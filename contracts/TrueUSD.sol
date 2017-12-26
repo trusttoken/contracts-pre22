@@ -22,7 +22,7 @@ contract TrueUSD is MintableToken, BurnableToken {
     //Burning functions as withdrawing money from the system. The platform will keep track of who burns coins,
     //and will send them back the equivalent amount of money.
     function burn(uint256 _value) public {
-        require(WhiteList(canBurnWhiteList).hasAccess(msg.sender) == true);
+        require(onBurnWhitelist(msg.sender));
         require(_value <= balances[msg.sender]);
         address burner = msg.sender;
         balances[burner] = balances[burner].sub(_value);
@@ -31,11 +31,20 @@ contract TrueUSD is MintableToken, BurnableToken {
     }
 
     function mint(address _to, uint256 _amount) onlyOwner canMint public returns (bool) {
-        require(WhiteList(canMintWhiteList).hasAccess(msg.sender) == true);
+        require(onMintWhitelist(msg.sender));
         totalSupply = totalSupply.add(_amount);
         balances[_to] = balances[_to].add(_amount);
         Mint(_to, _amount);
         Transfer(address(0), _to, _amount);
         return true;
-  }
+    }
+
+    function onMintWhitelist(address _address) view public returns(bool) {
+        WhiteList w = WhiteList(canMintWhiteList);
+        return w.hasAccess(_address);
+    }
+
+    function onBurnWhitelist(address _address) view public returns(bool) {
+        return (WhiteList(canBurnWhiteList).hasAccess(_address) == true);
+    }
 }
