@@ -14,5 +14,12 @@ module.exports = {
       gas: 4500000,
       gasPrice: 22000000000 // Specified in Wei
     },
+    production: {
+      provider: new HDWalletProvider(process.env.MNEMONIC, "https://mainnet.infura.io/dYWKKqsJkbv9cZlQFEpI "),
+      network_id: "1",
+      gas: 4500000,
+      gasPrice: 20000000000
+    },
+
   }
 };
