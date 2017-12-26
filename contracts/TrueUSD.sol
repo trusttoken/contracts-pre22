@@ -31,7 +31,7 @@ contract TrueUSD is MintableToken, BurnableToken {
     }
 
     function mint(address _to, uint256 _amount) onlyOwner canMint public returns (bool) {
-        require(onMintWhitelist(msg.sender));
+        require(onMintWhitelist(_to));
         totalSupply = totalSupply.add(_amount);
         balances[_to] = balances[_to].add(_amount);
         Mint(_to, _amount);
@@ -40,8 +40,7 @@ contract TrueUSD is MintableToken, BurnableToken {
     }
 
     function onMintWhitelist(address _address) view public returns(bool) {
-        WhiteList w = WhiteList(canMintWhiteList);
-        return w.hasAccess(_address);
+        return WhiteList(canMintWhiteList).hasAccess(_address);
     }
 
     function onBurnWhitelist(address _address) view public returns(bool) {

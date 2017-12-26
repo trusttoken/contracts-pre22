@@ -6,7 +6,8 @@ var canMintWhiteList, canBurnWhiteList
 
 module.exports = async function(deployer) {
   await deployer;
-  const mintWhiteList = await WhiteList.new("mintWhiteList")
+  const minWhiteList = await WhiteList.new("mintWhiteList")
   const canBurnWhiteList = await WhiteList.new("canBurnWhiteList")
-  const trueUSD = await TrueUSD.new(mintWhiteList.address, canBurnWhiteList.address)
+  const trueUSD = await TrueUSD.new(minWhiteList.address, canBurnWhiteList.address)
+  console.log("Addresses are: ", minWhiteList.address, canBurnWhiteList.address, trueUSD.address)
 };
