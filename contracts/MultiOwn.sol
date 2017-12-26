@@ -5,11 +5,13 @@ contract MultiOwn {
         mapping(address => bool) votes;
         bool hasCompleted;
     }
-    address[] public owners;
-    mapping(address => uint) ownersIndices; // starts from 1
     mapping (uint => Proposal) public proposals;
-    uint public requiredVoteCount = 2;
     uint public proposalCount = 0;
+
+    address[] public owners;
+    mapping(address => uint) public ownersIndices; // starts from 1
+
+    uint public requiredVoteCount = 2;
 
     struct ChangeOwnershipProposal {
         address from;
@@ -25,9 +27,12 @@ contract MultiOwn {
     }
 
     // Transfer Ownership logic 
-    function proposeChangeOwnership(address _from, address _to) public {
-        uint id = proposalCount++;
+    function proposeChangeOwnership(address _from, address _to) public returns (uint) {
+        assert(ownersIndices[msg.sender] != 0);
+        proposalCount = proposalCount + 1;
+        uint id = proposalCount;
         changeOwnershipProposals[id] = ChangeOwnershipProposal(_from, _to);
+        return id;
     }
 
     function changeOwnership(uint _proposalId) private {
@@ -50,7 +55,7 @@ contract MultiOwn {
         }
     }
 
-    function voteCountForProposal(uint _proposalId) view private returns (uint) {
+    function voteCountForProposal(uint _proposalId) view public returns (uint) {
         uint votes = 0;
         for (uint id = 1; id < owners.length; id++) {
             if (proposals[_proposalId].votes[owners[id]] == true) {
