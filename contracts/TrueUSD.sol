@@ -28,7 +28,7 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     }
 
     function mint(address _to, uint256 _amount) onlyOwner canMint public returns (bool) {
-        require(canMintWhiteList.hasAccess(_address));
+        require(canMintWhiteList.hasAccess(_to));
         super.mint(_to, _amount);
     }
 }
