@@ -32,6 +32,11 @@ contract LimitedAdmin is Ownable, HasNoEther, HasNoTokens {
     MintOperation[] public mintOperations;
     TransferOwnershipOperation public transferOwnershipOperation;
     
+    // starts with no admin
+    function LimitedAdmin(address _child) public {
+        child = TrueUSD(_child);
+    }
+    
     event MintOperationEvent(MintOperation op, uint opIndex);
     event TransferOwnershipOperationEvent(TransferOwnershipOperation op);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
@@ -57,6 +62,7 @@ contract LimitedAdmin is Ownable, HasNoEther, HasNoTokens {
         MintOperation memory op = mintOperations[index];
         require(op.admin == admin); //checks that the requester's adminship has not been revoked
         require(op.releaseBlock <= block.number); //checks that enough time has elapsed
+        require(op.to == msg.sender); //only the recipient of the funds can complete the mint op
         address to = op.to;
         uint256 amount = op.amount;
         delete mintOperations[index];
@@ -66,6 +72,7 @@ contract LimitedAdmin is Ownable, HasNoEther, HasNoTokens {
     function releaseTransferOwnership() public {
         require(transferOwnershipOperation.admin == admin);
         require(transferOwnershipOperation.releaseBlock <= block.number);
+        require(transferOwnershipOperation.newOwner == msg.sender);
         address newOwner = transferOwnershipOperation.newOwner;
         delete transferOwnershipOperation;
         child.transferOwnership(newOwner);
