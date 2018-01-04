@@ -21,7 +21,7 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     }
 
     //Burning functions as withdrawing money from the system. The platform will keep track of who burns coins,
-    //and will send them back the equivalent amount of money. (TODO)
+    //and will send them back the equivalent amount of money.
     function burn(uint256 _value) public {
         require(canBurnWhiteList.hasAccess(msg.sender));
         super.burn(_value);
