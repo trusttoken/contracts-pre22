@@ -1,6 +1,6 @@
 var WhiteList = artifacts.require("Whitelist");
 var TrueUSD = artifacts.require("TrueUSD");
-var LimitedAdmin = artifacts.require("LimitedAdmin");
+var TimeLockedAdmin = artifacts.require("TimeLockedAdmin");
 var Web3 = require('web3');
 
 var canMintWhiteList, canBurnWhiteList
@@ -13,6 +13,6 @@ module.exports = async function(deployer) {
   console.log("canBurnWhiteList Address: ", canBurnWhiteList.address)
   const trueUSD = await TrueUSD.new(mintWhiteList.address, canBurnWhiteList.address)
   console.log("trueUSD Address: ", trueUSD.address)
-  const limitedAdmin = await LimitedAdmin.new(trueUSD.address)
-  console.log("limitedAdmin Address: ", limitedAdmin.address)
+  const timeLockedAdmin = await TimeLockedAdmin.new(trueUSD.address)
+  console.log("timeLockedAdmin Address: ", timeLockedAdmin.address)
 };
