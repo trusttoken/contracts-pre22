@@ -49,13 +49,9 @@ contract LimitedAdmin is Ownable, HasNoEther, HasNoTokens {
     event TransferOwnershipOperationEvent(TransferOwnershipOperation op);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
 
-    modifier onlyAdmin() {
-        require(msg.sender == admin);
-        _;
-    }
-    
     // admin initiates a request to mint _amount TUSD for account _to
-    function requestMint(address _to, uint256 _amount) public onlyAdmin {
+    function requestMint(address _to, uint256 _amount) public {
+        require(msg.sender == admin);
         MintOperation memory op = MintOperation(_to, _amount, admin, block.number + blocksDelay);
         MintOperationEvent(op, mintOperations.length);
         mintOperations.push(op);
@@ -63,7 +59,8 @@ contract LimitedAdmin is Ownable, HasNoEther, HasNoTokens {
     
     // admin initiates a request to transfer ownership of the TrueUSD contract to newOwner.
     // Can be used e.g. to upgrade this LimitedAdmin contract.
-    function requestTransferOwnership(address newOwner) public onlyAdmin {
+    function requestTransferOwnership(address newOwner) public {
+        require(msg.sender == admin);
         TransferOwnershipOperation memory op = TransferOwnershipOperation(newOwner, admin, block.number + blocksDelay);
         TransferOwnershipOperationEvent(op);
         transferOwnershipOperation = op;
@@ -94,7 +91,6 @@ contract LimitedAdmin is Ownable, HasNoEther, HasNoTokens {
     
     // Owner of this contract (immediately) replaces the current admin with newAdmin
     function transferAdminship(address newAdmin) public onlyOwner {
-        require(newAdmin != address(0));
         AdminshipTransferred(admin, newAdmin);
         admin = newAdmin;
     }
