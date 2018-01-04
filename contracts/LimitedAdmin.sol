@@ -5,26 +5,34 @@ import 'zeppelin-solidity/contracts/ownership/HasNoTokens.sol';
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import './TrueUSD.sol';
 
-// somewhat based on https://github.com/bitclave/Multiownable/blob/master/contracts/Multiownable.sol
-// A LimitedAdmin is supposed to be the Owner of a TrueUSD contract ('child'). The 
-// 'admin' can call mint and transferOwnership on the child, and they can be forwarded to the child
-// after some number of blocks have elapsed. The owner of the LimitedAdmin can 
-// replace the admin, cancelling all pending calls (unless the admin is quickly restored)
+// The LimitedAdmin contract is intended to be the initial Owner of the TrueUSD
+// contract. It splits ownership into two accounts: an "admin" account and an
+// "owner" account. The admin of LimitedAdmin can initiate two kinds of
+// transactions: minting TUSD, and transferring ownership of the TrueUSD
+// contract to a new owner. However, both of these transactions must be stored
+// for ~1 day's worth of blocks first before they can be forwarded to the
+// TrueUSD contract. In the event that the admin account is compromised, this
+// setup allows the owner of LimitedAdmin (which can be stored extremely
+// securely since it is never used in normal operation) to replace the admin.
+// Once a day has passed, all mint and ownership transfer requests can be
+// finalized by the beneficiary (the token recipient or the new owner,
+// respectively). Requests initiated by an admin that has since been deposed
+// cannot be finalized.
 contract LimitedAdmin is Ownable, HasNoEther, HasNoTokens {
 
-    uint public constant blocksDelay = 24*60*60/15; // 24 hours, assuming a 15 second blocktime
+    uint public constant blocksDelay = 20;//24*60*60/15; // 24 hours, assuming a 15 second blocktime
 
     struct MintOperation {
         address to;
         uint256 amount;
         address admin;
-        uint releaseBlock;
+        uint deferBlock;
     }
     
     struct TransferOwnershipOperation {
         address newOwner;
         address admin;
-        uint releaseBlock;
+        uint deferBlock;
     }
 
     address public admin;
@@ -46,38 +54,45 @@ contract LimitedAdmin is Ownable, HasNoEther, HasNoTokens {
         _;
     }
     
+    // admin initiates a request to mint _amount TUSD for account _to
     function requestMint(address _to, uint256 _amount) public onlyAdmin {
         MintOperation memory op = MintOperation(_to, _amount, admin, block.number + blocksDelay);
         MintOperationEvent(op, mintOperations.length);
         mintOperations.push(op);
     }
     
+    // admin initiates a request to transfer ownership of the TrueUSD contract to newOwner.
+    // Can be used e.g. to upgrade this LimitedAdmin contract.
     function requestTransferOwnership(address newOwner) public onlyAdmin {
         TransferOwnershipOperation memory op = TransferOwnershipOperation(newOwner, admin, block.number + blocksDelay);
         TransferOwnershipOperationEvent(op);
         transferOwnershipOperation = op;
     }
     
-    function releaseMint(uint index) public {
+    // after a day, beneficiary of a mint request finalizes it by providing the
+    // index of the request (visible in the MintOperationEvent accompanying the original request)
+    function finalizeMint(uint index) public {
         MintOperation memory op = mintOperations[index];
         require(op.admin == admin); //checks that the requester's adminship has not been revoked
-        require(op.releaseBlock <= block.number); //checks that enough time has elapsed
-        require(op.to == msg.sender); //only the recipient of the funds can complete the mint op
+        require(op.deferBlock <= block.number); //checks that enough time has elapsed
+        require(op.to == msg.sender); //only the recipient of the funds can finalize
         address to = op.to;
         uint256 amount = op.amount;
         delete mintOperations[index];
         child.mint(to, amount);
     }
     
-    function releaseTransferOwnership() public {
+    // after a day, prospective new owner of TrueUSD finalizes the ownership change
+    function finalizeTransferOwnership() public {
         require(transferOwnershipOperation.admin == admin);
-        require(transferOwnershipOperation.releaseBlock <= block.number);
+        require(transferOwnershipOperation.deferBlock <= block.number);
         require(transferOwnershipOperation.newOwner == msg.sender);
         address newOwner = transferOwnershipOperation.newOwner;
         delete transferOwnershipOperation;
         child.transferOwnership(newOwner);
     }
     
+    // Owner of this contract (immediately) replaces the current admin with newAdmin
     function transferAdminship(address newAdmin) public onlyOwner {
         require(newAdmin != address(0));
         AdminshipTransferred(admin, newAdmin);
