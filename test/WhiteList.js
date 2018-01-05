@@ -11,20 +11,20 @@ contract('WhiteList', function(accounts) {
         assert.equal(Web3.utils.toAscii(name).replace(/\u0000/g, ''), "Mint whitelist", "Got wrong name");
 
         const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, {gas: 3000000, from: accounts[0]})
-        let canMint = await mintWhiteList.hasAccess(accounts[0])
-        let canBurn = await burnWhiteList.hasAccess(accounts[0])
+        let canMint = await mintWhiteList.whiteList(accounts[0])
+        let canBurn = await burnWhiteList.whiteList(accounts[0])
         assert.equal(canMint, false, "User should not be on white list");
         assert.equal(canBurn, false, "User should not be on white list");
 
         await mintWhiteList.changeWhiteList(accounts[0], true)//.send({gas: 3000000, from: accounts[0]})
-        canMint = await mintWhiteList.hasAccess(accounts[0])
-        canBurn = await burnWhiteList.hasAccess(accounts[0])
+        canMint = await mintWhiteList.whiteList(accounts[0])
+        canBurn = await burnWhiteList.whiteList(accounts[0])
         assert.equal(canMint, true, "User should be on white list");
         assert.equal(canBurn, false, "User should not be on white list");
 
         await burnWhiteList.changeWhiteList(accounts[0], true)//.send({gas: 3000000, from: accounts[0]})
-        canMint = await mintWhiteList.hasAccess(accounts[0])
-        canBurn = await burnWhiteList.hasAccess(accounts[0])
+        canMint = await mintWhiteList.whiteList(accounts[0])
+        canBurn = await burnWhiteList.whiteList(accounts[0])
         assert.equal(canMint, true, "User should be on white list");
         assert.equal(canBurn, true, "User should be on white list");
     })
