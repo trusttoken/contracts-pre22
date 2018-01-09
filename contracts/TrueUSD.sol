@@ -10,13 +10,13 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     string public symbol = "TUSD";
     uint8 public decimals = 18;
     uint public INITIAL_SUPPLY = 0;
-    WhiteList public canMintWhiteList;
+    WhiteList public canReceiveMintWhitelist;
     WhiteList public canBurnWhiteList;
 
     function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList) public {
         totalSupply = INITIAL_SUPPLY;
         balances[msg.sender] = INITIAL_SUPPLY;
-        canMintWhiteList = WhiteList(_canMintWhiteList);
+        canReceiveMintWhitelist = WhiteList(_canMintWhiteList);
         canBurnWhiteList = WhiteList(_canBurnWhiteList);
     }
 
@@ -28,7 +28,7 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     }
 
     function mint(address _to, uint256 _amount) onlyOwner public returns (bool) {
-        require(canMintWhiteList.whiteList(_to));
+        require(canReceiveMintWhitelist.whiteList(_to));
         return super.mint(_to, _amount);
     }
 }

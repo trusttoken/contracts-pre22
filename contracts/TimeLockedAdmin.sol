@@ -20,7 +20,7 @@ import './TrueUSD.sol';
 // cannot be finalized.
 contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
 
-    uint public constant blocksDelay = 20;//24*60*60/15; // 24 hours, assuming a 15 second blocktime
+    uint public constant blocksDelay = 24*60*60/15; // 24 hours, assuming a 15 second blocktime
 
     struct MintOperation {
         address to;
