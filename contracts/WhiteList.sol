@@ -15,8 +15,4 @@ contract WhiteList is Ownable {
         whiteList[_to] = _canWithdraw;
         ChangeWhiteList(_to, _canWithdraw);
     }
-
-    function hasAccess(address _address) public view returns (bool) {
-        return whiteList[_address];
-    }
 }
