@@ -46,6 +46,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     TrueUSD public child;
     MintOperation[] public mintOperations;
     TransferOwnershipOperation public transferOwnershipOperation;
+    ChangeBurnBoundsOperation public changeBurnBoundsOperation;
 
     // starts with no admin
     function TimeLockedAdmin(address _child) public {
@@ -69,16 +70,18 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     // Can be used e.g. to upgrade this TimeLockedAdmin contract.
     function requestTransferOwnership(address newOwner) public {
         require(msg.sender == admin);
-        transferOwnershipOperation = TransferOwnershipOperation(newOwner, admin, block.number + blocksDelay);
-        TransferOwnershipOperationEvent(transferOwnershipOperation);
+        TransferOwnershipOperation memory op = TransferOwnershipOperation(newOwner, admin, block.number + blocksDelay);
+        TransferOwnershipOperationEvent(op);
+        transferOwnershipOperation = op;
     }
 
     // admin initiates a request that the minimum and maximum amounts that any trueUSD user can
     // burn become newMin and newMax
     function requestChangeBurnBounds(uint newMin, uint newMax) public {
         require(msg.sender == admin);
-        changeBurnBoundsOperation = ChangeBurnBoundsOperation(newMin, newMax, admin, block.number + blocksDelay);
-        ChangeBurnBoundsOperationEvent(changeBurnBoundsOperation);
+        ChangeBurnBoundsOperation memory op = ChangeBurnBoundsOperation(newMin, newMax, admin, block.number + blocksDelay);
+        ChangeBurnBoundsOperationEvent(op);
+        changeBurnBoundsOperation = op;
     }
 
     // after a day, beneficiary of a mint request finalizes it by providing the

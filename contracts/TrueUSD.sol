@@ -13,8 +13,8 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
 
     WhiteList public canReceiveMintWhitelist;
     WhiteList public canBurnWhiteList;
-    uint burnMin = 10000 * 10**decimals;
-    uint burnMax = 20000000 * 10**decimals;
+    uint burnMin = 10000 * uint256(10)**decimals;
+    uint burnMax = 20000000 * uint256(10)**decimals;
 
     function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList) public {
         totalSupply = INITIAL_SUPPLY;
@@ -37,7 +37,7 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
         return super.mint(_to, _amount);
     }
 
-    function changeBurnBounds(uint newMin, uint newMax) {
+    function changeBurnBounds(uint newMin, uint newMax) onlyOwner public {
         burnMin = newMin;
         burnMax = newMax;
     }
