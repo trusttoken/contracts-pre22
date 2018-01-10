@@ -1,4 +1,4 @@
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/token/MintableToken.sol';
 import 'zeppelin-solidity/contracts/token/BurnableToken.sol';
@@ -6,10 +6,10 @@ import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
 import './WhiteList.sol';
 
 contract TrueUSD is MintableToken, BurnableToken, NoOwner {
-    string public name = "TrueUSD";
-    string public symbol = "TUSD";
-    uint8 public decimals = 18;
-    uint public INITIAL_SUPPLY = 0;
+    string public constant name = "TrueUSD";
+    string public constant symbol = "TUSD";
+    uint8 public constant decimals = 18;
+    uint public constant INITIAL_SUPPLY = 0;
 
     WhiteList public canReceiveMintWhitelist;
     WhiteList public canBurnWhiteList;
@@ -18,13 +18,12 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
 
     function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList) public {
         totalSupply = INITIAL_SUPPLY;
-        balances[msg.sender] = INITIAL_SUPPLY;
         canReceiveMintWhitelist = WhiteList(_canMintWhiteList);
         canBurnWhiteList = WhiteList(_canBurnWhiteList);
     }
 
     //Burning functions as withdrawing money from the system. The platform will keep track of who burns coins,
-    //and will send them back the equivalent amount of money.
+    //and will send them back the equivalent amount of money (rounded down to the nearest cent).
     function burn(uint256 _value) public {
         require(canBurnWhiteList.whiteList(msg.sender));
         require(_value >= burnMin);

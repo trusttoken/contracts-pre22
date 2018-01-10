@@ -63,8 +63,8 @@
   ],
   "bytecode": "0x6060604052336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506103fc806100536000396000f300606060405260043610610057576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632aed7f3f1461005c5780638da5cb5b14610095578063f2fde38b146100ea575b600080fd5b341561006757600080fd5b610093600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610123565b005b34156100a057600080fd5b6100a8610256565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34156100f557600080fd5b610121600480803573ffffffffffffffffffffffffffffffffffffffff1690602001909190505061027b565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614151561018057600080fd5b8190508073ffffffffffffffffffffffffffffffffffffffff1663f2fde38b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff166040518263ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001915050600060405180830381600087803b151561023e57600080fd5b6102c65a03f1151561024f57600080fd5b5050505050565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415156102d657600080fd5b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff161415151561031257600080fd5b8073ffffffffffffffffffffffffffffffffffffffff166000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a3806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550505600a165627a7a72305820f44089b6bae787ff0df3d9e93987dade0410c2932ff886888e156fcfc425e8540029",
   "deployedBytecode": "0x606060405260043610610057576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632aed7f3f1461005c5780638da5cb5b14610095578063f2fde38b146100ea575b600080fd5b341561006757600080fd5b610093600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610123565b005b34156100a057600080fd5b6100a8610256565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34156100f557600080fd5b610121600480803573ffffffffffffffffffffffffffffffffffffffff1690602001909190505061027b565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614151561018057600080fd5b8190508073ffffffffffffffffffffffffffffffffffffffff1663f2fde38b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff166040518263ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001915050600060405180830381600087803b151561023e57600080fd5b6102c65a03f1151561024f57600080fd5b5050505050565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415156102d657600080fd5b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff161415151561031257600080fd5b8073ffffffffffffffffffffffffffffffffffffffff166000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a3806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550505600a165627a7a72305820f44089b6bae787ff0df3d9e93987dade0410c2932ff886888e156fcfc425e8540029",
-  "sourceMap": "310:336:5:-;;;509:10:9;501:5;;:18;;;;;;;;;;;;;;;;;;310:336:5;;;;;;",
-  "deployedSourceMap": "310:336:5:-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;480:164;;;;;;;;;;;;;;;;;;;;;;;;;;;;238:20:9;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;834:169;;;;;;;;;;;;;;;;;;;;;;;;;;;;480:164:5;552:20;654:5:9;;;;;;;;;;;640:19;;:10;:19;;;632:28;;;;;;;;583:12:5;552:44;;602:12;:30;;;633:5;;;;;;;;;;;602:37;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;480:164;;:::o;238:20:9:-;;;;;;;;;;;;;:::o;834:169::-;654:5;;;;;;;;;;;640:19;;:10;:19;;;632:28;;;;;;;;930:1;910:22;;:8;:22;;;;902:31;;;;;;;;967:8;939:37;;960:5;;;;;;;;;;;939:37;;;;;;;;;;;;990:8;982:5;;:16;;;;;;;;;;;;;;;;;;834:169;:::o",
+  "sourceMap": "310:336:7:-;;;509:10:11;501:5;;:18;;;;;;;;;;;;;;;;;;310:336:7;;;;;;",
+  "deployedSourceMap": "310:336:7:-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;480:164;;;;;;;;;;;;;;;;;;;;;;;;;;;;238:20:11;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;834:169;;;;;;;;;;;;;;;;;;;;;;;;;;;;480:164:7;552:20;654:5:11;;;;;;;;;;;640:19;;:10;:19;;;632:28;;;;;;;;583:12:7;552:44;;602:12;:30;;;633:5;;;;;;;;;;;602:37;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;480:164;;:::o;238:20:11:-;;;;;;;;;;;;;:::o;834:169::-;654:5;;;;;;;;;;;640:19;;:10;:19;;;632:28;;;;;;;;930:1;910:22;;:8;:22;;;;902:31;;;;;;;;967:8;939:37;;960:5;;;;;;;;;;;939:37;;;;;;;;;;;;990:8;982:5;;:16;;;;;;;;;;;;;;;;;;834:169;:::o",
   "source": "pragma solidity ^0.4.18;\n\nimport \"./Ownable.sol\";\n\n/**\n * @title Contracts that should not own Contracts\n * @author Remco Bloemen <remco@2π.com>\n * @dev Should contracts (anything Ownable) end up being owned by this contract, it allows the owner\n * of this contract to reclaim ownership of the contracts.\n */\ncontract HasNoContracts is Ownable {\n\n  /**\n   * @dev Reclaim ownership of Ownable contracts\n   * @param contractAddr The address of the Ownable to be reclaimed.\n   */\n  function reclaimContract(address contractAddr) external onlyOwner {\n    Ownable contractInst = Ownable(contractAddr);\n    contractInst.transferOwnership(owner);\n  }\n}\n",
   "sourcePath": "zeppelin-solidity/contracts/ownership/HasNoContracts.sol",
   "ast": {
@@ -72,7 +72,7 @@
       "absolutePath": "zeppelin-solidity/contracts/ownership/HasNoContracts.sol",
       "exportedSymbols": {
         "HasNoContracts": [
-          715
+          800
         ]
       }
     },
@@ -86,39 +86,39 @@
             ".18"
           ]
         },
-        "id": 691,
+        "id": 776,
         "name": "PragmaDirective",
-        "src": "0:24:5"
+        "src": "0:24:7"
       },
       {
         "attributes": {
-          "SourceUnit": 844,
+          "SourceUnit": 929,
           "absolutePath": "zeppelin-solidity/contracts/ownership/Ownable.sol",
           "file": "./Ownable.sol",
-          "scope": 716,
+          "scope": 801,
           "symbolAliases": [
             null
           ],
           "unitAlias": ""
         },
-        "id": 692,
+        "id": 777,
         "name": "ImportDirective",
-        "src": "26:23:5"
+        "src": "26:23:7"
       },
       {
         "attributes": {
           "contractDependencies": [
-            843
+            928
           ],
           "contractKind": "contract",
           "documentation": "@title Contracts that should not own Contracts\n@author Remco Bloemen <remco@2π.com>\n@dev Should contracts (anything Ownable) end up being owned by this contract, it allows the owner\nof this contract to reclaim ownership of the contracts.",
           "fullyImplemented": true,
           "linearizedBaseContracts": [
-            715,
-            843
+            800,
+            928
           ],
           "name": "HasNoContracts",
-          "scope": 716
+          "scope": 801
         },
         "children": [
           {
@@ -132,17 +132,17 @@
                 "attributes": {
                   "contractScope": null,
                   "name": "Ownable",
-                  "referencedDeclaration": 843,
+                  "referencedDeclaration": 928,
                   "type": "contract Ownable"
                 },
-                "id": 693,
+                "id": 778,
                 "name": "UserDefinedTypeName",
-                "src": "337:7:5"
+                "src": "337:7:7"
               }
             ],
-            "id": 694,
+            "id": 779,
             "name": "InheritanceSpecifier",
-            "src": "337:7:5"
+            "src": "337:7:7"
           },
           {
             "attributes": {
@@ -151,7 +151,7 @@
               "isConstructor": false,
               "name": "reclaimContract",
               "payable": false,
-              "scope": 715,
+              "scope": 800,
               "stateMutability": "nonpayable",
               "superFunction": null,
               "visibility": "external"
@@ -163,7 +163,7 @@
                     "attributes": {
                       "constant": false,
                       "name": "contractAddr",
-                      "scope": 714,
+                      "scope": 799,
                       "stateVariable": false,
                       "storageLocation": "default",
                       "type": "address",
@@ -176,19 +176,19 @@
                           "name": "address",
                           "type": "address"
                         },
-                        "id": 695,
+                        "id": 780,
                         "name": "ElementaryTypeName",
-                        "src": "505:7:5"
+                        "src": "505:7:7"
                       }
                     ],
-                    "id": 696,
+                    "id": 781,
                     "name": "VariableDeclaration",
-                    "src": "505:20:5"
+                    "src": "505:20:7"
                   }
                 ],
-                "id": 697,
+                "id": 782,
                 "name": "ParameterList",
-                "src": "504:22:5"
+                "src": "504:22:7"
               },
               {
                 "attributes": {
@@ -197,9 +197,9 @@
                   ]
                 },
                 "children": [],
-                "id": 700,
+                "id": 785,
                 "name": "ParameterList",
-                "src": "546:0:5"
+                "src": "546:0:7"
               },
               {
                 "attributes": {
@@ -214,25 +214,25 @@
                       "overloadedDeclarations": [
                         null
                       ],
-                      "referencedDeclaration": 817,
+                      "referencedDeclaration": 902,
                       "type": "modifier ()",
                       "value": "onlyOwner"
                     },
-                    "id": 698,
+                    "id": 783,
                     "name": "Identifier",
-                    "src": "536:9:5"
+                    "src": "536:9:7"
                   }
                 ],
-                "id": 699,
+                "id": 784,
                 "name": "ModifierInvocation",
-                "src": "536:9:5"
+                "src": "536:9:7"
               },
               {
                 "children": [
                   {
                     "attributes": {
                       "assignments": [
-                        702
+                        787
                       ]
                     },
                     "children": [
@@ -240,7 +240,7 @@
                         "attributes": {
                           "constant": false,
                           "name": "contractInst",
-                          "scope": 714,
+                          "scope": 799,
                           "stateVariable": false,
                           "storageLocation": "default",
                           "type": "contract Ownable",
@@ -252,17 +252,17 @@
                             "attributes": {
                               "contractScope": null,
                               "name": "Ownable",
-                              "referencedDeclaration": 843,
+                              "referencedDeclaration": 928,
                               "type": "contract Ownable"
                             },
-                            "id": 701,
+                            "id": 786,
                             "name": "UserDefinedTypeName",
-                            "src": "552:7:5"
+                            "src": "552:7:7"
                           }
                         ],
-                        "id": 702,
+                        "id": 787,
                         "name": "VariableDeclaration",
-                        "src": "552:20:5"
+                        "src": "552:20:7"
                       },
                       {
                         "attributes": {
@@ -290,13 +290,13 @@
                               "overloadedDeclarations": [
                                 null
                               ],
-                              "referencedDeclaration": 843,
+                              "referencedDeclaration": 928,
                               "type": "type(contract Ownable)",
                               "value": "Ownable"
                             },
-                            "id": 703,
+                            "id": 788,
                             "name": "Identifier",
-                            "src": "575:7:5"
+                            "src": "575:7:7"
                           },
                           {
                             "attributes": {
@@ -304,23 +304,23 @@
                               "overloadedDeclarations": [
                                 null
                               ],
-                              "referencedDeclaration": 696,
+                              "referencedDeclaration": 781,
                               "type": "address",
                               "value": "contractAddr"
                             },
-                            "id": 704,
+                            "id": 789,
                             "name": "Identifier",
-                            "src": "583:12:5"
+                            "src": "583:12:7"
                           }
                         ],
-                        "id": 705,
+                        "id": 790,
                         "name": "FunctionCall",
-                        "src": "575:21:5"
+                        "src": "575:21:7"
                       }
                     ],
-                    "id": 706,
+                    "id": 791,
                     "name": "VariableDeclarationStatement",
-                    "src": "552:44:5"
+                    "src": "552:44:7"
                   },
                   {
                     "children": [
@@ -352,7 +352,7 @@
                               "isPure": false,
                               "lValueRequested": false,
                               "member_name": "transferOwnership",
-                              "referencedDeclaration": 842,
+                              "referencedDeclaration": 927,
                               "type": "function (address) external"
                             },
                             "children": [
@@ -362,18 +362,18 @@
                                   "overloadedDeclarations": [
                                     null
                                   ],
-                                  "referencedDeclaration": 702,
+                                  "referencedDeclaration": 787,
                                   "type": "contract Ownable",
                                   "value": "contractInst"
                                 },
-                                "id": 707,
+                                "id": 792,
                                 "name": "Identifier",
-                                "src": "602:12:5"
+                                "src": "602:12:7"
                               }
                             ],
-                            "id": 709,
+                            "id": 794,
                             "name": "MemberAccess",
-                            "src": "602:30:5"
+                            "src": "602:30:7"
                           },
                           {
                             "attributes": {
@@ -381,43 +381,43 @@
                               "overloadedDeclarations": [
                                 null
                               ],
-                              "referencedDeclaration": 791,
+                              "referencedDeclaration": 876,
                               "type": "address",
                               "value": "owner"
                             },
-                            "id": 710,
+                            "id": 795,
                             "name": "Identifier",
-                            "src": "633:5:5"
+                            "src": "633:5:7"
                           }
                         ],
-                        "id": 711,
+                        "id": 796,
                         "name": "FunctionCall",
-                        "src": "602:37:5"
+                        "src": "602:37:7"
                       }
                     ],
-                    "id": 712,
+                    "id": 797,
                     "name": "ExpressionStatement",
-                    "src": "602:37:5"
+                    "src": "602:37:7"
                   }
                 ],
-                "id": 713,
+                "id": 798,
                 "name": "Block",
-                "src": "546:98:5"
+                "src": "546:98:7"
               }
             ],
-            "id": 714,
+            "id": 799,
             "name": "FunctionDefinition",
-            "src": "480:164:5"
+            "src": "480:164:7"
           }
         ],
-        "id": 715,
+        "id": 800,
         "name": "ContractDefinition",
-        "src": "310:336:5"
+        "src": "310:336:7"
       }
     ],
-    "id": 716,
+    "id": 801,
     "name": "SourceUnit",
-    "src": "0:647:5"
+    "src": "0:647:7"
   },
   "compiler": {
     "name": "solc",
@@ -425,5 +425,5 @@
   },
   "networks": {},
   "schemaVersion": "1.0.1",
-  "updatedAt": "2018-01-09T23:19:41.073Z"
+  "updatedAt": "2018-01-10T22:58:05.690Z"
 }
