@@ -72,7 +72,7 @@
       "absolutePath": "zeppelin-solidity/contracts/ownership/HasNoContracts.sol",
       "exportedSymbols": {
         "HasNoContracts": [
-          784
+          859
         ]
       }
     },
@@ -86,39 +86,39 @@
             ".18"
           ]
         },
-        "id": 760,
+        "id": 835,
         "name": "PragmaDirective",
         "src": "0:24:5"
       },
       {
         "attributes": {
-          "SourceUnit": 913,
+          "SourceUnit": 988,
           "absolutePath": "zeppelin-solidity/contracts/ownership/Ownable.sol",
           "file": "./Ownable.sol",
-          "scope": 785,
+          "scope": 860,
           "symbolAliases": [
             null
           ],
           "unitAlias": ""
         },
-        "id": 761,
+        "id": 836,
         "name": "ImportDirective",
         "src": "26:23:5"
       },
       {
         "attributes": {
           "contractDependencies": [
-            912
+            987
           ],
           "contractKind": "contract",
           "documentation": "@title Contracts that should not own Contracts\n@author Remco Bloemen <remco@2π.com>\n@dev Should contracts (anything Ownable) end up being owned by this contract, it allows the owner\nof this contract to reclaim ownership of the contracts.",
           "fullyImplemented": true,
           "linearizedBaseContracts": [
-            784,
-            912
+            859,
+            987
           ],
           "name": "HasNoContracts",
-          "scope": 785
+          "scope": 860
         },
         "children": [
           {
@@ -132,15 +132,15 @@
                 "attributes": {
                   "contractScope": null,
                   "name": "Ownable",
-                  "referencedDeclaration": 912,
+                  "referencedDeclaration": 987,
                   "type": "contract Ownable"
                 },
-                "id": 762,
+                "id": 837,
                 "name": "UserDefinedTypeName",
                 "src": "337:7:5"
               }
             ],
-            "id": 763,
+            "id": 838,
             "name": "InheritanceSpecifier",
             "src": "337:7:5"
           },
@@ -151,7 +151,7 @@
               "isConstructor": false,
               "name": "reclaimContract",
               "payable": false,
-              "scope": 784,
+              "scope": 859,
               "stateMutability": "nonpayable",
               "superFunction": null,
               "visibility": "external"
@@ -163,7 +163,7 @@
                     "attributes": {
                       "constant": false,
                       "name": "contractAddr",
-                      "scope": 783,
+                      "scope": 858,
                       "stateVariable": false,
                       "storageLocation": "default",
                       "type": "address",
@@ -176,17 +176,17 @@
                           "name": "address",
                           "type": "address"
                         },
-                        "id": 764,
+                        "id": 839,
                         "name": "ElementaryTypeName",
                         "src": "505:7:5"
                       }
                     ],
-                    "id": 765,
+                    "id": 840,
                     "name": "VariableDeclaration",
                     "src": "505:20:5"
                   }
                 ],
-                "id": 766,
+                "id": 841,
                 "name": "ParameterList",
                 "src": "504:22:5"
               },
@@ -197,7 +197,7 @@
                   ]
                 },
                 "children": [],
-                "id": 769,
+                "id": 844,
                 "name": "ParameterList",
                 "src": "546:0:5"
               },
@@ -214,16 +214,16 @@
                       "overloadedDeclarations": [
                         null
                       ],
-                      "referencedDeclaration": 886,
+                      "referencedDeclaration": 961,
                       "type": "modifier ()",
                       "value": "onlyOwner"
                     },
-                    "id": 767,
+                    "id": 842,
                     "name": "Identifier",
                     "src": "536:9:5"
                   }
                 ],
-                "id": 768,
+                "id": 843,
                 "name": "ModifierInvocation",
                 "src": "536:9:5"
               },
@@ -232,7 +232,7 @@
                   {
                     "attributes": {
                       "assignments": [
-                        771
+                        846
                       ]
                     },
                     "children": [
@@ -240,7 +240,7 @@
                         "attributes": {
                           "constant": false,
                           "name": "contractInst",
-                          "scope": 783,
+                          "scope": 858,
                           "stateVariable": false,
                           "storageLocation": "default",
                           "type": "contract Ownable",
@@ -252,15 +252,15 @@
                             "attributes": {
                               "contractScope": null,
                               "name": "Ownable",
-                              "referencedDeclaration": 912,
+                              "referencedDeclaration": 987,
                               "type": "contract Ownable"
                             },
-                            "id": 770,
+                            "id": 845,
                             "name": "UserDefinedTypeName",
                             "src": "552:7:5"
                           }
                         ],
-                        "id": 771,
+                        "id": 846,
                         "name": "VariableDeclaration",
                         "src": "552:20:5"
                       },
@@ -290,11 +290,11 @@
                               "overloadedDeclarations": [
                                 null
                               ],
-                              "referencedDeclaration": 912,
+                              "referencedDeclaration": 987,
                               "type": "type(contract Ownable)",
                               "value": "Ownable"
                             },
-                            "id": 772,
+                            "id": 847,
                             "name": "Identifier",
                             "src": "575:7:5"
                           },
@@ -304,21 +304,21 @@
                               "overloadedDeclarations": [
                                 null
                               ],
-                              "referencedDeclaration": 765,
+                              "referencedDeclaration": 840,
                               "type": "address",
                               "value": "contractAddr"
                             },
-                            "id": 773,
+                            "id": 848,
                             "name": "Identifier",
                             "src": "583:12:5"
                           }
                         ],
-                        "id": 774,
+                        "id": 849,
                         "name": "FunctionCall",
                         "src": "575:21:5"
                       }
                     ],
-                    "id": 775,
+                    "id": 850,
                     "name": "VariableDeclarationStatement",
                     "src": "552:44:5"
                   },
@@ -352,7 +352,7 @@
                               "isPure": false,
                               "lValueRequested": false,
                               "member_name": "transferOwnership",
-                              "referencedDeclaration": 911,
+                              "referencedDeclaration": 986,
                               "type": "function (address) external"
                             },
                             "children": [
@@ -362,16 +362,16 @@
                                   "overloadedDeclarations": [
                                     null
                                   ],
-                                  "referencedDeclaration": 771,
+                                  "referencedDeclaration": 846,
                                   "type": "contract Ownable",
                                   "value": "contractInst"
                                 },
-                                "id": 776,
+                                "id": 851,
                                 "name": "Identifier",
                                 "src": "602:12:5"
                               }
                             ],
-                            "id": 778,
+                            "id": 853,
                             "name": "MemberAccess",
                             "src": "602:30:5"
                           },
@@ -381,41 +381,41 @@
                               "overloadedDeclarations": [
                                 null
                               ],
-                              "referencedDeclaration": 860,
+                              "referencedDeclaration": 935,
                               "type": "address",
                               "value": "owner"
                             },
-                            "id": 779,
+                            "id": 854,
                             "name": "Identifier",
                             "src": "633:5:5"
                           }
                         ],
-                        "id": 780,
+                        "id": 855,
                         "name": "FunctionCall",
                         "src": "602:37:5"
                       }
                     ],
-                    "id": 781,
+                    "id": 856,
                     "name": "ExpressionStatement",
                     "src": "602:37:5"
                   }
                 ],
-                "id": 782,
+                "id": 857,
                 "name": "Block",
                 "src": "546:98:5"
               }
             ],
-            "id": 783,
+            "id": 858,
             "name": "FunctionDefinition",
             "src": "480:164:5"
           }
         ],
-        "id": 784,
+        "id": 859,
         "name": "ContractDefinition",
         "src": "310:336:5"
       }
     ],
-    "id": 785,
+    "id": 860,
     "name": "SourceUnit",
     "src": "0:647:5"
   },
@@ -425,5 +425,5 @@
   },
   "networks": {},
   "schemaVersion": "1.0.1",
-  "updatedAt": "2018-01-13T00:07:18.547Z"
+  "updatedAt": "2018-01-15T05:36:31.038Z"
 }

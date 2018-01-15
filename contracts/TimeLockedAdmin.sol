@@ -47,15 +47,17 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     TrueUSD public child;
     WhiteList public canBurnWhiteList;
     WhiteList public canReceiveMintWhitelist;
+    WhiteList public blackList;
     MintOperation[] public mintOperations;
     TransferOwnershipOperation public transferOwnershipOperation;
     ChangeBurnBoundsOperation public changeBurnBoundsOperation;
 
     // starts with no admin
-    function TimeLockedAdmin(address _child, address _canBurnWhiteList, address _canReceiveMintWhitelist) public {
+    function TimeLockedAdmin(address _child, address _canBurnWhiteList, address _canReceiveMintWhitelist, address _blackList) public {
         child = TrueUSD(_child);
         canBurnWhiteList = WhiteList(_canBurnWhiteList);
         canReceiveMintWhitelist = WhiteList(_canReceiveMintWhitelist);
+        blackList = WhiteList(_blackList);
     }
 
     event MintOperationEvent(MintOperation op, uint opIndex);
@@ -112,6 +114,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
         child.transferOwnership(newOwner);
         canBurnWhiteList.transferOwnership(newOwner);
         canReceiveMintWhitelist.transferOwnership(newOwner);
+        blackList.transferOwnership(newOwner);
     }
 
     // after a day, admin finalizes the burn bounds change
@@ -131,13 +134,8 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
         admin = newAdmin;
     }
 
-    function changeBurnWhiteList(address _to, bool _canWithdraw) public {
+    function updateWhiteList(address whiteList, address entry, bool flag) public {
         require(msg.sender == admin);
-        canBurnWhiteList.changeWhiteList(_to, _canWithdraw);
-    }
-
-    function changeMintWhiteList(address _to, bool _canWithdraw) public {
-        require(msg.sender == admin);
-        canReceiveMintWhitelist.changeWhiteList(_to, _canWithdraw);
+        WhiteList(whiteList).changeWhiteList(entry, flag);
     }
 }

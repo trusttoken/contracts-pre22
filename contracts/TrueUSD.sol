@@ -13,13 +13,15 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
 
     WhiteList public canReceiveMintWhitelist;
     WhiteList public canBurnWhiteList;
+    WhiteList public blackList;
     uint burnMin = 10000 * uint256(10)**decimals;
     uint burnMax = 20000000 * uint256(10)**decimals;
 
-    function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList) public {
+    function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList, address _blackList) public {
         totalSupply = INITIAL_SUPPLY;
         canReceiveMintWhitelist = WhiteList(_canMintWhiteList);
         canBurnWhiteList = WhiteList(_canBurnWhiteList);
+        blackList = WhiteList(_blackList);
     }
 
     //Burning functions as withdrawing money from the system. The platform will keep track of who burns coins,
@@ -39,5 +41,17 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     function changeBurnBounds(uint newMin, uint newMax) onlyOwner public {
         burnMin = newMin;
         burnMax = newMax;
+    }
+
+    function transfer(address to, uint256 value) public returns (bool) {
+        require(!blackList.whiteList(msg.sender));
+        require(!blackList.whiteList(to));
+        return super.transfer(to, value);
+    }
+
+    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+        require(!blackList.whiteList(from));
+        require(!blackList.whiteList(to));
+        return super.transferFrom(from, to, value);
     }
 }

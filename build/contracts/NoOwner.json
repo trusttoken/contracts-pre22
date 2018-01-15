@@ -122,7 +122,7 @@
       "absolutePath": "zeppelin-solidity/contracts/ownership/NoOwner.sol",
       "exportedSymbols": {
         "NoOwner": [
-          856
+          931
         ]
       }
     },
@@ -136,80 +136,80 @@
             ".18"
           ]
         },
-        "id": 846,
+        "id": 921,
         "name": "PragmaDirective",
         "src": "0:24:8"
       },
       {
         "attributes": {
-          "SourceUnit": 820,
+          "SourceUnit": 895,
           "absolutePath": "zeppelin-solidity/contracts/ownership/HasNoEther.sol",
           "file": "./HasNoEther.sol",
-          "scope": 857,
+          "scope": 932,
           "symbolAliases": [
             null
           ],
           "unitAlias": ""
         },
-        "id": 847,
+        "id": 922,
         "name": "ImportDirective",
         "src": "26:26:8"
       },
       {
         "attributes": {
-          "SourceUnit": 845,
+          "SourceUnit": 920,
           "absolutePath": "zeppelin-solidity/contracts/ownership/HasNoTokens.sol",
           "file": "./HasNoTokens.sol",
-          "scope": 857,
+          "scope": 932,
           "symbolAliases": [
             null
           ],
           "unitAlias": ""
         },
-        "id": 848,
+        "id": 923,
         "name": "ImportDirective",
         "src": "53:27:8"
       },
       {
         "attributes": {
-          "SourceUnit": 785,
+          "SourceUnit": 860,
           "absolutePath": "zeppelin-solidity/contracts/ownership/HasNoContracts.sol",
           "file": "./HasNoContracts.sol",
-          "scope": 857,
+          "scope": 932,
           "symbolAliases": [
             null
           ],
           "unitAlias": ""
         },
-        "id": 849,
+        "id": 924,
         "name": "ImportDirective",
         "src": "81:30:8"
       },
       {
         "attributes": {
           "contractDependencies": [
-            758,
-            784,
-            819,
-            844,
-            912
+            833,
+            859,
+            894,
+            919,
+            987
           ],
           "contractKind": "contract",
           "documentation": "@title Base contract for contracts that should not own things.\n@author Remco Bloemen <remco@2π.com>\n@dev Solves a class of errors where a contract accidentally becomes owner of Ether, Tokens or\nOwned contracts. See respective base contracts for details.",
           "fullyImplemented": true,
           "linearizedBaseContracts": [
-            856,
-            784,
-            844,
-            758,
-            819,
-            912
+            931,
+            859,
+            919,
+            833,
+            894,
+            987
           ],
           "name": "NoOwner",
           "nodes": [
             null
           ],
-          "scope": 857
+          "scope": 932
         },
         "children": [
           {
@@ -223,15 +223,15 @@
                 "attributes": {
                   "contractScope": null,
                   "name": "HasNoEther",
-                  "referencedDeclaration": 819,
+                  "referencedDeclaration": 894,
                   "type": "contract HasNoEther"
                 },
-                "id": 850,
+                "id": 925,
                 "name": "UserDefinedTypeName",
                 "src": "408:10:8"
               }
             ],
-            "id": 851,
+            "id": 926,
             "name": "InheritanceSpecifier",
             "src": "408:10:8"
           },
@@ -246,15 +246,15 @@
                 "attributes": {
                   "contractScope": null,
                   "name": "HasNoTokens",
-                  "referencedDeclaration": 844,
+                  "referencedDeclaration": 919,
                   "type": "contract HasNoTokens"
                 },
-                "id": 852,
+                "id": 927,
                 "name": "UserDefinedTypeName",
                 "src": "420:11:8"
               }
             ],
-            "id": 853,
+            "id": 928,
             "name": "InheritanceSpecifier",
             "src": "420:11:8"
           },
@@ -269,25 +269,25 @@
                 "attributes": {
                   "contractScope": null,
                   "name": "HasNoContracts",
-                  "referencedDeclaration": 784,
+                  "referencedDeclaration": 859,
                   "type": "contract HasNoContracts"
                 },
-                "id": 854,
+                "id": 929,
                 "name": "UserDefinedTypeName",
                 "src": "433:14:8"
               }
             ],
-            "id": 855,
+            "id": 930,
             "name": "InheritanceSpecifier",
             "src": "433:14:8"
           }
         ],
-        "id": 856,
+        "id": 931,
         "name": "ContractDefinition",
         "src": "388:63:8"
       }
     ],
-    "id": 857,
+    "id": 932,
     "name": "SourceUnit",
     "src": "0:452:8"
   },
@@ -297,5 +297,5 @@
   },
   "networks": {},
   "schemaVersion": "1.0.1",
-  "updatedAt": "2018-01-13T00:07:18.550Z"
+  "updatedAt": "2018-01-15T05:36:31.039Z"
 }
