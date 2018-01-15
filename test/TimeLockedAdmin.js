@@ -1,4 +1,4 @@
-const WhiteList = artifacts.require("WhiteList");
+const AddressList = artifacts.require("AddressList");
 const TrueUSD = artifacts.require("TrueUSD");
 const TimeLockedAdmin = artifacts.require("TimeLockedAdmin");
 var Web3 = require('web3');
@@ -15,18 +15,22 @@ expectThrow = async promise => {
 
 contract('TimeLockedAdmin', function(accounts) {
     it("should work", async () => {
-        const mintWhiteList = await WhiteList.new("Mint whitelist", {gas: 3000000, from: accounts[0]})
-        const burnWhiteList = await WhiteList.new("Burn whitelist", {gas: 3000000, from: accounts[0]})
-        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, {gas: 3000000, from: accounts[0]})
+        const mintWhiteList = await AddressList.new("Mint whitelist", {gas: 3000000, from: accounts[0]})
+        const burnWhiteList = await AddressList.new("Burn whitelist", {gas: 3000000, from: accounts[0]})
+        const blackList = await AddressList.new("Blacklist", {gas: 3000000, from: accounts[0]})
+        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, {gas: 3000000, from: accounts[0]})
         await expectThrow(trueUSD.mint(accounts[3], 10, {gas: 3000000, from: accounts[0]})) //user 3 is not (yet) on whitelist
-        await expectThrow(mintWhiteList.changeWhiteList(accounts[3], true, {gas: 3000000, from: accounts[1]})) //user 1 is not the owner
-        await mintWhiteList.changeWhiteList(accounts[3], true, {gas: 3000000, from: accounts[0]})
+        await expectThrow(mintWhiteList.changeList(accounts[3], true, {gas: 3000000, from: accounts[1]})) //user 1 is not the owner
+        await mintWhiteList.changeList(accounts[3], true, {gas: 3000000, from: accounts[0]})
         var balance = await trueUSD.balanceOf(accounts[3])
         assert.equal(balance, 0, "accounts[3] should start with nothing")
         await trueUSD.mint(accounts[3], 10, {gas: 3000000, from: accounts[0]})
         var balance = await trueUSD.balanceOf(accounts[3])
         assert.equal(balance, 10, "accounts[3] should have coins after mint")
-        const timeLockedAdmin = await TimeLockedAdmin.new(trueUSD.address, {gas: 3000000, from: accounts[0]})
+        const timeLockedAdmin = await TimeLockedAdmin.new(trueUSD.address, burnWhiteList.address, mintWhiteList.address, blackList.address, {gas: 3000000, from: accounts[0]})
+        await mintWhiteList.transferOwnership(timeLockedAdmin.address, {gas: 3000000, from: accounts[0]})
+        await burnWhiteList.transferOwnership(timeLockedAdmin.address, {gas: 3000000, from: accounts[0]})
+        await blackList.transferOwnership(timeLockedAdmin.address, {gas: 3000000, from: accounts[0]})
         await trueUSD.transferOwnership(timeLockedAdmin.address, {gas: 3000000, from: accounts[0]})
         await expectThrow(trueUSD.mint(accounts[3], 10, {gas: 3000000, from: accounts[0]})) //user 0 is no longer the owner
         await expectThrow(timeLockedAdmin.requestMint(accounts[3], 200, {gas: 3000000, from: accounts[0]})) //user 0 is owner but not the admin

@@ -6,7 +6,7 @@ import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import './TrueUSD.sol';
 
 // The TimeLockedAdmin contract is intended to be the initial Owner of the TrueUSD
-// contract and TrueUSD's whitelists. It splits ownership into two accounts: an "admin" account and an
+// contract and TrueUSD's AddressLists. It splits ownership into two accounts: an "admin" account and an
 // "owner" account. The admin of TimeLockedAdmin can initiate two kinds of
 // transactions: minting TUSD, and transferring ownership of the TrueUSD
 // contract to a new owner. However, both of these transactions must be stored
@@ -17,7 +17,7 @@ import './TrueUSD.sol';
 // Once a day has passed, all mint and ownership transfer requests can be
 // finalized by the beneficiary (the token recipient or the new owner,
 // respectively). Requests initiated by an admin that has since been deposed
-// cannot be finalized. The admin is also able to update TrueUSD's whitelists
+// cannot be finalized. The admin is also able to update TrueUSD's AddressLists
 // (without a day's delay).
 contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
 
@@ -45,9 +45,9 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
 
     address public admin;
     TrueUSD public child;
-    WhiteList public canBurnWhiteList;
-    WhiteList public canReceiveMintWhitelist;
-    WhiteList public blackList;
+    AddressList public canBurnWhiteList;
+    AddressList public canReceiveMintWhitelist;
+    AddressList public blackList;
     MintOperation[] public mintOperations;
     TransferOwnershipOperation public transferOwnershipOperation;
     ChangeBurnBoundsOperation public changeBurnBoundsOperation;
@@ -55,9 +55,9 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     // starts with no admin
     function TimeLockedAdmin(address _child, address _canBurnWhiteList, address _canReceiveMintWhitelist, address _blackList) public {
         child = TrueUSD(_child);
-        canBurnWhiteList = WhiteList(_canBurnWhiteList);
-        canReceiveMintWhitelist = WhiteList(_canReceiveMintWhitelist);
-        blackList = WhiteList(_blackList);
+        canBurnWhiteList = AddressList(_canBurnWhiteList);
+        canReceiveMintWhitelist = AddressList(_canReceiveMintWhitelist);
+        blackList = AddressList(_blackList);
     }
 
     event MintOperationEvent(MintOperation op, uint opIndex);
@@ -73,7 +73,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
         mintOperations.push(op);
     }
 
-    // admin initiates a request to transfer ownership of the TrueUSD contract and all whitelists to newOwner.
+    // admin initiates a request to transfer ownership of the TrueUSD contract and all AddressLists to newOwner.
     // Can be used e.g. to upgrade this TimeLockedAdmin contract.
     function requestTransferOwnership(address newOwner) public {
         require(msg.sender == admin);
@@ -134,8 +134,8 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
         admin = newAdmin;
     }
 
-    function updateWhiteList(address whiteList, address entry, bool flag) public {
+    function updateList(address list, address entry, bool flag) public {
         require(msg.sender == admin);
-        WhiteList(whiteList).changeWhiteList(entry, flag);
+        AddressList(list).changeList(entry, flag);
     }
 }
