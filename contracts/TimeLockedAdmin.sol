@@ -8,7 +8,7 @@ import './TrueUSD.sol';
 // The TimeLockedAdmin contract is intended to be the initial Owner of the TrueUSD
 // contract and TrueUSD's AddressLists. It splits ownership into two accounts: an "admin" account and an
 // "owner" account. The admin of TimeLockedAdmin can initiate two kinds of
-// transactions: minting TUSD, and transferring ownership of the TrueUSD
+// transactions: minting TrueUSD, and transferring ownership of the TrueUSD
 // contract to a new owner. However, both of these transactions must be stored
 // for ~1 day's worth of blocks first before they can be forwarded to the
 // TrueUSD contract. In the event that the admin account is compromised, this
