@@ -8,7 +8,7 @@ contract('AddressList', function(accounts) {
         const burnWhiteList = await AddressList.new("Burn whitelist", {gas: 3000000, from: accounts[0]})
 
         const name = await mintWhiteList.name();
-        assert.equal(Web3.utils.toAscii(name).replace(/\u0000/g, ''), "Mint whitelist", "Got wrong name");
+        assert.equal(name, "Mint whitelist", "Got wrong name");
 
         const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, {gas: 3000000, from: accounts[0]})
         let canMint = await mintWhiteList.onList(accounts[0])
