@@ -65,7 +65,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     event ChangeBurnBoundsOperationEvent(ChangeBurnBoundsOperation op);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
 
-    // admin initiates a request to mint _amount TUSD for account _to
+    // admin initiates a request to mint _amount TrueUSD for account _to
     function requestMint(address _to, uint256 _amount) public {
         require(msg.sender == admin);
         MintOperation memory op = MintOperation(_to, _amount, admin, block.number + blocksDelay);
@@ -82,7 +82,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
         transferOwnershipOperation = op;
     }
 
-    // admin initiates a request that the minimum and maximum amounts that any trueUSD user can
+    // admin initiates a request that the minimum and maximum amounts that any TrueUSD user can
     // burn become newMin and newMax
     function requestChangeBurnBounds(uint newMin, uint newMax) public {
         require(msg.sender == admin);
