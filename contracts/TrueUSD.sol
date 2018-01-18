@@ -17,11 +17,16 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     uint burnMin = 10000 * uint256(10)**decimals;
     uint burnMax = 20000000 * uint256(10)**decimals;
 
+    uint16 insuranceFeeBips;
+    address insurer;
+
     function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList, address _blackList) public {
         totalSupply = INITIAL_SUPPLY;
         canReceiveMintWhitelist = AddressList(_canMintWhiteList);
         canBurnWhiteList = AddressList(_canBurnWhiteList);
         blackList = AddressList(_blackList);
+        insuranceFeeBips = 7;
+        insurer = msg.sender;
     }
 
     //Burning functions as withdrawing money from the system. The platform will keep track of who burns coins,
@@ -46,12 +51,26 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     function transfer(address to, uint256 value) public returns (bool) {
         require(!blackList.onList(msg.sender));
         require(!blackList.onList(to));
+        uint256 insuranceFee = value.mul(insuranceFeeBips).div(10000);
+        value = value.sub(insuranceFee);
+        super.transfer(insurer, insuranceFee);
         return super.transfer(to, value);
     }
 
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
         require(!blackList.onList(from));
         require(!blackList.onList(to));
+        uint256 insuranceFee = value.mul(insuranceFeeBips).div(10000);
+        value = value.sub(insuranceFee);
+        super.transferFrom(from, insurer, insuranceFee);
         return super.transferFrom(from, to, value);
+    }
+
+    function changeInsuranceFee(uint16 newInsuranceFeeBips) public onlyOwner {
+        insuranceFeeBips = newInsuranceFeeBips;
+    }
+
+    function changeInsurer(address newInsurer) public onlyOwner {
+        insurer = newInsurer;
     }
 }

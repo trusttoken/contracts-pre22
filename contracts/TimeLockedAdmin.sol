@@ -43,6 +43,18 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
         uint deferBlock;
     }
 
+    struct ChangeInsuranceFeeBipsOperation {
+        uint16 newBips;
+        address admin;
+        uint deferBlock;
+    }
+
+    struct ChangeInsurerOperation {
+        address newInsurer;
+        address admin;
+        uint deferBlock;
+    }
+
     address public admin;
     TrueUSD public child;
     AddressList public canBurnWhiteList;
@@ -51,6 +63,8 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     MintOperation[] public mintOperations;
     TransferOwnershipOperation public transferOwnershipOperation;
     ChangeBurnBoundsOperation public changeBurnBoundsOperation;
+    ChangeInsuranceFeeBipsOperation public changeInsuranceFeeBipsOperation;
+    ChangeInsurerOperation public changeInsurerOperation;
 
     // starts with no admin
     function TimeLockedAdmin(address _child, address _canBurnWhiteList, address _canReceiveMintWhitelist, address _blackList) public {
@@ -63,6 +77,8 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     event MintOperationEvent(MintOperation op, uint opIndex);
     event TransferOwnershipOperationEvent(TransferOwnershipOperation op);
     event ChangeBurnBoundsOperationEvent(ChangeBurnBoundsOperation op);
+    event ChangeInsuranceFeeBipsOperationEvent(ChangeInsuranceFeeBipsOperation op);
+    event ChangeInsurerOperationEvent(ChangeInsurerOperation op);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
 
     // admin initiates a request to mint _amount TrueUSD for account _to
@@ -89,6 +105,22 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
         ChangeBurnBoundsOperation memory op = ChangeBurnBoundsOperation(newMin, newMax, admin, block.number + blocksDelay);
         ChangeBurnBoundsOperationEvent(op);
         changeBurnBoundsOperation = op;
+    }
+
+    // admin initiates a request that the insurance fee be changed to newBips bips
+    function requestChangeInsuranceFeeBips(uint16 newBips) public {
+        require(msg.sender == admin);
+        ChangeInsuranceFeeBipsOperation memory op = ChangeInsuranceFeeBipsOperation(newBips, admin, block.number + blocksDelay);
+        ChangeInsuranceFeeBipsOperationEvent(op);
+        changeInsuranceFeeBipsOperation = op;
+    }
+
+    // admin initiates a request that the recipient of the insurance fee be changed to newInsurer
+    function requestChangeInsurer(address newInsurer) public {
+        require(msg.sender == admin);
+        ChangeInsurerOperation memory op = ChangeInsurerOperation(newInsurer, admin, block.number + blocksDelay);
+        ChangeInsurerOperationEvent(op);
+        changeInsurerOperation = op;
     }
 
     // after a day, beneficiary of a mint request finalizes it by providing the
@@ -126,6 +158,26 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
         uint newMax = changeBurnBoundsOperation.newMax;
         delete changeBurnBoundsOperation;
         child.changeBurnBounds(newMin, newMax);
+    }
+
+    // after a day, admin finalizes the insurance fee change
+    function finalizeChangeInsuranceFeeBips() public {
+        require(msg.sender == admin);
+        require(changeBurnBoundsOperation.admin == admin);
+        require(changeBurnBoundsOperation.deferBlock <= block.number);
+        uint16 newBips = changeInsuranceFeeBipsOperation.newBips;
+        delete changeInsuranceFeeBipsOperation;
+        child.changeInsuranceFee(newBips);
+    }
+
+    // after a day, admin finalizes the insurance fees recipient change
+    function finalizeChangeInsurer() public {
+        require(msg.sender == admin);
+        require(changeInsurerOperation.admin == admin);
+        require(changeInsurerOperation.deferBlock <= block.number);
+        address newInsurer = changeInsurerOperation.newInsurer;
+        delete changeInsurerOperation;
+        child.changeInsurer(newInsurer);
     }
 
     // Owner of this contract (immediately) replaces the current admin with newAdmin

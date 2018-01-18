@@ -10,7 +10,7 @@ contract('AddressList', function(accounts) {
         const name = await mintWhiteList.name();
         assert.equal(name, "Mint whitelist", "Got wrong name");
 
-        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, {gas: 3000000, from: accounts[0]})
+        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, {gas: 4000000, from: accounts[0]})
         let canMint = await mintWhiteList.onList(accounts[0])
         let canBurn = await burnWhiteList.onList(accounts[0])
         assert.equal(canMint, false, "User should not be on white list");
