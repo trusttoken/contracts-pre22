@@ -14,18 +14,20 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     AddressList public canReceiveMintWhitelist;
     AddressList public canBurnWhiteList;
     AddressList public blackList;
-    uint burnMin = 10000 * uint256(10)**decimals;
-    uint burnMax = 20000000 * uint256(10)**decimals;
+    uint public burnMin = 10000 * uint256(10)**decimals;
+    uint public burnMax = 20000000 * uint256(10)**decimals;
 
-    uint16 insuranceFeeBips;
-    address insurer;
+    uint80 public insuranceFeeNumerator;
+    uint80 public insuranceFeeDenominator;
+    address public insurer;
 
     function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList, address _blackList) public {
         totalSupply = INITIAL_SUPPLY;
         canReceiveMintWhitelist = AddressList(_canMintWhiteList);
         canBurnWhiteList = AddressList(_canBurnWhiteList);
         blackList = AddressList(_blackList);
-        insuranceFeeBips = 7;
+        insuranceFeeNumerator = 7;
+        insuranceFeeDenominator = 10000;
         insurer = msg.sender;
     }
 
@@ -51,7 +53,7 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     function transfer(address to, uint256 value) public returns (bool) {
         require(!blackList.onList(msg.sender));
         require(!blackList.onList(to));
-        uint256 insuranceFee = value.mul(insuranceFeeBips).div(10000);
+        uint256 insuranceFee = value.mul(insuranceFeeNumerator).div(insuranceFeeDenominator);
         value = value.sub(insuranceFee);
         super.transfer(insurer, insuranceFee);
         return super.transfer(to, value);
@@ -60,14 +62,15 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
         require(!blackList.onList(from));
         require(!blackList.onList(to));
-        uint256 insuranceFee = value.mul(insuranceFeeBips).div(10000);
+        uint256 insuranceFee = value.mul(insuranceFeeNumerator).div(insuranceFeeDenominator);
         value = value.sub(insuranceFee);
         super.transferFrom(from, insurer, insuranceFee);
         return super.transferFrom(from, to, value);
     }
 
-    function changeInsuranceFee(uint16 newInsuranceFeeBips) public onlyOwner {
-        insuranceFeeBips = newInsuranceFeeBips;
+    function changeInsuranceFee(uint80 newNumerator, uint80 newDenominator) public onlyOwner {
+        insuranceFeeNumerator = newNumerator;
+        insuranceFeeDenominator = newDenominator;
     }
 
     function changeInsurer(address newInsurer) public onlyOwner {

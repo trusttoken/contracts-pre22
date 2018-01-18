@@ -78,7 +78,7 @@
       "absolutePath": "zeppelin-solidity/contracts/ownership/HasNoEther.sol",
       "exportedSymbols": {
         "HasNoEther": [
-          1242
+          1265
         ]
       }
     },
@@ -92,39 +92,39 @@
             ".18"
           ]
         },
-        "id": 1209,
+        "id": 1232,
         "name": "PragmaDirective",
         "src": "0:24:8"
       },
       {
         "attributes": {
-          "SourceUnit": 1336,
+          "SourceUnit": 1359,
           "absolutePath": "zeppelin-solidity/contracts/ownership/Ownable.sol",
           "file": "./Ownable.sol",
-          "scope": 1243,
+          "scope": 1266,
           "symbolAliases": [
             null
           ],
           "unitAlias": ""
         },
-        "id": 1210,
+        "id": 1233,
         "name": "ImportDirective",
         "src": "26:23:8"
       },
       {
         "attributes": {
           "contractDependencies": [
-            1335
+            1358
           ],
           "contractKind": "contract",
           "documentation": "@title Contracts that should not own Ether\n@author Remco Bloemen <remco@2π.com>\n@dev This tries to block incoming ether to prevent accidental loss of Ether. Should Ether end up\nin the contract, it will allow the owner to reclaim this ether.\n@notice Ether can still be send to this contract by:\ncalling functions labeled `payable`\n`selfdestruct(contract_address)`\nmining directly to the contract address",
           "fullyImplemented": true,
           "linearizedBaseContracts": [
-            1242,
-            1335
+            1265,
+            1358
           ],
           "name": "HasNoEther",
-          "scope": 1243
+          "scope": 1266
         },
         "children": [
           {
@@ -138,15 +138,15 @@
                 "attributes": {
                   "contractScope": null,
                   "name": "Ownable",
-                  "referencedDeclaration": 1335,
+                  "referencedDeclaration": 1358,
                   "type": "contract Ownable"
                 },
-                "id": 1211,
+                "id": 1234,
                 "name": "UserDefinedTypeName",
                 "src": "509:7:8"
               }
             ],
-            "id": 1212,
+            "id": 1235,
             "name": "InheritanceSpecifier",
             "src": "509:7:8"
           },
@@ -160,7 +160,7 @@
               ],
               "name": "HasNoEther",
               "payable": true,
-              "scope": 1242,
+              "scope": 1265,
               "stateMutability": "payable",
               "superFunction": null,
               "visibility": "public"
@@ -173,7 +173,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1213,
+                "id": 1236,
                 "name": "ParameterList",
                 "src": "937:2:8"
               },
@@ -184,7 +184,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1214,
+                "id": 1237,
                 "name": "ParameterList",
                 "src": "955:0:8"
               },
@@ -218,11 +218,11 @@
                               "overloadedDeclarations": [
                                 null
                               ],
-                              "referencedDeclaration": 1966,
+                              "referencedDeclaration": 1989,
                               "type": "function (bool) pure",
                               "value": "require"
                             },
-                            "id": 1215,
+                            "id": 1238,
                             "name": "Identifier",
                             "src": "961:7:8"
                           },
@@ -259,16 +259,16 @@
                                       "overloadedDeclarations": [
                                         null
                                       ],
-                                      "referencedDeclaration": 1963,
+                                      "referencedDeclaration": 1986,
                                       "type": "msg",
                                       "value": "msg"
                                     },
-                                    "id": 1216,
+                                    "id": 1239,
                                     "name": "Identifier",
                                     "src": "969:3:8"
                                   }
                                 ],
-                                "id": 1217,
+                                "id": 1240,
                                 "name": "MemberAccess",
                                 "src": "969:9:8"
                               },
@@ -285,32 +285,32 @@
                                   "type": "int_const 0",
                                   "value": "0"
                                 },
-                                "id": 1218,
+                                "id": 1241,
                                 "name": "Literal",
                                 "src": "982:1:8"
                               }
                             ],
-                            "id": 1219,
+                            "id": 1242,
                             "name": "BinaryOperation",
                             "src": "969:14:8"
                           }
                         ],
-                        "id": 1220,
+                        "id": 1243,
                         "name": "FunctionCall",
                         "src": "961:23:8"
                       }
                     ],
-                    "id": 1221,
+                    "id": 1244,
                     "name": "ExpressionStatement",
                     "src": "961:23:8"
                   }
                 ],
-                "id": 1222,
+                "id": 1245,
                 "name": "Block",
                 "src": "955:34:8"
               }
             ],
-            "id": 1223,
+            "id": 1246,
             "name": "FunctionDefinition",
             "src": "918:71:8"
           },
@@ -324,7 +324,7 @@
               ],
               "name": "",
               "payable": false,
-              "scope": 1242,
+              "scope": 1265,
               "stateMutability": "nonpayable",
               "superFunction": null,
               "visibility": "external"
@@ -337,7 +337,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1224,
+                "id": 1247,
                 "name": "ParameterList",
                 "src": "1104:2:8"
               },
@@ -348,7 +348,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1225,
+                "id": 1248,
                 "name": "ParameterList",
                 "src": "1116:0:8"
               },
@@ -359,12 +359,12 @@
                   ]
                 },
                 "children": [],
-                "id": 1226,
+                "id": 1249,
                 "name": "Block",
                 "src": "1116:5:8"
               }
             ],
-            "id": 1227,
+            "id": 1250,
             "name": "FunctionDefinition",
             "src": "1096:25:8"
           },
@@ -375,7 +375,7 @@
               "isConstructor": false,
               "name": "reclaimEther",
               "payable": false,
-              "scope": 1242,
+              "scope": 1265,
               "stateMutability": "nonpayable",
               "superFunction": null,
               "visibility": "external"
@@ -388,7 +388,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1228,
+                "id": 1251,
                 "name": "ParameterList",
                 "src": "1222:2:8"
               },
@@ -399,7 +399,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1231,
+                "id": 1254,
                 "name": "ParameterList",
                 "src": "1244:0:8"
               },
@@ -416,16 +416,16 @@
                       "overloadedDeclarations": [
                         null
                       ],
-                      "referencedDeclaration": 1309,
+                      "referencedDeclaration": 1332,
                       "type": "modifier ()",
                       "value": "onlyOwner"
                     },
-                    "id": 1229,
+                    "id": 1252,
                     "name": "Identifier",
                     "src": "1234:9:8"
                   }
                 ],
-                "id": 1230,
+                "id": 1253,
                 "name": "ModifierInvocation",
                 "src": "1234:9:8"
               },
@@ -459,11 +459,11 @@
                               "overloadedDeclarations": [
                                 null
                               ],
-                              "referencedDeclaration": 1954,
+                              "referencedDeclaration": 1977,
                               "type": "function (bool) pure",
                               "value": "assert"
                             },
-                            "id": 1232,
+                            "id": 1255,
                             "name": "Identifier",
                             "src": "1250:6:8"
                           },
@@ -505,16 +505,16 @@
                                       "overloadedDeclarations": [
                                         null
                                       ],
-                                      "referencedDeclaration": 1283,
+                                      "referencedDeclaration": 1306,
                                       "type": "address",
                                       "value": "owner"
                                     },
-                                    "id": 1233,
+                                    "id": 1256,
                                     "name": "Identifier",
                                     "src": "1257:5:8"
                                   }
                                 ],
-                                "id": 1234,
+                                "id": 1257,
                                 "name": "MemberAccess",
                                 "src": "1257:10:8"
                               },
@@ -536,51 +536,51 @@
                                       "overloadedDeclarations": [
                                         null
                                       ],
-                                      "referencedDeclaration": 1982,
+                                      "referencedDeclaration": 2005,
                                       "type": "contract HasNoEther",
                                       "value": "this"
                                     },
-                                    "id": 1235,
+                                    "id": 1258,
                                     "name": "Identifier",
                                     "src": "1268:4:8"
                                   }
                                 ],
-                                "id": 1236,
+                                "id": 1259,
                                 "name": "MemberAccess",
                                 "src": "1268:12:8"
                               }
                             ],
-                            "id": 1237,
+                            "id": 1260,
                             "name": "FunctionCall",
                             "src": "1257:24:8"
                           }
                         ],
-                        "id": 1238,
+                        "id": 1261,
                         "name": "FunctionCall",
                         "src": "1250:32:8"
                       }
                     ],
-                    "id": 1239,
+                    "id": 1262,
                     "name": "ExpressionStatement",
                     "src": "1250:32:8"
                   }
                 ],
-                "id": 1240,
+                "id": 1263,
                 "name": "Block",
                 "src": "1244:43:8"
               }
             ],
-            "id": 1241,
+            "id": 1264,
             "name": "FunctionDefinition",
             "src": "1201:86:8"
           }
         ],
-        "id": 1242,
+        "id": 1265,
         "name": "ContractDefinition",
         "src": "486:803:8"
       }
     ],
-    "id": 1243,
+    "id": 1266,
     "name": "SourceUnit",
     "src": "0:1290:8"
   },
@@ -590,5 +590,5 @@
   },
   "networks": {},
   "schemaVersion": "1.0.1",
-  "updatedAt": "2018-01-18T01:25:09.525Z"
+  "updatedAt": "2018-01-18T04:38:04.529Z"
 }

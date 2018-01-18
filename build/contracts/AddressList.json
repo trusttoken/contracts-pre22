@@ -157,7 +157,7 @@
       },
       {
         "attributes": {
-          "SourceUnit": 1336,
+          "SourceUnit": 1359,
           "absolutePath": "zeppelin-solidity/contracts/ownership/Ownable.sol",
           "file": "zeppelin-solidity/contracts/ownership/Ownable.sol",
           "scope": 49,
@@ -173,14 +173,14 @@
       {
         "attributes": {
           "contractDependencies": [
-            1335
+            1358
           ],
           "contractKind": "contract",
           "documentation": null,
           "fullyImplemented": true,
           "linearizedBaseContracts": [
             48,
-            1335
+            1358
           ],
           "name": "AddressList",
           "scope": 49
@@ -197,7 +197,7 @@
                 "attributes": {
                   "contractScope": null,
                   "name": "Ownable",
-                  "referencedDeclaration": 1335,
+                  "referencedDeclaration": 1358,
                   "type": "contract Ownable"
                 },
                 "id": 3,
@@ -571,7 +571,7 @@
                       "overloadedDeclarations": [
                         null
                       ],
-                      "referencedDeclaration": 1309,
+                      "referencedDeclaration": 1332,
                       "type": "modifier ()",
                       "value": "onlyOwner"
                     },
@@ -770,5 +770,5 @@
   },
   "networks": {},
   "schemaVersion": "1.0.1",
-  "updatedAt": "2018-01-18T01:25:09.521Z"
+  "updatedAt": "2018-01-18T04:38:04.524Z"
 }

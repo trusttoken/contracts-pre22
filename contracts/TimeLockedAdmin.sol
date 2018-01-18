@@ -43,8 +43,9 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
         uint deferBlock;
     }
 
-    struct ChangeInsuranceFeeBipsOperation {
-        uint16 newBips;
+    struct ChangeInsuranceFeeOperation {
+        uint80 newNumerator;
+        uint80 newDenominator;
         address admin;
         uint deferBlock;
     }
@@ -63,7 +64,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     MintOperation[] public mintOperations;
     TransferOwnershipOperation public transferOwnershipOperation;
     ChangeBurnBoundsOperation public changeBurnBoundsOperation;
-    ChangeInsuranceFeeBipsOperation public changeInsuranceFeeBipsOperation;
+    ChangeInsuranceFeeOperation public changeInsuranceFeeOperation;
     ChangeInsurerOperation public changeInsurerOperation;
 
     // starts with no admin
@@ -77,7 +78,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     event MintOperationEvent(MintOperation op, uint opIndex);
     event TransferOwnershipOperationEvent(TransferOwnershipOperation op);
     event ChangeBurnBoundsOperationEvent(ChangeBurnBoundsOperation op);
-    event ChangeInsuranceFeeBipsOperationEvent(ChangeInsuranceFeeBipsOperation op);
+    event ChangeInsuranceFeeOperationEvent(ChangeInsuranceFeeOperation op);
     event ChangeInsurerOperationEvent(ChangeInsurerOperation op);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
 
@@ -107,12 +108,12 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
         changeBurnBoundsOperation = op;
     }
 
-    // admin initiates a request that the insurance fee be changed to newBips bips
-    function requestChangeInsuranceFeeBips(uint16 newBips) public {
+    // admin initiates a request that the insurance fee be changed
+    function requestChangeInsuranceFee(uint80 newNumerator, uint80 newDenominator) public {
         require(msg.sender == admin);
-        ChangeInsuranceFeeBipsOperation memory op = ChangeInsuranceFeeBipsOperation(newBips, admin, block.number + blocksDelay);
-        ChangeInsuranceFeeBipsOperationEvent(op);
-        changeInsuranceFeeBipsOperation = op;
+        ChangeInsuranceFeeOperation memory op = ChangeInsuranceFeeOperation(newNumerator, newDenominator, admin, block.number + blocksDelay);
+        ChangeInsuranceFeeOperationEvent(op);
+        changeInsuranceFeeOperation = op;
     }
 
     // admin initiates a request that the recipient of the insurance fee be changed to newInsurer
@@ -161,13 +162,14 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     }
 
     // after a day, admin finalizes the insurance fee change
-    function finalizeChangeInsuranceFeeBips() public {
+    function finalizeChangeInsuranceFee() public {
         require(msg.sender == admin);
-        require(changeBurnBoundsOperation.admin == admin);
-        require(changeBurnBoundsOperation.deferBlock <= block.number);
-        uint16 newBips = changeInsuranceFeeBipsOperation.newBips;
-        delete changeInsuranceFeeBipsOperation;
-        child.changeInsuranceFee(newBips);
+        require(changeInsuranceFeeOperation.admin == admin);
+        require(changeInsuranceFeeOperation.deferBlock <= block.number);
+        uint80 newNumerator = changeInsuranceFeeOperation.newNumerator;
+        uint80 newDenominator = changeInsuranceFeeOperation.newDenominator;
+        delete changeInsuranceFeeOperation;
+        child.changeInsuranceFee(newNumerator, newDenominator);
     }
 
     // after a day, admin finalizes the insurance fees recipient change
