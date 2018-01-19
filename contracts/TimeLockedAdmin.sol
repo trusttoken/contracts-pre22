@@ -21,7 +21,9 @@ import './TrueUSD.sol';
 // (without a day's delay).
 contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
 
-    uint public constant blocksDelay = 24*60*60/15; // 24 hours, assuming a 15 second blocktime
+    // 24 hours, assuming a 15 second blocktime.
+    // As long as this isn't too far off from reality it doesn't really matter.
+    uint public constant blocksDelay = 24*60*60/15;
 
     struct MintOperation {
         address to;
