@@ -5,7 +5,7 @@ import 'zeppelin-solidity/contracts/token/BurnableToken.sol';
 import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
 import './AddressList.sol';
 
-contract TrueUSD is BurnableToken, NoOwner {
+contract TrueUSD is StandardToken, BurnableToken, NoOwner {
     string public constant name = "TrueUSD";
     string public constant symbol = "TUSD";
     uint8 public constant decimals = 18;
