@@ -9,7 +9,6 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     string public constant name = "TrueUSD";
     string public constant symbol = "TUSD";
     uint8 public constant decimals = 18;
-    uint public constant INITIAL_SUPPLY = 0;
 
     AddressList public canReceiveMintWhitelist;
     AddressList public canBurnWhiteList;
@@ -22,7 +21,7 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     address public insurer;
 
     function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList, address _blackList) public {
-        totalSupply = INITIAL_SUPPLY;
+        totalSupply = 0;
         canReceiveMintWhitelist = AddressList(_canMintWhiteList);
         canBurnWhiteList = AddressList(_canBurnWhiteList);
         blackList = AddressList(_blackList);
