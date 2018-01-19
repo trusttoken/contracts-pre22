@@ -5,7 +5,7 @@ import 'zeppelin-solidity/contracts/token/BurnableToken.sol';
 import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
 import './AddressList.sol';
 
-contract TrueUSD is MintableToken, BurnableToken, NoOwner {
+contract TrueUSD is BurnableToken, NoOwner {
     string public constant name = "TrueUSD";
     string public constant symbol = "TUSD";
     uint8 public constant decimals = 18;
@@ -21,6 +21,7 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     address public insurer;
 
     event ChangeBurnBoundsEvent(uint newMin, uint newMax);
+    event Mint(address indexed to, uint256 amount);
 
     function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList, address _blackList) public {
         totalSupply = 0;
@@ -41,9 +42,14 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
         super.burn(_value);
     }
 
-    function mint(address _to, uint256 _amount) onlyOwner public returns (bool) {
+    //Create _amount new tokens and transfer them to _to.
+    //Based on code by OpenZeppelin: https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/token/MintableToken.sol
+    function mint(address _to, uint256 _amount) onlyOwner public {
         require(canReceiveMintWhitelist.onList(_to));
-        return super.mint(_to, _amount);
+        totalSupply = totalSupply.add(_amount);
+        balances[_to] = balances[_to].add(_amount);
+        Mint(_to, _amount);
+        Transfer(address(0), _to, _amount);
     }
 
     //Change the minimum and maximum amount that can be burned at once. Burning
