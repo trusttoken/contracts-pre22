@@ -4,8 +4,8 @@ var Web3 = require('web3');
 
 contract('AddressList', function(accounts) {
     it("should work", async () => {
-        const mintWhiteList = await AddressList.new("Mint whitelist", {gas: 3000000, from: accounts[0]})
-        const burnWhiteList = await AddressList.new("Burn whitelist", {gas: 3000000, from: accounts[0]})
+        const mintWhiteList = await AddressList.new("Mint whitelist", false, {gas: 3000000, from: accounts[0]})
+        const burnWhiteList = await AddressList.new("Burn whitelist", false, {gas: 3000000, from: accounts[0]})
 
         const name = await mintWhiteList.name();
         assert.equal(name, "Mint whitelist", "Got wrong name");

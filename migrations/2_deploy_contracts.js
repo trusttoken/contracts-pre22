@@ -9,11 +9,11 @@ var canMintWhiteList, canBurnWhiteList
 module.exports = async function(deployer) {
   await deployer;
   const addressValidation = await AddressValidation.new()
-  const mintWhiteList = await AddressList.new("mintWhiteList")
+  const mintWhiteList = await AddressList.new("mintWhiteList", false)
   console.log("mintWhiteList Address: ", mintWhiteList.address)
-  const canBurnWhiteList = await AddressList.new("canBurnWhiteList")
+  const canBurnWhiteList = await AddressList.new("canBurnWhiteList", false)
   console.log("canBurnWhiteList Address: ", canBurnWhiteList.address)
-  const blackList = await AddressList.new("blackList")
+  const blackList = await AddressList.new("blackList", true)
   console.log("blackList Address: ", blackList.address)
   const trueUSD = await TrueUSD.new(mintWhiteList.address, canBurnWhiteList.address, blackList.address)
   console.log("trueUSD Address: ", trueUSD.address)
