@@ -13,8 +13,8 @@ contract TrueUSD is MintableToken, BurnableToken, NoOwner {
     AddressList public canReceiveMintWhitelist;
     AddressList public canBurnWhiteList;
     AddressList public blackList;
-    uint public burnMin = 10000 * uint256(10)**decimals;
-    uint public burnMax = 20000000 * uint256(10)**decimals;
+    uint public burnMin = 10000 * 10**uint256(decimals);
+    uint public burnMax = 20000000 * 10**uint256(decimals);
 
     uint80 public insuranceFeeNumerator;
     uint80 public insuranceFeeDenominator;
