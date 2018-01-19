@@ -67,6 +67,11 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     ChangeInsuranceFeeOperation public changeInsuranceFeeOperation;
     ChangeInsurerOperation public changeInsurerOperation;
 
+    modifier onlyAdmin() {
+      require(msg.sender == admin);
+      _;
+    }
+
     // starts with no admin
     function TimeLockedAdmin(address _child, address _canBurnWhiteList, address _canReceiveMintWhitelist, address _blackList) public {
         child = TrueUSD(_child);
@@ -83,8 +88,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
 
     // admin initiates a request to mint _amount TrueUSD for account _to
-    function requestMint(address _to, uint256 _amount) public {
-        require(msg.sender == admin);
+    function requestMint(address _to, uint256 _amount) public onlyAdmin {
         MintOperation memory op = MintOperation(_to, _amount, admin, block.number + blocksDelay);
         MintOperationEvent(op, mintOperations.length);
         mintOperations.push(op);
@@ -92,8 +96,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
 
     // admin initiates a request to transfer ownership of the TrueUSD contract and all AddressLists to newOwner.
     // Can be used e.g. to upgrade this TimeLockedAdmin contract.
-    function requestTransferOwnership(address newOwner) public {
-        require(msg.sender == admin);
+    function requestTransferOwnership(address newOwner) public onlyAdmin {
         TransferOwnershipOperation memory op = TransferOwnershipOperation(newOwner, admin, block.number + blocksDelay);
         TransferOwnershipOperationEvent(op);
         transferOwnershipOperation = op;
@@ -101,24 +104,21 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
 
     // admin initiates a request that the minimum and maximum amounts that any TrueUSD user can
     // burn become newMin and newMax
-    function requestChangeBurnBounds(uint newMin, uint newMax) public {
-        require(msg.sender == admin);
+    function requestChangeBurnBounds(uint newMin, uint newMax) public onlyAdmin {
         ChangeBurnBoundsOperation memory op = ChangeBurnBoundsOperation(newMin, newMax, admin, block.number + blocksDelay);
         ChangeBurnBoundsOperationEvent(op);
         changeBurnBoundsOperation = op;
     }
 
     // admin initiates a request that the insurance fee be changed
-    function requestChangeInsuranceFee(uint80 newNumerator, uint80 newDenominator) public {
-        require(msg.sender == admin);
+    function requestChangeInsuranceFee(uint80 newNumerator, uint80 newDenominator) public onlyAdmin {
         ChangeInsuranceFeeOperation memory op = ChangeInsuranceFeeOperation(newNumerator, newDenominator, admin, block.number + blocksDelay);
         ChangeInsuranceFeeOperationEvent(op);
         changeInsuranceFeeOperation = op;
     }
 
     // admin initiates a request that the recipient of the insurance fee be changed to newInsurer
-    function requestChangeInsurer(address newInsurer) public {
-        require(msg.sender == admin);
+    function requestChangeInsurer(address newInsurer) public onlyAdmin {
         ChangeInsurerOperation memory op = ChangeInsurerOperation(newInsurer, admin, block.number + blocksDelay);
         ChangeInsurerOperationEvent(op);
         changeInsurerOperation = op;
@@ -151,8 +151,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     }
 
     // after a day, admin finalizes the burn bounds change
-    function finalizeChangeBurnBounds() public {
-        require(msg.sender == admin);
+    function finalizeChangeBurnBounds() public onlyAdmin {
         require(changeBurnBoundsOperation.admin == admin);
         require(changeBurnBoundsOperation.deferBlock <= block.number);
         uint newMin = changeBurnBoundsOperation.newMin;
@@ -162,8 +161,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     }
 
     // after a day, admin finalizes the insurance fee change
-    function finalizeChangeInsuranceFee() public {
-        require(msg.sender == admin);
+    function finalizeChangeInsuranceFee() public onlyAdmin {
         require(changeInsuranceFeeOperation.admin == admin);
         require(changeInsuranceFeeOperation.deferBlock <= block.number);
         uint80 newNumerator = changeInsuranceFeeOperation.newNumerator;
@@ -173,8 +171,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     }
 
     // after a day, admin finalizes the insurance fees recipient change
-    function finalizeChangeInsurer() public {
-        require(msg.sender == admin);
+    function finalizeChangeInsurer() public onlyAdmin {
         require(changeInsurerOperation.admin == admin);
         require(changeInsurerOperation.deferBlock <= block.number);
         address newInsurer = changeInsurerOperation.newInsurer;
@@ -188,8 +185,8 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
         admin = newAdmin;
     }
 
-    function updateList(address list, address entry, bool flag) public {
-        require(msg.sender == admin);
+    // admin (immediately) updates a whitelist/blacklist
+    function updateList(address list, address entry, bool flag) public onlyAdmin {
         AddressList(list).changeList(entry, flag);
     }
 }
