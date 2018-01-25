@@ -1,9 +1,9 @@
 pragma solidity ^0.4.18;
 
-import 'zeppelin-solidity/contracts/token/StandardToken.sol';
-import 'zeppelin-solidity/contracts/token/BurnableToken.sol';
-import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
-import './AddressList.sol';
+import "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
+import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import "./AddressList.sol";
 
 contract TrueUSD is StandardToken, BurnableToken, NoOwner {
     string public constant name = "TrueUSD";
@@ -24,7 +24,7 @@ contract TrueUSD is StandardToken, BurnableToken, NoOwner {
     event Mint(address indexed to, uint256 amount);
 
     function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList, address _blackList) public {
-        totalSupply = 0;
+        totalSupply_ = 0;
         canReceiveMintWhitelist = AddressList(_canMintWhiteList);
         canBurnWhiteList = AddressList(_canBurnWhiteList);
         blackList = AddressList(_blackList);
@@ -46,7 +46,7 @@ contract TrueUSD is StandardToken, BurnableToken, NoOwner {
     //Based on code by OpenZeppelin: https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/token/MintableToken.sol
     function mint(address _to, uint256 _amount) onlyOwner public {
         require(canReceiveMintWhitelist.onList(_to));
-        totalSupply = totalSupply.add(_amount);
+        totalSupply_ = totalSupply_.add(_amount);
         balances[_to] = balances[_to].add(_amount);
         Mint(_to, _amount);
         Transfer(address(0), _to, _amount);
