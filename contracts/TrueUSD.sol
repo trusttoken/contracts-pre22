@@ -68,19 +68,31 @@ contract TrueUSD is StandardToken, BurnableToken, NoOwner {
     function transfer(address to, uint256 value) public returns (bool) {
         require(!blackList.onList(msg.sender));
         require(!blackList.onList(to));
-        uint256 insuranceFee = value.mul(insuranceFeeNumerator).div(insuranceFeeDenominator);
-        value = value.sub(insuranceFee);
-        super.transfer(insurer, insuranceFee);
-        return super.transfer(to, value);
+        bool result = super.transfer(to, value);
+        payInsuranceFee(to, value);
+        return result;
     }
 
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
         require(!blackList.onList(from));
         require(!blackList.onList(to));
+        bool result = super.transferFrom(from, to, value);
+        payInsuranceFee(to, value);
+        return result;
+    }
+
+    function payInsuranceFee(address payer, uint256 value) private {
         uint256 insuranceFee = value.mul(insuranceFeeNumerator).div(insuranceFeeDenominator);
-        value = value.sub(insuranceFee);
-        super.transferFrom(from, insurer, insuranceFee);
-        return super.transferFrom(from, to, value);
+        transferFromWithoutAllowance(payer, insurer, insuranceFee);
+    }
+
+    // based on 'transfer' in https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/token/ERC20/BasicToken.sol
+    function transferFromWithoutAllowance(address from, address _to, uint256 _value) private {
+        assert(_to != address(0));
+        assert(_value <= balances[from]);
+        balances[from] = balances[from].sub(_value);
+        balances[_to] = balances[_to].add(_value);
+        Transfer(from, _to, _value);
     }
 
     function changeInsuranceFee(uint80 newNumerator, uint80 newDenominator) public onlyOwner {
