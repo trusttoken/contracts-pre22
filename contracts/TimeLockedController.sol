@@ -6,22 +6,22 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "./TrueUSD.sol";
 
-// The TimeLockedAdmin contract is intended to be the initial Owner of the TrueUSD
+// The TimeLockedController contract is intended to be the initial Owner of the TrueUSD
 // contract and TrueUSD's AddressLists. It splits ownership into two accounts: an "admin" account and an
-// "owner" account. The admin of TimeLockedAdmin can initiate two kinds of
+// "owner" account. The admin of TimeLockedController can initiate two kinds of
 // transactions: minting TrueUSD, and transferring ownership of the TrueUSD
 // contract to a new owner. However, both of these transactions must be stored
 // for ~1 day's worth of blocks first before they can be forwarded to the
 // TrueUSD contract. In the event that the admin account is compromised, this
-// setup allows the owner of TimeLockedAdmin (which can be stored extremely
+// setup allows the owner of TimeLockedController (which can be stored extremely
 // securely since it is never used in normal operation) to replace the admin.
 // Once a day has passed, all mint and ownership transfer requests can be
 // finalized by the beneficiary (the token recipient or the new owner,
-// respectively). Requests initiated by an admin that has since been deposed
+// respectively); mint requests can also be finalized by the admin. Requests initiated by an admin that has since been deposed
 // cannot be finalized. The admin is also able to update TrueUSD's AddressLists
 // (without a day's delay). Anything the admin can do, the owner can also do
 // without a delay.
-contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
+contract TimeLockedController is Ownable, HasNoEther, HasNoTokens {
     using SafeMath for uint256;
 
     // 24 hours, assuming a 15 second blocktime.
@@ -92,7 +92,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     }
 
     // starts with no admin
-    function TimeLockedAdmin(address _child, address _canBurnWhiteList, address _canReceiveMintWhitelist, address _blackList) public {
+    function TimeLockedController(address _child, address _canBurnWhiteList, address _canReceiveMintWhitelist, address _blackList) public {
         child = TrueUSD(_child);
         canBurnWhiteList = AddressList(_canBurnWhiteList);
         canReceiveMintWhitelist = AddressList(_canReceiveMintWhitelist);
@@ -123,8 +123,8 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     }
 
     // admin initiates a request to transfer ownership of the TrueUSD contract and all AddressLists to newOwner.
-    // Can be used e.g. to upgrade this TimeLockedAdmin contract.
-    function requestTransferOwnership(address newOwner) public onlyAdminOrOwner {
+    // Can be used e.g. to upgrade this TimeLockedController contract.
+    function requestTransferChildrenOwnership(address newOwner) public onlyAdminOrOwner {
         uint deferBlock = computeDeferBlock();
         transferOwnershipOperation = TransferOwnershipOperation(newOwner, admin, deferBlock);
         TransferOwnershipOperationEvent(newOwner, deferBlock);
@@ -182,7 +182,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
         MintOperation memory op = mintOperations[index];
         require(op.admin == admin); //checks that the requester's adminship has not been revoked
         require(op.deferBlock <= block.number); //checks that enough time has elapsed
-        require(op.to == msg.sender); //only the recipient of the funds can finalize
+        require(op.to == msg.sender || admin == msg.sender); //only the recipient of the funds or the admin can finalize
         address to = op.to;
         uint256 amount = op.amount;
         delete mintOperations[index];
@@ -190,7 +190,7 @@ contract TimeLockedAdmin is Ownable, HasNoEther, HasNoTokens {
     }
 
     // after a day, prospective new owner of TrueUSD finalizes the ownership change
-    function finalizeTransferOwnership() public {
+    function finalizeTransferChildrenOwnership() public {
         require(transferOwnershipOperation.admin == admin);
         require(transferOwnershipOperation.deferBlock <= block.number);
         require(transferOwnershipOperation.newOwner == msg.sender);

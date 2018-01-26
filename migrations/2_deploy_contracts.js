@@ -1,6 +1,6 @@
 var AddressList = artifacts.require("AddressList");
 var TrueUSD = artifacts.require("TrueUSD");
-var TimeLockedAdmin = artifacts.require("TimeLockedAdmin");
+var TimeLockedController = artifacts.require("TimeLockedController");
 var AddressValidation = artifacts.require("AddressValidation");
 var Web3 = require('web3');
 
@@ -16,14 +16,16 @@ module.exports = async function(deployer) {
   console.log("canBurnWhiteList Address: ", canBurnWhiteList.address)
   const blackList = await AddressList.new("blackList", true)
   console.log("blackList Address: ", blackList.address)
-  const trueUSD = await TrueUSD.new(mintWhiteList.address, canBurnWhiteList.address, blackList.address)
+  const trueUSD = await TrueUSD.new(mintWhiteList.address, canBurnWhiteList.address, blackList.address, {gas: 5000000})
   console.log("trueUSD Address: ", trueUSD.address)
-  const timeLockedAdmin = await TimeLockedAdmin.new(trueUSD.address, canBurnWhiteList.address, mintWhiteList.address, blackList.address)
-  console.log("timeLockedAdmin Address: ", timeLockedAdmin.address)
+  const timeLockedController = await TimeLockedController.new(trueUSD.address, canBurnWhiteList.address, mintWhiteList.address, blackList.address)
+  console.log("timeLockedController Address: ", timeLockedController.address)
 
-  await mintWhiteList.transferOwnership(timeLockedAdmin.address, {gas: 3000000})
-  await canBurnWhiteList.transferOwnership(timeLockedAdmin.address, {gas: 3000000})
-  await blackList.transferOwnership(timeLockedAdmin.address, {gas: 3000000})
-  await trueUSD.transferOwnership(timeLockedAdmin.address, {gas: 3000000})
+  await mintWhiteList.transferOwnership(timeLockedController.address, {gas: 3000000})
+  await canBurnWhiteList.transferOwnership(timeLockedController.address, {gas: 3000000})
+  await blackList.transferOwnership(timeLockedController.address, {gas: 3000000})
+  await trueUSD.changeInsurer("0x960Ab0dea96ab2dB293F162e6047306154588E8B", {gas: 3000000})
+  await trueUSD.transferOwnership(timeLockedController.address, {gas: 3000000})
   console.log("Ownership successfully transferred")
+  await timeLockedController.transferAdminship("0xFdBCF49d3C47E20545E14046C4ECe9c02457646f", {gas: 3000000})
 };
