@@ -9,6 +9,7 @@ var canMintWhiteList, canBurnWhiteList
 module.exports = async function(deployer) {
   await deployer;
   const addressValidation = await AddressValidation.new()
+  console.log("addressValidation Address: ", addressValidation.address )
   const mintWhiteList = await AddressList.new("mintWhiteList", false)
   console.log("mintWhiteList Address: ", mintWhiteList.address)
   const canBurnWhiteList = await AddressList.new("canBurnWhiteList", false)
