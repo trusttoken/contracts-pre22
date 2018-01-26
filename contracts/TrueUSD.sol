@@ -44,8 +44,8 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner {
         require(_value >= burnMin);
         require(_value <= burnMax);
         uint256 fee = payInsuranceFee(msg.sender, _value, burnFeeNumerator, burnFeeDenominator, burnFeeFlat);
-        _value = _value.sub(fee);
-        super.burn(_value);
+        uint256 remaining = _value.sub(fee);
+        super.burn(remaining);
     }
 
     //Create _amount new tokens and transfer them to _to.
@@ -88,11 +88,12 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner {
         return result;
     }
 
-    function payInsuranceFee(address payer, uint256 value, uint80 numerator, uint80 denominator, uint256 flatRate) private returns (uint256 insuranceFee) {
-        insuranceFee = value.mul(numerator).div(denominator).add(flatRate);
+    function payInsuranceFee(address payer, uint256 value, uint80 numerator, uint80 denominator, uint256 flatRate) private returns (uint256) {
+        uint256 insuranceFee = value.mul(numerator).div(denominator).add(flatRate);
         if (insuranceFee > 0) {
             transferFromWithoutAllowance(payer, insurer, insuranceFee);
         }
+        return insuranceFee;
     }
 
     // based on 'transfer' in https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/token/ERC20/BasicToken.sol
