@@ -25,4 +25,5 @@ module.exports = async function(deployer) {
   await canBurnWhiteList.transferOwnership(timeLockedAdmin.address, {gas: 3000000})
   await blackList.transferOwnership(timeLockedAdmin.address, {gas: 3000000})
   await trueUSD.transferOwnership(timeLockedAdmin.address, {gas: 3000000})
+  console.log("Ownership successfully transferred")
 };
