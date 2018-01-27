@@ -15,9 +15,9 @@ import "./TrueUSD.sol";
 // TrueUSD contract. In the event that the admin account is compromised, this
 // setup allows the owner of TimeLockedController (which can be stored extremely
 // securely since it is never used in normal operation) to replace the admin.
-// Once a day has passed, all mint and ownership transfer requests can be
-// finalized by the beneficiary (the token recipient or the new owner,
-// respectively); mint requests can also be finalized by the admin. Requests initiated by an admin that has since been deposed
+// Once a day has passed, all mint requests can be finalized by the admin;
+// ownership transfers can be finalized by the new owner.
+// Requests initiated by an admin that has since been deposed
 // cannot be finalized. The admin is also able to update TrueUSD's AddressLists
 // (without a day's delay). Anything the admin can do, the owner can also do
 // without a delay.
@@ -178,11 +178,10 @@ contract TimeLockedController is Ownable, HasNoEther, HasNoTokens {
 
     // after a day, beneficiary of a mint request finalizes it by providing the
     // index of the request (visible in the MintOperationEvent accompanying the original request)
-    function finalizeMint(uint index) public {
+    function finalizeMint(uint index) public onlyAdminOrOwner {
         MintOperation memory op = mintOperations[index];
         require(op.admin == admin); //checks that the requester's adminship has not been revoked
         require(op.deferBlock <= block.number); //checks that enough time has elapsed
-        require(op.to == msg.sender || admin == msg.sender); //only the recipient of the funds or the admin can finalize
         address to = op.to;
         uint256 amount = op.amount;
         delete mintOperations[index];
