@@ -253,7 +253,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     }
 
     function issueClaimOwnership(address _other) public onlyAdminOrOwner {
-        /* Claimable other = Claimable(_other);
-        other.claimOwnership(); */
+        Claimable other = Claimable(_other);
+        other.claimOwnership();
     }
 }
