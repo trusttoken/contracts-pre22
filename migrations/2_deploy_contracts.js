@@ -22,10 +22,14 @@ module.exports = async function(deployer) {
   console.log("timeLockedController Address: ", timeLockedController.address)
 
   await mintWhiteList.transferOwnership(timeLockedController.address, {gas: 3000000})
+  await timeLockedController.issueClaimOwnership(mintWhiteList.address)
   await canBurnWhiteList.transferOwnership(timeLockedController.address, {gas: 3000000})
+  await timeLockedController.issueClaimOwnership(canBurnWhiteList.address)
   await blackList.transferOwnership(timeLockedController.address, {gas: 3000000})
+  await timeLockedController.issueClaimOwnership(blackList.address)
   await trueUSD.changeInsurer("0x960Ab0dea96ab2dB293F162e6047306154588E8B", {gas: 3000000})
   await trueUSD.transferOwnership(timeLockedController.address, {gas: 3000000})
+  await timeLockedController.issueClaimOwnership(trueUSD.address)
   console.log("Ownership successfully transferred")
   await timeLockedController.transferAdminship("0xFdBCF49d3C47E20545E14046C4ECe9c02457646f", {gas: 3000000})
 };

@@ -1,8 +1,8 @@
 pragma solidity ^0.4.18;
 
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "zeppelin-solidity/contracts/ownership/Claimable.sol";
 
-contract AddressList is Ownable {
+contract AddressList is Claimable {
     string public name;
     mapping (address => bool) public onList;
 

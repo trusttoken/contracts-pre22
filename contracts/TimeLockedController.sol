@@ -2,7 +2,7 @@ pragma solidity ^0.4.18;
 
 import "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import "zeppelin-solidity/contracts/ownership/HasNoTokens.sol";
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "zeppelin-solidity/contracts/ownership/Claimable.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "./TrueUSD.sol";
 
@@ -15,13 +15,12 @@ import "./TrueUSD.sol";
 // TrueUSD contract. In the event that the admin account is compromised, this
 // setup allows the owner of TimeLockedController (which can be stored extremely
 // securely since it is never used in normal operation) to replace the admin.
-// Once a day has passed, all mint requests can be finalized by the admin;
-// ownership transfers can be finalized by the new owner.
+// Once a day has passed, requests can be finalized by the admin.
 // Requests initiated by an admin that has since been deposed
 // cannot be finalized. The admin is also able to update TrueUSD's AddressLists
 // (without a day's delay). Anything the admin can do, the owner can also do
 // without a delay.
-contract TimeLockedController is Ownable, HasNoEther, HasNoTokens {
+contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     using SafeMath for uint256;
 
     // 24 hours, assuming a 15 second blocktime.
@@ -188,11 +187,10 @@ contract TimeLockedController is Ownable, HasNoEther, HasNoTokens {
         child.mint(to, amount);
     }
 
-    // after a day, prospective new owner of TrueUSD finalizes the ownership change
-    function finalizeTransferChildrenOwnership() public {
+    // after a day, admin finalizes the ownership change
+    function finalizeTransferChildrenOwnership() public onlyAdminOrOwner {
         require(transferOwnershipOperation.admin == admin);
         require(transferOwnershipOperation.deferBlock <= block.number);
-        require(transferOwnershipOperation.newOwner == msg.sender);
         address newOwner = transferOwnershipOperation.newOwner;
         delete transferOwnershipOperation;
         child.transferOwnership(newOwner);
@@ -252,5 +250,10 @@ contract TimeLockedController is Ownable, HasNoEther, HasNoTokens {
     // admin (immediately) updates a whitelist/blacklist
     function updateList(address list, address entry, bool flag) public onlyAdminOrOwner {
         AddressList(list).changeList(entry, flag);
+    }
+
+    function issueClaimOwnership(address _other) public onlyAdminOrOwner {
+        /* Claimable other = Claimable(_other);
+        other.claimOwnership(); */
     }
 }

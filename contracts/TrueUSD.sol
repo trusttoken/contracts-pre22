@@ -3,9 +3,10 @@ pragma solidity ^0.4.18;
 import "zeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
 import "zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import "zeppelin-solidity/contracts/ownership/Claimable.sol";
 import "./AddressList.sol";
 
-contract TrueUSD is PausableToken, BurnableToken, NoOwner {
+contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
     string public constant name = "TrueUSD";
     string public constant symbol = "TUSD";
     uint8 public constant decimals = 18;
