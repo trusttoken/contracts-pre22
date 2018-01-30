@@ -17,7 +17,7 @@ contract('TrueUSD', function(accounts) {
         const mintWhiteList = await AddressList.new("Mint whitelist", {gas: 3000000, from: accounts[0]})
         const burnWhiteList = await AddressList.new("Burn whitelist", {gas: 3000000, from: accounts[0]})
         const blackList = await AddressList.new("Blacklist", {gas: 3000000, from: accounts[0]})
-        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, {gas: 4000000, from: accounts[0]})
+        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, {gas: 6000000, from: accounts[0]})
         await expectThrow(trueUSD.mint(accounts[3], 10, {gas: 3000000, from: accounts[0]})) //user 3 is not (yet) on whitelist
         await expectThrow(mintWhiteList.changeList(accounts[3], true, {gas: 3000000, from: accounts[1]})) //user 1 is not the owner
         await mintWhiteList.changeList(accounts[3], true, {gas: 3000000, from: accounts[0]})

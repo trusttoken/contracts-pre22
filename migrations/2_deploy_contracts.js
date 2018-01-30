@@ -4,8 +4,6 @@ var TimeLockedController = artifacts.require("TimeLockedController");
 var AddressValidation = artifacts.require("AddressValidation");
 var Web3 = require('web3');
 
-var canMintWhiteList, canBurnWhiteList
-
 module.exports = async function(deployer) {
   await deployer;
   const addressValidation = await AddressValidation.new()
@@ -16,7 +14,7 @@ module.exports = async function(deployer) {
   console.log("canBurnWhiteList Address: ", canBurnWhiteList.address)
   const blackList = await AddressList.new("blackList", true)
   console.log("blackList Address: ", blackList.address)
-  const trueUSD = await TrueUSD.new(mintWhiteList.address, canBurnWhiteList.address, blackList.address, {gas: 5000000})
+  const trueUSD = await TrueUSD.new(mintWhiteList.address, canBurnWhiteList.address, blackList.address, {gas: 6000000})
   console.log("trueUSD Address: ", trueUSD.address)
   const timeLockedController = await TimeLockedController.new(trueUSD.address, canBurnWhiteList.address, mintWhiteList.address, blackList.address)
   console.log("timeLockedController Address: ", timeLockedController.address)

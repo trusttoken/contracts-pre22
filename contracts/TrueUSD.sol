@@ -5,6 +5,7 @@ import "zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import "zeppelin-solidity/contracts/ownership/Claimable.sol";
 import "./AddressList.sol";
+import "./DelegateERC20.sol";
 
 contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
     string public constant name = "TrueUSD";
@@ -27,8 +28,14 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
     uint256 public burnFeeFlat = 0;
     address public insurer;
 
+    // If this contract needs to be upgraded, the new contract will be stored
+    // in 'delegate' and any ERC20 calls to this contract will be delegated to that one.
+    DelegateERC20 public delegate;
+
     event ChangeBurnBoundsEvent(uint256 newMin, uint256 newMax);
     event Mint(address indexed to, uint256 amount);
+    event WipedAccount(address indexed account, uint256 balance);
+    event DelegatedTo(address indexed newContract);
 
     function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList, address _blackList) public {
         totalSupply_ = 0;
@@ -76,17 +83,81 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
     function transfer(address to, uint256 value) public returns (bool) {
         require(!blackList.onList(msg.sender));
         require(!blackList.onList(to));
-        bool result = super.transfer(to, value);
-        payInsuranceFee(to, value, transferFeeNumerator, transferFeeDenominator, 0);
-        return result;
+        if (delegate == address(0)) {
+            bool result = super.transfer(to, value);
+            payInsuranceFee(to, value, transferFeeNumerator, transferFeeDenominator, 0);
+            return result;
+        } else {
+            return delegate.delegateTransfer(to, value, msg.sender);
+        }
     }
 
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
         require(!blackList.onList(from));
         require(!blackList.onList(to));
-        bool result = super.transferFrom(from, to, value);
-        payInsuranceFee(to, value, transferFeeNumerator, transferFeeDenominator, 0);
-        return result;
+        if (delegate == address(0)) {
+            bool result = super.transferFrom(from, to, value);
+            payInsuranceFee(to, value, transferFeeNumerator, transferFeeDenominator, 0);
+            return result;
+        } else {
+            return delegate.delegateTransferFrom(from, to, value, msg.sender);
+        }
+    }
+
+    function balanceOf(address who) public view returns (uint256) {
+        if (delegate == address(0)) {
+            return super.balanceOf(who);
+        } else {
+            return delegate.delegateBalanceOf(who);
+        }
+    }
+
+    function approve(address spender, uint256 value) public returns (bool) {
+        if (delegate == address(0)) {
+            return super.approve(spender, value);
+        } else {
+            return delegate.delegateApprove(spender, value, msg.sender);
+        }
+    }
+
+    function allowance(address _owner, address spender) public view returns (uint256) {
+        if (delegate == address(0)) {
+            return super.allowance(_owner, spender);
+        } else {
+            return delegate.delegateAllowance(_owner, spender);
+        }
+    }
+
+    function totalSupply() public view returns (uint256) {
+        if (delegate == address(0)) {
+            return super.totalSupply();
+        } else {
+            return delegate.delegateTotalSupply();
+        }
+    }
+
+    function increaseApproval(address spender, uint addedValue) public returns (bool) {
+        if (delegate == address(0)) {
+            return super.increaseApproval(spender, addedValue);
+        } else {
+            return delegate.delegateIncreaseApproval(spender, addedValue, msg.sender);
+        }
+    }
+
+    function decreaseApproval(address spender, uint subtractedValue) public returns (bool) {
+        if (delegate == address(0)) {
+            return super.decreaseApproval(spender, subtractedValue);
+        } else {
+            return delegate.delegateDecreaseApproval(spender, subtractedValue, msg.sender);
+        }
+    }
+
+    function wipeBlacklistedAccount(address account) public onlyOwner {
+        require(blackList.onList(account));
+        uint256 oldValue = balanceOf(account);
+        balances[account] = 0;
+        totalSupply_ = totalSupply_.sub(oldValue);
+        WipedAccount(account, oldValue);
     }
 
     function payInsuranceFee(address payer, uint256 value, uint80 numerator, uint80 denominator, uint256 flatRate) private returns (uint256) {
@@ -130,5 +201,11 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
     function changeInsurer(address newInsurer) public onlyOwner {
         require(newInsurer != address(0));
         insurer = newInsurer;
+    }
+
+    // Can undelegate by passing in newContract = address(0)
+    function delegateToNewContract(address newContract) public onlyOwner {
+        delegate = DelegateERC20(newContract);
+        DelegatedTo(newContract);
     }
 }

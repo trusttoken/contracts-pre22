@@ -18,7 +18,7 @@ contract('TimeLockedController', function(accounts) {
         const mintWhiteList = await AddressList.new("Mint whitelist", {gas: 3000000, from: accounts[0]})
         const burnWhiteList = await AddressList.new("Burn whitelist", {gas: 3000000, from: accounts[0]})
         const blackList = await AddressList.new("Blacklist", {gas: 3000000, from: accounts[0]})
-        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, {gas: 4000000, from: accounts[0]})
+        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, {gas: 6000000, from: accounts[0]})
         await mintWhiteList.changeList(accounts[3], true, {gas: 3000000, from: accounts[0]})
         async function userHasCoins(id, amount) {
           var balance = await trueUSD.balanceOf(accounts[id])
