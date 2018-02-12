@@ -35,7 +35,7 @@ and/or transferring of TrueUSD. There is currently a 7 bips fee on transfers.
 These fees are intended to compensate whomever is insuring the contract.
 With the launch of the TrustToken platform, TrustToken holders
 will stake TrustToken so that if anything were to go wrong with the USD backing
-(e.g. a bank holding the funds goes under), TrueUSD holders could be compensated
+(e.g. a bank holding the funds goes under), TrueUSD holders would be compensated
 from the TrustToken stake instead.
 
 ### Delegation to a new contract
