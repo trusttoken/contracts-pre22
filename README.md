@@ -24,8 +24,9 @@ control their ethereum address using AddressValidation.sol).
 ### Blacklist
 
 Addresses can also be blacklisted, preventing them from sending or receiving
-TrueUSD. This will only be used to limit the use of TrueUSD by bad actors in
-accordance with law enforcement.
+TrueUSD. This can be used to prevent the use of TrueUSD by bad actors in
+accordance with law enforcement. The blacklist will only be used in accordance
+with the [TrueCoin Terms of Use](https://truecoin.com/terms-of-use).
 
 ### Insurance Fees
 
