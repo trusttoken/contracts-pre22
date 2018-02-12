@@ -30,10 +30,10 @@ with the [TrueCoin Terms of Use](https://truecoin.com/terms-of-use).
 
 ### Insurance Fees
 
-The contract is equipped to charge transaction fees upon minting, burning, and/or
-transferring of TrueUSD. At time of writing there is a 7 bips fee on transfers
-and no fee for minting or burning. These fees are intended to compensate whomever
-is insuring the contract. With the launch of the TrustToken platform, the insurer
+The contract is equipped to charge transaction fees upon minting, burning,
+and/or transferring of TrueUSD. There is currently a 7 bips fee on transfers.
+These fees are intended to compensate whomever is insuring the contract.
+With the launch of the TrustToken platform, TrustToken holders
 will stake TrustToken so that if anything were to go wrong with the USD backing
 (e.g. a bank holding the funds goes under), TrueUSD holders could be compensated
 from the TrustToken stake instead.
