@@ -25,7 +25,7 @@ module.exports = async function(deployer) {
   await timeLockedController.issueClaimOwnership(canBurnWhiteList.address)
   await blackList.transferOwnership(timeLockedController.address)
   await timeLockedController.issueClaimOwnership(blackList.address)
-  await trueUSD.changeInsurer("0x960Ab0dea96ab2dB293F162e6047306154588E8B")
+  await trueUSD.changeStaker("0x960Ab0dea96ab2dB293F162e6047306154588E8B")
   await trueUSD.transferOwnership(timeLockedController.address)
   await timeLockedController.issueClaimOwnership(trueUSD.address)
   console.log("Ownership successfully transferred")

@@ -28,16 +28,6 @@ TrueUSD. This can be used to prevent the use of TrueUSD by bad actors in
 accordance with law enforcement. The blacklist will only be used in accordance
 with the [TrueCoin Terms of Use](https://truecoin.com/terms-of-use).
 
-### Insurance Fees
-
-The contract is equipped to charge transaction fees upon minting, burning,
-and/or transferring of TrueUSD. There is currently a 7 bips fee on transfers.
-These fees are intended to compensate whomever is insuring the contract.
-With the launch of the TrustToken platform, TrustToken holders
-will stake TrustToken so that if anything were to go wrong with the USD backing
-(e.g. a bank holding the funds goes under), TrueUSD holders would be compensated
-from the TrustToken stake instead.
-
 ### Delegation to a new contract
 
 If TrueUSD.sol ever needs to be upgraded, the new contract will implement the

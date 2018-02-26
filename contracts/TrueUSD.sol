@@ -26,7 +26,7 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
     uint80 public burnFeeNumerator = 0;
     uint80 public burnFeeDenominator = 10000;
     uint256 public burnFeeFlat = 0;
-    address public insurer;
+    address public staker;
 
     // If this contract needs to be upgraded, the new contract will be stored
     // in 'delegate' and any ERC20 calls to this contract will be delegated to that one.
@@ -42,7 +42,7 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
         canReceiveMintWhitelist = AddressList(_canMintWhiteList);
         canBurnWhiteList = AddressList(_canBurnWhiteList);
         blackList = AddressList(_blackList);
-        insurer = msg.sender;
+        staker = msg.sender;
     }
 
     //Burning functions as withdrawing money from the system. The platform will keep track of who burns coins,
@@ -51,7 +51,7 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
         require(canBurnWhiteList.onList(msg.sender));
         require(_value >= burnMin);
         require(_value <= burnMax);
-        uint256 fee = payInsuranceFee(msg.sender, _value, burnFeeNumerator, burnFeeDenominator, burnFeeFlat);
+        uint256 fee = payStakingFee(msg.sender, _value, burnFeeNumerator, burnFeeDenominator, burnFeeFlat);
         uint256 remaining = _value.sub(fee);
         super.burn(remaining);
     }
@@ -64,7 +64,7 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
         balances[_to] = balances[_to].add(_amount);
         Mint(_to, _amount);
         Transfer(address(0), _to, _amount);
-        payInsuranceFee(_to, _amount, mintFeeNumerator, mintFeeDenominator, mintFeeFlat);
+        payStakingFee(_to, _amount, mintFeeNumerator, mintFeeDenominator, mintFeeFlat);
     }
 
     //Change the minimum and maximum amount that can be burned at once. Burning
@@ -85,7 +85,7 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
         require(!blackList.onList(to));
         if (delegate == address(0)) {
             bool result = super.transfer(to, value);
-            payInsuranceFee(to, value, transferFeeNumerator, transferFeeDenominator, 0);
+            payStakingFee(to, value, transferFeeNumerator, transferFeeDenominator, 0);
             return result;
         } else {
             return delegate.delegateTransfer(to, value, msg.sender);
@@ -97,7 +97,7 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
         require(!blackList.onList(to));
         if (delegate == address(0)) {
             bool result = super.transferFrom(from, to, value);
-            payInsuranceFee(to, value, transferFeeNumerator, transferFeeDenominator, 0);
+            payStakingFee(to, value, transferFeeNumerator, transferFeeDenominator, 0);
             return result;
         } else {
             return delegate.delegateTransferFrom(from, to, value, msg.sender);
@@ -160,12 +160,12 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
         WipedAccount(account, oldValue);
     }
 
-    function payInsuranceFee(address payer, uint256 value, uint80 numerator, uint80 denominator, uint256 flatRate) private returns (uint256) {
-        uint256 insuranceFee = value.mul(numerator).div(denominator).add(flatRate);
-        if (insuranceFee > 0) {
-            transferFromWithoutAllowance(payer, insurer, insuranceFee);
+    function payStakingFee(address payer, uint256 value, uint80 numerator, uint80 denominator, uint256 flatRate) private returns (uint256) {
+        uint256 stakingFee = value.mul(numerator).div(denominator).add(flatRate);
+        if (stakingFee > 0) {
+            transferFromWithoutAllowance(payer, staker, stakingFee);
         }
-        return insuranceFee;
+        return stakingFee;
     }
 
     // based on 'transfer' in https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/token/ERC20/BasicToken.sol
@@ -177,7 +177,7 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
         Transfer(from, _to, _value);
     }
 
-    function changeInsuranceFees(uint80 _transferFeeNumerator,
+    function changeStakingFees(uint80 _transferFeeNumerator,
                                  uint80 _transferFeeDenominator,
                                  uint80 _mintFeeNumerator,
                                  uint80 _mintFeeDenominator,
@@ -198,9 +198,9 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
         burnFeeFlat = _burnFeeFlat;
     }
 
-    function changeInsurer(address newInsurer) public onlyOwner {
-        require(newInsurer != address(0));
-        insurer = newInsurer;
+    function changeStaker(address newStaker) public onlyOwner {
+        require(newStaker != address(0));
+        staker = newStaker;
     }
 
     // Can undelegate by passing in newContract = address(0)

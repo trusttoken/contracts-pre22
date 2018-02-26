@@ -47,7 +47,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint deferBlock;
     }
 
-    struct ChangeInsuranceFeesOperation {
+    struct ChangeStakingFeesOperation {
         uint80 _transferFeeNumerator;
         uint80 _transferFeeDenominator;
         uint80 _mintFeeNumerator;
@@ -60,8 +60,8 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint deferBlock;
     }
 
-    struct ChangeInsurerOperation {
-        address newInsurer;
+    struct ChangeStakerOperation {
+        address newStaker;
         address admin;
         uint deferBlock;
     }
@@ -74,8 +74,8 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     MintOperation[] public mintOperations;
     TransferOwnershipOperation public transferOwnershipOperation;
     ChangeBurnBoundsOperation public changeBurnBoundsOperation;
-    ChangeInsuranceFeesOperation public changeInsuranceFeesOperation;
-    ChangeInsurerOperation public changeInsurerOperation;
+    ChangeStakingFeesOperation public changeStakingFeesOperation;
+    ChangeStakerOperation public changeStakerOperation;
 
     modifier onlyAdminOrOwner() {
         require(msg.sender == admin || msg.sender == owner);
@@ -101,7 +101,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     event MintOperationEvent(address indexed _to, uint256 amount, uint deferBlock, uint opIndex);
     event TransferOwnershipOperationEvent(address newOwner, uint deferBlock);
     event ChangeBurnBoundsOperationEvent(uint newMin, uint newMax, uint deferBlock);
-    event ChangeInsuranceFeesOperationEvent(uint80 _transferFeeNumerator,
+    event ChangeStakingFeesOperationEvent(uint80 _transferFeeNumerator,
                                             uint80 _transferFeeDenominator,
                                             uint80 _mintFeeNumerator,
                                             uint80 _mintFeeDenominator,
@@ -110,7 +110,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
                                             uint80 _burnFeeDenominator,
                                             uint256 _burnFeeFlat,
                                             uint deferBlock);
-    event ChangeInsurerOperationEvent(address newInsurer, uint deferBlock);
+    event ChangeStakerOperationEvent(address newStaker, uint deferBlock);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
 
     // admin initiates a request to mint _amount TrueUSD for account _to
@@ -137,8 +137,8 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         ChangeBurnBoundsOperationEvent(newMin, newMax, deferBlock);
     }
 
-    // admin initiates a request that the insurance fee be changed
-    function requestChangeInsuranceFees(uint80 _transferFeeNumerator,
+    // admin initiates a request that the staking fee be changed
+    function requestChangeStakingFees(uint80 _transferFeeNumerator,
                                         uint80 _transferFeeDenominator,
                                         uint80 _mintFeeNumerator,
                                         uint80 _mintFeeDenominator,
@@ -147,7 +147,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
                                         uint80 _burnFeeDenominator,
                                         uint256 _burnFeeFlat) public onlyAdminOrOwner {
         uint deferBlock = computeDeferBlock();
-        changeInsuranceFeesOperation = ChangeInsuranceFeesOperation(_transferFeeNumerator,
+        changeStakingFeesOperation = ChangeStakingFeesOperation(_transferFeeNumerator,
                                                                     _transferFeeDenominator,
                                                                     _mintFeeNumerator,
                                                                     _mintFeeDenominator,
@@ -157,7 +157,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
                                                                     _burnFeeFlat,
                                                                     admin,
                                                                     deferBlock);
-        ChangeInsuranceFeesOperationEvent(_transferFeeNumerator,
+        ChangeStakingFeesOperationEvent(_transferFeeNumerator,
                                           _transferFeeDenominator,
                                           _mintFeeNumerator,
                                           _mintFeeDenominator,
@@ -168,11 +168,11 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
                                           deferBlock);
     }
 
-    // admin initiates a request that the recipient of the insurance fee be changed to newInsurer
-    function requestChangeInsurer(address newInsurer) public onlyAdminOrOwner {
+    // admin initiates a request that the recipient of the staking fee be changed to newStaker
+    function requestChangeStaker(address newStaker) public onlyAdminOrOwner {
         uint deferBlock = computeDeferBlock();
-        changeInsurerOperation = ChangeInsurerOperation(newInsurer, admin, deferBlock);
-        ChangeInsurerOperationEvent(newInsurer, deferBlock);
+        changeStakerOperation = ChangeStakerOperation(newStaker, admin, deferBlock);
+        ChangeStakerOperationEvent(newStaker, deferBlock);
     }
 
     // after a day, beneficiary of a mint request finalizes it by providing the
@@ -209,20 +209,20 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         child.changeBurnBounds(newMin, newMax);
     }
 
-    // after a day, admin finalizes the insurance fee change
-    function finalizeChangeInsuranceFees() public onlyAdminOrOwner {
-        require(changeInsuranceFeesOperation.admin == admin);
-        require(changeInsuranceFeesOperation.deferBlock <= block.number);
-        uint80 _transferFeeNumerator = changeInsuranceFeesOperation._transferFeeNumerator;
-        uint80 _transferFeeDenominator = changeInsuranceFeesOperation._transferFeeDenominator;
-        uint80 _mintFeeNumerator = changeInsuranceFeesOperation._mintFeeNumerator;
-        uint80 _mintFeeDenominator = changeInsuranceFeesOperation._mintFeeDenominator;
-        uint256 _mintFeeFlat = changeInsuranceFeesOperation._mintFeeFlat;
-        uint80 _burnFeeNumerator = changeInsuranceFeesOperation._burnFeeNumerator;
-        uint80 _burnFeeDenominator = changeInsuranceFeesOperation._burnFeeDenominator;
-        uint256 _burnFeeFlat = changeInsuranceFeesOperation._burnFeeFlat;
-        delete changeInsuranceFeesOperation;
-        child.changeInsuranceFees(_transferFeeNumerator,
+    // after a day, admin finalizes the staking fee change
+    function finalizeChangeStakingFees() public onlyAdminOrOwner {
+        require(changeStakingFeesOperation.admin == admin);
+        require(changeStakingFeesOperation.deferBlock <= block.number);
+        uint80 _transferFeeNumerator = changeStakingFeesOperation._transferFeeNumerator;
+        uint80 _transferFeeDenominator = changeStakingFeesOperation._transferFeeDenominator;
+        uint80 _mintFeeNumerator = changeStakingFeesOperation._mintFeeNumerator;
+        uint80 _mintFeeDenominator = changeStakingFeesOperation._mintFeeDenominator;
+        uint256 _mintFeeFlat = changeStakingFeesOperation._mintFeeFlat;
+        uint80 _burnFeeNumerator = changeStakingFeesOperation._burnFeeNumerator;
+        uint80 _burnFeeDenominator = changeStakingFeesOperation._burnFeeDenominator;
+        uint256 _burnFeeFlat = changeStakingFeesOperation._burnFeeFlat;
+        delete changeStakingFeesOperation;
+        child.changeStakingFees(_transferFeeNumerator,
                                   _transferFeeDenominator,
                                   _mintFeeNumerator,
                                   _mintFeeDenominator,
@@ -232,13 +232,13 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
                                   _burnFeeFlat);
     }
 
-    // after a day, admin finalizes the insurance fees recipient change
-    function finalizeChangeInsurer() public onlyAdminOrOwner {
-        require(changeInsurerOperation.admin == admin);
-        require(changeInsurerOperation.deferBlock <= block.number);
-        address newInsurer = changeInsurerOperation.newInsurer;
-        delete changeInsurerOperation;
-        child.changeInsurer(newInsurer);
+    // after a day, admin finalizes the staking fees recipient change
+    function finalizeChangeStaker() public onlyAdminOrOwner {
+        require(changeStakerOperation.admin == admin);
+        require(changeStakerOperation.deferBlock <= block.number);
+        address newStaker = changeStakerOperation.newStaker;
+        delete changeStakerOperation;
+        child.changeStaker(newStaker);
     }
 
     // Owner of this contract (immediately) replaces the current admin with newAdmin
