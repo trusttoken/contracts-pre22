@@ -66,6 +66,12 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint deferBlock;
     }
 
+    struct DelegateOperation {
+        DelegateERC20 delegate;
+        address admin;
+        uint deferBlock;
+    }
+
     address public admin;
     TrueUSD public trueUSD;
     AddressList public canBurnWhiteList;
@@ -76,6 +82,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     ChangeBurnBoundsOperation public changeBurnBoundsOperation;
     ChangeStakingFeesOperation public changeStakingFeesOperation;
     ChangeStakerOperation public changeStakerOperation;
+    DelegateOperation public delegateOperation;
 
     modifier onlyAdminOrOwner() {
         require(msg.sender == admin || msg.sender == owner);
@@ -111,6 +118,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
                                             uint256 _burnFeeFlat,
                                             uint deferBlock);
     event ChangeStakerOperationEvent(address newStaker, uint deferBlock);
+    event DelegateOperationEvent(DelegateERC20 delegate, uint deferBlock);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
 
     // admin initiates a request to mint _amount TrueUSD for account _to
@@ -173,6 +181,13 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint deferBlock = computeDeferBlock();
         changeStakerOperation = ChangeStakerOperation(newStaker, admin, deferBlock);
         ChangeStakerOperationEvent(newStaker, deferBlock);
+    }
+
+    // admin initiates a request that future ERC20 calls to trueUSD be delegated to _delegate
+    function requestDelegation(DelegateERC20 _delegate) public onlyAdminOrOwner {
+        uint deferBlock = computeDeferBlock();
+        delegateOperation = DelegateOperation(_delegate, admin, deferBlock);
+        DelegateOperationEvent(_delegate, deferBlock);
     }
 
     // after a day, beneficiary of a mint request finalizes it by providing the
@@ -239,6 +254,15 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         address newStaker = changeStakerOperation.newStaker;
         delete changeStakerOperation;
         trueUSD.changeStaker(newStaker);
+    }
+
+    // after a day, admin finalizes the delegation
+    function finalizeDelegation() public onlyAdminOrOwner {
+        require(delegateOperation.admin == admin);
+        require(delegateOperation.deferBlock <= block.number);
+        address delegate = delegateOperation.delegate;
+        delete delegateOperation;
+        trueUSD.delegateToNewContract(delegate);
     }
 
     // Owner of this contract (immediately) replaces the current admin with newAdmin
