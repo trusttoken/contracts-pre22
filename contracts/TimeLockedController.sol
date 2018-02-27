@@ -34,7 +34,8 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint deferBlock;
     }
 
-    struct TransferOwnershipOperation {
+    struct TransferChildOperation {
+        Ownable child;
         address newOwner;
         address admin;
         uint deferBlock;
@@ -78,7 +79,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     AddressList public canReceiveMintWhitelist;
     AddressList public blackList;
     MintOperation[] public mintOperations;
-    TransferOwnershipOperation public transferOwnershipOperation;
+    TransferChildOperation[] public transferChildOperations;
     ChangeBurnBoundsOperation public changeBurnBoundsOperation;
     ChangeStakingFeesOperation public changeStakingFeesOperation;
     ChangeStakerOperation public changeStakerOperation;
@@ -106,7 +107,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     }
 
     event MintOperationEvent(address indexed _to, uint256 amount, uint deferBlock, uint opIndex);
-    event TransferOwnershipOperationEvent(address newOwner, uint deferBlock);
+    event TransferChildOperationEvent(address indexed _child, address indexed _newOwner, uint deferBlock, uint opIndex);
     event ChangeBurnBoundsOperationEvent(uint newMin, uint newMax, uint deferBlock);
     event ChangeStakingFeesOperationEvent(uint80 _transferFeeNumerator,
                                             uint80 _transferFeeDenominator,
@@ -129,12 +130,13 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         mintOperations.push(op);
     }
 
-    // admin initiates a request to transfer ownership of the TrueUSD contract and all AddressLists to newOwner.
+    // admin initiates a request to transfer _child to _newOwner
     // Can be used e.g. to upgrade this TimeLockedController contract.
-    function requestTransferChildrenOwnership(address newOwner) public onlyAdminOrOwner {
+    function requestTransferChild(Ownable _child, address _newOwner) public onlyAdminOrOwner {
         uint deferBlock = computeDeferBlock();
-        transferOwnershipOperation = TransferOwnershipOperation(newOwner, admin, deferBlock);
-        TransferOwnershipOperationEvent(newOwner, deferBlock);
+        TransferChildOperation memory op = TransferChildOperation(_child, _newOwner, admin, deferBlock);
+        TransferChildOperationEvent(_child, _newOwner, deferBlock, transferChildOperations.length);
+        transferChildOperations.push(op);
     }
 
     // admin initiates a request that the minimum and maximum amounts that any TrueUSD user can
@@ -190,7 +192,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         DelegateOperationEvent(_delegate, deferBlock);
     }
 
-    // after a day, beneficiary of a mint request finalizes it by providing the
+    // after a day, admin finalizes mint request by providing the
     // index of the request (visible in the MintOperationEvent accompanying the original request)
     function finalizeMint(uint index) public onlyAdminOrOwner {
         MintOperation memory op = mintOperations[index];
@@ -202,16 +204,16 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         trueUSD.mint(to, amount);
     }
 
-    // after a day, admin finalizes the ownership change
-    function finalizeTransferChildrenOwnership() public onlyAdminOrOwner {
-        require(transferOwnershipOperation.admin == admin);
-        require(transferOwnershipOperation.deferBlock <= block.number);
-        address newOwner = transferOwnershipOperation.newOwner;
-        delete transferOwnershipOperation;
-        trueUSD.transferOwnership(newOwner);
-        canBurnWhiteList.transferOwnership(newOwner);
-        canReceiveMintWhitelist.transferOwnership(newOwner);
-        blackList.transferOwnership(newOwner);
+    // after a day, admin finalizes the transfer of a child contract by providing the
+    // index of the request (visible in the TransferChildOperationEvent accompanying the original request)
+    function finalizeTransferChild(uint index) public onlyAdminOrOwner {
+        TransferChildOperation memory op = transferChildOperations[index];
+        require(op.admin == admin);
+        require(op.deferBlock <= block.number);
+        Ownable _child = op.child;
+        address _newOwner = op.newOwner;
+        delete transferChildOperations[index];
+        _child.transferOwnership(_newOwner);
     }
 
     // after a day, admin finalizes the burn bounds change

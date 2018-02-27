@@ -63,15 +63,18 @@ contract('TimeLockedController', function(accounts) {
         await userHasCoins(3, 40219)
         await timeLockedController.transferAdminship(accounts[2], {from: accounts[0]})
         await expectThrow(timeLockedController.finalizeMint(2, {from: accounts[3]})) //can't finalize because admin has been changed
-        await expectThrow(timeLockedController.requestTransferChildrenOwnership(accounts[2], {from: accounts[1]})) //only admin/owner can request
-        await timeLockedController.requestTransferChildrenOwnership(accounts[2], {from: accounts[2]})
+        await expectThrow(timeLockedController.requestTransferChild(trueUSD.address, accounts[2], {from: accounts[1]})) //only admin/owner can request
+        await timeLockedController.requestTransferChild(trueUSD.address, accounts[2], {from: accounts[2]})
+        await timeLockedController.requestTransferChild(mintWhiteList.address, accounts[2], {from: accounts[2]})
+        await timeLockedController.requestTransferChild(burnWhiteList.address, accounts[2], {from: accounts[2]})
+        await timeLockedController.requestTransferChild(blackList.address, accounts[2], {from: accounts[2]})
         await timeLockedController.requestMint(accounts[3], 500000, {from: accounts[2]})
         await timeLockedController.requestMint(accounts[3], 6000000, {from: accounts[2]})
-        await expectThrow(timeLockedController.finalizeTransferChildrenOwnership({from: accounts[2]})) //too early to finalize
+        await expectThrow(timeLockedController.finalizeTransferChild(0, {from: accounts[2]})) //too early to finalize
         for (var i = 0; i < blocksDelay; i++) {
           web3.currentProvider.send({jsonrpc: "2.0", method: "evm_mine", params: [], id: 0})
         }
-        await timeLockedController.finalizeTransferChildrenOwnership({from: accounts[0]})
+        await timeLockedController.finalizeTransferChild(0, {from: accounts[0]})
         await timeLockedController.finalizeMint(4, {from: accounts[2]}) // can still finalize because ownership isn't transferred until claimed
         await userHasCoins(3, 540219)
         await trueUSD.claimOwnership({from: accounts[2]})
