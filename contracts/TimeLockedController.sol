@@ -67,7 +67,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     }
 
     address public admin;
-    TrueUSD public child;
+    TrueUSD public trueUSD;
     AddressList public canBurnWhiteList;
     AddressList public canReceiveMintWhitelist;
     AddressList public blackList;
@@ -91,8 +91,8 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     }
 
     // starts with no admin
-    function TimeLockedController(address _child, address _canBurnWhiteList, address _canReceiveMintWhitelist, address _blackList) public {
-        child = TrueUSD(_child);
+    function TimeLockedController(address _trueUSD, address _canBurnWhiteList, address _canReceiveMintWhitelist, address _blackList) public {
+        trueUSD = TrueUSD(_trueUSD);
         canBurnWhiteList = AddressList(_canBurnWhiteList);
         canReceiveMintWhitelist = AddressList(_canReceiveMintWhitelist);
         blackList = AddressList(_blackList);
@@ -184,7 +184,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         address to = op.to;
         uint256 amount = op.amount;
         delete mintOperations[index];
-        child.mint(to, amount);
+        trueUSD.mint(to, amount);
     }
 
     // after a day, admin finalizes the ownership change
@@ -193,7 +193,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         require(transferOwnershipOperation.deferBlock <= block.number);
         address newOwner = transferOwnershipOperation.newOwner;
         delete transferOwnershipOperation;
-        child.transferOwnership(newOwner);
+        trueUSD.transferOwnership(newOwner);
         canBurnWhiteList.transferOwnership(newOwner);
         canReceiveMintWhitelist.transferOwnership(newOwner);
         blackList.transferOwnership(newOwner);
@@ -206,7 +206,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint newMin = changeBurnBoundsOperation.newMin;
         uint newMax = changeBurnBoundsOperation.newMax;
         delete changeBurnBoundsOperation;
-        child.changeBurnBounds(newMin, newMax);
+        trueUSD.changeBurnBounds(newMin, newMax);
     }
 
     // after a day, admin finalizes the staking fee change
@@ -222,7 +222,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint80 _burnFeeDenominator = changeStakingFeesOperation._burnFeeDenominator;
         uint256 _burnFeeFlat = changeStakingFeesOperation._burnFeeFlat;
         delete changeStakingFeesOperation;
-        child.changeStakingFees(_transferFeeNumerator,
+        trueUSD.changeStakingFees(_transferFeeNumerator,
                                   _transferFeeDenominator,
                                   _mintFeeNumerator,
                                   _mintFeeDenominator,
@@ -238,7 +238,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         require(changeStakerOperation.deferBlock <= block.number);
         address newStaker = changeStakerOperation.newStaker;
         delete changeStakerOperation;
-        child.changeStaker(newStaker);
+        trueUSD.changeStaker(newStaker);
     }
 
     // Owner of this contract (immediately) replaces the current admin with newAdmin
