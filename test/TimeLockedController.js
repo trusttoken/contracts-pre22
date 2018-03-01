@@ -15,16 +15,17 @@ expectThrow = async promise => {
 
 contract('TimeLockedController', function(accounts) {
     it("should work", async () => {
-        const mintWhiteList = await AddressList.new("Mint whitelist", {from: accounts[0]})
-        const burnWhiteList = await AddressList.new("Burn whitelist", {from: accounts[0]})
-        const blackList = await AddressList.new("Blacklist", {from: accounts[0]})
-        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, {gas: 6000000, from: accounts[0]})
+        const mintWhiteList = await AddressList.new("Mint whitelist", false, {from: accounts[0]})
+        const burnWhiteList = await AddressList.new("Burn whitelist", false, {from: accounts[0]})
+        const blackList = await AddressList.new("Blacklist", true, {from: accounts[0]})
+        const noFeesList = await AddressList.new("No Fees list", false, {from: accounts[0]})
+        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, noFeesList.address, {gas: 6000000, from: accounts[0]})
         await mintWhiteList.changeList(accounts[3], true, {from: accounts[0]})
         async function userHasCoins(id, amount) {
           var balance = await trueUSD.balanceOf(accounts[id])
           assert.equal(balance, amount, "userHasCoins fail: actual balance "+balance)
         }
-        const timeLockedController = await TimeLockedController.new(trueUSD.address, burnWhiteList.address, mintWhiteList.address, blackList.address, {gas: 5000000, from: accounts[0]})
+        const timeLockedController = await TimeLockedController.new(trueUSD.address, {gas: 5000000, from: accounts[0]})
         await mintWhiteList.transferOwnership(timeLockedController.address, {from: accounts[0]})
         await burnWhiteList.transferOwnership(timeLockedController.address, {from: accounts[0]})
         await blackList.transferOwnership(timeLockedController.address, {from: accounts[0]})

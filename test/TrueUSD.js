@@ -14,10 +14,11 @@ expectThrow = async promise => {
 
 contract('TrueUSD', function(accounts) {
     it("should work", async () => {
-        const mintWhiteList = await AddressList.new("Mint whitelist", {from: accounts[0]})
-        const burnWhiteList = await AddressList.new("Burn whitelist", {from: accounts[0]})
-        const blackList = await AddressList.new("Blacklist", {from: accounts[0]})
-        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, {gas: 6000000, from: accounts[0]})
+        const mintWhiteList = await AddressList.new("Mint whitelist", false, {from: accounts[0]})
+        const burnWhiteList = await AddressList.new("Burn whitelist", false, {from: accounts[0]})
+        const blackList = await AddressList.new("Blacklist", true, {from: accounts[0]})
+        const noFeesList = await AddressList.new("No Fees list", false, {from: accounts[0]})
+        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, noFeesList.address, {gas: 6000000, from: accounts[0]})
         await expectThrow(trueUSD.mint(accounts[3], 10, {from: accounts[0]})) //user 3 is not (yet) on whitelist
         await expectThrow(mintWhiteList.changeList(accounts[3], true, {from: accounts[1]})) //user 1 is not the owner
         await mintWhiteList.changeList(accounts[3], true, {from: accounts[0]})

@@ -75,9 +75,6 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     address public admin;
     TrueUSD public trueUSD;
-    AddressList public canBurnWhiteList;
-    AddressList public canReceiveMintWhitelist;
-    AddressList public blackList;
     MintOperation[] public mintOperations;
     TransferChildOperation[] public transferChildOperations;
     ChangeBurnBoundsOperation public changeBurnBoundsOperation;
@@ -99,11 +96,8 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     }
 
     // starts with no admin
-    function TimeLockedController(address _trueUSD, address _canBurnWhiteList, address _canReceiveMintWhitelist, address _blackList) public {
+    function TimeLockedController(address _trueUSD) public {
         trueUSD = TrueUSD(_trueUSD);
-        canBurnWhiteList = AddressList(_canBurnWhiteList);
-        canReceiveMintWhitelist = AddressList(_canReceiveMintWhitelist);
-        blackList = AddressList(_blackList);
     }
 
     event MintOperationEvent(address indexed _to, uint256 amount, uint deferBlock, uint opIndex);

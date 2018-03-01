@@ -23,7 +23,7 @@ module.exports = {
     production: {
       provider: new HDWalletProvider(process.env.MNEMONIC, "https://mainnet.infura.io/dYWKKqsJkbv9cZlQFEpI "),
       network_id: "1",
-      gas: 5500000,
+      gas: 6000000,
       gasPrice: 8000000000
     },
 
