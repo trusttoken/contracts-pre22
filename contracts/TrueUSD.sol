@@ -209,8 +209,8 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
     }
 
     // Can undelegate by passing in newContract = address(0)
-    function delegateToNewContract(address newContract) public onlyOwner {
-        delegate = DelegateERC20(newContract);
-        DelegatedTo(newContract);
+    function delegateToNewContract(DelegateERC20 newContract) public onlyOwner {
+        delegate = newContract;
+        DelegatedTo(delegate);
     }
 }

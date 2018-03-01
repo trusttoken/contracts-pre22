@@ -73,6 +73,12 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint deferBlock;
     }
 
+    struct ChangeTrueUSDOperation {
+        TrueUSD newContract;
+        address admin;
+        uint deferBlock;
+    }
+
     address public admin;
     TrueUSD public trueUSD;
     MintOperation[] public mintOperations;
@@ -81,6 +87,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     ChangeStakingFeesOperation public changeStakingFeesOperation;
     ChangeStakerOperation public changeStakerOperation;
     DelegateOperation public delegateOperation;
+    ChangeTrueUSDOperation public changeTrueUSDOperation;
 
     modifier onlyAdminOrOwner() {
         require(msg.sender == admin || msg.sender == owner);
@@ -114,6 +121,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
                                             uint deferBlock);
     event ChangeStakerOperationEvent(address newStaker, uint deferBlock);
     event DelegateOperationEvent(DelegateERC20 delegate, uint deferBlock);
+    event ChangeTrueUSDOperationEvent(TrueUSD newContract, uint deferBlock);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
 
     // admin initiates a request to mint _amount TrueUSD for account _to
@@ -186,6 +194,13 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         DelegateOperationEvent(_delegate, deferBlock);
     }
 
+    // admin initiates a request that this contract's trueUSD pointer be updated to newContract
+    function requestReplaceTrueUSD(TrueUSD newContract) public onlyAdminOrOwner {
+        uint deferBlock = computeDeferBlock();
+        changeTrueUSDOperation = ChangeTrueUSDOperation(newContract, admin, deferBlock);
+        ChangeTrueUSDOperationEvent(newContract, deferBlock);
+    }
+
     // after a day, admin finalizes mint request by providing the
     // index of the request (visible in the MintOperationEvent accompanying the original request)
     function finalizeMint(uint index) public onlyAdminOrOwner {
@@ -256,9 +271,17 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     function finalizeDelegation() public onlyAdminOrOwner {
         require(delegateOperation.admin == admin);
         require(delegateOperation.deferBlock <= block.number);
-        address delegate = delegateOperation.delegate;
+        DelegateERC20 delegate = delegateOperation.delegate;
         delete delegateOperation;
         trueUSD.delegateToNewContract(delegate);
+    }
+
+    function finalizeReplaceTrueUSD() public onlyAdminOrOwner {
+        require(changeTrueUSDOperation.admin == admin);
+        require(changeTrueUSDOperation.deferBlock <= block.number);
+        TrueUSD newContract = changeTrueUSDOperation.newContract;
+        delete changeTrueUSDOperation;
+        trueUSD = newContract;
     }
 
     // Owner of this contract (immediately) replaces the current admin with newAdmin
