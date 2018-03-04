@@ -6,8 +6,9 @@ import "../zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import "../zeppelin-solidity/contracts/ownership/HasNoTokens.sol";
 import "./AddressList.sol";
 import "./StandardDelegate.sol";
+import "./CanDelegate.sol";
 
-contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, HasNoEther, HasNoTokens {
+contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, HasNoEther, HasNoTokens, CanDelegate {
     string public constant name = "TrueUSD";
     string public constant symbol = "TUSD";
     uint8 public constant decimals = 18;
@@ -29,14 +30,9 @@ contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, HasNoEther, 
     uint256 public burnFeeFlat = 0;
     address public staker;
 
-    // If this contract needs to be upgraded, the new contract will be stored
-    // in 'delegate' and any ERC20 calls to this contract will be delegated to that one.
-    DelegateERC20 public delegate;
-
     event ChangeBurnBoundsEvent(uint256 newMin, uint256 newMax);
     event Mint(address indexed to, uint256 amount);
     event WipedAccount(address indexed account, uint256 balance);
-    event DelegatedTo(address indexed newContract);
 
     function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList, address _blackList, address _noFeesList) public {
         totalSupply_ = 0;
@@ -80,70 +76,6 @@ contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, HasNoEther, 
         burnMin = newMin;
         burnMax = newMax;
         ChangeBurnBoundsEvent(newMin, newMax);
-    }
-
-    function transfer(address to, uint256 value) public returns (bool) {
-        if (delegate == address(0)) {
-            return super.transfer(to, value);
-        } else {
-            return delegate.delegateTransfer(to, value, msg.sender);
-        }
-    }
-
-    function transferFrom(address from, address to, uint256 value) public returns (bool) {
-        if (delegate == address(0)) {
-            return super.transferFrom(from, to, value);
-        } else {
-            return delegate.delegateTransferFrom(from, to, value, msg.sender);
-        }
-    }
-
-    function balanceOf(address who) public view returns (uint256) {
-        if (delegate == address(0)) {
-            return super.balanceOf(who);
-        } else {
-            return delegate.delegateBalanceOf(who);
-        }
-    }
-
-    function approve(address spender, uint256 value) public returns (bool) {
-        if (delegate == address(0)) {
-            return super.approve(spender, value);
-        } else {
-            return delegate.delegateApprove(spender, value, msg.sender);
-        }
-    }
-
-    function allowance(address _owner, address spender) public view returns (uint256) {
-        if (delegate == address(0)) {
-            return super.allowance(_owner, spender);
-        } else {
-            return delegate.delegateAllowance(_owner, spender);
-        }
-    }
-
-    function totalSupply() public view returns (uint256) {
-        if (delegate == address(0)) {
-            return super.totalSupply();
-        } else {
-            return delegate.delegateTotalSupply();
-        }
-    }
-
-    function increaseApproval(address spender, uint addedValue) public returns (bool) {
-        if (delegate == address(0)) {
-            return super.increaseApproval(spender, addedValue);
-        } else {
-            return delegate.delegateIncreaseApproval(spender, addedValue, msg.sender);
-        }
-    }
-
-    function decreaseApproval(address spender, uint subtractedValue) public returns (bool) {
-        if (delegate == address(0)) {
-            return super.decreaseApproval(spender, subtractedValue);
-        } else {
-            return delegate.delegateDecreaseApproval(spender, subtractedValue, msg.sender);
-        }
     }
 
     // transfer and transferFrom are both dispatched to this function, so we
@@ -198,11 +130,5 @@ contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, HasNoEther, 
     function changeStaker(address newStaker) public onlyOwner {
         require(newStaker != address(0));
         staker = newStaker;
-    }
-
-    // Can undelegate by passing in newContract = address(0)
-    function delegateToNewContract(DelegateERC20 newContract) public onlyOwner {
-        delegate = newContract;
-        DelegatedTo(delegate);
     }
 }
