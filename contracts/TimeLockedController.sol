@@ -41,6 +41,12 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint deferBlock;
     }
 
+    struct ReclaimOperation {
+        Ownable other;
+        address admin;
+        uint deferBlock;
+    }
+
     struct ChangeBurnBoundsOperation {
         uint newMin;
         uint newMax;
@@ -96,6 +102,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     TrueUSD public trueUSD;
     MintOperation[] public mintOperations;
     TransferChildOperation[] public transferChildOperations;
+    ReclaimOperation[] public reclaimOperations;
     ChangeBurnBoundsOperation public changeBurnBoundsOperation;
     ChangeStakingFeesOperation public changeStakingFeesOperation;
     ChangeStakerOperation public changeStakerOperation;
@@ -124,6 +131,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     event MintOperationEvent(address indexed _to, uint256 amount, uint deferBlock, uint opIndex);
     event TransferChildOperationEvent(address indexed _child, address indexed _newOwner, uint deferBlock, uint opIndex);
+    event ReclaimOperationEvent(address indexed other, uint deferBlock, uint opIndex);
     event ChangeBurnBoundsOperationEvent(uint newMin, uint newMax, uint deferBlock);
     event ChangeStakingFeesOperationEvent(uint80 _transferFeeNumerator,
                                             uint80 _transferFeeDenominator,
@@ -156,6 +164,16 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         TransferChildOperation memory op = TransferChildOperation(_child, _newOwner, admin, deferBlock);
         TransferChildOperationEvent(_child, _newOwner, deferBlock, transferChildOperations.length);
         transferChildOperations.push(op);
+    }
+
+    // admin initiates a request to transfer ownership of a contract from trueUSD
+    // to this TimeLockedController. Can be used e.g. to reclaim balance sheet
+    // in order to transfer it to an upgraded TrueUSD contract.
+    function requestReclaim(Ownable other) public onlyAdminOrOwner {
+        uint deferBlock = computeDeferBlock();
+        ReclaimOperation memory op = ReclaimOperation(other, admin, deferBlock);
+        ReclaimOperationEvent(other, deferBlock, reclaimOperations.length);
+        reclaimOperations.push(op);
     }
 
     // admin initiates a request that the minimum and maximum amounts that any TrueUSD user can
@@ -255,6 +273,15 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         address _newOwner = op.newOwner;
         delete transferChildOperations[index];
         _child.transferOwnership(_newOwner);
+    }
+
+    function finalizeReclaim(uint index) public onlyAdminOrOwner {
+        ReclaimOperation memory op = reclaimOperations[index];
+        require(op.admin == admin);
+        require(op.deferBlock <= block.number);
+        Ownable other = op.other;
+        delete reclaimOperations[index];
+        trueUSD.reclaimContract(other);
     }
 
     // after a day, admin finalizes the burn bounds change
