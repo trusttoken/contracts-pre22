@@ -1,5 +1,7 @@
 const AddressList = artifacts.require("AddressList");
 const TrueUSD = artifacts.require("TrueUSD");
+const BalanceSheet = artifacts.require("BalanceSheet");
+const AllowanceSheet = artifacts.require("AllowanceSheet");
 var Web3 = require('web3');
 
 //simplified from https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/test/helpers/expectThrow.js
@@ -18,7 +20,13 @@ contract('TrueUSD', function(accounts) {
         const burnWhiteList = await AddressList.new("Burn whitelist", false, {from: accounts[0]})
         const blackList = await AddressList.new("Blacklist", true, {from: accounts[0]})
         const noFeesList = await AddressList.new("No Fees list", false, {from: accounts[0]})
-        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, noFeesList.address, {gas: 6000000, from: accounts[0]})
+        const balances = await BalanceSheet.new({from: accounts[0]})
+        const allowances = await AllowanceSheet.new({from: accounts[0]})
+        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, noFeesList.address, {gas: 6500000, from: accounts[0]})
+        await balances.transferOwnership(trueUSD.address)
+        await allowances.transferOwnership(trueUSD.address)
+        await trueUSD.setBalanceSheet(balances.address)
+        await trueUSD.setAllowanceSheet(allowances.address)
         await expectThrow(trueUSD.mint(accounts[3], 10, {from: accounts[0]})) //user 3 is not (yet) on whitelist
         await expectThrow(mintWhiteList.changeList(accounts[3], true, {from: accounts[1]})) //user 1 is not the owner
         await mintWhiteList.changeList(accounts[3], true, {from: accounts[0]})

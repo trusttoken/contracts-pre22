@@ -1,5 +1,7 @@
 const AddressList = artifacts.require("AddressList");
 const TrueUSD = artifacts.require("TrueUSD");
+const BalanceSheet = artifacts.require("BalanceSheet");
+const AllowanceSheet = artifacts.require("AllowanceSheet");
 const TimeLockedController = artifacts.require("TimeLockedController");
 var Web3 = require('web3');
 
@@ -19,7 +21,13 @@ contract('TimeLockedController', function(accounts) {
         const burnWhiteList = await AddressList.new("Burn whitelist", false, {from: accounts[0]})
         const blackList = await AddressList.new("Blacklist", true, {from: accounts[0]})
         const noFeesList = await AddressList.new("No Fees list", false, {from: accounts[0]})
-        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, noFeesList.address, {gas: 6000000, from: accounts[0]})
+        const balances = await BalanceSheet.new({from: accounts[0]})
+        const allowances = await AllowanceSheet.new({from: accounts[0]})
+        const trueUSD = await TrueUSD.new(mintWhiteList.address, burnWhiteList.address, blackList.address, noFeesList.address, {gas: 6500000, from: accounts[0]})
+        await balances.transferOwnership(trueUSD.address)
+        await allowances.transferOwnership(trueUSD.address)
+        await trueUSD.setBalanceSheet(balances.address)
+        await trueUSD.setAllowanceSheet(allowances.address)
         await mintWhiteList.changeList(accounts[3], true, {from: accounts[0]})
         async function userHasCoins(id, amount) {
           var balance = await trueUSD.balanceOf(accounts[id])

@@ -1,13 +1,13 @@
 pragma solidity ^0.4.18;
 
-import "zeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
-import "zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
-import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import "zeppelin-solidity/contracts/ownership/Claimable.sol";
+import "../zeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
+import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
+import "../zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import "../zeppelin-solidity/contracts/ownership/HasNoTokens.sol";
 import "./AddressList.sol";
 import "./DelegateERC20.sol";
 
-contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
+contract TrueUSD is PausableToken, BurnableToken, HasNoEther, HasNoTokens {
     string public constant name = "TrueUSD";
     string public constant symbol = "TUSD";
     uint8 public constant decimals = 18;
@@ -63,7 +63,7 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
     function mint(address _to, uint256 _amount) onlyOwner public {
         require(canReceiveMintWhitelist.onList(_to));
         totalSupply_ = totalSupply_.add(_amount);
-        balances[_to] = balances[_to].add(_amount);
+        balances.addBalance(_to, _amount);
         Mint(_to, _amount);
         Transfer(address(0), _to, _amount);
         payStakingFee(_to, _amount, mintFeeNumerator, mintFeeDenominator, mintFeeFlat, 0x0);
@@ -157,7 +157,7 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
     function wipeBlacklistedAccount(address account) public onlyOwner {
         require(blackList.onList(account));
         uint256 oldValue = balanceOf(account);
-        balances[account] = 0;
+        balances.setBalance(account, 0);
         totalSupply_ = totalSupply_.sub(oldValue);
         WipedAccount(account, oldValue);
     }
@@ -168,18 +168,9 @@ contract TrueUSD is PausableToken, BurnableToken, NoOwner, Claimable {
         }
         uint256 stakingFee = value.mul(numerator).div(denominator).add(flatRate);
         if (stakingFee > 0) {
-            transferFromWithoutAllowance(payer, staker, stakingFee);
+            transferAllArgsNoAllowance(payer, staker, stakingFee);
         }
         return stakingFee;
-    }
-
-    // based on 'transfer' in https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/token/ERC20/BasicToken.sol
-    function transferFromWithoutAllowance(address from, address _to, uint256 _value) private {
-        assert(_to != address(0));
-        assert(_value <= balances[from]);
-        balances[from] = balances[from].sub(_value);
-        balances[_to] = balances[_to].add(_value);
-        Transfer(from, _to, _value);
     }
 
     function changeStakingFees(uint80 _transferFeeNumerator,

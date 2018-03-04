@@ -1,0 +1,3 @@
+[submodule "foo"]
+	path = zeppelin-solidity
+	url = https://github.com/trusttoken/zeppelin-solidity.git
