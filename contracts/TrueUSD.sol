@@ -13,7 +13,7 @@ contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, HasNoEther, 
     string public constant symbol = "TUSD";
     uint8 public constant decimals = 18;
 
-    AddressList public canReceiveMintWhitelist;
+    AddressList public canReceiveMintWhiteList;
     AddressList public canBurnWhiteList;
     AddressList public blackList;
     AddressList public noFeesList;
@@ -34,13 +34,16 @@ contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, HasNoEther, 
     event Mint(address indexed to, uint256 amount);
     event WipedAccount(address indexed account, uint256 balance);
 
-    function TrueUSD(address _canMintWhiteList, address _canBurnWhiteList, address _blackList, address _noFeesList) public {
+    function TrueUSD() public {
         totalSupply_ = 0;
-        canReceiveMintWhitelist = AddressList(_canMintWhiteList);
-        canBurnWhiteList = AddressList(_canBurnWhiteList);
-        blackList = AddressList(_blackList);
-        noFeesList = AddressList(_noFeesList);
         staker = msg.sender;
+    }
+
+    function setLists(AddressList _canReceiveMintWhiteList, AddressList _canBurnWhiteList, AddressList _blackList, AddressList _noFeesList) onlyOwner public {
+        canReceiveMintWhiteList = _canReceiveMintWhiteList;
+        canBurnWhiteList = _canBurnWhiteList;
+        blackList = _blackList;
+        noFeesList = _noFeesList;
     }
 
     //Burning functions as withdrawing money from the system. The platform will keep track of who burns coins,
@@ -57,7 +60,7 @@ contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, HasNoEther, 
     //Create _amount new tokens and transfer them to _to.
     //Based on code by OpenZeppelin: https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/token/MintableToken.sol
     function mint(address _to, uint256 _amount) onlyOwner public {
-        require(canReceiveMintWhitelist.onList(_to));
+        require(canReceiveMintWhiteList.onList(_to));
         totalSupply_ = totalSupply_.add(_amount);
         balances.addBalance(_to, _amount);
         Mint(_to, _amount);
