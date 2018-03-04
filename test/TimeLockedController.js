@@ -33,7 +33,7 @@ contract('TimeLockedController', function(accounts) {
           var balance = await trueUSD.balanceOf(accounts[id])
           assert.equal(balance, amount, "userHasCoins fail: actual balance "+balance)
         }
-        const timeLockedController = await TimeLockedController.new(trueUSD.address, {gas: 5000000, from: accounts[0]})
+        const timeLockedController = await TimeLockedController.new(trueUSD.address, {gas: 5500000, from: accounts[0]})
         await mintWhiteList.transferOwnership(timeLockedController.address, {from: accounts[0]})
         await burnWhiteList.transferOwnership(timeLockedController.address, {from: accounts[0]})
         await blackList.transferOwnership(timeLockedController.address, {from: accounts[0]})

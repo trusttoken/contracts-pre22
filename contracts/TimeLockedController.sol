@@ -73,6 +73,12 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint deferBlock;
     }
 
+    struct SetDelegatedFromOperation {
+        address source;
+        address admin;
+        uint deferBlock;
+    }
+
     struct ChangeTrueUSDOperation {
         TrueUSD newContract;
         address admin;
@@ -87,6 +93,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     ChangeStakingFeesOperation public changeStakingFeesOperation;
     ChangeStakerOperation public changeStakerOperation;
     DelegateOperation public delegateOperation;
+    SetDelegatedFromOperation public setDelegatedFromOperation;
     ChangeTrueUSDOperation public changeTrueUSDOperation;
 
     modifier onlyAdminOrOwner() {
@@ -121,6 +128,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
                                             uint deferBlock);
     event ChangeStakerOperationEvent(address newStaker, uint deferBlock);
     event DelegateOperationEvent(DelegateERC20 delegate, uint deferBlock);
+    event SetDelegatedFromOperationEvent(address source, uint deferBlock);
     event ChangeTrueUSDOperationEvent(TrueUSD newContract, uint deferBlock);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
 
@@ -192,6 +200,14 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint deferBlock = computeDeferBlock();
         delegateOperation = DelegateOperation(_delegate, admin, deferBlock);
         DelegateOperationEvent(_delegate, deferBlock);
+    }
+
+    // admin initiates a request that incoming delegate* calls from _source be
+    // accepted by trueUSD
+    function requestDelegatedFrom(address _source) public onlyAdminOrOwner {
+        uint deferBlock = computeDeferBlock();
+        setDelegatedFromOperation = SetDelegatedFromOperation(_source, admin, deferBlock);
+        SetDelegatedFromOperationEvent(_source, deferBlock);
     }
 
     // admin initiates a request that this contract's trueUSD pointer be updated to newContract
@@ -274,6 +290,14 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         DelegateERC20 delegate = delegateOperation.delegate;
         delete delegateOperation;
         trueUSD.delegateToNewContract(delegate);
+    }
+
+    function finalizeSetDelegatedFrom() public onlyAdminOrOwner {
+        require(setDelegatedFromOperation.admin == admin);
+        require(setDelegatedFromOperation.deferBlock <= block.number);
+        address source = setDelegatedFromOperation.source;
+        delete setDelegatedFromOperation;
+        trueUSD.setDelegatedFrom(source);
     }
 
     function finalizeReplaceTrueUSD() public onlyAdminOrOwner {
