@@ -9,8 +9,8 @@ import "./StandardDelegate.sol";
 import "./CanDelegate.sol";
 
 contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, HasNoEther, HasNoTokens, CanDelegate {
-    string public constant name = "TrueUSD";
-    string public constant symbol = "TUSD";
+    string public name = "TrueUSD";
+    string public symbol = "TUSD";
     uint8 public constant decimals = 18;
 
     AddressList public canReceiveMintWhiteList;
@@ -44,6 +44,11 @@ contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, HasNoEther, 
         canBurnWhiteList = _canBurnWhiteList;
         blackList = _blackList;
         noFeesList = _noFeesList;
+    }
+
+    function changeName(string _name, string _symbol) onlyOwner public {
+        name = _name;
+        symbol = _symbol;
     }
 
     //Burning functions as withdrawing money from the system. The platform will keep track of who burns coins,

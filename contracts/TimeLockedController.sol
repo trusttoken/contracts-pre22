@@ -85,6 +85,13 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint deferBlock;
     }
 
+    struct ChangeNameOperation {
+        string name;
+        string symbol;
+        address admin;
+        uint deferBlock;
+    }
+
     address public admin;
     TrueUSD public trueUSD;
     MintOperation[] public mintOperations;
@@ -95,6 +102,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     DelegateOperation public delegateOperation;
     SetDelegatedFromOperation public setDelegatedFromOperation;
     ChangeTrueUSDOperation public changeTrueUSDOperation;
+    ChangeNameOperation public changeNameOperation;
 
     modifier onlyAdminOrOwner() {
         require(msg.sender == admin || msg.sender == owner);
@@ -130,6 +138,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     event DelegateOperationEvent(DelegateERC20 delegate, uint deferBlock);
     event SetDelegatedFromOperationEvent(address source, uint deferBlock);
     event ChangeTrueUSDOperationEvent(TrueUSD newContract, uint deferBlock);
+    event ChangeNameOperationEvent(string name, string symbol, uint deferBlock);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
 
     // admin initiates a request to mint _amount TrueUSD for account _to
@@ -215,6 +224,13 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint deferBlock = computeDeferBlock();
         changeTrueUSDOperation = ChangeTrueUSDOperation(newContract, admin, deferBlock);
         ChangeTrueUSDOperationEvent(newContract, deferBlock);
+    }
+
+    // admin initiates a request that trueUSD's name and symbol be changed
+    function requestNameChange(string name, string symbol) public onlyAdminOrOwner {
+        uint deferBlock = computeDeferBlock();
+        changeNameOperation = ChangeNameOperation(name, symbol, admin, deferBlock);
+        ChangeNameOperationEvent(name, symbol, deferBlock);
     }
 
     // after a day, admin finalizes mint request by providing the
@@ -306,6 +322,15 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         TrueUSD newContract = changeTrueUSDOperation.newContract;
         delete changeTrueUSDOperation;
         trueUSD = newContract;
+    }
+
+    function finalizeChangeName() public onlyAdminOrOwner {
+        require(changeNameOperation.admin == admin);
+        require(changeNameOperation.deferBlock <= block.number);
+        string memory name = changeNameOperation.name;
+        string memory symbol = changeNameOperation.symbol;
+        delete changeNameOperation;
+        trueUSD.changeName(name, symbol);
     }
 
     // Owner of this contract (immediately) replaces the current admin with newAdmin
