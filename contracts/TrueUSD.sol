@@ -5,9 +5,9 @@ import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "../zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import "../zeppelin-solidity/contracts/ownership/HasNoTokens.sol";
 import "./AddressList.sol";
-import "./DelegateERC20.sol";
+import "./StandardDelegate.sol";
 
-contract TrueUSD is PausableToken, BurnableToken, HasNoEther, HasNoTokens {
+contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, HasNoEther, HasNoTokens {
     string public constant name = "TrueUSD";
     string public constant symbol = "TUSD";
     uint8 public constant decimals = 18;
@@ -83,24 +83,16 @@ contract TrueUSD is PausableToken, BurnableToken, HasNoEther, HasNoTokens {
     }
 
     function transfer(address to, uint256 value) public returns (bool) {
-        require(!blackList.onList(msg.sender));
-        require(!blackList.onList(to));
         if (delegate == address(0)) {
-            bool result = super.transfer(to, value);
-            payStakingFee(to, value, transferFeeNumerator, transferFeeDenominator, 0, msg.sender);
-            return result;
+            return super.transfer(to, value);
         } else {
             return delegate.delegateTransfer(to, value, msg.sender);
         }
     }
 
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
-        require(!blackList.onList(from));
-        require(!blackList.onList(to));
         if (delegate == address(0)) {
-            bool result = super.transferFrom(from, to, value);
-            payStakingFee(to, value, transferFeeNumerator, transferFeeDenominator, 0, from);
-            return result;
+            return super.transferFrom(from, to, value);
         } else {
             return delegate.delegateTransferFrom(from, to, value, msg.sender);
         }
@@ -154,6 +146,15 @@ contract TrueUSD is PausableToken, BurnableToken, HasNoEther, HasNoTokens {
         }
     }
 
+    // transfer and transferFrom are both dispatched to this function, so we
+    // check blacklist and pay staking fee here.
+    function transferAllArgsNoAllowance(address _from, address _to, uint256 _value) internal {
+        require(!blackList.onList(_from));
+        require(!blackList.onList(_to));
+        super.transferAllArgsNoAllowance(_from, _to, _value);
+        payStakingFee(_to, _value, transferFeeNumerator, transferFeeDenominator, 0, _from);
+    }
+
     function wipeBlacklistedAccount(address account) public onlyOwner {
         require(blackList.onList(account));
         uint256 oldValue = balanceOf(account);
@@ -168,7 +169,7 @@ contract TrueUSD is PausableToken, BurnableToken, HasNoEther, HasNoTokens {
         }
         uint256 stakingFee = value.mul(numerator).div(denominator).add(flatRate);
         if (stakingFee > 0) {
-            transferAllArgsNoAllowance(payer, staker, stakingFee);
+            super.transferAllArgsNoAllowance(payer, staker, stakingFee);
         }
         return stakingFee;
     }
