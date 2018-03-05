@@ -34,7 +34,7 @@ contract('TimeLockedController', function(accounts) {
           var balance = await trueUSD.balanceOf(accounts[id])
           assert.equal(balance, amount, "userHasCoins fail: actual balance "+balance)
         }
-        const timeLockedController = await TimeLockedController.new(trueUSD.address, {gas: 6500000, from: accounts[0]})
+        const timeLockedController = await TimeLockedController.new({gas: 6500000, from: accounts[0]})
         await mintWhiteList.transferOwnership(timeLockedController.address, {from: accounts[0]})
         await burnWhiteList.transferOwnership(timeLockedController.address, {from: accounts[0]})
         await blackList.transferOwnership(timeLockedController.address, {from: accounts[0]})
@@ -45,6 +45,7 @@ contract('TimeLockedController', function(accounts) {
         await timeLockedController.issueClaimOwnership(burnWhiteList.address, {from: accounts[0]})
         await timeLockedController.issueClaimOwnership(blackList.address, {from: accounts[0]})
         await timeLockedController.issueClaimOwnership(trueUSD.address, {from: accounts[0]})
+        await timeLockedController.setTrueUSD(trueUSD.address)
         await expectThrow(trueUSD.mint(accounts[3], 10, {from: accounts[0]})) //user 0 is no longer the owner
         await timeLockedController.requestMint(accounts[3], 9, {from: accounts[0]})
         await timeLockedController.finalizeMint(0, {from: accounts[0]}) // the owner can finalize immediately
@@ -73,25 +74,20 @@ contract('TimeLockedController', function(accounts) {
         await userHasCoins(3, 40219)
         await timeLockedController.transferAdminship(accounts[2], {from: accounts[0]})
         await expectThrow(timeLockedController.finalizeMint(2, {from: accounts[3]})) //can't finalize because admin has been changed
-        await expectThrow(timeLockedController.requestTransferChild(trueUSD.address, accounts[2], {from: accounts[1]})) //only admin/owner can request
-        await timeLockedController.requestTransferChild(trueUSD.address, accounts[2], {from: accounts[2]})
-        await timeLockedController.requestTransferChild(mintWhiteList.address, accounts[2], {from: accounts[2]})
-        await timeLockedController.requestTransferChild(burnWhiteList.address, accounts[2], {from: accounts[2]})
-        await timeLockedController.requestTransferChild(blackList.address, accounts[2], {from: accounts[2]})
+        await expectThrow(timeLockedController.transferChild(trueUSD.address, accounts[2], {from: accounts[1]})) //only owner
         await timeLockedController.requestMint(accounts[3], 500000, {from: accounts[2]})
-        await timeLockedController.requestMint(accounts[3], 6000000, {from: accounts[2]})
-        await expectThrow(timeLockedController.finalizeTransferChild(0, {from: accounts[2]})) //too early to finalize
+        await timeLockedController.transferChild(trueUSD.address, accounts[2], {from: accounts[0]})
+        await timeLockedController.transferChild(mintWhiteList.address, accounts[2], {from: accounts[0]})
+        await timeLockedController.transferChild(burnWhiteList.address, accounts[2], {from: accounts[0]})
+        await timeLockedController.transferChild(blackList.address, accounts[2], {from: accounts[0]})
+        await trueUSD.claimOwnership({from: accounts[2]})
+        await expectThrow(timeLockedController.finalizeMint(4, {from: accounts[2]})) //timeLockedController is no longer the owner of trueUSD
+        await trueUSD.transferOwnership(timeLockedController.address, {from: accounts[2]})
+        await timeLockedController.issueClaimOwnership(trueUSD.address, {from: accounts[0]})
         for (var i = 0; i < blocksDelay; i++) {
           web3.currentProvider.send({jsonrpc: "2.0", method: "evm_mine", params: [], id: 0})
         }
-        await timeLockedController.finalizeTransferChild(0, {from: accounts[0]})
-        await timeLockedController.finalizeMint(4, {from: accounts[2]}) // can still finalize because ownership isn't transferred until claimed
+        await timeLockedController.finalizeMint(4, {from: accounts[2]})
         await userHasCoins(3, 540219)
-        await trueUSD.claimOwnership({from: accounts[2]})
-        await expectThrow(timeLockedController.finalizeMint(5, {from: accounts[2]})) //timeLockedController is no longer the owner of trueUSD
-        await trueUSD.transferOwnership(timeLockedController.address, {from: accounts[2]})
-        await timeLockedController.issueClaimOwnership(trueUSD.address, {from: accounts[0]})
-        await timeLockedController.finalizeMint(5, {from: accounts[2]})
-        await userHasCoins(3, 6540219)
     })
 })
