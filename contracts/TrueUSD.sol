@@ -86,7 +86,13 @@ contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, NoOwner, Can
         ChangeBurnBoundsEvent(newMin, newMax);
     }
 
-    // transfer and transferFrom are both dispatched to this function, so we
+    // A blacklisted address can't call transferFrom
+    function transferAllArgsYesAllowance(address _from, address _to, uint256 _value, address spender) internal {
+        require(!blackList.onList(spender));
+        super.transferAllArgsYesAllowance(_from, _to, _value, spender);
+    }
+
+    // transfer and transferFrom both ultimately call this function, so we
     // check blacklist and pay staking fee here.
     function transferAllArgsNoAllowance(address _from, address _to, uint256 _value) internal {
         require(!blackList.onList(_from));
