@@ -11,7 +11,7 @@ import "./NamableAddressList.sol";
 // contract and TrueUSD's AddressLists. It splits ownership into two accounts: an "admin" account and an
 // "owner" account. The admin of TimeLockedController can initiate minting TrueUSD.
 // However, these transactions must be stored
-// for ~1 day's worth of blocks first before they can be forwarded to the
+// for 1 day first before they can be forwarded to the
 // TrueUSD contract. In the event that the admin account is compromised, this
 // setup allows the owner of TimeLockedController (which can be stored extremely
 // securely since it is never used in normal operation) to replace the admin.
@@ -23,15 +23,13 @@ import "./NamableAddressList.sol";
 contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     using SafeMath for uint256;
 
-    // 24 hours, assuming a 15 second blocktime.
-    // As long as this isn't too far off from reality it doesn't really matter.
-    uint256 public constant blocksDelay = 24*60*60/15;
+    uint256 public constant MINT_DELAY = 1 days;
 
     struct MintOperation {
         address to;
         uint256 amount;
         address admin;
-        uint256 deferBlock;
+        uint256 releaseTimestamp;
     }
 
     address public admin;
@@ -43,7 +41,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         _;
     }
 
-    event MintOperationEvent(address indexed _to, uint256 amount, uint256 deferBlock, uint256 opIndex);
+    event MintOperationEvent(address indexed _to, uint256 amount, uint256 releaseTimestamp, uint256 opIndex);
     event TransferChildEvent(address indexed _child, address indexed _newOwner);
     event ReclaimEvent(address indexed other);
     event ChangeBurnBoundsEvent(uint256 newMin, uint256 newMax);
@@ -68,12 +66,12 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     // admin initiates a request to mint _amount TrueUSD for account _to
     function requestMint(address _to, uint256 _amount) public onlyAdminOrOwner {
-        uint256 deferBlock = block.number;
+        uint256 releaseTimestamp = block.timestamp;
         if (msg.sender != owner) {
-            deferBlock = deferBlock.add(blocksDelay);
+            releaseTimestamp = releaseTimestamp.add(MINT_DELAY);
         }
-        MintOperation memory op = MintOperation(_to, _amount, admin, deferBlock);
-        MintOperationEvent(_to, _amount, deferBlock, mintOperations.length);
+        MintOperation memory op = MintOperation(_to, _amount, admin, releaseTimestamp);
+        MintOperationEvent(_to, _amount, releaseTimestamp, mintOperations.length);
         mintOperations.push(op);
     }
 
@@ -82,7 +80,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     function finalizeMint(uint256 index) public onlyAdminOrOwner {
         MintOperation memory op = mintOperations[index];
         require(op.admin == admin); //checks that the requester's adminship has not been revoked
-        require(op.deferBlock <= block.number); //checks that enough time has elapsed
+        require(op.releaseTimestamp <= block.timestamp); //checks that enough time has elapsed
         address to = op.to;
         uint256 amount = op.amount;
         delete mintOperations[index];
