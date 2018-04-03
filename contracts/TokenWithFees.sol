@@ -1,10 +1,10 @@
 pragma solidity ^0.4.18;
 
 import "../zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
-import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "./AddressList.sol";
+import "./StandardDelegate.sol";
 
-contract TokenWithFees is MintableToken, BurnableToken {
+contract TokenWithFees is MintableToken, StandardDelegate {
     AddressList public noFeesList;
 
     uint80 public transferFeeNumerator = 7;
@@ -21,6 +21,10 @@ contract TokenWithFees is MintableToken, BurnableToken {
         staker = msg.sender;
     }
 
+    function setNoFeesList(AddressList _noFeesList) onlyOwner public {
+        noFeesList = _noFeesList;
+    }
+
     function burnAllArgs(address burner, uint256 _value) internal {
         uint256 fee = payStakingFee(burner, _value, burnFeeNumerator, burnFeeDenominator, burnFeeFlat, 0x0);
         uint256 remaining = _value.sub(fee);
@@ -32,6 +36,7 @@ contract TokenWithFees is MintableToken, BurnableToken {
         payStakingFee(_to, _amount, mintFeeNumerator, mintFeeDenominator, mintFeeFlat, 0x0);
     }
 
+    // transfer and transferFrom both call this function, so pay staking fee here.
     function transferAllArgsNoAllowance(address _from, address _to, uint256 _value) internal {
         super.transferAllArgsNoAllowance(_from, _to, _value);
         payStakingFee(_to, _value, transferFeeNumerator, transferFeeDenominator, 0, _from);

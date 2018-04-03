@@ -1,8 +1,8 @@
 pragma solidity ^0.4.18;
 
-// Interface implemented by BurnableTokens that are the *target* of
+// Interface implemented by tokens that are the *target* of a BurnableToken's
 // delegation. That is, if we want to replace BurnableToken X by
-// BurnableToken Y but for convenience we'd like users of X
+// Y but for convenience we'd like users of X
 // to be able to keep using it and it will just forward calls to Y,
 // then X should extend CanDelegate and Y should extend DelegateBurnable.
 // Most ERC20 calls use the value of msg.sender to figure out e.g. whose
@@ -12,7 +12,7 @@ pragma solidity ^0.4.18;
 // we do not expect all regular users to learn about Y and change accordingly,
 // but we do require the *owner* of X to now use Y instead so ownerOnly
 // functions are not delegated and should be disabled instead.
-contract DelegateBurnable {
+interface DelegateBurnable {
   function delegateTotalSupply() public view returns (uint256);
   function delegateBalanceOf(address who) public view returns (uint256);
   function delegateTransfer(address to, uint256 value, address origSender) public returns (bool);

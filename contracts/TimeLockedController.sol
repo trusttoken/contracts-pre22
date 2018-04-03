@@ -173,7 +173,8 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     // Swap out TrueUSD's address lists
     function setLists(AddressList _canReceiveMintWhiteList, AddressList _canBurnWhiteList, AddressList _blackList, AddressList _noFeesList) onlyOwner public {
-        trueUSD.setLists(_canReceiveMintWhiteList, _canBurnWhiteList, _blackList, _noFeesList);
+        trueUSD.setLists(_canReceiveMintWhiteList, _canBurnWhiteList, _blackList);
+        trueUSD.setNoFeesList(_noFeesList);
     }
 
     // Update a whitelist/blacklist

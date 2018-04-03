@@ -1,10 +1,10 @@
 pragma solidity ^0.4.18;
 
-import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
-import "../zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "./BurnableTokenWithBounds.sol";
 import "./DelegateBurnable.sol";
+import "../zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 
-contract StandardDelegate is StandardToken, BurnableToken, DelegateBurnable {
+contract StandardDelegate is DelegateBurnable, StandardToken, BurnableTokenWithBounds {
     address public delegatedFrom;
 
     modifier onlySender(address source) {
