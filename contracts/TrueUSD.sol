@@ -2,13 +2,14 @@ pragma solidity ^0.4.18;
 
 import "../zeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
 import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
+import "../zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 // TrueUSD *is* supposed to own 'balances' and 'allowances', but it needs to be able to relinquish them:
 import "../zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import "./AddressList.sol";
 import "./StandardDelegate.sol";
 import "./CanDelegate.sol";
 
-contract TrueUSD is StandardDelegate, PausableToken, NoOwner, CanDelegate {
+contract TrueUSD is StandardDelegate, PausableToken, MintableToken, NoOwner, CanDelegate {
     string public name = "TrueUSD";
     string public symbol = "TUSD";
     uint8 public constant decimals = 18;
@@ -64,13 +65,9 @@ contract TrueUSD is StandardDelegate, PausableToken, NoOwner, CanDelegate {
     }
 
     //Create _amount new tokens and transfer them to _to.
-    //Based on code by OpenZeppelin: https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/token/MintableToken.sol
-    function mint(address _to, uint256 _amount) onlyOwner public {
+    function mint(address _to, uint256 _amount) onlyOwner public returns (bool) {
         require(canReceiveMintWhiteList.onList(_to));
-        totalSupply_ = totalSupply_.add(_amount);
-        balances.addBalance(_to, _amount);
-        Mint(_to, _amount);
-        Transfer(address(0), _to, _amount);
+        super.mint(_to, _amount);
         payStakingFee(_to, _amount, mintFeeNumerator, mintFeeDenominator, mintFeeFlat, 0x0);
     }
 
