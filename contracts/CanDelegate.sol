@@ -1,17 +1,18 @@
 pragma solidity ^0.4.18;
 
 import "../zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "./DelegateERC20.sol";
+import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
+import "./DelegateBurnable.sol";
 
-contract CanDelegate is StandardToken {
+contract CanDelegate is StandardToken, BurnableToken {
     // If this contract needs to be upgraded, the new contract will be stored
-    // in 'delegate' and any ERC20 calls to this contract will be delegated to that one.
-    DelegateERC20 public delegate;
+    // in 'delegate' and any BurnableToken calls to this contract will be delegated to that one.
+    DelegateBurnable public delegate;
 
     event DelegatedTo(address indexed newContract);
 
     // Can undelegate by passing in newContract = address(0)
-    function delegateToNewContract(DelegateERC20 newContract) public onlyOwner {
+    function delegateToNewContract(DelegateBurnable newContract) public onlyOwner {
         delegate = newContract;
         DelegatedTo(delegate);
     }
@@ -78,6 +79,14 @@ contract CanDelegate is StandardToken {
             return super.decreaseApproval(spender, subtractedValue);
         } else {
             return delegate.delegateDecreaseApproval(spender, subtractedValue, msg.sender);
+        }
+    }
+
+    function burn(uint256 value) public {
+        if (delegate == address(0)) {
+            super.burn(value);
+        } else {
+            delegate.delegateBurn(value, msg.sender);
         }
     }
 }

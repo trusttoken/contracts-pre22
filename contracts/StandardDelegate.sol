@@ -1,9 +1,10 @@
 pragma solidity ^0.4.18;
 
+import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "../zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "./DelegateERC20.sol";
+import "./DelegateBurnable.sol";
 
-contract StandardDelegate is StandardToken, DelegateERC20 {
+contract StandardDelegate is StandardToken, BurnableToken, DelegateBurnable {
     address public delegatedFrom;
 
     modifier onlySender(address source) {
@@ -51,5 +52,9 @@ contract StandardDelegate is StandardToken, DelegateERC20 {
     function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) onlySender(delegatedFrom) public returns (bool) {
         decreaseApprovalAllArgs(spender, subtractedValue, origSender);
         return true;
+    }
+
+    function delegateBurn(uint256 value, address origSender) onlySender(delegatedFrom) public {
+        burnAllArgs(origSender, value);
     }
 }

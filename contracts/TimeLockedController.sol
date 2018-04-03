@@ -56,7 +56,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
                                             uint80 _burnFeeDenominator,
                                             uint256 _burnFeeFlat);
     event ChangeStakerEvent(address newStaker);
-    event DelegateEvent(DelegateERC20 delegate);
+    event DelegateEvent(DelegateBurnable delegate);
     event SetDelegatedFromEvent(address source);
     event ChangeTrueUSDEvent(TrueUSD newContract);
     event ChangeNameEvent(string name, string symbol);
@@ -140,8 +140,8 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         trueUSD.changeStaker(newStaker);
     }
 
-    // Future ERC20 calls to trueUSD be delegated to _delegate
-    function delegateToNewContract(DelegateERC20 delegate) public onlyOwner {
+    // Future BurnableToken calls to trueUSD will be delegated to _delegate
+    function delegateToNewContract(DelegateBurnable delegate) public onlyOwner {
         DelegateEvent(delegate);
         trueUSD.delegateToNewContract(delegate);
     }

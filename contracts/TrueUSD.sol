@@ -8,7 +8,7 @@ import "./AddressList.sol";
 import "./StandardDelegate.sol";
 import "./CanDelegate.sol";
 
-contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, NoOwner, CanDelegate {
+contract TrueUSD is StandardDelegate, PausableToken, NoOwner, CanDelegate {
     string public name = "TrueUSD";
     string public symbol = "TUSD";
     uint8 public constant decimals = 18;
@@ -53,13 +53,14 @@ contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, NoOwner, Can
 
     //Burning functions as withdrawing money from the system. The platform will keep track of who burns coins,
     //and will send them back the equivalent amount of money (rounded down to the nearest cent).
-    function burn(uint256 _value) public {
-        require(canBurnWhiteList.onList(msg.sender));
+    //The API for burning is inherited: burn(uint256 _value)
+    function burnAllArgs(address burner, uint256 _value) internal {
+        require(canBurnWhiteList.onList(burner));
         require(_value >= burnMin);
         require(_value <= burnMax);
-        uint256 fee = payStakingFee(msg.sender, _value, burnFeeNumerator, burnFeeDenominator, burnFeeFlat, 0x0);
+        uint256 fee = payStakingFee(burner, _value, burnFeeNumerator, burnFeeDenominator, burnFeeFlat, 0x0);
         uint256 remaining = _value.sub(fee);
-        super.burn(remaining);
+        super.burnAllArgs(burner, remaining);
     }
 
     //Create _amount new tokens and transfer them to _to.
