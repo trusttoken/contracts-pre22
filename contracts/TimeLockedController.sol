@@ -167,7 +167,9 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         trueUSD.changeName(name, symbol);
     }
 
-    // Replace the current admin with newAdmin
+    // Replace the current admin with newAdmin. This should be rare (e.g. if admin
+    // is compromised), and will invalidate all pending mint operations (including
+    // any the owner may have made and not yet finalized)
     function transferAdminship(address newAdmin) public onlyOwner {
         require(newAdmin != 0x0);
         AdminshipTransferred(admin, newAdmin);
