@@ -15,11 +15,11 @@ pragma solidity ^0.4.18;
 interface DelegateBurnable {
   function delegateTotalSupply() public view returns (uint256);
   function delegateBalanceOf(address who) public view returns (uint256);
-  function delegateTransfer(address to, uint256 value, address origSender) public returns (bool);
+  function delegateTransferAllArgs(address origSender, address to, uint256 value) public;
   function delegateAllowance(address owner, address spender) public view returns (uint256);
-  function delegateTransferFrom(address from, address to, uint256 value, address origSender) public returns (bool);
-  function delegateApprove(address spender, uint256 value, address origSender) public returns (bool);
-  function delegateIncreaseApproval(address spender, uint256 addedValue, address origSender) public returns (bool);
-  function delegateDecreaseApproval(address spender, uint256 subtractedValue, address origSender) public returns (bool);
-  function delegateBurn(uint256 value, address origSender) public;
+  function delegateTransferFromAllArgs(address from, address to, uint256 value, address origSender) public;
+  function delegateApproveAllArgs(address spender, uint256 value, address origSender) public;
+  function delegateIncreaseApprovalAllArgs(address spender, uint256 addedValue, address origSender) public;
+  function delegateDecreaseApprovalAllArgs(address spender, uint256 subtractedValue, address origSender) public;
+  function delegateBurnAllArgs(address burner, uint256 _value) public;
 }

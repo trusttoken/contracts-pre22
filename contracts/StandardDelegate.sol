@@ -25,36 +25,31 @@ contract StandardDelegate is DelegateBurnable, StandardToken, BurnableTokenWithB
         return balanceOf(who);
     }
 
-    function delegateTransfer(address to, uint256 value, address origSender) onlySender(delegatedFrom) public returns (bool) {
-        transferAllArgsNoAllowance(origSender, to, value);
-        return true;
+    function delegateTransferAllArgs(address to, uint256 value, address origSender) onlySender(delegatedFrom) public {
+        transferAllArgs(origSender, to, value);
     }
 
     function delegateAllowance(address owner, address spender) public view returns (uint256) {
         return allowance(owner, spender);
     }
 
-    function delegateTransferFrom(address from, address to, uint256 value, address origSender) onlySender(delegatedFrom) public returns (bool) {
-        transferAllArgsYesAllowance(from, to, value, origSender);
-        return true;
+    function delegateTransferFromAllArgs(address from, address to, uint256 value, address origSender) onlySender(delegatedFrom) public {
+        transferFromAllArgs(from, to, value, origSender);
     }
 
-    function delegateApprove(address spender, uint256 value, address origSender) onlySender(delegatedFrom) public returns (bool) {
+    function delegateApproveAllArgs(address spender, uint256 value, address origSender) onlySender(delegatedFrom) public {
         approveAllArgs(spender, value, origSender);
-        return true;
     }
 
-    function delegateIncreaseApproval(address spender, uint256 addedValue, address origSender) onlySender(delegatedFrom) public returns (bool) {
+    function delegateIncreaseApprovalAllArgs(address spender, uint256 addedValue, address origSender) onlySender(delegatedFrom) public {
         increaseApprovalAllArgs(spender, addedValue, origSender);
-        return true;
     }
 
-    function delegateDecreaseApproval(address spender, uint256 subtractedValue, address origSender) onlySender(delegatedFrom) public returns (bool) {
+    function delegateDecreaseApprovalAllArgs(address spender, uint256 subtractedValue, address origSender) onlySender(delegatedFrom) public {
         decreaseApprovalAllArgs(spender, subtractedValue, origSender);
-        return true;
     }
 
-    function delegateBurn(uint256 value, address origSender) onlySender(delegatedFrom) public {
+    function delegateBurnAllArgs(uint256 value, address origSender) onlySender(delegatedFrom) public {
         burnAllArgs(origSender, value);
     }
 }

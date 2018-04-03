@@ -37,8 +37,8 @@ contract TokenWithFees is MintableToken, StandardDelegate {
     }
 
     // transfer and transferFrom both call this function, so pay staking fee here.
-    function transferAllArgsNoAllowance(address _from, address _to, uint256 _value) internal {
-        super.transferAllArgsNoAllowance(_from, _to, _value);
+    function transferAllArgs(address _from, address _to, uint256 _value) internal {
+        super.transferAllArgs(_from, _to, _value);
         payStakingFee(_to, _value, transferFeeNumerator, transferFeeDenominator, 0, _from);
     }
 
@@ -48,7 +48,7 @@ contract TokenWithFees is MintableToken, StandardDelegate {
         }
         uint256 stakingFee = value.mul(numerator).div(denominator).add(flatRate);
         if (stakingFee > 0) {
-            super.transferAllArgsNoAllowance(payer, staker, stakingFee);
+            super.transferAllArgs(payer, staker, stakingFee);
         }
         return stakingFee;
     }

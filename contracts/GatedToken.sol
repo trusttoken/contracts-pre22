@@ -29,16 +29,16 @@ contract GatedToken is TokenWithFees {
     }
 
     // A blacklisted address can't call transferFrom
-    function transferAllArgsYesAllowance(address _from, address _to, uint256 _value, address spender) internal {
+    function transferFromAllArgs(address _from, address _to, uint256 _value, address spender) internal {
         require(!blackList.onList(spender));
-        super.transferAllArgsYesAllowance(_from, _to, _value, spender);
+        super.transferFromAllArgs(_from, _to, _value, spender);
     }
 
     // transfer and transferFrom both call this function, so check blacklist here.
-    function transferAllArgsNoAllowance(address _from, address _to, uint256 _value) internal {
+    function transferAllArgs(address _from, address _to, uint256 _value) internal {
         require(!blackList.onList(_from));
         require(!blackList.onList(_to));
-        super.transferAllArgsNoAllowance(_from, _to, _value);
+        super.transferAllArgs(_from, _to, _value);
     }
 
     function wipeBlacklistedAccount(address account) public onlyOwner {

@@ -17,19 +17,19 @@ contract CanDelegate is GatedToken {
     }
 
     // If a delegate has been designated, all ERC20 calls are forwarded to it
-    function transfer(address to, uint256 value) public returns (bool) {
+    function transferAllArgs(address from, address to, uint256 value) internal {
         if (delegate == address(0)) {
-            return super.transfer(to, value);
+            super.transferAllArgs(from, to, value);
         } else {
-            return delegate.delegateTransfer(to, value, msg.sender);
+            delegate.delegateTransferAllArgs(from, to, value);
         }
     }
 
-    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+    function transferFromAllArgs(address from, address to, uint256 value, address spender) internal {
         if (delegate == address(0)) {
-            return super.transferFrom(from, to, value);
+            super.transferFromAllArgs(from, to, value, spender);
         } else {
-            return delegate.delegateTransferFrom(from, to, value, msg.sender);
+            delegate.delegateTransferFromAllArgs(from, to, value, spender);
         }
     }
 
@@ -41,11 +41,11 @@ contract CanDelegate is GatedToken {
         }
     }
 
-    function approve(address spender, uint256 value) public returns (bool) {
+    function approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
         if (delegate == address(0)) {
-            return super.approve(spender, value);
+            super.approveAllArgs(_spender, _value, _tokenHolder);
         } else {
-            return delegate.delegateApprove(spender, value, msg.sender);
+            delegate.delegateApproveAllArgs(_spender, _value, _tokenHolder);
         }
     }
 
@@ -65,27 +65,27 @@ contract CanDelegate is GatedToken {
         }
     }
 
-    function increaseApproval(address spender, uint256 addedValue) public returns (bool) {
+    function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address tokenHolder) internal {
         if (delegate == address(0)) {
-            return super.increaseApproval(spender, addedValue);
+            super.increaseApprovalAllArgs(_spender, _addedValue, tokenHolder);
         } else {
-            return delegate.delegateIncreaseApproval(spender, addedValue, msg.sender);
+            delegate.delegateIncreaseApprovalAllArgs(_spender, _addedValue, tokenHolder);
         }
     }
 
-    function decreaseApproval(address spender, uint256 subtractedValue) public returns (bool) {
+    function decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address tokenHolder) internal {
         if (delegate == address(0)) {
-            return super.decreaseApproval(spender, subtractedValue);
+            super.decreaseApprovalAllArgs(_spender, _subtractedValue, tokenHolder);
         } else {
-            return delegate.delegateDecreaseApproval(spender, subtractedValue, msg.sender);
+            delegate.delegateDecreaseApprovalAllArgs(_spender, _subtractedValue, tokenHolder);
         }
     }
 
-    function burn(uint256 value) public {
+    function burnAllArgs(address burner, uint256 value) internal {
         if (delegate == address(0)) {
-            super.burn(value);
+            super.burnAllArgs(burner, value);
         } else {
-            delegate.delegateBurn(value, msg.sender);
+            delegate.delegateBurnAllArgs(burner, value);
         }
     }
 }
