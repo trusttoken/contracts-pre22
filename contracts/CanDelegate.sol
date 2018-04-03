@@ -65,7 +65,7 @@ contract CanDelegate is GatedToken {
         }
     }
 
-    function increaseApproval(address spender, uint addedValue) public returns (bool) {
+    function increaseApproval(address spender, uint256 addedValue) public returns (bool) {
         if (delegate == address(0)) {
             return super.increaseApproval(spender, addedValue);
         } else {
@@ -73,7 +73,7 @@ contract CanDelegate is GatedToken {
         }
     }
 
-    function decreaseApproval(address spender, uint subtractedValue) public returns (bool) {
+    function decreaseApproval(address spender, uint256 subtractedValue) public returns (bool) {
         if (delegate == address(0)) {
             return super.decreaseApproval(spender, subtractedValue);
         } else {

@@ -7,13 +7,13 @@ import "./StandardDelegate.sol";
 contract TokenWithFees is MintableToken, StandardDelegate {
     AddressList public noFeesList;
 
-    uint80 public transferFeeNumerator = 7;
-    uint80 public transferFeeDenominator = 10000;
-    uint80 public mintFeeNumerator = 0;
-    uint80 public mintFeeDenominator = 10000;
+    uint256 public transferFeeNumerator = 7;
+    uint256 public transferFeeDenominator = 10000;
+    uint256 public mintFeeNumerator = 0;
+    uint256 public mintFeeDenominator = 10000;
     uint256 public mintFeeFlat = 0;
-    uint80 public burnFeeNumerator = 0;
-    uint80 public burnFeeDenominator = 10000;
+    uint256 public burnFeeNumerator = 0;
+    uint256 public burnFeeDenominator = 10000;
     uint256 public burnFeeFlat = 0;
     address public staker;
 
@@ -42,7 +42,7 @@ contract TokenWithFees is MintableToken, StandardDelegate {
         payStakingFee(_to, _value, transferFeeNumerator, transferFeeDenominator, 0, _from);
     }
 
-    function payStakingFee(address payer, uint256 value, uint80 numerator, uint80 denominator, uint256 flatRate, address otherParticipant) private returns (uint256) {
+    function payStakingFee(address payer, uint256 value, uint256 numerator, uint256 denominator, uint256 flatRate, address otherParticipant) private returns (uint256) {
         if (noFeesList.onList(payer) || noFeesList.onList(otherParticipant)) {
             return 0;
         }
@@ -53,14 +53,14 @@ contract TokenWithFees is MintableToken, StandardDelegate {
         return stakingFee;
     }
 
-    function changeStakingFees(uint80 _transferFeeNumerator,
-                                 uint80 _transferFeeDenominator,
-                                 uint80 _mintFeeNumerator,
-                                 uint80 _mintFeeDenominator,
-                                 uint256 _mintFeeFlat,
-                                 uint80 _burnFeeNumerator,
-                                 uint80 _burnFeeDenominator,
-                                 uint256 _burnFeeFlat) public onlyOwner {
+    function changeStakingFees(uint256 _transferFeeNumerator,
+                               uint256 _transferFeeDenominator,
+                               uint256 _mintFeeNumerator,
+                               uint256 _mintFeeDenominator,
+                               uint256 _mintFeeFlat,
+                               uint256 _burnFeeNumerator,
+                               uint256 _burnFeeDenominator,
+                               uint256 _burnFeeFlat) public onlyOwner {
         require(_transferFeeDenominator != 0);
         require(_mintFeeDenominator != 0);
         require(_burnFeeDenominator != 0);

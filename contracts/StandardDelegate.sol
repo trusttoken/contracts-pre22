@@ -44,12 +44,12 @@ contract StandardDelegate is DelegateBurnable, StandardToken, BurnableTokenWithB
         return true;
     }
 
-    function delegateIncreaseApproval(address spender, uint addedValue, address origSender) onlySender(delegatedFrom) public returns (bool) {
+    function delegateIncreaseApproval(address spender, uint256 addedValue, address origSender) onlySender(delegatedFrom) public returns (bool) {
         increaseApprovalAllArgs(spender, addedValue, origSender);
         return true;
     }
 
-    function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) onlySender(delegatedFrom) public returns (bool) {
+    function delegateDecreaseApproval(address spender, uint256 subtractedValue, address origSender) onlySender(delegatedFrom) public returns (bool) {
         decreaseApprovalAllArgs(spender, subtractedValue, origSender);
         return true;
     }

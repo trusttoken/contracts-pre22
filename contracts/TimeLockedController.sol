@@ -25,13 +25,13 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     // 24 hours, assuming a 15 second blocktime.
     // As long as this isn't too far off from reality it doesn't really matter.
-    uint public constant blocksDelay = 24*60*60/15;
+    uint256 public constant blocksDelay = 24*60*60/15;
 
     struct MintOperation {
         address to;
         uint256 amount;
         address admin;
-        uint deferBlock;
+        uint256 deferBlock;
     }
 
     address public admin;
@@ -43,17 +43,17 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         _;
     }
 
-    event MintOperationEvent(address indexed _to, uint256 amount, uint deferBlock, uint opIndex);
+    event MintOperationEvent(address indexed _to, uint256 amount, uint256 deferBlock, uint256 opIndex);
     event TransferChildEvent(address indexed _child, address indexed _newOwner);
     event ReclaimEvent(address indexed other);
-    event ChangeBurnBoundsEvent(uint newMin, uint newMax);
-    event ChangeStakingFeesEvent(uint80 _transferFeeNumerator,
-                                            uint80 _transferFeeDenominator,
-                                            uint80 _mintFeeNumerator,
-                                            uint80 _mintFeeDenominator,
+    event ChangeBurnBoundsEvent(uint256 newMin, uint256 newMax);
+    event ChangeStakingFeesEvent(uint256 _transferFeeNumerator,
+                                            uint256 _transferFeeDenominator,
+                                            uint256 _mintFeeNumerator,
+                                            uint256 _mintFeeDenominator,
                                             uint256 _mintFeeFlat,
-                                            uint80 _burnFeeNumerator,
-                                            uint80 _burnFeeDenominator,
+                                            uint256 _burnFeeNumerator,
+                                            uint256 _burnFeeDenominator,
                                             uint256 _burnFeeFlat);
     event ChangeStakerEvent(address newStaker);
     event DelegateEvent(DelegateBurnable delegate);
@@ -62,9 +62,13 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     event ChangeNameEvent(string name, string symbol);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
 
+    function TimeLockedController() public {
+        admin = msg.sender;
+    }
+
     // admin initiates a request to mint _amount TrueUSD for account _to
     function requestMint(address _to, uint256 _amount) public onlyAdminOrOwner {
-        uint deferBlock = block.number;
+        uint256 deferBlock = block.number;
         if (msg.sender != owner) {
             deferBlock = deferBlock.add(blocksDelay);
         }
@@ -75,7 +79,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     // after a day, admin finalizes mint request by providing the
     // index of the request (visible in the MintOperationEvent accompanying the original request)
-    function finalizeMint(uint index) public onlyAdminOrOwner {
+    function finalizeMint(uint256 index) public onlyAdminOrOwner {
         MintOperation memory op = mintOperations[index];
         require(op.admin == admin); //checks that the requester's adminship has not been revoked
         require(op.deferBlock <= block.number); //checks that enough time has elapsed
@@ -102,19 +106,19 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     // Change the minimum and maximum amounts that TrueUSD users can
     // burn to newMin and newMax
-    function changeBurnBounds(uint newMin, uint newMax) public onlyOwner {
+    function changeBurnBounds(uint256 newMin, uint256 newMax) public onlyOwner {
         ChangeBurnBoundsEvent(newMin, newMax);
         trueUSD.changeBurnBounds(newMin, newMax);
     }
 
     // Change the transaction fees charged on transfer/mint/burn
-    function changeStakingFees(uint80 _transferFeeNumerator,
-                               uint80 _transferFeeDenominator,
-                               uint80 _mintFeeNumerator,
-                               uint80 _mintFeeDenominator,
+    function changeStakingFees(uint256 _transferFeeNumerator,
+                               uint256 _transferFeeDenominator,
+                               uint256 _mintFeeNumerator,
+                               uint256 _mintFeeDenominator,
                                uint256 _mintFeeFlat,
-                               uint80 _burnFeeNumerator,
-                               uint80 _burnFeeDenominator,
+                               uint256 _burnFeeNumerator,
+                               uint256 _burnFeeDenominator,
                                uint256 _burnFeeFlat) public onlyOwner {
         ChangeStakingFeesEvent(_transferFeeNumerator,
                                           _transferFeeDenominator,
@@ -167,6 +171,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     // Replace the current admin with newAdmin
     function transferAdminship(address newAdmin) public onlyOwner {
+        require(newAdmin != 0x0);
         AdminshipTransferred(admin, newAdmin);
         admin = newAdmin;
     }

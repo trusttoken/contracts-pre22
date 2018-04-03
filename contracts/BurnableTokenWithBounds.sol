@@ -23,7 +23,7 @@ contract BurnableTokenWithBounds is BurnableToken {
     //flexibility since burning could also be as good as disabled
     //by setting the minimum extremely high, and we don't want to lock
     //in any particular cap for the minimum)
-    function changeBurnBounds(uint newMin, uint newMax) onlyOwner public {
+    function changeBurnBounds(uint256 newMin, uint256 newMax) onlyOwner public {
         require(newMin <= newMax);
         burnMin = newMin;
         burnMax = newMax;
