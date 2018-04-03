@@ -1,23 +1,25 @@
 const NamableAddressList = artifacts.require("NamableAddressList");
 var Web3 = require('web3');
 
-//simplified from https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/test/helpers/expectThrow.js
-expectThrow = async promise => {
+//copied from https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/test/helpers/assertRevert.js
+//TODO: how to import this directly from node_modules or zeppelin fork?
+assertRevert = async promise => {
   try {
     await promise;
+    assert.fail('Expected revert not received');
   } catch (error) {
-    return;
+    const revertFound = error.message.search('revert') >= 0;
+    assert(revertFound, `Expected "revert", got ${error} instead`);
   }
-  assert.fail('Expected throw not received');
 };
 
 contract('NamableAddressList', function(accounts) {
     it("should work", async () => {
-        const burnWhiteList = await NamableAddressList.new("Burn whitelist", false, {from: accounts[0]})
+        const burnWhiteList = await NamableAddressList.new("Burn whitelist")
 
-        const name = await burnWhiteList.name();
+        let name = await burnWhiteList.name();
         assert.equal(name, "Burn whitelist", "Got wrong name");
-        await expectThrow(burnWhiteList.changeName("fooList", {from: accounts[1]}))
+        await assertRevert(burnWhiteList.changeName("fooList", {from: accounts[1]}))
         await burnWhiteList.changeName("fooList", {from: accounts[0]})
         name = await burnWhiteList.name();
         assert.equal(name, "fooList", "Got wrong name");

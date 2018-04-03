@@ -16,13 +16,13 @@ expectThrow = async promise => {
 
 contract('TrueUSD', function(accounts) {
     it("should work", async () => {
-        const mintWhiteList = await AddressList.new("Mint whitelist", false, {from: accounts[0]})
-        const burnWhiteList = await AddressList.new("Burn whitelist", false, {from: accounts[0]})
-        const blackList = await AddressList.new("Blacklist", true, {from: accounts[0]})
-        const noFeesList = await AddressList.new("No Fees list", false, {from: accounts[0]})
-        const balances = await BalanceSheet.new({from: accounts[0]})
-        const allowances = await AllowanceSheet.new({from: accounts[0]})
-        const trueUSD = await TrueUSD.new({gas: 6500000, from: accounts[0]})
+        const mintWhiteList = await AddressList.new("Mint whitelist")
+        const burnWhiteList = await AddressList.new("Burn whitelist")
+        const blackList = await AddressList.new("Blacklist")
+        const noFeesList = await AddressList.new("No Fees list")
+        const balances = await BalanceSheet.new()
+        const allowances = await AllowanceSheet.new()
+        const trueUSD = await TrueUSD.new()
         await trueUSD.setLists(mintWhiteList.address, burnWhiteList.address, blackList.address, noFeesList.address, {from: accounts[0]})
         await balances.transferOwnership(trueUSD.address)
         await allowances.transferOwnership(trueUSD.address)
@@ -53,7 +53,7 @@ contract('TrueUSD', function(accounts) {
         await userHasCoins(0, 7+6)
     })
     it("can change name", async () => {
-        const trueUSD = await TrueUSD.new({gas: 6500000, from: accounts[0]})
+        const trueUSD = await TrueUSD.new()
         let name = await trueUSD.name()
         assert.equal(name, "TrueUSD")
         let symbol = await trueUSD.symbol()
