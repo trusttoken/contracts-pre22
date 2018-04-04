@@ -42,7 +42,8 @@ module.exports = async function(deployer) {
   await allowances.transferOwnership(trueUSD.address)
   await trueUSD.setBalanceSheet(balances.address)
   await trueUSD.setAllowanceSheet(allowances.address)
-  await trueUSD.setLists(mintWhiteList.address, canBurnWhiteList.address, blackList.address, noFeesList.address)
+  await trueUSD.setLists(mintWhiteList.address, canBurnWhiteList.address, blackList.address)
+  await trueUSD.setNoFeesList(noFeesList.address)
   await trueUSD.changeStaker("0x960Ab0dea96ab2dB293F162e6047306154588E8B")
 
   console.log("Create TimeLockedController and transfer ownership of other contracts to it...")
