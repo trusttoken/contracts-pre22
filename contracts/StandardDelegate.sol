@@ -17,11 +17,11 @@ contract StandardDelegate is DelegateBurnable, StandardToken, BurnableTokenWithB
     }
 
     // All delegate ERC20 functions are forwarded to corresponding normal functions
-    function delegateTotalSupply() public view returns (uint256) {
+    function delegateTotalSupply() onlySender(delegatedFrom) public view returns (uint256) {
         return totalSupply();
     }
 
-    function delegateBalanceOf(address who) public view returns (uint256) {
+    function delegateBalanceOf(address who) onlySender(delegatedFrom) public view returns (uint256) {
         return balanceOf(who);
     }
 
@@ -29,7 +29,7 @@ contract StandardDelegate is DelegateBurnable, StandardToken, BurnableTokenWithB
         transferAllArgs(origSender, to, value);
     }
 
-    function delegateAllowance(address owner, address spender) public view returns (uint256) {
+    function delegateAllowance(address owner, address spender) onlySender(delegatedFrom) public view returns (uint256) {
         return allowance(owner, spender);
     }
 
