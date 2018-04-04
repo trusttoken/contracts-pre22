@@ -4,7 +4,7 @@ import "./BurnableTokenWithBounds.sol";
 import "./DelegateBurnable.sol";
 import "../zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 
-contract StandardDelegate is DelegateBurnable, StandardToken, BurnableTokenWithBounds {
+contract StandardDelegate is DelegateBurnable, StandardToken, BurnableToken {
     address public delegatedFrom;
 
     modifier onlySender(address source) {

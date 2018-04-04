@@ -1,10 +1,10 @@
 pragma solidity ^0.4.18;
 
+import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "../zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 import "./AddressList.sol";
-import "./StandardDelegate.sol";
 
-contract TokenWithFees is MintableToken, StandardDelegate {
+contract TokenWithFees is MintableToken, BurnableToken {
     AddressList public noFeesList;
 
     uint256 public transferFeeNumerator = 7;

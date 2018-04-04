@@ -1,9 +1,10 @@
 pragma solidity ^0.4.18;
 
 import "./AddressList.sol";
-import "./TokenWithFees.sol";
+import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
+import "../zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 
-contract GatedToken is TokenWithFees {
+contract GatedToken is MintableToken, BurnableToken {
     AddressList public canReceiveMintWhiteList;
     AddressList public canBurnWhiteList;
     AddressList public blackList;

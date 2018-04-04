@@ -1,9 +1,10 @@
 pragma solidity ^0.4.18;
 
 import "./DelegateBurnable.sol";
-import "./GatedToken.sol";
+import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
+import "../zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 
-contract CanDelegate is GatedToken {
+contract CanDelegate is MintableToken, BurnableToken {
     // If this contract needs to be upgraded, the new contract will be stored
     // in 'delegate' and any BurnableToken calls to this contract will be delegated to that one.
     DelegateBurnable public delegate;
