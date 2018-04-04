@@ -27,6 +27,6 @@ contract BurnableTokenWithBounds is BurnableToken {
         require(newMin <= newMax);
         burnMin = newMin;
         burnMax = newMax;
-        ChangeBurnBoundsEvent(newMin, newMax);
+        emit ChangeBurnBoundsEvent(newMin, newMax);
     }
 }

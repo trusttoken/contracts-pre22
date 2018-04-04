@@ -2,8 +2,6 @@ pragma solidity ^0.4.18;
 
 import "./AddressList.sol";
 import "./TokenWithFees.sol";
-// import "../zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
-// import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 
 contract GatedToken is TokenWithFees {
     AddressList public canReceiveMintWhiteList;
@@ -46,6 +44,6 @@ contract GatedToken is TokenWithFees {
         uint256 oldValue = balanceOf(account);
         balances.setBalance(account, 0);
         totalSupply_ = totalSupply_.sub(oldValue);
-        WipedAccount(account, oldValue);
+        emit WipedAccount(account, oldValue);
     }
 }

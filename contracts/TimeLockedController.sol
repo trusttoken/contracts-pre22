@@ -71,7 +71,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
             releaseTimestamp = releaseTimestamp.add(MINT_DELAY);
         }
         MintOperation memory op = MintOperation(_to, _amount, admin, releaseTimestamp);
-        MintOperationEvent(_to, _amount, releaseTimestamp, mintOperations.length);
+        emit MintOperationEvent(_to, _amount, releaseTimestamp, mintOperations.length);
         mintOperations.push(op);
     }
 
@@ -90,7 +90,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     // Transfer ownership of _child to _newOwner
     // Can be used e.g. to upgrade this TimeLockedController contract.
     function transferChild(Ownable _child, address _newOwner) public onlyOwner {
-        TransferChildEvent(_child, _newOwner);
+        emit TransferChildEvent(_child, _newOwner);
         _child.transferOwnership(_newOwner);
     }
 
@@ -98,14 +98,14 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     // to this TimeLockedController. Can be used e.g. to reclaim balance sheet
     // in order to transfer it to an upgraded TrueUSD contract.
     function requestReclaim(Ownable other) public onlyOwner {
-        ReclaimEvent(other);
+        emit ReclaimEvent(other);
         trueUSD.reclaimContract(other);
     }
 
     // Change the minimum and maximum amounts that TrueUSD users can
     // burn to newMin and newMax
     function changeBurnBounds(uint256 newMin, uint256 newMax) public onlyOwner {
-        ChangeBurnBoundsEvent(newMin, newMax);
+        emit ChangeBurnBoundsEvent(newMin, newMax);
         trueUSD.changeBurnBounds(newMin, newMax);
     }
 
@@ -118,7 +118,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
                                uint256 _burnFeeNumerator,
                                uint256 _burnFeeDenominator,
                                uint256 _burnFeeFlat) public onlyOwner {
-        ChangeStakingFeesEvent(_transferFeeNumerator,
+        emit ChangeStakingFeesEvent(_transferFeeNumerator,
                                           _transferFeeDenominator,
                                           _mintFeeNumerator,
                                           _mintFeeDenominator,
@@ -138,32 +138,32 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     // Change the recipient of staking fees to newStaker
     function changeStaker(address newStaker) public onlyOwner {
-        ChangeStakerEvent(newStaker);
+        emit ChangeStakerEvent(newStaker);
         trueUSD.changeStaker(newStaker);
     }
 
     // Future BurnableToken calls to trueUSD will be delegated to _delegate
     function delegateToNewContract(DelegateBurnable delegate) public onlyOwner {
-        DelegateEvent(delegate);
+        emit DelegateEvent(delegate);
         trueUSD.delegateToNewContract(delegate);
     }
 
     // Incoming delegate* calls from _source will be accepted by trueUSD
     function setDelegatedFrom(address _source) public onlyOwner {
-        SetDelegatedFromEvent(_source);
+        emit SetDelegatedFromEvent(_source);
         trueUSD.setDelegatedFrom(_source);
     }
 
     // Update this contract's trueUSD pointer to newContract (e.g. if the
     // contract is upgraded)
     function setTrueUSD(TrueUSD newContract) public onlyOwner {
-        ChangeTrueUSDEvent(newContract);
+        emit ChangeTrueUSDEvent(newContract);
         trueUSD = newContract;
     }
 
     // change trueUSD's name and symbol
     function changeName(string name, string symbol) public onlyOwner {
-        ChangeNameEvent(name, symbol);
+        emit ChangeNameEvent(name, symbol);
         trueUSD.changeName(name, symbol);
     }
 
@@ -172,7 +172,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     // any the owner may have made and not yet finalized)
     function transferAdminship(address newAdmin) public onlyOwner {
         require(newAdmin != 0x0);
-        AdminshipTransferred(admin, newAdmin);
+        emit AdminshipTransferred(admin, newAdmin);
         admin = newAdmin;
     }
 

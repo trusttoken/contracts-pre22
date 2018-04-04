@@ -16,7 +16,7 @@ contract AddressList is Claimable {
         require(_to != 0x0);
         if (onList[_to] != _onList) {
             onList[_to] = _onList;
-            ChangeWhiteList(_to, _onList);
+            emit ChangeWhiteList(_to, _onList);
         }
     }
 }

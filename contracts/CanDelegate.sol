@@ -13,7 +13,7 @@ contract CanDelegate is GatedToken {
     // Can undelegate by passing in newContract = address(0)
     function delegateToNewContract(DelegateBurnable newContract) public onlyOwner {
         delegate = newContract;
-        DelegatedTo(delegate);
+        emit DelegatedTo(delegate);
     }
 
     // If a delegate has been designated, all ERC20 calls are forwarded to it

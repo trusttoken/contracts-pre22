@@ -7,6 +7,6 @@ contract AddressValidation {
 
     function validateKey(bytes32 _message) public {
         keyValidations[msg.sender] = _message;
-        ValidateKey(msg.sender, _message);
+        emit ValidateKey(msg.sender, _message);
     }
 }

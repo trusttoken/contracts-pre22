@@ -12,7 +12,7 @@ pragma solidity ^0.4.18;
 // we do not expect all regular users to learn about Y and change accordingly,
 // but we do require the *owner* of X to now use Y instead so ownerOnly
 // functions are not delegated and should be disabled instead.
-interface DelegateBurnable {
+contract DelegateBurnable {
   function delegateTotalSupply() public view returns (uint256);
   function delegateBalanceOf(address who) public view returns (uint256);
   function delegateTransferAllArgs(address origSender, address to, uint256 value) public;
