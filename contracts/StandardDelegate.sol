@@ -25,7 +25,7 @@ contract StandardDelegate is DelegateBurnable, StandardToken, BurnableTokenWithB
         return balanceOf(who);
     }
 
-    function delegateTransferAllArgs(address to, uint256 value, address origSender) onlySender(delegatedFrom) public {
+    function delegateTransferAllArgs(address origSender, address to, uint256 value) onlySender(delegatedFrom) public {
         transferAllArgs(origSender, to, value);
     }
 
@@ -49,7 +49,7 @@ contract StandardDelegate is DelegateBurnable, StandardToken, BurnableTokenWithB
         decreaseApprovalAllArgs(spender, subtractedValue, origSender);
     }
 
-    function delegateBurnAllArgs(uint256 value, address origSender) onlySender(delegatedFrom) public {
+    function delegateBurnAllArgs(address origSender, uint256 value) onlySender(delegatedFrom) public {
         burnAllArgs(origSender, value);
     }
 }
