@@ -9,7 +9,7 @@ import "./GatedToken.sol";
 import "./TokenWithFees.sol";
 import "./StandardDelegate.sol";
 
-contract TrueUSD is PausableToken, NoOwner, BurnableTokenWithBounds, CanDelegate, GatedToken, TokenWithFees, StandardDelegate {
+contract TrueUSD is PausableToken, NoOwner, BurnableTokenWithBounds, GatedToken, TokenWithFees, StandardDelegate, CanDelegate {
     string public name = "TrueUSD";
     string public symbol = "TUSD";
     uint8 public constant decimals = 18;

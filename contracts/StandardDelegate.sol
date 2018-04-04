@@ -16,7 +16,7 @@ contract StandardDelegate is DelegateBurnable, StandardToken, BurnableToken {
         delegatedFrom = addr;
     }
 
-    // All delegate ERC20 functions are forwarded to corresponding normal functions
+    // each function delegateX is simply forwarded to function X
     function delegateTotalSupply() onlySender(delegatedFrom) public view returns (uint256) {
         return totalSupply();
     }
