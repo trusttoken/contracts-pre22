@@ -7,6 +7,8 @@ import "./modularERC20/ModularStandardToken.sol";
 contract StandardDelegate is DelegateBurnable, ModularStandardToken, ModularBurnableToken {
     address public delegatedFrom;
 
+    event DelegatedFromSet(address addr);
+
     modifier onlySender(address source) {
         require(msg.sender == source);
         _;
@@ -14,6 +16,7 @@ contract StandardDelegate is DelegateBurnable, ModularStandardToken, ModularBurn
 
     function setDelegatedFrom(address addr) onlyOwner public {
         delegatedFrom = addr;
+        emit DelegatedFromSet(addr);
     }
 
     // each function delegateX is simply forwarded to function X

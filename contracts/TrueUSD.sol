@@ -14,6 +14,8 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Gate
     string public symbol = "TUSD";
     uint8 public constant decimals = 18;
 
+    event TokenNameChanged(string newName, string newSymbol);
+
     function TrueUSD() public {
         totalSupply_ = 0;
         burnMin = 10000 * 10**uint256(decimals);
@@ -23,5 +25,6 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Gate
     function changeName(string _name, string _symbol) onlyOwner public {
         name = _name;
         symbol = _symbol;
+        emit TokenNameChanged(_name, _symbol);
     }
 }

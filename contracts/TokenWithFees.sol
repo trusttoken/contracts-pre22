@@ -17,12 +17,16 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
     uint256 public burnFeeFlat = 0;
     address public staker;
 
+    event NoFeesListSet(address indexed list);
+    event StakerChanged(address indexed addr);
+
     function TokenWithFees() public {
         staker = msg.sender;
     }
 
     function setNoFeesList(AddressList _noFeesList) onlyOwner public {
         noFeesList = _noFeesList;
+        emit NoFeesListSet(_noFeesList);
     }
 
     function burnAllArgs(address burner, uint256 _value) internal {
@@ -77,5 +81,6 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
     function changeStaker(address newStaker) public onlyOwner {
         require(newStaker != address(0));
         staker = newStaker;
+        emit StakerChanged(newStaker);
     }
 }

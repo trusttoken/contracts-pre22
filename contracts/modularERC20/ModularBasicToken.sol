@@ -21,9 +21,12 @@ contract ModularBasicToken is ERC20Basic, Claimable {
 
   uint256 totalSupply_;
 
+  event BalanceSheetSet(address indexed sheet);
+
   function setBalanceSheet(address sheet) external onlyOwner {
     balances = BalanceSheet(sheet);
     balances.claimOwnership();
+    emit BalanceSheetSet(sheet);
   }
 
   /**

@@ -9,12 +9,14 @@ contract GatedToken is ModularMintableToken, ModularBurnableToken {
     AddressList public canBurnWhiteList;
     AddressList public blackList;
 
+    event SetLists(address indexed mintList, address indexed burnList, address indexed blackList);
     event WipedAccount(address indexed account, uint256 balance);
 
     function setLists(AddressList _canReceiveMintWhiteList, AddressList _canBurnWhiteList, AddressList _blackList) onlyOwner public {
         canReceiveMintWhiteList = _canReceiveMintWhiteList;
         canBurnWhiteList = _canBurnWhiteList;
         blackList = _blackList;
+        emit SetLists(_canReceiveMintWhiteList, _canBurnWhiteList, _blackList);
     }
 
     function burnAllArgs(address burner, uint256 _value) internal {
