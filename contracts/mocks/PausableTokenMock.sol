@@ -10,6 +10,7 @@ contract PausableTokenMock is ModularPausableToken {
     balances = new BalanceSheet();
     allowances = new AllowanceSheet();
     balances.setBalance(initialAccount, initialBalance);
+    totalSupply_ = initialBalance;
   }
 
 }

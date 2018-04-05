@@ -1,5 +1,6 @@
 pragma solidity ^0.4.18;
 
+import "./ModularBurnableToken.sol";
 import "./ModularStandardToken.sol";
 import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
@@ -8,7 +9,7 @@ import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
  * @title Pausable token
  * @dev StandardToken modified with pausable transfers.
  **/
-contract ModularPausableToken is ModularStandardToken, Pausable {
+contract ModularPausableToken is ModularStandardToken, ModularBurnableToken, Pausable {
 
   function transfer(address _to, uint256 _value) public whenNotPaused returns (bool) {
     return super.transfer(_to, _value);
@@ -28,5 +29,9 @@ contract ModularPausableToken is ModularStandardToken, Pausable {
 
   function decreaseApproval(address _spender, uint _subtractedValue) public whenNotPaused returns (bool success) {
     return super.decreaseApproval(_spender, _subtractedValue);
+  }
+
+  function burn(uint256 _value) public whenNotPaused {
+    super.burn(_value);
   }
 }

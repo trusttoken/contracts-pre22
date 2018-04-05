@@ -260,5 +260,31 @@ contract('PausableToken', function ([_, owner, recipient, anotherAccount]) {
         await assertRevert(this.token.increaseApproval(anotherAccount, 40, { from: owner }));
       });
     });
+
+    describe('burn', function () {
+      it('allows to burn when unpaused', async function () {
+        await this.token.burn(60, { from: owner });
+
+        const balance = await this.token.balanceOf(owner);
+        assert.equal(balance, 40);
+      });
+
+      it('allows to burn when paused and then unpaused', async function () {
+        await this.token.pause({ from: owner });
+        await this.token.unpause({ from: owner });
+
+        await this.token.burn(60, { from: owner });
+
+        const balance = await this.token.balanceOf(owner);
+        assert.equal(balance, 40);
+      });
+
+      it('reverts when trying to burn when paused', async function () {
+        await this.token.pause({ from: owner });
+
+        await assertRevert(this.token.burn(60, { from: owner }));
+      });
+    });
+
   });
 });
