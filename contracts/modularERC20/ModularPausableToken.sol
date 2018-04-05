@@ -4,34 +4,32 @@ import "./ModularBurnableToken.sol";
 import "./ModularStandardToken.sol";
 import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
-
 /**
  * @title Pausable token
  * @dev StandardToken modified with pausable transfers.
  **/
 contract ModularPausableToken is ModularStandardToken, ModularBurnableToken, Pausable {
+    function transferAllArgs(address from, address to, uint256 value) internal whenNotPaused {
+        super.transferAllArgs(from, to, value);
+    }
 
-  function transfer(address _to, uint256 _value) public whenNotPaused returns (bool) {
-    return super.transfer(_to, _value);
-  }
+    function transferFromAllArgs(address from, address to, uint256 value, address spender) internal whenNotPaused {
+        super.transferFromAllArgs(from, to, value, spender);
+    }
 
-  function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused returns (bool) {
-    return super.transferFrom(_from, _to, _value);
-  }
+    function approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal whenNotPaused {
+        super.approveAllArgs(_spender, _value, _tokenHolder);
+    }
 
-  function approve(address _spender, uint256 _value) public whenNotPaused returns (bool) {
-    return super.approve(_spender, _value);
-  }
+    function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address tokenHolder) internal whenNotPaused {
+        super.increaseApprovalAllArgs(_spender, _addedValue, tokenHolder);
+    }
 
-  function increaseApproval(address _spender, uint _addedValue) public whenNotPaused returns (bool success) {
-    return super.increaseApproval(_spender, _addedValue);
-  }
+    function decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address tokenHolder) internal whenNotPaused {
+        super.decreaseApprovalAllArgs(_spender, _subtractedValue, tokenHolder);
+    }
 
-  function decreaseApproval(address _spender, uint _subtractedValue) public whenNotPaused returns (bool success) {
-    return super.decreaseApproval(_spender, _subtractedValue);
-  }
-
-  function burn(uint256 _value) public whenNotPaused {
-    super.burn(_value);
-  }
+    function burnAllArgs(address burner, uint256 value) internal whenNotPaused {
+        super.burnAllArgs(burner, value);
+    }
 }
