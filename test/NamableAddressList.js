@@ -2,22 +2,20 @@ const NamableAddressList = artifacts.require("NamableAddressList");
 var Web3 = require('web3');
 import assertRevert from './helpers/assertRevert';
 
-contract('NamableAddressList', function(accounts) {
-    it("should work", async () => {
-        const burnWhiteList = await NamableAddressList.new("Burn whitelist")
+contract('NamableAddressList', function([_, owner, anotherAccount]) {
+    beforeEach(async function () {
+        this.whitelist = await NamableAddressList.new("Burn whitelist", {from: owner});
+    });
 
-        let name = await burnWhiteList.name();
+    it("owner can change name", async function() {
+        let name = await this.whitelist.name();
         assert.equal(name, "Burn whitelist", "Got wrong name");
-        await assertRevert(burnWhiteList.changeName("fooList", {from: accounts[1]}))
-        await burnWhiteList.changeName("fooList", {from: accounts[0]})
-        name = await burnWhiteList.name();
+        await this.whitelist.changeName("fooList", {from: owner});
+        name = await this.whitelist.name();
         assert.equal(name, "fooList", "Got wrong name");
+    });
 
-        let canBurn = await burnWhiteList.onList(accounts[0])
-        assert.equal(canBurn, false, "User should not be on white list");
-
-        await burnWhiteList.changeList(accounts[0], true)
-        canBurn = await burnWhiteList.onList(accounts[0])
-        assert.equal(canBurn, true, "User should be on white list");
-    })
+    it("non-owner can't change name", async function() {
+        await assertRevert(this.whitelist.changeName("fooList", { from: anotherAccount }));
+    });
 })
