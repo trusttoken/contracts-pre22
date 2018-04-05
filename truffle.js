@@ -1,3 +1,6 @@
+require('babel-register');
+require('babel-polyfill');
+
 var HDWalletProvider = require("truffle-hdwallet-provider");
 
 module.exports = {
@@ -26,6 +29,5 @@ module.exports = {
       gas: 6500000,
       gasPrice: 7000000000
     },
-
   }
 };

@@ -1,11 +1,11 @@
 pragma solidity ^0.4.18;
 
-import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
+import "./modularERC20/ModularBurnableToken.sol";
 
 //Burning functions as withdrawing money from the system. The platform will keep track of who burns coins,
 //and will send them back the equivalent amount of money (rounded down to the nearest cent).
 //The API for burning is inherited: burn(uint256 _value)
-contract BurnableTokenWithBounds is BurnableToken {
+contract BurnableTokenWithBounds is ModularBurnableToken {
     uint256 public burnMin = 0;
     uint256 public burnMax = 0;
 

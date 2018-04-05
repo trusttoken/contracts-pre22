@@ -1,15 +1,15 @@
 pragma solidity ^0.4.18;
 
-import "../zeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
+import "./modularERC20/ModularPausableToken.sol";
 // TrueUSD *is* supposed to own 'balances' and 'allowances', but it needs to be able to relinquish them:
-import "../zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import "./CanDelegate.sol";
 import "./BurnableTokenWithBounds.sol";
 import "./GatedToken.sol";
 import "./TokenWithFees.sol";
 import "./StandardDelegate.sol";
 
-contract TrueUSD is PausableToken, NoOwner, BurnableTokenWithBounds, GatedToken, TokenWithFees, StandardDelegate, CanDelegate {
+contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, GatedToken, TokenWithFees, StandardDelegate, CanDelegate {
     string public name = "TrueUSD";
     string public symbol = "TUSD";
     uint8 public constant decimals = 18;

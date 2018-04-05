@@ -1,10 +1,10 @@
 pragma solidity ^0.4.18;
 
 import "./AddressList.sol";
-import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
-import "../zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
+import "./modularERC20/ModularBurnableToken.sol";
+import "./modularERC20/ModularMintableToken.sol";
 
-contract GatedToken is MintableToken, BurnableToken {
+contract GatedToken is ModularMintableToken, ModularBurnableToken {
     AddressList public canReceiveMintWhiteList;
     AddressList public canBurnWhiteList;
     AddressList public blackList;

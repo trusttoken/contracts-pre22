@@ -1,9 +1,9 @@
 pragma solidity ^0.4.18;
 
-import "../zeppelin-solidity/contracts/ownership/HasNoEther.sol";
-import "../zeppelin-solidity/contracts/ownership/HasNoTokens.sol";
-import "../zeppelin-solidity/contracts/ownership/Claimable.sol";
-import "../zeppelin-solidity/contracts/math/SafeMath.sol";
+import "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import "zeppelin-solidity/contracts/ownership/HasNoTokens.sol";
+import "zeppelin-solidity/contracts/ownership/Claimable.sol";
+import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "./TrueUSD.sol";
 import "./NamableAddressList.sol";
 

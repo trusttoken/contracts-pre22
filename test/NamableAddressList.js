@@ -1,17 +1,6 @@
 const NamableAddressList = artifacts.require("NamableAddressList");
 var Web3 = require('web3');
-
-//copied from https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/test/helpers/assertRevert.js
-//TODO: how to import this directly from node_modules or zeppelin fork?
-assertRevert = async promise => {
-  try {
-    await promise;
-    assert.fail('Expected revert not received');
-  } catch (error) {
-    const revertFound = error.message.search('revert') >= 0;
-    assert(revertFound, `Expected "revert", got ${error} instead`);
-  }
-};
+import assertRevert from './helpers/assertRevert';
 
 contract('NamableAddressList', function(accounts) {
     it("should work", async () => {
