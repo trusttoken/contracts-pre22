@@ -13,13 +13,13 @@ pragma solidity ^0.4.18;
 // but we do require the *owner* of X to now use Y instead so ownerOnly
 // functions are not delegated and should be disabled instead.
 contract DelegateBurnable {
-  function delegateTotalSupply() public view returns (uint256);
-  function delegateBalanceOf(address who) public view returns (uint256);
-  function delegateTransferAllArgs(address origSender, address to, uint256 value) public;
-  function delegateAllowance(address owner, address spender) public view returns (uint256);
-  function delegateTransferFromAllArgs(address from, address to, uint256 value, address origSender) public;
-  function delegateApproveAllArgs(address spender, uint256 value, address origSender) public;
-  function delegateIncreaseApprovalAllArgs(address spender, uint256 addedValue, address origSender) public;
-  function delegateDecreaseApprovalAllArgs(address spender, uint256 subtractedValue, address origSender) public;
-  function delegateBurnAllArgs(address burner, uint256 _value) public;
+    function delegateTotalSupply() public view returns (uint256);
+    function delegateBalanceOf(address who) public view returns (uint256);
+    function delegateTransferAllArgs(address origSender, address to, uint256 value) public;
+    function delegateAllowance(address owner, address spender) public view returns (uint256);
+    function delegateTransferFromAllArgs(address from, address to, uint256 value, address origSender) public;
+    function delegateApproveAllArgs(address spender, uint256 value, address origSender) public;
+    function delegateIncreaseApprovalAllArgs(address spender, uint256 addedValue, address origSender) public;
+    function delegateDecreaseApprovalAllArgs(address spender, uint256 subtractedValue, address origSender) public;
+    function delegateBurnAllArgs(address burner, uint256 _value) public;
 }
