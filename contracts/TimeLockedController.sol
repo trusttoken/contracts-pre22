@@ -23,7 +23,7 @@ import "./NamableAddressList.sol";
 contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     using SafeMath for uint256;
 
-    uint256 public constant MINT_DELAY = 1 days;
+    uint256 public mintDelay = 1 days;
 
     struct MintOperation {
         address to;
@@ -59,6 +59,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     event ChangeTrueUSDEvent(TrueUSD newContract);
     event ChangeNameEvent(string name, string symbol);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
+    event MintDelayChanged(uint256 newDelay);
 
     function TimeLockedController() public {
         admin = msg.sender;
@@ -68,7 +69,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     function requestMint(address _to, uint256 _amount) public onlyAdminOrOwner {
         uint256 releaseTimestamp = block.timestamp;
         if (msg.sender != owner) {
-            releaseTimestamp = releaseTimestamp.add(MINT_DELAY);
+            releaseTimestamp = releaseTimestamp.add(mintDelay);
         }
         MintOperation memory op = MintOperation(_to, _amount, admin, releaseTimestamp);
         emit MintOperationEvent(_to, _amount, releaseTimestamp, mintOperations.length);
@@ -196,5 +197,11 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     function issueClaimOwnership(address _other) public onlyAdminOrOwner {
         Claimable other = Claimable(_other);
         other.claimOwnership();
+    }
+
+    // Change the delay imposed on admin-initiated mint requests
+    function changeMintDelay(uint256 newDelay) public onlyOwner {
+        mintDelay = newDelay;
+        emit MintDelayChanged(newDelay);
     }
 }
