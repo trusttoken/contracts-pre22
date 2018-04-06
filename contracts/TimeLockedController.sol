@@ -41,25 +41,12 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         _;
     }
 
-    event TLCRequestMint(address indexed to, address indexed admin, uint256 amount, uint256 releaseTimestamp, uint256 opIndex);
-    event TLCTransferChild(address indexed child, address indexed newOwner);
-    event TLCRequestReclaim(address indexed other);
-    event TLCChangeBurnBounds(uint256 newMin, uint256 newMax);
-    event TLCChangeStakingFees(uint256 transferFeeNumerator,
-                               uint256 transferFeeDenominator,
-                               uint256 mintFeeNumerator,
-                               uint256 mintFeeDenominator,
-                               uint256 mintFeeFlat,
-                               uint256 burnFeeNumerator,
-                               uint256 burnFeeDenominator,
-                               uint256 burnFeeFlat);
-    event TLCChangeStaker(address newStaker);
-    event TLCDelegateToNewContract(DelegateBurnable delegate);
-    event TLCSetDelegatedFrom(address source);
-    event TLCSetTrueUSD(TrueUSD newContract);
-    event TLCChangeTokenName(string name, string symbol);
-    event TLCTransferAdminship(address indexed previousAdmin, address indexed newAdmin);
-    event TLCChangeMintDelay(uint256 newDelay);
+    event RequestMint(address indexed to, address indexed admin, uint256 amount, uint256 releaseTimestamp, uint256 opIndex);
+    event TransferChild(address indexed child, address indexed newOwner);
+    event RequestReclaim(address indexed other);
+    event SetTrueUSD(TrueUSD newContract);
+    event TransferAdminship(address indexed previousAdmin, address indexed newAdmin);
+    event ChangeMintDelay(uint256 newDelay);
 
     function TimeLockedController() public {
         admin = msg.sender;
@@ -72,12 +59,12 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
             releaseTimestamp = releaseTimestamp.add(mintDelay);
         }
         MintOperation memory op = MintOperation(_to, _amount, admin, releaseTimestamp);
-        emit TLCRequestMint(_to, admin, _amount, releaseTimestamp, mintOperations.length);
+        emit RequestMint(_to, admin, _amount, releaseTimestamp, mintOperations.length);
         mintOperations.push(op);
     }
 
     // after a day, admin finalizes mint request by providing the
-    // index of the request (visible in the TLCRequestMint accompanying the original request)
+    // index of the request (visible in the RequestMint event accompanying the original request)
     function finalizeMint(uint256 _index) public onlyAdminOrOwner {
         MintOperation memory op = mintOperations[_index];
         require(op.admin == admin); //checks that the requester's adminship has not been revoked
@@ -91,7 +78,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     // Transfer ownership of _child to _newOwner
     // Can be used e.g. to upgrade this TimeLockedController contract.
     function transferChild(Ownable _child, address _newOwner) public onlyOwner {
-        emit TLCTransferChild(_child, _newOwner);
+        emit TransferChild(_child, _newOwner);
         _child.transferOwnership(_newOwner);
     }
 
@@ -99,14 +86,13 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     // to this TimeLockedController. Can be used e.g. to reclaim balance sheet
     // in order to transfer it to an upgraded TrueUSD contract.
     function requestReclaim(Ownable _other) public onlyOwner {
-        emit TLCRequestReclaim(_other);
+        emit RequestReclaim(_other);
         trueUSD.reclaimContract(_other);
     }
 
     // Change the minimum and maximum amounts that TrueUSD users can
     // burn to newMin and newMax
     function changeBurnBounds(uint256 _min, uint256 _max) public onlyOwner {
-        emit TLCChangeBurnBounds(_min, _max);
         trueUSD.changeBurnBounds(_min, _max);
     }
 
@@ -119,14 +105,6 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
                                uint256 _burnFeeNumerator,
                                uint256 _burnFeeDenominator,
                                uint256 _burnFeeFlat) public onlyOwner {
-        emit TLCChangeStakingFees(_transferFeeNumerator,
-                                    _transferFeeDenominator,
-                                    _mintFeeNumerator,
-                                    _mintFeeDenominator,
-                                    _mintFeeFlat,
-                                    _burnFeeNumerator,
-                                    _burnFeeDenominator,
-                                    _burnFeeFlat);
         trueUSD.changeStakingFees(_transferFeeNumerator,
                                   _transferFeeDenominator,
                                   _mintFeeNumerator,
@@ -139,32 +117,28 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     // Change the recipient of staking fees to newStaker
     function changeStaker(address _newStaker) public onlyOwner {
-        emit TLCChangeStaker(_newStaker);
         trueUSD.changeStaker(_newStaker);
     }
 
     // Future BurnableToken calls to trueUSD will be delegated to _delegate
     function delegateToNewContract(DelegateBurnable _delegate) public onlyOwner {
-        emit TLCDelegateToNewContract(_delegate);
         trueUSD.delegateToNewContract(_delegate);
     }
 
     // Incoming delegate* calls from _source will be accepted by trueUSD
     function setDelegatedFrom(address _source) public onlyOwner {
-        emit TLCSetDelegatedFrom(_source);
         trueUSD.setDelegatedFrom(_source);
     }
 
     // Update this contract's trueUSD pointer to newContract (e.g. if the
     // contract is upgraded)
     function setTrueUSD(TrueUSD _newContract) public onlyOwner {
-        emit TLCSetTrueUSD(_newContract);
+        emit SetTrueUSD(_newContract);
         trueUSD = _newContract;
     }
 
     // change trueUSD's name and symbol
     function changeTokenName(string _name, string _symbol) public onlyOwner {
-        emit TLCChangeTokenName(_name, _symbol);
         trueUSD.changeTokenName(_name, _symbol);
     }
 
@@ -173,7 +147,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     // any the owner may have made and not yet finalized)
     function transferAdminship(address _newAdmin) public onlyOwner {
         require(_newAdmin != address(0));
-        emit TLCTransferAdminship(admin, _newAdmin);
+        emit TransferAdminship(admin, _newAdmin);
         admin = _newAdmin;
     }
 
@@ -202,6 +176,6 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     // Change the delay imposed on admin-initiated mint requests
     function changeMintDelay(uint256 _newDelay) public onlyOwner {
         mintDelay = _newDelay;
-        emit TLCChangeMintDelay(_newDelay);
+        emit ChangeMintDelay(_newDelay);
     }
 }
