@@ -41,7 +41,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         _;
     }
 
-    event MintOperationEvent(address indexed _to, uint256 amount, uint256 releaseTimestamp, uint256 opIndex);
+    event MintOperationEvent(address indexed _to, address indexed admin, uint256 amount, uint256 releaseTimestamp, uint256 opIndex);
     event TransferChildEvent(address indexed _child, address indexed _newOwner);
     event ReclaimEvent(address indexed other);
     event ChangeBurnBoundsEvent(uint256 newMin, uint256 newMax);
@@ -72,7 +72,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
             releaseTimestamp = releaseTimestamp.add(mintDelay);
         }
         MintOperation memory op = MintOperation(_to, _amount, admin, releaseTimestamp);
-        emit MintOperationEvent(_to, _amount, releaseTimestamp, mintOperations.length);
+        emit MintOperationEvent(_to, admin, _amount, releaseTimestamp, mintOperations.length);
         mintOperations.push(op);
     }
 
