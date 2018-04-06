@@ -17,7 +17,7 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
 
     event AllowanceSheetSet(address indexed sheet);
 
-    function setAllowanceSheet(address sheet) external onlyOwner {
+    function setAllowanceSheet(address sheet) public onlyOwner {
         allowances = AllowanceSheet(sheet);
         allowances.claimOwnership();
         emit AllowanceSheetSet(sheet);
