@@ -18,14 +18,14 @@ contract ModularBurnableToken is ModularBasicToken {
         burnAllArgs(msg.sender, _value);
     }
 
-    function burnAllArgs(address burner, uint256 _value) internal {
-        require(_value <= balances.balanceOf(burner));
+    function burnAllArgs(address _burner, uint256 _value) internal {
+        require(_value <= balances.balanceOf(_burner));
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
 
-        balances.subBalance(burner, _value);
+        balances.subBalance(_burner, _value);
         totalSupply_ = totalSupply_.sub(_value);
-        emit Burn(burner, _value);
-        emit Transfer(burner, address(0), _value);
+        emit Burn(_burner, _value);
+        emit Transfer(_burner, address(0), _value);
     }
 }

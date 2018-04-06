@@ -50,7 +50,7 @@ contract('TrueUSD', function(accounts) {
         assert.equal(name, "TrueUSD")
         let symbol = await trueUSD.symbol()
         assert.equal(symbol, "TUSD")
-        await trueUSD.changeName("FooCoin", "FCN")
+        await trueUSD.changeTokenName("FooCoin", "FCN")
         name = await trueUSD.name()
         assert.equal(name, "FooCoin")
         symbol = await trueUSD.symbol()

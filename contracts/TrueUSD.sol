@@ -14,7 +14,7 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Gate
     string public symbol = "TUSD";
     uint8 public constant decimals = 18;
 
-    event TokenNameChanged(string newName, string newSymbol);
+    event ChangeTokenName(string newName, string newSymbol);
 
     function TrueUSD() public {
         totalSupply_ = 0;
@@ -22,16 +22,16 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Gate
         burnMax = 20000000 * 10**uint256(decimals);
     }
 
-    function changeName(string _name, string _symbol) onlyOwner public {
+    function changeTokenName(string _name, string _symbol) onlyOwner public {
         name = _name;
         symbol = _symbol;
-        emit TokenNameChanged(_name, _symbol);
+        emit ChangeTokenName(_name, _symbol);
     }
 
     // disable most onlyOwner functions upon delegation, since the owner should
     // use the new version of the contract
     modifier onlyWhenNoDelegate() {
-        require(address(delegate) == 0x0);
+        require(address(delegate) == address(0));
         _;
     }
 
@@ -42,23 +42,23 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Gate
     function mint(address _to, uint256 _amount) onlyWhenNoDelegate public returns (bool) {
         super.mint(_to, _amount);
     }
-    function setBalanceSheet(address sheet) onlyWhenNoDelegate public {
-        super.setBalanceSheet(sheet);
+    function setBalanceSheet(address _sheet) onlyWhenNoDelegate public {
+        super.setBalanceSheet(_sheet);
     }
-    function setAllowanceSheet(address sheet) onlyWhenNoDelegate public {
-        super.setAllowanceSheet(sheet);
+    function setAllowanceSheet(address _sheet) onlyWhenNoDelegate public {
+        super.setAllowanceSheet(_sheet);
     }
-    function changeBurnBounds(uint256 newMin, uint256 newMax) onlyWhenNoDelegate public {
-        super.changeBurnBounds(newMin, newMax);
-    }
+    // function changeBurnBounds(uint256 _min, uint256 _max) onlyWhenNoDelegate public {
+    //     super.changeBurnBounds(_min, _max);
+    // }
     // function setLists(AddressList _canReceiveMintWhiteList, AddressList _canBurnWhiteList, AddressList _blackList) onlyWhenNoDelegate public {
     //     super.setLists(_canReceiveMintWhiteList, _canBurnWhiteList, _blackList);
     // }
-    // function changeStaker(address newStaker) onlyWhenNoDelegate public {
-    //     super.changeStaker(newStaker);
+    // function changeStaker(address _newStaker) onlyWhenNoDelegate public {
+    //     super.changeStaker(_newStaker);
     // }
-    // function wipeBlacklistedAccount(address account) onlyWhenNoDelegate public {
-    //     super.wipeBlacklistedAccount(account);
+    // function wipeBlacklistedAccount(address _account) onlyWhenNoDelegate public {
+    //     super.wipeBlacklistedAccount(_account);
     // }
     // function changeStakingFees(
     //     uint256 _transferFeeNumerator,

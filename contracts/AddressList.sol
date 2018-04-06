@@ -9,14 +9,14 @@ contract AddressList is Claimable {
     function AddressList(string _name) public {
         name = _name;
     }
-    event ChangeWhiteList(address indexed to, bool onList);
+    event ListChanged(address indexed addr, bool value);
 
-    // Set whether _to is on the list or not. 0x0 is never on the list.
-    function changeList(address _to, bool _onList) onlyOwner public {
-        require(_to != 0x0);
-        if (onList[_to] != _onList) {
-            onList[_to] = _onList;
-            emit ChangeWhiteList(_to, _onList);
+    // Set whether _to is on the list or not. address(0) is never on the list.
+    function changeList(address _addr, bool _value) onlyOwner public {
+        require(_addr != address(0));
+        if (onList[_addr] != _value) {
+            onList[_addr] = _value;
+            emit ListChanged(_addr, _value);
         }
     }
 }

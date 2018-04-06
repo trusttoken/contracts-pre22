@@ -34,10 +34,10 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
         return true;
     }
 
-    function transferFromAllArgs(address _from, address _to, uint256 _value, address spender) internal {
-        require(_value <= allowances.allowanceOf(_from, spender));
+    function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+        require(_value <= allowances.allowanceOf(_from, _spender));
 
-        allowances.subAllowance(_from, spender, _value);
+        allowances.subAllowance(_from, _spender, _value);
         transferAllArgs(_from, _to, _value);
     }
 
@@ -86,9 +86,9 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
         return true;
     }
 
-    function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address tokenHolder) internal {
-        allowances.addAllowance(tokenHolder, _spender, _addedValue);
-        emit Approval(tokenHolder, _spender, allowances.allowanceOf(tokenHolder, _spender));
+    function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
+        allowances.addAllowance(_tokenHolder, _spender, _addedValue);
+        emit Approval(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
     }
 
     /**
@@ -106,14 +106,14 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
         return true;
     }
 
-    function decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address tokenHolder) internal {
-        uint256 oldValue = allowances.allowanceOf(tokenHolder, _spender);
+    function decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
+        uint256 oldValue = allowances.allowanceOf(_tokenHolder, _spender);
         if (_subtractedValue > oldValue) {
-            allowances.setAllowance(tokenHolder, _spender, 0);
+            allowances.setAllowance(_tokenHolder, _spender, 0);
         } else {
-            allowances.subAllowance(tokenHolder, _spender, _subtractedValue);
+            allowances.subAllowance(_tokenHolder, _spender, _subtractedValue);
         }
-        emit Approval(tokenHolder, _spender, allowances.allowanceOf(tokenHolder, _spender));
+        emit Approval(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
     }
 
 }

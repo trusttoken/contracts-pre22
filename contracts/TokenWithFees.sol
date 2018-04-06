@@ -17,8 +17,8 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
     uint256 public burnFeeFlat = 0;
     address public staker;
 
-    event NoFeesListSet(address indexed list);
-    event StakerChanged(address indexed addr);
+    event SetNoFeesList(address indexed list);
+    event ChangeStaker(address indexed addr);
 
     function TokenWithFees() public {
         staker = msg.sender;
@@ -26,18 +26,18 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
 
     function setNoFeesList(AddressList _noFeesList) onlyOwner public {
         noFeesList = _noFeesList;
-        emit NoFeesListSet(_noFeesList);
+        emit SetNoFeesList(_noFeesList);
     }
 
-    function burnAllArgs(address burner, uint256 _value) internal {
-        uint256 fee = payStakingFee(burner, _value, burnFeeNumerator, burnFeeDenominator, burnFeeFlat, 0x0);
+    function burnAllArgs(address _burner, uint256 _value) internal {
+        uint256 fee = payStakingFee(_burner, _value, burnFeeNumerator, burnFeeDenominator, burnFeeFlat, address(0));
         uint256 remaining = _value.sub(fee);
-        super.burnAllArgs(burner, remaining);
+        super.burnAllArgs(_burner, remaining);
     }
 
     function mint(address _to, uint256 _amount) onlyOwner public returns (bool) {
         super.mint(_to, _amount);
-        payStakingFee(_to, _amount, mintFeeNumerator, mintFeeDenominator, mintFeeFlat, 0x0);
+        payStakingFee(_to, _amount, mintFeeNumerator, mintFeeDenominator, mintFeeFlat, address(0));
     }
 
     // transfer and transferFrom both call this function, so pay staking fee here.
@@ -46,13 +46,13 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
         payStakingFee(_to, _value, transferFeeNumerator, transferFeeDenominator, 0, _from);
     }
 
-    function payStakingFee(address payer, uint256 value, uint256 numerator, uint256 denominator, uint256 flatRate, address otherParticipant) private returns (uint256) {
-        if (noFeesList.onList(payer) || noFeesList.onList(otherParticipant)) {
+    function payStakingFee(address _payer, uint256 _value, uint256 _numerator, uint256 _denominator, uint256 _flatRate, address _otherParticipant) private returns (uint256) {
+        if (noFeesList.onList(_payer) || noFeesList.onList(_otherParticipant)) {
             return 0;
         }
-        uint256 stakingFee = value.mul(numerator).div(denominator).add(flatRate);
+        uint256 stakingFee = _value.mul(_numerator).div(_denominator).add(_flatRate);
         if (stakingFee > 0) {
-            super.transferAllArgs(payer, staker, stakingFee);
+            super.transferAllArgs(_payer, staker, stakingFee);
         }
         return stakingFee;
     }
@@ -78,9 +78,9 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
         burnFeeFlat = _burnFeeFlat;
     }
 
-    function changeStaker(address newStaker) public onlyOwner {
-        require(newStaker != address(0));
-        staker = newStaker;
-        emit StakerChanged(newStaker);
+    function changeStaker(address _newStaker) public onlyOwner {
+        require(_newStaker != address(0));
+        staker = _newStaker;
+        emit ChangeStaker(_newStaker);
     }
 }

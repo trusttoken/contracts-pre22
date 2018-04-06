@@ -8,15 +8,15 @@ contract BalanceSheet is Claimable {
 
     mapping (address => uint256) public balanceOf;
 
-    function addBalance(address addr, uint256 value) public onlyOwner {
-        balanceOf[addr] = balanceOf[addr].add(value);
+    function addBalance(address _addr, uint256 _value) public onlyOwner {
+        balanceOf[_addr] = balanceOf[_addr].add(_value);
     }
 
-    function subBalance(address addr, uint256 value) public onlyOwner {
-        balanceOf[addr] = balanceOf[addr].sub(value);
+    function subBalance(address _addr, uint256 _value) public onlyOwner {
+        balanceOf[_addr] = balanceOf[_addr].sub(_value);
     }
 
-    function setBalance(address addr, uint256 value) public onlyOwner {
-        balanceOf[addr] = value;
+    function setBalance(address _addr, uint256 _value) public onlyOwner {
+        balanceOf[_addr] = _value;
     }
 }

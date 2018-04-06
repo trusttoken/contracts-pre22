@@ -9,27 +9,27 @@ import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
  * @dev StandardToken modified with pausable transfers.
  **/
 contract ModularPausableToken is ModularStandardToken, ModularBurnableToken, Pausable {
-    function transferAllArgs(address from, address to, uint256 value) internal whenNotPaused {
-        super.transferAllArgs(from, to, value);
+    function transferAllArgs(address _from, address _to, uint256 _value) internal whenNotPaused {
+        super.transferAllArgs(_from, _to, _value);
     }
 
-    function transferFromAllArgs(address from, address to, uint256 value, address spender) internal whenNotPaused {
-        super.transferFromAllArgs(from, to, value, spender);
+    function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal whenNotPaused {
+        super.transferFromAllArgs(_from, _to, _value, _spender);
     }
 
     function approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal whenNotPaused {
         super.approveAllArgs(_spender, _value, _tokenHolder);
     }
 
-    function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address tokenHolder) internal whenNotPaused {
-        super.increaseApprovalAllArgs(_spender, _addedValue, tokenHolder);
+    function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal whenNotPaused {
+        super.increaseApprovalAllArgs(_spender, _addedValue, _tokenHolder);
     }
 
-    function decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address tokenHolder) internal whenNotPaused {
-        super.decreaseApprovalAllArgs(_spender, _subtractedValue, tokenHolder);
+    function decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal whenNotPaused {
+        super.decreaseApprovalAllArgs(_spender, _subtractedValue, _tokenHolder);
     }
 
-    function burnAllArgs(address burner, uint256 value) internal whenNotPaused {
-        super.burnAllArgs(burner, value);
+    function burnAllArgs(address _burner, uint256 _value) internal whenNotPaused {
+        super.burnAllArgs(_burner, _value);
     }
 }

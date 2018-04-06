@@ -21,5 +21,5 @@ contract DelegateBurnable {
     function delegateApproveAllArgs(address spender, uint256 value, address origSender) public;
     function delegateIncreaseApprovalAllArgs(address spender, uint256 addedValue, address origSender) public;
     function delegateDecreaseApprovalAllArgs(address spender, uint256 subtractedValue, address origSender) public;
-    function delegateBurnAllArgs(address burner, uint256 _value) public;
+    function delegateBurnAllArgs(address burner, uint256 value) public;
 }

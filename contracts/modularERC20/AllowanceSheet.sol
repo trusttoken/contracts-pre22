@@ -8,15 +8,15 @@ contract AllowanceSheet is Claimable {
 
     mapping (address => mapping (address => uint256)) public allowanceOf;
 
-    function addAllowance(address tokenHolder, address spender, uint256 value) public onlyOwner {
-        allowanceOf[tokenHolder][spender] = allowanceOf[tokenHolder][spender].add(value);
+    function addAllowance(address _tokenHolder, address _spender, uint256 _value) public onlyOwner {
+        allowanceOf[_tokenHolder][_spender] = allowanceOf[_tokenHolder][_spender].add(_value);
     }
 
-    function subAllowance(address tokenHolder, address spender, uint256 value) public onlyOwner {
-        allowanceOf[tokenHolder][spender] = allowanceOf[tokenHolder][spender].sub(value);
+    function subAllowance(address _tokenHolder, address _spender, uint256 _value) public onlyOwner {
+        allowanceOf[_tokenHolder][_spender] = allowanceOf[_tokenHolder][_spender].sub(_value);
     }
 
-    function setAllowance(address tokenHolder, address spender, uint256 value) public onlyOwner {
-        allowanceOf[tokenHolder][spender] = value;
+    function setAllowance(address _tokenHolder, address _spender, uint256 _value) public onlyOwner {
+        allowanceOf[_tokenHolder][_spender] = _value;
     }
 }

@@ -12,25 +12,25 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
     event DelegatedTo(address indexed newContract);
 
     // Can undelegate by passing in newContract = address(0)
-    function delegateToNewContract(DelegateBurnable newContract) public onlyOwner {
-        delegate = newContract;
+    function delegateToNewContract(DelegateBurnable _newContract) public onlyOwner {
+        delegate = _newContract;
         emit DelegatedTo(delegate);
     }
 
     // If a delegate has been designated, all ERC20 calls are forwarded to it
-    function transferAllArgs(address from, address to, uint256 value) internal {
+    function transferAllArgs(address _from, address _to, uint256 _value) internal {
         if (delegate == address(0)) {
-            super.transferAllArgs(from, to, value);
+            super.transferAllArgs(_from, _to, _value);
         } else {
-            delegate.delegateTransferAllArgs(from, to, value);
+            delegate.delegateTransferAllArgs(_from, _to, _value);
         }
     }
 
-    function transferFromAllArgs(address from, address to, uint256 value, address spender) internal {
+    function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         if (delegate == address(0)) {
-            super.transferFromAllArgs(from, to, value, spender);
+            super.transferFromAllArgs(_from, _to, _value, _spender);
         } else {
-            delegate.delegateTransferFromAllArgs(from, to, value, spender);
+            delegate.delegateTransferFromAllArgs(_from, _to, _value, _spender);
         }
     }
 
@@ -50,11 +50,11 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         }
     }
 
-    function allowance(address _owner, address spender) public view returns (uint256) {
+    function allowance(address _owner, address _spender) public view returns (uint256) {
         if (delegate == address(0)) {
-            return super.allowance(_owner, spender);
+            return super.allowance(_owner, _spender);
         } else {
-            return delegate.delegateAllowance(_owner, spender);
+            return delegate.delegateAllowance(_owner, _spender);
         }
     }
 
@@ -66,27 +66,27 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         }
     }
 
-    function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address tokenHolder) internal {
+    function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
         if (delegate == address(0)) {
-            super.increaseApprovalAllArgs(_spender, _addedValue, tokenHolder);
+            super.increaseApprovalAllArgs(_spender, _addedValue, _tokenHolder);
         } else {
-            delegate.delegateIncreaseApprovalAllArgs(_spender, _addedValue, tokenHolder);
+            delegate.delegateIncreaseApprovalAllArgs(_spender, _addedValue, _tokenHolder);
         }
     }
 
-    function decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address tokenHolder) internal {
+    function decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
         if (delegate == address(0)) {
-            super.decreaseApprovalAllArgs(_spender, _subtractedValue, tokenHolder);
+            super.decreaseApprovalAllArgs(_spender, _subtractedValue, _tokenHolder);
         } else {
-            delegate.delegateDecreaseApprovalAllArgs(_spender, _subtractedValue, tokenHolder);
+            delegate.delegateDecreaseApprovalAllArgs(_spender, _subtractedValue, _tokenHolder);
         }
     }
 
-    function burnAllArgs(address burner, uint256 value) internal {
+    function burnAllArgs(address _burner, uint256 _value) internal {
         if (delegate == address(0)) {
-            super.burnAllArgs(burner, value);
+            super.burnAllArgs(_burner, _value);
         } else {
-            delegate.delegateBurnAllArgs(burner, value);
+            delegate.delegateBurnAllArgs(_burner, _value);
         }
     }
 }
