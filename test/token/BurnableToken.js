@@ -1,17 +1,17 @@
-const BurnableTokenMock = artifacts.require('BurnableTokenMock')
 import assertRevert from '../helpers/assertRevert'
+const BurnableTokenMock = artifacts.require('BurnableTokenMock')
 
-contract('BurnableToken', function ([_, owner]) {
+contract('BurnableToken', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function () {
-        this.token = await BurnableTokenMock.new(owner, 100)
+        this.token = await BurnableTokenMock.new(oneHundred, 100, { from: owner })
     })
 
-    burnableTokenTests([_, owner])
+    burnableTokenTests([_, owner, oneHundred, anotherAccount])
 })
 
-function burnableTokenTests([_, owner]) {
+function burnableTokenTests([_, owner, oneHundred, anotherAccount]) {
     describe('--BurnableToken Tests--', function () {
-        const from = owner
+        const from = oneHundred
 
         describe('when the given amount is not greater than balance of the sender', function () {
             const amount = 10
@@ -28,11 +28,11 @@ function burnableTokenTests([_, owner]) {
                 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
                 assert.equal(logs.length, 2)
                 assert.equal(logs[0].event, 'Burn')
-                assert.equal(logs[0].args.burner, owner)
+                assert.equal(logs[0].args.burner, oneHundred)
                 assert.equal(logs[0].args.value, amount)
 
                 assert.equal(logs[1].event, 'Transfer')
-                assert.equal(logs[1].args.from, owner)
+                assert.equal(logs[1].args.from, oneHundred)
                 assert.equal(logs[1].args.to, ZERO_ADDRESS)
                 assert.equal(logs[1].args.value, amount)
             })

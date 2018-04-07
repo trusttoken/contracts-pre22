@@ -1,15 +1,15 @@
 const BasicToken = artifacts.require('BasicTokenMock')
 import assertRevert from '../helpers/assertRevert'
 
-contract('BasicToken', function ([_, owner, recipient, anotherAccount]) {
+contract('BasicToken', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function () {
-        this.token = await BasicToken.new(owner, 100)
+        this.token = await BasicToken.new(oneHundred, 100, { from: owner })
     })
 
-    basicTokenTests([_, owner, recipient, anotherAccount])
+    basicTokenTests([_, owner, oneHundred, anotherAccount])
 })
 
-function basicTokenTests([_, owner, recipient, anotherAccount]) {
+function basicTokenTests([_, owner, oneHundred, anotherAccount]) {
     describe('--BasicToken Tests--', function () {
         const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
@@ -24,7 +24,7 @@ function basicTokenTests([_, owner, recipient, anotherAccount]) {
         describe('balanceOf', function () {
             describe('when the requested account has no tokens', function () {
                 it('returns zero', async function () {
-                    const balance = await this.token.balanceOf(anotherAccount)
+                    const balance = await this.token.balanceOf(owner)
 
                     assert.equal(balance, 0)
                 })
@@ -32,7 +32,7 @@ function basicTokenTests([_, owner, recipient, anotherAccount]) {
 
             describe('when the requested account has some tokens', function () {
                 it('returns the total amount of tokens', async function () {
-                    const balance = await this.token.balanceOf(owner)
+                    const balance = await this.token.balanceOf(oneHundred)
 
                     assert.equal(balance, 100)
                 })
@@ -40,14 +40,14 @@ function basicTokenTests([_, owner, recipient, anotherAccount]) {
         })
 
         describe('transfer', function () {
-            describe('when the recipient is not the zero address', function () {
-                const to = recipient
+            describe('when the anotherAccount is not the zero address', function () {
+                const to = anotherAccount
 
                 describe('when the sender does not have enough balance', function () {
                     const amount = 101
 
                     it('reverts', async function () {
-                        await assertRevert(this.token.transfer(to, amount, { from: owner }))
+                        await assertRevert(this.token.transfer(to, amount, { from: oneHundred }))
                     })
                 })
 
@@ -55,32 +55,32 @@ function basicTokenTests([_, owner, recipient, anotherAccount]) {
                     const amount = 100
 
                     it('transfers the requested amount', async function () {
-                        await this.token.transfer(to, amount, { from: owner })
+                        await this.token.transfer(to, amount, { from: oneHundred })
 
-                        const senderBalance = await this.token.balanceOf(owner)
+                        const senderBalance = await this.token.balanceOf(oneHundred)
                         assert.equal(senderBalance, 0)
 
-                        const recipientBalance = await this.token.balanceOf(to)
-                        assert.equal(recipientBalance, amount)
+                        const anotherAccountBalance = await this.token.balanceOf(to)
+                        assert.equal(anotherAccountBalance, amount)
                     })
 
                     it('emits a transfer event', async function () {
-                        const { logs } = await this.token.transfer(to, amount, { from: owner })
+                        const { logs } = await this.token.transfer(to, amount, { from: oneHundred })
 
                         assert.equal(logs.length, 1)
                         assert.equal(logs[0].event, 'Transfer')
-                        assert.equal(logs[0].args.from, owner)
+                        assert.equal(logs[0].args.from, oneHundred)
                         assert.equal(logs[0].args.to, to)
                         assert(logs[0].args.value.eq(amount))
                     })
                 })
             })
 
-            describe('when the recipient is the zero address', function () {
+            describe('when the anotherAccount is the zero address', function () {
                 const to = ZERO_ADDRESS
 
                 it('reverts', async function () {
-                    await assertRevert(this.token.transfer(to, 100, { from: owner }))
+                    await assertRevert(this.token.transfer(to, 100, { from: oneHundred }))
                 })
             })
         })

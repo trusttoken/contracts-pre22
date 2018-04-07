@@ -1,11 +1,11 @@
+import assertRevert from './helpers/assertRevert'
+import increaseTime, { duration } from './helpers/increaseTime'
 const AddressList = artifacts.require("AddressList")
 const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const TimeLockedController = artifacts.require("TimeLockedController")
 var Web3 = require('web3')
-import assertRevert from './helpers/assertRevert'
-import increaseTime, {duration} from './helpers/increaseTime'
 
 contract('TimeLockedController', function(accounts) {
     it("should work", async () => {

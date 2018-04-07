@@ -1,6 +1,6 @@
+import assertRevert from './helpers/assertRevert'
 const AddressList = artifacts.require("AddressList")
 var Web3 = require('web3')
-import assertRevert from './helpers/assertRevert'
 
 contract('AddressList', function(accounts) {
     it("should work", async () => {

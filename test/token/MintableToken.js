@@ -3,7 +3,7 @@ const MintableToken = artifacts.require('ModularMintableToken')
 const BalanceSheet = artifacts.require('BalanceSheet')
 const AllowanceSheet = artifacts.require('AllowanceSheet')
 
-contract('Mintable', function ([owner, anotherAccount]) {
+contract('Mintable', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function () {
         const balanceSheet = await BalanceSheet.new({ from: owner })
         const allowanceSheet = await AllowanceSheet.new({ from: owner })
@@ -14,36 +14,42 @@ contract('Mintable', function ([owner, anotherAccount]) {
         await this.token.setAllowanceSheet(allowanceSheet.address, { from: owner })
     })
 
-    describe('mint', function () {
+    mintableTokenTests([_, owner, oneHundred, anotherAccount])
+})
+
+function mintableTokenTests([_, owner, oneHundred, anotherAccount]) {
+    describe('-MintableToken Tests-', function () {
         const amount = 100
 
         describe('when the sender is the token owner', function () {
             const from = owner
 
-                it('mints the requested amount', async function () {
-                    await this.token.mint(owner, amount, { from })
+            it('mints the requested amount', async function () {
+                await this.token.mint(anotherAccount, amount, { from })
 
-                    const balance = await this.token.balanceOf(owner)
-                    assert.equal(balance, amount)
-                })
+                const balance = await this.token.balanceOf(anotherAccount)
+                assert.equal(balance, amount)
+            })
 
-                it('emits a mint finished event', async function () {
-                    const { logs } = await this.token.mint(owner, amount, { from })
+            it('emits a mint finished event', async function () {
+                const { logs } = await this.token.mint(anotherAccount, amount, { from })
 
-                    assert.equal(logs.length, 2)
-                    assert.equal(logs[0].event, 'Mint')
-                    assert.equal(logs[0].args.to, owner)
-                    assert.equal(logs[0].args.amount, amount)
-                    assert.equal(logs[1].event, 'Transfer')
-                })
+                assert.equal(logs.length, 2)
+                assert.equal(logs[0].event, 'Mint')
+                assert.equal(logs[0].args.to, anotherAccount)
+                assert.equal(logs[0].args.amount, amount)
+                assert.equal(logs[1].event, 'Transfer')
+            })
         })
 
         describe('when the sender is not the token owner', function () {
             const from = anotherAccount
 
-                it('reverts', async function () {
-                    await assertRevert(this.token.mint(owner, amount, { from }))
-                })
+            it('reverts', async function () {
+                await assertRevert(this.token.mint(anotherAccount, amount, { from }))
+            })
         })
     })
-})
+}
+
+export default mintableTokenTests

@@ -1,23 +1,23 @@
 import assertRevert from './helpers/assertRevert'
-const BurnableTokenWithBoundsMock = artifacts.require('BurnableTokenWithBoundsMock')
 import burnableTokenTests from './token/BurnableToken'
+const BurnableTokenWithBoundsMock = artifacts.require('BurnableTokenWithBoundsMock')
 
-contract('BurnableTokenWithBounds', function ([_, owner, recipient]) {
+contract('BurnableTokenWithBounds', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function () {
-        this.token = await BurnableTokenWithBoundsMock.new(recipient, 100, { from: owner })
+        this.token = await BurnableTokenWithBoundsMock.new(oneHundred, 100, { from: owner })
     })
 
-    burnableTokenWithBoundsTests([_, owner, recipient])
+    burnableTokenWithBoundsTests([_, owner, oneHundred])
 })
 
-function burnableTokenWithBoundsTests([_, owner, recipient]) {
+function burnableTokenWithBoundsTests([_, owner, oneHundred, anotherAccount]) {
     describe('--BurnableTokenWithBounds Tests--', function () {
         describe('non-restrictive burn bounds', function () {
             beforeEach(async function () {
                 await this.token.setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owner })
             })
 
-            burnableTokenTests([_, recipient])
+            burnableTokenTests([_, owner, oneHundred, anotherAccount])
         })
 
         describe('restrictive burn bounds', function () {
@@ -26,11 +26,11 @@ function burnableTokenWithBoundsTests([_, owner, recipient]) {
             })
 
             it("allows burns with bounds and reverts others", async function () {
-                await assertRevert(this.token.burn(9, { from: recipient }))
-                await assertRevert(this.token.burn(21, { from: recipient }))
-                await this.token.burn(10, { from: recipient })
-                await this.token.burn(15, { from: recipient })
-                await this.token.burn(20, { from: recipient })
+                await assertRevert(this.token.burn(9, { from: oneHundred }))
+                await assertRevert(this.token.burn(21, { from: oneHundred }))
+                await this.token.burn(10, { from: oneHundred })
+                await this.token.burn(15, { from: oneHundred })
+                await this.token.burn(20, { from: oneHundred })
             })
         })
     })

@@ -1,10 +1,10 @@
+import assertRevert from './helpers/assertRevert'
+import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
 const AddressList = artifacts.require("AddressList")
 const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 var Web3 = require('web3')
-import assertRevert from './helpers/assertRevert'
-import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
 
 contract('TrueUSD-old-test', function(accounts) {
     it("should work", async () => {
@@ -81,6 +81,7 @@ contract('TrueUSD', function ([_, owner, recipient, anotherAccount]) {
 
         await this.mintWhiteList.changeList(recipient, true, { from: owner })
         await this.token.mint(recipient, 100, { from: owner })
+        await this.mintWhiteList.changeList(recipient, false, { from: owner })
     })
 
     describe('burn', function () {
