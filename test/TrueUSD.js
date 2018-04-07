@@ -1,11 +1,12 @@
-const AddressList = artifacts.require("AddressList");
-const TrueUSD = artifacts.require("TrueUSD");
-const BalanceSheet = artifacts.require("BalanceSheet");
-const AllowanceSheet = artifacts.require("AllowanceSheet");
-var Web3 = require('web3');
-import assertRevert from './helpers/assertRevert';
+const AddressList = artifacts.require("AddressList")
+const TrueUSD = artifacts.require("TrueUSD")
+const BalanceSheet = artifacts.require("BalanceSheet")
+const AllowanceSheet = artifacts.require("AllowanceSheet")
+var Web3 = require('web3')
+import assertRevert from './helpers/assertRevert'
+import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
 
-contract('TrueUSD', function(accounts) {
+contract('TrueUSD-old-test', function(accounts) {
     it("should work", async () => {
         const mintWhiteList = await AddressList.new("Mint whitelist")
         const burnWhiteList = await AddressList.new("Burn whitelist")
@@ -55,5 +56,46 @@ contract('TrueUSD', function(accounts) {
         assert.equal(name, "FooCoin")
         symbol = await trueUSD.symbol()
         assert.equal(symbol, "FCN")
+    })
+})
+
+contract('TrueUSD', function ([_, owner, recipient, anotherAccount]) {
+    beforeEach(async function () {
+        // Set up a TrueUSD contract with 100 tokens for 'recipient'.
+        // We do not follow the Mock pattern here because one contract that
+        // did all of this in its constructor would use more than a block's
+        // maximum gas.
+        this.mintWhiteList = await AddressList.new("Mint whitelist", { from: owner })
+        this.burnWhiteList = await AddressList.new("Burn whitelist", { from: owner })
+        this.blackList = await AddressList.new("Blacklist", { from: owner })
+        this.noFeesList = await AddressList.new("No Fees list", { from: owner })
+        this.balances = await BalanceSheet.new({ from: owner })
+        this.allowances = await AllowanceSheet.new({ from: owner })
+        this.token = await TrueUSD.new({ from: owner })
+        await this.token.setLists(this.mintWhiteList.address, this.burnWhiteList.address, this.blackList.address, { from: owner })
+        await this.token.setNoFeesList(this.noFeesList.address, { from: owner })
+        await this.balances.transferOwnership(this.token.address, { from: owner })
+        await this.allowances.transferOwnership(this.token.address, { from: owner })
+        await this.token.setBalanceSheet(this.balances.address, { from: owner })
+        await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
+
+        await this.mintWhiteList.changeList(recipient, true, { from: owner })
+        await this.token.mint(recipient, 100, { from: owner })
+    })
+
+    describe('burn', function () {
+        describe('user is on burn whitelist', function () {
+            beforeEach(async function () {
+                await this.burnWhiteList.changeList(recipient, true, { from: owner })
+            })
+
+            burnableTokenWithBoundsTests([_, owner, recipient])
+        })
+
+        describe('user is not on burn whitelist', function () {
+            it("reverts burn", async function () {
+                await assertRevert(this.token.burn(21, { from: recipient }))
+            })
+        })
     })
 })

@@ -36,18 +36,18 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Gate
     }
 
     //TODO: block gas limit is insufficient to include all these?
-    function setNoFeesList(AddressList _noFeesList) onlyWhenNoDelegate public {
-        super.setNoFeesList(_noFeesList);
-    }
-    function mint(address _to, uint256 _amount) onlyWhenNoDelegate public returns (bool) {
-        super.mint(_to, _amount);
-    }
-    function setBalanceSheet(address _sheet) onlyWhenNoDelegate public {
-        super.setBalanceSheet(_sheet);
-    }
-    function setAllowanceSheet(address _sheet) onlyWhenNoDelegate public {
-        super.setAllowanceSheet(_sheet);
-    }
+    // function setNoFeesList(AddressList _noFeesList) onlyWhenNoDelegate public {
+    //     super.setNoFeesList(_noFeesList);
+    // }
+    // function mint(address _to, uint256 _amount) onlyWhenNoDelegate public returns (bool) {
+    //     super.mint(_to, _amount);
+    // }
+    // function setBalanceSheet(address _sheet) onlyWhenNoDelegate public {
+    //     super.setBalanceSheet(_sheet);
+    // }
+    // function setAllowanceSheet(address _sheet) onlyWhenNoDelegate public {
+    //     super.setAllowanceSheet(_sheet);
+    // }
     // function changeBurnBounds(uint256 _min, uint256 _max) onlyWhenNoDelegate public {
     //     super.changeBurnBounds(_min, _max);
     // }
