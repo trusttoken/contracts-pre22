@@ -43,7 +43,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     event RequestMint(address indexed to, address indexed admin, uint256 amount, uint256 releaseTimestamp, uint256 opIndex);
     event TransferChild(address indexed child, address indexed newOwner);
-    event RequestReclaim(address indexed other);
+    event RequestReclaimContract(address indexed other);
     event SetTrueUSD(TrueUSD newContract);
     event TransferAdminship(address indexed previousAdmin, address indexed newAdmin);
     event ChangeMintDelay(uint256 newDelay);
@@ -85,9 +85,17 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     // Transfer ownership of a contract from trueUSD
     // to this TimeLockedController. Can be used e.g. to reclaim balance sheet
     // in order to transfer it to an upgraded TrueUSD contract.
-    function requestReclaim(Ownable _other) public onlyOwner {
-        emit RequestReclaim(_other);
+    function requestReclaimContract(Ownable _other) public onlyOwner {
+        emit RequestReclaimContract(_other);
         trueUSD.reclaimContract(_other);
+    }
+
+    function requestReclaimEther() public onlyOwner {
+        trueUSD.reclaimEther();
+    }
+
+    function requestReclaimToken(ERC20Basic _token) public onlyOwner {
+        trueUSD.reclaimToken(_token);
     }
 
     // Change the minimum and maximum amounts that TrueUSD users can
