@@ -25,4 +25,13 @@ contract('AddressList', function([_, owner, oneHundred, anotherAccount]) {
     it("non-owner can't change list", async function () {
         await assertRevert(this.list.changeList(oneHundred, true, { from: anotherAccount }))
     })
+
+    it('emits an event', async function () {
+        const { logs } = await this.list.changeList(oneHundred, true, { from: owner })
+
+        assert.equal(logs.length, 1)
+        assert.equal(logs[0].event, 'ChangeList')
+        assert.equal(logs[0].args.addr, oneHundred)
+        assert.equal(logs[0].args.value, true)
+    })
 })

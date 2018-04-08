@@ -9,6 +9,7 @@ module.exports = {
       host: "localhost",
       port: 8545,
       gas: 7900000,
+      gasPrice: 1, // Specified in Wei
       network_id: "*" // Match any network id
     },
     ropsten: {

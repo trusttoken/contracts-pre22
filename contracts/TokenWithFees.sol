@@ -7,7 +7,7 @@ import "./AddressList.sol";
 contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
     AddressList public noFeesList;
 
-    uint256 public transferFeeNumerator = 7;
+    uint256 public transferFeeNumerator = 0;
     uint256 public transferFeeDenominator = 10000;
     uint256 public mintFeeNumerator = 0;
     uint256 public mintFeeDenominator = 10000;
@@ -19,6 +19,14 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
 
     event SetNoFeesList(address indexed list);
     event ChangeStaker(address indexed addr);
+    event ChangeStakingFees(uint256 transferFeeNumerator,
+                            uint256 transferFeeDenominator,
+                            uint256 mintFeeNumerator,
+                            uint256 mintFeeDenominator,
+                            uint256 mintFeeFlat,
+                            uint256 burnFeeNumerator,
+                            uint256 burnFeeDenominator,
+                            uint256 burnFeeFlat);
 
     function TokenWithFees() public {
         staker = msg.sender;
@@ -65,9 +73,9 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
                                uint256 _burnFeeNumerator,
                                uint256 _burnFeeDenominator,
                                uint256 _burnFeeFlat) public onlyOwner {
-        require(_transferFeeDenominator != 0);
-        require(_mintFeeDenominator != 0);
-        require(_burnFeeDenominator != 0);
+        require(_transferFeeNumerator < _transferFeeDenominator);
+        require(_mintFeeNumerator < _mintFeeDenominator);
+        require(_burnFeeNumerator < _burnFeeDenominator);
         transferFeeNumerator = _transferFeeNumerator;
         transferFeeDenominator = _transferFeeDenominator;
         mintFeeNumerator = _mintFeeNumerator;
@@ -76,6 +84,14 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
         burnFeeNumerator = _burnFeeNumerator;
         burnFeeDenominator = _burnFeeDenominator;
         burnFeeFlat = _burnFeeFlat;
+        emit ChangeStakingFees(transferFeeNumerator,
+                               transferFeeDenominator,
+                               mintFeeNumerator,
+                               mintFeeDenominator,
+                               mintFeeFlat,
+                               burnFeeNumerator,
+                               burnFeeDenominator,
+                               burnFeeFlat);
     }
 
     function changeStaker(address _newStaker) public onlyOwner {
