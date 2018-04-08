@@ -6,5 +6,5 @@ contract('BurnableTokenWithBounds', function ([_, owner, oneHundred, anotherAcco
         this.token = await BurnableTokenWithBoundsMock.new(oneHundred, 100, { from: owner })
     })
 
-    burnableTokenWithBoundsTests([_, owner, oneHundred])
+    burnableTokenWithBoundsTests([_, owner, oneHundred, anotherAccount])
 })
