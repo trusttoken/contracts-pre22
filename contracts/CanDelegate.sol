@@ -22,7 +22,7 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         if (delegate == address(0)) {
             super.transferAllArgs(_from, _to, _value);
         } else {
-            delegate.delegateTransferAllArgs(_from, _to, _value);
+            assert(delegate.delegateTransfer(_to, _value, _from));
         }
     }
 
@@ -30,7 +30,7 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         if (delegate == address(0)) {
             super.transferFromAllArgs(_from, _to, _value, _spender);
         } else {
-            delegate.delegateTransferFromAllArgs(_from, _to, _value, _spender);
+            assert(delegate.delegateTransferFrom(_from, _to, _value, _spender));
         }
     }
 
@@ -46,7 +46,7 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         if (delegate == address(0)) {
             super.approveAllArgs(_spender, _value, _tokenHolder);
         } else {
-            delegate.delegateApproveAllArgs(_spender, _value, _tokenHolder);
+            assert(delegate.delegateApprove(_spender, _value, _tokenHolder));
         }
     }
 
@@ -70,7 +70,7 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         if (delegate == address(0)) {
             super.increaseApprovalAllArgs(_spender, _addedValue, _tokenHolder);
         } else {
-            delegate.delegateIncreaseApprovalAllArgs(_spender, _addedValue, _tokenHolder);
+            assert(delegate.delegateIncreaseApproval(_spender, _addedValue, _tokenHolder));
         }
     }
 
@@ -78,7 +78,7 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         if (delegate == address(0)) {
             super.decreaseApprovalAllArgs(_spender, _subtractedValue, _tokenHolder);
         } else {
-            delegate.delegateDecreaseApprovalAllArgs(_spender, _subtractedValue, _tokenHolder);
+            assert(delegate.delegateDecreaseApproval(_spender, _subtractedValue, _tokenHolder));
         }
     }
 
@@ -86,7 +86,7 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         if (delegate == address(0)) {
             super.burnAllArgs(_burner, _value);
         } else {
-            delegate.delegateBurnAllArgs(_burner, _value);
+            delegate.delegateBurn(_burner, _value);
         }
     }
 }

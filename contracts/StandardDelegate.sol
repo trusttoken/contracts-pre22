@@ -28,7 +28,7 @@ contract StandardDelegate is DelegateBurnable, ModularStandardToken, ModularBurn
         return balanceOf(_who);
     }
 
-    function delegateTransferAllArgs(address _origSender, address _to, uint256 _value) onlySender(delegatedFrom) public {
+    function delegateTransfer(address _to, uint256 _value, address _origSender) onlySender(delegatedFrom) public returns (bool) {
         transferAllArgs(_origSender, _to, _value);
     }
 
@@ -36,23 +36,27 @@ contract StandardDelegate is DelegateBurnable, ModularStandardToken, ModularBurn
         return allowance(_owner, _spender);
     }
 
-    function delegateTransferFromAllArgs(address _from, address _to, uint256 _value, address _origSender) onlySender(delegatedFrom) public {
+    function delegateTransferFrom(address _from, address _to, uint256 _value, address _origSender) onlySender(delegatedFrom) public returns (bool) {
         transferFromAllArgs(_from, _to, _value, _origSender);
+        return true;
     }
 
-    function delegateApproveAllArgs(address _spender, uint256 _value, address _origSender) onlySender(delegatedFrom) public {
+    function delegateApprove(address _spender, uint256 _value, address _origSender) onlySender(delegatedFrom) public returns (bool) {
         approveAllArgs(_spender, _value, _origSender);
+        return true;
     }
 
-    function delegateIncreaseApprovalAllArgs(address _spender, uint256 _addedValue, address _origSender) onlySender(delegatedFrom) public {
+    function delegateIncreaseApproval(address _spender, uint256 _addedValue, address _origSender) onlySender(delegatedFrom) public returns (bool) {
         increaseApprovalAllArgs(_spender, _addedValue, _origSender);
+        return true;
     }
 
-    function delegateDecreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _origSender) onlySender(delegatedFrom) public {
+    function delegateDecreaseApproval(address _spender, uint256 _subtractedValue, address _origSender) onlySender(delegatedFrom) public returns (bool) {
         decreaseApprovalAllArgs(_spender, _subtractedValue, _origSender);
+        return true;
     }
 
-    function delegateBurnAllArgs(address _origSender, uint256 _value) onlySender(delegatedFrom) public {
+    function delegateBurn(address _origSender, uint256 _value) onlySender(delegatedFrom) public {
         burnAllArgs(_origSender, _value);
     }
 }
