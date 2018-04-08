@@ -38,7 +38,7 @@ contract('TrueUSD', function (accounts) {
                 await this.burnWhiteList.changeList(oneHundred, true, { from: owner })
             })
 
-            burnableTokenWithBoundsTests([_, owner, oneHundred])
+            burnableTokenWithBoundsTests([_, owner, oneHundred, anotherAccount])
         })
 
         describe('user is not on burn whitelist', function () {
@@ -67,9 +67,9 @@ contract('TrueUSD', function (accounts) {
         await this.token.pause({ from: owner })
         await assertRevert(this.token.transfer(accounts[5], 9999, { from: accounts[4] }))
         await this.token.unpause({ from: owner })
-        await assertRevert(this.token.delegateTransferAllArgs(accounts[4], accounts[5], 9999, { from: accounts[6] }))
+        await assertRevert(this.token.delegateTransfer(accounts[5], 9999, accounts[4], { from: accounts[6] }))
         await this.token.setDelegatedFrom(accounts[6], { from: owner })
-        await this.token.delegateTransferAllArgs(accounts[4], accounts[5], 9999, { from: accounts[6] })
+        await this.token.delegateTransfer(accounts[5], 9999, accounts[4], { from: accounts[6] })
         await userHasCoins(4, 11000 - 7 - 9999)
         await userHasCoins(5, 9999 - 6)
         await userHasCoins(1, 7 + 6)
