@@ -8,7 +8,7 @@ const TimeLockedController = artifacts.require("TimeLockedController")
 var Web3 = require('web3')
 
 contract('TimeLockedController', function(accounts) {
-    it("should work", async () => {
+    it("should work", async function () {
         const mintWhiteList = await AddressList.new("Mint whitelist")
         const burnWhiteList = await AddressList.new("Burn whitelist")
         const blackList = await AddressList.new("Blacklist")

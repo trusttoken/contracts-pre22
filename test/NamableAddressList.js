@@ -7,7 +7,7 @@ contract('NamableAddressList', function([_, owner, anotherAccount]) {
         this.whitelist = await NamableAddressList.new("Burn whitelist", {from: owner})
     })
 
-    it("owner can change name", async function() {
+    it("owner can change name", async function () {
         let name = await this.whitelist.name()
         assert.equal(name, "Burn whitelist", "Got wrong name")
         await this.whitelist.changeName("fooList", {from: owner})
@@ -15,7 +15,7 @@ contract('NamableAddressList', function([_, owner, anotherAccount]) {
         assert.equal(name, "fooList", "Got wrong name")
     })
 
-    it("non-owner can't change name", async function() {
+    it("non-owner can't change name", async function () {
         await assertRevert(this.whitelist.changeName("fooList", { from: anotherAccount }))
     })
 })
