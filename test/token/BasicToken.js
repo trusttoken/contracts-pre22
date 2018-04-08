@@ -1,13 +1,4 @@
-const BasicToken = artifacts.require('BasicTokenMock')
 import assertRevert from '../helpers/assertRevert'
-
-contract('BasicToken', function ([_, owner, oneHundred, anotherAccount]) {
-    beforeEach(async function () {
-        this.token = await BasicToken.new(oneHundred, 100, { from: owner })
-    })
-
-    basicTokenTests([_, owner, oneHundred, anotherAccount])
-})
 
 function basicTokenTests([_, owner, oneHundred, anotherAccount]) {
     describe('--BasicToken Tests--', function () {

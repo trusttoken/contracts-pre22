@@ -4,7 +4,6 @@ const AddressList = artifacts.require("AddressList")
 const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
-var Web3 = require('web3')
 
 contract('TrueUSD-old-test', function(accounts) {
     it("should work", async function () {

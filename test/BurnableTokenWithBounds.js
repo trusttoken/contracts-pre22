@@ -1,14 +1,5 @@
 import assertRevert from './helpers/assertRevert'
 import burnableTokenTests from './token/BurnableToken'
-const BurnableTokenWithBoundsMock = artifacts.require('BurnableTokenWithBoundsMock')
-
-contract('BurnableTokenWithBounds', function ([_, owner, oneHundred, anotherAccount]) {
-    beforeEach(async function () {
-        this.token = await BurnableTokenWithBoundsMock.new(oneHundred, 100, { from: owner })
-    })
-
-    burnableTokenWithBoundsTests([_, owner, oneHundred])
-})
 
 function burnableTokenWithBoundsTests([_, owner, oneHundred, anotherAccount]) {
     describe('--BurnableTokenWithBounds Tests--', function () {
