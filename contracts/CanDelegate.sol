@@ -9,12 +9,12 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
     // in 'delegate' and any BurnableToken calls to this contract will be delegated to that one.
     DelegateBurnable public delegate;
 
-    event DelegatedTo(address indexed newContract);
+    event DelegateToNewContract(address indexed newContract);
 
     // Can undelegate by passing in newContract = address(0)
     function delegateToNewContract(DelegateBurnable _newContract) public onlyOwner {
         delegate = _newContract;
-        emit DelegatedTo(delegate);
+        emit DelegateToNewContract(delegate);
     }
 
     // If a delegate has been designated, all ERC20 calls are forwarded to it

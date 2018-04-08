@@ -10,7 +10,7 @@ contract GatedToken is ModularMintableToken, ModularBurnableToken {
     AddressList public blackList;
 
     event SetLists(address indexed mintList, address indexed burnList, address indexed blackList);
-    event WipedAccount(address indexed account, uint256 balance);
+    event WipeBlacklistedAccount(address indexed account, uint256 balance);
 
     function setLists(AddressList _canReceiveMintWhiteList, AddressList _canBurnWhiteList, AddressList _blackList) onlyOwner public {
         canReceiveMintWhiteList = _canReceiveMintWhiteList;
@@ -47,6 +47,6 @@ contract GatedToken is ModularMintableToken, ModularBurnableToken {
         uint256 oldValue = balanceOf(_account);
         balances.setBalance(_account, 0);
         totalSupply_ = totalSupply_.sub(oldValue);
-        emit WipedAccount(_account, oldValue);
+        emit WipeBlacklistedAccount(_account, oldValue);
     }
 }
