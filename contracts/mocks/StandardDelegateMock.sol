@@ -1,10 +1,10 @@
 pragma solidity ^0.4.18;
 
-import "../modularERC20/ModularPausableToken.sol";
+import "../StandardDelegate.sol";
 
-contract PausableTokenMock is ModularPausableToken {
+contract StandardDelegateMock is StandardDelegate {
 
-    function PausableTokenMock(address initialAccount, uint initialBalance) public {
+    function StandardDelegateMock(address initialAccount, uint256 initialBalance) public {
         balances = new BalanceSheet();
         allowances = new AllowanceSheet();
         balances.setBalance(initialAccount, initialBalance);
