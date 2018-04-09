@@ -7,7 +7,7 @@ module.exports = {
   solc: {
     optimizer: {
       enabled: true,
-      runs: 200
+      runs: 2000000000
     }
   },
   networks: {
