@@ -64,11 +64,10 @@ function gatedTokenTests([_, owner, oneHundred, anotherAccount]) {
 
                 burnableTokenTests([_, owner, oneHundred, anotherAccount])
 
-                //TODO do we actually want this feature? removing from whitelist can already accomplish this
-                // it('rejects burn when user is on blacklist', async function () {
-                //     await this.blackList.changeList(oneHundred, true, { from: owner })
-                //     await assertRevert(this.token.burn(20, { from: oneHundred }))
-                // })
+                it('rejects burn when user is on blacklist', async function () {
+                    await this.blackList.changeList(oneHundred, true, { from: owner })
+                    await assertRevert(this.token.burn(20, { from: oneHundred }))
+                })
             })
 
             it('rejects burn when user is not on burn whitelist', async function () {

@@ -35,50 +35,49 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Gate
         _;
     }
 
-    //TODO: block gas limit is insufficient to include all these?
-    // function setNoFeesList(AddressList _noFeesList) onlyWhenNoDelegate public {
-    //     super.setNoFeesList(_noFeesList);
-    // }
-    // function mint(address _to, uint256 _amount) onlyWhenNoDelegate public returns (bool) {
-    //     super.mint(_to, _amount);
-    // }
-    // function setBalanceSheet(address _sheet) onlyWhenNoDelegate public {
-    //     super.setBalanceSheet(_sheet);
-    // }
-    // function setAllowanceSheet(address _sheet) onlyWhenNoDelegate public {
-    //     super.setAllowanceSheet(_sheet);
-    // }
-    // function changeBurnBounds(uint256 _min, uint256 _max) onlyWhenNoDelegate public {
-    //     super.changeBurnBounds(_min, _max);
-    // }
-    // function setLists(AddressList _canReceiveMintWhiteList, AddressList _canBurnWhiteList, AddressList _blackList) onlyWhenNoDelegate public {
-    //     super.setLists(_canReceiveMintWhiteList, _canBurnWhiteList, _blackList);
-    // }
-    // function changeStaker(address _newStaker) onlyWhenNoDelegate public {
-    //     super.changeStaker(_newStaker);
-    // }
-    // function wipeBlacklistedAccount(address _account) onlyWhenNoDelegate public {
-    //     super.wipeBlacklistedAccount(_account);
-    // }
-    // function changeStakingFees(
-    //     uint256 _transferFeeNumerator,
-    //     uint256 _transferFeeDenominator,
-    //     uint256 _mintFeeNumerator,
-    //     uint256 _mintFeeDenominator,
-    //     uint256 _mintFeeFlat,
-    //     uint256 _burnFeeNumerator,
-    //     uint256 _burnFeeDenominator,
-    //     uint256 _burnFeeFlat
-    // ) onlyWhenNoDelegate public {
-    //     super.changeStakingFees(
-    //         _transferFeeNumerator,
-    //         _transferFeeDenominator,
-    //         _mintFeeNumerator,
-    //         _mintFeeDenominator,
-    //         _mintFeeFlat,
-    //         _burnFeeNumerator,
-    //         _burnFeeDenominator,
-    //         _burnFeeFlat
-    //     );
-    // }
+    function setNoFeesList(AddressList _noFeesList) onlyWhenNoDelegate public {
+        super.setNoFeesList(_noFeesList);
+    }
+    function mint(address _to, uint256 _amount) onlyWhenNoDelegate public returns (bool) {
+        super.mint(_to, _amount);
+    }
+    function setBalanceSheet(address _sheet) onlyWhenNoDelegate public {
+        super.setBalanceSheet(_sheet);
+    }
+    function setAllowanceSheet(address _sheet) onlyWhenNoDelegate public {
+        super.setAllowanceSheet(_sheet);
+    }
+    function setBurnBounds(uint256 _min, uint256 _max) onlyWhenNoDelegate public {
+        super.setBurnBounds(_min, _max);
+    }
+    function setLists(AddressList _canReceiveMintWhiteList, AddressList _canBurnWhiteList, AddressList _blackList) onlyWhenNoDelegate public {
+        super.setLists(_canReceiveMintWhiteList, _canBurnWhiteList, _blackList);
+    }
+    function changeStaker(address _newStaker) onlyWhenNoDelegate public {
+        super.changeStaker(_newStaker);
+    }
+    function wipeBlacklistedAccount(address _account) onlyWhenNoDelegate public {
+        super.wipeBlacklistedAccount(_account);
+    }
+    function changeStakingFees(
+        uint256 _transferFeeNumerator,
+        uint256 _transferFeeDenominator,
+        uint256 _mintFeeNumerator,
+        uint256 _mintFeeDenominator,
+        uint256 _mintFeeFlat,
+        uint256 _burnFeeNumerator,
+        uint256 _burnFeeDenominator,
+        uint256 _burnFeeFlat
+    ) onlyWhenNoDelegate public {
+        super.changeStakingFees(
+            _transferFeeNumerator,
+            _transferFeeDenominator,
+            _mintFeeNumerator,
+            _mintFeeDenominator,
+            _mintFeeFlat,
+            _burnFeeNumerator,
+            _burnFeeDenominator,
+            _burnFeeFlat
+        );
+    }
 }

@@ -21,6 +21,7 @@ contract GatedToken is ModularMintableToken, ModularBurnableToken {
 
     function burnAllArgs(address _burner, uint256 _value) internal {
         require(canBurnWhiteList.onList(_burner));
+        require(!blackList.onList(_burner));
         super.burnAllArgs(_burner, _value);
     }
 
