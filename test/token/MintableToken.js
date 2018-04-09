@@ -1,6 +1,6 @@
 import assertRevert from '../helpers/assertRevert'
 
-function mintableTokenTests([_, owner, oneHundred, anotherAccount]) {
+function mintableTokenTests([owner, oneHundred, anotherAccount]) {
     describe('-MintableToken Tests-', function () {
         const amount = 100
 

@@ -19,5 +19,5 @@ contract('TokenWithFees', function ([_, owner, oneHundred, anotherAccount]) {
         await this.token.mint(oneHundred, 100, { from: owner })
     })
 
-    tokenWithFeesTests([_, owner, oneHundred, anotherAccount])
+    tokenWithFeesTests([owner, oneHundred, anotherAccount])
 })

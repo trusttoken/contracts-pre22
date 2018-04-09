@@ -6,5 +6,5 @@ contract('CanDelegate', function ([_, owner, oneHundred, anotherAccount]) {
         this.token = await CanDelegateMock.new(oneHundred, 100, { from: owner })
     })
 
-    canDelegateTests([_, owner, oneHundred, anotherAccount])
+    canDelegateTests([owner, oneHundred, anotherAccount])
 })

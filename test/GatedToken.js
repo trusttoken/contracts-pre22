@@ -5,7 +5,7 @@ import standardTokenTests from './token/StandardToken';
 import basicTokenTests from './token/BasicToken';
 const AddressList = artifacts.require('AddressList')
 
-function gatedTokenTests([_, owner, oneHundred, anotherAccount]) {
+function gatedTokenTests([owner, oneHundred, anotherAccount]) {
     describe('--GatedToken Tests--', function () {
         describe('setLists', function () {
             let mintWhiteList2, burnWhiteList2, blackList2
@@ -48,7 +48,7 @@ function gatedTokenTests([_, owner, oneHundred, anotherAccount]) {
                     await this.mintWhiteList.changeList(anotherAccount, true, { from: owner })
                 })
 
-                mintableTokenTests([_, owner, oneHundred, anotherAccount])
+                mintableTokenTests([owner, oneHundred, anotherAccount])
             })
 
             it('rejects mint when user is not on mint whitelist', async function () {
@@ -62,7 +62,7 @@ function gatedTokenTests([_, owner, oneHundred, anotherAccount]) {
                     await this.burnWhiteList.changeList(oneHundred, true, { from: owner })
                 })
 
-                burnableTokenTests([_, owner, oneHundred, anotherAccount])
+                burnableTokenTests([owner, oneHundred, anotherAccount])
 
                 it('rejects burn when user is on blacklist', async function () {
                     await this.blackList.changeList(oneHundred, true, { from: owner })
@@ -77,8 +77,8 @@ function gatedTokenTests([_, owner, oneHundred, anotherAccount]) {
 
         describe('transferring', function () {
             describe('when user is not on blacklist', function () {
-                basicTokenTests([_, owner, oneHundred, anotherAccount])
-                standardTokenTests([_, owner, oneHundred, anotherAccount])
+                basicTokenTests([owner, oneHundred, anotherAccount])
+                standardTokenTests([owner, oneHundred, anotherAccount])
             })
 
             describe('when user is on blacklist', function () {

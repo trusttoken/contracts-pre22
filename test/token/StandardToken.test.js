@@ -7,6 +7,6 @@ contract('StandardToken', function ([_, owner, oneHundred, anotherAccount]) {
         this.token = await StandardTokenMock.new(oneHundred, 100)
     })
 
-    basicTokenTests([_, owner, oneHundred, anotherAccount])
-    standardTokenTests([_, owner, oneHundred, anotherAccount])
+    basicTokenTests([owner, oneHundred, anotherAccount])
+    standardTokenTests([owner, oneHundred, anotherAccount])
 })

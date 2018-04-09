@@ -1,6 +1,6 @@
 import assertRevert from '../helpers/assertRevert'
 
-function burnableTokenTests([_, owner, oneHundred, anotherAccount]) {
+function burnableTokenTests([owner, oneHundred, anotherAccount]) {
     describe('--BurnableToken Tests--', function () {
         const from = oneHundred
 

@@ -23,5 +23,5 @@ contract('GatedToken', function ([_, owner, oneHundred, anotherAccount]) {
         await this.mintWhiteList.changeList(oneHundred, false, { from: owner })
     })
 
-    gatedTokenTests([_, owner, oneHundred, anotherAccount])
+    gatedTokenTests([owner, oneHundred, anotherAccount])
 })

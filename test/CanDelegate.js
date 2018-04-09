@@ -4,13 +4,13 @@ import burnableTokenTests from './token/BurnableToken';
 import standardTokenTests from './token/StandardToken';
 import basicTokenTests from './token/BasicToken';
 
-function canDelegateTests([_, owner, oneHundred, anotherAccount]) {
+function canDelegateTests([owner, oneHundred, anotherAccount]) {
     describe('--CanDelegate Tests--', function () {
         describe('when not yet delegating', function () {
-            mintableTokenTests([_, owner, oneHundred, anotherAccount])
-            burnableTokenTests([_, owner, oneHundred, anotherAccount])
-            basicTokenTests([_, owner, oneHundred, anotherAccount])
-            standardTokenTests([_, owner, oneHundred, anotherAccount])
+            mintableTokenTests([owner, oneHundred, anotherAccount])
+            burnableTokenTests([owner, oneHundred, anotherAccount])
+            basicTokenTests([owner, oneHundred, anotherAccount])
+            standardTokenTests([owner, oneHundred, anotherAccount])
         })
 
         describe('delegateToNewContract', function () {

@@ -1,6 +1,6 @@
 import assertRevert from '../helpers/assertRevert'
 
-function basicTokenTests([_, owner, oneHundred, anotherAccount]) {
+function basicTokenTests([owner, oneHundred, anotherAccount]) {
     describe('--BasicToken Tests--', function () {
         const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 

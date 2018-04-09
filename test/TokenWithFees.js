@@ -5,13 +5,13 @@ import standardTokenTests from './token/StandardToken';
 import basicTokenTests from './token/BasicToken';
 const AddressList = artifacts.require('AddressList')
 
-function tokenWithFeesTests([_, owner, oneHundred, anotherAccount]) {
+function tokenWithFeesTests([owner, oneHundred, anotherAccount]) {
     describe('--TokenWithFees Tests--', function () {
         describe('fees are initially set to 0', function () {
-            basicTokenTests([_, owner, oneHundred, anotherAccount])
-            standardTokenTests([_, owner, oneHundred, anotherAccount])
-            burnableTokenTests([_, owner, oneHundred, anotherAccount])
-            mintableTokenTests([_, owner, oneHundred, anotherAccount])
+            basicTokenTests([owner, oneHundred, anotherAccount])
+            standardTokenTests([owner, oneHundred, anotherAccount])
+            burnableTokenTests([owner, oneHundred, anotherAccount])
+            mintableTokenTests([owner, oneHundred, anotherAccount])
         })
 
         it('staker is originally owner', async function () {

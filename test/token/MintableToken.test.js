@@ -14,5 +14,5 @@ contract('MintableToken', function ([_, owner, oneHundred, anotherAccount]) {
         await this.token.setAllowanceSheet(allowanceSheet.address, { from: owner })
     })
 
-    mintableTokenTests([_, owner, oneHundred, anotherAccount])
+    mintableTokenTests([owner, oneHundred, anotherAccount])
 })

@@ -6,5 +6,5 @@ contract('BasicToken', function ([_, owner, oneHundred, anotherAccount]) {
         this.token = await BasicToken.new(oneHundred, 100, { from: owner })
     })
 
-    basicTokenTests([_, owner, oneHundred, anotherAccount])
+    basicTokenTests([owner, oneHundred, anotherAccount])
 })

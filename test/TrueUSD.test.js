@@ -1,5 +1,6 @@
 import assertRevert from './helpers/assertRevert'
 import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
+import basicTokenTests from './token/BasicToken';
 const AddressList = artifacts.require("AddressList")
 const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
@@ -38,7 +39,7 @@ contract('TrueUSD', function (accounts) {
                 await this.burnWhiteList.changeList(oneHundred, true, { from: owner })
             })
 
-            burnableTokenWithBoundsTests([_, owner, oneHundred, anotherAccount])
+            burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount])
         })
 
         describe('user is not on burn whitelist', function () {
