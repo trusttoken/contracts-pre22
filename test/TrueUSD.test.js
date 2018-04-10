@@ -1,6 +1,8 @@
 import assertRevert from './helpers/assertRevert'
 import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
 import basicTokenTests from './token/BasicToken';
+import standardTokenTests from './token/StandardToken';
+import burnableTokenTests from './token/BurnableToken';
 const AddressList = artifacts.require("AddressList")
 const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
@@ -86,5 +88,72 @@ contract('TrueUSD', function (accounts) {
         assert.equal(name, "FooCoin")
         symbol = await this.token.symbol()
         assert.equal(symbol, "FCN")
+    })
+})
+
+contract('TrueUSD: 3 contracts', function (accounts) {
+    const _ = accounts[0]
+    const owners = [accounts[1], accounts[2], accounts[3]]
+    const oneHundreds = [accounts[4], accounts[5], accounts[6]]
+    const anotherAccounts = [accounts[7], accounts[8], accounts[9]]
+
+    beforeEach(async function () {
+        this.mintWhiteLists = []
+        this.burnWhiteLists = []
+        this.blackLists = []
+        this.noFeesLists = []
+        this.balancess = []
+        this.allowancess = []
+        this.tokens = []
+
+        for (let i = 0; i < 3; i++) {
+            this.mintWhiteLists[i] = await AddressList.new("Mint whitelist", { from: owners[i] })
+            this.burnWhiteLists[i] = await AddressList.new("Burn whitelist", { from: owners[i] })
+            this.blackLists[i] = await AddressList.new("Blacklist", { from: owners[i] })
+            this.noFeesLists[i] = await AddressList.new("No Fees list", { from: owners[i] })
+
+            this.balancess[i] = await BalanceSheet.new({ from: owners[i] })
+            this.allowancess[i] = await AllowanceSheet.new({ from: owners[i] })
+            this.tokens[i] = await TrueUSD.new({ from: owners[i] })
+            await this.tokens[i].setLists(this.mintWhiteLists[i].address, this.burnWhiteLists[i].address, this.blackLists[i].address, { from: owners[i] })
+            await this.tokens[i].setNoFeesList(this.noFeesLists[i].address, { from: owners[i] })
+            await this.balancess[i].transferOwnership(this.tokens[i].address, { from: owners[i] })
+            await this.allowancess[i].transferOwnership(this.tokens[i].address, { from: owners[i] })
+            await this.tokens[i].setBalanceSheet(this.balancess[i].address, { from: owners[i] })
+            await this.tokens[i].setAllowanceSheet(this.allowancess[i].address, { from: owners[i] })
+
+            await this.mintWhiteLists[i].changeList(oneHundreds[i], true, { from: owners[i] })
+            await this.tokens[i].mint(oneHundreds[i], 100, { from: owners[i] })
+            await this.mintWhiteLists[i].changeList(oneHundreds[i], false, { from: owners[i] })
+        }
+    })
+
+    describe('chaining three contracts', function () {
+        beforeEach(async function () {
+            this.tokens[0].delegateToNewContract(this.tokens[1].address, { from: owners[0] })
+            this.tokens[1].setDelegatedFrom(this.tokens[0].address, { from: owners[1] })
+            this.tokens[1].delegateToNewContract(this.tokens[2].address, { from: owners[1] })
+            this.tokens[2].setDelegatedFrom(this.tokens[1].address, { from: owners[2] })
+        })
+
+        for (var i = 0; i < 2; i++) {
+            describe('contract ' + i + ' behaves', function () {
+                beforeEach(async function () {
+                    this.token = this.tokens[i]
+                })
+
+                basicTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
+                standardTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
+
+                describe('burn', function () {
+                    beforeEach(async function () {
+                        await this.burnWhiteLists[2].changeList(oneHundreds[2], true, { from: owners[2] })
+                        await this.tokens[2].setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owners[2] })
+                    })
+
+                    burnableTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
+                })
+            })
+        }
     })
 })

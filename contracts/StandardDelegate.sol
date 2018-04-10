@@ -30,6 +30,7 @@ contract StandardDelegate is DelegateBurnable, ModularStandardToken, ModularBurn
 
     function delegateTransfer(address _to, uint256 _value, address _origSender) onlySender(delegatedFrom) public returns (bool) {
         transferAllArgs(_origSender, _to, _value);
+        return true;
     }
 
     function delegateAllowance(address _owner, address _spender) onlySender(delegatedFrom) public view returns (uint256) {
