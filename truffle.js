@@ -24,6 +24,13 @@ module.exports = {
       gas: 7990000,
       gasPrice: 22000000000 // Specified in Wei
     },
+    coverage: {
+      host: "localhost",
+      network_id: "*", // eslint-disable-line camelcase
+      port: 8555,
+      gas: 10000000000000,
+      gasPrice: 0x01,
+    },
     rinkeby: {
       provider: new HDWalletProvider(process.env.MNEMONIC, "https://rinkeby.infura.io/"),
       network_id: "4",
