@@ -3,6 +3,8 @@ import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
 import basicTokenTests from './token/BasicToken';
 import standardTokenTests from './token/StandardToken';
 import burnableTokenTests from './token/BurnableToken';
+import gatedTokenTests from './GatedToken';
+import tokenWithFeesTests from './TokenWithFees';
 const AddressList = artifacts.require("AddressList")
 const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
@@ -50,6 +52,29 @@ contract('TrueUSD', function (accounts) {
             })
         })
     })
+
+    describe('when there are no burn bounds', function () {
+        beforeEach(async function () {
+            await this.token.setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owner })
+        })
+
+        gatedTokenTests([owner, oneHundred, anotherAccount])
+    })
+
+    describe('when everyone is on the whitelists and there are no burn bounds', function () {
+        beforeEach(async function () {
+            await this.token.setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owner })
+            await this.burnWhiteList.changeList(owner, true, { from: owner })
+            await this.burnWhiteList.changeList(oneHundred, true, { from: owner })
+            await this.burnWhiteList.changeList(anotherAccount, true, { from: owner })
+            await this.mintWhiteList.changeList(owner, true, { from: owner })
+            await this.mintWhiteList.changeList(oneHundred, true, { from: owner })
+            await this.mintWhiteList.changeList(anotherAccount, true, { from: owner })
+        })
+
+        tokenWithFeesTests([owner, oneHundred, anotherAccount])
+    })
+
 
     it("old long interaction trace test", async function () {
         await assertRevert(this.token.mint(accounts[3], 10, { from: owner })) //user 3 is not (yet) on whitelist

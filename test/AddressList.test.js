@@ -34,4 +34,14 @@ contract('AddressList', function([_, owner, oneHundred, anotherAccount]) {
         assert.equal(logs[0].args.addr, oneHundred)
         assert.equal(logs[0].args.value, true)
     })
+
+    it('does not emit an event if no actual change', async function () {
+        const { logs } = await this.list.changeList(oneHundred, false, { from: owner })
+
+        assert.equal(logs.length, 0)
+    })
+
+    it("cannot add address(0) to true", async function () {
+        await assertRevert(this.list.changeList(0x0, true, { from: owner }))
+    })
 })

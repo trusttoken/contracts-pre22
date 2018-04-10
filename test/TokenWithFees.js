@@ -37,6 +37,10 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount]) {
             it('cannot be called by non-owner', async function () {
                 await assertRevert(this.token.changeStaker(anotherAccount, { from: anotherAccount }))
             })
+
+            it('cannot set to address(0)', async function () {
+                await assertRevert(this.token.changeStaker(0x0, { from: owner }))
+            })
         })
 
         describe('changeStakingFees', function () {
@@ -128,6 +132,17 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount]) {
                 assert.equal(balance, fee)
                 balance = await this.token.balanceOf(anotherAccount)
                 assert.equal(balance, amount - fee)
+            })
+
+            it('transfer to user on noFeesList', async function () {
+                await this.noFeesList.changeList(anotherAccount, true, { from: owner })
+                await this.token.transfer(anotherAccount, amount, { from: oneHundred })
+                let balance = await this.token.balanceOf(oneHundred)
+                assert.equal(balance, 100 - amount)
+                balance = await this.token.balanceOf(owner)
+                assert.equal(balance, 0)
+                balance = await this.token.balanceOf(anotherAccount)
+                assert.equal(balance, amount)
             })
 
             it('transferFrom', async function () {

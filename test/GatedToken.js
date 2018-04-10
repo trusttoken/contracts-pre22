@@ -82,17 +82,26 @@ function gatedTokenTests([owner, oneHundred, anotherAccount]) {
             })
 
             describe('when user is on blacklist', function () {
-                beforeEach(async function () {
+                it('rejects transfer from blacklisted account', async function () {
                     await this.blackList.changeList(oneHundred, true, { from: owner })
-                })
-
-                it('rejects transfer', async function () {
                     await assertRevert(this.token.transfer(anotherAccount, 100, { from: oneHundred }))
                 })
 
-                it('rejects transferFrom', async function () {
+                it('rejects transfer to blacklisted account', async function () {
+                    await this.blackList.changeList(oneHundred, true, { from: owner })
+                    await assertRevert(this.token.transfer(anotherAccount, 100, { from: oneHundred }))
+                })
+
+                it('rejects transferFrom to blacklisted account', async function () {
+                    await this.blackList.changeList(oneHundred, true, { from: owner })
                     await this.token.approve(anotherAccount, 100, { from: oneHundred })
-                    await assertRevert(this.token.transferFrom(oneHundred, anotherAccount, 100, { from: anotherAccount }))
+                    await assertRevert(this.token.transferFrom(oneHundred, owner, 100, { from: anotherAccount }))
+                })
+
+                it('rejects transferFrom by blacklisted spender', async function () {
+                    await this.blackList.changeList(anotherAccount, true, { from: owner })
+                    await this.token.approve(anotherAccount, 100, { from: oneHundred })
+                    await assertRevert(this.token.transferFrom(oneHundred, owner, 100, { from: anotherAccount }))
                 })
             })
         })
