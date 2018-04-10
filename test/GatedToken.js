@@ -88,7 +88,7 @@ function gatedTokenTests([owner, oneHundred, anotherAccount]) {
                 })
 
                 it('rejects transfer to blacklisted account', async function () {
-                    await this.blackList.changeList(oneHundred, true, { from: owner })
+                    await this.blackList.changeList(anotherAccount, true, { from: owner })
                     await assertRevert(this.token.transfer(anotherAccount, 100, { from: oneHundred }))
                 })
 
