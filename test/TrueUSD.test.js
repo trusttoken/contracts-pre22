@@ -91,7 +91,101 @@ contract('TrueUSD', function (accounts) {
     })
 })
 
-contract('TrueUSD: 3 contracts', function (accounts) {
+contract('TrueUSD: chaining 2 contracts', function (accounts) {
+    const _ = accounts[0]
+    const owners = [accounts[1], accounts[2]]
+    const oneHundreds = [accounts[4], accounts[5]]
+    const anotherAccounts = [accounts[7], accounts[8]]
+
+    beforeEach(async function () {
+        this.mintWhiteLists = []
+        this.burnWhiteLists = []
+        this.blackLists = []
+        this.noFeesLists = []
+        this.balancess = []
+        this.allowancess = []
+        this.tokens = []
+
+        for (let i = 0; i < 2; i++) {
+            this.mintWhiteLists[i] = await AddressList.new("Mint whitelist", { from: owners[i] })
+            this.burnWhiteLists[i] = await AddressList.new("Burn whitelist", { from: owners[i] })
+            this.blackLists[i] = await AddressList.new("Blacklist", { from: owners[i] })
+            this.noFeesLists[i] = await AddressList.new("No Fees list", { from: owners[i] })
+
+            this.balancess[i] = await BalanceSheet.new({ from: owners[i] })
+            this.allowancess[i] = await AllowanceSheet.new({ from: owners[i] })
+            this.tokens[i] = await TrueUSD.new({ from: owners[i] })
+            await this.tokens[i].setLists(this.mintWhiteLists[i].address, this.burnWhiteLists[i].address, this.blackLists[i].address, { from: owners[i] })
+            await this.tokens[i].setNoFeesList(this.noFeesLists[i].address, { from: owners[i] })
+            await this.balancess[i].transferOwnership(this.tokens[i].address, { from: owners[i] })
+            await this.allowancess[i].transferOwnership(this.tokens[i].address, { from: owners[i] })
+            await this.tokens[i].setBalanceSheet(this.balancess[i].address, { from: owners[i] })
+            await this.tokens[i].setAllowanceSheet(this.allowancess[i].address, { from: owners[i] })
+
+            await this.mintWhiteLists[i].changeList(oneHundreds[i], true, { from: owners[i] })
+            await this.tokens[i].mint(oneHundreds[i], 100, { from: owners[i] })
+            await this.mintWhiteLists[i].changeList(oneHundreds[i], false, { from: owners[i] })
+        }
+    })
+
+    describe('chaining two contracts', function () {
+        beforeEach(async function () {
+            await this.tokens[0].delegateToNewContract(this.tokens[1].address, { from: owners[0] })
+            await this.tokens[1].setDelegatedFrom(this.tokens[0].address, { from: owners[1] })
+        })
+
+        describe('delegation disables', function () {
+            beforeEach(async function () {
+                this.token = this.tokens[0]
+            })
+
+            it("setNoFeesList", async function () {
+                await assertRevert(this.token.setNoFeesList(this.noFeesLists[1].address, { from: owners[0] }))
+            })
+
+            it("mint", async function () {
+                await this.mintWhiteLists[0].changeList(anotherAccounts[0], true, { from: owners[0] })
+                await assertRevert(this.token.mint(anotherAccounts[0], 100, { from: owners[0] }))
+            })
+
+            it("setBalanceSheet", async function () {
+                const sheet = await BalanceSheet.new({ from: owners[0] })
+                await sheet.transferOwnership(this.token.address, { from: owners[0] })
+                await assertRevert(this.token.setBalanceSheet(sheet.address, { from: owners[0] }))
+            })
+
+            it("setAllowanceSheet", async function () {
+                const sheet = await AllowanceSheet.new({ from: owners[0] })
+                await sheet.transferOwnership(this.token.address, { from: owners[0] })
+                await assertRevert(this.token.setBalanceSheet(sheet.address, { from: owners[0] }))
+            })
+
+            it("setBurnBounds", async function () {
+                await assertRevert(this.token.setBurnBounds(0, 1, { from: owners[0] }))
+            })
+
+            it("setLists", async function () {
+                await assertRevert(this.token.setLists(this.mintWhiteLists[1].address, this.burnWhiteLists[1].address, this.blackLists[1].address, { from: owners[0] }))
+            })
+
+            it("changeStaker", async function () {
+                await assertRevert(this.token.changeStaker(anotherAccounts[0], { from: owners[0] }))
+            })
+
+            it("wipeBlacklistedAccount", async function () {
+                await this.blackLists[0].changeList(anotherAccounts[0], true, { from: owners[0] })
+                await assertRevert(this.token.wipeBlacklistedAccount(anotherAccounts[0], { from: owners[0] }))
+            })
+
+            it("changeStakingFees", async function () {
+                await assertRevert(this.token.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, { from: owners[0] }))
+            })
+        })
+    })
+})
+
+
+contract('TrueUSD: chaining 3 contracts', function (accounts) {
     const _ = accounts[0]
     const owners = [accounts[1], accounts[2], accounts[3]]
     const oneHundreds = [accounts[4], accounts[5], accounts[6]]
@@ -130,10 +224,10 @@ contract('TrueUSD: 3 contracts', function (accounts) {
 
     describe('chaining three contracts', function () {
         beforeEach(async function () {
-            this.tokens[0].delegateToNewContract(this.tokens[1].address, { from: owners[0] })
-            this.tokens[1].setDelegatedFrom(this.tokens[0].address, { from: owners[1] })
-            this.tokens[1].delegateToNewContract(this.tokens[2].address, { from: owners[1] })
-            this.tokens[2].setDelegatedFrom(this.tokens[1].address, { from: owners[2] })
+            await this.tokens[0].delegateToNewContract(this.tokens[1].address, { from: owners[0] })
+            await this.tokens[1].setDelegatedFrom(this.tokens[0].address, { from: owners[1] })
+            await this.tokens[1].delegateToNewContract(this.tokens[2].address, { from: owners[1] })
+            await this.tokens[2].setDelegatedFrom(this.tokens[1].address, { from: owners[2] })
         })
 
         for (var i = 0; i < 2; i++) {
