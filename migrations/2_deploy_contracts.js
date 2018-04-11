@@ -1,10 +1,10 @@
-var NamableAddressList = artifacts.require("NamableAddressList");
-var BalanceSheet = artifacts.require("BalanceSheet");
-var AllowanceSheet = artifacts.require("AllowanceSheet");
-var TrueUSD = artifacts.require("TrueUSD");
-var TimeLockedController = artifacts.require("TimeLockedController");
-var AddressValidation = artifacts.require("AddressValidation");
-var Web3 = require('web3');
+// var NamableAddressList = artifacts.require("NamableAddressList");
+// var BalanceSheet = artifacts.require("BalanceSheet");
+// var AllowanceSheet = artifacts.require("AllowanceSheet");
+// var TrueUSD = artifacts.require("TrueUSD");
+// var TimeLockedController = artifacts.require("TimeLockedController");
+// var AddressValidation = artifacts.require("AddressValidation");
+// var Web3 = require('web3');
 
 module.exports = async function(deployer) {
   // await deployer;

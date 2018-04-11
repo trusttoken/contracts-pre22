@@ -7,6 +7,7 @@ import gatedTokenTests from './GatedToken';
 import tokenWithFeesTests from './TokenWithFees';
 const AddressList = artifacts.require("AddressList")
 const TrueUSD = artifacts.require("TrueUSD")
+const TrueUSDMock = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 
@@ -274,5 +275,42 @@ contract('TrueUSD: chaining 3 contracts', function (accounts) {
                 })
             })
         }
+    })
+})
+
+contract('Another TrueUSD test suite', function (accounts) {
+    const _ = accounts[0]
+    const owners = [accounts[1], accounts[2], accounts[3]]
+    const oneHundreds = [accounts[4], accounts[5], accounts[6]]
+    const anotherAccounts = [accounts[7], accounts[8], accounts[9]]
+
+    beforeEach(async function () {
+        const mintWhiteList = await AddressList.new("mint", { from: owners[0] })
+        const burnWhiteList = await AddressList.new("burn", { from: owners[0] })
+        const blackList = await AddressList.new("black", { from: owners[0] })
+        await mintWhiteList.changeList(owners[1], true, { from: owners[0] })
+        await mintWhiteList.changeList(oneHundreds[0], true, { from: owners[0] })
+        await mintWhiteList.changeList(oneHundreds[1], true, { from: owners[0] })
+        await mintWhiteList.changeList(anotherAccounts[1], true, { from: owners[0] })
+        await burnWhiteList.changeList(owners[1], true, { from: owners[0] })
+        await burnWhiteList.changeList(oneHundreds[0], true, { from: owners[0] })
+        await burnWhiteList.changeList(oneHundreds[1], true, { from: owners[0] })
+        await burnWhiteList.changeList(anotherAccounts[1], true, { from: owners[0] })
+        this.token = await TrueUSDMock.new(oneHundreds[0], 100, { from: owners[0] })
+        await this.token.setLists(mintWhiteList.address, burnWhiteList.address, blackList.address, { from: owners[0] })
+        await this.token.setNoFeesList(blackList.address, { from: owners[0] })
+        this.token2 = await TrueUSDMock.new(oneHundreds[1], 100, { from: owners[1] })
+        await this.token2.setLists(mintWhiteList.address, burnWhiteList.address, blackList.address, { from: owners[1] })
+        await this.token2.setNoFeesList(blackList.address, { from: owners[1] })
+    })
+
+    describe('chaining two contracts', function () {
+        beforeEach(async function () {
+            await this.token.delegateToNewContract(this.token2.address, { from: owners[0] })
+            await this.token2.setDelegatedFrom(this.token.address, { from: owners[1] })
+        })
+
+        basicTokenTests([owners[1], oneHundreds[1], anotherAccounts[1]])
+        standardTokenTests([owners[1], oneHundreds[1], anotherAccounts[1]])
     })
 })
