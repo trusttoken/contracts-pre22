@@ -16,9 +16,6 @@ contract('TrueUSD', function (accounts) {
 
     beforeEach(async function () {
         // Set up a TrueUSD contract with 100 tokens for 'oneHundred'.
-        // We do not follow the Mock pattern here because one contract that
-        // did all of this in its constructor would use more than a block's
-        // maximum gas.
         this.mintWhiteList = await AddressList.new("Mint whitelist", { from: owner })
         this.burnWhiteList = await AddressList.new("Burn whitelist", { from: owner })
         this.blackList = await AddressList.new("Blacklist", { from: owner })
@@ -138,19 +135,9 @@ contract('TrueUSD: chaining 2 contracts', function (accounts) {
             this.blackLists[i] = await AddressList.new("Blacklist", { from: owners[i] })
             this.noFeesLists[i] = await AddressList.new("No Fees list", { from: owners[i] })
 
-            this.balancess[i] = await BalanceSheet.new({ from: owners[i] })
-            this.allowancess[i] = await AllowanceSheet.new({ from: owners[i] })
-            this.tokens[i] = await TrueUSD.new({ from: owners[i] })
+            this.tokens[i] = await TrueUSDMock.new(oneHundreds[i], 100, { from: owners[i] })
             await this.tokens[i].setLists(this.mintWhiteLists[i].address, this.burnWhiteLists[i].address, this.blackLists[i].address, { from: owners[i] })
             await this.tokens[i].setNoFeesList(this.noFeesLists[i].address, { from: owners[i] })
-            await this.balancess[i].transferOwnership(this.tokens[i].address, { from: owners[i] })
-            await this.allowancess[i].transferOwnership(this.tokens[i].address, { from: owners[i] })
-            await this.tokens[i].setBalanceSheet(this.balancess[i].address, { from: owners[i] })
-            await this.tokens[i].setAllowanceSheet(this.allowancess[i].address, { from: owners[i] })
-
-            await this.mintWhiteLists[i].changeList(oneHundreds[i], true, { from: owners[i] })
-            await this.tokens[i].mint(oneHundreds[i], 100, { from: owners[i] })
-            await this.mintWhiteLists[i].changeList(oneHundreds[i], false, { from: owners[i] })
         }
     })
 
@@ -232,19 +219,9 @@ contract('TrueUSD: chaining 3 contracts', function (accounts) {
             this.blackLists[i] = await AddressList.new("Blacklist", { from: owners[i] })
             this.noFeesLists[i] = await AddressList.new("No Fees list", { from: owners[i] })
 
-            this.balancess[i] = await BalanceSheet.new({ from: owners[i] })
-            this.allowancess[i] = await AllowanceSheet.new({ from: owners[i] })
-            this.tokens[i] = await TrueUSD.new({ from: owners[i] })
+            this.tokens[i] = await TrueUSDMock.new(oneHundreds[i], 100, { from: owners[i] })
             await this.tokens[i].setLists(this.mintWhiteLists[i].address, this.burnWhiteLists[i].address, this.blackLists[i].address, { from: owners[i] })
             await this.tokens[i].setNoFeesList(this.noFeesLists[i].address, { from: owners[i] })
-            await this.balancess[i].transferOwnership(this.tokens[i].address, { from: owners[i] })
-            await this.allowancess[i].transferOwnership(this.tokens[i].address, { from: owners[i] })
-            await this.tokens[i].setBalanceSheet(this.balancess[i].address, { from: owners[i] })
-            await this.tokens[i].setAllowanceSheet(this.allowancess[i].address, { from: owners[i] })
-
-            await this.mintWhiteLists[i].changeList(oneHundreds[i], true, { from: owners[i] })
-            await this.tokens[i].mint(oneHundreds[i], 100, { from: owners[i] })
-            await this.mintWhiteLists[i].changeList(oneHundreds[i], false, { from: owners[i] })
         }
     })
 
@@ -288,14 +265,6 @@ contract('Another TrueUSD test suite', function (accounts) {
         const mintWhiteList = await AddressList.new("mint", { from: owners[0] })
         const burnWhiteList = await AddressList.new("burn", { from: owners[0] })
         const blackList = await AddressList.new("black", { from: owners[0] })
-        await mintWhiteList.changeList(owners[1], true, { from: owners[0] })
-        await mintWhiteList.changeList(oneHundreds[0], true, { from: owners[0] })
-        await mintWhiteList.changeList(oneHundreds[1], true, { from: owners[0] })
-        await mintWhiteList.changeList(anotherAccounts[1], true, { from: owners[0] })
-        await burnWhiteList.changeList(owners[1], true, { from: owners[0] })
-        await burnWhiteList.changeList(oneHundreds[0], true, { from: owners[0] })
-        await burnWhiteList.changeList(oneHundreds[1], true, { from: owners[0] })
-        await burnWhiteList.changeList(anotherAccounts[1], true, { from: owners[0] })
         this.token = await TrueUSDMock.new(oneHundreds[0], 100, { from: owners[0] })
         await this.token.setLists(mintWhiteList.address, burnWhiteList.address, blackList.address, { from: owners[0] })
         await this.token.setNoFeesList(blackList.address, { from: owners[0] })
