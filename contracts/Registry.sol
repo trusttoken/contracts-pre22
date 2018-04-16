@@ -12,7 +12,7 @@ contract Registry is Claimable {
     }
 
     mapping(address => mapping(string => AttributeData)) private attributes;
-    RegistryAccessManager accessManager;
+    RegistryAccessManager public accessManager;
 
     function Registry() public {
         accessManager = new RegistryAccessManagerImpl();

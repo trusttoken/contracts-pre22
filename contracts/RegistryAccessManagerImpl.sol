@@ -6,7 +6,7 @@ import "./RegistryAccessManager.sol";
 contract RegistryAccessManagerImpl is RegistryAccessManager {
     string public constant WRITE_PERMISSION = "canWriteTo";
 
-    function confirmWrite(address _who, string _attribute, uint256 _value, address _admin) public returns (bool) {
+    function confirmWrite(address /*_who*/, string _attribute, uint256 /*_value*/, address _admin) public returns (bool) {
         return Registry(msg.sender).hasAttribute(_admin, strConcat(WRITE_PERMISSION, _attribute));
     }
 
