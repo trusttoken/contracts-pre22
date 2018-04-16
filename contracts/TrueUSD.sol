@@ -5,11 +5,11 @@ import "./modularERC20/ModularPausableToken.sol";
 import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import "./CanDelegate.sol";
 import "./BurnableTokenWithBounds.sol";
-import "./GatedToken.sol";
+import "./ComplianceToken.sol";
 import "./TokenWithFees.sol";
 import "./StandardDelegate.sol";
 
-contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, GatedToken, TokenWithFees, StandardDelegate, CanDelegate {
+contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, ComplianceToken, TokenWithFees, StandardDelegate, CanDelegate {
     string public name = "TrueUSD";
     string public symbol = "TUSD";
     uint8 public constant decimals = 18;
@@ -35,9 +35,6 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Gate
         _;
     }
 
-    function setNoFeesList(AddressList _noFeesList) onlyWhenNoDelegate public {
-        super.setNoFeesList(_noFeesList);
-    }
     function mint(address _to, uint256 _amount) onlyWhenNoDelegate public returns (bool) {
         super.mint(_to, _amount);
     }
@@ -50,8 +47,8 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Gate
     function setBurnBounds(uint256 _min, uint256 _max) onlyWhenNoDelegate public {
         super.setBurnBounds(_min, _max);
     }
-    function setLists(AddressList _canReceiveMintWhiteList, AddressList _canBurnWhiteList, AddressList _blackList) onlyWhenNoDelegate public {
-        super.setLists(_canReceiveMintWhiteList, _canBurnWhiteList, _blackList);
+    function setRegistry(Registry _registry) onlyWhenNoDelegate public {
+        super.setRegistry(_registry);
     }
     function changeStaker(address _newStaker) onlyWhenNoDelegate public {
         super.changeStaker(_newStaker);

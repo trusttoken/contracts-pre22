@@ -3,9 +3,9 @@ import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
 import basicTokenTests from './token/BasicToken';
 import standardTokenTests from './token/StandardToken';
 import burnableTokenTests from './token/BurnableToken';
-import gatedTokenTests from './GatedToken';
+import complianceTokenTests from './ComplianceToken';
 import tokenWithFeesTests from './TokenWithFees';
-const AddressList = artifacts.require("AddressList")
+const Registry = artifacts.require("Registry")
 const TrueUSD = artifacts.require("TrueUSD")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
@@ -16,29 +16,25 @@ contract('TrueUSD', function (accounts) {
 
     beforeEach(async function () {
         // Set up a TrueUSD contract with 100 tokens for 'oneHundred'.
-        this.mintWhiteList = await AddressList.new("Mint whitelist", { from: owner })
-        this.burnWhiteList = await AddressList.new("Burn whitelist", { from: owner })
-        this.blackList = await AddressList.new("Blacklist", { from: owner })
-        this.noFeesList = await AddressList.new("No Fees list", { from: owner })
+        this.registry = await Registry.new({ from: owner })
         this.balances = await BalanceSheet.new({ from: owner })
         this.allowances = await AllowanceSheet.new({ from: owner })
         this.token = await TrueUSD.new({ from: owner })
-        await this.token.setLists(this.mintWhiteList.address, this.burnWhiteList.address, this.blackList.address, { from: owner })
-        await this.token.setNoFeesList(this.noFeesList.address, { from: owner })
+        await this.token.setRegistry(this.registry.address, { from: owner })
         await this.balances.transferOwnership(this.token.address, { from: owner })
         await this.allowances.transferOwnership(this.token.address, { from: owner })
         await this.token.setBalanceSheet(this.balances.address, { from: owner })
         await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
-        await this.mintWhiteList.changeList(oneHundred, true, { from: owner })
+        await this.registry.setAttribute(oneHundred, "hasPassedKYC", 1, { from: owner })
         await this.token.mint(oneHundred, 100, { from: owner })
-        await this.mintWhiteList.changeList(oneHundred, false, { from: owner })
+        await this.registry.setAttribute(oneHundred, "hasPassedKYC", 0, { from: owner })
     })
 
     describe('burn', function () {
         describe('user is on burn whitelist', function () {
             beforeEach(async function () {
-                await this.burnWhiteList.changeList(oneHundred, true, { from: owner })
+                await this.registry.setAttribute(oneHundred, "canBurn", 1, { from: owner })
             })
 
             burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount])
@@ -56,18 +52,18 @@ contract('TrueUSD', function (accounts) {
             await this.token.setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owner })
         })
 
-        gatedTokenTests([owner, oneHundred, anotherAccount])
+        complianceTokenTests([owner, oneHundred, anotherAccount])
     })
 
     describe('when everyone is on the whitelists and there are no burn bounds', function () {
         beforeEach(async function () {
             await this.token.setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owner })
-            await this.burnWhiteList.changeList(owner, true, { from: owner })
-            await this.burnWhiteList.changeList(oneHundred, true, { from: owner })
-            await this.burnWhiteList.changeList(anotherAccount, true, { from: owner })
-            await this.mintWhiteList.changeList(owner, true, { from: owner })
-            await this.mintWhiteList.changeList(oneHundred, true, { from: owner })
-            await this.mintWhiteList.changeList(anotherAccount, true, { from: owner })
+            await this.registry.setAttribute(owner, "hasPassedKYC", 1, { from: owner })
+            await this.registry.setAttribute(oneHundred, "hasPassedKYC", 1, { from: owner })
+            await this.registry.setAttribute(anotherAccount, "hasPassedKYC", 1, { from: owner })
+            await this.registry.setAttribute(owner, "canBurn", 1, { from: owner })
+            await this.registry.setAttribute(oneHundred, "canBurn", 1, { from: owner })
+            await this.registry.setAttribute(anotherAccount, "canBurn", 1, { from: owner })
         })
 
         tokenWithFeesTests([owner, oneHundred, anotherAccount])
@@ -76,8 +72,8 @@ contract('TrueUSD', function (accounts) {
 
     it("old long interaction trace test", async function () {
         await assertRevert(this.token.mint(accounts[3], 10, { from: owner })) //user 3 is not (yet) on whitelist
-        await assertRevert(this.mintWhiteList.changeList(accounts[3], true, { from: anotherAccount })) //user 1 is not the owner
-        await this.mintWhiteList.changeList(accounts[3], true, { from: owner })
+        await assertRevert(this.registry.setAttribute(accounts[3], "hasPassedKYC", 1, { from: anotherAccount })) //anotherAccount is not the owner
+        await this.registry.setAttribute(accounts[3], "hasPassedKYC", 1, { from: owner })
         const userHasCoins = async (id, amount) => {
             var balance = await this.token.balanceOf(accounts[id])
             assert.equal(balance, amount, "userHasCoins fail: actual balance " + balance)
@@ -121,23 +117,16 @@ contract('TrueUSD: chaining 2 contracts', function (accounts) {
     const anotherAccounts = [accounts[7], accounts[8]]
 
     beforeEach(async function () {
-        this.mintWhiteLists = []
-        this.burnWhiteLists = []
-        this.blackLists = []
-        this.noFeesLists = []
+        this.registries = []
         this.balancess = []
         this.allowancess = []
         this.tokens = []
 
         for (let i = 0; i < 2; i++) {
-            this.mintWhiteLists[i] = await AddressList.new("Mint whitelist", { from: owners[i] })
-            this.burnWhiteLists[i] = await AddressList.new("Burn whitelist", { from: owners[i] })
-            this.blackLists[i] = await AddressList.new("Blacklist", { from: owners[i] })
-            this.noFeesLists[i] = await AddressList.new("No Fees list", { from: owners[i] })
+            this.registries[i] = await Registry.new({ from: owners[i] })
 
             this.tokens[i] = await TrueUSDMock.new(oneHundreds[i], 100, { from: owners[i] })
-            await this.tokens[i].setLists(this.mintWhiteLists[i].address, this.burnWhiteLists[i].address, this.blackLists[i].address, { from: owners[i] })
-            await this.tokens[i].setNoFeesList(this.noFeesLists[i].address, { from: owners[i] })
+            await this.tokens[i].setRegistry(this.registries[i].address, { from: owners[i] })
         }
     })
 
@@ -153,11 +142,11 @@ contract('TrueUSD: chaining 2 contracts', function (accounts) {
             })
 
             it("setNoFeesList", async function () {
-                await assertRevert(this.token.setNoFeesList(this.noFeesLists[1].address, { from: owners[0] }))
+                await assertRevert(this.token.setRegistry(this.registries[1].address, { from: owners[0] }))
             })
 
             it("mint", async function () {
-                await this.mintWhiteLists[0].changeList(anotherAccounts[0], true, { from: owners[0] })
+                await this.registries[0].setAttribute(anotherAccounts[0], "hasPassedKYC", 1, { from: owners[0] })
                 await assertRevert(this.token.mint(anotherAccounts[0], 100, { from: owners[0] }))
             })
 
@@ -177,16 +166,12 @@ contract('TrueUSD: chaining 2 contracts', function (accounts) {
                 await assertRevert(this.token.setBurnBounds(0, 1, { from: owners[0] }))
             })
 
-            it("setLists", async function () {
-                await assertRevert(this.token.setLists(this.mintWhiteLists[1].address, this.burnWhiteLists[1].address, this.blackLists[1].address, { from: owners[0] }))
-            })
-
             it("changeStaker", async function () {
                 await assertRevert(this.token.changeStaker(anotherAccounts[0], { from: owners[0] }))
             })
 
             it("wipeBlacklistedAccount", async function () {
-                await this.blackLists[0].changeList(anotherAccounts[0], true, { from: owners[0] })
+                await this.registries[0].setAttribute(anotherAccounts[0], "isBlacklisted", 1, { from: owners[0] })
                 await assertRevert(this.token.wipeBlacklistedAccount(anotherAccounts[0], { from: owners[0] }))
             })
 
@@ -205,23 +190,16 @@ contract('TrueUSD: chaining 3 contracts', function (accounts) {
     const anotherAccounts = [accounts[7], accounts[8], accounts[9]]
 
     beforeEach(async function () {
-        this.mintWhiteLists = []
-        this.burnWhiteLists = []
-        this.blackLists = []
-        this.noFeesLists = []
+        this.registries = []
         this.balancess = []
         this.allowancess = []
         this.tokens = []
 
         for (let i = 0; i < 3; i++) {
-            this.mintWhiteLists[i] = await AddressList.new("Mint whitelist", { from: owners[i] })
-            this.burnWhiteLists[i] = await AddressList.new("Burn whitelist", { from: owners[i] })
-            this.blackLists[i] = await AddressList.new("Blacklist", { from: owners[i] })
-            this.noFeesLists[i] = await AddressList.new("No Fees list", { from: owners[i] })
+            this.registries[i] = await Registry.new({ from: owners[i] })
 
             this.tokens[i] = await TrueUSDMock.new(oneHundreds[i], 100, { from: owners[i] })
-            await this.tokens[i].setLists(this.mintWhiteLists[i].address, this.burnWhiteLists[i].address, this.blackLists[i].address, { from: owners[i] })
-            await this.tokens[i].setNoFeesList(this.noFeesLists[i].address, { from: owners[i] })
+            await this.tokens[i].setRegistry(this.registries[i].address, { from: owners[i] })
         }
     })
 
@@ -244,7 +222,7 @@ contract('TrueUSD: chaining 3 contracts', function (accounts) {
 
                 describe('burn', function () {
                     beforeEach(async function () {
-                        await this.burnWhiteLists[2].changeList(oneHundreds[2], true, { from: owners[2] })
+                        await this.registries[2].setAttribute(oneHundreds[2], "canBurn", 1, { from: owners[2] })
                         await this.tokens[2].setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owners[2] })
                     })
 
@@ -262,15 +240,11 @@ contract('Another TrueUSD test suite', function (accounts) {
     const anotherAccounts = [accounts[7], accounts[8], accounts[9]]
 
     beforeEach(async function () {
-        const mintWhiteList = await AddressList.new("mint", { from: owners[0] })
-        const burnWhiteList = await AddressList.new("burn", { from: owners[0] })
-        const blackList = await AddressList.new("black", { from: owners[0] })
+        const registry = await Registry.new({ from: owners[0] })
         this.token = await TrueUSDMock.new(oneHundreds[0], 100, { from: owners[0] })
-        await this.token.setLists(mintWhiteList.address, burnWhiteList.address, blackList.address, { from: owners[0] })
-        await this.token.setNoFeesList(blackList.address, { from: owners[0] })
+        await this.token.setRegistry(registry.address, { from: owners[0] })
         this.token2 = await TrueUSDMock.new(oneHundreds[1], 100, { from: owners[1] })
-        await this.token2.setLists(mintWhiteList.address, burnWhiteList.address, blackList.address, { from: owners[1] })
-        await this.token2.setNoFeesList(blackList.address, { from: owners[1] })
+        await this.token2.setRegistry(registry.address, { from: owners[1] })
     })
 
     describe('chaining two contracts', function () {

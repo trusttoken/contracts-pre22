@@ -1,12 +1,11 @@
 pragma solidity ^0.4.18;
 
+import "./HasRegistry.sol";
 import "./modularERC20/ModularBurnableToken.sol";
 import "./modularERC20/ModularMintableToken.sol";
-import "./AddressList.sol";
 
-contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
-    AddressList public noFeesList;
-
+contract TokenWithFees is ModularMintableToken, ModularBurnableToken, HasRegistry {
+    string public constant NO_FEES = "noFees";
     uint256 public transferFeeNumerator = 0;
     uint256 public transferFeeDenominator = 10000;
     uint256 public mintFeeNumerator = 0;
@@ -17,7 +16,6 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
     uint256 public burnFeeFlat = 0;
     address public staker;
 
-    event SetNoFeesList(address indexed list);
     event ChangeStaker(address indexed addr);
     event ChangeStakingFees(uint256 transferFeeNumerator,
                             uint256 transferFeeDenominator,
@@ -30,11 +28,6 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
 
     function TokenWithFees() public {
         staker = msg.sender;
-    }
-
-    function setNoFeesList(AddressList _noFeesList) onlyOwner public {
-        noFeesList = _noFeesList;
-        emit SetNoFeesList(_noFeesList);
     }
 
     function burnAllArgs(address _burner, uint256 _value) internal {
@@ -55,7 +48,7 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken {
     }
 
     function payStakingFee(address _payer, uint256 _value, uint256 _numerator, uint256 _denominator, uint256 _flatRate, address _otherParticipant) private returns (uint256) {
-        if (noFeesList.onList(_payer) || noFeesList.onList(_otherParticipant)) {
+        if (registry.hasAttribute(_payer, NO_FEES) || registry.hasAttribute(_otherParticipant, NO_FEES)) {
             return 0;
         }
         uint256 stakingFee = _value.mul(_numerator).div(_denominator).add(_flatRate);

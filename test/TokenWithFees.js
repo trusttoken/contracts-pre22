@@ -3,7 +3,7 @@ import mintableTokenTests from './token/MintableToken';
 import burnableTokenTests from './token/BurnableToken';
 import standardTokenTests from './token/StandardToken';
 import basicTokenTests from './token/BasicToken';
-const AddressList = artifacts.require('AddressList')
+const Registry = artifacts.require('Registry')
 
 function tokenWithFeesTests([owner, oneHundred, anotherAccount]) {
     describe('--TokenWithFees Tests--', function () {
@@ -101,6 +101,11 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount]) {
         describe('fees are non-zero', function () {
             const amount = 48
 
+            async function assertBalance(account, value) {
+                let balance = await this.token.balanceOf(account)
+                assert.equal(balance, value)
+            }
+
             beforeEach(async function () {
                 await this.token.changeStakingFees(2, 20, 2, 20, 5, 2, 20, 5, { from: owner })
             })
@@ -108,80 +113,48 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount]) {
             it('burn', async function () {
                 const fee = Math.floor(amount * 2 / 20) + 5
                 await this.token.burn(amount, { from: oneHundred })
-                let balance = await this.token.balanceOf(oneHundred)
-                assert.equal(balance, 100 - amount)
-                balance = await this.token.balanceOf(owner)
-                assert.equal(balance, fee)
+                await assertBalance.call(this, oneHundred, 100 - amount)
+                await assertBalance.call(this, owner, fee)
             })
 
             it('mint', async function () {
                 const fee = Math.floor(amount * 2 / 20) + 5
                 await this.token.mint(anotherAccount, amount, { from: owner })
-                let balance = await this.token.balanceOf(anotherAccount)
-                assert.equal(balance, amount - fee)
-                balance = await this.token.balanceOf(owner)
-                assert.equal(balance, fee)
+                await assertBalance.call(this, anotherAccount, amount - fee)
+                await assertBalance.call(this, owner, fee)
             })
 
             it('transfer', async function () {
                 const fee = Math.floor(amount * 2 / 20)
                 await this.token.transfer(anotherAccount, amount, { from: oneHundred })
-                let balance = await this.token.balanceOf(oneHundred)
-                assert.equal(balance, 100 - amount)
-                balance = await this.token.balanceOf(owner)
-                assert.equal(balance, fee)
-                balance = await this.token.balanceOf(anotherAccount)
-                assert.equal(balance, amount - fee)
+                await assertBalance.call(this, oneHundred, 100 - amount)
+                await assertBalance.call(this, owner, fee)
+                await assertBalance.call(this, anotherAccount, amount - fee)
             })
 
-            it('transfer to user on noFeesList', async function () {
-                await this.noFeesList.changeList(anotherAccount, true, { from: owner })
+            it('transfer to user with noFees property', async function () {
+                await this.registry.setAttribute(anotherAccount, "noFees", 1, { from: owner })
                 await this.token.transfer(anotherAccount, amount, { from: oneHundred })
-                let balance = await this.token.balanceOf(oneHundred)
-                assert.equal(balance, 100 - amount)
-                balance = await this.token.balanceOf(owner)
-                assert.equal(balance, 0)
-                balance = await this.token.balanceOf(anotherAccount)
-                assert.equal(balance, amount)
+                await assertBalance.call(this, oneHundred, 100 - amount)
+                await assertBalance.call(this, owner, 0)
+                await assertBalance.call(this, anotherAccount, amount)
+            })
+
+            it('transfer from user with noFees property', async function () {
+                await this.registry.setAttribute(oneHundred, "noFees", 1, { from: owner })
+                await this.token.transfer(anotherAccount, amount, { from: oneHundred })
+                await assertBalance.call(this, oneHundred, 100 - amount)
+                await assertBalance.call(this, owner, 0)
+                await assertBalance.call(this, anotherAccount, amount)
             })
 
             it('transferFrom', async function () {
                 const fee = Math.floor(amount * 2 / 20)
                 await this.token.approve(anotherAccount, amount, { from: oneHundred })
                 await this.token.transferFrom(oneHundred, anotherAccount, amount, { from: anotherAccount })
-                let balance = await this.token.balanceOf(oneHundred)
-                assert.equal(balance, 100 - amount)
-                balance = await this.token.balanceOf(owner)
-                assert.equal(balance, fee)
-                balance = await this.token.balanceOf(anotherAccount)
-                assert.equal(balance, amount - fee)
-            })
-        })
-
-        describe('setNoFeesList', function () {
-            let newList
-
-            beforeEach(async function () {
-                newList = await AddressList.new("new", { from: owner })
-            })
-
-            it('sets the list', async function () {
-                await this.token.setNoFeesList(newList.address, { from: owner })
-
-                const list = await this.token.noFeesList()
-                assert.equal(list, newList.address)
-            })
-
-            it('emits an event', async function () {
-                const { logs } = await this.token.setNoFeesList(newList.address, { from: owner })
-
-                assert.equal(logs.length, 1)
-                assert.equal(logs[0].event, 'SetNoFeesList')
-                assert.equal(logs[0].args.list, newList.address)
-            })
-
-            it('cannot be called by non-owner', async function () {
-                await assertRevert(this.token.setNoFeesList(newList.address, { from: anotherAccount }))
+                await assertBalance.call(this, oneHundred, 100 - amount)
+                await assertBalance.call(this, owner, fee)
+                await assertBalance.call(this, anotherAccount, amount - fee)
             })
         })
     })

@@ -1,6 +1,6 @@
 import assertRevert from './helpers/assertRevert'
 import increaseTime, { duration } from './helpers/increaseTime'
-const AddressList = artifacts.require("AddressList")
+const Registry = artifacts.require("Registry")
 const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
@@ -8,10 +8,7 @@ const TimeLockedController = artifacts.require("TimeLockedController")
 
 contract('TimeLockedController', function(accounts) {
     it("should work", async function () {
-        const mintWhiteList = await AddressList.new("Mint whitelist")
-        const burnWhiteList = await AddressList.new("Burn whitelist")
-        const blackList = await AddressList.new("Blacklist")
-        const noFeesList = await AddressList.new("No Fees list")
+        const registry = await Registry.new()
         const balances = await BalanceSheet.new()
         const allowances = await AllowanceSheet.new()
         const trueUSD = await TrueUSD.new()
@@ -19,22 +16,18 @@ contract('TimeLockedController', function(accounts) {
         await allowances.transferOwnership(trueUSD.address)
         await trueUSD.setBalanceSheet(balances.address)
         await trueUSD.setAllowanceSheet(allowances.address)
-        await mintWhiteList.changeList(accounts[3], true, {from: accounts[0]})
+        await registry.setAttribute(accounts[3], "hasPassedKYC", 1, {from: accounts[0]})
         async function userHasCoins(id, amount) {
           var balance = await trueUSD.balanceOf(accounts[id])
           assert.equal(balance, amount, "userHasCoins fail: actual balance "+balance)
         }
         const timeLockedController = await TimeLockedController.new({from: accounts[0]})
-        await mintWhiteList.transferOwnership(timeLockedController.address, {from: accounts[0]})
-        await burnWhiteList.transferOwnership(timeLockedController.address, {from: accounts[0]})
-        await blackList.transferOwnership(timeLockedController.address, {from: accounts[0]})
+        await registry.transferOwnership(timeLockedController.address, {from: accounts[0]})
         await trueUSD.transferOwnership(timeLockedController.address, {from: accounts[0]})
-        await timeLockedController.issueClaimOwnership(mintWhiteList.address, {from: accounts[0]})
-        await timeLockedController.issueClaimOwnership(burnWhiteList.address, {from: accounts[0]})
-        await timeLockedController.issueClaimOwnership(blackList.address, {from: accounts[0]})
+        await timeLockedController.issueClaimOwnership(registry.address, {from: accounts[0]})
         await timeLockedController.issueClaimOwnership(trueUSD.address, {from: accounts[0]})
         await timeLockedController.setTrueUSD(trueUSD.address)
-        await timeLockedController.setLists(mintWhiteList.address, burnWhiteList.address, blackList.address, noFeesList.address, {from: accounts[0]})
+        await timeLockedController.setRegistry(registry.address, {from: accounts[0]})
         await assertRevert(trueUSD.mint(accounts[3], 10, {from: accounts[0]})) //user 0 is no longer the owner
         await timeLockedController.requestMint(accounts[3], 9, {from: accounts[0]})
         await timeLockedController.finalizeMint(0, {from: accounts[0]}) // the owner can finalize immediately
@@ -59,9 +52,7 @@ contract('TimeLockedController', function(accounts) {
         await assertRevert(timeLockedController.transferChild(trueUSD.address, accounts[2], {from: accounts[1]})) //only owner
         await timeLockedController.requestMint(accounts[3], 500000, {from: accounts[2]})
         await timeLockedController.transferChild(trueUSD.address, accounts[2], {from: accounts[0]})
-        await timeLockedController.transferChild(mintWhiteList.address, accounts[2], {from: accounts[0]})
-        await timeLockedController.transferChild(burnWhiteList.address, accounts[2], {from: accounts[0]})
-        await timeLockedController.transferChild(blackList.address, accounts[2], {from: accounts[0]})
+        await timeLockedController.transferChild(registry.address, accounts[2], {from: accounts[0]})
         await trueUSD.claimOwnership({from: accounts[2]})
         await assertRevert(timeLockedController.finalizeMint(4, {from: accounts[2]})) //timeLockedController is no longer the owner of trueUSD
         await trueUSD.transferOwnership(timeLockedController.address, {from: accounts[2]})

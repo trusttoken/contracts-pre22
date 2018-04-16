@@ -5,10 +5,9 @@ import "zeppelin-solidity/contracts/ownership/HasNoTokens.sol";
 import "zeppelin-solidity/contracts/ownership/Claimable.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "./TrueUSD.sol";
-import "./NamableAddressList.sol";
 
 // The TimeLockedController contract is intended to be the initial Owner of the TrueUSD
-// contract and TrueUSD's AddressLists. It splits ownership into two accounts: an "admin" account and an
+// contract and TrueUSD's Registry. It splits ownership into two accounts: an "admin" account and an
 // "owner" account. The admin of TimeLockedController can initiate minting TrueUSD.
 // However, these transactions must be stored
 // for 1 day first before they can be forwarded to the
@@ -17,13 +16,11 @@ import "./NamableAddressList.sol";
 // securely since it is never used in normal operation) to replace the admin.
 // Once a day has passed, requests can be finalized by the admin.
 // Requests initiated by an admin that has since been deposed
-// cannot be finalized. The admin is also able to update TrueUSD's AddressLists
+// cannot be finalized. The admin is also able to update TrueUSD's Registry
 // (without a day's delay). The owner can mint without the day's delay, and also
 // change other aspects of TrueUSD like the staking fees.
 contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     using SafeMath for uint256;
-
-    uint256 public mintDelay = 1 days;
 
     struct MintOperation {
         address to;
@@ -32,6 +29,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint256 releaseTimestamp;
     }
 
+    uint256 public mintDelay = 1 days;
     address public admin;
     TrueUSD public trueUSD;
     MintOperation[] public mintOperations;
@@ -159,20 +157,14 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         admin = _newAdmin;
     }
 
-    // Swap out TrueUSD's address lists
-    function setLists(AddressList _canReceiveMintWhiteList, AddressList _canBurnWhiteList, AddressList _blackList, AddressList _noFeesList) onlyOwner public {
-        trueUSD.setLists(_canReceiveMintWhiteList, _canBurnWhiteList, _blackList);
-        trueUSD.setNoFeesList(_noFeesList);
+    // Swap out TrueUSD's permissions registry
+    function setRegistry(Registry _registry) onlyOwner public {
+        trueUSD.setRegistry(_registry);
     }
 
-    // Update a whitelist/blacklist
-    function updateList(address _list, address _entry, bool _flag) public onlyAdminOrOwner {
-        AddressList(_list).changeList(_entry, _flag);
-    }
-
-    // Rename a whitelist/blacklist
-    function renameList(address _list, string _name) public onlyAdminOrOwner {
-        NamableAddressList(_list).changeName(_name);
+    // Update the registry
+    function setAttribute(Registry _registry, address _who, string _attribute, uint256 _value) public onlyAdminOrOwner {
+        _registry.setAttribute(_who, _attribute, _value);
     }
 
     // Claim ownership of an arbitrary Claimable contract
