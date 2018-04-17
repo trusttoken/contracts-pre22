@@ -5,19 +5,18 @@ const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const TimeLockedController = artifacts.require("TimeLockedController")
-// const TimeLockedControllerMock = artifacts.require("TimeLockedControllerMock")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 
 contract('TimeLockedController', function ([_, owner, oneHundred, admin]) {
     beforeEach(async function () {
-        // this.controller = await TimeLockedControllerMock.new(oneHundred, 100, { from: owner })
         this.registry = await Registry.new({ from: owner })
-        this.trueUSD = await TrueUSDMock.new(oneHundred, 100, { from: owner })
+        this.token = await TrueUSDMock.new(oneHundred, 100, { from: owner })
         this.controller = await TimeLockedController.new({ from: owner })
         await this.registry.transferOwnership(this.controller.address, { from: owner })
-        await this.trueUSD.transferOwnership(this.controller.address, { from: owner })
+        await this.token.transferOwnership(this.controller.address, { from: owner })
         await this.controller.issueClaimOwnership(this.registry.address, { from: owner })
-        await this.controller.issueClaimOwnership(this.trueUSD.address, { from: owner })
+        await this.controller.issueClaimOwnership(this.token.address, { from: owner })
+        await this.controller.setTrueUSD(this.token.address, { from: owner })
         await this.controller.transferAdminship(admin, { from: owner })
     })
 
@@ -59,28 +58,146 @@ contract('TimeLockedController', function ([_, owner, oneHundred, admin]) {
         })
     })
 
-    // describe('setDelegatedFrom', function () {
-    //     it('sets delegatedFrom', async function () {
-    //         let x = await this.trueUSD.owner()
-    //         assert.equal(x, this.controller.address)
-    //         x = await this.controller.owner()
-    //         assert.equal(x, owner)
-    //         await this.controller.setDelegatedFrom(oneHundred, { from: owner })
+    describe('setDelegatedFrom', function () {
+        it('sets delegatedFrom', async function () {
+            await this.controller.setDelegatedFrom(oneHundred, { from: owner })
 
-    //         // const addr = await this.trueUSD.delegatedFrom()
-    //         // assert.equal(addr, oneHundred)
-    //     })
+            const addr = await this.token.delegatedFrom()
+            assert.equal(addr, oneHundred)
+        })
 
-    //     it('cannot be called by others', async function () {
-    //         // await assertRevert(this.controller.setDelegatedFrom(oneHundred, { from: admin }))
-    //     })
-    // })
+        it('cannot be called by others', async function () {
+            await assertRevert(this.controller.setDelegatedFrom(oneHundred, { from: admin }))
+        })
+    })
 
-    // describe('changeTokenName', function () {
-    //     it('sets the token name', async function () {
-    //         await this.controller.changeTokenName("FooCoin", "FCN", { from: owner })
-    //     })
-    // })
+    describe('changeTokenName', function () {
+        it('sets the token name', async function () {
+            await this.controller.changeTokenName("FooCoin", "FCN", { from: owner })
+
+            const name = await this.token.name()
+            assert.equal(name, "FooCoin")
+            const symbol = await this.token.symbol()
+            assert.equal(symbol, "FCN")
+        })
+
+        it('cannot be called by others', async function () {
+            await assertRevert(this.controller.changeTokenName("FooCoin", "FCN", { from: admin }))
+        })
+    })
+
+    describe('setBurnBounds', function () {
+        it('sets burnBounds', async function () {
+            await this.controller.setBurnBounds(3, 4, { from: owner })
+
+            const min = await this.token.burnMin()
+            assert.equal(min, 3)
+            const max = await this.token.burnMax()
+            assert.equal(max, 4)
+        })
+
+        it('cannot be called by others', async function () {
+            await assertRevert(this.controller.setBurnBounds(3, 4, { from: admin }))
+        })
+    })
+
+    describe('changeStaker', function () {
+        it('sets staker', async function () {
+            await this.controller.changeStaker(oneHundred, { from: owner })
+
+            const staker = await this.token.staker()
+            assert.equal(staker, oneHundred)
+        })
+
+        it('cannot be called by others', async function () {
+            await assertRevert(this.controller.changeStaker(oneHundred, { from: admin }))
+        })
+    })
+
+    describe('delegateToNewContract', function () {
+        it('sets delegate', async function () {
+            await this.controller.delegateToNewContract(oneHundred, { from: owner })
+
+            const delegate = await this.token.delegate()
+            assert.equal(delegate, oneHundred)
+        })
+
+        it('cannot be called by others', async function () {
+            await assertRevert(this.controller.delegateToNewContract(oneHundred, { from: admin }))
+        })
+    })
+
+    describe('transferAdminship', function () {
+        it('emits an event', async function () {
+            const { logs } = await this.controller.transferAdminship(oneHundred, { from: owner })
+
+            assert.equal(logs.length, 1)
+            assert.equal(logs[0].event, 'TransferAdminship')
+            assert.equal(logs[0].args.previousAdmin, admin)
+            assert.equal(logs[0].args.newAdmin, oneHundred)
+        })
+
+        it('cannot set to 0x0', async function () {
+            await assertRevert(this.controller.transferAdminship(0x0, { from: owner }))
+        })
+
+        it('cannot be called by others', async function () {
+            await assertRevert(this.controller.transferAdminship(oneHundred, { from: admin }))
+        })
+    })
+
+    describe('requestReclaimContract', function () {
+        it('reclaims the contract', async function () {
+            const balances = await this.token.balances()
+            let balanceOwner = await BalanceSheet.at(balances).owner()
+            assert.equal(balanceOwner, this.token.address)
+
+            await this.controller.requestReclaimContract(balances, { from: owner })
+            await this.controller.issueClaimOwnership(balances, { from: owner })
+            balanceOwner = await BalanceSheet.at(balances).owner()
+            assert.equal(balanceOwner, this.controller.address)
+        })
+
+        it('emits an event', async function () {
+            const balances = await this.token.balances()
+            const { logs } = await this.controller.requestReclaimContract(balances, { from: owner })
+
+            assert.equal(logs.length, 1)
+            assert.equal(logs[0].event, 'RequestReclaimContract')
+            assert.equal(logs[0].args.other, balances)
+        })
+
+        it('cannot be called by others', async function () {
+            const balances = await this.token.balances()
+            await assertRevert(this.controller.requestReclaimContract(balances, { from: admin }))
+        })
+    })
+
+    describe('delegateToNewContract', function () {
+        it('changes fees', async function () {
+            await this.controller.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, { from: owner })
+            const transferFeeNumerator = await this.token.transferFeeNumerator()
+            assert.equal(transferFeeNumerator, 1)
+            const transferFeeDenominator = await this.token.transferFeeDenominator()
+            assert.equal(transferFeeDenominator, 2)
+            const mintFeeNumerator = await this.token.mintFeeNumerator()
+            assert.equal(mintFeeNumerator, 3)
+            const mintFeeDenominator = await this.token.mintFeeDenominator()
+            assert.equal(mintFeeDenominator, 4)
+            const mintFeeFlat = await this.token.mintFeeFlat()
+            assert.equal(mintFeeFlat, 5)
+            const burnFeeNumerator = await this.token.burnFeeNumerator()
+            assert.equal(burnFeeNumerator, 6)
+            const burnFeeDenominator = await this.token.burnFeeDenominator()
+            assert.equal(burnFeeDenominator, 7)
+            const burnFeeFlat = await this.token.burnFeeFlat()
+            assert.equal(burnFeeFlat, 8)
+        })
+
+        it('cannot be called by others', async function () {
+            await assertRevert(this.controller.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, { from: admin }))
+        })
+    })
 })
 
 contract('TimeLockedController - old test', function (accounts) {
