@@ -118,8 +118,6 @@ contract('TrueUSD: chaining 2 contracts', function (accounts) {
 
     beforeEach(async function () {
         this.registries = []
-        this.balancess = []
-        this.allowancess = []
         this.tokens = []
 
         for (let i = 0; i < 2; i++) {
@@ -191,8 +189,6 @@ contract('TrueUSD: chaining 3 contracts', function (accounts) {
 
     beforeEach(async function () {
         this.registries = []
-        this.balancess = []
-        this.allowancess = []
         this.tokens = []
 
         for (let i = 0; i < 3; i++) {
@@ -211,49 +207,43 @@ contract('TrueUSD: chaining 3 contracts', function (accounts) {
             await this.tokens[2].setDelegatedFrom(this.tokens[1].address, { from: owners[2] })
         })
 
-        for (var i = 0; i < 2; i++) {
-            describe('contract ' + i + ' behaves', function () {
-                beforeEach(async function () {
-                    this.token = this.tokens[i]
-                })
 
-                basicTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
-                standardTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
-
-                describe('burn', function () {
-                    beforeEach(async function () {
-                        await this.registries[2].setAttribute(oneHundreds[2], "canBurn", 1, { from: owners[2] })
-                        await this.tokens[2].setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owners[2] })
-                    })
-
-                    burnableTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
-                })
+        describe('contract ' + 0 + ' behaves', function () {
+            beforeEach(async function () {
+                this.token = this.tokens[0]
             })
-        }
-    })
-})
 
-contract('Another TrueUSD test suite', function (accounts) {
-    const _ = accounts[0]
-    const owners = [accounts[1], accounts[2], accounts[3]]
-    const oneHundreds = [accounts[4], accounts[5], accounts[6]]
-    const anotherAccounts = [accounts[7], accounts[8], accounts[9]]
+            basicTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
+            standardTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
 
-    beforeEach(async function () {
-        const registry = await Registry.new({ from: owners[0] })
-        this.token = await TrueUSDMock.new(oneHundreds[0], 100, { from: owners[0] })
-        await this.token.setRegistry(registry.address, { from: owners[0] })
-        this.token2 = await TrueUSDMock.new(oneHundreds[1], 100, { from: owners[1] })
-        await this.token2.setRegistry(registry.address, { from: owners[1] })
-    })
+            describe('burn', function () {
+                beforeEach(async function () {
+                    await this.registries[2].setAttribute(oneHundreds[2], "canBurn", 1, { from: owners[2] })
+                    await this.tokens[2].setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owners[2] })
+                })
 
-    describe('chaining two contracts', function () {
-        beforeEach(async function () {
-            await this.token.delegateToNewContract(this.token2.address, { from: owners[0] })
-            await this.token2.setDelegatedFrom(this.token.address, { from: owners[1] })
+                burnableTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
+            })
         })
 
-        basicTokenTests([owners[1], oneHundreds[1], anotherAccounts[1]])
-        standardTokenTests([owners[1], oneHundreds[1], anotherAccounts[1]])
+        describe('contract ' + 1 + ' behaves', function () {
+            beforeEach(async function () {
+                // This is the only line that differs from '0 behaves' above, but for some reason
+                // putting this all in a for loop doesn't work (coverage goes down?!)
+                this.token = this.tokens[1]
+            })
+
+            basicTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
+            standardTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
+
+            describe('burn', function () {
+                beforeEach(async function () {
+                    await this.registries[2].setAttribute(oneHundreds[2], "canBurn", 1, { from: owners[2] })
+                    await this.tokens[2].setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owners[2] })
+                })
+
+                burnableTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
+            })
+        })
     })
 })
