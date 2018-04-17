@@ -7,7 +7,6 @@ import "./ModularBasicToken.sol";
  * @dev Token that can be irreversibly burned (destroyed).
  */
 contract ModularBurnableToken is ModularBasicToken {
-
     event Burn(address indexed burner, uint256 value);
 
     /**

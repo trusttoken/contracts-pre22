@@ -12,7 +12,6 @@ import "./AllowanceSheet.sol";
  * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
  */
 contract ModularStandardToken is ERC20, ModularBasicToken {
-
     AllowanceSheet public allowances;
 
     event AllowanceSheetSet(address indexed sheet);
