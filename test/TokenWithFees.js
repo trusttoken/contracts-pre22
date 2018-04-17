@@ -1,4 +1,5 @@
 import assertRevert from './helpers/assertRevert'
+import assertBalance from './helpers/assertBalance'
 import mintableTokenTests from './token/MintableToken';
 import burnableTokenTests from './token/BurnableToken';
 import standardTokenTests from './token/StandardToken';
@@ -101,11 +102,6 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount]) {
         describe('fees are non-zero', function () {
             const amount = 48
 
-            async function assertBalance(account, value) {
-                let balance = await this.token.balanceOf(account)
-                assert.equal(balance, value)
-            }
-
             beforeEach(async function () {
                 await this.token.changeStakingFees(2, 20, 2, 20, 5, 2, 20, 5, { from: owner })
             })
@@ -113,48 +109,48 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount]) {
             it('burn', async function () {
                 const fee = Math.floor(amount * 2 / 20) + 5
                 await this.token.burn(amount, { from: oneHundred })
-                await assertBalance.call(this, oneHundred, 100 - amount)
-                await assertBalance.call(this, owner, fee)
+                await assertBalance(this.token, oneHundred, 100 - amount)
+                await assertBalance(this.token, owner, fee)
             })
 
             it('mint', async function () {
                 const fee = Math.floor(amount * 2 / 20) + 5
                 await this.token.mint(anotherAccount, amount, { from: owner })
-                await assertBalance.call(this, anotherAccount, amount - fee)
-                await assertBalance.call(this, owner, fee)
+                await assertBalance(this.token, anotherAccount, amount - fee)
+                await assertBalance(this.token, owner, fee)
             })
 
             it('transfer', async function () {
                 const fee = Math.floor(amount * 2 / 20)
                 await this.token.transfer(anotherAccount, amount, { from: oneHundred })
-                await assertBalance.call(this, oneHundred, 100 - amount)
-                await assertBalance.call(this, owner, fee)
-                await assertBalance.call(this, anotherAccount, amount - fee)
+                await assertBalance(this.token, oneHundred, 100 - amount)
+                await assertBalance(this.token, owner, fee)
+                await assertBalance(this.token, anotherAccount, amount - fee)
             })
 
             it('transfer to user with noFees property', async function () {
                 await this.registry.setAttribute(anotherAccount, "noFees", 1, { from: owner })
                 await this.token.transfer(anotherAccount, amount, { from: oneHundred })
-                await assertBalance.call(this, oneHundred, 100 - amount)
-                await assertBalance.call(this, owner, 0)
-                await assertBalance.call(this, anotherAccount, amount)
+                await assertBalance(this.token, oneHundred, 100 - amount)
+                await assertBalance(this.token, owner, 0)
+                await assertBalance(this.token, anotherAccount, amount)
             })
 
             it('transfer from user with noFees property', async function () {
                 await this.registry.setAttribute(oneHundred, "noFees", 1, { from: owner })
                 await this.token.transfer(anotherAccount, amount, { from: oneHundred })
-                await assertBalance.call(this, oneHundred, 100 - amount)
-                await assertBalance.call(this, owner, 0)
-                await assertBalance.call(this, anotherAccount, amount)
+                await assertBalance(this.token, oneHundred, 100 - amount)
+                await assertBalance(this.token, owner, 0)
+                await assertBalance(this.token, anotherAccount, amount)
             })
 
             it('transferFrom', async function () {
                 const fee = Math.floor(amount * 2 / 20)
                 await this.token.approve(anotherAccount, amount, { from: oneHundred })
                 await this.token.transferFrom(oneHundred, anotherAccount, amount, { from: anotherAccount })
-                await assertBalance.call(this, oneHundred, 100 - amount)
-                await assertBalance.call(this, owner, fee)
-                await assertBalance.call(this, anotherAccount, amount - fee)
+                await assertBalance(this.token, oneHundred, 100 - amount)
+                await assertBalance(this.token, owner, fee)
+                await assertBalance(this.token, anotherAccount, amount - fee)
             })
         })
     })

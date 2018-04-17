@@ -1,4 +1,5 @@
 import assertRevert from '../helpers/assertRevert'
+import assertBalance from '../helpers/assertBalance'
 
 function standardTokenTests([owner, oneHundred, anotherAccount]) {
     describe('--StandardToken Tests--', function () {
@@ -120,12 +121,8 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                         it('transfers the requested amount', async function () {
                             await this.token.transferFrom(oneHundred, to, amount, { from: spender })
-
-                            const senderBalance = await this.token.balanceOf(oneHundred)
-                            assert.equal(senderBalance, 0)
-
-                            const anotherAccountBalance = await this.token.balanceOf(to)
-                            assert.equal(anotherAccountBalance, amount)
+                            await assertBalance(this.token, oneHundred, 0)
+                            await assertBalance(this.token, to, amount)
                         })
 
                         it('decreases the spender allowance', async function () {

@@ -1,4 +1,5 @@
 import assertRevert from '../helpers/assertRevert'
+import assertBalance from '../helpers/assertBalance'
 
 function basicTokenTests([owner, oneHundred, anotherAccount]) {
     describe('--BasicToken Tests--', function () {
@@ -15,17 +16,13 @@ function basicTokenTests([owner, oneHundred, anotherAccount]) {
         describe('balanceOf', function () {
             describe('when the requested account has no tokens', function () {
                 it('returns zero', async function () {
-                    const balance = await this.token.balanceOf(owner)
-
-                    assert.equal(balance, 0)
+                    await assertBalance(this.token, owner, 0)
                 })
             })
 
             describe('when the requested account has some tokens', function () {
                 it('returns the total amount of tokens', async function () {
-                    const balance = await this.token.balanceOf(oneHundred)
-
-                    assert.equal(balance, 100)
+                    await assertBalance(this.token, oneHundred, 100)
                 })
             })
         })
@@ -47,12 +44,8 @@ function basicTokenTests([owner, oneHundred, anotherAccount]) {
 
                     it('transfers the requested amount', async function () {
                         await this.token.transfer(to, amount, { from: oneHundred })
-
-                        const senderBalance = await this.token.balanceOf(oneHundred)
-                        assert.equal(senderBalance, 0)
-
-                        const anotherAccountBalance = await this.token.balanceOf(to)
-                        assert.equal(anotherAccountBalance, amount)
+                        await assertBalance(this.token, oneHundred, 0)
+                        await assertBalance(this.token, to, amount)
                     })
 
                     it('emits a transfer event', async function () {

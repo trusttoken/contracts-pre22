@@ -1,4 +1,5 @@
 import assertRevert from '../helpers/assertRevert'
+import assertBalance from '../helpers/assertBalance'
 import expectThrow from '../helpers/expectThrow'
 const BalanceSheet = artifacts.require('BalanceSheet')
 
@@ -13,20 +14,17 @@ contract('BalanceSheet', function ([_, owner, anotherAccount]) {
 
         it('addBalance', async function () {
             await this.sheet.addBalance(anotherAccount, 70, { from })
-            const balance = await this.sheet.balanceOf(anotherAccount)
-            assert.equal(balance, 100+70)
+            await assertBalance(this.sheet, anotherAccount, 100+70)
         })
 
         it('subBalance', async function () {
             await this.sheet.subBalance(anotherAccount, 70, { from })
-            const balance = await this.sheet.balanceOf(anotherAccount)
-            assert.equal(balance, 100-70)
+            await assertBalance(this.sheet, anotherAccount, 100-70)
         })
 
         it('setBalance', async function () {
             await this.sheet.setBalance(anotherAccount, 70, { from })
-            const balance = await this.sheet.balanceOf(anotherAccount)
-            assert.equal(balance, 70)
+            await assertBalance(this.sheet, anotherAccount, 70)
         })
 
         it('reverts subBalance if insufficient funds', async function () {

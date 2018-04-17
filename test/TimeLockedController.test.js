@@ -1,4 +1,5 @@
 import assertRevert from './helpers/assertRevert'
+import assertBalance from './helpers/assertBalance'
 import increaseTime, { duration } from './helpers/increaseTime'
 const Registry = artifacts.require("Registry")
 const TrueUSD = artifacts.require("TrueUSD")
@@ -200,8 +201,7 @@ contract('TimeLockedController', function (accounts) {
             it('reclaims token', async function () {
                 await this.token.transfer(this.token.address, 40, { from: oneHundred })
                 await this.controller.requestReclaimToken(this.token.address, { from: owner })
-                const balance = await this.token.balanceOf(owner)
-                assert.equal(balance, 40)
+                await assertBalance(this.token, owner, 40)
             })
 
             it('cannot be called by others', async function () {
@@ -248,10 +248,6 @@ contract('TimeLockedController', function (accounts) {
             await trueUSD.setBalanceSheet(balances.address)
             await trueUSD.setAllowanceSheet(allowances.address)
             await registry.setAttribute(accounts[3], "hasPassedKYC", 1, { from: accounts[0] })
-            async function userHasCoins(id, amount) {
-                var balance = await trueUSD.balanceOf(accounts[id])
-                assert.equal(balance, amount, "userHasCoins fail: actual balance " + balance)
-            }
             const timeLockedController = await TimeLockedController.new({ from: accounts[0] })
             await registry.transferOwnership(timeLockedController.address, { from: accounts[0] })
             await trueUSD.transferOwnership(timeLockedController.address, { from: accounts[0] })
@@ -262,7 +258,7 @@ contract('TimeLockedController', function (accounts) {
             await assertRevert(trueUSD.mint(accounts[3], 10, { from: accounts[0] })) //user 0 is no longer the owner
             await timeLockedController.requestMint(accounts[3], 9, { from: accounts[0] })
             await timeLockedController.finalizeMint(0, { from: accounts[0] }) // the owner can finalize immediately
-            await userHasCoins(3, 9)
+            await assertBalance(trueUSD, accounts[3], 9)
             await assertRevert(timeLockedController.requestMint(accounts[3], 200, { from: accounts[1] })) //user 1 is not (yet) the admin
             await timeLockedController.transferAdminship(accounts[1], { from: accounts[0] })
             await timeLockedController.requestMint(accounts[3], 200, { from: accounts[1] })
@@ -271,13 +267,13 @@ contract('TimeLockedController', function (accounts) {
             await assertRevert(timeLockedController.finalizeMint(1, { from: accounts[3] })) //still not enough time has passed
             await increaseTime(duration.hours(12))
             await timeLockedController.finalizeMint(1, { from: accounts[1] }) //only target of mint can finalize
-            await userHasCoins(3, 209)
+            await assertBalance(trueUSD, accounts[3], 209)
             await timeLockedController.requestMint(accounts[3], 3000, { from: accounts[1] })
             await timeLockedController.requestMint(accounts[3], 40000, { from: accounts[1] })
             await increaseTime(duration.days(1))
             await timeLockedController.finalizeMint(3, { from: accounts[1] })
             await assertRevert(timeLockedController.finalizeMint(3, { from: accounts[1] })) //can't double-finalize
-            await userHasCoins(3, 40209)
+            await assertBalance(trueUSD, accounts[3], 40209)
             await timeLockedController.transferAdminship(accounts[2], { from: accounts[0] })
             await assertRevert(timeLockedController.finalizeMint(2, { from: accounts[3] })) //can't finalize because admin has been changed
             await assertRevert(timeLockedController.transferChild(trueUSD.address, accounts[2], { from: accounts[1] })) //only owner
@@ -290,7 +286,7 @@ contract('TimeLockedController', function (accounts) {
             await timeLockedController.issueClaimOwnership(trueUSD.address, { from: accounts[0] })
             await increaseTime(duration.days(1))
             await timeLockedController.finalizeMint(4, { from: accounts[2] })
-            await userHasCoins(3, 540209)
+            await assertBalance(trueUSD, accounts[3], 540209)
         })
     })
 })

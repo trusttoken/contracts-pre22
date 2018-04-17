@@ -1,5 +1,7 @@
+import assertRevert from './helpers/assertRevert'
 import canDelegateTests from './CanDelegate'
 const CanDelegateMock = artifacts.require('CanDelegateMock')
+const StandardDelegateMock = artifacts.require('StandardDelegateMock')
 
 contract('CanDelegate', function (accounts) {
     const _ = accounts[0]
@@ -12,4 +14,10 @@ contract('CanDelegate', function (accounts) {
     })
 
     canDelegateTests([owners[0], oneHundreds[0], anotherAccounts[0]])
+
+    it('other test', async function () {
+        const delegate = await StandardDelegateMock.new(oneHundreds[0], 100, { from: owners[0] })
+        await delegate.setDelegatedFrom(anotherAccounts[0], { from: owners[0] })
+        await assertRevert(delegate.delegateTransfer(anotherAccounts[0], 10, 0x0, { from: anotherAccounts[0] }))
+    })
 })

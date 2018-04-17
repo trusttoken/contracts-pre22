@@ -1,4 +1,5 @@
 import assertRevert from '../helpers/assertRevert'
+import assertBalance from '../helpers/assertBalance'
 const PausableToken = artifacts.require('PausableTokenMock')
 
 contract('PausableToken', function ([_, owner, recipient, anotherAccount]) {
@@ -115,12 +116,8 @@ contract('PausableToken', function ([_, owner, recipient, anotherAccount]) {
         describe('transfer', function () {
             it('allows to transfer when unpaused', async function () {
                 await this.token.transfer(recipient, 100, { from: owner })
-
-                const senderBalance = await this.token.balanceOf(owner)
-                assert.equal(senderBalance, 0)
-
-                const recipientBalance = await this.token.balanceOf(recipient)
-                assert.equal(recipientBalance, 100)
+                await assertBalance(this.token, owner, 0)
+                await assertBalance(this.token, recipient, 100)
             })
 
             it('allows to transfer when paused and then unpaused', async function () {
@@ -128,12 +125,8 @@ contract('PausableToken', function ([_, owner, recipient, anotherAccount]) {
                 await this.token.unpause({ from: owner })
 
                 await this.token.transfer(recipient, 100, { from: owner })
-
-                const senderBalance = await this.token.balanceOf(owner)
-                assert.equal(senderBalance, 0)
-
-                const recipientBalance = await this.token.balanceOf(recipient)
-                assert.equal(recipientBalance, 100)
+                await assertBalance(this.token, owner, 0)
+                await assertBalance(this.token, recipient, 100)
             })
 
             it('reverts when trying to transfer when paused', async function () {
@@ -176,11 +169,8 @@ contract('PausableToken', function ([_, owner, recipient, anotherAccount]) {
             it('allows to transfer from when unpaused', async function () {
                 await this.token.transferFrom(owner, recipient, 40, { from: anotherAccount })
 
-                const senderBalance = await this.token.balanceOf(owner)
-                assert.equal(senderBalance, 60)
-
-                const recipientBalance = await this.token.balanceOf(recipient)
-                assert.equal(recipientBalance, 40)
+                await assertBalance(this.token, owner, 60)
+                await assertBalance(this.token, recipient, 40)
             })
 
             it('allows to transfer when paused and then unpaused', async function () {
@@ -188,12 +178,8 @@ contract('PausableToken', function ([_, owner, recipient, anotherAccount]) {
                 await this.token.unpause({ from: owner })
 
                 await this.token.transferFrom(owner, recipient, 40, { from: anotherAccount })
-
-                const senderBalance = await this.token.balanceOf(owner)
-                assert.equal(senderBalance, 60)
-
-                const recipientBalance = await this.token.balanceOf(recipient)
-                assert.equal(recipientBalance, 40)
+                await assertBalance(this.token, owner, 60)
+                await assertBalance(this.token, recipient, 40)
             })
 
             it('reverts when trying to transfer from when paused', async function () {
@@ -264,9 +250,7 @@ contract('PausableToken', function ([_, owner, recipient, anotherAccount]) {
         describe('burn', function () {
             it('allows to burn when unpaused', async function () {
                 await this.token.burn(60, { from: owner })
-
-                const balance = await this.token.balanceOf(owner)
-                assert.equal(balance, 40)
+                await assertBalance(this.token, owner, 40)
             })
 
             it('allows to burn when paused and then unpaused', async function () {
@@ -274,9 +258,7 @@ contract('PausableToken', function ([_, owner, recipient, anotherAccount]) {
                 await this.token.unpause({ from: owner })
 
                 await this.token.burn(60, { from: owner })
-
-                const balance = await this.token.balanceOf(owner)
-                assert.equal(balance, 40)
+                await assertBalance(this.token, owner, 40)
             })
 
             it('reverts when trying to burn when paused', async function () {
