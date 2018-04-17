@@ -77,4 +77,15 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Comp
             _burnFeeFlat
         );
     }
+
+    // this contract is initially owned by a contract that itself extends parts
+    // of NoOwner, so we use these instead of the normal NoOwner functions
+    function reclaimEther(address _to) external onlyOwner {
+        assert(_to.send(address(this).balance));
+    }
+
+    function reclaimToken(ERC20Basic token, address _to) external onlyOwner {
+        uint256 balance = token.balanceOf(this);
+        token.safeTransfer(_to, balance);
+    }
 }

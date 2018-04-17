@@ -89,11 +89,11 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     }
 
     function requestReclaimEther() public onlyOwner {
-        trueUSD.reclaimEther();
+        trueUSD.reclaimEther(owner);
     }
 
     function requestReclaimToken(ERC20Basic _token) public onlyOwner {
-        trueUSD.reclaimToken(_token);
+        trueUSD.reclaimToken(_token, owner);
     }
 
     // Change the minimum and maximum amounts that TrueUSD users can

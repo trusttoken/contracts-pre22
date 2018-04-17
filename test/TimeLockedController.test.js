@@ -6,11 +6,13 @@ const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const TimeLockedController = artifacts.require("TimeLockedController")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
+const ForceEther = artifacts.require("ForceEther")
 
 contract('TimeLockedController', function ([_, owner, oneHundred, admin]) {
     beforeEach(async function () {
         this.registry = await Registry.new({ from: owner })
         this.token = await TrueUSDMock.new(oneHundred, 100, { from: owner })
+        await this.token.setRegistry(this.registry.address, { from: owner })
         this.controller = await TimeLockedController.new({ from: owner })
         await this.registry.transferOwnership(this.controller.address, { from: owner })
         await this.token.transferOwnership(this.controller.address, { from: owner })
@@ -18,6 +20,7 @@ contract('TimeLockedController', function ([_, owner, oneHundred, admin]) {
         await this.controller.issueClaimOwnership(this.token.address, { from: owner })
         await this.controller.setTrueUSD(this.token.address, { from: owner })
         await this.controller.transferAdminship(admin, { from: owner })
+
     })
 
     describe('changeMintDelay', function () {
@@ -170,6 +173,37 @@ contract('TimeLockedController', function ([_, owner, oneHundred, admin]) {
         it('cannot be called by others', async function () {
             const balances = await this.token.balances()
             await assertRevert(this.controller.requestReclaimContract(balances, { from: admin }))
+        })
+    })
+
+    describe('requestReclaimEther', function () {
+        it('reclaims ether', async function () {
+            const balance1 = web3.fromWei(web3.eth.getBalance(oneHundred), 'ether').toNumber()
+            const forceEther = await ForceEther.new({ from: oneHundred, value: 1000000000 })
+            await forceEther.destroyAndSend(this.token.address)
+            await this.controller.requestReclaimEther({ from: owner })
+            const balance2 = web3.fromWei(web3.eth.getBalance(owner), 'ether').toNumber()
+            assert.isAbove(balance2, balance1)
+        })
+
+        it('cannot be called by others', async function () {
+            const forceEther = await ForceEther.new({ from: oneHundred, value: 1000000000 })
+            await forceEther.destroyAndSend(this.token.address)
+            await assertRevert(this.controller.requestReclaimEther({ from: admin }))
+        })
+    })
+
+    describe('requestReclaimToken', function () {
+        it('reclaims token', async function () {
+            await this.token.transfer(this.token.address, 40, { from: oneHundred })
+            await this.controller.requestReclaimToken(this.token.address, { from: owner })
+            const balance = await this.token.balanceOf(owner)
+            assert.equal(balance, 40)
+        })
+
+        it('cannot be called by others', async function () {
+            await this.token.transfer(this.token.address, 40, { from: oneHundred })
+            await assertRevert(this.controller.requestReclaimToken(this.token.address, { from: admin }))
         })
     })
 

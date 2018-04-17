@@ -1,6 +1,8 @@
 pragma solidity ^0.4.18;
 
 import "../DelegateBurnable.sol";
+// import this so it will be availble for tests:
+import "zeppelin-solidity/contracts/mocks/ForceEther.sol";
 
 contract FailingDelegate is DelegateBurnable {
     function delegateTotalSupply() public view returns (uint256) {
