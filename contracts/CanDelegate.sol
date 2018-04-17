@@ -22,7 +22,7 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         if (delegate == address(0)) {
             super.transferAllArgs(_from, _to, _value);
         } else {
-            assert(delegate.delegateTransfer(_to, _value, _from));
+            require(delegate.delegateTransfer(_to, _value, _from));
         }
     }
 
@@ -30,7 +30,7 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         if (delegate == address(0)) {
             super.transferFromAllArgs(_from, _to, _value, _spender);
         } else {
-            assert(delegate.delegateTransferFrom(_from, _to, _value, _spender));
+            require(delegate.delegateTransferFrom(_from, _to, _value, _spender));
         }
     }
 
@@ -46,7 +46,7 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         if (delegate == address(0)) {
             super.approveAllArgs(_spender, _value, _tokenHolder);
         } else {
-            assert(delegate.delegateApprove(_spender, _value, _tokenHolder));
+            require(delegate.delegateApprove(_spender, _value, _tokenHolder));
         }
     }
 
@@ -70,7 +70,7 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         if (delegate == address(0)) {
             super.increaseApprovalAllArgs(_spender, _addedValue, _tokenHolder);
         } else {
-            assert(delegate.delegateIncreaseApproval(_spender, _addedValue, _tokenHolder));
+            require(delegate.delegateIncreaseApproval(_spender, _addedValue, _tokenHolder));
         }
     }
 
@@ -78,7 +78,7 @@ contract CanDelegate is ModularMintableToken, ModularBurnableToken {
         if (delegate == address(0)) {
             super.decreaseApprovalAllArgs(_spender, _subtractedValue, _tokenHolder);
         } else {
-            assert(delegate.delegateDecreaseApproval(_spender, _subtractedValue, _tokenHolder));
+            require(delegate.delegateDecreaseApproval(_spender, _subtractedValue, _tokenHolder));
         }
     }
 
