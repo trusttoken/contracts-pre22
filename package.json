@@ -13,7 +13,16 @@
   "license": "ISC",
   "devDependencies": {},
   "dependencies": {
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-stage-2": "^6.18.0",
+    "babel-preset-stage-3": "^6.17.0",
+    "babel-register": "^6.26.0",
+    "ethereumjs-testrpc": "^6.0.3",
+    "solidity-coverage": "^0.4.15",
+    "truffle": "^4.1.6",
     "truffle-hdwallet-provider": "0.0.3",
-    "web3": "^1.0.0-beta.27"
+    "web3": "^1.0.0-beta.33",
+    "zeppelin-solidity": "^1.8.0"
   }
 }

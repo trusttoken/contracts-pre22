@@ -1,55 +1,63 @@
 pragma solidity ^0.4.18;
 
-import "../zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "./DelegateERC20.sol";
+import "./modularERC20/ModularBurnableToken.sol";
+import "./DelegateBurnable.sol";
+import "./modularERC20/ModularStandardToken.sol";
 
-contract StandardDelegate is StandardToken, DelegateERC20 {
+contract StandardDelegate is DelegateBurnable, ModularStandardToken, ModularBurnableToken {
     address public delegatedFrom;
 
-    modifier onlySender(address source) {
-        require(msg.sender == source);
+    event DelegatedFromSet(address addr);
+
+    modifier onlySender(address _source) {
+        require(msg.sender == _source);
         _;
     }
 
-    function setDelegatedFrom(address addr) onlyOwner public {
-        delegatedFrom = addr;
+    function setDelegatedFrom(address _addr) onlyOwner public {
+        delegatedFrom = _addr;
+        emit DelegatedFromSet(_addr);
     }
 
-    // All delegate ERC20 functions are forwarded to corresponding normal functions
-    function delegateTotalSupply() public view returns (uint256) {
+    // each function delegateX is simply forwarded to function X
+    function delegateTotalSupply() onlySender(delegatedFrom) public view returns (uint256) {
         return totalSupply();
     }
 
-    function delegateBalanceOf(address who) public view returns (uint256) {
-        return balanceOf(who);
+    function delegateBalanceOf(address _who) onlySender(delegatedFrom) public view returns (uint256) {
+        return balanceOf(_who);
     }
 
-    function delegateTransfer(address to, uint256 value, address origSender) onlySender(delegatedFrom) public returns (bool) {
-        transferAllArgsNoAllowance(origSender, to, value);
+    function delegateTransfer(address _to, uint256 _value, address _origSender) onlySender(delegatedFrom) public returns (bool) {
+        transferAllArgs(_origSender, _to, _value);
         return true;
     }
 
-    function delegateAllowance(address owner, address spender) public view returns (uint256) {
-        return allowance(owner, spender);
+    function delegateAllowance(address _owner, address _spender) onlySender(delegatedFrom) public view returns (uint256) {
+        return allowance(_owner, _spender);
     }
 
-    function delegateTransferFrom(address from, address to, uint256 value, address origSender) onlySender(delegatedFrom) public returns (bool) {
-        transferAllArgsYesAllowance(from, to, value, origSender);
+    function delegateTransferFrom(address _from, address _to, uint256 _value, address _origSender) onlySender(delegatedFrom) public returns (bool) {
+        transferFromAllArgs(_from, _to, _value, _origSender);
         return true;
     }
 
-    function delegateApprove(address spender, uint256 value, address origSender) onlySender(delegatedFrom) public returns (bool) {
-        approveAllArgs(spender, value, origSender);
+    function delegateApprove(address _spender, uint256 _value, address _origSender) onlySender(delegatedFrom) public returns (bool) {
+        approveAllArgs(_spender, _value, _origSender);
         return true;
     }
 
-    function delegateIncreaseApproval(address spender, uint addedValue, address origSender) onlySender(delegatedFrom) public returns (bool) {
-        increaseApprovalAllArgs(spender, addedValue, origSender);
+    function delegateIncreaseApproval(address _spender, uint256 _addedValue, address _origSender) onlySender(delegatedFrom) public returns (bool) {
+        increaseApprovalAllArgs(_spender, _addedValue, _origSender);
         return true;
     }
 
-    function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) onlySender(delegatedFrom) public returns (bool) {
-        decreaseApprovalAllArgs(spender, subtractedValue, origSender);
+    function delegateDecreaseApproval(address _spender, uint256 _subtractedValue, address _origSender) onlySender(delegatedFrom) public returns (bool) {
+        decreaseApprovalAllArgs(_spender, _subtractedValue, _origSender);
         return true;
+    }
+
+    function delegateBurn(address _origSender, uint256 _value) onlySender(delegatedFrom) public {
+        burnAllArgs(_origSender, _value);
     }
 }

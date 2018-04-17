@@ -1,148 +1,91 @@
 pragma solidity ^0.4.18;
 
-import "../zeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
-import "../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
+import "./modularERC20/ModularPausableToken.sol";
 // TrueUSD *is* supposed to own 'balances' and 'allowances', but it needs to be able to relinquish them:
-import "../zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import "./AddressList.sol";
-import "./StandardDelegate.sol";
+import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import "./CanDelegate.sol";
+import "./BurnableTokenWithBounds.sol";
+import "./ComplianceToken.sol";
+import "./TokenWithFees.sol";
+import "./StandardDelegate.sol";
 
-contract TrueUSD is StandardDelegate, PausableToken, BurnableToken, NoOwner, CanDelegate {
+contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, ComplianceToken, TokenWithFees, StandardDelegate, CanDelegate {
     string public name = "TrueUSD";
     string public symbol = "TUSD";
     uint8 public constant decimals = 18;
 
-    AddressList public canReceiveMintWhiteList;
-    AddressList public canBurnWhiteList;
-    AddressList public blackList;
-    AddressList public noFeesList;
-    uint256 public burnMin = 10000 * 10**uint256(decimals);
-    uint256 public burnMax = 20000000 * 10**uint256(decimals);
-
-    uint80 public transferFeeNumerator = 7;
-    uint80 public transferFeeDenominator = 10000;
-    uint80 public mintFeeNumerator = 0;
-    uint80 public mintFeeDenominator = 10000;
-    uint256 public mintFeeFlat = 0;
-    uint80 public burnFeeNumerator = 0;
-    uint80 public burnFeeDenominator = 10000;
-    uint256 public burnFeeFlat = 0;
-    address public staker;
-
-    event ChangeBurnBoundsEvent(uint256 newMin, uint256 newMax);
-    event Mint(address indexed to, uint256 amount);
-    event WipedAccount(address indexed account, uint256 balance);
+    event ChangeTokenName(string newName, string newSymbol);
 
     function TrueUSD() public {
         totalSupply_ = 0;
-        staker = msg.sender;
+        burnMin = 10000 * 10**uint256(decimals);
+        burnMax = 20000000 * 10**uint256(decimals);
     }
 
-    function setLists(AddressList _canReceiveMintWhiteList, AddressList _canBurnWhiteList, AddressList _blackList, AddressList _noFeesList) onlyOwner public {
-        canReceiveMintWhiteList = _canReceiveMintWhiteList;
-        canBurnWhiteList = _canBurnWhiteList;
-        blackList = _blackList;
-        noFeesList = _noFeesList;
-    }
-
-    function changeName(string _name, string _symbol) onlyOwner public {
+    function changeTokenName(string _name, string _symbol) onlyOwner public {
         name = _name;
         symbol = _symbol;
+        emit ChangeTokenName(_name, _symbol);
     }
 
-    //Burning functions as withdrawing money from the system. The platform will keep track of who burns coins,
-    //and will send them back the equivalent amount of money (rounded down to the nearest cent).
-    function burn(uint256 _value) public {
-        require(canBurnWhiteList.onList(msg.sender));
-        require(_value >= burnMin);
-        require(_value <= burnMax);
-        uint256 fee = payStakingFee(msg.sender, _value, burnFeeNumerator, burnFeeDenominator, burnFeeFlat, 0x0);
-        uint256 remaining = _value.sub(fee);
-        super.burn(remaining);
+    // disable most onlyOwner functions upon delegation, since the owner should
+    // use the new version of the contract
+    modifier onlyWhenNoDelegate() {
+        require(address(delegate) == address(0));
+        _;
     }
 
-    //Create _amount new tokens and transfer them to _to.
-    //Based on code by OpenZeppelin: https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/token/MintableToken.sol
-    function mint(address _to, uint256 _amount) onlyOwner public {
-        require(canReceiveMintWhiteList.onList(_to));
-        totalSupply_ = totalSupply_.add(_amount);
-        balances.addBalance(_to, _amount);
-        Mint(_to, _amount);
-        Transfer(address(0), _to, _amount);
-        payStakingFee(_to, _amount, mintFeeNumerator, mintFeeDenominator, mintFeeFlat, 0x0);
+    function mint(address _to, uint256 _amount) onlyWhenNoDelegate public returns (bool) {
+        super.mint(_to, _amount);
+    }
+    function setBalanceSheet(address _sheet) onlyWhenNoDelegate public {
+        super.setBalanceSheet(_sheet);
+    }
+    function setAllowanceSheet(address _sheet) onlyWhenNoDelegate public {
+        super.setAllowanceSheet(_sheet);
+    }
+    function setBurnBounds(uint256 _min, uint256 _max) onlyWhenNoDelegate public {
+        super.setBurnBounds(_min, _max);
+    }
+    function setRegistry(Registry _registry) onlyWhenNoDelegate public {
+        super.setRegistry(_registry);
+    }
+    function changeStaker(address _newStaker) onlyWhenNoDelegate public {
+        super.changeStaker(_newStaker);
+    }
+    function wipeBlacklistedAccount(address _account) onlyWhenNoDelegate public {
+        super.wipeBlacklistedAccount(_account);
+    }
+    function changeStakingFees(
+        uint256 _transferFeeNumerator,
+        uint256 _transferFeeDenominator,
+        uint256 _mintFeeNumerator,
+        uint256 _mintFeeDenominator,
+        uint256 _mintFeeFlat,
+        uint256 _burnFeeNumerator,
+        uint256 _burnFeeDenominator,
+        uint256 _burnFeeFlat
+    ) onlyWhenNoDelegate public {
+        super.changeStakingFees(
+            _transferFeeNumerator,
+            _transferFeeDenominator,
+            _mintFeeNumerator,
+            _mintFeeDenominator,
+            _mintFeeFlat,
+            _burnFeeNumerator,
+            _burnFeeDenominator,
+            _burnFeeFlat
+        );
     }
 
-    //Change the minimum and maximum amount that can be burned at once. Burning
-    //may be disabled by setting both to 0 (this will not be done under normal
-    //operation, but we can't add checks to disallow it without losing a lot of
-    //flexibility since burning could also be as good as disabled
-    //by setting the minimum extremely high, and we don't want to lock
-    //in any particular cap for the minimum)
-    function changeBurnBounds(uint newMin, uint newMax) onlyOwner public {
-        require(newMin <= newMax);
-        burnMin = newMin;
-        burnMax = newMax;
-        ChangeBurnBoundsEvent(newMin, newMax);
+    // this contract is initially owned by a contract that itself extends parts
+    // of NoOwner, so we use these instead of the normal NoOwner functions
+    function reclaimEther(address _to) external onlyOwner {
+        assert(_to.send(address(this).balance));
     }
 
-    // A blacklisted address can't call transferFrom
-    function transferAllArgsYesAllowance(address _from, address _to, uint256 _value, address spender) internal {
-        require(!blackList.onList(spender));
-        super.transferAllArgsYesAllowance(_from, _to, _value, spender);
-    }
-
-    // transfer and transferFrom both ultimately call this function, so we
-    // check blacklist and pay staking fee here.
-    function transferAllArgsNoAllowance(address _from, address _to, uint256 _value) internal {
-        require(!blackList.onList(_from));
-        require(!blackList.onList(_to));
-        super.transferAllArgsNoAllowance(_from, _to, _value);
-        payStakingFee(_to, _value, transferFeeNumerator, transferFeeDenominator, 0, _from);
-    }
-
-    function wipeBlacklistedAccount(address account) public onlyOwner {
-        require(blackList.onList(account));
-        uint256 oldValue = balanceOf(account);
-        balances.setBalance(account, 0);
-        totalSupply_ = totalSupply_.sub(oldValue);
-        WipedAccount(account, oldValue);
-    }
-
-    function payStakingFee(address payer, uint256 value, uint80 numerator, uint80 denominator, uint256 flatRate, address otherParticipant) private returns (uint256) {
-        if (noFeesList.onList(payer) || noFeesList.onList(otherParticipant)) {
-            return 0;
-        }
-        uint256 stakingFee = value.mul(numerator).div(denominator).add(flatRate);
-        if (stakingFee > 0) {
-            super.transferAllArgsNoAllowance(payer, staker, stakingFee);
-        }
-        return stakingFee;
-    }
-
-    function changeStakingFees(uint80 _transferFeeNumerator,
-                                 uint80 _transferFeeDenominator,
-                                 uint80 _mintFeeNumerator,
-                                 uint80 _mintFeeDenominator,
-                                 uint256 _mintFeeFlat,
-                                 uint80 _burnFeeNumerator,
-                                 uint80 _burnFeeDenominator,
-                                 uint256 _burnFeeFlat) public onlyOwner {
-        require(_transferFeeDenominator != 0);
-        require(_mintFeeDenominator != 0);
-        require(_burnFeeDenominator != 0);
-        transferFeeNumerator = _transferFeeNumerator;
-        transferFeeDenominator = _transferFeeDenominator;
-        mintFeeNumerator = _mintFeeNumerator;
-        mintFeeDenominator = _mintFeeDenominator;
-        mintFeeFlat = _mintFeeFlat;
-        burnFeeNumerator = _burnFeeNumerator;
-        burnFeeDenominator = _burnFeeDenominator;
-        burnFeeFlat = _burnFeeFlat;
-    }
-
-    function changeStaker(address newStaker) public onlyOwner {
-        require(newStaker != address(0));
-        staker = newStaker;
+    function reclaimToken(ERC20Basic token, address _to) external onlyOwner {
+        uint256 balance = token.balanceOf(this);
+        token.safeTransfer(_to, balance);
     }
 }

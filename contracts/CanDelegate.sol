@@ -1,35 +1,36 @@
 pragma solidity ^0.4.18;
 
-import "../zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "./DelegateERC20.sol";
+import "./DelegateBurnable.sol";
+import "./modularERC20/ModularBurnableToken.sol";
+import "./modularERC20/ModularMintableToken.sol";
 
-contract CanDelegate is StandardToken {
+contract CanDelegate is ModularMintableToken, ModularBurnableToken {
     // If this contract needs to be upgraded, the new contract will be stored
-    // in 'delegate' and any ERC20 calls to this contract will be delegated to that one.
-    DelegateERC20 public delegate;
+    // in 'delegate' and any BurnableToken calls to this contract will be delegated to that one.
+    DelegateBurnable public delegate;
 
-    event DelegatedTo(address indexed newContract);
+    event DelegateToNewContract(address indexed newContract);
 
     // Can undelegate by passing in newContract = address(0)
-    function delegateToNewContract(DelegateERC20 newContract) public onlyOwner {
-        delegate = newContract;
-        DelegatedTo(delegate);
+    function delegateToNewContract(DelegateBurnable _newContract) public onlyOwner {
+        delegate = _newContract;
+        emit DelegateToNewContract(delegate);
     }
 
     // If a delegate has been designated, all ERC20 calls are forwarded to it
-    function transfer(address to, uint256 value) public returns (bool) {
+    function transferAllArgs(address _from, address _to, uint256 _value) internal {
         if (delegate == address(0)) {
-            return super.transfer(to, value);
+            super.transferAllArgs(_from, _to, _value);
         } else {
-            return delegate.delegateTransfer(to, value, msg.sender);
+            require(delegate.delegateTransfer(_to, _value, _from));
         }
     }
 
-    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+    function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         if (delegate == address(0)) {
-            return super.transferFrom(from, to, value);
+            super.transferFromAllArgs(_from, _to, _value, _spender);
         } else {
-            return delegate.delegateTransferFrom(from, to, value, msg.sender);
+            require(delegate.delegateTransferFrom(_from, _to, _value, _spender));
         }
     }
 
@@ -41,19 +42,19 @@ contract CanDelegate is StandardToken {
         }
     }
 
-    function approve(address spender, uint256 value) public returns (bool) {
+    function approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
         if (delegate == address(0)) {
-            return super.approve(spender, value);
+            super.approveAllArgs(_spender, _value, _tokenHolder);
         } else {
-            return delegate.delegateApprove(spender, value, msg.sender);
+            require(delegate.delegateApprove(_spender, _value, _tokenHolder));
         }
     }
 
-    function allowance(address _owner, address spender) public view returns (uint256) {
+    function allowance(address _owner, address _spender) public view returns (uint256) {
         if (delegate == address(0)) {
-            return super.allowance(_owner, spender);
+            return super.allowance(_owner, _spender);
         } else {
-            return delegate.delegateAllowance(_owner, spender);
+            return delegate.delegateAllowance(_owner, _spender);
         }
     }
 
@@ -65,19 +66,27 @@ contract CanDelegate is StandardToken {
         }
     }
 
-    function increaseApproval(address spender, uint addedValue) public returns (bool) {
+    function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
         if (delegate == address(0)) {
-            return super.increaseApproval(spender, addedValue);
+            super.increaseApprovalAllArgs(_spender, _addedValue, _tokenHolder);
         } else {
-            return delegate.delegateIncreaseApproval(spender, addedValue, msg.sender);
+            require(delegate.delegateIncreaseApproval(_spender, _addedValue, _tokenHolder));
         }
     }
 
-    function decreaseApproval(address spender, uint subtractedValue) public returns (bool) {
+    function decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
         if (delegate == address(0)) {
-            return super.decreaseApproval(spender, subtractedValue);
+            super.decreaseApprovalAllArgs(_spender, _subtractedValue, _tokenHolder);
         } else {
-            return delegate.delegateDecreaseApproval(spender, subtractedValue, msg.sender);
+            require(delegate.delegateDecreaseApproval(_spender, _subtractedValue, _tokenHolder));
+        }
+    }
+
+    function burnAllArgs(address _burner, uint256 _value) internal {
+        if (delegate == address(0)) {
+            super.burnAllArgs(_burner, _value);
+        } else {
+            delegate.delegateBurn(_burner, _value);
         }
     }
 }
