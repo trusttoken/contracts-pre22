@@ -1,4 +1,5 @@
 import assertRevert from './helpers/assertRevert'
+import expectThrow from './helpers/expectThrow'
 import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
 import basicTokenTests from './token/BasicToken';
 import standardTokenTests from './token/StandardToken';
@@ -10,6 +11,7 @@ const TrueUSD = artifacts.require("TrueUSD")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
+const ForceEther = artifacts.require("ForceEther")
 
 contract('TrueUSD', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
@@ -177,6 +179,12 @@ contract('TrueUSD', function (accounts) {
                     await assertRevert(this.token.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, { from: owners[0] }))
                 })
             })
+        })
+
+        it('reclaim ether can not target a NoOwner', async function () {
+            const forceEther = await ForceEther.new({ from: oneHundreds[0], value: 1000000000 })
+            await forceEther.destroyAndSend(this.tokens[0].address)
+            await expectThrow(this.tokens[0].reclaimEther(this.tokens[1].address, { from: owners[0] }))
         })
     })
 
