@@ -26,6 +26,8 @@ contract ComplianceToken is ModularMintableToken, ModularBurnableToken, HasRegis
     // A blacklisted address can't call transferFrom
     function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         require(!registry.hasAttribute(_spender, IS_BLACKLISTED));
+        require(!registry.hasAttribute(_spender, IS_EXCHANGE) || (registry.hasAttribute(_from, HAS_PASSED_KYC) && registry.hasAttribute(_to, HAS_PASSED_KYC)));
+        require((!registry.hasAttribute(_to, IS_EXCHANGE) && !registry.hasAttribute(_from, IS_EXCHANGE)) || registry.hasAttribute(_spender, HAS_PASSED_KYC));
         super.transferFromAllArgs(_from, _to, _value, _spender);
     }
 
@@ -33,6 +35,8 @@ contract ComplianceToken is ModularMintableToken, ModularBurnableToken, HasRegis
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
         require(!registry.hasAttribute(_from, IS_BLACKLISTED));
         require(!registry.hasAttribute(_to, IS_BLACKLISTED));
+        require(!registry.hasAttribute(_to, IS_EXCHANGE) || registry.hasAttribute(_from, HAS_PASSED_KYC));
+        require(!registry.hasAttribute(_from, IS_EXCHANGE) || registry.hasAttribute(_to, HAS_PASSED_KYC));
         super.transferAllArgs(_from, _to, _value);
     }
 
