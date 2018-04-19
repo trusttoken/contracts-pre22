@@ -1,7 +1,7 @@
 import assertRevert from '../helpers/assertRevert'
 import assertBalance from '../helpers/assertBalance'
 
-function basicTokenTests([owner, oneHundred, anotherAccount]) {
+function basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
     describe('--BasicToken Tests--', function () {
         const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
@@ -60,13 +60,17 @@ function basicTokenTests([owner, oneHundred, anotherAccount]) {
                 })
             })
 
-            describe('when the anotherAccount is the zero address', function () {
-                const to = ZERO_ADDRESS
+            // This test is skipped for contracts that inherit from WithdrawalToken
+            // because they treat such transfers as burns instead
+            if (!transfersToZeroBecomeBurns) {
+                describe('when the anotherAccount is the zero address', function () {
+                    const to = ZERO_ADDRESS
 
-                it('reverts', async function () {
-                    await assertRevert(this.token.transfer(to, 100, { from: oneHundred }))
+                    it('reverts', async function () {
+                        await assertRevert(this.token.transfer(to, 100, { from: oneHundred }))
+                    })
                 })
-            })
+            }
         })
     })
 }

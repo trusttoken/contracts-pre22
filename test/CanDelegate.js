@@ -6,12 +6,12 @@ import basicTokenTests from './token/BasicToken';
 const FailingDelegate = artifacts.require('FailingDelegate')
 const SucceedingDelegate = artifacts.require('SucceedingDelegate')
 
-function canDelegateTests([owner, oneHundred, anotherAccount]) {
+function canDelegateTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
     describe('--CanDelegate Tests--', function () {
         describe('when not yet delegating', function () {
             mintableTokenTests([owner, oneHundred, anotherAccount])
-            burnableTokenTests([owner, oneHundred, anotherAccount])
-            basicTokenTests([owner, oneHundred, anotherAccount])
+            burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
+            basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
             standardTokenTests([owner, oneHundred, anotherAccount])
         })
 

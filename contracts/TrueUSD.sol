@@ -8,8 +8,9 @@ import "./BurnableTokenWithBounds.sol";
 import "./ComplianceToken.sol";
 import "./TokenWithFees.sol";
 import "./StandardDelegate.sol";
+import "./WithdrawalToken.sol";
 
-contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, ComplianceToken, TokenWithFees, StandardDelegate, CanDelegate {
+contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, ComplianceToken, TokenWithFees, WithdrawalToken, StandardDelegate, CanDelegate {
     string public name = "TrueUSD";
     string public symbol = "TUSD";
     uint8 public constant decimals = 18;

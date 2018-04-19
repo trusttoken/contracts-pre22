@@ -5,7 +5,7 @@ import standardTokenTests from './token/StandardToken';
 import basicTokenTests from './token/BasicToken';
 const Registry = artifacts.require('Registry')
 
-function complianceTokenTests([owner, oneHundred, anotherAccount]) {
+function complianceTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
     describe('--GatedToken Tests--', function () {
         describe('minting', function () {
             describe('when user is on mint whitelist', function () {
@@ -27,7 +27,7 @@ function complianceTokenTests([owner, oneHundred, anotherAccount]) {
                     await this.registry.setAttribute(oneHundred, "canBurn", 1, { from: owner })
                 })
 
-                burnableTokenTests([owner, oneHundred, anotherAccount])
+                burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
 
                 it('rejects burn when user is on blacklist', async function () {
                     await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, { from: owner })
@@ -40,9 +40,33 @@ function complianceTokenTests([owner, oneHundred, anotherAccount]) {
             })
         })
 
+        if (transfersToZeroBecomeBurns) {
+            describe('transfers to 0x0 become burns', function () {
+                const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+                describe('burning', function () {
+                    describe('when user is on burn whitelist', function () {
+                        beforeEach(async function () {
+                            await this.registry.setAttribute(oneHundred, "canBurn", 1, { from: owner })
+                        })
+
+                        burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
+
+                        it('rejects burn when user is on blacklist', async function () {
+                            await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, { from: owner })
+                            await assertRevert(this.token.transfer(ZERO_ADDRESS, 20, { from: oneHundred }))
+                        })
+                    })
+
+                    it('rejects burn when user is not on burn whitelist', async function () {
+                        await assertRevert(this.token.transfer(ZERO_ADDRESS, 20, { from: oneHundred }))
+                    })
+                })
+            })
+        }
+
         describe('transferring', function () {
             describe('when user is not on blacklist', function () {
-                basicTokenTests([owner, oneHundred, anotherAccount])
+                basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
                 standardTokenTests([owner, oneHundred, anotherAccount])
             })
 
