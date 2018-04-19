@@ -1,6 +1,6 @@
 pragma solidity ^0.4.18;
 
-import "./HasRegistry.sol";
+import "../registry/contracts/HasRegistry.sol";
 import "./modularERC20/ModularBurnableToken.sol";
 import "./modularERC20/ModularMintableToken.sol";
 

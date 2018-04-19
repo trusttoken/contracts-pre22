@@ -118,7 +118,7 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
                     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
                     it('burn', async function () {
                         const fee = Math.floor(amount * 2 / 20) + 5
-                        await this.token.transfer(ZERO_ADDREEE, amount, { from: oneHundred })
+                        await this.token.transfer(ZERO_ADDRESS, amount, { from: oneHundred })
                         await assertBalance(this.token, oneHundred, 100 - amount)
                         await assertBalance(this.token, owner, fee)
                     })
