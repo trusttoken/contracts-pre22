@@ -40,7 +40,7 @@ contract('TrueUSD', function (accounts) {
                     await this.registry.setAttribute(oneHundred, "canBurn", 1, { from: owner })
                 })
 
-                burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount])
+                burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount], true)
             })
 
             describe('user is not on burn whitelist', function () {
@@ -55,7 +55,7 @@ contract('TrueUSD', function (accounts) {
                 await this.token.setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owner })
             })
 
-            complianceTokenTests([owner, oneHundred, anotherAccount])
+            complianceTokenTests([owner, oneHundred, anotherAccount], true)
         })
 
         describe('when everyone is on the whitelists and there are no burn bounds', function () {
@@ -69,7 +69,7 @@ contract('TrueUSD', function (accounts) {
                 await this.registry.setAttribute(anotherAccount, "canBurn", 1, { from: owner })
             })
 
-            tokenWithFeesTests([owner, oneHundred, anotherAccount])
+            tokenWithFeesTests([owner, oneHundred, anotherAccount], true)
         })
 
         it("old long interaction trace test", async function () {
@@ -220,7 +220,7 @@ contract('TrueUSD', function (accounts) {
                     this.token = this.tokens[0]
                 })
 
-                basicTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
+                basicTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]], true)
                 standardTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
 
                 describe('burn', function () {
@@ -229,7 +229,7 @@ contract('TrueUSD', function (accounts) {
                         await this.tokens[2].setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owners[2] })
                     })
 
-                    burnableTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
+                    burnableTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]], true)
                 })
             })
 
@@ -240,7 +240,7 @@ contract('TrueUSD', function (accounts) {
                     this.token = this.tokens[1]
                 })
 
-                basicTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
+                basicTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]], true)
                 standardTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
 
                 describe('burn', function () {
@@ -249,7 +249,7 @@ contract('TrueUSD', function (accounts) {
                         await this.tokens[2].setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owners[2] })
                     })
 
-                    burnableTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]])
+                    burnableTokenTests([owners[2], oneHundreds[2], anotherAccounts[2]], true)
                 })
             })
         })

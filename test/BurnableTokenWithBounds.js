@@ -1,14 +1,14 @@
 import assertRevert from './helpers/assertRevert'
 import burnableTokenTests from './token/BurnableToken'
 
-function burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount]) {
+function burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
     describe('--BurnableTokenWithBounds Tests--', function () {
         describe('non-restrictive burn bounds', function () {
             beforeEach(async function () {
                 await this.token.setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owner })
             })
 
-            burnableTokenTests([owner, oneHundred, anotherAccount])
+            burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
         })
 
         describe('setBurnBounds', function () {
@@ -49,8 +49,23 @@ function burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount]) {
                 await this.token.burn(20, { from: oneHundred })
             })
         })
-    })
 
+        if (transfersToZeroBecomeBurns) {
+            const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+            describe('transfers to 0x0 become burns', function () {
+                describe('restrictive burn bounds', function () {
+                    it("allows burns within bounds and reverts others", async function () {
+                        await this.token.setBurnBounds(10, 20, { from: owner })
+                        await assertRevert(this.token.transfer(ZERO_ADDRESS, 9, { from: oneHundred }))
+                        await assertRevert(this.token.transfer(ZERO_ADDRESS, 21, { from: oneHundred }))
+                        await this.token.transfer(ZERO_ADDRESS, 10, { from: oneHundred })
+                        await this.token.transfer(ZERO_ADDRESS, 15, { from: oneHundred })
+                        await this.token.transfer(ZERO_ADDRESS, 20, { from: oneHundred })
+                    })
+                })
+            })
+        }
+    })
 }
 
 export default burnableTokenWithBoundsTests

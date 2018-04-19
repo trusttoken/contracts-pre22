@@ -6,12 +6,12 @@ import standardTokenTests from './token/StandardToken';
 import basicTokenTests from './token/BasicToken';
 const Registry = artifacts.require('Registry')
 
-function tokenWithFeesTests([owner, oneHundred, anotherAccount]) {
+function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
     describe('--TokenWithFees Tests--', function () {
         describe('fees are initially set to 0', function () {
-            basicTokenTests([owner, oneHundred, anotherAccount])
+            basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
             standardTokenTests([owner, oneHundred, anotherAccount])
-            burnableTokenTests([owner, oneHundred, anotherAccount])
+            burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
             mintableTokenTests([owner, oneHundred, anotherAccount])
         })
 
@@ -112,6 +112,18 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount]) {
                 await assertBalance(this.token, oneHundred, 100 - amount)
                 await assertBalance(this.token, owner, fee)
             })
+
+            if (transfersToZeroBecomeBurns) {
+                describe('transfers to 0x0 become burns', function () {
+                    const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+                    it('burn', async function () {
+                        const fee = Math.floor(amount * 2 / 20) + 5
+                        await this.token.transfer(ZERO_ADDRESS, amount, { from: oneHundred })
+                        await assertBalance(this.token, oneHundred, 100 - amount)
+                        await assertBalance(this.token, owner, fee)
+                    })
+                })
+            }
 
             it('mint', async function () {
                 const fee = Math.floor(amount * 2 / 20) + 5
