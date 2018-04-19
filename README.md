@@ -1,7 +1,6 @@
 # TrueUSD
 
-This repository contains the TrueUSD ERC20 contract and related contracts. For
-a high-level overview, see this [video](https://www.youtube.com/watch?v=vv6-rcjjDXM).
+This repository contains the TrueUSD ERC20 contract and related contracts.
 
 ## The Contracts
 
