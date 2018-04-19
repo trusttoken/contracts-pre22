@@ -25,7 +25,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     struct MintOperation {
         address to;
-        uint256 amount;
+        uint256 value;
         address admin;
         uint256 releaseTimestamp;
     }
@@ -40,7 +40,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         _;
     }
 
-    event RequestMint(address indexed to, address indexed admin, uint256 amount, uint256 releaseTimestamp, uint256 opIndex);
+    event RequestMint(address indexed to, address indexed admin, uint256 value, uint256 releaseTimestamp, uint256 opIndex);
     event TransferChild(address indexed child, address indexed newOwner);
     event RequestReclaimContract(address indexed other);
     event SetTrueUSD(TrueUSD newContract);
@@ -51,14 +51,14 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         admin = msg.sender;
     }
 
-    // admin initiates a request to mint _amount TrueUSD for account _to
-    function requestMint(address _to, uint256 _amount) public onlyAdminOrOwner {
+    // admin initiates a request to mint _value TrueUSD for account _to
+    function requestMint(address _to, uint256 _value) public onlyAdminOrOwner {
         uint256 releaseTimestamp = block.timestamp;
         if (msg.sender != owner) {
             releaseTimestamp = releaseTimestamp.add(mintDelay);
         }
-        MintOperation memory op = MintOperation(_to, _amount, admin, releaseTimestamp);
-        emit RequestMint(_to, admin, _amount, releaseTimestamp, mintOperations.length);
+        MintOperation memory op = MintOperation(_to, _value, admin, releaseTimestamp);
+        emit RequestMint(_to, admin, _value, releaseTimestamp, mintOperations.length);
         mintOperations.push(op);
     }
 
@@ -69,9 +69,9 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         require(op.admin == admin); //checks that the requester's adminship has not been revoked
         require(op.releaseTimestamp <= block.timestamp); //checks that enough time has elapsed
         address to = op.to;
-        uint256 amount = op.amount;
+        uint256 value = op.value;
         delete mintOperations[_index];
-        trueUSD.mint(to, amount);
+        trueUSD.mint(to, value);
     }
 
     // Transfer ownership of _child to _newOwner

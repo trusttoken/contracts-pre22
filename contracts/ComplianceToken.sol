@@ -28,9 +28,9 @@ contract ComplianceToken is ModularMintableToken, ModularBurnableToken, HasRegis
         super.burnAllArgs(_burner, _value);
     }
 
-    function mint(address _to, uint256 _amount) onlyOwner public returns (bool) {
+    function mint(address _to, uint256 _value) onlyOwner public returns (bool) {
         require(registry.hasAttribute(_to, HAS_PASSED_KYC));
-        super.mint(_to, _amount);
+        super.mint(_to, _value);
     }
 
     // A blacklisted address can't call transferFrom

@@ -44,9 +44,9 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken, HasRegistr
         super.burnAllArgs(_burner, remaining);
     }
 
-    function mint(address _to, uint256 _amount) onlyOwner public returns (bool) {
-        super.mint(_to, _amount);
-        payStakingFee(_to, _amount, mintFeeNumerator, mintFeeDenominator, mintFeeFlat, address(0));
+    function mint(address _to, uint256 _value) onlyOwner public returns (bool) {
+        super.mint(_to, _value);
+        payStakingFee(_to, _value, mintFeeNumerator, mintFeeDenominator, mintFeeFlat, address(0));
     }
 
     // transfer and transferFrom both call this function, so pay staking fee here.

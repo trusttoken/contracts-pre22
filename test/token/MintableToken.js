@@ -20,7 +20,7 @@ function mintableTokenTests([owner, oneHundred, anotherAccount]) {
                 assert.equal(logs.length, 2)
                 assert.equal(logs[0].event, 'Mint')
                 assert.equal(logs[0].args.to, anotherAccount)
-                assert.equal(logs[0].args.amount, amount)
+                assert.equal(logs[0].args.value, amount)
                 assert.equal(logs[1].event, 'Transfer')
             })
         })
