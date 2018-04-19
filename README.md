@@ -3,59 +3,53 @@
 This repository contains the TrueUSD ERC20 contract and related contracts. For
 a high-level overview, see this [video](https://www.youtube.com/watch?v=vv6-rcjjDXM).
 
-## TrueUSD.sol
+## The Contracts
 
-TrueUSD.sol is the main ERC20 contract. It inherits the following from
-[OpenZeppelin](https://openzeppelin.org/)'s open source standard token contracts:
- 1. standard ERC20 functionality
- 2. burning tokens
- 3. pausing all ERC20 functionality in an emergency
- 4. transferring ownership of the contract
+This is a high-level overview of the contracts. For more specifics, see the relevant .sol files.
 
-Additionally, it adds the following features:
+### modularERC20/...
 
-### Whitelists
+These contracts are inspired by and roughly equivalent to the corresponding ERC20
+token contracts from [OpenZeppelin](https://openzeppelin.org/). The main difference is
+that they keep track of balances and allowances by using separate contracts (BalanceSheet.sol
+and AllowanceSheet.sol) instead of mappings in their own storage.
 
-In order to deposit USD and receive newly minted TrueUSD, or to burn TrueUSD to
-redeem it for USD, users must first get onto the corresponding whitelists
-(AddressList.sol) by going through a KYC process (which includes proving they
-control their ethereum address using AddressValidation.sol).
+### WithdrawalToken.sol
 
-### Blacklist
+This makes it easier for users to burn tokens (i.e. redeem them for USD) by treating sends to 0x0 as
+burn operations.
 
-Addresses can also be blacklisted, preventing them from sending or receiving
-TrueUSD. This can be used to prevent the use of TrueUSD by bad actors in
-accordance with law enforcement. The blacklist will only be used in accordance
+### BurnableTokenWithBounds.sol
+
+This limits the minimum and maximum amount of tokens that can be burned (redeemed) at once.
+
+### ...Delegate....sol
+
+If a new version of the TrueUSD contract is ever launched, these three contracts allow users
+to continue using the old version if they want and it will forward all basic transactions to the new one.
+
+### ComplianceToken.sol
+
+This ensures that only users who have passed a KYC process can receive newly minted tokens or
+trade on exchanges. It also allows for blacklisting of bad actors in accordance
 with the [TrueCoin Terms of Use](https://truecoin.com/terms-of-use).
 
-### Delegation to a new contract
+### TokenWithFees.sol
 
-If TrueUSD.sol ever needs to be upgraded, the new contract will implement the
-interface from DelegateERC20.sol and will be stored in the 'delegate' address
-of the TrueUSD contract. This allows all TrueUSD ERC20 calls to be forwarded
-to the new contract, to allow for a seamless transition for exchanges and
-other services that may choose to keep using the old contract.
+This allows for transaction fees.
 
-## TimeLockedController.sol
+### TrueUSD.sol
 
-This contract allows us to split ownership of the TrueUSD contract into two addresses.
-One, called the "owner" address, has unfettered control of the TrueUSD contract -
-it can mint new tokens, transfer ownership of the contract, etc. However to make
-extra sure that TrueUSD is never compromised, this owner key will not be used in
-day-to-day operations, allowing it to be stored at a heightened level of security.
-Instead, the owner appoints an "admin" address. The admin can do most things the
-owner can do, and will be used in everyday operation. However, for critical
-operations like minting new tokens or transferring the contract, the admin can
-only perform these operations by calling a pair of functions - e.g. `requestMint`
-and `finalizeMint` - with (roughly) 24 hours in between the two calls.
-This allows us to watch the blockchain and if we discover the admin has been
-compromised and there are unauthorized operations underway, we can use the owner key
-to cancel those operations and replace the admin.
+This is the top-level ERC20 contract tying together all the previously mentioned functionality.
 
-## AddressList.sol / AddressValidation.sol
+### TimeLockedController.sol
 
-See "Whitelists" and "Blacklist" above.
+This contract is the initial owner of TrueUSD.sol. It splits ownership into 'owner' and 'admin'
+for extra security.
 
-## DelegateERC20.sol
+## Testing
 
-See "Delegation to a new contract" above.
+To run the tests and generate a code coverage report:
+
+- `npm install`
+- `./node_modules/.bin/solidity-coverage`

@@ -1,7 +1,6 @@
 pragma solidity ^0.4.21;
 
 import "./modularERC20/ModularPausableToken.sol";
-// TrueUSD *is* supposed to own 'balances' and 'allowances', but it needs to be able to relinquish them:
 import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import "./CanDelegate.sol";
 import "./BurnableTokenWithBounds.sol";
@@ -10,6 +9,8 @@ import "./TokenWithFees.sol";
 import "./StandardDelegate.sol";
 import "./WithdrawalToken.sol";
 
+// This is the top-level ERC20 contract, but most of the interesting functionality is
+// inherited - see the documentation on the corresponding contracts.
 contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, ComplianceToken, TokenWithFees, WithdrawalToken, StandardDelegate, CanDelegate {
     string public name = "TrueUSD";
     string public symbol = "TUSD";
@@ -80,7 +81,9 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Comp
     }
 
     // this contract is initially owned by a contract that itself extends parts
-    // of NoOwner, so we use these instead of the normal NoOwner functions
+    // of NoOwner, so we use these instead of the normal NoOwner functions.
+    // Note that we *do* inherit reclaimContract from NoOwner: This contract
+    // does have to own contracts, but it also has to be able to relinquish them.
     function reclaimEther(address _to) external onlyOwner {
         assert(_to.send(address(this).balance));
     }

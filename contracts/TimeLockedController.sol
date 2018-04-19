@@ -6,19 +6,20 @@ import "zeppelin-solidity/contracts/ownership/Claimable.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "./TrueUSD.sol";
 
-// The TimeLockedController contract is intended to be the initial Owner of the TrueUSD
-// contract and TrueUSD's Registry. It splits ownership into two accounts: an "admin" account and an
-// "owner" account. The admin of TimeLockedController can initiate minting TrueUSD.
-// However, these transactions must be stored
-// for 1 day first before they can be forwarded to the
-// TrueUSD contract. In the event that the admin account is compromised, this
-// setup allows the owner of TimeLockedController (which can be stored extremely
-// securely since it is never used in normal operation) to replace the admin.
-// Once a day has passed, requests can be finalized by the admin.
-// Requests initiated by an admin that has since been deposed
-// cannot be finalized. The admin is also able to update TrueUSD's Registry
-// (without a day's delay). The owner can mint without the day's delay, and also
-// change other aspects of TrueUSD like the staking fees.
+// This contract allows us to split ownership of the TrueUSD contract (and TrueUSD's Registry)
+// into two addresses. One, called the "owner" address, has unfettered control of the TrueUSD contract -
+// it can mint new tokens, transfer ownership of the contract, etc. However to make
+// extra sure that TrueUSD is never compromised, this owner key will not be used in
+// day-to-day operations, allowing it to be stored at a heightened level of security.
+// Instead, the owner appoints an "admin" address. The admin will be used in everyday operation,
+// but is restricted to performing only a few tasks like updating the Registry and minting
+// new tokens. Additionally, the admin can
+// only mint new tokens by calling a pair of functions - `requestMint`
+// and `finalizeMint` - with (roughly) 24 hours in between the two calls.
+// This allows us to watch the blockchain and if we discover the admin has been
+// compromised and there are unauthorized operations underway, we can use the owner key
+// to replace the admin. Requests initiated by an admin that has since been deposed
+// cannot be finalized.
 contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     using SafeMath for uint256;
 

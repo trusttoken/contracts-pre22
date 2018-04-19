@@ -4,6 +4,13 @@ import "../registry/contracts/HasRegistry.sol";
 import "./modularERC20/ModularBurnableToken.sol";
 import "./modularERC20/ModularMintableToken.sol";
 
+// This allows for transaction fees to be assessed on transfer, burn, and mint.
+// The fee upon burning n tokens (other fees computed similarly) is:
+// (n * burnFeeNumerator / burnFeeDenominator) + burnFeeFlat
+// Note that what you think of as 1 TrueUSD token is internally represented
+// as 10^18 units, so e.g. a one-penny fee for burnFeeFlat would look like
+// burnFeeFlat = 10^16
+// The fee for transfers is paid by the recipient.
 contract TokenWithFees is ModularMintableToken, ModularBurnableToken, HasRegistry {
     string public constant NO_FEES = "noFees";
     uint256 public transferFeeNumerator = 0;
@@ -14,6 +21,7 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken, HasRegistr
     uint256 public burnFeeNumerator = 0;
     uint256 public burnFeeDenominator = 10000;
     uint256 public burnFeeFlat = 0;
+    // All transaction fees are paid to this address.
     address public staker;
 
     event ChangeStaker(address indexed addr);
@@ -48,6 +56,7 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken, HasRegistr
     }
 
     function payStakingFee(address _payer, uint256 _value, uint256 _numerator, uint256 _denominator, uint256 _flatRate, address _otherParticipant) private returns (uint256) {
+        // This check allows accounts to be whitelisted and not have to pay transaction fees.
         if (registry.hasAttribute(_payer, NO_FEES) || registry.hasAttribute(_otherParticipant, NO_FEES)) {
             return 0;
         }

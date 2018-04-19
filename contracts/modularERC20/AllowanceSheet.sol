@@ -3,6 +3,7 @@ pragma solidity ^0.4.21;
 import "zeppelin-solidity/contracts/ownership/Claimable.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 
+// A wrapper around the allowanceOf mapping.
 contract AllowanceSheet is Claimable {
     using SafeMath for uint256;
 

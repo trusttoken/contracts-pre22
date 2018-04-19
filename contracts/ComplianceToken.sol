@@ -5,10 +5,20 @@ import "./modularERC20/ModularBurnableToken.sol";
 import "./modularERC20/ModularMintableToken.sol";
 
 contract ComplianceToken is ModularMintableToken, ModularBurnableToken, HasRegistry {
-    string constant HAS_PASSED_KYC = "hasPassedKYC"; // allows receiving mint and trading on exchanges
-    string constant CAN_BURN = "canBurn"; // allows redeeming tokens
-    string constant IS_BLACKLISTED = "isBlacklisted"; // prevents transfer, transferFrom, and burn
-    string constant IS_EXCHANGE = "isExchange"; // prevents transfers to/from non-KYC'ed addresses
+    // In order to deposit USD and receive newly minted TrueUSD, or to burn TrueUSD to
+    // redeem it for USD, users must first go through a KYC process (which includes proving they
+    // control their ethereum address using AddressValidation.sol).
+    string constant HAS_PASSED_KYC = "hasPassedKYC";
+    // Redeeming ("burning") TrueUSD tokens for USD requires a separate flag since
+    // users must not only be KYC'ed but must also have bank information on file.
+    string constant CAN_BURN = "canBurn";
+    // Addresses can also be blacklisted, preventing them from sending or receiving
+    // TrueUSD. This can be used to prevent the use of TrueUSD by bad actors in
+    // accordance with law enforcement. See [TrueCoin Terms of Use](https://truecoin.com/terms-of-use)
+    string constant IS_BLACKLISTED = "isBlacklisted";
+    // Only KYC'ed accounts can interact with addresses affiliated with an
+    // exchange (using transfer/transferFrom)
+    string constant IS_EXCHANGE = "isExchange";
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
 
@@ -40,6 +50,7 @@ contract ComplianceToken is ModularMintableToken, ModularBurnableToken, HasRegis
         super.transferAllArgs(_from, _to, _value);
     }
 
+    // Destroy the tokens owned by a blacklisted account
     function wipeBlacklistedAccount(address _account) public onlyOwner {
         require(registry.hasAttribute(_account, IS_BLACKLISTED));
         uint256 oldValue = balanceOf(_account);
