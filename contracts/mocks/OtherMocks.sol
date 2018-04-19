@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.21;
 
 import "../DelegateBurnable.sol";
 // import this so it will be availble for tests:

@@ -6,7 +6,7 @@ import basicTokenTests from './token/BasicToken';
 const Registry = artifacts.require('Registry')
 
 function complianceTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
-    describe('--GatedToken Tests--', function () {
+    describe('--ComplianceToken Tests--', function () {
         describe('minting', function () {
             describe('when user is on mint whitelist', function () {
                 beforeEach(async function () {
@@ -91,6 +91,68 @@ function complianceTokenTests([owner, oneHundred, anotherAccount], transfersToZe
                     await this.registry.setAttribute(anotherAccount, "isBlacklisted", 1, { from: owner })
                     await this.token.approve(anotherAccount, 100, { from: oneHundred })
                     await assertRevert(this.token.transferFrom(oneHundred, owner, 100, { from: anotherAccount }))
+                })
+            })
+
+            describe('when user is an exchange', function () {
+                describe('transferFrom', function () {
+                    const to = owner
+                    const from = oneHundred
+                    const spender = anotherAccount
+
+                    const checkPermutation = function(a, b, c) {
+                        describe('another permutation', function () {
+                            beforeEach(async function () {
+                                await this.token.approve(spender, 100, { from: from })
+                                await this.registry.setAttribute(a, "isExchange", 1, { from: owner })
+                            })
+
+                            it('rejects if one is not KYCed', async function () {
+                                await this.registry.setAttribute(b, "hasPassedKYC", 1, { from: owner })
+                                await assertRevert(this.token.transferFrom(from, to, 100, { from: spender }))
+                            })
+
+                            it('rejects if another is not KYCed', async function () {
+                                await this.registry.setAttribute(c, "hasPassedKYC", 1, { from: owner })
+                                await assertRevert(this.token.transferFrom(from, to, 100, { from: spender }))
+                            })
+
+                            it('allows if all are KYCed', async function () {
+                                await this.registry.setAttribute(b, "hasPassedKYC", 1, { from: owner })
+                                await this.registry.setAttribute(c, "hasPassedKYC", 1, { from: owner })
+                                await this.token.transferFrom(from, to, 100, { from: spender })
+                            })
+                        })
+                    }
+
+                    checkPermutation(to, from, spender)
+                    checkPermutation(spender, to, from)
+                    checkPermutation(from, spender, to)
+                })
+
+                describe('transfer', function () {
+                    const to = anotherAccount
+                    const from = oneHundred
+
+                    const checkPermutation = function (a, b) {
+                        describe('another permutation', function () {
+                            beforeEach(async function () {
+                                await this.registry.setAttribute(a, "isExchange", 1, { from: owner })
+                            })
+
+                            it('rejects if other is not KYCed', async function () {
+                                await assertRevert(this.token.transfer(to, 100, { from: from }))
+                            })
+
+                            it('allows if other is KYCed', async function () {
+                                await this.registry.setAttribute(b, "hasPassedKYC", 1, { from: owner })
+                                await this.token.transfer(to, 100, { from: from })
+                            })
+                        })
+                    }
+
+                    checkPermutation(to, from)
+                    checkPermutation(from, to)
                 })
             })
         })

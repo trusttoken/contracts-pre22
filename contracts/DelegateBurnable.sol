@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.21;
 
 // Interface implemented by tokens that are the *target* of a BurnableToken's
 // delegation. That is, if we want to replace BurnableToken X by

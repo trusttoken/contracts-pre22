@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.21;
 
 import "./modularERC20/ModularPausableToken.sol";
 // TrueUSD *is* supposed to own 'balances' and 'allowances', but it needs to be able to relinquish them:
