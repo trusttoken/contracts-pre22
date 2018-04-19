@@ -1,9 +1,9 @@
 pragma solidity ^0.4.21;
 
-import "../TrueUSD.sol";
+import "../ComplianceToken.sol";
 
-contract TrueUSDMock is TrueUSD {
-    function TrueUSDMock(address initialAccount, uint256 initialBalance) public {
+contract ComplianceTokenMock is ComplianceToken {
+    function ComplianceTokenMock(address initialAccount, uint256 initialBalance) public {
         balances = new BalanceSheet();
         allowances = new AllowanceSheet();
         balances.setBalance(initialAccount, initialBalance);
