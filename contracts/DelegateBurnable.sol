@@ -12,6 +12,9 @@ pragma solidity ^0.4.21;
 // we do not expect all regular users to learn about Y and change accordingly,
 // but we do require the *owner* of X to now use Y instead so ownerOnly
 // functions are not delegated and should be disabled instead.
+// This delegation system is intended to work with the "Modular" versions of
+// the standard ERC20 token contracts, allowing the balances and allowances
+// to be moved over to a new contract.
 // NOTE: To maintain backwards compatibility, these function signatures
 // cannot be changed
 contract DelegateBurnable {
