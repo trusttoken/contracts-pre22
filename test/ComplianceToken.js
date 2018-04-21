@@ -94,7 +94,7 @@ function complianceTokenTests([owner, oneHundred, anotherAccount], transfersToZe
                 })
             })
 
-            describe('when user is an exchange', function () {
+            describe('when user is a restricted exchange', function () {
                 describe('transferFrom', function () {
                     const to = owner
                     const from = oneHundred
@@ -104,7 +104,7 @@ function complianceTokenTests([owner, oneHundred, anotherAccount], transfersToZe
                         describe('another permutation', function () {
                             beforeEach(async function () {
                                 await this.token.approve(spender, 100, { from: from })
-                                await this.registry.setAttribute(a, "isExchange", 1, { from: owner })
+                                await this.registry.setAttribute(a, "isRestrictedExchange", 1, { from: owner })
                             })
 
                             it('rejects if one is not KYCed', async function () {
@@ -137,7 +137,7 @@ function complianceTokenTests([owner, oneHundred, anotherAccount], transfersToZe
                     const checkPermutation = function (a, b) {
                         describe('another permutation', function () {
                             beforeEach(async function () {
-                                await this.registry.setAttribute(a, "isExchange", 1, { from: owner })
+                                await this.registry.setAttribute(a, "isRestrictedExchange", 1, { from: owner })
                             })
 
                             it('rejects if other is not KYCed', async function () {

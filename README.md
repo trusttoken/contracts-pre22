@@ -30,8 +30,8 @@ to continue using the old version if they want and it will forward all basic tra
 ### ComplianceToken.sol
 
 This ensures that only users who have passed a KYC process can receive newly minted tokens or
-trade on exchanges. It also allows for blacklisting of bad actors in accordance
-with the [TrueCoin Terms of Use](https://truecoin.com/terms-of-use).
+trade on certain restricted exchanges. It also allows for blacklisting of bad actors in accordance
+with the [TrueCoin Terms of Use](https://www.trusttoken.com/trueusd/terms-of-use).
 
 ### TokenWithFees.sol
 

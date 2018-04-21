@@ -14,11 +14,11 @@ contract ComplianceToken is ModularMintableToken, ModularBurnableToken, HasRegis
     string constant CAN_BURN = "canBurn";
     // Addresses can also be blacklisted, preventing them from sending or receiving
     // TrueUSD. This can be used to prevent the use of TrueUSD by bad actors in
-    // accordance with law enforcement. See [TrueCoin Terms of Use](https://truecoin.com/terms-of-use)
+    // accordance with law enforcement. See [TrueCoin Terms of Use](https://www.trusttoken.com/trueusd/terms-of-use)
     string constant IS_BLACKLISTED = "isBlacklisted";
-    // Only KYC'ed accounts can interact with addresses affiliated with an
-    // exchange (using transfer/transferFrom)
-    string constant IS_EXCHANGE = "isExchange";
+    // Only KYC'ed accounts can interact with addresses affiliated with a
+    // restricted exchange (e.g. one that does not itself KYC its users).
+    string constant IS_RESTRICTED_EXCHANGE = "isRestrictedExchange";
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
 
@@ -36,8 +36,8 @@ contract ComplianceToken is ModularMintableToken, ModularBurnableToken, HasRegis
     // A blacklisted address can't call transferFrom
     function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         require(!registry.hasAttribute(_spender, IS_BLACKLISTED));
-        require(!registry.hasAttribute(_spender, IS_EXCHANGE) || (registry.hasAttribute(_from, HAS_PASSED_KYC) && registry.hasAttribute(_to, HAS_PASSED_KYC)));
-        require((!registry.hasAttribute(_to, IS_EXCHANGE) && !registry.hasAttribute(_from, IS_EXCHANGE)) || registry.hasAttribute(_spender, HAS_PASSED_KYC));
+        require(!registry.hasAttribute(_spender, IS_RESTRICTED_EXCHANGE) || (registry.hasAttribute(_from, HAS_PASSED_KYC) && registry.hasAttribute(_to, HAS_PASSED_KYC)));
+        require((!registry.hasAttribute(_to, IS_RESTRICTED_EXCHANGE) && !registry.hasAttribute(_from, IS_RESTRICTED_EXCHANGE)) || registry.hasAttribute(_spender, HAS_PASSED_KYC));
         super.transferFromAllArgs(_from, _to, _value, _spender);
     }
 
@@ -45,8 +45,8 @@ contract ComplianceToken is ModularMintableToken, ModularBurnableToken, HasRegis
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
         require(!registry.hasAttribute(_from, IS_BLACKLISTED));
         require(!registry.hasAttribute(_to, IS_BLACKLISTED));
-        require(!registry.hasAttribute(_to, IS_EXCHANGE) || registry.hasAttribute(_from, HAS_PASSED_KYC));
-        require(!registry.hasAttribute(_from, IS_EXCHANGE) || registry.hasAttribute(_to, HAS_PASSED_KYC));
+        require(!registry.hasAttribute(_to, IS_RESTRICTED_EXCHANGE) || registry.hasAttribute(_from, HAS_PASSED_KYC));
+        require(!registry.hasAttribute(_from, IS_RESTRICTED_EXCHANGE) || registry.hasAttribute(_to, HAS_PASSED_KYC));
         super.transferAllArgs(_from, _to, _value);
     }
 
