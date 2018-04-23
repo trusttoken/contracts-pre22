@@ -247,7 +247,7 @@ contract('TimeLockedController', function (accounts) {
             await allowances.transferOwnership(trueUSD.address)
             await trueUSD.setBalanceSheet(balances.address)
             await trueUSD.setAllowanceSheet(allowances.address)
-            await registry.setAttribute(accounts[3], "hasPassedKYC", 1, { from: accounts[0] })
+            await registry.setAttribute(accounts[3], "hasPassedKYC/AML", 1, { from: accounts[0] })
             const timeLockedController = await TimeLockedController.new({ from: accounts[0] })
             await registry.transferOwnership(timeLockedController.address, { from: accounts[0] })
             await trueUSD.transferOwnership(timeLockedController.address, { from: accounts[0] })

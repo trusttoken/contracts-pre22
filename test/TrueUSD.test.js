@@ -29,9 +29,9 @@ contract('TrueUSD', function (accounts) {
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC", 1, { from: owner })
+            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, { from: owner })
             await this.token.mint(oneHundred, 100, { from: owner })
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC", 0, { from: owner })
+            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 0, { from: owner })
         })
 
         describe('burn', function () {
@@ -61,9 +61,9 @@ contract('TrueUSD', function (accounts) {
         describe('when everyone is on the whitelists and there are no burn bounds', function () {
             beforeEach(async function () {
                 await this.token.setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owner })
-                await this.registry.setAttribute(owner, "hasPassedKYC", 1, { from: owner })
-                await this.registry.setAttribute(oneHundred, "hasPassedKYC", 1, { from: owner })
-                await this.registry.setAttribute(anotherAccount, "hasPassedKYC", 1, { from: owner })
+                await this.registry.setAttribute(owner, "hasPassedKYC/AML", 1, { from: owner })
+                await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, { from: owner })
+                await this.registry.setAttribute(anotherAccount, "hasPassedKYC/AML", 1, { from: owner })
                 await this.registry.setAttribute(owner, "canBurn", 1, { from: owner })
                 await this.registry.setAttribute(oneHundred, "canBurn", 1, { from: owner })
                 await this.registry.setAttribute(anotherAccount, "canBurn", 1, { from: owner })
@@ -74,8 +74,8 @@ contract('TrueUSD', function (accounts) {
 
         it("old long interaction trace test", async function () {
             await assertRevert(this.token.mint(accounts[3], 10, { from: owner })) //user 3 is not (yet) on whitelist
-            await assertRevert(this.registry.setAttribute(accounts[3], "hasPassedKYC", 1, { from: anotherAccount })) //anotherAccount is not the owner
-            await this.registry.setAttribute(accounts[3], "hasPassedKYC", 1, { from: owner })
+            await assertRevert(this.registry.setAttribute(accounts[3], "hasPassedKYC/AML", 1, { from: anotherAccount })) //anotherAccount is not the owner
+            await this.registry.setAttribute(accounts[3], "hasPassedKYC/AML", 1, { from: owner })
             const userHasCoins = async (id, amount) => {
                 var balance = await this.token.balanceOf(accounts[id])
                 assert.equal(balance, amount, "userHasCoins fail: actual balance " + balance)
@@ -146,7 +146,7 @@ contract('TrueUSD', function (accounts) {
                 })
 
                 it("mint", async function () {
-                    await this.registries[0].setAttribute(anotherAccounts[0], "hasPassedKYC", 1, { from: owners[0] })
+                    await this.registries[0].setAttribute(anotherAccounts[0], "hasPassedKYC/AML", 1, { from: owners[0] })
                     await assertRevert(this.token.mint(anotherAccounts[0], 100, { from: owners[0] }))
                 })
 

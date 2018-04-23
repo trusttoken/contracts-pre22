@@ -10,7 +10,7 @@ function complianceTokenTests([owner, oneHundred, anotherAccount], transfersToZe
         describe('minting', function () {
             describe('when user is on mint whitelist', function () {
                 beforeEach(async function () {
-                    await this.registry.setAttribute(anotherAccount, "hasPassedKYC", 1, { from: owner })
+                    await this.registry.setAttribute(anotherAccount, "hasPassedKYC/AML", 1, { from: owner })
                 })
 
                 mintableTokenTests([owner, oneHundred, anotherAccount])
@@ -107,19 +107,19 @@ function complianceTokenTests([owner, oneHundred, anotherAccount], transfersToZe
                                 await this.registry.setAttribute(a, "isRestrictedExchange", 1, { from: owner })
                             })
 
-                            it('rejects if one is not KYCed', async function () {
-                                await this.registry.setAttribute(b, "hasPassedKYC", 1, { from: owner })
+                            it('rejects if one is not KYC/AMLed', async function () {
+                                await this.registry.setAttribute(b, "hasPassedKYC/AML", 1, { from: owner })
                                 await assertRevert(this.token.transferFrom(from, to, 100, { from: spender }))
                             })
 
-                            it('rejects if another is not KYCed', async function () {
-                                await this.registry.setAttribute(c, "hasPassedKYC", 1, { from: owner })
+                            it('rejects if another is not KYC/AMLed', async function () {
+                                await this.registry.setAttribute(c, "hasPassedKYC/AML", 1, { from: owner })
                                 await assertRevert(this.token.transferFrom(from, to, 100, { from: spender }))
                             })
 
-                            it('allows if all are KYCed', async function () {
-                                await this.registry.setAttribute(b, "hasPassedKYC", 1, { from: owner })
-                                await this.registry.setAttribute(c, "hasPassedKYC", 1, { from: owner })
+                            it('allows if all are KYC/AMLed', async function () {
+                                await this.registry.setAttribute(b, "hasPassedKYC/AML", 1, { from: owner })
+                                await this.registry.setAttribute(c, "hasPassedKYC/AML", 1, { from: owner })
                                 await this.token.transferFrom(from, to, 100, { from: spender })
                             })
                         })
@@ -140,12 +140,12 @@ function complianceTokenTests([owner, oneHundred, anotherAccount], transfersToZe
                                 await this.registry.setAttribute(a, "isRestrictedExchange", 1, { from: owner })
                             })
 
-                            it('rejects if other is not KYCed', async function () {
+                            it('rejects if other is not KYC/AMLed', async function () {
                                 await assertRevert(this.token.transfer(to, 100, { from: from }))
                             })
 
-                            it('allows if other is KYCed', async function () {
-                                await this.registry.setAttribute(b, "hasPassedKYC", 1, { from: owner })
+                            it('allows if other is KYC/AMLed', async function () {
+                                await this.registry.setAttribute(b, "hasPassedKYC/AML", 1, { from: owner })
                                 await this.token.transfer(to, 100, { from: from })
                             })
                         })
