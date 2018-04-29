@@ -19,6 +19,12 @@ function amlTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecom
             it('rejects mint when user is not on mint whitelist', async function () {
                 await assertRevert(this.token.mint(anotherAccount, 100, { from: owner }))
             })
+
+            it('rejects mint when user is blacklisted', async function () {
+                await this.registry.setAttribute(anotherAccount, "hasPassedKYC/AML", 1, { from: owner })
+                await this.registry.setAttribute(anotherAccount, "isBlacklisted", 1, { from: owner })
+                await assertRevert(this.token.mint(anotherAccount, 100, { from: owner }))
+            })
         })
 
         describe('burning', function () {

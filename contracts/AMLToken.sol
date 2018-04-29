@@ -17,7 +17,7 @@ contract AMLToken is ModularMintableToken, ModularBurnableToken, HasRegistry {
     // accordance with law enforcement. See [TrueCoin Terms of Use](https://www.trusttoken.com/trueusd/terms-of-use)
     string constant IS_BLACKLISTED = "isBlacklisted";
     // Only KYC/AML'ed accounts can interact with addresses affiliated with a
-    // restricted exchange (e.g. one that does not itself KYC/AML its users).
+    // restricted exchange.
     string constant IS_RESTRICTED_EXCHANGE = "isRestrictedExchange";
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
@@ -30,6 +30,7 @@ contract AMLToken is ModularMintableToken, ModularBurnableToken, HasRegistry {
 
     function mint(address _to, uint256 _value) onlyOwner public returns (bool) {
         require(registry.hasAttribute(_to, HAS_PASSED_KYC_AML));
+        require(!registry.hasAttribute(_to, IS_BLACKLISTED));
         super.mint(_to, _value);
     }
 
