@@ -73,7 +73,7 @@ contract('TimeLockedController', function (accounts) {
                 assert.equal(addr, oneHundred)
             })
 
-            it('cannot be called by others', async function () {
+            it('cannot be called by non-owner', async function () {
                 await assertRevert(this.controller.setDelegatedFrom(oneHundred, { from: admin }))
             })
         })
@@ -88,7 +88,7 @@ contract('TimeLockedController', function (accounts) {
                 assert.equal(symbol, "FCN")
             })
 
-            it('cannot be called by others', async function () {
+            it('cannot be called by non-owner', async function () {
                 await assertRevert(this.controller.changeTokenName("FooCoin", "FCN", { from: admin }))
             })
         })
@@ -103,8 +103,12 @@ contract('TimeLockedController', function (accounts) {
                 assert.equal(max, 4)
             })
 
+            it('can be called by admin', async function () {
+                await this.controller.setBurnBounds(3, 4, { from: owner })
+            })
+
             it('cannot be called by others', async function () {
-                await assertRevert(this.controller.setBurnBounds(3, 4, { from: admin }))
+                await assertRevert(this.controller.setBurnBounds(3, 4, { from: oneHundred }))
             })
         })
 
@@ -116,7 +120,7 @@ contract('TimeLockedController', function (accounts) {
                 assert.equal(staker, oneHundred)
             })
 
-            it('cannot be called by others', async function () {
+            it('cannot be called by non-owner', async function () {
                 await assertRevert(this.controller.changeStaker(oneHundred, { from: admin }))
             })
         })
@@ -129,7 +133,7 @@ contract('TimeLockedController', function (accounts) {
                 assert.equal(delegate, oneHundred)
             })
 
-            it('cannot be called by others', async function () {
+            it('cannot be called by non-owner', async function () {
                 await assertRevert(this.controller.delegateToNewContract(oneHundred, { from: admin }))
             })
         })
@@ -148,7 +152,7 @@ contract('TimeLockedController', function (accounts) {
                 await assertRevert(this.controller.transferAdminship(0x0, { from: owner }))
             })
 
-            it('cannot be called by others', async function () {
+            it('cannot be called by non-owner', async function () {
                 await assertRevert(this.controller.transferAdminship(oneHundred, { from: admin }))
             })
         })
@@ -174,7 +178,7 @@ contract('TimeLockedController', function (accounts) {
                 assert.equal(logs[0].args.other, balances)
             })
 
-            it('cannot be called by others', async function () {
+            it('cannot be called by non-owner', async function () {
                 const balances = await this.token.balances()
                 await assertRevert(this.controller.requestReclaimContract(balances, { from: admin }))
             })
@@ -190,7 +194,7 @@ contract('TimeLockedController', function (accounts) {
                 assert.isAbove(balance2, balance1)
             })
 
-            it('cannot be called by others', async function () {
+            it('cannot be called by non-owner', async function () {
                 const forceEther = await ForceEther.new({ from: oneHundred, value: 1000000000 })
                 await forceEther.destroyAndSend(this.token.address)
                 await assertRevert(this.controller.requestReclaimEther({ from: admin }))
@@ -204,7 +208,7 @@ contract('TimeLockedController', function (accounts) {
                 await assertBalance(this.token, owner, 40)
             })
 
-            it('cannot be called by others', async function () {
+            it('cannot be called by non-owner', async function () {
                 await this.token.transfer(this.token.address, 40, { from: oneHundred })
                 await assertRevert(this.controller.requestReclaimToken(this.token.address, { from: admin }))
             })
@@ -231,7 +235,7 @@ contract('TimeLockedController', function (accounts) {
                 assert.equal(burnFeeFlat, 8)
             })
 
-            it('cannot be called by others', async function () {
+            it('cannot be called by non-owner', async function () {
                 await assertRevert(this.controller.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, { from: admin }))
             })
         })

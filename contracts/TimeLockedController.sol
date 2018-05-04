@@ -99,7 +99,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     // Change the minimum and maximum amounts that TrueUSD users can
     // burn to newMin and newMax
-    function setBurnBounds(uint256 _min, uint256 _max) public onlyOwner {
+    function setBurnBounds(uint256 _min, uint256 _max) public onlyAdminOrOwner {
         trueUSD.setBurnBounds(_min, _max);
     }
 
