@@ -4,14 +4,14 @@ import "./modularERC20/ModularPausableToken.sol";
 import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import "./CanDelegate.sol";
 import "./BurnableTokenWithBounds.sol";
-import "./AMLToken.sol";
+import "./CompliantToken.sol";
 import "./TokenWithFees.sol";
 import "./StandardDelegate.sol";
 import "./WithdrawalToken.sol";
 
 // This is the top-level ERC20 contract, but most of the interesting functionality is
 // inherited - see the documentation on the corresponding contracts.
-contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, AMLToken, TokenWithFees, WithdrawalToken, StandardDelegate, CanDelegate {
+contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, CompliantToken, TokenWithFees, WithdrawalToken, StandardDelegate, CanDelegate {
     string public name = "TrueUSD";
     string public symbol = "TUSD";
     uint8 public constant decimals = 18;

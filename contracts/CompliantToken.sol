@@ -4,7 +4,7 @@ import "../registry/contracts/HasRegistry.sol";
 import "./modularERC20/ModularBurnableToken.sol";
 import "./modularERC20/ModularMintableToken.sol";
 
-contract AMLToken is ModularMintableToken, ModularBurnableToken, HasRegistry {
+contract CompliantToken is ModularMintableToken, ModularBurnableToken, HasRegistry {
     // In order to deposit USD and receive newly minted TrueUSD, or to burn TrueUSD to
     // redeem it for USD, users must first go through a KYC/AML check (which includes proving they
     // control their ethereum address using AddressValidation.sol).

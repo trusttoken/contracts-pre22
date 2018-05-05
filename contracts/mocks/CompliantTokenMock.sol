@@ -1,9 +1,9 @@
 pragma solidity ^0.4.21;
 
-import "../AMLToken.sol";
+import "../CompliantToken.sol";
 
-contract AMLTokenMock is AMLToken {
-    function AMLTokenMock(address initialAccount, uint256 initialBalance) public {
+contract CompliantTokenMock is CompliantToken {
+    function CompliantTokenMock(address initialAccount, uint256 initialBalance) public {
         balances = new BalanceSheet();
         allowances = new AllowanceSheet();
         balances.setBalance(initialAccount, initialBalance);

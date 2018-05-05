@@ -27,7 +27,7 @@ This limits the minimum and maximum amount of tokens that can be burned (redeeme
 If a new version of the TrueUSD contract is ever launched, these three contracts allow users
 to continue using the old version if they want and it will forward all basic transactions to the new one.
 
-### AMLToken.sol
+### CompliantToken.sol
 
 This ensures that only users who have passed a KYC/AML check can receive newly minted tokens or
 trade on certain restricted exchanges. It also allows for blacklisting of bad actors in accordance

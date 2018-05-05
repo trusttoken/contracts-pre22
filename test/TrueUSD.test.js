@@ -4,7 +4,7 @@ import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
 import basicTokenTests from './token/BasicToken';
 import standardTokenTests from './token/StandardToken';
 import burnableTokenTests from './token/BurnableToken';
-import amlTokenTests from './AMLToken';
+import compliantTokenTests from './CompliantToken';
 import tokenWithFeesTests from './TokenWithFees';
 const Registry = artifacts.require("Registry")
 const TrueUSD = artifacts.require("TrueUSD")
@@ -55,7 +55,7 @@ contract('TrueUSD', function (accounts) {
                 await this.token.setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owner })
             })
 
-            amlTokenTests([owner, oneHundred, anotherAccount], true)
+            compliantTokenTests([owner, oneHundred, anotherAccount], true)
         })
 
         describe('when everyone is on the whitelists and there are no burn bounds', function () {

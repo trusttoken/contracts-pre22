@@ -5,8 +5,8 @@ import standardTokenTests from './token/StandardToken';
 import basicTokenTests from './token/BasicToken';
 const Registry = artifacts.require('Registry')
 
-function amlTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
-    describe('--AMLToken Tests--', function () {
+function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
+    describe('--CompliantToken Tests--', function () {
         describe('minting', function () {
             describe('when user is on mint whitelist', function () {
                 beforeEach(async function () {
@@ -196,4 +196,4 @@ function amlTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecom
 
 }
 
-export default amlTokenTests
+export default compliantTokenTests
