@@ -7,10 +7,12 @@ const Registry = artifacts.require('Registry')
 
 function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
     describe('--CompliantToken Tests--', function () {
+        const notes = "some notes"
+
         describe('minting', function () {
             describe('when user is on mint whitelist', function () {
                 beforeEach(async function () {
-                    await this.registry.setAttribute(anotherAccount, "hasPassedKYC/AML", 1, { from: owner })
+                    await this.registry.setAttribute(anotherAccount, "hasPassedKYC/AML", 1, notes, { from: owner })
                 })
 
                 mintableTokenTests([owner, oneHundred, anotherAccount])
@@ -21,8 +23,8 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
             })
 
             it('rejects mint when user is blacklisted', async function () {
-                await this.registry.setAttribute(anotherAccount, "hasPassedKYC/AML", 1, { from: owner })
-                await this.registry.setAttribute(anotherAccount, "isBlacklisted", 1, { from: owner })
+                await this.registry.setAttribute(anotherAccount, "hasPassedKYC/AML", 1, notes, { from: owner })
+                await this.registry.setAttribute(anotherAccount, "isBlacklisted", 1, notes, { from: owner })
                 await assertRevert(this.token.mint(anotherAccount, 100, { from: owner }))
             })
         })
@@ -30,13 +32,13 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
         describe('burning', function () {
             describe('when user is on burn whitelist', function () {
                 beforeEach(async function () {
-                    await this.registry.setAttribute(oneHundred, "canBurn", 1, { from: owner })
+                    await this.registry.setAttribute(oneHundred, "canBurn", 1, notes, { from: owner })
                 })
 
                 burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
 
                 it('rejects burn when user is on blacklist', async function () {
-                    await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, { from: owner })
+                    await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, notes, { from: owner })
                     await assertRevert(this.token.burn(20, { from: oneHundred }))
                 })
             })
@@ -52,13 +54,13 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
                 describe('burning', function () {
                     describe('when user is on burn whitelist', function () {
                         beforeEach(async function () {
-                            await this.registry.setAttribute(oneHundred, "canBurn", 1, { from: owner })
+                            await this.registry.setAttribute(oneHundred, "canBurn", 1, notes, { from: owner })
                         })
 
                         burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
 
                         it('rejects burn when user is on blacklist', async function () {
-                            await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, { from: owner })
+                            await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, notes, { from: owner })
                             await assertRevert(this.token.transfer(ZERO_ADDRESS, 20, { from: oneHundred }))
                         })
                     })
@@ -78,23 +80,23 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
 
             describe('when user is on blacklist', function () {
                 it('rejects transfer from blacklisted account', async function () {
-                    await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, { from: owner })
+                    await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, notes, { from: owner })
                     await assertRevert(this.token.transfer(anotherAccount, 100, { from: oneHundred }))
                 })
 
                 it('rejects transfer to blacklisted account', async function () {
-                    await this.registry.setAttribute(anotherAccount, "isBlacklisted", 1, { from: owner })
+                    await this.registry.setAttribute(anotherAccount, "isBlacklisted", 1, notes, { from: owner })
                     await assertRevert(this.token.transfer(anotherAccount, 100, { from: oneHundred }))
                 })
 
                 it('rejects transferFrom to blacklisted account', async function () {
-                    await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, { from: owner })
+                    await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, notes, { from: owner })
                     await this.token.approve(anotherAccount, 100, { from: oneHundred })
                     await assertRevert(this.token.transferFrom(oneHundred, owner, 100, { from: anotherAccount }))
                 })
 
                 it('rejects transferFrom by blacklisted spender', async function () {
-                    await this.registry.setAttribute(anotherAccount, "isBlacklisted", 1, { from: owner })
+                    await this.registry.setAttribute(anotherAccount, "isBlacklisted", 1, notes, { from: owner })
                     await this.token.approve(anotherAccount, 100, { from: oneHundred })
                     await assertRevert(this.token.transferFrom(oneHundred, owner, 100, { from: anotherAccount }))
                 })
@@ -110,22 +112,22 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
                         describe('another permutation', function () {
                             beforeEach(async function () {
                                 await this.token.approve(spender, 100, { from: from })
-                                await this.registry.setAttribute(a, "isRestrictedExchange", 1, { from: owner })
+                                await this.registry.setAttribute(a, "isRestrictedExchange", 1, notes, { from: owner })
                             })
 
                             it('rejects if one is not KYC/AMLed', async function () {
-                                await this.registry.setAttribute(b, "hasPassedKYC/AML", 1, { from: owner })
+                                await this.registry.setAttribute(b, "hasPassedKYC/AML", 1, notes, { from: owner })
                                 await assertRevert(this.token.transferFrom(from, to, 100, { from: spender }))
                             })
 
                             it('rejects if another is not KYC/AMLed', async function () {
-                                await this.registry.setAttribute(c, "hasPassedKYC/AML", 1, { from: owner })
+                                await this.registry.setAttribute(c, "hasPassedKYC/AML", 1, notes, { from: owner })
                                 await assertRevert(this.token.transferFrom(from, to, 100, { from: spender }))
                             })
 
                             it('allows if all are KYC/AMLed', async function () {
-                                await this.registry.setAttribute(b, "hasPassedKYC/AML", 1, { from: owner })
-                                await this.registry.setAttribute(c, "hasPassedKYC/AML", 1, { from: owner })
+                                await this.registry.setAttribute(b, "hasPassedKYC/AML", 1, notes, { from: owner })
+                                await this.registry.setAttribute(c, "hasPassedKYC/AML", 1, notes, { from: owner })
                                 await this.token.transferFrom(from, to, 100, { from: spender })
                             })
                         })
@@ -143,7 +145,7 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
                     const checkPermutation = function (a, b) {
                         describe('another permutation', function () {
                             beforeEach(async function () {
-                                await this.registry.setAttribute(a, "isRestrictedExchange", 1, { from: owner })
+                                await this.registry.setAttribute(a, "isRestrictedExchange", 1, notes, { from: owner })
                             })
 
                             it('rejects if other is not KYC/AMLed', async function () {
@@ -151,7 +153,7 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
                             })
 
                             it('allows if other is KYC/AMLed', async function () {
-                                await this.registry.setAttribute(b, "hasPassedKYC/AML", 1, { from: owner })
+                                await this.registry.setAttribute(b, "hasPassedKYC/AML", 1, notes, { from: owner })
                                 await this.token.transfer(to, 100, { from: from })
                             })
                         })
@@ -165,11 +167,11 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
 
         describe('wipe account', function () {
             beforeEach(async function () {
-                await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, { from: owner })
+                await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, notes, { from: owner })
             })
 
             it('will not wipe non-blacklisted account', async function () {
-                await this.registry.setAttribute(oneHundred, "isBlacklisted", 0, { from: owner })
+                await this.registry.setAttribute(oneHundred, "isBlacklisted", 0, notes, { from: owner })
                 await assertRevert(this.token.wipeBlacklistedAccount(oneHundred, { from: owner }))
             })
 

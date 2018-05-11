@@ -1,8 +1,20 @@
 pragma solidity ^0.4.21;
 
 import "../DelegateBurnable.sol";
-// import this so it will be availble for tests:
-import "zeppelin-solidity/contracts/mocks/ForceEther.sol";
+
+// Source: openzeppelin-solidity/contracts/mocks/ForceEther.sol
+// @title Force Ether into a contract.
+// @notice  even
+// if the contract is not payable.
+// @notice To use, construct the contract with the target as argument.
+// @author Remco Bloemen <remco@neufund.org>
+contract ForceEther {
+    function ForceEther() public payable { }
+
+    function destroyAndSend(address _recipient) public {
+        selfdestruct(_recipient);
+    }
+}
 
 contract FailingDelegate is DelegateBurnable {
     function delegateTotalSupply() public view returns (uint256) {

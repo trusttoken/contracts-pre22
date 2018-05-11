@@ -2,7 +2,7 @@ pragma solidity ^0.4.21;
 
 import "./ModularBurnableToken.sol";
 import "./ModularStandardToken.sol";
-import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
+import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
 /**
  * @title Pausable token

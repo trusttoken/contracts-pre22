@@ -141,7 +141,7 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
             })
 
             it('transfer to user with noFees property', async function () {
-                await this.registry.setAttribute(anotherAccount, "noFees", 1, { from: owner })
+                await this.registry.setAttribute(anotherAccount, "noFees", 1, "some notes", { from: owner })
                 await this.token.transfer(anotherAccount, amount, { from: oneHundred })
                 await assertBalance(this.token, oneHundred, 100 - amount)
                 await assertBalance(this.token, owner, 0)
@@ -149,7 +149,7 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
             })
 
             it('transfer from user with noFees property', async function () {
-                await this.registry.setAttribute(oneHundred, "noFees", 1, { from: owner })
+                await this.registry.setAttribute(oneHundred, "noFees", 1, "some notes", { from: owner })
                 await this.token.transfer(anotherAccount, amount, { from: oneHundred })
                 await assertBalance(this.token, oneHundred, 100 - amount)
                 await assertBalance(this.token, owner, 0)

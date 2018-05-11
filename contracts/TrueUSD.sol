@@ -1,7 +1,7 @@
 pragma solidity ^0.4.21;
 
 import "./modularERC20/ModularPausableToken.sol";
-import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import "openzeppelin-solidity/contracts/ownership/NoOwner.sol";
 import "./CanDelegate.sol";
 import "./BurnableTokenWithBounds.sol";
 import "./CompliantToken.sol";

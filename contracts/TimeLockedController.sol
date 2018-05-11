@@ -1,9 +1,9 @@
 pragma solidity ^0.4.21;
 
-import "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
-import "zeppelin-solidity/contracts/ownership/HasNoTokens.sol";
-import "zeppelin-solidity/contracts/ownership/Claimable.sol";
-import "zeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import "openzeppelin-solidity/contracts/ownership/HasNoTokens.sol";
+import "openzeppelin-solidity/contracts/ownership/Claimable.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./TrueUSD.sol";
 
 // This contract allows us to split ownership of the TrueUSD contract (and TrueUSD's Registry)
@@ -164,8 +164,8 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     }
 
     // Update the registry
-    function setAttribute(Registry _registry, address _who, string _attribute, uint256 _value) public onlyAdminOrOwner {
-        _registry.setAttribute(_who, _attribute, _value);
+    function setAttribute(Registry _registry, address _who, string _attribute, uint256 _value, string _notes) public onlyAdminOrOwner {
+        _registry.setAttribute(_who, _attribute, _value, _notes);
     }
 
     // Claim ownership of an arbitrary Claimable contract

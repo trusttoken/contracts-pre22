@@ -49,19 +49,21 @@ contract('TimeLockedController', function (accounts) {
         })
 
         describe('setAttribute', function () {
+            const notes = "some notes"
+
             it('sets the attribute', async function () {
-                await this.controller.setAttribute(this.registry.address, oneHundred, "foo", 3, { from: owner })
+                await this.controller.setAttribute(this.registry.address, oneHundred, "foo", 3, notes, { from: owner })
 
                 const attr = await this.registry.hasAttribute(oneHundred, "foo")
                 assert.equal(attr, true)
             })
 
             it('can be called by admin', async function () {
-                await this.controller.setAttribute(this.registry.address, oneHundred, "foo", 3, { from: admin })
+                await this.controller.setAttribute(this.registry.address, oneHundred, "foo", 3, notes, { from: admin })
             })
 
             it('cannot be called by others', async function () {
-                await assertRevert(this.controller.setAttribute(this.registry.address, oneHundred, "foo", 3, { from: oneHundred }))
+                await assertRevert(this.controller.setAttribute(this.registry.address, oneHundred, "foo", 3, notes, { from: oneHundred }))
             })
         })
 
@@ -187,15 +189,16 @@ contract('TimeLockedController', function (accounts) {
         describe('requestReclaimEther', function () {
             it('reclaims ether', async function () {
                 const balance1 = web3.fromWei(web3.eth.getBalance(oneHundred), 'ether').toNumber()
-                const forceEther = await ForceEther.new({ from: oneHundred, value: 1000000000 })
+                const forceEther = await ForceEther.new({ from: oneHundred, value: "10000000000000000000" })
                 await forceEther.destroyAndSend(this.token.address)
-                await this.controller.requestReclaimEther({ from: owner })
                 const balance2 = web3.fromWei(web3.eth.getBalance(owner), 'ether').toNumber()
-                assert.isAbove(balance2, balance1)
+                await this.controller.requestReclaimEther({ from: owner })
+                const balance3 = web3.fromWei(web3.eth.getBalance(owner), 'ether').toNumber()
+                assert.isAbove(balance3, balance2)
             })
 
             it('cannot be called by non-owner', async function () {
-                const forceEther = await ForceEther.new({ from: oneHundred, value: 1000000000 })
+                const forceEther = await ForceEther.new({ from: oneHundred, value: "10000000000000000000" })
                 await forceEther.destroyAndSend(this.token.address)
                 await assertRevert(this.controller.requestReclaimEther({ from: admin }))
             })
@@ -251,7 +254,7 @@ contract('TimeLockedController', function (accounts) {
             await allowances.transferOwnership(trueUSD.address)
             await trueUSD.setBalanceSheet(balances.address)
             await trueUSD.setAllowanceSheet(allowances.address)
-            await registry.setAttribute(accounts[3], "hasPassedKYC/AML", 1, { from: accounts[0] })
+            await registry.setAttribute(accounts[3], "hasPassedKYC/AML", 1, "some notes", { from: accounts[0] })
             const timeLockedController = await TimeLockedController.new({ from: accounts[0] })
             await registry.transferOwnership(timeLockedController.address, { from: accounts[0] })
             await trueUSD.transferOwnership(timeLockedController.address, { from: accounts[0] })
