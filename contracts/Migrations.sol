@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
@@ -6,7 +6,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 contract Migrations is Ownable {
     uint256 public lastCompletedMigration;
 
-    function Migrations() public {
+    constructor() public {
         owner = msg.sender;
     }
 

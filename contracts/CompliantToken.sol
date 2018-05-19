@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "../registry/contracts/HasRegistry.sol";
 import "./modularERC20/ModularBurnableToken.sol";

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./modularERC20/ModularPausableToken.sol";
 import "openzeppelin-solidity/contracts/ownership/NoOwner.sol";
@@ -18,7 +18,7 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Comp
 
     event ChangeTokenName(string newName, string newSymbol);
 
-    function TrueUSD() public {
+    constructor() public {
         totalSupply_ = 0;
         burnMin = 10000 * 10**uint256(decimals);
         burnMax = 20000000 * 10**uint256(decimals);

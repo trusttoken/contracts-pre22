@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "../registry/contracts/HasRegistry.sol";
 import "./modularERC20/ModularBurnableToken.sol";
@@ -34,7 +34,7 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken, HasRegistr
                             uint256 burnFeeDenominator,
                             uint256 burnFeeFlat);
 
-    function TokenWithFees() public {
+    constructor() public {
         staker = msg.sender;
     }
 

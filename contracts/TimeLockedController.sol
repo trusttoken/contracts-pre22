@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import "openzeppelin-solidity/contracts/ownership/HasNoTokens.sol";
@@ -47,7 +47,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     event TransferAdminship(address indexed previousAdmin, address indexed newAdmin);
     event ChangeMintDelay(uint256 newDelay);
 
-    function TimeLockedController() public {
+    constructor() public {
         admin = msg.sender;
     }
 

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "../DelegateBurnable.sol";
 
@@ -9,7 +9,7 @@ import "../DelegateBurnable.sol";
 // @notice To use, construct the contract with the target as argument.
 // @author Remco Bloemen <remco@neufund.org>
 contract ForceEther {
-    function ForceEther() public payable { }
+    constructor() public payable { }
 
     function destroyAndSend(address _recipient) public {
         selfdestruct(_recipient);

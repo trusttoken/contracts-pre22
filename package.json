@@ -20,9 +20,9 @@
     "babel-register": "^6.26.0",
     "ganache-cli": "6.1.0",
     "openzeppelin-solidity": "1.9.0",
-    "solidity-coverage": "^0.4.15",
-    "truffle": "^4.1.6",
+    "solidity-coverage": "^0.5.0",
+    "truffle": "^4.1.8",
     "truffle-hdwallet-provider": "0.0.3",
-    "web3": "^1.0.0-beta.33"
+    "web3": "^1.0.0-beta.34"
   }
 }
