@@ -51,8 +51,9 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken, HasRegistr
 
     // transfer and transferFrom both call this function, so pay staking fee here.
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
-        super.transferAllArgs(_from, _to, _value);
-        payStakingFee(_to, _value, transferFeeNumerator, transferFeeDenominator, 0, _from);
+        uint256 fee = payStakingFee(_from, _value, transferFeeNumerator, transferFeeDenominator, 0, _to);
+        uint256 remaining = _value.sub(fee);
+        super.transferAllArgs(_from, _to, remaining);
     }
 
     function payStakingFee(address _payer, uint256 _value, uint256 _numerator, uint256 _denominator, uint256 _flatRate, address _otherParticipant) private returns (uint256) {
