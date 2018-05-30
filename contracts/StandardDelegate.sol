@@ -1,13 +1,12 @@
 pragma solidity ^0.4.23;
 
-import "./modularERC20/ModularBurnableToken.sol";
 import "./DelegateBurnable.sol";
-import "./modularERC20/ModularStandardToken.sol";
+import "./modularERC20/ModularPausableToken.sol";
 
 // Treats all delegate functions exactly like the corresponding normal functions,
 // e.g. delegateTransfer is just like transfer. See DelegateBurnable.sol for more on
 // the delegation system.
-contract StandardDelegate is DelegateBurnable, ModularStandardToken, ModularBurnableToken {
+contract StandardDelegate is DelegateBurnable, ModularPausableToken {
     address public delegatedFrom;
 
     event DelegatedFromSet(address addr);

@@ -45,9 +45,9 @@ contract ModularBasicToken is ERC20Basic, Claimable {
     }
 
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
-        require(_to != address(0));
-        require(_from != address(0));
-        require(_value <= balances.balanceOf(_from));
+        require(_to != address(0),"to address cannot be 0x0");
+        require(_from != address(0),"from address cannot be 0x0");
+        require(_value <= balances.balanceOf(_from),"not enough balance to transfer");
 
         // SafeMath.sub will throw if there is not enough balance.
         balances.subBalance(_from, _value);

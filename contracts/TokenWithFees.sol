@@ -1,8 +1,7 @@
 pragma solidity ^0.4.23;
 
 import "../registry/contracts/HasRegistry.sol";
-import "./modularERC20/ModularBurnableToken.sol";
-import "./modularERC20/ModularMintableToken.sol";
+import "./modularERC20/ModularPausableToken.sol";
 
 // This allows for transaction fees to be assessed on transfer, burn, and mint.
 // The fee upon burning n tokens (other fees computed similarly) is:
@@ -11,7 +10,7 @@ import "./modularERC20/ModularMintableToken.sol";
 // as 10^18 units, so e.g. a one-penny fee for burnFeeFlat would look like
 // burnFeeFlat = 10^16
 // The fee for transfers is paid by the recipient.
-contract TokenWithFees is ModularMintableToken, ModularBurnableToken, HasRegistry {
+contract TokenWithFees is ModularPausableToken, HasRegistry {
     string public constant NO_FEES = "noFees";
     uint256 public transferFeeNumerator = 0;
     uint256 public transferFeeDenominator = 10000;
@@ -68,6 +67,19 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken, HasRegistr
         return stakingFee;
     }
 
+    function checkTransferFee(uint256 _value) public view returns (uint){
+        return _value.mul(transferFeeNumerator).div(transferFeeDenominator);
+    }
+
+    function checkMintFee(uint256 _value) public view returns (uint){
+        return _value.mul(mintFeeNumerator).div(mintFeeDenominator).add(mintFeeFlat);
+    }
+
+    function checkBurnFee(uint256 _value) public view returns (uint){
+        return _value.mul(burnFeeNumerator).div(burnFeeDenominator).add(burnFeeFlat);
+    }
+
+
     function changeStakingFees(uint256 _transferFeeNumerator,
                                uint256 _transferFeeDenominator,
                                uint256 _mintFeeNumerator,
@@ -98,7 +110,7 @@ contract TokenWithFees is ModularMintableToken, ModularBurnableToken, HasRegistr
     }
 
     function changeStaker(address _newStaker) public onlyOwner {
-        require(_newStaker != address(0));
+        require(_newStaker != address(0),"new staker cannot be 0x0");
         staker = _newStaker;
         emit ChangeStaker(_newStaker);
     }
