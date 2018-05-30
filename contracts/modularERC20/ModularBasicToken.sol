@@ -21,6 +21,10 @@ contract ModularBasicToken is ERC20Basic, Claimable {
 
     event BalanceSheetSet(address indexed sheet);
 
+    /**
+    * @dev claim ownership of the balancesheet contract
+    * @param _sheet The address to of the balancesheet to claim.
+    */
     function setBalanceSheet(address _sheet) public onlyOwner {
         balances = BalanceSheet(_sheet);
         balances.claimOwnership();
@@ -43,6 +47,7 @@ contract ModularBasicToken is ERC20Basic, Claimable {
         transferAllArgs(msg.sender, _to, _value);
         return true;
     }
+    
 
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
         require(_to != address(0),"to address cannot be 0x0");

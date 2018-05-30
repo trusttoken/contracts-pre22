@@ -13,8 +13,9 @@ contract ModularBurnableToken is ModularStandardToken {
      * @dev Burns a specific amount of tokens.
      * @param _value The amount of token to be burned.
      */
-    function burn(uint256 _value) public {
+    function burn(uint256 _value) public returns(bool) {
         burnAllArgs(msg.sender, _value);
+        return true;
     }
 
     function burnAllArgs(address _burner, uint256 _value) internal {

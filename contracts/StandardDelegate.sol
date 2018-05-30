@@ -11,6 +11,8 @@ contract StandardDelegate is DelegateBurnable, ModularPausableToken {
 
     event DelegatedFromSet(address addr);
 
+    //only calls from appointed address will be processed
+    //normally only calls from TrueUSD contract
     modifier onlySender(address _source) {
         require(msg.sender == _source);
         _;

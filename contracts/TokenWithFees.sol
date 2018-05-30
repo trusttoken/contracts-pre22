@@ -42,18 +42,22 @@ contract TokenWithFees is ModularPausableToken, HasRegistry {
         uint256 remaining = _value.sub(fee);
         super.burnAllArgs(_burner, remaining);
     }
+    
 
     function mint(address _to, uint256 _value) onlyOwner public returns (bool) {
         super.mint(_to, _value);
         payStakingFee(_to, _value, mintFeeNumerator, mintFeeDenominator, mintFeeFlat, address(0));
     }
 
+
     // transfer and transferFrom both call this function, so pay staking fee here.
+    //if A transfers 1000 tokens to B, B will recieve 999 tokens, and the staking contract will reciever 1 token.
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
         uint256 fee = payStakingFee(_from, _value, transferFeeNumerator, transferFeeDenominator, 0, _to);
         uint256 remaining = _value.sub(fee);
         super.transferAllArgs(_from, _to, remaining);
     }
+
 
     function payStakingFee(address _payer, uint256 _value, uint256 _numerator, uint256 _denominator, uint256 _flatRate, address _otherParticipant) private returns (uint256) {
         // This check allows accounts to be whitelisted and not have to pay transaction fees.
@@ -66,6 +70,7 @@ contract TokenWithFees is ModularPausableToken, HasRegistry {
         }
         return stakingFee;
     }
+
 
     function checkTransferFee(uint256 _value) public view returns (uint){
         return _value.mul(transferFeeNumerator).div(transferFeeDenominator);
@@ -109,6 +114,10 @@ contract TokenWithFees is ModularPausableToken, HasRegistry {
                                burnFeeFlat);
     }
 
+    /**
+    * @dev change the address of the staking contract. ie where the staking fee will be sent to
+    * @param _newStaker The address to of the new staking contract.
+    */
     function changeStaker(address _newStaker) public onlyOwner {
         require(_newStaker != address(0),"new staker cannot be 0x0");
         staker = _newStaker;

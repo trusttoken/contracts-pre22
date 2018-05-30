@@ -26,6 +26,7 @@ This limits the minimum and maximum amount of tokens that can be burned (redeeme
 
 If a new version of the TrueUSD contract is ever launched, these three contracts allow users
 to continue using the old version if they want and it will forward all basic transactions to the new one.
+see Delegation process.
 
 ### CompliantToken.sol
 
@@ -45,6 +46,20 @@ This is the top-level ERC20 contract tying together all the previously mentioned
 
 This contract is the initial owner of TrueUSD.sol. It splits ownership into 'owner' and 'admin'
 for extra security.
+
+
+### Delegation process
+
+To delegate calls to new contract, first deploy a contract that implements DelegateBurnable. Configure fees, burn bounds etc.
+
+Reclaim Balancesheets and Allowancesheets from TrueUSD, then transfer their ownership to the new contract. With the new contract call setBalanceSheet and setAllowanceSheet.
+
+Transfer ownership of the new contract to TimeLockedController. Claim ownership of new contract with TimeLockedController.
+
+If the new contract has function setDelegatedFrom, call the function with TrueUSD contract address as the parameter.
+
+call delegateToNewContract to delegate to new contract.
+
 
 ## Testing
 
