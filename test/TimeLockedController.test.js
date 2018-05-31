@@ -138,6 +138,7 @@ contract('TimeLockedController', function (accounts) {
                                                             this.token.allowanceSheet, { from: owner })
 
                 const delegate = await this.token.delegate()
+                console.log(delegate == this.delegateContract.address)
                 assert.equal(delegate, this.delegateContract.address)
 
                 const newBalanceSheetOwner = await this.token.balanceSheet.owner()
