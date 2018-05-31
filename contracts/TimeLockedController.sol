@@ -128,8 +128,28 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     }
 
     // Future BurnableToken calls to trueUSD will be delegated to _delegate
-    function delegateToNewContract(DelegateBurnable _delegate) public onlyOwner {
+    function delegateToNewContract(DelegateBurnable _delegate,
+                                   Ownable _balanceSheet,
+                                   Ownable _AlowanceSheet)public onlyOwner{
+        //initiate transfer ownership of storage contracts from trueUSD contract
+        requestReclaimContract(_balanceSheet);
+        requestReclaimContract(_AlowanceSheet);
+
+        //claim ownership of storage contract
+        issueClaimOwnership(_balanceSheet);
+        issueClaimOwnership(_AlowanceSheet);
+
+        //initiate transfer ownership of storage contracts to new delegate contract
+        transferChild(_balanceSheet,_delegate);
+        transferChild(_AlowanceSheet,_delegate);
+
+        //call to claim the storage contract with the new delegate contract
+        require(address(_delegate).call(bytes4(keccak256("setBalanceSheet(address)")), _balanceSheet));
+        require(address(_delegate).call(bytes4(keccak256("setAllowanceSheet(address)")), _AlowanceSheet));
+
+
         trueUSD.delegateToNewContract(_delegate);
+
     }
 
     // Incoming delegate* calls from _source will be accepted by trueUSD
