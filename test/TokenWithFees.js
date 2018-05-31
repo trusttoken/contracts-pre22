@@ -105,7 +105,14 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
             beforeEach(async function () {
                 await this.token.changeStakingFees(2, 20, 2, 20, 5, 2, 20, 5, { from: owner })
             })
-
+            event ChangeStakingFees(uint256 transferFeeNumerator,
+                                    uint256 transferFeeDenominator,
+                                    uint256 mintFeeNumerator,
+                                    uint256 mintFeeDenominator,
+                                    uint256 mintFeeFlat,
+                                    uint256 burnFeeNumerator,
+                                    uint256 burnFeeDenominator,
+                                    uint256 burnFeeFlat);
             it('burn', async function () {
                 const fee = Math.floor(amount * 2 / 20) + 5
                 await this.token.burn(amount, { from: oneHundred })
@@ -124,6 +131,17 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
                     })
                 })
             }
+            it ('check staking fees', async function(){
+              const transferFee = Math.floor(amount * 2 / 20)
+              const burnFee = Math.floor(amount * 2 / 20) + 5
+              const mintFee = Math.floor(amount * 2 / 20) + 5
+              let contractTransferFee = await this.token.checkTransferFee(amount,{ from: owner })
+              let contractBurnFee = await this.token.checkBurnFee(amount,{ from: owner })
+              let contractMintFee = await this.token.checkMintFee(amount,{ from: owner })
+              assert.equal(contractTransferFee,transferFee)
+              assert.equal(contractBurnFee,burnFee)
+              assert.equal(contractMintFee,mintFee)
+            })
 
             it('mint', async function () {
                 const fee = Math.floor(amount * 2 / 20) + 5
