@@ -131,26 +131,28 @@ contract('TimeLockedController', function (accounts) {
             })
         })
 
-        // describe('delegateToNewContract', function () {
-        //     it('sets delegate', async function () {
-        //         await this.controller.delegateToNewContract(this.delegateContract.address,
-        //                                                     this.token.balanceSheet,
-        //                                                     this.token.allowanceSheet, { from: owner })
-        //
-        //         const delegate = await this.token.delegate()
-        //         assert.equal(delegate, this.delegateContract.address)
-        //
-        //         const newBalanceSheetOwner = await this.token.balanceSheet.owner()
-        //         const newAllowanceSheetOwner = await this.token.allowanceSheet.owner()
-        //
-        //         assert.equal(newBalanceSheetOwner, this.delegateContract.address)
-        //         assert.equal(newAllowanceSheetOwner, this.delegateContract.address)
-        //     })
-        //
-        //     it('cannot be called by non-owner', async function () {
-        //         await assertRevert(this.controller.delegateToNewContract(oneHundred, { from: admin }))
-        //     })
-        // })
+        describe('delegateToNewContract', function () {
+            it('sets delegate', async function () {
+                await this.controller.delegateToNewContract(this.delegateContract.address,
+                                                            this.token.balanceSheet,
+                                                            this.token.allowanceSheet, { from: owner })
+
+                const delegate = await this.token.delegate()
+                assert.equal(delegate, this.delegateContract.address)
+
+                const newBalanceSheetOwner = await this.token.balanceSheet.owner()
+                const newAllowanceSheetOwner = await this.token.allowanceSheet.owner()
+
+                assert.equal(newBalanceSheetOwner, this.delegateContract.address)
+                assert.equal(newAllowanceSheetOwner, this.delegateContract.address)
+            })
+
+            it('cannot be called by non-owner', async function () {
+                await assertRevert(this.controller.delegateToNewContract(this.delegateContract.address,
+                                                            this.token.balanceSheet,
+                                                            this.token.allowanceSheet, { from: admin }))
+            })
+        })
 
         describe('transferAdminship', function () {
             it('emits an event', async function () {
