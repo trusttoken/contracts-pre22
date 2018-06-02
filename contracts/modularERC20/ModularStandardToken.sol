@@ -16,10 +16,14 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
 
     event AllowanceSheetSet(address indexed sheet);
 
-    function setAllowanceSheet(address sheet) public onlyOwner {
-        allowances = AllowanceSheet(sheet);
+    /**
+    * @dev claim ownership of the AllowanceSheet contract
+    * @param _sheet The address to of the AllowanceSheet to claim.
+    */
+    function setAllowanceSheet(address _sheet) public onlyOwner {
+        allowances = AllowanceSheet(_sheet);
         allowances.claimOwnership();
-        emit AllowanceSheetSet(sheet);
+        emit AllowanceSheetSet(_sheet);
     }
 
     /**
@@ -34,7 +38,7 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
     }
 
     function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        require(_value <= allowances.allowanceOf(_from, _spender));
+        require(_value <= allowances.allowanceOf(_from, _spender),"not enough allowance to transfer");
 
         allowances.subAllowance(_from, _spender, _value);
         transferAllArgs(_from, _to, _value);

@@ -1,11 +1,10 @@
 pragma solidity ^0.4.23;
 
 import "./DelegateBurnable.sol";
-import "./modularERC20/ModularBurnableToken.sol";
-import "./modularERC20/ModularMintableToken.sol";
+import "./modularERC20/ModularPausableToken.sol";
 
 // See DelegateBurnable.sol for more on the delegation system.
-contract CanDelegate is ModularMintableToken, ModularBurnableToken {
+contract CanDelegate is ModularPausableToken {
     // If this contract needs to be upgraded, the new contract will be stored
     // in 'delegate' and any BurnableToken calls to this contract will be delegated to that one.
     DelegateBurnable public delegate;

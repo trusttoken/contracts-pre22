@@ -1,19 +1,19 @@
 pragma solidity ^0.4.23;
 
-import "./modularERC20/ModularBurnableToken.sol";
+import "./modularERC20/ModularPausableToken.sol";
 
 //Burning functions as withdrawing money from the system. The platform will keep track of who burns coins,
 //and will send them back the equivalent amount of money (rounded down to the nearest cent).
 //The API for burning is inherited: burn(uint256 _value)
-contract BurnableTokenWithBounds is ModularBurnableToken {
+contract BurnableTokenWithBounds is ModularPausableToken {
     uint256 public burnMin = 0;
     uint256 public burnMax = 0;
 
     event SetBurnBounds(uint256 newMin, uint256 newMax);
 
     function burnAllArgs(address _burner, uint256 _value) internal {
-        require(_value >= burnMin);
-        require(_value <= burnMax);
+        require(_value >= burnMin,"exceeds max burn bound");
+        require(_value <= burnMax, "below min burn bound");
         super.burnAllArgs(_burner, _value);
     }
 
@@ -24,7 +24,7 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
     //by setting the minimum extremely high, and we don't want to lock
     //in any particular cap for the minimum)
     function setBurnBounds(uint256 _min, uint256 _max) onlyOwner public {
-        require(_min <= _max);
+        require(_min <= _max,"min > max");
         burnMin = _min;
         burnMax = _max;
         emit SetBurnBounds(_min, _max);

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "./ModularStandardToken.sol";
+import "./ModularBurnableToken.sol";
 
 /**
  * @title Mintable token
@@ -8,7 +8,7 @@ import "./ModularStandardToken.sol";
  * @dev Issue: * https://github.com/OpenZeppelin/openzeppelin-solidity/issues/120
  * Based on code by TokenMarketNet: https://github.com/TokenMarketNet/ico/blob/master/contracts/MintableToken.sol
  */
-contract ModularMintableToken is ModularStandardToken {
+contract ModularMintableToken is ModularBurnableToken {
     event Mint(address indexed to, uint256 value);
 
     /**

@@ -33,7 +33,7 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Comp
     // disable most onlyOwner functions upon delegation, since the owner should
     // use the new version of the contract
     modifier onlyWhenNoDelegate() {
-        require(address(delegate) == address(0));
+        require(address(delegate) == address(0),"a delegate contract exist");
         _;
     }
 

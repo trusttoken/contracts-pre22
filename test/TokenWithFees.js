@@ -124,6 +124,17 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
                     })
                 })
             }
+            it ('check staking fees', async function(){
+              const transferFee = Math.floor(amount * 2 / 20)
+              const burnFee = Math.floor(amount * 2 / 20) + 5
+              const mintFee = Math.floor(amount * 2 / 20) + 5
+              let contractTransferFee = await this.token.checkTransferFee(amount,{ from: owner })
+              let contractBurnFee = await this.token.checkBurnFee(amount,{ from: owner })
+              let contractMintFee = await this.token.checkMintFee(amount,{ from: owner })
+              assert.equal(contractTransferFee,transferFee)
+              assert.equal(contractBurnFee,burnFee)
+              assert.equal(contractMintFee,mintFee)
+            })
 
             it('mint', async function () {
                 const fee = Math.floor(amount * 2 / 20) + 5

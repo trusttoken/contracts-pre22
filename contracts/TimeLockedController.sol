@@ -36,7 +36,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     MintOperation[] public mintOperations;
 
     modifier onlyAdminOrOwner() {
-        require(msg.sender == admin || msg.sender == owner);
+        require(msg.sender == admin || msg.sender == owner,"must be admin or owner");
         _;
     }
 
@@ -66,8 +66,8 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     // index of the request (visible in the RequestMint event accompanying the original request)
     function finalizeMint(uint256 _index) public onlyAdminOrOwner {
         MintOperation memory op = mintOperations[_index];
-        require(op.admin == admin); //checks that the requester's adminship has not been revoked
-        require(op.releaseTimestamp <= block.timestamp); //checks that enough time has elapsed
+        require(op.admin == admin,"admin revoked"); //checks that the requester's adminship has not been revoked
+        require(op.releaseTimestamp <= block.timestamp,"not enough time elapsed"); //checks that enough time has elapsed
         address to = op.to;
         uint256 value = op.value;
         delete mintOperations[_index];
@@ -153,7 +153,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     // is compromised), and will invalidate all pending mint operations (including
     // any the owner may have made and not yet finalized)
     function transferAdminship(address _newAdmin) public onlyOwner {
-        require(_newAdmin != address(0));
+        require(_newAdmin != address(0),"new admin cannot be 0x0");
         emit TransferAdminship(admin, _newAdmin);
         admin = _newAdmin;
     }

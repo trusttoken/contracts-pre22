@@ -1,14 +1,14 @@
 pragma solidity ^0.4.23;
 
-import "./ModularBurnableToken.sol";
-import "./ModularStandardToken.sol";
+import "./ModularMintableToken.sol";
 import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
 /**
  * @title Pausable token
- * @dev StandardToken modified with pausable transfers.
+ * @dev MintableToken modified with pausable transfers.
  **/
-contract ModularPausableToken is ModularStandardToken, ModularBurnableToken, Pausable {
+contract ModularPausableToken is ModularMintableToken, Pausable {
+
     function transferAllArgs(address _from, address _to, uint256 _value) internal whenNotPaused {
         super.transferAllArgs(_from, _to, _value);
     }
