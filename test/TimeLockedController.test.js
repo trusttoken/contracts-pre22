@@ -8,6 +8,9 @@ const AllowanceSheet = artifacts.require("AllowanceSheet")
 const TimeLockedController = artifacts.require("TimeLockedController")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const ForceEther = artifacts.require("ForceEther")
+const DelegateBurnableMock = artifacts.require("DelegateBurnableMock")
+const FaultyDelegateBurnableMock1 = artifacts.require("FaultyDelegateBurnableMock1")
+const FaultyDelegateBurnableMock2 = artifacts.require("FaultyDelegateBurnableMock2")
 
 contract('TimeLockedController', function (accounts) {
     describe('--TimeLockedController Tests--', function () {
@@ -24,6 +27,12 @@ contract('TimeLockedController', function (accounts) {
             await this.controller.issueClaimOwnership(this.token.address, { from: owner })
             await this.controller.setTrueUSD(this.token.address, { from: owner })
             await this.controller.transferAdminship(admin, { from: owner })
+            this.balanceSheet = await this.token.balances()
+            this.allowanceSheet = await this.token.allowances()
+            this.delegateContract = await DelegateBurnableMock.new({ from: owner })
+            this.faultyDelegateContract1 = await FaultyDelegateBurnableMock1.new({ from: owner })
+            this.faultyDelegateContract2 = await FaultyDelegateBurnableMock2.new({ from: owner })
+
 
         })
 
@@ -129,15 +138,48 @@ contract('TimeLockedController', function (accounts) {
 
         describe('delegateToNewContract', function () {
             it('sets delegate', async function () {
-                await this.controller.delegateToNewContract(oneHundred, { from: owner })
-
+                await this.controller.delegateToNewContract(this.delegateContract.address,
+                                                            this.balanceSheet,
+                                                            this.allowanceSheet, { from: owner })
                 const delegate = await this.token.delegate()
-                assert.equal(delegate, oneHundred)
+
+                assert.equal(delegate, this.delegateContract.address)
+                let balanceOwner = await BalanceSheet.at(this.balanceSheet).owner()
+                let allowanceOwner = await AllowanceSheet.at(this.allowanceSheet).owner()
+
+
+                assert.equal(balanceOwner, this.delegateContract.address)
+                assert.equal(allowanceOwner, this.delegateContract.address)
+
             })
 
             it('cannot be called by non-owner', async function () {
-                await assertRevert(this.controller.delegateToNewContract(oneHundred, { from: admin }))
+                await assertRevert(this.controller.delegateToNewContract(this.delegateContract.address,
+                                                            this.balanceSheet,
+                                                            this.allowanceSheet, { from: admin }))
             })
+
+            it('cannot set delegate with balancesheet is not owned', async function () {
+                let balanceSheetAddr = "0x123";
+                let allowanceSheetAddr = "0x234"
+                await assertRevert(this.controller.delegateToNewContract(this.delegateContract.address,
+                                                            balanceSheetAddr,
+                                                            allowanceSheetAddr, { from: owner }))
+            })
+
+            it('fails when new delegate contract doesnt implement setBalanceSheet() ', async function () {
+                await assertRevert(this.controller.delegateToNewContract(this.faultyDelegateContract1.address,
+                                                            this.balanceSheet,
+                                                            this.allowanceSheet, { from: owner }))
+            })
+
+            it('fails when new delegate contract doesnt implement setAllowanceSheet() ', async function () {
+                await assertRevert(this.controller.delegateToNewContract(this.faultyDelegateContract2.address,
+                                                            this.balanceSheet,
+                                                            this.allowanceSheet, { from: owner }))
+            })
+
+
         })
 
         describe('transferAdminship', function () {
@@ -217,7 +259,7 @@ contract('TimeLockedController', function (accounts) {
             })
         })
 
-        describe('delegateToNewContract', function () {
+        describe('Staking Fees', function () {
             it('changes fees', async function () {
                 await this.controller.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, { from: owner })
                 const transferFeeNumerator = await this.token.transferFeeNumerator()

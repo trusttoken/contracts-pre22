@@ -40,11 +40,11 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Comp
     function mint(address _to, uint256 _value) onlyWhenNoDelegate public returns (bool) {
         super.mint(_to, _value);
     }
-    function setBalanceSheet(address _sheet) onlyWhenNoDelegate public {
-        super.setBalanceSheet(_sheet);
+    function setBalanceSheet(address _sheet) onlyWhenNoDelegate public returns (bool) {
+        return super.setBalanceSheet(_sheet);
     }
-    function setAllowanceSheet(address _sheet) onlyWhenNoDelegate public {
-        super.setAllowanceSheet(_sheet);
+    function setAllowanceSheet(address _sheet) onlyWhenNoDelegate public returns (bool) {
+        return super.setAllowanceSheet(_sheet);
     }
     function setBurnBounds(uint256 _min, uint256 _max) onlyWhenNoDelegate public {
         super.setBurnBounds(_min, _max);
