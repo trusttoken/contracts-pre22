@@ -18,7 +18,7 @@ contract('TimeLockedController', function (accounts) {
 
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
-            this.token = await TrueUSDMock.new(oneHundred, 100, { from: owner })
+            this.token = await TrueUSDMock.new(oneHundred, 100*10**18, { from: owner })
             await this.token.setRegistry(this.registry.address, { from: owner })
             this.controller = await TimeLockedController.new({ from: owner })
             await this.registry.transferOwnership(this.controller.address, { from: owner })
@@ -106,20 +106,20 @@ contract('TimeLockedController', function (accounts) {
 
         describe('setBurnBounds', function () {
             it('sets burnBounds', async function () {
-                await this.controller.setBurnBounds(3, 4, { from: owner })
+                await this.controller.setBurnBounds(3*10**18, 4*10**18, { from: owner })
 
                 const min = await this.token.burnMin()
-                assert.equal(min, 3)
+                assert.equal(min, 3*10**18)
                 const max = await this.token.burnMax()
-                assert.equal(max, 4)
+                assert.equal(max, 4*10**18)
             })
 
             it('can be called by admin', async function () {
-                await this.controller.setBurnBounds(3, 4, { from: owner })
+                await this.controller.setBurnBounds(3*10**18, 4*10**18, { from: owner })
             })
 
             it('cannot be called by others', async function () {
-                await assertRevert(this.controller.setBurnBounds(3, 4, { from: oneHundred }))
+                await assertRevert(this.controller.setBurnBounds(3*10**18, 4*10**18, { from: oneHundred }))
             })
         })
 
@@ -248,13 +248,13 @@ contract('TimeLockedController', function (accounts) {
 
         describe('requestReclaimToken', function () {
             it('reclaims token', async function () {
-                await this.token.transfer(this.token.address, 40, { from: oneHundred })
+                await this.token.transfer(this.token.address, 40*10**18, { from: oneHundred })
                 await this.controller.requestReclaimToken(this.token.address, { from: owner })
-                await assertBalance(this.token, owner, 40)
+                await assertBalance(this.token, owner, 40*10**18)
             })
 
             it('cannot be called by non-owner', async function () {
-                await this.token.transfer(this.token.address, 40, { from: oneHundred })
+                await this.token.transfer(this.token.address, 40*10**18, { from: oneHundred })
                 await assertRevert(this.controller.requestReclaimToken(this.token.address, { from: admin }))
             })
         })

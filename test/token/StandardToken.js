@@ -10,7 +10,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                 const spender = anotherAccount
 
                 describe('when the sender has enough balance', function () {
-                    const amount = 100
+                    const amount = 100*10**18
 
                     it('emits an approval event', async function () {
                         const { logs } = await this.token.approve(spender, amount, { from: oneHundred })
@@ -33,7 +33,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                     describe('when the spender had an approved amount', function () {
                         beforeEach(async function () {
-                            await this.token.approve(spender, 1, { from: oneHundred })
+                            await this.token.approve(spender, 1*10**18, { from: oneHundred })
                         })
 
                         it('approves the requested amount and replaces the previous one', async function () {
@@ -46,7 +46,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                 })
 
                 describe('when the sender does not have enough balance', function () {
-                    const amount = 101
+                    const amount = 101*10**18
 
                     it('emits an approval event', async function () {
                         const { logs } = await this.token.approve(spender, amount, { from: oneHundred })
@@ -69,7 +69,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                     describe('when the spender had an approved amount', function () {
                         beforeEach(async function () {
-                            await this.token.approve(spender, 1, { from: oneHundred })
+                            await this.token.approve(spender, 1*10**18, { from: oneHundred })
                         })
 
                         it('approves the requested amount and replaces the previous one', async function () {
@@ -83,7 +83,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
             })
 
             describe('when the spender is the zero address', function () {
-                const amount = 100
+                const amount = 100*10**18
                 const spender = ZERO_ADDRESS
 
                 it('approves the requested amount', async function () {
@@ -113,11 +113,11 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                 describe('when the spender has enough approved balance', function () {
                     beforeEach(async function () {
-                        await this.token.approve(spender, 100, { from: oneHundred })
+                        await this.token.approve(spender, 100*10**18, { from: oneHundred })
                     })
 
                     describe('when the oneHundred has enough balance', function () {
-                        const amount = 100
+                        const amount = 100*10**18
 
                         it('transfers the requested amount', async function () {
                             await this.token.transferFrom(oneHundred, to, amount, { from: spender })
@@ -144,7 +144,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                     })
 
                     describe('when the oneHundred does not have enough balance', function () {
-                        const amount = 101
+                        const amount = 101*10**18
 
                         it('reverts', async function () {
                             await assertRevert(this.token.transferFrom(oneHundred, to, amount, { from: spender }))
@@ -154,11 +154,11 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                 describe('when the spender does not have enough approved balance', function () {
                     beforeEach(async function () {
-                        await this.token.approve(spender, 99, { from: oneHundred })
+                        await this.token.approve(spender, 99*10**18, { from: oneHundred })
                     })
 
                     describe('when the oneHundred has enough balance', function () {
-                        const amount = 100
+                        const amount = 100*10**18
 
                         it('reverts', async function () {
                             await assertRevert(this.token.transferFrom(oneHundred, to, amount, { from: spender }))
@@ -166,7 +166,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                     })
 
                     describe('when the oneHundred does not have enough balance', function () {
-                        const amount = 101
+                        const amount = 101*10**18
 
                         it('reverts', async function () {
                             await assertRevert(this.token.transferFrom(oneHundred, to, amount, { from: spender }))
@@ -176,7 +176,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
             })
 
             describe('when the anotherAccount is the zero address', function () {
-                const amount = 100
+                const amount = 100*10**18
                 const to = ZERO_ADDRESS
 
                 beforeEach(async function () {
@@ -194,7 +194,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                 const spender = anotherAccount
 
                 describe('when the sender has enough balance', function () {
-                    const amount = 100
+                    const amount = 100*10**18
 
                     it('emits an approval event', async function () {
                         const { logs } = await this.token.decreaseApproval(spender, amount, { from: oneHundred })
@@ -217,20 +217,20 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                     describe('when the spender had an approved amount', function () {
                         beforeEach(async function () {
-                            await this.token.approve(spender, amount + 1, { from: oneHundred })
+                            await this.token.approve(spender, amount + 1*10**18, { from: oneHundred })
                         })
 
                         it('decreases the spender allowance subtracting the requested amount', async function () {
                             await this.token.decreaseApproval(spender, amount, { from: oneHundred })
 
                             const allowance = await this.token.allowance(oneHundred, spender)
-                            assert.equal(allowance, 1)
+                            assert.equal(allowance, 1*10**18)
                         })
                     })
                 })
 
                 describe('when the sender does not have enough balance', function () {
-                    const amount = 101
+                    const amount = 101*10**18
 
                     it('emits an approval event', async function () {
                         const { logs } = await this.token.decreaseApproval(spender, amount, { from: oneHundred })
@@ -253,21 +253,21 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                     describe('when the spender had an approved amount', function () {
                         beforeEach(async function () {
-                            await this.token.approve(spender, amount + 1, { from: oneHundred })
+                            await this.token.approve(spender, amount + 1*10**18, { from: oneHundred })
                         })
 
                         it('decreases the spender allowance subtracting the requested amount', async function () {
                             await this.token.decreaseApproval(spender, amount, { from: oneHundred })
 
                             const allowance = await this.token.allowance(oneHundred, spender)
-                            assert.equal(allowance, 1)
+                            assert.equal(allowance, 1*10**18)
                         })
                     })
                 })
             })
 
             describe('when the spender is the zero address', function () {
-                const amount = 100
+                const amount = 100*10**18
                 const spender = ZERO_ADDRESS
 
                 it('decreases the requested amount', async function () {
@@ -290,7 +290,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
         })
 
         describe('increase approval', function () {
-            const amount = 100
+            const amount = 100*10**18
 
             describe('when the spender is not the zero address', function () {
                 const spender = anotherAccount
@@ -317,20 +317,20 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                     describe('when the spender had an approved amount', function () {
                         beforeEach(async function () {
-                            await this.token.approve(spender, 1, { from: oneHundred })
+                            await this.token.approve(spender, 1*10**18, { from: oneHundred })
                         })
 
                         it('increases the spender allowance adding the requested amount', async function () {
                             await this.token.increaseApproval(spender, amount, { from: oneHundred })
 
                             const allowance = await this.token.allowance(oneHundred, spender)
-                            assert.equal(allowance, amount + 1)
+                            assert.equal(allowance, amount + 1*10**18)
                         })
                     })
                 })
 
                 describe('when the sender does not have enough balance', function () {
-                    const amount = 101
+                    const amount = 101*10**18
 
                     it('emits an approval event', async function () {
                         const { logs } = await this.token.increaseApproval(spender, amount, { from: oneHundred })
@@ -353,14 +353,14 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                     describe('when the spender had an approved amount', function () {
                         beforeEach(async function () {
-                            await this.token.approve(spender, 1, { from: oneHundred })
+                            await this.token.approve(spender, 1*10**18, { from: oneHundred })
                         })
 
                         it('increases the spender allowance adding the requested amount', async function () {
                             await this.token.increaseApproval(spender, amount, { from: oneHundred })
 
                             const allowance = await this.token.allowance(oneHundred, spender)
-                            assert.equal(allowance, amount + 1)
+                            assert.equal(allowance, amount + 1*10**18)
                         })
                     })
                 })

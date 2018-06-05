@@ -100,16 +100,16 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
         })
 
         describe('fees are non-zero', function () {
-            const amount = 48
+            const amount = 48*10**18
 
             beforeEach(async function () {
-                await this.token.changeStakingFees(2, 20, 2, 20, 5, 2, 20, 5, { from: owner })
+                await this.token.changeStakingFees(2, 20, 2, 20, 5*10**18, 2, 20, 5*10**18, { from: owner })
             })
 
             it('burn', async function () {
-                const fee = Math.floor(amount * 2 / 20) + 5
+                const fee = Math.floor(amount * 2 / 20) + 5*10**18
                 await this.token.burn(amount, { from: oneHundred })
-                await assertBalance(this.token, oneHundred, 100 - amount)
+                await assertBalance(this.token, oneHundred, 100*10**18 - amount)
                 await assertBalance(this.token, owner, fee)
             })
 
@@ -117,17 +117,17 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
                 describe('transfers to 0x0 become burns', function () {
                     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
                     it('burn', async function () {
-                        const fee = Math.floor(amount * 2 / 20) + 5
+                        const fee = Math.floor(amount * 2 / 20) + 5*10**18
                         await this.token.transfer(ZERO_ADDRESS, amount, { from: oneHundred })
-                        await assertBalance(this.token, oneHundred, 100 - amount)
+                        await assertBalance(this.token, oneHundred, 100*10**18 - amount)
                         await assertBalance(this.token, owner, fee)
                     })
                 })
             }
             it ('check staking fees', async function(){
               const transferFee = Math.floor(amount * 2 / 20)
-              const burnFee = Math.floor(amount * 2 / 20) + 5
-              const mintFee = Math.floor(amount * 2 / 20) + 5
+              const burnFee = Math.floor(amount * 2 / 20) + 5*10**18
+              const mintFee = Math.floor(amount * 2 / 20) + 5*10**18
               let contractTransferFee = await this.token.checkTransferFee(amount,{ from: owner })
               let contractBurnFee = await this.token.checkBurnFee(amount,{ from: owner })
               let contractMintFee = await this.token.checkMintFee(amount,{ from: owner })
@@ -137,7 +137,7 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
             })
 
             it('mint', async function () {
-                const fee = Math.floor(amount * 2 / 20) + 5
+                const fee = Math.floor(amount * 2 / 20) + 5*10**18
                 await this.token.mint(anotherAccount, amount, { from: owner })
                 await assertBalance(this.token, anotherAccount, amount - fee)
                 await assertBalance(this.token, owner, fee)
@@ -146,7 +146,7 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
             it('transfer', async function () {
                 const fee = Math.floor(amount * 2 / 20)
                 await this.token.transfer(anotherAccount, amount, { from: oneHundred })
-                await assertBalance(this.token, oneHundred, 100 - amount)
+                await assertBalance(this.token, oneHundred, 100*10**18 - amount)
                 await assertBalance(this.token, owner, fee)
                 await assertBalance(this.token, anotherAccount, amount - fee)
             })
@@ -154,7 +154,7 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
             it('transfer to user with noFees property', async function () {
                 await this.registry.setAttribute(anotherAccount, "noFees", 1, "some notes", { from: owner })
                 await this.token.transfer(anotherAccount, amount, { from: oneHundred })
-                await assertBalance(this.token, oneHundred, 100 - amount)
+                await assertBalance(this.token, oneHundred, 100*10**18 - amount)
                 await assertBalance(this.token, owner, 0)
                 await assertBalance(this.token, anotherAccount, amount)
             })
@@ -162,7 +162,7 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
             it('transfer from user with noFees property', async function () {
                 await this.registry.setAttribute(oneHundred, "noFees", 1, "some notes", { from: owner })
                 await this.token.transfer(anotherAccount, amount, { from: oneHundred })
-                await assertBalance(this.token, oneHundred, 100 - amount)
+                await assertBalance(this.token, oneHundred, 100*10**18 - amount)
                 await assertBalance(this.token, owner, 0)
                 await assertBalance(this.token, anotherAccount, amount)
             })
@@ -171,7 +171,7 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
                 const fee = Math.floor(amount * 2 / 20)
                 await this.token.approve(anotherAccount, amount, { from: oneHundred })
                 await this.token.transferFrom(oneHundred, anotherAccount, amount, { from: anotherAccount })
-                await assertBalance(this.token, oneHundred, 100 - amount)
+                await assertBalance(this.token, oneHundred, 100*10**18 - amount)
                 await assertBalance(this.token, owner, fee)
                 await assertBalance(this.token, anotherAccount, amount - fee)
             })

@@ -2,6 +2,7 @@ pragma solidity ^0.4.23;
 
 import "./modularERC20/ModularPausableToken.sol";
 import "openzeppelin-solidity/contracts/ownership/NoOwner.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./CanDelegate.sol";
 import "./BurnableTokenWithBounds.sol";
 import "./CompliantToken.sol";
@@ -12,9 +13,12 @@ import "./WithdrawalToken.sol";
 // This is the top-level ERC20 contract, but most of the interesting functionality is
 // inherited - see the documentation on the corresponding contracts.
 contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, CompliantToken, TokenWithFees, WithdrawalToken, StandardDelegate, CanDelegate {
+    using SafeMath for *;
+
     string public name = "TrueUSD";
     string public symbol = "TUSD";
     uint8 public constant decimals = 18;
+    uint8 public constant rounding = 2;
 
     event ChangeTokenName(string newName, string newSymbol);
 
@@ -80,6 +84,12 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Comp
         );
     }
 
+    /* function burnAllArgs(address _burner, uint256 _value) internal {
+      uint burnAmount = _value.div(10**uint256(decimals.sub(rounding))).mul(10**uint256(decimals.sub(rounding)));
+      super.burnAllArgs(_burner, burnAmount);
+    } */
+
+
     // Alternatives to the normal NoOwner functions in case this contract's owner
     // can't own ether or tokens.
     // Note that we *do* inherit reclaimContract from NoOwner: This contract
@@ -92,4 +102,5 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Comp
         uint256 balance = token.balanceOf(this);
         token.safeTransfer(_to, balance);
     }
+
 }

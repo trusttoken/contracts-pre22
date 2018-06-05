@@ -10,14 +10,14 @@ contract('CanDelegate', function (accounts) {
     const anotherAccounts = [accounts[7], accounts[8], accounts[9]]
 
     beforeEach(async function () {
-        this.token = await CanDelegateMock.new(oneHundreds[0], 100, { from: owners[0] })
+        this.token = await CanDelegateMock.new(oneHundreds[0], 100*10**18, { from: owners[0] })
     })
 
     canDelegateTests([owners[0], oneHundreds[0], anotherAccounts[0]])
 
     it('other test', async function () {
-        const delegate = await StandardDelegateMock.new(oneHundreds[0], 100, { from: owners[0] })
+        const delegate = await StandardDelegateMock.new(oneHundreds[0], 100*10**18, { from: owners[0] })
         await delegate.setDelegatedFrom(anotherAccounts[0], { from: owners[0] })
-        await assertRevert(delegate.delegateTransfer(anotherAccounts[0], 10, 0x0, { from: anotherAccounts[0] }))
+        await assertRevert(delegate.delegateTransfer(anotherAccounts[0], 10*10**18, 0x0, { from: anotherAccounts[0] }))
     })
 })
