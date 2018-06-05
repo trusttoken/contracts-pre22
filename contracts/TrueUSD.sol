@@ -83,11 +83,11 @@ contract TrueUSD is ModularPausableToken, NoOwner, BurnableTokenWithBounds, Comp
             _burnFeeFlat
         );
     }
-
-    /* function burnAllArgs(address _burner, uint256 _value) internal {
-      uint burnAmount = _value.div(10**uint256(decimals.sub(rounding))).mul(10**uint256(decimals.sub(rounding)));
+    function burnAllArgs(address _burner, uint256 _value) internal {
+      //round down burn amount to cent
+      uint burnAmount = _value / (10 **uint256(decimals-rounding)) * (10 **uint256(decimals-rounding));
       super.burnAllArgs(_burner, burnAmount);
-    } */
+    }
 
 
     // Alternatives to the normal NoOwner functions in case this contract's owner

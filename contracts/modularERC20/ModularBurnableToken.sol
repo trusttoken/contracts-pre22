@@ -22,7 +22,7 @@ contract ModularBurnableToken is ModularStandardToken {
         require(_value <= balances.balanceOf(_burner),"not enough balance to burn");
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
-        uint burnAmount = _value / (10 **16) * (10 **16);
+        /* uint burnAmount = _value / (10 **16) * (10 **16); */
         balances.subBalance(_burner, _value);
         totalSupply_ = totalSupply_.sub(_value);
         emit Burn(_burner, _value);

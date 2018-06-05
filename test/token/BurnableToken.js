@@ -37,6 +37,17 @@ function burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZero
             })
         })
 
+        // describe('round down burn amount', function () {
+        //
+        //     it("burns 10.50", async function () {
+        //         const amount = 10.503*10**18
+        //         await this.token.burn(amount, { from: oneHundred })
+        //         let remainingBalance = await this.token.balanceOf(oneHundred)
+        //         assert.equal(remainingBalance, 89.5*10**18)
+        //     })
+        // })
+
+
         if(transfersToZeroBecomeBurns) {
             describe('transfers to 0x0 become burns', function () {
                 describe('when the given amount is not greater than balance of the sender', function () {
