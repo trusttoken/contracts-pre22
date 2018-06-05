@@ -16,7 +16,7 @@ contract('TokenWithFees', function ([_, owner, oneHundred, anotherAccount]) {
         await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
         await this.token.setRegistry(this.registry.address, { from: owner })
 
-        await this.token.mint(oneHundred, 100, { from: owner })
+        await this.token.mint(oneHundred, 100*10**18, { from: owner })
     })
 
     tokenWithFeesTests([owner, oneHundred, anotherAccount])
