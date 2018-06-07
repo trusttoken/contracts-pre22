@@ -41,6 +41,6 @@ contract FaultyDelegateBurnableMock1 is DelegateBurnable{
     function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) public returns (bool){
       return true;
     }
-    function delegateBurn(address _origSender, uint256 _value) public{
+    function delegateBurn(address _origSender, uint256 _value, string _note) public{
     }
 }

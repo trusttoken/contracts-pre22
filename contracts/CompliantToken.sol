@@ -21,10 +21,10 @@ contract CompliantToken is ModularPausableToken, HasRegistry {
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
 
-    function burnAllArgs(address _burner, uint256 _value) internal {
+    function burnAllArgs(address _burner, uint256 _value, string _note) internal {
         require(registry.hasAttribute(_burner, CAN_BURN),"_burner does not have canBurn attribute");
         require(!registry.hasAttribute(_burner, IS_BLACKLISTED),"_burner is blacklisted");
-        super.burnAllArgs(_burner, _value);
+        super.burnAllArgs(_burner, _value, _note);
     }
 
     function mint(address _to, uint256 _value) onlyOwner public returns (bool) {

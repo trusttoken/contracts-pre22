@@ -82,11 +82,11 @@ contract CanDelegate is ModularPausableToken {
         }
     }
 
-    function burnAllArgs(address _burner, uint256 _value) internal {
+    function burnAllArgs(address _burner, uint256 _value, string _note) internal {
         if (delegate == address(0)) {
-            super.burnAllArgs(_burner, _value);
+            super.burnAllArgs(_burner, _value, _note);
         } else {
-            delegate.delegateBurn(_burner, _value);
+            delegate.delegateBurn(_burner, _value ,_note);
         }
     }
 }

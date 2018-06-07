@@ -39,12 +39,12 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
 
                 it('rejects burn when user is on blacklist', async function () {
                     await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, notes, { from: owner })
-                    await assertRevert(this.token.burn(20*10**18, { from: oneHundred }))
+                    await assertRevert(this.token.burn(20*10**18, "burn note", { from: oneHundred }))
                 })
             })
 
             it('rejects burn when user is not on burn whitelist', async function () {
-                await assertRevert(this.token.burn(20*10**18, { from: oneHundred }))
+                await assertRevert(this.token.burn(20*10**18, "burn note", { from: oneHundred }))
             })
         })
 
