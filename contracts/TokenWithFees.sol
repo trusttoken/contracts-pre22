@@ -37,12 +37,12 @@ contract TokenWithFees is ModularPausableToken, HasRegistry {
         staker = msg.sender;
     }
 
-    function burnAllArgs(address _burner, uint256 _value) internal {
+    function burnAllArgs(address _burner, uint256 _value, string _note) internal {
         uint256 fee = payStakingFee(_burner, _value, burnFeeNumerator, burnFeeDenominator, burnFeeFlat, address(0));
         uint256 remaining = _value.sub(fee);
-        super.burnAllArgs(_burner, remaining);
+        super.burnAllArgs(_burner, remaining, _note);
     }
-    
+
 
     function mint(address _to, uint256 _value) onlyOwner public returns (bool) {
         super.mint(_to, _value);

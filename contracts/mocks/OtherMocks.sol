@@ -41,7 +41,7 @@ contract FailingDelegate is DelegateBurnable {
     function delegateDecreaseApproval(address, uint, address) public returns (bool) {
         return false;
     }
-    function delegateBurn(address, uint256) public {}
+    function delegateBurn(address, uint256, string) public {}
 }
 
 contract SucceedingDelegate is DelegateBurnable {
@@ -69,5 +69,5 @@ contract SucceedingDelegate is DelegateBurnable {
     function delegateDecreaseApproval(address, uint, address) public returns (bool) {
         return true;
     }
-    function delegateBurn(address, uint256) public {}
+    function delegateBurn(address, uint256, string) public {}
 }

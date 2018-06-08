@@ -61,7 +61,7 @@ contract StandardDelegate is DelegateBurnable, ModularPausableToken {
         return true;
     }
 
-    function delegateBurn(address _origSender, uint256 _value) onlySender(delegatedFrom) public {
-        burnAllArgs(_origSender, _value);
+    function delegateBurn(address _origSender, uint256 _value ,string _note) onlySender(delegatedFrom) public {
+        burnAllArgs(_origSender, _value , _note);
     }
 }
