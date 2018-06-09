@@ -46,6 +46,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     event SetTrueUSD(TrueUSD newContract);
     event TransferAdminship(address indexed previousAdmin, address indexed newAdmin);
     event ChangeMintDelay(uint256 newDelay);
+    event RevokeMint(uint256 opIndex);
 
     constructor() public {
         admin = msg.sender;
@@ -72,6 +73,11 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
         uint256 value = op.value;
         delete mintOperations[_index];
         trueUSD.mint(to, value);
+    }
+
+    function revokeMint(uint256 _index) public onlyOwner {
+        delete mintOperations[_index];
+        emit RevokeMint(_index);
     }
 
     // Transfer ownership of _child to _newOwner
