@@ -57,6 +57,19 @@ contract('TimeLockedController', function (accounts) {
             })
         })
 
+        describe('revoke mint', function () {
+            it('request mint then revoke it', async function () {
+                await this.controller.requestMint(oneHundred, 10*10*18 , { from: admin })
+                const { logs } = await this.controller.revokeMint(0, {from: owner})
+                assert.equal(logs.length, 1)
+                assert.equal(logs[0].event, 'RevokeMint')
+                assert.equal(logs[0].args.opIndex, 0,"wrong")
+                await increaseTime(duration.hours(20))
+                await assertRevert(this.controller.finalizeMint(0, { from: admin }))
+
+            })
+        })
+
         describe('setAttribute', function () {
             const notes = "some notes"
 
