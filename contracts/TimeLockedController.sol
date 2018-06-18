@@ -67,7 +67,7 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
     // index of the request (visible in the RequestMint event accompanying the original request)
     function finalizeMint(uint256 _index) public onlyAdminOrOwner {
         MintOperation memory op = mintOperations[_index];
-        require(op.admin == admin,"admin revoked"); //checks that the requester's adminship has not been revoked
+        require(op.admin == admin,"admin revoked"); //check that the admin has not changed since mint was requested
         require(op.releaseTimestamp <= block.timestamp,"not enough time elapsed"); //checks that enough time has elapsed
         address to = op.to;
         uint256 value = op.value;
