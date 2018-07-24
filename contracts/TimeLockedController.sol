@@ -5,6 +5,10 @@ import "openzeppelin-solidity/contracts/ownership/HasNoTokens.sol";
 import "openzeppelin-solidity/contracts/ownership/Claimable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./TrueUSD.sol";
+import "./DateTime.sol";
+import "../registry/contracts/HasRegistry.sol";
+
+
 
 // This contract allows us to split ownership of the TrueUSD contract (and TrueUSD's Registry)
 // into two addresses. One, called the "owner" address, has unfettered control of the TrueUSD contract -
@@ -20,117 +24,324 @@ import "./TrueUSD.sol";
 // compromised and there are unauthorized operations underway, we can use the owner key
 // to replace the admin. Requests initiated by an admin that has since been deposed
 // cannot be finalized.
-contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
+contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable {
     using SafeMath for uint256;
 
     struct MintOperation {
         address to;
         uint256 value;
-        address admin;
-        uint256 releaseTimestamp;
+        uint256 requestedBlock;
+        uint256 timeRequested;
+        uint256 numberOfApproval;
+        mapping(address => bool) approved; 
     }
 
-    uint256 public mintDelay = 1 days;
-    address public admin;
-    TrueUSD public trueUSD;
-    MintOperation[] public mintOperations;
+    struct TimeOfDay{
+        uint8 hour;
+        uint8 minute;
+    }
 
-    modifier onlyAdminOrOwner() {
-        require(msg.sender == admin || msg.sender == owner,"must be admin or owner");
+
+    mapping(bytes32 => bool) public holidays;
+
+
+    bool public mintPaused;
+    uint256 public smallMintThreshold;
+    uint8 public minSmallMintApproval;
+    uint8 public minLargeMintApproval;
+    uint256 public DailyMintLimit;
+    uint256 public mintedToday;
+    uint256 public timeOfLastMint;
+    uint256 public mintReqValidBeforeThisBlock;
+    address public mintKey;
+    TrueUSD public trueUSD;
+    DateTimeAPI public dateTime;
+    MintOperation[] public mintOperations;
+    TimeOfDay[] public mintCheckTimes;
+
+    uint256 public timeZoneDiff = 7 hours;
+    uint8 public resetTime;
+
+    string constant public IS_MINT_CHECKER = "isTUSDMintChecker";
+    string constant public IS_MINT_APPROVER = "isTUSDMintApprover";
+
+    modifier onlyMintKeyOrOwner() {
+        require(msg.sender == mintKey || msg.sender == owner,"must be mintKey or owner");
         _;
     }
 
-    event RequestMint(address indexed to, address indexed admin, uint256 value, uint256 releaseTimestamp, uint256 opIndex);
+    modifier onlyMintCheckerOrOwner() {
+        require(registry.hasAttribute(msg.sender, IS_MINT_CHECKER) || msg.sender == owner,"must be validator or owner");
+        _;
+    }
+
+    modifier onlyMintApproverOrOwner() {
+        require(registry.hasAttribute(msg.sender, IS_MINT_APPROVER) || msg.sender == owner,"must be approver or owner");
+        _;
+    }
+
+    modifier mintNotPaused() {
+        require(!mintPaused,"minting is paused");
+        _;
+    }
+
+    modifier notOnWeekend(){
+        require(dateTime.getWeekday(now - timeZoneDiff) != 0);
+        require(dateTime.getWeekday(now - timeZoneDiff) != 6);
+        _;
+    }
+
+    modifier notOnHoliday(){
+        uint year = dateTime.getYear(now - timeZoneDiff);
+        uint month = dateTime.getMonth(now - timeZoneDiff);
+        uint day = dateTime.getDay(now - timeZoneDiff);
+        uint hour = dateTime.getHour(now - timeZoneDiff);
+        require(!holidays[keccak256(year,month,day,hour)]);
+        _;
+    }
+
+
+    event RequestMint(address indexed to, address indexed mintKey, uint256 value, uint256 requestedTime, uint256 opIndex);
     event TransferChild(address indexed child, address indexed newOwner);
     event RequestReclaimContract(address indexed other);
     event SetTrueUSD(TrueUSD newContract);
-    event TransferAdminship(address indexed previousAdmin, address indexed newAdmin);
-    event ChangeMintDelay(uint256 newDelay);
+    event TransferMintKey(address indexed previousMintKey, address indexed newMintKey);
     event RevokeMint(uint256 opIndex);
+    event MintPaused(bool status);
+    event MintApproved(address approver, uint opIndex);
+    event MintLimitReset(address owner);
+    event ApprovalThresholdChanged(uint smallMintApproval, uint largeMintApproval);
+    event SmallMintThresholdChanged(uint oldThreshold, uint newThreshold);
+    event DailyLimitChanged(uint oldLimit, uint newLimit);
+    event HolidayModified(uint year, uint month, uint day, uint hour, bool status);
+    event AddMintCheckTime(uint8 hour, uint8 minute, address owner, address sender);
+    event RemoveMintCheckTime(uint8 hour, uint8 minute);
 
-    constructor() public {
-        admin = msg.sender;
+
+    /*
+    ========================================
+    Minting functions
+    ========================================
+    */
+
+    function addMintCheckTime(uint8 _hour, uint8 _minute) public onlyOwner {
+        TimeOfDay memory time = TimeOfDay(_hour, _minute);
+        mintCheckTimes.push(time);
+        emit AddMintCheckTime(_hour, _minute, owner, msg.sender);
+    } 
+
+    function removeMintCheckTime(uint _index) public onlyOwner returns(bool) {
+        if (_index >= mintCheckTimes.length) return false;
+        TimeOfDay memory time = mintCheckTimes[_index];
+        emit RemoveMintCheckTime(time.hour, time.minute);
+        for (uint i = _index; i<mintCheckTimes.length-1; i++){
+            mintCheckTimes[i] = mintCheckTimes[i+1];
+        }
+        delete mintCheckTimes[mintCheckTimes.length-1];
+        mintCheckTimes.length--;
+        return true;
     }
 
-    // admin initiates a request to mint _value TrueUSD for account _to
-    function requestMint(address _to, uint256 _value) public onlyAdminOrOwner {
-        uint256 releaseTimestamp = block.timestamp;
-        if (msg.sender != owner) {
-            releaseTimestamp = releaseTimestamp.add(mintDelay);
+    function numberOfCheckTimes() public view returns(uint) {
+        return mintCheckTimes.length;
+    }
+
+    function setSmallMintThreshold(uint256 _threshold) public onlyOwner{
+        emit SmallMintThresholdChanged(smallMintThreshold,_threshold);
+        smallMintThreshold = _threshold;
+    }
+
+    function setMinimalApprovals(uint8 _smallMintApproval, uint8 _largeMintApproval) public onlyOwner{
+        minSmallMintApproval = _smallMintApproval;
+        minLargeMintApproval = _largeMintApproval;
+        emit ApprovalThresholdChanged(_smallMintApproval, _largeMintApproval);
+    }
+
+    function setMintLimit(uint256 _limit) public onlyOwner{
+        emit DailyLimitChanged( DailyMintLimit, _limit);
+        DailyMintLimit = _limit;
+    }
+
+    function resetMintedToday() public onlyOwner{
+        mintedToday = 0;
+        emit MintLimitReset(msg.sender);
+    }
+
+    // mintKey initiates a request to mint _value TrueUSD for account _to
+    function requestMint(address _to, uint256 _value) public mintNotPaused notOnHoliday notOnWeekend onlyMintKeyOrOwner {
+        uint currentTimeZoneTime = now - timeZoneDiff;
+        if (dateTime.getMonth(currentTimeZoneTime + resetTime) == dateTime.getMonth(timeOfLastMint + resetTime) &&
+            dateTime.getDay(currentTimeZoneTime + resetTime) == dateTime.getDay(timeOfLastMint + resetTime)){
+            mintedToday = mintedToday.add(_value);
+            require(mintedToday <= DailyMintLimit, "over the mint limit");
+        }else{
+            mintedToday = _value;
         }
-        MintOperation memory op = MintOperation(_to, _value, admin, releaseTimestamp);
-        emit RequestMint(_to, admin, _value, releaseTimestamp, mintOperations.length);
+        timeOfLastMint = currentTimeZoneTime;
+        MintOperation memory op = MintOperation(_to, _value, block.number, currentTimeZoneTime, 0);
+        emit RequestMint(_to, msg.sender, _value, timeOfLastMint, mintOperations.length);
         mintOperations.push(op);
     }
 
-    // after a day, admin finalizes mint request by providing the
+    function ableToFinalize(uint256 requestedTime) public view returns (bool) {
+        //write our modified version so that i can just make one call
+        uint16 year = dateTime.getYear(now - timeZoneDiff);
+        uint8 month = dateTime.getMonth(now - timeZoneDiff);
+        uint8 day = dateTime.getDay(now - timeZoneDiff);
+
+        uint16 yesterdayYear = dateTime.getYear(now - 1 days - timeZoneDiff);
+        uint8 yesterdayMonth = dateTime.getMonth(now - 1 days - timeZoneDiff);
+        uint8 yesterday = dateTime.getDay(now - 1 days - timeZoneDiff);
+
+        uint checkTime;
+
+        for (uint i; i <mintCheckTimes.length; i++){
+            checkTime = dateTime.toTimestamp(yesterdayYear,yesterdayMonth, yesterday, mintCheckTimes[i].hour, mintCheckTimes[i].minute);
+            if(requestedTime+ 30 minutes <= checkTime){
+                return true;
+            }
+            checkTime = dateTime.toTimestamp(year,month, day, mintCheckTimes[i].hour, mintCheckTimes[i].minute);
+            if (now - timeZoneDiff >= checkTime + 2 hours){
+                if(requestedTime+ 30 minutes < checkTime){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    function hasEnoughApproval(uint256 numberOfApproval, uint256 value) public view returns (bool) {
+         if (value < smallMintThreshold){
+            if(numberOfApproval < minSmallMintApproval){
+                return false;
+            }
+         }else{
+            if(numberOfApproval < minLargeMintApproval){
+                return false;
+            }
+         }
+         return true;
+    }
+
+    // after a day, mintKey finalizes mint request by providing the
     // index of the request (visible in the RequestMint event accompanying the original request)
-    function finalizeMint(uint256 _index) public onlyAdminOrOwner {
+    function finalizeMint(uint256 _index) public mintNotPaused onlyMintKeyOrOwner {
         MintOperation memory op = mintOperations[_index];
-        require(op.admin == admin,"admin revoked"); //checks that the requester's adminship has not been revoked
-        require(op.releaseTimestamp <= block.timestamp,"not enough time elapsed"); //checks that enough time has elapsed
+        if (msg.sender == mintKey){
+            require(op.requestedBlock > mintReqValidBeforeThisBlock);
+            require(ableToFinalize(op.timeRequested),"not enough time elapsed"); //checks that enough time has elapsed
+            require(hasEnoughApproval(op.numberOfApproval, op.value), "not enough approvers");
+        }
         address to = op.to;
         uint256 value = op.value;
         delete mintOperations[_index];
         trueUSD.mint(to, value);
     }
 
-    function revokeMint(uint256 _index) public onlyOwner {
+    function approveMint(uint256 _index) public onlyMintApproverOrOwner {
+        //check gas optimization is it better to store to memory first
+        require(!mintOperations[_index].approved[msg.sender]);
+        mintOperations[_index].approved[msg.sender] =true;
+        mintOperations[_index].numberOfApproval = mintOperations[_index].numberOfApproval.add(1);//safe math
+        emit MintApproved(msg.sender, _index);
+    }
+
+    function revokeMint(uint256 _index) public onlyMintKeyOrOwner {
         delete mintOperations[_index];
         emit RevokeMint(_index);
     }
 
-    // Transfer ownership of _child to _newOwner
-    // Can be used e.g. to upgrade this TimeLockedController contract.
-    function transferChild(Ownable _child, address _newOwner) public onlyOwner {
-        emit TransferChild(_child, _newOwner);
-        _child.transferOwnership(_newOwner);
+    function returnTime() public view returns(uint256){
+        return now  - timeZoneDiff;
     }
 
-    // Transfer ownership of a contract from trueUSD
-    // to this TimeLockedController. Can be used e.g. to reclaim balance sheet
-    // in order to transfer it to an upgraded TrueUSD contract.
-    function requestReclaimContract(Ownable _other) public onlyOwner {
-        emit RequestReclaimContract(_other);
-        trueUSD.reclaimContract(_other);
+
+
+    /*
+    ========================================
+    Key management
+    ========================================
+    */
+
+    // Replace the current admin with newAdmin. This should be rare (e.g. if admin
+    // is compromised), and will invalidate all pending mint operations (including
+    // any the owner may have made and not yet finalized)
+    function transferMintKey(address _newMintKey) public onlyOwner {
+        require(_newMintKey != address(0),"new mint key cannot be 0x0");
+        emit TransferMintKey( mintKey, _newMintKey);
+        mintKey = _newMintKey;
+    }
+ 
+
+    /*
+    ========================================
+    Mint Pausing
+    ========================================
+    */
+
+    function invalidateAllPendingMints() public onlyOwner {
+        mintReqValidBeforeThisBlock = block.number;
     }
 
-    function requestReclaimEther() public onlyOwner {
-        trueUSD.reclaimEther(owner);
+    function pauseMints() public onlyMintCheckerOrOwner {
+        mintPaused = true;
+        emit MintPaused(true);
     }
 
-    function requestReclaimToken(ERC20Basic _token) public onlyOwner {
-        trueUSD.reclaimToken(_token, owner);
+    function unPauseMints() public onlyOwner{
+        mintPaused = false;
+        emit MintPaused(false);
+    }
+    
+    function addHoliday(uint _year, uint _month, uint _day, uint _hour) onlyMintCheckerOrOwner{
+        holidays[keccak256(_year, _month, _day, _hour)] = true;
+        emit HolidayModified(_year, _month, _day ,_hour,true);
     }
 
-    // Change the minimum and maximum amounts that TrueUSD users can
-    // burn to newMin and newMax
-    function setBurnBounds(uint256 _min, uint256 _max) public onlyAdminOrOwner {
-        trueUSD.setBurnBounds(_min, _max);
+    function removeHoliday(uint _year, uint _month, uint _day,uint _hour) onlyOwner{
+        holidays[keccak256(_year, _month, _day, _hour)] = false;
+        emit HolidayModified(_year, _month, _day ,_hour,false);
     }
 
-    // Change the transaction fees charged on transfer/mint/burn
-    function changeStakingFees(uint256 _transferFeeNumerator,
-                               uint256 _transferFeeDenominator,
-                               uint256 _mintFeeNumerator,
-                               uint256 _mintFeeDenominator,
-                               uint256 _mintFeeFlat,
-                               uint256 _burnFeeNumerator,
-                               uint256 _burnFeeDenominator,
-                               uint256 _burnFeeFlat) public onlyOwner {
-        trueUSD.changeStakingFees(_transferFeeNumerator,
-                                  _transferFeeDenominator,
-                                  _mintFeeNumerator,
-                                  _mintFeeDenominator,
-                                  _mintFeeFlat,
-                                  _burnFeeNumerator,
-                                  _burnFeeDenominator,
-                                  _burnFeeFlat);
+
+    /*
+    ========================================
+    set and claim contracts, administrative
+    ========================================
+    */
+
+    function setDateTime(address _newContract) public onlyOwner{
+        dateTime = DateTimeAPI(_newContract);
     }
 
-    // Change the recipient of staking fees to newStaker
-    function changeStaker(address _newStaker) public onlyOwner {
-        trueUSD.changeStaker(_newStaker);
+    // Incoming delegate* calls from _source will be accepted by trueUSD
+    function setDelegatedFrom(address _source) public onlyOwner {
+        trueUSD.setDelegatedFrom(_source);
+    }
+
+
+    // Update this contract's trueUSD pointer to newContract (e.g. if the
+    // contract is upgraded)
+    function setTrueUSD(TrueUSD _newContract) public onlyOwner {
+        emit SetTrueUSD(_newContract);
+        trueUSD = _newContract;
+    }
+
+    // change trueUSD's name and symbol
+    function changeTokenName(string _name, string _symbol) public onlyOwner {
+        trueUSD.changeTokenName(_name, _symbol);
+    }
+
+    // Swap out TrueUSD's permissions registry
+    function setTusdRegistry(Registry _registry) onlyOwner public {
+        trueUSD.setRegistry(_registry);
+    }
+
+    // Claim ownership of an arbitrary Claimable contract
+    function issueClaimOwnership(address _other) public onlyOwner {
+        Claimable other = Claimable(_other);
+        other.claimOwnership();
     }
 
     // Future BurnableToken calls to trueUSD will be delegated to _delegate
@@ -158,51 +369,60 @@ contract TimeLockedController is HasNoEther, HasNoTokens, Claimable {
 
     }
 
-    // Incoming delegate* calls from _source will be accepted by trueUSD
-    function setDelegatedFrom(address _source) public onlyOwner {
-        trueUSD.setDelegatedFrom(_source);
+
+    // Transfer ownership of _child to _newOwner
+    // Can be used e.g. to upgrade this TimeLockedController contract.
+    function transferChild(Ownable _child, address _newOwner) public onlyOwner {
+        emit TransferChild(_child, _newOwner);
+        _child.transferOwnership(_newOwner);
     }
 
-    // Update this contract's trueUSD pointer to newContract (e.g. if the
-    // contract is upgraded)
-    function setTrueUSD(TrueUSD _newContract) public onlyOwner {
-        emit SetTrueUSD(_newContract);
-        trueUSD = _newContract;
+    // Transfer ownership of a contract from trueUSD
+    // to this TimeLockedController. Can be used e.g. to reclaim balance sheet
+    // in order to transfer it to an upgraded TrueUSD contract.
+    function requestReclaimContract(Ownable _other) public onlyOwner {
+        emit RequestReclaimContract(_other);
+        trueUSD.reclaimContract(_other);
     }
 
-    // change trueUSD's name and symbol
-    function changeTokenName(string _name, string _symbol) public onlyOwner {
-        trueUSD.changeTokenName(_name, _symbol);
+    function requestReclaimEther() public onlyOwner {
+        trueUSD.reclaimEther(owner);
     }
 
-    // Replace the current admin with newAdmin. This should be rare (e.g. if admin
-    // is compromised), and will invalidate all pending mint operations (including
-    // any the owner may have made and not yet finalized)
-    function transferAdminship(address _newAdmin) public onlyOwner {
-        require(_newAdmin != address(0),"new admin cannot be 0x0");
-        emit TransferAdminship(admin, _newAdmin);
-        admin = _newAdmin;
+    function requestReclaimToken(ERC20Basic _token) public onlyOwner {
+        trueUSD.reclaimToken(_token, owner);
     }
 
-    // Swap out TrueUSD's permissions registry
-    function setRegistry(Registry _registry) onlyOwner public {
-        trueUSD.setRegistry(_registry);
+    // Change the minimum and maximum amounts that TrueUSD users can
+    // burn to newMin and newMax
+    function setBurnBounds(uint256 _min, uint256 _max) public onlyOwner {
+        trueUSD.setBurnBounds(_min, _max);
     }
 
-    // Update the registry
-    function setAttribute(Registry _registry, address _who, string _attribute, uint256 _value, string _notes) public onlyAdminOrOwner {
-        _registry.setAttribute(_who, _attribute, _value, _notes);
+    // Change the transaction fees charged on transfer/mint/burn
+    function changeStakingFees(uint256 _transferFeeNumerator,
+                               uint256 _transferFeeDenominator,
+                               uint256 _mintFeeNumerator,
+                               uint256 _mintFeeDenominator,
+                               uint256 _mintFeeFlat,
+                               uint256 _burnFeeNumerator,
+                               uint256 _burnFeeDenominator,
+                               uint256 _burnFeeFlat) public onlyOwner {
+        trueUSD.changeStakingFees(_transferFeeNumerator,
+                                  _transferFeeDenominator,
+                                  _mintFeeNumerator,
+                                  _mintFeeDenominator,
+                                  _mintFeeFlat,
+                                  _burnFeeNumerator,
+                                  _burnFeeDenominator,
+                                  _burnFeeFlat);
     }
 
-    // Claim ownership of an arbitrary Claimable contract
-    function issueClaimOwnership(address _other) public onlyAdminOrOwner {
-        Claimable other = Claimable(_other);
-        other.claimOwnership();
+    // Change the recipient of staking fees to newStaker
+    function changeStaker(address _newStaker) public onlyOwner {
+        trueUSD.changeStaker(_newStaker);
     }
 
-    // Change the delay imposed on admin-initiated mint requests
-    function changeMintDelay(uint256 _newDelay) public onlyOwner {
-        mintDelay = _newDelay;
-        emit ChangeMintDelay(_newDelay);
-    }
+
+
 }
