@@ -13,7 +13,7 @@ contract CompliantToken is ModularPausableToken, HasRegistry {
     string constant CAN_BURN = "canBurn";
     // Addresses can also be blacklisted, preventing them from sending or receiving
     // TrueUSD. This can be used to prevent the use of TrueUSD by bad actors in
-    // accordance with law enforcement. See [TrueCoin Terms of Use](https://www.trusttoken.com/trueusd/terms-of-use)
+    // accordance with law enforcement. See [TrueCoin Terms of Use](https://www.trusttoken.com/terms-of-use/)
     string constant IS_BLACKLISTED = "isBlacklisted";
     // Only KYC/AML'ed accounts can interact with addresses affiliated with a
     // restricted exchange.
