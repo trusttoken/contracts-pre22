@@ -5,7 +5,7 @@ import "openzeppelin-solidity/contracts/ownership/HasNoTokens.sol";
 import "openzeppelin-solidity/contracts/ownership/Claimable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./TrueUSD.sol";
-import "./DateTime.sol";
+import "./utilities/DateTime.sol";
 import "../registry/contracts/HasRegistry.sol";
 
 
@@ -33,6 +33,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
         uint256 requestedBlock;
         uint256 timeRequested;
         uint256 numberOfApproval;
+        bool paused;
         mapping(address => bool) approved; 
     }
 
@@ -101,21 +102,25 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     }
 
 
-    event RequestMint(address indexed to, address indexed mintKey, uint256 value, uint256 requestedTime, uint256 opIndex);
+    event RequestMint(address indexed to, address indexed mintKey, uint256 indexed value, uint256 requestedTime, uint256 opIndex);
+    event FinalizeMint(address indexed to, address indexed mintKey, uint256 indexed value, uint256 opIndex);
     event TransferChild(address indexed child, address indexed newOwner);
     event RequestReclaimContract(address indexed other);
     event SetTrueUSD(TrueUSD newContract);
     event TransferMintKey(address indexed previousMintKey, address indexed newMintKey);
     event RevokeMint(uint256 opIndex);
-    event MintPaused(bool status);
+    event AllMintsPaused(bool status);
+    event MintPaused(uint opIndex ,bool status);
+
     event MintApproved(address approver, uint opIndex);
-    event MintLimitReset(address owner);
+    event MintLimitReset(address sender);
     event ApprovalThresholdChanged(uint smallMintApproval, uint largeMintApproval);
     event SmallMintThresholdChanged(uint oldThreshold, uint newThreshold);
     event DailyLimitChanged(uint oldLimit, uint newLimit);
-    event HolidayModified(uint year, uint month, uint day, uint hour, bool status);
-    event AddMintCheckTime(uint8 hour, uint8 minute, address owner, address sender);
+    event HolidayModified(uint year, uint month, uint day, bool status);
+    event AddMintCheckTime(uint8 hour, uint8 minute);
     event RemoveMintCheckTime(uint8 hour, uint8 minute);
+    event DateTimeAddressSet(address newDateTimeContract);
 
 
     /*
@@ -127,7 +132,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     function addMintCheckTime(uint8 _hour, uint8 _minute) public onlyOwner {
         TimeOfDay memory time = TimeOfDay(_hour, _minute);
         mintCheckTimes.push(time);
-        emit AddMintCheckTime(_hour, _minute, owner, msg.sender);
+        emit AddMintCheckTime(_hour, _minute);
     } 
 
     function removeMintCheckTime(uint _index) public onlyOwner returns(bool) {
@@ -170,6 +175,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     // mintKey initiates a request to mint _value TrueUSD for account _to
     function requestMint(address _to, uint256 _value) public mintNotPaused notOnHoliday notOnWeekend onlyMintKeyOrOwner {
         uint currentTimeZoneTime = now - timeZoneDiff;
+        //remove the not on holiday and not on weekend modifier
         if (dateTime.getMonth(currentTimeZoneTime + resetTime) == dateTime.getMonth(timeOfLastMint + resetTime) &&
             dateTime.getDay(currentTimeZoneTime + resetTime) == dateTime.getDay(timeOfLastMint + resetTime)){
             mintedToday = mintedToday.add(_value);
@@ -178,10 +184,28 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
             mintedToday = _value;
         }
         timeOfLastMint = currentTimeZoneTime;
-        MintOperation memory op = MintOperation(_to, _value, block.number, currentTimeZoneTime, 0);
+        MintOperation memory op = MintOperation(_to, _value, block.number, currentTimeZoneTime, 0, false);
         emit RequestMint(_to, msg.sender, _value, timeOfLastMint, mintOperations.length);
         mintOperations.push(op);
     }
+
+    function returnChecktime(uint index) public view returns(uint){
+        uint16 year = dateTime.getYear(now - timeZoneDiff);
+        uint8 month = dateTime.getMonth(now - timeZoneDiff);
+        uint8 day = dateTime.getDay(now - timeZoneDiff);
+        uint checkTime = dateTime.toTimestamp(year,month, day, mintCheckTimes[index].hour, mintCheckTimes[index].minute) + timeZoneDiff;
+        return checkTime;
+
+    }
+
+    function returnYesterdayChecktime(uint index) public view returns(uint){
+        uint16 yesterdayYear = dateTime.getYear(now - 1 days - timeZoneDiff);
+        uint8 yesterdayMonth = dateTime.getMonth(now - 1 days - timeZoneDiff);
+        uint8 yesterday = dateTime.getDay(now - 1 days - timeZoneDiff);
+        uint checkTime = dateTime.toTimestamp(yesterdayYear,yesterdayMonth, yesterday, mintCheckTimes[index].hour, mintCheckTimes[index].minute) + timeZoneDiff;
+        return checkTime;
+    }
+
 
     function ableToFinalize(uint256 requestedTime) public view returns (bool) {
         //write our modified version so that i can just make one call
@@ -196,13 +220,13 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
         uint checkTime;
 
         for (uint i; i <mintCheckTimes.length; i++){
-            checkTime = dateTime.toTimestamp(yesterdayYear,yesterdayMonth, yesterday, mintCheckTimes[i].hour, mintCheckTimes[i].minute);
-            if(requestedTime+ 30 minutes <= checkTime){
+            checkTime = dateTime.toTimestamp(yesterdayYear,yesterdayMonth, yesterday, mintCheckTimes[i].hour, mintCheckTimes[i].minute) + timeZoneDiff;
+            if(requestedTime + timeZoneDiff + 30 minutes <= checkTime){
                 return true;
             }
-            checkTime = dateTime.toTimestamp(year,month, day, mintCheckTimes[i].hour, mintCheckTimes[i].minute);
-            if (now - timeZoneDiff >= checkTime + 2 hours){
-                if(requestedTime+ 30 minutes < checkTime){
+            checkTime = dateTime.toTimestamp(year,month, day, mintCheckTimes[i].hour, mintCheckTimes[i].minute) + timeZoneDiff;
+            if (now >= checkTime + 2 hours){
+                if(requestedTime+ timeZoneDiff + 30 minutes < checkTime){
                     return true;
                 }
             }
@@ -230,12 +254,14 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
         MintOperation memory op = mintOperations[_index];
         if (msg.sender == mintKey){
             require(op.requestedBlock > mintReqValidBeforeThisBlock);
+            require(!op.paused);
             require(ableToFinalize(op.timeRequested),"not enough time elapsed"); //checks that enough time has elapsed
             require(hasEnoughApproval(op.numberOfApproval, op.value), "not enough approvers");
         }
         address to = op.to;
         uint256 value = op.value;
         delete mintOperations[_index];
+        emit FinalizeMint(to, msg.sender, value, _index);
         trueUSD.mint(to, value);
     }
 
@@ -286,22 +312,35 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
 
     function pauseMints() public onlyMintCheckerOrOwner {
         mintPaused = true;
-        emit MintPaused(true);
+        emit AllMintsPaused(true);
     }
+
 
     function unPauseMints() public onlyOwner{
         mintPaused = false;
-        emit MintPaused(false);
+        emit AllMintsPaused(false);
     }
+
+
+    function pauseMint(uint _opIndex) public onlyMintCheckerOrOwner {
+        mintOperations[_opIndex].paused = true;
+        emit MintPaused( _opIndex , true);
+    }
+
+    function unpauseMint(uint _opIndex) public onlyOwner {
+        mintOperations[_opIndex].paused = false;
+        emit MintPaused( _opIndex , false);
+    }
+
     
     function addHoliday(uint _year, uint _month, uint _day, uint _hour) onlyMintCheckerOrOwner{
         holidays[keccak256(_year, _month, _day, _hour)] = true;
-        emit HolidayModified(_year, _month, _day ,_hour,true);
+        emit HolidayModified(_year, _month, _day, true);
     }
 
     function removeHoliday(uint _year, uint _month, uint _day,uint _hour) onlyOwner{
         holidays[keccak256(_year, _month, _day, _hour)] = false;
-        emit HolidayModified(_year, _month, _day ,_hour,false);
+        emit HolidayModified(_year, _month, _day, false);
     }
 
 
@@ -313,6 +352,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
 
     function setDateTime(address _newContract) public onlyOwner{
         dateTime = DateTimeAPI(_newContract);
+        emit DateTimeAddressSet(_newContract);
     }
 
     // Incoming delegate* calls from _source will be accepted by trueUSD
