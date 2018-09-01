@@ -62,7 +62,7 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
 
     function approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
         allowances.setAllowance(_tokenHolder, _spender, _value);
-        emit Approval(_tokenHolder, _spender, _value);
+        ERC20events(eventDelegateor).emitApprovalEvent(_tokenHolder, _spender, _value);
     }
 
     /**
@@ -92,7 +92,7 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
 
     function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
         allowances.addAllowance(_tokenHolder, _spender, _addedValue);
-        emit Approval(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
+        emitApprovalEvent(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
     }
 
     /**
@@ -117,7 +117,8 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
         } else {
             allowances.subAllowance(_tokenHolder, _spender, _subtractedValue);
         }
-        emit Approval(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
+        emitApprovalEvent(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
     }
+    
 
 }
