@@ -20,6 +20,7 @@ contract StandardDelegate is DelegateBurnable, ModularPausableToken {
 
     function setDelegatedFrom(address _addr) onlyOwner public {
         delegatedFrom = _addr;
+        eventDelegateor = _addr;
         emit DelegatedFromSet(_addr);
     }
 
