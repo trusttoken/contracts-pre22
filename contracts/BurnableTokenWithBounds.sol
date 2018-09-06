@@ -12,7 +12,7 @@ contract BurnableTokenWithBounds is ModularPausableToken {
     event SetBurnBounds(uint256 newMin, uint256 newMax);
 
     function burnAllArgs(address _burner, uint256 _value, string _note) internal {
-        require(_value >= burnMin,"exceeds max burn bound");
+        require(_value >= burnMin, "exceeds max burn bound");
         require(_value <= burnMax, "below min burn bound");
         super.burnAllArgs(_burner, _value, _note);
     }
@@ -23,8 +23,8 @@ contract BurnableTokenWithBounds is ModularPausableToken {
     //flexibility since burning could also be as good as disabled
     //by setting the minimum extremely high, and we don't want to lock
     //in any particular cap for the minimum)
-    function setBurnBounds(uint256 _min, uint256 _max) onlyOwner public {
-        require(_min <= _max,"min > max");
+    function setBurnBounds(uint256 _min, uint256 _max) public onlyOwner {
+        require(_min <= _max, "min > max");
         burnMin = _min;
         burnMax = _max;
         emit SetBurnBounds(_min, _max);
