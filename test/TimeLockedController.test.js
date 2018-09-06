@@ -179,6 +179,34 @@ contract('TimeLockedController', function (accounts) {
     
             })
 
+            it('owner can mint on weekends', async function(){
+                var time = Number(await this.controller.returnTime())
+                var weekday = Number(await this.dateTime.getWeekday(time))
+                if (weekday !== 0 && weekday !== 6){
+                    let notOnWeekend = true
+                    while (notOnWeekend){
+                        await increaseTime(duration.days(1))
+                        time = Number(await this.controller.returnTime())
+                        weekday = Number(await this.dateTime.getWeekday(time))
+                        if (weekday === 6){ notOnWeekend = false}
+                    }
+                }
+                await this.controller.requestMint(oneHundred, 20*10**18 , { from: owner })
+                await this.controller.finalizeMint(0 , { from: owner })
+            })
+
+            it('pause key sets today as holiday, but owner can still mint', async function () {
+                const time = Number(await this.controller.returnTime()) + Number(await this.controller.timeZoneDiff())
+                var today = new Date(time*1000)
+                var day = today.getDate()
+                var month = today.getMonth()+1 //January is 0!
+                var year = today.getFullYear()
+                await this.controller.addHoliday(year,month,day,{ from: pauseKey })
+                await this.controller.requestMint(oneHundred, 10*10**18 , { from: owner })
+            })
+
+
+
             it('fails to transfer mintkey to 0x0', async function () {
                 await assertRevert(this.controller.transferMintKey("0x0000000000000000000000000000000000000000", { from: owner }))
             })
@@ -231,13 +259,13 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it("adding and removing holiday should generate logs", async function(){
-                var {logs} = await this.controller.addHoliday(2018,1,1,1, { from: owner })
+                var {logs} = await this.controller.addHoliday(2018,1,1, { from: owner })
                 assert.equal(logs[0].event,"HolidayModified" )
                 assert.equal(Number(logs[0].args.year),2018 )
                 assert.equal(Number(logs[0].args.month), 1)
                 assert.equal(Number(logs[0].args.day), 1)
                 assert.equal(logs[0].args.status, true)
-                var receipt = await this.controller.removeHoliday(2018,1,1,1, { from: owner })
+                var receipt = await this.controller.removeHoliday(2018,1,1, { from: owner })
                 logs = receipt["logs"]
                 assert.equal(logs[0].event,"HolidayModified" )
                 assert.equal(Number(logs[0].args.year),2018 )
@@ -323,29 +351,27 @@ contract('TimeLockedController', function (accounts) {
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
             })
 
-            it('pauseKey2 should be able to pause mints by sending in ehter', async function(){
-                await this.fastPause.send(10, {from: pauseKey2});
+            it('pauseKey2 should be able to pause mints by sending in ether', async function(){
+                await this.fastPause.sendTransaction({from: pauseKey2, gas: 600000, value: 10});                  
                 var paused = await this.controller.mintPaused()    
-                console.log(paused)
                 await assertRevert(this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey }))
-                await assertRevert(this.fastPause.send(10, {from: pauseKey}))
+                await assertRevert(this.fastPause.sendTransaction({from: pauseKey, gas: 600000, value: 10}));                  
                 await this.controller.unPauseMints({ from: owner })
                 paused = await this.controller.mintPaused()    
-                console.log(paused)
                 await this.fastPause.modifyPauseKey(pauseKey2, false, { from: owner })
                 await assertRevert(this.fastPause.send(10, {from: pauseKey2}))
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
 
             })
 
+
             it('pause key sets today as holiday, request mint fails', async function () {
                 const time = Number(await this.controller.returnTime()) + Number(await this.controller.timeZoneDiff())
                 var today = new Date(time*1000)
-                var hour = today.getHours()
                 var day = today.getDate()
                 var month = today.getMonth()+1 //January is 0!
                 var year = today.getFullYear()
-                await this.controller.addHoliday(year,month,day,hour,{ from: pauseKey })
+                await this.controller.addHoliday(year,month,day,{ from: pauseKey })
                 await assertRevert(this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey }))
             })
 
@@ -353,13 +379,12 @@ contract('TimeLockedController', function (accounts) {
             it('pauseKey cannot remove holiday', async function () {
                 var time = Number(await this.controller.returnTime()) + Number(await this.controller.timeZoneDiff())
                 var today = new Date(time*1000)
-                var hour = today.getHours()
                 var day = today.getDate()
                 var month = today.getMonth()+1 //January is 0!
                 var year = today.getFullYear()
-                await this.controller.addHoliday(year,month,day,hour,{ from: pauseKey })
-                await assertRevert(this.controller.removeHoliday(year,month,day,hour,{ from: pauseKey }))
-                this.controller.removeHoliday(year,month,day,hour,{ from: owner })
+                await this.controller.addHoliday(year,month,day,{ from: pauseKey })
+                await assertRevert(this.controller.removeHoliday(year,month,day,{ from: pauseKey }))
+                this.controller.removeHoliday(year,month,day,{ from: owner })
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
             })
 
@@ -387,7 +412,7 @@ contract('TimeLockedController', function (accounts) {
                 const {logs}= await this.controller.finalizeMint(0 , { from: mintKey })
                 assert.equal(logs[0].event,"FinalizeMint")
                 assert.equal(logs[0].args.to,oneHundred)
-                assert.equal(logs[0].args.to.mintKey,mintKey)
+                assert.equal(logs[0].args.mintKey,mintKey)
                 assert.equal(Number(logs[0].args.value),30*10**18)
                 assert.equal(Number(logs[0].args.opIndex),0)
             })
