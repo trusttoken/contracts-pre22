@@ -29,7 +29,7 @@ contract ModularPausableToken is ModularMintableToken, Pausable {
         super.decreaseApprovalAllArgs(_spender, _subtractedValue, _tokenHolder);
     }
 
-    function burnAllArgs(address _burner, uint256 _value) internal whenNotPaused {
-        super.burnAllArgs(_burner, _value);
+    function burnAllArgs(address _burner, uint256 _value, string _note) internal whenNotPaused {
+        super.burnAllArgs(_burner, _value, _note);
     }
 }

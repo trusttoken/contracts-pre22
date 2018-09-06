@@ -4,7 +4,7 @@ const PausableToken = artifacts.require('PausableTokenMock')
 
 contract('PausableToken', function ([_, owner, recipient, anotherAccount], transfersToZeroBecomeBurns) {
     beforeEach(async function () {
-        this.token = await PausableToken.new(owner, 100, { from: owner })
+        this.token = await PausableToken.new(owner, 100*10**18, { from: owner })
     })
 
     describe('pause', function () {
@@ -115,100 +115,100 @@ contract('PausableToken', function ([_, owner, recipient, anotherAccount], trans
 
         describe('transfer', function () {
             it('allows to transfer when unpaused', async function () {
-                await this.token.transfer(recipient, 100, { from: owner })
+                await this.token.transfer(recipient, 100*10**18, { from: owner })
                 await assertBalance(this.token, owner, 0)
-                await assertBalance(this.token, recipient, 100)
+                await assertBalance(this.token, recipient, 100*10**18)
             })
 
             it('allows to transfer when paused and then unpaused', async function () {
                 await this.token.pause({ from: owner })
                 await this.token.unpause({ from: owner })
 
-                await this.token.transfer(recipient, 100, { from: owner })
+                await this.token.transfer(recipient, 100*10**18, { from: owner })
                 await assertBalance(this.token, owner, 0)
-                await assertBalance(this.token, recipient, 100)
+                await assertBalance(this.token, recipient, 100*10**18)
             })
 
             it('reverts when trying to transfer when paused', async function () {
                 await this.token.pause({ from: owner })
 
-                await assertRevert(this.token.transfer(recipient, 100, { from: owner }))
+                await assertRevert(this.token.transfer(recipient, 100*10**18, { from: owner }))
             })
         })
 
         describe('approve', function () {
             it('allows to approve when unpaused', async function () {
-                await this.token.approve(anotherAccount, 40, { from: owner })
+                await this.token.approve(anotherAccount, 40*10**18, { from: owner })
 
                 const allowance = await this.token.allowance(owner, anotherAccount)
-                assert.equal(allowance, 40)
+                assert.equal(allowance, 40*10**18)
             })
 
             it('allows to transfer when paused and then unpaused', async function () {
                 await this.token.pause({ from: owner })
                 await this.token.unpause({ from: owner })
 
-                await this.token.approve(anotherAccount, 40, { from: owner })
+                await this.token.approve(anotherAccount, 40*10**18, { from: owner })
 
                 const allowance = await this.token.allowance(owner, anotherAccount)
-                assert.equal(allowance, 40)
+                assert.equal(allowance, 40*10**18)
             })
 
             it('reverts when trying to transfer when paused', async function () {
                 await this.token.pause({ from: owner })
 
-                await assertRevert(this.token.approve(anotherAccount, 40, { from: owner }))
+                await assertRevert(this.token.approve(anotherAccount, 40*10**18, { from: owner }))
             })
         })
 
         describe('transfer from', function () {
             beforeEach(async function () {
-                await this.token.approve(anotherAccount, 50, { from: owner })
+                await this.token.approve(anotherAccount, 50*10**18, { from: owner })
             })
 
             it('allows to transfer from when unpaused', async function () {
-                await this.token.transferFrom(owner, recipient, 40, { from: anotherAccount })
+                await this.token.transferFrom(owner, recipient, 40*10**18, { from: anotherAccount })
 
-                await assertBalance(this.token, owner, 60)
-                await assertBalance(this.token, recipient, 40)
+                await assertBalance(this.token, owner, 60*10**18)
+                await assertBalance(this.token, recipient, 40*10**18)
             })
 
             it('allows to transfer when paused and then unpaused', async function () {
                 await this.token.pause({ from: owner })
                 await this.token.unpause({ from: owner })
 
-                await this.token.transferFrom(owner, recipient, 40, { from: anotherAccount })
-                await assertBalance(this.token, owner, 60)
-                await assertBalance(this.token, recipient, 40)
+                await this.token.transferFrom(owner, recipient, 40*10**18, { from: anotherAccount })
+                await assertBalance(this.token, owner, 60*10**18)
+                await assertBalance(this.token, recipient, 40*10**18)
             })
 
             it('reverts when trying to transfer from when paused', async function () {
                 await this.token.pause({ from: owner })
 
-                await assertRevert(this.token.transferFrom(owner, recipient, 40, { from: anotherAccount }))
+                await assertRevert(this.token.transferFrom(owner, recipient, 40*10**18, { from: anotherAccount }))
             })
         })
 
         describe('decrease approval', function () {
             beforeEach(async function () {
-                await this.token.approve(anotherAccount, 100, { from: owner })
+                await this.token.approve(anotherAccount, 100*10**18, { from: owner })
             })
 
             it('allows to decrease approval when unpaused', async function () {
-                await this.token.decreaseApproval(anotherAccount, 40, { from: owner })
+                await this.token.decreaseApproval(anotherAccount, 40*10**18, { from: owner })
 
                 const allowance = await this.token.allowance(owner, anotherAccount)
-                assert.equal(allowance, 60)
+                assert.equal(allowance, 60*10**18)
             })
 
             it('allows to decrease approval when paused and then unpaused', async function () {
                 await this.token.pause({ from: owner })
                 await this.token.unpause({ from: owner })
 
-                await this.token.decreaseApproval(anotherAccount, 40, { from: owner })
+                await this.token.decreaseApproval(anotherAccount, 40*10**18, { from: owner })
 
                 const allowance = await this.token.allowance(owner, anotherAccount)
-                assert.equal(allowance, 60)
+                assert.equal(allowance, 60*10**18)
             })
 
             it('reverts when trying to transfer when paused', async function () {
@@ -220,51 +220,52 @@ contract('PausableToken', function ([_, owner, recipient, anotherAccount], trans
 
         describe('increase approval', function () {
             beforeEach(async function () {
-                await this.token.approve(anotherAccount, 100, { from: owner })
+                await this.token.approve(anotherAccount, 100*10**18, { from: owner })
             })
 
             it('allows to increase approval when unpaused', async function () {
-                await this.token.increaseApproval(anotherAccount, 40, { from: owner })
+                await this.token.increaseApproval(anotherAccount, 40*10**18, { from: owner })
 
                 const allowance = await this.token.allowance(owner, anotherAccount)
-                assert.equal(allowance, 140)
+                assert.equal(allowance, 140*10**18)
             })
 
             it('allows to increase approval when paused and then unpaused', async function () {
                 await this.token.pause({ from: owner })
                 await this.token.unpause({ from: owner })
 
-                await this.token.increaseApproval(anotherAccount, 40, { from: owner })
+                await this.token.increaseApproval(anotherAccount, 40*10**18, { from: owner })
 
                 const allowance = await this.token.allowance(owner, anotherAccount)
-                assert.equal(allowance, 140)
+                assert.equal(allowance, 140*10**18)
             })
 
             it('reverts when trying to increase approval when paused', async function () {
                 await this.token.pause({ from: owner })
 
-                await assertRevert(this.token.increaseApproval(anotherAccount, 40, { from: owner }))
+                await assertRevert(this.token.increaseApproval(anotherAccount, 40*10**18, { from: owner }))
             })
         })
 
         describe('burn', function () {
+
             it('allows to burn when unpaused', async function () {
-                await this.token.burn(60, { from: owner })
-                await assertBalance(this.token, owner, 40)
+                await this.token.burn(60*10**18, "burnNote", { from: owner })
+                await assertBalance(this.token, owner, 40*10**18)
             })
 
             it('allows to burn when paused and then unpaused', async function () {
                 await this.token.pause({ from: owner })
                 await this.token.unpause({ from: owner })
 
-                await this.token.burn(60, { from: owner })
-                await assertBalance(this.token, owner, 40)
+                await this.token.burn(60*10**18, "burnNote", { from: owner })
+                await assertBalance(this.token, owner, 40*10**18)
             })
 
             it('reverts when trying to burn when paused', async function () {
                 await this.token.pause({ from: owner })
 
-                await assertRevert(this.token.burn(60, { from: owner }))
+                await assertRevert(this.token.burn(60*10**18,  "burnNote",{ from: owner }))
             })
         })
 
@@ -273,22 +274,22 @@ contract('PausableToken', function ([_, owner, recipient, anotherAccount], trans
                 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
                 describe('burn', function () {
                     it('allows to burn when unpaused', async function () {
-                        await this.token.transfer(ZERO_ADDRESS, 60, { from: owner })
-                        await assertBalance(this.token, owner, 40)
+                        await this.token.transfer(ZERO_ADDRESS, 60*10**18, { from: owner })
+                        await assertBalance(this.token, owner, 40*10**18)
                     })
 
                     it('allows to burn when paused and then unpaused', async function () {
                         await this.token.pause({ from: owner })
                         await this.token.unpause({ from: owner })
 
-                        await this.token.transfer(ZERO_ADDRESS, 60, { from: owner })
-                        await assertBalance(this.token, owner, 40)
+                        await this.token.transfer(ZERO_ADDRESS, 60*10**18, { from: owner })
+                        await assertBalance(this.token, owner, 40*10**18)
                     })
 
                     it('reverts when trying to burn when paused', async function () {
                         await this.token.pause({ from: owner })
 
-                        await assertRevert(this.token.transfer(ZERO_ADDRESS, 60, { from: owner }))
+                        await assertRevert(this.token.transfer(ZERO_ADDRESS, 60*10**18, { from: owner }))
                     })
                 })
             })

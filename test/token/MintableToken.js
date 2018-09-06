@@ -2,7 +2,7 @@ import assertRevert from '../helpers/assertRevert'
 
 function mintableTokenTests([owner, oneHundred, anotherAccount]) {
     describe('-MintableToken Tests-', function () {
-        const amount = 100
+        const amount = 100*10**18
 
         describe('when the sender is the token owner', function () {
             const from = owner

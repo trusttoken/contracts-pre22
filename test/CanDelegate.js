@@ -43,23 +43,23 @@ function canDelegateTests([owner, oneHundred, anotherAccount], transfersToZeroBe
             })
 
             it('transfer', async function () {
-                await assertRevert(this.token.transfer(oneHundred, 50, { from: anotherAccount }))
+                await assertRevert(this.token.transfer(oneHundred, 50*10**18, { from: anotherAccount }))
             })
 
             it('transferFrom', async function () {
-                await assertRevert(this.token.transferFrom(oneHundred, oneHundred, 50, { from: anotherAccount }))
+                await assertRevert(this.token.transferFrom(oneHundred, oneHundred, 50*10**18, { from: anotherAccount }))
             })
 
             it('approve', async function () {
-                await assertRevert(this.token.approve(oneHundred, 50, { from: anotherAccount }))
+                await assertRevert(this.token.approve(oneHundred, 50*10**18, { from: anotherAccount }))
             })
 
             it('increaseApproval', async function () {
-                await assertRevert(this.token.increaseApproval(oneHundred, 50, { from: anotherAccount }))
+                await assertRevert(this.token.increaseApproval(oneHundred, 50*10**18, { from: anotherAccount }))
             })
 
             it('decreaseApproval', async function () {
-                await assertRevert(this.token.decreaseApproval(oneHundred, 50, { from: anotherAccount }))
+                await assertRevert(this.token.decreaseApproval(oneHundred, 50*10**18, { from: anotherAccount }))
             })
         })
 
@@ -69,24 +69,33 @@ function canDelegateTests([owner, oneHundred, anotherAccount], transfersToZeroBe
                 await this.token.delegateToNewContract(this.passToken.address, { from: owner })
             })
 
+            it('nonTusd addresses cannot call the emitTransferEvent function', async function(){
+                await assertRevert(this.token.emitTransferEvent(oneHundred, oneHundred, 50*10**18, { from: owner }))
+            })
+
+            it('nonTusd addresses cannot call the emitTransferEvent function', async function(){
+                await assertRevert(this.token.emitApprovalEvent(oneHundred, oneHundred, 50*10**18, { from: owner }))
+            })
+
+
             it('transfer', async function () {
-                await this.token.transfer(oneHundred, 50, { from: anotherAccount })
+                await this.token.transfer(oneHundred, 50*10**18, { from: anotherAccount })
             })
 
             it('transferFrom', async function () {
-                await this.token.transferFrom(oneHundred, oneHundred, 50, { from: anotherAccount })
+                await this.token.transferFrom(oneHundred, oneHundred, 50*10**18, { from: anotherAccount })
             })
 
             it('approve', async function () {
-                await this.token.approve(oneHundred, 50, { from: anotherAccount })
+                await this.token.approve(oneHundred, 50*10**18, { from: anotherAccount })
             })
 
             it('increaseApproval', async function () {
-                await this.token.increaseApproval(oneHundred, 50, { from: anotherAccount })
+                await this.token.increaseApproval(oneHundred, 50*10**18, { from: anotherAccount })
             })
 
             it('decreaseApproval', async function () {
-                await this.token.decreaseApproval(oneHundred, 50, { from: anotherAccount })
+                await this.token.decreaseApproval(oneHundred, 50*10**18, { from: anotherAccount })
             })
         })
     })

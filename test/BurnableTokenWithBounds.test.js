@@ -3,7 +3,7 @@ const BurnableTokenWithBoundsMock = artifacts.require('BurnableTokenWithBoundsMo
 
 contract('BurnableTokenWithBounds', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function () {
-        this.token = await BurnableTokenWithBoundsMock.new(oneHundred, 100, { from: owner })
+        this.token = await BurnableTokenWithBoundsMock.new(oneHundred, 100*10**18, { from: owner })
     })
 
     burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount])

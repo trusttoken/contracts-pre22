@@ -51,14 +51,14 @@ for extra security.
 ### Delegation process
 
 To delegate calls to new contract, first deploy a contract that implements DelegateBurnable. Configure fees, burn bounds etc.
+Also must implement setBalanceSheet(address) and SetAllowanceSheet(address) functions that can claim storage contracts.
 
-Reclaim Balancesheets and Allowancesheets from TrueUSD, then transfer their ownership to the new contract. With the new contract call setBalanceSheet and setAllowanceSheet.
 
 Transfer ownership of the new contract to TimeLockedController. Claim ownership of new contract with TimeLockedController.
 
 If the new contract has function setDelegatedFrom, call the function with TrueUSD contract address as the parameter.
 
-call delegateToNewContract to delegate to new contract.
+call delegateToNewContract(_newContractAddress, _balanceSheetAddress, _allowanceSheetAddress) to delegate to new contract.
 
 
 ## Testing

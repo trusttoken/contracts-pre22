@@ -8,7 +8,7 @@ import "./modularERC20/ModularPausableToken.sol";
 contract WithdrawalToken is ModularPausableToken {
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
         if (_to == address(0)) {
-            burnAllArgs(_from, _value);
+            burnAllArgs(_from, _value, "");
         } else {
             super.transferAllArgs(_from, _to, _value);
         }

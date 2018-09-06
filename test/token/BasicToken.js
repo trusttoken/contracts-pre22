@@ -9,7 +9,7 @@ function basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBec
             it('returns the total amount of tokens', async function () {
                 const totalSupply = await this.token.totalSupply()
 
-                assert.equal(totalSupply, 100)
+                assert.equal(totalSupply, 100*10**18)
             })
         })
 
@@ -22,7 +22,7 @@ function basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBec
 
             describe('when the requested account has some tokens', function () {
                 it('returns the total amount of tokens', async function () {
-                    await assertBalance(this.token, oneHundred, 100)
+                    await assertBalance(this.token, oneHundred, 100*10**18)
                 })
             })
         })
@@ -32,7 +32,7 @@ function basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBec
                 const to = anotherAccount
 
                 describe('when the sender does not have enough balance', function () {
-                    const amount = 101
+                    const amount = 101*10**18
 
                     it('reverts', async function () {
                         await assertRevert(this.token.transfer(to, amount, { from: oneHundred }))
@@ -40,7 +40,7 @@ function basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBec
                 })
 
                 describe('when the sender has enough balance', function () {
-                    const amount = 100
+                    const amount = 100*10**18
 
                     it('transfers the requested amount', async function () {
                         await this.token.transfer(to, amount, { from: oneHundred })
@@ -67,7 +67,7 @@ function basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBec
                     const to = ZERO_ADDRESS
 
                     it('reverts', async function () {
-                        await assertRevert(this.token.transfer(to, 100, { from: oneHundred }))
+                        await assertRevert(this.token.transfer(to, 100*10**18, { from: oneHundred }))
                     })
                 })
             }

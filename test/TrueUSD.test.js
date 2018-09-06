@@ -31,7 +31,7 @@ contract('TrueUSD', function (accounts) {
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
             await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, notes, { from: owner })
-            await this.token.mint(oneHundred, 100, { from: owner })
+            await this.token.mint(oneHundred, 100*10**18, { from: owner })
             await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 0, notes, { from: owner })
         })
 
@@ -46,10 +46,25 @@ contract('TrueUSD', function (accounts) {
 
             describe('user is not on burn whitelist', function () {
                 it("reverts burn", async function () {
-                    await assertRevert(this.token.burn(21, { from: oneHundred }))
+                    await this.token.setBurnBounds(10*10**18, 20*10**18, { from: owner })
+                    await assertRevert(this.token.burn(15*10**18, "burn note",  { from: oneHundred }))
                 })
             })
+
+
         })
+
+        describe('round down burn amount', function () {
+
+            it("burns 10.50", async function () {
+                await this.registry.setAttribute(oneHundred, "canBurn", 1, notes, { from: owner })
+                await this.token.setBurnBounds(10*10**18, 20*10**18, { from: owner })
+                await this.token.burn(10.503*10**18, "burn note", { from: oneHundred })
+                let remainingBalance = await this.token.balanceOf(oneHundred)
+                assert.equal(remainingBalance, 89.5*10**18)
+            })
+        })
+
 
         describe('when there are no burn bounds', function () {
             beforeEach(async function () {
@@ -202,7 +217,7 @@ contract('TrueUSD', function (accounts) {
             for (let i = 0; i < 3; i++) {
                 this.registries[i] = await Registry.new({ from: owners[i] })
 
-                this.tokens[i] = await TrueUSDMock.new(oneHundreds[i], 100, { from: owners[i] })
+                this.tokens[i] = await TrueUSDMock.new(oneHundreds[i], 100*10**18, { from: owners[i] })
                 await this.tokens[i].setRegistry(this.registries[i].address, { from: owners[i] })
             }
         })
