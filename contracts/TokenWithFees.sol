@@ -119,7 +119,7 @@ contract TokenWithFees is ModularPausableToken, HasRegistry {
     * @param _newStaker The address to of the new staking contract.
     */
     function changeStaker(address _newStaker) public onlyOwner {
-        require(_newStaker != address(0),"new staker cannot be 0x0");
+        require(_newStaker != address(0), "new staker cannot be 0x0");
         staker = _newStaker;
         emit ChangeStaker(_newStaker);
     }
