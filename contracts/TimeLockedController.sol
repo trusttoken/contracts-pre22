@@ -195,7 +195,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     }
 
 
-    function ableToFinalize(uint256 requestedTime) public view returns (bool) {
+    function enoughTimePassed(uint256 requestedTime) public view returns (bool) {
         //write our modified version so that i can just make one call
         uint16 year = dateTime.getYear(now - timeZoneDiff);
         uint8 month = dateTime.getMonth(now - timeZoneDiff);
@@ -236,16 +236,22 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
          return true;
     }
 
+    function canFinalize(uint256 _index) public constant notOnHoliday notOnWeekend returns(bool) {
+        MintOperation memory op = mintOperations[_index];
+        require(op.requestedBlock > mintReqValidBeforeThisBlock);
+        require(!op.paused);
+        require(enoughTimePassed(op.timeRequested)); //checks that enough time has elapsed
+        require(hasEnoughApproval(op.numberOfApproval, op.value));
+        return true;
+    }
+
     // after a day, mintKey finalizes mint request by providing the
     // index of the request (visible in the RequestMint event accompanying the original request)
     function finalizeMint(uint256 _index) public mintNotPaused notOnHoliday notOnWeekend onlyMintKeyOrOwner {
-        MintOperation memory op = mintOperations[_index];
         if (msg.sender == mintKey){
-            require(op.requestedBlock > mintReqValidBeforeThisBlock);
-            require(!op.paused);
-            require(ableToFinalize(op.timeRequested),"not enough time elapsed"); //checks that enough time has elapsed
-            require(hasEnoughApproval(op.numberOfApproval, op.value), "not enough approvers");
+            require(canFinalize(_index));
         }
+        MintOperation memory op = mintOperations[_index];
         address to = op.to;
         uint256 value = op.value;
         delete mintOperations[_index];
@@ -321,12 +327,12 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     }
 
     
-    function addHoliday(uint _year, uint _month, uint _day) onlyMintCheckerOrOwner{
+    function addHoliday(uint _year, uint _month, uint _day) onlyMintCheckerOrOwner {
         holidays[keccak256(_year, _month, _day)] = true;
         emit HolidayModified(_year, _month, _day, true);
     }
 
-    function removeHoliday(uint _year, uint _month, uint _day) onlyOwner{
+    function removeHoliday(uint _year, uint _month, uint _day) onlyOwner {
         holidays[keccak256(_year, _month, _day)] = false;
         emit HolidayModified(_year, _month, _day, false);
     }
