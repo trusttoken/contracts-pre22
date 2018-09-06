@@ -37,7 +37,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
         mapping(address => bool) approved; 
     }
 
-    struct TimeOfDay{
+    struct TimeOfDay {
         uint8 hour;
         uint8 minute;
     }
@@ -50,7 +50,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     uint256 public smallMintThreshold;
     uint8 public minSmallMintApproval;
     uint8 public minLargeMintApproval;
-    uint256 public DailyMintLimit;
+    uint256 public dailyMintLimit;
     uint256 public mintedToday;
     uint256 public timeOfLastMint;
     uint256 public mintReqValidBeforeThisBlock;
@@ -67,37 +67,42 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     string constant public IS_MINT_APPROVER = "isTUSDMintApprover";
 
     modifier onlyMintKeyOrOwner() {
-        require(msg.sender == mintKey || msg.sender == owner,"must be mintKey or owner");
+        require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
         _;
     }
 
     modifier onlyMintCheckerOrOwner() {
-        require(registry.hasAttribute(msg.sender, IS_MINT_CHECKER) || msg.sender == owner,"must be validator or owner");
+        require(registry.hasAttribute(msg.sender, IS_MINT_CHECKER) || msg.sender == owner, "must be validator or owner");
         _;
     }
 
     modifier onlyMintApproverOrOwner() {
-        require(registry.hasAttribute(msg.sender, IS_MINT_APPROVER) || msg.sender == owner,"must be approver or owner");
+        require(registry.hasAttribute(msg.sender, IS_MINT_APPROVER) || msg.sender == owner, "must be approver or owner");
         _;
     }
 
     modifier mintNotPaused() {
-        require(!mintPaused,"minting is paused");
+        if (msg.sender != owner) {
+            require(!mintPaused, "minting is paused");
+        }
         _;
     }
 
     modifier notOnWeekend(){
-        require(dateTime.getWeekday(now - timeZoneDiff) != 0);
-        require(dateTime.getWeekday(now - timeZoneDiff) != 6);
+        if (msg.sender != owner){
+            require(dateTime.getWeekday(now - timeZoneDiff) != 0);
+            require(dateTime.getWeekday(now - timeZoneDiff) != 6);
+        }
         _;
     }
 
     modifier notOnHoliday(){
-        uint year = dateTime.getYear(now - timeZoneDiff);
-        uint month = dateTime.getMonth(now - timeZoneDiff);
-        uint day = dateTime.getDay(now - timeZoneDiff);
-        uint hour = dateTime.getHour(now - timeZoneDiff);
-        require(!holidays[keccak256(year,month,day,hour)]);
+        if (msg.sender != owner){
+            uint year = dateTime.getYear(now - timeZoneDiff);
+            uint month = dateTime.getMonth(now - timeZoneDiff);
+            uint day = dateTime.getDay(now - timeZoneDiff);
+            require(!holidays[keccak256(year, month, day)]);
+        }
         _;
     }
 
@@ -110,7 +115,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     event TransferMintKey(address indexed previousMintKey, address indexed newMintKey);
     event RevokeMint(uint256 opIndex);
     event AllMintsPaused(bool status);
-    event MintPaused(uint opIndex ,bool status);
+    event MintPaused(uint opIndex, bool status);
 
     event MintApproved(address approver, uint opIndex);
     event MintLimitReset(address sender);
@@ -139,7 +144,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
         if (_index >= mintCheckTimes.length) return false;
         TimeOfDay memory time = mintCheckTimes[_index];
         emit RemoveMintCheckTime(time.hour, time.minute);
-        for (uint i = _index; i<mintCheckTimes.length-1; i++){
+        for (uint i = _index; i<mintCheckTimes.length-1; i++) {
             mintCheckTimes[i] = mintCheckTimes[i+1];
         }
         delete mintCheckTimes[mintCheckTimes.length-1];
@@ -163,8 +168,8 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     }
 
     function setMintLimit(uint256 _limit) public onlyOwner{
-        emit DailyLimitChanged( DailyMintLimit, _limit);
-        DailyMintLimit = _limit;
+        emit DailyLimitChanged( dailyMintLimit, _limit);
+        dailyMintLimit = _limit;
     }
 
     function resetMintedToday() public onlyOwner{
@@ -179,7 +184,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
         if (dateTime.getMonth(currentTimeZoneTime + resetTime) == dateTime.getMonth(timeOfLastMint + resetTime) &&
             dateTime.getDay(currentTimeZoneTime + resetTime) == dateTime.getDay(timeOfLastMint + resetTime)){
             mintedToday = mintedToday.add(_value);
-            require(mintedToday <= DailyMintLimit, "over the mint limit");
+            require(mintedToday <= dailyMintLimit, "over the mint limit");
         }else{
             mintedToday = _value;
         }
@@ -187,23 +192,6 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
         MintOperation memory op = MintOperation(_to, _value, block.number, currentTimeZoneTime, 0, false);
         emit RequestMint(_to, msg.sender, _value, timeOfLastMint, mintOperations.length);
         mintOperations.push(op);
-    }
-
-    function returnChecktime(uint index) public view returns(uint){
-        uint16 year = dateTime.getYear(now - timeZoneDiff);
-        uint8 month = dateTime.getMonth(now - timeZoneDiff);
-        uint8 day = dateTime.getDay(now - timeZoneDiff);
-        uint checkTime = dateTime.toTimestamp(year,month, day, mintCheckTimes[index].hour, mintCheckTimes[index].minute) + timeZoneDiff;
-        return checkTime;
-
-    }
-
-    function returnYesterdayChecktime(uint index) public view returns(uint){
-        uint16 yesterdayYear = dateTime.getYear(now - 1 days - timeZoneDiff);
-        uint8 yesterdayMonth = dateTime.getMonth(now - 1 days - timeZoneDiff);
-        uint8 yesterday = dateTime.getDay(now - 1 days - timeZoneDiff);
-        uint checkTime = dateTime.toTimestamp(yesterdayYear,yesterdayMonth, yesterday, mintCheckTimes[index].hour, mintCheckTimes[index].minute) + timeZoneDiff;
-        return checkTime;
     }
 
 
@@ -250,7 +238,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
 
     // after a day, mintKey finalizes mint request by providing the
     // index of the request (visible in the RequestMint event accompanying the original request)
-    function finalizeMint(uint256 _index) public mintNotPaused onlyMintKeyOrOwner {
+    function finalizeMint(uint256 _index) public mintNotPaused notOnHoliday notOnWeekend onlyMintKeyOrOwner {
         MintOperation memory op = mintOperations[_index];
         if (msg.sender == mintKey){
             require(op.requestedBlock > mintReqValidBeforeThisBlock);
@@ -309,7 +297,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     function invalidateAllPendingMints() public onlyOwner {
         mintReqValidBeforeThisBlock = block.number;
     }
-
+    
     function pauseMints() public onlyMintCheckerOrOwner {
         mintPaused = true;
         emit AllMintsPaused(true);
@@ -333,13 +321,13 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     }
 
     
-    function addHoliday(uint _year, uint _month, uint _day, uint _hour) onlyMintCheckerOrOwner{
-        holidays[keccak256(_year, _month, _day, _hour)] = true;
+    function addHoliday(uint _year, uint _month, uint _day) onlyMintCheckerOrOwner{
+        holidays[keccak256(_year, _month, _day)] = true;
         emit HolidayModified(_year, _month, _day, true);
     }
 
-    function removeHoliday(uint _year, uint _month, uint _day,uint _hour) onlyOwner{
-        holidays[keccak256(_year, _month, _day, _hour)] = false;
+    function removeHoliday(uint _year, uint _month, uint _day) onlyOwner{
+        holidays[keccak256(_year, _month, _day)] = false;
         emit HolidayModified(_year, _month, _day, false);
     }
 
@@ -429,7 +417,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
         trueUSD.reclaimEther(owner);
     }
 
-    function requestReclaimToken(ERC20Basic _token) public onlyOwner {
+    function requestReclaimToken(ERC20 _token) public onlyOwner {
         trueUSD.reclaimToken(_token, owner);
     }
 
