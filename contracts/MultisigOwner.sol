@@ -128,6 +128,7 @@ contract MultiSigOwner {
 
     function veto() public onlyOwner returns (bool success){
         require(!voted[msg.sender]);
+        require(ownerAction.callData.length > 0);
         if (ownerAction.disappoveSigs >= 1){
             _deleteOwnerActon();
             return true;
