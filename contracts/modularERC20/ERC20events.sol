@@ -1,11 +1,21 @@
 pragma solidity ^0.4.23;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
-
-contract ERC20events is ERC20 {
+contract ERC20events {
     address public eventDelegateor = address(this);
-    
+
+    event Transfer(
+        address indexed from,
+        address indexed to,
+        uint256 value
+    );
+
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
+
     modifier onlyTusd(){
         require(msg.sender == eventDelegateor);
         _;
