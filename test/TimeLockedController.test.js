@@ -493,19 +493,19 @@ contract('TimeLockedController', function (accounts) {
                 var blockchainDay = Number(await this.dateTime.getDay(time))
                 var timeDifference = 7 //hours
                 var requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,7-timeDifference,29).getTime()/1000
-                var result = await this.controller.ableToFinalize(requestEpochTime)
+                var result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, true)
                 requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,8-timeDifference,31).getTime()/1000
-                result = await this.controller.ableToFinalize(requestEpochTime)
+                result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, true)
                 requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,10-timeDifference,32).getTime()/1000
-                result = await this.controller.ableToFinalize(requestEpochTime)
+                result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, true)
                 requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,18-timeDifference,32).getTime()/1000
-                result = await this.controller.ableToFinalize(requestEpochTime)
+                result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, true)
                 requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,21-timeDifference,34).getTime()/1000
-                result = await this.controller.ableToFinalize(requestEpochTime)
+                result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, false)
 
 
@@ -727,13 +727,12 @@ contract('TimeLockedController', function (accounts) {
 
         describe('requestReclaimEther', function () {
             it('reclaims ether', async function () {
-                const balance1 = web3.fromWei(web3.eth.getBalance(oneHundred), 'ether').toNumber()
                 const forceEther = await ForceEther.new({ from: oneHundred, value: "10000000000000000000" })
                 await forceEther.destroyAndSend(this.token.address)
-                const balance2 = web3.fromWei(web3.eth.getBalance(owner), 'ether').toNumber()
+                const balance1 = web3.fromWei(web3.eth.getBalance(owner), 'ether').toNumber()
                 await this.controller.requestReclaimEther({ from: owner })
-                const balance3 = web3.fromWei(web3.eth.getBalance(owner), 'ether').toNumber()
-                assert.isAbove(balance3, balance2)
+                const balance2 = web3.fromWei(web3.eth.getBalance(owner), 'ether').toNumber()
+                assert.isAbove(balance2, balance1)
             })
 
             it('cannot be called by non-owner', async function () {
