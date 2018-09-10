@@ -1,5 +1,4 @@
-![alt tag](https://raw.github.com/trusttoken/trueUSD/readMe/logo.png)
-![My image](terryli0095.github.com/readmeFormat/1_kQfd9XpOQmBbOmsCAPVSMw.png)
+![alt tag](https://raw.github.com/trusttoken/trueUSD/readMe/Logo.png)
 
 
 # TrueUSD
