@@ -1,3 +1,5 @@
+![alt tag](https://raw.github.com/trusttoken/trueUSD/readMe/logo.png)
+
 # TrueUSD
 
 This repository contains the TrueUSD ERC20 contract and related contracts.
