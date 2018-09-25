@@ -19,6 +19,30 @@ contract CanDelegate is ModularPausableToken {
     }
 
     // If a delegate has been designated, all ERC20 calls are forwarded to it
+    function totalSupply() public view returns (uint256) {
+        if (delegate == address(0)) {
+            return super.totalSupply();
+        } else {
+            return delegate.delegateTotalSupply();
+        }
+    }
+    
+    function balanceOf(address who) public view returns (uint256) {
+        if (delegate == address(0)) {
+            return super.balanceOf(who);
+        } else {
+            return delegate.delegateBalanceOf(who);
+        }
+    }
+
+    function allowance(address _owner, address _spender) public view returns (uint256) {
+        if (delegate == address(0)) {
+            return super.allowance(_owner, _spender);
+        } else {
+            return delegate.delegateAllowance(_owner, _spender);
+        }
+    }
+
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
         if (delegate == address(0)) {
             super.transferAllArgs(_from, _to, _value);
@@ -35,35 +59,11 @@ contract CanDelegate is ModularPausableToken {
         }
     }
 
-    function balanceOf(address who) public view returns (uint256) {
-        if (delegate == address(0)) {
-            return super.balanceOf(who);
-        } else {
-            return delegate.delegateBalanceOf(who);
-        }
-    }
-
     function approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
         if (delegate == address(0)) {
             super.approveAllArgs(_spender, _value, _tokenHolder);
         } else {
             require(delegate.delegateApprove(_spender, _value, _tokenHolder));
-        }
-    }
-
-    function allowance(address _owner, address _spender) public view returns (uint256) {
-        if (delegate == address(0)) {
-            return super.allowance(_owner, _spender);
-        } else {
-            return delegate.delegateAllowance(_owner, _spender);
-        }
-    }
-
-    function totalSupply() public view returns (uint256) {
-        if (delegate == address(0)) {
-            return super.totalSupply();
-        } else {
-            return delegate.delegateTotalSupply();
         }
     }
 
@@ -87,7 +87,7 @@ contract CanDelegate is ModularPausableToken {
         if (delegate == address(0)) {
             super.burnAllArgs(_burner, _value, _note);
         } else {
-            delegate.delegateBurn(_burner, _value ,_note);
+            delegate.delegateBurn(_burner, _value, _note);
         }
     }
 }

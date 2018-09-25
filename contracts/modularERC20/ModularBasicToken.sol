@@ -13,7 +13,7 @@ import "./ERC20events.sol";
  * @title Basic token
  * @dev Basic version of StandardToken, with no allowances.
  */
-contract ModularBasicToken is ERC20Basic, Claimable,ERC20events {
+contract ModularBasicToken is ERC20Basic, Claimable, ERC20events {
     using SafeMath for uint256;
 
     BalanceSheet public balances;
@@ -26,7 +26,7 @@ contract ModularBasicToken is ERC20Basic, Claimable,ERC20events {
     * @dev claim ownership of the balancesheet contract
     * @param _sheet The address to of the balancesheet to claim.
     */
-    function setBalanceSheet(address _sheet) public onlyOwner returns (bool){
+    function setBalanceSheet(address _sheet) public onlyOwner returns (bool) {
         balances = BalanceSheet(_sheet);
         balances.claimOwnership();
         emit BalanceSheetSet(_sheet);
@@ -71,5 +71,4 @@ contract ModularBasicToken is ERC20Basic, Claimable,ERC20events {
     function balanceOf(address _owner) public view returns (uint256 balance) {
         return balances.balanceOf(_owner);
     }
-    
 }

@@ -20,6 +20,12 @@ contract CompliantToken is ModularPausableToken, HasRegistry {
     string public constant IS_RESTRICTED_EXCHANGE = "isRestrictedExchange";
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
+    
+    function mint(address _to, uint256 _value) public onlyOwner returns (bool) {
+        require(registry.hasAttribute(_to, HAS_PASSED_KYC_AML), "_to has not passed kyc");
+        require(!registry.hasAttribute(_to, IS_BLACKLISTED), "_to is blacklisted");
+        return super.mint(_to, _value);
+    }
 
     function burnAllArgs(address _burner, uint256 _value, string _note) internal {
         require(registry.hasAttribute(_burner, CAN_BURN), "_burner does not have canBurn attribute");
@@ -27,19 +33,17 @@ contract CompliantToken is ModularPausableToken, HasRegistry {
         super.burnAllArgs(_burner, _value, _note);
     }
 
-    function mint(address _to, uint256 _value) public onlyOwner returns (bool) {
-        require(registry.hasAttribute(_to, HAS_PASSED_KYC_AML), "_to has not passed kyc");
-        require(!registry.hasAttribute(_to, IS_BLACKLISTED), "_to is blacklisted");
-        super.mint(_to, _value);
-    }
-
     // A blacklisted address can't call transferFrom
     function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         require(!registry.hasAttribute(_spender, IS_BLACKLISTED), "_spender is blacklisted");
-        require(!registry.hasAttribute(_spender, IS_RESTRICTED_EXCHANGE) || (registry.hasAttribute(_from, HAS_PASSED_KYC_AML) && registry.hasAttribute(_to, HAS_PASSED_KYC_AML)),
-        "_spender is restricted exchange and _from has no kyc, or _to has no kyc");
-        require((!registry.hasAttribute(_to, IS_RESTRICTED_EXCHANGE) && !registry.hasAttribute(_from, IS_RESTRICTED_EXCHANGE)) || registry.hasAttribute(_spender, HAS_PASSED_KYC_AML),
-        "_spender is restricted exchange or _from is restricted exchange, or _spender has no kyc");
+        require(!registry.hasAttribute(_spender, IS_RESTRICTED_EXCHANGE) || 
+                (registry.hasAttribute(_from, HAS_PASSED_KYC_AML) && 
+                registry.hasAttribute(_to, HAS_PASSED_KYC_AML)),
+            "_spender is restricted exchange and _from has no kyc, or _to has no kyc");
+        require((!registry.hasAttribute(_to, IS_RESTRICTED_EXCHANGE) && 
+                !registry.hasAttribute(_from, IS_RESTRICTED_EXCHANGE)) || 
+                registry.hasAttribute(_spender, HAS_PASSED_KYC_AML),
+            "_spender is restricted exchange or _from is restricted exchange, or _spender has no kyc");
         super.transferFromAllArgs(_from, _to, _value, _spender);
     }
 
@@ -47,10 +51,12 @@ contract CompliantToken is ModularPausableToken, HasRegistry {
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
         require(!registry.hasAttribute(_from, IS_BLACKLISTED), "_from is blacklisted");
         require(!registry.hasAttribute(_to, IS_BLACKLISTED), "_to is blacklisted");
-        require(!registry.hasAttribute(_to, IS_RESTRICTED_EXCHANGE) || registry.hasAttribute(_from, HAS_PASSED_KYC_AML),
-        "registry is restricted exchange and _from has no kyc");
-        require(!registry.hasAttribute(_from, IS_RESTRICTED_EXCHANGE) || registry.hasAttribute(_to, HAS_PASSED_KYC_AML),
-        "registry is restricted exchange and _to has no kyc");
+        require(!registry.hasAttribute(_to, IS_RESTRICTED_EXCHANGE) || 
+                registry.hasAttribute(_from, HAS_PASSED_KYC_AML),
+            "_to is restricted exchange and _from has no kyc");
+        require(!registry.hasAttribute(_from, IS_RESTRICTED_EXCHANGE) || 
+                registry.hasAttribute(_to, HAS_PASSED_KYC_AML),
+            "_from is restricted exchange and _to has no kyc");
         super.transferAllArgs(_from, _to, _value);
     }
 

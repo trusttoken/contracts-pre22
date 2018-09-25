@@ -16,15 +16,18 @@ const FaultyDelegateBurnableMock2 = artifacts.require("FaultyDelegateBurnableMoc
 const DateTimeMock = artifacts.require("DateTimeMock")
 const MultisigOwner = artifacts.require("MultisigOwner")
 const BasicTokenMock = artifacts.require("BasicTokenMock")
+const GlobalPause = artifacts.require("GlobalPause")
 
 
 contract('MultisigOwner', function (accounts) {
-    const [_, owner1, owner2, owner3 , oneHundred, mintKey, pauseKey, approver] = accounts
+    const [_, owner1, owner2, owner3 , oneHundred, blackListed, mintKey, pauseKey, approver] = accounts
     
     beforeEach(async function () {
         this.registry = await Registry.new({ from: owner1 })
         this.dateTime = await DateTimeMock.new({ from: owner1 })
         this.token = await TrueUSDMock.new(oneHundred, 100*10**18, { from: owner1 })
+        this.globalPause = await GlobalPause.new({ from: owner1 })
+        await this.token.setGlobalPause(this.globalPause.address, { from: owner1 })
         this.controller = await TimeLockedController.new({ from: owner1 })
         await this.controller.setRegistry(this.registry.address, { from: owner1 })
         await this.token.transferOwnership(this.controller.address, { from: owner1 })
@@ -78,22 +81,22 @@ contract('MultisigOwner', function (accounts) {
 
     describe('Functions independent of timeLockController', async function(){
         it ('current owners are owners', async function(){
-            const owner1Result = await this.multisigOwner.Owners(owner1)
-            const owner2Result = await this.multisigOwner.Owners(owner2)
-            const owner3Result = await this.multisigOwner.Owners(owner3)
+            const owner1Result = await this.multisigOwner.owners(owner1)
+            const owner2Result = await this.multisigOwner.owners(owner2)
+            const owner3Result = await this.multisigOwner.owners(owner3)
             assert.equal(owner1Result,owner2Result)
             assert.equal(owner1Result,owner3Result)
         })
 
         it ('Owners can modify owner multisig owners', async function(){
-            await this.multisigOwner.updateOwner(owner3, oneHundred, {from : owner1 })
-            let newOwnerResult = await this.multisigOwner.Owners(oneHundred)
-            let owner3Result = await this.multisigOwner.Owners(owner3)
+            await this.multisigOwner.msUpdateOwner(owner3, oneHundred, {from : owner1 })
+            let newOwnerResult = await this.multisigOwner.owners(oneHundred)
+            let owner3Result = await this.multisigOwner.owners(owner3)
             assert.equal(newOwnerResult,false)
             assert.equal(owner3Result,true)
-            await this.multisigOwner.updateOwner(owner3, oneHundred, {from : owner2 })
-            newOwnerResult = await this.multisigOwner.Owners(oneHundred)
-            owner3Result = await this.multisigOwner.Owners(owner3)
+            await this.multisigOwner.msUpdateOwner(owner3, oneHundred, {from : owner2 })
+            newOwnerResult = await this.multisigOwner.owners(oneHundred)
+            owner3Result = await this.multisigOwner.owners(owner3)
             assert.equal(newOwnerResult,true)
             assert.equal(owner3Result,false)
             const ownerList0 = await this.multisigOwner.ownerList(0)
@@ -219,65 +222,59 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(pendingOwner, oneHundred)
         })
 
-        it('call addMintCheckTime of timeLockController', async function(){
-            await this.multisigOwner.addMintCheckTime(8,30,{from: owner1})
-            await this.multisigOwner.addMintCheckTime(8,30,{from: owner2})
-            const numberOfCheckTimes = await this.controller.numberOfCheckTimes()
-            const firstCheckTime = await this.controller.mintCheckTimes(0)
-            assert.equal(Number(numberOfCheckTimes), 1)
-            assert.equal(Number(firstCheckTime[0]), 8)
-            assert.equal(Number(firstCheckTime[1]), 30)
-
-        })
-
-        it('call removeMintCheckTime of timeLockController', async function(){
-            await this.multisigOwner.addMintCheckTime(8,30,{from: owner1})
-            await this.multisigOwner.addMintCheckTime(8,30,{from: owner2})
-            await this.multisigOwner.removeMintCheckTime(0,{from: owner1})
-            await this.multisigOwner.removeMintCheckTime(0,{from: owner2})
-            const numberOfCheckTimes = await this.controller.numberOfCheckTimes()
-            assert.equal(Number(numberOfCheckTimes), 0)
-
-        })
 
         it('call setSmallMintThreshold of timeLockController', async function(){
             await this.multisigOwner.setSmallMintThreshold(10000, {from: owner1})
             await this.multisigOwner.setSmallMintThreshold(10000, {from: owner2})
-
+            const smallMintThreshold = await this.controller.smallMintThreshold()
+            assert.equal(Number(smallMintThreshold), 10000)
         })
 
         it('call setMinimalApprovals of timeLockController', async function(){
             await this.multisigOwner.setMinimalApprovals(1, 2, {from: owner1})
             await this.multisigOwner.setMinimalApprovals(1, 2, {from: owner2})
+            const minSmallMintApproval = await this.controller.minSmallMintApproval()
+            assert.equal(Number(minSmallMintApproval), 1)
+            const minLargeMintApproval = await this.controller.minLargeMintApproval()
+            assert.equal(Number(minLargeMintApproval), 2)
 
         })
 
         it('call setMintLimit of timeLockController', async function(){
             await this.multisigOwner.setMintLimit(1000, {from: owner1})
             await this.multisigOwner.setMintLimit(1000, {from: owner2})
-
+            const dailyMintLimit = await this.controller.dailyMintLimit()
+            assert.equal(Number(dailyMintLimit), 1000)
         })
 
         it('call resetMintedToday of timeLockController', async function(){
             await this.multisigOwner.resetMintedToday({from: owner1})
             await this.multisigOwner.resetMintedToday({from: owner2})
+            const mintedToday = await this.controller.mintedToday()
+            assert.equal(Number(mintedToday), 0)
+        })
 
+        it('call setTimeZoneDiff of timeLockController', async function(){
+            await this.multisigOwner.setTimeZoneDiff(8, {from: owner1})
+            await this.multisigOwner.setTimeZoneDiff(8, {from: owner2})
+            const newTimeZone = await this.controller.timeZoneDiff()
+            assert.equal(Number(newTimeZone),28800)
         })
 
         it('call pauseMints of timeLockController', async function(){
             await this.multisigOwner.pauseMints({from: owner1})
             await this.multisigOwner.pauseMints({from: owner2})
-        })
-
-        it('call unPauseMints of timeLockController', async function(){
+            let mintPaused = await this.controller.mintPaused()
+            assert.equal(mintPaused,true)
             await this.multisigOwner.unPauseMints({from: owner1})
             await this.multisigOwner.unPauseMints({from: owner2})
+            mintPaused = await this.controller.mintPaused()
+            assert.equal(mintPaused,false)
         })
 
         it('call addHoliday of timeLockController', async function(){
             await this.multisigOwner.addHoliday(2018, 1, 1, {from: owner1})
             await this.multisigOwner.addHoliday(2018, 1, 1, {from: owner2})
-
         })
 
         it('call removeHoliday of timeLockController', async function(){
@@ -286,37 +283,43 @@ contract('MultisigOwner', function (accounts) {
 
             await this.multisigOwner.removeHoliday(2018, 1, 1, {from: owner1})
             await this.multisigOwner.removeHoliday(2018, 1, 1, {from: owner2})
-
         })
 
         it('call setDateTime of timeLockController', async function(){
             await this.multisigOwner.setDateTime(this.dateTime.address, {from: owner1})
             await this.multisigOwner.setDateTime(this.dateTime.address, {from: owner2})
-
+            const dateTime = await this.controller.dateTime()
+            assert.equal(dateTime,this.dateTime.address)
         })
 
         it('call setDelegatedFrom of timeLockController', async function(){
             await this.multisigOwner.setDelegatedFrom(this.token.address, {from: owner1})
             await this.multisigOwner.setDelegatedFrom(this.token.address, {from: owner2})
-
+            const delegatedFrom = await this.token.delegatedFrom()
+            assert.equal(delegatedFrom,this.token.address)
         })
 
         it('call setTrueUSD of timeLockController', async function(){
             await this.multisigOwner.setTrueUSD(this.token.address, {from: owner1})
             await this.multisigOwner.setTrueUSD(this.token.address, {from: owner2})
-
+            const trueUSD = await this.controller.trueUSD()
+            assert.equal(trueUSD,this.token.address)
         })
 
         it('call changeTokenName of timeLockController', async function(){
             await this.multisigOwner.changeTokenName("Terry Token", "ttt", {from: owner1})
             await this.multisigOwner.changeTokenName("Terry Token", "ttt", {from: owner2})
-
+            const name = await this.token.name()
+            const symbol = await this.token.symbol()
+            assert.equal(name,"Terry Token")
+            assert.equal(symbol,"ttt")
         })
 
         it('call setTusdRegistry of timeLockController', async function(){
             await this.multisigOwner.setTusdRegistry(this.registry.address, {from: owner1})
             await this.multisigOwner.setTusdRegistry(this.registry.address, {from: owner2})
-
+            const registry = await this.token.registry()
+            assert.equal(registry,this.registry.address)
         })
 
         it('call delegateToNewContract of timeLockController', async function(){
@@ -390,7 +393,38 @@ contract('MultisigOwner', function (accounts) {
             
             const userBalance = await this.basicToken.balanceOf(oneHundred)
             assert.equal(Number(userBalance), 100)
+        })
 
+        it('call setGlobalPause of timeLockController', async function(){
+            await this.multisigOwner.setGlobalPause(oneHundred, {from: owner1})
+            await this.multisigOwner.setGlobalPause(oneHundred, {from: owner2})
+            const GlobalPauseAddress = await this.token.globalPause()
+            assert.equal(GlobalPauseAddress, oneHundred)
+
+        })
+    
+        it('call setTrueUsdFastPause of timeLockController', async function(){
+            await this.multisigOwner.setTrueUsdFastPause(oneHundred, {from: owner1})
+            await this.multisigOwner.setTrueUsdFastPause(oneHundred, {from: owner2})
+            const trueUsdFastPause = await this.controller.trueUsdFastPause()
+            assert.equal(trueUsdFastPause, oneHundred)
+        })
+
+        it('call pauseTrueUSD and unpauseTrueUSD of timeLockController', async function(){
+            await this.multisigOwner.pauseTrueUSD({from: owner1})
+            await this.multisigOwner.pauseTrueUSD({from: owner2})
+            let paused = await this.token.paused()
+            assert.equal(paused, true)
+            await this.multisigOwner.unpauseTrueUSD({from: owner1})
+            await this.multisigOwner.unpauseTrueUSD({from: owner2})
+            paused = await this.token.paused()
+            assert.equal(paused, false)
+        })
+
+        it('call wipeBlackListedTrueUSD of timeLockController', async function(){
+            await this.registry.setAttribute(blackListed, "isBlacklisted", 1, "notes", { from: owner1 })
+            await this.multisigOwner.wipeBlackListedTrueUSD(blackListed, {from: owner1})
+            await this.multisigOwner.wipeBlackListedTrueUSD(blackListed, {from: owner2})
         })
 
         it('call setBurnBounds of timeLockController', async function(){
@@ -458,30 +492,30 @@ contract('MultisigOwner', function (accounts) {
         })
 
         it('first entire mint process with owner requesting and approving mints', async function(){
-            await this.multisigOwner.addMintCheckTime(8,0, { from: owner1 })
-            await this.multisigOwner.addMintCheckTime(8,0, { from: owner2 })
             await this.multisigOwner.requestMint(oneHundred, 10*10**18,  {from: owner1})
             await this.multisigOwner.requestMint(oneHundred, 10*10**18, {from: owner2})
             await assertRevert(this.controller.finalizeMint(0, {from: mintKey}))
             await this.multisigOwner.approveMint(0, {from: owner1})
             await this.multisigOwner.approveMint(0, {from: owner3})
+            await increaseTime(duration.days(1))
+
+
             await this.multisigOwner.pauseMint(0, {from: owner3})
             await this.multisigOwner.pauseMint(0, {from: owner2})
             await assertRevert(this.controller.finalizeMint(0, {from: mintKey}))
             await this.multisigOwner.unpauseMint(0, {from: owner3})
             await this.multisigOwner.unpauseMint(0, {from: owner2})
-            await increaseTime(duration.days(1))
-            var time = Number(await this.controller.returnTime())
-            var weekday = Number(await this.dateTime.getWeekday(time))
-            if (weekday == 0 && weekday == 6){
-                await increaseTime(duration.days(2))
+
+            const time = Number(await this.controller.returnTime())
+            let weekday = Number(await this.dateTime.getWeekday(time))
+
+            if (weekday === 0 || weekday === 6 || weekday === 5){
+                await increaseTime(duration.days(3))
             }
             await this.controller.finalizeMint(0, {from: mintKey})
         })
 
         it('seconds entire mint process with owner requesting and approving mints', async function(){
-            await this.multisigOwner.addMintCheckTime(8,0, { from: owner1 })
-            await this.multisigOwner.addMintCheckTime(8,0, { from: owner2 })
             await this.multisigOwner.requestMint(oneHundred, 10*10**18,  {from: owner1})
             await this.multisigOwner.requestMint(oneHundred, 10*10**18, {from: owner2})
             await this.multisigOwner.approveMint(0, {from: owner1})
@@ -489,10 +523,10 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.invalidateAllPendingMints({from: owner3})
             await this.multisigOwner.invalidateAllPendingMints({from: owner2})
             await increaseTime(duration.days(1))
-            var time = Number(await this.controller.returnTime())
-            var weekday = Number(await this.dateTime.getWeekday(time))
-            if (weekday == 0 && weekday == 6){
-                await increaseTime(duration.days(2))
+            const time = Number(await this.controller.returnTime())
+            let weekday = Number(await this.dateTime.getWeekday(time))
+            if (weekday === 0 || weekday === 6 || weekday === 5){
+                await increaseTime(duration.days(3))
             }
             await assertRevert(this.controller.finalizeMint(0, {from: mintKey}))
         })
@@ -506,8 +540,5 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(mintOperation[0],0x0000000000000000000000000000000000000000)
             assert.equal(Number(mintOperation[1]),0)
         })
-
-
-
     })
 })

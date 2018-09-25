@@ -4,7 +4,7 @@
 // const TimeLockedController = artifacts.require("TimeLockedController");
 // const DateTimeMock = artifacts.require("DateTimeMock");
 // const Registry = artifacts.require("Registry");
-// const FastPause = artifacts.require("FastPause")
+// const FastPauseMints = artifacts.require("FastPauseMints")
 // const pauseKey = "0x75f87fbbf0d57c24d76046ec023d611db8652034"
 // const mintKey = "0x75f87fbbf0d57c24d76046ec023d611db8652034"
 // const approver1 = "0x75f87fbbf0d57c24d76046ec023d611db8652034"
@@ -13,7 +13,7 @@
 // const user = "0x5ae70e90105e3a7ec9bfda781ec4f80b00ead2a2"
 
 module.exports = async (deployer, network, accounts)=> {
-  // let balanceSheet, allowanceSheet,trueUSD,timeLockedController,dateTime, registry, fastPause;
+  // let balanceSheet, allowanceSheet,trueUSD,timeLockedController,dateTime, registry, fastPauseMints;
 
   // deployer.then(async ()=>{
   // console.log("deploying BalanceSheet")
@@ -28,13 +28,13 @@ module.exports = async (deployer, network, accounts)=> {
   // dateTime = DateTimeMock.at("0x45f51f427d0f5ef9044e054081320e21d40b3516")//await DateTimeMock.new();
   // console.log("deploying registry")
   // registry = Registry.at("0xb8ba104c9479faa475d00bfe789693c0a25f6ca8")//await Registry.new();
-  // console.log("deploying FastPause")
-  // fastPause = FastPause.at("0x99dd152342291cd31ddccbf635f94c0cf217d4d2")//await FastPause.new(); 
+  // console.log("deploying FastPauseMints")
+  // fastPauseMints = FastPauseMints.at("0x99dd152342291cd31ddccbf635f94c0cf217d4d2")//await FastPauseMints.new(); 
   // console.log("######################")
   // console.log("tusd Address", trueUSD.address)
   // console.log("controller address", timeLockedController.address)
   // console.log("registry Address", registry.address)
-  // console.log("fastPause Address", fastPause.address)
+  // console.log("fastPauseMints Address", fastPauseMints.address)
   // console.log("dateTime Address", dateTime.address)
   // console.log("balanceSheet Address", balanceSheet.address)
   // console.log("allowanceSheet Address", allowanceSheet.address)
@@ -67,18 +67,14 @@ module.exports = async (deployer, network, accounts)=> {
   // await registry.setAttribute(pauseKey, "isTUSDMintChecker", 1, "notes")
   // await registry.setAttribute(user, "hasPassedKYC/AML", 1, "notes",)
   // await registry.setAttribute(user, "noFees", 1, "notes")
-  // console.log("configure fastPause");
-  // await fastPause.modifyPauseKey(pauseKey, true)
-  // await fastPause.setController(timeLockedController.address)
-  // await registry.setAttribute(fastPause.address, "isTUSDMintChecker", 1, "notes")
+  // console.log("configure fastPauseMints");
+  // await fastPauseMints.modifyPauseKey(pauseKey, true)
+  // await fastPauseMints.setController(timeLockedController.address)
+  // await registry.setAttribute(fastPauseMints.address, "isTUSDMintChecker", 1, "notes")
   // console.log("######################")
   // console.log("tusd Address", trueUSD.address)
   // console.log("controller address", timeLockedController.address)
   // console.log("registry Address", registry.address)
-  // console.log("fastPause Address", fastPause.address)
+  // console.log("fastPauseMints Address", fastPauseMints.address)
   // })
-
-
-
-
 };

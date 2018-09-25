@@ -1,6 +1,12 @@
 pragma solidity ^0.4.23;
 
-
+/*
+Allows TrueUSD to emit events from the base contract.
+Instead of emitting the event directly in transfer function,
+the transfer functions calls emitTransferEvent. This way events
+can always be emitted from the the base contract even after we delegate
+calls to a new contract
+*/
 contract ERC20events {
     address public eventDelegateor = address(this);
 
@@ -16,8 +22,8 @@ contract ERC20events {
         uint256 value
     );
 
-    modifier onlyTusd(){
-        require(msg.sender == eventDelegateor);
+    modifier onlyTusd() {
+        require(msg.sender == eventDelegateor, "only event delegator can call to emit event");
         _;
     }
     
@@ -28,5 +34,4 @@ contract ERC20events {
     function emitApprovalEvent(address _tokenHolder, address _spender, uint256 _value) public onlyTusd {
         emit Approval(_tokenHolder, _spender, _value);
     }
-
 }

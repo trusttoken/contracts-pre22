@@ -125,17 +125,27 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
                 })
             }
             it ('check staking fees', async function(){
-              const transferFee = Math.floor(amount * 2 / 20)
-              const burnFee = Math.floor(amount * 2 / 20) + 5*10**18
-              const mintFee = Math.floor(amount * 2 / 20) + 5*10**18
-              let contractTransferFee = await this.token.checkTransferFee(amount,{ from: owner })
-              let contractBurnFee = await this.token.checkBurnFee(amount,{ from: owner })
-              let contractMintFee = await this.token.checkMintFee(amount,{ from: owner })
-              assert.equal(contractTransferFee,transferFee)
-              assert.equal(contractBurnFee,burnFee)
-              assert.equal(contractMintFee,mintFee)
+                const transferFee = Math.floor(amount * 2 / 20)
+                const burnFee = Math.floor(amount * 2 / 20) + 5*10**18
+                const mintFee = Math.floor(amount * 2 / 20) + 5*10**18
+                const contractTransferFee = await this.token.checkTransferFee(oneHundred, anotherAccount, amount,{ from: owner })
+                const contractBurnFee = await this.token.checkBurnFee(oneHundred, amount,{ from: owner })
+                const contractMintFee = await this.token.checkMintFee(oneHundred, amount,{ from: owner })
+                assert.equal(contractTransferFee,transferFee)
+                assert.equal(contractBurnFee,burnFee)
+                assert.equal(contractMintFee,mintFee)
             })
 
+            it ('check staking fees when one party has no fee', async function(){
+            await this.registry.setAttribute(oneHundred, "noFees", 1, "some notes", { from: owner })
+              const contractTransferFee = await this.token.checkTransferFee(oneHundred, anotherAccount, amount,{ from: owner })
+              const contractBurnFee = await this.token.checkBurnFee(oneHundred, amount,{ from: owner })
+              const contractMintFee = await this.token.checkMintFee(oneHundred, amount,{ from: owner })
+              assert.equal(Number(contractTransferFee),0)
+              assert.equal(Number(contractBurnFee),0)
+              assert.equal(Number(contractMintFee),0)
+            })
+  
             it('mint', async function () {
                 const fee = Math.floor(amount * 2 / 20) + 5*10**18
                 await this.token.mint(anotherAccount, amount, { from: owner })
