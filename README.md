@@ -15,6 +15,8 @@ These contracts are inspired by and roughly equivalent to the corresponding ERC2
 token contracts from [OpenZeppelin](https://openzeppelin.org/). The main difference is
 that they keep track of balances and allowances by using separate contracts (BalanceSheet.sol
 and AllowanceSheet.sol) instead of mappings in their own storage.
+ERCevents contract is used to ensure that events are still emitted from the original address even
+after contract update.
 
 ### WithdrawalToken.sol
 
@@ -47,15 +49,21 @@ This is the top-level ERC20 contract tying together all the previously mentioned
 
 ### TimeLockedController.sol
 
-This contract is the initial owner of TrueUSD.sol. It splits ownership into 'owner' and 'admin'
-for extra security.
+This contract is the initial owner of TrueUSD.sol. Consists of an Owner key, Mint Pause Keys, 
+Mint Key, and Mint Approval Keys. Also provides time delays on mint requests to ensure security.
+
+### MultiSigOwner.sol
+
+This contract is the owner of TimeLockedController.sol. It turns every owner only functions into 
+Multisig function that requires two approvals.
 
 
 ### Delegation process
 
-To delegate calls to new contract, first deploy a contract that implements DelegateBurnable. Configure fees, burn bounds etc.
+To delegate calls to new contract, first deploy a contract that implements DelegateBurnable. Configure fees, burn bounds, global pause etc.
 Also must implement setBalanceSheet(address) and SetAllowanceSheet(address) functions that can claim storage contracts.
 
+Set registry instance for the new contract. Set totalSupply to equal to the current totalSupply of the old contract.
 
 Transfer ownership of the new contract to TimeLockedController. Claim ownership of new contract with TimeLockedController.
 
@@ -67,7 +75,7 @@ call delegateToNewContract(_newContractAddress, _balanceSheetAddress, _allowance
 ## Testing
 
 To run the tests and generate a code coverage report:
-
+- ensure the registry submodule is in the root directory (clone the repo in if not)
 - `npm install`
 - `./node_modules/.bin/solidity-coverage`
 
