@@ -1,13 +1,29 @@
 pragma solidity ^0.4.23;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-
-
-contract ERC20events is ERC20 {
+/*
+Allows TrueUSD to emit events from the base contract.
+Instead of emitting the event directly in transfer function,
+the transfer functions calls emitTransferEvent. This way events
+can always be emitted from the the base contract even after we delegate
+calls to a new contract
+*/
+contract ERC20events {
     address public eventDelegateor = address(this);
-    
-    modifier onlyTusd(){
-        require(msg.sender == eventDelegateor);
+
+    event Transfer(
+        address indexed from,
+        address indexed to,
+        uint256 value
+    );
+
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
+
+    modifier onlyTusd() {
+        require(msg.sender == eventDelegateor, "only event delegator can call to emit event");
         _;
     }
     
@@ -18,5 +34,4 @@ contract ERC20events is ERC20 {
     function emitApprovalEvent(address _tokenHolder, address _spender, uint256 _value) public onlyTusd {
         emit Approval(_tokenHolder, _spender, _value);
     }
-
 }
