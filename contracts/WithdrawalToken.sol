@@ -18,7 +18,7 @@ contract WithdrawalToken is ModularPausableToken {
     // _to != 0x0, but we do because we redirect 0x0 transfers to burns, but
     // we do not redirect transferFrom
     function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        require(_to != address(0),"_to address is 0x0");
+        require(_to != address(0), "_to address is 0x0");
         super.transferFromAllArgs(_from, _to, _value, _spender);
     }
 }
