@@ -69,6 +69,15 @@ function canDelegateTests([owner, oneHundred, anotherAccount], transfersToZeroBe
                 await this.token.delegateToNewContract(this.passToken.address, { from: owner })
             })
 
+            it('nonTusd addresses cannot call the emitTransferEvent function', async function(){
+                await assertRevert(this.token.emitTransferEvent(oneHundred, oneHundred, 50*10**18, { from: owner }))
+            })
+
+            it('nonTusd addresses cannot call the emitTransferEvent function', async function(){
+                await assertRevert(this.token.emitApprovalEvent(oneHundred, oneHundred, 50*10**18, { from: owner }))
+            })
+
+
             it('transfer', async function () {
                 await this.token.transfer(oneHundred, 50*10**18, { from: anotherAccount })
             })

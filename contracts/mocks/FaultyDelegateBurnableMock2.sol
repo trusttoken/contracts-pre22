@@ -18,29 +18,29 @@ contract FaultyDelegateBurnableMock2 is DelegateBurnable{
     }
 
     function delegateTotalSupply() public view returns (uint256){
-      return 0;
+        return 0;
     }
     function delegateBalanceOf(address who) public view returns (uint256){
-      return 0;
+        return 0;
     }
     function delegateTransfer(address to, uint256 value, address origSender) public returns (bool){
-      return true;
+        return true;
     }
     function delegateAllowance(address owner, address spender) public view returns (uint256){
-      return 0;
+        return 0;
     }
     function delegateTransferFrom(address from, address to, uint256 value, address origSender) public returns (bool){
-      return true;
+        return true;
     }
     function delegateApprove(address spender, uint256 value, address origSender) public returns (bool){
-      return true;
+        return true;
     }
     function delegateIncreaseApproval(address spender, uint addedValue, address origSender) public returns (bool){
-      return true;
+        return true;
     }
     function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) public returns (bool){
-      return true;
+        return true;
     }
-    function delegateBurn(address _origSender, uint256 _value, string _note) public{
+    function delegateBurn(address _origSender, uint256 _value, string _note) public {
     }
 }

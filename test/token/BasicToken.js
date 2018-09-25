@@ -8,7 +8,6 @@ function basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBec
         describe('total supply', function () {
             it('returns the total amount of tokens', async function () {
                 const totalSupply = await this.token.totalSupply()
-
                 assert.equal(totalSupply, 100*10**18)
             })
         })
