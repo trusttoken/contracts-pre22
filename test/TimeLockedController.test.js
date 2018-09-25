@@ -14,21 +14,25 @@ const DelegateBurnableMock = artifacts.require("DelegateBurnableMock")
 const FaultyDelegateBurnableMock1 = artifacts.require("FaultyDelegateBurnableMock1")
 const FaultyDelegateBurnableMock2 = artifacts.require("FaultyDelegateBurnableMock2")
 const DateTimeMock = artifacts.require("DateTimeMock")
-const FastPause = artifacts.require("FastPause")
+const FastPauseMints = artifacts.require("FastPauseMints")
+const FastPauseTrueUSD = artifacts.require("FastPauseTrueUSD")
+const GlobalPause = artifacts.require("GlobalPause")
 
 contract('TimeLockedController', function (accounts) {
 
     describe('--TimeLockedController Tests--', function () {
-        const [_, owner, oneHundred, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3] = accounts
+        const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
 
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
             this.dateTime = await DateTimeMock.new({ from: owner })
             this.token = await TrueUSDMock.new(oneHundred, 100*10**18, { from: owner })
+            this.globalPause = await GlobalPause.new({ from: owner })
+            await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
             this.controller = await TimeLockedController.new({ from: owner })
-            this.fastPause = await FastPause.new({ from: owner })
-            await this.fastPause.setController(this.controller.address, { from: owner })
-            await this.fastPause.modifyPauseKey(pauseKey2, true, { from: owner })
+            this.fastPauseMints = await FastPauseMints.new({ from: owner })
+            await this.fastPauseMints.setController(this.controller.address, { from: owner })
+            await this.fastPauseMints.modifyPauseKey(pauseKey2, true, { from: owner })
             await this.controller.setRegistry(this.registry.address, { from: owner })
             await this.token.transferOwnership(this.controller.address, { from: owner })
             await this.controller.issueClaimOwnership(this.token.address, { from: owner })
@@ -46,57 +50,12 @@ contract('TimeLockedController', function (accounts) {
             await this.registry.setAttribute(approver2, "isTUSDMintApprover", 1, "notes", { from: owner })
             await this.registry.setAttribute(approver3, "isTUSDMintApprover", 1, "notes", { from: owner })
             await this.registry.setAttribute(pauseKey, "isTUSDMintChecker", 1, "notes", { from: owner })
-            await this.registry.setAttribute(this.fastPause.address, "isTUSDMintChecker", 1, "notes", { from: owner })
+            await this.registry.setAttribute(this.fastPauseMints.address, "isTUSDMintChecker", 1, "notes", { from: owner })
             const time = Number(await this.controller.returnTime())
             const weekday = Number(await this.dateTime.getWeekday(time))
             if (weekday === 0 || weekday === 6 || weekday === 5){
                 await increaseTime(duration.days(3))
             }
-
-        })
-
-        describe('add and remove MintCheckTime', function () {
-            it('add mint checktime', async function () {
-                await this.controller.addMintCheckTime(12,0, { from: owner })
-                const numberOfCheckTimes = await this.controller.numberOfCheckTimes()
-                const firstCheckTime = await this.controller.mintCheckTimes(0)
-                assert.equal(Number(numberOfCheckTimes), 1)
-                assert.equal(Number(firstCheckTime[0]), 12)
-                assert.equal(Number(firstCheckTime[1]), 0)
-            })
-
-            it('emits an event', async function () {
-                const { logs } = await this.controller.addMintCheckTime(11,0, { from: owner })
-
-                assert.equal(logs.length, 1)
-                assert.equal(logs[0].event, 'AddMintCheckTime')
-                assert.equal(Number(logs[0].args.hour), 11)
-                assert.equal(Number(logs[0].args.minute), 0)
-            })
-
-            it('cannot be called by non-owner', async function () {
-                await assertRevert(this.controller.addMintCheckTime(11,0, { from: pauseKey }))
-            })
-
-            it('adds two mint checktimes and remove one', async function () {
-                await this.controller.addMintCheckTime(13,0, { from: owner })
-                await this.controller.addMintCheckTime(14,0, { from: owner })
-                var numberOfCheckTimes = await this.controller.numberOfCheckTimes()
-                assert.equal(Number(numberOfCheckTimes), 2)
-                await this.controller.removeMintCheckTime(0, { from: owner })
-                numberOfCheckTimes = await this.controller.numberOfCheckTimes()
-                assert.equal(Number(numberOfCheckTimes), 1)
-            })
-
-            it('remove mint check time thats out of range', async function () {
-                await this.controller.addMintCheckTime(8,0, { from: owner })
-                await this.controller.addMintCheckTime(15,0, { from: owner })
-                await this.controller.addMintCheckTime(20,0, { from: owner })
-                //how do i know that it returned false here
-                await this.controller.removeMintCheckTime(3, { from: owner })
-                await this.controller.removeMintCheckTime(1, { from: owner })
-                await this.controller.removeMintCheckTime(2, { from: owner })
-            })
 
         })
 
@@ -109,7 +68,7 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('non mintKey/owner cannot request mint', async function () {
-                await assertRevert(this.controller.requestMint(oneHundred, 10*10**18 , { from: pauseKey }))
+                await assertRevert(this.controller.requestMint(oneHundred, 10*10**18 , { from: otherAddress }))
             })
 
             it('request a mint', async function () {
@@ -150,18 +109,18 @@ contract('TimeLockedController', function (accounts) {
                 await this.controller.requestMint(oneHundred, 20*10**18 , { from: mintKey })
                 await assertRevert(this.controller.requestMint(oneHundred, 20*10**18 , { from: mintKey }))
                 await increaseTime(duration.hours(25))
-                var time = Number(await this.controller.returnTime())
-                var weekday = Number(await this.dateTime.getWeekday(time))
-                if (weekday == 0 || weekday == 6){
+                const time = Number(await this.controller.returnTime())
+                const weekday = Number(await this.dateTime.getWeekday(time))
+                if (weekday === 0 || weekday === 6){
                     await assertRevert(this.controller.requestMint(oneHundred, 20*10**18 , { from: mintKey }))
-                } else{
+                } else {
                     await this.controller.requestMint(oneHundred, 20*10**18 , { from: mintKey })
                 }
             })
 
             it('cannot mint on weekends', async function(){
-                var time = Number(await this.controller.returnTime())
-                var weekday = Number(await this.dateTime.getWeekday(time))
+                let time = Number(await this.controller.returnTime())
+                let weekday = Number(await this.dateTime.getWeekday(time))
                 if (weekday !== 0 && weekday !== 6){
                     let notOnWeekend = true
                     while (notOnWeekend){
@@ -180,8 +139,8 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('owner can mint on weekends', async function(){
-                var time = Number(await this.controller.returnTime())
-                var weekday = Number(await this.dateTime.getWeekday(time))
+                let time = Number(await this.controller.returnTime())
+                let weekday = Number(await this.dateTime.getWeekday(time))
                 if (weekday !== 0 && weekday !== 6){
                     let notOnWeekend = true
                     while (notOnWeekend){
@@ -197,10 +156,10 @@ contract('TimeLockedController', function (accounts) {
 
             it('pause key sets today as holiday, but owner can still mint', async function () {
                 const time = Number(await this.controller.returnTime()) + Number(await this.controller.timeZoneDiff())
-                var today = new Date(time*1000)
-                var day = today.getDate()
-                var month = today.getMonth()+1 //January is 0!
-                var year = today.getFullYear()
+                let today = new Date(time*1000)
+                let day = today.getDate()
+                let month = today.getMonth()+1 //January is 0!
+                let year = today.getFullYear()
                 await this.controller.addHoliday(year,month,day,{ from: pauseKey })
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: owner })
             })
@@ -213,7 +172,7 @@ contract('TimeLockedController', function (accounts) {
 
 
             it('non owner/mintkey cannot transfer mintkey', async function () {
-                await assertRevert(this.controller.transferMintKey(oneHundred, { from: mintKey }))
+                await assertRevert(this.controller.transferMintKey(oneHundred, { from: otherAddress }))
             })
         })
 
@@ -259,13 +218,13 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it("adding and removing holiday should generate logs", async function(){
-                var {logs} = await this.controller.addHoliday(2018,1,1, { from: owner })
+                let {logs} = await this.controller.addHoliday(2018,1,1, { from: owner })
                 assert.equal(logs[0].event,"HolidayModified" )
                 assert.equal(Number(logs[0].args.year),2018 )
                 assert.equal(Number(logs[0].args.month), 1)
                 assert.equal(Number(logs[0].args.day), 1)
                 assert.equal(logs[0].args.status, true)
-                var receipt = await this.controller.removeHoliday(2018,1,1, { from: owner })
+                let receipt = await this.controller.removeHoliday(2018,1,1, { from: owner })
                 logs = receipt["logs"]
                 assert.equal(logs[0].event,"HolidayModified" )
                 assert.equal(Number(logs[0].args.year),2018 )
@@ -274,25 +233,18 @@ contract('TimeLockedController', function (accounts) {
                 assert.equal(logs[0].args.status, false)
             })
 
-            it("adding and removing mint check times should generate logs", async function(){
-                var {logs} = await this.controller.addMintCheckTime( 8, 0, { from: owner })
-                assert.equal(logs[0].event,"AddMintCheckTime" )
-                assert.equal(Number(logs[0].args.hour),8 )
-                assert.equal(Number(logs[0].args.minute), 0)
-
-                var receipt = await this.controller.removeMintCheckTime( 0, { from: owner })
-                logs = receipt["logs"]
-                assert.equal(logs[0].event,"RemoveMintCheckTime" )
-                assert.equal(Number(logs[0].args.hour),8 )
-                assert.equal(Number(logs[0].args.minute), 0)
-
-            })
-
             it("setting new date time contract should generate logs", async function(){
                 const {logs} = await this.controller.setDateTime( oneHundred, { from: owner })
                 assert.equal(logs[0].event,"DateTimeAddressSet" )
                 assert.equal(logs[0].args.newDateTimeContract,oneHundred )
+            })
 
+            it("changing timezone should generate logs", async function(){
+                const oldTimeZone = await this.controller.timeZoneDiff()
+                const {logs} = await this.controller.setTimeZoneDiff( 8, { from: owner })
+                assert.equal(logs[0].event,"TimeZoneChanged" )
+                assert.equal(Number(logs[0].args.oldTimeZone), Number(oldTimeZone)/3600)
+                assert.equal(Number(logs[0].args.newTimeZone),8)
             })
 
         })
@@ -300,8 +252,6 @@ contract('TimeLockedController', function (accounts) {
 
         describe('Full mint process', function () {
             beforeEach(async function () {
-                await this.controller.addMintCheckTime(8,0, { from: owner })
-                await this.controller.addMintCheckTime(20,0, { from: owner })
                 await this.controller.setMintLimit(100*10**18, { from: owner })
                 await this.controller.setSmallMintThreshold(11*10**18, { from: owner })
                 await this.controller.setMinimalApprovals(2,3, { from: owner })
@@ -315,7 +265,7 @@ contract('TimeLockedController', function (accounts) {
 
             it('cannot approve mint if not an approver', async function () {
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
-                await assertRevert(this.controller.approveMint(0 , { from: pauseKey }))
+                await assertRevert(this.controller.approveMint(0 , { from: otherAddress }))
             })
 
             it('approve mint should generate logs', async function(){
@@ -338,7 +288,7 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('non pause key cannot pause mint', async function () {
-                await assertRevert(this.controller.pauseMints({ from: oneHundred }))
+                await assertRevert(this.controller.pauseMints({ from: otherAddress }))
             })
 
             it('pause key cannot unpause', async function () {
@@ -352,63 +302,91 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('pauseKey2 should be able to pause mints by sending in ether', async function(){
-                await this.fastPause.sendTransaction({from: pauseKey2, gas: 600000, value: 10});                  
-                var paused = await this.controller.mintPaused()    
+                await this.fastPauseMints.sendTransaction({from: pauseKey2, gas: 600000, value: 10});                  
+                let paused = await this.controller.mintPaused()    
+                assert.equal(paused, true)
                 await assertRevert(this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey }))
-                await assertRevert(this.fastPause.sendTransaction({from: pauseKey, gas: 600000, value: 10}));                  
+                await assertRevert(this.fastPauseMints.sendTransaction({from: pauseKey, gas: 600000, value: 10}));                  
                 await this.controller.unPauseMints({ from: owner })
-                paused = await this.controller.mintPaused()    
-                await this.fastPause.modifyPauseKey(pauseKey2, false, { from: owner })
-                await assertRevert(this.fastPause.send(10, {from: pauseKey2}))
+                paused = await this.controller.mintPaused()  
+                assert.equal(paused, false)  
+                await this.fastPauseMints.modifyPauseKey(pauseKey2, false, { from: owner })
+                await assertRevert(this.fastPauseMints.send(10, {from: pauseKey2}))
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
-
             })
 
 
             it('pause key sets today as holiday, request mint fails', async function () {
                 const time = Number(await this.controller.returnTime()) + Number(await this.controller.timeZoneDiff())
-                var today = new Date(time*1000)
-                var day = today.getDate()
-                var month = today.getMonth()+1 //January is 0!
-                var year = today.getFullYear()
+                let today = new Date(time*1000)
+                let day = today.getDate()
+                let month = today.getMonth()+1 //January is 0!
+                let year = today.getFullYear()
                 await this.controller.addHoliday(year,month,day,{ from: pauseKey })
                 await assertRevert(this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey }))
             })
 
 
             it('pauseKey cannot remove holiday', async function () {
-                var time = Number(await this.controller.returnTime()) + Number(await this.controller.timeZoneDiff())
-                var today = new Date(time*1000)
-                var day = today.getDate()
-                var month = today.getMonth()+1 //January is 0!
-                var year = today.getFullYear()
+                let time = Number(await this.controller.returnTime()) + Number(await this.controller.timeZoneDiff())
+                let today = new Date(time*1000)
+                let day = today.getDate()
+                let month = today.getMonth()+1 //January is 0!
+                let year = today.getFullYear()
+
                 await this.controller.addHoliday(year,month,day,{ from: pauseKey })
                 await assertRevert(this.controller.removeHoliday(year,month,day,{ from: pauseKey }))
                 this.controller.removeHoliday(year,month,day,{ from: owner })
-                await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
             })
 
             it('cannot finalize without enough approvers', async function () {
+                let time = Number(await this.controller.returnTime())
+                let blockchainHour = Number(await this.dateTime.getHour(time))
+
+                while (blockchainHour !== 8){
+                    await increaseTime(duration.hours(1))
+                    time = Number(await this.controller.returnTime()) 
+                    blockchainHour = Number(await this.dateTime.getHour(time))
+                }
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
                 await this.controller.approveMint(0 , { from: approver1 })
-                await increaseTime(duration.hours(15))
+                await increaseTime(duration.hours(5))
                 await assertRevert(this.controller.finalizeMint(0 , { from: mintKey }))
             })
 
             it('cannot finalize a large amount without enough approvers', async function(){
+                let time = Number(await this.controller.returnTime())
+                let blockchainHour = Number(await this.dateTime.getHour(time))
+
+                while (blockchainHour !== 8){
+                    await increaseTime(duration.hours(1))
+                    time = Number(await this.controller.returnTime()) 
+                    blockchainHour = Number(await this.dateTime.getHour(time))
+                }
                 await this.controller.requestMint(oneHundred, 30*10**18 , { from: mintKey })
                 await this.controller.approveMint(0 , { from: approver1 })
                 await this.controller.approveMint(0 , { from: approver2 })
-                await increaseTime(duration.hours(15))
+                await increaseTime(duration.hours(5))
                 await assertRevert(this.controller.finalizeMint(0 , { from: mintKey }))
             })       
 
             it('finalize a large amount', async function(){
+                let time = Number(await this.controller.returnTime())
+                let blockchainHour = Number(await this.dateTime.getHour(time))
+
+                while (blockchainHour !== 8){
+                    await increaseTime(duration.hours(1))
+                    time = Number(await this.controller.returnTime()) 
+                    blockchainHour = Number(await this.dateTime.getHour(time))
+                }
+
                 await this.controller.requestMint(oneHundred, 30*10**18 , { from: mintKey })
                 await this.controller.approveMint(0 , { from: approver1 })
                 await this.controller.approveMint(0 , { from: approver2 })
                 await this.controller.approveMint(0 , { from: approver3 })
-                await increaseTime(duration.hours(15))
+                await increaseTime(duration.hours(5))                
+
+
                 const {logs}= await this.controller.finalizeMint(0 , { from: mintKey })
                 assert.equal(logs[0].event,"FinalizeMint")
                 assert.equal(logs[0].args.to,oneHundred)
@@ -418,18 +396,27 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('pause key can pause specific mint', async function(){
+                let time = Number(await this.controller.returnTime())
+                let blockchainHour = Number(await this.dateTime.getHour(time))
+
+                while (blockchainHour !== 8){
+                    await increaseTime(duration.hours(1))
+                    time = Number(await this.controller.returnTime()) 
+                    blockchainHour = Number(await this.dateTime.getHour(time))
+                }
+
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
                 await this.controller.approveMint(0 , { from: approver1 })
                 await this.controller.approveMint(0 , { from: approver2 })
                 await this.controller.approveMint(0 , { from: approver3 })
-                await increaseTime(duration.hours(15))
-                var {logs}= await this.controller.pauseMint(0 , { from: pauseKey })
+                await increaseTime(duration.hours(5))
+                let {logs}= await this.controller.pauseMint(0 , { from: pauseKey })
                 assert.equal(logs[0].event,"MintPaused")
                 assert.equal(Number(logs[0].args.opIndex),0)
                 assert.equal(logs[0].args.status,true)
                 await assertRevert(this.controller.finalizeMint(0 , { from: mintKey }))
                 await assertRevert(this.controller.unpauseMint(0 , { from: pauseKey }))
-                var receipt = await this.controller.unpauseMint(0 , { from: owner })
+                let receipt = await this.controller.unpauseMint(0 , { from: owner })
                 logs = receipt["logs"]
                 assert.equal(logs[0].event,"MintPaused")
                 assert.equal(Number(logs[0].args.opIndex),0)
@@ -438,6 +425,14 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('cannot finalize after all request invalidated', async function(){
+                let time = Number(await this.controller.returnTime())
+                let blockchainHour = Number(await this.dateTime.getHour(time))
+
+                while (blockchainHour !== 8){
+                    await increaseTime(duration.hours(1))
+                    time = Number(await this.controller.returnTime()) 
+                    blockchainHour = Number(await this.dateTime.getHour(time))
+                }
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
                 await this.controller.requestMint(oneHundred, 20*10**18 , { from: mintKey })
                 await this.controller.approveMint(0 , { from: approver1 })
@@ -447,15 +442,22 @@ contract('TimeLockedController', function (accounts) {
                 await this.controller.approveMint(1 , { from: approver2 })
                 await this.controller.approveMint(1 , { from: approver3 })
                 await this.controller.invalidateAllPendingMints({from: owner})
-                await increaseTime(duration.hours(15))
+                await increaseTime(duration.hours(5))
                 await assertRevert(this.controller.finalizeMint(0 , { from: mintKey }))
             })
 
 
             it('does the entire mint process', async function () {
+                let time = Number(await this.controller.returnTime())
+                let blockchainHour = Number(await this.dateTime.getHour(time))
 
                 const kycStatus = await this.registry.hasAttribute(oneHundred, "hasPassedKYC/AML")
                 assert.equal(kycStatus,true,"failed to set kycAML status to true")
+                while (blockchainHour !== 8){
+                    await increaseTime(duration.hours(1))
+                    time = Number(await this.controller.returnTime()) 
+                    blockchainHour = Number(await this.dateTime.getHour(time))
+                }
 
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })                
                 await this.controller.approveMint(0 , { from: approver1 })
@@ -463,7 +465,7 @@ contract('TimeLockedController', function (accounts) {
                 const mintOperation = await this.controller.mintOperations(0)
                 assert.equal(Number(mintOperation[4]), 2,"numberOfApprovals != 2")
                 assert.equal(Number(mintOperation[1]), 10*10**18,"wrong mint amount")
-                await increaseTime(duration.hours(15))
+                await increaseTime(duration.hours(5))
                 await this.controller.finalizeMint(0 , { from: mintKey })
 
             })
@@ -476,11 +478,9 @@ contract('TimeLockedController', function (accounts) {
 
 
             it('always able to finalize mint from a day ago', async function () {
-                var time = Number(await this.controller.returnTime())
-
-                //make it so that the second part of te...
-                var blockchainHour = Number(await this.dateTime.getHour(time))
-                while (blockchainHour != 9){
+                let time = Number(await this.controller.returnTime())
+                let blockchainHour = Number(await this.dateTime.getHour(time))
+                while (blockchainHour !== 10){
                     await increaseTime(duration.hours(1))
                     time = Number(await this.controller.returnTime())
                     blockchainHour = Number(await this.dateTime.getHour(time))
@@ -488,42 +488,86 @@ contract('TimeLockedController', function (accounts) {
 
 
                 time = Number(await this.controller.returnTime())
-                var blockchainYear = Number(await this.dateTime.getYear(time))
-                var blockchainMonth = Number(await this.dateTime.getMonth(time))
-                var blockchainDay = Number(await this.dateTime.getDay(time))
-                var timeDifference = 7 //hours
-                var requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,7-timeDifference,29).getTime()/1000
-                var result = await this.controller.enoughTimePassed(requestEpochTime)
-                assert.equal(result, true)
-                requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,8-timeDifference,31).getTime()/1000
-                result = await this.controller.enoughTimePassed(requestEpochTime)
+                let blockchainYear = Number(await this.dateTime.getYear(time))
+                let blockchainMonth = Number(await this.dateTime.getMonth(time))
+                let blockchainDay = Number(await this.dateTime.getDay(time))
+                let timeDifference = 7 //hours
+                let requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,9-timeDifference,29).getTime()/1000
+                let result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, true)
                 requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,10-timeDifference,32).getTime()/1000
                 result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, true)
-                requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,18-timeDifference,32).getTime()/1000
+                requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,15-timeDifference,28).getTime()/1000
                 result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, true)
+                requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,15-timeDifference,35).getTime()/1000
+                result = await this.controller.enoughTimePassed(requestEpochTime)
+                assert.equal(result, false)
                 requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,21-timeDifference,34).getTime()/1000
+                result = await this.controller.enoughTimePassed(requestEpochTime)
+                assert.equal(result, false)
+            })
+
+            it ('enoughTimePassed behaves properly', async function(){
+                let time = Number(await this.controller.returnTime())
+                let blockchainHour = Number(await this.dateTime.getHour(time))
+                while (blockchainHour !== 13){
+                    await increaseTime(duration.hours(1))
+                    time = Number(await this.controller.returnTime())
+                    blockchainHour = Number(await this.dateTime.getHour(time))
+                }
+
+                time = Number(await this.controller.returnTime())
+                let blockchainYear = Number(await this.dateTime.getYear(time))
+                let blockchainMonth = Number(await this.dateTime.getMonth(time))
+                let blockchainDay = Number(await this.dateTime.getDay(time))
+                let timeDifference = 7 //hours
+
+                let requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,15-timeDifference,29).getTime()/1000
+                let result = await this.controller.enoughTimePassed(requestEpochTime)
+                assert.equal(result, false)
+                requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,9-timeDifference,29).getTime()/1000
+                result = await this.controller.enoughTimePassed(requestEpochTime)
+                assert.equal(result, true)
+                requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,9-timeDifference,45).getTime()/1000
                 result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, false)
 
 
+                while (blockchainHour !== 18){
+                    await increaseTime(duration.hours(1))
+                    time = Number(await this.controller.returnTime())
+                    blockchainHour = Number(await this.dateTime.getHour(time))
+                }
+
+                requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,9-timeDifference,45).getTime()/1000
+                result = await this.controller.enoughTimePassed(requestEpochTime)
+                assert.equal(result, true)
+                requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,15-timeDifference,28).getTime()/1000
+                result = await this.controller.enoughTimePassed(requestEpochTime)
+                assert.equal(result, true)
+                requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,15-timeDifference,35).getTime()/1000
+                result = await this.controller.enoughTimePassed(requestEpochTime)
+                assert.equal(result, false)
+                requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,16-timeDifference,35).getTime()/1000
+                result = await this.controller.enoughTimePassed(requestEpochTime)
+                assert.equal(result, false)
+
             })
 
-
             it('does the entire mint process finalize within the day', async function () {
-                var time = Number(await this.controller.returnTime()) 
-                //increase time until time equals 7:28
-                var blockchainHour = Number(await this.dateTime.getHour(time))
-                var blockchainMinute = Number(await this.dateTime.getMinute(time))
-                while (blockchainMinute != 20){
+                let time = Number(await this.controller.returnTime()) 
+                //increase time until time equals 9:20
+                let blockchainHour = Number(await this.dateTime.getHour(time))
+                let blockchainMinute = Number(await this.dateTime.getMinute(time))
+                while (blockchainMinute !== 20){
                     await increaseTime(duration.minutes(1))
                     time = Number(await this.controller.returnTime())
                     blockchainMinute = Number(await this.dateTime.getMinute(time))
                 }
 
-                while (blockchainHour != 7){
+                while (blockchainHour !== 9){
                     await increaseTime(duration.hours(1))
                     time = Number(await this.controller.returnTime()) 
                     blockchainHour = Number(await this.dateTime.getHour(time))
@@ -537,17 +581,17 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('mint fails if not enough time for checker to pause', async function () {
-                var time = Number(await this.controller.returnTime()) 
-                //increase time until time equals 7:29
-                var blockchainHour = Number(await this.dateTime.getHour(time))
-                var blockchainMinute = Number(await this.dateTime.getMinute(time))
-                while (blockchainMinute != 23){
+                let time = Number(await this.controller.returnTime()) 
+                //increase time until time equals 9:23
+                let blockchainHour = Number(await this.dateTime.getHour(time))
+                let blockchainMinute = Number(await this.dateTime.getMinute(time))
+                while (blockchainMinute !== 23){
                     await increaseTime(duration.minutes(1))
                     time = Number(await this.controller.returnTime())
                     blockchainMinute = Number(await this.dateTime.getMinute(time))
                 }
 
-                while (blockchainHour != 7){
+                while (blockchainHour !== 9){
                     await increaseTime(duration.hours(1))
                     time = Number(await this.controller.returnTime())
                     blockchainHour = Number(await this.dateTime.getHour(time))
@@ -563,17 +607,18 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('mint fails if the request mint is within 30 mins before checktime', async function () {
-                var time = Number(await this.controller.returnTime()) 
-                //increase time until time equals 7:29
-                var blockchainHour = Number(await this.dateTime.getHour(time))
-                var blockchainMinute = Number(await this.dateTime.getMinute(time))
-                while (blockchainMinute != 25){
+                let time = Number(await this.controller.returnTime()) 
+                //increase time until time equals 9:40
+                let blockchainMinute = Number(await this.dateTime.getMinute(time))
+                while (blockchainMinute !== 40){
                     await increaseTime(duration.minutes(1))
                     time = Number(await this.controller.returnTime())
                     blockchainMinute = Number(await this.dateTime.getMinute(time))
                 }
 
-                while (blockchainHour != 7){
+                time = Number(await this.controller.returnTime()) 
+                let blockchainHour = Number(await this.dateTime.getHour(time))
+                while (blockchainHour !== 9){
                     await increaseTime(duration.hours(1))
                     time = Number(await this.controller.returnTime())
                     blockchainHour = Number(await this.dateTime.getHour(time))
@@ -586,10 +631,33 @@ contract('TimeLockedController', function (accounts) {
                 await assertRevert(this.controller.finalizeMint(0 , { from: mintKey }))
             })
 
-            
+            it('mint process after timezone shift', async function(){
+                await this.controller.setTimeZoneDiff(8, { from: owner })
+                let time = Number(await this.controller.returnTime()) 
+                //increase time until time equals 9:20
+                let blockchainMinute = Number(await this.dateTime.getMinute(time))
+                while (blockchainMinute !== 20){
+                    await increaseTime(duration.minutes(1))
+                    time = Number(await this.controller.returnTime())
+                    blockchainMinute = Number(await this.dateTime.getMinute(time))
+                }
+
+                time = Number(await this.controller.returnTime()) 
+                let blockchainHour = Number(await this.dateTime.getHour(time))
+                while (blockchainHour !== 9){
+                    await increaseTime(duration.hours(1))
+                    time = Number(await this.controller.returnTime()) 
+                    blockchainHour = Number(await this.dateTime.getHour(time))
+                }
+                await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
+                await this.controller.approveMint(0 , { from: approver1 })
+                await this.controller.approveMint(0 , { from: approver2 })
+
+                await increaseTime(duration.hours(3))
+                await this.controller.finalizeMint(0 , { from: mintKey })
+
+            })
         })
-
-
 
         describe('setDelegatedFrom', function () {
             it('sets delegatedFrom', async function () {
@@ -600,7 +668,7 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('cannot be called by non-owner', async function () {
-                await assertRevert(this.controller.setDelegatedFrom(oneHundred, { from: mintKey }))
+                await assertRevert(this.controller.setDelegatedFrom(oneHundred, { from: otherAddress }))
             })
         })
 
@@ -615,7 +683,7 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('cannot be called by non-owner', async function () {
-                await assertRevert(this.controller.changeTokenName("FooCoin", "FCN", { from: mintKey }))
+                await assertRevert(this.controller.changeTokenName("FooCoin", "FCN", { from: otherAddress }))
             })
         })
 
@@ -629,12 +697,12 @@ contract('TimeLockedController', function (accounts) {
                 assert.equal(max, 4*10**18)
             })
 
-            it('cannot be called by admin', async function () {
-                await assertRevert(this.controller.setBurnBounds(3*10**18, 4*10**18, { from: mintKey }))
+            it('cannot be called by non Owner', async function () {
+                await assertRevert(this.controller.setBurnBounds(3*10**18, 4*10**18, { from: otherAddress }))
             })
 
-            it('cannot be called by others', async function () {
-                await assertRevert(this.controller.setBurnBounds(3*10**18, 4*10**18, { from: oneHundred }))
+            it('cannot be called by non Owner', async function () {
+                await assertRevert(this.controller.setBurnBounds(3*10**18, 4*10**18, { from: otherAddress }))
             })
         })
 
@@ -647,7 +715,7 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('cannot be called by non-owner', async function () {
-                await assertRevert(this.controller.changeStaker(oneHundred, { from: mintKey }))
+                await assertRevert(this.controller.changeStaker(oneHundred, { from: otherAddress }))
             })
         })
 
@@ -671,7 +739,7 @@ contract('TimeLockedController', function (accounts) {
             it('cannot be called by non-owner', async function () {
                 await assertRevert(this.controller.delegateToNewContract(this.delegateContract.address,
                                                             this.balanceSheet,
-                                                            this.allowanceSheet, { from: mintKey }))
+                                                            this.allowanceSheet, { from: otherAddress }))
             })
 
             it('cannot set delegate with balancesheet is not owned', async function () {
@@ -693,8 +761,61 @@ contract('TimeLockedController', function (accounts) {
                                                             this.balanceSheet,
                                                             this.allowanceSheet, { from: owner }))
             })
+        })
 
+        describe('pause trueUSD and wipe accounts', function(){
+            beforeEach(async function(){
+                this.fastPauseTrueUSD = await FastPauseTrueUSD.new(pauseKey, this.controller.address, { from: owner })
+                await this.controller.setTrueUsdFastPause(this.fastPauseTrueUSD.address, { from: owner })
+            })
 
+            it('timeLockControler can pause TrueUSD transfers', async function(){
+                await this.token.transfer(mintKey, 10*10**18, { from: oneHundred })
+                await this.controller.pauseTrueUSD({ from: owner })
+                await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
+            })
+
+            it('timeLockControler can unpause TrueUSD transfers', async function(){
+                await this.controller.pauseTrueUSD({ from: owner })
+                await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
+                await this.controller.unpauseTrueUSD({ from: owner })
+                await this.token.transfer(mintKey, 40*10**18, { from: oneHundred })
+            })
+
+            it('trueUsdPauser can pause TrueUSD by sending ether to fastPause contract', async function(){
+                await this.fastPauseTrueUSD.sendTransaction({from: pauseKey, gas: 600000, value: 10});                  
+                const paused = await this.token.paused();
+                assert.equal(paused, true)               
+            })
+
+            it('non pauser cannot pause TrueUSD ', async function(){
+                await assertRevert(this.controller.pauseTrueUSD({ from: mintKey }));                  
+            })
+
+            it('non pauser cannot pause TrueUSD by sending ether to fastPause contract', async function(){
+                await assertRevert(this.fastPauseTrueUSD.sendTransaction({from: pauseKey2, gas: 600000, value: 10}));                  
+            })
+
+            it('timeLockControler can wipe blacklisted account', async function(){
+                await this.token.transfer(this.token.address, 40*10**18, { from: oneHundred })
+                await assertBalance(this.token, this.token.address, 40000000000000000000)
+                await this.registry.setAttribute(this.token.address, "isBlacklisted", 1, "notes", { from: owner })
+                await this.controller.wipeBlackListedTrueUSD(this.token.address, { from: owner })
+                await assertBalance(this.token, this.token.address, 0)
+            })
+
+            it('timeLockController can set GlobalPause', async function(){
+                this.globalPause = await GlobalPause.new({ from: owner })
+                await this.globalPause.pauseAllTokens(true, { from: owner })
+                await this.controller.setGlobalPause(this.globalPause.address, { from: owner })
+                await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
+                await this.globalPause.pauseAllTokens(false, { from: owner })
+                await this.token.transfer(mintKey, 40*10**18, { from: oneHundred })
+                await this.globalPause.updateForkStatus(false, { from: owner })
+                await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
+                await this.globalPause.updateForkStatus(true, { from: owner })
+                await this.token.transfer(mintKey, 40*10**18, { from: oneHundred })
+            })
         })
 
 
@@ -738,7 +859,7 @@ contract('TimeLockedController', function (accounts) {
             it('cannot be called by non-owner', async function () {
                 const forceEther = await ForceEther.new({ from: oneHundred, value: "10000000000000000000" })
                 await forceEther.destroyAndSend(this.token.address)
-                await assertRevert(this.controller.requestReclaimEther({ from: mintKey }))
+                await assertRevert(this.controller.requestReclaimEther({ from: otherAddress }))
             })
         })
 
@@ -751,7 +872,7 @@ contract('TimeLockedController', function (accounts) {
 
             it('cannot be called by non-owner', async function () {
                 await this.token.transfer(this.token.address, 40*10**18, { from: oneHundred })
-                await assertRevert(this.controller.requestReclaimToken(this.token.address, { from: mintKey }))
+                await assertRevert(this.controller.requestReclaimToken(this.token.address, { from: otherAddress }))
             })
         })
 
@@ -777,7 +898,112 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('cannot be called by non-owner', async function () {
-                await assertRevert(this.controller.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, { from: mintKey }))
+                await assertRevert(this.controller.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, { from: otherAddress }))
+            })
+        })
+
+
+
+        describe('Full delegation process', function () {
+            beforeEach(async function () {
+                this.newToken = await TrueUSD.new({ from: owner })
+                await this.newToken.setDelegatedFrom(this.token.address, { from: owner })
+                await this.newToken.setTotalSupply(100*10**18, { from: owner })
+                await assertRevert(this.newToken.setTotalSupply(10*10**18, { from: owner }))
+                await this.newToken.setBurnBounds(10*10**18, 20*10**18, { from: owner })
+                await this.newToken.setGlobalPause(this.globalPause.address, { from: owner })    
+                await this.newToken.transferOwnership(this.controller.address, { from: owner })
+                await this.controller.issueClaimOwnership(this.newToken.address, { from: owner })
+                await this.controller.delegateToNewContract(this.newToken.address,
+                    this.balanceSheet,
+                    this.allowanceSheet, { from: owner })
+                await this.controller.setTrueUSD(this.newToken.address, { from: owner })
+                await this.controller.setTusdRegistry(this.registry.address, { from: owner })  
+                await this.controller.changeStakingFees(0, 1, 0, 1, 0, 0, 1, 0, { from: owner })
+  
+            })
+
+            describe('Base contract behaves well', function () {
+                it('delegation set properly', async function(){
+                    assert.equal(await this.token.delegate(),this.newToken.address)
+                    assert.equal(await this.token.eventDelegateor(),this.newToken.address)
+                    assert.equal(await this.newToken.eventDelegateor(),this.token.address)
+                    assert.equal(await this.newToken.delegatedFrom(),this.token.address)
+                })
+
+                it('checks for totalSupply', async function(){
+                    const totalSupply = await this.token.totalSupply()
+                    assert.equal(Number(totalSupply),100000000000000000000)
+                })
+
+                it('transfer token from one account to another', async function(){
+                    assertBalance(this.token, oneHundred, 100*10**18)
+                    await this.token.transfer(otherAddress, 10*10**18, { from: oneHundred }) 
+                    assertBalance(this.token, otherAddress, 10*10**18)
+                })
+
+                it('transferFrom token from one account to another', async function(){
+                    await this.token.approve(spender, 10*10**18, { from: oneHundred })
+                    const allowance = await this.token.allowance(oneHundred, spender)
+                    assert.equal(Number(allowance),10*10**18)
+                    await this.token.transferFrom(oneHundred, otherAddress, 10*10**18, { from: spender })
+                    assertBalance(this.token, otherAddress, 10*10**18)
+                })
+
+                it('burns from an account', async function(){
+                    await this.registry.setAttribute(oneHundred, "canBurn", 1, "notes", { from: owner })
+                    await this.token.burn(10*10**18, "burn", { from: oneHundred })
+                    assertBalance(this.token, oneHundred, 90*10**18)
+                })
+
+                it('increaseApproval and decreaseApproval of an address', async function(){
+                    await this.token.increaseApproval(spender, 10*10**18, { from: oneHundred })
+                    let allowance = await this.token.allowance(oneHundred, spender)
+                    assert.equal(Number(allowance),10*10**18)
+                    await this.token.decreaseApproval(spender, 10*10**18, { from: oneHundred })
+                    allowance = await this.token.allowance(oneHundred, spender)
+                    assert.equal(Number(allowance),0)
+                })
+            })
+            describe('New contract behaves well', function () {
+                it('cannot set totalsupply again', async function(){
+                    await assertRevert(this.newToken.setTotalSupply(10, { from: owner }))
+                })
+
+                it('checks for totalSupply', async function(){
+                    const totalSupply = await this.newToken.totalSupply()
+                    assert.equal(Number(totalSupply),100*10**18)
+                })
+
+                it('transfer token from one account to another', async function(){
+                    assertBalance(this.newToken, oneHundred, 100*10**18)
+                    await this.token.transfer(otherAddress, 10*10**18, { from: oneHundred }) 
+                    assertBalance(this.newToken, otherAddress, 10*10**18)
+                })
+
+                it('transferFrom token from one account to another', async function(){
+                    await this.newToken.approve(spender, 10*10**18, { from: oneHundred })
+                    const allowance = await this.newToken.allowance(oneHundred, spender)
+                    assert.equal(Number(allowance),10*10**18)
+                    await this.newToken.transferFrom(oneHundred, otherAddress, 10*10**18, { from: spender })
+                    assertBalance(this.newToken, otherAddress, 10*10**18)
+                })
+
+                it('burns from an account', async function(){
+                    await this.registry.setAttribute(oneHundred, "canBurn", 1, "notes", { from: owner })
+                    await this.newToken.burn(10*10**18, "burn", { from: oneHundred })
+                    assertBalance(this.newToken, oneHundred, 90*10**18)
+                })
+
+                it('increaseApproval and decreaseApproval of an address', async function(){
+                    await this.newToken.increaseApproval(spender, 10*10**18, { from: oneHundred })
+                    let allowance = await this.newToken.allowance(oneHundred, spender)
+                    assert.equal(Number(allowance),10*10**18)
+                    await this.newToken.decreaseApproval(spender, 10*10**18, { from: oneHundred })
+                    allowance = await this.newToken.allowance(oneHundred, spender)
+                    assert.equal(Number(allowance),0)
+                })
+
             })
         })
     })

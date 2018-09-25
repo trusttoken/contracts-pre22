@@ -2,6 +2,7 @@ import assertRevert from './helpers/assertRevert'
 import canDelegateTests from './CanDelegate'
 const CanDelegateMock = artifacts.require('CanDelegateMock')
 const StandardDelegateMock = artifacts.require('StandardDelegateMock')
+const GlobalPause = artifacts.require("GlobalPause")
 
 contract('CanDelegate', function (accounts) {
     const _ = accounts[0]
@@ -11,6 +12,8 @@ contract('CanDelegate', function (accounts) {
 
     beforeEach(async function () {
         this.token = await CanDelegateMock.new(oneHundreds[0], 100*10**18, { from: owners[0] })
+        this.globalPause = await GlobalPause.new({ from: owners[0] })
+        await this.token.setGlobalPause(this.globalPause.address, { from: owners[0] })
     })
 
     canDelegateTests([owners[0], oneHundreds[0], anotherAccounts[0]])

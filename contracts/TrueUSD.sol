@@ -36,7 +36,19 @@ CanDelegate {
         burnMax = 20000000 * 10**uint256(DECIMALS);
     }
 
-    function changeTokenName(string _name, string _symbol) public onlyOwner {
+    bool public totalSupplySet;
+
+    /** 
+    *@dev set the totalSupply of the contract for delegation purposes
+    Can only be set once.
+    */
+    function setTotalSupply(uint _totalSupply) external onlyOwner {
+        require(!totalSupplySet, "total supply already set");
+        totalSupply_ = _totalSupply;
+        totalSupplySet = true;
+    }
+
+    function changeTokenName(string _name, string _symbol) external onlyOwner {
         name = _name;
         symbol = _symbol;
         emit ChangeTokenName(_name, _symbol);
@@ -50,7 +62,7 @@ CanDelegate {
     }
 
     function mint(address _to, uint256 _value) public onlyWhenNoDelegate returns (bool) {
-        super.mint(_to, _value);
+        return super.mint(_to, _value);
     }
 
     function setBalanceSheet(address _sheet) public onlyWhenNoDelegate returns (bool) {
@@ -99,12 +111,6 @@ CanDelegate {
         );
     }
 
-    function burnAllArgs(address _burner, uint256 _value, string _note) internal {
-        //round down burn amount to cent
-        uint burnAmount = _value / (10 ** uint256(DECIMALS - ROUNDING)) * (10 ** uint256(DECIMALS - ROUNDING));
-        super.burnAllArgs(_burner, burnAmount, _note);
-    }
-
     // Alternatives to the normal NoOwner functions in case this contract's owner
     // can't own ether or tokens.
     // Note that we *do* inherit reclaimContract from NoOwner: This contract
@@ -115,7 +121,12 @@ CanDelegate {
 
     function reclaimToken(ERC20 token, address _to) external onlyOwner {
         uint256 balance = token.balanceOf(this);
-        assert(token.transfer(_to, balance));
+        token.transfer(_to, balance);
     }
 
+    function burnAllArgs(address _burner, uint256 _value, string _note) internal {
+        //round down burn amount to cent
+        uint burnAmount = _value.div(10 ** uint256(DECIMALS - ROUNDING)).mul(10 ** uint256(DECIMALS - ROUNDING));
+        super.burnAllArgs(_burner, burnAmount, _note);
+    }
 }

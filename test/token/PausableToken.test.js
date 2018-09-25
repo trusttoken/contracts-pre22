@@ -1,10 +1,13 @@
 import assertRevert from '../helpers/assertRevert'
 import assertBalance from '../helpers/assertBalance'
 const PausableToken = artifacts.require('PausableTokenMock')
+const GlobalPause = artifacts.require("GlobalPause")
 
 contract('PausableToken', function ([_, owner, recipient, anotherAccount], transfersToZeroBecomeBurns) {
     beforeEach(async function () {
         this.token = await PausableToken.new(owner, 100*10**18, { from: owner })
+        this.globalPause = await GlobalPause.new({ from: owner })
+        await this.token.setGlobalPause(this.globalPause.address, { from: owner })
     })
 
     describe('pause', function () {
