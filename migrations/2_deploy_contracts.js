@@ -77,8 +77,4 @@ module.exports = async (deployer, network, accounts)=> {
   // console.log("registry Address", registry.address)
   // console.log("fastPauseMints Address", fastPauseMints.address)
   // })
-
-
-
-
 };

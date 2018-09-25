@@ -650,10 +650,7 @@ contract('TimeLockedController', function (accounts) {
                     time = Number(await this.controller.returnTime()) 
                     blockchainHour = Number(await this.dateTime.getHour(time))
                 }
-                const {logs} = await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
-                const mintOperation = await this.controller.mintOperations(0)
-                const requestedTime = mintOperation[3]
-                const requestedTime1 = logs[0].args.requestedTime
+                await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
                 await this.controller.approveMint(0 , { from: approver1 })
                 await this.controller.approveMint(0 , { from: approver2 })
 
