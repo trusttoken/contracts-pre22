@@ -518,7 +518,6 @@ contract('TimeLockedController', function (accounts) {
                     blockchainHour = Number(await this.dateTime.getHour(time))
                 }
 
-
                 time = Number(await this.controller.returnTime())
                 let blockchainYear = Number(await this.dateTime.getYear(time))
                 let blockchainMonth = Number(await this.dateTime.getMonth(time))
@@ -659,8 +658,6 @@ contract('TimeLockedController', function (accounts) {
 
             })
         })
-
-
 
         describe('setDelegatedFrom', function () {
             it('sets delegatedFrom', async function () {

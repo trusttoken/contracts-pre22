@@ -119,6 +119,4 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
         }
         ERC20events(eventDelegateor).emitApprovalEvent(_tokenHolder,_spender, allowances.allowanceOf(_tokenHolder, _spender));
     }
-    
-
 }
