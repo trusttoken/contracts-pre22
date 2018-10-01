@@ -15,8 +15,8 @@ These contracts are inspired by and roughly equivalent to the corresponding ERC2
 token contracts from [OpenZeppelin](https://openzeppelin.org/). The main difference is
 that they keep track of balances and allowances by using separate contracts (BalanceSheet.sol
 and AllowanceSheet.sol) instead of mappings in their own storage.
-ERCevents contract is used to ensure that events are still emitted from the original address even
-after contract update.
+The ERCevents contract is used to ensure that events are still emitted from the original address even
+after the TrueUSD contract is delegated.
 
 ### WithdrawalToken.sol
 
@@ -25,13 +25,13 @@ burn operations.
 
 ### BurnableTokenWithBounds.sol
 
-This limits the minimum and maximum amount of tokens that can be burned (redeemed) at once.
+This limits the minimum and maximum number of tokens that can be burned (redeemed) at once.
 
 ### ...Delegate....sol
 
 If a new version of the TrueUSD contract is ever launched, these three contracts allow users
 to continue using the old version if they want and it will forward all basic transactions to the new one.
-see Delegation process.
+See the section entitled Delegation Process below.
 
 ### CompliantToken.sol
 
@@ -50,18 +50,16 @@ This is the top-level ERC20 contract tying together all the previously mentioned
 ### TimeLockedController.sol
 
 This contract is the initial owner of TrueUSD.sol. Consists of an Owner key, Mint Pause Keys, 
-Mint Key, and Mint Approval Keys. Also provides time delays on mint requests to ensure security.
+Mint Key, and Mint Approval Keys. It also imposes time delays on mint requests to maximize security.
 
 ### MultiSigOwner.sol
 
-This contract is the owner of TimeLockedController.sol. It turns every owner only functions into 
-Multisig function that requires two approvals.
+This contract is the owner of TimeLockedController.sol. It turns every function that only the owner can access into a multisig function that requires 2/3 approvals.
 
-
-### Delegation process
+### Delegation Process
 
 To delegate calls to new contract, first deploy a contract that implements DelegateBurnable. Configure fees, burn bounds, global pause etc.
-Also must implement setBalanceSheet(address) and SetAllowanceSheet(address) functions that can claim storage contracts.
+The contract must also implement setBalanceSheet(address) and setAllowanceSheet(address) in order to claim the storage contracts.
 
 Set registry instance for the new contract. Set totalSupply to equal to the current totalSupply of the old contract.
 
@@ -97,13 +95,13 @@ To run the tests and generate a code coverage report:
 | Pages  | URL |
 | ------------- | ------------- |
 | Website  | https://www.trueusd.com/  |
-| FaceBook  | https://www.facebook.com/TrustToken/  |
+| Facebook  | https://www.facebook.com/TrustToken/  |
 | Twitter  | https://twitter.com/TrustToken  |
 | Telegram  | https://t.me/joinchat/HihkMkTja1gIyBRM1J1_vg  |
 
 
 
-## Listed Exchanges
+## Exchanges where TrueUSD is Traded
 | Exchanges  | URL |
 | ------------- | ------------- |
 | Binance  | https://www.binance.com/ 
