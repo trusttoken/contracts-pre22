@@ -8,7 +8,7 @@ import "./BurnableTokenWithBounds.sol";
 import "./CompliantToken.sol";
 import "./TokenWithFees.sol";
 import "./StandardDelegate.sol";
-import "./WithdrawalToken.sol";
+import "./RedeemToken.sol";
 
 // This is the top-level ERC20 contract, but most of the interesting functionality is
 // inherited - see the documentation on the corresponding contracts.
@@ -18,7 +18,7 @@ NoOwner,
 BurnableTokenWithBounds, 
 CompliantToken, 
 TokenWithFees, 
-WithdrawalToken, 
+RedeemToken, 
 StandardDelegate, 
 CanDelegate {
     using SafeMath for *;
