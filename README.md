@@ -81,11 +81,11 @@ To run the tests and generate a code coverage report:
 
 ## Other Information
 
-| Description            | URL                                                                   |
-| ---------------------- | --------------------------------------------------------------------- |
-| Etherscan Page         | https://etherscan.io/token/0x8dd5fbce2f6a956c3022ba3663759011dd51e73e |
-| Coinmarketcap          | https://coinmarketcap.com/currencies/true-usd/                        |
-| TrueUSD’s Terms of Use | https://www.trueusd.com/terms-of-use                                  |
+| Description  | URL |
+| ------------- | ------------- |
+| Etherscan Page | https://etherscan.io/token/0x8dd5fbce2f6a956c3022ba3663759011dd51e73e  |
+| Coinmarketcap  | https://coinmarketcap.com/currencies/true-usd/  |
+| TrueUSD’s Terms of Use  | https://www.trusttoken.com/terms-of-use/  |
 
 ## Social Links
 
