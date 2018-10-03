@@ -245,20 +245,6 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
         }
         return false;
     }
-    
-    function returnFirstCheckTime() public view returns(uint){
-        uint16 year = dateTime.getYear(now.sub(timeZoneDiff));
-        uint8 month = dateTime.getMonth(now.sub(timeZoneDiff));
-        uint8 day = dateTime.getDay(now.sub(timeZoneDiff));
-        uint firstCheckTime = dateTime.toTimestamp(year, month, day, firstMintCheckTimes.hour, firstMintCheckTimes.minute);
-        return firstCheckTime;
-    }
-    
-    function timeRequestedShift(uint timeRequested) public view returns(uint){
-        return timeRequested.add(30 minutes);
-    }
-
-
 
     /**
      * @dev compute if the number of approvals is enough for a given mint amount

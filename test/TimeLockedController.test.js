@@ -257,6 +257,17 @@ contract('TimeLockedController', function (accounts) {
                 await this.controller.setMinimalApprovals(2,3, { from: owner })
             })
 
+            it('have enought approvals for mints', async function(){
+                let result = await this.controller.hasEnoughApproval(2,10*10**18)
+                assert.equal(result,true)
+                result = await this.controller.hasEnoughApproval(1,10*10**18)
+                assert.equal(result,false)
+                result = await this.controller.hasEnoughApproval(3,12*10**18)
+                assert.equal(result,true)
+                result = await this.controller.hasEnoughApproval(2,12*10**18)
+                assert.equal(result,false)
+            })
+
             it('owner can finalize before checktime/without approvals', async function(){
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
                 await this.controller.finalizeMint(0 , { from: owner })
