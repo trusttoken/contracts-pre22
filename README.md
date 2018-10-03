@@ -1,6 +1,5 @@
 ![alt tag](https://raw.github.com/trusttoken/trueUSD/readMe/Logo.png)
 
-
 # TrueUSD
 
 This repository contains the TrueUSD ERC20 contract and related contracts.
@@ -18,7 +17,7 @@ and AllowanceSheet.sol) instead of mappings in their own storage.
 The ERCevents contract is used to ensure that events are still emitted from the original address even
 after the TrueUSD contract is delegated.
 
-### WithdrawalToken.sol
+### RedeemToken.sol
 
 This makes it easier for users to burn tokens (i.e. redeem them for USD) by treating sends to 0x0 as
 burn operations.
@@ -49,7 +48,7 @@ This is the top-level ERC20 contract tying together all the previously mentioned
 
 ### TimeLockedController.sol
 
-This contract is the initial owner of TrueUSD.sol. Consists of an Owner key, Mint Pause Keys, 
+This contract is the initial owner of TrueUSD.sol. Consists of an Owner key, Mint Pause Keys,
 Mint Key, and Mint Approval Keys. It also imposes time delays on mint requests to maximize security.
 
 ### MultiSigOwner.sol
@@ -67,46 +66,42 @@ Transfer ownership of the new contract to TimeLockedController. Claim ownership 
 
 If the new contract has function setDelegatedFrom, call the function with TrueUSD contract address as the parameter.
 
-call delegateToNewContract(_newContractAddress, _balanceSheetAddress, _allowanceSheetAddress) to delegate to new contract.
-
+call delegateToNewContract(\_newContractAddress, \_balanceSheetAddress, \_allowanceSheetAddress) to delegate to new contract.
 
 ## Testing
 
-Ensure the registry submodule is in the root directory 
+Ensure the registry submodule is in the root directory
 
--`rm -r registry`
--`git clone git@github.com:trusttoken/registry.git`
-
+-`rm -r registry` -`git clone git@github.com:trusttoken/registry.git`
 
 To run the tests and generate a code coverage report:
+
 - `npm install`
 - `./node_modules/.bin/solidity-coverage`
 
-
 ## Other Information
-| Description  | URL |
-| ------------- | ------------- |
-| Etherscan Page | https://etherscan.io/token/0x8dd5fbce2f6a956c3022ba3663759011dd51e73e  |
-| Coinmarketcap  | https://coinmarketcap.com/currencies/true-usd/  |
-| TrueUSD’s Terms of Use  | https://www.trueusd.com/terms-of-use  |
 
+| Description            | URL                                                                   |
+| ---------------------- | --------------------------------------------------------------------- |
+| Etherscan Page         | https://etherscan.io/token/0x8dd5fbce2f6a956c3022ba3663759011dd51e73e |
+| Coinmarketcap          | https://coinmarketcap.com/currencies/true-usd/                        |
+| TrueUSD’s Terms of Use | https://www.trueusd.com/terms-of-use                                  |
 
 ## Social Links
-| Pages  | URL |
-| ------------- | ------------- |
-| Website  | https://www.trueusd.com/  |
-| Facebook  | https://www.facebook.com/TrustToken/  |
-| Twitter  | https://twitter.com/TrustToken  |
-| Telegram  | https://t.me/joinchat/HihkMkTja1gIyBRM1J1_vg  |
 
-
+| Pages    | URL                                          |
+| -------- | -------------------------------------------- |
+| Website  | https://www.trueusd.com/                     |
+| Facebook | https://www.facebook.com/TrustToken/         |
+| Twitter  | https://twitter.com/TrustToken               |
+| Telegram | https://t.me/joinchat/HihkMkTja1gIyBRM1J1_vg |
 
 ## Exchanges where TrueUSD is Traded
-| Exchanges  | URL |
-| ------------- | ------------- |
-| Binance  | https://www.binance.com/ 
-| Bittrex  | https://bittrex.com  |
-| CoinTiger  | https://www.cointiger.pro  |
-| Upbit  | https://upbit.com/  |
-| HBUS  | https://www.hbus.com/  |
 
+| Exchanges | URL                       |
+| --------- | ------------------------- |
+| Binance   | https://www.binance.com/  |
+| Bittrex   | https://bittrex.com       |
+| CoinTiger | https://www.cointiger.pro |
+| Upbit     | https://upbit.com/        |
+| HBUS      | https://www.hbus.com/     |

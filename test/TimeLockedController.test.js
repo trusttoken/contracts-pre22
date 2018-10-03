@@ -491,7 +491,7 @@ contract('TimeLockedController', function (accounts) {
                 let blockchainYear = Number(await this.dateTime.getYear(time))
                 let blockchainMonth = Number(await this.dateTime.getMonth(time))
                 let blockchainDay = Number(await this.dateTime.getDay(time))
-                let timeDifference = 7 //hours
+                let timeDifference = 8 //hours because at this point the blockchain date is past nov 5th. which is post daylight saving
                 let requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay-1,9-timeDifference,29).getTime()/1000
                 let result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, true)
@@ -522,18 +522,17 @@ contract('TimeLockedController', function (accounts) {
                 let blockchainYear = Number(await this.dateTime.getYear(time))
                 let blockchainMonth = Number(await this.dateTime.getMonth(time))
                 let blockchainDay = Number(await this.dateTime.getDay(time))
-                let timeDifference = 7 //hours
+                let timeDifference = 8 //hours because at this point the blockchain date is past nov 5th. which is post daylight saving
 
-                let requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,15-timeDifference,29).getTime()/1000
+                let requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,15-timeDifference,28).getTime()/1000
                 let result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, false)
-                requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,9-timeDifference,29).getTime()/1000
+                requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,9-timeDifference,28).getTime()/1000
                 result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, true)
                 requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,9-timeDifference,45).getTime()/1000
                 result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, false)
-
 
                 while (blockchainHour !== 18){
                     await increaseTime(duration.hours(1))
@@ -553,7 +552,6 @@ contract('TimeLockedController', function (accounts) {
                 requestEpochTime = new Date(blockchainYear,blockchainMonth-1,blockchainDay,16-timeDifference,35).getTime()/1000
                 result = await this.controller.enoughTimePassed(requestEpochTime)
                 assert.equal(result, false)
-
             })
 
             it('does the entire mint process finalize within the day', async function () {
