@@ -72,7 +72,8 @@ call delegateToNewContract(\_newContractAddress, \_balanceSheetAddress, \_allowa
 
 Ensure the registry submodule is in the root directory
 
--`rm -r registry` -`git clone git@github.com:trusttoken/registry.git`
+- `rm -r registry`
+- `git clone git@github.com:trusttoken/registry.git`
 
 To run the tests and generate a code coverage report:
 
