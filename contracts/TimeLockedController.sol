@@ -115,9 +115,10 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     //mint operations by the mintkey cannot be processed on defined holidays
     modifier notOnHoliday() {
         if (msg.sender != owner) {
-            uint16 year = dateTime.getYear(now.sub(timeZoneDiff));
-            uint8 month = dateTime.getMonth(now.sub(timeZoneDiff));
-            uint8 day = dateTime.getDay(now.sub(timeZoneDiff));
+            uint shiftedTimestamp = now.sub(timeZoneDiff);
+            uint16 year = dateTime.getYear(shiftedTimestamp);
+            uint8 month = dateTime.getMonth(shiftedTimestamp);
+            uint8 day = dateTime.getDay(shiftedTimestamp);
             require(!holidays[keccak256(year, month, day)], "not on holiday");
         }
         _;
