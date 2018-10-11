@@ -75,7 +75,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     string constant public IS_MINT_APPROVER = "isTUSDMintApprover";
 
     modifier onlyFastPauseOrOwner() {
-        require(msg.sender == trueUsdFastPause || msg.sender == owner, "must be mintKey or owner");
+        require(msg.sender == trueUsdFastPause || msg.sender == owner, "must be pauser or owner");
         _;
     }
 
@@ -204,7 +204,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
             dateTime.getDay(currentTimeZoneTime) == dateTime.getDay(timeOfLastMint)) {
             mintedToday = mintedToday.add(_value);
             require(mintedToday <= dailyMintLimit, "over the mint limit");
-        }else {
+        } else {
             mintedToday = _value;
         }
         timeOfLastMint = currentTimeZoneTime;
@@ -254,7 +254,7 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
             if (numberOfApproval < minSmallMintApproval) {
                 return false;
             }
-        }else {
+        } else {
             if (numberOfApproval < minLargeMintApproval) {
                 return false;
             }
