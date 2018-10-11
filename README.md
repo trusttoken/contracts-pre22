@@ -36,7 +36,7 @@ See the section entitled Delegation Process below.
 
 This ensures that only users who have passed a KYC/AML check can receive newly minted tokens or
 trade on certain restricted exchanges. It also allows for blacklisting of bad actors in accordance
-with the [TrueCoin Terms of Use](https://www.trusttoken.com/trueusd/terms-of-use).
+with the [TrueCoin Terms of Use](https://www.trusttoken.com/terms-of-use/).
 
 ### TokenWithFees.sol
 
