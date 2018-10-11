@@ -314,8 +314,12 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     /** 
     *@dev return current time in pacific time
     */
-    function returnTime() public view returns(uint256) {
+    function returnTime() public view returns (uint256) {
         return now.sub(timeZoneDiff);
+    }
+
+    function mintOperationCount() public view returns (uint256) {
+        return mintOperations.length;
     }
 
     /*
