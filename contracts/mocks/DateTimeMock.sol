@@ -45,9 +45,9 @@ contract DateTimeMock {
         function getDaysInMonth(uint8 month, uint16 year) public pure returns (uint8) {
                 if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
                         return 31;
-                }else if (month == 4 || month == 6 || month == 9 || month == 11) {
+                } else if (month == 4 || month == 6 || month == 9 || month == 11) {
                         return 30;
-                }else if (isLeapYear(year)) {
+                } else if (isLeapYear(year)) {
                         return 29;
                 } else {
                         return 28;
@@ -165,7 +165,7 @@ contract DateTimeMock {
                 for (i = ORIGIN_YEAR; i < year; i++) {
                         if (isLeapYear(i)) {
                                 timestamp += LEAP_YEAR_IN_SECONDS;
-                        }else {
+                        } else {
                                 timestamp += YEAR_IN_SECONDS;
                         }
                 }
