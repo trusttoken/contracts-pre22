@@ -72,11 +72,15 @@ contract('TimeLockedController', function (accounts) {
             })
 
             it('request a mint', async function () {
+                const originalMintOperationCount = await this.controller.mintOperationCount()
+                assert.equal(originalMintOperationCount, 0)
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: owner })
                 const mintOperation = await this.controller.mintOperations(0)
                 assert.equal(mintOperation[0], oneHundred)
                 assert.equal(Number(mintOperation[1]), 10*10**18)
                 assert.equal(Number(mintOperation[4]), 0,"numberOfApprovals not 0")
+                const mintOperationCount = await this.controller.mintOperationCount()
+                assert.equal(mintOperationCount, 1)
             })
 
             it('request mint then revoke it', async function () {
