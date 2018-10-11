@@ -105,8 +105,9 @@ contract TimeLockedController is HasRegistry, HasNoEther, HasNoTokens, Claimable
     //mint operations by the mintkey cannot be processed on weekend
     modifier notOnWeekend() {
         if (msg.sender != owner) {
-            require(dateTime.getWeekday(now.sub(timeZoneDiff)) != 0, "cannot mint on weekend");
-            require(dateTime.getWeekday(now.sub(timeZoneDiff)) != 6, "cannot mint on weekend");
+            uint8 weekday = dateTime.getWeekday(now.sub(timeZoneDiff));
+            require(weekday != 0, "cannot mint on weekend");
+            require(weekday != 6, "cannot mint on weekend");
         }
         _;
     }
