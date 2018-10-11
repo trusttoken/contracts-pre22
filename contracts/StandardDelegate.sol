@@ -20,10 +20,10 @@ contract StandardDelegate is DelegateBurnable, ModularPausableToken {
     }
 
     //only calls from delegatedFrom can call the delegate___ functions
-    //only calls from eventDelegateor can call the emit ERC20 event functions
+    //only calls from eventDelegate can call the emit ERC20 event functions
     function setDelegatedFrom(address _addr) public onlyOwner {
         delegatedFrom = _addr;
-        eventDelegateor = _addr;
+        eventDelegate = _addr;
         emit DelegatedFromSet(_addr);
     }
 

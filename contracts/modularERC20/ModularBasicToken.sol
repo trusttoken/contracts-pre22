@@ -59,7 +59,7 @@ contract ModularBasicToken is ERC20Basic, Claimable, ERC20events {
         // SafeMath.sub will throw if there is not enough balance.
         balances.subBalance(_from, _value);
         balances.addBalance(_to, _value);
-        ERC20events(eventDelegateor).emitTransferEvent(_from, _to, _value);
+        ERC20events(eventDelegate).emitTransferEvent(_from, _to, _value);
     }
     
 

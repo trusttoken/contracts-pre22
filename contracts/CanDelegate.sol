@@ -14,7 +14,7 @@ contract CanDelegate is ModularPausableToken {
     // Can undelegate by passing in newContract = address(0)
     function delegateToNewContract(DelegateBurnable _newContract) public onlyOwner {
         delegate = _newContract;
-        eventDelegateor = address(_newContract);
+        eventDelegate = address(_newContract);
         emit DelegateToNewContract(delegate);
     }
 

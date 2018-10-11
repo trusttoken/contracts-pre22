@@ -935,8 +935,8 @@ contract('TimeLockedController', function (accounts) {
             describe('Base contract behaves well', function () {
                 it('delegation set properly', async function(){
                     assert.equal(await this.token.delegate(),this.newToken.address)
-                    assert.equal(await this.token.eventDelegateor(),this.newToken.address)
-                    assert.equal(await this.newToken.eventDelegateor(),this.token.address)
+                    assert.equal(await this.token.eventDelegate(),this.newToken.address)
+                    assert.equal(await this.newToken.eventDelegate(),this.token.address)
                     assert.equal(await this.newToken.delegatedFrom(),this.token.address)
                 })
 

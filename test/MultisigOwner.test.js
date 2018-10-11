@@ -332,10 +332,10 @@ contract('MultisigOwner', function (accounts) {
                 this.balanceSheet,
                 this.allowanceSheet, { from: owner2 })
             const delegate = await this.token.delegate()
-            const eventDelegateor = await this.token.eventDelegateor()
+            const eventDelegate = await this.token.eventDelegate()
 
             assert.equal(delegate, this.delegateContract.address)
-            assert.equal(eventDelegateor, this.delegateContract.address)
+            assert.equal(eventDelegate, this.delegateContract.address)
             let balanceOwner = await BalanceSheet.at(this.balanceSheet).owner()
             let allowanceOwner = await AllowanceSheet.at(this.allowanceSheet).owner()
 

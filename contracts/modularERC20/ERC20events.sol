@@ -8,7 +8,7 @@ can always be emitted from the the base contract even after we delegate
 calls to a new contract
 */
 contract ERC20events {
-    address public eventDelegateor = address(this);
+    address public eventDelegate = address(this);
 
     event Transfer(
         address indexed from,
@@ -23,7 +23,7 @@ contract ERC20events {
     );
 
     modifier onlyTusd() {
-        require(msg.sender == eventDelegateor, "only event delegator can call to emit event");
+        require(msg.sender == eventDelegate, "only event delegator can call to emit event");
         _;
     }
     
