@@ -48,31 +48,31 @@ This is the top-level ERC20 contract tying together all the previously mentioned
 
 ### TimeLockedController.sol
 
-This contract is the initial owner of TrueUSD.sol. Consists of an Owner key, Mint Pause Keys,
+This contract is the initial owner of `TrueUSD.sol`. Consists of an Owner key, Mint Pause Keys,
 Mint Key, and Mint Approval Keys. It also imposes time delays on mint requests to maximize security.
 
 ### MultiSigOwner.sol
 
-This contract is the owner of TimeLockedController.sol. It turns every function that only the owner can access into a multisig function that requires 2/3 approvals.
+This contract is the owner of `TimeLockedController.sol`. It turns every function that only the owner can access into a multisig function that requires 2/3 approvals.
 
 ### Delegation Process
 
-To delegate calls to new contract, first deploy a contract that implements DelegateBurnable. Configure fees, burn bounds, global pause etc.
-The contract must also implement setBalanceSheet(address) and setAllowanceSheet(address) in order to claim the storage contracts.
+To delegate calls to new contract, first deploy a contract that implements `DelegateBurnable`. Configure fees, burn bounds, global pause etc.
+The contract must also implement `setBalanceSheet(address)` and `setAllowanceSheet(address)` in order to claim the storage contracts.
 
-Set registry instance for the new contract. Set totalSupply to equal to the current totalSupply of the old contract.
+Set registry instance for the new contract. Set `totalSupply` to equal to the current `totalSupply` of the old contract.
 
-Transfer ownership of the new contract to TimeLockedController. Claim ownership of new contract with TimeLockedController.
+Transfer ownership of the new contract to `TimeLockedController`. Claim ownership of new contract with `TimeLockedController`.
 
-If the new contract has function setDelegatedFrom, call the function with TrueUSD contract address as the parameter.
+If the new contract has function `setDelegatedFrom`, call the function with TrueUSD contract address as the parameter.
 
-call delegateToNewContract(\_newContractAddress, \_balanceSheetAddress, \_allowanceSheetAddress) to delegate to new contract.
+call `delegateToNewContract(_newContractAddress, _balanceSheetAddress, _allowanceSheetAddress)` to delegate to new contract.
 
 ## Testing
 
 Initialize the registry submodule in the root directory:
 
-- `git submodule init && git submodule update``
+- `git submodule init && git submodule update`
 
 To run the tests and generate a code coverage report:
 
@@ -81,11 +81,11 @@ To run the tests and generate a code coverage report:
 
 ## Other Information
 
-| Description  | URL |
-| ------------- | ------------- |
+| Description    | URL                                                                    |
+| -------------  | ---------------------------------------------------------------------- |
 | Etherscan Page | https://etherscan.io/token/0x8dd5fbce2f6a956c3022ba3663759011dd51e73e  |
-| Coinmarketcap  | https://coinmarketcap.com/currencies/true-usd/  |
-| TrueUSD’s Terms of Use  | https://www.trusttoken.com/terms-of-use/  |
+| Coinmarketcap  | https://coinmarketcap.com/currencies/true-usd/                         |
+| TrueUSD’s Terms of Use  | https://www.trusttoken.com/terms-of-use/                      |
 
 ## Social Links
 
