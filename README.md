@@ -77,7 +77,7 @@ Initialize the registry submodule in the root directory:
 To run the tests and generate a code coverage report:
 
 - `npm install`
-- `./node_modules/.bin/solidity-coverage`
+- `npm test`
 
 ## Other Information
 
