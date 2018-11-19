@@ -62,8 +62,8 @@ contract TimeLockedController {
     uint256 public jumboMintPool;
     uint8 public ratifiedPoolRefillApprovals;
 
-    uint8 constant public RATIFY_MINT_SIGS = 1;
-    uint8 constant public JUMBO_MINT_SIGS = 3;
+    uint8 constant public RATIFY_MINT_SIGS = 1; //number of approvals needed to finalize a Ratified Mint
+    uint8 constant public JUMBO_MINT_SIGS = 3; //number of approvals needed to finalize a Jumbo Mint
 
     bool public mintPaused;
     uint256 public mintReqInValidBeforeThisBlock; //all mint request before this block are invalid
@@ -207,8 +207,8 @@ contract TimeLockedController {
     */
 
     /**
-     * @dev define the threshold for a mint to be considered a small mint.
-     small mints requires a smaller number of approvals
+     * @dev set the threshold for a mint to be considered an instant mint, ratify mint and jumbo mint
+     Instant mint requires no approval, ratify mint requires 1 approval and jumbo mint requires 3 approvals
      */
     function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _jumbo) external onlyOwner {
         instantMintThreshold= _instant;
@@ -217,6 +217,11 @@ contract TimeLockedController {
         emit MintThresholdChanged(_instant, _ratified, _jumbo);
     }
 
+
+    /**
+     * @dev set the limit of each mint pool. For example can only instant mint up to the instant mint pool limit
+     before needing to refill
+     */
     function setMintLimits(uint256 _instant, uint256 _ratified, uint256 _jumbo) external onlyOwner {
         instantMintLimit = _instant;
         ratifiedMintLimit = _ratified;
@@ -224,13 +229,18 @@ contract TimeLockedController {
         emit MintLimitsChanged(_instant, _ratified, _jumbo);
     }
 
-
+    /**
+     * @dev Ratifier can refill instant mint pool
+     */
     function refillInstantMintPool() external onlyMintRatifierOrOwner {
         ratifiedMintPool = ratifiedMintPool.sub(instantMintLimit.sub(instantMintPool));
         instantMintPool = instantMintLimit;
         emit InstantPoolRefilled();
     }
 
+    /**
+     * @dev Owner or 3 ratifiers can refill Ratified Mint Pool
+     */
     function refillRatifiedMintPool() external onlyMintRatifierOrOwner {
         if (msg.sender != owner) {
             if (ratifiedPoolRefillApprovals < 2) {
@@ -244,6 +254,9 @@ contract TimeLockedController {
         emit RadifyPoolRefilled();
     }
 
+    /**
+     * @dev Owner can refill Jumbo Mint Pool
+     */
     function refillJumboMintPool() external onlyOwner {
         jumboMintPool = jumboMintLimit;
         emit JumboPoolRefilled();
@@ -260,6 +273,12 @@ contract TimeLockedController {
         emit RequestMint(_to, _value, mintOperations.length, msg.sender);
     }
 
+
+    /**
+     * @dev Instant mint without ratification if the amount is less than instantMintThreshold and instantMintPool
+     * @param _to the address to mint to
+     * @param _value the amount minted
+     */
     function instantMint(address _to, uint256 _value) external mintNotPaused onlyMintKeyOrOwner {
         require(_value <= instantMintThreshold, "over the instant mint threshold");
         require(_value <= instantMintPool, "instant mint pool is dry");
@@ -268,6 +287,14 @@ contract TimeLockedController {
         trueUSD.mint(_to, _value);
     }
 
+
+    /**
+     * @dev ratifier ratifies a request mint. If the number of ratifiers that signed off is greater than 
+     the number of approvals required, the request is finalized
+     * @param _index the index of the requestMint to ratify
+     * @param _to the address to mint to
+     * @param _value the amount requested
+     */
     function ratifyMint(uint256 _index, address _to, uint256 _value) external mintNotPaused onlyMintRatifierOrOwner {
         MintOperation memory op = mintOperations[_index];
         require(op.to == _to, "to address does not match");
@@ -420,6 +447,10 @@ contract TimeLockedController {
     ========================================
     */
 
+
+    /** 
+    *@dev Increment redemption address count of TrueUSD
+    */
     function incrementRedemptionAddressCount() external onlyOwnerOrRedemptionAdmin {
         trueUSD.incrementRedemptionAddressCount();
     }
