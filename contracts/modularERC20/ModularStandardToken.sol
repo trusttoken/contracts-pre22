@@ -2,7 +2,6 @@ pragma solidity ^0.4.23;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./ModularBasicToken.sol";
-import "./AllowanceSheet.sol";
 
 /**
  * @title Standard ERC20 token
@@ -11,11 +10,11 @@ import "./AllowanceSheet.sol";
  * @dev https://github.com/ethereum/EIPs/issues/20
  * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
  */
-contract ModularStandardToken is ERC20, ModularBasicToken {
-    AllowanceSheet public allowances;
-
+contract ModularStandardToken is ModularBasicToken {
+    
     event AllowanceSheetSet(address indexed sheet);
-
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    
     /**
     * @dev claim ownership of the AllowanceSheet contract
     * @param _sheet The address to of the AllowanceSheet to claim.
@@ -62,7 +61,7 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
 
     function approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
         allowances.setAllowance(_tokenHolder, _spender, _value);
-        ERC20events(eventDelegateor).emitApprovalEvent(_tokenHolder, _spender, _value);
+        emit Approval(_tokenHolder, _spender, _value);
     }
 
     /**
@@ -92,7 +91,7 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
 
     function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
         allowances.addAllowance(_tokenHolder, _spender, _addedValue);
-        ERC20events(eventDelegateor).emitApprovalEvent(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
+        emit Approval(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
     }
 
     /**
@@ -117,6 +116,6 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
         } else {
             allowances.subAllowance(_tokenHolder, _spender, _subtractedValue);
         }
-        ERC20events(eventDelegateor).emitApprovalEvent(_tokenHolder,_spender, allowances.allowanceOf(_tokenHolder, _spender));
+        emit Approval(_tokenHolder,_spender, allowances.allowanceOf(_tokenHolder, _spender));
     }
 }

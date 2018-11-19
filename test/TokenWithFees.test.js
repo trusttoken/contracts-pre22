@@ -1,5 +1,5 @@
 import tokenWithFeesTests from './TokenWithFees';
-const TokenWithFees = artifacts.require('TokenWithFees')
+const TrueUSD = artifacts.require("TrueUSD")
 const Registry = artifacts.require('Registry')
 const BalanceSheet = artifacts.require('BalanceSheet')
 const AllowanceSheet = artifacts.require('AllowanceSheet')
@@ -10,7 +10,8 @@ contract('TokenWithFees', function ([_, owner, oneHundred, anotherAccount]) {
         this.balances = await BalanceSheet.new({ from: owner })
         this.allowances = await AllowanceSheet.new({ from: owner })
         this.registry = await Registry.new({ from: owner })
-        this.token = await TokenWithFees.new({ from: owner })
+        this.token = await TrueUSD.new({ from: owner })
+        await this.token.initialize(0, { from: owner })
         await this.balances.transferOwnership(this.token.address, { from: owner })
         await this.allowances.transferOwnership(this.token.address, { from: owner })
         await this.token.setBalanceSheet(this.balances.address, { from: owner })
@@ -18,9 +19,12 @@ contract('TokenWithFees', function ([_, owner, oneHundred, anotherAccount]) {
         await this.token.setRegistry(this.registry.address, { from: owner })
         this.globalPause = await GlobalPause.new({ from: owner })
         await this.token.setGlobalPause(this.globalPause.address, { from: owner })
-
+        await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner })
+        await this.registry.setAttribute(anotherAccount, "hasPassedKYC/AML", 1, "notes", { from: owner })
+        await this.registry.setAttribute(oneHundred, "canBurn", 1, "notes", { from: owner })
         await this.token.mint(oneHundred, 100*10**18, { from: owner })
+        await this.token.setBurnBounds(0, 100000*10**18, { from: owner })
     })
 
-    tokenWithFeesTests([owner, oneHundred, anotherAccount])
+    tokenWithFeesTests([owner, oneHundred, anotherAccount], true)
 })

@@ -8,16 +8,15 @@ const Registry = artifacts.require('Registry')
 
 function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
     describe('--TokenWithFees Tests--', function () {
+        beforeEach(async function(){
+            await this.token.changeStaker(owner, { from: owner })
+        })
+
         describe('fees are initially set to 0', function () {
             basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
             standardTokenTests([owner, oneHundred, anotherAccount])
             burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
             mintableTokenTests([owner, oneHundred, anotherAccount])
-        })
-
-        it('staker is originally owner', async function () {
-            const staker = await this.token.staker()
-            assert.equal(staker, owner)
         })
 
         describe('changeStaker', function () {

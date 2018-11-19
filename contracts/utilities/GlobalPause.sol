@@ -2,7 +2,6 @@ pragma solidity ^0.4.23;
 
 import "openzeppelin-solidity/contracts/ownership/Claimable.sol";
 
-
 /*
 All future trusttoken tokens can reference this contract. 
 Allow for Admin to pause a set of tokens with one transaction

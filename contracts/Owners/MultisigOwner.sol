@@ -33,7 +33,7 @@ contract MultiSigOwner {
     address[3] public ownerList;
 
     modifier onlyOwner() {
-        require(owners[msg.sender], "must be owner");
+        require(owners[msg.sender], "only Owner");
         _;
     }
 
@@ -104,6 +104,7 @@ contract MultiSigOwner {
             return true;
         } 
     }
+
 
     /**
     * @dev Let MultisigOwner contract claim ownership of a claimable contract
@@ -178,6 +179,37 @@ contract MultiSigOwner {
         }    
     }
 
+    function msTransferControllerProxyOwnership(address _newOwner) external onlyOwner returns(bool success) {
+        _initOrSignOwnerAction("msTransferControllerProxyOwnership");
+        if (ownerAction.approveSigs > 1) {
+            OwnedUpgradeabilityProxy(timeLockController).transferProxyOwnership(_newOwner);
+            emit ActionExecuted("msTransferControllerProxyOwnership");
+            _deleteOwnerActon();
+            return true;
+        }
+    }
+
+    function msClaimControllerProxyOwnership() external onlyOwner returns(bool success) {
+        _initOrSignOwnerAction("msClaimControllerProxyOwnership");
+        if (ownerAction.approveSigs > 1) {
+            OwnedUpgradeabilityProxy(timeLockController).claimProxyOwnership();
+            emit ActionExecuted("msClaimControllerProxyOwnership");
+            _deleteOwnerActon();
+            return true;
+        }
+    }
+
+    function msUpgradeControllerProxyImplTo(address _implementation) external onlyOwner returns(bool success) {
+        _initOrSignOwnerAction("msUpgradeControllerProxyImplTo");
+        if (ownerAction.approveSigs > 1) {
+            OwnedUpgradeabilityProxy(timeLockController).upgradeTo(_implementation);
+            emit ActionExecuted("msUpgradeControllerProxyImplTo");
+            _deleteOwnerActon();
+            return true;
+        }
+    }
+
+
     /**
     * @dev Veto the current in flight action. Reverts if no current action
     */
@@ -217,46 +249,62 @@ contract MultiSigOwner {
     in TimeLockController.
     */
 
-    function reclaimEther() external onlyOwner {
-        _signOrExecute("reclaimEther"); 
+    function initialize() external onlyOwner {
+        _signOrExecute("initialize"); 
+    }
+
+    function transferTusdProxyOwnership(address _newOwner) external onlyOwner {
+        _signOrExecute("transferTusdProxyOwnership"); 
+    }
+    
+    function claimTusdProxyOwnership() external onlyOwner {
+        _signOrExecute("claimTusdProxyOwnership"); 
+    }
+
+    function upgradeTusdProxyImplTo(address _implementation) external onlyOwner {
+        _signOrExecute("upgradeTusdProxyImplTo"); 
     }
 
     function transferOwnership(address newOwner) external onlyOwner {
         _signOrExecute("transferOwnership"); 
     }
 
-    function setSmallMintThreshold(uint256 _threshold) external onlyOwner {
-        _signOrExecute("setSmallMintThreshold");
+    function claimOwnership() external onlyOwner {
+        _signOrExecute("claimOwnership"); 
     }
 
-    function setMinimalApprovals(uint8 _smallMintApproval, uint8 _largeMintApproval) external onlyOwner {
-        _signOrExecute("setMinimalApprovals");
+    function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _jumbo) external onlyOwner {
+        _signOrExecute("setMintThresholds");
     }
 
-    function setMintLimit(uint256 _limit) external onlyOwner {
+    function setMintLimits(uint256 _instant, uint256 _ratified, uint256 _jumbo) external onlyOwner {
         _signOrExecute("setMintLimit");
     }
 
-    function resetMintedToday() external onlyOwner {
-        _signOrExecute("resetMintedToday");
+    function refillInstantMintPool() external onlyOwner {
+        _signOrExecute("refillInstantMintPool");
     }
 
-    function setTimeZoneDiff(uint _hours) external onlyOwner {
-        _signOrExecute("setTimeZoneDiff");
+    function refillRatifiedMintPool() external onlyOwner {
+        _signOrExecute("refillRatifiedMintPool");
+    }
+
+    function refillJumboMintPool() external onlyOwner {
+        _signOrExecute("refillJumboMintPool");
     }
 
     function requestMint(address _to, uint256 _value) external onlyOwner {
         _signOrExecute("requestMint");
     }
 
-    function finalizeMint(uint256 _index) external onlyOwner {
-        _signOrExecute("finalizeMint");
-    }
-    
-    function approveMint(uint256 _index) external onlyOwner {
-        _signOrExecute("approveMint");
+    function instantMint(address _to, uint256 _value) external onlyOwner {
+        _signOrExecute("instantMint");
     }
 
+    function ratifyMint(uint256 _index, address _to, uint256 _value) external onlyOwner {
+        _signOrExecute("ratifyMint");
+    }
+    
     function revokeMint(uint256 _index) external onlyOwner {
         _signOrExecute("revokeMint");
     }
@@ -273,8 +321,8 @@ contract MultiSigOwner {
         _signOrExecute("pauseMints");
     } 
 
-    function unPauseMints() external onlyOwner {
-        _signOrExecute("unPauseMints");
+    function unpauseMints() external onlyOwner {
+        _signOrExecute("unpauseMints");
     } 
 
     function pauseMint(uint _opIndex) external onlyOwner {
@@ -285,24 +333,16 @@ contract MultiSigOwner {
         _signOrExecute("unpauseMint"); 
     }
 
-    function addHoliday(uint16 _year, uint8 _month, uint8 _day) external onlyOwner {
-        _signOrExecute("addHoliday"); 
-    }
-
-    function removeHoliday(uint _year, uint _month, uint _day) external onlyOwner {
-        _signOrExecute("removeHoliday"); 
-    }
-
-    function setDateTime(address _newContract) external onlyOwner {
-        _signOrExecute("setDateTime"); 
-    }
-
-    function setDelegatedFrom(address _source) external onlyOwner {
-        _signOrExecute("setDelegatedFrom"); 
-    }
-
     function setTrueUSD(TrueUSD _newContract) external onlyOwner {
         _signOrExecute("setTrueUSD"); 
+    }
+
+    function initializeTrueUSD(uint256 _totalSupply) external onlyOwner {
+        _signOrExecute("initializeTrueUSD"); 
+    }
+
+    function setRegistry(Registry _registry) external onlyOwner {
+        _signOrExecute("setRegistry"); 
     }
 
     function changeTokenName(string _name, string _symbol) external onlyOwner {
@@ -317,11 +357,11 @@ contract MultiSigOwner {
         _signOrExecute("issueClaimOwnership"); 
     }
 
-    function delegateToNewContract(
-        DelegateBurnable _delegate,
+    function claimStorageForProxy(
+        address _delegate,
         Ownable _balanceSheet,
         Ownable _alowanceSheet) external {
-        _signOrExecute("delegateToNewContract"); 
+        _signOrExecute("claimStorageForProxy"); 
     }
 
     function transferChild(Ownable _child, address _newOwner) external onlyOwner {
@@ -378,5 +418,13 @@ contract MultiSigOwner {
 
     function changeStaker(address _newStaker) external onlyOwner {
         _signOrExecute("changeStaker"); 
+    }
+
+    function reclaimEther(address _to) external onlyOwner {
+        _signOrExecute("reclaimEther"); 
+    }
+
+    function reclaimToken(ERC20 _token, address _to) external onlyOwner {
+        _signOrExecute("reclaimToken"); 
     }
 } 

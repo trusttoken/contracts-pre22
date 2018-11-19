@@ -21,7 +21,7 @@ contract ModularMintableToken is ModularBurnableToken {
         totalSupply_ = totalSupply_.add(_value);
         balances.addBalance(_to, _value);
         emit Mint(_to, _value);
-        ERC20events(eventDelegateor).emitTransferEvent(address(0), _to, _value);
+        emit Transfer(address(0), _to, _value);
         return true;
     }
 }

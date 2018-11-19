@@ -27,6 +27,6 @@ contract ModularBurnableToken is ModularStandardToken {
         balances.subBalance(_burner, _value);
         totalSupply_ = totalSupply_.sub(_value);
         emit Burn(_burner, _value, _note);
-        ERC20events(eventDelegateor).emitTransferEvent(_burner, address(0), _value);
+        emit Transfer(_burner, address(0), _value);
     }
 }
