@@ -98,8 +98,8 @@ contract TimeLockedController {
         _;
     }
 
-    modifier onlyOwnerOrBurnAdmin() {
-        require(registry.hasAttribute(msg.sender, IS_REDEMPTION_ADMIN) || msg.sender == owner, "must be burn admin or owner");
+    modifier onlyOwnerOrRedemptionAdmin() {
+        require(registry.hasAttribute(msg.sender, IS_REDEMPTION_ADMIN) || msg.sender == owner, "must be Redemption admin or owner");
         _;
     }
 
@@ -420,7 +420,7 @@ contract TimeLockedController {
     ========================================
     */
 
-    function incrementRedemptionAddressCount() external onlyOwnerOrBurnAdmin {
+    function incrementRedemptionAddressCount() external onlyOwnerOrRedemptionAdmin {
         trueUSD.incrementRedemptionAddressCount();
     }
 
