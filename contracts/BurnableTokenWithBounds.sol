@@ -6,8 +6,6 @@ import "./modularERC20/ModularPausableToken.sol";
 //and will send them back the equivalent amount of money (rounded down to the nearest cent).
 //The API for burning is inherited: burn(uint256 _value)
 contract BurnableTokenWithBounds is ModularPausableToken {
-    uint256 public burnMin = 0;
-    uint256 public burnMax = 0;
 
     event SetBurnBounds(uint256 newMin, uint256 newMax);
 

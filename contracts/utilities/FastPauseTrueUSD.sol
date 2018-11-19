@@ -1,6 +1,6 @@
 pragma solidity ^0.4.21;
 
-import "../TimeLockedController.sol";
+import "../Owners/TimeLockedController.sol";
 
 /*
 Allows for admins to quickly respond to critical emergencies
@@ -15,18 +15,18 @@ contract FastPauseTrueUSD {
     
     event FastTrueUSDPause(address sender);
 
-    constructor (address _trueUsdPauser, address _controllerContract) public {
+    constructor(address _trueUsdPauser, address _controllerContract) public {
         controllerContract = TimeLockedController(_controllerContract);
         trueUsdPauser = _trueUsdPauser;
     }
     
-    modifier onlyPauser() {
+    modifier onlyPauseKey() {
         require(msg.sender == trueUsdPauser, "not TrueUSD pauser");
         _;
     }
 
     //fallback function used to pause trueUSD when it recieves eth
-    function() public payable onlyPauser {
+    function() public payable onlyPauseKey {
         emit FastTrueUSDPause(msg.sender);
         msg.sender.transfer(msg.value);
         controllerContract.pauseTrueUSD();

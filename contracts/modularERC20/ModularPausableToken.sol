@@ -2,17 +2,49 @@ pragma solidity ^0.4.23;
 
 import "./ModularMintableToken.sol";
 import "../utilities/GlobalPause.sol";
-import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
 /**
  * @title Pausable token
  * @dev MintableToken modified with pausable transfers.
  **/
-contract ModularPausableToken is ModularMintableToken, Pausable {
+contract ModularPausableToken is ModularMintableToken {
 
-    GlobalPause public globalPause;
-
+    event Pause();
+    event Unpause();
     event GlobalPauseSet(address newGlobalPause);
+
+    /**
+    * @dev Modifier to make a function callable only when the contract is not paused.
+    */
+    modifier whenNotPaused() {
+        require(!paused);
+        _;
+    }
+
+    /**
+    * @dev Modifier to make a function callable only when the contract is paused.
+    */
+    modifier whenPaused() {
+        require(paused);
+        _;
+    }
+
+    /**
+    * @dev called by the owner to pause, triggers stopped state
+    */
+    function pause() public onlyOwner whenNotPaused {
+        paused = true;
+        emit Pause();
+    }
+
+    /**
+    * @dev called by the owner to unpause, returns to normal state
+    */
+    function unpause() public onlyOwner whenPaused {
+        paused = false;
+        emit Unpause();
+    }
+
 
     //All erc20 transactions are paused when not on the supported fork
     modifier notOnSupportedChain() {

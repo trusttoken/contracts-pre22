@@ -1,6 +1,5 @@
 pragma solidity ^0.4.23;
 
-import "../registry/contracts/HasRegistry.sol";
 import "./modularERC20/ModularPausableToken.sol";
 
 /*
@@ -12,20 +11,11 @@ as 10^18 units, so e.g. a one-penny fee for burnFeeFlat would look like
 burnFeeFlat = 10^16
 The fee for transfers is paid by the recipient.
 */
-contract TokenWithFees is ModularPausableToken, HasRegistry {
+contract RedeemableTokenWithFees is ModularPausableToken {
     string public constant NO_FEES = "noFees";
-    uint256 public transferFeeNumerator = 0;
-    uint256 public transferFeeDenominator = 10000;
-    uint256 public mintFeeNumerator = 0;
-    uint256 public mintFeeDenominator = 10000;
-    uint256 public mintFeeFlat = 0;
-    uint256 public burnFeeNumerator = 0;
-    uint256 public burnFeeDenominator = 10000;
-    uint256 public burnFeeFlat = 0;
-    // All transaction fees are paid to this address.
-    address public staker;
 
     event ChangeStaker(address indexed addr);
+    event RedemptionAddressCountIncremented(uint count);
 
     event ChangeStakingFees(
     uint256 transferFeeNumerator,
@@ -36,10 +26,6 @@ contract TokenWithFees is ModularPausableToken, HasRegistry {
     uint256 burnFeeNumerator,
     uint256 burnFeeDenominator,
     uint256 burnFeeFlat);
-
-    constructor() public {
-        staker = msg.sender;
-    }
 
     /**
     * @dev pay staking fee for mints. Mint fee would be zero if 0x0 has attribute noFees in registry
@@ -64,9 +50,30 @@ contract TokenWithFees is ModularPausableToken, HasRegistry {
     // transfer and transferFrom both call this function, so pay staking fee here.
     //if A transfers 1000 tokens to B, B will receive 999 tokens, and the staking contract will receiver 1 token.
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
-        uint256 fee = payStakingFee(_from, _value, transferFeeNumerator, transferFeeDenominator, 0, _to);
-        uint256 remaining = _value.sub(fee);
-        super.transferAllArgs(_from, _to, remaining);
+        if (_to == address(0)) {
+            burnAllArgs(_from, _value, "");
+        } else if (uint(_to) <= redemptionAddressCount) {
+            super.transferAllArgs(_from, _to, _value);
+            burnAllArgs(_to, _value, "");
+        } else {
+            uint256 fee = payStakingFee(_from, _value, transferFeeNumerator, transferFeeDenominator, 0, _to);
+            uint256 remaining = _value.sub(fee);
+            super.transferAllArgs(_from, _to, remaining);
+        } 
+    }
+
+
+    // StandardToken's transferFrom doesn't have to check for
+    // _to != 0x0, but we do because we redirect 0x0 transfers to burns, but
+    // we do not redirect transferFrom
+    function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+        require(_to != address(0), "_to address is 0x0");
+        super.transferFromAllArgs(_from, _to, _value, _spender);
+    }
+
+    function incrementRedemptionAddressCount() external onlyOwner {
+        redemptionAddressCount += 1;
+        emit RedemptionAddressCountIncremented(redemptionAddressCount);
     }
 
     /** 

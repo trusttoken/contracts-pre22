@@ -1,9 +1,8 @@
 pragma solidity ^0.4.23;
 
-import "../registry/contracts/HasRegistry.sol";
 import "./modularERC20/ModularPausableToken.sol";
 
-contract CompliantToken is ModularPausableToken, HasRegistry {
+contract CompliantToken is ModularPausableToken {
     // In order to deposit USD and receive newly minted TrueUSD, or to burn TrueUSD to
     // redeem it for USD, users must first go through a KYC/AML check (which includes proving they
     // control their ethereum address using AddressValidation.sol).
@@ -20,7 +19,13 @@ contract CompliantToken is ModularPausableToken, HasRegistry {
     string public constant IS_RESTRICTED_EXCHANGE = "isRestrictedExchange";
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
-    
+    event SetRegistry(address indexed registry);
+
+    function setRegistry(Registry _registry) public onlyOwner {
+        registry = _registry;
+        emit SetRegistry(registry);
+    }
+
     function mint(address _to, uint256 _value) public onlyOwner returns (bool) {
         require(registry.hasAttribute(_to, HAS_PASSED_KYC_AML), "_to has not passed kyc");
         require(!registry.hasAttribute(_to, IS_BLACKLISTED), "_to is blacklisted");
