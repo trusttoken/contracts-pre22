@@ -545,10 +545,6 @@ contract('TimeLockedController', function (accounts) {
                 await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
                 await this.globalPause.pauseAllTokens(false, { from: owner })
                 await this.token.transfer(mintKey, 40*10**18, { from: oneHundred })
-                await this.globalPause.updateForkStatus(false, { from: owner })
-                await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
-                await this.globalPause.updateForkStatus(true, { from: owner })
-                await this.token.transfer(mintKey, 40*10**18, { from: oneHundred })
             })
         })
         describe('Claim storage contracts', function () {
