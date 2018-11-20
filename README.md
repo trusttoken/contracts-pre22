@@ -17,20 +17,9 @@ and AllowanceSheet.sol) instead of mappings in their own storage.
 The ERCevents contract is used to ensure that events are still emitted from the original address even
 after the TrueUSD contract is delegated.
 
-### RedeemToken.sol
-
-This makes it easier for users to burn tokens (i.e. redeem them for USD) by treating sends to 0x0 as
-burn operations.
-
 ### BurnableTokenWithBounds.sol
 
 This limits the minimum and maximum number of tokens that can be burned (redeemed) at once.
-
-### ...Delegate....sol
-
-If a new version of the TrueUSD contract is ever launched, these three contracts allow users
-to continue using the old version if they want and it will forward all basic transactions to the new one.
-See the section entitled Delegation Process below.
 
 ### CompliantToken.sol
 
@@ -38,15 +27,18 @@ This ensures that only users who have passed a KYC/AML check can receive newly m
 trade on certain restricted exchanges. It also allows for blacklisting of bad actors in accordance
 with the [TrueCoin Terms of Use](https://www.trusttoken.com/terms-of-use/).
 
-### TokenWithFees.sol
+### RedeemableTokenWithFees.sol
 
 This allows for transaction fees.
+Also makes it easier for users to burn tokens (i.e. redeem them for USD) by treating sends to 0x0 as
+burn operations.
+Implements Redemption addresses
 
 ### TrueUSD.sol
 
 This is the top-level ERC20 contract tying together all the previously mentioned functionality.
 
-### TimeLockedController.sol
+### TokenController.sol
 
 This contract is the initial owner of TrueUSD.sol. Consists of an Owner key, Mint Pause Keys,
 Mint Key, and Mint Approval Keys. It also imposes time delays on mint requests to maximize security.
@@ -57,16 +49,6 @@ This contract is the owner of TimeLockedController.sol. It turns every function 
 
 ### Delegation Process
 
-To delegate calls to new contract, first deploy a contract that implements DelegateBurnable. Configure fees, burn bounds, global pause etc.
-The contract must also implement setBalanceSheet(address) and setAllowanceSheet(address) in order to claim the storage contracts.
-
-Set registry instance for the new contract. Set totalSupply to equal to the current totalSupply of the old contract.
-
-Transfer ownership of the new contract to TimeLockedController. Claim ownership of new contract with TimeLockedController.
-
-If the new contract has function setDelegatedFrom, call the function with TrueUSD contract address as the parameter.
-
-call delegateToNewContract(\_newContractAddress, \_balanceSheetAddress, \_allowanceSheetAddress) to delegate to new contract.
 
 ## Testing
 
