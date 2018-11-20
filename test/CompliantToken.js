@@ -165,6 +165,17 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
             })
         })
 
+        describe('CanWriteTo-', function (){
+            beforeEach(async function () {
+                const canWriteToKYCAttribute = await this.registry.writeAttributeFor("hasPassedKYC/AML")
+                await this.registry.setAttribute(oneHundred, canWriteToKYCAttribute, 1, notes, { from: owner })
+            })
+
+            it('address other than the owner can write attribute if they have canWrite access', async function(){
+                await this.registry.setAttribute(anotherAccount, "hasPassedKYC/AML", 1, notes, { from: oneHundred })
+            })
+        })
+
         describe('wipe account', function () {
             beforeEach(async function () {
                 await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, notes, { from: owner })

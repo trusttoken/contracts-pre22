@@ -476,7 +476,7 @@ contract('TimeLockedController', function (accounts) {
                 await this.controller.incrementRedemptionAddressCount({from: owner})
                 await this.controller.incrementRedemptionAddressCount({from: redemptionAdmin})
                 const redemptionAddressCount = Number(await this.token.redemptionAddressCount())
-                assert.equal(redemptionAddressCount,1)
+                assert.equal(redemptionAddressCount,2)
             })
             it('other addresses cannot increment Redemption Address Count', async function(){
                 await assertRevert(this.controller.incrementRedemptionAddressCount({from: oneHundred}))

@@ -12,7 +12,7 @@ burnFeeFlat = 10^16
 The fee for transfers is paid by the recipient.
 */
 contract RedeemableTokenWithFees is ModularPausableToken {
-    string public constant NO_FEES = "noFees";
+    bytes32 public constant NO_FEES = "noFees";
 
     event ChangeStaker(address indexed addr);
     event RedemptionAddressCountIncremented(uint count);

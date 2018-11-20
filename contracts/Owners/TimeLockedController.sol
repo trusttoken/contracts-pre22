@@ -74,9 +74,9 @@ contract TimeLockedController {
     Registry public registry;
     address public trueUsdFastPause;
 
-    string constant public IS_MINT_CHECKER = "isTUSDMintChecker";
-    string constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
-    string constant public IS_REDEMPTION_ADMIN = "isRedemptionAdmin";
+    bytes32 constant public IS_MINT_CHECKER = "isTUSDMintChecker";
+    bytes32 constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
+    bytes32 constant public IS_REDEMPTION_ADMIN = "isRedemptionAdmin";
 
     modifier onlyFastPauseOrOwner() {
         require(msg.sender == trueUsdFastPause || msg.sender == owner, "must be pauser or owner");

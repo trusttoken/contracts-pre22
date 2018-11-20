@@ -12,32 +12,15 @@ Transfers to 0x9052BE99C9C8C5545743859e4559A75100000005 will be forwared to 0x90
  */
 contract DepositToken is ModularPausableToken {
     
-    string public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
+    bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
 
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
-        uint value;
-        bytes32 notes;
-        address admin;
-        uint time;
-        (value, notes, admin, time) = registry.getAttribute(maskedAddress(_to), IS_DEPOSIT_ADDRESS);
+        address shiftedAddress = address(uint(_to) >> 24);
+        uint value = registry.getAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS);
         if (value != 0) {
             super.transferAllArgs(_from, address(value), _value);
         } else {
             super.transferAllArgs(_from, _to, _value);
-        }
-    }
-
-    /**
-    @dev returns the address with last 8 characters zeroed out
-    */
-    function maskedAddress(address _addr) public constant returns (address) {
-        bytes20 bytes20Address = cut(uint256(_addr) << 96);
-        return address(bytes20Address);
-    }
-
-    function cut(uint shiftedAddress) internal constant returns (bytes16 shortAddress) {
-        assembly {
-            shortAddress := shiftedAddress
         }
     }
 }

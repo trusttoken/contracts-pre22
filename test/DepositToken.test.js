@@ -12,7 +12,7 @@ const GlobalPause = artifacts.require("GlobalPause")
 contract('DepositToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     const notes = "some notes"
-    const DEPOSIT_ADDRESS = anotherAccount.slice(0,34) + '00000000'
+    const DEPOSIT_ADDRESS = '0x000000' + anotherAccount.slice(2,36)
 
     describe('--Deposit Token--', function () {
         beforeEach(async function () {
@@ -42,10 +42,10 @@ contract('DepositToken', function (accounts) {
 
 
         it('transfers a deposit address of another account forwards tokens to anotherAccount', async function(){
-            const depositAddressOne = anotherAccount.slice(0,34) + '00000000';
-            const depositAddressTwo = anotherAccount.slice(0,34) + '20000000';
-            const depositAddressThree = anotherAccount.slice(0,34) + '40000000';
-            const depositAddressFour = anotherAccount.slice(0,34) + '00500000';
+            const depositAddressOne = anotherAccount.slice(0,36) + '000000';
+            const depositAddressTwo = anotherAccount.slice(0,36) + '200000';
+            const depositAddressThree = anotherAccount.slice(0,36) + '400000';
+            const depositAddressFour = anotherAccount.slice(0,36) + '005000';
             await this.token.transfer(depositAddressOne, 10*10**18,{from: oneHundred})
             await this.token.transfer(depositAddressTwo, 10*10**18, {from: oneHundred})
             await this.token.transfer(depositAddressThree, 10*10**18, {from: oneHundred})
@@ -55,10 +55,10 @@ contract('DepositToken', function (accounts) {
 
         it('can remove deposit address', async function(){
             await this.registry.setAttribute(DEPOSIT_ADDRESS, "isDepositAddress", 0, notes, { from: owner })
-            const depositAddressOne = anotherAccount.slice(0,34) + '00000000';
-            const depositAddressTwo = anotherAccount.slice(0,34) + '20000000';
-            const depositAddressThree = anotherAccount.slice(0,34) + '40000000';
-            const depositAddressFour = anotherAccount.slice(0,34) + '00500000';
+            const depositAddressOne = anotherAccount.slice(0,36) + '000000';
+            const depositAddressTwo = anotherAccount.slice(0,36) + '200000';
+            const depositAddressThree = anotherAccount.slice(0,36) + '400000';
+            const depositAddressFour = anotherAccount.slice(0,36) + '005000';
             await this.token.transfer(depositAddressOne, 10*10**18, {from: oneHundred})
             await this.token.transfer(depositAddressTwo, 10*10**18, {from: oneHundred})
             await this.token.transfer(depositAddressThree, 10*10**18, {from: oneHundred})
