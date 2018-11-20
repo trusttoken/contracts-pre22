@@ -101,68 +101,6 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
                     await assertRevert(this.token.transferFrom(oneHundred, owner, 100*10**18, { from: anotherAccount }))
                 })
             })
-
-            describe('when user is a restricted exchange', function () {
-                describe('transferFrom', function () {
-                    const to = owner
-                    const from = oneHundred
-                    const spender = anotherAccount
-
-                    const checkPermutation = function(a, b, c) {
-                        describe('another permutation', function () {
-                            beforeEach(async function () {
-                                await this.token.approve(spender, 100*10**18, { from: from })
-                                await this.registry.setAttribute(a, "isRestrictedExchange", 1, notes, { from: owner })
-                            })
-
-                            it('rejects if one is not KYC/AMLed', async function () {
-                                await this.registry.setAttribute(b, "hasPassedKYC/AML", 1, notes, { from: owner })
-                                await assertRevert(this.token.transferFrom(from, to, 100*10**18, { from: spender }))
-                            })
-
-                            it('rejects if another is not KYC/AMLed', async function () {
-                                await this.registry.setAttribute(c, "hasPassedKYC/AML", 1, notes, { from: owner })
-                                await assertRevert(this.token.transferFrom(from, to, 100*10**18, { from: spender }))
-                            })
-
-                            it('allows if all are KYC/AMLed', async function () {
-                                await this.registry.setAttribute(b, "hasPassedKYC/AML", 1, notes, { from: owner })
-                                await this.registry.setAttribute(c, "hasPassedKYC/AML", 1, notes, { from: owner })
-                                await this.token.transferFrom(from, to, 100*10**18, { from: spender })
-                            })
-                        })
-                    }
-
-                    checkPermutation(to, from, spender)
-                    checkPermutation(spender, to, from)
-                    checkPermutation(from, spender, to)
-                })
-
-                describe('transfer', function () {
-                    const to = anotherAccount
-                    const from = oneHundred
-
-                    const checkPermutation = function (a, b) {
-                        describe('another permutation', function () {
-                            beforeEach(async function () {
-                                await this.registry.setAttribute(a, "isRestrictedExchange", 1, notes, { from: owner })
-                            })
-
-                            it('rejects if other is not KYC/AMLed', async function () {
-                                await assertRevert(this.token.transfer(to, 100*10**18, { from: from }))
-                            })
-
-                            it('allows if other is KYC/AMLed', async function () {
-                                await this.registry.setAttribute(b, "hasPassedKYC/AML", 1, notes, { from: owner })
-                                await this.token.transfer(to, 100*10**18, { from: from })
-                            })
-                        })
-                    }
-
-                    checkPermutation(to, from)
-                    checkPermutation(from, to)
-                })
-            })
         })
 
         describe('CanWriteTo-', function (){

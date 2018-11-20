@@ -14,9 +14,6 @@ contract CompliantToken is ModularPausableToken {
     // TrueUSD. This can be used to prevent the use of TrueUSD by bad actors in
     // accordance with law enforcement. See [TrueCoin Terms of Use](https://www.trusttoken.com/trueusd/terms-of-use)
     bytes32 public constant IS_BLACKLISTED = "isBlacklisted";
-    // Only KYC/AML'ed accounts can interact with addresses affiliated with a
-    // restricted exchange.
-    bytes32 public constant IS_RESTRICTED_EXCHANGE = "isRestrictedExchange";
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
     event SetRegistry(address indexed registry);
@@ -41,14 +38,6 @@ contract CompliantToken is ModularPausableToken {
     // A blacklisted address can't call transferFrom
     function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         require(!registry.hasAttribute(_spender, IS_BLACKLISTED), "_spender is blacklisted");
-        require(!registry.hasAttribute(_spender, IS_RESTRICTED_EXCHANGE) || 
-                (registry.hasAttribute(_from, HAS_PASSED_KYC_AML) && 
-                registry.hasAttribute(_to, HAS_PASSED_KYC_AML)),
-            "_spender is restricted exchange and _from has no kyc, or _to has no kyc");
-        require((!registry.hasAttribute(_to, IS_RESTRICTED_EXCHANGE) && 
-                !registry.hasAttribute(_from, IS_RESTRICTED_EXCHANGE)) || 
-                registry.hasAttribute(_spender, HAS_PASSED_KYC_AML),
-            "_spender is restricted exchange or _from is restricted exchange, or _spender has no kyc");
         super.transferFromAllArgs(_from, _to, _value, _spender);
     }
 
@@ -56,12 +45,6 @@ contract CompliantToken is ModularPausableToken {
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
         require(!registry.hasAttribute(_from, IS_BLACKLISTED), "_from is blacklisted");
         require(!registry.hasAttribute(_to, IS_BLACKLISTED), "_to is blacklisted");
-        require(!registry.hasAttribute(_to, IS_RESTRICTED_EXCHANGE) || 
-                registry.hasAttribute(_from, HAS_PASSED_KYC_AML),
-            "_to is restricted exchange and _from has no kyc");
-        require(!registry.hasAttribute(_from, IS_RESTRICTED_EXCHANGE) || 
-                registry.hasAttribute(_to, HAS_PASSED_KYC_AML),
-            "_from is restricted exchange and _to has no kyc");
         super.transferAllArgs(_from, _to, _value);
     }
 
