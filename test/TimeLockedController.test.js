@@ -540,14 +540,10 @@ contract('TimeLockedController', function (accounts) {
 
             it('timeLockController can set GlobalPause', async function(){
                 this.globalPause = await GlobalPause.new({ from: owner })
-                await this.globalPause.pauseAllTokens(true, { from: owner })
+                await this.globalPause.pauseAllTokens(true, "Unsupported fork", { from: owner })
                 await this.controller.setGlobalPause(this.globalPause.address, { from: owner })
                 await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
-                await this.globalPause.pauseAllTokens(false, { from: owner })
-                await this.token.transfer(mintKey, 40*10**18, { from: oneHundred })
-                await this.globalPause.updateForkStatus(false, { from: owner })
-                await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
-                await this.globalPause.updateForkStatus(true, { from: owner })
+                await this.globalPause.pauseAllTokens(false, "", { from: owner })
                 await this.token.transfer(mintKey, 40*10**18, { from: oneHundred })
             })
         })

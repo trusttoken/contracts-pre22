@@ -48,8 +48,7 @@ contract ModularPausableToken is ModularMintableToken {
 
     //All erc20 transactions are paused when not on the supported fork
     modifier notOnSupportedChain() {
-        require(!globalPause.AllTokenPaused(), "All tokens paused");
-        require(globalPause.SupportedFork(), "This is a not the supported Chain");
+        globalPause.requireNotPaused();
         _;
     }
 
