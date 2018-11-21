@@ -6,14 +6,14 @@ contract CompliantToken is ModularPausableToken {
     // In order to deposit USD and receive newly minted TrueUSD, or to burn TrueUSD to
     // redeem it for USD, users must first go through a KYC/AML check (which includes proving they
     // control their ethereum address using AddressValidation.sol).
-    bytes32 public constant HAS_PASSED_KYC_AML = keccak256("hasPassedKYC/AML");
+    bytes32 public constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
     // Redeeming ("burning") TrueUSD tokens for USD requires a separate flag since
     // users must not only be KYC/AML'ed but must also have bank information on file.
-    bytes32 public constant CAN_BURN = keccak256("canBurn");
+    bytes32 public constant CAN_BURN = "canBurn";
     // Addresses can also be blacklisted, preventing them from sending or receiving
     // TrueUSD. This can be used to prevent the use of TrueUSD by bad actors in
     // accordance with law enforcement. See [TrueCoin Terms of Use](https://www.trusttoken.com/trueusd/terms-of-use)
-    bytes32 public constant IS_BLACKLISTED = keccak256("isBlacklisted");
+    bytes32 public constant IS_BLACKLISTED = "isBlacklisted";
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
     event SetRegistry(address indexed registry);
