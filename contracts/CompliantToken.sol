@@ -6,14 +6,14 @@ contract CompliantToken is ModularPausableToken {
     // In order to deposit USD and receive newly minted TrueUSD, or to burn TrueUSD to
     // redeem it for USD, users must first go through a KYC/AML check (which includes proving they
     // control their ethereum address using AddressValidation.sol).
-    bytes32 public constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
+    bytes32 public constant HAS_PASSED_KYC_AML = keccak256("hasPassedKYC/AML");
     // Redeeming ("burning") TrueUSD tokens for USD requires a separate flag since
     // users must not only be KYC/AML'ed but must also have bank information on file.
-    bytes32 public constant CAN_BURN = "canBurn";
+    bytes32 public constant CAN_BURN = keccak256("canBurn");
     // Addresses can also be blacklisted, preventing them from sending or receiving
     // TrueUSD. This can be used to prevent the use of TrueUSD by bad actors in
     // accordance with law enforcement. See [TrueCoin Terms of Use](https://www.trusttoken.com/trueusd/terms-of-use)
-    bytes32 public constant IS_BLACKLISTED = "isBlacklisted";
+    bytes32 public constant IS_BLACKLISTED = keccak256("isBlacklisted");
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
     event SetRegistry(address indexed registry);
@@ -24,14 +24,12 @@ contract CompliantToken is ModularPausableToken {
     }
 
     function mint(address _to, uint256 _value) public onlyOwner returns (bool) {
-        require(registry.hasAttribute(_to, HAS_PASSED_KYC_AML), "_to has not passed kyc");
-        require(!registry.hasAttribute(_to, IS_BLACKLISTED), "_to is blacklisted");
+        require(registry.hasAttribute1ButNotAttribute2(_to, HAS_PASSED_KYC_AML, IS_BLACKLISTED), "_to cannot mint");
         return super.mint(_to, _value);
     }
 
     function burnAllArgs(address _burner, uint256 _value, string _note) internal {
-        require(registry.hasAttribute(_burner, CAN_BURN), "_burner does not have canBurn attribute");
-        require(!registry.hasAttribute(_burner, IS_BLACKLISTED), "_burner is blacklisted");
+        require(registry.hasAttribute1ButNotAttribute2(_burner, CAN_BURN, IS_BLACKLISTED), "_burner cannot burn");
         super.burnAllArgs(_burner, _value, _note);
     }
 
@@ -43,8 +41,7 @@ contract CompliantToken is ModularPausableToken {
 
     // transfer and transferFrom both call this function, so check blacklist here.
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
-        require(!registry.hasAttribute(_from, IS_BLACKLISTED), "_from is blacklisted");
-        require(!registry.hasAttribute(_to, IS_BLACKLISTED), "_to is blacklisted");
+        require(!registry.eitherHaveAttribute(_from, _to, IS_BLACKLISTED), "blacklisted");
         super.transferAllArgs(_from, _to, _value);
     }
 

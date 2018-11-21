@@ -108,7 +108,7 @@ contract RedeemableTokenWithFees is ModularPausableToken {
     @dev returns true if either party has the property 'noFee'
     */
     function hasNoFee(address _from, address _to) public view returns (bool) {
-        return registry.hasAttribute(_from, NO_FEES) || registry.hasAttribute(_to, NO_FEES);
+        return registry.eitherHaveAttribute(_from, _to, NO_FEES);
     }
 
     //Utilities functions for other contracts to calculate fee beforehand
