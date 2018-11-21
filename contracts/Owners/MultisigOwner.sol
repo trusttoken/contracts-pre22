@@ -1,5 +1,6 @@
 pragma solidity ^0.4.23;
 import "./TimeLockedController.sol";
+import "../Proxy/OwnedUpgradeabilityProxy.sol";
 
 /*
 This contract is the owner of TimeLockController. 
@@ -32,6 +33,12 @@ contract MultiSigOwner {
     //list of all owners of the multisigOwner
     address[3] public ownerList;
 
+
+    bool public initialized;
+
+    //current owner action
+    OwnerAction public ownerAction;
+
     modifier onlyOwner() {
         require(owners[msg.sender], "only Owner");
         _;
@@ -48,16 +55,17 @@ contract MultiSigOwner {
     event ActionExecuted(string actionName);
     event ActionVetoed(string actionName);
 
-    OwnerAction public ownerAction;
 
     //Initial Owners are set during deployment
-    constructor(address[3] _initialOwners) public {
+    function msInitialize(address[3] _initialOwners) public {
+        require(!initialized);
         owners[_initialOwners[0]] = true;
         owners[_initialOwners[1]] = true;
         owners[_initialOwners[2]] = true;
         ownerList[0] = _initialOwners[0];
         ownerList[1] = _initialOwners[1];
         ownerList[2] = _initialOwners[2];
+        initialized = true;
     }
 
     function() external payable {
@@ -86,10 +94,37 @@ contract MultiSigOwner {
         delete voted[ownerList[2]];
     }
 
+    function msUpgradeImplementation(address _newImplementation) external onlyOwner {
+        _initOrSignOwnerAction("msUpgradeImplementation");
+        if (ownerAction.approveSigs > 1) {
+            OwnedUpgradeabilityProxy(address(this)).upgradeTo(_newImplementation);
+            emit ActionExecuted("msUpgradeImplementation");
+            _deleteOwnerActon();
+        } 
+    }
+
+    function msTransferProxyOwnership(address _newProxyOwner) external onlyOwner {
+        _initOrSignOwnerAction("msTransferProxyOwnership");
+        if (ownerAction.approveSigs > 1) {
+            OwnedUpgradeabilityProxy(address(this)).transferProxyOwnership(_newProxyOwner);
+            emit ActionExecuted("msTransferProxyOwnership");
+            _deleteOwnerActon();
+        } 
+    }
+
+    function msClaimProxyOwnership() external onlyOwner {
+        _initOrSignOwnerAction("msClaimProxyOwnership");
+        if (ownerAction.approveSigs > 1) {
+            OwnedUpgradeabilityProxy(address(this)).claimProxyOwnership();
+            emit ActionExecuted("msClaimProxyOwnership");
+            _deleteOwnerActon();
+        } 
+    }
+
     /**
     * @dev Replace a current owner with a new owner
     */
-    function msUpdateOwner (address _oldOwner, address _newOwner) external onlyOwner returns(bool success) {
+    function msUpdateOwner (address _oldOwner, address _newOwner) external onlyOwner {
         _initOrSignOwnerAction("updateOwner");
         if (ownerAction.approveSigs > 1) {
             owners[_oldOwner] = false;
@@ -101,7 +136,6 @@ contract MultiSigOwner {
             }
             emit ActionExecuted("updateOwner");
             _deleteOwnerActon();
-            return true;
         } 
     }
 
@@ -109,14 +143,13 @@ contract MultiSigOwner {
     /**
     * @dev Let MultisigOwner contract claim ownership of a claimable contract
     */
-    function msIssueclaimContract (address _other) public onlyOwner returns(bool success) {
+    function msIssueclaimContract (address _other) public onlyOwner {
         _initOrSignOwnerAction("msIssueclaimContract");
         if (ownerAction.approveSigs > 1) {
             Claimable other = Claimable(_other);
             other.claimOwnership();
             emit ActionExecuted("msIssueclaimContract");
             _deleteOwnerActon();
-            return true;
         } 
     }
 
@@ -125,14 +158,13 @@ contract MultiSigOwner {
     *@param _contractAddr The contract that this contract currently owns
     *@param _newOwner The address to which the ownership will be transferred to
     */
-    function msReclaimContract(address _contractAddr, address _newOwner) external onlyOwner returns(bool success) {
+    function msReclaimContract(address _contractAddr, address _newOwner) external onlyOwner {
         _initOrSignOwnerAction("msReclaimContract");
         if (ownerAction.approveSigs > 1) {
             Ownable contractInst = Ownable(_contractAddr);
             contractInst.transferOwnership(_newOwner);
             emit ActionExecuted("msReclaimContract");
             _deleteOwnerActon();
-            return true;
         }
     }
 
@@ -140,13 +172,12 @@ contract MultiSigOwner {
     * @dev Transfer all eth in this contract address to another address
     *@param _to The eth will be send to this address
     */
-    function msReclaimEther(address _to) external onlyOwner returns(bool success) {
+    function msReclaimEther(address _to) external onlyOwner {
         _initOrSignOwnerAction("msReclaimEther");
         if (ownerAction.approveSigs > 1) {
             _to.transfer(address(this).balance);
             emit ActionExecuted("msReclaimEther");
             _deleteOwnerActon();
-            return true;
         }
     }
 
@@ -155,57 +186,52 @@ contract MultiSigOwner {
     *@param _token The token address of the token
     *@param _to The tokens will be send to this address
     */
-    function msReclaimToken(ERC20 _token, address _to) external onlyOwner returns(bool success) {
+    function msReclaimToken(ERC20 _token, address _to) external onlyOwner {
         _initOrSignOwnerAction("msReclaimToken");
         if (ownerAction.approveSigs > 1) {
             uint256 balance = _token.balanceOf(this);
             _token.transfer(_to, balance);
             emit ActionExecuted("msReclaimToken");
             _deleteOwnerActon();
-            return true;
         }
     }
 
     /**
     * @dev Set the instance of TimeLockController that this contract will be calling
     */
-    function msSetTimeLockController (address _newController) public onlyOwner returns(bool success) {
+    function msSetTimeLockController (address _newController) public onlyOwner {
         _initOrSignOwnerAction("msSetTimeLockController");
         if (ownerAction.approveSigs > 1) {
             timeLockController = TimeLockedController(_newController);
             emit ActionExecuted("msSetTimeLockController");
             _deleteOwnerActon();
-            return true;
         }    
     }
 
-    function msTransferControllerProxyOwnership(address _newOwner) external onlyOwner returns(bool success) {
+    function msTransferControllerProxyOwnership(address _newOwner) external onlyOwner {
         _initOrSignOwnerAction("msTransferControllerProxyOwnership");
         if (ownerAction.approveSigs > 1) {
             OwnedUpgradeabilityProxy(timeLockController).transferProxyOwnership(_newOwner);
             emit ActionExecuted("msTransferControllerProxyOwnership");
             _deleteOwnerActon();
-            return true;
         }
     }
 
-    function msClaimControllerProxyOwnership() external onlyOwner returns(bool success) {
+    function msClaimControllerProxyOwnership() external onlyOwner {
         _initOrSignOwnerAction("msClaimControllerProxyOwnership");
         if (ownerAction.approveSigs > 1) {
             OwnedUpgradeabilityProxy(timeLockController).claimProxyOwnership();
             emit ActionExecuted("msClaimControllerProxyOwnership");
             _deleteOwnerActon();
-            return true;
         }
     }
 
-    function msUpgradeControllerProxyImplTo(address _implementation) external onlyOwner returns(bool success) {
+    function msUpgradeControllerProxyImplTo(address _implementation) external onlyOwner {
         _initOrSignOwnerAction("msUpgradeControllerProxyImplTo");
         if (ownerAction.approveSigs > 1) {
             OwnedUpgradeabilityProxy(timeLockController).upgradeTo(_implementation);
             emit ActionExecuted("msUpgradeControllerProxyImplTo");
             _deleteOwnerActon();
-            return true;
         }
     }
 
@@ -213,17 +239,15 @@ contract MultiSigOwner {
     /**
     * @dev Veto the current in flight action. Reverts if no current action
     */
-    function veto() public onlyOwner returns (bool success) {
+    function veto() public onlyOwner {
         require(!voted[msg.sender], "already voted");
         require(ownerAction.callData.length > 0, "no action in flight");
         if (ownerAction.disappoveSigs >= 1) {
             emit ActionVetoed(ownerAction.actionName);
             _deleteOwnerActon();
-            return true;
         } else {
             ownerAction.disappoveSigs += 1;
             voted[msg.sender] = true;
-            return true;
         }
     }
 
@@ -232,7 +256,7 @@ contract MultiSigOwner {
     If no in flight action, create a new one. Otherwise sign and the action
     if the msg.data matches call data matches. Reverts otherwise
     */
-    function _signOrExecute(string _actionName) internal returns (bool success) {
+    function _signOrExecute(string _actionName) internal {
         _initOrSignOwnerAction(_actionName);
         if (ownerAction.approveSigs > 1) {
             require(address(timeLockController).call(msg.data), "timeLockController call failed");

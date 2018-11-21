@@ -18,7 +18,8 @@ contract('--Full upgrade process with multisig--', function (accounts) {
 
     describe('--Set up contracts--', function () {
         beforeEach(async function () {
-            this.multisigOwner = await MultisigOwner.new([owner1, owner2, owner3], { from: owner1 })
+            this.multisigOwner = await MultisigOwner.new({ from: owner1 })
+            await this.multisigOwner.msInitialize([owner1, owner2, owner3],{ from: owner1 })
 
             this.registry = await Registry.new({ from: owner1 })
             this.globalPause = await GlobalPause.new({ from: owner1 })
@@ -27,7 +28,7 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             this.controller = await TimeLockedController.at(this.controllerProxy.address)
             await this.multisigOwner.msSetTimeLockController(this.controllerProxy.address, {from : owner1 })
             await this.multisigOwner.msSetTimeLockController(this.controllerProxy.address, {from : owner2 })
-            this.controllerProxy.transferProxyOwnership(this.multisigOwner.address,{ from: owner1 } )
+            await this.controllerProxy.transferProxyOwnership(this.multisigOwner.address,{ from: owner1 } )
             await this.multisigOwner.msClaimControllerProxyOwnership({from : owner1 })
             await this.multisigOwner.msClaimControllerProxyOwnership({from : owner2 })
             await this.multisigOwner.msUpgradeControllerProxyImplTo(this.controllerImplementation.address, {from : owner1 })
@@ -39,7 +40,7 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             this.token = await TrueUSD.at(this.tokenProxy.address)
             await this.multisigOwner.setTrueUSD(this.token.address, {from : owner1 })
             await this.multisigOwner.setTrueUSD(this.token.address, {from : owner2 })
-            this.tokenProxy.transferProxyOwnership(this.controller.address,{ from: owner1 } )
+            await this.tokenProxy.transferProxyOwnership(this.controller.address,{ from: owner1 } )
 
             await this.multisigOwner.claimTusdProxyOwnership({from : owner1 })
             await this.multisigOwner.claimTusdProxyOwnership({from : owner2 })
@@ -81,12 +82,17 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             await this.multisigOwner.ratifyMint(0,oneHundred, 10*10**18, {from: owner2})
         })
         describe('Assertion tests for set up', async function()  {
-            it('token contract cannot be reinitialized', async function() {
+
+            it('multisig contract cannot be reinitialized', async function() {
+                await assertRevert(this.multisigOwner.msInitialize([owner1, owner2, owner3],{ from: owner1 }))
+            })
+
+            it('controller contract cannot be reinitialized', async function() {
                 await assertRevert(this.controller.initialize({from: owner1}))
                 await assertRevert(this.controller.initialize({from: oneHundred}))
             })
 
-            it('controller contract cannot be reinitialized', async function() {
+            it('token contract cannot be reinitialized', async function() {
                 await assertRevert(this.token.initialize(0, {from: owner1}))
                 await assertRevert(this.token.initialize(0, {from: oneHundred}))
             })
@@ -96,6 +102,32 @@ contract('--Full upgrade process with multisig--', function (accounts) {
                 const allowanceSheetOwner = await this.allowanceSheet.owner()
                 assert.equal(balanceSheetOwner, this.token.address)
                 assert.equal(allowanceSheetOwner, this.token.address)
+            })
+
+            it('Controller owner is set', async function(){
+                const controllerOwner = await this.controller.owner()
+                assert.equal(controllerOwner, this.multisigOwner.address)
+            })
+
+            it('Token owner is set', async function(){
+                const tokenOwner = await this.token.owner()
+                assert.equal(tokenOwner,this.controller.address)
+            })
+
+            it('controller cannot accept eth', async function(){
+                await assertRevert(this.controller.sendTransaction({ 
+                    value: 33, 
+                    from: owner3, 
+                    gas: 300000 
+                 }));             
+            })
+
+            it('token cannot accept eth', async function(){
+                await assertRevert(this.token.sendTransaction({ 
+                    value: 33, 
+                    from: owner3, 
+                    gas: 300000 
+                 }));             
             })
         })
         describe('Upgrade each piece of the contract', async function()  {
@@ -126,10 +158,12 @@ contract('--Full upgrade process with multisig--', function (accounts) {
                 await this.multisigOwner.ratifyMint(1, oneHundred, 10*10**18, {from: owner2})    
             })
             it('upgrades multisig owner contract', async function() {
-                this.newMultisigOwner = await MultisigOwner.new([owner1, owner2, owner3], { from: owner1 })
+                this.newMultisigOwner = await MultisigOwner.new({ from: owner1 })
+
+                await this.newMultisigOwner.msInitialize([owner1, owner2, owner3], { from: owner1 })
+
                 await this.multisigOwner.transferOwnership(this.newMultisigOwner.address, {from: owner1})
                 await this.multisigOwner.transferOwnership(this.newMultisigOwner.address, {from: owner2})    
-
                 await this.multisigOwner.msTransferControllerProxyOwnership(this.newMultisigOwner.address, {from: owner1})
                 await this.multisigOwner.msTransferControllerProxyOwnership(this.newMultisigOwner.address, {from: owner2})    
                 
@@ -152,7 +186,7 @@ contract('--Full upgrade process with multisig--', function (accounts) {
                 await this.multisigOwner.transferTusdProxyOwnership(this.newControllerProxy.address, {from : owner2 })
                 await this.multisigOwner.msSetTimeLockController(this.newControllerProxy.address, {from : owner1 })
                 await this.multisigOwner.msSetTimeLockController(this.newControllerProxy.address, {from : owner2 })
-                this.newControllerProxy.transferProxyOwnership(this.multisigOwner.address,{ from: owner1 } )
+                await this.newControllerProxy.transferProxyOwnership(this.multisigOwner.address,{ from: owner1 } )
                 await this.multisigOwner.msClaimControllerProxyOwnership({from : owner1 })
                 await this.multisigOwner.msClaimControllerProxyOwnership({from : owner2 })
                 await this.multisigOwner.msUpgradeControllerProxyImplTo(this.newControllerImplementation.address, {from : owner1 })

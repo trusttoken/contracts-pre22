@@ -6,16 +6,12 @@ const TrueUSD = artifacts.require("TrueUSD")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
-const ForceEther = artifacts.require("ForceEther")
 const GlobalPause = artifacts.require("GlobalPause")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
-const FastPauseTrueUSD = artifacts.require("FastPauseTrueUSD")
 const TimeLockedController = artifacts.require("TimeLockedController")
-const MultisigOwner = artifacts.require("MultisigOwner")
 
 contract('--Full upgrade process --', function (accounts) {
     const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
-    const notes = "some notes"
 
     describe('--Set up proxy--', function () {
         beforeEach(async function () {

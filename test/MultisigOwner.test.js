@@ -1,8 +1,5 @@
 import assertRevert from './helpers/assertRevert'
-import expectThrow from './helpers/expectThrow'
 import assertBalance from './helpers/assertBalance'
-import increaseTime, { duration } from './helpers/increaseTime'
-import { throws } from 'assert'
 const Registry = artifacts.require("Registry")
 const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
@@ -37,7 +34,8 @@ contract('MultisigOwner', function (accounts) {
         await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner1 })
         await this.registry.setAttribute(approver, "isTUSDMintApprover", 1, "notes", { from: owner1 })
         await this.registry.setAttribute(pauseKey, "isTUSDMintChecker", 1, "notes", { from: owner1 })
-        this.multisigOwner = await MultisigOwner.new([owner1, owner2, owner3], { from: owner1 })
+        this.multisigOwner = await MultisigOwner.new({ from: owner1 })
+        await this.multisigOwner.msInitialize([owner1, owner2, owner3], { from: owner1 })
     })
 
     describe('Multisig Contract claiming TimeLockController', function () {
@@ -73,6 +71,9 @@ contract('MultisigOwner', function (accounts) {
     })
 
     describe('Functions independent of timeLockController', async function(){
+        it ('cannot be reinitialized', async function(){
+            await assertRevert(this.multisigOwner.msInitialize([owner1, owner2, owner3], {from: owner1}))
+        })
         it ('current owners are owners', async function(){
             const owner1Result = await this.multisigOwner.owners(owner1)
             const owner2Result = await this.multisigOwner.owners(owner2)
