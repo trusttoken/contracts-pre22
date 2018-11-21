@@ -253,7 +253,7 @@ contract('PausableToken', function ([_, owner, recipient, anotherAccount], trans
         describe('burn', function () {
 
             it('allows to burn when unpaused', async function () {
-                await this.token.burn(60*10**18, "burnNote", { from: owner })
+                await this.token.burn(60*10**18, { from: owner })
                 await assertBalance(this.token, owner, 40*10**18)
             })
 
@@ -261,14 +261,14 @@ contract('PausableToken', function ([_, owner, recipient, anotherAccount], trans
                 await this.token.pause({ from: owner })
                 await this.token.unpause({ from: owner })
 
-                await this.token.burn(60*10**18, "burnNote", { from: owner })
+                await this.token.burn(60*10**18, { from: owner })
                 await assertBalance(this.token, owner, 40*10**18)
             })
 
             it('reverts when trying to burn when paused', async function () {
                 await this.token.pause({ from: owner })
 
-                await assertRevert(this.token.burn(60*10**18,  "burnNote",{ from: owner }))
+                await assertRevert(this.token.burn(60*10**18, { from: owner }))
             })
         })
 

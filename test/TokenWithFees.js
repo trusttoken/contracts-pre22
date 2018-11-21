@@ -107,7 +107,7 @@ function tokenWithFeesTests([owner, oneHundred, anotherAccount], transfersToZero
 
             it('burn', async function () {
                 const fee = Math.floor(amount * 2 / 20) + 5*10**18
-                await this.token.burn(amount, "burn note", { from: oneHundred })
+                await this.token.burn(amount, { from: oneHundred })
                 await assertBalance(this.token, oneHundred, 100*10**18 - amount)
                 await assertBalance(this.token, owner, fee)
             })

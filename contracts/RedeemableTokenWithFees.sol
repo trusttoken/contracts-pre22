@@ -41,20 +41,20 @@ contract RedeemableTokenWithFees is ModularPausableToken {
     * @dev pay staking fee for burns. Burn fee would be zero if 0x0 has attribute noFees in registry
     Address who burns pays burn fee
     */
-    function burnAllArgs(address _burner, uint256 _value, string _note) internal {
+    function burnAllArgs(address _burner, uint256 _value) internal {
         uint256 fee = payStakingFee(_burner, _value, burnFeeNumerator, burnFeeDenominator, burnFeeFlat, address(0));
         uint256 remaining = _value.sub(fee);
-        super.burnAllArgs(_burner, remaining, _note);
+        super.burnAllArgs(_burner, remaining);
     }
 
     // transfer and transferFrom both call this function, so pay staking fee here.
     //if A transfers 1000 tokens to B, B will receive 999 tokens, and the staking contract will receiver 1 token.
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
         if (_to == address(0)) {
-            burnAllArgs(_from, _value, "");
+            burnAllArgs(_from, _value);
         } else if (uint(_to) <= redemptionAddressCount) {
             super.transferAllArgs(_from, _to, _value);
-            burnAllArgs(_to, _value, "");
+            burnAllArgs(_to, _value);
         } else {
             uint256 fee = payStakingFee(_from, _value, transferFeeNumerator, transferFeeDenominator, 0, _to);
             uint256 remaining = _value.sub(fee);

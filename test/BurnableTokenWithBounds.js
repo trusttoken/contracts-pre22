@@ -42,11 +42,11 @@ function burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount], trans
         describe('restrictive burn bounds', function () {
             it("allows burns within bounds and reverts others", async function () {
                 await this.token.setBurnBounds(10*10**18, 20*10**18, { from: owner })
-                await assertRevert(this.token.burn(9*10**18, "burnNote", { from: oneHundred }))
-                await assertRevert(this.token.burn(21*10**18, "burnNote", { from: oneHundred }))
-                await this.token.burn(10*10**18, "burnNote", { from: oneHundred })
-                await this.token.burn(15*10**18, "burnNote", { from: oneHundred })
-                await this.token.burn(20*10**18, "burnNote", { from: oneHundred })
+                await assertRevert(this.token.burn(9*10**18, { from: oneHundred }))
+                await assertRevert(this.token.burn(21*10**18, { from: oneHundred }))
+                await this.token.burn(10*10**18, { from: oneHundred })
+                await this.token.burn(15*10**18, { from: oneHundred })
+                await this.token.burn(20*10**18, { from: oneHundred })
             })
         })
 

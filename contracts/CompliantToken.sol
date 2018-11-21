@@ -28,9 +28,9 @@ contract CompliantToken is ModularPausableToken {
         return super.mint(_to, _value);
     }
 
-    function burnAllArgs(address _burner, uint256 _value, string _note) internal {
+    function burnAllArgs(address _burner, uint256 _value) internal {
         require(registry.hasAttribute1ButNotAttribute2(_burner, CAN_BURN, IS_BLACKLISTED), "_burner cannot burn");
-        super.burnAllArgs(_burner, _value, _note);
+        super.burnAllArgs(_burner, _value);
     }
 
     // A blacklisted address can't call transferFrom

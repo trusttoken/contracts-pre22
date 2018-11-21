@@ -61,7 +61,7 @@ contract('TrueUSD', function (accounts) {
             describe('user is not on burn whitelist', function () {
                 it("reverts burn", async function () {
                     await this.token.setBurnBounds(10*10**18, 20*10**18, { from: owner })
-                    await assertRevert(this.token.burn(15*10**18, "burn note",  { from: oneHundred }))
+                    await assertRevert(this.token.burn(15*10**18,  { from: oneHundred }))
                 })
             })
         })
@@ -70,7 +70,7 @@ contract('TrueUSD', function (accounts) {
             it("burns 10.50", async function () {
                 await this.registry.setAttribute(oneHundred, "canBurn", 1, notes, { from: owner })
                 await this.token.setBurnBounds(10*10**18, 20*10**18, { from: owner })
-                await this.token.burn(10.503*10**18, "burn note", { from: oneHundred })
+                await this.token.burn(10.503*10**18, { from: oneHundred })
                 let remainingBalance = await this.token.balanceOf(oneHundred)
                 assert.equal(remainingBalance, 89.5*10**18)
             })

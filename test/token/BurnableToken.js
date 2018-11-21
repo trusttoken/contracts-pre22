@@ -7,22 +7,20 @@ function burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZero
 
         describe('when the given amount is not greater than balance of the sender', function () {
             const amount = 10*10**18
-            const burnNote = "burn coins"
 
             it('burns the requested amount', async function () {
-                await this.token.burn(amount, burnNote, { from })
+                await this.token.burn(amount, { from })
 
                 const balance = await this.token.balanceOf(from)
                 assert.equal(balance, 90*10**18)
             })
 
             it('emits a burn event', async function () {
-                const { logs } = await this.token.burn(amount, burnNote, { from })
+                const { logs } = await this.token.burn(amount, { from })
                 assert.equal(logs.length, 2)
                 assert.equal(logs[0].event, 'Burn')
                 assert.equal(logs[0].args.burner, oneHundred)
                 assert.equal(logs[0].args.value, amount)
-                assert.equal(logs[0].args.note, burnNote)
 
                 assert.equal(logs[1].event, 'Transfer')
                 assert.equal(logs[1].args.from, oneHundred)
@@ -33,9 +31,8 @@ function burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZero
 
         describe('when the given amount is greater than the balance of the sender', function () {
             const amount = 101*10**18
-            const burnNote = "ill fail"
             it('reverts', async function () {
-                await assertRevert(this.token.burn(amount, burnNote, { from }))
+                await assertRevert(this.token.burn(amount, { from }))
             })
         })
 
