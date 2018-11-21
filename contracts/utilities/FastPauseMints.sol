@@ -2,17 +2,17 @@ pragma solidity ^0.4.21;
 
 
 import "openzeppelin-solidity/contracts/ownership/Claimable.sol";
-import "../Owners/TimeLockedController.sol";
+import "../Owners/TokenController.sol";
 
 /*
 Allows for admins to quickly respond to fradulent mints
-After deploying FastPauseMints and configuring it with TimeLockedController
+After deploying FastPauseMints and configuring it with TokenController
 Can pause trueUSD by simply sending any amount of ether to this contract
 from the trueUsdPauser address
 */
 contract FastPauseMints is Claimable {
     
-    TimeLockedController public controllerContract;
+    TokenController public controllerContract;
     address public trueUsdMintPauser;
 
     event FastTrueUSDMintsPause(address who);
@@ -23,7 +23,7 @@ contract FastPauseMints is Claimable {
     }
 
     constructor(address _trueUsdMintPauser, address _controllerContract) public {
-        controllerContract = TimeLockedController(_controllerContract);
+        controllerContract = TokenController(_controllerContract);
         trueUsdMintPauser = _trueUsdMintPauser;
     }
 

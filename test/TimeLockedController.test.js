@@ -7,16 +7,16 @@ const Registry = artifacts.require("Registry")
 const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
-const TimeLockedController = artifacts.require("TimeLockedController")
+const TokenController = artifacts.require("TokenController")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const ForceEther = artifacts.require("ForceEther")
 const FastPauseMints = artifacts.require("FastPauseMints")
 const FastPauseTrueUSD = artifacts.require("FastPauseTrueUSD")
 const GlobalPause = artifacts.require("GlobalPause")
 
-contract('TimeLockedController', function (accounts) {
+contract('TokenController', function (accounts) {
 
-    describe('--TimeLockedController Tests--', function () {
+    describe('--TokenController Tests--', function () {
         const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, ratifier1, ratifier2, ratifier3, redemptionAdmin] = accounts
 
         beforeEach(async function () {
@@ -24,7 +24,7 @@ contract('TimeLockedController', function (accounts) {
             this.token = await TrueUSDMock.new(oneHundred, 100*10**18, { from: owner })
             this.globalPause = await GlobalPause.new({ from: owner })
             await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
-            this.controller = await TimeLockedController.new({ from: owner })
+            this.controller = await TokenController.new({ from: owner })
             this.fastPauseMints = await FastPauseMints.new(pauseKey2, this.controller.address, { from: owner })
             await this.controller.initialize({ from: owner })
             await this.controller.setRegistry(this.registry.address, { from: owner })
@@ -503,13 +503,13 @@ contract('TimeLockedController', function (accounts) {
                 await this.controller.setTrueUsdFastPause(this.fastPauseTrueUSD.address, { from: owner })
             })
 
-            it('timeLockControler can pause TrueUSD transfers', async function(){
+            it('TokenController can pause TrueUSD transfers', async function(){
                 await this.token.transfer(mintKey, 10*10**18, { from: oneHundred })
                 await this.controller.pauseTrueUSD({ from: owner })
                 await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
             })
 
-            it('timeLockControler can unpause TrueUSD transfers', async function(){
+            it('TokenController can unpause TrueUSD transfers', async function(){
                 await this.controller.pauseTrueUSD({ from: owner })
                 await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
                 await this.controller.unpauseTrueUSD({ from: owner })
@@ -530,7 +530,7 @@ contract('TimeLockedController', function (accounts) {
                 await assertRevert(this.fastPauseTrueUSD.sendTransaction({from: pauseKey2, gas: 600000, value: 10}));                  
             })
 
-            it('timeLockControler can wipe blacklisted account', async function(){
+            it('TokenController can wipe blacklisted account', async function(){
                 await this.token.transfer(this.token.address, 40*10**18, { from: oneHundred })
                 await assertBalance(this.token, this.token.address, 40000000000000000000)
                 await this.registry.setAttribute(this.token.address, "isBlacklisted", 1, "notes", { from: owner })
@@ -538,7 +538,7 @@ contract('TimeLockedController', function (accounts) {
                 await assertBalance(this.token, this.token.address, 0)
             })
 
-            it('timeLockController can set GlobalPause', async function(){
+            it('tokenController can set GlobalPause', async function(){
                 this.globalPause = await GlobalPause.new({ from: owner })
                 await this.globalPause.pauseAllTokens(true, "Unsupported fork", { from: owner })
                 await this.controller.setGlobalPause(this.globalPause.address, { from: owner })

@@ -1,13 +1,14 @@
 pragma solidity ^0.4.23;
-import "./TimeLockedController.sol";
+
+import "./TokenController.sol";
 import "../Proxy/OwnedUpgradeabilityProxy.sol";
 
 /*
-This contract is the owner of TimeLockController. 
+This contract is the owner of TokenController. 
 This contract is responsible for calling all onlyOwner functions in
-TimeLockController.
-This contract has a copy of all functions in TimeLockController.
-Functions with name starting with 'ms' are not in TimeLockController.
+TokenController.
+This contract has a copy of all functions in TokenController.
+Functions with name starting with 'ms' are not in TokenController.
 They are for admin purposes (eg. transfer eth out of MultiSigOwner)
 MultiSigOwner contract has three owners
 The first time a function is called, an action is created.
@@ -28,7 +29,7 @@ contract MultiSigOwner {
     mapping(address=>bool) public voted;
 
     //The controller instance that this multisig controlls
-    TimeLockedController public timeLockController;
+    TokenController public tokenController;
 
     //list of all owners of the multisigOwner
     address[3] public ownerList;
@@ -197,13 +198,13 @@ contract MultiSigOwner {
     }
 
     /**
-    * @dev Set the instance of TimeLockController that this contract will be calling
+    * @dev Set the instance of TokenController that this contract will be calling
     */
-    function msSetTimeLockController (address _newController) public onlyOwner {
-        _initOrSignOwnerAction("msSetTimeLockController");
+    function msSetTokenController (address _newController) public onlyOwner {
+        _initOrSignOwnerAction("msSetTokenController");
         if (ownerAction.approveSigs > 1) {
-            timeLockController = TimeLockedController(_newController);
-            emit ActionExecuted("msSetTimeLockController");
+            tokenController = TokenController(_newController);
+            emit ActionExecuted("msSetTokenController");
             _deleteOwnerActon();
         }    
     }
@@ -211,7 +212,7 @@ contract MultiSigOwner {
     function msTransferControllerProxyOwnership(address _newOwner) external onlyOwner {
         _initOrSignOwnerAction("msTransferControllerProxyOwnership");
         if (ownerAction.approveSigs > 1) {
-            OwnedUpgradeabilityProxy(timeLockController).transferProxyOwnership(_newOwner);
+            OwnedUpgradeabilityProxy(tokenController).transferProxyOwnership(_newOwner);
             emit ActionExecuted("msTransferControllerProxyOwnership");
             _deleteOwnerActon();
         }
@@ -220,7 +221,7 @@ contract MultiSigOwner {
     function msClaimControllerProxyOwnership() external onlyOwner {
         _initOrSignOwnerAction("msClaimControllerProxyOwnership");
         if (ownerAction.approveSigs > 1) {
-            OwnedUpgradeabilityProxy(timeLockController).claimProxyOwnership();
+            OwnedUpgradeabilityProxy(tokenController).claimProxyOwnership();
             emit ActionExecuted("msClaimControllerProxyOwnership");
             _deleteOwnerActon();
         }
@@ -229,7 +230,7 @@ contract MultiSigOwner {
     function msUpgradeControllerProxyImplTo(address _implementation) external onlyOwner {
         _initOrSignOwnerAction("msUpgradeControllerProxyImplTo");
         if (ownerAction.approveSigs > 1) {
-            OwnedUpgradeabilityProxy(timeLockController).upgradeTo(_implementation);
+            OwnedUpgradeabilityProxy(tokenController).upgradeTo(_implementation);
             emit ActionExecuted("msUpgradeControllerProxyImplTo");
             _deleteOwnerActon();
         }
@@ -252,14 +253,14 @@ contract MultiSigOwner {
     }
 
     /**
-    * @dev Internal function used to call functions of timeLockController.
+    * @dev Internal function used to call functions of tokenController.
     If no in flight action, create a new one. Otherwise sign and the action
     if the msg.data matches call data matches. Reverts otherwise
     */
     function _signOrExecute(string _actionName) internal {
         _initOrSignOwnerAction(_actionName);
         if (ownerAction.approveSigs > 1) {
-            require(address(timeLockController).call(msg.data), "timeLockController call failed");
+            require(address(tokenController).call(msg.data), "tokenController call failed");
             emit ActionExecuted(_actionName);
             _deleteOwnerActon();
         }
@@ -267,10 +268,10 @@ contract MultiSigOwner {
 
     /*
     ============================================
-    THE FOLLOWING FUNCTIONS CALLED TO TIMELOCKCONTROLLER.
-    They share the same function signatures as functions in TimeLockController.
+    THE FOLLOWING FUNCTIONS CALLED TO TokenController.
+    They share the same function signatures as functions in TokenController.
     They will generate the correct callData so that the same function will be called
-    in TimeLockController.
+    in TokenController.
     */
 
     function initialize() external onlyOwner {

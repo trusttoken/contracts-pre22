@@ -4,7 +4,7 @@ const Registry = artifacts.require("Registry")
 const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
-const TimeLockedController = artifacts.require("TimeLockedController")
+const TokenController = artifacts.require("TokenController")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const ForceEther = artifacts.require("ForceEther")
 const MultisigOwner = artifacts.require("MultisigOwner")
@@ -21,7 +21,7 @@ contract('MultisigOwner', function (accounts) {
         await this.token.initialize(100*10**18, { from: owner1 })
         this.globalPause = await GlobalPause.new({ from: owner1 })
         await this.token.setGlobalPause(this.globalPause.address, { from: owner1 })
-        this.controller = await TimeLockedController.new({ from: owner1 })
+        this.controller = await TokenController.new({ from: owner1 })
         await this.controller.initialize({ from: owner1 })
         await this.controller.setRegistry(this.registry.address, { from: owner1 })
         await this.token.transferOwnership(this.controller.address, { from: owner1 })
@@ -38,8 +38,8 @@ contract('MultisigOwner', function (accounts) {
         await this.multisigOwner.msInitialize([owner1, owner2, owner3], { from: owner1 })
     })
 
-    describe('Multisig Contract claiming TimeLockController', function () {
-        it('Multisig can claimownership to TimeLockController', async function () {
+    describe('Multisig Contract claiming TokenController', function () {
+        it('Multisig can claimownership to TokenController', async function () {
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
             const initialOwner = await this.controller.owner()
             await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner1 })
@@ -70,7 +70,7 @@ contract('MultisigOwner', function (accounts) {
         })
     })
 
-    describe('Functions independent of timeLockController', async function(){
+    describe('Functions independent of tokenController', async function(){
         it ('cannot be reinitialized', async function(){
             await assertRevert(this.multisigOwner.msInitialize([owner1, owner2, owner3], {from: owner1}))
         })
@@ -102,10 +102,10 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(ownerList2, oneHundred)
         })
 
-        it ('Owners can set timelock controller', async function(){
-            await this.multisigOwner.msSetTimeLockController(this.controller.address, {from : owner1 })
-            await this.multisigOwner.msSetTimeLockController(this.controller.address, {from : owner2 })
-            const controller = await this.multisigOwner.timeLockController();
+        it ('Owners can set TokenController', async function(){
+            await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
+            await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner2 })
+            const controller = await this.multisigOwner.tokenController();
             assert.equal(controller, this.controller.address)
         })
 
@@ -147,7 +147,7 @@ contract('MultisigOwner', function (accounts) {
         })
 
         it('owners can veto actions', async function(){
-            await this.multisigOwner.msSetTimeLockController(this.controller.address, {from : owner1 })
+            await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
             await this.multisigOwner.veto({from : owner2 })
             await this.multisigOwner.veto({from : owner3 })
             const ownerAction = await this.multisigOwner.ownerAction();
@@ -162,28 +162,28 @@ contract('MultisigOwner', function (accounts) {
 
 
         it('owner cannot veto an action twice', async function(){
-            await this.multisigOwner.msSetTimeLockController(this.controller.address, {from : owner1 })
+            await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
             await this.multisigOwner.veto({from : owner2 })
             await assertRevert(this.multisigOwner.veto({from : owner2 }))
         })
 
         it('same owner cannot sign the same action twice', async function(){
-            await this.multisigOwner.msSetTimeLockController(this.controller.address, {from : owner1 })
-            await assertRevert(this.multisigOwner.msSetTimeLockController(this.controller.address, {from : owner1 }))
+            await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
+            await assertRevert(this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 }))
         })
 
     }) 
 
-    describe('Call timeLockController functions', function(){
+    describe('Call tokenController functions', function(){
         beforeEach(async function () {
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
             await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner1 })
             await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner2 })
-            await this.multisigOwner.msSetTimeLockController(this.controller.address, {from : owner1 })
-            await this.multisigOwner.msSetTimeLockController(this.controller.address, {from : owner2 })
+            await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
+            await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner2 })
         })
 
-        it('call reclaimEther of timeLockController', async function(){
+        it('call reclaimEther of tokenController', async function(){
             const forceEther = await ForceEther.new({ from: oneHundred, value: "10000000000000000000" })
             await forceEther.destroyAndSend(this.controller.address)
             const controllerInitialBalance = web3.fromWei(web3.eth.getBalance(this.controller.address), 'ether').toNumber()
@@ -198,7 +198,7 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(multisigFinalBalance, 10)
         })
 
-        it('call reclaimToken of timeLockController', async function(){
+        it('call reclaimToken of tokenController', async function(){
             await this.token.transfer(this.controller.address, 40*10**18, { from: oneHundred })
             await this.multisigOwner.reclaimToken(this.token.address, owner1, { from: owner1 })
             await this.multisigOwner.reclaimToken(this.token.address, owner1, { from: owner2 })
@@ -216,36 +216,36 @@ contract('MultisigOwner', function (accounts) {
         })
 
 
-        it('call transferOwnership of timeLockController', async function(){
+        it('call transferOwnership of tokenController', async function(){
             await this.multisigOwner.transferOwnership(oneHundred,{from: owner1})
             await this.multisigOwner.transferOwnership(oneHundred,{from: owner2})
             const pendingOwner = await this.controller.pendingOwner()
             assert.equal(pendingOwner, oneHundred)
         })
 
-        it('call setMintThresholds of timeLockController', async function(){
+        it('call setMintThresholds of tokenController', async function(){
             await this.multisigOwner.setMintThresholds(10*10**18,100*10**18,1000*10**18, { from: owner1 })
             await this.multisigOwner.setMintThresholds(10*10**18,100*10**18,1000*10**18, { from: owner2 })
         })
 
-        it('call setMintLimits of timeLockController', async function(){
+        it('call setMintLimits of tokenController', async function(){
             await this.multisigOwner.setMintLimits(30*10**18,300*10**18,3000*10**18,{ from: owner1 })
             await this.multisigOwner.setMintLimits(30*10**18,300*10**18,3000*10**18,{ from: owner2 })
         })
 
-        it('call refillJumboMintPool of timeLockController', async function(){
+        it('call refillJumboMintPool of tokenController', async function(){
             await this.multisigOwner.refillJumboMintPool({ from: owner1 })
             await this.multisigOwner.refillJumboMintPool({ from: owner2 })
         })
 
-        it('call refillRatifiedMintPool of timeLockController', async function(){
+        it('call refillRatifiedMintPool of tokenController', async function(){
             await this.multisigOwner.refillJumboMintPool({ from: owner1 })
             await this.multisigOwner.refillJumboMintPool({ from: owner2 })
             await this.multisigOwner.refillRatifiedMintPool({ from: owner1 })
             await this.multisigOwner.refillRatifiedMintPool({ from: owner2 })
         })
 
-        it('call refillInstantMintPool of timeLockController', async function(){
+        it('call refillInstantMintPool of tokenController', async function(){
             await this.multisigOwner.refillJumboMintPool({ from: owner1 })
             await this.multisigOwner.refillJumboMintPool({ from: owner2 })
             await this.multisigOwner.refillRatifiedMintPool({ from: owner1 })
@@ -254,7 +254,7 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.refillInstantMintPool({ from: owner2 })
         })
 
-        it('call pauseMints of timeLockController', async function(){
+        it('call pauseMints of tokenController', async function(){
             await this.multisigOwner.pauseMints({from: owner1})
             await this.multisigOwner.pauseMints({from: owner2})
             let mintPaused = await this.controller.mintPaused()
@@ -265,14 +265,14 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(mintPaused,false)
         })
 
-        it('call setTrueUSD of timeLockController', async function(){
+        it('call setTrueUSD of tokenController', async function(){
             await this.multisigOwner.setTrueUSD(this.token.address, {from: owner1})
             await this.multisigOwner.setTrueUSD(this.token.address, {from: owner2})
             const trueUSD = await this.controller.trueUSD()
             assert.equal(trueUSD,this.token.address)
         })
 
-        it('call changeTokenName of timeLockController', async function(){
+        it('call changeTokenName of tokenController', async function(){
             await this.multisigOwner.changeTokenName("Terry Token", "ttt", {from: owner1})
             await this.multisigOwner.changeTokenName("Terry Token", "ttt", {from: owner2})
             const name = await this.token.name()
@@ -281,21 +281,21 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(symbol,"ttt")
         })
 
-        it('call setTusdRegistry of timeLockController', async function(){
+        it('call setTusdRegistry of tokenController', async function(){
             await this.multisigOwner.setTusdRegistry(this.registry.address, {from: owner1})
             await this.multisigOwner.setTusdRegistry(this.registry.address, {from: owner2})
             const registry = await this.token.registry()
             assert.equal(registry,this.registry.address)
         })
 
-        it('call transferChild of timeLockController', async function(){
+        it('call transferChild of tokenController', async function(){
             await this.multisigOwner.transferChild(this.token.address, oneHundred, {from: owner1})
             await this.multisigOwner.transferChild(this.token.address, oneHundred, {from: owner2})
             const pendingOwner = await this.token.pendingOwner()
             assert.equal(pendingOwner, oneHundred)
         })
 
-        it('call requestReclaimContract of timeLockController', async function(){
+        it('call requestReclaimContract of tokenController', async function(){
             const balances = await this.token.balances()
             let balanceOwner = await BalanceSheet.at(balances).owner()
             assert.equal(balanceOwner, this.token.address)
@@ -310,7 +310,7 @@ contract('MultisigOwner', function (accounts) {
         })
 
 
-        it('call requestReclaimEther of timeLockController', async function(){
+        it('call requestReclaimEther of tokenController', async function(){
             const forceEther = await ForceEther.new({ from: oneHundred, value: "10000000000000000000" })
             await forceEther.destroyAndSend(this.token.address)
             const balance1 = web3.fromWei(web3.eth.getBalance(this.multisigOwner.address), 'ether').toNumber()
@@ -321,7 +321,7 @@ contract('MultisigOwner', function (accounts) {
 
         })
 
-        it('call requestReclaimToken of timeLockController', async function(){
+        it('call requestReclaimToken of tokenController', async function(){
             this.basicToken = await BasicTokenMock.new(this.token.address, 100, {from: owner1});
 
             await this.multisigOwner.requestReclaimToken(this.basicToken.address, {from: owner1})
@@ -339,7 +339,7 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(Number(userBalance), 100)
         })
 
-        it('call setGlobalPause of timeLockController', async function(){
+        it('call setGlobalPause of tokenController', async function(){
             await this.multisigOwner.setGlobalPause(oneHundred, {from: owner1})
             await this.multisigOwner.setGlobalPause(oneHundred, {from: owner2})
             const GlobalPauseAddress = await this.token.globalPause()
@@ -347,14 +347,14 @@ contract('MultisigOwner', function (accounts) {
 
         })
     
-        it('call setTrueUsdFastPause of timeLockController', async function(){
+        it('call setTrueUsdFastPause of tokenController', async function(){
             await this.multisigOwner.setTrueUsdFastPause(oneHundred, {from: owner1})
             await this.multisigOwner.setTrueUsdFastPause(oneHundred, {from: owner2})
             const trueUsdFastPause = await this.controller.trueUsdFastPause()
             assert.equal(trueUsdFastPause, oneHundred)
         })
 
-        it('call pauseTrueUSD and unpauseTrueUSD of timeLockController', async function(){
+        it('call pauseTrueUSD and unpauseTrueUSD of tokenController', async function(){
             await this.multisigOwner.pauseTrueUSD({from: owner1})
             await this.multisigOwner.pauseTrueUSD({from: owner2})
             let paused = await this.token.paused()
@@ -365,13 +365,13 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(paused, false)
         })
 
-        it('call wipeBlackListedTrueUSD of timeLockController', async function(){
+        it('call wipeBlackListedTrueUSD of tokenController', async function(){
             await this.registry.setAttribute(blackListed, "isBlacklisted", 1, "notes", { from: owner1 })
             await this.multisigOwner.wipeBlackListedTrueUSD(blackListed, {from: owner1})
             await this.multisigOwner.wipeBlackListedTrueUSD(blackListed, {from: owner2})
         })
 
-        it('call setBurnBounds of timeLockController', async function(){
+        it('call setBurnBounds of tokenController', async function(){
             await this.multisigOwner.setBurnBounds(3*10**18, 4*10**18, {from: owner1})
             await this.multisigOwner.setBurnBounds(3*10**18, 4*10**18, {from: owner2})
 
@@ -382,7 +382,7 @@ contract('MultisigOwner', function (accounts) {
 
         })
 
-        it('call changeStakingFees of timeLockController', async function(){
+        it('call changeStakingFees of tokenController', async function(){
             await this.multisigOwner.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, {from: owner1})
             await this.multisigOwner.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, {from: owner2})
             const transferFeeNumerator = await this.token.transferFeeNumerator()
@@ -404,7 +404,7 @@ contract('MultisigOwner', function (accounts) {
 
         })
 
-        it('call changeStaker of timeLockController', async function(){
+        it('call changeStaker of tokenController', async function(){
             await this.multisigOwner.changeStaker(oneHundred, {from: owner1})
             await this.multisigOwner.changeStaker(oneHundred, {from: owner2})
             const staker = await this.token.staker()
@@ -422,8 +422,8 @@ contract('MultisigOwner', function (accounts) {
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
             await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner1 })
             await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner2 })
-            await this.multisigOwner.msSetTimeLockController(this.controller.address, {from : owner1 })
-            await this.multisigOwner.msSetTimeLockController(this.controller.address, {from : owner2 })
+            await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
+            await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner2 })
             await this.multisigOwner.transferMintKey(mintKey, {from : owner2 })
             await this.multisigOwner.transferMintKey(mintKey, {from : owner3 })
 

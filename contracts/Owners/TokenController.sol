@@ -29,7 +29,7 @@ Rules to when a mint can be finalized:
 
 */
 
-contract TimeLockedController {
+contract TokenController {
     using SafeMath for uint256;
 
     struct MintOperation {
@@ -519,8 +519,8 @@ contract TimeLockedController {
 
     /** 
     *@dev Transfer ownership of _child to _newOwner.
-    Can be used e.g. to upgrade this TimeLockedController contract.
-    *@param _child contract that timeLockController currently Owns 
+    Can be used e.g. to upgrade this TokenController contract.
+    *@param _child contract that tokenController currently Owns 
     *@param _newOwner new owner/pending owner of _child
     */
     function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
@@ -529,7 +529,7 @@ contract TimeLockedController {
     }
 
     /** 
-    *@dev Transfer ownership of a contract from trueUSD to this TimeLockedController.
+    *@dev Transfer ownership of a contract from trueUSD to this TokenController.
     Can be used e.g. to reclaim balance sheet
     in order to transfer it to an upgraded TrueUSD contract.
     *@param _other address of the contract to claim ownership of
@@ -540,7 +540,7 @@ contract TimeLockedController {
     }
 
     /** 
-    *@dev send all ether in trueUSD address to the owner of timeLockController 
+    *@dev send all ether in trueUSD address to the owner of tokenController 
     */
     function requestReclaimEther() external onlyOwner {
         trueUSD.reclaimEther(owner);
@@ -548,7 +548,7 @@ contract TimeLockedController {
 
     /** 
     *@dev transfer all tokens of a particular type in trueUSD address to the
-    owner of timeLockController 
+    owner of tokenController 
     *@param _token token address of the token to transfer
     */
     function requestReclaimToken(ERC20 _token) external onlyOwner {

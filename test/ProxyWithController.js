@@ -8,7 +8,7 @@ const ForceEther = artifacts.require("ForceEther")
 const GlobalPause = artifacts.require("GlobalPause")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 const FastPauseTrueUSD = artifacts.require("FastPauseTrueUSD")
-const TimeLockedController = artifacts.require("TimeLockedController")
+const TokenController = artifacts.require("TokenController")
 
 contract('--Proxy With Controller--', function (accounts) {
     const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
@@ -33,10 +33,10 @@ contract('--Proxy With Controller--', function (accounts) {
             await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
             await this.token.changeStakingFees(0,1000,0,1000,0,0,1000,0, {from: owner})                
-            this.controllerImplementation = await TimeLockedController.new({ from: owner })
+            this.controllerImplementation = await TokenController.new({ from: owner })
             this.controllerProxy = await Proxy.new({ from: owner })
             await this.controllerProxy.upgradeTo(this.controllerImplementation.address,{ from: owner })
-            this.controller = await TimeLockedController.at(this.controllerProxy.address)
+            this.controller = await TokenController.at(this.controllerProxy.address)
             await this.controller.initialize({from: owner})
             await this.controller.setRegistry(this.registry.address, { from: owner })
             await this.controller.setTrueUSD(this.token.address, { from: owner })
@@ -85,7 +85,7 @@ contract('--Proxy With Controller--', function (accounts) {
             assert.equal(tokenRegistry, this.registry.address)
         })
 
-        describe('--timelock controller functions--', async function(){
+        describe('--TokenController functions--', async function(){
             beforeEach(async function () {
                 await this.token.setRegistry(this.registry.address, { from: owner })
                 await this.token.mint(oneHundred, 100*10**18, {from: owner})
