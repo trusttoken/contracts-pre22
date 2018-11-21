@@ -1,6 +1,6 @@
 pragma solidity ^0.4.21;
 
-import "../Owners/TokenController.sol";
+import "../Admin/TokenController.sol";
 
 /*
 Allows for admins to quickly respond to critical emergencies

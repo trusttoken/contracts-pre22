@@ -2,7 +2,7 @@ pragma solidity ^0.4.21;
 
 
 import "openzeppelin-solidity/contracts/ownership/Claimable.sol";
-import "../Owners/TokenController.sol";
+import "../Admin/TokenController.sol";
 
 /*
 Allows for admins to quickly respond to fradulent mints
