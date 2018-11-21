@@ -15,7 +15,7 @@ contract RedeemableTokenWithFees is ModularPausableToken {
     bytes32 public constant NO_FEES = "noFees";
 
     event ChangeStaker(address indexed addr);
-    event RedemptionAddressCountIncremented(uint count);
+    event RedemptionAddress(address indexed addr);
 
     event ChangeStakingFees(
     uint256 transferFeeNumerator,
@@ -72,8 +72,8 @@ contract RedeemableTokenWithFees is ModularPausableToken {
     }
 
     function incrementRedemptionAddressCount() external onlyOwner {
+        emit RedemptionAddress(address(redemptionAddressCount));
         redemptionAddressCount += 1;
-        emit RedemptionAddressCountIncremented(redemptionAddressCount);
     }
 
     /** 
