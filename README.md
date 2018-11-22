@@ -20,8 +20,8 @@ after the TrueUSD contract is delegated.
 ### Admins/...
 ### TokenController.sol
 
-This contract is the initial owner of TrueUSD.sol. Consists of an Owner key, Mint Pause Keys,
-Mint Key, and Mint Approval Keys. It also imposes time delays on mint requests to maximize security.
+This contract is the owner of TrueUSD.sol. Consists of an Owner key, Mint Pause Keys,
+Mint Key, and Mint Ratify Keys. It's also responsible for configuring constants and upgrading the token contract
 
 ### MultiSigOwner.sol
 
@@ -30,12 +30,11 @@ This contract is the owner of TokenController.sol. It turns every function that 
 
 ### Proxy/...
 
-
 ### ProxyStorage.sol
-Storage layout of TrueUSD. Makes upgrades safer. 
+Storage layout of TrueUSD. Makes upgrades safer.
 
 ### HasOwner.sol
-Our own implementation of Claimable Contract
+Our own implementation of Claimable Contract.
 
 ### BurnableTokenWithBounds.sol
 
@@ -50,22 +49,29 @@ with the [TrueCoin Terms of Use](https://www.trusttoken.com/terms-of-use/).
 ### RedeemableTokenWithFees.sol
 
 This allows for transaction fees.
-Also makes it easier for users to burn tokens (i.e. redeem them for USD) by treating sends to 0x0 as
-burn operations.
-Implements Redemption addresses
+
+Also makes it easier for users to burn tokens (i.e. redeem them for USD) by treating sends to 0x0 as burn operations.
+
+Implements Redemption address feature.
 
 ### DepositToken.sol
 Allow users to register deposit addresses. 
 
 ### GasRefundToken.sol
-Enable transfer methods to be sponsored. Reduce gas cost of transfer
+Enable transfer and mint methods to be sponsored. Reduce gas cost of transfer and mint.
 
 ### TrueUSD.sol
 
 This is the top-level ERC20 contract tying together all the previously mentioned functionality.
 
-### Upgrade Process
 
+## Upgrade Process
+
+There are three main parts to the system of smart contracts. TrueUSD Token, TokenController, and MultisigOwner. Each contract will sit behind a delegate proxy contract. So to upgrade, the admin needs to point the implementation in the delegate proxy to a new instance. 
+
+TokenController is the owner of TrueUSD and the also the proxyOwner of TrueUSD proxy
+Multisig is the owner of TokenController and the also the proxyOwner of TokenController proxy.
+Multisig is also the proxyOwner of its own proxy.
 
 ## Testing
 
