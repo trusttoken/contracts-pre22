@@ -6,9 +6,9 @@ import "../Admin/TokenController.sol";
 
 /*
 Allows for admins to quickly respond to fradulent mints
-After deploying FastPauseMints and configuring it with TokenController
-Can pause trueUSD by simply sending any amount of ether to this contract
-from the trueUsdPauser address
+After deploying FastPauseMints and configuring it with TokenController, admins can
+can pause trueUSD by simply sending any amount of ether to this contract
+from the trueUsdMintPauser address.
 */
 contract FastPauseMints is Claimable {
     

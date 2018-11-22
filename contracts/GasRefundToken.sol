@@ -2,9 +2,14 @@ pragma solidity ^0.4.23;
 
 import "./modularERC20/ModularPausableToken.sol";
 
-/*
- */
+/**  
+@title Gas Refund Token
+Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas refund mechanism in EVM
+Each time an non-empty storage slot is set to 0, evm refund 15,000 (19,000 after Constantinople) to the sender
+of the transaction. 
+*/
 contract GasRefundToken is ModularPausableToken {
+
 
     function sponserGas() external {
         uint256 len = gasRefundPool.length;
@@ -20,6 +25,10 @@ contract GasRefundToken is ModularPausableToken {
         gasRefundPool[len + 8] = 1;
     }  
 
+    /**  
+    @dev refund upto 45,000 (57,000 after Constantinople) gas for functions with 
+    gasRefund modifier.
+    */
     modifier gasRefund {
         uint256 len = gasRefundPool.length;
         if (len != 0) {
@@ -31,11 +40,18 @@ contract GasRefundToken is ModularPausableToken {
         _;  
     }
 
+    /**  
+    *@dev Return the remaining sponsored gas slots
+    */
     function remainingGasRefundPool() public view returns(uint) {
         return gasRefundPool.length;
     }
 
     function transferAllArgs(address _from, address _to, uint256 _value) internal gasRefund {
         super.transferAllArgs(_from, _to, _value);
+    }
+
+    function mint(address _to, uint256 _value) public onlyOwner gasRefund returns (bool) {
+        return super.mint(_to, _value);
     }
 }

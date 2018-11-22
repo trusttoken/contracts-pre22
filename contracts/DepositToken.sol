@@ -2,11 +2,11 @@ pragma solidity ^0.4.23;
 
 import "./modularERC20/ModularPausableToken.sol";
 
-/*
+/** @title Deposit Token
 Allows users to register their address so that all transfers to deposit addresses
 of the registered address will be forwarded to the registered address.  
 For example for address 0x9052BE99C9C8C5545743859e4559A751bDe4c923,
-the its deposit addresses are all addresses between
+its deposit addresses are all addresses between
 0x9052BE99C9C8C5545743859e4559A75100000000 and 0x9052BE99C9C8C5545743859e4559A751ffffffff
 Transfers to 0x9052BE99C9C8C5545743859e4559A75100000005 will be forwared to 0x9052BE99C9C8C5545743859e4559A751bDe4c923
  */

@@ -8,8 +8,10 @@ import "./RedeemableTokenWithFees.sol";
 import "./DepositToken.sol";
 import "./GasRefundToken.sol";
 
-// This is the top-level ERC20 contract, but most of the interesting functionality is
-// inherited - see the documentation on the corresponding contracts.
+/** @title TrueUSD
+* @dev This is the top-level ERC20 contract, but most of the interesting functionality is
+* inherited - see the documentation on the corresponding contracts.
+*/
 contract TrueUSD is 
 ModularPausableToken, 
 BurnableTokenWithBounds, 

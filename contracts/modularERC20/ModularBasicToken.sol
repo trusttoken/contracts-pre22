@@ -4,9 +4,7 @@ import "../HasOwner.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 // Version of OpenZeppelin's BasicToken whose balances mapping has been replaced
-// with a separate BalanceSheet contract. Most useful in combination with e.g.
-// HasNoContracts because then it can relinquish its balance sheet to a new
-// version of the token, removing the need to copy over balances.
+// with a separate BalanceSheet contract. remove the need to copy over balances.
 /**
  * @title Basic token
  * @dev Basic version of StandardToken, with no allowances.

@@ -4,8 +4,8 @@ import "../Admin/TokenController.sol";
 
 /*
 Allows for admins to quickly respond to critical emergencies
-After deploying FastPauseTrueUSD and configuring it with TokenController
-Can pause trueUSD by simply sending any amount of ether to this contract
+After deploying FastPauseTrueUSD and configuring it with TokenController, admins
+can pause trueUSD by simply sending any amount of ether to this contract
 from the trueUsdPauser address
 */
 contract FastPauseTrueUSD {

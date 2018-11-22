@@ -2,7 +2,7 @@ pragma solidity ^0.4.23;
 
 import "./modularERC20/ModularPausableToken.sol";
 
-/*
+/** @title Redeemable Token With Fees
 This allows for transaction fees to be assessed on transfer, burn, and mint.
 The fee upon burning n tokens (other fees computed similarly) is:
 (n * burnFeeNumerator / burnFeeDenominator) + burnFeeFlat
@@ -10,6 +10,8 @@ Note that what you think of as 1 TrueUSD token is internally represented
 as 10^18 units, so e.g. a one-penny fee for burnFeeFlat would look like
 burnFeeFlat = 10^16
 The fee for transfers is paid by the recipient.
+Also makes transfers to 0x0 alias to Burn
+Implement Redemption Addresses
 */
 contract RedeemableTokenWithFees is ModularPausableToken {
     bytes32 public constant NO_FEES = "noFees";
@@ -51,8 +53,10 @@ contract RedeemableTokenWithFees is ModularPausableToken {
     //if A transfers 1000 tokens to B, B will receive 999 tokens, and the staking contract will receiver 1 token.
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
         if (_to == address(0)) {
+            // transfer to 0x0 becomes burn
             burnAllArgs(_from, _value);
         } else if (uint(_to) <= redemptionAddressCount) {
+            // Trnasfers to redemption addresses becomes burn
             super.transferAllArgs(_from, _to, _value);
             burnAllArgs(_to, _value);
         } else {
