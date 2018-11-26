@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.23;
 
 import "./modularERC20/ModularPausableToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -7,6 +7,7 @@ import "./CompliantToken.sol";
 import "./RedeemableTokenWithFees.sol";
 import "./DepositToken.sol";
 import "./GasRefundToken.sol";
+import "./TokenWithHook.sol";
 
 /** @title TrueUSD
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
@@ -18,7 +19,8 @@ BurnableTokenWithBounds,
 CompliantToken, 
 DepositToken,
 RedeemableTokenWithFees,
-GasRefundToken {
+GasRefundToken,
+TokenWithHook {
     using SafeMath for *;
 
     uint8 public constant DECIMALS = 18;
