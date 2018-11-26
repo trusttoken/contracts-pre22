@@ -99,17 +99,6 @@ contract('RedeemToken', function (accounts) {
                 await this.token.incrementRedemptionAddressCount({ from: owner })
                 await assertRevert(this.token.transfer(ADDRESS_ONE, 10*10**18, {from : oneHundred}))
             })
-
-            it('does not pay transfer fee and burn fee', async function(){
-                await this.registry.setAttribute(ADDRESS_ONE, "canBurn", 1, notes, { from: owner })
-                const amount = 48*10**18        
-                await this.token.changeStakingFees(2, 20, 2, 20, 5*10**18, 2, 20, 5*10**18, { from: owner })
-                const fee = Math.floor(amount * 2 / 20) + 5*10**18
-                await this.token.incrementRedemptionAddressCount({ from: owner })
-                await this.token.transfer(ADDRESS_ONE, amount, {from : oneHundred})
-                await assertBalance(this.token, oneHundred, 100*10**18 - amount)
-                await assertBalance(this.token, owner, fee)    
-            })
         })
     })
 })

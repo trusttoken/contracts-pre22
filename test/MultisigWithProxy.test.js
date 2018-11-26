@@ -83,8 +83,6 @@ contract('MultisigOwner With Proxy', function (accounts) {
             this.balanceSheet.address,
             this.allowanceSheet.address, 
             { from: owner2 })
-        await this.multisigOwner.changeStakingFees(0,1000,0,1000,0,0,1000,0, {from: owner1})                
-        await this.multisigOwner.changeStakingFees(0,1000,0,1000,0,0,1000,0, {from: owner2})                
         await this.multisigOwner.requestMint(oneHundred, 10*10**18,  {from: owner1})
         await this.multisigOwner.requestMint(oneHundred, 10*10**18, {from: owner2})
         await this.multisigOwner.ratifyMint(0,oneHundred, 10*10**18, {from: owner1})

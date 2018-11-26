@@ -429,22 +429,6 @@ contract MultiSigOwner {
         _signOrExecute("setBurnBounds"); 
     }
 
-    function changeStakingFees(
-        uint256 _transferFeeNumerator,
-        uint256 _transferFeeDenominator,
-        uint256 _mintFeeNumerator,
-        uint256 _mintFeeDenominator,
-        uint256 _mintFeeFlat,
-        uint256 _burnFeeNumerator,
-        uint256 _burnFeeDenominator,
-        uint256 _burnFeeFlat) external onlyOwner {
-        _signOrExecute("changeStakingFees"); 
-    }
-
-    function changeStaker(address _newStaker) external onlyOwner {
-        _signOrExecute("changeStaker"); 
-    }
-
     function reclaimEther(address _to) external onlyOwner {
         _signOrExecute("reclaimEther"); 
     }

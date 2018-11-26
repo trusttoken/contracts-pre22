@@ -5,7 +5,6 @@ import basicTokenTests from './token/BasicToken';
 import standardTokenTests from './token/StandardToken';
 import burnableTokenTests from './token/BurnableToken';
 import compliantTokenTests from './CompliantToken';
-import tokenWithFeesTests from './TokenWithFees';
 const Registry = artifacts.require("Registry")
 const TrueUSD = artifacts.require("TrueUSD")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
@@ -83,41 +82,6 @@ contract('TrueUSD', function (accounts) {
             })
 
             compliantTokenTests([owner, oneHundred, anotherAccount], true)
-        })
-
-        describe('when everyone is on the whitelists and there are no burn bounds', function () {
-            beforeEach(async function () {
-                await this.token.setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owner })
-                await this.registry.setAttribute(owner, "hasPassedKYC/AML", 1, notes, { from: owner })
-                await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, notes, { from: owner })
-                await this.registry.setAttribute(anotherAccount, "hasPassedKYC/AML", 1, notes, { from: owner })
-                await this.registry.setAttribute(owner, "canBurn", 1, notes, { from: owner })
-                await this.registry.setAttribute(oneHundred, "canBurn", 1, notes, { from: owner })
-                await this.registry.setAttribute(anotherAccount, "canBurn", 1, notes, { from: owner })
-            })
-
-            tokenWithFeesTests([owner, oneHundred, anotherAccount], true)
-        })
-
-        it("old long interaction trace test", async function () {
-            await assertRevert(this.token.mint(accounts[3], 10, { from: owner })) //user 3 is not (yet) on whitelist
-            await assertRevert(this.registry.setAttribute(accounts[3], "hasPassedKYC/AML", 1, notes, { from: anotherAccount })) //anotherAccount is not the owner
-            await this.registry.setAttribute(accounts[3], "hasPassedKYC/AML", 1, notes, { from: owner })
-            const userHasCoins = async (id, amount) => {
-                var balance = await this.token.balanceOf(accounts[id])
-                assert.equal(balance, amount, "userHasCoins fail: actual balance " + balance)
-            }
-            await this.token.changeStakingFees(7, 10000, 0, 10000, 0, 0, 10000, 0, { from: owner })
-            await userHasCoins(3, 0)
-            await this.token.mint(accounts[3], 12345, { from: owner })
-            await userHasCoins(3, 12345)
-            await userHasCoins(1, 0)
-            await this.token.transfer(accounts[4], 11000, { from: accounts[3] })
-            await userHasCoins(3, 1345)
-            await userHasCoins(4, 11000 - 7)
-            await this.token.pause({ from: owner })
-            await assertRevert(this.token.transfer(accounts[5], 9999, { from: accounts[4] }))
-            await this.token.unpause({ from: owner })
         })
 
         it("can change name", async function () {

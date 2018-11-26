@@ -32,7 +32,6 @@ contract('--Proxy With Controller--', function (accounts) {
             await this.token.setGlobalPause(this.globalPause.address, { from: owner }) 
             await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
-            await this.token.changeStakingFees(0,1000,0,1000,0,0,1000,0, {from: owner})                
             this.controllerImplementation = await TokenController.new({ from: owner })
             this.controllerProxy = await Proxy.new({ from: owner })
             await this.controllerProxy.upgradeTo(this.controllerImplementation.address,{ from: owner })

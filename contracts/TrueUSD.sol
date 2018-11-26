@@ -4,7 +4,7 @@ import "./modularERC20/ModularPausableToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./BurnableTokenWithBounds.sol";
 import "./CompliantToken.sol";
-import "./RedeemableTokenWithFees.sol";
+import "./RedeemableToken.sol";
 import "./DepositToken.sol";
 import "./GasRefundToken.sol";
 import "./TokenWithHook.sol";
@@ -17,7 +17,7 @@ contract TrueUSD is
 ModularPausableToken, 
 BurnableTokenWithBounds, 
 CompliantToken,
-RedeemableTokenWithFees,
+RedeemableToken,
 TokenWithHook,
 DepositToken,
 GasRefundToken {
@@ -39,7 +39,6 @@ GasRefundToken {
         totalSupply_ = _totalSupply;
         burnMin = 10000 * 10**uint256(DECIMALS);
         burnMax = 20000000 * 10**uint256(DECIMALS);
-        staker = msg.sender;
         name = "TrueUSD";
         symbol = "TUSD";
     }

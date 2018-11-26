@@ -6,27 +6,26 @@ import "../TrueUSD.sol";
 import "../../registry/contracts/Registry.sol";
 import "../Proxy/OwnedUpgradeabilityProxy.sol";
 
-/* This contract allows us to split ownership of the TrueUSD contract (and TrueUSD's Registry)
+/** @title TokenController
+@dev This contract allows us to split ownership of the TrueUSD contract
 into two addresses. One, called the "owner" address, has unfettered control of the TrueUSD contract -
 it can mint new tokens, transfer ownership of the contract, etc. However to make
 extra sure that TrueUSD is never compromised, this owner key will not be used in
 day-to-day operations, allowing it to be stored at a heightened level of security.
 Instead, the owner appoints an various "admin" address. 
-There are 3 different types of admin addresses;  MintKey, MintApprover, and MintChecker. 
-MintKey can request and revoke and finalize mints one at a time.
-MintChecker can pause individual mints or pause all mints.
-MintApprover needs to approve the mint for any mint to be finalized.
-Additionally, the MintKey can  only mint new tokens by calling a pair of functions - 
-`requestMint` and `finalizeMint` - with significant gaps in time between the two calls.
-This allows us to watch the blockchain and if we discover the mintkey has been
-compromised and there are unauthorized operations underway, we can use the owner key
-to pause the mint.
+There are 3 different types of admin addresses;  MintKey, MintRatifier, and MintChecker. 
+MintKey can request and revoke mints one at a time.
+MintCheckers can pause individual mints or pause all mints.
+MintRatifiers can approve and finalize mints with enough approval.
 
-Rules to when a mint can be finalized:
- A requested mint can be finalized if and only if there exists a checktime P with the following properties:
-  1. The mint was requested at least 30 min before P
-  2. The current time is at least  2 hrs after P
-
+There are three levels of mints: instant mint, ratified mint, and jumbo mint. Each have a different threshold
+and deduct from a different pool.
+Instant mint has the lowest threshold and finalizes instantly without any ratifiers. Deduct from instant mint pool,
+which can be refilled by one ratifier.
+Ratify mint has the second lowest threshold and finalizes with one ratifier approval. Deduct from ratify mint pool,
+which can be refilled by three ratifiers.
+Jumbo mint has the highest threshold and finalizes with three ratifier approvals. Deduct from jumbo mint pool,
+which can only be refilled by the owner.
 */
 
 contract TokenController {
@@ -602,37 +601,6 @@ contract TokenController {
     */
     function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
         trueUSD.setBurnBounds(_min, _max);
-    }
-
-    /** 
-    *@dev Change the transaction fees charged on transfer/mint/burn
-    */
-    function changeStakingFees(
-        uint256 _transferFeeNumerator,
-        uint256 _transferFeeDenominator,
-        uint256 _mintFeeNumerator,
-        uint256 _mintFeeDenominator,
-        uint256 _mintFeeFlat,
-        uint256 _burnFeeNumerator,
-        uint256 _burnFeeDenominator,
-        uint256 _burnFeeFlat) external onlyOwner {
-        trueUSD.changeStakingFees(
-            _transferFeeNumerator,
-            _transferFeeDenominator,
-            _mintFeeNumerator,
-            _mintFeeDenominator,
-            _mintFeeFlat,
-            _burnFeeNumerator,
-            _burnFeeDenominator,
-            _burnFeeFlat);
-    }
-
-    /** 
-    *@dev Change the recipient of staking fees to newStaker
-    *@param _newStaker new staker to send staking fess to
-    */
-    function changeStaker(address _newStaker) external onlyOwner {
-        trueUSD.changeStaker(_newStaker);
     }
 
     /** 
