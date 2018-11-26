@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.23;
 import "../registry/contracts/Registry.sol";
 import "./modularERC20/BalanceSheet.sol";
 import "./modularERC20/AllowanceSheet.sol";
@@ -27,17 +27,6 @@ contract ProxyStorage {
     uint256 public burnMax = 0;
 
     Registry public registry;
-
-    uint256 public transferFeeNumerator = 0;
-    uint256 public transferFeeDenominator = 10000;
-    uint256 public mintFeeNumerator = 0;
-    uint256 public mintFeeDenominator = 10000;
-    uint256 public mintFeeFlat = 0;
-    uint256 public burnFeeNumerator = 0;
-    uint256 public burnFeeDenominator = 10000;
-    uint256 public burnFeeFlat = 0;
-    // All transaction fees are paid to this address.
-    address public staker;
 
     string public name = "TrueUSD";
     string public symbol = "TUSD";

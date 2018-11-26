@@ -483,19 +483,6 @@ contract('TokenController', function (accounts) {
             })
         })
 
-        describe('changeStaker', function () {
-            it('sets staker', async function () {
-                await this.controller.changeStaker(oneHundred, { from: owner })
-
-                const staker = await this.token.staker()
-                assert.equal(staker, oneHundred)
-            })
-
-            it('cannot be called by non-owner', async function () {
-                await assertRevert(this.controller.changeStaker(oneHundred, { from: otherAddress }))
-            })
-        })
-
 
         describe('pause trueUSD and wipe accounts', function(){
             beforeEach(async function(){
@@ -648,32 +635,5 @@ contract('TokenController', function (accounts) {
                 await assertBalance(this.token, owner, 40*10**18)
             })
         })
-
-        describe('Staking Fees', function () {
-            it('changes fees', async function () {
-                await this.controller.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, { from: owner })
-                const transferFeeNumerator = await this.token.transferFeeNumerator()
-                assert.equal(transferFeeNumerator, 1)
-                const transferFeeDenominator = await this.token.transferFeeDenominator()
-                assert.equal(transferFeeDenominator, 2)
-                const mintFeeNumerator = await this.token.mintFeeNumerator()
-                assert.equal(mintFeeNumerator, 3)
-                const mintFeeDenominator = await this.token.mintFeeDenominator()
-                assert.equal(mintFeeDenominator, 4)
-                const mintFeeFlat = await this.token.mintFeeFlat()
-                assert.equal(mintFeeFlat, 5)
-                const burnFeeNumerator = await this.token.burnFeeNumerator()
-                assert.equal(burnFeeNumerator, 6)
-                const burnFeeDenominator = await this.token.burnFeeDenominator()
-                assert.equal(burnFeeDenominator, 7)
-                const burnFeeFlat = await this.token.burnFeeFlat()
-                assert.equal(burnFeeFlat, 8)
-            })
-
-            it('cannot be called by non-owner', async function () {
-                await assertRevert(this.controller.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, { from: otherAddress }))
-            })
-        })
     })
-
 })

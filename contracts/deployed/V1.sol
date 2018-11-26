@@ -1,4 +1,4 @@
-// pragma solidity ^0.4.18;
+pragma solidity ^0.4.18;
 
 // contract DelegateERC20 {
 //   function delegateTotalSupply() public view returns (uint256);

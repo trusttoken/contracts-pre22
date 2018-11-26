@@ -1,10 +1,10 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.23;
 
 import "./modularERC20/ModularPausableToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./BurnableTokenWithBounds.sol";
 import "./CompliantToken.sol";
-import "./RedeemableTokenWithFees.sol";
+import "./RedeemableToken.sol";
 import "./DepositToken.sol";
 import "./GasRefundToken.sol";
 
@@ -17,7 +17,7 @@ ModularPausableToken,
 BurnableTokenWithBounds, 
 CompliantToken, 
 DepositToken,
-RedeemableTokenWithFees,
+RedeemableToken,
 GasRefundToken {
     using SafeMath for *;
 
@@ -37,7 +37,6 @@ GasRefundToken {
         totalSupply_ = _totalSupply;
         burnMin = 10000 * 10**uint256(DECIMALS);
         burnMax = 20000000 * 10**uint256(DECIMALS);
-        staker = msg.sender;
         name = "TrueUSD";
         symbol = "TUSD";
     }

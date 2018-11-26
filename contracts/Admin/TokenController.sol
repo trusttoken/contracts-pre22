@@ -605,37 +605,6 @@ contract TokenController {
     }
 
     /** 
-    *@dev Change the transaction fees charged on transfer/mint/burn
-    */
-    function changeStakingFees(
-        uint256 _transferFeeNumerator,
-        uint256 _transferFeeDenominator,
-        uint256 _mintFeeNumerator,
-        uint256 _mintFeeDenominator,
-        uint256 _mintFeeFlat,
-        uint256 _burnFeeNumerator,
-        uint256 _burnFeeDenominator,
-        uint256 _burnFeeFlat) external onlyOwner {
-        trueUSD.changeStakingFees(
-            _transferFeeNumerator,
-            _transferFeeDenominator,
-            _mintFeeNumerator,
-            _mintFeeDenominator,
-            _mintFeeFlat,
-            _burnFeeNumerator,
-            _burnFeeDenominator,
-            _burnFeeFlat);
-    }
-
-    /** 
-    *@dev Change the recipient of staking fees to newStaker
-    *@param _newStaker new staker to send staking fess to
-    */
-    function changeStaker(address _newStaker) external onlyOwner {
-        trueUSD.changeStaker(_newStaker);
-    }
-
-    /** 
     *@dev Owner can send ether balance in contract address
     *@param _to address to which the funds will be send to
     */
