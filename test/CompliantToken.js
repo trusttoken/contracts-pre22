@@ -130,13 +130,17 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
                 assert.equal(balance, 0)
             })
 
-            it('emits an event', async function () {
+            it('emits events', async function () {
                 const { logs } = await this.token.wipeBlacklistedAccount(oneHundred, { from: owner })
 
-                assert.equal(logs.length, 1)
+                assert.equal(logs.length, 2)
                 assert.equal(logs[0].event, 'WipeBlacklistedAccount')
                 assert.equal(logs[0].args.account, oneHundred)
                 assert.equal(logs[0].args.balance, 100*10**18)
+                assert.equal(logs[1].event, 'Transfer')
+                assert.equal(logs[1].args.amount, oneHundred)
+                assert.equal(logs[1].args.to, 0)
+                assert.equal(logs[1].args.from, owner)
             })
 
             it('cannot be called by non-owner', async function () {

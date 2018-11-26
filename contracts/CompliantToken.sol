@@ -52,5 +52,6 @@ contract CompliantToken is ModularPausableToken {
         balances.setBalance(_account, 0);
         totalSupply_ = totalSupply_.sub(oldValue);
         emit WipeBlacklistedAccount(_account, oldValue);
+        emit Transfer(_account, address(0), oldValue);
     }
 }
