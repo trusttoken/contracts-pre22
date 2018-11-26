@@ -42,8 +42,8 @@ This limits the minimum and maximum number of tokens that can be burned (redeeme
 
 ### CompliantToken.sol
 
-This ensures that only users who have passed a KYC/AML check can receive newly minted tokens or
-trade on certain restricted exchanges. It also allows for blacklisting of bad actors in accordance
+This ensures that only users who have passed a KYC/AML check can receive newly minted tokens.
+It also allows for blacklisting of bad actors in accordance
 with the [TrueCoin Terms of Use](https://www.trusttoken.com/terms-of-use/).
 
 ### RedeemableToken.sol
