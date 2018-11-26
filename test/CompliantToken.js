@@ -138,7 +138,7 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
                 assert.equal(logs[0].args.account, oneHundred)
                 assert.equal(logs[0].args.balance, 100*10**18)
                 assert.equal(logs[1].event, 'Transfer')
-                assert.equal(logs[1].args.amount, oneHundred)
+                assert.equal(logs[1].args.value, oneHundred)
                 assert.equal(logs[1].args.to, 0)
                 assert.equal(logs[1].args.from, owner)
             })
