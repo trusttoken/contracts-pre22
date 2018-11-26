@@ -7,6 +7,7 @@ import "./CompliantToken.sol";
 import "./RedeemableToken.sol";
 import "./DepositToken.sol";
 import "./GasRefundToken.sol";
+import "./TokenWithHook.sol";
 
 /** @title TrueUSD
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
@@ -15,9 +16,10 @@ import "./GasRefundToken.sol";
 contract TrueUSD is 
 ModularPausableToken, 
 BurnableTokenWithBounds, 
-CompliantToken, 
-DepositToken,
+CompliantToken,
 RedeemableToken,
+TokenWithHook,
+DepositToken,
 GasRefundToken {
     using SafeMath for *;
 

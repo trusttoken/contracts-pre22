@@ -16,7 +16,7 @@ contract GlobalPause is Claimable {
         pauseNotice = _notice;
     }
 
-    function requireNotPaused() public {
+    function requireNotPaused() public view {
         require(!AllTokenPaused, pauseNotice);
     }
 }
