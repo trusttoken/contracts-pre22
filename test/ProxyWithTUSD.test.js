@@ -5,7 +5,6 @@ import basicTokenTests from './token/BasicToken';
 import standardTokenTests from './token/StandardToken';
 import burnableTokenTests from './token/BurnableToken';
 import compliantTokenTests from './CompliantToken';
-import tokenWithFeesTests from './TokenWithFees';
 const Registry = artifacts.require("Registry")
 const TrueUSD = artifacts.require("TrueUSD")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
@@ -68,10 +67,6 @@ contract('Proxy', function (accounts) {
             it ('set registry', async function(){
                 await this.token.setRegistry(this.registry.address, { from: owner }) 
             })
-
-            it ('sets staking fees', async function(){
-                await this.token.changeStakingFees(0,1000,0,1000,0,0,1000,0, {from: owner})                
-            })
         })
         describe('---Tusd token functions---', function(){
             beforeEach(async function () {
@@ -80,7 +75,6 @@ contract('Proxy', function (accounts) {
                 await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
                 await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
                 await this.token.setRegistry(this.registry.address, { from: owner }) 
-                await this.token.changeStakingFees(0,1000,0,1000,0,0,1000,0, {from: owner})                
                 await this.token.mint(oneHundred, 100*10**18, {from: owner})
             })
             it('proxy return totalSupply', async function(){

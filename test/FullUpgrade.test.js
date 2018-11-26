@@ -53,7 +53,6 @@ contract('--Full upgrade process --', function (accounts) {
                                                        this.balanceSheet.address,
                                                        this.allowanceSheet.address, 
                                                        { from: owner })
-            await this.controller.changeStakingFees(0,1000,0,1000,0,0,1000,0, {from: owner})                
             await this.controller.setTusdRegistry(this.registry.address, { from: owner })
         })
         it('conducts the full upgrade from the current on chain contract', async function(){
@@ -77,7 +76,6 @@ contract('--Full upgrade process --', function (accounts) {
 
             await this.controller.claimStorageForProxy(this.token.address,this.balanceSheet, this.allowanceSheet, { from: owner })
             await this.controller.setGlobalPause(this.globalPause.address, { from: owner }) 
-            await this.controller.changeStakingFees(0,1000,0,1000,0,0,1000,0, {from: owner})                
             
             await this.controller.setTusdRegistry(this.registry.address, { from: owner })
             await assertBalance(this.token, oneHundred, 1000* 10 ^ 18)

@@ -381,35 +381,6 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(max, 4*10**18)
 
         })
-
-        it('call changeStakingFees of tokenController', async function(){
-            await this.multisigOwner.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, {from: owner1})
-            await this.multisigOwner.changeStakingFees(1, 2, 3, 4, 5, 6, 7, 8, {from: owner2})
-            const transferFeeNumerator = await this.token.transferFeeNumerator()
-            assert.equal(transferFeeNumerator, 1)
-            const transferFeeDenominator = await this.token.transferFeeDenominator()
-            assert.equal(transferFeeDenominator, 2)
-            const mintFeeNumerator = await this.token.mintFeeNumerator()
-            assert.equal(mintFeeNumerator, 3)
-            const mintFeeDenominator = await this.token.mintFeeDenominator()
-            assert.equal(mintFeeDenominator, 4)
-            const mintFeeFlat = await this.token.mintFeeFlat()
-            assert.equal(mintFeeFlat, 5)
-            const burnFeeNumerator = await this.token.burnFeeNumerator()
-            assert.equal(burnFeeNumerator, 6)
-            const burnFeeDenominator = await this.token.burnFeeDenominator()
-            assert.equal(burnFeeDenominator, 7)
-            const burnFeeFlat = await this.token.burnFeeFlat()
-            assert.equal(burnFeeFlat, 8)
-
-        })
-
-        it('call changeStaker of tokenController', async function(){
-            await this.multisigOwner.changeStaker(oneHundred, {from: owner1})
-            await this.multisigOwner.changeStaker(oneHundred, {from: owner2})
-            const staker = await this.token.staker()
-            assert.equal(staker, oneHundred)
-        })
     })
 
     describe('mint related owner actions', function(){
