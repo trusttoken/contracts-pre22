@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 import "./UpgradeabilityProxy.sol";
 
@@ -44,7 +44,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @dev Throws if called by any account other than the pending owner.
     */
     modifier onlyPendingProxyOwner() {
-        require(msg.sender == pendingProxyOwner());
+        require(msg.sender == pendingProxyOwner(), "only pending Proxy Owner");
         _;
     }
 

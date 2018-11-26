@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 import "./ModularMintableToken.sol";
 import "../utilities/GlobalPause.sol";
@@ -17,7 +17,7 @@ contract ModularPausableToken is ModularMintableToken {
     * @dev Modifier to make a function callable only when the contract is not paused.
     */
     modifier whenNotPaused() {
-        require(!paused);
+        require(!paused, "Token Not Paused");
         _;
     }
 
@@ -25,7 +25,7 @@ contract ModularPausableToken is ModularMintableToken {
     * @dev Modifier to make a function callable only when the contract is paused.
     */
     modifier whenPaused() {
-        require(paused);
+        require(paused, "Token Paused");
         _;
     }
 

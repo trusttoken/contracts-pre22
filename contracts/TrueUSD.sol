@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 import "./modularERC20/ModularPausableToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
