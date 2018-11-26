@@ -1,5 +1,5 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.23;
 
-interface TrueCoinReceiver {
+contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
 }

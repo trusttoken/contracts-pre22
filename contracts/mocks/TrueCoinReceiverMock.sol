@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.23;
 
 contract TrueCoinReceiverMock {
 
@@ -7,6 +7,8 @@ contract TrueCoinReceiverMock {
     uint public state;
 
     function tokenFallback( address _from, uint256 _value ) external {
+        //test what happends if the trigger fails
+        require (_value > 10 * 10 ** 18);
         state = _value;
         emit TokenReceived(_from, _value);
     }
