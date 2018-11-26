@@ -42,18 +42,29 @@ contract('TokenWithHooks', function (accounts) {
         it('transfers to a registered receiver contracts', async function(){
             const {logs}=await this.token.transfer(this.registeredReceiver.address, 50*10**18, {from: oneHundred})
             const newState = await this.registeredReceiver.state()
-            assertBalance.equal(newState, 50*10**18)
-            console.log(logs)
+            assert.equal(newState, 50*10**18)
         })
 
         it('transfers to a unregistered receiver contracts', async function(){
             await this.token.transfer(this.unregisteredReceiver.address, 50*10**18, {from: oneHundred})
             const newState = await this.registeredReceiver.state()
-            assertBalance.equal(newState, 0)
+            assert.equal(newState, 0)
         })
 
         it('transfers to a registered receiver contracts that fails', async function(){
             await assertRevert(this.token.transfer(this.registeredReceiver.address, 5*10**18, {from: oneHundred}))
         })
+
+        it('token with hooks works with deposit address', async function(){
+            this.depositAddressReceiver = await TrueCoinReceiverMock.new({from: owner})
+            const DEPOSIT_ADDRESS = '0x00000' + this.depositAddressReceiver.address.slice(2,37)
+            await this.registry.setAttribute(DEPOSIT_ADDRESS, "isDepositAddress", this.depositAddressReceiver.address, web3.fromUtf8(notes), { from: owner })
+            await this.registry.setAttribute(this.depositAddressReceiver.address, "isRegisteredContract", 1, notes, { from: owner })
+            const depositAddressOne = this.depositAddressReceiver.address.slice(0,37) + '20000';
+            const {logs} = await this.token.transfer(depositAddressOne, 50*10**18, {from: oneHundred})
+            const newSender = await this.depositAddressReceiver.sender()
+            assert.equal(newSender,depositAddressOne)
+        })
+
     })
 })

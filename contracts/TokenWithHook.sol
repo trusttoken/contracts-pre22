@@ -19,7 +19,7 @@ contract TokenWithHook is ModularPausableToken {
         if (length > 0) {
             if(registry.hasAttribute(_to, IS_REGISTERED_CONTRACT)) {
                 super.transferAllArgs(_from, _to, _value);
-                TrueCoinReceiver(_to).tokenFallback(msg.sender, _value);
+                TrueCoinReceiver(_to).tokenFallback(_from, _value);
             } else {
                 super.transferAllArgs(_from, _to, _value);
             }

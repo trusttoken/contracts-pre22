@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.23;
 
 import "openzeppelin-solidity/contracts/ownership/Claimable.sol";
 
@@ -16,7 +16,7 @@ contract GlobalPause is Claimable {
         pauseNotice = _notice;
     }
 
-    function requireNotPaused() public {
+    function requireNotPaused() public view {
         require(!AllTokenPaused, pauseNotice);
     }
 }

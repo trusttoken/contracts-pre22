@@ -16,11 +16,11 @@ import "./TokenWithHook.sol";
 contract TrueUSD is 
 ModularPausableToken, 
 BurnableTokenWithBounds, 
-CompliantToken, 
-DepositToken,
+CompliantToken,
 RedeemableTokenWithFees,
-GasRefundToken,
-TokenWithHook {
+TokenWithHook,
+DepositToken,
+GasRefundToken {
     using SafeMath for *;
 
     uint8 public constant DECIMALS = 18;

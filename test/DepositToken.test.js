@@ -12,7 +12,7 @@ const GlobalPause = artifacts.require("GlobalPause")
 contract('DepositToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     const notes = "some notes"
-    const DEPOSIT_ADDRESS = '0x000000' + anotherAccount.slice(2,36)
+    const DEPOSIT_ADDRESS = '0x00000' + anotherAccount.slice(2,37)
 
     describe('--Deposit Token--', function () {
         beforeEach(async function () {
@@ -42,10 +42,10 @@ contract('DepositToken', function (accounts) {
 
 
         it('transfers a deposit address of another account forwards tokens to anotherAccount', async function(){
-            const depositAddressOne = anotherAccount.slice(0,36) + '000000';
-            const depositAddressTwo = anotherAccount.slice(0,36) + '200000';
-            const depositAddressThree = anotherAccount.slice(0,36) + '400000';
-            const depositAddressFour = anotherAccount.slice(0,36) + '005000';
+            const depositAddressOne = anotherAccount.slice(0,37) + '00000';
+            const depositAddressTwo = anotherAccount.slice(0,37) + '20000';
+            const depositAddressThree = anotherAccount.slice(0,37) + '40000';
+            const depositAddressFour = anotherAccount.slice(0,37) + '00500';
             await this.token.transfer(depositAddressOne, 10*10**18,{from: oneHundred})
             await this.token.transfer(depositAddressTwo, 10*10**18, {from: oneHundred})
             await this.token.transfer(depositAddressThree, 10*10**18, {from: oneHundred})
@@ -53,12 +53,22 @@ contract('DepositToken', function (accounts) {
             await assertBalance(this.token,anotherAccount, 40*10**18)
         })
 
+        it('emits the right events', async function(){
+            const depositAddressOne = anotherAccount.slice(0,37) + '00000';
+            const {logs} = await this.token.transfer(depositAddressOne, 10*10**18,{from: oneHundred})
+            assert.equal(logs[0].args.from,oneHundred)
+            assert.equal(logs[0].args.to,depositAddressOne)
+            assert.equal(logs[1].args.from,depositAddressOne)
+            assert.equal(logs[1].args.to,anotherAccount)
+
+        })
+
         it('can remove deposit address', async function(){
             await this.registry.setAttribute(DEPOSIT_ADDRESS, "isDepositAddress", 0, notes, { from: owner })
-            const depositAddressOne = anotherAccount.slice(0,36) + '000000';
-            const depositAddressTwo = anotherAccount.slice(0,36) + '200000';
-            const depositAddressThree = anotherAccount.slice(0,36) + '400000';
-            const depositAddressFour = anotherAccount.slice(0,36) + '005000';
+            const depositAddressOne = anotherAccount.slice(0,37) + '00000';
+            const depositAddressTwo = anotherAccount.slice(0,37) + '20000';
+            const depositAddressThree = anotherAccount.slice(0,37) + '40000';
+            const depositAddressFour = anotherAccount.slice(0,37) + '00500';
             await this.token.transfer(depositAddressOne, 10*10**18, {from: oneHundred})
             await this.token.transfer(depositAddressTwo, 10*10**18, {from: oneHundred})
             await this.token.transfer(depositAddressThree, 10*10**18, {from: oneHundred})
