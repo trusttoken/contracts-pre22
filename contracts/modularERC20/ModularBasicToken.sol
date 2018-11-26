@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.23;
 
 import "../HasOwner.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -13,7 +13,7 @@ contract ModularBasicToken is HasOwner {
     using SafeMath for uint256;
 
     event BalanceSheetSet(address indexed sheet);
-    event Transfer(address from, address to, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
 
     /**
     * @dev claim ownership of the balancesheet contract
