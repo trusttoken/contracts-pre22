@@ -25,7 +25,6 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
         await this.delegate.setGlobalPause(this.globalPause.address, { from: owner }) 
         await this.delegate.setRegistry(this.registry.address, { from: owner })
         await this.original.delegateToNewContract(this.delegate.address, {from:owner})
-        await this.delegate.setDelegateFrom(this.original.address, {from:owner})
     })
 
     describe('--DelegateERC20 Tests--', function() {
@@ -33,13 +32,6 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
             assert.equal(this.totalSupply, Number(await this.delegate.delegateTotalSupply()))
             assert.equal(this.totalSupply, Number(await this.delegate.totalSupply()))
             assert.equal(this.totalSupply, Number(await this.original.totalSupply()))
-        })
-d
-        describe('Original', function(){
-            beforeEach(async function() {
-                this.token = this.original
-            })
-            standardTokenTests([owner, oneHundred, anotherAccount])    
         })
 
         describe('Delegate', function(){
