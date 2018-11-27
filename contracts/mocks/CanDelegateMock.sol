@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "../deployed/CanDelegateV1.sol";
+import "./CanDelegateV1.sol";
 
 contract CanDelegateMock is CanDelegateV1 {
     constructor(address initialAccount, uint256 initialBalance) public {
