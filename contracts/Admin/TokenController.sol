@@ -509,7 +509,7 @@ contract TokenController {
     function claimStorageForProxy(
         TrueUSD _proxy,
         HasOwner _balanceSheet,
-        HasOwner _alowanceSheet) external onlyOwner {
+        HasOwner _allowanceSheet) external onlyOwner {
 
         //call to claim the storage contract with the new delegate contract
         _proxy.setBalanceSheet(_balanceSheet);
