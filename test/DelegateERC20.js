@@ -1,15 +1,31 @@
 const CanDelegate = artifacts.require('CanDelegateMock')
-const DelegateERC20 = artifacts.require('DelegateERC20Mock')
+const TrueUSD = artifacts.require('TrueUSD')
 import standardTokenTests from './token/StandardToken';
-import basicTokenTests from './token/BasicToken';
+const Registry = artifacts.require("Registry")
+const GlobalPause = artifacts.require("GlobalPause")
 
 contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function() {
         this.totalSupply = 100 * 10 ** 18
-        this.original = await CanDelegate.new(oneHundred, this.totalSupply * 2, {from:owner})
-        this.delegate = await DelegateERC20.new(oneHundred, this.totalSupply, {from:owner})
+        this.original = await CanDelegate.new(oneHundred, this.totalSupply, {from:owner})
+        this.BalanceSheetAddress = await this.original.balances()
+        this.AllowanceSheetAddress = await this.original.allowances()
+        this.delegate = await TrueUSD.new({ from: owner })
+        this.registry = await Registry.new({ from: owner })
+
+        await this.delegate.initialize(this.totalSupply, { from: owner })
+        await this.original.transferChild(this.BalanceSheetAddress,this.delegate.address, { from: owner })
+
+        await this.original.transferChild(this.AllowanceSheetAddress, this.delegate.address, { from: owner })
+
+        await this.delegate.setBalanceSheet(this.BalanceSheetAddress, { from: owner })
+
+        await this.delegate.setAllowanceSheet(this.AllowanceSheetAddress, { from: owner })
+        this.globalPause = await GlobalPause.new({ from: owner })
+        await this.delegate.setGlobalPause(this.globalPause.address, { from: owner }) 
+        await this.delegate.setRegistry(this.registry.address, { from: owner })
         await this.original.delegateToNewContract(this.delegate.address, {from:owner})
-        this.token = this.original
+        await this.delegate.setDelegateFrom(this.original.address, {from:owner})
     })
 
     describe('--DelegateERC20 Tests--', function() {
@@ -18,20 +34,19 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
             assert.equal(this.totalSupply, Number(await this.delegate.totalSupply()))
             assert.equal(this.totalSupply, Number(await this.original.totalSupply()))
         })
-        it('can use delegate', function() {
-            this.token = this.delegate
-            describe('transfers and allowances', function () {
-                basicTokenTests([owner, oneHundred, anotherAccount], true)
-                standardTokenTests([owner, oneHundred, anotherAccount])
+
+        describe('Original', function(){
+            beforeEach(async function() {
+                this.token = this.original
             })
+            standardTokenTests([owner, oneHundred, anotherAccount])    
         })
-        it('can use original', function() {
-            this.token = this.original
-            describe('transfers and allowances', function () {
-                basicTokenTests([owner, oneHundred, anotherAccount], true)
-                standardTokenTests([owner, oneHundred, anotherAccount])
+
+        describe('Delegate', function(){
+            beforeEach(async function() {
+                this.token = this.delegate
             })
+            standardTokenTests([owner, oneHundred, anotherAccount])    
         })
     })
-
 })

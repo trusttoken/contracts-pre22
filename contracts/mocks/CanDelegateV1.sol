@@ -331,6 +331,10 @@ contract CanDelegateV1 is StandardTokenV1 {
         DelegatedTo(delegate);
     }
 
+    function transferChild(address _child, address _newOwner) public onlyOwner {
+        OwnableV1(_child).transferOwnership(_newOwner);
+    }
+
     // If a delegate has been designated, all ERC20 calls are forwarded to it
     function transfer(address to, uint256 value) public returns (bool) {
         if (delegate == address(0)) {
