@@ -504,7 +504,7 @@ contract TokenController {
     *@dev calls setBalanceSheet(address) and setAllowanceSheet(address) on the _proxy contract
     @param _proxy the contract that inplments setBalanceSheet and setAllowanceSheet
     @param _balanceSheet HasOwner storage contract
-    @param _alowanceSheet HasOwner storage contract
+    @param _allowanceSheet HasOwner storage contract
     */
     function claimStorageForProxy(
         TrueUSD _proxy,
