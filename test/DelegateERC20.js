@@ -34,7 +34,7 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
             assert.equal(this.totalSupply, Number(await this.delegate.totalSupply()))
             assert.equal(this.totalSupply, Number(await this.original.totalSupply()))
         })
-
+d
         describe('Original', function(){
             beforeEach(async function() {
                 this.token = this.original

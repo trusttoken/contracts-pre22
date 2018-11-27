@@ -2,11 +2,7 @@ import "./modularERC20/ModularStandardToken.sol";
 
 contract DelegateERC20 is ModularStandardToken {
 
-    address public delegateFrom;
 
-    function setDelegateFrom(address _delegateFrom) public onlyOwner {
-        delegateFrom = _delegateFrom;
-    }
 
     function delegateTotalSupply() public view returns (uint256) {
         return totalSupply();
