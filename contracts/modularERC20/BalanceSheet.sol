@@ -20,9 +20,4 @@ contract BalanceSheet is Claimable {
     function setBalance(address _addr, uint256 _value) public onlyOwner {
         balanceOf[_addr] = _value;
     }
-
-    function transferBalance(address _from, address _to, uint256 _value) public onlyOwner {
-        balanceOf[_from] = balanceOf[_from].sub(_value);
-        balanceOf[_to] = balanceOf[_to].add(_value);
-    }
 }
