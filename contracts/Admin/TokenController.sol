@@ -507,13 +507,13 @@ contract TokenController {
     @param _alowanceSheet HasOwner storage contract
     */
     function claimStorageForProxy(
-        address _proxy,
+        TrueUSD _proxy,
         HasOwner _balanceSheet,
         HasOwner _alowanceSheet) external onlyOwner {
 
         //call to claim the storage contract with the new delegate contract
-        require(address(_proxy).call(bytes4(keccak256("setBalanceSheet(address)")), _balanceSheet));
-        require(address(_proxy).call(bytes4(keccak256("setAllowanceSheet(address)")), _alowanceSheet));
+        _proxy.setBalanceSheet(_balanceSheet);
+        _proxy.setAllowanceSheet(_allowanceSheet);
     }
 
     /** 
