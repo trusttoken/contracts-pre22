@@ -6,9 +6,9 @@ import basicTokenTests from './token/BasicToken';
 contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function() {
         this.totalSupply = 100 * 10 ** 18
-        this.original = CanDelegate.new(oneHundred, this.totalSupply * 2, {from:owner})
-        this.delegate = DelegateERC20.new(oneHundred, this.totalSupply, {from:owner})
-        this.original.delegateToNewContract(this.delegate.address, {from:owner})
+        this.original = await CanDelegate.new(oneHundred, this.totalSupply * 2, {from:owner})
+        this.delegate = await DelegateERC20.new(oneHundred, this.totalSupply, {from:owner})
+        await this.original.delegateToNewContract(this.delegate.address, {from:owner})
         this.token = this.original
     })
 
