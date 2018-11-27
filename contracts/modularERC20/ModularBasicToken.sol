@@ -48,8 +48,7 @@ contract ModularBasicToken is HasOwner {
         require(_value <= balances.balanceOf(_from),"not enough balance to transfer");
 
         // SafeMath.sub will throw if there is not enough balance.
-        balances.subBalance(_from, _value);
-        balances.addBalance(_to, _value);
+        balances.transferBalance(_from, _to, _value);
         emit Transfer(_from, _to, _value);
     }
     
