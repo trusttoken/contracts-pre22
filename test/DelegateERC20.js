@@ -13,19 +13,19 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
     })
 
     describe('--DelegateERC20 Tests--', function() {
-        describe('totalSupply', async function () {
-            assert.equal(this.totalSupply, await this.delegate.delegateTotalSupply())
-            assert.equal(this.totalSupply, await this.delegate.totalSupply())
-            assert.equal(this.totalSupply, await this.original.totalSupply())
+        it('shares totalSupply', async function () {
+            assert.equal(this.totalSupply, Number(await this.delegate.delegateTotalSupply()))
+            assert.equal(this.totalSupply, Number(await this.delegate.totalSupply()))
+            assert.equal(this.totalSupply, Number(await this.original.totalSupply()))
         })
-        describe('Delegate', function() {
+        it('can use delegate', function() {
             this.token = this.delegate
             describe('transfers and allowances', function () {
                 basicTokenTests([owner, oneHundred, anotherAccount], true)
                 standardTokenTests([owner, oneHundred, anotherAccount])
             })
         })
-        describe('Original', function() {
+        it('can use original', function() {
             this.token = this.original
             describe('transfers and allowances', function () {
                 basicTokenTests([owner, oneHundred, anotherAccount], true)
