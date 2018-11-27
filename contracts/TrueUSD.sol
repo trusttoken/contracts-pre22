@@ -8,6 +8,7 @@ import "./RedeemableToken.sol";
 import "./DepositToken.sol";
 import "./GasRefundToken.sol";
 import "./TokenWithHook.sol";
+import "./DelegateERC20.sol";
 
 /** @title TrueUSD
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
@@ -19,6 +20,7 @@ BurnableTokenWithBounds,
 CompliantToken,
 RedeemableToken,
 TokenWithHook,
+DelegateERC20,
 DepositToken,
 GasRefundToken {
     using SafeMath for *;

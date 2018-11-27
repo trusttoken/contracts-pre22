@@ -46,7 +46,8 @@ contract ModularBasicToken is HasOwner {
 
     function transferAllArgs(address _from, address _to, uint256 _value) internal {
         // SafeMath.sub will throw if there is not enough balance.
-        balances.transferBalance(_from, _to, _value);
+        balances.subBalance(_from, _value);
+        balances.addBalance(_to, _value);
         emit Transfer(_from, _to, _value);
     }
     
