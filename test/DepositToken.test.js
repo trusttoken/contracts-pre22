@@ -8,9 +8,10 @@ const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
 const GlobalPause = artifacts.require("GlobalPause")
+const DepositAddressRegistrar = artifacts.require("DepositAddressRegistrar")
 
 contract('DepositToken', function (accounts) {
-    const [_, owner, oneHundred, anotherAccount] = accounts
+    const [_, owner, oneHundred, anotherAccount, thirdAddress] = accounts
     const notes = "some notes"
     const DEPOSIT_ADDRESS = '0x00000' + anotherAccount.slice(2,37)
 
@@ -74,6 +75,40 @@ contract('DepositToken', function (accounts) {
             await this.token.transfer(depositAddressThree, 10*10**18, {from: oneHundred})
             await this.token.transfer(depositAddressFour, 10*10**18, {from: oneHundred})
             await assertBalance(this.token,anotherAccount, 0)
+        })
+
+        describe('deposit token works with deposit registrar', function(){
+            beforeEach(async function () {
+                this.registrar = await DepositAddressRegistrar.new(this.registry.address, {from: owner})
+                const canWriteToDepositAddress = await this.registry.writeAttributeFor("isDepositAddress")
+                await this.registry.setAttributeValue(this.registrar.address, canWriteToDepositAddress, 1, { from: owner })
+            })
+
+            it('Registrar can register deposit address', async function(){
+                await this.registrar.registerDepositAddress({from: thirdAddress})
+                const depositAddressOne = thirdAddress.slice(0,37) + '00000';
+                const depositAddressTwo = thirdAddress.slice(0,37) + '20000';
+                const depositAddressThree = thirdAddress.slice(0,37) + '40000';
+                const depositAddressFour = thirdAddress.slice(0,37) + '00500';
+                await this.token.transfer(depositAddressOne, 10*10**18,{from: oneHundred})
+                await this.token.transfer(depositAddressTwo, 10*10**18, {from: oneHundred})
+                await this.token.transfer(depositAddressThree, 10*10**18, {from: oneHundred})
+                await this.token.transfer(depositAddressFour, 10*10**18, {from: oneHundred})
+                await assertBalance(this.token,thirdAddress, 40*10**18)    
+            })
+
+            it('Registrar can register deposit address through fallback function', async function(){
+                await this.registrar.sendTransaction({from: thirdAddress, gas: 600000})
+                const depositAddressOne = thirdAddress.slice(0,37) + '00000';
+                const depositAddressTwo = thirdAddress.slice(0,37) + '20000';
+                const depositAddressThree = thirdAddress.slice(0,37) + '40000';
+                const depositAddressFour = thirdAddress.slice(0,37) + '00500';
+                await this.token.transfer(depositAddressOne, 10*10**18,{from: oneHundred})
+                await this.token.transfer(depositAddressTwo, 10*10**18, {from: oneHundred})
+                await this.token.transfer(depositAddressThree, 10*10**18, {from: oneHundred})
+                await this.token.transfer(depositAddressFour, 10*10**18, {from: oneHundred})
+                await assertBalance(this.token,thirdAddress, 40*10**18)    
+            })
         })
     })
 })
