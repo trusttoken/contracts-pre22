@@ -12,7 +12,7 @@ contract DepositAddressRegistrar {
     event DepositAddressRegistered(address registeredAddress);
 
     constructor(address _registry) public {
-        registry= Registry(_registry);
+        registry = Registry(_registry);
     }
     
     function registerDepositAddress() external {
