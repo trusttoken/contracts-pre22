@@ -98,7 +98,7 @@ contract('DepositToken', function (accounts) {
             })
 
             it('Registrar can register deposit address through fallback function', async function(){
-                await this.registrar.sendTransaction({from: thirdAddress, gas: 600000})
+                await this.registrar.sendTransaction({from: thirdAddress, gas: 600000, value: 10})
                 const depositAddressOne = thirdAddress.slice(0,37) + '00000';
                 const depositAddressTwo = thirdAddress.slice(0,37) + '20000';
                 const depositAddressThree = thirdAddress.slice(0,37) + '40000';
@@ -108,6 +108,16 @@ contract('DepositToken', function (accounts) {
                 await this.token.transfer(depositAddressThree, 10*10**18, {from: oneHundred})
                 await this.token.transfer(depositAddressFour, 10*10**18, {from: oneHundred})
                 await assertBalance(this.token,thirdAddress, 40*10**18)    
+            })
+
+            it('cannot register for deposit address twice', async function(){
+                await this.registrar.sendTransaction({from: thirdAddress, gas: 600000})
+                await assertRevert(this.registrar.sendTransaction({from: thirdAddress, gas: 600000}))
+            })
+
+            it('cannot register for deposit address twice', async function(){
+                await this.registrar.registerDepositAddress({from: thirdAddress})
+                await assertRevert(this.registrar.registerDepositAddress({from: thirdAddress}))
             })
         })
     })
