@@ -76,6 +76,18 @@ contract('DepositToken', function (accounts) {
             await this.token.transfer(depositAddressFour, 10*10**18, {from: oneHundred})
             await assertBalance(this.token,anotherAccount, 0)
         })
+        
+        it('deposit tokens work with minting', async function(){
+            const depositAddressOne = anotherAccount.slice(0,37) + '00000';
+            const depositAddressTwo = anotherAccount.slice(0,37) + '20000';
+            await this.registry.setAttribute(depositAddressOne, "hasPassedKYC/AML", 1, notes, { from: owner })
+            await this.registry.setAttribute(depositAddressTwo, "hasPassedKYC/AML", 1, notes, { from: owner })
+            const {logs} = await this.token.mint(depositAddressOne, 10*10**18, {from: owner})
+            console.log(logs)
+            await this.token.mint(depositAddressTwo, 10*10**18, {from: owner})
+            await assertBalance(this.token,anotherAccount, 20*10**18)
+        })
+
 
         describe('deposit token works with deposit registrar', function(){
             beforeEach(async function () {
