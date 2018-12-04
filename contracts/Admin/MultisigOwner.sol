@@ -298,11 +298,11 @@ contract MultiSigOwner {
         _signOrExecute("claimOwnership"); 
     }
 
-    function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _jumbo) external onlyOwner {
+    function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
         _signOrExecute("setMintThresholds");
     }
 
-    function setMintLimits(uint256 _instant, uint256 _ratified, uint256 _jumbo) external onlyOwner {
+    function setMintLimits(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
         _signOrExecute("setMintLimit");
     }
 
@@ -314,8 +314,8 @@ contract MultiSigOwner {
         _signOrExecute("refillRatifiedMintPool");
     }
 
-    function refillJumboMintPool() external onlyOwner {
-        _signOrExecute("refillJumboMintPool");
+    function refillMultiSigMintPool() external onlyOwner {
+        _signOrExecute("refillMultiSigMintPool");
     }
 
     function requestMint(address _to, uint256 _value) external onlyOwner {

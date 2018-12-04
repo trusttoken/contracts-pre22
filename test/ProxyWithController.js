@@ -44,7 +44,7 @@ contract('--Proxy With Controller--', function (accounts) {
             await this.registry.setAttribute(approver1, "isTUSDMintApprover", 1, "notes", { from: owner })
             await this.registry.setAttribute(approver2, "isTUSDMintApprover", 1, "notes", { from: owner })
             await this.registry.setAttribute(approver3, "isTUSDMintApprover", 1, "notes", { from: owner })
-            await this.registry.setAttribute(pauseKey, "isTUSDMintChecker", 1, "notes", { from: owner })
+            await this.registry.setAttribute(pauseKey, "isTUSDMintPausers", 1, "notes", { from: owner })
         })
 
         it('controller cannot be reinitialized', async function(){

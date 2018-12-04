@@ -70,7 +70,7 @@ contract('MultisigOwner With Proxy', function (accounts) {
         await this.registry.setAttribute(oneHundred, "canBurn", 1, "notes", { from: owner1 })
         await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner1 })
         await this.registry.setAttribute(approver, "isTUSDMintApprover", 1, "notes", { from: owner1 })
-        await this.registry.setAttribute(pauseKey, "isTUSDMintChecker", 1, "notes", { from: owner1 })
+        await this.registry.setAttribute(pauseKey, "isTUSDMintPausers", 1, "notes", { from: owner1 })
         this.balanceSheet = await BalanceSheet.new({ from: owner1 })
         this.allowanceSheet = await AllowanceSheet.new({ from: owner1 })
         await this.balanceSheet.transferOwnership(this.token.address,{ from: owner1 })
