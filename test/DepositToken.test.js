@@ -83,7 +83,6 @@ contract('DepositToken', function (accounts) {
             await this.registry.setAttribute(depositAddressOne, "hasPassedKYC/AML", 1, notes, { from: owner })
             await this.registry.setAttribute(depositAddressTwo, "hasPassedKYC/AML", 1, notes, { from: owner })
             const {logs} = await this.token.mint(depositAddressOne, 10*10**18, {from: owner})
-            console.log(logs)
             await this.token.mint(depositAddressTwo, 10*10**18, {from: owner})
             await assertBalance(this.token,anotherAccount, 20*10**18)
         })
