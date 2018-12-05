@@ -31,9 +31,9 @@ contract CompliantToken is ModularPausableToken {
         emit SetRegistry(registry);
     }
 
-    function mint(address _to, uint256 _value) public onlyOwner returns (bool) {
+    function mint(address _to, uint256 _value) public onlyOwner {
         require(registry.hasAttribute1ButNotAttribute2(_to, HAS_PASSED_KYC_AML, IS_BLACKLISTED), "_to cannot mint");
-        return super.mint(_to, _value);
+        super.mint(_to, _value);
     }
 
     function burnAllArgs(address _burner, uint256 _value) internal {

@@ -50,7 +50,7 @@ contract GasRefundToken is ModularPausableToken {
         super.transferAllArgs(_from, _to, _value);
     }
 
-    function mint(address _to, uint256 _value) public onlyOwner gasRefund returns (bool) {
-        return super.mint(_to, _value);
+    function mint(address _to, uint256 _value) public onlyOwner gasRefund {
+        super.mint(_to, _value);
     }
 }

@@ -17,11 +17,10 @@ contract ModularMintableToken is ModularBurnableToken {
      * @param _value The amount of tokens to mint.
      * @return A boolean that indicates if the operation was successful.
      */
-    function mint(address _to, uint256 _value) public onlyOwner returns (bool) {
+    function mint(address _to, uint256 _value) public onlyOwner {
         totalSupply_ = totalSupply_.add(_value);
         balances.addBalance(_to, _value);
         emit Mint(_to, _value);
         emit Transfer(address(0), _to, _value);
-        return true;
     }
 }
