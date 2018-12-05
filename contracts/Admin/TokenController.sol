@@ -57,7 +57,7 @@ contract TokenController {
     uint256 public instantMintPool; 
     uint256 public ratifiedMintPool; 
     uint256 public multiSigMintPool;
-    uint8 public ratifiedPoolRefillApprovals;
+    address[2] public ratifiedPoolRefillApprovals;
 
     uint8 constant public RATIFY_MINT_SIGS = 1; //number of approvals needed to finalize a Ratified Mint
     uint8 constant public MULTISIG_MINT_SIGS = 3; //number of approvals needed to finalize a MultiSig Mint
@@ -130,7 +130,7 @@ contract TokenController {
     event MintThresholdChanged(uint instant, uint ratified, uint multiSig);
     event MintLimitsChanged(uint instant, uint ratified, uint multiSig);
     event InstantPoolRefilled();
-    event RadifyPoolRefilled();
+    event RatifyPoolRefilled();
     event MultiSigPoolRefilled();
 
     /*
@@ -240,15 +240,21 @@ contract TokenController {
      */
     function refillRatifiedMintPool() external onlyMintRatifierOrOwner {
         if (msg.sender != owner) {
-            if (ratifiedPoolRefillApprovals < 2) {
-                ratifiedPoolRefillApprovals += 1;
+            address[2] memory refillApprovals = ratifiedPoolRefillApprovals;
+            require(msg.sender != refillApprovals[0] && msg.sender != refillApprovals[1]);
+            if (refillApprovals[0] == address(0)) {
+                ratifiedPoolRefillApprovals[0] = msg.sender;
+                return;
+            } 
+            if (refillApprovals[1] == address(0)) {
+                ratifiedPoolRefillApprovals[1] = msg.sender;
                 return;
             } 
         }
+        delete ratifiedPoolRefillApprovals; // clears the whole array
         multiSigMintPool = multiSigMintPool.sub(ratifiedMintLimit.sub(ratifiedMintPool));
         ratifiedMintPool = ratifiedMintLimit;
-        ratifiedPoolRefillApprovals = 0;
-        emit RadifyPoolRefilled();
+        emit RatifyPoolRefilled();
     }
 
     /**

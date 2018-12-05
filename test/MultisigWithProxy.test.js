@@ -111,14 +111,13 @@ contract('MultisigOwner With Proxy', function (accounts) {
     })
 
     it('multisig owner can accept eth', async function(){
-        const initialEthBalance = await web3.eth.getBalance(this.multisigProxy.address)
+        const initialEthBalance = Number(await web3.eth.getBalance(this.multisigProxy.address))
         await this.multisigProxy.sendTransaction({ 
             value: 33, 
             from: owner1, 
             gas: 300000 
          });         
-         const ethBalance = await web3.eth.getBalance(this.multisigProxy.address)
+         const ethBalance = Number(await web3.eth.getBalance(this.multisigProxy.address))
          assert.isAbove(ethBalance, initialEthBalance)
-})
-
+    })
 })
