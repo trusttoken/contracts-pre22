@@ -251,7 +251,7 @@ contract TokenController {
                 return;
             } 
         }
-        delete ratifiedPoolRefillApprovals; // garbage collects the entire array
+        delete ratifiedPoolRefillApprovals; // clears the whole array
         multiSigMintPool = multiSigMintPool.sub(ratifiedMintLimit.sub(ratifiedMintPool));
         ratifiedMintPool = ratifiedMintLimit;
         emit RatifyPoolRefilled();
