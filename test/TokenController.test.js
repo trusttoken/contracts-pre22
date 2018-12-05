@@ -408,6 +408,15 @@ contract('TokenController', function (accounts) {
                 await assertRevert(this.controller.refillRatifiedMintPool({ from: ratifier2 }))
             })
 
+            it('refilling the ratify pool clears the array', async function(){
+                await this.controller.refillMultiSigMintPool({ from: owner })
+                await this.controller.refillRatifiedMintPool({ from: ratifier1 })
+                await this.controller.refillRatifiedMintPool({ from: ratifier2 })
+                await this.controller.refillRatifiedMintPool({ from: ratifier3 })
+                await this.controller.refillRatifiedMintPool({ from: ratifier1 })
+                await this.controller.refillRatifiedMintPool({ from: ratifier2 })
+            })
+
             it('can finalize mint after refill', async function(){
                 await this.controller.refillMultiSigMintPool({ from: owner })
                 await this.controller.requestMint(otherAddress, 1000*10**18 , { from: mintKey })
