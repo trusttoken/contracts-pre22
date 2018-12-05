@@ -247,7 +247,7 @@ contract('TokenController', function (accounts) {
             })
 
 
-            it('does the entire radify mint process', async function () {
+            it('does the entire ratify mint process', async function () {
                 await this.controller.requestMint(otherAddress, 20*10**18 , { from: mintKey })
                 await this.controller.ratifyMint(0, otherAddress, 20*10**18 , { from: ratifier1 })
                 await assertBalance(this.token, otherAddress, 20*10**18)
@@ -255,13 +255,13 @@ contract('TokenController', function (accounts) {
                 assert.equal(Number(remainRatifyPool),250*10**18)
             })
 
-            it('single approval radify does not finalize if over the radifiedMintthreshold', async function () {
+            it('single approval ratify does not finalize if over the ratifiedMintthreshold', async function () {
                 await this.controller.requestMint(otherAddress, 200*10**18 , { from: mintKey })
                 await this.controller.ratifyMint(0, otherAddress, 200*10**18 , { from: ratifier1 })
                 await assertBalance(this.token, otherAddress, 0)
             })
 
-            it('single approval radify mint does not finalize if over the radifiedMintPool is dry', async function () {
+            it('single approval ratify mint does not finalize if over the ratifiedMintPool is dry', async function () {
                 await this.controller.requestMint(otherAddress, 100*10**18 , { from: mintKey })
                 await this.controller.ratifyMint(0, otherAddress, 100*10**18 , { from: ratifier1 })
                 await this.controller.requestMint(otherAddress, 100*10**18 , { from: mintKey })
@@ -380,7 +380,7 @@ contract('TokenController', function (accounts) {
                 await this.controller.refillRatifiedMintPool({ from: ratifier1 })
                 await this.controller.refillRatifiedMintPool({ from: ratifier2 })
                 const { logs } = await this.controller.refillRatifiedMintPool({ from: ratifier3 })
-                assert.equal(logs[0].event,"RadifyPoolRefilled")
+                assert.equal(logs[0].event,"RatifyPoolRefilled")
                 const ratifyPool = await this.controller.ratifiedMintPool()
                 assert.equal(Number(ratifyPool), 300*10**18)
                 const multiSigPool = await this.controller.multiSigMintPool()
