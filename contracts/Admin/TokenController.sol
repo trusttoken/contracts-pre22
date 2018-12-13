@@ -272,8 +272,8 @@ contract TokenController {
      */
     function requestMint(address _to, uint256 _value) external mintNotPaused onlyMintKeyOrOwner {
         MintOperation memory op = MintOperation(_to, _value, block.number, 0, false);
-        mintOperations.push(op);
         emit RequestMint(_to, _value, mintOperations.length, msg.sender);
+        mintOperations.push(op);
     }
 
 
