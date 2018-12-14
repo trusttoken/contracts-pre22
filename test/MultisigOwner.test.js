@@ -33,7 +33,7 @@ contract('MultisigOwner', function (accounts) {
         this.allowanceSheet = await this.token.allowances()
         await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner1 })
         await this.registry.setAttribute(approver, "isTUSDMintApprover", 1, "notes", { from: owner1 })
-        await this.registry.setAttribute(pauseKey, "isTUSDMintChecker", 1, "notes", { from: owner1 })
+        await this.registry.setAttribute(pauseKey, "isTUSDMintPausers", 1, "notes", { from: owner1 })
         this.multisigOwner = await MultisigOwner.new({ from: owner1 })
         await this.multisigOwner.msInitialize([owner1, owner2, owner3], { from: owner1 })
     })
@@ -233,21 +233,21 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.setMintLimits(30*10**18,300*10**18,3000*10**18,{ from: owner2 })
         })
 
-        it('call refillJumboMintPool of tokenController', async function(){
-            await this.multisigOwner.refillJumboMintPool({ from: owner1 })
-            await this.multisigOwner.refillJumboMintPool({ from: owner2 })
+        it('call refillMultiSigMintPool of tokenController', async function(){
+            await this.multisigOwner.refillMultiSigMintPool({ from: owner1 })
+            await this.multisigOwner.refillMultiSigMintPool({ from: owner2 })
         })
 
         it('call refillRatifiedMintPool of tokenController', async function(){
-            await this.multisigOwner.refillJumboMintPool({ from: owner1 })
-            await this.multisigOwner.refillJumboMintPool({ from: owner2 })
+            await this.multisigOwner.refillMultiSigMintPool({ from: owner1 })
+            await this.multisigOwner.refillMultiSigMintPool({ from: owner2 })
             await this.multisigOwner.refillRatifiedMintPool({ from: owner1 })
             await this.multisigOwner.refillRatifiedMintPool({ from: owner2 })
         })
 
         it('call refillInstantMintPool of tokenController', async function(){
-            await this.multisigOwner.refillJumboMintPool({ from: owner1 })
-            await this.multisigOwner.refillJumboMintPool({ from: owner2 })
+            await this.multisigOwner.refillMultiSigMintPool({ from: owner1 })
+            await this.multisigOwner.refillMultiSigMintPool({ from: owner2 })
             await this.multisigOwner.refillRatifiedMintPool({ from: owner1 })
             await this.multisigOwner.refillRatifiedMintPool({ from: owner2 })
             await this.multisigOwner.refillInstantMintPool({ from: owner1 })
@@ -387,7 +387,7 @@ contract('MultisigOwner', function (accounts) {
         beforeEach(async function () {
             await this.controller.setMintThresholds(10*10**18,100*10**18,1000*10**18, { from: owner1 })
             await this.controller.setMintLimits(30*10**18,300*10**18,3000*10**18,{ from: owner1 })
-            await this.controller.refillJumboMintPool({ from: owner1 })
+            await this.controller.refillMultiSigMintPool({ from: owner1 })
             await this.controller.refillRatifiedMintPool({ from: owner1 })
             await this.controller.refillInstantMintPool({ from: owner1 })
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
@@ -426,7 +426,7 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.requestMint(oneHundred, 20*10**18, {from: owner2})
             await this.multisigOwner.invalidateAllPendingMints({from: owner1})
             await this.multisigOwner.invalidateAllPendingMints({from: owner2})
-            const invalidateBefore = await this.controller.mintReqInvalidBeforeThisBlock()
+            const invalidateBefore = Number(await this.controller.mintReqInvalidBeforeThisBlock())
             assert.isAbove(invalidateBefore, 0)
 
         })

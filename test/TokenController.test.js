@@ -39,8 +39,8 @@ contract('TokenController', function (accounts) {
             await this.registry.setAttribute(ratifier1, "isTUSDMintRatifier", 1, web3.fromUtf8("notes"), { from: owner })
             await this.registry.setAttribute(ratifier2, "isTUSDMintRatifier", 1, web3.fromUtf8("notes"), { from: owner })
             await this.registry.setAttribute(ratifier3, "isTUSDMintRatifier", 1, web3.fromUtf8("notes"), { from: owner })
-            await this.registry.setAttribute(pauseKey, "isTUSDMintChecker", 1, web3.fromUtf8("notes"), { from: owner })
-            await this.registry.setAttribute(this.fastPauseMints.address, "isTUSDMintChecker", 1, web3.fromUtf8("notes"), { from: owner })
+            await this.registry.setAttribute(pauseKey, "isTUSDMintPausers", 1, web3.fromUtf8("notes"), { from: owner })
+            await this.registry.setAttribute(this.fastPauseMints.address, "isTUSDMintPausers", 1, web3.fromUtf8("notes"), { from: owner })
         })
 
         describe('Request and Finalize Mints (owner)', function () {
@@ -123,7 +123,7 @@ contract('TokenController', function (accounts) {
                 assert.equal(logs[0].event,"MintThresholdChanged" )
                 assert.equal(Number(logs[0].args.instant), 10*10**18)
                 assert.equal(Number(logs[0].args.ratified), 100*10**18)
-                assert.equal(Number(logs[0].args.jumbo), 1000*10**18)
+                assert.equal(Number(logs[0].args.multiSig), 1000*10**18)
             })
 
             it("changing mint limits should generate logs", async function(){
@@ -131,7 +131,7 @@ contract('TokenController', function (accounts) {
                 assert.equal(logs[0].event,"MintLimitsChanged" )
                 assert.equal(Number(logs[0].args.instant), 30*10**18)
                 assert.equal(Number(logs[0].args.ratified), 300*10**18)
-                assert.equal(Number(logs[0].args.jumbo), 3000*10**18)
+                assert.equal(Number(logs[0].args.multiSig), 3000*10**18)
             })
         })
 
@@ -139,7 +139,7 @@ contract('TokenController', function (accounts) {
             beforeEach(async function () {
                 await this.controller.setMintThresholds(10*10**18,100*10**18,1000*10**18, { from: owner })
                 await this.controller.setMintLimits(30*10**18,300*10**18,3000*10**18,{ from: owner })
-                await this.controller.refillJumboMintPool({ from: owner })
+                await this.controller.refillMultiSigMintPool({ from: owner })
                 await this.controller.refillRatifiedMintPool({ from: owner })
                 await this.controller.refillInstantMintPool({ from: owner })
             })
@@ -247,7 +247,7 @@ contract('TokenController', function (accounts) {
             })
 
 
-            it('does the entire radify mint process', async function () {
+            it('does the entire ratify mint process', async function () {
                 await this.controller.requestMint(otherAddress, 20*10**18 , { from: mintKey })
                 await this.controller.ratifyMint(0, otherAddress, 20*10**18 , { from: ratifier1 })
                 await assertBalance(this.token, otherAddress, 20*10**18)
@@ -255,13 +255,13 @@ contract('TokenController', function (accounts) {
                 assert.equal(Number(remainRatifyPool),250*10**18)
             })
 
-            it('single approval radify does not finalize if over the radifiedMintthreshold', async function () {
+            it('single approval ratify does not finalize if over the ratifiedMintthreshold', async function () {
                 await this.controller.requestMint(otherAddress, 200*10**18 , { from: mintKey })
                 await this.controller.ratifyMint(0, otherAddress, 200*10**18 , { from: ratifier1 })
                 await assertBalance(this.token, otherAddress, 0)
             })
 
-            it('single approval radify mint does not finalize if over the radifiedMintPool is dry', async function () {
+            it('single approval ratify mint does not finalize if over the ratifiedMintPool is dry', async function () {
                 await this.controller.requestMint(otherAddress, 100*10**18 , { from: mintKey })
                 await this.controller.ratifyMint(0, otherAddress, 100*10**18 , { from: ratifier1 })
                 await this.controller.requestMint(otherAddress, 100*10**18 , { from: mintKey })
@@ -291,17 +291,17 @@ contract('TokenController', function (accounts) {
                 await this.controller.finalizeMint(1, {from : owner})
             })
 
-            it('does the entire jumbo mint process', async function () {
+            it('does the entire multiSig mint process', async function () {
                 await this.controller.requestMint(otherAddress, 200*10**18 , { from: mintKey })
                 await this.controller.ratifyMint(0, otherAddress, 200*10**18 , { from: ratifier1 })
                 await this.controller.ratifyMint(0, otherAddress, 200*10**18 , { from: ratifier2 })
                 await this.controller.ratifyMint(0, otherAddress, 200*10**18 , { from: ratifier3 })
                 await assertBalance(this.token, otherAddress, 200*10**18)
-                const remainJumboPool = await this.controller.jumboMintPool()
-                assert.equal(Number(remainJumboPool), 2500*10**18)
+                const remainMultiSigPool = await this.controller.multiSigMintPool()
+                assert.equal(Number(remainMultiSigPool), 2500*10**18)
             })
 
-            it('jumbo mint does not finalize if over the jumbpMintthreshold', async function () {
+            it('multiSig mint does not finalize if over the jumbpMintthreshold', async function () {
                 await this.controller.requestMint(otherAddress, 2000*10**18 , { from: mintKey })
                 await this.controller.ratifyMint(0, otherAddress, 2000*10**18 , { from: ratifier1 })
                 await this.controller.ratifyMint(0, otherAddress, 2000*10**18 , { from: ratifier2 })
@@ -309,7 +309,7 @@ contract('TokenController', function (accounts) {
                 await assertBalance(this.token, otherAddress, 0)
             })
 
-            it('jumbo mint does not finalize if over the jumboMintPool is dry', async function () {
+            it('multiSig mint does not finalize if over the multiSigMintPool is dry', async function () {
                 await this.controller.requestMint(otherAddress, 1000*10**18 , { from: mintKey })
                 await this.controller.ratifyMint(0, otherAddress, 1000*10**18 , { from: ratifier1 })
                 await this.controller.ratifyMint(0, otherAddress, 1000*10**18 , { from: ratifier2 })
@@ -367,38 +367,58 @@ contract('TokenController', function (accounts) {
                 await this.controller.setMintThresholds(10*10**18,100*10**18,1000*10**18, { from: owner })
                 await this.controller.setMintLimits(30*10**18,300*10**18,3000*10**18,{ from: owner })
             })
-            it('refills jumbo mint pool', async function(){
-                const { logs }= await this.controller.refillJumboMintPool({ from: owner })
-                assert.equal(logs[0].event,"JumboPoolRefilled")
-                const jumboPool = await this.controller.jumboMintPool()
-                assert.equal(Number(jumboPool), 3000*10**18)
+
+            it('refills multiSig mint pool', async function(){
+                const { logs }= await this.controller.refillMultiSigMintPool({ from: owner })
+                assert.equal(logs[0].event,"MultiSigPoolRefilled")
+                const multiSigPool = await this.controller.multiSigMintPool()
+                assert.equal(Number(multiSigPool), 3000*10**18)
             })
+
             it('refills ratify mint pool', async function(){
-                await this.controller.refillJumboMintPool({ from: owner })
+                await this.controller.refillMultiSigMintPool({ from: owner })
                 await this.controller.refillRatifiedMintPool({ from: ratifier1 })
                 await this.controller.refillRatifiedMintPool({ from: ratifier2 })
                 const { logs } = await this.controller.refillRatifiedMintPool({ from: ratifier3 })
-                assert.equal(logs[0].event,"RadifyPoolRefilled")
+                assert.equal(logs[0].event,"RatifyPoolRefilled")
                 const ratifyPool = await this.controller.ratifiedMintPool()
                 assert.equal(Number(ratifyPool), 300*10**18)
-                const jumboPool = await this.controller.jumboMintPool()
-                assert.equal(Number(jumboPool), 2700*10**18)
+                const multiSigPool = await this.controller.multiSigMintPool()
+                assert.equal(Number(multiSigPool), 2700*10**18)
             })
+
             it('refills instant mint pool', async function(){
-                await this.controller.refillJumboMintPool({ from: owner })
+                await this.controller.refillMultiSigMintPool({ from: owner })
                 await this.controller.refillRatifiedMintPool({ from: owner })
                 const { logs } = await this.controller.refillInstantMintPool({ from: owner })
                 assert.equal(logs[0].event,"InstantPoolRefilled")
                 const ratifyPool = await this.controller.ratifiedMintPool()
                 assert.equal(Number(ratifyPool), 270*10**18)
-                const jumboPool = await this.controller.jumboMintPool()
-                assert.equal(Number(jumboPool), 2700*10**18)
+                const multiSigPool = await this.controller.multiSigMintPool()
+                assert.equal(Number(multiSigPool), 2700*10**18)
                 const instantPool = await this.controller.instantMintPool()
                 assert.equal(Number(instantPool), 30*10**18)
             })
 
+            it('Ratifier cannot refill RatifiedMintPool alone', async function(){
+                await this.controller.refillMultiSigMintPool({ from: owner })
+                await this.controller.refillRatifiedMintPool({ from: ratifier1 })
+                await this.controller.refillRatifiedMintPool({ from: ratifier2 })
+                await assertRevert(this.controller.refillRatifiedMintPool({ from: ratifier1 }))
+                await assertRevert(this.controller.refillRatifiedMintPool({ from: ratifier2 }))
+            })
+
+            it('refilling the ratify pool clears the array', async function(){
+                await this.controller.refillMultiSigMintPool({ from: owner })
+                await this.controller.refillRatifiedMintPool({ from: ratifier1 })
+                await this.controller.refillRatifiedMintPool({ from: ratifier2 })
+                await this.controller.refillRatifiedMintPool({ from: ratifier3 })
+                await this.controller.refillRatifiedMintPool({ from: ratifier1 })
+                await this.controller.refillRatifiedMintPool({ from: ratifier2 })
+            })
+
             it('can finalize mint after refill', async function(){
-                await this.controller.refillJumboMintPool({ from: owner })
+                await this.controller.refillMultiSigMintPool({ from: owner })
                 await this.controller.requestMint(otherAddress, 1000*10**18 , { from: mintKey })
                 await this.controller.ratifyMint(0, otherAddress, 1000*10**18 , { from: ratifier1 })
                 await this.controller.ratifyMint(0, otherAddress, 1000*10**18 , { from: ratifier2 })
@@ -416,7 +436,7 @@ contract('TokenController', function (accounts) {
                 await this.controller.ratifyMint(3, otherAddress, 500*10**18 , { from: ratifier2 })
                 await this.controller.ratifyMint(3, otherAddress, 500*10**18 , { from: ratifier3 })
                 await assertBalance(this.token, otherAddress, 2800*10**18)
-                await this.controller.refillJumboMintPool({ from: owner })
+                await this.controller.refillMultiSigMintPool({ from: owner })
                 await this.controller.finalizeMint(3, {from : mintKey})
                 await assertBalance(this.token, otherAddress, 3300*10**18)
             })
@@ -472,7 +492,7 @@ contract('TokenController', function (accounts) {
 
         describe('redemption addresses', function (){
             it('owner and redemption Admin can increment Redemption Address Count', async function(){
-                await this.registry.setAttribute(redemptionAdmin, "isRedemptionAdmin", 1, "notes", { from: owner })
+                await this.registry.setAttribute(redemptionAdmin, "isTUSDRedemptionAdmin", 1, "notes", { from: owner })
                 await this.controller.incrementRedemptionAddressCount({from: owner})
                 await this.controller.incrementRedemptionAddressCount({from: redemptionAdmin})
                 const redemptionAddressCount = Number(await this.token.redemptionAddressCount())
