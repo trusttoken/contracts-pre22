@@ -1,5 +1,6 @@
-import "./modularERC20/ModularStandardToken.sol";
+pragma solidity ^0.4.23;
 
+import "./modularERC20/ModularStandardToken.sol";
 
 /** @title DelegateERC20
 Accept forwarding delegation calls from the old TrueUSD (V1) contract. THis way the all the ERC20
