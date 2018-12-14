@@ -14,7 +14,8 @@ const GlobalPause = artifacts.require("GlobalPause")
 
 contract('MultisigOwner', function (accounts) {
     const [_, owner1, owner2, owner3 , oneHundred, blackListed, mintKey, pauseKey, approver] = accounts
-    
+    const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+
     beforeEach(async function () {
         this.registry = await Registry.new({ from: owner1 })
         this.token = await TrueUSDMock.new(oneHundred, 100*10**18, { from: owner1 })
@@ -39,6 +40,13 @@ contract('MultisigOwner', function (accounts) {
     })
 
     describe('Multisig Contract claiming TokenController', function () {
+
+        it('initial owners cannot be 0x0', async function(){
+            this.tempMultisigOwner = await MultisigOwner.new({ from: owner1 })
+            await assertRevert(this.tempMultisigOwner.msInitialize([ZERO_ADDRESS, owner2, owner3], { from: owner1 }))
+            await assertRevert(this.tempMultisigOwner.msInitialize([owner1, ZERO_ADDRESS, owner3], { from: owner1 }))
+            await assertRevert(this.tempMultisigOwner.msInitialize([owner1, owner2, ZERO_ADDRESS], { from: owner1 }))
+        })
         it('Multisig can claimownership to TokenController', async function () {
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
             const initialOwner = await this.controller.owner()
