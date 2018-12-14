@@ -12,7 +12,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @param previousOwner representing the address of the previous owner
     * @param newOwner representing the address of the new owner
     */
-    event ProxyOwnershipTransferred(address previousOwner, address newOwner);
+    event ProxyOwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
     * @dev Event to show ownership transfer is pending
@@ -29,7 +29,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @dev the constructor sets the original owner of the contract to the sender account.
     */
     constructor() public {
-        setUpgradeabilityOwner(msg.sender);
+        _setUpgradeabilityOwner(msg.sender);
     }
 
     /**
@@ -73,7 +73,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     /**
     * @dev Sets the address of the owner
     */
-    function setUpgradeabilityOwner(address newProxyOwner) internal {
+    function _setUpgradeabilityOwner(address newProxyOwner) internal {
         bytes32 position = proxyOwnerPosition;
         assembly {
             sstore(position, newProxyOwner)
@@ -83,7 +83,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     /**
     * @dev Sets the address of the owner
     */
-    function setPendingUpgradeabilityOwner(address newPendingProxyOwner) internal {
+    function _setPendingUpgradeabilityOwner(address newPendingProxyOwner) internal {
         bytes32 position = pendingProxyOwnerPosition;
         assembly {
             sstore(position, newPendingProxyOwner)
@@ -97,7 +97,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     */
     function transferProxyOwnership(address newOwner) external onlyProxyOwner {
         require(newOwner != address(0));
-        setPendingUpgradeabilityOwner(newOwner);
+        _setPendingUpgradeabilityOwner(newOwner);
         emit NewPendingOwner(proxyOwner(), newOwner);
     }
 
@@ -106,8 +106,8 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     */
     function claimProxyOwnership() external onlyPendingProxyOwner {
         emit ProxyOwnershipTransferred(proxyOwner(), pendingProxyOwner());
-        setUpgradeabilityOwner(pendingProxyOwner());
-        setPendingUpgradeabilityOwner(address(0));
+        _setUpgradeabilityOwner(pendingProxyOwner());
+        _setPendingUpgradeabilityOwner(address(0));
     }
 
     /**

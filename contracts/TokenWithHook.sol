@@ -12,19 +12,14 @@ contract TokenWithHook is ModularPausableToken {
     
     bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
 
-    function transferAllArgs(address _from, address _to, uint256 _value) internal {
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         uint length;
         assembly { length := extcodesize(_to) }
-
+        super._transferAllArgs(_from, _to, _value);
         if (length > 0) {
             if(registry.hasAttribute(_to, IS_REGISTERED_CONTRACT)) {
-                super.transferAllArgs(_from, _to, _value);
                 TrueCoinReceiver(_to).tokenFallback(_from, _value);
-            } else {
-                super.transferAllArgs(_from, _to, _value);
             }
-        } else {
-            super.transferAllArgs(_from, _to, _value);
         }
     }
 }

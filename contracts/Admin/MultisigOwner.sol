@@ -28,7 +28,7 @@ contract MultiSigOwner {
     //mapping that keeps track of which owner had already voted in the current action
     mapping(address=>bool) public voted;
 
-    //The controller instance that this multisig controlls
+    //The controller instance that this multisig controls
     TokenController public tokenController;
 
     //list of all owners of the multisigOwner
@@ -60,6 +60,9 @@ contract MultiSigOwner {
     //Initial Owners are set during deployment
     function msInitialize(address[3] _initialOwners) public {
         require(!initialized);
+        require(_initialOwners[0] != address(0) &&
+        _initialOwners[1] != address(0) &&
+        _initialOwners[2] != address(0));
         owners[_initialOwners[0]] = true;
         owners[_initialOwners[1]] = true;
         owners[_initialOwners[2]] = true;
@@ -88,7 +91,7 @@ contract MultiSigOwner {
         voted[msg.sender] = true;
     }
 
-    function _deleteOwnerActon() internal {
+    function _deleteOwnerAction() internal {
         delete ownerAction;
         delete voted[ownerList[0]];
         delete voted[ownerList[1]];
@@ -100,7 +103,7 @@ contract MultiSigOwner {
         if (ownerAction.approveSigs > 1) {
             OwnedUpgradeabilityProxy(address(this)).upgradeTo(_newImplementation);
             emit ActionExecuted("msUpgradeImplementation");
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         } 
     }
 
@@ -109,7 +112,7 @@ contract MultiSigOwner {
         if (ownerAction.approveSigs > 1) {
             OwnedUpgradeabilityProxy(address(this)).transferProxyOwnership(_newProxyOwner);
             emit ActionExecuted("msTransferProxyOwnership");
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         } 
     }
 
@@ -118,7 +121,7 @@ contract MultiSigOwner {
         if (ownerAction.approveSigs > 1) {
             OwnedUpgradeabilityProxy(address(this)).claimProxyOwnership();
             emit ActionExecuted("msClaimProxyOwnership");
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         } 
     }
 
@@ -136,7 +139,7 @@ contract MultiSigOwner {
                 }
             }
             emit ActionExecuted("updateOwner");
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         } 
     }
 
@@ -144,13 +147,13 @@ contract MultiSigOwner {
     /**
     * @dev Let MultisigOwner contract claim ownership of a claimable contract
     */
-    function msIssueclaimContract (address _other) public onlyOwner {
-        _initOrSignOwnerAction("msIssueclaimContract");
+    function msIssueClaimContract(address _other) external onlyOwner {
+        _initOrSignOwnerAction("msIssueClaimContract");
         if (ownerAction.approveSigs > 1) {
             Claimable other = Claimable(_other);
             other.claimOwnership();
-            emit ActionExecuted("msIssueclaimContract");
-            _deleteOwnerActon();
+            emit ActionExecuted("msIssueClaimContract");
+            _deleteOwnerAction();
         } 
     }
 
@@ -165,7 +168,7 @@ contract MultiSigOwner {
             Ownable contractInst = Ownable(_contractAddr);
             contractInst.transferOwnership(_newOwner);
             emit ActionExecuted("msReclaimContract");
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         }
     }
 
@@ -178,7 +181,7 @@ contract MultiSigOwner {
         if (ownerAction.approveSigs > 1) {
             _to.transfer(address(this).balance);
             emit ActionExecuted("msReclaimEther");
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         }
     }
 
@@ -193,7 +196,7 @@ contract MultiSigOwner {
             uint256 balance = _token.balanceOf(this);
             _token.transfer(_to, balance);
             emit ActionExecuted("msReclaimToken");
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         }
     }
 
@@ -205,7 +208,7 @@ contract MultiSigOwner {
         if (ownerAction.approveSigs > 1) {
             tokenController = TokenController(_newController);
             emit ActionExecuted("msSetTokenController");
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         }    
     }
 
@@ -214,7 +217,7 @@ contract MultiSigOwner {
         if (ownerAction.approveSigs > 1) {
             OwnedUpgradeabilityProxy(tokenController).transferProxyOwnership(_newOwner);
             emit ActionExecuted("msTransferControllerProxyOwnership");
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         }
     }
 
@@ -223,7 +226,7 @@ contract MultiSigOwner {
         if (ownerAction.approveSigs > 1) {
             OwnedUpgradeabilityProxy(tokenController).claimProxyOwnership();
             emit ActionExecuted("msClaimControllerProxyOwnership");
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         }
     }
 
@@ -232,7 +235,7 @@ contract MultiSigOwner {
         if (ownerAction.approveSigs > 1) {
             OwnedUpgradeabilityProxy(tokenController).upgradeTo(_implementation);
             emit ActionExecuted("msUpgradeControllerProxyImplTo");
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         }
     }
 
@@ -240,12 +243,12 @@ contract MultiSigOwner {
     /**
     * @dev Veto the current in flight action. Reverts if no current action
     */
-    function veto() public onlyOwner {
+    function msVeto() public onlyOwner {
         require(!voted[msg.sender], "already voted");
         require(ownerAction.callData.length > 0, "no action in flight");
         if (ownerAction.disappoveSigs >= 1) {
             emit ActionVetoed(ownerAction.actionName);
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         } else {
             ownerAction.disappoveSigs += 1;
             voted[msg.sender] = true;
@@ -262,7 +265,7 @@ contract MultiSigOwner {
         if (ownerAction.approveSigs > 1) {
             require(address(tokenController).call(msg.data), "tokenController call failed");
             emit ActionExecuted(_actionName);
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         }
     }
 

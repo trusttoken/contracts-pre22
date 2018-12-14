@@ -31,26 +31,26 @@ contract CompliantToken is ModularPausableToken {
         emit SetRegistry(registry);
     }
 
-    function mint(address _to, uint256 _value) public onlyOwner returns (bool) {
+    function mint(address _to, uint256 _value) public onlyOwner {
         require(registry.hasAttribute1ButNotAttribute2(_to, HAS_PASSED_KYC_AML, IS_BLACKLISTED), "_to cannot mint");
-        return super.mint(_to, _value);
+        super.mint(_to, _value);
     }
 
-    function burnAllArgs(address _burner, uint256 _value) internal {
+    function _burnAllArgs(address _burner, uint256 _value) internal {
         require(registry.hasAttribute1ButNotAttribute2(_burner, CAN_BURN, IS_BLACKLISTED), "_burner cannot burn");
-        super.burnAllArgs(_burner, _value);
+        super._burnAllArgs(_burner, _value);
     }
 
     // A blacklisted address can't call transferFrom
-    function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         require(!registry.hasAttribute(_spender, IS_BLACKLISTED), "_spender is blacklisted");
-        super.transferFromAllArgs(_from, _to, _value, _spender);
+        super._transferFromAllArgs(_from, _to, _value, _spender);
     }
 
     // transfer and transferFrom both call this function, so check blacklist here.
-    function transferAllArgs(address _from, address _to, uint256 _value) internal {
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         require(!registry.eitherHaveAttribute(_from, _to, IS_BLACKLISTED), "blacklisted");
-        super.transferAllArgs(_from, _to, _value);
+        super._transferAllArgs(_from, _to, _value);
     }
 
     // Destroy the tokens owned by a blacklisted account

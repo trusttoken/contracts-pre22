@@ -42,12 +42,12 @@ contract('MultisigOwner', function (accounts) {
         it('Multisig can claimownership to TokenController', async function () {
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
             const initialOwner = await this.controller.owner()
-            await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner1 })
+            await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner1 })
             const currentOwner = await this.controller.owner()
             assert.equal(initialOwner, currentOwner)
             const pendingOwner = await this.controller.pendingOwner()
             assert.equal(pendingOwner, this.multisigOwner.address)
-            await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner2 })
+            await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner2 })
             const finalOwner = await this.controller.owner()
             assert.equal(finalOwner, this.multisigOwner.address)
    
@@ -55,18 +55,18 @@ contract('MultisigOwner', function (accounts) {
 
         it('multisig cannot claim ownership when there is another action in flight', async function () {
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
-            await this.multisigOwner.msIssueclaimContract(this.registry.address, {from : owner1 })
-            await assertRevert(this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner2 }));
+            await this.multisigOwner.msIssueClaimContract(this.registry.address, {from : owner1 })
+            await assertRevert(this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner2 }));
         })
 
         it('Multisig cannot claimownership to when ownership is not transferred', async function () {
-            await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner1 })
-            await assertRevert(this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner2 })) 
+            await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner1 })
+            await assertRevert(this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner2 })) 
         })
 
         it('non owners cannot call onlyOwner functions', async function(){
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
-            await assertRevert(this.multisigOwner.msIssueclaimContract(this.controller.address, {from : oneHundred }));
+            await assertRevert(this.multisigOwner.msIssueClaimContract(this.controller.address, {from : oneHundred }));
         })
     })
 
@@ -112,8 +112,8 @@ contract('MultisigOwner', function (accounts) {
 
         it ('Owners can transfer contract it owns to other addresses', async function(){
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
-            await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner1 })
-            await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner2 })
+            await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner1 })
+            await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner2 })
             const currentOwner = await this.controller.owner()
             assert.equal(currentOwner, this.multisigOwner.address)
 
@@ -148,8 +148,8 @@ contract('MultisigOwner', function (accounts) {
 
         it('owners can veto actions', async function(){
             await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
-            await this.multisigOwner.veto({from : owner2 })
-            await this.multisigOwner.veto({from : owner3 })
+            await this.multisigOwner.msVeto({from : owner2 })
+            await this.multisigOwner.msVeto({from : owner3 })
             const ownerAction = await this.multisigOwner.ownerAction();
             assert.equal(ownerAction[0], '0x')
             assert.equal(Number(ownerAction[1]), 0)
@@ -157,14 +157,14 @@ contract('MultisigOwner', function (accounts) {
         })
 
         it('owners cannot veto when there is no action', async function(){
-            await assertRevert(this.multisigOwner.veto({from : owner3 }))
+            await assertRevert(this.multisigOwner.msVeto({from : owner3 }))
         })
 
 
         it('owner cannot veto an action twice', async function(){
             await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
-            await this.multisigOwner.veto({from : owner2 })
-            await assertRevert(this.multisigOwner.veto({from : owner2 }))
+            await this.multisigOwner.msVeto({from : owner2 })
+            await assertRevert(this.multisigOwner.msVeto({from : owner2 }))
         })
 
         it('same owner cannot sign the same action twice', async function(){
@@ -177,8 +177,8 @@ contract('MultisigOwner', function (accounts) {
     describe('Call tokenController functions', function(){
         beforeEach(async function () {
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
-            await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner1 })
-            await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner2 })
+            await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner1 })
+            await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner2 })
             await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
             await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner2 })
         })
@@ -391,8 +391,8 @@ contract('MultisigOwner', function (accounts) {
             await this.controller.refillRatifiedMintPool({ from: owner1 })
             await this.controller.refillInstantMintPool({ from: owner1 })
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
-            await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner1 })
-            await this.multisigOwner.msIssueclaimContract(this.controller.address, {from : owner2 })
+            await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner1 })
+            await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner2 })
             await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
             await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner2 })
             await this.multisigOwner.transferMintKey(mintKey, {from : owner2 })
@@ -426,7 +426,7 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.requestMint(oneHundred, 20*10**18, {from: owner2})
             await this.multisigOwner.invalidateAllPendingMints({from: owner1})
             await this.multisigOwner.invalidateAllPendingMints({from: owner2})
-            const invalidateBefore = Number(await this.controller.mintReqInValidBeforeThisBlock())
+            const invalidateBefore = Number(await this.controller.mintReqInvalidBeforeThisBlock())
             assert.isAbove(invalidateBefore, 0)
 
         })

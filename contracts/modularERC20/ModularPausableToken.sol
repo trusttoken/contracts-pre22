@@ -11,13 +11,13 @@ contract ModularPausableToken is ModularMintableToken {
 
     event Pause();
     event Unpause();
-    event GlobalPauseSet(address newGlobalPause);
+    event GlobalPauseSet(address indexed newGlobalPause);
 
     /**
     * @dev Modifier to make a function callable only when the contract is not paused.
     */
     modifier whenNotPaused() {
-        require(!paused, "Token Not Paused");
+        require(!paused, "Token Paused");
         _;
     }
 
@@ -25,7 +25,7 @@ contract ModularPausableToken is ModularMintableToken {
     * @dev Modifier to make a function callable only when the contract is paused.
     */
     modifier whenPaused() {
-        require(paused, "Token Paused");
+        require(paused, "Token Not Paused");
         _;
     }
 
@@ -47,7 +47,7 @@ contract ModularPausableToken is ModularMintableToken {
 
 
     //All erc20 transactions are paused when not on the supported fork
-    modifier notOnSupportedChain() {
+    modifier onSupportedChain() {
         globalPause.requireNotPaused();
         _;
     }
@@ -57,27 +57,27 @@ contract ModularPausableToken is ModularMintableToken {
         emit GlobalPauseSet(_newGlobalPause);
     }
     
-    function transferAllArgs(address _from, address _to, uint256 _value) internal whenNotPaused notOnSupportedChain {
-        super.transferAllArgs(_from, _to, _value);
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal whenNotPaused onSupportedChain {
+        super._transferAllArgs(_from, _to, _value);
     }
 
-    function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal whenNotPaused notOnSupportedChain {
-        super.transferFromAllArgs(_from, _to, _value, _spender);
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal whenNotPaused onSupportedChain {
+        super._transferFromAllArgs(_from, _to, _value, _spender);
     }
 
-    function approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal whenNotPaused notOnSupportedChain {
-        super.approveAllArgs(_spender, _value, _tokenHolder);
+    function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal whenNotPaused onSupportedChain {
+        super._approveAllArgs(_spender, _value, _tokenHolder);
     }
 
-    function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal whenNotPaused notOnSupportedChain {
-        super.increaseApprovalAllArgs(_spender, _addedValue, _tokenHolder);
+    function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal whenNotPaused onSupportedChain {
+        super._increaseApprovalAllArgs(_spender, _addedValue, _tokenHolder);
     }
 
-    function decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal whenNotPaused notOnSupportedChain {
-        super.decreaseApprovalAllArgs(_spender, _subtractedValue, _tokenHolder);
+    function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal whenNotPaused onSupportedChain {
+        super._decreaseApprovalAllArgs(_spender, _subtractedValue, _tokenHolder);
     }
 
-    function burnAllArgs(address _burner, uint256 _value) internal whenNotPaused notOnSupportedChain {
-        super.burnAllArgs(_burner, _value);
+    function _burnAllArgs(address _burner, uint256 _value) internal whenNotPaused onSupportedChain {
+        super._burnAllArgs(_burner, _value);
     }
 }

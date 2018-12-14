@@ -39,8 +39,8 @@ contract('GasRefundToken', function (accounts) {
 
 
         it('transfer to anotherAccount without gas refund', async function(){
-            await this.token.sponserGas({from: anotherAccount})
-            await this.token.sponserGas({from: anotherAccount})
+            await this.token.sponsorGas({from: anotherAccount})
+            await this.token.sponsorGas({from: anotherAccount})
             assert.equal(Number(await this.token.remainingGasRefundPool()),18)
             //truffle has no gas refund so this receipt of gas used is not accurate
             const receipt = await this.token.transfer(anotherAccount, 50*10**18, {from: oneHundred})

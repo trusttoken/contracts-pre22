@@ -13,9 +13,10 @@ contract FastPauseTrueUSD {
     TokenController public controllerContract;
     address public trueUsdPauser;
     
-    event FastTrueUSDPause(address sender);
+    event FastTrueUSDPause(address indexed sender);
 
     constructor(address _trueUsdPauser, address _controllerContract) public {
+        require(_trueUsdPauser != address(0) && _controllerContract != address(0));
         controllerContract = TokenController(_controllerContract);
         trueUsdPauser = _trueUsdPauser;
     }
@@ -25,7 +26,7 @@ contract FastPauseTrueUSD {
         _;
     }
 
-    //fallback function used to pause trueUSD when it recieves eth
+    //fallback function used to pause trueUSD when it receives eth
     function() public payable onlyPauseKey {
         emit FastTrueUSDPause(msg.sender);
         msg.sender.transfer(msg.value);
