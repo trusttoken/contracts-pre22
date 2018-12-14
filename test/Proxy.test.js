@@ -86,7 +86,7 @@ contract('Proxy', function (accounts) {
 
         it('transfer proxy ownership emits event', async function(){
             const {logs} = await this.proxy.transferProxyOwnership(oneHundred, {from: owner})
-            assert.equal(logs[0].event, 'newPendingOwner')
+            assert.equal(logs[0].event, 'NewPendingOwner')
             assert.equal(logs[0].args.currentOwner, owner)
             assert.equal(logs[0].args.pendingOwner, oneHundred)
         })
