@@ -14,14 +14,14 @@ contract DepositToken is ModularPausableToken {
     
     bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
 
-    function transferAllArgs(address _from, address _to, uint256 _value) internal {
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         address shiftedAddress = address(uint(_to) >> 20);
         uint value = registry.getAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS);
         if (value != 0) {
-            super.transferAllArgs(_from, _to, _value);
-            super.transferAllArgs(_to, address(value), _value);
+            super._transferAllArgs(_from, _to, _value);
+            super._transferAllArgs(_to, address(value), _value);
         } else {
-            super.transferAllArgs(_from, _to, _value);
+            super._transferAllArgs(_from, _to, _value);
         }
     }
 
@@ -30,7 +30,7 @@ contract DepositToken is ModularPausableToken {
         uint value = registry.getAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS);
         if (value != 0) {
             super.mint(_to, _value);
-            super.transferAllArgs(_to, address(value), _value);
+            super._transferAllArgs(_to, address(value), _value);
         } else {
             super.mint(_to, _value);
         }

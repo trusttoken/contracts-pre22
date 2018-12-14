@@ -74,9 +74,9 @@ GasRefundToken {
         _ownable.transferOwnership(owner);
     }
 
-    function burnAllArgs(address _burner, uint256 _value) internal {
+    function _burnAllArgs(address _burner, uint256 _value) internal {
         //round down burn amount so that the lowest amount allowed is 1 cent
         uint burnAmount = _value.div(10 ** uint256(DECIMALS - ROUNDING)).mul(10 ** uint256(DECIMALS - ROUNDING));
-        super.burnAllArgs(_burner, burnAmount);
+        super._burnAllArgs(_burner, burnAmount);
     }
 }

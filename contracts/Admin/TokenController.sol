@@ -63,7 +63,7 @@ contract TokenController {
     uint8 constant public JUMBO_MINT_SIGS = 3; //number of approvals needed to finalize a Jumbo Mint
 
     bool public mintPaused;
-    uint256 public mintReqInValidBeforeThisBlock; //all mint request before this block are invalid
+    uint256 public mintReqInvalidBeforeThisBlock; //all mint request before this block are invalid
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
     
@@ -108,15 +108,15 @@ contract TokenController {
         _;
     }
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-    event newOwnerPending(address indexed currentOwner, address indexed pendingOwner);
+    event NewOwnerPending(address indexed currentOwner, address indexed pendingOwner);
     event SetRegistry(address indexed registry);
     event TransferChild(address indexed child, address indexed newOwner);
     event RequestReclaimContract(address indexed other);
     event SetTrueUSD(TrueUSD newContract);
     event TrueUsdInitialized();
     
-    event RequestMint(address indexed to, uint256 indexed value, uint256 indexed opIndex, address mintKey);
-    event FinalizeMint(address indexed to, uint256 indexed value, uint256 indexed opIndex, address mintKey);
+    event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
+    event FinalizeMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
     event InstantMint(address indexed to, uint256 indexed value, address indexed mintKey);
     
     event TransferMintKey(address indexed previousMintKey, address indexed newMintKey);
@@ -167,7 +167,7 @@ contract TokenController {
     */
     function transferOwnership(address newOwner) external onlyOwner {
         pendingOwner = newOwner;
-        emit newOwnerPending(owner , pendingOwner);
+        emit NewOwnerPending(owner, pendingOwner);
     }
 
     /**
@@ -208,7 +208,7 @@ contract TokenController {
      Instant mint requires no approval, ratify mint requires 1 approval and jumbo mint requires 3 approvals
      */
     function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _jumbo) external onlyOwner {
-        instantMintThreshold= _instant;
+        instantMintThreshold = _instant;
         ratifiedMintThreshold = _ratified;
         jumboMintThreshold = _jumbo;
         emit MintThresholdChanged(_instant, _ratified, _jumbo);
@@ -359,7 +359,7 @@ contract TokenController {
      */
     function canFinalize(uint256 _index) public view returns(bool) {
         MintOperation memory op = mintOperations[_index];
-        require(op.requestedBlock > mintReqInValidBeforeThisBlock, "this mint is invalid"); //also checks if request still exists
+        require(op.requestedBlock > mintReqInvalidBeforeThisBlock, "this mint is invalid"); //also checks if request still exists
         require(!op.paused, "this mint is paused");
         require(hasEnoughApproval(op.numberOfApproval, op.value), "not enough approvals");
         return true;
@@ -404,7 +404,7 @@ contract TokenController {
     *@dev invalidates all mint request initiated before the current block 
     */
     function invalidateAllPendingMints() external onlyOwner {
-        mintReqInValidBeforeThisBlock = block.number;
+        mintReqInvalidBeforeThisBlock = block.number;
     }
 
     /** 

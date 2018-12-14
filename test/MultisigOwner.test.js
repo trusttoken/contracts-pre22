@@ -426,7 +426,7 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.requestMint(oneHundred, 20*10**18, {from: owner2})
             await this.multisigOwner.invalidateAllPendingMints({from: owner1})
             await this.multisigOwner.invalidateAllPendingMints({from: owner2})
-            const invalidateBefore = await this.controller.mintReqInValidBeforeThisBlock()
+            const invalidateBefore = await this.controller.mintReqInvalidBeforeThisBlock()
             assert.isAbove(invalidateBefore, 0)
 
         })

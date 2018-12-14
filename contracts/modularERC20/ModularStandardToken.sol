@@ -33,15 +33,15 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _value uint256 the amount of tokens to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        transferFromAllArgs(_from, _to, _value, msg.sender);
+        _transferFromAllArgs(_from, _to, _value, msg.sender);
         return true;
     }
 
-    function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         require(_value <= allowances.allowanceOf(_from, _spender),"not enough allowance to transfer");
 
         allowances.subAllowance(_from, _spender, _value);
-        transferAllArgs(_from, _to, _value);
+        _transferAllArgs(_from, _to, _value);
     }
 
     /**
@@ -55,11 +55,11 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _value The amount of tokens to be spent.
      */
     function approve(address _spender, uint256 _value) public returns (bool) {
-        approveAllArgs(_spender, _value, msg.sender);
+        _approveAllArgs(_spender, _value, msg.sender);
         return true;
     }
 
-    function approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
+    function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
         allowances.setAllowance(_tokenHolder, _spender, _value);
         emit Approval(_tokenHolder, _spender, _value);
     }
@@ -85,11 +85,11 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _addedValue The amount of tokens to increase the allowance by.
      */
     function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
-        increaseApprovalAllArgs(_spender, _addedValue, msg.sender);
+        _increaseApprovalAllArgs(_spender, _addedValue, msg.sender);
         return true;
     }
 
-    function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
+    function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
         allowances.addAllowance(_tokenHolder, _spender, _addedValue);
         emit Approval(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
     }
@@ -105,11 +105,11 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _subtractedValue The amount of tokens to decrease the allowance by.
      */
     function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
-        decreaseApprovalAllArgs(_spender, _subtractedValue, msg.sender);
+        _decreaseApprovalAllArgs(_spender, _subtractedValue, msg.sender);
         return true;
     }
 
-    function decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
+    function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
         uint256 oldValue = allowances.allowanceOf(_tokenHolder, _spender);
         if (_subtractedValue > oldValue) {
             allowances.setAllowance(_tokenHolder, _spender, 0);
