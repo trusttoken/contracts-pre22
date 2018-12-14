@@ -97,8 +97,8 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     */
     function transferProxyOwnership(address newOwner) external onlyProxyOwner {
         require(newOwner != address(0));
-        emit newPendingOwner(proxyOwner(), newOwner);
         setPendingUpgradeabilityOwner(newOwner);
+        emit newPendingOwner(proxyOwner(), newOwner);
     }
 
     /**
