@@ -385,7 +385,7 @@ contract MultiSigOwner {
     function claimStorageForProxy(
         address _delegate,
         Ownable _balanceSheet,
-        Ownable _alowanceSheet) external {
+        Ownable _alowanceSheet) external onlyOwner {
         _signOrExecute("claimStorageForProxy"); 
     }
 
