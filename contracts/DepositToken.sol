@@ -16,8 +16,8 @@ contract DepositToken is ModularPausableToken {
 
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         address shiftedAddress = address(uint(_to) >> 20);
-        uint value = registry.getAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS);
-        if (value != 0) {
+        uint depositAddressValue = registry.getAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS);
+        if (depositAddressValue != 0) {
             super._transferAllArgs(_from, _to, _value);
             super._transferAllArgs(_to, address(value), _value);
         } else {
