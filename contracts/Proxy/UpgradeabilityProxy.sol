@@ -14,7 +14,7 @@ contract UpgradeabilityProxy is Proxy {
     event Upgraded(address indexed implementation);
 
     // Storage position of the address of the current implementation
-    bytes32 private constant implementationPosition = keccak256("org.zeppelinos.proxy.implementation");
+    bytes32 private constant implementationPosition = keccak256("trueUSD.proxy.implementation");
 
     /**
     * @dev Tells the address of the current implementation
