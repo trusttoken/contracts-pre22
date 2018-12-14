@@ -28,7 +28,7 @@ contract MultiSigOwner {
     //mapping that keeps track of which owner had already voted in the current action
     mapping(address=>bool) public voted;
 
-    //The controller instance that this multisig controlls
+    //The controller instance that this multisig controls
     TokenController public tokenController;
 
     //list of all owners of the multisigOwner

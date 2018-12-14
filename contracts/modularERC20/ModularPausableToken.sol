@@ -17,7 +17,7 @@ contract ModularPausableToken is ModularMintableToken {
     * @dev Modifier to make a function callable only when the contract is not paused.
     */
     modifier whenNotPaused() {
-        require(!paused, "Token Not Paused");
+        require(!paused, "Token Paused");
         _;
     }
 
@@ -25,7 +25,7 @@ contract ModularPausableToken is ModularMintableToken {
     * @dev Modifier to make a function callable only when the contract is paused.
     */
     modifier whenPaused() {
-        require(paused, "Token Paused");
+        require(paused, "Token Not Paused");
         _;
     }
 

@@ -14,8 +14,6 @@ These contracts are inspired by and roughly equivalent to the corresponding ERC2
 token contracts from [OpenZeppelin](https://openzeppelin.org/). The main difference is
 that they keep track of balances and allowances by using separate contracts (BalanceSheet.sol
 and AllowanceSheet.sol) instead of mappings in their own storage.
-The ERCevents contract is used to ensure that events are still emitted from the original address even
-after the TrueUSD contract is delegated.
 
 ### Admins/...
 ### TokenController.sol
