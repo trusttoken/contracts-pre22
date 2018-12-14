@@ -21,6 +21,7 @@ contract FastPauseMints {
     }
 
     constructor(address _trueUsdMintPauser, address _controllerContract) public {
+        require(_trueUsdMintPauser != address(0) && _controllerContract != address(0));
         controllerContract = TokenController(_controllerContract);
         trueUsdMintPauser = _trueUsdMintPauser;
     }

@@ -10,7 +10,7 @@ of the transaction.
 */
 contract GasRefundToken is ModularPausableToken {
 
-    function sponserGas() external {
+    function sponsorGas() external {
         uint256 len = gasRefundPool.length;
         gasRefundPool.length = len + 9;
         gasRefundPool[len] = 1;

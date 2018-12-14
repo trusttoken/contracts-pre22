@@ -309,7 +309,7 @@ contract TokenController {
      * @dev finalize a mint request, mint the amount requested to the specified address
      @param _index of the request (visible in the RequestMint event accompanying the original request)
      */
-    function finalizeMint(uint256 _index) public {
+    function finalizeMint(uint256 _index) public mintNotPaused {
         MintOperation memory op = mintOperations[_index];
         address to = op.to;
         uint256 value = op.value;

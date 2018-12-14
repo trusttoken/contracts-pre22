@@ -16,6 +16,7 @@ contract FastPauseTrueUSD {
     event FastTrueUSDPause(address sender);
 
     constructor(address _trueUsdPauser, address _controllerContract) public {
+        require(_trueUsdPauser != address(0) && _controllerContract != address(0));
         controllerContract = TokenController(_controllerContract);
         trueUsdPauser = _trueUsdPauser;
     }

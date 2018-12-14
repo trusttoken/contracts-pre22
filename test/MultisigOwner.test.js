@@ -148,8 +148,8 @@ contract('MultisigOwner', function (accounts) {
 
         it('owners can veto actions', async function(){
             await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
-            await this.multisigOwner.veto({from : owner2 })
-            await this.multisigOwner.veto({from : owner3 })
+            await this.multisigOwner.msVeto({from : owner2 })
+            await this.multisigOwner.msVeto({from : owner3 })
             const ownerAction = await this.multisigOwner.ownerAction();
             assert.equal(ownerAction[0], '0x')
             assert.equal(Number(ownerAction[1]), 0)
@@ -157,14 +157,14 @@ contract('MultisigOwner', function (accounts) {
         })
 
         it('owners cannot veto when there is no action', async function(){
-            await assertRevert(this.multisigOwner.veto({from : owner3 }))
+            await assertRevert(this.multisigOwner.msVeto({from : owner3 }))
         })
 
 
         it('owner cannot veto an action twice', async function(){
             await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
-            await this.multisigOwner.veto({from : owner2 })
-            await assertRevert(this.multisigOwner.veto({from : owner2 }))
+            await this.multisigOwner.msVeto({from : owner2 })
+            await assertRevert(this.multisigOwner.msVeto({from : owner2 }))
         })
 
         it('same owner cannot sign the same action twice', async function(){
