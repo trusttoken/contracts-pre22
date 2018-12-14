@@ -135,6 +135,8 @@ npm test
 | Exchanges | URL                       |
 | --------- | ------------------------- |
 | Binance   | https://www.binance.com/  |
+| Huobi     | https://www.huobi.com/    |
+| Okex      | https://www.okex.com/     |
 | Bittrex   | https://bittrex.com       |
 | CoinTiger | https://www.cointiger.pro |
 | Upbit     | https://upbit.com/        |
