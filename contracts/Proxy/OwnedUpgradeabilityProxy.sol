@@ -19,7 +19,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @param currentOwner representing the address of the current owner
     * @param pendingOwner representing the address of the pending owner
     */
-    event newPendingOwner(address currentOwner, address pendingOwner);
+    event NewPendingOwner(address currentOwner, address pendingOwner);
     
     // Storage position of the owner and pendingOwner of the contract
     bytes32 private constant proxyOwnerPosition = keccak256("trueUSD.proxy.owner");
@@ -98,7 +98,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     function transferProxyOwnership(address newOwner) external onlyProxyOwner {
         require(newOwner != address(0));
         setPendingUpgradeabilityOwner(newOwner);
-        emit newPendingOwner(proxyOwner(), newOwner);
+        emit NewPendingOwner(proxyOwner(), newOwner);
     }
 
     /**
