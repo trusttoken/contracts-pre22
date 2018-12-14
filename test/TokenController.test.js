@@ -18,6 +18,7 @@ contract('TokenController', function (accounts) {
 
     describe('--TokenController Tests--', function () {
         const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, ratifier1, ratifier2, ratifier3, redemptionAdmin] = accounts
+        const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
@@ -48,6 +49,17 @@ contract('TokenController', function (accounts) {
             beforeEach(async function () {
                 await this.controller.setMintThresholds(10*10**18,100*10**18,1000*10**18, { from: owner })
                 await this.controller.setMintLimits(30*10**18,300*10**18,3000*10**18,{ from: owner })
+            })
+
+            it('mint limits cannot be out of order', async function(){
+                await assertRevert(this.controller.setMintLimits(300*10**18,30*10**18,3000*10**18,{ from: owner }))
+                await assertRevert(this.controller.setMintLimits(30*10**18,300*10**18,200*10**18,{ from: owner }))
+
+            })
+
+            it('mint thresholds cannot be out of order', async function(){
+                await assertRevert(this.controller.setMintThresholds(100*10**18,10*10**18,1000*10**18, { from: owner }))
+                await assertRevert(this.controller.setMintThresholds(10*10**18,100*10**18,50*10**18, { from: owner }))
             })
 
             it('non mintKey/owner cannot request mint', async function () {
@@ -207,6 +219,11 @@ contract('TokenController', function (accounts) {
                 await this.controller.pauseMints({ from: owner })
                 await this.controller.unpauseMints({ from: owner })
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: mintKey })
+            })
+
+            it('fastpause cannot be created with 0x0 in constructor', async function(){
+                await assertRevert(FastPauseMints.new(ZERO_ADDRESS, this.controller.address, { from: owner }))
+                await assertRevert(FastPauseMints.new(oneHundred, ZERO_ADDRESS, { from: owner }))
             })
 
             it('pauseKey2 should be able to pause mints by sending in ether', async function(){
@@ -509,6 +526,12 @@ contract('TokenController', function (accounts) {
                 this.fastPauseTrueUSD = await FastPauseTrueUSD.new(pauseKey, this.controller.address, { from: owner })
                 await this.controller.setTrueUsdFastPause(this.fastPauseTrueUSD.address, { from: owner })
             })
+
+            it('fastpauseTusd cannot be created with 0x0', async function(){
+                await assertRevert(FastPauseTrueUSD.new(ZERO_ADDRESS, this.controller.address, { from: owner }))
+                await assertRevert(FastPauseTrueUSD.new(oneHundred, ZERO_ADDRESS, { from: owner }))    
+            })
+
 
             it('TokenController can pause TrueUSD transfers', async function(){
                 await this.token.transfer(mintKey, 10*10**18, { from: oneHundred })

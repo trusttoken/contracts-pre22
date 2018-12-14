@@ -221,6 +221,7 @@ contract TokenController {
      before needing to refill
      */
     function setMintLimits(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
+        require(_instant < _ratified && _ratified < _multiSig);
         instantMintLimit = _instant;
         ratifiedMintLimit = _ratified;
         multiSigMintLimit = _multiSig;
