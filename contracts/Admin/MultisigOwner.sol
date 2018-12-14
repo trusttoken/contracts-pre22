@@ -147,12 +147,12 @@ contract MultiSigOwner {
     /**
     * @dev Let MultisigOwner contract claim ownership of a claimable contract
     */
-    function msIssueclaimContract (address _other) external onlyOwner {
-        _initOrSignOwnerAction("msIssueclaimContract");
+    function msIssueClaimContract(address _other) external onlyOwner {
+        _initOrSignOwnerAction("msIssueClaimContract");
         if (ownerAction.approveSigs > 1) {
             Claimable other = Claimable(_other);
             other.claimOwnership();
-            emit ActionExecuted("msIssueclaimContract");
+            emit ActionExecuted("msIssueClaimContract");
             _deleteOwnerAction();
         } 
     }

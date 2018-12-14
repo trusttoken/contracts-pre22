@@ -8,15 +8,15 @@ Allow for Admin to pause a set of tokens with one transaction
 Used to signal which fork is the supported fork for asset-back tokens
 */
 contract GlobalPause is Claimable {
-    bool public allTokenPaused = false;
+    bool public allTokensPaused = false;
     string public pauseNotice;
 
     function pauseAllTokens(bool _status, string _notice) public onlyOwner {
-        allTokenPaused = _status;
+        allTokensPaused = _status;
         pauseNotice = _notice;
     }
 
     function requireNotPaused() public view {
-        require(!allTokenPaused, pauseNotice);
+        require(!allTokensPaused, pauseNotice);
     }
 }
