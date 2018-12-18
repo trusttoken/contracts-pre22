@@ -27,7 +27,7 @@ contract ERC20 is ERC20Basic {
   event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-// File: registry/contracts/registry.sol
+// File: registry/contracts/Registry.sol
 
 contract Registry {
     struct AttributeData {
