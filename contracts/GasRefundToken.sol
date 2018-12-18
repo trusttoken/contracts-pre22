@@ -25,7 +25,7 @@ contract GasRefundToken is ModularPausableToken {
     }  
 
     /**  
-    @dev refund upto 45,000 (57,000 after Constantinople) gas for functions with 
+    @dev refund up to 45,000 (57,000 after Constantinople) gas for functions with 
     gasRefund modifier.
     */
     modifier gasRefund {
