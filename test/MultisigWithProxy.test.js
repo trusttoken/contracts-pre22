@@ -55,8 +55,10 @@ contract('MultisigOwner With Proxy', function (accounts) {
         await this.multisigOwner.claimTusdProxyOwnership({from : owner2 })
         await this.multisigOwner.upgradeTusdProxyImplTo(this.tokenImplementation.address, {from : owner1 })
         await this.multisigOwner.upgradeTusdProxyImplTo(this.tokenImplementation.address, {from : owner2 })
-        await this.multisigOwner.initializeTrueUSD(0, {from : owner1 })
-        await this.multisigOwner.initializeTrueUSD(0, {from : owner2 })
+        await this.multisigOwner.initializeTrueUSD({from : owner1 })
+        await this.multisigOwner.initializeTrueUSD({from : owner2 })
+        await this.multisigOwner.setTusdTotalSupply(0, {from : owner1 })
+        await this.multisigOwner.setTusdTotalSupply(0, {from : owner2 })
 
         await this.multisigOwner.transferMintKey(mintKey, { from: owner1 })
         await this.multisigOwner.transferMintKey(mintKey, { from: owner2 })

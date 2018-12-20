@@ -365,8 +365,12 @@ contract MultiSigOwner {
         _signOrExecute("setTrueUSD"); 
     }
 
-    function initializeTrueUSD(uint256 _totalSupply) external onlyOwner {
+    function initializeTrueUSD() external onlyOwner {
         _signOrExecute("initializeTrueUSD"); 
+    }
+
+    function setTusdTotalSupply(uint _totalSupply) external onlyOwner {
+        _signOrExecute("setTusdTotalSupply"); 
     }
 
     function setRegistry(Registry _registry) external onlyOwner {

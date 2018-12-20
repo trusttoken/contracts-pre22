@@ -21,7 +21,7 @@ contract('DepositToken', function (accounts) {
             this.balances = await BalanceSheet.new({ from: owner })
             this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSD.new({ from: owner })
-            await this.token.initialize(0, { from: owner })
+            await this.token.initialize({ from: owner })
             this.globalPause = await GlobalPause.new({ from: owner })
             await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
             await this.token.setRegistry(this.registry.address, { from: owner })
@@ -34,6 +34,21 @@ contract('DepositToken', function (accounts) {
             await this.token.mint(oneHundred, 100*10**18, { from: owner })
             await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 0, notes, { from: owner })
             await this.registry.setAttribute(DEPOSIT_ADDRESS, "isDepositAddress", anotherAccount, web3.fromUtf8(notes), { from: owner })
+        })
+
+        it ('owner can set total supply when totalsupply is 0', async function(){
+            await this.token.setTotalSupply(10*10**18, { from: owner })
+            const totalSupply = Number(await this.token.totalSupply())
+            assert.equal(10*10**18, totalSupply)
+        })
+
+        it ('totalsupply can only be set once', async function(){
+            await this.token.setTotalSupply(10*10**18, { from: owner })
+            await assertRevert(this.token.setTotalSupply(10*10**18, { from: owner }))
+        })
+
+        it ('non owner cannot set total supply', async function(){
+            await assertRevert(this.token.setTotalSupply(10*10**18, { from: oneHundred }))
         })
 
         it('transfer to anotherAccount', async function(){

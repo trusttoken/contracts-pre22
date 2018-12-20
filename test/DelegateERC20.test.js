@@ -13,7 +13,8 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
         this.delegate = await TrueUSD.new({ from: owner })
         this.registry = await Registry.new({ from: owner })
 
-        await this.delegate.initialize(this.totalSupply, { from: owner })
+        await this.delegate.initialize({ from: owner })
+        await this.delegate.setTotalSupply(this.totalSupply, { from: owner })
         await this.original.transferChild(this.BalanceSheetAddress,this.delegate.address, { from: owner })
 
         await this.original.transferChild(this.AllowanceSheetAddress, this.delegate.address, { from: owner })

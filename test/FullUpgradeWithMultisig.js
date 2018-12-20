@@ -46,8 +46,10 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             await this.multisigOwner.claimTusdProxyOwnership({from : owner2 })
             await this.multisigOwner.upgradeTusdProxyImplTo(this.tokenImplementation.address, {from : owner1 })
             await this.multisigOwner.upgradeTusdProxyImplTo(this.tokenImplementation.address, {from : owner2 })
-            await this.multisigOwner.initializeTrueUSD(0, {from : owner1 })
-            await this.multisigOwner.initializeTrueUSD(0, {from : owner2 })
+            await this.multisigOwner.initializeTrueUSD({from : owner1 })
+            await this.multisigOwner.initializeTrueUSD({from : owner2 })
+            await this.multisigOwner.setTusdTotalSupply(0, {from : owner1 })
+            await this.multisigOwner.setTusdTotalSupply(0, {from : owner2 })
             
             await this.multisigOwner.transferMintKey(mintKey, { from: owner1 })
             await this.multisigOwner.transferMintKey(mintKey, { from: owner2 })
@@ -91,8 +93,8 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             })
 
             it('token contract cannot be reinitialized', async function() {
-                await assertRevert(this.token.initialize(0, {from: owner1}))
-                await assertRevert(this.token.initialize(0, {from: oneHundred}))
+                await assertRevert(this.token.initialize({from: owner1}))
+                await assertRevert(this.token.initialize({from: oneHundred}))
             })
 
             it('storage contract owned by token proxy ', async function() {
