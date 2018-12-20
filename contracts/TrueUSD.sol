@@ -38,7 +38,6 @@ GasRefundToken {
         require(!initialized, "already initialized");
         initialized = true;
         owner = msg.sender;
-        totalSupply_ = _totalSupply;
         burnMin = 10000 * 10**uint256(DECIMALS);
         burnMax = 20000000 * 10**uint256(DECIMALS);
         name = "TrueUSD";
