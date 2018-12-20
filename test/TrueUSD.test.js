@@ -37,6 +37,21 @@ contract('TrueUSD', function (accounts) {
             await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 0, notes, { from: owner })
         })
 
+        it ('owner can set totalsupply', async function(){
+            await this.token.setTotalSupply(100*10**18,{ from: owner })
+            const totalSupply = Number(await this.token.totalSupply())
+            assert.equal(100*10**18, totalSupply)
+        })
+
+        it('totalsupply cannot be set when it is not zero', async function(){
+            await this.token.setTotalSupply(100*10**18,{ from: owner })
+            await assertRevert(this.token.setTotalSupply(100*10**18,{ from: owner }))
+        })
+
+        it('only owner can set totalSupply', async function(){
+            await assertRevert(this.token.setTotalSupply(100*10**18,{ from: oneHundred }))
+        })
+
         it('trueUSD does not accept ether', async function(){
             await assertRevert(this.token.sendTransaction({from: oneHundred, gas: 600000, value: 1000}));                  
             const balanceWithEther = web3.fromWei(web3.eth.getBalance(this.token.address), 'ether').toNumber()
