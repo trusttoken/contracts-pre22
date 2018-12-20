@@ -1,7 +1,7 @@
 import assertRevert from './helpers/assertRevert'
 import burnableTokenTests from './token/BurnableToken'
 
-function burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
+function burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns = false) {
     describe('--BurnableTokenWithBounds Tests--', function () {
         describe('non-restrictive burn bounds', function () {
             beforeEach(async function () {

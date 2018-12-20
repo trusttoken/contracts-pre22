@@ -1,9 +1,6 @@
 import assertRevert from './helpers/assertRevert'
 import expectThrow from './helpers/expectThrow'
 import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
-import basicTokenTests from './token/BasicToken';
-import standardTokenTests from './token/StandardToken';
-import burnableTokenTests from './token/BurnableToken';
 import compliantTokenTests from './CompliantToken';
 const Registry = artifacts.require("Registry")
 const TrueUSD = artifacts.require("TrueUSD")
@@ -54,7 +51,7 @@ contract('TrueUSD', function (accounts) {
                     await this.registry.setAttribute(oneHundred, "canBurn", 1, notes, { from: owner })
                 })
 
-                burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount], true)
+                burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount], false)
             })
 
             describe('user is not on burn whitelist', function () {
@@ -81,7 +78,7 @@ contract('TrueUSD', function (accounts) {
                 await this.token.setBurnBounds(0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", { from: owner })
             })
 
-            compliantTokenTests([owner, oneHundred, anotherAccount], true)
+            compliantTokenTests([owner, oneHundred, anotherAccount], false)
         })
 
         it("can change name", async function () {
