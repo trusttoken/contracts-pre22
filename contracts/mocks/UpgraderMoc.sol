@@ -1,18 +1,18 @@
 pragma solidity ^0.4.23;
-contract OldTrueUSD {
+contract OldTrueUSDMock {
     function delegateToNewContract(address _newContract) public;
     function claimOwnership() public;
     function balances() public returns(address);
     function allowances() public returns(address);
     function totalSupply() public returns(uint);
 }
-contract NewTrueUSD {
+contract NewTrueUSDMock {
     function setTotalSupply(uint _totalSupply) public;
     function transferOwnership(address _newOwner) public;
     function claimOwnership() public;
 }
 
-contract TokenController {
+contract TokenControllerMock {
     function claimOwnership() external;
     function transferChild(address _child, address _newOwner) external;
     function requestReclaimContract(address _child) external;
@@ -28,10 +28,10 @@ contract TokenController {
 
 /**
  */
-contract UpgradeHelper {
-    OldTrueUSD public oldTrueUSD = OldTrueUSD(address(0));
-    NewTrueUSD public  newTrueUSD = NewTrueUSD(address(0));
-    TokenController public tokenController = TokenController(address(0));
+contract UpgradeHelperMock {
+    OldTrueUSD public oldTrueUSD = OldTrueUSDMock(address(0));
+    NewTrueUSD public  newTrueUSD = NewTrueUSDMock(address(0));
+    TokenController public tokenController = TokenControllerMock(address(0));
     address public constant registry = address(1);
     address public constant globalPause = address(2);
 
