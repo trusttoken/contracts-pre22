@@ -32,8 +32,8 @@ contract TokenController {
 contract UpgradeHelper {
     OldTrueUSD public constant oldTrueUSD = OldTrueUSD(0x8dd5fbce2f6a956c3022ba3663759011dd51e73e);
     NewTrueUSD public constant newTrueUSD = NewTrueUSD(0x0000000000085d4780B73119b644AE5ecd22b376);
-    TokenController public constant tokenController = TokenController(address(0));
-    address public constant registry = address(0);
+    TokenController public constant tokenController = TokenController(0x0000000000075efbee23fe2de1bd0b7690883cc9);
+    address public constant registry = address(0x0000000000013949f288172bd7e36837bddc7211);
     address public constant globalPause = address(0);
 
     function upgrade() public {
