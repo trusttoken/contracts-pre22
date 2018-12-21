@@ -22,7 +22,7 @@ contract('TokenController', function (accounts) {
 
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
-            this.token = await TrueUSDMock.new(oneHundred, 100*10**18, { from: owner })
+            this.token = await TrueUSDMock.new(oneHundred, 0, { from: owner })
             this.globalPause = await GlobalPause.new({ from: owner })
             await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
             this.controller = await TokenController.new({ from: owner })
