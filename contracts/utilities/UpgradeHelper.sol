@@ -31,7 +31,7 @@ contract TokenControllerInterface {
  */
 contract UpgradeHelper {
     OldTrueUSDInterface public constant oldTrueUSD = OldTrueUSDInterface(0x8dd5fbce2f6a956c3022ba3663759011dd51e73e);
-    OldTrueUSDInterface public constant newTrueUSD = OldTrueUSDInterface(0x0000000000085d4780B73119b644AE5ecd22b376);
+    NewTrueUSDInterface public constant newTrueUSD = NewTrueUSDInterface(0x0000000000085d4780B73119b644AE5ecd22b376);
     TokenControllerInterface public constant tokenController = TokenControllerInterface(0x0000000000075efbee23fe2de1bd0b7690883cc9);
     address public constant registry = address(0x0000000000013949f288172bd7e36837bddc7211);
     address public constant globalPause = address(0);
