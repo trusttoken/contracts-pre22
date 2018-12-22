@@ -12,10 +12,9 @@ contract RedeemableToken is ModularPausableToken {
 
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         if (_to == address(0)) {
-            // transfer to 0x0 becomes burn
-            _burnAllArgs(_from, _value);
+            revert("_to address is 0x0");
         } else if (uint(_to) <= redemptionAddressCount) {
-            // Trnasfers to redemption addresses becomes burn
+            // Transfers to redemption addresses becomes burn
             super._transferAllArgs(_from, _to, _value);
             _burnAllArgs(_to, _value);
         } else {
@@ -23,14 +22,6 @@ contract RedeemableToken is ModularPausableToken {
         }
     }
     
-    // StandardToken's transferFrom doesn't have to check for
-    // _to != 0x0, but we do because we redirect 0x0 transfers to burns, but
-    // we do not redirect transferFrom
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        require(_to != address(0), "_to address is 0x0");
-        super._transferFromAllArgs(_from, _to, _value, _spender);
-    }
-
     function incrementRedemptionAddressCount() external onlyOwner {
         emit RedemptionAddress(address(redemptionAddressCount));
         redemptionAddressCount += 1;

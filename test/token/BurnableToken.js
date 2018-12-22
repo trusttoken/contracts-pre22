@@ -1,6 +1,6 @@
 import assertRevert from '../helpers/assertRevert'
 
-function burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
+function burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns = false) {
     describe('--BurnableToken Tests--', function () {
         const from = oneHundred
         const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'

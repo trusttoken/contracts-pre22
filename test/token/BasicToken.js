@@ -1,7 +1,7 @@
 import assertRevert from '../helpers/assertRevert'
 import assertBalance from '../helpers/assertBalance'
 
-function basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
+function basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns = false) {
     describe('--BasicToken Tests--', function () {
 
         describe('total supply', function () {

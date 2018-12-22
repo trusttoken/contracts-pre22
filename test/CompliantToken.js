@@ -5,7 +5,7 @@ import standardTokenTests from './token/StandardToken';
 import basicTokenTests from './token/BasicToken';
 const Registry = artifacts.require('Registry')
 
-function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns) {
+function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns = false) {
     describe('--CompliantToken Tests--', function () {
         const notes = "some notes"
 
