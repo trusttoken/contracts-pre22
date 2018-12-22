@@ -62,5 +62,9 @@ contract('Upgrade Helper', function (accounts) {
             const delegate = await this.original.delegate()
             assert.equal(delegate, this.token.address)
         })
+        it('new tusd has correct registry', async function(){
+            const registry = await this.token.registry()
+            assert.equal(registry, '0x0000000000013949f288172bd7e36837bddc7211')
+        })
     })
 })

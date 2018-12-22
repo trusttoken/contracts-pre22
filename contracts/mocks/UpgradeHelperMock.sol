@@ -1,40 +1,11 @@
 pragma solidity ^0.4.23;
-contract OldTrueUSDMock {
-    function delegateToNewContract(address _newContract) public;
-    function claimOwnership() public;
-    function balances() public returns(address);
-    function allowances() public returns(address);
-    function totalSupply() public returns(uint);
-    function transferOwnership(address _newOwner) external;
-}
-contract NewTrueUSDMock {
-    function setTotalSupply(uint _totalSupply) public;
-    function transferOwnership(address _newOwner) public;
-    function claimOwnership() public;
-}
+import "../utilities/UpgradeHelper.sol";
 
-contract TokenControllerMock {
-    function claimOwnership() external;
-    function transferChild(address _child, address _newOwner) external;
-    function requestReclaimContract(address _child) public;
-    function issueClaimOwnership(address _child) external;
-    function setTrueUSD(address _newTusd) external;
-    function setTusdRegistry(address _Registry) external;
-    function claimStorageForProxy(address _delegate,
-        address _balanceSheet,
-        address _alowanceSheet) external;
-    function setGlobalPause(address _globalPause) external;
-    function transferOwnership(address _newOwner) external;
-    function owner() external returns(address);
-}
-
-/**
- */
 contract UpgradeHelperMock {
-    OldTrueUSDMock public oldTrueUSD;
-    NewTrueUSDMock public  newTrueUSD;
-    TokenControllerMock public tokenController;
-    address public constant registry = address(1);
+    OldTrueUSDInterface public oldTrueUSD;
+    NewTrueUSDInterface public  newTrueUSD;
+    TokenControllerInterface public tokenController;
+    address public constant registry = address(0x0000000000013949f288172bd7e36837bddc7211);
     address public constant globalPause = address(2);
 
     constructor(address _oldTrueUSD, address _newTrueUSD, address _tokenController) {
