@@ -113,7 +113,6 @@ contract TokenController {
     event TransferChild(address indexed child, address indexed newOwner);
     event RequestReclaimContract(address indexed other);
     event SetTrueUSD(TrueUSD newContract);
-    event TrueUsdInitialized();
     
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
     event FinalizeMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -470,15 +469,6 @@ contract TokenController {
     function setTrueUSD(TrueUSD _newContract) external onlyOwner {
         trueUSD = _newContract;
         emit SetTrueUSD(_newContract);
-    }
-
-    function initializeTrueUSD() external onlyOwner {
-        trueUSD.initialize();
-        emit TrueUsdInitialized();
-    }
-
-    function setTusdTotalSupply(uint _totalSupply) external onlyOwner {
-        trueUSD.setTotalSupply(_totalSupply);
     }
 
     /** 
