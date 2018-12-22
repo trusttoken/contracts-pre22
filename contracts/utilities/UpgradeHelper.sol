@@ -5,6 +5,7 @@ contract OldTrueUSDInterface {
     function balances() public returns(address);
     function allowances() public returns(address);
     function totalSupply() public returns(uint);
+    function transferOwnership(address _newOwner) external;
 }
 contract NewTrueUSDInterface {
     function setTotalSupply(uint _totalSupply) public;
@@ -25,6 +26,7 @@ contract TokenControllerInterface {
     function setGlobalPause(address _globalPause) external;
     function transferOwnership(address _newOwner) external;
     function owner() external returns(address);
+    function tokenController() external;
 }
 
 /**
@@ -40,9 +42,7 @@ contract UpgradeHelper {
         // Helper contract becomes the owner of controller, and both TUSD contracts
         address endOwner = tokenController.owner();
         tokenController.claimOwnership();
-        tokenController.transferChild(oldTrueUSD, address(this));
         newTrueUSD.claimOwnership();
-        oldTrueUSD.claimOwnership();
 
         // 
         address balanceSheetAddress = oldTrueUSD.balances();
@@ -51,6 +51,8 @@ contract UpgradeHelper {
         tokenController.requestReclaimContract(allowanceSheetAddress);
         tokenController.issueClaimOwnership(balanceSheetAddress);
         tokenController.issueClaimOwnership(allowanceSheetAddress);
+        tokenController.transferChild(oldTrueUSD, address(this));
+        oldTrueUSD.claimOwnership();
         tokenController.transferChild(balanceSheetAddress, newTrueUSD);
         tokenController.transferChild(allowanceSheetAddress, newTrueUSD);
         
@@ -64,5 +66,7 @@ contract UpgradeHelper {
 
         oldTrueUSD.delegateToNewContract(newTrueUSD);
         tokenController.transferOwnership(endOwner);
+        oldTrueUSD.transferOwnership(tokenController);
+        tokenController.issueClaimOwnership(oldTrueUSD);
     }
 }

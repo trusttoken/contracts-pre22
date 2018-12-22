@@ -5,6 +5,7 @@ contract OldTrueUSDMock {
     function balances() public returns(address);
     function allowances() public returns(address);
     function totalSupply() public returns(uint);
+    function transferOwnership(address _newOwner) external;
 }
 contract NewTrueUSDMock {
     function setTotalSupply(uint _totalSupply) public;
@@ -15,7 +16,7 @@ contract NewTrueUSDMock {
 contract TokenControllerMock {
     function claimOwnership() external;
     function transferChild(address _child, address _newOwner) external;
-    function requestReclaimContract(address _child) external;
+    function requestReclaimContract(address _child) public;
     function issueClaimOwnership(address _child) external;
     function setTrueUSD(address _newTusd) external;
     function setTusdRegistry(address _Registry) external;
@@ -24,14 +25,15 @@ contract TokenControllerMock {
         address _alowanceSheet) external;
     function setGlobalPause(address _globalPause) external;
     function transferOwnership(address _newOwner) external;
+    function tokenController() external;
 }
 
 /**
  */
 contract UpgradeHelperMock {
-    OldTrueUSDMock public oldTrueUSD = OldTrueUSDMock(address(0));
-    NewTrueUSDMock public  newTrueUSD = NewTrueUSDMock(address(0));
-    TokenControllerMock public tokenController = TokenControllerMock(address(0));
+    OldTrueUSDMock public oldTrueUSD;
+    NewTrueUSDMock public  newTrueUSD;
+    TokenControllerMock public tokenController;
     address public constant registry = address(1);
     address public constant globalPause = address(2);
 
@@ -43,9 +45,7 @@ contract UpgradeHelperMock {
     function upgrade() public {
         // Helper contract becomes the owner of controller, and both TUSD contracts
         tokenController.claimOwnership();
-        tokenController.transferChild(oldTrueUSD, address(this));
         newTrueUSD.claimOwnership();
-        oldTrueUSD.claimOwnership();
 
         // 
         address balanceSheetAddress = oldTrueUSD.balances();
@@ -54,6 +54,8 @@ contract UpgradeHelperMock {
         tokenController.requestReclaimContract(allowanceSheetAddress);
         tokenController.issueClaimOwnership(balanceSheetAddress);
         tokenController.issueClaimOwnership(allowanceSheetAddress);
+        tokenController.transferChild(oldTrueUSD, address(this));
+        oldTrueUSD.claimOwnership();
         tokenController.transferChild(balanceSheetAddress, newTrueUSD);
         tokenController.transferChild(allowanceSheetAddress, newTrueUSD);
         
@@ -67,5 +69,7 @@ contract UpgradeHelperMock {
 
         oldTrueUSD.delegateToNewContract(newTrueUSD);
         tokenController.transferOwnership(address(3));
+        oldTrueUSD.transferOwnership(tokenController);
+        tokenController.issueClaimOwnership(oldTrueUSD);
     }
 }
