@@ -19,7 +19,6 @@ contract('MultisigOwner', function (accounts) {
     beforeEach(async function () {
         this.registry = await Registry.new({ from: owner1 })
         this.token = await TrueUSDMock.new(oneHundred, 100*10**18, { from: owner1 })
-        await this.token.initialize({ from: owner1 })
         this.globalPause = await GlobalPause.new({ from: owner1 })
         await this.token.setGlobalPause(this.globalPause.address, { from: owner1 })
         this.controller = await TokenController.new({ from: owner1 })
