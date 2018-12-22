@@ -9,9 +9,9 @@ contract UpgradeHelperMock {
     address public constant globalPause = address(2);
 
     constructor(address _oldTrueUSD, address _newTrueUSD, address _tokenController) {
-        oldTrueUSD = OldTrueUSDMock(_oldTrueUSD);
-        newTrueUSD = NewTrueUSDMock(_newTrueUSD);
-        tokenController = TokenControllerMock(_tokenController);
+        oldTrueUSD = OldTrueUSDInterface(_oldTrueUSD);
+        newTrueUSD = NewTrueUSDInterface(_newTrueUSD);
+        tokenController = TokenControllerInterface(_tokenController);
     }
     function upgrade() public {
         // TokenController should have end owner as it's pending owner at the end
