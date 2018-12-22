@@ -28,7 +28,7 @@ contract('--Proxy With Controller--', function (accounts) {
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
             await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner })
             await this.registry.setAttribute(oneHundred, "canBurn", 1, "notes", { from: owner })
-            await this.token.initialize(0,{from: owner})
+            await this.token.initialize({from: owner})
             await this.token.setGlobalPause(this.globalPause.address, { from: owner }) 
             await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   

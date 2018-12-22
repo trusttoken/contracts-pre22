@@ -41,13 +41,15 @@ contract('--Full upgrade process --', function (accounts) {
             await this.controller.refillMultiSigMintPool({ from: owner })
             await this.controller.refillRatifiedMintPool({ from: owner })
             await this.controller.refillInstantMintPool({ from: owner })
+            await this.token.initialize({from :owner})
+            await this.token.transferOwnership(this.controller.address, {from :owner})
+            await this.controller.issueClaimOwnership(this.token.address, {from :owner})
         })
         it('conducts the full upgrade process', async function(){
             this.balanceSheet = await BalanceSheet.new({ from: owner })
             this.allowanceSheet = await AllowanceSheet.new({ from: owner })
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
-            await this.controller.initializeTrueUSD(0, { from: owner })
             await this.controller.setGlobalPause(this.globalPause.address, { from: owner }) 
             await this.controller.claimStorageForProxy(this.token.address, 
                                                        this.balanceSheet.address,
@@ -57,7 +59,6 @@ contract('--Full upgrade process --', function (accounts) {
         })
         it('conducts the full upgrade from the current on chain contract', async function(){
             this.onChainToken = await TrueUSDMock.new(oneHundred, 1000* 10 ^ 18 ,  {from: owner})
-            await this.onChainToken.initialize(1000* 10 ^ 18, {from: owner})
             this.balanceSheet = await this.onChainToken.balances()
             this.allowanceSheet = await this.onChainToken.allowances()
             this.onChainController = await TokenController.new({from: owner})
@@ -65,7 +66,6 @@ contract('--Full upgrade process --', function (accounts) {
             await this.onChainController.initialize({from: owner})
             await this.onChainController.issueClaimOwnership(this.onChainToken.address, { from: owner })
             await this.onChainController.setTrueUSD(this.onChainToken.address, { from: owner })
-            await this.controller.initializeTrueUSD(1000* 10 ^ 18, { from: owner })
             await this.onChainController.requestReclaimContract(this.allowanceSheet, { from: owner })
             await this.onChainController.requestReclaimContract(this.balanceSheet, { from: owner })
             await this.onChainController.issueClaimOwnership(this.allowanceSheet, { from: owner })

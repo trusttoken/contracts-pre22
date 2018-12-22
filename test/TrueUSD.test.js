@@ -13,6 +13,27 @@ const GlobalPause = artifacts.require("GlobalPause")
 contract('TrueUSD', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     const notes = "some notes"
+    describe('TUSD init', function(){
+        beforeEach(async function () {
+            this.token = await TrueUSD.new({ from: owner })
+            await this.token.initialize({ from: owner })
+        })
+
+        it ('owner can set totalsupply', async function(){
+            await this.token.setTotalSupply(100*10**18,{ from: owner })
+            const totalSupply = Number(await this.token.totalSupply())
+            assert.equal(100*10**18, totalSupply)
+        })
+
+        it('totalsupply cannot be set when it is not zero', async function(){
+            await this.token.setTotalSupply(100*10**18,{ from: owner })
+            await assertRevert(this.token.setTotalSupply(100*10**18,{ from: owner }))
+        })
+
+        it('only owner can set totalSupply', async function(){
+            await assertRevert(this.token.setTotalSupply(100*10**18,{ from: oneHundred }))
+        })
+    })
 
     describe('--TrueUSD Tests: 1 contract--', function () {
         beforeEach(async function () {
@@ -21,7 +42,7 @@ contract('TrueUSD', function (accounts) {
             this.balances = await BalanceSheet.new({ from: owner })
             this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSD.new({ from: owner })
-            await this.token.initialize(0, { from: owner })
+            await this.token.initialize({ from: owner })
             this.globalPause = await GlobalPause.new({ from: owner })
             await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
             await this.token.setRegistry(this.registry.address, { from: owner })

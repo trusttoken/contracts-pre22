@@ -36,9 +36,11 @@ contract('MultisigOwner With Proxy', function (accounts) {
         this.controller = await TokenController.at(this.controllerProxy.address)
         await this.multisigOwner.msSetTokenController(this.controllerProxy.address, {from : owner1 })
         await this.multisigOwner.msSetTokenController(this.controllerProxy.address, {from : owner2 })
+
         await this.controllerProxy.transferProxyOwnership(this.multisigOwner.address,{ from: owner1 } )
         await this.multisigOwner.msClaimControllerProxyOwnership({from : owner1 })
         await this.multisigOwner.msClaimControllerProxyOwnership({from : owner2 })
+
         await this.multisigOwner.msUpgradeControllerProxyImplTo(this.controllerImplementation.address, {from : owner1 })
         await this.multisigOwner.msUpgradeControllerProxyImplTo(this.controllerImplementation.address, {from : owner2 })
         await this.multisigOwner.initialize({from : owner1 })
@@ -55,8 +57,11 @@ contract('MultisigOwner With Proxy', function (accounts) {
         await this.multisigOwner.claimTusdProxyOwnership({from : owner2 })
         await this.multisigOwner.upgradeTusdProxyImplTo(this.tokenImplementation.address, {from : owner1 })
         await this.multisigOwner.upgradeTusdProxyImplTo(this.tokenImplementation.address, {from : owner2 })
-        await this.multisigOwner.initializeTrueUSD(0, {from : owner1 })
-        await this.multisigOwner.initializeTrueUSD(0, {from : owner2 })
+        
+        await this.token.initialize({from :owner1})
+        await this.token.transferOwnership(this.controller.address, {from: owner1})
+        await this.multisigOwner.issueClaimOwnership(this.token.address, {from: owner1})
+        await this.multisigOwner.issueClaimOwnership(this.token.address, {from: owner2})
 
         await this.multisigOwner.transferMintKey(mintKey, { from: owner1 })
         await this.multisigOwner.transferMintKey(mintKey, { from: owner2 })

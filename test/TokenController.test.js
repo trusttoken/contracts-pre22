@@ -26,11 +26,12 @@ contract('TokenController', function (accounts) {
             this.globalPause = await GlobalPause.new({ from: owner })
             await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
             this.controller = await TokenController.new({ from: owner })
-            this.fastPauseMints = await FastPauseMints.new(pauseKey2, this.controller.address, { from: owner })
+            await this.token.transferOwnership(this.controller.address, {from: owner})
             await this.controller.initialize({ from: owner })
+            await this.controller.issueClaimOwnership(this.token.address, {from: owner})
+            this.fastPauseMints = await FastPauseMints.new(pauseKey2, this.controller.address, { from: owner })
             await this.controller.setRegistry(this.registry.address, { from: owner })
             await this.controller.setTrueUSD(this.token.address, { from: owner })
-            await this.controller.initializeTrueUSD(100*10**18, { from: owner })
             await this.controller.setTusdRegistry(this.registry.address, { from: owner })
             await this.controller.transferMintKey(mintKey, { from: owner })
             this.balanceSheet = await this.token.balances()
@@ -54,7 +55,6 @@ contract('TokenController', function (accounts) {
             it('mint limits cannot be out of order', async function(){
                 await assertRevert(this.controller.setMintLimits(300*10**18,30*10**18,3000*10**18,{ from: owner }))
                 await assertRevert(this.controller.setMintLimits(30*10**18,300*10**18,200*10**18,{ from: owner }))
-
             })
 
             it('mint thresholds cannot be out of order', async function(){

@@ -36,7 +36,7 @@ contract('Proxy', function (accounts) {
         })
 
         it('initializes proxy/tusd contract', async function(){
-            await this.token.initialize(0,{from: owner})
+            await this.token.initialize({from: owner})
             const tokenOwner = await this.token.owner()
             assert.equal(tokenOwner, owner)
             const burnMin = await this.token.burnMin()
@@ -46,13 +46,13 @@ contract('Proxy', function (accounts) {
         })
 
         it('cannot initialize a second time', async function(){
-            await this.token.initialize(0,{from: owner})
-            await assertRevert(this.token.initialize(0, {from: owner}))
+            await this.token.initialize({from: owner})
+            await assertRevert(this.token.initialize({from: owner}))
         })
 
         describe('---Tusd setup functions---', function(){
             beforeEach(async function () {
-                await this.token.initialize(0, {from: owner})
+                await this.token.initialize({from: owner})
             })
 
             it ('set globalPause contract', async function(){
@@ -70,7 +70,7 @@ contract('Proxy', function (accounts) {
         })
         describe('---Tusd token functions---', function(){
             beforeEach(async function () {
-                await this.token.initialize(0, {from: owner})
+                await this.token.initialize({from: owner})
                 await this.token.setGlobalPause(this.globalPause.address, { from: owner }) 
                 await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
                 await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   

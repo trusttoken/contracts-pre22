@@ -8,5 +8,6 @@ contract TrueUSDMock is TrueUSD {
         allowances = new AllowanceSheet();
         balances.setBalance(initialAccount, initialBalance);
         totalSupply_ = initialBalance;
+        initialize();
     }
 }

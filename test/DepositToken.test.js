@@ -21,7 +21,7 @@ contract('DepositToken', function (accounts) {
             this.balances = await BalanceSheet.new({ from: owner })
             this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSD.new({ from: owner })
-            await this.token.initialize(0, { from: owner })
+            await this.token.initialize({ from: owner })
             this.globalPause = await GlobalPause.new({ from: owner })
             await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
             await this.token.setRegistry(this.registry.address, { from: owner })
