@@ -1,8 +1,8 @@
 pragma solidity ^0.4.23;
 
-import "../StandardDelegate.sol";
+import "../DelegateERC20.sol";
 
-contract StandardDelegateMock is StandardDelegate {
+contract DelegateERC20Mock is DelegateERC20 {
     constructor(address initialAccount, uint256 initialBalance) public {
         balances = new BalanceSheet();
         allowances = new AllowanceSheet();

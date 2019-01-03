@@ -1,8 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./ModularBasicToken.sol";
-import "./AllowanceSheet.sol";
 
 /**
  * @title Standard ERC20 token
@@ -11,11 +9,11 @@ import "./AllowanceSheet.sol";
  * @dev https://github.com/ethereum/EIPs/issues/20
  * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
  */
-contract ModularStandardToken is ERC20, ModularBasicToken {
-    AllowanceSheet public allowances;
-
+contract ModularStandardToken is ModularBasicToken {
+    
     event AllowanceSheetSet(address indexed sheet);
-
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    
     /**
     * @dev claim ownership of the AllowanceSheet contract
     * @param _sheet The address to of the AllowanceSheet to claim.
@@ -34,15 +32,15 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
      * @param _value uint256 the amount of tokens to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        transferFromAllArgs(_from, _to, _value, msg.sender);
+        _transferFromAllArgs(_from, _to, _value, msg.sender);
         return true;
     }
 
-    function transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         require(_value <= allowances.allowanceOf(_from, _spender),"not enough allowance to transfer");
 
+        _transferAllArgs(_from, _to, _value);
         allowances.subAllowance(_from, _spender, _value);
-        transferAllArgs(_from, _to, _value);
     }
 
     /**
@@ -56,13 +54,13 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
      * @param _value The amount of tokens to be spent.
      */
     function approve(address _spender, uint256 _value) public returns (bool) {
-        approveAllArgs(_spender, _value, msg.sender);
+        _approveAllArgs(_spender, _value, msg.sender);
         return true;
     }
 
-    function approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
+    function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
         allowances.setAllowance(_tokenHolder, _spender, _value);
-        ERC20events(eventDelegateor).emitApprovalEvent(_tokenHolder, _spender, _value);
+        emit Approval(_tokenHolder, _spender, _value);
     }
 
     /**
@@ -86,13 +84,13 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
      * @param _addedValue The amount of tokens to increase the allowance by.
      */
     function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
-        increaseApprovalAllArgs(_spender, _addedValue, msg.sender);
+        _increaseApprovalAllArgs(_spender, _addedValue, msg.sender);
         return true;
     }
 
-    function increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
+    function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
         allowances.addAllowance(_tokenHolder, _spender, _addedValue);
-        ERC20events(eventDelegateor).emitApprovalEvent(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
+        emit Approval(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
     }
 
     /**
@@ -106,17 +104,17 @@ contract ModularStandardToken is ERC20, ModularBasicToken {
      * @param _subtractedValue The amount of tokens to decrease the allowance by.
      */
     function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
-        decreaseApprovalAllArgs(_spender, _subtractedValue, msg.sender);
+        _decreaseApprovalAllArgs(_spender, _subtractedValue, msg.sender);
         return true;
     }
 
-    function decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
+    function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
         uint256 oldValue = allowances.allowanceOf(_tokenHolder, _spender);
         if (_subtractedValue > oldValue) {
             allowances.setAllowance(_tokenHolder, _spender, 0);
         } else {
             allowances.subAllowance(_tokenHolder, _spender, _subtractedValue);
         }
-        ERC20events(eventDelegateor).emitApprovalEvent(_tokenHolder,_spender, allowances.allowanceOf(_tokenHolder, _spender));
+        emit Approval(_tokenHolder,_spender, allowances.allowanceOf(_tokenHolder, _spender));
     }
 }

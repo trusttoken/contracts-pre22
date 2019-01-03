@@ -6,12 +6,17 @@ function mintableTokenTests([owner, oneHundred, anotherAccount]) {
 
         describe('when the sender is the token owner', function () {
             const from = owner
+            const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
             it('mints the requested amount', async function () {
                 await this.token.mint(anotherAccount, amount, { from })
 
                 const balance = await this.token.balanceOf(anotherAccount)
                 assert.equal(balance, amount)
+            })
+
+            it('cannot mint to 0x0', async function () {
+                await assertRevert(this.token.mint(ZERO_ADDRESS, amount, { from }))
             })
 
             it('emits a mint finished event', async function () {

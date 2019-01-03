@@ -125,10 +125,6 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                             await assertBalance(this.token, to, amount)
                         })
 
-                        it('cannot transfer from 0x0', async function () {
-                            await assertRevert(this.token.transferFrom(ZERO_ADDRESS, to, 0, { from: spender }))
-                        })
-
                         it('decreases the spender allowance', async function () {
                             await this.token.transferFrom(oneHundred, to, amount, { from: spender })
 
@@ -176,19 +172,6 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                             await assertRevert(this.token.transferFrom(oneHundred, to, amount, { from: spender }))
                         })
                     })
-                })
-            })
-
-            describe('when the anotherAccount is the zero address', function () {
-                const amount = 100*10**18
-                const to = ZERO_ADDRESS
-
-                beforeEach(async function () {
-                    await this.token.approve(spender, amount, { from: oneHundred })
-                })
-
-                it('reverts', async function () {
-                    await assertRevert(this.token.transferFrom(oneHundred, to, amount, { from: spender }))
                 })
             })
         })

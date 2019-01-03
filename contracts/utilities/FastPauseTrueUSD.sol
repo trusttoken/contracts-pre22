@@ -1,32 +1,33 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
-import "../TimeLockedController.sol";
+import "../Admin/TokenController.sol";
 
 /*
 Allows for admins to quickly respond to critical emergencies
-After deploying FastPauseTrueUSD and configuring it with TimeLockedController
-Can pause trueUSD by simply sending any amount of ether to this contract
+After deploying FastPauseTrueUSD and configuring it with TokenController, admins
+can pause trueUSD by simply sending any amount of ether to this contract
 from the trueUsdPauser address
 */
 contract FastPauseTrueUSD {
     
-    TimeLockedController public controllerContract;
+    TokenController public controllerContract;
     address public trueUsdPauser;
     
-    event FastTrueUSDPause(address sender);
+    event FastTrueUSDPause(address indexed sender);
 
-    constructor (address _trueUsdPauser, address _controllerContract) public {
-        controllerContract = TimeLockedController(_controllerContract);
+    constructor(address _trueUsdPauser, address _controllerContract) public {
+        require(_trueUsdPauser != address(0) && _controllerContract != address(0));
+        controllerContract = TokenController(_controllerContract);
         trueUsdPauser = _trueUsdPauser;
     }
     
-    modifier onlyPauser() {
+    modifier onlyPauseKey() {
         require(msg.sender == trueUsdPauser, "not TrueUSD pauser");
         _;
     }
 
-    //fallback function used to pause trueUSD when it recieves eth
-    function() public payable onlyPauser {
+    //fallback function used to pause trueUSD when it receives eth
+    function() public payable onlyPauseKey {
         emit FastTrueUSDPause(msg.sender);
         msg.sender.transfer(msg.value);
         controllerContract.pauseTrueUSD();

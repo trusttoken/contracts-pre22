@@ -1,12 +1,14 @@
 pragma solidity ^0.4.23;
-import "./TimeLockedController.sol";
+
+import "./TokenController.sol";
+import "../Proxy/OwnedUpgradeabilityProxy.sol";
 
 /*
-This contract is the owner of TimeLockController. 
+This contract is the owner of TokenController. 
 This contract is responsible for calling all onlyOwner functions in
-TimeLockController.
-This contract has a copy of all functions in TimeLockController.
-Functions with name starting with 'ms' are not in TimeLockController.
+TokenController.
+This contract has a copy of all functions in TokenController.
+Functions with name starting with 'ms' are not in TokenController.
 They are for admin purposes (eg. transfer eth out of MultiSigOwner)
 MultiSigOwner contract has three owners
 The first time a function is called, an action is created.
@@ -26,14 +28,20 @@ contract MultiSigOwner {
     //mapping that keeps track of which owner had already voted in the current action
     mapping(address=>bool) public voted;
 
-    //The controller instance that this multisig controlls
-    TimeLockedController public timeLockController;
+    //The controller instance that this multisig controls
+    TokenController public tokenController;
 
     //list of all owners of the multisigOwner
     address[3] public ownerList;
 
+
+    bool public initialized;
+
+    //current owner action
+    OwnerAction public ownerAction;
+
     modifier onlyOwner() {
-        require(owners[msg.sender], "must be owner");
+        require(owners[msg.sender], "only Owner");
         _;
     }
 
@@ -48,16 +56,20 @@ contract MultiSigOwner {
     event ActionExecuted(string actionName);
     event ActionVetoed(string actionName);
 
-    OwnerAction public ownerAction;
 
     //Initial Owners are set during deployment
-    constructor(address[3] _initialOwners) public {
+    function msInitialize(address[3] _initialOwners) public {
+        require(!initialized);
+        require(_initialOwners[0] != address(0) &&
+        _initialOwners[1] != address(0) &&
+        _initialOwners[2] != address(0));
         owners[_initialOwners[0]] = true;
         owners[_initialOwners[1]] = true;
         owners[_initialOwners[2]] = true;
         ownerList[0] = _initialOwners[0];
         ownerList[1] = _initialOwners[1];
         ownerList[2] = _initialOwners[2];
+        initialized = true;
     }
 
     function() external payable {
@@ -79,17 +91,44 @@ contract MultiSigOwner {
         voted[msg.sender] = true;
     }
 
-    function _deleteOwnerActon() internal {
+    function _deleteOwnerAction() internal {
         delete ownerAction;
         delete voted[ownerList[0]];
         delete voted[ownerList[1]];
         delete voted[ownerList[2]];
     }
 
+    function msUpgradeImplementation(address _newImplementation) external onlyOwner {
+        _initOrSignOwnerAction("msUpgradeImplementation");
+        if (ownerAction.approveSigs > 1) {
+            OwnedUpgradeabilityProxy(address(this)).upgradeTo(_newImplementation);
+            emit ActionExecuted("msUpgradeImplementation");
+            _deleteOwnerAction();
+        } 
+    }
+
+    function msTransferProxyOwnership(address _newProxyOwner) external onlyOwner {
+        _initOrSignOwnerAction("msTransferProxyOwnership");
+        if (ownerAction.approveSigs > 1) {
+            OwnedUpgradeabilityProxy(address(this)).transferProxyOwnership(_newProxyOwner);
+            emit ActionExecuted("msTransferProxyOwnership");
+            _deleteOwnerAction();
+        } 
+    }
+
+    function msClaimProxyOwnership() external onlyOwner {
+        _initOrSignOwnerAction("msClaimProxyOwnership");
+        if (ownerAction.approveSigs > 1) {
+            OwnedUpgradeabilityProxy(address(this)).claimProxyOwnership();
+            emit ActionExecuted("msClaimProxyOwnership");
+            _deleteOwnerAction();
+        } 
+    }
+
     /**
     * @dev Replace a current owner with a new owner
     */
-    function msUpdateOwner (address _oldOwner, address _newOwner) external onlyOwner returns(bool success) {
+    function msUpdateOwner (address _oldOwner, address _newOwner) external onlyOwner {
         _initOrSignOwnerAction("updateOwner");
         if (ownerAction.approveSigs > 1) {
             owners[_oldOwner] = false;
@@ -100,22 +139,21 @@ contract MultiSigOwner {
                 }
             }
             emit ActionExecuted("updateOwner");
-            _deleteOwnerActon();
-            return true;
+            _deleteOwnerAction();
         } 
     }
+
 
     /**
     * @dev Let MultisigOwner contract claim ownership of a claimable contract
     */
-    function msIssueclaimContract (address _other) public onlyOwner returns(bool success) {
-        _initOrSignOwnerAction("msIssueclaimContract");
+    function msIssueClaimContract(address _other) external onlyOwner {
+        _initOrSignOwnerAction("msIssueClaimContract");
         if (ownerAction.approveSigs > 1) {
             Claimable other = Claimable(_other);
             other.claimOwnership();
-            emit ActionExecuted("msIssueclaimContract");
-            _deleteOwnerActon();
-            return true;
+            emit ActionExecuted("msIssueClaimContract");
+            _deleteOwnerAction();
         } 
     }
 
@@ -124,14 +162,13 @@ contract MultiSigOwner {
     *@param _contractAddr The contract that this contract currently owns
     *@param _newOwner The address to which the ownership will be transferred to
     */
-    function msReclaimContract(address _contractAddr, address _newOwner) external onlyOwner returns(bool success) {
+    function msReclaimContract(address _contractAddr, address _newOwner) external onlyOwner {
         _initOrSignOwnerAction("msReclaimContract");
         if (ownerAction.approveSigs > 1) {
             Ownable contractInst = Ownable(_contractAddr);
             contractInst.transferOwnership(_newOwner);
             emit ActionExecuted("msReclaimContract");
-            _deleteOwnerActon();
-            return true;
+            _deleteOwnerAction();
         }
     }
 
@@ -139,13 +176,12 @@ contract MultiSigOwner {
     * @dev Transfer all eth in this contract address to another address
     *@param _to The eth will be send to this address
     */
-    function msReclaimEther(address _to) external onlyOwner returns(bool success) {
+    function msReclaimEther(address _to) external onlyOwner {
         _initOrSignOwnerAction("msReclaimEther");
         if (ownerAction.approveSigs > 1) {
             _to.transfer(address(this).balance);
             emit ActionExecuted("msReclaimEther");
-            _deleteOwnerActon();
-            return true;
+            _deleteOwnerAction();
         }
     }
 
@@ -154,109 +190,149 @@ contract MultiSigOwner {
     *@param _token The token address of the token
     *@param _to The tokens will be send to this address
     */
-    function msReclaimToken(ERC20 _token, address _to) external onlyOwner returns(bool success) {
+    function msReclaimToken(ERC20 _token, address _to) external onlyOwner {
         _initOrSignOwnerAction("msReclaimToken");
         if (ownerAction.approveSigs > 1) {
             uint256 balance = _token.balanceOf(this);
             _token.transfer(_to, balance);
             emit ActionExecuted("msReclaimToken");
-            _deleteOwnerActon();
-            return true;
+            _deleteOwnerAction();
         }
     }
 
     /**
-    * @dev Set the instance of TimeLockController that this contract will be calling
+    * @dev Set the instance of TokenController that this contract will be calling
     */
-    function msSetTimeLockController (address _newController) public onlyOwner returns(bool success) {
-        _initOrSignOwnerAction("msSetTimeLockController");
+    function msSetTokenController (address _newController) public onlyOwner {
+        _initOrSignOwnerAction("msSetTokenController");
         if (ownerAction.approveSigs > 1) {
-            timeLockController = TimeLockedController(_newController);
-            emit ActionExecuted("msSetTimeLockController");
-            _deleteOwnerActon();
-            return true;
+            tokenController = TokenController(_newController);
+            emit ActionExecuted("msSetTokenController");
+            _deleteOwnerAction();
         }    
     }
+
+    function msTransferControllerProxyOwnership(address _newOwner) external onlyOwner {
+        _initOrSignOwnerAction("msTransferControllerProxyOwnership");
+        if (ownerAction.approveSigs > 1) {
+            OwnedUpgradeabilityProxy(tokenController).transferProxyOwnership(_newOwner);
+            emit ActionExecuted("msTransferControllerProxyOwnership");
+            _deleteOwnerAction();
+        }
+    }
+
+    function msClaimControllerProxyOwnership() external onlyOwner {
+        _initOrSignOwnerAction("msClaimControllerProxyOwnership");
+        if (ownerAction.approveSigs > 1) {
+            OwnedUpgradeabilityProxy(tokenController).claimProxyOwnership();
+            emit ActionExecuted("msClaimControllerProxyOwnership");
+            _deleteOwnerAction();
+        }
+    }
+
+    function msUpgradeControllerProxyImplTo(address _implementation) external onlyOwner {
+        _initOrSignOwnerAction("msUpgradeControllerProxyImplTo");
+        if (ownerAction.approveSigs > 1) {
+            OwnedUpgradeabilityProxy(tokenController).upgradeTo(_implementation);
+            emit ActionExecuted("msUpgradeControllerProxyImplTo");
+            _deleteOwnerAction();
+        }
+    }
+
 
     /**
     * @dev Veto the current in flight action. Reverts if no current action
     */
-    function veto() public onlyOwner returns (bool success) {
+    function msVeto() public onlyOwner {
         require(!voted[msg.sender], "already voted");
         require(ownerAction.callData.length > 0, "no action in flight");
         if (ownerAction.disappoveSigs >= 1) {
             emit ActionVetoed(ownerAction.actionName);
-            _deleteOwnerActon();
-            return true;
+            _deleteOwnerAction();
         } else {
             ownerAction.disappoveSigs += 1;
             voted[msg.sender] = true;
-            return true;
         }
     }
 
     /**
-    * @dev Internal function used to call functions of timeLockController.
+    * @dev Internal function used to call functions of tokenController.
     If no in flight action, create a new one. Otherwise sign and the action
     if the msg.data matches call data matches. Reverts otherwise
     */
-    function _signOrExecute(string _actionName) internal returns (bool success) {
+    function _signOrExecute(string _actionName) internal {
         _initOrSignOwnerAction(_actionName);
         if (ownerAction.approveSigs > 1) {
-            require(address(timeLockController).call(msg.data), "timeLockController call failed");
+            require(address(tokenController).call(msg.data), "tokenController call failed");
             emit ActionExecuted(_actionName);
-            _deleteOwnerActon();
+            _deleteOwnerAction();
         }
     }
 
     /*
     ============================================
-    THE FOLLOWING FUNCTIONS CALLED TO TIMELOCKCONTROLLER.
-    They share the same function signatures as functions in TimeLockController.
+    THE FOLLOWING FUNCTIONS CALLED TO TokenController.
+    They share the same function signatures as functions in TokenController.
     They will generate the correct callData so that the same function will be called
-    in TimeLockController.
+    in TokenController.
     */
 
-    function reclaimEther() external onlyOwner {
-        _signOrExecute("reclaimEther"); 
+    function initialize() external onlyOwner {
+        _signOrExecute("initialize"); 
+    }
+
+    function transferTusdProxyOwnership(address _newOwner) external onlyOwner {
+        _signOrExecute("transferTusdProxyOwnership"); 
+    }
+    
+    function claimTusdProxyOwnership() external onlyOwner {
+        _signOrExecute("claimTusdProxyOwnership"); 
+    }
+
+    function upgradeTusdProxyImplTo(address _implementation) external onlyOwner {
+        _signOrExecute("upgradeTusdProxyImplTo"); 
     }
 
     function transferOwnership(address newOwner) external onlyOwner {
         _signOrExecute("transferOwnership"); 
     }
 
-    function setSmallMintThreshold(uint256 _threshold) external onlyOwner {
-        _signOrExecute("setSmallMintThreshold");
+    function claimOwnership() external onlyOwner {
+        _signOrExecute("claimOwnership"); 
     }
 
-    function setMinimalApprovals(uint8 _smallMintApproval, uint8 _largeMintApproval) external onlyOwner {
-        _signOrExecute("setMinimalApprovals");
+    function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
+        _signOrExecute("setMintThresholds");
     }
 
-    function setMintLimit(uint256 _limit) external onlyOwner {
+    function setMintLimits(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
         _signOrExecute("setMintLimit");
     }
 
-    function resetMintedToday() external onlyOwner {
-        _signOrExecute("resetMintedToday");
+    function refillInstantMintPool() external onlyOwner {
+        _signOrExecute("refillInstantMintPool");
     }
 
-    function setTimeZoneDiff(uint _hours) external onlyOwner {
-        _signOrExecute("setTimeZoneDiff");
+    function refillRatifiedMintPool() external onlyOwner {
+        _signOrExecute("refillRatifiedMintPool");
+    }
+
+    function refillMultiSigMintPool() external onlyOwner {
+        _signOrExecute("refillMultiSigMintPool");
     }
 
     function requestMint(address _to, uint256 _value) external onlyOwner {
         _signOrExecute("requestMint");
     }
 
-    function finalizeMint(uint256 _index) external onlyOwner {
-        _signOrExecute("finalizeMint");
-    }
-    
-    function approveMint(uint256 _index) external onlyOwner {
-        _signOrExecute("approveMint");
+    function instantMint(address _to, uint256 _value) external onlyOwner {
+        _signOrExecute("instantMint");
     }
 
+    function ratifyMint(uint256 _index, address _to, uint256 _value) external onlyOwner {
+        _signOrExecute("ratifyMint");
+    }
+    
     function revokeMint(uint256 _index) external onlyOwner {
         _signOrExecute("revokeMint");
     }
@@ -273,8 +349,8 @@ contract MultiSigOwner {
         _signOrExecute("pauseMints");
     } 
 
-    function unPauseMints() external onlyOwner {
-        _signOrExecute("unPauseMints");
+    function unpauseMints() external onlyOwner {
+        _signOrExecute("unpauseMints");
     } 
 
     function pauseMint(uint _opIndex) external onlyOwner {
@@ -285,24 +361,12 @@ contract MultiSigOwner {
         _signOrExecute("unpauseMint"); 
     }
 
-    function addHoliday(uint16 _year, uint8 _month, uint8 _day) external onlyOwner {
-        _signOrExecute("addHoliday"); 
-    }
-
-    function removeHoliday(uint _year, uint _month, uint _day) external onlyOwner {
-        _signOrExecute("removeHoliday"); 
-    }
-
-    function setDateTime(address _newContract) external onlyOwner {
-        _signOrExecute("setDateTime"); 
-    }
-
-    function setDelegatedFrom(address _source) external onlyOwner {
-        _signOrExecute("setDelegatedFrom"); 
-    }
-
     function setTrueUSD(TrueUSD _newContract) external onlyOwner {
         _signOrExecute("setTrueUSD"); 
+    }
+
+    function setRegistry(Registry _registry) external onlyOwner {
+        _signOrExecute("setRegistry"); 
     }
 
     function changeTokenName(string _name, string _symbol) external onlyOwner {
@@ -317,11 +381,11 @@ contract MultiSigOwner {
         _signOrExecute("issueClaimOwnership"); 
     }
 
-    function delegateToNewContract(
-        DelegateBurnable _delegate,
+    function claimStorageForProxy(
+        address _delegate,
         Ownable _balanceSheet,
-        Ownable _alowanceSheet) external {
-        _signOrExecute("delegateToNewContract"); 
+        Ownable _alowanceSheet) external onlyOwner {
+        _signOrExecute("claimStorageForProxy"); 
     }
 
     function transferChild(Ownable _child, address _newOwner) external onlyOwner {
@@ -364,19 +428,11 @@ contract MultiSigOwner {
         _signOrExecute("setBurnBounds"); 
     }
 
-    function changeStakingFees(
-        uint256 _transferFeeNumerator,
-        uint256 _transferFeeDenominator,
-        uint256 _mintFeeNumerator,
-        uint256 _mintFeeDenominator,
-        uint256 _mintFeeFlat,
-        uint256 _burnFeeNumerator,
-        uint256 _burnFeeDenominator,
-        uint256 _burnFeeFlat) external onlyOwner {
-        _signOrExecute("changeStakingFees"); 
+    function reclaimEther(address _to) external onlyOwner {
+        _signOrExecute("reclaimEther"); 
     }
 
-    function changeStaker(address _newStaker) external onlyOwner {
-        _signOrExecute("changeStaker"); 
+    function reclaimToken(ERC20 _token, address _to) external onlyOwner {
+        _signOrExecute("reclaimToken"); 
     }
 } 
