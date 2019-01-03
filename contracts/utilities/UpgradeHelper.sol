@@ -31,11 +31,11 @@ contract TokenControllerInterface {
 /**
  */
 contract UpgradeHelper {
-    OldTrueUSDInterface public constant oldTrueUSD = OldTrueUSDInterface(0x8dd5fbce2f6a956c3022ba3663759011dd51e73e);
+    OldTrueUSDInterface public constant oldTrueUSD = OldTrueUSDInterface(0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E);
     NewTrueUSDInterface public constant newTrueUSD = NewTrueUSDInterface(0x0000000000085d4780B73119b644AE5ecd22b376);
-    TokenControllerInterface public constant tokenController = TokenControllerInterface(0x0000000000075efbee23fe2de1bd0b7690883cc9);
-    address public constant registry = address(0x0000000000013949f288172bd7e36837bddc7211);
-    address public constant globalPause = address(0);
+    TokenControllerInterface public constant tokenController = TokenControllerInterface(0x0000000000075EfBeE23fe2de1bd0b7690883cc9);
+    address public constant registry = address(0x0000000000013949F288172bD7E36837bDdC7211);
+    address public constant globalPause = address(0x0000000000027f6D87be8Ade118d9ee56767d993);
 
     function upgrade() public {
         // TokenController should have end owner as it's pending owner at the end
