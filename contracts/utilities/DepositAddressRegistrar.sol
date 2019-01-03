@@ -15,7 +15,7 @@ contract DepositAddressRegistrar {
         registry = Registry(_registry);
     }
     
-    function registerDepositAddress() external {
+    function registerDepositAddress() public {
         address shiftedAddress = address(uint(msg.sender) >> 20);
         require(!registry.hasAttribute(shiftedAddress, IS_DEPOSIT_ADDRESS), "deposit address already registered");
         registry.setAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS, uint(msg.sender));
@@ -23,10 +23,7 @@ contract DepositAddressRegistrar {
     }
     
     function() external payable {
-        address shiftedAddress = address(uint(msg.sender) >> 20);
-        require(!registry.hasAttribute(shiftedAddress, IS_DEPOSIT_ADDRESS), "deposit address already registered");
-        registry.setAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS, uint(msg.sender));
-        emit DepositAddressRegistered(msg.sender);
+        registerDepositAddress();
         msg.sender.transfer(msg.value);
     }
 }
