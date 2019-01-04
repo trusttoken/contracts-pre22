@@ -18,7 +18,6 @@ contract ModularBurnableToken is ModularStandardToken {
     }
 
     function _burnAllArgs(address _burner, uint256 _value) internal {
-        require(_value <= balances.balanceOf(_burner), "not enough balance to burn");
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
         /* uint burnAmount = _value / (10 **16) * (10 **16); */
