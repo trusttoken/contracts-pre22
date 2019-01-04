@@ -37,8 +37,6 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        require(_value <= allowances.allowanceOf(_from, _spender),"not enough allowance to transfer");
-
         _transferAllArgs(_from, _to, _value);
         allowances.subAllowance(_from, _spender, _value);
     }
