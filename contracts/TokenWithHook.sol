@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "./modularERC20/ModularPausableToken.sol";
+import "./modularERC20/ModularMintableToken.sol";
 import "./TrueCoinReceiver.sol";
 
 /** @title Token With Hook

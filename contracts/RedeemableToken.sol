@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "./modularERC20/ModularPausableToken.sol";
+import "./modularERC20/ModularMintableToken.sol";
 
 /** @title Redeemable Token 
 Makes transfers to 0x0 alias to Burn

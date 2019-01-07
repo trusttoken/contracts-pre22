@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "./modularERC20/ModularPausableToken.sol";
+import "./modularERC20/ModularMintableToken.sol";
 
 /** @title Deposit Token
 Allows users to register their address so that all transfers to deposit addresses
