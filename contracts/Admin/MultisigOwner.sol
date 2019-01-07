@@ -404,20 +404,12 @@ contract MultiSigOwner {
         _signOrExecute("requestReclaimToken"); 
     } 
 
-    function setGlobalPause(address _newGlobalPause) external onlyOwner {
-        _signOrExecute("setGlobalPause"); 
-    } 
-
     function setTrueUsdFastPause(address _newFastPause) external onlyOwner {
         _signOrExecute("setTrueUsdFastPause"); 
     }
 
     function pauseTrueUSD() external onlyOwner {
         _signOrExecute("pauseTrueUSD"); 
-    }
-
-    function unpauseTrueUSD() external onlyOwner {
-        _signOrExecute("unpauseTrueUSD"); 
     }
 
     function wipeBlackListedTrueUSD(address _blacklistedAddress) external onlyOwner {

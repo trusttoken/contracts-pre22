@@ -557,14 +557,6 @@ contract TokenController {
     }
 
     /** 
-    *@dev set new contract to which tokens look to to see if it's on the supported fork
-    *@param _newGlobalPause address of the new contract
-    */
-    function setGlobalPause(address _newGlobalPause) external onlyOwner {
-        trueUSD.setGlobalPause(_newGlobalPause);
-    }
-
-    /** 
     *@dev set new contract to which specified address can send eth to to quickly pause trueUSD
     *@param _newFastPause address of the new contract
     */
@@ -578,13 +570,6 @@ contract TokenController {
     */
     function pauseTrueUSD() external onlyFastPauseOrOwner {
         trueUSD.pause();
-    }
-
-    /** 
-    *@dev unpause all pausable actions on TrueUSD, mints/burn/transfer/approve
-    */
-    function unpauseTrueUSD() external onlyOwner {
-        trueUSD.unpause();
     }
     
     /** 
