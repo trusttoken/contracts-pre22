@@ -7,7 +7,7 @@ import "./modularERC20/ModularPausableToken.sol";
  * @dev Burning functions as redeeming money from the system. The platform will keep track of who burns coins,
  * and will send them back the equivalent amount of money (rounded down to the nearest cent).
  */
-contract BurnableTokenWithBounds is ModularPausableToken {
+contract BurnableTokenWithBounds is ModularMintableToken {
 
     event SetBurnBounds(uint256 newMin, uint256 newMax);
 

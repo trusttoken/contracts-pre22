@@ -8,7 +8,7 @@ If tokens are transferred to a Registered Token Receiver contract, trigger the t
 Token Receiver contract. Assume all Registered Token Receiver contract implements the TrueCoinReceiver 
 interface. If the tokenFallback reverts, the entire transaction reverts. 
  */
-contract TokenWithHook is ModularPausableToken {
+contract TokenWithHook is ModularMintableToken {
     
     bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
 
