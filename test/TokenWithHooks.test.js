@@ -2,7 +2,7 @@ import assertRevert from './helpers/assertRevert'
 import assertBalance from './helpers/assertBalance'
 
 const Registry = artifacts.require("Registry")
-const TrueUSD = artifacts.require("TrueUSDMocks")
+const TrueUSD = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const GlobalPause = artifacts.require("GlobalPause")
