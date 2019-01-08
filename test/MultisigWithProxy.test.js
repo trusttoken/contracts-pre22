@@ -46,7 +46,7 @@ contract('MultisigOwner With Proxy', function (accounts) {
         await this.multisigOwner.initialize({from : owner1 })
         await this.multisigOwner.initialize({from : owner2 })
         this.tokenProxy = await Proxy.new({ from: owner1 })
-        this.tokenImplementation = await TrueUSD.new({ from: owner1 })
+        this.tokenImplementation = await TrueUSD.new(owner1, 0, { from: owner1 })
         this.token = await TrueUSD.at(this.tokenProxy.address)
 
         await this.multisigOwner.setTrueUSD(this.token.address, {from : owner1 })

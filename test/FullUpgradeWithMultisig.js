@@ -31,11 +31,10 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             await this.multisigOwner.msUpgradeControllerProxyImplTo(this.controllerImplementation.address, {from : owner1 })
             await this.multisigOwner.msUpgradeControllerProxyImplTo(this.controllerImplementation.address, {from : owner2 })
             this.tokenProxy = await Proxy.new({ from: owner1 })
-            this.tokenImplementation = await TrueUSD.new({ from: owner1 })
+            this.tokenImplementation = await TrueUSD.new(owner1, 0, { from: owner1 })
             this.token = await TrueUSD.at(this.tokenProxy.address)
             await this.tokenProxy.transferProxyOwnership(this.controller.address,{ from: owner1 } )
-            await this.multisigOwner.initialize({from : owner1 })
-            await this.multisigOwner.initialize({from : owner2 })
+            this.token.initialize();
             await this.multisigOwner.setTrueUSD(this.token.address, {from : owner1 })
             await this.multisigOwner.setTrueUSD(this.token.address, {from : owner2 })
             await this.multisigOwner.claimTusdProxyOwnership({from : owner1 })
