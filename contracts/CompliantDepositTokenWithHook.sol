@@ -6,26 +6,23 @@ import "./TrueCoinReceiver.sol";
 
 contract CompliantDepositTokenWithHook is CompliantToken, DepositToken {
 
-    function transferFrom(address _to, uint256 _value, address _from) public returns (bool) {
-        address _sender = msg.sender;
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {
         bool isContract;
         (_to, isContract) = registry.requireCanTransferFrom(_sender, _from, _to);
         super._transferAllArgs(_from, _to, _value);
+        allowances.subAllowance(_from, _sender, _value);
         if (isContract) {
             TrueCoinReceiver(_to).tokenFallback(_from, _value);
         }
-        return true;
     }
 
-    function transfer(address _to, uint256 _value) public returns (bool) {
-        address _from = msg.sender;
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         bool isContract;
         (_to, isContract) = registry.requireCanTransfer(_from, _to);
         super._transferAllArgs(_from, _to, _value);
         if (isContract) {
             TrueCoinReceiver(_to).tokenFallback(_from, _value);
         }
-        return true;
     }
 
 }

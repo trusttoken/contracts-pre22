@@ -14,10 +14,10 @@ import "./DelegateERC20.sol";
 */
 contract TrueUSD is 
 ModularPausableToken, 
+CompliantDepositTokenWithHook,
 BurnableTokenWithBounds, 
 RedeemableToken,
 DelegateERC20,
-CompliantDepositTokenWithHook,
 GasRefundToken {
     using SafeMath for *;
 
