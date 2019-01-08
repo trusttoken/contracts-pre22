@@ -17,12 +17,7 @@ contract('--Proxy With Controller--', function (accounts) {
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
             this.tokenProxy = await Proxy.new({ from: owner })
-<<<<<<< HEAD
-            this.tusdImplementation = await TrueUSD.new({ from: owner })
-=======
             this.tusdImplementation = await TrueUSD.new(owner, 0, { from: owner })
-            this.globalPause = await GlobalPause.new({ from: owner })
->>>>>>> master
             this.token = await TrueUSD.at(this.tokenProxy.address)
             this.balanceSheet = await BalanceSheet.new({ from: owner })
             this.allowanceSheet = await AllowanceSheet.new({ from: owner })
