@@ -2,7 +2,6 @@ import assertRevert from './helpers/assertRevert'
 import expectThrow from './helpers/expectThrow'
 import assertBalance from './helpers/assertBalance'
 const Registry = artifacts.require("Registry")
-const TrueUSD = artifacts.require("TrueUSD")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
@@ -16,9 +15,10 @@ contract('--Full upgrade process --', function (accounts) {
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
             this.tokenProxy = await Proxy.new({ from: owner })
-            this.tokenImplementation = await TrueUSD.new({ from: owner })
-            this.token = await TrueUSD.at(this.tokenProxy.address)
+            this.tokenImplementation = await TrueUSDMock.new(owner, 0, { from: owner })
+            this.token = await TrueUSDMock.at(this.tokenProxy.address)
             await this.tokenProxy.upgradeTo(this.tokenImplementation.address,{ from: owner })
+            this.token.initialize({ from:owner });
             this.controllerImplementation = await TokenController.new({ from: owner })
             this.controllerProxy = await Proxy.new({ from: owner })
             await this.controllerProxy.upgradeTo(this.controllerImplementation.address,{ from: owner })
@@ -39,7 +39,6 @@ contract('--Full upgrade process --', function (accounts) {
             await this.controller.refillMultiSigMintPool({ from: owner })
             await this.controller.refillRatifiedMintPool({ from: owner })
             await this.controller.refillInstantMintPool({ from: owner })
-            await this.token.initialize({from :owner})
             await this.token.transferOwnership(this.controller.address, {from :owner})
             await this.controller.issueClaimOwnership(this.token.address, {from :owner})
         })

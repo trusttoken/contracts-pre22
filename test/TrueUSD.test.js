@@ -3,7 +3,6 @@ import expectThrow from './helpers/expectThrow'
 import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
 import compliantTokenTests from './CompliantToken';
 const Registry = artifacts.require("Registry")
-const TrueUSD = artifacts.require("TrueUSD")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
@@ -14,8 +13,7 @@ contract('TrueUSD', function (accounts) {
     const notes = "some notes"
     describe('TUSD init', function(){
         beforeEach(async function () {
-            this.token = await TrueUSD.new({ from: owner })
-            await this.token.initialize({ from: owner })
+            this.token = await TrueUSDMock.new(owner, 0, { from: owner })
         })
 
         it ('owner can set totalsupply', async function(){
@@ -40,8 +38,14 @@ contract('TrueUSD', function (accounts) {
             this.registry = await Registry.new({ from: owner })
             this.balances = await BalanceSheet.new({ from: owner })
             this.allowances = await AllowanceSheet.new({ from: owner })
+<<<<<<< HEAD
             this.token = await TrueUSD.new({ from: owner })
             await this.token.initialize({ from: owner })
+=======
+            this.token = await TrueUSDMock.new(owner, 0, { from: owner })
+            this.globalPause = await GlobalPause.new({ from: owner })
+            await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
+>>>>>>> master
             await this.token.setRegistry(this.registry.address, { from: owner })
             await this.balances.transferOwnership(this.token.address, { from: owner })
             await this.allowances.transferOwnership(this.token.address, { from: owner })
