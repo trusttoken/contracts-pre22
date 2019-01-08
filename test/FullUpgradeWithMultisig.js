@@ -2,7 +2,7 @@ import assertRevert from './helpers/assertRevert'
 import expectThrow from './helpers/expectThrow'
 import assertBalance from './helpers/assertBalance'
 const Registry = artifacts.require("Registry")
-const TrueUSD = artifacts.require("TrueUSD")
+const TrueUSD = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const GlobalPause = artifacts.require("GlobalPause")
@@ -31,7 +31,7 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             await this.multisigOwner.msUpgradeControllerProxyImplTo(this.controllerImplementation.address, {from : owner1 })
             await this.multisigOwner.msUpgradeControllerProxyImplTo(this.controllerImplementation.address, {from : owner2 })
             this.tokenProxy = await Proxy.new({ from: owner1 })
-            this.tokenImplementation = await TrueUSD.new({ from: owner1 })
+            this.tokenImplementation = await TrueUSD.new(owner1, 0, { from: owner1 })
             this.token = await TrueUSD.at(this.tokenProxy.address)
             await this.tokenProxy.transferProxyOwnership(this.controller.address,{ from: owner1 } )
             await this.multisigOwner.initialize({from : owner1 })
@@ -42,7 +42,7 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             await this.multisigOwner.claimTusdProxyOwnership({from : owner2 })
             await this.multisigOwner.upgradeTusdProxyImplTo(this.tokenImplementation.address, {from : owner1 })
             await this.multisigOwner.upgradeTusdProxyImplTo(this.tokenImplementation.address, {from : owner2 })
-            await this.token.initialize({from :owner1})
+            await this.token.initialize({ from: owner1 })
             await this.token.transferOwnership(this.controller.address, {from: owner1})
             await this.multisigOwner.issueClaimOwnership(this.token.address, {from: owner1})
             await this.multisigOwner.issueClaimOwnership(this.token.address, {from: owner2})
@@ -128,7 +128,7 @@ contract('--Full upgrade process with multisig--', function (accounts) {
         })
         describe('Upgrade each piece of the contract', async function()  {
             it('upgrades token implementation contract', async function() {
-                this.newTokenImplementation = await TrueUSD.new({ from: owner2 })
+                this.newTokenImplementation = await TrueUSD.new(owner2, 0, { from: owner2 })
                 await this.multisigOwner.upgradeTusdProxyImplTo(this.newTokenImplementation.address, {from : owner1 })
                 await this.multisigOwner.upgradeTusdProxyImplTo(this.newTokenImplementation.address, {from : owner2 })
                 const newImplAddress = await this.tokenProxy.implementation()

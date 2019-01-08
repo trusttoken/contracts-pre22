@@ -6,7 +6,7 @@ import standardTokenTests from './token/StandardToken';
 import burnableTokenTests from './token/BurnableToken';
 import compliantTokenTests from './CompliantToken';
 const Registry = artifacts.require("Registry")
-const TrueUSD = artifacts.require("TrueUSD")
+const TrueUSD = artifacts.require("TrueUSDMock")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
@@ -23,7 +23,7 @@ contract('Proxy', function (accounts) {
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
             this.proxy = await TusdProxy.new({ from: owner })
-            this.implementation = await TrueUSD.new({ from: owner })
+            this.implementation = await TrueUSD.new(owner, 0, { from: owner })
             this.globalPause = await GlobalPause.new({ from: owner })
             this.token = await TrueUSD.at(this.proxy.address)
             this.balanceSheet = await BalanceSheet.new({ from: owner })

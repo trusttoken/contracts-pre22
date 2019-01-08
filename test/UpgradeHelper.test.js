@@ -2,8 +2,7 @@ import assertRevert from './helpers/assertRevert'
 import expectThrow from './helpers/expectThrow'
 const Controller = artifacts.require("TokenController")
 const CanDelegate = artifacts.require('CanDelegateMock')
-const TrueUSD = artifacts.require('TrueUSD')
-const TrueUSDMock = artifacts.require('TrueUSDMock')
+const TrueUSD = artifacts.require('TrueUSDMock')
 const UpgradeHelperMock = artifacts.require("UpgradeHelperMock")
 
 
@@ -15,9 +14,8 @@ contract('Upgrade Helper', function (accounts) {
         beforeEach(async function () {
             this.original = await CanDelegate.new(oneHundred, 10*10**18, {from:owner})
             this.controller = await Controller.new({from:owner})
-            this.token = await TrueUSD.new({from:owner})
+            this.token = await TrueUSD.new(owner, 0, {from:owner})
             await this.controller.initialize({from: owner})
-            await this.token.initialize({from: owner})
             this.helper = await UpgradeHelperMock.new(this.original.address, this.token.address, this.controller.address, {from:owner})
             await this.controller.transferOwnership(this.helper.address, {from: owner})
             await this.token.transferOwnership(this.helper.address, {from: owner})

@@ -2,7 +2,7 @@ import assertRevert from './helpers/assertRevert'
 import assertBalance from './helpers/assertBalance'
 
 const Registry = artifacts.require("Registry")
-const TrueUSD = artifacts.require("TrueUSD")
+const TrueUSD = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const GlobalPause = artifacts.require("GlobalPause")
@@ -19,8 +19,7 @@ contract('TokenWithHooks', function (accounts) {
             this.registry = await Registry.new({ from: owner })
             this.balances = await BalanceSheet.new({ from: owner })
             this.allowances = await AllowanceSheet.new({ from: owner })
-            this.token = await TrueUSD.new({ from: owner })
-            await this.token.initialize({ from: owner })
+            this.token = await TrueUSD.new(owner, 0, { from: owner })
             this.globalPause = await GlobalPause.new({ from: owner })
             await this.token.setGlobalPause(this.globalPause.address, { from: owner })   
             await this.token.setRegistry(this.registry.address, { from: owner })
@@ -40,7 +39,7 @@ contract('TokenWithHooks', function (accounts) {
         })
 
         it('transfers to a registered receiver contracts', async function(){
-            const {logs}=await this.token.transfer(this.registeredReceiver.address, 50*10**18, {from: oneHundred})
+            const { logs } = await this.token.transfer(this.registeredReceiver.address, 50*10**18, { from: oneHundred })
             const newState = await this.registeredReceiver.state()
             assert.equal(newState, 50*10**18)
         })

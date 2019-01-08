@@ -1,7 +1,7 @@
 import assertRevert from './helpers/assertRevert'
 import expectThrow from './helpers/expectThrow'
 const Registry = artifacts.require("Registry")
-const TrueUSD = artifacts.require("TrueUSD")
+const TrueUSD = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
@@ -18,7 +18,7 @@ contract('--Proxy With Controller--', function (accounts) {
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
             this.tokenProxy = await Proxy.new({ from: owner })
-            this.tusdImplementation = await TrueUSD.new({ from: owner })
+            this.tusdImplementation = await TrueUSD.new(owner, 0, { from: owner })
             this.globalPause = await GlobalPause.new({ from: owner })
             this.token = await TrueUSD.at(this.tokenProxy.address)
             this.balanceSheet = await BalanceSheet.new({ from: owner })
