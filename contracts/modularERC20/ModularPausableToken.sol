@@ -61,10 +61,6 @@ contract ModularPausableToken is ModularMintableToken {
         super._transferAllArgs(_from, _to, _value);
     }
 
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal whenNotPaused onSupportedChain {
-        super._transferFromAllArgs(_from, _to, _value, _spender);
-    }
-
     function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal whenNotPaused onSupportedChain {
         super._approveAllArgs(_spender, _value, _tokenHolder);
     }
