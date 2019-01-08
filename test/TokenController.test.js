@@ -12,7 +12,6 @@ const TrueUSDMock = artifacts.require("TrueUSDMock")
 const ForceEther = artifacts.require("ForceEther")
 const FastPauseMints = artifacts.require("FastPauseMints")
 const FastPauseTrueUSD = artifacts.require("FastPauseTrueUSD")
-const GlobalPause = artifacts.require("GlobalPause")
 
 contract('TokenController', function (accounts) {
 
@@ -23,8 +22,6 @@ contract('TokenController', function (accounts) {
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
             this.token = await TrueUSDMock.new(oneHundred, 100*10**18, { from: owner })
-            this.globalPause = await GlobalPause.new({ from: owner })
-            await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
             this.controller = await TokenController.new({ from: owner })
             await this.token.transferOwnership(this.controller.address, {from: owner})
             await this.controller.initialize({ from: owner })
@@ -539,13 +536,6 @@ contract('TokenController', function (accounts) {
                 await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
             })
 
-            it('TokenController can unpause TrueUSD transfers', async function(){
-                await this.controller.pauseTrueUSD({ from: owner })
-                await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
-                await this.controller.unpauseTrueUSD({ from: owner })
-                await this.token.transfer(mintKey, 40*10**18, { from: oneHundred })
-            })
-
             it('trueUsdPauser can pause TrueUSD by sending ether to fastPause contract', async function(){
                 await this.fastPauseTrueUSD.sendTransaction({from: pauseKey, gas: 600000, value: 10});                  
                 const paused = await this.token.paused();
@@ -566,15 +556,6 @@ contract('TokenController', function (accounts) {
                 await this.registry.setAttribute(this.token.address, "isBlacklisted", 1, "notes", { from: owner })
                 await this.controller.wipeBlackListedTrueUSD(this.token.address, { from: owner })
                 await assertBalance(this.token, this.token.address, 0)
-            })
-
-            it('tokenController can set GlobalPause', async function(){
-                this.globalPause = await GlobalPause.new({ from: owner })
-                await this.globalPause.pauseAllTokens(true, "Unsupported fork", { from: owner })
-                await this.controller.setGlobalPause(this.globalPause.address, { from: owner })
-                await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
-                await this.globalPause.pauseAllTokens(false, "", { from: owner })
-                await this.token.transfer(mintKey, 40*10**18, { from: oneHundred })
             })
         })
         describe('Claim storage contracts', function () {

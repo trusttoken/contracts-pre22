@@ -2,7 +2,6 @@ const CanDelegate = artifacts.require('CanDelegateMock')
 const TrueUSD = artifacts.require('TrueUSD')
 import standardTokenTests from './token/StandardToken';
 const Registry = artifacts.require("Registry")
-const GlobalPause = artifacts.require("GlobalPause")
 
 contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function() {
@@ -22,8 +21,6 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
         await this.delegate.setBalanceSheet(this.BalanceSheetAddress, { from: owner })
 
         await this.delegate.setAllowanceSheet(this.AllowanceSheetAddress, { from: owner })
-        this.globalPause = await GlobalPause.new({ from: owner })
-        await this.delegate.setGlobalPause(this.globalPause.address, { from: owner }) 
         await this.delegate.setRegistry(this.registry.address, { from: owner })
         await this.original.delegateToNewContract(this.delegate.address, {from:owner})
     })

@@ -7,7 +7,6 @@ const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
-const GlobalPause = artifacts.require("GlobalPause")
 const DepositAddressRegistrar = artifacts.require("DepositAddressRegistrar")
 
 contract('DepositToken', function (accounts) {
@@ -22,8 +21,6 @@ contract('DepositToken', function (accounts) {
             this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSD.new({ from: owner })
             await this.token.initialize({ from: owner })
-            this.globalPause = await GlobalPause.new({ from: owner })
-            await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
             await this.token.setRegistry(this.registry.address, { from: owner })
             await this.balances.transferOwnership(this.token.address, { from: owner })
             await this.allowances.transferOwnership(this.token.address, { from: owner })

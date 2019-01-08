@@ -9,7 +9,6 @@ const TrueUSDMock = artifacts.require("TrueUSDMock")
 const ForceEther = artifacts.require("ForceEther")
 const MultisigOwner = artifacts.require("MultisigOwner")
 const BasicTokenMock = artifacts.require("BasicTokenMock")
-const GlobalPause = artifacts.require("GlobalPause")
 
 
 contract('MultisigOwner', function (accounts) {
@@ -19,8 +18,6 @@ contract('MultisigOwner', function (accounts) {
     beforeEach(async function () {
         this.registry = await Registry.new({ from: owner1 })
         this.token = await TrueUSDMock.new(oneHundred, 100*10**18, { from: owner1 })
-        this.globalPause = await GlobalPause.new({ from: owner1 })
-        await this.token.setGlobalPause(this.globalPause.address, { from: owner1 })
         this.controller = await TokenController.new({ from: owner1 })
         await this.controller.initialize({ from: owner1 })
         await this.controller.setRegistry(this.registry.address, { from: owner1 })
@@ -346,30 +343,12 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(Number(userBalance), 100)
         })
 
-        it('call setGlobalPause of tokenController', async function(){
-            await this.multisigOwner.setGlobalPause(oneHundred, {from: owner1})
-            await this.multisigOwner.setGlobalPause(oneHundred, {from: owner2})
-            const GlobalPauseAddress = await this.token.globalPause()
-            assert.equal(GlobalPauseAddress, oneHundred)
-
-        })
     
         it('call setTrueUsdFastPause of tokenController', async function(){
             await this.multisigOwner.setTrueUsdFastPause(oneHundred, {from: owner1})
             await this.multisigOwner.setTrueUsdFastPause(oneHundred, {from: owner2})
             const trueUsdFastPause = await this.controller.trueUsdFastPause()
             assert.equal(trueUsdFastPause, oneHundred)
-        })
-
-        it('call pauseTrueUSD and unpauseTrueUSD of tokenController', async function(){
-            await this.multisigOwner.pauseTrueUSD({from: owner1})
-            await this.multisigOwner.pauseTrueUSD({from: owner2})
-            let paused = await this.token.paused()
-            assert.equal(paused, true)
-            await this.multisigOwner.unpauseTrueUSD({from: owner1})
-            await this.multisigOwner.unpauseTrueUSD({from: owner2})
-            paused = await this.token.paused()
-            assert.equal(paused, false)
         })
 
         it('call wipeBlackListedTrueUSD of tokenController', async function(){
