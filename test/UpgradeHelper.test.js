@@ -2,8 +2,7 @@ import assertRevert from './helpers/assertRevert'
 import expectThrow from './helpers/expectThrow'
 const Controller = artifacts.require("TokenController")
 const CanDelegate = artifacts.require('CanDelegateMock')
-const TrueUSD = artifacts.require('TrueUSD')
-const TrueUSDMock = artifacts.require('TrueUSDMock')
+const TrueUSD = artifacts.require('TrueUSDMock')
 const UpgradeHelperMock = artifacts.require("UpgradeHelperMock")
 
 

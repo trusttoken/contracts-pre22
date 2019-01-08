@@ -2,7 +2,6 @@ import assertRevert from './helpers/assertRevert'
 import expectThrow from './helpers/expectThrow'
 import assertBalance from './helpers/assertBalance'
 const Registry = artifacts.require("Registry")
-const TrueUSD = artifacts.require("TrueUSD")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
@@ -18,8 +17,8 @@ contract('--Full upgrade process --', function (accounts) {
             this.registry = await Registry.new({ from: owner })
             this.globalPause = await GlobalPause.new({ from: owner })
             this.tokenProxy = await Proxy.new({ from: owner })
-            this.tokenImplementation = await TrueUSD.new({ from: owner })
-            this.token = await TrueUSD.at(this.tokenProxy.address)
+            this.tokenImplementation = await TrueUSDMock.new({ from: owner })
+            this.token = await TrueUSDMock.at(this.tokenProxy.address)
             await this.tokenProxy.upgradeTo(this.tokenImplementation.address,{ from: owner })
             this.controllerImplementation = await TokenController.new({ from: owner })
             this.controllerProxy = await Proxy.new({ from: owner })
