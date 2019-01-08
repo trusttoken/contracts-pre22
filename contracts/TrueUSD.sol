@@ -30,11 +30,11 @@ GasRefundToken {
 
     event ChangeTokenName(string newName, string newSymbol);
 
-    function decimals() public returns (uint8) {
+    function decimals() public pure returns (uint8) {
         return DECIMALS;
     }
 
-    function rounding() public returns (uint8) {
+    function rounding() public pure returns (uint8) {
         return ROUNDING;
     }
 
