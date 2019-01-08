@@ -4,14 +4,14 @@ import assertBalance from './helpers/assertBalance'
 import increaseTime, { duration } from './helpers/increaseTime'
 import { throws } from 'assert'
 const Registry = artifacts.require("Registry")
-const TrueUSD = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const TokenController = artifacts.require("TokenController")
-const TrueUSDMock = artifacts.require("TrueUSDMock")
+const TrueUSD = artifacts.require("TrueUSDMock")
 const ForceEther = artifacts.require("ForceEther")
 const FastPauseMints = artifacts.require("FastPauseMints")
 const FastPauseTrueUSD = artifacts.require("FastPauseTrueUSD")
+const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 
 contract('TokenController', function (accounts) {
 
@@ -21,7 +21,21 @@ contract('TokenController', function (accounts) {
 
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
-            this.token = await TrueUSDMock.new(oneHundred, 100*10**18, { from: owner })
+            this.tokenProxy = await Proxy.new({ from: owner })
+            this.tusdImplementation = await TrueUSD.new(owner, 0, { from: owner })
+            this.token = await TrueUSD.at(this.tokenProxy.address)
+            this.balanceSheet = await BalanceSheet.new({ from: owner })
+            await this.balanceSheet.setBalance(oneHundred, 100*10**18, {from:owner});
+            this.allowanceSheet = await AllowanceSheet.new({ from: owner })
+            await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
+            await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
+            await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
+            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner })
+            await this.registry.setAttribute(oneHundred, "canBurn", 1, "notes", { from: owner })
+            await this.token.initialize({from: owner})
+            await this.token.setTotalSupply(100*10**18, {from: owner})
+            await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
+            await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
             this.controller = await TokenController.new({ from: owner })
             await this.token.transferOwnership(this.controller.address, {from: owner})
             await this.controller.initialize({ from: owner })
@@ -31,8 +45,8 @@ contract('TokenController', function (accounts) {
             await this.controller.setTrueUSD(this.token.address, { from: owner })
             await this.controller.setTusdRegistry(this.registry.address, { from: owner })
             await this.controller.transferMintKey(mintKey, { from: owner })
-            this.balanceSheet = await this.token.balances()
-            this.allowanceSheet = await this.token.allowances()
+            await this.tokenProxy.transferProxyOwnership(this.controller.address, {from: owner})
+            await this.controller.claimTusdProxyOwnership({from: owner})
             await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, web3.fromUtf8("notes"), { from: owner })
             await this.registry.setAttribute(otherAddress, "hasPassedKYC/AML", 1, web3.fromUtf8("notes"), { from: owner })
             await this.registry.setAttribute(ratifier1, "isTUSDMintRatifier", 1, web3.fromUtf8("notes"), { from: owner })
@@ -533,13 +547,14 @@ contract('TokenController', function (accounts) {
             it('TokenController can pause TrueUSD transfers', async function(){
                 await this.token.transfer(mintKey, 10*10**18, { from: oneHundred })
                 await this.controller.pauseTrueUSD({ from: owner })
-                await assertRevert(this.token.transfer(mintKey, 40*10**18, { from: oneHundred }))
+                const pausedImpl = await this.tokenProxy.implementation()
+                assert.equal(pausedImpl, "0x0000000000000000000000000000000000000001")
             })
 
             it('trueUsdPauser can pause TrueUSD by sending ether to fastPause contract', async function(){
-                await this.fastPauseTrueUSD.sendTransaction({from: pauseKey, gas: 600000, value: 10});                  
-                const paused = await this.token.paused();
-                assert.equal(paused, true)               
+                await this.fastPauseTrueUSD.sendTransaction({from: pauseKey, gas: 600000, value: 10}); 
+                const pausedImpl = await this.tokenProxy.implementation()
+                assert.equal(pausedImpl, "0x0000000000000000000000000000000000000001")                 
             })
 
             it('non pauser cannot pause TrueUSD ', async function(){

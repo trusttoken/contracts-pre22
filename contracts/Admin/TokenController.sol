@@ -75,6 +75,8 @@ contract TokenController {
     bytes32 constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 constant public IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
 
+    address constant public PAUSED_IMPLEMENTATION = address(1); // ***To be changed the paused version of TrueUSD in Production
+
     modifier onlyFastPauseOrOwner() {
         require(msg.sender == trueUsdFastPause || msg.sender == owner, "must be pauser or owner");
         _;
@@ -569,7 +571,7 @@ contract TokenController {
     *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
     */
     function pauseTrueUSD() external onlyFastPauseOrOwner {
-        trueUSD.pause();
+        OwnedUpgradeabilityProxy(trueUSD).upgradeTo(PAUSED_IMPLEMENTATION);
     }
     
     /** 
