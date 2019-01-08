@@ -19,8 +19,8 @@ contract ProxyStorage {
 
     uint256 totalSupply_;
     
-    bool public paused_Deprecated = false;
-    address public globalPause_Deprecated;
+    bool private paused_Deprecated = false;
+    address private globalPause_Deprecated;
 
     uint256 public burnMin = 0;
     uint256 public burnMax = 0;
