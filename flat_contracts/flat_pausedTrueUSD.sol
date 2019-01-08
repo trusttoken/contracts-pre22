@@ -535,7 +535,7 @@ contract PausedToken is HasOwner {
 }
 
 /** @title DelegateERC20
-Accept forwarding delegation calls from the old TrueUSD (V1) contract. THis way the all the ERC20
+Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
 functions in the old contract still works (except Burn). 
 */
 contract DelegateERC20 is PausedToken {
