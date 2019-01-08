@@ -16,7 +16,6 @@ contract('Upgrade Helper', function (accounts) {
             this.controller = await Controller.new({from:owner})
             this.token = await TrueUSD.new(owner, 0, {from:owner})
             await this.controller.initialize({from: owner})
-            await this.token.initialize({from: owner})
             this.helper = await UpgradeHelperMock.new(this.original.address, this.token.address, this.controller.address, {from:owner})
             await this.controller.transferOwnership(this.helper.address, {from: owner})
             await this.token.transferOwnership(this.helper.address, {from: owner})

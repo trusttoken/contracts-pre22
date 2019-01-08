@@ -39,7 +39,7 @@ contract('TokenWithHooks', function (accounts) {
         })
 
         it('transfers to a registered receiver contracts', async function(){
-            const {logs}=await this.token.transfer(this.registeredReceiver.address, 50*10**18, {from: oneHundred})
+            const { logs } = await this.token.transfer(this.registeredReceiver.address, 50*10**18, { from: oneHundred })
             const newState = await this.registeredReceiver.state()
             assert.equal(newState, 50*10**18)
         })
