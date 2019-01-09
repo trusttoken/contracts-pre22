@@ -55,8 +55,8 @@ contract('--Full upgrade process --', function (accounts) {
         })
         it('conducts the full upgrade from the current on chain contract', async function(){
             this.onChainToken = await TrueUSDMock.new(oneHundred, 1000* 10 ^ 18 ,  {from: owner})
-            this.balanceSheet = await this.onChainToken.balances()
-            this.allowanceSheet = await this.onChainToken.allowances()
+            this.balanceSheet = await this.onChainToken.balances.call()
+            this.allowanceSheet = await this.onChainToken.allowances.call()
             this.onChainController = await TokenController.new({from: owner})
             await this.onChainToken.transferOwnership(this.onChainController.address, { from: owner })
             await this.onChainController.initialize({from: owner})

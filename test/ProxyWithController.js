@@ -68,14 +68,14 @@ contract('--Proxy With Controller--', function (accounts) {
         it('token can transfer ownership to controller', async function(){
             await this.token.transferOwnership(this.controller.address, { from: owner })
             await this.controller.issueClaimOwnership(this.token.address, { from: owner })
-            const tokenOwner = await this.token.owner()
+            const tokenOwner = await this.token.owner.call()
             assert.equal(tokenOwner,this.controller.address)
         })
         it('controller can set tusd registry', async function(){
             await this.token.transferOwnership(this.controller.address, { from: owner })
             await this.controller.issueClaimOwnership(this.token.address, { from: owner })
             await this.controller.setTusdRegistry(this.registry.address, { from: owner })
-            const tokenRegistry = await this.token.registry()
+            const tokenRegistry = await this.token.registry.call()
             assert.equal(tokenRegistry, this.registry.address)
         })
 
@@ -94,14 +94,14 @@ contract('--Proxy With Controller--', function (accounts) {
             })
 
             it('request a mint', async function () {
-                const originalMintOperationCount = await this.controller.mintOperationCount()
+                const originalMintOperationCount = await this.controller.mintOperationCount.call()
                 assert.equal(originalMintOperationCount, 0)
                 await this.controller.requestMint(oneHundred, 10*10**18 , { from: owner })
-                const mintOperation = await this.controller.mintOperations(0)
+                const mintOperation = await this.controller.mintOperations.call(0)
                 assert.equal(mintOperation[0], oneHundred)
                 assert.equal(Number(mintOperation[1]), 10*10**18)
                 assert.equal(Number(mintOperation[3]), 0,"numberOfApprovals not 0")
-                const mintOperationCount = await this.controller.mintOperationCount()
+                const mintOperationCount = await this.controller.mintOperationCount.call()
                 assert.equal(mintOperationCount, 1)
 
             })

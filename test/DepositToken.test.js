@@ -87,7 +87,7 @@ contract('DepositToken', function (accounts) {
         describe('deposit token works with deposit registrar', function(){
             beforeEach(async function () {
                 this.registrar = await DepositAddressRegistrar.new(this.registry.address, {from: owner})
-                const canWriteToDepositAddress = await this.registry.writeAttributeFor("isDepositAddress")
+                const canWriteToDepositAddress = await this.registry.writeAttributeFor.call("isDepositAddress")
                 await this.registry.setAttributeValue(this.registrar.address, canWriteToDepositAddress, 1, { from: owner })
             })
 

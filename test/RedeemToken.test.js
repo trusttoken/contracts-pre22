@@ -39,9 +39,9 @@ contract('RedeemToken', function (accounts) {
             await assertBalance(this.token, oneHundred, 100*10**18)
             await this.token.approve(anotherAccount, 10*10**18, {from : oneHundred})
             await assertRevert(this.token.transferFrom(oneHundred,ZERO_ADDRESS, 10*10**18, {from : anotherAccount}))
-            const totalSupply = await this.token.totalSupply()
+            const totalSupply = await this.token.totalSupply.call()
             assert.equal(Number(totalSupply),100*10**18)
-            const balanceOfZero = await this.token.balanceOf(ZERO_ADDRESS);
+            const balanceOfZero = await this.token.balanceOf.call(ZERO_ADDRESS);
             assert.equal(Number(balanceOfZero), 0);
         })
         
@@ -51,7 +51,7 @@ contract('RedeemToken', function (accounts) {
 
             it('owner can increment Redemption address count', async function(){
                 await this.token.incrementRedemptionAddressCount({ from: owner })
-                assert.equal(Number(await this.token.redemptionAddressCount()),1)
+                assert.equal(Number(await this.token.redemptionAddressCount.call()),1)
             })
 
             it('transfers to Redemption addresses gets burned', async function(){
@@ -63,12 +63,12 @@ contract('RedeemToken', function (accounts) {
                 assert.equal(logs[1].event, 'Burn')
                 assert.equal(logs[2].event, 'Transfer')
                 await assertBalance(this.token, oneHundred, 90*10**18)
-                assert.equal(Number(await this.token.totalSupply()),90*10**18)
+                assert.equal(Number(await this.token.totalSupply.call()),90*10**18)
                 await this.token.transfer(ADDRESS_TWO, 10*10**18, {from : oneHundred})
-                assert.equal(Number(await this.token.totalSupply()),90*10**18)
+                assert.equal(Number(await this.token.totalSupply.call()),90*10**18)
                 await this.token.incrementRedemptionAddressCount({ from: owner })
                 await this.token.transfer(ADDRESS_ONE, 10*10**18, {from : oneHundred})
-                assert.equal(Number(await this.token.totalSupply()),80*10**18)
+                assert.equal(Number(await this.token.totalSupply.call()),80*10**18)
             })
 
             it('transfers to Redemption addresses fails if Redemption address cannot burn', async function(){

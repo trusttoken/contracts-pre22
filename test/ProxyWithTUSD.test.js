@@ -35,11 +35,11 @@ contract('Proxy', function (accounts) {
 
         it('initializes proxy/tusd contract', async function(){
             await this.token.initialize({from: owner})
-            const tokenOwner = await this.token.owner()
+            const tokenOwner = await this.token.owner.call()
             assert.equal(tokenOwner, owner)
-            const burnMin = await this.token.burnMin()
+            const burnMin = await this.token.burnMin.call()
             assert.equal(Number(burnMin), 10000*10**18)
-            const burnMax = await this.token.burnMax()
+            const burnMax = await this.token.burnMax.call()
             assert.equal(Number(burnMax), 20000000*10**18)
         })
 
@@ -71,7 +71,7 @@ contract('Proxy', function (accounts) {
                 await this.token.mint(oneHundred, 100*10**18, {from: owner})
             })
             it('proxy return totalSupply', async function(){
-                await this.token.totalSupply()
+                await this.token.totalSupply.call()
             })    
 
             it('can transfer token', async function(){

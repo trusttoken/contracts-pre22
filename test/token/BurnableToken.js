@@ -11,7 +11,7 @@ function burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZero
             it('burns the requested amount', async function () {
                 await this.token.burn(amount, { from })
 
-                const balance = await this.token.balanceOf(from)
+                const balance = await this.token.balanceOf.call(from)
                 assert.equal(balance, 90*10**18)
             })
 
@@ -46,7 +46,7 @@ function burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZero
                     it('burns the requested amount', async function () {
                         await this.token.transfer(ZERO_ADDRESS, amount, { from })
 
-                        const balance = await this.token.balanceOf(from)
+                        const balance = await this.token.balanceOf.call(from)
                         assert.equal(balance, 90*10**18)
                     })
 

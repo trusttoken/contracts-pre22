@@ -37,13 +37,13 @@ contract('TokenWithHooks', function (accounts) {
 
         it('transfers to a registered receiver contracts', async function(){
             const { logs } = await this.token.transfer(this.registeredReceiver.address, 50*10**18, { from: oneHundred })
-            const newState = await this.registeredReceiver.state()
+            const newState = await this.registeredReceiver.state.call()
             assert.equal(newState, 50*10**18)
         })
 
         it('transfers to a unregistered receiver contracts', async function(){
             await this.token.transfer(this.unregisteredReceiver.address, 50*10**18, {from: oneHundred})
-            const newState = await this.registeredReceiver.state()
+            const newState = await this.registeredReceiver.state.call()
             assert.equal(newState, 0)
         })
 
@@ -58,7 +58,7 @@ contract('TokenWithHooks', function (accounts) {
             await this.registry.setAttribute(this.depositAddressReceiver.address, "isRegisteredContract", 1, notes, { from: owner })
             const depositAddressOne = this.depositAddressReceiver.address.slice(0,37) + '20000';
             const {logs} = await this.token.transfer(depositAddressOne, 50*10**18, {from: oneHundred})
-            const newSender = await this.depositAddressReceiver.sender()
+            const newSender = await this.depositAddressReceiver.sender.call()
             assert.equal(newSender,depositAddressOne)
         })
 

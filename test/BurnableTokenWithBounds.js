@@ -15,9 +15,9 @@ function burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount], trans
             it('sets the bounds', async function () {
                 await this.token.setBurnBounds(10*10**18, 20*10**18, { from: owner })
 
-                const min = await this.token.burnMin()
+                const min = await this.token.burnMin.call()
                 assert.equal(min, 10*10**18)
-                const max = await this.token.burnMax()
+                const max = await this.token.burnMax.call()
                 assert.equal(max, 20*10**18)
             })
 

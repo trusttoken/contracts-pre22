@@ -26,8 +26,8 @@ contract('MultisigOwner', function (accounts) {
         await this.controller.setTrueUSD(this.token.address, { from: owner1 })
         await this.controller.setTusdRegistry(this.registry.address, { from: owner1 })
         this.ClaimableContract =await BalanceSheet.new({from: owner1})
-        this.balanceSheet = await this.token.balances()
-        this.allowanceSheet = await this.token.allowances()
+        this.balanceSheet = await this.token.balances.call()
+        this.allowanceSheet = await this.token.allowances.call()
         await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner1 })
         await this.registry.setAttribute(approver, "isTUSDMintApprover", 1, "notes", { from: owner1 })
         await this.registry.setAttribute(pauseKey, "isTUSDMintPausers", 1, "notes", { from: owner1 })
@@ -45,14 +45,14 @@ contract('MultisigOwner', function (accounts) {
         })
         it('Multisig can claimownership to TokenController', async function () {
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
-            const initialOwner = await this.controller.owner()
+            const initialOwner = await this.controller.owner.call()
             await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner1 })
-            const currentOwner = await this.controller.owner()
+            const currentOwner = await this.controller.owner.call()
             assert.equal(initialOwner, currentOwner)
-            const pendingOwner = await this.controller.pendingOwner()
+            const pendingOwner = await this.controller.pendingOwner.call()
             assert.equal(pendingOwner, this.multisigOwner.address)
             await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner2 })
-            const finalOwner = await this.controller.owner()
+            const finalOwner = await this.controller.owner.call()
             assert.equal(finalOwner, this.multisigOwner.address)
    
         })
@@ -79,27 +79,27 @@ contract('MultisigOwner', function (accounts) {
             await assertRevert(this.multisigOwner.msInitialize([owner1, owner2, owner3], {from: owner1}))
         })
         it ('current owners are owners', async function(){
-            const owner1Result = await this.multisigOwner.owners(owner1)
-            const owner2Result = await this.multisigOwner.owners(owner2)
-            const owner3Result = await this.multisigOwner.owners(owner3)
+            const owner1Result = await this.multisigOwner.owners.call(owner1)
+            const owner2Result = await this.multisigOwner.owners.call(owner2)
+            const owner3Result = await this.multisigOwner.owners.call(owner3)
             assert.equal(owner1Result,owner2Result)
             assert.equal(owner1Result,owner3Result)
         })
 
         it ('Owners can modify owner multisig owners', async function(){
             await this.multisigOwner.msUpdateOwner(owner3, oneHundred, {from : owner1 })
-            let newOwnerResult = await this.multisigOwner.owners(oneHundred)
-            let owner3Result = await this.multisigOwner.owners(owner3)
+            let newOwnerResult = await this.multisigOwner.owners.call(oneHundred)
+            let owner3Result = await this.multisigOwner.owners.call(owner3)
             assert.equal(newOwnerResult,false)
             assert.equal(owner3Result,true)
             await this.multisigOwner.msUpdateOwner(owner3, oneHundred, {from : owner2 })
-            newOwnerResult = await this.multisigOwner.owners(oneHundred)
-            owner3Result = await this.multisigOwner.owners(owner3)
+            newOwnerResult = await this.multisigOwner.owners.call(oneHundred)
+            owner3Result = await this.multisigOwner.owners.call(owner3)
             assert.equal(newOwnerResult,true)
             assert.equal(owner3Result,false)
-            const ownerList0 = await this.multisigOwner.ownerList(0)
-            const ownerList1 = await this.multisigOwner.ownerList(1)
-            const ownerList2 = await this.multisigOwner.ownerList(2)
+            const ownerList0 = await this.multisigOwner.ownerList.call(0)
+            const ownerList1 = await this.multisigOwner.ownerList.call(1)
+            const ownerList2 = await this.multisigOwner.ownerList.call(2)
 
             assert.equal(ownerList0, owner1)
             assert.equal(ownerList1, owner2)
@@ -109,7 +109,7 @@ contract('MultisigOwner', function (accounts) {
         it ('Owners can set TokenController', async function(){
             await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
             await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner2 })
-            const controller = await this.multisigOwner.tokenController();
+            const controller = await this.multisigOwner.tokenController.call();
             assert.equal(controller, this.controller.address)
         })
 
@@ -118,12 +118,12 @@ contract('MultisigOwner', function (accounts) {
             await this.controller.transferOwnership(this.multisigOwner.address, { from: owner1 })
             await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner1 })
             await this.multisigOwner.msIssueClaimContract(this.controller.address, {from : owner2 })
-            const currentOwner = await this.controller.owner()
+            const currentOwner = await this.controller.owner.call()
             assert.equal(currentOwner, this.multisigOwner.address)
 
             await this.multisigOwner.msReclaimContract(this.controller.address, oneHundred, {from : owner1 })
             await this.multisigOwner.msReclaimContract(this.controller.address, oneHundred, {from : owner2 })
-            const controllerPendingOwner = await this.controller.pendingOwner()
+            const controllerPendingOwner = await this.controller.pendingOwner.call()
             assert.equal(controllerPendingOwner, oneHundred)
         })
 
@@ -144,8 +144,8 @@ contract('MultisigOwner', function (accounts) {
             this.basicToken = await BasicTokenMock.new(this.multisigOwner.address, 100, {from: owner1});
             await this.multisigOwner.msReclaimToken(this.basicToken.address, oneHundred, {from : owner1 })
             await this.multisigOwner.msReclaimToken(this.basicToken.address, oneHundred,  {from : owner2 })
-            const contractBalance = await this.basicToken.balanceOf(this.multisigOwner.address)
-            const userBalance = await this.basicToken.balanceOf(oneHundred)
+            const contractBalance = await this.basicToken.balanceOf.call(this.multisigOwner.address)
+            const userBalance = await this.basicToken.balanceOf.call(oneHundred)
             assert.equal(Number(contractBalance), 0)
             assert.equal(Number(userBalance), 100)
         })
@@ -154,7 +154,7 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.msSetTokenController(this.controller.address, {from : owner1 })
             await this.multisigOwner.msVeto({from : owner2 })
             await this.multisigOwner.msVeto({from : owner3 })
-            const ownerAction = await this.multisigOwner.ownerAction();
+            const ownerAction = await this.multisigOwner.ownerAction.call();
             assert.equal(ownerAction[0], '0x')
             assert.equal(Number(ownerAction[1]), 0)
             assert.equal(Number(ownerAction[2]), 0)
@@ -223,7 +223,7 @@ contract('MultisigOwner', function (accounts) {
         it('call transferOwnership of tokenController', async function(){
             await this.multisigOwner.transferOwnership(oneHundred,{from: owner1})
             await this.multisigOwner.transferOwnership(oneHundred,{from: owner2})
-            const pendingOwner = await this.controller.pendingOwner()
+            const pendingOwner = await this.controller.pendingOwner.call()
             assert.equal(pendingOwner, oneHundred)
         })
 
@@ -261,26 +261,26 @@ contract('MultisigOwner', function (accounts) {
         it('call pauseMints of tokenController', async function(){
             await this.multisigOwner.pauseMints({from: owner1})
             await this.multisigOwner.pauseMints({from: owner2})
-            let mintPaused = await this.controller.mintPaused()
+            let mintPaused = await this.controller.mintPaused.call()
             assert.equal(mintPaused,true)
             await this.multisigOwner.unpauseMints({from: owner1})
             await this.multisigOwner.unpauseMints({from: owner2})
-            mintPaused = await this.controller.mintPaused()
+            mintPaused = await this.controller.mintPaused.call()
             assert.equal(mintPaused,false)
         })
 
         it('call setTrueUSD of tokenController', async function(){
             await this.multisigOwner.setTrueUSD(this.token.address, {from: owner1})
             await this.multisigOwner.setTrueUSD(this.token.address, {from: owner2})
-            const trueUSD = await this.controller.trueUSD()
+            const trueUSD = await this.controller.trueUSD.call()
             assert.equal(trueUSD,this.token.address)
         })
 
         it('call changeTokenName of tokenController', async function(){
             await this.multisigOwner.changeTokenName("Terry Token", "ttt", {from: owner1})
             await this.multisigOwner.changeTokenName("Terry Token", "ttt", {from: owner2})
-            const name = await this.token.name()
-            const symbol = await this.token.symbol()
+            const name = await this.token.name.call()
+            const symbol = await this.token.symbol.call()
             assert.equal(name,"Terry Token")
             assert.equal(symbol,"ttt")
         })
@@ -288,27 +288,27 @@ contract('MultisigOwner', function (accounts) {
         it('call setTusdRegistry of tokenController', async function(){
             await this.multisigOwner.setTusdRegistry(this.registry.address, {from: owner1})
             await this.multisigOwner.setTusdRegistry(this.registry.address, {from: owner2})
-            const registry = await this.token.registry()
+            const registry = await this.token.registry.call()
             assert.equal(registry,this.registry.address)
         })
 
         it('call transferChild of tokenController', async function(){
             await this.multisigOwner.transferChild(this.token.address, oneHundred, {from: owner1})
             await this.multisigOwner.transferChild(this.token.address, oneHundred, {from: owner2})
-            const pendingOwner = await this.token.pendingOwner()
+            const pendingOwner = await this.token.pendingOwner.call()
             assert.equal(pendingOwner, oneHundred)
         })
 
         it('call requestReclaimContract of tokenController', async function(){
-            const balances = await this.token.balances()
-            let balanceOwner = await BalanceSheet.at(balances).owner()
+            const balances = await this.token.balances.call()
+            let balanceOwner = await BalanceSheet.at(balances).owner.call()
             assert.equal(balanceOwner, this.token.address)
 
             await this.multisigOwner.requestReclaimContract(balances, { from: owner1 })
             await this.multisigOwner.requestReclaimContract(balances, { from: owner2 })
             await this.multisigOwner.issueClaimOwnership(balances, { from: owner1 })
             await this.multisigOwner.issueClaimOwnership(balances, { from: owner2 })
-            balanceOwner = await BalanceSheet.at(balances).owner()
+            balanceOwner = await BalanceSheet.at(balances).owner.call()
             assert.equal(balanceOwner, this.controller.address)
 
         })
@@ -331,15 +331,15 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.requestReclaimToken(this.basicToken.address, {from: owner1})
             await this.multisigOwner.requestReclaimToken(this.basicToken.address, {from: owner2})
             
-            const tokenContractBalance = await this.basicToken.balanceOf(this.token.address)
-            const multiSigBalance = await this.basicToken.balanceOf(this.multisigOwner.address)
+            const tokenContractBalance = await this.basicToken.balanceOf.call(this.token.address)
+            const multiSigBalance = await this.basicToken.balanceOf.call(this.multisigOwner.address)
             assert.equal(Number(tokenContractBalance), 0)
             assert.equal(Number(multiSigBalance), 100)
 
             await this.multisigOwner.msReclaimToken(this.basicToken.address, oneHundred, {from : owner1 })
             await this.multisigOwner.msReclaimToken(this.basicToken.address, oneHundred,  {from : owner2 })
             
-            const userBalance = await this.basicToken.balanceOf(oneHundred)
+            const userBalance = await this.basicToken.balanceOf.call(oneHundred)
             assert.equal(Number(userBalance), 100)
         })
 
@@ -347,7 +347,7 @@ contract('MultisigOwner', function (accounts) {
         it('call setTrueUsdFastPause of tokenController', async function(){
             await this.multisigOwner.setTrueUsdFastPause(oneHundred, {from: owner1})
             await this.multisigOwner.setTrueUsdFastPause(oneHundred, {from: owner2})
-            const trueUsdFastPause = await this.controller.trueUsdFastPause()
+            const trueUsdFastPause = await this.controller.trueUsdFastPause.call()
             assert.equal(trueUsdFastPause, oneHundred)
         })
 
@@ -361,9 +361,9 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.setBurnBounds(3*10**18, 4*10**18, {from: owner1})
             await this.multisigOwner.setBurnBounds(3*10**18, 4*10**18, {from: owner2})
 
-            const min = await this.token.burnMin()
+            const min = await this.token.burnMin.call()
             assert.equal(min, 3*10**18)
-            const max = await this.token.burnMax()
+            const max = await this.token.burnMax.call()
             assert.equal(max, 4*10**18)
 
         })
@@ -397,11 +397,11 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.requestMint(oneHundred, 10*10**18, {from: owner2})
             await this.multisigOwner.pauseMint(0,  {from: owner1})
             await this.multisigOwner.pauseMint(0,  {from: owner2})
-            let mintOperation = await this.controller.mintOperations(0)
+            let mintOperation = await this.controller.mintOperations.call(0)
             assert.equal(mintOperation[4],true)
             await this.multisigOwner.unpauseMint(0,  {from: owner1})
             await this.multisigOwner.unpauseMint(0,  {from: owner2})
-            mintOperation = await this.controller.mintOperations(0)
+            mintOperation = await this.controller.mintOperations.call(0)
             assert.equal(mintOperation[4],false)
         })
 
@@ -412,7 +412,7 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.requestMint(oneHundred, 20*10**18, {from: owner2})
             await this.multisigOwner.invalidateAllPendingMints({from: owner1})
             await this.multisigOwner.invalidateAllPendingMints({from: owner2})
-            const invalidateBefore = Number(await this.controller.mintReqInvalidBeforeThisBlock())
+            const invalidateBefore = Number(await this.controller.mintReqInvalidBeforeThisBlock.call())
             assert.isAbove(invalidateBefore, 0)
 
         })
@@ -430,7 +430,7 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.requestMint(oneHundred, 10*10**18, {from: owner2})
             await this.multisigOwner.revokeMint(0, {from: owner1})
             await this.multisigOwner.revokeMint(0, {from: owner3})
-            const mintOperation = await this.controller.mintOperations(0)
+            const mintOperation = await this.controller.mintOperations.call(0)
             assert.equal(mintOperation[0],0x0000000000000000000000000000000000000000)
             assert.equal(Number(mintOperation[1]),0)
         })

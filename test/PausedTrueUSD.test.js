@@ -10,9 +10,9 @@ const PausedTrueUSD = artifacts.require("PausedTrueUSDMock")
 const CanDelegate = artifacts.require('CanDelegateMock')
 const TrueUSD = artifacts.require("TrueUSDMock")
 
-contract('TokenController', function (accounts) {
+contract('PausedTrueUSD', function (accounts) {
 
-    describe('--TokenController Tests--', function () {
+    describe('--PausedTrueUSD Tests--', function () {
         const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, ratifier1, ratifier2, ratifier3, redemptionAdmin] = accounts
         const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
@@ -61,7 +61,6 @@ contract('TokenController', function (accounts) {
         })
 
         it('current token is not paused', async function(){
-            console.log(await this.token.balanceOf(oneHundred))
             await this.token.transfer(otherAddress, 10*10**18, { from: oneHundred })
         })
 
@@ -71,7 +70,7 @@ contract('TokenController', function (accounts) {
 
         describe('Paused TrueUSD', function() {
             beforeEach(async function () {
-                await this.token.approve(anotherAccount, 100*10**18, { from: oneHundred })
+                await this.token.approve(otherAddress, 100*10**18, { from: oneHundred })
                 await this.pausedTrueUSD.setDelegateFrom(this.original.address, {from: owner})
                 await this.controller.pauseTrueUSD({from: owner})
             })
@@ -87,36 +86,77 @@ contract('TokenController', function (accounts) {
                 })    
 
                 it('approve is now paused', async function(){
-                    await assertRevert(this.token.approve(anotherAccount, 100*10**18, { from: oneHundred }))
-                    await assertRevert(this.token.increaseApproval(anotherAccount, 100*10**18, { from: oneHundred }))
-                    await assertRevert(this.token.decreaseApproval(anotherAccount, 100*10**18, { from: oneHundred }))
+                    await assertRevert(this.token.approve(otherAddress, 100*10**18, { from: oneHundred }))
+                    await assertRevert(this.token.increaseApproval(otherAddress, 100*10**18, { from: oneHundred }))
+                    await assertRevert(this.token.decreaseApproval(otherAddress, 100*10**18, { from: oneHundred }))
                 })    
+
+                it('transferFroms is now paused', async function(){
+                    await assertRevert(this.token.transferFrom(oneHundred, owner, 100*10**18, { from: otherAddress }))
+                })    
+
+                it('mint is now paused', async function(){
+                    await this.controller.setMintThresholds(30*10**18,300*10**18,3000*10**18, { from: owner })
+                    await this.controller.setMintLimits(30*10**18,300*10**18,3000*10**18,{ from: owner })
+                    await this.controller.refillMultiSigMintPool({ from: owner })
+                    await this.controller.refillRatifiedMintPool({ from: owner })
+                    await this.controller.refillInstantMintPool({ from: owner })
+
+                    await assertRevert(this.controller.instantMint(oneHundred, 100*10**18, { from: otherAddress }))
+                })
             })
 
             describe('getter functions still functioning', function(){
                 it('balanceOf', async function(){
-                    const balance = await this.token.balanceOf(oneHundred)
-                    console.log(balance)
+                    const balance = Number(await this.token.balanceOf.call(oneHundred))
+                    const balanceOrg = Number(await this.token.balanceOf.call(oneHundred))
+                    assert.equal(balance,balanceOrg)
                 })
                 it('allowance', async function(){
-                    const allowance = await this.token.allowance(oneHundred,balance)
-                    console.log(allowance)
+                    const allowance = Number(await this.token.allowance.call(oneHundred,otherAddress))
+                    const allowanceOrg = Number(await this.token.allowance.call(oneHundred,otherAddress))
+                    assert.equal(allowance,allowanceOrg)
+                })
+
+                it('totalSupply', async function(){
+                    const totalSupply = Number(await this.token.totalSupply.call())
+                    const totalSupplyOrg = Number(await this.token.totalSupply.call())
+                    assert.equal(totalSupply,totalSupplyOrg)
+                })
+
+                it('registry', async function(){
+                    const registry = await this.token.registry.call()
+                    assert.equal(registry,this.registry.address)
+                })
+                it('Rounding', async function(){
+                    const decimals = await this.token.decimals.call()
+                    assert.equal(decimals,18)
+                })
+                it('Decimal', async function(){
+                    const rounding = await this.token.rounding.call()
+                    assert.equal(rounding,2)
                 })
             })
 
             describe('admin functions still functioning', function(){
                 it('test admin functions', async function(){
                     await this.token.sponsorGas({from: otherAddress})
+                    assert.equal(Number(await this.token.remainingGasRefundPool.call()),)
                     await this.controller.setTusdRegistry('0x0000000000000000000000000000000000000003',{from: owner})
-                    assert.equal(await this.token.registry(), '0x0000000000000000000000000000000000000003')
+                    assert.equal(await this.token.registry.call(), '0x0000000000000000000000000000000000000003')
                     await this.controller.incrementRedemptionAddressCount({from: owner})
-                    assert.equal(await this.token.redemptionAddressCount(), 1)
+                    assert.equal(await this.token.redemptionAddressCount.call(), 1)
+                    await this.controller.changeTokenName("TerryToken","TTT", {from: owner})
                 })
 
                 it('can still wipe blacklisted account', async function(){
                     await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, web3.fromUtf8("notes"), { from: owner })
                     await this.controller.wipeBlackListedTrueUSD(oneHundred, {from : owner})
                     await assertBalance(this.token, oneHundred,0)
+                })
+
+                it('cannot  wipe blacklisted account if not blacklisted', async function(){
+                    await assertRevert(this.controller.wipeBlackListedTrueUSD(oneHundred, {from : owner}))
                 })
 
                 it('can still set storage contracts', async function(){
@@ -129,7 +169,6 @@ contract('TokenController', function (accounts) {
                                                        this.newAllowanceSheet.address, 
                                                        { from: owner })
                 })
-                
             })
         })
 

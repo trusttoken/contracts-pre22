@@ -54,39 +54,19 @@ contract PausedToken is HasOwner {
         revert("Token Paused");
     }
 
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        revert("Token Paused");
-    }
-
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        revert("Token Paused");
-    }
-
-    function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
-        revert("Token Paused");
-    }
-
     function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
         revert("Token Paused");
     }
     function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
         revert("Token Paused");
     }
-
-    function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
-        revert("Token Paused");
-    }
-
-    function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
-        revert("Token Paused");
-    }
 }
 
-/** @title DelegateERC20
+/** @title PausedDelegateERC20
 Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
 functions in the old contract still works (except Burn). 
 */
-contract DelegateERC20 is PausedToken {
+contract PausedDelegateERC20 is PausedToken {
 
     address public constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
     
@@ -104,8 +84,7 @@ contract DelegateERC20 is PausedToken {
     }
 
     function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferAllArgs(origSender, to, value);
-        return true;
+        revert("Token Paused");
     }
 
     function delegateAllowance(address owner, address spender) public view returns (uint256) {
@@ -113,23 +92,19 @@ contract DelegateERC20 is PausedToken {
     }
 
     function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferFromAllArgs(from, to, value, origSender);
-        return true;
+        revert("Token Paused");
     }
 
     function delegateApprove(address spender, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _approveAllArgs(spender, value, origSender);
-        return true;
+        revert("Token Paused");
     }
 
     function delegateIncreaseApproval(address spender, uint addedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        _increaseApprovalAllArgs(spender, addedValue, origSender);
-        return true;
+        revert("Token Paused");
     }
 
     function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        _decreaseApprovalAllArgs(spender, subtractedValue, origSender);
-        return true;
+        revert("Token Paused");
     }
 }
 
@@ -137,7 +112,7 @@ contract DelegateERC20 is PausedToken {
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
 * inherited - see the documentation on the corresponding contracts.
 */
-contract PausedTrueUSD is DelegateERC20 {
+contract PausedTrueUSD is PausedDelegateERC20 {
     using SafeMath for *;
 
     uint8 public constant DECIMALS = 18;

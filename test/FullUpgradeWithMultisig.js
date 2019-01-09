@@ -90,19 +90,19 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             })
 
             it('storage contract owned by token proxy ', async function() {
-                const balanceSheetOwner = await this.balanceSheet.owner()
-                const allowanceSheetOwner = await this.allowanceSheet.owner()
+                const balanceSheetOwner = await this.balanceSheet.owner.call()
+                const allowanceSheetOwner = await this.allowanceSheet.owner.call()
                 assert.equal(balanceSheetOwner, this.token.address)
                 assert.equal(allowanceSheetOwner, this.token.address)
             })
 
             it('Controller owner is set', async function(){
-                const controllerOwner = await this.controller.owner()
+                const controllerOwner = await this.controller.owner.call()
                 assert.equal(controllerOwner, this.multisigOwner.address)
             })
 
             it('Token owner is set', async function(){
-                const tokenOwner = await this.token.owner()
+                const tokenOwner = await this.token.owner.call()
                 assert.equal(tokenOwner,this.controller.address)
             })
 
@@ -127,9 +127,9 @@ contract('--Full upgrade process with multisig--', function (accounts) {
                 this.newTokenImplementation = await TrueUSD.new(owner2, 0, { from: owner2 })
                 await this.multisigOwner.upgradeTusdProxyImplTo(this.newTokenImplementation.address, {from : owner1 })
                 await this.multisigOwner.upgradeTusdProxyImplTo(this.newTokenImplementation.address, {from : owner2 })
-                const newImplAddress = await this.tokenProxy.implementation()
+                const newImplAddress = await this.tokenProxy.implementation.call()
                 assert.equal(newImplAddress,this.newTokenImplementation.address)
-                const currentOwner = await this.token.owner()
+                const currentOwner = await this.token.owner.call()
                 assert.equal(currentOwner,this.controller.address)
                 await this.multisigOwner.requestMint(oneHundred, 10*10**18,  {from: owner1})
                 await this.multisigOwner.requestMint(oneHundred, 10*10**18, {from: owner2})
@@ -140,9 +140,9 @@ contract('--Full upgrade process with multisig--', function (accounts) {
                 this.newControllerImplementation = await TokenController.new({ from: owner2 })
                 await this.multisigOwner.msUpgradeControllerProxyImplTo(this.newControllerImplementation.address, {from : owner1 })
                 await this.multisigOwner.msUpgradeControllerProxyImplTo(this.newControllerImplementation.address, {from : owner2 })
-                const newImplAddress = await this.controllerProxy.implementation()
+                const newImplAddress = await this.controllerProxy.implementation.call()
                 assert.equal(newImplAddress,this.newControllerImplementation.address)
-                const currentOwner = await this.controller.owner()
+                const currentOwner = await this.controller.owner.call()
                 assert.equal(currentOwner,this.multisigOwner.address)
                 await this.multisigOwner.requestMint(oneHundred, 10*10**18,  {from: owner1})
                 await this.multisigOwner.requestMint(oneHundred, 10*10**18, {from: owner2})

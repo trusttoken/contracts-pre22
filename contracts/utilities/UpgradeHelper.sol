@@ -23,7 +23,7 @@ contract TokenControllerInterface {
     function claimStorageForProxy(address _delegate,
         address _balanceSheet,
         address _alowanceSheet) external;
-    function setGlobalPause(address _globalPause) external;
+    // function setGlobalPause(address _globalPause) external;
     function transferOwnership(address _newOwner) external;
     function owner() external returns(address);
 }
@@ -35,7 +35,7 @@ contract UpgradeHelper {
     NewTrueUSDInterface public constant newTrueUSD = NewTrueUSDInterface(0x0000000000085d4780B73119b644AE5ecd22b376);
     TokenControllerInterface public constant tokenController = TokenControllerInterface(0x0000000000075EfBeE23fe2de1bd0b7690883cc9);
     address public constant registry = address(0x0000000000013949F288172bD7E36837bDdC7211);
-    address public constant globalPause = address(0x0000000000027f6D87be8Ade118d9ee56767d993);
+    // address public constant globalPause = address(0x0000000000027f6D87be8Ade118d9ee56767d993);
 
     function upgrade() public {
         // TokenController should have end owner as it's pending owner at the end
@@ -67,7 +67,7 @@ contract UpgradeHelper {
 
         // Configure TrueUSD
         tokenController.setTusdRegistry(registry);
-        tokenController.setGlobalPause(globalPause);
+        // tokenController.setGlobalPause(globalPause);
 
         // Point oldTrueUSD delegation to NewTrueUSD
         tokenController.transferChild(oldTrueUSD, address(this));

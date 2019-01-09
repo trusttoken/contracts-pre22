@@ -7,8 +7,8 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function() {
         this.totalSupply = 100 * 10 ** 18
         this.original = await CanDelegate.new(oneHundred, this.totalSupply, {from:owner})
-        this.BalanceSheetAddress = await this.original.balances()
-        this.AllowanceSheetAddress = await this.original.allowances()
+        this.BalanceSheetAddress = await this.original.balances.call()
+        this.AllowanceSheetAddress = await this.original.allowances.call()
         this.delegate = await TrueUSD.new(owner, this.totalSupply, { from: owner })
         this.registry = await Registry.new({ from: owner })
 
@@ -25,9 +25,9 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
 
     describe('--DelegateERC20 Tests--', function() {
         it('shares totalSupply', async function () {
-            assert.equal(this.totalSupply, Number(await this.delegate.delegateTotalSupply()))
-            assert.equal(this.totalSupply, Number(await this.delegate.totalSupply()))
-            assert.equal(this.totalSupply, Number(await this.original.totalSupply()))
+            assert.equal(this.totalSupply, Number(await this.delegate.delegateTotalSupply.call()))
+            assert.equal(this.totalSupply, Number(await this.delegate.totalSupply.call()))
+            assert.equal(this.totalSupply, Number(await this.original.totalSupply.call()))
         })
 
         describe('Delegate', function(){
