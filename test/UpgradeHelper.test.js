@@ -26,42 +26,42 @@ contract('Upgrade Helper', function (accounts) {
         })
 
         it('Controller points to new trueUSD', async function(){
-            const trueUSD = await this.controller.trueUSD()
+            const trueUSD = await this.controller.trueUSD.call()
             assert.equal(trueUSD, this.token.address)
         })
 
         it('Controller owns new trueUSD', async function(){
-            const tusdOwner = await this.token.owner()
+            const tusdOwner = await this.token.owner.call()
             assert.equal(tusdOwner, this.controller.address)
         })
 
         it('controller has correct owner as pendingowner', async function(){
-            const controllerOwner = await this.controller.pendingOwner()
+            const controllerOwner = await this.controller.pendingOwner.call()
             assert.equal(controllerOwner, owner)
         })
 
         it('oldTusd owned by controller', async function(){
-            const originalOwner = await this.original.owner()
+            const originalOwner = await this.original.owner.call()
             assert.equal(originalOwner, this.controller.address)
         })
 
         it('token total supply correct', async function(){
-            const totalSupply = Number(await this.token.totalSupply())
+            const totalSupply = Number(await this.token.totalSupply.call())
             assert.equal(totalSupply, 10*10**18)
         })
         it('token has correct balance and allowance sheet', async function(){
-            const balanceSheet = await this.token.balances()
-            assert.equal(balanceSheet, await this.original.balances())
-            const allowanceSheet = await this.token.allowances()
-            assert.equal(allowanceSheet, await this.original.allowances())
+            const balanceSheet = await this.token.balances.call()
+            assert.equal(balanceSheet, await this.original.balances.call())
+            const allowanceSheet = await this.token.allowances.call()
+            assert.equal(allowanceSheet, await this.original.allowances.call())
         })
 
         it('original token points to new token', async function(){
-            const delegate = await this.original.delegate()
+            const delegate = await this.original.delegate.call()
             assert.equal(delegate, this.token.address)
         })
         it('new tusd has correct registry', async function(){
-            const registry = await this.token.registry()
+            const registry = await this.token.registry.call()
             assert.equal(registry, '0x0000000000013949f288172bd7e36837bddc7211')
         })
     })

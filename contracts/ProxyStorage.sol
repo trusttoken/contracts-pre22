@@ -2,7 +2,6 @@ pragma solidity ^0.4.23;
 import "../registry/contracts/Registry.sol";
 import "./modularERC20/BalanceSheet.sol";
 import "./modularERC20/AllowanceSheet.sol";
-import "./utilities/GlobalPause.sol";
 
 /*
 Defines the storage layout of the implementaiton (TrueUSD) contract. Any newly declared 
@@ -20,8 +19,8 @@ contract ProxyStorage {
 
     uint256 totalSupply_;
     
-    bool public paused = false;
-    GlobalPause public globalPause;
+    bool private paused_Deprecated = false;
+    address private globalPause_Deprecated;
 
     uint256 public burnMin = 0;
     uint256 public burnMax = 0;

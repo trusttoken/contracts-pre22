@@ -11,7 +11,7 @@ function mintableTokenTests([owner, oneHundred, anotherAccount]) {
             it('mints the requested amount', async function () {
                 await this.token.mint(anotherAccount, amount, { from })
 
-                const balance = await this.token.balanceOf(anotherAccount)
+                const balance = await this.token.balanceOf.call(anotherAccount)
                 assert.equal(balance, amount)
             })
 

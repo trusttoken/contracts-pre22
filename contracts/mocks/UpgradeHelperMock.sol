@@ -6,7 +6,6 @@ contract UpgradeHelperMock {
     NewTrueUSDInterface public  newTrueUSD;
     TokenControllerInterface public tokenController;
     address public constant registry = address(0x0000000000013949f288172bd7e36837bddc7211);
-    address public constant globalPause = address(2);
 
     constructor(address _oldTrueUSD, address _newTrueUSD, address _tokenController) {
         oldTrueUSD = OldTrueUSDInterface(_oldTrueUSD);
@@ -43,7 +42,6 @@ contract UpgradeHelperMock {
 
         // Configure TrueUSD
         tokenController.setTusdRegistry(registry);
-        tokenController.setGlobalPause(globalPause);
 
         // Point oldTrueUSD delegation to NewTrueUSD
         tokenController.transferChild(oldTrueUSD, address(this));

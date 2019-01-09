@@ -11,7 +11,6 @@ const TrueUSDMock = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
-const GlobalPause = artifacts.require("GlobalPause")
 const TusdProxy = artifacts.require("OwnedUpgradeabilityProxy")
 
 
@@ -24,7 +23,6 @@ contract('Proxy', function (accounts) {
             this.registry = await Registry.new({ from: owner })
             this.proxy = await TusdProxy.new({ from: owner })
             this.implementation = await TrueUSD.new(owner, 0, { from: owner })
-            this.globalPause = await GlobalPause.new({ from: owner })
             this.token = await TrueUSD.at(this.proxy.address)
             this.balanceSheet = await BalanceSheet.new({ from: owner })
             this.allowanceSheet = await AllowanceSheet.new({ from: owner })
@@ -37,11 +35,11 @@ contract('Proxy', function (accounts) {
 
         it('initializes proxy/tusd contract', async function(){
             await this.token.initialize({from: owner})
-            const tokenOwner = await this.token.owner()
+            const tokenOwner = await this.token.owner.call()
             assert.equal(tokenOwner, owner)
-            const burnMin = await this.token.burnMin()
+            const burnMin = await this.token.burnMin.call()
             assert.equal(Number(burnMin), 10000*10**18)
-            const burnMax = await this.token.burnMax()
+            const burnMax = await this.token.burnMax.call()
             assert.equal(Number(burnMax), 20000000*10**18)
         })
 
@@ -53,10 +51,6 @@ contract('Proxy', function (accounts) {
         describe('---Tusd setup functions---', function(){
             beforeEach(async function () {
                 await this.token.initialize({from: owner})
-            })
-
-            it ('set globalPause contract', async function(){
-                await this.token.setGlobalPause(this.globalPause.address, { from: owner }) 
             })
 
             it ('set storage contract', async function(){
@@ -71,14 +65,13 @@ contract('Proxy', function (accounts) {
         describe('---Tusd token functions---', function(){
             beforeEach(async function () {
                 await this.token.initialize({from: owner})
-                await this.token.setGlobalPause(this.globalPause.address, { from: owner }) 
                 await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
                 await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
                 await this.token.setRegistry(this.registry.address, { from: owner }) 
                 await this.token.mint(oneHundred, 100*10**18, {from: owner})
             })
             it('proxy return totalSupply', async function(){
-                await this.token.totalSupply()
+                await this.token.totalSupply.call()
             })    
 
             it('can transfer token', async function(){

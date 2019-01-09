@@ -26,7 +26,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('approves the requested amount', async function () {
                             await this.token.approve(spender, amount, { from: oneHundred })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert.equal(allowance, amount)
                         })
                     })
@@ -39,7 +39,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('approves the requested amount and replaces the previous one', async function () {
                             await this.token.approve(spender, amount, { from: oneHundred })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert.equal(allowance, amount)
                         })
                     })
@@ -62,7 +62,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('approves the requested amount', async function () {
                             await this.token.approve(spender, amount, { from: oneHundred })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert.equal(allowance, amount)
                         })
                     })
@@ -75,7 +75,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('approves the requested amount and replaces the previous one', async function () {
                             await this.token.approve(spender, amount, { from: oneHundred })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert.equal(allowance, amount)
                         })
                     })
@@ -89,7 +89,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                 it('approves the requested amount', async function () {
                     await this.token.approve(spender, amount, { from: oneHundred })
 
-                    const allowance = await this.token.allowance(oneHundred, spender)
+                    const allowance = await this.token.allowance.call(oneHundred, spender)
                     assert.equal(allowance, amount)
                 })
 
@@ -128,7 +128,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('decreases the spender allowance', async function () {
                             await this.token.transferFrom(oneHundred, to, amount, { from: spender })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert(allowance.eq(0))
                         })
 
@@ -197,7 +197,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('keeps the allowance to zero', async function () {
                             await this.token.decreaseApproval(spender, amount, { from: oneHundred })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert.equal(allowance, 0)
                         })
                     })
@@ -210,7 +210,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('decreases the spender allowance subtracting the requested amount', async function () {
                             await this.token.decreaseApproval(spender, amount, { from: oneHundred })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert.equal(allowance, 1*10**18)
                         })
                     })
@@ -233,7 +233,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('keeps the allowance to zero', async function () {
                             await this.token.decreaseApproval(spender, amount, { from: oneHundred })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert.equal(allowance, 0)
                         })
                     })
@@ -246,7 +246,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('decreases the spender allowance subtracting the requested amount', async function () {
                             await this.token.decreaseApproval(spender, amount, { from: oneHundred })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert.equal(allowance, 1*10**18)
                         })
                     })
@@ -260,7 +260,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                 it('decreases the requested amount', async function () {
                     await this.token.decreaseApproval(spender, amount, { from: oneHundred })
 
-                    const allowance = await this.token.allowance(oneHundred, spender)
+                    const allowance = await this.token.allowance.call(oneHundred, spender)
                     assert.equal(allowance, 0)
                 })
 
@@ -297,7 +297,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('approves the requested amount', async function () {
                             await this.token.increaseApproval(spender, amount, { from: oneHundred })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert.equal(allowance, amount)
                         })
                     })
@@ -310,7 +310,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('increases the spender allowance adding the requested amount', async function () {
                             await this.token.increaseApproval(spender, amount, { from: oneHundred })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert.equal(allowance, amount + 1*10**18)
                         })
                     })
@@ -333,7 +333,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('approves the requested amount', async function () {
                             await this.token.increaseApproval(spender, amount, { from: oneHundred })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert.equal(allowance, amount)
                         })
                     })
@@ -346,7 +346,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         it('increases the spender allowance adding the requested amount', async function () {
                             await this.token.increaseApproval(spender, amount, { from: oneHundred })
 
-                            const allowance = await this.token.allowance(oneHundred, spender)
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert.equal(allowance, amount + 1*10**18)
                         })
                     })
@@ -359,7 +359,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                 it('approves the requested amount', async function () {
                     await this.token.increaseApproval(spender, amount, { from: oneHundred })
 
-                    const allowance = await this.token.allowance(oneHundred, spender)
+                    const allowance = await this.token.allowance.call(oneHundred, spender)
                     assert.equal(allowance, amount)
                 })
 

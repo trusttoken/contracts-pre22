@@ -6,7 +6,6 @@ const Registry = artifacts.require("Registry")
 const TrueUSD = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
-const GlobalPause = artifacts.require("GlobalPause")
 
 contract('GasRefundToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
@@ -18,8 +17,6 @@ contract('GasRefundToken', function (accounts) {
             this.balances = await BalanceSheet.new({ from: owner })
             this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSD.new(owner, 0, { from: owner })
-            this.globalPause = await GlobalPause.new({ from: owner })
-            await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
             await this.token.setRegistry(this.registry.address, { from: owner })
             await this.balances.transferOwnership(this.token.address, { from: owner })
             await this.allowances.transferOwnership(this.token.address, { from: owner })
@@ -41,14 +38,14 @@ contract('GasRefundToken', function (accounts) {
             const FIFTY = 50*10**18;
             await this.token.sponsorGas({from: anotherAccount})
             await this.token.sponsorGas({from: anotherAccount})
-            assert.equal(Number(await this.token.remainingGasRefundPool()),18)
+            assert.equal(Number(await this.token.remainingGasRefundPool.call()),18)
             //truffle has no gas refund so this receipt of gas used is not accurate
             const receipt = await this.token.transfer(anotherAccount, FIFTY, {from: oneHundred})
-            assert.equal(Number(await this.token.remainingGasRefundPool()),15)
+            assert.equal(Number(await this.token.remainingGasRefundPool.call()),15)
             await assertBalance(this.token,anotherAccount, FIFTY)
             await this.token.approve(oneHundred, FIFTY, { from: anotherAccount });
             await this.token.transferFrom(anotherAccount, oneHundred, FIFTY, { from: oneHundred });
-            assert.equal(Number(await this.token.remainingGasRefundPool()), 12);
+            assert.equal(Number(await this.token.remainingGasRefundPool.call()), 12);
         })
     })
 })
