@@ -66,8 +66,8 @@ contract('TokenWithHooks', function (accounts) {
             this.receiver = await TrueCoinReceiverMock.new({from: owner})
             await this.registry.setAttribute(this.receiver.address, "isRegisteredContract", 1, notes, { from: owner })
             await this.registry.setAttribute(this.receiver.address, "hasPassedKYC/AML", 1, notes, { from: owner })
-            await this.token.mint(this.receiver, 50*10**18, { from:owner });
-            const newSender = await this.receiver.sender()
+            await this.token.mint(this.receiver.address, 50*10**18, { from:owner });
+            const newSender = await this.receiver.sender.call()
             assert.equal(newSender, '0x0000000000000000000000000000000000000000')
         })
 
