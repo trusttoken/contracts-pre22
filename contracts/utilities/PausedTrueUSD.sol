@@ -129,11 +129,11 @@ contract PausedTrueUSD is PausedDelegateERC20 {
     event SetRegistry(address indexed registry);
     event RedemptionAddress(address indexed addr);
 
-    function decimals() public returns (uint8) {
+    function decimals() public pure returns (uint8) {
         return DECIMALS;
     }
 
-    function rounding() public returns (uint8) {
+    function rounding() public pure returns (uint8) {
         return ROUNDING;
     }
 
