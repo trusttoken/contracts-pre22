@@ -105,7 +105,7 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
 
         describe('CanWriteTo-', function (){
             beforeEach(async function () {
-                const canWriteToKYCAttribute = await this.registry.writeAttributeFor("hasPassedKYC/AML")
+                const canWriteToKYCAttribute = await this.registry.writeAttributeFor.call("hasPassedKYC/AML")
                 await this.registry.setAttribute(oneHundred, canWriteToKYCAttribute, 1, notes, { from: owner })
             })
 
@@ -126,7 +126,7 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
 
             it('sets balance to 0', async function () {
                 await this.token.wipeBlacklistedAccount(oneHundred, { from: owner })
-                const balance = await this.token.balanceOf(oneHundred)
+                const balance = await this.token.balanceOf.call(oneHundred)
                 assert.equal(balance, 0)
             })
 

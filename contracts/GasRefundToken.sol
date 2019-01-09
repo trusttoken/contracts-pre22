@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "./modularERC20/ModularPausableToken.sol";
+import "./modularERC20/ModularMintableToken.sol";
 
 /**  
 @title Gas Refund Token
@@ -8,7 +8,7 @@ Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas 
 Each time an non-empty storage slot is set to 0, evm refund 15,000 (19,000 after Constantinople) to the sender
 of the transaction. 
 */
-contract GasRefundToken is ModularPausableToken {
+contract GasRefundToken is ModularMintableToken {
 
     function sponsorGas() external {
         uint256 len = gasRefundPool.length;

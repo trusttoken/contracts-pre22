@@ -7,7 +7,6 @@ const TrueUSD = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
-const GlobalPause = artifacts.require("GlobalPause")
 const DepositAddressRegistrar = artifacts.require("DepositAddressRegistrar")
 
 contract('DepositToken', function (accounts) {
@@ -21,8 +20,6 @@ contract('DepositToken', function (accounts) {
             this.balances = await BalanceSheet.new({ from: owner })
             this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSD.new(owner, 0, { from: owner })
-            this.globalPause = await GlobalPause.new({ from: owner })
-            await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
             await this.token.setRegistry(this.registry.address, { from: owner })
             await this.balances.transferOwnership(this.token.address, { from: owner })
             await this.allowances.transferOwnership(this.token.address, { from: owner })
@@ -90,7 +87,7 @@ contract('DepositToken', function (accounts) {
         describe('deposit token works with deposit registrar', function(){
             beforeEach(async function () {
                 this.registrar = await DepositAddressRegistrar.new(this.registry.address, {from: owner})
-                const canWriteToDepositAddress = await this.registry.writeAttributeFor("isDepositAddress")
+                const canWriteToDepositAddress = await this.registry.writeAttributeFor.call("isDepositAddress")
                 await this.registry.setAttributeValue(this.registrar.address, canWriteToDepositAddress, 1, { from: owner })
             })
 

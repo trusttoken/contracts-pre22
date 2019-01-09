@@ -7,7 +7,6 @@ const TrueUSDMock = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
-const GlobalPause = artifacts.require("GlobalPause")
 
 contract('TrueUSD', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
@@ -19,7 +18,7 @@ contract('TrueUSD', function (accounts) {
 
         it ('owner can set totalsupply', async function(){
             await this.token.setTotalSupply(100*10**18,{ from: owner })
-            const totalSupply = Number(await this.token.totalSupply())
+            const totalSupply = Number(await this.token.totalSupply.call())
             assert.equal(100*10**18, totalSupply)
         })
 
@@ -40,8 +39,6 @@ contract('TrueUSD', function (accounts) {
             this.balances = await BalanceSheet.new({ from: owner })
             this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSDMock.new(owner, 0, { from: owner })
-            this.globalPause = await GlobalPause.new({ from: owner })
-            await this.token.setGlobalPause(this.globalPause.address, { from: owner })    
             await this.token.setRegistry(this.registry.address, { from: owner })
             await this.balances.transferOwnership(this.token.address, { from: owner })
             await this.allowances.transferOwnership(this.token.address, { from: owner })
@@ -85,7 +82,7 @@ contract('TrueUSD', function (accounts) {
                 await this.registry.setAttribute(oneHundred, "canBurn", 1, notes, { from: owner })
                 await this.token.setBurnBounds(10*10**18, 20*10**18, { from: owner })
                 await this.token.burn(10.503*10**18, { from: oneHundred })
-                let remainingBalance = await this.token.balanceOf(oneHundred)
+                let remainingBalance = await this.token.balanceOf.call(oneHundred)
                 assert.equal(remainingBalance, 89.5*10**18)
             })
         })
@@ -100,14 +97,14 @@ contract('TrueUSD', function (accounts) {
         })
 
         it("can change name", async function () {
-            let name = await this.token.name()
+            let name = await this.token.name.call()
             assert.equal(name, "TrueUSD")
-            let symbol = await this.token.symbol()
+            let symbol = await this.token.symbol.call()
             assert.equal(symbol, "TUSD")
             await this.token.changeTokenName("FooCoin", "FCN", { from: owner })
-            name = await this.token.name()
+            name = await this.token.name.call()
             assert.equal(name, "FooCoin")
-            symbol = await this.token.symbol()
+            symbol = await this.token.symbol.call()
             assert.equal(symbol, "FCN")
         })
     })

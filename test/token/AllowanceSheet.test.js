@@ -13,19 +13,19 @@ contract('AllowanceSheet', function ([_, owner, account2, account3]) {
 
         it('addAllowance', async function () {
             await this.sheet.addAllowance(account2, account3, 70*10**18, { from })
-            const balance = await this.sheet.allowanceOf(account2, account3)
+            const balance = await this.sheet.allowanceOf.call(account2, account3)
             assert.equal(balance, (100+70)*10**18)
         })
 
         it('subAllowance', async function () {
             await this.sheet.subAllowance(account2, account3, 70*10**18, { from })
-            const balance = await this.sheet.allowanceOf(account2, account3)
+            const balance = await this.sheet.allowanceOf.call(account2, account3)
             assert.equal(balance, (100-70)*10**18)
         })
 
         it('setAllowance', async function () {
             await this.sheet.setAllowance(account2, account3, 70*10**18, { from })
-            const balance = await this.sheet.allowanceOf(account2, account3)
+            const balance = await this.sheet.allowanceOf.call(account2, account3)
             assert.equal(balance, 70*10**18)
         })
 
