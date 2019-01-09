@@ -9,7 +9,7 @@ contract CompliantDepositTokenWithHook is CompliantToken, DepositToken {
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {
         bool hasHook;
         address originalTo = _to;
-        (_to, hasHook) = registry.requireCanTransfer(_from, _to);
+        (_to, hasHook) = registry.requireCanTransferFrom(_from, _to);
         allowances.subAllowance(_from, _sender, _value);
         balances.subBalance(_from, _value);
         balances.addBalance(_to, _value);
