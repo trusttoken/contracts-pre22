@@ -23,7 +23,6 @@ contract TokenControllerInterface {
     function claimStorageForProxy(address _delegate,
         address _balanceSheet,
         address _alowanceSheet) external;
-    // function setGlobalPause(address _globalPause) external;
     function transferOwnership(address _newOwner) external;
     function owner() external returns(address);
 }
@@ -67,7 +66,6 @@ contract UpgradeHelper {
 
         // Configure TrueUSD
         tokenController.setTusdRegistry(registry);
-        // tokenController.setGlobalPause(globalPause);
 
         // Point oldTrueUSD delegation to NewTrueUSD
         tokenController.transferChild(oldTrueUSD, address(this));
