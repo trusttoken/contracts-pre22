@@ -14,14 +14,4 @@ contract DepositToken is ModularPausableToken {
     
     bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
 
-    function mint(address _to, uint256 _value) public onlyOwner {
-        address shiftedAddress = address(uint(_to) >> 20);
-        uint depositAddressValue = registry.getAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS);
-        if (depositAddressValue != 0) {
-            super.mint(_to, _value);
-            super._transferAllArgs(_to, address(depositAddressValue), _value);
-        } else {
-            super.mint(_to, _value);
-        }
-    }
 }
