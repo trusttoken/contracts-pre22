@@ -28,7 +28,7 @@ contract CompliantToken is ModularMintableToken {
     }
 
     function _burnAllArgs(address _burner, uint256 _value) internal {
-        require(registry.hasAttribute1ButNotAttribute2(_burner, CAN_BURN, IS_BLACKLISTED), "_burner cannot burn");
+        registry.requireCanBurn(_burner);
         super._burnAllArgs(_burner, _value);
     }
 
