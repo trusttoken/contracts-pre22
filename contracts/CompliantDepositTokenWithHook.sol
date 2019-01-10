@@ -13,14 +13,13 @@ contract CompliantDepositTokenWithHook is CompliantToken, DepositToken, TokenWit
         allowances.subAllowance(_from, _sender, _value);
         balances.subBalance(_from, _value);
         balances.addBalance(_to, _value);
+        emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
-            emit Transfer(_from, originalTo, _value);
             emit Transfer(originalTo, _to, _value);
             if (hasHook) {
                 TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
             }
         } else {
-            emit Transfer(_from, _to, _value);
             if (hasHook) {
                 TrueCoinReceiver(_to).tokenFallback(_from, _value);
             }
@@ -33,14 +32,13 @@ contract CompliantDepositTokenWithHook is CompliantToken, DepositToken, TokenWit
         (_to, hasHook) = registry.requireCanTransfer(_from, _to);
         balances.subBalance(_from, _value);
         balances.addBalance(_to, _value);
+        emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
-            emit Transfer(_from, originalTo, _value);
             emit Transfer(originalTo, _to, _value);
             if (hasHook) {
                 TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
             }
         } else {
-            emit Transfer(_from, _to, _value);
             if (hasHook) {
                 TrueCoinReceiver(_to).tokenFallback(_from, _value);
             }
