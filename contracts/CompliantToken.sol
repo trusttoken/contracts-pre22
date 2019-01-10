@@ -2,9 +2,6 @@ pragma solidity ^0.4.23;
 
 import "./modularERC20/ModularMintableToken.sol";
 
-/**
- * @title Compliant Token
- */
 contract CompliantToken is ModularMintableToken {
     // In order to deposit USD and receive newly minted TrueUSD, or to burn TrueUSD to
     // redeem it for USD, users must first go through a KYC/AML check (which includes proving they
@@ -21,7 +18,6 @@ contract CompliantToken is ModularMintableToken {
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
     event SetRegistry(address indexed registry);
     
-    
     /**
     * @dev Point to the registry that contains all compliance related data
     @param _registry The address of the registry instance
@@ -31,26 +27,9 @@ contract CompliantToken is ModularMintableToken {
         emit SetRegistry(registry);
     }
 
-    function mint(address _to, uint256 _value) public onlyOwner {
-        require(registry.hasAttribute1ButNotAttribute2(_to, HAS_PASSED_KYC_AML, IS_BLACKLISTED), "_to cannot mint");
-        super.mint(_to, _value);
-    }
-
     function _burnAllArgs(address _burner, uint256 _value) internal {
         require(registry.hasAttribute1ButNotAttribute2(_burner, CAN_BURN, IS_BLACKLISTED), "_burner cannot burn");
         super._burnAllArgs(_burner, _value);
-    }
-
-    // A blacklisted address can't call transferFrom
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        require(!registry.hasAttribute(_spender, IS_BLACKLISTED), "_spender is blacklisted");
-        super._transferFromAllArgs(_from, _to, _value, _spender);
-    }
-
-    // transfer and transferFrom both call this function, so check blacklist here.
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        require(!registry.eitherHaveAttribute(_from, _to, IS_BLACKLISTED), "blacklisted");
-        super._transferAllArgs(_from, _to, _value);
     }
 
     // Destroy the tokens owned by a blacklisted account

@@ -36,7 +36,7 @@ contract GasRefundToken is ModularMintableToken {
             gasRefundPool[--len] = 0;
             gasRefundPool.length = len;
         }   
-        _;  
+        _;
     }
 
     /**  
@@ -48,6 +48,10 @@ contract GasRefundToken is ModularMintableToken {
 
     function _transferAllArgs(address _from, address _to, uint256 _value) internal gasRefund {
         super._transferAllArgs(_from, _to, _value);
+    }
+
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal gasRefund {
+        super._transferFromAllArgs(_from, _to, _value, _sender);
     }
 
     function mint(address _to, uint256 _value) public onlyOwner gasRefund {

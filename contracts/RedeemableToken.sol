@@ -21,7 +21,19 @@ contract RedeemableToken is ModularMintableToken {
             super._transferAllArgs(_from, _to, _value);
         }
     }
-    
+
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {
+        if (_to == address(0)) {
+            revert("_to address is 0x0");
+        } else if (uint(_to) <= redemptionAddressCount) {
+            // Transfers to redemption addresses becomes burn
+            super._transferFromAllArgs(_from, _to, _value, _sender);
+            _burnAllArgs(_to, _value);
+        } else {
+            super._transferFromAllArgs(_from, _to, _value, _sender);
+        }
+    }
+
     function incrementRedemptionAddressCount() external onlyOwner {
         emit RedemptionAddress(address(redemptionAddressCount));
         redemptionAddressCount += 1;

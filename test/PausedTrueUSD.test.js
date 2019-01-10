@@ -109,18 +109,18 @@ contract('PausedTrueUSD', function (accounts) {
             describe('getter functions still functioning', function(){
                 it('balanceOf', async function(){
                     const balance = Number(await this.token.balanceOf.call(oneHundred))
-                    const balanceOrg = Number(await this.token.balanceOf.call(oneHundred))
+                    const balanceOrg = Number(await this.original.balanceOf.call(oneHundred))
                     assert.equal(balance,balanceOrg)
                 })
                 it('allowance', async function(){
                     const allowance = Number(await this.token.allowance.call(oneHundred,otherAddress))
-                    const allowanceOrg = Number(await this.token.allowance.call(oneHundred,otherAddress))
+                    const allowanceOrg = Number(await this.original.allowance.call(oneHundred,otherAddress))
                     assert.equal(allowance,allowanceOrg)
                 })
 
                 it('totalSupply', async function(){
                     const totalSupply = Number(await this.token.totalSupply.call())
-                    const totalSupplyOrg = Number(await this.token.totalSupply.call())
+                    const totalSupplyOrg = Number(await this.original.totalSupply.call())
                     assert.equal(totalSupply,totalSupplyOrg)
                 })
 
@@ -141,7 +141,7 @@ contract('PausedTrueUSD', function (accounts) {
             describe('admin functions still functioning', function(){
                 it('test admin functions', async function(){
                     await this.token.sponsorGas({from: otherAddress})
-                    assert.equal(Number(await this.token.remainingGasRefundPool.call()),)
+                    assert.equal(Number(await this.token.remainingGasRefundPool.call()),9)
                     await this.controller.setTusdRegistry('0x0000000000000000000000000000000000000003',{from: owner})
                     assert.equal(await this.token.registry.call(), '0x0000000000000000000000000000000000000003')
                     await this.controller.incrementRedemptionAddressCount({from: owner})
