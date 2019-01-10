@@ -52,6 +52,11 @@ contract Registry {
     // this accessManager, so that it may be replaced by the owner as needed
 
     bytes32 public constant WRITE_PERMISSION = keccak256("canWriteTo-");
+    bytes32 public constant IS_BLACKLISTED = "isBlacklisted";
+    bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
+    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
+    bytes32 public constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
+    bytes32 public constant CAN_BURN = "canBurn";
 
     event OwnershipTransferred(
         address indexed previousOwner,
@@ -122,6 +127,44 @@ contract Registry {
 
     function haveEitherAttribute(address _who1, bytes32 _attribute1, address _who2, bytes32 _attribute2) public view returns (bool) {
         return attributes[_who1][_attribute1].value != 0 || attributes[_who2][_attribute2].value != 0;
+    }
+
+    function isDepositAddress(address _who) public view returns (bool) {
+        return attributes[address(uint256(_who) >> 20)][IS_DEPOSIT_ADDRESS].value != 0;
+    }
+
+    function getDepositAddress(address _who) public view returns (address) {
+        return address(attributes[address(uint256(_who) >> 20)][IS_DEPOSIT_ADDRESS].value);
+    }
+
+    function requireCanTransfer(address _from, address _to) public view returns (address, bool) {
+        require (attributes[_from][IS_BLACKLISTED].value == 0, "blacklisted");
+        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
+        if (depositAddressValue != 0) {
+            _to = address(depositAddressValue);
+        }
+        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
+        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
+    }
+
+    function requireCanTransferFrom(address _sender, address _from, address _to) public view returns (address, bool) {
+        require (attributes[_sender][IS_BLACKLISTED].value == 0, "blacklisted");
+        return requireCanTransfer(_from, _to);
+    }
+
+    function requireCanMint(address _to) public view returns (address, bool) {
+        require (attributes[_to][HAS_PASSED_KYC_AML].value != 0);
+        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
+        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
+        if (depositAddressValue != 0) {
+            _to = address(depositAddressValue);
+        }
+        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
+    }
+
+    function requireCanBurn(address _from) public view {
+        require (attributes[_from][CAN_BURN].value != 0);
+        require (attributes[_from][IS_BLACKLISTED].value == 0);
     }
 
     // Returns the exact value of the attribute, as well as its metadata
@@ -506,39 +549,19 @@ contract PausedToken is HasOwner {
         revert("Token Paused");
     }
 
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        revert("Token Paused");
-    }
-
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        revert("Token Paused");
-    }
-
-    function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
-        revert("Token Paused");
-    }
-
     function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
         revert("Token Paused");
     }
     function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
         revert("Token Paused");
     }
-
-    function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
-        revert("Token Paused");
-    }
-
-    function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
-        revert("Token Paused");
-    }
 }
 
-/** @title DelegateERC20
+/** @title PausedDelegateERC20
 Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
 functions in the old contract still works (except Burn). 
 */
-contract DelegateERC20 is PausedToken {
+contract PausedDelegateERC20 is PausedToken {
 
     address public constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
     
@@ -556,8 +579,7 @@ contract DelegateERC20 is PausedToken {
     }
 
     function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferAllArgs(origSender, to, value);
-        return true;
+        revert("Token Paused");
     }
 
     function delegateAllowance(address owner, address spender) public view returns (uint256) {
@@ -565,23 +587,19 @@ contract DelegateERC20 is PausedToken {
     }
 
     function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferFromAllArgs(from, to, value, origSender);
-        return true;
+        revert("Token Paused");
     }
 
     function delegateApprove(address spender, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _approveAllArgs(spender, value, origSender);
-        return true;
+        revert("Token Paused");
     }
 
     function delegateIncreaseApproval(address spender, uint addedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        _increaseApprovalAllArgs(spender, addedValue, origSender);
-        return true;
+        revert("Token Paused");
     }
 
     function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        _decreaseApprovalAllArgs(spender, subtractedValue, origSender);
-        return true;
+        revert("Token Paused");
     }
 }
 
@@ -589,7 +607,7 @@ contract DelegateERC20 is PausedToken {
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
 * inherited - see the documentation on the corresponding contracts.
 */
-contract PausedTrueUSD is DelegateERC20 {
+contract PausedTrueUSD is PausedDelegateERC20 {
     using SafeMath for *;
 
     uint8 public constant DECIMALS = 18;
@@ -606,11 +624,11 @@ contract PausedTrueUSD is DelegateERC20 {
     event SetRegistry(address indexed registry);
     event RedemptionAddress(address indexed addr);
 
-    function decimals() public returns (uint8) {
+    function decimals() public pure returns (uint8) {
         return DECIMALS;
     }
 
-    function rounding() public returns (uint8) {
+    function rounding() public pure returns (uint8) {
         return ROUNDING;
     }
 
