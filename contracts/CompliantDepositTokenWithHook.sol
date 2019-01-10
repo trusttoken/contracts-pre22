@@ -47,21 +47,18 @@ contract CompliantDepositTokenWithHook is CompliantToken, DepositToken, TokenWit
 
     function mint(address _to, uint256 _value) public onlyOwner {
         require(_to != address(0), "to address cannot be zero");
-        require(registry.hasAttribute1ButNotAttribute2(_to, HAS_PASSED_KYC_AML, IS_BLACKLISTED), "_to cannot mint");
-        address shiftedAddress = address(uint256(_to) >> 20);
-        uint256 depositAddressValue = registry.getAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS);
-        totalSupply_ = totalSupply_.add(_value);
+        bool hasHook;
         address originalTo = _to;
-        emit Mint(_to, _value);
-        emit Transfer(address(0), _to, _value);
-        if (depositAddressValue != 0) {
-            _to = address(depositAddressValue);
+        (_to, hasHook) = registry.requireCanMint(_to);
+        totalSupply_ = totalSupply_.add(_value);
+        emit Mint(originalTo, _value);
+        emit Transfer(address(0), originalTo, _value);
+        if (_to != originalTo) {
             emit Transfer(originalTo, _to, _value);
         }
         balances.addBalance(_to, _value);
-        uint256 hasHook = registry.getAttributeValue(_to, IS_REGISTERED_CONTRACT);
-        if (hasHook != 0) {
-            if (depositAddressValue != 0) {
+        if (hasHook) {
+            if (_to != originalTo) {
                 TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
             } else {
                 TrueCoinReceiver(_to).tokenFallback(address(0), _value);
