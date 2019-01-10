@@ -55,11 +55,11 @@ contract CompliantDepositTokenWithHook is CompliantToken, DepositToken, TokenWit
         totalSupply_ = totalSupply_.add(_value);
         address originalTo = _to;
         emit Mint(_to, _value);
+        emit Transfer(address(0), _to, _value);
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
-            emit Transfer(address(0), originalTo, _value);
+            emit Transfer(originalTo, _to, _value);
         }
-        emit Transfer(address(0), _to, _value);
         balances.addBalance(_to, _value);
         uint256 hasHook = registry.getAttributeValue(_to, IS_REGISTERED_CONTRACT);
         if (hasHook != 0) {
