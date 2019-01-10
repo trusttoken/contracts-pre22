@@ -57,7 +57,19 @@ contract('DepositToken', function (accounts) {
             assert.equal(logs[0].args.to,depositAddressOne)
             assert.equal(logs[1].args.from,depositAddressOne)
             assert.equal(logs[1].args.to,anotherAccount)
+        })
 
+        it('emits the right events for mint', async function() {
+            const ZERO = '0x0000000000000000000000000000000000000000';
+            const depositAddressOne = anotherAccount.slice(0,37) + '00000';
+            await this.registry.setAttribute(depositAddressOne, "hasPassedKYC/AML", 1, notes, { from: owner});
+            const {logs} = await this.token.mint(depositAddressOne, 10*10**18,{from: owner})
+            assert.equal(logs[0].args.to,depositAddressOne);
+            assert.equal(logs[0].args.value, 10*10**18);
+            assert.equal(logs[1].args.from,ZERO)
+            assert.equal(logs[1].args.to,depositAddressOne)
+            assert.equal(logs[2].args.from,depositAddressOne)
+            assert.equal(logs[2].args.to,anotherAccount)
         })
 
         it('can remove deposit address', async function(){
