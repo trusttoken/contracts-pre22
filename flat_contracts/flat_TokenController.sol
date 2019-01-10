@@ -100,6 +100,11 @@ contract Registry {
     // this accessManager, so that it may be replaced by the owner as needed
 
     bytes32 public constant WRITE_PERMISSION = keccak256("canWriteTo-");
+    bytes32 public constant IS_BLACKLISTED = "isBlacklisted";
+    bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
+    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
+    bytes32 public constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
+    bytes32 public constant CAN_BURN = "canBurn";
 
     event OwnershipTransferred(
         address indexed previousOwner,
@@ -170,6 +175,44 @@ contract Registry {
 
     function haveEitherAttribute(address _who1, bytes32 _attribute1, address _who2, bytes32 _attribute2) public view returns (bool) {
         return attributes[_who1][_attribute1].value != 0 || attributes[_who2][_attribute2].value != 0;
+    }
+
+    function isDepositAddress(address _who) public view returns (bool) {
+        return attributes[address(uint256(_who) >> 20)][IS_DEPOSIT_ADDRESS].value != 0;
+    }
+
+    function getDepositAddress(address _who) public view returns (address) {
+        return address(attributes[address(uint256(_who) >> 20)][IS_DEPOSIT_ADDRESS].value);
+    }
+
+    function requireCanTransfer(address _from, address _to) public view returns (address, bool) {
+        require (attributes[_from][IS_BLACKLISTED].value == 0, "blacklisted");
+        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
+        if (depositAddressValue != 0) {
+            _to = address(depositAddressValue);
+        }
+        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
+        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
+    }
+
+    function requireCanTransferFrom(address _sender, address _from, address _to) public view returns (address, bool) {
+        require (attributes[_sender][IS_BLACKLISTED].value == 0, "blacklisted");
+        return requireCanTransfer(_from, _to);
+    }
+
+    function requireCanMint(address _to) public view returns (address, bool) {
+        require (attributes[_to][HAS_PASSED_KYC_AML].value != 0);
+        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
+        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
+        if (depositAddressValue != 0) {
+            _to = address(depositAddressValue);
+        }
+        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
+    }
+
+    function requireCanBurn(address _from) public view {
+        require (attributes[_from][CAN_BURN].value != 0);
+        require (attributes[_from][IS_BLACKLISTED].value == 0);
     }
 
     // Returns the exact value of the attribute, as well as its metadata
@@ -362,27 +405,6 @@ contract AllowanceSheet is Claimable {
     }
 }
 
-// File: contracts/utilities/GlobalPause.sol
-
-/*
-All future trusttoken tokens can reference this contract. 
-Allow for Admin to pause a set of tokens with one transaction
-Used to signal which fork is the supported fork for asset-back tokens
-*/
-contract GlobalPause is Claimable {
-    bool public allTokensPaused = false;
-    string public pauseNotice;
-
-    function pauseAllTokens(bool _status, string _notice) public onlyOwner {
-        allTokensPaused = _status;
-        pauseNotice = _notice;
-    }
-
-    function requireNotPaused() public view {
-        require(!allTokensPaused, pauseNotice);
-    }
-}
-
 // File: contracts/ProxyStorage.sol
 
 /*
@@ -401,8 +423,8 @@ contract ProxyStorage {
 
     uint256 totalSupply_;
     
-    bool public paused = false;
-    GlobalPause public globalPause;
+    bool private paused_Deprecated = false;
+    address private globalPause_Deprecated;
 
     uint256 public burnMin = 0;
     uint256 public burnMax = 0;
@@ -572,8 +594,6 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        require(_value <= allowances.allowanceOf(_from, _spender),"not enough allowance to transfer");
-
         _transferAllArgs(_from, _to, _value);
         allowances.subAllowance(_from, _spender, _value);
     }
@@ -672,7 +692,6 @@ contract ModularBurnableToken is ModularStandardToken {
     }
 
     function _burnAllArgs(address _burner, uint256 _value) internal {
-        require(_value <= balances.balanceOf(_burner), "not enough balance to burn");
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
         /* uint burnAmount = _value / (10 **16) * (10 **16); */
@@ -709,87 +728,6 @@ contract ModularMintableToken is ModularBurnableToken {
     }
 }
 
-// File: contracts/modularERC20/ModularPausableToken.sol
-
-/**
- * @title Pausable token
- * @dev MintableToken modified with pausable transfers.
- **/
-contract ModularPausableToken is ModularMintableToken {
-
-    event Pause();
-    event Unpause();
-    event GlobalPauseSet(address indexed newGlobalPause);
-
-    /**
-    * @dev Modifier to make a function callable only when the contract is not paused.
-    */
-    modifier whenNotPaused() {
-        require(!paused, "Token Paused");
-        _;
-    }
-
-    /**
-    * @dev Modifier to make a function callable only when the contract is paused.
-    */
-    modifier whenPaused() {
-        require(paused, "Token Not Paused");
-        _;
-    }
-
-    /**
-    * @dev called by the owner to pause, triggers stopped state
-    */
-    function pause() public onlyOwner whenNotPaused {
-        paused = true;
-        emit Pause();
-    }
-
-    /**
-    * @dev called by the owner to unpause, returns to normal state
-    */
-    function unpause() public onlyOwner whenPaused {
-        paused = false;
-        emit Unpause();
-    }
-
-
-    //All erc20 transactions are paused when not on the supported fork
-    modifier onSupportedChain() {
-        globalPause.requireNotPaused();
-        _;
-    }
-
-    function setGlobalPause(address _newGlobalPause) external onlyOwner {
-        globalPause = GlobalPause(_newGlobalPause);
-        emit GlobalPauseSet(_newGlobalPause);
-    }
-    
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal whenNotPaused onSupportedChain {
-        super._transferAllArgs(_from, _to, _value);
-    }
-
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal whenNotPaused onSupportedChain {
-        super._transferFromAllArgs(_from, _to, _value, _spender);
-    }
-
-    function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal whenNotPaused onSupportedChain {
-        super._approveAllArgs(_spender, _value, _tokenHolder);
-    }
-
-    function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal whenNotPaused onSupportedChain {
-        super._increaseApprovalAllArgs(_spender, _addedValue, _tokenHolder);
-    }
-
-    function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal whenNotPaused onSupportedChain {
-        super._decreaseApprovalAllArgs(_spender, _subtractedValue, _tokenHolder);
-    }
-
-    function _burnAllArgs(address _burner, uint256 _value) internal whenNotPaused onSupportedChain {
-        super._burnAllArgs(_burner, _value);
-    }
-}
-
 // File: contracts/BurnableTokenWithBounds.sol
 
 /**
@@ -797,7 +735,7 @@ contract ModularPausableToken is ModularMintableToken {
  * @dev Burning functions as redeeming money from the system. The platform will keep track of who burns coins,
  * and will send them back the equivalent amount of money (rounded down to the nearest cent).
  */
-contract BurnableTokenWithBounds is ModularPausableToken {
+contract BurnableTokenWithBounds is ModularMintableToken {
 
     event SetBurnBounds(uint256 newMin, uint256 newMax);
 
@@ -823,10 +761,7 @@ contract BurnableTokenWithBounds is ModularPausableToken {
 
 // File: contracts/CompliantToken.sol
 
-/**
- * @title Compliant Token
- */
-contract CompliantToken is ModularPausableToken {
+contract CompliantToken is ModularMintableToken {
     // In order to deposit USD and receive newly minted TrueUSD, or to burn TrueUSD to
     // redeem it for USD, users must first go through a KYC/AML check (which includes proving they
     // control their ethereum address using AddressValidation.sol).
@@ -842,7 +777,6 @@ contract CompliantToken is ModularPausableToken {
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
     event SetRegistry(address indexed registry);
     
-    
     /**
     * @dev Point to the registry that contains all compliance related data
     @param _registry The address of the registry instance
@@ -852,26 +786,9 @@ contract CompliantToken is ModularPausableToken {
         emit SetRegistry(registry);
     }
 
-    function mint(address _to, uint256 _value) public onlyOwner {
-        require(registry.hasAttribute1ButNotAttribute2(_to, HAS_PASSED_KYC_AML, IS_BLACKLISTED), "_to cannot mint");
-        super.mint(_to, _value);
-    }
-
     function _burnAllArgs(address _burner, uint256 _value) internal {
-        require(registry.hasAttribute1ButNotAttribute2(_burner, CAN_BURN, IS_BLACKLISTED), "_burner cannot burn");
+        registry.requireCanBurn(_burner);
         super._burnAllArgs(_burner, _value);
-    }
-
-    // A blacklisted address can't call transferFrom
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        require(!registry.hasAttribute(_spender, IS_BLACKLISTED), "_spender is blacklisted");
-        super._transferFromAllArgs(_from, _to, _value, _spender);
-    }
-
-    // transfer and transferFrom both call this function, so check blacklist here.
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        require(!registry.eitherHaveAttribute(_from, _to, IS_BLACKLISTED), "blacklisted");
-        super._transferAllArgs(_from, _to, _value);
     }
 
     // Destroy the tokens owned by a blacklisted account
@@ -885,43 +802,6 @@ contract CompliantToken is ModularPausableToken {
     }
 }
 
-// File: contracts/RedeemableToken.sol
-
-/** @title Redeemable Token 
-Makes transfers to 0x0 alias to Burn
-Implement Redemption Addresses
-*/
-contract RedeemableToken is ModularPausableToken {
-
-    event RedemptionAddress(address indexed addr);
-
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        if (_to == address(0)) {
-            // transfer to 0x0 becomes burn
-            _burnAllArgs(_from, _value);
-        } else if (uint(_to) <= redemptionAddressCount) {
-            // Trnasfers to redemption addresses becomes burn
-            super._transferAllArgs(_from, _to, _value);
-            _burnAllArgs(_to, _value);
-        } else {
-            super._transferAllArgs(_from, _to, _value);
-        }
-    }
-    
-    // StandardToken's transferFrom doesn't have to check for
-    // _to != 0x0, but we do because we redirect 0x0 transfers to burns, but
-    // we do not redirect transferFrom
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        require(_to != address(0), "_to address is 0x0");
-        super._transferFromAllArgs(_from, _to, _value, _spender);
-    }
-
-    function incrementRedemptionAddressCount() external onlyOwner {
-        emit RedemptionAddress(address(redemptionAddressCount));
-        redemptionAddressCount += 1;
-    }
-}
-
 // File: contracts/DepositToken.sol
 
 /** @title Deposit Token
@@ -932,30 +812,133 @@ its deposit addresses are all addresses between
 0x9052BE99C9C8C5545743859e4559A75100000 and 0x9052BE99C9C8C5545743859e4559A751fffff
 Transfers to 0x9052BE99C9C8C5545743859e4559A75100005 will be forwared to 0x9052BE99C9C8C5545743859e4559A751bDe4c923
  */
-contract DepositToken is ModularPausableToken {
+contract DepositToken is ModularMintableToken {
     
     bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
 
+}
+
+// File: contracts/TrueCoinReceiver.sol
+
+contract TrueCoinReceiver {
+    function tokenFallback( address from, uint256 value ) external;
+}
+
+// File: contracts/TokenWithHook.sol
+
+/** @title Token With Hook
+If tokens are transferred to a Registered Token Receiver contract, trigger the tokenFallback function in the 
+Token Receiver contract. Assume all Registered Token Receiver contract implements the TrueCoinReceiver 
+interface. If the tokenFallback reverts, the entire transaction reverts. 
+ */
+contract TokenWithHook is ModularMintableToken {
+    
+    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
+
+}
+
+// File: contracts/CompliantDepositTokenWithHook.sol
+
+contract CompliantDepositTokenWithHook is CompliantToken, DepositToken, TokenWithHook {
+
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {
+        bool hasHook;
+        address originalTo = _to;
+        (_to, hasHook) = registry.requireCanTransferFrom(_sender, _from, _to);
+        allowances.subAllowance(_from, _sender, _value);
+        balances.subBalance(_from, _value);
+        balances.addBalance(_to, _value);
+        emit Transfer(_from, originalTo, _value);
+        if (originalTo != _to) {
+            emit Transfer(originalTo, _to, _value);
+            if (hasHook) {
+                TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(_to).tokenFallback(_from, _value);
+            }
+        }
+    }
+
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        address shiftedAddress = address(uint(_to) >> 20);
-        uint depositAddressValue = registry.getAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS);
-        if (depositAddressValue != 0) {
+        bool hasHook;
+        address originalTo = _to;
+        (_to, hasHook) = registry.requireCanTransfer(_from, _to);
+        balances.subBalance(_from, _value);
+        balances.addBalance(_to, _value);
+        emit Transfer(_from, originalTo, _value);
+        if (originalTo != _to) {
+            emit Transfer(originalTo, _to, _value);
+            if (hasHook) {
+                TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(_to).tokenFallback(_from, _value);
+            }
+        }
+    }
+
+    function mint(address _to, uint256 _value) public onlyOwner {
+        require(_to != address(0), "to address cannot be zero");
+        bool hasHook;
+        address originalTo = _to;
+        (_to, hasHook) = registry.requireCanMint(_to);
+        totalSupply_ = totalSupply_.add(_value);
+        emit Mint(originalTo, _value);
+        emit Transfer(address(0), originalTo, _value);
+        if (_to != originalTo) {
+            emit Transfer(originalTo, _to, _value);
+        }
+        balances.addBalance(_to, _value);
+        if (hasHook) {
+            if (_to != originalTo) {
+                TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
+            } else {
+                TrueCoinReceiver(_to).tokenFallback(address(0), _value);
+            }
+        }
+    }
+}
+
+// File: contracts/RedeemableToken.sol
+
+/** @title Redeemable Token 
+Makes transfers to 0x0 alias to Burn
+Implement Redemption Addresses
+*/
+contract RedeemableToken is ModularMintableToken {
+
+    event RedemptionAddress(address indexed addr);
+
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
+        if (_to == address(0)) {
+            revert("_to address is 0x0");
+        } else if (uint(_to) <= redemptionAddressCount) {
+            // Transfers to redemption addresses becomes burn
             super._transferAllArgs(_from, _to, _value);
-            super._transferAllArgs(_to, address(depositAddressValue), _value);
+            _burnAllArgs(_to, _value);
         } else {
             super._transferAllArgs(_from, _to, _value);
         }
     }
 
-    function mint(address _to, uint256 _value) public onlyOwner {
-        address shiftedAddress = address(uint(_to) >> 20);
-        uint depositAddressValue = registry.getAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS);
-        if (depositAddressValue != 0) {
-            super.mint(_to, _value);
-            super._transferAllArgs(_to, address(depositAddressValue), _value);
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {
+        if (_to == address(0)) {
+            revert("_to address is 0x0");
+        } else if (uint(_to) <= redemptionAddressCount) {
+            // Transfers to redemption addresses becomes burn
+            super._transferFromAllArgs(_from, _to, _value, _sender);
+            _burnAllArgs(_to, _value);
         } else {
-            super.mint(_to, _value);
+            super._transferFromAllArgs(_from, _to, _value, _sender);
         }
+    }
+
+    function incrementRedemptionAddressCount() external onlyOwner {
+        emit RedemptionAddress(address(redemptionAddressCount));
+        redemptionAddressCount += 1;
     }
 }
 
@@ -967,7 +950,7 @@ Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas 
 Each time an non-empty storage slot is set to 0, evm refund 15,000 (19,000 after Constantinople) to the sender
 of the transaction. 
 */
-contract GasRefundToken is ModularPausableToken {
+contract GasRefundToken is ModularMintableToken {
 
     function sponsorGas() external {
         uint256 len = gasRefundPool.length;
@@ -984,7 +967,7 @@ contract GasRefundToken is ModularPausableToken {
     }  
 
     /**  
-    @dev refund upto 45,000 (57,000 after Constantinople) gas for functions with 
+    @dev refund up to 45,000 (57,000 after Constantinople) gas for functions with 
     gasRefund modifier.
     */
     modifier gasRefund {
@@ -995,7 +978,7 @@ contract GasRefundToken is ModularPausableToken {
             gasRefundPool[--len] = 0;
             gasRefundPool.length = len;
         }   
-        _;  
+        _;
     }
 
     /**  
@@ -1009,37 +992,12 @@ contract GasRefundToken is ModularPausableToken {
         super._transferAllArgs(_from, _to, _value);
     }
 
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal gasRefund {
+        super._transferFromAllArgs(_from, _to, _value, _sender);
+    }
+
     function mint(address _to, uint256 _value) public onlyOwner gasRefund {
         super.mint(_to, _value);
-    }
-}
-
-// File: contracts/TrueCoinReceiver.sol
-
-contract TrueCoinReceiver {
-    function tokenFallback( address from, uint256 value ) external;
-}
-
-// File: contracts/TokenWithHook.sol
-
-/** @title Token With Hook
-If tokens are transferred to a Registered Token Receiver contract, trigger the tokenFallback function in the 
-Token Receiver contract. Assume all Registered Token Receiver contract implements the TrueCoinReceiver 
-interface. If the tokenFallback reverts, the entire transaction reverts. 
- */
-contract TokenWithHook is ModularPausableToken {
-    
-    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
-
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        uint length;
-        assembly { length := extcodesize(_to) }
-        super._transferAllArgs(_from, _to, _value);
-        if (length > 0) {
-            if(registry.hasAttribute(_to, IS_REGISTERED_CONTRACT)) {
-                TrueCoinReceiver(_to).tokenFallback(_from, _value);
-            }
-        }
     }
 }
 
@@ -1103,13 +1061,11 @@ contract DelegateERC20 is ModularStandardToken {
 * inherited - see the documentation on the corresponding contracts.
 */
 contract TrueUSD is 
-ModularPausableToken, 
+ModularMintableToken, 
+CompliantDepositTokenWithHook,
 BurnableTokenWithBounds, 
-CompliantToken,
 RedeemableToken,
-TokenWithHook,
 DelegateERC20,
-DepositToken,
 GasRefundToken {
     using SafeMath for *;
 
@@ -1118,19 +1074,12 @@ GasRefundToken {
 
     event ChangeTokenName(string newName, string newSymbol);
 
-    /**  
-    *@dev set the totalSupply of the contract for delegation purposes
-    Can only be set once.
-    */
-    function initialize(uint256 _totalSupply) public {
-        require(!initialized, "already initialized");
-        initialized = true;
-        owner = msg.sender;
-        totalSupply_ = _totalSupply;
-        burnMin = 10000 * 10**uint256(DECIMALS);
-        burnMax = 20000000 * 10**uint256(DECIMALS);
-        name = "TrueUSD";
-        symbol = "TUSD";
+    function decimals() public pure returns (uint8) {
+        return DECIMALS;
+    }
+
+    function rounding() public pure returns (uint8) {
+        return ROUNDING;
     }
 
     function changeTokenName(string _name, string _symbol) external onlyOwner {
@@ -1445,6 +1394,8 @@ contract TokenController {
     bytes32 constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 constant public IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
 
+    address constant public PAUSED_IMPLEMENTATION = address(1); // ***To be changed the paused version of TrueUSD in Production
+
     modifier onlyFastPauseOrOwner() {
         require(msg.sender == trueUsdFastPause || msg.sender == owner, "must be pauser or owner");
         _;
@@ -1483,7 +1434,6 @@ contract TokenController {
     event TransferChild(address indexed child, address indexed newOwner);
     event RequestReclaimContract(address indexed other);
     event SetTrueUSD(TrueUSD newContract);
-    event TrueUsdInitialized();
     
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
     event FinalizeMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -1842,11 +1792,6 @@ contract TokenController {
         emit SetTrueUSD(_newContract);
     }
 
-    function initializeTrueUSD(uint256 _totalSupply) external onlyOwner {
-        trueUSD.initialize(_totalSupply);
-        emit TrueUsdInitialized();
-    }
-
     /** 
     *@dev Update this contract's registry pointer to _registry
     */
@@ -1933,14 +1878,6 @@ contract TokenController {
     }
 
     /** 
-    *@dev set new contract to which tokens look to to see if it's on the supported fork
-    *@param _newGlobalPause address of the new contract
-    */
-    function setGlobalPause(address _newGlobalPause) external onlyOwner {
-        trueUSD.setGlobalPause(_newGlobalPause);
-    }
-
-    /** 
     *@dev set new contract to which specified address can send eth to to quickly pause trueUSD
     *@param _newFastPause address of the new contract
     */
@@ -1953,14 +1890,7 @@ contract TokenController {
     *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
     */
     function pauseTrueUSD() external onlyFastPauseOrOwner {
-        trueUSD.pause();
-    }
-
-    /** 
-    *@dev unpause all pausable actions on TrueUSD, mints/burn/transfer/approve
-    */
-    function unpauseTrueUSD() external onlyOwner {
-        trueUSD.unpause();
+        OwnedUpgradeabilityProxy(trueUSD).upgradeTo(PAUSED_IMPLEMENTATION);
     }
     
     /** 
