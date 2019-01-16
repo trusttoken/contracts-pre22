@@ -42,8 +42,12 @@ contract GasRefundToken is ModularMintableToken {
     /**  
     *@dev Return the remaining sponsored gas slots
     */
-    function remainingGasRefundPool() public view returns(uint) {
+    function remainingGasRefundPool() public view returns (uint) {
         return gasRefundPool.length;
+    }
+
+    function remainingSponsoredTransactions() public view returns (uint) {
+        return gasRefundPool.length / 3;
     }
 
     function _transferAllArgs(address _from, address _to, uint256 _value) internal gasRefund {
