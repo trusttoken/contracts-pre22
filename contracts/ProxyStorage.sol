@@ -32,4 +32,5 @@ contract ProxyStorage {
 
     uint[] public gasRefundPool;
     uint256 public redemptionAddressCount;
+    uint256 public minimumGasPriceForFutureRefunds;
 }
