@@ -60,6 +60,9 @@ contract PausedToken is HasOwner {
     function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
         revert("Token Paused");
     }
+    function paused() public pure returns (bool) {
+        return true;
+    }
 }
 
 /** @title PausedDelegateERC20
