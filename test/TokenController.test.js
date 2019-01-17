@@ -515,20 +515,6 @@ contract('TokenController', function (accounts) {
             })
         })
 
-        describe('redemption addresses', function (){
-            it('owner and redemption Admin can increment Redemption Address Count', async function(){
-                await this.registry.setAttribute(redemptionAdmin, "isTUSDRedemptionAdmin", 1, "notes", { from: owner })
-                await this.controller.incrementRedemptionAddressCount({from: owner})
-                await this.controller.incrementRedemptionAddressCount({from: redemptionAdmin})
-                const redemptionAddressCount = Number(await this.token.redemptionAddressCount.call())
-                assert.equal(redemptionAddressCount,2)
-            })
-            it('other addresses cannot increment Redemption Address Count', async function(){
-                await assertRevert(this.controller.incrementRedemptionAddressCount({from: oneHundred}))
-            })
-        })
-
-
         describe('pause trueUSD and wipe accounts', function(){
             beforeEach(async function(){
                 this.fastPauseTrueUSD = await FastPauseTrueUSD.new(pauseKey, this.controller.address, { from: owner })

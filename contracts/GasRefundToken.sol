@@ -35,8 +35,7 @@ contract GasRefundToken is ModularMintableToken {
     }
 
     /**  
-    @dev refund up to 45,000 (57,000 after Constantinople) gas for functions with 
-    gasRefund modifier.
+    @dev refund 45,000 gas for functions with gasRefund modifier.
     */
     modifier gasRefund {
         uint256 len = gasRefundPool.length;
@@ -52,8 +51,12 @@ contract GasRefundToken is ModularMintableToken {
     /**  
     *@dev Return the remaining sponsored gas slots
     */
-    function remainingGasRefundPool() public view returns(uint) {
+    function remainingGasRefundPool() public view returns (uint) {
         return gasRefundPool.length;
+    }
+
+    function remainingSponsoredTransactions() public view returns (uint) {
+        return gasRefundPool.length / 3;
     }
 
     function _transferAllArgs(address _from, address _to, uint256 _value) internal gasRefund {

@@ -61,10 +61,11 @@ contract('PausedTrueUSD', function (accounts) {
         })
 
         it('current token is not paused', async function(){
+            assert.equal(await this.token.paused(), false);
             await this.token.transfer(otherAddress, 10*10**18, { from: oneHundred })
         })
 
-        it('current token is not paused', async function(){
+        it ('unpaused token can burn', async function() {
             await this.token.burn(10000*10**18, { from: oneHundred })
         })
 
@@ -77,6 +78,7 @@ contract('PausedTrueUSD', function (accounts) {
 
             describe('token transfers are now paused', function(){
                 it ('transfer is now paused', async function(){
+                    assert.equal(await this.token.paused(), true);
                     await assertRevert(this.token.transfer(otherAddress, 10*10**18, { from: oneHundred }))
                     await assertRevert(this.original.transfer(otherAddress, 10*10**18, { from: oneHundred }))
                 })
@@ -144,8 +146,6 @@ contract('PausedTrueUSD', function (accounts) {
                     assert.equal(Number(await this.token.remainingGasRefundPool.call()),9)
                     await this.controller.setTusdRegistry('0x0000000000000000000000000000000000000003',{from: owner})
                     assert.equal(await this.token.registry.call(), '0x0000000000000000000000000000000000000003')
-                    await this.controller.incrementRedemptionAddressCount({from: owner})
-                    assert.equal(await this.token.redemptionAddressCount.call(), 1)
                     await this.controller.changeTokenName("TerryToken","TTT", {from: owner})
                 })
 
