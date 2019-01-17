@@ -39,13 +39,16 @@ contract('GasRefundToken', function (accounts) {
             await this.token.sponsorGas({from: anotherAccount})
             await this.token.sponsorGas({from: anotherAccount})
             assert.equal(Number(await this.token.remainingGasRefundPool.call()),18)
+            assert.equal(Number(await this.token.remainingSponsoredTransactions.call()), 6);
             //truffle has no gas refund so this receipt of gas used is not accurate
             const receipt = await this.token.transfer(anotherAccount, FIFTY, {from: oneHundred})
             assert.equal(Number(await this.token.remainingGasRefundPool.call()),15)
+            assert.equal(Number(await this.token.remainingSponsoredTransactions.call()), 5);
             await assertBalance(this.token,anotherAccount, FIFTY)
             await this.token.approve(oneHundred, FIFTY, { from: anotherAccount });
             await this.token.transferFrom(anotherAccount, oneHundred, FIFTY, { from: oneHundred });
             assert.equal(Number(await this.token.remainingGasRefundPool.call()), 12);
+            assert.equal(Number(await this.token.remainingSponsoredTransactions.call()), 4);
         })
     })
 })
