@@ -58,10 +58,12 @@ contract('RedeemToken', function (accounts) {
                 assert.equal(logs[2].event, 'Transfer')
                 await assertBalance(this.token, oneHundred, 90*10**18)
                 assert.equal(Number(await this.token.totalSupply.call()),90*10**18)
-                await this.token.transfer(ADDRESS_TWO, 10*10**18, {from : oneHundred})
+                await assertRevert(this.token.transfer('0x0000000000000000000000000000000000000004', 10*10**18, {from: oneHundred}))
                 assert.equal(Number(await this.token.totalSupply.call()),90*10**18)
-                await this.token.transfer(ADDRESS_ONE, 10*10**18, {from : oneHundred})
+                await this.token.transfer(ADDRESS_TWO, 10*10**18, {from : oneHundred})
                 assert.equal(Number(await this.token.totalSupply.call()),80*10**18)
+                await this.token.transfer(ADDRESS_ONE, 10*10**18, {from : oneHundred})
+                assert.equal(Number(await this.token.totalSupply.call()),70*10**18)
             })
 
             it('transfers to Redemption addresses fails if Redemption address cannot burn', async function(){
