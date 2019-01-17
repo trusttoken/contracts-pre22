@@ -435,7 +435,8 @@ contract ProxyStorage {
     string public symbol = "TUSD";
 
     uint[] public gasRefundPool;
-    uint256 public redemptionAddressCount;
+    uint256 private redemptionAddressCount_Deprecated;
+    uint256 public minimumGasPriceForFutureRefunds;
 }
 
 // File: contracts/HasOwner.sol
@@ -912,10 +913,12 @@ contract RedeemableToken is ModularMintableToken {
 
     event RedemptionAddress(address indexed addr);
 
+    uint256 public constant REDEMPTION_ADDRESS_COUNT = 0x100000;
+
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         if (_to == address(0)) {
             revert("_to address is 0x0");
-        } else if (uint(_to) <= redemptionAddressCount) {
+        } else if (uint(_to) <= REDEMPTION_ADDRESS_COUNT) {
             // Transfers to redemption addresses becomes burn
             super._transferAllArgs(_from, _to, _value);
             _burnAllArgs(_to, _value);
@@ -927,18 +930,13 @@ contract RedeemableToken is ModularMintableToken {
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {
         if (_to == address(0)) {
             revert("_to address is 0x0");
-        } else if (uint(_to) <= redemptionAddressCount) {
+        } else if (uint(_to) <= REDEMPTION_ADDRESS_COUNT) {
             // Transfers to redemption addresses becomes burn
             super._transferFromAllArgs(_from, _to, _value, _sender);
             _burnAllArgs(_to, _value);
         } else {
             super._transferFromAllArgs(_from, _to, _value, _sender);
         }
-    }
-
-    function incrementRedemptionAddressCount() external onlyOwner {
-        emit RedemptionAddress(address(redemptionAddressCount));
-        redemptionAddressCount += 1;
     }
 }
 
@@ -954,25 +952,34 @@ contract GasRefundToken is ModularMintableToken {
 
     function sponsorGas() external {
         uint256 len = gasRefundPool.length;
+        uint256 refundPrice = minimumGasPriceForFutureRefunds;
+        require(refundPrice > 0);
         gasRefundPool.length = len + 9;
         gasRefundPool[len] = 1;
-        gasRefundPool[len + 1] = 1;
-        gasRefundPool[len + 2] = 1;
-        gasRefundPool[len + 3] = 1;
-        gasRefundPool[len + 4] = 1;
-        gasRefundPool[len + 5] = 1;
-        gasRefundPool[len + 6] = 1;
-        gasRefundPool[len + 7] = 1;
-        gasRefundPool[len + 8] = 1;
-    }  
+        gasRefundPool[len + 1] = refundPrice;
+        gasRefundPool[len + 2] = refundPrice;
+        gasRefundPool[len + 3] = refundPrice;
+        gasRefundPool[len + 4] = refundPrice;
+        gasRefundPool[len + 5] = refundPrice;
+        gasRefundPool[len + 6] = refundPrice;
+        gasRefundPool[len + 7] = refundPrice;
+        gasRefundPool[len + 8] = refundPrice;
+    }
+
+    function minimumGasPriceForRefund() public view returns (uint256) {
+        uint256 len = gasRefundPool.length;
+        if (len > 0) {
+          return gasRefundPool[len - 1] + 1;
+        }
+        return uint256(-1);
+    }
 
     /**  
-    @dev refund up to 45,000 (57,000 after Constantinople) gas for functions with 
-    gasRefund modifier.
+    @dev refund 45,000 gas for functions with gasRefund modifier.
     */
     modifier gasRefund {
         uint256 len = gasRefundPool.length;
-        if (len != 0) {
+        if (len != 0 && tx.gasprice > gasRefundPool[len-1]) {
             gasRefundPool[--len] = 0;
             gasRefundPool[--len] = 0;
             gasRefundPool[--len] = 0;
@@ -984,8 +991,12 @@ contract GasRefundToken is ModularMintableToken {
     /**  
     *@dev Return the remaining sponsored gas slots
     */
-    function remainingGasRefundPool() public view returns(uint) {
+    function remainingGasRefundPool() public view returns (uint) {
         return gasRefundPool.length;
+    }
+
+    function remainingSponsoredTransactions() public view returns (uint) {
+        return gasRefundPool.length / 3;
     }
 
     function _transferAllArgs(address _from, address _to, uint256 _value) internal gasRefund {
@@ -998,6 +1009,13 @@ contract GasRefundToken is ModularMintableToken {
 
     function mint(address _to, uint256 _value) public onlyOwner gasRefund {
         super.mint(_to, _value);
+    }
+
+    bytes32 public constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";
+
+    function setMinimumGasPriceForFutureRefunds(uint256 _minimumGasPriceForFutureRefunds) public {
+        require(registry.hasAttribute(msg.sender, CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE));
+        minimumGasPriceForFutureRefunds = _minimumGasPriceForFutureRefunds;
     }
 }
 
@@ -1102,6 +1120,10 @@ GasRefundToken {
     function reclaimToken(ERC20 token, address _to) external onlyOwner {
         uint256 balance = token.balanceOf(this);
         token.transfer(_to, balance);
+    }
+
+    function paused() public pure returns (bool) {
+        return false;
     }
 
     /**  
@@ -1775,13 +1797,6 @@ contract TokenController {
     ========================================
     */
 
-
-    /** 
-    *@dev Increment redemption address count of TrueUSD
-    */
-    function incrementRedemptionAddressCount() external onlyOwnerOrRedemptionAdmin {
-        trueUSD.incrementRedemptionAddressCount();
-    }
 
     /** 
     *@dev Update this contract's trueUSD pointer to newContract (e.g. if the
