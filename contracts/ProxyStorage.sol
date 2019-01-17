@@ -31,5 +31,5 @@ contract ProxyStorage {
     string public symbol = "TUSD";
 
     uint[] public gasRefundPool;
-    uint256 public redemptionAddressCount_Deprecated;
+    uint256 private redemptionAddressCount_Deprecated;
 }
