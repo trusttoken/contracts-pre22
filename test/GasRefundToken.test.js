@@ -26,27 +26,38 @@ contract('GasRefundToken', function (accounts) {
             await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, notes, { from: owner })
             await this.token.mint(oneHundred, 100*10**18, { from: owner })
             await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 0, notes, { from: owner })
+            await this.registry.setAttributeValue(oneHundred, "canSetFutureRefundMinGasPrice", 1, { from: owner });
         })
 
-        it('transfer to anotherAccount without gas refund', async function(){
+        it('blocks others from setting the minimum refund gas price', async function() {
+            await assertRevert(this.token.setMinimumGasPriceForFutureRefunds(1), { from: anotherAccount });
+        })
+
+        it('transfer to anotherAccount without gas refund', async function() {
             const receipt = await this.token.transfer(anotherAccount, 50*10**18, {from: oneHundred})
             await assertBalance(this.token,anotherAccount, 50*10**18)
+            await this.token.setMinimumGasPriceForFutureRefunds(1e3, { from: oneHundred });
+            await this.token.sponsorGas();
+            assert.equal(await this.token.remainingGasRefundPool(), 9);
+            await this.token.transfer(oneHundred, 50*10**18, { from: anotherAccount, gasPrice: 1000 });
+            assert.equal(await this.token.remainingGasRefundPool(), 9);
         })
 
 
         it('transfer to anotherAccount with gas refund', async function(){
             const FIFTY = 50*10**18;
+            await this.token.setMinimumGasPriceForFutureRefunds(1e3, { from: oneHundred });
             await this.token.sponsorGas({from: anotherAccount})
             await this.token.sponsorGas({from: anotherAccount})
             assert.equal(Number(await this.token.remainingGasRefundPool.call()),18)
             assert.equal(Number(await this.token.remainingSponsoredTransactions.call()), 6);
             //truffle has no gas refund so this receipt of gas used is not accurate
-            const receipt = await this.token.transfer(anotherAccount, FIFTY, {from: oneHundred})
+            const receipt = await this.token.transfer(anotherAccount, FIFTY, {from: oneHundred, gasPrice: 1001, gasLimit: 150000})
             assert.equal(Number(await this.token.remainingGasRefundPool.call()),15)
             assert.equal(Number(await this.token.remainingSponsoredTransactions.call()), 5);
             await assertBalance(this.token,anotherAccount, FIFTY)
             await this.token.approve(oneHundred, FIFTY, { from: anotherAccount });
-            await this.token.transferFrom(anotherAccount, oneHundred, FIFTY, { from: oneHundred });
+            await this.token.transferFrom(anotherAccount, oneHundred, FIFTY, { from: oneHundred, gasPrice: 1001, gasLimit: 200000 });
             assert.equal(Number(await this.token.remainingGasRefundPool.call()), 12);
             assert.equal(Number(await this.token.remainingSponsoredTransactions.call()), 4);
         })
