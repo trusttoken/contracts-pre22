@@ -458,13 +458,6 @@ contract TokenController {
 
 
     /** 
-    *@dev Increment redemption address count of TrueUSD
-    */
-    function incrementRedemptionAddressCount() external onlyOwnerOrRedemptionAdmin {
-        trueUSD.incrementRedemptionAddressCount();
-    }
-
-    /** 
     *@dev Update this contract's trueUSD pointer to newContract (e.g. if the
     contract is upgraded)
     */

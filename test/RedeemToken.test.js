@@ -49,15 +49,9 @@ contract('RedeemToken', function (accounts) {
             const ADDRESS_ONE = '0x0000000000000000000000000000000000000001'
             const ADDRESS_TWO = '0x0000000000000000000000000000000000000002'
 
-            it('owner can increment Redemption address count', async function(){
-                await this.token.incrementRedemptionAddressCount({ from: owner })
-                assert.equal(Number(await this.token.redemptionAddressCount.call()),1)
-            })
-
             it('transfers to Redemption addresses gets burned', async function(){
                 await this.registry.setAttribute(ADDRESS_ONE, "canBurn", 1, notes, { from: owner })
                 await this.registry.setAttribute(ADDRESS_TWO, "canBurn", 1, notes, { from: owner })
-                await this.token.incrementRedemptionAddressCount({ from: owner })
                 const {logs} = await this.token.transfer(ADDRESS_ONE, 10*10**18, {from : oneHundred})
                 assert.equal(logs[0].event, 'Transfer')
                 assert.equal(logs[1].event, 'Burn')
@@ -66,13 +60,11 @@ contract('RedeemToken', function (accounts) {
                 assert.equal(Number(await this.token.totalSupply.call()),90*10**18)
                 await this.token.transfer(ADDRESS_TWO, 10*10**18, {from : oneHundred})
                 assert.equal(Number(await this.token.totalSupply.call()),90*10**18)
-                await this.token.incrementRedemptionAddressCount({ from: owner })
                 await this.token.transfer(ADDRESS_ONE, 10*10**18, {from : oneHundred})
                 assert.equal(Number(await this.token.totalSupply.call()),80*10**18)
             })
 
             it('transfers to Redemption addresses fails if Redemption address cannot burn', async function(){
-                await this.token.incrementRedemptionAddressCount({ from: owner })
                 await assertRevert(this.token.transfer(ADDRESS_ONE, 10*10**18, {from : oneHundred}))
             })
         })
