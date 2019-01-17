@@ -146,8 +146,6 @@ contract('PausedTrueUSD', function (accounts) {
                     assert.equal(Number(await this.token.remainingGasRefundPool.call()),9)
                     await this.controller.setTusdRegistry('0x0000000000000000000000000000000000000003',{from: owner})
                     assert.equal(await this.token.registry.call(), '0x0000000000000000000000000000000000000003')
-                    await this.controller.incrementRedemptionAddressCount({from: owner})
-                    assert.equal(await this.token.redemptionAddressCount.call(), 1)
                     await this.controller.changeTokenName("TerryToken","TTT", {from: owner})
                 })
 

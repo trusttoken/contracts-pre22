@@ -151,11 +151,6 @@ contract PausedTrueUSD is PausedDelegateERC20 {
         emit SetRegistry(registry);
     }
 
-    function incrementRedemptionAddressCount() external onlyOwner {
-        emit RedemptionAddress(address(redemptionAddressCount));
-        redemptionAddressCount += 1;
-    }
-
     function sponsorGas() external {
         uint256 len = gasRefundPool.length;
         gasRefundPool.length = len + 9;
