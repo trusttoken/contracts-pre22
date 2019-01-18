@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# print all commands as they execute
+set -x
+
+truffle-flattener contracts/TrueUSD.sol > flat_contracts/flat_tusd.sol
+truffle-flattener registry/contracts/Registry.sol > flat_contracts/flat_Registry.sol
+truffle-flattener contracts/Proxy/OwnedUpgradeabilityProxy.sol > flat_contracts/flat_OwnedUpgradeableProxy.sol
+truffle-flattener contracts/Admin/TokenController.sol > flat_contracts/flat_TokenController.sol
+truffle-flattener contracts/utilities/UpgradeHelper.sol > flat_contracts/flat_UpgradeHelper.sol
+truffle-flattener contracts/utilities/DepositAddressRegistrar.sol > flat_contracts/flat_depositAddressRegistrar.sol
+truffle-flattener contracts/utilities/PausedTrueUSD.sol > flat_contracts/flat_pausedTrueUSD.sol
