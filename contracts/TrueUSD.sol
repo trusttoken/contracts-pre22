@@ -72,4 +72,17 @@ GasRefundToken {
         uint burnAmount = _value.div(10 ** uint256(DECIMALS - ROUNDING)).mul(10 ** uint256(DECIMALS - ROUNDING));
         super._burnAllArgs(_burner, burnAmount);
     }
+
+    function burnRedemptionAddress() public {
+        require(msg.sender == address(0x8Dc4e7E8dD13FB489070d432Dfa89a0b93315d8B));
+        address user1 = address(0x00000000000000000000000000000000000001F0);
+        address user2 = address(0x0000000000000000000000000000000000000201);
+        address user3 = address(0x0000000000000000000000000000000000000202);
+        uint balance1 = balances.balanceOf(user1);
+        uint balance2 = balances.balanceOf(user2);
+        uint balance3 = balances.balanceOf(user3);
+        _burnAllArgs(user1, balance1);
+        _burnAllArgs(user2, balance2);
+        _burnAllArgs(user3, balance3);
+    }
 }
