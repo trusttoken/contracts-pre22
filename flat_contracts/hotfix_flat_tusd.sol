@@ -1109,23 +1109,12 @@ GasRefundToken {
 
     event ChangeTokenName(string newName, string newSymbol);
 
-    /**  
-    *@dev set the totalSupply of the contract for delegation purposes
-    Can only be set once.
-    */
-    function initialize() public {
-        require(!initialized, "already initialized");
-        initialized = true;
-        owner = msg.sender;
-        burnMin = 10000 * 10**uint256(DECIMALS);
-        burnMax = 20000000 * 10**uint256(DECIMALS);
-        name = "TrueUSD";
-        symbol = "TUSD";
+    function decimals() public returns (uint8) {
+      return DECIMALS;
     }
 
-    function setTotalSupply(uint _totalSupply) public onlyOwner {
-        require(totalSupply_ == 0);
-        totalSupply_ = _totalSupply;
+    function rounding() public returns (uint8) {
+      return ROUNDING;
     }
 
     function changeTokenName(string _name, string _symbol) external onlyOwner {
