@@ -49,6 +49,9 @@ contract('GasRefundToken', function (accounts) {
             await this.token.setMinimumGasPriceForFutureRefunds(1e3, { from: oneHundred });
             await this.token.sponsorGas({from: anotherAccount})
             await this.token.sponsorGas({from: anotherAccount})
+            for (let i = 0; i < 18; i++) {
+              assert.equal(Number(await this.token.gasRefundPool.call(i)), 1e3);
+            }
             assert.equal(Number(await this.token.remainingGasRefundPool.call()),18)
             assert.equal(Number(await this.token.remainingSponsoredTransactions.call()), 6);
             //truffle has no gas refund so this receipt of gas used is not accurate
