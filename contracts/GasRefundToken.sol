@@ -15,7 +15,7 @@ contract GasRefundToken is ModularMintableToken {
         uint256 refundPrice = minimumGasPriceForFutureRefunds;
         require(refundPrice > 0);
         gasRefundPool.length = len + 9;
-        gasRefundPool[len] = 1;
+        gasRefundPool[len] = refundPrice;
         gasRefundPool[len + 1] = refundPrice;
         gasRefundPool[len + 2] = refundPrice;
         gasRefundPool[len + 3] = refundPrice;
