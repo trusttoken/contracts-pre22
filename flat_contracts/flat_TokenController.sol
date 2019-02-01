@@ -980,11 +980,8 @@ contract GasRefundToken is ModularMintableToken {
     modifier gasRefund {
         uint256 len = gasRefundPool.length;
         if (len > 2 && tx.gasprice > gasRefundPool[len-1]) {
-            gasRefundPool[--len] = 0;
-            gasRefundPool[--len] = 0;
-            gasRefundPool[--len] = 0;
-            gasRefundPool.length = len;
-        }   
+            gasRefundPool.length = len - 3;
+        }
         _;
     }
 
