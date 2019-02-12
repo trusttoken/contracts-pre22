@@ -1,10 +1,33 @@
 pragma solidity ^0.4.23;
 
 import "./CompliantToken.sol";
-import "./DepositToken.sol";
-import "./TokenWithHook.sol";
+import "./TrueCoinReceiver.sol";
 
-contract CompliantDepositTokenWithHook is CompliantToken, DepositToken, TokenWithHook {
+contract CompliantDepositTokenWithHook is CompliantToken {
+
+    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
+    bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
+
+    /**
+    * @dev transfer token for a specified address
+    * @param _to The address to transfer to.
+    * @param _value The amount to be transferred.
+    */
+    function transfer(address _to, uint256 _value) public returns (bool) {
+        _transferAllArgs(msg.sender, _to, _value);
+        return true;
+    }
+
+    /**
+     * @dev Transfer tokens from one address to another
+     * @param _from address The address which you want to send tokens from
+     * @param _to address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     */
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+        _transferFromAllArgs(_from, _to, _value, msg.sender);
+        return true;
+    }
 
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {
         bool hasHook;

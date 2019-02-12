@@ -1,14 +1,12 @@
 import assertRevert from './helpers/assertRevert'
 import assertBalance from './helpers/assertBalance'
 const Registry = artifacts.require("Registry")
-const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const TokenController = artifacts.require("TokenController")
-const TrueUSDMock = artifacts.require("TrueUSDMock")
 const ForceEther = artifacts.require("ForceEther")
 const MultisigOwner = artifacts.require("MultisigOwner")
-const BasicTokenMock = artifacts.require("BasicTokenMock")
+const TrueUSDMock = artifacts.require("TrueUSDMock")
 
 
 contract('MultisigOwner', function (accounts) {
@@ -141,7 +139,8 @@ contract('MultisigOwner', function (accounts) {
         })
 
         it('owners can reclaim token', async function(){
-            this.basicToken = await BasicTokenMock.new(this.multisigOwner.address, 100, {from: owner1});
+            this.basicToken = await TrueUSDMock.new(this.multisigOwner.address, 100, {from: owner1});
+            await this.basicToken.setRegistry(this.registry.address, {from: owner1});
             await this.multisigOwner.msReclaimToken(this.basicToken.address, oneHundred, {from : owner1 })
             await this.multisigOwner.msReclaimToken(this.basicToken.address, oneHundred,  {from : owner2 })
             const contractBalance = await this.basicToken.balanceOf.call(this.multisigOwner.address)
@@ -326,7 +325,8 @@ contract('MultisigOwner', function (accounts) {
         })
 
         it('call requestReclaimToken of tokenController', async function(){
-            this.basicToken = await BasicTokenMock.new(this.token.address, 100, {from: owner1});
+            this.basicToken = await TrueUSDMock.new(this.token.address, 100, {from: owner1});
+            await this.basicToken.setRegistry(this.registry.address, {from: owner1});
 
             await this.multisigOwner.requestReclaimToken(this.basicToken.address, {from: owner1})
             await this.multisigOwner.requestReclaimToken(this.basicToken.address, {from: owner2})
