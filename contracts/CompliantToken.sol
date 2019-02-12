@@ -1,8 +1,8 @@
 pragma solidity ^0.4.23;
 
-import "./modularERC20/ModularMintableToken.sol";
+import "./modularERC20/ModularBurnableToken.sol";
 
-contract CompliantToken is ModularMintableToken {
+contract CompliantToken is ModularBurnableToken {
     // In order to deposit USD and receive newly minted TrueUSD, or to burn TrueUSD to
     // redeem it for USD, users must first go through a KYC/AML check (which includes proving they
     // control their ethereum address using AddressValidation.sol).

@@ -1,12 +1,12 @@
 pragma solidity ^0.4.23;
 
-import "./modularERC20/ModularMintableToken.sol";
+import "./CompliantDepositTokenWithHook.sol";
 
 /** @title Redeemable Token 
 Makes transfers to 0x0 alias to Burn
 Implement Redemption Addresses
 */
-contract RedeemableToken is ModularMintableToken {
+contract RedeemableToken is CompliantDepositTokenWithHook {
 
     event RedemptionAddress(address indexed addr);
 

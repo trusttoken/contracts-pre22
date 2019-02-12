@@ -8,6 +8,7 @@ import "./ModularStandardToken.sol";
  */
 contract ModularBurnableToken is ModularStandardToken {
     event Burn(address indexed burner, uint256 value);
+    event Mint(address indexed to, uint256 value);
 
     /**
      * @dev Burns a specific amount of tokens.
