@@ -19,7 +19,7 @@ function showRegression(type, actual, expected) {
   }
 }
 
-contract('GasRefundToken', function ([_, owner, oneHundred, anotherAccount]) {
+contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
 
     describe('--Gas Refund Token--', function () {
         const DOLLAR = 1*10**18;
