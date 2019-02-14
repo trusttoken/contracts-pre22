@@ -32,7 +32,7 @@ contract('GasRefundToken', function ([_, owner, oneHundred, anotherAccount]) {
             this.registryProxy = await OwnedUpgradeabilityProxy.new({from: owner});
             this.registryImpl = await Registry.new({ from: owner })
 
-            this.tokenProxy.upgradeTo(this.tokenMockImpl.address, {from:owner});
+            await this.tokenProxy.upgradeTo(this.tokenMockImpl.address, {from:owner});
             this.tokenMock = await TrueUSDMock.at(this.tokenProxy.address);
             await this.tokenMock.initialize({from: owner});
 
