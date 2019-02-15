@@ -8,6 +8,8 @@ const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
 
+const bytes32 = require('./helpers/bytes32.js')
+
 contract('RedeemToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount, cannotBurn] = accounts
     const notes = "some notes"
@@ -25,11 +27,11 @@ contract('RedeemToken', function (accounts) {
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
             await this.token.mint(oneHundred, 100*10**18, { from: owner })
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 0, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 0, notes, { from: owner })
 
-            await this.registry.setAttribute(oneHundred, "canBurn", 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
             await this.token.setBurnBounds(5*10**18, 1000*10**18, { from: owner }) 
         })
 
@@ -50,8 +52,8 @@ contract('RedeemToken', function (accounts) {
             const ADDRESS_TWO = '0x0000000000000000000000000000000000000002'
 
             it('transfers to Redemption addresses gets burned', async function(){
-                await this.registry.setAttribute(ADDRESS_ONE, "canBurn", 1, notes, { from: owner })
-                await this.registry.setAttribute(ADDRESS_TWO, "canBurn", 1, notes, { from: owner })
+                await this.registry.setAttribute(ADDRESS_ONE, bytes32("canBurn"), 1, notes, { from: owner })
+                await this.registry.setAttribute(ADDRESS_TWO, bytes32("canBurn"), 1, notes, { from: owner })
                 const {logs} = await this.token.transfer(ADDRESS_ONE, 10*10**18, {from : oneHundred})
                 assert.equal(logs[0].event, 'Transfer')
                 assert.equal(logs[1].event, 'Burn')

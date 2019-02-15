@@ -8,6 +8,8 @@ const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
 
+const BN = web3.utils.toBN;
+
 contract('TrueUSD', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     const notes = "some notes"
@@ -17,18 +19,18 @@ contract('TrueUSD', function (accounts) {
         })
 
         it ('owner can set totalsupply', async function(){
-            await this.token.setTotalSupply(100*10**18,{ from: owner })
+            await this.token.setTotalSupply(BN(100*10**18),{ from: owner })
             const totalSupply = Number(await this.token.totalSupply.call())
-            assert.equal(100*10**18, totalSupply)
+            assert.equal(BN(100*10**18), totalSupply)
         })
 
         it('totalsupply cannot be set when it is not zero', async function(){
-            await this.token.setTotalSupply(100*10**18,{ from: owner })
-            await assertRevert(this.token.setTotalSupply(100*10**18,{ from: owner }))
+            await this.token.setTotalSupply(BN(100*10**18),{ from: owner })
+            await assertRevert(this.token.setTotalSupply(BN(100*10**18),{ from: owner }))
         })
 
         it('only owner can set totalSupply', async function(){
-            await assertRevert(this.token.setTotalSupply(100*10**18,{ from: oneHundred }))
+            await assertRevert(this.token.setTotalSupply(BN(100*10**18),{ from: oneHundred }))
         })
     })
 
@@ -45,7 +47,7 @@ contract('TrueUSD', function (accounts) {
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
             await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, notes, { from: owner })
-            await this.token.mint(oneHundred, 100*10**18, { from: owner })
+            await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
             await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 0, notes, { from: owner })
         })
 
@@ -71,8 +73,8 @@ contract('TrueUSD', function (accounts) {
 
             describe('user is not on burn whitelist', function () {
                 it("reverts burn", async function () {
-                    await this.token.setBurnBounds(10*10**18, 20*10**18, { from: owner })
-                    await assertRevert(this.token.burn(15*10**18,  { from: oneHundred }))
+                    await this.token.setBurnBounds(BN(10*10**18), BN(20*10**18), { from: owner })
+                    await assertRevert(this.token.burn(BN(15*10**18),  { from: oneHundred }))
                 })
             })
         })
@@ -80,10 +82,10 @@ contract('TrueUSD', function (accounts) {
         describe('round down burn amount', function () {
             it("burns 10.50", async function () {
                 await this.registry.setAttribute(oneHundred, "canBurn", 1, notes, { from: owner })
-                await this.token.setBurnBounds(10*10**18, 20*10**18, { from: owner })
-                await this.token.burn(10.503*10**18, { from: oneHundred })
+                await this.token.setBurnBounds(BN(10*10**18), BN(20*10**18), { from: owner })
+                await this.token.burn(BN(10.503*10**18), { from: oneHundred })
                 let remainingBalance = await this.token.balanceOf.call(oneHundred)
-                assert.equal(remainingBalance, 89.5*10**18)
+                assert.equal(remainingBalance, BN(89.5*10**18))
             })
         })
 

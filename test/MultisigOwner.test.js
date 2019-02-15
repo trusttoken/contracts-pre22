@@ -8,6 +8,7 @@ const ForceEther = artifacts.require("ForceEther")
 const MultisigOwner = artifacts.require("MultisigOwner")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 
+const bytes32 = require('./helpers/bytes32.js')
 
 contract('MultisigOwner', function (accounts) {
     const [_, owner1, owner2, owner3 , oneHundred, blackListed, mintKey, pauseKey, approver] = accounts
@@ -26,9 +27,9 @@ contract('MultisigOwner', function (accounts) {
         this.ClaimableContract =await BalanceSheet.new({from: owner1})
         this.balanceSheet = await this.token.balances.call()
         this.allowanceSheet = await this.token.allowances.call()
-        await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner1 })
-        await this.registry.setAttribute(approver, "isTUSDMintApprover", 1, "notes", { from: owner1 })
-        await this.registry.setAttribute(pauseKey, "isTUSDMintPausers", 1, "notes", { from: owner1 })
+        await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, "notes", { from: owner1 })
+        await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, "notes", { from: owner1 })
+        await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, "notes", { from: owner1 })
         this.multisigOwner = await MultisigOwner.new({ from: owner1 })
         await this.multisigOwner.msInitialize([owner1, owner2, owner3], { from: owner1 })
     })
@@ -352,7 +353,7 @@ contract('MultisigOwner', function (accounts) {
         })
 
         it('call wipeBlackListedTrueUSD of tokenController', async function(){
-            await this.registry.setAttribute(blackListed, "isBlacklisted", 1, "notes", { from: owner1 })
+            await this.registry.setAttribute(blackListed, bytes32("isBlacklisted"), 1, "notes", { from: owner1 })
             await this.multisigOwner.wipeBlackListedTrueUSD(blackListed, {from: owner1})
             await this.multisigOwner.wipeBlackListedTrueUSD(blackListed, {from: owner2})
         })

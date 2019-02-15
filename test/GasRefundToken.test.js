@@ -7,6 +7,8 @@ const TrueUSD = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 
+const bytes32 = require('./helpers/bytes32.js')
+
 contract('GasRefundToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     const notes = "some notes"
@@ -23,10 +25,10 @@ contract('GasRefundToken', function (accounts) {
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, bytes32(notes), { from: owner })
             await this.token.mint(oneHundred, 100*10**18, { from: owner })
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 0, notes, { from: owner })
-            await this.registry.setAttributeValue(oneHundred, "canSetFutureRefundMinGasPrice", 1, { from: owner });
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 0, bytes32(notes), { from: owner })
+            await this.registry.setAttributeValue(oneHundred, bytes32("canSetFutureRefundMinGasPrice"), 1, { from: owner });
         })
 
         it('blocks others from setting the minimum refund gas price', async function() {

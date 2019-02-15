@@ -5,46 +5,49 @@ import standardTokenTests from './token/StandardToken';
 import basicTokenTests from './token/BasicToken';
 const Registry = artifacts.require('Registry')
 
+const bytes32 = require('./helpers/bytes32.js')
+const BN = web3.utils.toBN;
+
 function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns = false) {
     describe('--CompliantToken Tests--', function () {
-        const notes = "some notes"
+        const notes = bytes32("some notes")
 
         describe('minting', function () {
             describe('when user is on mint whitelist', function () {
                 beforeEach(async function () {
-                    await this.registry.setAttribute(anotherAccount, "hasPassedKYC/AML", 1, notes, { from: owner })
+                    await this.registry.setAttribute(anotherAccount, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
                 })
 
                 mintableTokenTests([owner, oneHundred, anotherAccount])
             })
 
             it('rejects mint when user is not on mint whitelist', async function () {
-                await assertRevert(this.token.mint(anotherAccount, 100*10**18, { from: owner }))
+                await assertRevert(this.token.mint(anotherAccount, BN(100*10**18), { from: owner }))
             })
 
             it('rejects mint when user is blacklisted', async function () {
-                await this.registry.setAttribute(anotherAccount, "hasPassedKYC/AML", 1, notes, { from: owner })
-                await this.registry.setAttribute(anotherAccount, "isBlacklisted", 1, notes, { from: owner })
-                await assertRevert(this.token.mint(anotherAccount, 100*10**18, { from: owner }))
+                await this.registry.setAttribute(anotherAccount, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+                await this.registry.setAttribute(anotherAccount, bytes32("isBlacklisted"), 1, notes, { from: owner })
+                await assertRevert(this.token.mint(anotherAccount, BN(100*10**18), { from: owner }))
             })
         })
 
         describe('burning', function () {
             describe('when user is on burn whitelist', function () {
                 beforeEach(async function () {
-                    await this.registry.setAttribute(oneHundred, "canBurn", 1, notes, { from: owner })
+                    await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
                 })
 
                 burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
 
                 it('rejects burn when user is on blacklist', async function () {
-                    await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, notes, { from: owner })
-                    await assertRevert(this.token.burn(20*10**18, { from: oneHundred }))
+                    await this.registry.setAttribute(oneHundred, bytes32("isBlacklisted"), 1, notes, { from: owner })
+                    await assertRevert(this.token.burn(BN(20*10**18), { from: oneHundred }))
                 })
             })
 
             it('rejects burn when user is not on burn whitelist', async function () {
-                await assertRevert(this.token.burn(20*10**18, { from: oneHundred }))
+                await assertRevert(this.token.burn(BN(20*10**18), { from: oneHundred }))
             })
         })
 
@@ -54,19 +57,19 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
                 describe('burning', function () {
                     describe('when user is on burn whitelist', function () {
                         beforeEach(async function () {
-                            await this.registry.setAttribute(oneHundred, "canBurn", 1, notes, { from: owner })
+                            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
                         })
 
                         burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
 
                         it('rejects burn when user is on blacklist', async function () {
                             await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, notes, { from: owner })
-                            await assertRevert(this.token.transfer(ZERO_ADDRESS, 20*10**18, { from: oneHundred }))
+                            await assertRevert(this.token.transfer(ZERO_ADDRESS, BN(20*10**18), { from: oneHundred }))
                         })
                     })
 
                     it('rejects burn when user is not on burn whitelist', async function () {
-                        await assertRevert(this.token.transfer(ZERO_ADDRESS, 20*10**18, { from: oneHundred }))
+                        await assertRevert(this.token.transfer(ZERO_ADDRESS, BN(20*10**18), { from: oneHundred }))
                     })
                 })
             })
@@ -81,24 +84,24 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
             describe('when user is on blacklist', function () {
                 it('rejects transfer from blacklisted account', async function () {
                     await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, notes, { from: owner })
-                    await assertRevert(this.token.transfer(anotherAccount, 100*10**18, { from: oneHundred }))
+                    await assertRevert(this.token.transfer(anotherAccount, BN(100*10**18), { from: oneHundred }))
                 })
 
                 it('rejects transfer to blacklisted account', async function () {
                     await this.registry.setAttribute(anotherAccount, "isBlacklisted", 1, notes, { from: owner })
-                    await assertRevert(this.token.transfer(anotherAccount, 100*10**18, { from: oneHundred }))
+                    await assertRevert(this.token.transfer(anotherAccount, BN(100*10**18), { from: oneHundred }))
                 })
 
                 it('rejects transferFrom to blacklisted account', async function () {
                     await this.registry.setAttribute(oneHundred, "isBlacklisted", 1, notes, { from: owner })
-                    await this.token.approve(anotherAccount, 100*10**18, { from: oneHundred })
-                    await assertRevert(this.token.transferFrom(oneHundred, owner, 100*10**18, { from: anotherAccount }))
+                    await this.token.approve(anotherAccount, BN(100*10**18), { from: oneHundred })
+                    await assertRevert(this.token.transferFrom(oneHundred, owner, BN(100*10**18), { from: anotherAccount }))
                 })
 
                 it('rejects transferFrom by blacklisted spender', async function () {
                     await this.registry.setAttribute(anotherAccount, "isBlacklisted", 1, notes, { from: owner })
-                    await this.token.approve(anotherAccount, 100*10**18, { from: oneHundred })
-                    await assertRevert(this.token.transferFrom(oneHundred, owner, 100*10**18, { from: anotherAccount }))
+                    await this.token.approve(anotherAccount, BN(100*10**18), { from: oneHundred })
+                    await assertRevert(this.token.transferFrom(oneHundred, owner, BN(100*10**18), { from: anotherAccount }))
                 })
             })
         })
@@ -136,9 +139,9 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
                 assert.equal(logs.length, 2)
                 assert.equal(logs[0].event, 'WipeBlacklistedAccount')
                 assert.equal(logs[0].args.account, oneHundred)
-                assert.equal(logs[0].args.balance, 100*10**18)
+                assert.equal(logs[0].args.balance, BN(100*10**18))
                 assert.equal(logs[1].event, 'Transfer')
-                assert.equal(logs[1].args.value, 100*10**18)
+                assert.equal(logs[1].args.value, BN(100*10**18))
                 assert.equal(logs[1].args.to, 0)
                 assert.equal(logs[1].args.from, oneHundred)
             })

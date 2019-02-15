@@ -11,6 +11,8 @@ const TokenController = artifacts.require("TokenController")
 const MultisigOwner = artifacts.require("MultisigOwner")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 
+const bytes32 = require('./helpers/bytes32.js')
+
 contract('MultisigOwner With Proxy', function (accounts) {
     const [_, owner1, owner2, owner3 , oneHundred, blackListed, mintKey, pauseKey, approver] = accounts
     
@@ -67,11 +69,11 @@ contract('MultisigOwner With Proxy', function (accounts) {
         await this.multisigOwner.setRegistry(this.registry.address, { from: owner2 })
         await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner1 })
         await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner2 })
-        await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner1 })
-        await this.registry.setAttribute(oneHundred, "canBurn", 1, "notes", { from: owner1 })
-        await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner1 })
-        await this.registry.setAttribute(approver, "isTUSDMintApprover", 1, "notes", { from: owner1 })
-        await this.registry.setAttribute(pauseKey, "isTUSDMintPausers", 1, "notes", { from: owner1 })
+        await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, "notes", { from: owner1 })
+        await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, "notes", { from: owner1 })
+        await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, "notes", { from: owner1 })
+        await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, "notes", { from: owner1 })
+        await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, "notes", { from: owner1 })
         this.balanceSheet = await BalanceSheet.new({ from: owner1 })
         this.allowanceSheet = await AllowanceSheet.new({ from: owner1 })
         await this.balanceSheet.transferOwnership(this.token.address,{ from: owner1 })

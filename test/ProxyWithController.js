@@ -7,6 +7,8 @@ const AllowanceSheet = artifacts.require("AllowanceSheet")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 const TokenController = artifacts.require("TokenController")
 
+const bytes32 = require('./helpers/bytes32.js')
+
 contract('--Proxy With Controller--', function (accounts) {
     const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
     const notes = "some notes"
@@ -22,8 +24,8 @@ contract('--Proxy With Controller--', function (accounts) {
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner })
-            await this.registry.setAttribute(oneHundred, "canBurn", 1, "notes", { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, "notes", { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, "notes", { from: owner })
             await this.token.initialize({from: owner})
             await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
@@ -35,11 +37,11 @@ contract('--Proxy With Controller--', function (accounts) {
             await this.controller.setRegistry(this.registry.address, { from: owner })
             await this.controller.setTrueUSD(this.token.address, { from: owner })
             await this.controller.transferMintKey(mintKey, { from: owner })
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner })
-            await this.registry.setAttribute(approver1, "isTUSDMintApprover", 1, "notes", { from: owner })
-            await this.registry.setAttribute(approver2, "isTUSDMintApprover", 1, "notes", { from: owner })
-            await this.registry.setAttribute(approver3, "isTUSDMintApprover", 1, "notes", { from: owner })
-            await this.registry.setAttribute(pauseKey, "isTUSDMintPausers", 1, "notes", { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, "notes", { from: owner })
+            await this.registry.setAttribute(approver1, bytes32("isTUSDMintApprover"), 1, "notes", { from: owner })
+            await this.registry.setAttribute(approver2, bytes32("isTUSDMintApprover"), 1, "notes", { from: owner })
+            await this.registry.setAttribute(approver3, bytes32("isTUSDMintApprover"), 1, "notes", { from: owner })
+            await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, "notes", { from: owner })
         })
 
         it('controller cannot be reinitialized', async function(){

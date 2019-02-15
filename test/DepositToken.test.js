@@ -9,9 +9,12 @@ const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
 const DepositAddressRegistrar = artifacts.require("DepositAddressRegistrar")
 
+const bytes32 = require('./helpers/bytes32.js')
+const BN = web3.utils.toBN;
+
 contract('DepositToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount, thirdAddress] = accounts
-    const notes = "some notes"
+    const notes = bytes32("some notes")
     const DEPOSIT_ADDRESS = '0x00000' + anotherAccount.slice(2,37)
 
     describe('--Deposit Token--', function () {
@@ -26,15 +29,15 @@ contract('DepositToken', function (accounts) {
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, notes, { from: owner })
-            await this.token.mint(oneHundred, 100*10**18, { from: owner })
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 0, notes, { from: owner })
-            await this.registry.setAttribute(DEPOSIT_ADDRESS, "isDepositAddress", anotherAccount, web3.fromUtf8(notes), { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 0, notes, { from: owner })
+            await this.registry.setAttribute(DEPOSIT_ADDRESS, bytes32("isDepositAddress"), anotherAccount, web3.fromUtf8(notes), { from: owner })
         })
 
         it('transfer to anotherAccount', async function(){
-            await this.token.transfer(anotherAccount, 50*10**18, {from: oneHundred})
-            await assertBalance(this.token,anotherAccount, 50*10**18)
+            await this.token.transfer(anotherAccount, BN(50*10**18), {from: oneHundred})
+            await assertBalance(this.token,anotherAccount, BN(50*10**18))
         })
 
 
@@ -43,11 +46,11 @@ contract('DepositToken', function (accounts) {
             const depositAddressTwo = anotherAccount.slice(0,37) + '20000';
             const depositAddressThree = anotherAccount.slice(0,37) + '40000';
             const depositAddressFour = anotherAccount.slice(0,37) + '00500';
-            await this.token.transfer(depositAddressOne, 10*10**18,{from: oneHundred})
-            await this.token.transfer(depositAddressTwo, 10*10**18, {from: oneHundred})
-            await this.token.transfer(depositAddressThree, 10*10**18, {from: oneHundred})
-            await this.token.transfer(depositAddressFour, 10*10**18, {from: oneHundred})
-            await assertBalance(this.token,anotherAccount, 40*10**18)
+            await this.token.transfer(depositAddressOne, BN(10*10**18),{from: oneHundred})
+            await this.token.transfer(depositAddressTwo, BN(10*10**18), {from: oneHundred})
+            await this.token.transfer(depositAddressThree, BN(10*10**18), {from: oneHundred})
+            await this.token.transfer(depositAddressFour, BN(10*10**18), {from: oneHundred})
+            await assertBalance(this.token,anotherAccount, BN(40*10**18))
         })
 
         it('emits the right events', async function(){
@@ -62,10 +65,10 @@ contract('DepositToken', function (accounts) {
         it('emits the right events for mint', async function() {
             const ZERO = '0x0000000000000000000000000000000000000000';
             const depositAddressOne = anotherAccount.slice(0,37) + '00000';
-            await this.registry.setAttribute(depositAddressOne, "hasPassedKYC/AML", 1, notes, { from: owner});
-            const {logs} = await this.token.mint(depositAddressOne, 10*10**18,{from: owner})
+            await this.registry.setAttribute(depositAddressOne, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner});
+            const {logs} = await this.token.mint(depositAddressOne, BN(10*10**18),{from: owner})
             assert.equal(logs[0].args.to,depositAddressOne);
-            assert.equal(logs[0].args.value, 10*10**18);
+            assert.equal(logs[0].args.value, BN(10*10**18));
             assert.equal(logs[1].args.from,ZERO)
             assert.equal(logs[1].args.to,depositAddressOne)
             assert.equal(logs[2].args.from,depositAddressOne)
@@ -73,26 +76,26 @@ contract('DepositToken', function (accounts) {
         })
 
         it('can remove deposit address', async function(){
-            await this.registry.setAttribute(DEPOSIT_ADDRESS, "isDepositAddress", 0, notes, { from: owner })
+            await this.registry.setAttribute(DEPOSIT_ADDRESS, bytes32("isDepositAddress"), 0, notes, { from: owner })
             const depositAddressOne = anotherAccount.slice(0,37) + '00000';
             const depositAddressTwo = anotherAccount.slice(0,37) + '20000';
             const depositAddressThree = anotherAccount.slice(0,37) + '40000';
             const depositAddressFour = anotherAccount.slice(0,37) + '00500';
-            await this.token.transfer(depositAddressOne, 10*10**18, {from: oneHundred})
-            await this.token.transfer(depositAddressTwo, 10*10**18, {from: oneHundred})
-            await this.token.transfer(depositAddressThree, 10*10**18, {from: oneHundred})
-            await this.token.transfer(depositAddressFour, 10*10**18, {from: oneHundred})
+            await this.token.transfer(depositAddressOne, BN(10*10**18), {from: oneHundred})
+            await this.token.transfer(depositAddressTwo, BN(10*10**18), {from: oneHundred})
+            await this.token.transfer(depositAddressThree, BN(10*10**18), {from: oneHundred})
+            await this.token.transfer(depositAddressFour, BN(10*10**18), {from: oneHundred})
             await assertBalance(this.token,anotherAccount, 0)
         })
         
         it('deposit tokens work with minting', async function(){
             const depositAddressOne = anotherAccount.slice(0,37) + '00000';
             const depositAddressTwo = anotherAccount.slice(0,37) + '20000';
-            await this.registry.setAttribute(depositAddressOne, "hasPassedKYC/AML", 1, notes, { from: owner })
-            await this.registry.setAttribute(depositAddressTwo, "hasPassedKYC/AML", 1, notes, { from: owner })
-            const {logs} = await this.token.mint(depositAddressOne, 10*10**18, {from: owner})
-            await this.token.mint(depositAddressTwo, 10*10**18, {from: owner})
-            await assertBalance(this.token,anotherAccount, 20*10**18)
+            await this.registry.setAttribute(depositAddressOne, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.setAttribute(depositAddressTwo, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            const {logs} = await this.token.mint(depositAddressOne, BN(10*10**18), {from: owner})
+            await this.token.mint(depositAddressTwo, BN(10*10**18), {from: owner})
+            await assertBalance(this.token,anotherAccount, BN(20*10**18))
         })
 
 
