@@ -11,7 +11,7 @@ const bytes32 = require('./helpers/bytes32.js')
 
 contract('--Proxy With Controller--', function (accounts) {
     const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
-    const notes = "some notes"
+    const notes = bytes32("some notes")
 
     describe('--Set up proxy--', function () {
         beforeEach(async function () {
@@ -24,8 +24,8 @@ contract('--Proxy With Controller--', function (accounts) {
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, "notes", { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, "notes", { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
             await this.token.initialize({from: owner})
             await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
@@ -37,11 +37,11 @@ contract('--Proxy With Controller--', function (accounts) {
             await this.controller.setRegistry(this.registry.address, { from: owner })
             await this.controller.setTrueUSD(this.token.address, { from: owner })
             await this.controller.transferMintKey(mintKey, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, "notes", { from: owner })
-            await this.registry.setAttribute(approver1, bytes32("isTUSDMintApprover"), 1, "notes", { from: owner })
-            await this.registry.setAttribute(approver2, bytes32("isTUSDMintApprover"), 1, "notes", { from: owner })
-            await this.registry.setAttribute(approver3, bytes32("isTUSDMintApprover"), 1, "notes", { from: owner })
-            await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, "notes", { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.setAttribute(approver1, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
+            await this.registry.setAttribute(approver2, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
+            await this.registry.setAttribute(approver3, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
+            await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
         })
 
         it('controller cannot be reinitialized', async function(){
@@ -87,24 +87,24 @@ contract('--Proxy With Controller--', function (accounts) {
                 await this.token.mint(oneHundred, 100*10**18, {from: owner})
                 await this.token.transferOwnership(this.controller.address, { from: owner })
                 await this.controller.issueClaimOwnership(this.token.address, { from: owner })
-                await this.controller.setMintThresholds(10*10**18,100*10**18,1000*10**18, { from: owner })
-                await this.controller.setMintLimits(30*10**18,300*10**18,3000*10**18,{ from: owner })
+                await this.controller.setMintThresholds(10*10**18,BN(100).mul(BN(10**18)),BN(1000).mul(BN(10**18)), { from: owner })
+                await this.controller.setMintLimits(30*10**18,BN(300).mul(BN(10**18)),BN(3000).mul(BN(10**18)),{ from: owner })
             })
 
             it('non mintKey/owner cannot request mint', async function () {
-                await assertRevert(this.controller.requestMint(oneHundred, 10*10**18 , { from: otherAddress }))
+                await assertRevert(this.controller.requestMint(oneHundred, BN(10*10**18), { from: otherAddress }))
             })
 
             it('request a mint', async function () {
                 const originalMintOperationCount = await this.controller.mintOperationCount.call()
                 assert.equal(originalMintOperationCount, 0)
-                await this.controller.requestMint(oneHundred, 10*10**18 , { from: owner })
+                await this.controller.requestMint(oneHundred, BN(10*10**18), { from: owner })
                 const mintOperation = await this.controller.mintOperations.call(0)
                 assert.equal(mintOperation[0], oneHundred)
-                assert.equal(Number(mintOperation[1]), 10*10**18)
-                assert.equal(Number(mintOperation[3]), 0,"numberOfApprovals not 0")
+                assert(mintOperation[1].eq(BN(10*10**18)))
+                assert(mintOperation[3].eq(BN(0)),"numberOfApprovals not 0")
                 const mintOperationCount = await this.controller.mintOperationCount.call()
-                assert.equal(mintOperationCount, 1)
+                assert(mintOperationCount.eq(1))
 
             })
         })

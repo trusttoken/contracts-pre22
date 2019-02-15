@@ -13,8 +13,12 @@ module.exports = {
   },
   compilers: {
     solc: {
-      version: "0.4.23"
-    }
+      version: "0.4.23",
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    },
   },
   networks: {
     development: {

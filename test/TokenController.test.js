@@ -18,6 +18,7 @@ contract('TokenController', function (accounts) {
     describe('--TokenController Tests--', function () {
         const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, ratifier1, ratifier2, ratifier3, redemptionAdmin] = accounts
         const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+        const notes = bytes32("notes")
 
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
@@ -25,13 +26,13 @@ contract('TokenController', function (accounts) {
             this.tusdImplementation = await TrueUSD.new(owner, 0, { from: owner })
             this.token = await TrueUSD.at(this.tokenProxy.address)
             this.balanceSheet = await BalanceSheet.new({ from: owner })
-            await this.balanceSheet.setBalance(oneHundred, BN(100*10**18), {from:owner});
+            await this.balanceSheet.setBalance(oneHundred, BN(10**18).mul(BN(100)), {from:owner});
             this.allowanceSheet = await AllowanceSheet.new({ from: owner })
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, "notes", { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, "notes", { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
             await this.token.initialize({from: owner})
             await this.token.setTotalSupply(BN(100*10**18), {from: owner})
             await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
@@ -47,13 +48,13 @@ contract('TokenController', function (accounts) {
             await this.controller.transferMintKey(mintKey, { from: owner })
             await this.tokenProxy.transferProxyOwnership(this.controller.address, {from: owner})
             await this.controller.claimTusdProxyOwnership({from: owner})
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, web3.fromUtf8("notes"), { from: owner })
-            await this.registry.setAttribute(otherAddress, bytes32("hasPassedKYC/AML"), 1, web3.fromUtf8("notes"), { from: owner })
-            await this.registry.setAttribute(ratifier1, bytes32("isTUSDMintRatifier"), 1, web3.fromUtf8("notes"), { from: owner })
-            await this.registry.setAttribute(ratifier2, bytes32("isTUSDMintRatifier"), 1, web3.fromUtf8("notes"), { from: owner })
-            await this.registry.setAttribute(ratifier3, bytes32("isTUSDMintRatifier"), 1, web3.fromUtf8("notes"), { from: owner })
-            await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, web3.fromUtf8("notes"), { from: owner })
-            await this.registry.setAttribute(this.fastPauseMints.address, bytes32("isTUSDMintPausers"), 1, web3.fromUtf8("notes"), { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.setAttribute(otherAddress, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.setAttribute(ratifier1, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
+            await this.registry.setAttribute(ratifier2, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
+            await this.registry.setAttribute(ratifier3, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
+            await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
+            await this.registry.setAttribute(this.fastPauseMints.address, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
         })
 
         describe('Request and Finalize Mints (owner)', function () {
@@ -64,13 +65,13 @@ contract('TokenController', function (accounts) {
             })
 
             it('mint limits cannot be out of order', async function(){
-                await assertRevert(this.controller.setMintLimits(BN(300*10**18),BN(30*10**18),BN(3000*10**18),{ from: owner }))
-                await assertRevert(this.controller.setMintLimits(BN(30*10**18),BN(300*10**18),BN(200*10**18),{ from: owner }))
+                await assertRevert(this.controller.setMintLimits(BN(300*10**18),BN(30*10**18),BN(3000).mul(BN(10**18)),{ from: owner }))
+                await assertRevert(this.controller.setMintLimits(BN(30*10**18),BN(300*10**18),BN(200).mul(BN(10**18)),{ from: owner }))
             })
 
             it('mint thresholds cannot be out of order', async function(){
-                await assertRevert(this.controller.setMintThresholds(BN(100*10**18),BN(10*10**18),BN(1000*10**18), { from: owner }))
-                await assertRevert(this.controller.setMintThresholds(BN(10*10**18),BN(100*10**18),BN(50*10**18), { from: owner }))
+                await assertRevert(this.controller.setMintThresholds(BN(100).mul(BN(10**18)),BN(10*10**18),BN(1000).mul(BN(10**18)), { from: owner }))
+                await assertRevert(this.controller.setMintThresholds(BN(10*10**18),BN(100).mul(BN(10**18)),BN(50*10**18), { from: owner }))
             })
 
             it('non mintKey/owner cannot request mint', async function () {
@@ -83,10 +84,10 @@ contract('TokenController', function (accounts) {
                 await this.controller.requestMint(oneHundred, BN(10*10**18) , { from: owner })
                 const mintOperation = await this.controller.mintOperations.call(0)
                 assert.equal(mintOperation[0], oneHundred)
-                assert.equal(Number(mintOperation[1]), 10*10**18)
-                assert.equal(Number(mintOperation[3]), 0,"numberOfApprovals not 0")
+                assert(mintOperation[1].eq(BN(10*10**18)))
+                assert(mintOperation[3].eq(0),"numberOfApprovals not 0")
                 const mintOperationCount = await this.controller.mintOperationCount.call()
-                assert.equal(mintOperationCount, 1)
+                assert(BN(mintOperationCount).eq(BN(1)))
             })
 
             it('request mint then revoke it', async function () {
@@ -97,24 +98,24 @@ contract('TokenController', function (accounts) {
                 assert.equal(logs[0].args.opIndex, 0,"wrong opIndex")
                 const mintOperation = await this.controller.mintOperations(0)
                 assert.equal(mintOperation[0], "0x0000000000000000000000000000000000000000","to address not 0")
-                assert.equal(Number(mintOperation[1]), 0,"value not 0")
-                assert.equal(Number(mintOperation[2]), 0,"requested block not 0")
-                assert.equal(Number(mintOperation[3]), 0,"numberOfApprovals not 0")
+                assert(mintOperation[1].eq(BN(0)),"value not 0")
+                assert(mintOperation[2].eq(BN(0)),"requested block not 0")
+                assert(mintOperation[3].eq(BN(0)),"numberOfApprovals not 0")
             })
 
             it('request and finalize a mint', async function () {
                 await this.controller.requestMint(oneHundred, BN(10*10**18) , { from: owner })
                 const {logs} = await this.controller.ratifyMint(0, oneHundred, BN(10*10**18), {from: owner})
                 assert.equal(logs[0].event,"MintRatified");
-                assert.equal(Number(logs[0].args.opIndex),0);
+                assert(logs[0].args.opIndex.eq(0));
                 assert.equal(logs[0].args.ratifier,owner);
                 assert.equal(logs[1].event,"FinalizeMint");
-                assert.equal(Number(logs[1].args.value),10*10**18);
+                assert(logs[1].args.value.eq(BN(10*10**18)));
                 assert.equal(logs[1].args.to,oneHundred);
-                assert.equal(Number(logs[1].args.opIndex),0);
+                assert(logs[1].args.opIndex.eq(BN(0)));
                 assert.equal(logs[1].args.mintKey,owner);
                 const totalSupply = await this.token.totalSupply.call()
-                assert.equal(Number(totalSupply),BN(110*10**18));
+                assert(totalSupply.eq(BN(10**18).mul(BN(110))));
             })
 
             it('fails to transfer mintkey to 0x0', async function () {
@@ -144,17 +145,17 @@ contract('TokenController', function (accounts) {
             it("changing mint thresholds should generate logs", async function(){
                 const {logs} = await this.controller.setMintThresholds(BN(10*10**18),BN(100*10**18),BN(1000*10**18), { from: owner })
                 assert.equal(logs[0].event,"MintThresholdChanged" )
-                assert.equal(Number(logs[0].args.instant), BN(10*10**18))
-                assert.equal(Number(logs[0].args.ratified), BN(100*10**18))
-                assert.equal(Number(logs[0].args.multiSig), BN(1000*10**18))
+                assert(logs[0].args.instant.eq(BN(10*10**18)))
+                assert(logs[0].args.ratified.eq(BN(100*10**18)))
+                assert((logs[0].args.multiSig).eq(BN(1000).mul(BN(10**18))))
             })
 
             it("changing mint limits should generate logs", async function(){
                 const {logs} = await this.controller.setMintLimits(BN(30*10**18),BN(300*10**18),BN(3000*10**18),{ from: owner })
-                assert.equal(logs[0].event,"MintLimitsChanged" )
-                assert.equal(Number(logs[0].args.instant), BN(30*10**18))
-                assert.equal(Number(logs[0].args.ratified), BN(300*10**18))
-                assert.equal(Number(logs[0].args.multiSig), BN(3000*10**18))
+                assert.equal(logs[0].event, "MintLimitsChanged")
+                assert(logs[0].args.instant.eq(BN(30*10**18)))
+                assert(logs[0].args.ratified.eq(BN(300).mul(BN(10**18))))
+                assert(logs[0].args.multiSig.eq(BN(3000).mul(BN(10**18))))
             })
         })
 
@@ -170,15 +171,15 @@ contract('TokenController', function (accounts) {
             it('have enough approvals for mints', async function(){
                 let result = await this.controller.hasEnoughApproval.call(1,BN(50*10**18))
                 assert.equal(result,true)
-                result = await this.controller.hasEnoughApproval.call(1,BN(200*10**18))
+                result = await this.controller.hasEnoughApproval.call(1,BN(200).mul(BN(10**18)))
                 assert.equal(result,false)
-                result = await this.controller.hasEnoughApproval.call(3,BN(200*10**18))
+                result = await this.controller.hasEnoughApproval.call(3,BN(200).mul(BN(10**18)))
                 assert.equal(result,true)
-                result = await this.controller.hasEnoughApproval.call(3,BN(2000*10**18))
+                result = await this.controller.hasEnoughApproval.call(3,BN(2000).mul(BN(10**18)))
                 assert.equal(result,false)
-                result = await this.controller.hasEnoughApproval.call(2,BN(500*10**18))
+                result = await this.controller.hasEnoughApproval.call(2,BN(500).mul(BN(10**18)))
                 assert.equal(result,false)
-                result = await this.controller.hasEnoughApproval.call(0,BN(50*10**18))
+                result = await this.controller.hasEnoughApproval.call(0,BN(50).mul(BN(10**18)))
                 assert.equal(result,false)
             })
 
@@ -196,7 +197,7 @@ contract('TokenController', function (accounts) {
             it('ratifier cannot ratify twice', async function () {
                 await this.controller.requestMint(oneHundred, BN(200*10**18), { from: mintKey })
                 await this.controller.ratifyMint(0, oneHundred, BN(200*10**18), { from: ratifier1 })
-                await assertRevert(this.controller.ratifyMint(0, oneHundred, BN(200*10**18), { from: ratifier1 }))
+                await assertRevert(this.controller.ratifyMint(0, oneHundred, BN(200).mul(BN(10**18)), { from: ratifier1 }))
             })
 
             it('ratify mint should generate logs', async function(){
@@ -204,7 +205,7 @@ contract('TokenController', function (accounts) {
                 const {logs} = await this.controller.ratifyMint(0, oneHundred, BN(10*10**18), { from: ratifier1 })
                 assert.equal(logs[0].event,"MintRatified")
                 assert.equal(logs[0].args.ratifier,ratifier1)
-                assert.equal(Number(logs[0].args.opIndex),0)
+                assert(logs[0].args.opIndex.eq(BN(0)))
             })
     
             it('cannot approve the same mint twice', async function () {

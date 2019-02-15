@@ -15,7 +15,7 @@ const BN = web3.utils.toBN;
 contract('DepositToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount, thirdAddress] = accounts
     const notes = bytes32("some notes")
-    const DEPOSIT_ADDRESS = '0x00000' + anotherAccount.slice(2,37)
+    const DEPOSIT_ADDRESS = web3.utils.toChecksumAddress('0x00000' + anotherAccount.slice(2,37))
 
     describe('--Deposit Token--', function () {
         beforeEach(async function () {
@@ -32,7 +32,7 @@ contract('DepositToken', function (accounts) {
             await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
             await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
             await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 0, notes, { from: owner })
-            await this.registry.setAttribute(DEPOSIT_ADDRESS, bytes32("isDepositAddress"), anotherAccount, web3.fromUtf8(notes), { from: owner })
+            await this.registry.setAttribute(DEPOSIT_ADDRESS, bytes32("isDepositAddress"), anotherAccount, notes, { from: owner })
         })
 
         it('transfer to anotherAccount', async function(){
@@ -42,10 +42,10 @@ contract('DepositToken', function (accounts) {
 
 
         it('transfers a deposit address of another account forwards tokens to anotherAccount', async function(){
-            const depositAddressOne = anotherAccount.slice(0,37) + '00000';
-            const depositAddressTwo = anotherAccount.slice(0,37) + '20000';
-            const depositAddressThree = anotherAccount.slice(0,37) + '40000';
-            const depositAddressFour = anotherAccount.slice(0,37) + '00500';
+            const depositAddressOne = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '00000');
+            const depositAddressTwo = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '20000');
+            const depositAddressThree = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '40000');
+            const depositAddressFour = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '00500');
             await this.token.transfer(depositAddressOne, BN(10*10**18),{from: oneHundred})
             await this.token.transfer(depositAddressTwo, BN(10*10**18), {from: oneHundred})
             await this.token.transfer(depositAddressThree, BN(10*10**18), {from: oneHundred})
@@ -54,8 +54,8 @@ contract('DepositToken', function (accounts) {
         })
 
         it('emits the right events', async function(){
-            const depositAddressOne = anotherAccount.slice(0,37) + '00000';
-            const {logs} = await this.token.transfer(depositAddressOne, 10*10**18,{from: oneHundred})
+            const depositAddressOne = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '00000');
+            const {logs} = await this.token.transfer(depositAddressOne, BN(10*10**18),{from: oneHundred})
             assert.equal(logs[0].args.from,oneHundred)
             assert.equal(logs[0].args.to,depositAddressOne)
             assert.equal(logs[1].args.from,depositAddressOne)
@@ -64,11 +64,11 @@ contract('DepositToken', function (accounts) {
 
         it('emits the right events for mint', async function() {
             const ZERO = '0x0000000000000000000000000000000000000000';
-            const depositAddressOne = anotherAccount.slice(0,37) + '00000';
+            const depositAddressOne = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '00000');
             await this.registry.setAttribute(depositAddressOne, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner});
             const {logs} = await this.token.mint(depositAddressOne, BN(10*10**18),{from: owner})
             assert.equal(logs[0].args.to,depositAddressOne);
-            assert.equal(logs[0].args.value, BN(10*10**18));
+            assert(logs[0].args.value.eq(BN(10*10**18)));
             assert.equal(logs[1].args.from,ZERO)
             assert.equal(logs[1].args.to,depositAddressOne)
             assert.equal(logs[2].args.from,depositAddressOne)
@@ -77,10 +77,10 @@ contract('DepositToken', function (accounts) {
 
         it('can remove deposit address', async function(){
             await this.registry.setAttribute(DEPOSIT_ADDRESS, bytes32("isDepositAddress"), 0, notes, { from: owner })
-            const depositAddressOne = anotherAccount.slice(0,37) + '00000';
-            const depositAddressTwo = anotherAccount.slice(0,37) + '20000';
-            const depositAddressThree = anotherAccount.slice(0,37) + '40000';
-            const depositAddressFour = anotherAccount.slice(0,37) + '00500';
+            const depositAddressOne = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '00000');
+            const depositAddressTwo = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '20000');
+            const depositAddressThree = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '40000');
+            const depositAddressFour = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '00500');
             await this.token.transfer(depositAddressOne, BN(10*10**18), {from: oneHundred})
             await this.token.transfer(depositAddressTwo, BN(10*10**18), {from: oneHundred})
             await this.token.transfer(depositAddressThree, BN(10*10**18), {from: oneHundred})
@@ -89,8 +89,8 @@ contract('DepositToken', function (accounts) {
         })
         
         it('deposit tokens work with minting', async function(){
-            const depositAddressOne = anotherAccount.slice(0,37) + '00000';
-            const depositAddressTwo = anotherAccount.slice(0,37) + '20000';
+            const depositAddressOne = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '00000');
+            const depositAddressTwo = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '20000');
             await this.registry.setAttribute(depositAddressOne, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
             await this.registry.setAttribute(depositAddressTwo, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
             const {logs} = await this.token.mint(depositAddressOne, BN(10*10**18), {from: owner})
@@ -102,34 +102,34 @@ contract('DepositToken', function (accounts) {
         describe('deposit token works with deposit registrar', function(){
             beforeEach(async function () {
                 this.registrar = await DepositAddressRegistrar.new(this.registry.address, {from: owner})
-                const canWriteToDepositAddress = await this.registry.writeAttributeFor.call("isDepositAddress")
+                const canWriteToDepositAddress = await this.registry.writeAttributeFor.call(bytes32("isDepositAddress"))
                 await this.registry.setAttributeValue(this.registrar.address, canWriteToDepositAddress, 1, { from: owner })
             })
 
             it('Registrar can register deposit address', async function(){
                 await this.registrar.registerDepositAddress({from: thirdAddress})
-                const depositAddressOne = thirdAddress.slice(0,37) + '00000';
-                const depositAddressTwo = thirdAddress.slice(0,37) + '20000';
-                const depositAddressThree = thirdAddress.slice(0,37) + '40000';
-                const depositAddressFour = thirdAddress.slice(0,37) + '00500';
-                await this.token.transfer(depositAddressOne, 10*10**18,{from: oneHundred})
-                await this.token.transfer(depositAddressTwo, 10*10**18, {from: oneHundred})
-                await this.token.transfer(depositAddressThree, 10*10**18, {from: oneHundred})
-                await this.token.transfer(depositAddressFour, 10*10**18, {from: oneHundred})
-                await assertBalance(this.token,thirdAddress, 40*10**18)    
+                const depositAddressOne = web3.utils.toChecksumAddress(thirdAddress.slice(0,37) + '00000');
+                const depositAddressTwo = web3.utils.toChecksumAddress(thirdAddress.slice(0,37) + '20000');
+                const depositAddressThree = web3.utils.toChecksumAddress(thirdAddress.slice(0,37) + '40000');
+                const depositAddressFour = web3.utils.toChecksumAddress(thirdAddress.slice(0,37) + '00500');
+                await this.token.transfer(depositAddressOne, BN(10*10**18),{from: oneHundred})
+                await this.token.transfer(depositAddressTwo, BN(10*10**18), {from: oneHundred})
+                await this.token.transfer(depositAddressThree, BN(10*10**18), {from: oneHundred})
+                await this.token.transfer(depositAddressFour, BN(10*10**18), {from: oneHundred})
+                await assertBalance(this.token,thirdAddress, BN(40*10**18))
             })
 
             it('Registrar can register deposit address through fallback function', async function(){
                 await this.registrar.sendTransaction({from: thirdAddress, gas: 600000, value: 10})
-                const depositAddressOne = thirdAddress.slice(0,37) + '00000';
-                const depositAddressTwo = thirdAddress.slice(0,37) + '20000';
-                const depositAddressThree = thirdAddress.slice(0,37) + '40000';
-                const depositAddressFour = thirdAddress.slice(0,37) + '00500';
-                await this.token.transfer(depositAddressOne, 10*10**18,{from: oneHundred})
-                await this.token.transfer(depositAddressTwo, 10*10**18, {from: oneHundred})
-                await this.token.transfer(depositAddressThree, 10*10**18, {from: oneHundred})
-                await this.token.transfer(depositAddressFour, 10*10**18, {from: oneHundred})
-                await assertBalance(this.token,thirdAddress, 40*10**18)    
+                const depositAddressOne = web3.utils.toChecksumAddress(thirdAddress.slice(0,37) + '00000');
+                const depositAddressTwo = web3.utils.toChecksumAddress(thirdAddress.slice(0,37) + '20000');
+                const depositAddressThree = web3.utils.toChecksumAddress(thirdAddress.slice(0,37) + '40000');
+                const depositAddressFour = web3.utils.toChecksumAddress(thirdAddress.slice(0,37) + '00500');
+                await this.token.transfer(depositAddressOne, BN(10*10**18),{from: oneHundred})
+                await this.token.transfer(depositAddressTwo, BN(10*10**18), {from: oneHundred})
+                await this.token.transfer(depositAddressThree, BN(10*10**18), {from: oneHundred})
+                await this.token.transfer(depositAddressFour, BN(10*10**18), {from: oneHundred})
+                await assertBalance(this.token,thirdAddress, 40*10**18)
             })
 
             it('cannot register for deposit address twice', async function(){

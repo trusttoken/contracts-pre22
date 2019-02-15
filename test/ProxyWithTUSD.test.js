@@ -13,10 +13,12 @@ const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
 const TusdProxy = artifacts.require("OwnedUpgradeabilityProxy")
 
+const bytes32 = require('./helpers/bytes32.js')
+const BN = web3.utils.toBN;
 
 contract('Proxy', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
-    const notes = "some notes"
+    const notes = bytes32("some notes")
 
     describe('--Set up proxy--', function () {
         beforeEach(async function () {
@@ -29,8 +31,8 @@ contract('Proxy', function (accounts) {
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.proxy.upgradeTo(this.implementation.address,{ from: owner })
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner })
-            await this.registry.setAttribute(oneHundred, "canBurn", 1, "notes", { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
         })
 
         it('initializes proxy/tusd contract', async function(){
@@ -38,9 +40,9 @@ contract('Proxy', function (accounts) {
             const tokenOwner = await this.token.owner.call()
             assert.equal(tokenOwner, owner)
             const burnMin = await this.token.burnMin.call()
-            assert.equal(Number(burnMin), 10000*10**18)
+            assert(BN(10000).mul(BN(10**18)).eq(burnMin))
             const burnMax = await this.token.burnMax.call()
-            assert.equal(Number(burnMax), 20000000*10**18)
+            assert(burnMax.eq(BN(20000000).mul(BN(10**18))))
         })
 
         it('cannot initialize a second time', async function(){
@@ -68,14 +70,14 @@ contract('Proxy', function (accounts) {
                 await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
                 await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
                 await this.token.setRegistry(this.registry.address, { from: owner }) 
-                await this.token.mint(oneHundred, 100*10**18, {from: owner})
+                await this.token.mint(oneHundred, BN(100).mul(BN(10**18)), {from: owner})
             })
             it('proxy return totalSupply', async function(){
                 await this.token.totalSupply.call()
             })    
 
             it('can transfer token', async function(){
-                await this.token.transfer(anotherAccount,10*10**18, {from: oneHundred})
+                await this.token.transfer(anotherAccount,BN(10*10**18), {from: oneHundred})
             }) 
 
             basicTokenTests([owner, oneHundred, anotherAccount])
