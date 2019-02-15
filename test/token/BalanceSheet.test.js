@@ -3,6 +3,8 @@ import assertBalance from '../helpers/assertBalance'
 import expectThrow from '../helpers/expectThrow'
 const BalanceSheet = artifacts.require('BalanceSheet')
 
+const BN = web3.utils.toBN;
+
 contract('BalanceSheet', function ([_, owner, anotherAccount]) {
     beforeEach(async function () {
         this.sheet = await BalanceSheet.new({ from: owner })

@@ -131,12 +131,12 @@ contract('MultisigOwner', function (accounts) {
         it ('owners can reclaim ether',async function(){
             const emptyAddress = "0x0000000000000000000000000000000000000002"
             await this.multisigOwner.sendTransaction({from: oneHundred, gas: 30000, value: BN(10*10**18)});
-            const balanceWithEther = web3.utils.fromWei(web3.eth.getBalance(this.multisigOwner.address), 'ether').toNumber()
+            const balanceWithEther = web3.utils.fromWei(await web3.eth.getBalance(this.multisigOwner.address), 'ether').toNumber()
             assert.equal(balanceWithEther, 10)
             await this.multisigOwner.msReclaimEther(emptyAddress, {from : owner1 })
             await this.multisigOwner.msReclaimEther(emptyAddress, {from : owner2 })
             const multisigFinalBalance = web3.utils.fromWei(await web3.eth.getBalance(this.multisigOwner.address), 'ether').toNumber()
-            const userBalance = web3.utils.fromWei(web3.eth.getBalance(emptyAddress), 'ether').toNumber()
+            const userBalance = web3.utils.fromWei(await web3.eth.getBalance(emptyAddress), 'ether').toNumber()
             assert.equal(multisigFinalBalance, 0)
             assert.equal(userBalance, 10)
         })
@@ -158,8 +158,8 @@ contract('MultisigOwner', function (accounts) {
             await this.multisigOwner.msVeto({from : owner3 })
             const ownerAction = await this.multisigOwner.ownerAction.call();
             assert.equal(ownerAction[0], null)
-            assert.equal(ownerAction[1].eq(BN(0)))
-            assert.equal(ownerAction[2].eq(BN(0)))
+            assert.equal(ownerAction[1], null)
+            assert.equal(ownerAction[2], null)
         })
 
         it('owners cannot veto when there is no action', async function(){
@@ -303,14 +303,14 @@ contract('MultisigOwner', function (accounts) {
 
         it('call requestReclaimContract of tokenController', async function(){
             const balances = await this.token.balances.call()
-            let balanceOwner = await BalanceSheet.at(balances).owner.call()
+            let balanceOwner = (await BalanceSheet.at(balances)).owner.call()
             assert.equal(balanceOwner, this.token.address)
 
             await this.multisigOwner.requestReclaimContract(balances, { from: owner1 })
             await this.multisigOwner.requestReclaimContract(balances, { from: owner2 })
             await this.multisigOwner.issueClaimOwnership(balances, { from: owner1 })
             await this.multisigOwner.issueClaimOwnership(balances, { from: owner2 })
-            balanceOwner = await BalanceSheet.at(balances).owner.call()
+            balanceOwner = (await BalanceSheet.at(balances).owner).call()
             assert.equal(balanceOwner, this.controller.address)
 
         })
@@ -319,10 +319,10 @@ contract('MultisigOwner', function (accounts) {
         it('call requestReclaimEther of tokenController', async function(){
             const forceEther = await ForceEther.new({ from: oneHundred, value: "10000000000000000000" })
             await forceEther.destroyAndSend(this.token.address)
-            const balance1 = web3.utils.fromWei(web3.eth.getBalance(this.multisigOwner.address), 'ether').toNumber()
+            const balance1 = web3.utils.fromWei(await web3.eth.getBalance(this.multisigOwner.address), 'ether').toNumber()
             await this.multisigOwner.requestReclaimEther({from: owner1})
             await this.multisigOwner.requestReclaimEther({from: owner2})
-            const balance2 = web3.utils.fromWei(web3.eth.getBalance(this.multisigOwner.address), 'ether').toNumber()
+            const balance2 = web3.utils.fromWei(await web3.eth.getBalance(this.multisigOwner.address), 'ether').toNumber()
             assert.isAbove(balance2, balance1)
 
         })

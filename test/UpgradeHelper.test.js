@@ -63,7 +63,7 @@ contract('Upgrade Helper', function (accounts) {
         })
         it('new tusd has correct registry', async function(){
             const registry = await this.token.registry.call()
-            assert.equal(registry, '0x0000000000013949f288172bd7e36837bddc7211')
+            assert.equal(registry, web3.utils.toChecksumAddress('0x0000000000013949f288172bd7e36837bddc7211'))
         })
     })
 })

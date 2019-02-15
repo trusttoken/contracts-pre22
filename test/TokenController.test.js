@@ -65,7 +65,7 @@ contract('TokenController', function (accounts) {
             })
 
             it('mint limits cannot be out of order', async function(){
-                await assertRevert(this.controller.setMintLimits(BN(300*10**18),BN(30*10**18),BN(3000).mul(BN(10**18)),{ from: owner }))
+                await assertRevert(this.controller.setMintLimits(BN(300).mul(BN(10**18)),BN(30*10**18),BN(3000).mul(BN(10**18)),{ from: owner }))
                 await assertRevert(this.controller.setMintLimits(BN(30*10**18),BN(300*10**18),BN(200).mul(BN(10**18)),{ from: owner }))
             })
 

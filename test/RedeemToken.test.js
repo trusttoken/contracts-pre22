@@ -9,6 +9,7 @@ const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
 
 const bytes32 = require('./helpers/bytes32.js')
+const BN = web3.utils.toBN;
 
 contract('RedeemToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount, cannotBurn] = accounts

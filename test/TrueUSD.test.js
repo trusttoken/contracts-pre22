@@ -88,7 +88,7 @@ contract('TrueUSD', function (accounts) {
                 await this.token.setBurnBounds(BN(10*10**18), BN(20*10**18), { from: owner })
                 await this.token.burn(BN(10.503*10**18), { from: oneHundred })
                 let remainingBalance = await this.token.balanceOf.call(oneHundred)
-                assert(remainingBalance.eq(BN(89.5).mul(BN(10**18))))
+                assert(remainingBalance.eq(BN(895).mul(BN(10**17))))
             })
         })
 

@@ -5,12 +5,9 @@ const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const OwnedUpgradeabilityProxy = artifacts.require("OwnedUpgradeabilityProxy")
 
-<<<<<<< HEAD
 const bytes32 = require('./helpers/bytes32.js');
 const BN = web3.utils.toBN;
 
-=======
->>>>>>> upstream/master
 function showRegressions(expectations) {
   for (let trial in expectations) {
     showRegression(trial, expectations[trial].actual, expectations[trial].expected);
