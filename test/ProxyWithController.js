@@ -8,6 +8,7 @@ const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 const TokenController = artifacts.require("TokenController")
 
 const bytes32 = require('./helpers/bytes32.js')
+const BN = web3.utils.toBN;
 
 contract('--Proxy With Controller--', function (accounts) {
     const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
@@ -84,11 +85,11 @@ contract('--Proxy With Controller--', function (accounts) {
         describe('--TokenController functions--', async function(){
             beforeEach(async function () {
                 await this.token.setRegistry(this.registry.address, { from: owner })
-                await this.token.mint(oneHundred, 100*10**18, {from: owner})
+                await this.token.mint(oneHundred, BN(100).mul(BN(10**18)), {from: owner})
                 await this.token.transferOwnership(this.controller.address, { from: owner })
                 await this.controller.issueClaimOwnership(this.token.address, { from: owner })
-                await this.controller.setMintThresholds(10*10**18,BN(100).mul(BN(10**18)),BN(1000).mul(BN(10**18)), { from: owner })
-                await this.controller.setMintLimits(30*10**18,BN(300).mul(BN(10**18)),BN(3000).mul(BN(10**18)),{ from: owner })
+                await this.controller.setMintThresholds(BN(10*10**18),BN(100).mul(BN(10**18)),BN(1000).mul(BN(10**18)), { from: owner })
+                await this.controller.setMintLimits(BN(30*10**18),BN(300).mul(BN(10**18)),BN(3000).mul(BN(10**18)),{ from: owner })
             })
 
             it('non mintKey/owner cannot request mint', async function () {
@@ -104,7 +105,7 @@ contract('--Proxy With Controller--', function (accounts) {
                 assert(mintOperation[1].eq(BN(10*10**18)))
                 assert(mintOperation[3].eq(BN(0)),"numberOfApprovals not 0")
                 const mintOperationCount = await this.controller.mintOperationCount.call()
-                assert(mintOperationCount.eq(1))
+                assert(mintOperationCount.eq(BN(1)), 'operation count not 1')
 
             })
         })

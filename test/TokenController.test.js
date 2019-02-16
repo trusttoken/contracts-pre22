@@ -11,7 +11,7 @@ const FastPauseTrueUSD = artifacts.require("FastPauseTrueUSD")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 
 const bytes32 = require('./helpers/bytes32.js')
-const BN = web3.utils.BN;
+const BN = web3.utils.toBN;
 
 contract('TokenController', function (accounts) {
 
@@ -34,7 +34,7 @@ contract('TokenController', function (accounts) {
             await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
             await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
             await this.token.initialize({from: owner})
-            await this.token.setTotalSupply(BN(100*10**18), {from: owner})
+            await this.token.setTotalSupply(BN(100).mul(BN(10**18)), {from: owner})
             await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
             this.controller = await TokenController.new({ from: owner })
@@ -60,13 +60,13 @@ contract('TokenController', function (accounts) {
         describe('Request and Finalize Mints (owner)', function () {
 
             beforeEach(async function () {
-                await this.controller.setMintThresholds(BN(10*10**18),BN(100*10**18),BN(1000*10**18), { from: owner })
-                await this.controller.setMintLimits(BN(30*10**18),BN(300*10**18),BN(3000*10**18),{ from: owner })
+                await this.controller.setMintThresholds(BN(10*10**18),BN(100).mul(BN(10**18)),BN(1000).mul(BN(10**18)), { from: owner })
+                await this.controller.setMintLimits(BN(30).mul(BN(10**18)),BN(300).mul(BN(10**18)),BN(3000).mul(BN(10**18)),{ from: owner })
             })
 
             it('mint limits cannot be out of order', async function(){
                 await assertRevert(this.controller.setMintLimits(BN(300).mul(BN(10**18)),BN(30*10**18),BN(3000).mul(BN(10**18)),{ from: owner }))
-                await assertRevert(this.controller.setMintLimits(BN(30*10**18),BN(300*10**18),BN(200).mul(BN(10**18)),{ from: owner }))
+                await assertRevert(this.controller.setMintLimits(BN(30*10**18),BN(300).mul(BN(10**18)),BN(200).mul(BN(10**18)),{ from: owner }))
             })
 
             it('mint thresholds cannot be out of order', async function(){
@@ -80,7 +80,7 @@ contract('TokenController', function (accounts) {
 
             it('request a mint', async function () {
                 const originalMintOperationCount = await this.controller.mintOperationCount.call()
-                assert.equal(originalMintOperationCount, 0)
+                assert(originalMintOperationCount.eq(BN(0)))
                 await this.controller.requestMint(oneHundred, BN(10*10**18) , { from: owner })
                 const mintOperation = await this.controller.mintOperations.call(0)
                 assert.equal(mintOperation[0], oneHundred)
@@ -143,15 +143,15 @@ contract('TokenController', function (accounts) {
             })
 
             it("changing mint thresholds should generate logs", async function(){
-                const {logs} = await this.controller.setMintThresholds(BN(10*10**18),BN(100*10**18),BN(1000*10**18), { from: owner })
+                const {logs} = await this.controller.setMintThresholds(BN(10*10**18),BN(100).mul(BN(10**18)),BN(1000).mul(BN(10**18)), { from: owner })
                 assert.equal(logs[0].event,"MintThresholdChanged" )
                 assert(logs[0].args.instant.eq(BN(10*10**18)))
-                assert(logs[0].args.ratified.eq(BN(100*10**18)))
+                assert(logs[0].args.ratified.eq(BN(100).mul(BN(10**18))))
                 assert((logs[0].args.multiSig).eq(BN(1000).mul(BN(10**18))))
             })
 
             it("changing mint limits should generate logs", async function(){
-                const {logs} = await this.controller.setMintLimits(BN(30*10**18),BN(300*10**18),BN(3000*10**18),{ from: owner })
+                const {logs} = await this.controller.setMintLimits(BN(30*10**18),BN(300).mul(BN(10**18)),BN(3000).mul(BN(10**18)),{ from: owner })
                 assert.equal(logs[0].event, "MintLimitsChanged")
                 assert(logs[0].args.instant.eq(BN(30*10**18)))
                 assert(logs[0].args.ratified.eq(BN(300).mul(BN(10**18))))
@@ -161,8 +161,8 @@ contract('TokenController', function (accounts) {
 
         describe('Full mint process', function () {
             beforeEach(async function () {
-                await this.controller.setMintThresholds(BN(10*10**18),BN(100*10**18),BN(1000*10**18), { from: owner })
-                await this.controller.setMintLimits(BN(30*10**18),BN(300*10**18),BN(3000*10**18),{ from: owner })
+                await this.controller.setMintThresholds(BN(10*10**18),BN(100).mul(BN(10**18)),BN(1000).mul(BN(10**18)), { from: owner })
+                await this.controller.setMintLimits(BN(30*10**18),BN(300).mul(BN(10**18)),BN(3000).mul(BN(10**18)),{ from: owner })
                 await this.controller.refillMultiSigMintPool({ from: owner })
                 await this.controller.refillRatifiedMintPool({ from: owner })
                 await this.controller.refillInstantMintPool({ from: owner })
@@ -285,86 +285,86 @@ contract('TokenController', function (accounts) {
             })
 
             it('single approval ratify does not finalize if over the ratifiedMintthreshold', async function () {
-                await this.controller.requestMint(otherAddress, BN(200*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(0, otherAddress, BN(200*10**18) , { from: ratifier1 })
+                await this.controller.requestMint(otherAddress, BN(200).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(0, otherAddress, BN(200).mul(BN(10**18)) , { from: ratifier1 })
                 await assertBalance(this.token, otherAddress, 0)
             })
 
             it('single approval ratify mint does not finalize if over the ratifiedMintPool is dry', async function () {
-                await this.controller.requestMint(otherAddress, BN(100*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(0, otherAddress, BN(100*10**18) , { from: ratifier1 })
-                await this.controller.requestMint(otherAddress, BN(100*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(1, otherAddress, BN(100*10**18) , { from: ratifier1 })
+                await this.controller.requestMint(otherAddress, BN(100).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(0, otherAddress, BN(100).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.requestMint(otherAddress, BN(100).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(1, otherAddress, BN(100).mul(BN(10**18)) , { from: ratifier1 })
                 await this.controller.requestMint(otherAddress, BN(30*10**18) , { from: mintKey })
                 await this.controller.ratifyMint(2, otherAddress, BN(30*10**18) , { from: ratifier1 })
-                await this.controller.requestMint(otherAddress, BN(50*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(3, otherAddress, BN(50*10**18) , { from: ratifier1 })
-                await assertBalance(this.token, otherAddress, BN(230*10**18))
+                await this.controller.requestMint(otherAddress, BN(50).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(3, otherAddress, BN(50).mul(BN(10**18)) , { from: ratifier1 })
+                await assertBalance(this.token, otherAddress, BN(230).mul(BN(10**18)))
             })
 
             it('cannot finalize mint without enough approvers', async function(){
-                await this.controller.requestMint(otherAddress, BN(50*10**18) , { from: mintKey })
+                await this.controller.requestMint(otherAddress, BN(50).mul(BN(10**18)) , { from: mintKey })
                 await assertRevert(this.controller.finalizeMint(0, {from : mintKey}))
                 await this.controller.ratifyMint(0, otherAddress, BN(50*10**18) , { from: ratifier1 })
-                await this.controller.requestMint(otherAddress, BN(500*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(1, otherAddress, BN(500*10**18) , { from: ratifier1 })
-                await this.controller.ratifyMint(1, otherAddress, BN(500*10**18) , { from: ratifier2 })
+                await this.controller.requestMint(otherAddress, BN(500).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(1, otherAddress, BN(500).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.ratifyMint(1, otherAddress, BN(500).mul(BN(10**18)) , { from: ratifier2 })
                 await assertRevert(this.controller.finalizeMint(1, {from : mintKey}))
-                await this.controller.ratifyMint(1, otherAddress, BN(500*10**18) , { from: ratifier3 })
+                await this.controller.ratifyMint(1, otherAddress, BN(500).mul(BN(10**18)) , { from: ratifier3 })
             })
 
             it('owner can finalize mint without ratifiers', async function(){
                 await this.controller.requestMint(otherAddress, BN(50*10**18) , { from: mintKey })
                 await this.controller.finalizeMint(0, {from : owner})
-                await this.controller.requestMint(otherAddress, BN(500*10**18) , { from: mintKey })
+                await this.controller.requestMint(otherAddress, BN(500).mul(BN(10**18)) , { from: mintKey })
                 await this.controller.finalizeMint(1, {from : owner})
             })
 
             it('does the entire multiSig mint process', async function () {
-                await this.controller.requestMint(otherAddress, BN(200*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(0, otherAddress, BN(200*10**18) , { from: ratifier1 })
-                await this.controller.ratifyMint(0, otherAddress, BN(200*10**18) , { from: ratifier2 })
-                await this.controller.ratifyMint(0, otherAddress, BN(200*10**18) , { from: ratifier3 })
-                await assertBalance(this.token, otherAddress, BN(200*10**18))
+                await this.controller.requestMint(otherAddress, BN(200).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(0, otherAddress, BN(200).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.ratifyMint(0, otherAddress, BN(200).mul(BN(10**18)) , { from: ratifier2 })
+                await this.controller.ratifyMint(0, otherAddress, BN(200).mul(BN(10**18)) , { from: ratifier3 })
+                await assertBalance(this.token, otherAddress, BN(200).mul(BN(10**18)))
                 const remainMultiSigPool = await this.controller.multiSigMintPool.call()
-                assert.equal(Number(remainMultiSigPool), BN(2500*10**18))
+                assert.equal(Number(remainMultiSigPool), BN(2500).mul(BN(10**18)))
             })
 
             it('multiSig mint does not finalize if over the jumbpMintthreshold', async function () {
-                await this.controller.requestMint(otherAddress, BN(2000*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(0, otherAddress, BN(2000*10**18) , { from: ratifier1 })
-                await this.controller.ratifyMint(0, otherAddress, BN(2000*10**18) , { from: ratifier2 })
-                await this.controller.ratifyMint(0, otherAddress, BN(2000*10**18) , { from: ratifier3 })
+                await this.controller.requestMint(otherAddress, BN(2000).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(0, otherAddress, BN(2000).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.ratifyMint(0, otherAddress, BN(2000).mul(BN(10**18)) , { from: ratifier2 })
+                await this.controller.ratifyMint(0, otherAddress, BN(2000).mul(BN(10**18)) , { from: ratifier3 })
                 await assertBalance(this.token, otherAddress, 0)
             })
 
             it('multiSig mint does not finalize if over the multiSigMintPool is dry', async function () {
-                await this.controller.requestMint(otherAddress, BN(1000*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(0, otherAddress, BN(1000*10**18) , { from: ratifier1 })
-                await this.controller.ratifyMint(0, otherAddress, BN(1000*10**18) , { from: ratifier2 })
-                await this.controller.ratifyMint(0, otherAddress, BN(1000*10**18) , { from: ratifier3 })
-                await this.controller.requestMint(otherAddress, BN(1000*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(1, otherAddress, BN(1000*10**18) , { from: ratifier1 })
-                await this.controller.ratifyMint(1, otherAddress, BN(1000*10**18) , { from: ratifier2 })
-                await this.controller.ratifyMint(1, otherAddress, BN(1000*10**18) , { from: ratifier3 })
-                await this.controller.requestMint(otherAddress, BN(300*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(2, otherAddress, BN(300*10**18) , { from: ratifier1 })
-                await this.controller.ratifyMint(2, otherAddress, BN(300*10**18) , { from: ratifier2 })
-                await this.controller.ratifyMint(2, otherAddress, BN(300*10**18) , { from: ratifier3 })
-                await this.controller.requestMint(otherAddress, BN(500*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(3, otherAddress, BN(500*10**18) , { from: ratifier1 })
-                await this.controller.ratifyMint(3, otherAddress, BN(500*10**18) , { from: ratifier2 })
-                await this.controller.ratifyMint(3, otherAddress, BN(500*10**18) , { from: ratifier3 })
-                await assertBalance(this.token, otherAddress, BN(2300*10**18))
+                await this.controller.requestMint(otherAddress, BN(1000).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(0, otherAddress, BN(1000).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.ratifyMint(0, otherAddress, BN(1000).mul(BN(10**18)) , { from: ratifier2 })
+                await this.controller.ratifyMint(0, otherAddress, BN(1000).mul(BN(10**18)) , { from: ratifier3 })
+                await this.controller.requestMint(otherAddress, BN(1000).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(1, otherAddress, BN(1000).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.ratifyMint(1, otherAddress, BN(1000).mul(BN(10**18)) , { from: ratifier2 })
+                await this.controller.ratifyMint(1, otherAddress, BN(1000).mul(BN(10**18)) , { from: ratifier3 })
+                await this.controller.requestMint(otherAddress, BN(300).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(2, otherAddress, BN(300).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.ratifyMint(2, otherAddress, BN(300).mul(BN(10**18)) , { from: ratifier2 })
+                await this.controller.ratifyMint(2, otherAddress, BN(300).mul(BN(10**18)) , { from: ratifier3 })
+                await this.controller.requestMint(otherAddress, BN(500).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(3, otherAddress, BN(500).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.ratifyMint(3, otherAddress, BN(500).mul(BN(10**18)) , { from: ratifier2 })
+                await this.controller.ratifyMint(3, otherAddress, BN(500).mul(BN(10**18)) , { from: ratifier3 })
+                await assertBalance(this.token, otherAddress, BN(2300).mul(BN(10**18)))
             })
 
             it('owner can mint unlimited amount', async function () {
-                await this.controller.requestMint(oneHundred, BN(10000*10**18), { from: mintKey })
-                await this.controller.ratifyMint(0, oneHundred, BN(10000*10**18), { from: owner })
+                await this.controller.requestMint(oneHundred, BN(10000).mul(BN(10**18)), { from: mintKey })
+                await this.controller.ratifyMint(0, oneHundred, BN(10000).mul(BN(10**18)), { from: owner })
             })
 
             it('pause key can pause specific mint', async function() {
-                await this.controller.requestMint(oneHundred, BN(10*10**18), { from: mintKey })
+                await this.controller.requestMint(oneHundred, BN(10).mul(BN(10**18)), { from: mintKey })
                 await this.controller.pauseMint(0, { from: pauseKey })
                 await assertRevert(this.controller.ratifyMint(0, oneHundred, BN(10*10**18), { from: ratifier1 }))
             })
@@ -393,8 +393,8 @@ contract('TokenController', function (accounts) {
 
         describe('refill mint pool', function(){
             beforeEach(async function () {
-                await this.controller.setMintThresholds(BN(10*10**18),BN(100*10**18),BN(1000*10**18), { from: owner })
-                await this.controller.setMintLimits(BN(30*10**18),BN(300*10**18),BN(3000*10**18),{ from: owner })
+                await this.controller.setMintThresholds(BN(10*10**18),BN(100).mul(BN(10**18)),BN(1000).mul(BN(10**18)), { from: owner })
+                await this.controller.setMintLimits(BN(30).mul(BN(10**18)),BN(300).mul(BN(10**18)),BN(3000).mul(BN(10**18)),{ from: owner })
             })
 
             it('refills multiSig mint pool', async function(){
@@ -448,22 +448,22 @@ contract('TokenController', function (accounts) {
 
             it('can finalize mint after refill', async function(){
                 await this.controller.refillMultiSigMintPool({ from: owner })
-                await this.controller.requestMint(otherAddress, BN(1000*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(0, otherAddress, BN(1000*10**18) , { from: ratifier1 })
-                await this.controller.ratifyMint(0, otherAddress, BN(1000*10**18) , { from: ratifier2 })
-                await this.controller.ratifyMint(0, otherAddress, BN(1000*10**18) , { from: ratifier3 })
-                await this.controller.requestMint(otherAddress, BN(1000*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(1, otherAddress, BN(1000*10**18) , { from: ratifier1 })
-                await this.controller.ratifyMint(1, otherAddress, BN(1000*10**18) , { from: ratifier2 })
-                await this.controller.ratifyMint(1, otherAddress, BN(1000*10**18) , { from: ratifier3 })
-                await this.controller.requestMint(otherAddress, BN(800*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(2, otherAddress, BN(800*10**18) , { from: ratifier1 })
-                await this.controller.ratifyMint(2, otherAddress, BN(800*10**18) , { from: ratifier2 })
-                await this.controller.ratifyMint(2, otherAddress, BN(800*10**18) , { from: ratifier3 })
-                await this.controller.requestMint(otherAddress, BN(500*10**18) , { from: mintKey })
-                await this.controller.ratifyMint(3, otherAddress, BN(500*10**18) , { from: ratifier1 })
-                await this.controller.ratifyMint(3, otherAddress, BN(500*10**18) , { from: ratifier2 })
-                await this.controller.ratifyMint(3, otherAddress, BN(500*10**18) , { from: ratifier3 })
+                await this.controller.requestMint(otherAddress, BN(1000).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(0, otherAddress, BN(1000).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.ratifyMint(0, otherAddress, BN(1000).mul(BN(10**18)) , { from: ratifier2 })
+                await this.controller.ratifyMint(0, otherAddress, BN(1000).mul(BN(10**18)) , { from: ratifier3 })
+                await this.controller.requestMint(otherAddress, BN(1000).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(1, otherAddress, BN(1000).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.ratifyMint(1, otherAddress, BN(1000).mul(BN(10**18)) , { from: ratifier2 })
+                await this.controller.ratifyMint(1, otherAddress, BN(1000).mul(BN(10**18)) , { from: ratifier3 })
+                await this.controller.requestMint(otherAddress, BN(800).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(2, otherAddress, BN(800).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.ratifyMint(2, otherAddress, BN(800).mul(BN(10**18)) , { from: ratifier2 })
+                await this.controller.ratifyMint(2, otherAddress, BN(800).mul(BN(10**18)) , { from: ratifier3 })
+                await this.controller.requestMint(otherAddress, BN(500).mul(BN(10**18)) , { from: mintKey })
+                await this.controller.ratifyMint(3, otherAddress, BN(500).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.ratifyMint(3, otherAddress, BN(500).mul(BN(10**18)) , { from: ratifier2 })
+                await this.controller.ratifyMint(3, otherAddress, BN(500).mul(BN(10**18)) , { from: ratifier3 })
                 await assertBalance(this.token, otherAddress, 2800*10**18)
                 await this.controller.refillMultiSigMintPool({ from: owner })
                 await this.controller.finalizeMint(3, {from : mintKey})
@@ -553,7 +553,7 @@ contract('TokenController', function (accounts) {
             })
 
             it('TokenController can wipe blacklisted account', async function(){
-                await this.token.transfer(this.token.address, BN(40*10**18), { from: oneHundred })
+                await this.token.transfer(this.token.address, BN(40).mul(BN(10**18)), { from: oneHundred })
                 await assertBalance(this.token, this.token.address, 40000000000000000000)
                 await this.registry.setAttribute(this.token.address, "isBlacklisted", 1, "notes", { from: owner })
                 await this.controller.wipeBlackListedTrueUSD(this.token.address, { from: owner })
@@ -621,9 +621,9 @@ contract('TokenController', function (accounts) {
             it('reclaims ether', async function () {
                 const forceEther = await ForceEther.new({ from: oneHundred, value: "10000000000000000000" })
                 await forceEther.destroyAndSend(this.token.address)
-                const balance1 = web3.fromWei(web3.eth.getBalance(owner), 'ether').toNumber()
+                const balance1 = web3.fromWei(web3.eth.getBalance(owner), 'ether')
                 await this.controller.requestReclaimEther({ from: owner })
-                const balance2 = web3.fromWei(web3.eth.getBalance(owner), 'ether').toNumber()
+                const balance2 = web3.fromWei(web3.eth.getBalance(owner), 'ether')
                 assert.isAbove(balance2, balance1)
             })
 
@@ -636,27 +636,27 @@ contract('TokenController', function (accounts) {
             it('can reclaim ether in the controller contract address',  async function () {
                 const forceEther = await ForceEther.new({ from: oneHundred, value: "10000000000000000000" })
                 await forceEther.destroyAndSend(this.controller.address)
-                const balance1 = web3.fromWei(web3.eth.getBalance(owner), 'ether').toNumber()
+                const balance1 = web3.fromWei(web3.eth.getBalance(owner), 'ether')
                 await this.controller.reclaimEther(owner, { from: owner })
-                const balance2 = web3.fromWei(web3.eth.getBalance(owner), 'ether').toNumber()
+                const balance2 = web3.fromWei(web3.eth.getBalance(owner), 'ether')
                 assert.isAbove(balance2, balance1)
             })
         })
 
         describe('requestReclaimToken', function () {
             it('reclaims token', async function () {
-                await this.token.transfer(this.token.address, BN(40*10**18), { from: oneHundred })
+                await this.token.transfer(this.token.address, BN(40).mul(BN(10**18)), { from: oneHundred })
                 await this.controller.requestReclaimToken(this.token.address, { from: owner })
-                await assertBalance(this.token, owner, BN(40*10**18))
+                await assertBalance(this.token, owner, BN(40).mul(BN(10**18)))
             })
 
             it('cannot be called by non-owner', async function () {
-                await this.token.transfer(this.token.address, BN(40*10**18), { from: oneHundred })
+                await this.token.transfer(this.token.address, BN(40).mul(BN(10**18)), { from: oneHundred })
                 await assertRevert(this.controller.requestReclaimToken(this.token.address, { from: otherAddress }))
             })
 
             it('can reclaim token in the controller contract address',  async function () {
-                await this.token.transfer(this.controller.address, BN(40*10**18), { from: oneHundred })
+                await this.token.transfer(this.controller.address, BN(40).mul(BN(10**18)), { from: oneHundred })
                 await this.controller.reclaimToken(this.token.address, owner, { from: owner })
                 await assertBalance(this.token, owner, 40*10**18)
             })

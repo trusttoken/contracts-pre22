@@ -21,16 +21,16 @@ contract('BalanceSheet', function ([_, owner, anotherAccount]) {
 
         it('subBalance', async function () {
             await this.sheet.subBalance(anotherAccount, BN(70*10**18), { from })
-            await assertBalance(this.sheet, anotherAccount, BN((100-70).mul(BN(10**18))))
+            await assertBalance(this.sheet, anotherAccount, BN(100-70).mul(BN(10**18)))
         })
 
         it('setBalance', async function () {
-            await this.sheet.setBalance(anotherAccount, BN(70*10**18), { from })
-            await assertBalance(this.sheet, anotherAccount, BN(70*10**18))
+            await this.sheet.setBalance(anotherAccount, BN(70).mul(BN(10**18)), { from })
+            await assertBalance(this.sheet, anotherAccount, BN(70).mul(BN(10**18)))
         })
 
         it('reverts subBalance if insufficient funds', async function () {
-            await expectThrow(this.sheet.subBalance(anotherAccount, BN(170*10**18), { from }))
+            await expectThrow(this.sheet.subBalance(anotherAccount, BN(170).mul(BN(10**18)), { from }))
         })
     })
 

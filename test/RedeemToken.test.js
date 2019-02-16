@@ -29,23 +29,23 @@ contract('RedeemToken', function (accounts) {
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
             await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
+            await this.token.mint(oneHundred, BN(100).mul(BN(10**18)), { from: owner })
             await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 0, notes, { from: owner })
 
             await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
-            await this.token.setBurnBounds(BN(5*10**18), BN(1000).eq(BN(10**18)), { from: owner }) 
+            await this.token.setBurnBounds(BN(5*10**18), BN(1000).mul(BN(10**18)), { from: owner }) 
         })
 
         it('transfer to 0x0 does not burn trueUSD', async function(){
             await assertBalance(this.token, oneHundred, 100*10**18)
-            await assertRevert(this.token.transfer(ZERO_ADDRESS, 10*10**18, {from : oneHundred}))
+            await assertRevert(this.token.transfer(ZERO_ADDRESS, BN(10*10**18), {from : oneHundred}))
             await assertBalance(this.token, oneHundred, 100*10**18)
             await this.token.approve(anotherAccount, BN(10*10**18), {from : oneHundred})
             await assertRevert(this.token.transferFrom(oneHundred,ZERO_ADDRESS, BN(10*10**18), {from : anotherAccount}))
             const totalSupply = await this.token.totalSupply.call()
-            assert.equal(totalSupply.eq(BN(100*10**18)))
+            assert(totalSupply.eq(BN(100*10**18)))
             const balanceOfZero = await this.token.balanceOf.call(ZERO_ADDRESS);
-            assert.equal(balanceOfZero.eq(BN(0)));
+            assert(balanceOfZero.eq(BN(0)));
         })
         
         describe('--Redemption Addresses--', function () {

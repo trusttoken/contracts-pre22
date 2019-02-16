@@ -103,13 +103,13 @@ contract('PausedTrueUSD', function (accounts) {
                 })    
 
                 it('mint is now paused', async function(){
-                    await this.controller.setMintThresholds(BN(30*10**18),BN(300*10**18),BN(3000*10**18), { from: owner })
-                    await this.controller.setMintLimits(BN(30*10**18),BN(300*10**18),BN(3000*10**18),{ from: owner })
+                    await this.controller.setMintThresholds(BN(30*10**18),BN(300).mul(BN(10**18)),BN(3000).mul(BN(10**18)), { from: owner })
+                    await this.controller.setMintLimits(BN(30*10**18),BN(300).mul(BN(10**18)),BN(3000).mul(BN(10**18)),{ from: owner })
                     await this.controller.refillMultiSigMintPool({ from: owner })
                     await this.controller.refillRatifiedMintPool({ from: owner })
                     await this.controller.refillInstantMintPool({ from: owner })
 
-                    await assertRevert(this.controller.instantMint(oneHundred, BN(100*10**18), { from: otherAddress }))
+                    await assertRevert(this.controller.instantMint(oneHundred, BN(100).mul(BN(10**18)), { from: otherAddress }))
                 })
             })
 
