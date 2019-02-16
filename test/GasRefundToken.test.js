@@ -48,7 +48,7 @@ contract('GasRefundToken', function (accounts) {
             const withRefundTx = await this.token.transfer(oneHundred, BN(10*10**18), { from: anotherAccount, gasPrice: 1001 });
             assert.equal(await this.token.remainingGasRefundPool(), 6);
             assert.isBelow(withRefundTx.receipt.gasUsed, noRefundTx.receipt.gasUsed, "Less gas used with refund");
-            assert.isAbove(noRefundTx.receipt.gasUsed - withRefundTx.receipt.gasUsed, 23350, "Effective refund has regressed");
+            assert.isAbove(noRefundTx.receipt.gasUsed - withRefundTx.receipt.gasUsed, 23245, "Effective refund has regressed");
         })
 
 

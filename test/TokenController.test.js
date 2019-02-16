@@ -85,7 +85,7 @@ contract('TokenController', function (accounts) {
                 const mintOperation = await this.controller.mintOperations.call(0)
                 assert.equal(mintOperation[0], oneHundred)
                 assert(mintOperation[1].eq(BN(10*10**18)))
-                assert(mintOperation[3].eq(0),"numberOfApprovals not 0")
+                assert(mintOperation[3].eq(BN(0)),"numberOfApprovals not 0")
                 const mintOperationCount = await this.controller.mintOperationCount.call()
                 assert(BN(mintOperationCount).eq(BN(1)))
             })
@@ -107,7 +107,7 @@ contract('TokenController', function (accounts) {
                 await this.controller.requestMint(oneHundred, BN(10*10**18) , { from: owner })
                 const {logs} = await this.controller.ratifyMint(0, oneHundred, BN(10*10**18), {from: owner})
                 assert.equal(logs[0].event,"MintRatified");
-                assert(logs[0].args.opIndex.eq(0));
+                assert(logs[0].args.opIndex.eq(BN(0)));
                 assert.equal(logs[0].args.ratifier,owner);
                 assert.equal(logs[1].event,"FinalizeMint");
                 assert(logs[1].args.value.eq(BN(10*10**18)));
@@ -464,10 +464,10 @@ contract('TokenController', function (accounts) {
                 await this.controller.ratifyMint(3, otherAddress, BN(500).mul(BN(10**18)) , { from: ratifier1 })
                 await this.controller.ratifyMint(3, otherAddress, BN(500).mul(BN(10**18)) , { from: ratifier2 })
                 await this.controller.ratifyMint(3, otherAddress, BN(500).mul(BN(10**18)) , { from: ratifier3 })
-                await assertBalance(this.token, otherAddress, 2800*10**18)
+                await assertBalance(this.token, otherAddress, BN(2800).mul(BN(10**18)))
                 await this.controller.refillMultiSigMintPool({ from: owner })
                 await this.controller.finalizeMint(3, {from : mintKey})
-                await assertBalance(this.token, otherAddress, 3300*10**18)
+                await assertBalance(this.token, otherAddress, BN(3300).mul(BN(10**18)))
             })
         })
 
@@ -502,20 +502,20 @@ contract('TokenController', function (accounts) {
 
         describe('setBurnBounds', function () {
             it('sets burnBounds', async function () {
-                await this.controller.setBurnBounds(3*10**18, 4*10**18, { from: owner })
+                await this.controller.setBurnBounds(BN(3*10**18), BN(4*10**18), { from: owner })
 
                 const min = await this.token.burnMin.call()
-                assert.equal(min, 3*10**18)
+                assert(min.eq(BN(3*10**18)))
                 const max = await this.token.burnMax.call()
-                assert.equal(max, 4*10**18)
+                assert(max.eq(BN(4*10**18)))
             })
 
             it('cannot be called by non Owner', async function () {
-                await assertRevert(this.controller.setBurnBounds(3*10**18, 4*10**18, { from: otherAddress }))
+                await assertRevert(this.controller.setBurnBounds(BN(3*10**18), BN(4*10**18), { from: otherAddress }))
             })
 
             it('cannot be called by non Owner', async function () {
-                await assertRevert(this.controller.setBurnBounds(3*10**18, 4*10**18, { from: otherAddress }))
+                await assertRevert(this.controller.setBurnBounds(BN(3*10**18), BN(4*10**18), { from: otherAddress }))
             })
         })
 
@@ -532,7 +532,7 @@ contract('TokenController', function (accounts) {
 
 
             it('TokenController can pause TrueUSD transfers', async function(){
-                await this.token.transfer(mintKey, 10*10**18, { from: oneHundred })
+                await this.token.transfer(mintKey, BN(10*10**18), { from: oneHundred })
                 await this.controller.pauseTrueUSD({ from: owner })
                 const pausedImpl = await this.tokenProxy.implementation.call()
                 assert.equal(pausedImpl, "0x0000000000000000000000000000000000000001")
@@ -555,7 +555,7 @@ contract('TokenController', function (accounts) {
             it('TokenController can wipe blacklisted account', async function(){
                 await this.token.transfer(this.token.address, BN(40).mul(BN(10**18)), { from: oneHundred })
                 await assertBalance(this.token, this.token.address, 40000000000000000000)
-                await this.registry.setAttribute(this.token.address, "isBlacklisted", 1, "notes", { from: owner })
+                await this.registry.setAttribute(this.token.address, bytes32("isBlacklisted"), 1, notes, { from: owner })
                 await this.controller.wipeBlackListedTrueUSD(this.token.address, { from: owner })
                 await assertBalance(this.token, this.token.address, 0)
             })
@@ -587,12 +587,12 @@ contract('TokenController', function (accounts) {
         describe('requestReclaimContract', function () {
             it('reclaims the contract', async function () {
                 const balances = await this.token.balances.call()
-                let balanceOwner = await BalanceSheet.at(balances).owner.call()
+                let balanceOwner = await (await BalanceSheet.at(balances)).owner.call()
                 assert.equal(balanceOwner, this.token.address)
 
                 await this.controller.requestReclaimContract(balances, { from: owner })
                 await this.controller.issueClaimOwnership(balances, { from: owner })
-                balanceOwner = await BalanceSheet.at(balances).owner.call()
+                balanceOwner = await (await BalanceSheet.at(balances)).owner.call()
                 assert.equal(balanceOwner, this.controller.address)
             })
 
@@ -621,10 +621,10 @@ contract('TokenController', function (accounts) {
             it('reclaims ether', async function () {
                 const forceEther = await ForceEther.new({ from: oneHundred, value: "10000000000000000000" })
                 await forceEther.destroyAndSend(this.token.address)
-                const balance1 = web3.fromWei(web3.eth.getBalance(owner), 'ether')
+                const balance1 = web3.utils.fromWei(await web3.eth.getBalance(owner), 'ether')
                 await this.controller.requestReclaimEther({ from: owner })
-                const balance2 = web3.fromWei(web3.eth.getBalance(owner), 'ether')
-                assert.isAbove(balance2, balance1)
+                const balance2 = web3.utils.fromWei(await web3.eth.getBalance(owner), 'ether')
+                assert.isAbove(Number(balance2), Number(balance1))
             })
 
             it('cannot be called by non-owner', async function () {
@@ -636,10 +636,10 @@ contract('TokenController', function (accounts) {
             it('can reclaim ether in the controller contract address',  async function () {
                 const forceEther = await ForceEther.new({ from: oneHundred, value: "10000000000000000000" })
                 await forceEther.destroyAndSend(this.controller.address)
-                const balance1 = web3.fromWei(web3.eth.getBalance(owner), 'ether')
+                const balance1 = web3.utils.fromWei(await web3.eth.getBalance(owner), 'ether')
                 await this.controller.reclaimEther(owner, { from: owner })
-                const balance2 = web3.fromWei(web3.eth.getBalance(owner), 'ether')
-                assert.isAbove(balance2, balance1)
+                const balance2 = web3.utils.fromWei(await web3.eth.getBalance(owner), 'ether')
+                assert.isAbove(Number(balance2), Number(balance1))
             })
         })
 
@@ -658,7 +658,7 @@ contract('TokenController', function (accounts) {
             it('can reclaim token in the controller contract address',  async function () {
                 await this.token.transfer(this.controller.address, BN(40).mul(BN(10**18)), { from: oneHundred })
                 await this.controller.reclaimToken(this.token.address, owner, { from: owner })
-                await assertBalance(this.token, owner, 40*10**18)
+                await assertBalance(this.token, owner, BN(40).mul(BN(10**18)))
             })
         })
     })
