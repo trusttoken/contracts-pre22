@@ -1,13 +1,15 @@
 import assertRevert from '../helpers/assertRevert'
 import assertBalance from '../helpers/assertBalance'
 
+const BN = web3.utils.toBN;
+
 function basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns = false) {
     describe('--BasicToken Tests--', function () {
 
         describe('total supply', function () {
             it('returns the total amount of tokens', async function () {
                 const totalSupply = await this.token.totalSupply.call()
-                assert.equal(totalSupply, 100*10**18)
+                assert(totalSupply.eq(BN(100*10**18)), `${totalSupply} should equal 100e18`)
             })
         })
 
@@ -30,15 +32,14 @@ function basicTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBec
                 const to = anotherAccount
 
                 describe('when the sender does not have enough balance', function () {
-                    const amount = 101*10**18
-
+                    const amount = BN(101*10**18)
                     it('reverts', async function () {
                         await assertRevert(this.token.transfer(to, amount, { from: oneHundred }))
                     })
                 })
 
                 describe('when the sender has enough balance', function () {
-                    const amount = 100*10**18
+                    const amount = BN(100*10**18)
 
                     it('transfers the requested amount', async function () {
                         await this.token.transfer(to, amount, { from: oneHundred })

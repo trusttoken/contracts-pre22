@@ -4,10 +4,12 @@ const Registry = artifacts.require('Registry')
 const BalanceSheet = artifacts.require('BalanceSheet')
 const AllowanceSheet = artifacts.require('AllowanceSheet')
 
+const BN = web3.utils.toBN;
+
 contract('CompliantToken', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function () {
         this.registry = await Registry.new({ from: owner })
-        this.token = await CompliantTokenMock.new(oneHundred, 100*10**18, { from: owner })
+        this.token = await CompliantTokenMock.new(oneHundred, BN(100*10**18), { from: owner })
         await this.token.setRegistry(this.registry.address, { from: owner })
     })
 

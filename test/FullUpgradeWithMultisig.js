@@ -9,8 +9,12 @@ const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 const TokenController = artifacts.require("TokenController")
 const MultisigOwner = artifacts.require("MultisigOwner")
 
+const bytes32 = require('./helpers/bytes32.js')
+const BN = web3.utils.toBN;
+
 contract('--Full upgrade process with multisig--', function (accounts) {
     const [_, owner1, owner2, owner3 , oneHundred, anotherAccount, mintKey, pauseKey, approver] = accounts
+    const notes = bytes32("notes")
 
     describe('--Set up contracts--', function () {
         beforeEach(async function () {
@@ -51,11 +55,11 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             await this.multisigOwner.setRegistry(this.registry.address, { from: owner2 })
             await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner1 })
             await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner2 })
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner1 })
-            await this.registry.setAttribute(oneHundred, "canBurn", 1, "notes", { from: owner1 })
-            await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner1 })
-            await this.registry.setAttribute(approver, "isTUSDMintApprover", 1, "notes", { from: owner1 })
-            await this.registry.setAttribute(pauseKey, "isTUSDMintPausers", 1, "notes", { from: owner1 })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner1 })
+            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner1 })
+            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner1 })
+            await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, notes, { from: owner1 })
+            await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner1 })
             this.balanceSheet = await BalanceSheet.new({ from: owner1 })
             this.allowanceSheet = await AllowanceSheet.new({ from: owner1 })
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner1 })
@@ -68,10 +72,10 @@ contract('--Full upgrade process with multisig--', function (accounts) {
                 this.balanceSheet.address,
                 this.allowanceSheet.address, 
                 { from: owner2 })
-            await this.multisigOwner.requestMint(oneHundred, 10*10**18,  {from: owner1})
-            await this.multisigOwner.requestMint(oneHundred, 10*10**18, {from: owner2})
-            await this.multisigOwner.ratifyMint(0,oneHundred, 10*10**18, {from: owner1})
-            await this.multisigOwner.ratifyMint(0,oneHundred, 10*10**18, {from: owner2})
+            await this.multisigOwner.requestMint(oneHundred, BN(10*10**18),  {from: owner1})
+            await this.multisigOwner.requestMint(oneHundred, BN(10*10**18), {from: owner2})
+            await this.multisigOwner.ratifyMint(0,oneHundred, BN(10*10**18), {from: owner1})
+            await this.multisigOwner.ratifyMint(0,oneHundred, BN(10*10**18), {from: owner2})
         })
         describe('Assertion tests for set up', async function()  {
 
@@ -131,10 +135,10 @@ contract('--Full upgrade process with multisig--', function (accounts) {
                 assert.equal(newImplAddress,this.newTokenImplementation.address)
                 const currentOwner = await this.token.owner.call()
                 assert.equal(currentOwner,this.controller.address)
-                await this.multisigOwner.requestMint(oneHundred, 10*10**18,  {from: owner1})
-                await this.multisigOwner.requestMint(oneHundred, 10*10**18, {from: owner2})
-                await this.multisigOwner.ratifyMint(1, oneHundred, 10*10**18,  {from: owner1})
-                await this.multisigOwner.ratifyMint(1, oneHundred, 10*10**18, {from: owner2})    
+                await this.multisigOwner.requestMint(oneHundred, BN(10*10**18),  {from: owner1})
+                await this.multisigOwner.requestMint(oneHundred, BN(10*10**18), {from: owner2})
+                await this.multisigOwner.ratifyMint(1, oneHundred, BN(10*10**18),  {from: owner1})
+                await this.multisigOwner.ratifyMint(1, oneHundred, BN(10*10**18), {from: owner2})    
             })
             it('upgrades controller implementation contract', async function() {
                 this.newControllerImplementation = await TokenController.new({ from: owner2 })
@@ -144,10 +148,10 @@ contract('--Full upgrade process with multisig--', function (accounts) {
                 assert.equal(newImplAddress,this.newControllerImplementation.address)
                 const currentOwner = await this.controller.owner.call()
                 assert.equal(currentOwner,this.multisigOwner.address)
-                await this.multisigOwner.requestMint(oneHundred, 10*10**18,  {from: owner1})
-                await this.multisigOwner.requestMint(oneHundred, 10*10**18, {from: owner2})
-                await this.multisigOwner.ratifyMint(1, oneHundred, 10*10**18, {from: owner1})
-                await this.multisigOwner.ratifyMint(1, oneHundred, 10*10**18, {from: owner2})    
+                await this.multisigOwner.requestMint(oneHundred, BN(10*10**18),  {from: owner1})
+                await this.multisigOwner.requestMint(oneHundred, BN(10*10**18), {from: owner2})
+                await this.multisigOwner.ratifyMint(1, oneHundred, BN(10*10**18), {from: owner1})
+                await this.multisigOwner.ratifyMint(1, oneHundred, BN(10*10**18), {from: owner2})    
             })
             it('upgrades multisig owner contract', async function() {
                 this.newMultisigOwner = await MultisigOwner.new({ from: owner1 })

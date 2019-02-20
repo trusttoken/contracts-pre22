@@ -5,6 +5,9 @@ const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const OwnedUpgradeabilityProxy = artifacts.require("OwnedUpgradeabilityProxy")
 
+const bytes32 = require('./helpers/bytes32.js');
+const BN = web3.utils.toBN;
+
 function showRegressions(expectations) {
   for (let trial in expectations) {
     showRegression(trial, expectations[trial].actual, expectations[trial].expected);
@@ -22,7 +25,7 @@ function showRegression(type, actual, expected) {
 contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
 
     describe('--Gas Refund Token--', function () {
-        const DOLLAR = 1*10**18;
+        const DOLLAR = BN(1*10**18);
         beforeEach(async function () {
             this.balances = await BalanceSheet.new({ from: owner })
             this.allowances = await AllowanceSheet.new({ from: owner })
@@ -48,17 +51,17 @@ contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
-            await this.registry.setAttributeValue(oneHundred, "hasPassedKYC/AML", 1, { from: owner })
-            await this.token.mint(oneHundred, 100*10**18, { from: owner })
-            await this.registry.setAttributeValue(oneHundred, "hasPassedKYC/AML", 0, { from: owner })
-            await this.registry.setAttributeValue(oneHundred, "canSetFutureRefundMinGasPrice", 1, { from: owner });
+            await this.registry.setAttributeValue(oneHundred, bytes32("hasPassedKYC/AML"), 1, { from: owner })
+            await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
+            await this.registry.setAttributeValue(oneHundred, bytes32("hasPassedKYC/AML"), 0, { from: owner })
+            await this.registry.setAttributeValue(oneHundred, bytes32("canSetFutureRefundMinGasPrice"), 1, { from: owner });
         })
 
         it('does not regress in cost without refund', async function(){
             const reduceToNewNoRefund = await this.token.transfer(anotherAccount, DOLLAR, { from: oneHundred });
             const reduceToExistingNoRefund = await this.token.transfer(anotherAccount, DOLLAR, { from: oneHundred });
-            const emptyToExistingNoRefund = await this.token.transfer(anotherAccount, 98*10**18, { from: oneHundred });
-            const emptyToNewNoRefund = await this.token.transfer(oneHundred, 100*10**18, { from: anotherAccount });
+            const emptyToExistingNoRefund = await this.token.transfer(anotherAccount, BN(98*10**18), { from: oneHundred });
+            const emptyToNewNoRefund = await this.token.transfer(oneHundred, BN(100*10**18), { from: anotherAccount });
             const expectations = {
               reduceToNewNoRefund: { expected: 106151, actual: reduceToNewNoRefund.receipt.gasUsed },
               reduceToExistingNoRefund: { expected: 91151, actual: reduceToExistingNoRefund.receipt.gasUsed },
@@ -74,8 +77,8 @@ contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
             await this.token.sponsorGas({ from: owner });
             const reduceToNewWithRefund = await this.token.transfer(anotherAccount, DOLLAR, { from: oneHundred, gasPrice: 2 });
             const reduceToExistingWithRefund = await this.token.transfer(anotherAccount, DOLLAR, { from: oneHundred, gasPrice: 2 });
-            const emptyToExistingWithRefund = await this.token.transfer(anotherAccount, 98*10**18, { from: oneHundred, gasPrice: 2 });
-            const emptyToNewWithRefund = await this.token.transfer(oneHundred, 100*10**18, { from: anotherAccount, gasPrice: 2 });
+            const emptyToExistingWithRefund = await this.token.transfer(anotherAccount, BN(98*10**18), { from: oneHundred, gasPrice: 2 });
+            const emptyToNewWithRefund = await this.token.transfer(oneHundred, BN(100*10**18), { from: anotherAccount, gasPrice: 2 });
             const expectations = {
               reduceToNewWithRefund: { actual: reduceToNewWithRefund.receipt.gasUsed, expected: 83407 },
               reduceToExistingWithRefund: { actual: reduceToExistingWithRefund.receipt.gasUsed, expected: 68407 },

@@ -3,9 +3,11 @@ const TrueUSD = artifacts.require('TrueUSDMock')
 import standardTokenTests from './token/StandardToken';
 const Registry = artifacts.require("Registry")
 
+const BN = web3.utils.toBN;
+
 contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function() {
-        this.totalSupply = 100 * 10 ** 18
+        this.totalSupply = BN(100 * 10 ** 18)
         this.original = await CanDelegate.new(oneHundred, this.totalSupply, {from:owner})
         this.BalanceSheetAddress = await this.original.balances.call()
         this.AllowanceSheetAddress = await this.original.allowances.call()
@@ -25,9 +27,9 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
 
     describe('--DelegateERC20 Tests--', function() {
         it('shares totalSupply', async function () {
-            assert.equal(this.totalSupply, Number(await this.delegate.delegateTotalSupply.call()))
-            assert.equal(this.totalSupply, Number(await this.delegate.totalSupply.call()))
-            assert.equal(this.totalSupply, Number(await this.original.totalSupply.call()))
+            assert(this.totalSupply.eq(await this.delegate.delegateTotalSupply.call()))
+            assert(this.totalSupply.eq(await this.delegate.totalSupply.call()))
+            assert(this.totalSupply.eq(await this.original.totalSupply.call()))
         })
 
         describe('Delegate', function(){
