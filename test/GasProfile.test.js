@@ -74,10 +74,10 @@ contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
                     const emptyToExistingNoRefund = await this.token.transfer(anotherAccount, BN(98*10**18), { from: oneHundred });
                     const emptyToNewNoRefund = await this.token.transfer(oneHundred, BN(100*10**18), { from: anotherAccount });
                     const expectations = {
-                      reduceToNewNoRefund: { expected: 105953, actual: reduceToNewNoRefund.receipt.gasUsed },
-                      reduceToExistingNoRefund: { expected: 90953, actual: reduceToExistingNoRefund.receipt.gasUsed },
-                      emptyToExistingNoRefund: { expected: 76017, actual: emptyToExistingNoRefund.receipt.gasUsed },
-                      emptyToNewNoRefund: { expected: 91017, actual: emptyToNewNoRefund.receipt.gasUsed },
+                      reduceToNewNoRefund: { expected: 105909, actual: reduceToNewNoRefund.receipt.gasUsed },
+                      reduceToExistingNoRefund: { expected: 90909, actual: reduceToExistingNoRefund.receipt.gasUsed },
+                      emptyToExistingNoRefund: { expected: 75973, actual: emptyToExistingNoRefund.receipt.gasUsed },
+                      emptyToNewNoRefund: { expected: 90973, actual: emptyToNewNoRefund.receipt.gasUsed },
                     };
                     showRegressions(expectations);
                 })
@@ -99,14 +99,14 @@ contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
                     const reduceApprovalEmptyingToNew = await this.token.transferFrom(anotherAccount, oneHundred, BN(100).mul(DOLLAR), { from: oneHundred, gasPrice: 1} );
                     
                     const expectations = {
-                        reduceApprovalReducingToNew : { actual: reduceApprovalReducingToNew.receipt.gasUsed, expected: 118068 },
-                        reduceApprovalReducingToExisting : { actual: reduceApprovalReducingToExisting.receipt.gasUsed, expected: 103068 },
-                        reduceApprovalEmptyingToNew : { actual: reduceApprovalEmptyingToNew.receipt.gasUsed, expected: 103132 },
-                        reduceApprovalEmptyingToExisting : { actual: reduceApprovalEmptyingToExisting.receipt.gasUsed, expected: 88068 },
-                        emptyApprovalReducingToNew : { actual: emptyApprovalReducingToNew.receipt.gasUsed, expected: 103068 },
-                        emptyApprovalReducingToExisting : { actual: emptyApprovalReducingToExisting.receipt.gasUsed, expected: 88132 },
-                        emptyApprovalEmptyingToNew : { actual: emptyApprovalEmptyingToNew.receipt.gasUsed, expected: 88132 },
-                        emptyApprovalEmptyingToExisting : { actual: emptyApprovalEmptyingToExisting.receipt.gasUsed, expected: 73132 },
+                        reduceApprovalReducingToNew : { actual: reduceApprovalReducingToNew.receipt.gasUsed, expected: 118024 },
+                        reduceApprovalReducingToExisting : { actual: reduceApprovalReducingToExisting.receipt.gasUsed, expected: 103024 },
+                        reduceApprovalEmptyingToNew : { actual: reduceApprovalEmptyingToNew.receipt.gasUsed, expected: 103088 },
+                        reduceApprovalEmptyingToExisting : { actual: reduceApprovalEmptyingToExisting.receipt.gasUsed, expected: 88024 },
+                        emptyApprovalReducingToNew : { actual: emptyApprovalReducingToNew.receipt.gasUsed, expected: 103024 },
+                        emptyApprovalReducingToExisting : { actual: emptyApprovalReducingToExisting.receipt.gasUsed, expected: 88088 },
+                        emptyApprovalEmptyingToNew : { actual: emptyApprovalEmptyingToNew.receipt.gasUsed, expected: 88088 },
+                        emptyApprovalEmptyingToExisting : { actual: emptyApprovalEmptyingToExisting.receipt.gasUsed, expected: 73088 },
                         approve50: { actual: approve50.receipt.gasUsed, expected: 64256 },
                     };
                     showRegressions(expectations);
@@ -116,8 +116,8 @@ contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
                     const reduceToBurn = await this.token.transfer(BURN_ADDRESS, DOLLAR, { from: oneHundred, gasPrice: 1 });
                     const emptyToBurn = await this.token.transfer(BURN_ADDRESS, BN(99*10**18), { from: oneHundred, gasPrice: 1});
                     const expectations = {
-                        reduceToBurn: { actual: reduceToBurn.receipt.gasUsed, expected: 137436 },
-                        emptyToBurn: { actual: emptyToBurn.receipt.gasUsed, expected: 107500 },
+                        reduceToBurn: { actual: reduceToBurn.receipt.gasUsed, expected: 137370 },
+                        emptyToBurn: { actual: emptyToBurn.receipt.gasUsed, expected: 107434 },
                     }
                     showRegressions(expectations);
                 })
@@ -126,9 +126,9 @@ contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
                     const reduceToBurnWithChange = await this.token.transfer(BURN_ADDRESS, BN(98*10**18), { from: oneHundred, gasPrice: 1});
                     const emptyToBurnWithChange = await this.token.transfer(BURN_ADDRESS, BN(100*10**18).sub(BN(98*10**18)).sub(BN(10**16).add(BN(10**12))), { from: oneHundred, gasPrice: 1 });
                     const expectations = {
-                        burnMicroDollar: { actual: burnMicroDollar.receipt.gasUsed, expected: 152436 },
-                        reduceToBurnWithChange: { actual: reduceToBurnWithChange.receipt.gasUsed, expected: 137500 },
-                        emptyToBurnWithChange: { actual: emptyToBurnWithChange.receipt.gasUsed, expected: 122500 },
+                        burnMicroDollar: { actual: burnMicroDollar.receipt.gasUsed, expected: 152370 },
+                        reduceToBurnWithChange: { actual: reduceToBurnWithChange.receipt.gasUsed, expected: 137434 },
+                        emptyToBurnWithChange: { actual: emptyToBurnWithChange.receipt.gasUsed, expected: 122434 },
                     }
                     showRegressions(expectations);
                 })
@@ -146,10 +146,10 @@ contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
                     const emptyToExistingWithRefund = await this.token.transfer(anotherAccount, BN(98*10**18), { from: oneHundred, gasPrice: 2 });
                     const emptyToNewWithRefund = await this.token.transfer(oneHundred, BN(100*10**18), { from: anotherAccount, gasPrice: 2 });
                     const expectations = {
-                      reduceToNewWithRefund: { actual: reduceToNewWithRefund.receipt.gasUsed, expected: 83209 },
-                      reduceToExistingWithRefund: { actual: reduceToExistingWithRefund.receipt.gasUsed, expected: 68209 },
-                      emptyToExistingWithRefund: { actual: emptyToExistingWithRefund.receipt.gasUsed, expected: 56637 },
-                      emptyToNewWithRefund: { actual: emptyToNewWithRefund.receipt.gasUsed, expected: 68273 },
+                      reduceToNewWithRefund: { actual: reduceToNewWithRefund.receipt.gasUsed, expected: 83165 },
+                      reduceToExistingWithRefund: { actual: reduceToExistingWithRefund.receipt.gasUsed, expected: 68165 },
+                      emptyToExistingWithRefund: { actual: emptyToExistingWithRefund.receipt.gasUsed, expected: 56615 },
+                      emptyToNewWithRefund: { actual: emptyToNewWithRefund.receipt.gasUsed, expected: 68229 },
                     };
                     showRegressions(expectations);
                 })
@@ -170,14 +170,14 @@ contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
                     const reduceApprovalEmptyingToNewWithRefund = await this.token.transferFrom(anotherAccount, oneHundred, BN(100).mul(DOLLAR), { from: oneHundred, gasPrice: 2} );
                     
                     const expectations = {
-                        reduceApprovalReducingToNewWithRefund : { actual: reduceApprovalReducingToNewWithRefund.receipt.gasUsed, expected: 95324 },
-                        reduceApprovalReducingToExistingWithRefund : { actual: reduceApprovalReducingToExistingWithRefund.receipt.gasUsed, expected: 80324 },
-                        reduceApprovalEmptyingToNewWithRefund : { actual: reduceApprovalEmptyingToNewWithRefund.receipt.gasUsed, expected: 80388 },
-                        reduceApprovalEmptyingToExistingWithRefund : { actual: reduceApprovalEmptyingToExistingWithRefund.receipt.gasUsed, expected: 65324 },
-                        emptyApprovalReducingToNewWithRefund : { actual: emptyApprovalReducingToNewWithRefund.receipt.gasUsed, expected: 80324 },
-                        emptyApprovalReducingToExistingWithRefund : { actual: emptyApprovalReducingToExistingWithRefund.receipt.gasUsed, expected: 65388 },
-                        emptyApprovalEmptyingToNewWithRefund : { actual: emptyApprovalEmptyingToNewWithRefund.receipt.gasUsed, expected: 70194 },
-                        emptyApprovalEmptyingToExistingWithRefund : { actual: emptyApprovalEmptyingToExistingWithRefund.receipt.gasUsed, expected: 62694 },
+                        reduceApprovalReducingToNewWithRefund : { actual: reduceApprovalReducingToNewWithRefund.receipt.gasUsed, expected: 95280 },
+                        reduceApprovalReducingToExistingWithRefund : { actual: reduceApprovalReducingToExistingWithRefund.receipt.gasUsed, expected: 80280 },
+                        reduceApprovalEmptyingToNewWithRefund : { actual: reduceApprovalEmptyingToNewWithRefund.receipt.gasUsed, expected: 80344 },
+                        reduceApprovalEmptyingToExistingWithRefund : { actual: reduceApprovalEmptyingToExistingWithRefund.receipt.gasUsed, expected: 65280 },
+                        emptyApprovalReducingToNewWithRefund : { actual: emptyApprovalReducingToNewWithRefund.receipt.gasUsed, expected: 80280 },
+                        emptyApprovalReducingToExistingWithRefund : { actual: emptyApprovalReducingToExistingWithRefund.receipt.gasUsed, expected: 65344 },
+                        emptyApprovalEmptyingToNewWithRefund : { actual: emptyApprovalEmptyingToNewWithRefund.receipt.gasUsed, expected: 70172 },
+                        emptyApprovalEmptyingToExistingWithRefund : { actual: emptyApprovalEmptyingToExistingWithRefund.receipt.gasUsed, expected: 62672 },
                         approve50WithRefund: { actual: approve50WithRefund.receipt.gasUsed, expected: 64256 },
                     };
                     showRegressions(expectations);
@@ -187,8 +187,8 @@ contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
                     const reduceToBurnWithRefund = await this.token.transfer(BURN_ADDRESS, DOLLAR, { from: oneHundred, gasPrice: 2 });
                     const emptyToBurnWithRefund = await this.token.transfer(BURN_ADDRESS, BN(99*10**18), { from: oneHundred, gasPrice: 2});
                     const expectations = {
-                        reduceToBurnWithRefund: { actual: reduceToBurnWithRefund.receipt.gasUsed, expected: 114692 },
-                        emptyToBurnWithRefund: { actual: emptyToBurnWithRefund.receipt.gasUsed, expected: 87378 },
+                        reduceToBurnWithRefund: { actual: reduceToBurnWithRefund.receipt.gasUsed, expected: 114626 },
+                        emptyToBurnWithRefund: { actual: emptyToBurnWithRefund.receipt.gasUsed, expected: 87345 },
                     }
                     showRegressions(expectations);
                 })
@@ -197,9 +197,9 @@ contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
                     const reduceToBurnWithChangeWithRefund = await this.token.transfer(BURN_ADDRESS, BN(98*10**18), { from: oneHundred, gasPrice: 2});
                     const emptyToBurnWithChangeWithRefund = await this.token.transfer(BURN_ADDRESS, BN(100*10**18).sub(BN(98*10**18)).sub(BN(10**16).add(BN(10**12))), { from: oneHundred, gasPrice: 2 });
                     const expectations = {
-                        burnMicroDollarWithRefund: { actual: burnMicroDollarWithRefund.receipt.gasUsed, expected: 129692 },
-                        reduceToBurnWithChangeWithRefund: { actual: reduceToBurnWithChangeWithRefund.receipt.gasUsed, expected: 114756 },
-                        emptyToBurnWithChangeWithRefund: { actual: emptyToBurnWithChangeWithRefund.receipt.gasUsed, expected: 99756 },
+                        burnMicroDollarWithRefund: { actual: burnMicroDollarWithRefund.receipt.gasUsed, expected: 129626 },
+                        reduceToBurnWithChangeWithRefund: { actual: reduceToBurnWithChangeWithRefund.receipt.gasUsed, expected: 114690 },
+                        emptyToBurnWithChangeWithRefund: { actual: emptyToBurnWithChangeWithRefund.receipt.gasUsed, expected: 99690 },
                     }
                     showRegressions(expectations);
                 })
