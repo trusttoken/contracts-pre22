@@ -530,25 +530,6 @@ contract ModularBasicToken is HasOwner {
     }
 
     /**
-    * @dev transfer token for a specified address
-    * @param _to The address to transfer to.
-    * @param _value The amount to be transferred.
-    */
-    function transfer(address _to, uint256 _value) public returns (bool) {
-        _transferAllArgs(msg.sender, _to, _value);
-        return true;
-    }
-
-
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        // SafeMath.sub will throw if there is not enough balance.
-        balances.subBalance(_from, _value);
-        balances.addBalance(_to, _value);
-        emit Transfer(_from, _to, _value);
-    }
-    
-
-    /**
     * @dev Gets the balance of the specified address.
     * @param _owner The address to query the the balance of.
     * @return An uint256 representing the amount owned by the passed address.
@@ -581,22 +562,6 @@ contract ModularStandardToken is ModularBasicToken {
         allowances.claimOwnership();
         emit AllowanceSheetSet(_sheet);
         return true;
-    }
-
-    /**
-     * @dev Transfer tokens from one address to another
-     * @param _from address The address which you want to send tokens from
-     * @param _to address The address which you want to transfer to
-     * @param _value uint256 the amount of tokens to be transferred
-     */
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        _transferFromAllArgs(_from, _to, _value, msg.sender);
-        return true;
-    }
-
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        _transferAllArgs(_from, _to, _value);
-        allowances.subAllowance(_from, _spender, _value);
     }
 
     /**
@@ -683,6 +648,7 @@ contract ModularStandardToken is ModularBasicToken {
  */
 contract ModularBurnableToken is ModularStandardToken {
     event Burn(address indexed burner, uint256 value);
+    event Mint(address indexed to, uint256 value);
 
     /**
      * @dev Burns a specific amount of tokens.
@@ -703,32 +669,6 @@ contract ModularBurnableToken is ModularStandardToken {
     }
 }
 
-// File: contracts/modularERC20/ModularMintableToken.sol
-
-/**
- * @title Mintable token
- * @dev Simple ERC20 Token example, with mintable token creation
- * @dev Issue: * https://github.com/OpenZeppelin/openzeppelin-solidity/issues/120
- * Based on code by TokenMarketNet: https://github.com/TokenMarketNet/ico/blob/master/contracts/MintableToken.sol
- */
-contract ModularMintableToken is ModularBurnableToken {
-    event Mint(address indexed to, uint256 value);
-
-    /**
-     * @dev Function to mint tokens
-     * @param _to The address that will receive the minted tokens.
-     * @param _value The amount of tokens to mint.
-     * @return A boolean that indicates if the operation was successful.
-     */
-    function mint(address _to, uint256 _value) public onlyOwner {
-        require(_to != address(0), "to address cannot be zero");
-        totalSupply_ = totalSupply_.add(_value);
-        balances.addBalance(_to, _value);
-        emit Mint(_to, _value);
-        emit Transfer(address(0), _to, _value);
-    }
-}
-
 // File: contracts/BurnableTokenWithBounds.sol
 
 /**
@@ -736,7 +676,7 @@ contract ModularMintableToken is ModularBurnableToken {
  * @dev Burning functions as redeeming money from the system. The platform will keep track of who burns coins,
  * and will send them back the equivalent amount of money (rounded down to the nearest cent).
  */
-contract BurnableTokenWithBounds is ModularMintableToken {
+contract BurnableTokenWithBounds is ModularBurnableToken {
 
     event SetBurnBounds(uint256 newMin, uint256 newMax);
 
@@ -762,18 +702,18 @@ contract BurnableTokenWithBounds is ModularMintableToken {
 
 // File: contracts/CompliantToken.sol
 
-contract CompliantToken is ModularMintableToken {
+contract CompliantToken is ModularBurnableToken {
     // In order to deposit USD and receive newly minted TrueUSD, or to burn TrueUSD to
     // redeem it for USD, users must first go through a KYC/AML check (which includes proving they
     // control their ethereum address using AddressValidation.sol).
-    bytes32 public constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
+    bytes32 constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
     // Redeeming ("burning") TrueUSD tokens for USD requires a separate flag since
     // users must not only be KYC/AML'ed but must also have bank information on file.
-    bytes32 public constant CAN_BURN = "canBurn";
+    bytes32 constant CAN_BURN = "canBurn";
     // Addresses can also be blacklisted, preventing them from sending or receiving
     // TrueUSD. This can be used to prevent the use of TrueUSD by bad actors in
     // accordance with law enforcement. See [TrueCoin Terms of Use](https://www.trusttoken.com/trueusd/terms-of-use)
-    bytes32 public constant IS_BLACKLISTED = "isBlacklisted";
+    bytes32 constant IS_BLACKLISTED = "isBlacklisted";
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
     event SetRegistry(address indexed registry);
@@ -803,44 +743,39 @@ contract CompliantToken is ModularMintableToken {
     }
 }
 
-// File: contracts/DepositToken.sol
-
-/** @title Deposit Token
-Allows users to register their address so that all transfers to deposit addresses
-of the registered address will be forwarded to the registered address.  
-For example for address 0x9052BE99C9C8C5545743859e4559A751bDe4c923,
-its deposit addresses are all addresses between
-0x9052BE99C9C8C5545743859e4559A75100000 and 0x9052BE99C9C8C5545743859e4559A751fffff
-Transfers to 0x9052BE99C9C8C5545743859e4559A75100005 will be forwared to 0x9052BE99C9C8C5545743859e4559A751bDe4c923
- */
-contract DepositToken is ModularMintableToken {
-    
-    bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
-
-}
-
 // File: contracts/TrueCoinReceiver.sol
 
 contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
 }
 
-// File: contracts/TokenWithHook.sol
-
-/** @title Token With Hook
-If tokens are transferred to a Registered Token Receiver contract, trigger the tokenFallback function in the 
-Token Receiver contract. Assume all Registered Token Receiver contract implements the TrueCoinReceiver 
-interface. If the tokenFallback reverts, the entire transaction reverts. 
- */
-contract TokenWithHook is ModularMintableToken {
-    
-    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
-
-}
-
 // File: contracts/CompliantDepositTokenWithHook.sol
 
-contract CompliantDepositTokenWithHook is CompliantToken, DepositToken, TokenWithHook {
+contract CompliantDepositTokenWithHook is CompliantToken {
+
+    bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
+    bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
+
+    /**
+    * @dev transfer token for a specified address
+    * @param _to The address to transfer to.
+    * @param _value The amount to be transferred.
+    */
+    function transfer(address _to, uint256 _value) public returns (bool) {
+        _transferAllArgs(msg.sender, _to, _value);
+        return true;
+    }
+
+    /**
+     * @dev Transfer tokens from one address to another
+     * @param _from address The address which you want to send tokens from
+     * @param _to address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     */
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+        _transferFromAllArgs(_from, _to, _value, msg.sender);
+        return true;
+    }
 
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {
         bool hasHook;
@@ -909,11 +844,11 @@ contract CompliantDepositTokenWithHook is CompliantToken, DepositToken, TokenWit
 Makes transfers to 0x0 alias to Burn
 Implement Redemption Addresses
 */
-contract RedeemableToken is ModularMintableToken {
+contract RedeemableToken is CompliantDepositTokenWithHook {
 
     event RedemptionAddress(address indexed addr);
 
-    uint256 public constant REDEMPTION_ADDRESS_COUNT = 0x100000;
+    uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
 
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         if (_to == address(0)) {
@@ -948,7 +883,7 @@ Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas 
 Each time an non-empty storage slot is set to 0, evm refund 15,000 (19,000 after Constantinople) to the sender
 of the transaction. 
 */
-contract GasRefundToken is ModularMintableToken {
+contract GasRefundToken is CompliantDepositTokenWithHook {
 
     function sponsorGas() external {
         uint256 len = gasRefundPool.length;
@@ -1008,7 +943,7 @@ contract GasRefundToken is ModularMintableToken {
         super.mint(_to, _value);
     }
 
-    bytes32 public constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";
+    bytes32 constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";
 
     function setMinimumGasPriceForFutureRefunds(uint256 _minimumGasPriceForFutureRefunds) public {
         require(registry.hasAttribute(msg.sender, CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE));
@@ -1022,9 +957,9 @@ contract GasRefundToken is ModularMintableToken {
 Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
 functions in the old contract still works (except Burn). 
 */
-contract DelegateERC20 is ModularStandardToken {
+contract DelegateERC20 is CompliantDepositTokenWithHook {
 
-    address public constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
+    address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
     
     modifier onlyDelegateFrom() {
         require(msg.sender == DELEGATE_FROM);
@@ -1076,7 +1011,6 @@ contract DelegateERC20 is ModularStandardToken {
 * inherited - see the documentation on the corresponding contracts.
 */
 contract TrueUSD is 
-ModularMintableToken, 
 CompliantDepositTokenWithHook,
 BurnableTokenWithBounds, 
 RedeemableToken,
@@ -1084,8 +1018,8 @@ DelegateERC20,
 GasRefundToken {
     using SafeMath for *;
 
-    uint8 public constant DECIMALS = 18;
-    uint8 public constant ROUNDING = 2;
+    uint8 constant DECIMALS = 18;
+    uint8 constant ROUNDING = 2;
 
     event ChangeTokenName(string newName, string newSymbol);
 

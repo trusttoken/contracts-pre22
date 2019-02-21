@@ -19,8 +19,8 @@ DelegateERC20,
 GasRefundToken {
     using SafeMath for *;
 
-    uint8 public constant DECIMALS = 18;
-    uint8 public constant ROUNDING = 2;
+    uint8 constant DECIMALS = 18;
+    uint8 constant ROUNDING = 2;
 
     event ChangeTokenName(string newName, string newSymbol);
 
