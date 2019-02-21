@@ -1,6 +1,6 @@
 import assertRevert from './helpers/assertRevert'
 import assertBalance from './helpers/assertBalance'
-const Registry = artifacts.require("Registry")
+const Registry = artifacts.require("RegistryMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const TokenController = artifacts.require("TokenController")

@@ -3,7 +3,7 @@ import mintableTokenTests from './token/MintableToken';
 import burnableTokenTests from './token/BurnableToken';
 import standardTokenTests from './token/StandardToken';
 import basicTokenTests from './token/BasicToken';
-const Registry = artifacts.require('Registry')
+const Registry = artifacts.require('RegistryMock')
 
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN;

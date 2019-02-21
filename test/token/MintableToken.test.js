@@ -2,7 +2,7 @@ import mintableTokenTests from './MintableToken'
 const TrueUSDMock = artifacts.require('TrueUSDMock')
 const BalanceSheet = artifacts.require('BalanceSheet')
 const AllowanceSheet = artifacts.require('AllowanceSheet')
-const Registry = artifacts.require('Registry')
+const Registry = artifacts.require('RegistryMock')
 
 const bytes32 = require('../helpers/bytes32.js')
 

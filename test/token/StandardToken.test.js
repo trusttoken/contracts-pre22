@@ -1,7 +1,7 @@
 import basicTokenTests from './BasicToken'
 import standardTokenTests from './StandardToken'
 const TrueUSDMock = artifacts.require('TrueUSDMock')
-const Registry = artifacts.require('Registry')
+const Registry = artifacts.require('RegistryMock')
 
 const BN = web3.utils.toBN;
 

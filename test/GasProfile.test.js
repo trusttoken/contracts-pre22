@@ -1,4 +1,5 @@
-const Registry = artifacts.require("Registry")
+const RegistryMock = artifacts.require("RegistryMock")
+const Registry = artifacts.require('Registry')
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const TrueUSD = artifacts.require("TrueUSD")
 const BalanceSheet = artifacts.require("BalanceSheet")
@@ -34,16 +35,19 @@ contract('GasProfile', function ([_, owner, oneHundred, anotherAccount]) {
             this.tokenImpl = await TrueUSD.new()
             this.registryProxy = await OwnedUpgradeabilityProxy.new({from: owner});
             this.registryImpl = await Registry.new({ from: owner })
+            this.registryMockImpl = await RegistryMock.new({ from: owner })
 
             await this.tokenProxy.upgradeTo(this.tokenMockImpl.address, {from:owner});
             this.tokenMock = await TrueUSDMock.at(this.tokenProxy.address);
             await this.tokenMock.initialize({from: owner});
+            this.token = await TrueUSD.at(this.tokenProxy.address);
 
             await this.tokenProxy.upgradeTo(this.tokenImpl.address, {from: owner});
-            await this.registryProxy.upgradeTo(this.registryImpl.address, {from: owner});
-            this.token = await TrueUSD.at(this.tokenProxy.address);
+            await this.registryProxy.upgradeTo(this.registryMockImpl.address, {from: owner});
+            this.registryMock = await RegistryMock.at(this.registryProxy.address);
+            await this.registryMock.initialize({ from: owner });
+            await this.registryProxy.upgradeTo(this.registryImpl.address, { from: owner });
             this.registry = await Registry.at(this.registryProxy.address);
-            await this.registry.initialize({ from: owner });
 
             await this.token.setRegistry(this.registry.address, { from: owner })
             await this.balances.transferOwnership(this.token.address, { from: owner })
