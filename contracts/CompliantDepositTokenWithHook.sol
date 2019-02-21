@@ -5,8 +5,8 @@ import "./TrueCoinReceiver.sol";
 
 contract CompliantDepositTokenWithHook is CompliantToken {
 
-    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
-    bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
+    bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
+    bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
 
     /**
     * @dev transfer token for a specified address

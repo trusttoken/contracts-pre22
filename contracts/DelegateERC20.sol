@@ -8,7 +8,7 @@ functions in the old contract still works (except Burn).
 */
 contract DelegateERC20 is CompliantDepositTokenWithHook {
 
-    address public constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
+    address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
     
     modifier onlyDelegateFrom() {
         require(msg.sender == DELEGATE_FROM);
