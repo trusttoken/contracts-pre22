@@ -85,9 +85,10 @@ contract Registry {
         uint256 timestamp;
     }
     
+    // never remove any storage variables
     address public owner;
     address public pendingOwner;
-    bool public initialized;
+    bool initialized;
 
     // Stores arbitrary attributes for users. An example use case is an ERC20
     // token that requires its users to go through a KYC/AML check - in this case
@@ -112,13 +113,6 @@ contract Registry {
     );
     event SetAttribute(address indexed who, bytes32 attribute, uint256 value, bytes32 notes, address indexed adminAddr);
     event SetManager(address indexed oldManager, address indexed newManager);
-
-
-    function initialize() public {
-        require(!initialized, "already initialized");
-        owner = msg.sender;
-        initialized = true;
-    }
 
     function writeAttributeFor(bytes32 _attribute) public pure returns (bytes32) {
         return keccak256(WRITE_PERMISSION ^ _attribute);
@@ -240,15 +234,6 @@ contract Registry {
     function reclaimToken(ERC20 token, address _to) external onlyOwner {
         uint256 balance = token.balanceOf(this);
         token.transfer(_to, balance);
-    }
-
-    /**
-    * @dev sets the original `owner` of the contract to the sender
-    * at construction. Must then be reinitialized 
-    */
-    constructor() public {
-        owner = msg.sender;
-        emit OwnershipTransferred(address(0), owner);
     }
 
     /**
