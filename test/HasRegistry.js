@@ -1,5 +1,5 @@
 import assertRevert from './helpers/assertRevert'
-const Registry = artifacts.require('Registry')
+const Registry = artifacts.require('RegistryMock')
 
 function hasRegistryTests([owner, oneHundred, anotherAccount]) {
     describe('--HasRegistry Tests--', function () {

@@ -1,6 +1,6 @@
 import compliantTokenTests from './CompliantToken';
 const CompliantTokenMock = artifacts.require('CompliantTokenMock')
-const Registry = artifacts.require('Registry')
+const Registry = artifacts.require('RegistryMock')
 const BalanceSheet = artifacts.require('BalanceSheet')
 const AllowanceSheet = artifacts.require('AllowanceSheet')
 

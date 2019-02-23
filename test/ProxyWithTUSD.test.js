@@ -5,7 +5,7 @@ import basicTokenTests from './token/BasicToken';
 import standardTokenTests from './token/StandardToken';
 import burnableTokenTests from './token/BurnableToken';
 import compliantTokenTests from './CompliantToken';
-const Registry = artifacts.require("Registry")
+const Registry = artifacts.require("RegistryMock")
 const TrueUSD = artifacts.require("TrueUSDMock")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")

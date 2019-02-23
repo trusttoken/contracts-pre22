@@ -3,7 +3,7 @@ import expectThrow from './helpers/expectThrow'
 import assertBalance from './helpers/assertBalance'
 import increaseTime, { duration } from './helpers/increaseTime'
 import { throws } from 'assert'
-const Registry = artifacts.require("Registry")
+const Registry = artifacts.require("RegistryMock")
 const TrueUSD = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")

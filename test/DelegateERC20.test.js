@@ -1,7 +1,7 @@
 const CanDelegate = artifacts.require('CanDelegateMock')
 const TrueUSD = artifacts.require('TrueUSDMock')
 import standardTokenTests from './token/StandardToken';
-const Registry = artifacts.require("Registry")
+const Registry = artifacts.require("RegistryMock")
 
 const BN = web3.utils.toBN;
 
