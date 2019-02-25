@@ -13,38 +13,38 @@ const fs = require('fs')
 
 let profile;
 try {
-  profile = require('../GasProfile.json') || {};
+    profile = require('../GasProfile.json') || {};
 } catch (error) {
-  console.error(error);
-  console.log('Creating GasProfile.json')
-  profile = {}
+    console.error(error);
+    console.log('Creating GasProfile.json')
+    profile = {}
 }
 
 function showRegressions(results) {
-  for (let trial in results) {
-    showRegression(trial, results[trial].actual);
-  }
+    for (let trial in results) {
+        showRegression(trial, results[trial].actual);
+    }
 }
 
 function showRegression(type, actual) {
-  const expected = profile[type];
-  if (actual < expected) {
-    console.log("\x1b[32m", type, "improvement:", expected, '->', actual, "\x1b[0m");
-  } else if (actual > expected) {
-    console.log("\x1b[31m", type, "regression:", expected, '->', actual, "\x1b[0m");
-  } else if (typeof(expected) === 'undefined') {
-    console.log(type, '=', actual)
-  }
-  profile[type] = actual
+    const expected = profile[type];
+    if (actual < expected) {
+        console.log("\x1b[32m", type, "improvement:", expected, '->', actual, "\x1b[0m");
+    } else if (actual > expected) {
+        console.log("\x1b[31m", type, "regression:", expected, '->', actual, "\x1b[0m");
+    } else if (typeof(expected) === 'undefined') {
+        console.log(type, '=', actual)
+    }
+    profile[type] = actual
 }
 
 function hasNoZero(address) {
-  for (let i = 2; i < address.length; i++) {
-    if (address.substr(i, 2) == '00') {
-      return false
+    for (let i = 2; i < address.length; i++) {
+        if (address.substr(i, 2) == '00') {
+            return false
+        }
     }
-  }
-  return true
+    return true
 }
 
 contract('GasProfile', function (accounts) {
@@ -97,10 +97,10 @@ contract('GasProfile', function (accounts) {
                 const emptyToExistingNoRefund = await this.token.transfer(anotherAccount, BN(98*10**18), { from: oneHundred });
                 const emptyToNewNoRefund = await this.token.transfer(oneHundred, BN(100*10**18), { from: anotherAccount });
                 const expectations = {
-                  reduceToNewNoRefund: { actual: reduceToNewNoRefund.receipt.gasUsed },
-                  reduceToExistingNoRefund: { actual: reduceToExistingNoRefund.receipt.gasUsed },
-                  emptyToExistingNoRefund: { actual: emptyToExistingNoRefund.receipt.gasUsed },
-                  emptyToNewNoRefund: { actual: emptyToNewNoRefund.receipt.gasUsed },
+                    reduceToNewNoRefund: { actual: reduceToNewNoRefund.receipt.gasUsed },
+                    reduceToExistingNoRefund: { actual: reduceToExistingNoRefund.receipt.gasUsed },
+                    emptyToExistingNoRefund: { actual: emptyToExistingNoRefund.receipt.gasUsed },
+                    emptyToNewNoRefund: { actual: emptyToNewNoRefund.receipt.gasUsed },
                 };
                 showRegressions(expectations);
             })
@@ -158,10 +158,10 @@ contract('GasProfile', function (accounts) {
         })
         describe('with refund', function() {
             beforeEach(async function() {
-              await this.token.setMinimumGasPriceForFutureRefunds(1, { from: oneHundred });
-              await this.token.sponsorGas({ from: oneHundred });
-              await this.token.sponsorGas({ from: owner });
-              await this.token.sponsorGas({ from: anotherAccount });
+                await this.token.setMinimumGasPriceForFutureRefunds(1, { from: oneHundred });
+                await this.token.sponsorGas({ from: oneHundred });
+                await this.token.sponsorGas({ from: owner });
+                await this.token.sponsorGas({ from: anotherAccount });
             })
             it('transfer', async function() {
                 const reduceToNewWithRefund = await this.token.transfer(anotherAccount, DOLLAR, { from: oneHundred, gasPrice: 2 });
@@ -169,10 +169,10 @@ contract('GasProfile', function (accounts) {
                 const emptyToExistingWithRefund = await this.token.transfer(anotherAccount, BN(98*10**18), { from: oneHundred, gasPrice: 2 });
                 const emptyToNewWithRefund = await this.token.transfer(oneHundred, BN(100*10**18), { from: anotherAccount, gasPrice: 2 });
                 const expectations = {
-                  reduceToNewWithRefund: { actual: reduceToNewWithRefund.receipt.gasUsed },
-                  reduceToExistingWithRefund: { actual: reduceToExistingWithRefund.receipt.gasUsed },
-                  emptyToExistingWithRefund: { actual: emptyToExistingWithRefund.receipt.gasUsed },
-                  emptyToNewWithRefund: { actual: emptyToNewWithRefund.receipt.gasUsed },
+                    reduceToNewWithRefund: { actual: reduceToNewWithRefund.receipt.gasUsed },
+                    reduceToExistingWithRefund: { actual: reduceToExistingWithRefund.receipt.gasUsed },
+                    emptyToExistingWithRefund: { actual: emptyToExistingWithRefund.receipt.gasUsed },
+                    emptyToNewWithRefund: { actual: emptyToNewWithRefund.receipt.gasUsed },
                 };
                 showRegressions(expectations);
             })
