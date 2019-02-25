@@ -8,7 +8,7 @@ module.exports = {
     version: "0.4.23",
     optimizer: {
       enabled: true,
-      runs: 200
+      runs: 20000
     }
   },
   compilers: {
@@ -16,7 +16,7 @@ module.exports = {
       version: "0.4.23",
       optimizer: {
         enabled: true,
-        runs: 200
+        runs: 20000
       }
     },
   },
