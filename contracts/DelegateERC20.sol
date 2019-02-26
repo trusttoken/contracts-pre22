@@ -20,7 +20,7 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
     }
 
     function delegateBalanceOf(address who) public view returns (uint256) {
-        return balanceOf(who);
+        return balanceOf[who];
     }
 
     function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
@@ -29,7 +29,7 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
     }
 
     function delegateAllowance(address owner, address spender) public view returns (uint256) {
-        return allowance(owner, spender);
+        return allowance[owner][spender];
     }
 
     function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {

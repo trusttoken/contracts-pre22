@@ -35,8 +35,8 @@ contract CompliantToken is ModularBurnableToken {
     // Destroy the tokens owned by a blacklisted account
     function wipeBlacklistedAccount(address _account) public onlyOwner {
         require(registry.hasAttribute(_account, IS_BLACKLISTED), "_account is not blacklisted");
-        uint256 oldValue = balanceOf(_account);
-        balances.setBalance(_account, 0);
+        uint256 oldValue = balanceOf[_account];
+        balanceOf[_account] = 0;
         totalSupply_ = totalSupply_.sub(oldValue);
         emit WipeBlacklistedAccount(_account, oldValue);
         emit Transfer(_account, address(0), oldValue);

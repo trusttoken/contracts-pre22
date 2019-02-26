@@ -30,9 +30,9 @@
   "emptyApprovalEmptyingToNewWithRefund": 64573,
   "emptyApprovalEmptyingToExistingWithRefund": 57073,
   "approve50WithRefund": 61429,
-  "reduceToBurnWithRefund": 70677,
-  "emptyToBurnWithRefund": 57871,
-  "burnMicroDollarWithRefund": 70677,
-  "reduceToBurnWithChangeWithRefund": 70741,
-  "emptyToBurnWithChangeWithRefund": 70741
+  "reduceToBurnWithRefund": 86975,
+  "emptyToBurnWithRefund": 57039,
+  "burnMicroDollarWithRefund": 86975,
+  "reduceToBurnWithChangeWithRefund": 87039,
+  "emptyToBurnWithChangeWithRefund": 87039
 }

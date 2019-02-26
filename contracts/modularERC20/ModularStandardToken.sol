@@ -1,6 +1,7 @@
 pragma solidity ^0.4.23;
 
 import "./ModularBasicToken.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Standard ERC20 token
@@ -10,6 +11,7 @@ import "./ModularBasicToken.sol";
  * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
  */
 contract ModularStandardToken is ModularBasicToken {
+    using SafeMath for uint256;
     
     event AllowanceSheetSet(address indexed sheet);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -41,18 +43,8 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
-        allowances.setAllowance(_tokenHolder, _spender, _value);
+        allowance[_tokenHolder][_spender] = _value;
         emit Approval(_tokenHolder, _spender, _value);
-    }
-
-    /**
-     * @dev Function to check the amount of tokens that an owner allowed to a spender.
-     * @param _owner address The address which owns the funds.
-     * @param _spender address The address which will spend the funds.
-     * @return A uint256 specifying the amount of tokens still available for the spender.
-     */
-    function allowance(address _owner, address _spender) public view returns (uint256) {
-        return allowances.allowanceOf(_owner, _spender);
     }
 
     /**
@@ -71,8 +63,8 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
-        allowances.addAllowance(_tokenHolder, _spender, _addedValue);
-        emit Approval(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
+        allowance[_tokenHolder][_spender] = allowance[_tokenHolder][_spender].add(_addedValue);
+        emit Approval(_tokenHolder, _spender, allowance[_tokenHolder][_spender]);
     }
 
     /**
@@ -91,12 +83,14 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
-        uint256 oldValue = allowances.allowanceOf(_tokenHolder, _spender);
+        uint256 oldValue = allowance[_tokenHolder][_spender];
+        uint256 newValue;
         if (_subtractedValue > oldValue) {
-            allowances.setAllowance(_tokenHolder, _spender, 0);
+            newValue = 0;
         } else {
-            allowances.subAllowance(_tokenHolder, _spender, _subtractedValue);
+            newValue = oldValue - _subtractedValue;
         }
-        emit Approval(_tokenHolder,_spender, allowances.allowanceOf(_tokenHolder, _spender));
+        allowance[_tokenHolder][_spender] = newValue;
+        emit Approval(_tokenHolder,_spender, newValue);
     }
 }

@@ -59,9 +59,9 @@ contract CompliantDepositTokenWithHook is CompliantToken {
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = registry.requireCanTransferFrom(_sender, _from, _to);
-        allowances.subAllowance(_from, _sender, _value);
-        balances.subBalance(_from, _value);
-        balances.addBalance(_to, _value);
+        allowance[_from][_sender] = allowance[_from][_sender].sub(_value);
+        balanceOf[_from] = balanceOf[_from].sub(_value);
+        balanceOf[_to] = balanceOf[_to].add(_value);
         emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
             emit Transfer(originalTo, _to, _value);
@@ -79,8 +79,8 @@ contract CompliantDepositTokenWithHook is CompliantToken {
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = registry.requireCanTransfer(_from, _to);
-        balances.subBalance(_from, _value);
-        balances.addBalance(_to, _value);
+        balanceOf[_from] = balanceOf[_from].sub(_value);
+        balanceOf[_to] = balanceOf[_to].add(_value);
         emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
             emit Transfer(originalTo, _to, _value);
@@ -105,7 +105,7 @@ contract CompliantDepositTokenWithHook is CompliantToken {
         if (_to != originalTo) {
             emit Transfer(originalTo, _to, _value);
         }
-        balances.addBalance(_to, _value);
+        balanceOf[_to] = balanceOf[_to].add(_value);
         if (hasHook) {
             if (_to != originalTo) {
                 TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
