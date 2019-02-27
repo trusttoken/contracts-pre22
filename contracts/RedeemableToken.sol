@@ -8,8 +8,6 @@ Implement Redemption Addresses
 */
 contract RedeemableToken is CompliantDepositTokenWithHook {
 
-    event RedemptionAddress(address indexed addr);
-
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
 
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
