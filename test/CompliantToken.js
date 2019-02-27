@@ -5,6 +5,7 @@ import standardTokenTests from './token/StandardToken';
 import basicTokenTests from './token/BasicToken';
 const Registry = artifacts.require('RegistryMock')
 
+const writeAttributeFor = require('./helpers/writeAttributeFor.js')
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN;
 import assertBalance from './helpers/assertBalance'
@@ -109,7 +110,7 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
 
         describe('CanWriteTo-', function (){
             beforeEach(async function () {
-                const canWriteToKYCAttribute = await this.registry.writeAttributeFor.call(bytes32("hasPassedKYC/AML"))
+                const canWriteToKYCAttribute = writeAttributeFor(bytes32("hasPassedKYC/AML"))
                 await this.registry.setAttribute(oneHundred, canWriteToKYCAttribute, 1, notes, { from: owner })
             })
 
