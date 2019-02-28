@@ -12,7 +12,7 @@ contract ProxyStorage {
     address public owner;
     address public pendingOwner;
 
-    bool public initialized;
+    bool initialized;
     
     BalanceSheet public balances;
     AllowanceSheet public allowances;
@@ -33,4 +33,5 @@ contract ProxyStorage {
     uint[] public gasRefundPool;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
+
 }
