@@ -9,6 +9,7 @@ const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
 const DepositAddressRegistrar = artifacts.require("DepositAddressRegistrar")
 
+const writeAttributeFor = require('./helpers/writeAttributeFor.js')
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN;
 
@@ -102,7 +103,7 @@ contract('DepositToken', function (accounts) {
         describe('deposit token works with deposit registrar', function(){
             beforeEach(async function () {
                 this.registrar = await DepositAddressRegistrar.new(this.registry.address, {from: owner})
-                const canWriteToDepositAddress = await this.registry.writeAttributeFor.call(bytes32("isDepositAddress"))
+                const canWriteToDepositAddress = writeAttributeFor(bytes32("isDepositAddress"))
                 await this.registry.setAttributeValue(this.registrar.address, canWriteToDepositAddress, 1, { from: owner })
             })
 
