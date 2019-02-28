@@ -7,6 +7,8 @@ contract CompliantDepositTokenWithHook is CompliantToken {
 
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
+    uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
+    uint256 constant CENT = 10 ** 16;
 
     /**
     * @dev transfer token for a specified address
@@ -14,8 +16,34 @@ contract CompliantDepositTokenWithHook is CompliantToken {
     * @param _value The amount to be transferred.
     */
     function transfer(address _to, uint256 _value) public returns (bool) {
-        _transferAllArgs(msg.sender, _to, _value);
+        require(_to != address(0), "_to address is 0x0");
+        address _from = msg.sender;
+        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
+            registry.requireCanTransfer(_from, _to);
+            registry.requireCanBurn(_to);
+            _value -= _value % CENT;
+            require(_value >= burnMin, "below min burn bound");
+            require(_value <= burnMax, "exceeds max burn bound");
+            balances.subBalance(_from, _value);
+            emit Transfer(_from, _to, _value);
+            totalSupply_ = totalSupply_.sub(_value);
+            emit Burn(_to, _value);
+            emit Transfer(_to, address(0), _value);
+            return;
+        }
+        _transferAllArgs(_from, _to, _value);
         return true;
+    }
+
+    function burn(uint256 _value) public {
+        address _from = msg.sender;
+        _value -= _value % CENT;
+        require(_value >= burnMin, "below min burn bound");
+        require(_value <= burnMax, "exceeds max burn bound");
+        registry.requireCanBurn(_from);
+        totalSupply_ = totalSupply_.sub(_value);
+        emit Transfer(_from, address(0), _value);
+        emit Burn(_from, _value);
     }
 
     /**
@@ -25,6 +53,21 @@ contract CompliantDepositTokenWithHook is CompliantToken {
      * @param _value uint256 the amount of tokens to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+        require(_to != address(0), "_to address is 0x0");
+        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
+            registry.requireCanTransferFrom(msg.sender, _from, _to);
+            registry.requireCanBurn(_to);
+            _value -= _value % CENT;
+            require(_value >= burnMin, "below min burn bound");
+            require(_value <= burnMax, "exceeds max burn bound");
+            allowances.subAllowance(_from, msg.sender, _value);
+            balances.subBalance(_from, _value);
+            emit Transfer(_from, _to, _value);
+            totalSupply_ = totalSupply_.sub(_value);
+            emit Burn(_to, _value);
+            emit Transfer(_to, address(0), _value);
+            return;
+        }
         _transferFromAllArgs(_from, _to, _value, msg.sender);
         return true;
     }

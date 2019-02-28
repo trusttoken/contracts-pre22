@@ -44,12 +44,6 @@ This ensures that only users who have passed a KYC/AML check can receive newly m
 It also allows for blacklisting of bad actors in accordance
 with the [TrueCoin Terms of Use](https://www.trusttoken.com/terms-of-use/).
 
-### RedeemableToken.sol
-
-Makes it easier for users to burn tokens (i.e. redeem them for USD) by treating sends to 0x0 as burn operations.
-
-Implements Redemption address feature.
-
 ### DepositToken.sol
 Allow users to register deposit addresses. 
 

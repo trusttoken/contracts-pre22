@@ -27,11 +27,6 @@ contract CompliantToken is ModularBurnableToken {
         emit SetRegistry(registry);
     }
 
-    function _burnAllArgs(address _burner, uint256 _value) internal {
-        registry.requireCanBurn(_burner);
-        super._burnAllArgs(_burner, _value);
-    }
-
     // Destroy the tokens owned by a blacklisted account
     function wipeBlacklistedAccount(address _account) public onlyOwner {
         require(registry.hasAttribute(_account, IS_BLACKLISTED), "_account is not blacklisted");

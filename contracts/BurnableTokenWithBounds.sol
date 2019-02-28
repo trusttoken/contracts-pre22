@@ -11,12 +11,6 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
 
     event SetBurnBounds(uint256 newMin, uint256 newMax);
 
-    function _burnAllArgs(address _burner, uint256 _value) internal {
-        require(_value >= burnMin, "below min burn bound");
-        require(_value <= burnMax, "exceeds max burn bound");
-        super._burnAllArgs(_burner, _value);
-    }
-
     //Change the minimum and maximum amount that can be burned at once. Burning
     //may be disabled by setting both to 0 (this will not be done under normal
     //operation, but we can't add checks to disallow it without losing a lot of
