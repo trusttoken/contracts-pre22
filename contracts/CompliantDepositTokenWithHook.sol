@@ -15,7 +15,6 @@ contract CompliantDepositTokenWithHook is CompliantToken {
     * @param _value The amount to be transferred.
     */
     function transfer(address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0), "_to address is 0x0");
         address _from = msg.sender;
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
             registry.requireCanTransfer(_from, _to);
@@ -41,7 +40,6 @@ contract CompliantDepositTokenWithHook is CompliantToken {
      * @param _value uint256 the amount of tokens to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0), "_to address is 0x0");
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
             registry.requireCanTransferFrom(msg.sender, _from, _to);
             registry.requireCanBurn(_to);
