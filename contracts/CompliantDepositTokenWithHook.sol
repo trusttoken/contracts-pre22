@@ -8,7 +8,6 @@ contract CompliantDepositTokenWithHook is CompliantToken {
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
-    uint256 constant CENT = 10 ** 16;
 
     /**
     * @dev transfer token for a specified address
@@ -29,21 +28,10 @@ contract CompliantDepositTokenWithHook is CompliantToken {
             totalSupply_ = totalSupply_.sub(_value);
             emit Burn(_to, _value);
             emit Transfer(_to, address(0), _value);
-            return;
+        } else {
+            _transferAllArgs(_from, _to, _value);
         }
-        _transferAllArgs(_from, _to, _value);
         return true;
-    }
-
-    function burn(uint256 _value) public {
-        address _from = msg.sender;
-        _value -= _value % CENT;
-        require(_value >= burnMin, "below min burn bound");
-        require(_value <= burnMax, "exceeds max burn bound");
-        registry.requireCanBurn(_from);
-        totalSupply_ = totalSupply_.sub(_value);
-        emit Transfer(_from, address(0), _value);
-        emit Burn(_from, _value);
     }
 
     /**
@@ -66,9 +54,9 @@ contract CompliantDepositTokenWithHook is CompliantToken {
             totalSupply_ = totalSupply_.sub(_value);
             emit Burn(_to, _value);
             emit Transfer(_to, address(0), _value);
-            return;
+        } else {
+            _transferFromAllArgs(_from, _to, _value, msg.sender);
         }
-        _transferFromAllArgs(_from, _to, _value, msg.sender);
         return true;
     }
 

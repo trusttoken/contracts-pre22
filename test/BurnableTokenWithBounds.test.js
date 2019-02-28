@@ -1,5 +1,5 @@
 import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
-const TrueUSDMock = artifacts.require('TrueUSDMock')
+const BurnableTokenWithBoundsMock = artifacts.require('BurnableTokenWithBoundsMock')
 
 const BN = web3.utils.toBN;
 

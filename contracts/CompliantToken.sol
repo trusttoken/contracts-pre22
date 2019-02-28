@@ -17,7 +17,7 @@ contract CompliantToken is ModularBurnableToken {
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
     event SetRegistry(address indexed registry);
-    
+
     /**
     * @dev Point to the registry that contains all compliance related data
     @param _registry The address of the registry instance
@@ -25,6 +25,11 @@ contract CompliantToken is ModularBurnableToken {
     function setRegistry(Registry _registry) public onlyOwner {
         registry = _registry;
         emit SetRegistry(registry);
+    }
+
+    function _burnAllArgs(address _from, uint256 _value) internal {
+        registry.requireCanBurn(_from);
+        super._burnAllArgs(_from, _value);
     }
 
     // Destroy the tokens owned by a blacklisted account
