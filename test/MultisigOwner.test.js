@@ -278,15 +278,6 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(trueUSD,this.token.address)
         })
 
-        it('call changeTokenName of tokenController', async function(){
-            await this.multisigOwner.changeTokenName("Terry Token", "ttt", {from: owner1})
-            await this.multisigOwner.changeTokenName("Terry Token", "ttt", {from: owner2})
-            const name = await this.token.name.call()
-            const symbol = await this.token.symbol.call()
-            assert.equal(name,"Terry Token")
-            assert.equal(symbol,"ttt")
-        })
-
         it('call setTusdRegistry of tokenController', async function(){
             await this.multisigOwner.setTusdRegistry(this.registry.address, {from: owner1})
             await this.multisigOwner.setTusdRegistry(this.registry.address, {from: owner2})

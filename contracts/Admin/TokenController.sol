@@ -475,13 +475,6 @@ contract TokenController {
     }
 
     /** 
-    *@dev update TrueUSD's name and symbol
-    */
-    function changeTokenName(string _name, string _symbol) external onlyOwner {
-        trueUSD.changeTokenName(_name, _symbol);
-    }
-
-    /** 
     *@dev Swap out TrueUSD's permissions registry
     *@param _registry new registry for trueUSD
     */

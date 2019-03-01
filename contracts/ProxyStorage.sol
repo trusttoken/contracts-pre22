@@ -27,8 +27,8 @@ contract ProxyStorage {
 
     Registry public registry;
 
-    string public name = "TrueUSD";
-    string public symbol = "TUSD";
+    string name_Deprecated = "TrueUSD";
+    string symbol_Deprecated = "TUSD";
 
     uint[] public gasRefundPool;
     uint256 private redemptionAddressCount_Deprecated;

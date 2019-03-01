@@ -20,8 +20,6 @@ GasRefundToken {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
-    event ChangeTokenName(string newName, string newSymbol);
-
     function decimals() public pure returns (uint8) {
         return DECIMALS;
     }
@@ -30,10 +28,12 @@ GasRefundToken {
         return ROUNDING;
     }
 
-    function changeTokenName(string _name, string _symbol) external onlyOwner {
-        name = _name;
-        symbol = _symbol;
-        emit ChangeTokenName(_name, _symbol);
+    function name() public pure returns (string) {
+        return "TrueUSD";
+    }
+
+    function symbol() public pure returns (string) {
+        return "TUSD";
     }
 
     /**  

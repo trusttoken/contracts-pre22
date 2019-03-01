@@ -101,16 +101,11 @@ contract('TrueUSD', function (accounts) {
             compliantTokenTests([owner, oneHundred, anotherAccount], false)
         })
 
-        it("can change name", async function () {
+        it("correct name and symbol", async function () {
             let name = await this.token.name.call()
             assert.equal(name, "TrueUSD")
             let symbol = await this.token.symbol.call()
             assert.equal(symbol, "TUSD")
-            await this.token.changeTokenName("FooCoin", "FCN", { from: owner })
-            name = await this.token.name.call()
-            assert.equal(name, "FooCoin")
-            symbol = await this.token.symbol.call()
-            assert.equal(symbol, "FCN")
         })
     })
 })

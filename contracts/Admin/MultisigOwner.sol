@@ -369,10 +369,6 @@ contract MultiSigOwner {
         _signOrExecute("setRegistry"); 
     }
 
-    function changeTokenName(string _name, string _symbol) external onlyOwner {
-        _signOrExecute("changeTokenName"); 
-    }
-
     function setTusdRegistry(Registry _registry) external onlyOwner {
         _signOrExecute("setTusdRegistry"); 
     }

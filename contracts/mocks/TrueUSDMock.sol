@@ -17,8 +17,6 @@ contract TrueUSDMock is TrueUSD {
         owner = msg.sender;
         burnMin = 10000 * 10**uint256(DECIMALS);
         burnMax = 20000000 * 10**uint256(DECIMALS);
-        name = "TrueUSD";
-        symbol = "TUSD";
     }
 
     function setTotalSupply(uint _totalSupply) public onlyOwner {
