@@ -18,10 +18,7 @@ contract CompliantDepositTokenWithHook is CompliantToken {
         address _from = msg.sender;
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
             registry.requireCanTransfer(_from, _to);
-            registry.requireCanBurn(_to);
             _value -= _value % CENT;
-            require(_value >= burnMin, "below min burn bound");
-            require(_value <= burnMax, "exceeds max burn bound");
             _burnFromAllArgs(_from, _to, _value);
         } else {
             _transferAllArgs(_from, _to, _value);
@@ -38,10 +35,7 @@ contract CompliantDepositTokenWithHook is CompliantToken {
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
             registry.requireCanTransferFrom(msg.sender, _from, _to);
-            registry.requireCanBurn(_to);
             _value -= _value % CENT;
-            require(_value >= burnMin, "below min burn bound");
-            require(_value <= burnMax, "exceeds max burn bound");
             allowances.subAllowance(_from, msg.sender, _value);
             _burnFromAllArgs(_from, _to, _value);
         } else {
@@ -51,6 +45,9 @@ contract CompliantDepositTokenWithHook is CompliantToken {
     }
 
     function _burnFromAllArgs(address _from, address _to, uint256 _value) internal {
+        registry.requireCanBurn(_to);
+        require(_value >= burnMin, "below min burn bound");
+        require(_value <= burnMax, "exceeds max burn bound");
         balances.subBalance(_from, _value);
         emit Transfer(_from, _to, _value);
         totalSupply_ = totalSupply_.sub(_value);
