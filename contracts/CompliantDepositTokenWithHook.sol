@@ -22,11 +22,7 @@ contract CompliantDepositTokenWithHook is CompliantToken {
             _value -= _value % CENT;
             require(_value >= burnMin, "below min burn bound");
             require(_value <= burnMax, "exceeds max burn bound");
-            balances.subBalance(_from, _value);
-            emit Transfer(_from, _to, _value);
-            totalSupply_ = totalSupply_.sub(_value);
-            emit Burn(_to, _value);
-            emit Transfer(_to, address(0), _value);
+            _burnFromAllArgs(_from, _to, _value);
         } else {
             _transferAllArgs(_from, _to, _value);
         }
@@ -47,15 +43,19 @@ contract CompliantDepositTokenWithHook is CompliantToken {
             require(_value >= burnMin, "below min burn bound");
             require(_value <= burnMax, "exceeds max burn bound");
             allowances.subAllowance(_from, msg.sender, _value);
-            balances.subBalance(_from, _value);
-            emit Transfer(_from, _to, _value);
-            totalSupply_ = totalSupply_.sub(_value);
-            emit Burn(_to, _value);
-            emit Transfer(_to, address(0), _value);
+            _burnFromAllArgs(_from, _to, _value);
         } else {
             _transferFromAllArgs(_from, _to, _value, msg.sender);
         }
         return true;
+    }
+
+    function _burnFromAllArgs(address _from, address _to, uint256 _value) internal {
+        balances.subBalance(_from, _value);
+        emit Transfer(_from, _to, _value);
+        totalSupply_ = totalSupply_.sub(_value);
+        emit Burn(_to, _value);
+        emit Transfer(_to, address(0), _value);
     }
 
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {

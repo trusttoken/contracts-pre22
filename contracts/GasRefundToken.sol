@@ -64,6 +64,10 @@ contract GasRefundToken is CompliantDepositTokenWithHook {
         super._transferFromAllArgs(_from, _to, _value, _sender);
     }
 
+    function _burnFromAllArgs(address _from, address _to, uint256 _value) internal gasRefund {
+        super._burnFromAllArgs(_from, _to, _value);
+    }
+
     function mint(address _to, uint256 _value) public onlyOwner gasRefund {
         super.mint(_to, _value);
     }
