@@ -36,7 +36,7 @@ contract CompliantDepositTokenWithHook is CompliantToken {
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
             registry.requireCanTransferFrom(msg.sender, _from, _to);
             _value -= _value % CENT;
-            allowances.subAllowance(_from, msg.sender, _value);
+            allowance[_from][msg.sender] -= _value;
             _burnFromAllArgs(_from, _to, _value);
         } else {
             _transferFromAllArgs(_from, _to, _value, msg.sender);
@@ -48,7 +48,7 @@ contract CompliantDepositTokenWithHook is CompliantToken {
         registry.requireCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        balances.subBalance(_from, _value);
+        balanceOf[_from] = balanceOf[_from].sub(_value);
         emit Transfer(_from, _to, _value);
         totalSupply_ = totalSupply_.sub(_value);
         emit Burn(_to, _value);
