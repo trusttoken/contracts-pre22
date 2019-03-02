@@ -19,6 +19,7 @@ contract('TokenController', function (accounts) {
         const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, ratifier1, ratifier2, ratifier3, redemptionAdmin] = accounts
         const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
         const notes = bytes32("notes")
+        const DOLLAR = BN(10**18)
 
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
@@ -26,7 +27,6 @@ contract('TokenController', function (accounts) {
             this.tusdImplementation = await TrueUSD.new(owner, 0, { from: owner })
             this.token = await TrueUSD.at(this.tokenProxy.address)
             this.balanceSheet = await BalanceSheet.new({ from: owner })
-            await this.balanceSheet.setBalance(oneHundred, BN(10**18).mul(BN(100)), {from:owner});
             this.allowanceSheet = await AllowanceSheet.new({ from: owner })
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
@@ -55,6 +55,11 @@ contract('TokenController', function (accounts) {
             await this.registry.setAttribute(ratifier3, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
             await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
             await this.registry.setAttribute(this.fastPauseMints.address, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
+            await this.controller.setMintThresholds(BN(200*10**18),BN(1000).mul(DOLLAR),BN(1000).mul(DOLLAR), { from: owner })
+            await this.controller.setMintLimits(BN(200*10**18),BN(300).mul(DOLLAR),BN(3000).mul(DOLLAR),{ from: owner })
+            await this.controller.refillInstantMintPool({ from: owner })
+            await this.controller.instantMint(oneHundred, DOLLAR.mul(BN(100)), { from: owner})
+            await this.controller.refillInstantMintPool({ from: owner })
         })
 
         describe('Request and Finalize Mints (owner)', function () {
@@ -521,6 +526,7 @@ contract('TokenController', function (accounts) {
                 await this.controller.pauseTrueUSD({ from: owner })
                 const pausedImpl = await this.tokenProxy.implementation.call()
                 assert.equal(pausedImpl, "0x0000000000000000000000000000000000000001")
+                await assertRevert(this.token.transfer(mintKey, BN(10*10**18), { from: oneHundred }))
             })
 
             it('trueUsdPauser can pause TrueUSD by sending ether to fastPause contract', async function(){
