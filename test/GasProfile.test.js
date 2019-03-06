@@ -52,6 +52,8 @@ contract('GasProfile', function (accounts) {
     describe('--Gas Profiling--', function () {
         const DOLLAR = BN(1*10**18);
         const BURN_ADDRESS = '0x0000000000000000000000000000000000011111';
+        const KYCAML = bytes32("hasPassedKYC/AML")
+        const CAN_BURN = bytes32("canBurn")
         const [_, owner, oneHundred, anotherAccount] = accounts.filter(hasNoZero)
         beforeEach(async function () {
             this.balances = await BalanceSheet.new({ from: owner })
@@ -74,6 +76,8 @@ contract('GasProfile', function (accounts) {
             await this.registryMock.initialize({ from: owner });
             await this.registryProxy.upgradeTo(this.registryImpl.address, { from: owner });
             this.registry = await Registry.at(this.registryProxy.address);
+            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
+            await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
 
             await this.token.setRegistry(this.registry.address, { from: owner })
             await this.balances.transferOwnership(this.token.address, { from: owner })
@@ -81,12 +85,12 @@ contract('GasProfile', function (accounts) {
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
-            await this.registry.setAttributeValue(oneHundred, bytes32("hasPassedKYC/AML"), 1, { from: owner })
+            await this.registry.setAttributeValue(oneHundred, KYCAML, 1, { from: owner })
             await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
-            await this.registry.setAttributeValue(oneHundred, bytes32("hasPassedKYC/AML"), 0, { from: owner })
+            await this.registry.setAttributeValue(oneHundred, KYCAML, 0, { from: owner })
             await this.registry.setAttributeValue(oneHundred, bytes32("canSetFutureRefundMinGasPrice"), 1, { from: owner });
 
-            await this.registry.setAttributeValue(BURN_ADDRESS, bytes32("canBurn"), 1, {from: owner})
+            await this.registry.setAttributeValue(BURN_ADDRESS, CAN_BURN, 1, {from: owner})
             await this.token.setBurnBounds(BN(1), BN(1000).mul(BN(10**18)), {from: owner});
         })
 

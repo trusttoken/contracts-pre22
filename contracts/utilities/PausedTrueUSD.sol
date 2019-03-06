@@ -26,30 +26,30 @@ contract PausedToken is HasOwner {
         return true;
     }
 
-    function transfer(address _to, uint256 _value) public returns (bool) {
+    function transfer(address /*_to*/, uint256 /*_value*/) public returns (bool) {
         revert("Token Paused");
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+    function transferFrom(address /*_from*/, address /*_to*/, uint256 /*_value*/) public returns (bool) {
         revert("Token Paused");
     }
 
-    function burn(uint256 _value) public {
+    function burn(uint256 /*_value*/) public {
         revert("Token Paused");
     }
 
-    function mint(address _to, uint256 _value) public onlyOwner {
+    function mint(address /*_to*/, uint256 /*_value*/) public onlyOwner {
         revert("Token Paused");
     }
     
-    function approve(address _spender, uint256 _value) public returns (bool) {
+    function approve(address /*_spender*/, uint256 /*_value*/) public returns (bool) {
         revert("Token Paused");
     }
 
-    function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
+    function increaseApproval(address /*_spender*/, uint /*_addedValue*/) public returns (bool) {
         revert("Token Paused");
     }
-    function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
+    function decreaseApproval(address /*_spender*/, uint /*_subtractedValue*/) public returns (bool) {
         revert("Token Paused");
     }
     function paused() public pure returns (bool) {
@@ -75,30 +75,30 @@ contract PausedDelegateERC20 is PausedToken {
     }
 
     function delegateBalanceOf(address who) public view returns (uint256) {
-        return balanceOf[who];
+        return _balanceOf[who];
     }
 
-    function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
+    function delegateTransfer(address /*to*/, uint256 /*value*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
         revert("Token Paused");
     }
 
     function delegateAllowance(address owner, address spender) public view returns (uint256) {
-        return allowance[owner][spender];
+        return _allowance[owner][spender];
     }
 
-    function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
+    function delegateTransferFrom(address /*from*/, address /*to*/, uint256 /*value*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
         revert("Token Paused");
     }
 
-    function delegateApprove(address spender, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
+    function delegateApprove(address /*spender*/, uint256 /*value*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
         revert("Token Paused");
     }
 
-    function delegateIncreaseApproval(address spender, uint addedValue, address origSender) public onlyDelegateFrom returns (bool) {
+    function delegateIncreaseApproval(address /*spender*/, uint /*addedValue*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
         revert("Token Paused");
     }
 
-    function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) public onlyDelegateFrom returns (bool) {
+    function delegateDecreaseApproval(address /*spender*/, uint /*subtractedValue*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
         revert("Token Paused");
     }
 }
@@ -159,8 +159,8 @@ contract PausedTrueUSD is PausedDelegateERC20 {
 
     function wipeBlacklistedAccount(address _account) public onlyOwner {
         require(registry.hasAttribute(_account, IS_BLACKLISTED), "_account is not blacklisted");
-        uint256 oldValue = balanceOf[_account];
-        balances.setBalance(_account, 0);
+        uint256 oldValue = _balanceOf[_account];
+        _balanceOf[_account] = 0;
         totalSupply_ = totalSupply_.sub(oldValue);
         emit WipeBlacklistedAccount(_account, oldValue);
         emit Transfer(_account, address(0), oldValue);

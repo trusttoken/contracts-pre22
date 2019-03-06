@@ -15,6 +15,9 @@ contract('--Full upgrade process --', function (accounts) {
     const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
 
     const notes = bytes32("notes");
+    const KYCAML = bytes32("hasPassedKYC/AML")
+    const CAN_BURN = bytes32("canBurn")
+    const DOLLAR = BN(10**18)
 
     describe('--Set up proxy--', function () {
         beforeEach(async function () {
@@ -32,30 +35,36 @@ contract('--Full upgrade process --', function (accounts) {
             await this.controller.setTrueUSD(this.tokenProxy.address, { from: owner })
             await this.controller.transferMintKey(mintKey, { from: owner })
             await this.controller.setRegistry(this.registry.address, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
+            await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
+            await this.token.setRegistry(this.registry.address, { from: owner })
+            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
             await this.registry.setAttribute(approver1, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
             await this.registry.setAttribute(approver2, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
             await this.registry.setAttribute(approver3, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
             await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
-            await this.controller.setMintThresholds(BN(10*10**18),BN(100*10**18),BN(10**18).mul(BN(1000)), { from: owner })
-            await this.controller.setMintLimits(BN(30*10**18),BN(300*10**18),BN(10**18).mul(BN(3000)),{ from: owner })
+            await this.controller.setMintThresholds(BN(10*10**18),BN(100*10**18),DOLLAR.mul(BN(1000)), { from: owner })
+            await this.controller.setMintLimits(BN(30*10**18),BN(300).mul(DOLLAR),DOLLAR.mul(BN(3000)),{ from: owner })
             await this.controller.refillMultiSigMintPool({ from: owner })
             await this.controller.refillRatifiedMintPool({ from: owner })
             await this.controller.refillInstantMintPool({ from: owner })
-            await this.token.transferOwnership(this.controller.address, {from :owner})
+            console.log(28);
+            await this.token.transferOwnership(this.controller.address, {from: owner})
+            console.log(29);
+            console.log(this.controller.address)
+            console.log(await this.token.pendingOwner.call())
+            console.log(await this.token.owner.call())
             await this.controller.issueClaimOwnership(this.token.address, {from :owner})
+            console.log(30);
         })
         it('conducts the full upgrade process', async function(){
             this.balanceSheet = await BalanceSheet.new({ from: owner })
             this.allowanceSheet = await AllowanceSheet.new({ from: owner })
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
-            await this.controller.claimStorageForProxy(this.token.address, 
-                                                       this.balanceSheet.address,
-                                                       this.allowanceSheet.address, 
-                                                       { from: owner })
+            await this.controller.claimStorageForProxy(this.token.address, this.balanceSheet.address, this.allowanceSheet.address, { from: owner })
             await this.controller.setTusdRegistry(this.registry.address, { from: owner })
         })
         it('conducts the full upgrade from the current on chain contract', async function(){
@@ -78,7 +87,7 @@ contract('--Full upgrade process --', function (accounts) {
             await this.controller.claimStorageForProxy(this.token.address,this.balanceSheet, this.allowanceSheet, { from: owner })
             
             await this.controller.setTusdRegistry(this.registry.address, { from: owner })
-            await assertBalance(this.token, oneHundred, BN(1000).mul(BN(10 ** 18)))
+            await assertBalance(this.balanceSheet, oneHundred, BN(1000).mul(BN(10 ** 18)))
             await this.controller.requestMint(oneHundred, BN(10*10**8), { from: owner })
             await this.controller.ratifyMint(0, oneHundred, BN(10*10**8),{ from: owner })
         })

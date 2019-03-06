@@ -43,7 +43,7 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
-        allowance[_tokenHolder][_spender] = _value;
+        _setAllowance(_tokenHolder, _spender, _value);
         emit Approval(_tokenHolder, _spender, _value);
     }
 
@@ -63,8 +63,8 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
-        allowance[_tokenHolder][_spender] = allowance[_tokenHolder][_spender].add(_addedValue);
-        emit Approval(_tokenHolder, _spender, allowance[_tokenHolder][_spender]);
+        _addAllowance(_tokenHolder, _spender, _addedValue);
+        emit Approval(_tokenHolder, _spender, _getAllowance(_tokenHolder, _spender));
     }
 
     /**
@@ -83,14 +83,31 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
-        uint256 oldValue = allowance[_tokenHolder][_spender];
+        uint256 oldValue = _getAllowance(_tokenHolder, _spender);
         uint256 newValue;
         if (_subtractedValue > oldValue) {
             newValue = 0;
         } else {
             newValue = oldValue - _subtractedValue;
         }
-        allowance[_tokenHolder][_spender] = newValue;
+        _setAllowance(_tokenHolder, _spender, newValue);
         emit Approval(_tokenHolder,_spender, newValue);
+    }
+
+    function allowance(address _who, address _spender) public view returns (uint256) {
+        return _allowance[_who][_spender];
+    }
+
+    function _getAllowance(address _who, address _spender) internal view returns (uint256) {
+        return _allowance[_who][_spender];
+    }
+    function _addAllowance(address _who, address _spender, uint256 _value) internal {
+        _allowance[_who][_spender] = _allowance[_who][_spender].add(_value);
+    }
+    function _subAllowance(address _who, address _spender, uint256 _value) internal {
+        _allowance[_who][_spender] = _allowance[_who][_spender].sub(_value);
+    }
+    function _setAllowance(address _who, address _spender, uint256 _value) internal {
+        _allowance[_who][_spender] = _value;
     }
 }

@@ -15,6 +15,8 @@ contract('RedeemToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount, cannotBurn] = accounts
     const notes = bytes32("some notes")
     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+    const KYCAML = bytes32("hasPassedKYC/AML")
+    const CAN_BURN = bytes32("canBurn")
 
     describe('--Redeemable Token--', function () {
         beforeEach(async function () {
@@ -28,11 +30,14 @@ contract('RedeemToken', function (accounts) {
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.token.mint(oneHundred, BN(100).mul(BN(10**18)), { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 0, notes, { from: owner })
+            await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
+            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
 
-            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
+            await this.token.mint(oneHundred, BN(100).mul(BN(10**18)), { from: owner })
+            await this.registry.setAttribute(oneHundred, KYCAML, 0, notes, { from: owner })
+
+            await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
             await this.token.setBurnBounds(BN(5*10**18), BN(1000).mul(BN(10**18)), { from: owner }) 
         })
 
@@ -53,8 +58,8 @@ contract('RedeemToken', function (accounts) {
             const ADDRESS_TWO = '0x0000000000000000000000000000000000000002'
 
             it('transfers to Redemption addresses gets burned', async function(){
-                await this.registry.setAttribute(ADDRESS_ONE, bytes32("canBurn"), 1, notes, { from: owner })
-                await this.registry.setAttribute(ADDRESS_TWO, bytes32("canBurn"), 1, notes, { from: owner })
+                await this.registry.setAttribute(ADDRESS_ONE, CAN_BURN, 1, notes, { from: owner })
+                await this.registry.setAttribute(ADDRESS_TWO, CAN_BURN, 1, notes, { from: owner })
                 const {logs} = await this.token.transfer(ADDRESS_ONE, BN(10*10**18), {from : oneHundred})
                 assert.equal(logs[0].event, 'Transfer')
                 assert.equal(logs[1].event, 'Burn')

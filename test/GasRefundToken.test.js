@@ -14,6 +14,7 @@ contract('GasRefundToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     const notes = bytes32("some notes")
     const FIFTY = BN(50*10**18);
+    const KYCAML = bytes32("hasPassedKYC/AML")
 
     describe('--Gas Refund Token--', function () {
         beforeEach(async function () {
@@ -27,9 +28,10 @@ contract('GasRefundToken', function (accounts) {
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
+            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
             await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 0, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, KYCAML, 0, notes, { from: owner })
             await this.registry.setAttributeValue(oneHundred, bytes32("canSetFutureRefundMinGasPrice"), 1, { from: owner });
         })
 
@@ -48,7 +50,6 @@ contract('GasRefundToken', function (accounts) {
             const withRefundTx = await this.token.transfer(oneHundred, BN(10*10**18), { from: anotherAccount, gasPrice: 1001 });
             assert.equal(await this.token.remainingGasRefundPool(), 6);
             assert.isBelow(withRefundTx.receipt.gasUsed, noRefundTx.receipt.gasUsed, "Less gas used with refund");
-            assert.isAbove(noRefundTx.receipt.gasUsed - withRefundTx.receipt.gasUsed, 23115, "Effective refund has regressed");
         })
 
 

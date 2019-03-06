@@ -10,9 +10,11 @@ const TokenController = artifacts.require("TokenController")
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN;
 
-contract('--Proxy With Controller--', function (accounts) {
+contract('Proxy With Controller', function (accounts) {
     const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
     const notes = bytes32("some notes")
+    const KYCAML = bytes32("hasPassedKYC/AML")
+    const CAN_BURN = bytes32("canBurn")
 
     describe('--Set up proxy--', function () {
         beforeEach(async function () {
@@ -24,25 +26,21 @@ contract('--Proxy With Controller--', function (accounts) {
             this.allowanceSheet = await AllowanceSheet.new({ from: owner })
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
+
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
             await this.token.initialize({from: owner})
             await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
+
             this.controllerImplementation = await TokenController.new({ from: owner })
             this.controllerProxy = await Proxy.new({ from: owner })
             await this.controllerProxy.upgradeTo(this.controllerImplementation.address,{ from: owner })
             this.controller = await TokenController.at(this.controllerProxy.address)
+
             await this.controller.initialize({from: owner})
             await this.controller.setRegistry(this.registry.address, { from: owner })
             await this.controller.setTrueUSD(this.token.address, { from: owner })
             await this.controller.transferMintKey(mintKey, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.registry.setAttribute(approver1, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
-            await this.registry.setAttribute(approver2, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
-            await this.registry.setAttribute(approver3, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
-            await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
         })
 
         it('controller cannot be reinitialized', async function(){
@@ -70,12 +68,14 @@ contract('--Proxy With Controller--', function (accounts) {
 
         it('token can transfer ownership to controller', async function(){
             await this.token.transferOwnership(this.controller.address, { from: owner })
+            assert.equal(this.controller.address, await this.token.pendingOwner.call())
             await this.controller.issueClaimOwnership(this.token.address, { from: owner })
             const tokenOwner = await this.token.owner.call()
             assert.equal(tokenOwner,this.controller.address)
         })
         it('controller can set tusd registry', async function(){
             await this.token.transferOwnership(this.controller.address, { from: owner })
+            assert.equal(this.controller.address, await this.token.pendingOwner.call())
             await this.controller.issueClaimOwnership(this.token.address, { from: owner })
             await this.controller.setTusdRegistry(this.registry.address, { from: owner })
             const tokenRegistry = await this.token.registry.call()
@@ -85,6 +85,14 @@ contract('--Proxy With Controller--', function (accounts) {
         describe('--TokenController functions--', async function(){
             beforeEach(async function () {
                 await this.token.setRegistry(this.registry.address, { from: owner })
+                await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
+                await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
+                await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
+                await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
+                await this.registry.setAttribute(approver1, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
+                await this.registry.setAttribute(approver2, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
+                await this.registry.setAttribute(approver3, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
+                await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
                 await this.token.mint(oneHundred, BN(100).mul(BN(10**18)), {from: owner})
                 await this.token.transferOwnership(this.controller.address, { from: owner })
                 await this.controller.issueClaimOwnership(this.token.address, { from: owner })

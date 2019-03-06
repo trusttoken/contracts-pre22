@@ -19,8 +19,11 @@ contract('PausedTrueUSD', function (accounts) {
         const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, ratifier1, ratifier2, ratifier3, redemptionAdmin] = accounts
         const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
         const notes = bytes32('notes')
+        const RATIFIER = bytes32("isTUSDMintRatifier");
         const DOLLAR = BN(10**18)
         const TEN_THOUSAND = DOLLAR.mul(BN(10000));
+        const KYCAML = bytes32("hasPassedKYC/AML");
+        const CAN_BURN = bytes32("canBurn")
 
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
@@ -32,8 +35,8 @@ contract('PausedTrueUSD', function (accounts) {
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
+            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
+            await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
             await this.token.initialize({from: owner})
             await this.token.setTotalSupply(TEN_THOUSAND, {from: owner})
             await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
@@ -49,12 +52,12 @@ contract('PausedTrueUSD', function (accounts) {
             await this.controller.transferMintKey(mintKey, { from: owner })
             await this.tokenProxy.transferProxyOwnership(this.controller.address, {from: owner})
             await this.controller.claimTusdProxyOwnership({from: owner})
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.registry.setAttribute(otherAddress, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
-            await this.registry.setAttribute(ratifier1, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
-            await this.registry.setAttribute(ratifier2, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
-            await this.registry.setAttribute(ratifier3, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
+            await this.registry.setAttribute(otherAddress, KYCAML, 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
+            await this.registry.setAttribute(ratifier1, RATIFIER, 1, notes, { from: owner })
+            await this.registry.setAttribute(ratifier2, RATIFIER, 1, notes, { from: owner })
+            await this.registry.setAttribute(ratifier3, RATIFIER, 1, notes, { from: owner })
             await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
             await this.registry.setAttribute(this.fastPauseMints.address, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
 
@@ -63,8 +66,8 @@ contract('PausedTrueUSD', function (accounts) {
 
             this.original = await CanDelegate.new(oneHundred, TEN_THOUSAND, {from:owner})
             await this.original.delegateToNewContract(this.token.address, {from:owner})
-            await this.controller.setMintThresholds(BN(200*10**18),BN(300).mul(DOLLAR),BN(1000).mul(DOLLAR), { from: owner })
-            await this.controller.setMintLimits(BN(200*10**18),BN(300).mul(DOLLAR),BN(3000).mul(DOLLAR),{ from: owner })
+            await this.controller.setMintThresholds(BN(200).mul(DOLLAR),BN(300).mul(DOLLAR),BN(1000).mul(DOLLAR), { from: owner })
+            await this.controller.setMintLimits(BN(200).mul(DOLLAR),BN(300).mul(DOLLAR),BN(3000).mul(DOLLAR),{ from: owner })
             await this.controller.refillInstantMintPool({ from: owner })
             await this.controller.instantMint(oneHundred, DOLLAR.mul(BN(100)), { from: owner})
             await this.controller.refillInstantMintPool({ from: owner })

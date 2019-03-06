@@ -32,4 +32,20 @@ contract ModularBasicToken is HasOwner {
     function totalSupply() public view returns (uint256) {
         return totalSupply_;
     }
+
+    function balanceOf(address _who) public view returns (uint256) {
+        return _getBalance(_who);
+    }
+    function _getBalance(address _who) internal view returns (uint256) {
+        return _balanceOf[_who];
+    }
+    function _addBalance(address _who, uint256 _value) internal {
+        _balanceOf[_who] = _balanceOf[_who].add(_value);
+    }
+    function _subBalance(address _who, uint256 _value) internal {
+        _balanceOf[_who] = _balanceOf[_who].sub(_value);
+    }
+    function _setBalance(address _who, uint256 _value) internal {
+        _balanceOf[_who] = _value;
+    }
 }

@@ -14,6 +14,8 @@ contract('TokenWithHooks', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     const notes = bytes32("notes")
     const FIFTY = BN(50).mul(BN(10**18));
+    const KYCAML = bytes32("hasPassedKYC/AML")
+    const REGISTERED_CONTRACT = bytes32("isRegisteredContract")
 
     describe('--TokenWithHooks--', function () {
         beforeEach(async function () {
@@ -24,14 +26,16 @@ contract('TokenWithHooks', function (accounts) {
             this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSD.new(owner, 0, { from: owner })
             await this.token.setRegistry(this.registry.address, { from: owner })
+            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
+            await this.registry.subscribe(REGISTERD_CONTRACT, this.token.address, { from: owner })
             await this.balances.transferOwnership(this.token.address, { from: owner })
             await this.allowances.transferOwnership(this.token.address, { from: owner })
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
             await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 0, notes, { from: owner })
-            await this.registry.setAttribute(this.registeredReceiver.address, bytes32("isRegisteredContract"), 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, KYCAML, 0, notes, { from: owner })
+            await this.registry.setAttribute(this.registeredReceiver.address, REGISTERED_CONTRACT, 1, notes, { from: owner })
         })
 
         it('transfer to anotherAccount', async function(){
