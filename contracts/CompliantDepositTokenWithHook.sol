@@ -2,10 +2,10 @@ pragma solidity ^0.4.23;
 
 import "./TrueCoinReceiver.sol";
 import "./modularERC20/ModularBurnableToken.sol";
-import "../registry/contracts/RegistryToken.sol";
+import "../registry/contracts/Registry.sol";
 import "./ProxyStorage.sol";
 
-contract CompliantDepositTokenWithHook is ProxyStorage, RegistryToken, ModularBurnableToken {
+contract CompliantDepositTokenWithHook is ModularBurnableToken, RegistryClone {
 
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
@@ -132,6 +132,15 @@ contract CompliantDepositTokenWithHook is ProxyStorage, RegistryToken, ModularBu
         emit SetRegistry(registry);
     }
 
+    modifier onlyRegistry {
+      require(msg.sender == address(registry));
+      _;
+    }
+
+    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
+        attributes[_who][_attribute] = _value;
+    }
+
     function _burnAllArgs(address _from, uint256 _value) internal {
         _requireCanBurn(_from);
         super._burnAllArgs(_from, _value);
@@ -167,7 +176,7 @@ contract CompliantDepositTokenWithHook is ProxyStorage, RegistryToken, ModularBu
     }
 
     function _requireCanMint(address _to) internal view returns (address, bool) {
-        require (attributes[_to][HAS_PASSED_KYC_AML] != 0);
+        require (attributes[_to][HAS_PASSED_KYC_AML] != 0, "no kycaml");
         require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
         uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
         if (depositAddressValue != 0) {
@@ -177,7 +186,7 @@ contract CompliantDepositTokenWithHook is ProxyStorage, RegistryToken, ModularBu
     }
 
     function _requireCanBurn(address _from) internal view {
-        require (attributes[_from][CAN_BURN] != 0);
-        require (attributes[_from][IS_BLACKLISTED] == 0);
+        require (attributes[_from][CAN_BURN] != 0, "cannot burn from this address");
+        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
     }
 }

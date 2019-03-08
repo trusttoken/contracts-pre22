@@ -8,7 +8,6 @@ const Registry = artifacts.require("RegistryMock")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const ProvisionalRegistry = artifacts.require("ProvisionalRegistry")
 const ProvisionalTrueUSD = artifacts.require("ProvisionalTrueUSD")
-const TrueUSD = artifacts.require("TrueUSD")
 
 const BN = web3.utils.toBN;
 const bytes32 = require('./helpers/bytes32.js');
@@ -19,10 +18,11 @@ contract('ProvisionalTrueUSD', function (accounts) {
     const BLACKLISTED = bytes32("isBlacklisted")
     const CAN_BURN = bytes32("canBurn")
     const KYCAML = bytes32("hasPassedKYC/AML")
+    const BURN_ADDRESS = web3.utils.toChecksumAddress('0x0000000000000000000000000000000000011111')
 
     beforeEach(async function() {
         this.registryProxy = await Proxy.new({ from: owner })
-        this.provisionalRegistryImpl = await ProvisionalRegistry.new()
+        this.provisionalRegistryImpl = await ProvisionalRegistry.new(owner, 0)
         this.registryImpl = await Registry.new();
         await this.registryProxy.upgradeTo(this.registryImpl.address, { from: owner })
         this.registry = await Registry.at(this.registryProxy.address);
@@ -34,13 +34,18 @@ contract('ProvisionalTrueUSD', function (accounts) {
         await this.provisionalRegistry.setAttributeValue(oneHundred, KYCAML, BN(1), { from: owner })
 
         this.tokenProxy = await Proxy.new({ from: owner })
-        this.preMigrationTrueUSDImpl = await PreMigrationTrueUSDMock.new()
+        this.preMigrationTrueUSDImpl = await PreMigrationTrueUSDMock.new(oneHundred, 0)
         await this.tokenProxy.upgradeTo(this.preMigrationTrueUSDImpl.address, { from: owner })
         this.preMigrationToken = await PreMigrationTrueUSDMock.at(this.tokenProxy.address)
+        await this.preMigrationToken.initialize({ from: owner })
         await this.preMigrationToken.setRegistry(this.provisionalRegistry.address, { from: owner })
+        console.log(9)
         await this.preMigrationToken.mint(oneHundred, BN(100).mul(DOLLAR), { from: owner })
+        console.log(3)
         await this.preMigrationToken.approve(anotherAccount, BN(50).mul(DOLLAR), { from: oneHundred });
+        console.log(2)
         await this.preMigrationToken.setBurnBounds(BN(1), BN(100).mul(DOLLAR), { from: owner })
+        console.log(1)
     })
 
     describe('before upgrade', function() {
@@ -75,7 +80,7 @@ contract('ProvisionalTrueUSD', function (accounts) {
         })
         basicTokenTests([owner, oneHundred, anotherAccount])
 
-        describe('during migration', function() {
+        describe('balance and allowance migration', function() {
             it('is not pre-migrated', async function() {
                 const preMigratedBalance = await this.provisionalToken.migratedBalanceOf(oneHundred)
                 assert(BN(0).eq(preMigratedBalance))
@@ -118,7 +123,6 @@ contract('ProvisionalTrueUSD', function (accounts) {
                 assert(BN(40).mul(DOLLAR).eq(migratedBalanceTo))
             })
             describe('burns', function() {
-                const BURN_ADDRESS = web3.utils.toChecksumAddress('0x0000000000000000000000000000000000011111')
                 beforeEach(async function() {
                     await this.provisionalRegistry.setAttributeValue(BURN_ADDRESS, CAN_BURN, BN(1), { from: owner });
                     await this.provisionalRegistry.setAttributeValue(oneHundred, CAN_BURN, BN(1), { from: owner });
@@ -157,6 +161,24 @@ contract('ProvisionalTrueUSD', function (accounts) {
                     const migratedBalanceFrom = await this.provisionalToken.migratedBalanceOf.call(oneHundred)
                     assert(BN(200).mul(DOLLAR).eq(migratedBalanceFrom))
                 })
+            })
+        })
+        describe('registry migration', function() {
+            beforeEach(async function() {
+                await this.provisionalRegistry.subscribe(BLACKLISTED, this.provisionalToken.address, { from: owner })
+            })
+            it('reads unsynced registry during migration', async function() {
+                await assertRevert(this.provisionalToken.transfer(blacklisted, DOLLAR, { from: oneHundred }))
+            })
+            it('syncs registry values', async function() {
+                await this.provisionalRegistry.syncAttribute(BLACKLISTED, 0, [blacklisted])
+                await this.registryProxy.upgradeTo(this.registryImpl.address, { from: owner })
+                await assertRevert(this.provisionalToken.transfer(blacklisted, DOLLAR, { from: oneHundred }))
+            })
+            it('new writes sync', async function() {
+                await this.provisionalRegistry.setAttributeValue(oneHundred, BLACKLISTED, BN(1), { from: owner })
+                await this.registryProxy.upgradeTo(this.registryImpl.address, { from: owner })
+                await assertRevert(this.provisionalToken.transfer(owner, DOLLAR, { from: oneHundred }))
             })
         })
     })

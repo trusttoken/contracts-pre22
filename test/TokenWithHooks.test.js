@@ -16,6 +16,7 @@ contract('TokenWithHooks', function (accounts) {
     const FIFTY = BN(50).mul(BN(10**18));
     const KYCAML = bytes32("hasPassedKYC/AML")
     const REGISTERED_CONTRACT = bytes32("isRegisteredContract")
+    const DEPOSIT_ADDRESS = bytes32("isDepositAddress")
 
     describe('--TokenWithHooks--', function () {
         beforeEach(async function () {
@@ -27,7 +28,8 @@ contract('TokenWithHooks', function (accounts) {
             this.token = await TrueUSD.new(owner, 0, { from: owner })
             await this.token.setRegistry(this.registry.address, { from: owner })
             await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
-            await this.registry.subscribe(REGISTERD_CONTRACT, this.token.address, { from: owner })
+            await this.registry.subscribe(REGISTERED_CONTRACT, this.token.address, { from: owner })
+            await this.registry.subscribe(DEPOSIT_ADDRESS, this.token.address, { from: owner })
             await this.balances.transferOwnership(this.token.address, { from: owner })
             await this.allowances.transferOwnership(this.token.address, { from: owner })
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
@@ -75,8 +77,8 @@ contract('TokenWithHooks', function (accounts) {
 
         it('token with hooks transfer works with deposit address', async function(){
             this.depositAddressReceiver = await TrueCoinReceiverMock.new({from: owner})
-            const DEPOSIT_ADDRESS = web3.utils.toChecksumAddress('0x00000' + this.depositAddressReceiver.address.slice(2,37))
-            await this.registry.setAttribute(DEPOSIT_ADDRESS, bytes32("isDepositAddress"), this.depositAddressReceiver.address, notes, { from: owner })
+            const depositAddress = web3.utils.toChecksumAddress('0x00000' + this.depositAddressReceiver.address.slice(2,37))
+            await this.registry.setAttribute(depositAddress, DEPOSIT_ADDRESS, this.depositAddressReceiver.address, notes, { from: owner })
             await this.registry.setAttribute(this.depositAddressReceiver.address, bytes32("isRegisteredContract"), 1, notes, { from: owner })
             const depositAddressOne = web3.utils.toChecksumAddress(this.depositAddressReceiver.address.slice(0,37) + '20000');
             const {logs} = await this.token.transfer(depositAddressOne, FIFTY, {from: oneHundred})
@@ -86,9 +88,9 @@ contract('TokenWithHooks', function (accounts) {
 
         it('token with hooks transferFrom works with deposit address', async function(){
             this.depositAddressReceiver = await TrueCoinReceiverMock.new({from: owner})
-            const DEPOSIT_ADDRESS = web3.utils.toChecksumAddress('0x00000' + this.depositAddressReceiver.address.slice(2,37))
-            await this.registry.setAttribute(DEPOSIT_ADDRESS, bytes32("isDepositAddress"), this.depositAddressReceiver.address, notes, { from: owner })
-            await this.registry.setAttribute(this.depositAddressReceiver.address, bytes32("isRegisteredContract"), 1, notes, { from: owner })
+            const depositAddress = web3.utils.toChecksumAddress('0x00000' + this.depositAddressReceiver.address.slice(2,37))
+            await this.registry.setAttribute(depositAddress, DEPOSIT_ADDRESS, this.depositAddressReceiver.address, notes, { from: owner })
+            await this.registry.setAttribute(this.depositAddressReceiver.address, REGISTERED_CONTRACT, 1, notes, { from: owner })
             const depositAddressOne = web3.utils.toChecksumAddress(this.depositAddressReceiver.address.slice(0,37) + '20000');
             await this.token.approve(anotherAccount, FIFTY, { from: oneHundred });
             const {logs} = await this.token.transferFrom(oneHundred, depositAddressOne, FIFTY, {from: anotherAccount})
@@ -98,8 +100,8 @@ contract('TokenWithHooks', function (accounts) {
 
         it('fallback works for newly minted tokens', async function() {
             this.receiver = await TrueCoinReceiverMock.new({from: owner})
-            await this.registry.setAttribute(this.receiver.address, bytes32("isRegisteredContract"), 1, notes, { from: owner })
-            await this.registry.setAttribute(this.receiver.address, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.setAttribute(this.receiver.address, REGISTERED_CONTRACT, 1, notes, { from: owner })
+            await this.registry.setAttribute(this.receiver.address, KYCAML, 1, notes, { from: owner })
             await this.token.mint(this.receiver.address, FIFTY, { from:owner });
             const newSender = await this.receiver.sender.call()
             assert.equal(newSender, '0x0000000000000000000000000000000000000000')
@@ -107,11 +109,11 @@ contract('TokenWithHooks', function (accounts) {
 
         it('deposit address fallback works for newly minted tokens', async function() {
             this.depositAddressReceiver = await TrueCoinReceiverMock.new({from: owner})
-            const DEPOSIT_ADDRESS = web3.utils.toChecksumAddress('0x00000' + this.depositAddressReceiver.address.slice(2,37))
-            await this.registry.setAttribute(DEPOSIT_ADDRESS, bytes32("isDepositAddress"), this.depositAddressReceiver.address, notes, { from: owner })
-            await this.registry.setAttribute(this.depositAddressReceiver.address, bytes32("isRegisteredContract"), 1, notes, { from: owner })
+            const depositAddress = web3.utils.toChecksumAddress('0x00000' + this.depositAddressReceiver.address.slice(2,37))
+            await this.registry.setAttribute(depositAddress, DEPOSIT_ADDRESS, this.depositAddressReceiver.address, notes, { from: owner })
+            await this.registry.setAttribute(this.depositAddressReceiver.address, REGISTERED_CONTRACT, 1, notes, { from: owner })
             const depositAddressOne = web3.utils.toChecksumAddress(this.depositAddressReceiver.address.slice(0,37) + '20000');
-            await this.registry.setAttribute(depositAddressOne, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.setAttribute(depositAddressOne, KYCAML, 1, notes, { from: owner })
             await this.token.mint(depositAddressOne, FIFTY, { from:owner });
             const newSender = await this.depositAddressReceiver.sender()
             assert.equal(newSender, depositAddressOne)

@@ -1,8 +1,8 @@
 import assertRevert from './helpers/assertRevert'
 import expectThrow from './helpers/expectThrow'
 import assertBalance from './helpers/assertBalance'
-const Registry = artifacts.require("RegistryMock")
-const TrueUSDMock = artifacts.require("TrueUSDMock")
+const Registry = artifacts.require("ProvisionalRegistryMock")
+const TrueUSDMock = artifacts.require("PreMigrationTrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
@@ -50,14 +50,8 @@ contract('--Full upgrade process --', function (accounts) {
             await this.controller.refillMultiSigMintPool({ from: owner })
             await this.controller.refillRatifiedMintPool({ from: owner })
             await this.controller.refillInstantMintPool({ from: owner })
-            console.log(28);
             await this.token.transferOwnership(this.controller.address, {from: owner})
-            console.log(29);
-            console.log(this.controller.address)
-            console.log(await this.token.pendingOwner.call())
-            console.log(await this.token.owner.call())
             await this.controller.issueClaimOwnership(this.token.address, {from :owner})
-            console.log(30);
         })
         it('conducts the full upgrade process', async function(){
             this.balanceSheet = await BalanceSheet.new({ from: owner })
@@ -87,8 +81,17 @@ contract('--Full upgrade process --', function (accounts) {
             await this.controller.claimStorageForProxy(this.token.address,this.balanceSheet, this.allowanceSheet, { from: owner })
             
             await this.controller.setTusdRegistry(this.registry.address, { from: owner })
-            await assertBalance(this.balanceSheet, oneHundred, BN(1000).mul(BN(10 ** 18)))
+            await assertBalance(this.token, oneHundred, BN(1000).mul(BN(10 ** 18)))
             await this.controller.requestMint(oneHundred, BN(10*10**8), { from: owner })
+            console.log(await this.controller.registry.call())
+            console.log(await this.token.registry.call())
+            console.log(this.registry.address)
+            console.log(await this.registry.hasAttribute(oneHundred, KYCAML))
+            console.log(owner)
+            console.log(await this.controller.owner.call())
+            console.log(await this.controller.ratifiedMintPool.call())
+            console.log(BN(10**19))
+            console.log(10**19)
             await this.controller.ratifyMint(0, oneHundred, BN(10*10**8),{ from: owner })
         })
     })

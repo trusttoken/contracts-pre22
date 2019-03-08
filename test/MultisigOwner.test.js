@@ -26,28 +26,18 @@ contract('MultisigOwner', function (accounts) {
         await this.controller.initialize({ from: owner1 })
         await this.controller.setRegistry(this.registry.address, { from: owner1 })
         await this.token.transferOwnership(this.controller.address, { from: owner1 })
-        console.log('before')
         await this.controller.issueClaimOwnership(this.token.address, { from: owner1 })
-        console.log('after')
         await this.controller.setTrueUSD(this.token.address, { from: owner1 })
         await this.controller.setTusdRegistry(this.registry.address, { from: owner1 })
         this.ClaimableContract = await BalanceSheet.new({from: owner1})
         this.balanceSheet = await this.token.balances.call()
-        console.log(1);
         this.allowanceSheet = await this.token.allowances.call()
-        console.log(1);
-        await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
-        console.log(2);
-        await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
-        console.log(3);
+        await this.registry.subscribe(KYCAML, this.token.address, { from: owner1 })
+        await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner1 })
         await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner1 })
-        console.log(4);
         await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, notes, { from: owner1 })
-        console.log(5);
         await this.registry.setAttribute(pauseKey, PAUSER, 1, notes, { from: owner1 })
-        console.log(6);
         this.multisigOwner = await MultisigOwner.new({ from: owner1 })
-        console.log(7);
         await this.multisigOwner.msInitialize([owner1, owner2, owner3], { from: owner1 })
     })
 

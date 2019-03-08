@@ -25,7 +25,18 @@ contract PausedToken is HasOwner {
         emit BalanceSheetSet(_sheet);
         return true;
     }
-
+    function balanceOf(address _who) public view returns (uint256) {
+        return _getBalance(_who);
+    }
+    function _getBalance(address _who) internal view returns (uint256) {
+        return _balanceOf[_who];
+    }
+    function allowance(address _who, address _spender) public view returns (uint256) {
+        return _getAllowance(_who, _spender);
+    }
+    function _getAllowance(address _who, address _spender) internal view returns (uint256) {
+        return _allowance[_who][_spender];
+    }
     function transfer(address /*_to*/, uint256 /*_value*/) public returns (bool) {
         revert("Token Paused");
     }
@@ -107,7 +118,7 @@ contract PausedDelegateERC20 is PausedToken {
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
 * inherited - see the documentation on the corresponding contracts.
 */
-contract PausedTrueUSD is PausedDelegateERC20 {
+contract PausedTrueUSD is PausedDelegateERC20, RegistryClone {
     using SafeMath for *;
 
     uint8 public constant DECIMALS = 18;
@@ -155,6 +166,15 @@ contract PausedTrueUSD is PausedDelegateERC20 {
     */
     function remainingGasRefundPool() public view returns(uint) {
         return gasRefundPool.length;
+    }
+
+    modifier onlyRegistry {
+      require(msg.sender == address(registry));
+      _;
+    }
+
+    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
+        attributes[_who][_attribute] = _value;
     }
 
     function wipeBlacklistedAccount(address _account) public onlyOwner {

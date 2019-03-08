@@ -209,7 +209,7 @@ contract TokenController {
      Instant mint requires no approval, ratify mint requires 1 approval and multiSig mint requires 3 approvals
      */
     function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
-        require(_instant < _ratified && _ratified < _multiSig);
+        require(_instant <= _ratified && _ratified <= _multiSig);
         instantMintThreshold = _instant;
         ratifiedMintThreshold = _ratified;
         multiSigMintThreshold = _multiSig;
@@ -222,10 +222,19 @@ contract TokenController {
      before needing to refill
      */
     function setMintLimits(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
-        require(_instant < _ratified && _ratified < _multiSig);
+        require(_instant <= _ratified && _ratified <= _multiSig);
         instantMintLimit = _instant;
+        if (instantMintPool > instantMintLimit) {
+            instantMintPool = instantMintLimit;
+        }
         ratifiedMintLimit = _ratified;
+        if (ratifiedMintPool > ratifiedMintLimit) {
+            ratifiedMintPool = ratifiedMintLimit;
+        }
         multiSigMintLimit = _multiSig;
+        if (multiSigMintPool > multiSigMintLimit) {
+            multiSigMintPool = multiSigMintLimit;
+        }
         emit MintLimitsChanged(_instant, _ratified, _multiSig);
     }
 

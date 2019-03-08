@@ -51,53 +51,29 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             await this.token.initialize({ from: owner1 })
             await this.token.transferOwnership(this.controller.address, {from: owner1})
             await this.multisigOwner.issueClaimOwnership(this.token.address, {from: owner1})
-            console.log(32);
             await this.multisigOwner.issueClaimOwnership(this.token.address, {from: owner2})
-            console.log(33);
             await this.multisigOwner.transferMintKey(mintKey, { from: owner1 })
-            console.log(34);
             await this.multisigOwner.transferMintKey(mintKey, { from: owner2 })
-            console.log(35);
 
-            console.log(36);
             await this.multisigOwner.setRegistry(this.registry.address, { from: owner1 })
-            console.log(37);
             await this.multisigOwner.setRegistry(this.registry.address, { from: owner2 })
-            console.log(38);
             await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner1 })
-            console.log(39);
             await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner2 })
-            console.log(40);
             await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner1 })
-            console.log(41);
             await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner1 })
-            console.log(42);
             await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner1 })
-            console.log(43);
             await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, notes, { from: owner1 })
-            console.log(44);
             await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner1 })
-            console.log(45);
             this.balanceSheet = await BalanceSheet.new({ from: owner1 })
-            console.log(46);
             this.allowanceSheet = await AllowanceSheet.new({ from: owner1 })
-            console.log(47);
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner1 })
-            console.log(48);
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner1 })
-            console.log(49);
             await this.multisigOwner.claimStorageForProxy(this.token.address, this.balanceSheet.address, this.allowanceSheet.address, { from: owner1 })
-            console.log(50);
             await this.multisigOwner.claimStorageForProxy(this.token.address, this.balanceSheet.address, this.allowanceSheet.address, { from: owner2 })
-            console.log(51);
             await this.multisigOwner.requestMint(oneHundred, BN(10*10**18),  {from: owner1})
-            console.log(52);
             await this.multisigOwner.requestMint(oneHundred, BN(10*10**18), {from: owner2})
-            console.log(53);
             await this.multisigOwner.ratifyMint(0,oneHundred, BN(10*10**18), {from: owner1})
-            console.log(54);
             await this.multisigOwner.ratifyMint(0,oneHundred, BN(10*10**18), {from: owner2})
-            console.log(55);
         })
         describe('Assertion tests for set up', async function()  {
 

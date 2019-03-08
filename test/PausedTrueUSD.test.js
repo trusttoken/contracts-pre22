@@ -24,6 +24,7 @@ contract('PausedTrueUSD', function (accounts) {
         const TEN_THOUSAND = DOLLAR.mul(BN(10000));
         const KYCAML = bytes32("hasPassedKYC/AML");
         const CAN_BURN = bytes32("canBurn")
+        const BLACKLISTED = bytes32("isBlacklisted")
 
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
@@ -37,6 +38,7 @@ contract('PausedTrueUSD', function (accounts) {
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
             await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
             await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
+            await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
             await this.token.initialize({from: owner})
             await this.token.setTotalSupply(TEN_THOUSAND, {from: owner})
             await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
@@ -66,11 +68,15 @@ contract('PausedTrueUSD', function (accounts) {
 
             this.original = await CanDelegate.new(oneHundred, TEN_THOUSAND, {from:owner})
             await this.original.delegateToNewContract(this.token.address, {from:owner})
-            await this.controller.setMintThresholds(BN(200).mul(DOLLAR),BN(300).mul(DOLLAR),BN(1000).mul(DOLLAR), { from: owner })
-            await this.controller.setMintLimits(BN(200).mul(DOLLAR),BN(300).mul(DOLLAR),BN(3000).mul(DOLLAR),{ from: owner })
+
+            await this.controller.setMintThresholds(BN(10000).mul(DOLLAR),BN(30000).mul(DOLLAR),BN(1000000).mul(DOLLAR), { from: owner })
+            await this.controller.setMintLimits(BN(10000).mul(DOLLAR),BN(30000).mul(DOLLAR),BN(1000000).mul(DOLLAR),{ from: owner })
+            await this.controller.refillMultiSigMintPool({ from: owner })
+            await this.controller.refillRatifiedMintPool({ from: owner })
             await this.controller.refillInstantMintPool({ from: owner })
-            await this.controller.instantMint(oneHundred, DOLLAR.mul(BN(100)), { from: owner})
+            await this.controller.instantMint(oneHundred, TEN_THOUSAND, { from: owner})
             await this.controller.refillInstantMintPool({ from: owner })
+            await this.controller.setMintLimits(0,0,0, { from: owner })
         })
 
         it('current token is not paused', async function(){
@@ -85,8 +91,9 @@ contract('PausedTrueUSD', function (accounts) {
         describe('Paused TrueUSD', function() {
             beforeEach(async function () {
                 await this.token.approve(otherAddress, BN(100*10**18), { from: oneHundred })
-                await this.pausedTrueUSD.setDelegateFrom(this.original.address, {from: owner})
                 await this.controller.pauseTrueUSD({from: owner})
+                const pausedToken = await PausedTrueUSD.at(this.token.address)
+                await pausedToken.setDelegateFrom(this.original.address, {from: owner})
             })
 
             describe('token transfers are now paused', function(){
@@ -170,12 +177,12 @@ contract('PausedTrueUSD', function (accounts) {
                 })
 
                 it('can still wipe blacklisted account', async function(){
-                    await this.registry.setAttribute(oneHundred, bytes32("isBlacklisted"), 1, notes, { from: owner })
+                    await this.registry.setAttribute(oneHundred, BLACKLISTED, 1, notes, { from: owner })
                     await this.controller.wipeBlackListedTrueUSD(oneHundred, {from : owner})
                     await assertBalance(this.token, oneHundred,0)
                 })
 
-                it('cannot  wipe blacklisted account if not blacklisted', async function(){
+                it('cannot wipe blacklisted account if not blacklisted', async function(){
                     await assertRevert(this.controller.wipeBlackListedTrueUSD(oneHundred, {from : owner}))
                 })
 

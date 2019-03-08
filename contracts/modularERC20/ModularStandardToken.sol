@@ -95,7 +95,7 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function allowance(address _who, address _spender) public view returns (uint256) {
-        return _allowance[_who][_spender];
+        return _getAllowance(_who, _spender);
     }
 
     function _getAllowance(address _who, address _spender) internal view returns (uint256) {

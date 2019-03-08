@@ -23,7 +23,17 @@ contract('Upgrade Helper', function (accounts) {
             await this.original.transferOwnership(this.controller.address, {from: owner})
             await this.controller.issueClaimOwnership(this.original.address, {from: owner})
             await this.controller.setTrueUSD(this.original.address, {from: owner})
+            console.log(await this.token.pendingOwner.call())
+            console.log(await this.controller.pendingOwner.call())
+            console.log(this.helper.address)
+            console.log(await this.original.pendingOwner.call())
+            console.log(await this.original.owner.call())
+            console.log(this.controller.address)
+            console.log(await this.controller.owner.call())
+            console.log(owner)
+            console.log(1)
             await this.helper.upgrade({from: owner})
+            console.log(8)
         })
 
         it('Controller points to new trueUSD', async function(){
