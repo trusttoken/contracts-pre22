@@ -502,13 +502,15 @@ contract ModularBasicToken is HasOwner {
     function _getBalance(address _who) internal view returns (uint256) {
         return _balanceOf[_who];
     }
-    function _addBalance(address _who, uint256 _value) internal {
-        _balanceOf[_who] = _balanceOf[_who].add(_value);
+    function _addBalance(address _who, uint256 _value) internal returns (bool balanceNew) {
+        uint256 priorBalance = _balanceOf[_who];
+        _balanceOf[_who] = priorBalance.add(_value);
+        balanceNew = priorBalance == 0;
     }
-    function _subBalance(address _who, uint256 _value) internal returns (bool) {
+    function _subBalance(address _who, uint256 _value) internal returns (bool balanceZero) {
         uint256 updatedBalance = _balanceOf[_who].sub(_value);
         _balanceOf[_who] = updatedBalance;
-        return updatedBalance != 0;
+        balanceZero = updatedBalance == 0;
     }
     function _setBalance(address _who, uint256 _value) internal {
         _balanceOf[_who] = _value;
@@ -618,8 +620,10 @@ contract ModularStandardToken is ModularBasicToken {
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
         _allowance[_who][_spender] = _allowance[_who][_spender].add(_value);
     }
-    function _subAllowance(address _who, address _spender, uint256 _value) internal {
-        _allowance[_who][_spender] = _allowance[_who][_spender].sub(_value);
+    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool allowanceZero){
+        uint256 newAllowance = _allowance[_who][_spender].sub(_value);
+        _allowance[_who][_spender] = newAllowance;
+        allowanceZero = newAllowance == 0;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
         _allowance[_who][_spender] = _value;
@@ -842,9 +846,9 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         _requireCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        bool nonzero = _subBalance(_from, _value);
-        if (nonzero) {
-            gasRefund45();
+        bool balanceZero = _subBalance(_from, _value);
+        if (balanceZero) {
+            // no refund
         } else {
             gasRefund30();
         }
@@ -858,14 +862,40 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransferFrom(_sender, _from, _to);
-        _subAllowance(_from, _sender, _value);
-        bool nonzero = _subBalance(_from, _value);
-        if (nonzero) {
-            gasRefund45();
+        bool allowanceZero = _subAllowance(_from, _sender, _value);
+        bool balanceZero = _subBalance(_from, _value);
+        bool balanceNew = _addBalance(_to, _value);
+        
+        if (balanceNew) {
+            if (allowanceZero) {
+                if (balanceZero) {
+                    // do not refund
+                } else {
+                    gasRefund30();
+                }
+            } else {
+                if (balanceZero) {
+                    gasRefund30();
+                } else {
+                    gasRefund45();
+                }
+            }
         } else {
-            gasRefund30();
+            if (allowanceZero) {
+                if (balanceZero) {
+                    // do not refund
+                } else {
+                    gasRefund15();
+                }
+            } else {
+                if (balanceZero) {
+                    gasRefund15();
+                } else {
+                    gasRefund30();
+                }
+            }
+
         }
-        _addBalance(_to, _value);
         emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
             emit Transfer(originalTo, _to, _value);
@@ -883,13 +913,21 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransfer(_from, _to);
-        bool nonzero = _subBalance(_from, _value);
-        if (nonzero) {
-            gasRefund45();
+        bool balanceZero = _subBalance(_from, _value);
+        bool balanceNew = _addBalance(_to, _value);
+        if (balanceZero) {
+            if (balanceNew) {
+                gasRefund30();
+            } else {
+                // do not refund
+            }
         } else {
-            gasRefund15();
+            if (balanceNew) {
+                gasRefund45();
+            } else {
+                gasRefund30();
+            }
         }
-        _addBalance(_to, _value);
         emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
             emit Transfer(originalTo, _to, _value);
@@ -1151,14 +1189,15 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
     function _getBalance(address _who) internal view returns (uint256) {
         return balances.balanceOf(_who);
     }
-    function _addBalance(address _who, uint256 _value) internal {
-        uint256 balance = _getBalance(_who);
-        _setBalance(_who, balance.add(_value));
+    function _addBalance(address _who, uint256 _value) internal returns (bool balanceNew) {
+        uint256 priorBalance = _getBalance(_who);
+        _setBalance(_who, priorBalance.add(_value));
+        balanceNew = priorBalance == 0;
     }
-    function _subBalance(address _who, uint256 _value) internal returns (bool) {
-        uint256 balance = _getBalance(_who);
-        _setBalance(_who, balance.sub(_value));
-        return true;
+    function _subBalance(address _who, uint256 _value) internal returns (bool balanceZero) {
+        uint256 balanceNew = _getBalance(_who).sub(_value);
+        _setBalance(_who, balanceNew);
+        balanceZero = balanceNew == 0;
     }
     function _setBalance(address _who, uint256 _value) internal {
         balances.setBalance(_who, _value);
@@ -1191,9 +1230,11 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         uint256 prior = _getAllowance(_who, _spender);
         _setAllowance(_who, _spender, prior.add(_value)); 
     }
-    function _subAllowance(address _who, address _spender, uint256 _value) internal {
+    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool allowanceZero) {
         uint256 prior = _getAllowance(_who, _spender);
-        _setAllowance(_who, _spender, prior.sub(_value)); 
+        uint256 updated = prior.sub(_value);
+        _setAllowance(_who, _spender, updated); 
+        allowanceZero = updated == 0;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
         _allowance[_who][_spender] = _value;
