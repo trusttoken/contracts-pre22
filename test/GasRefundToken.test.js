@@ -58,11 +58,13 @@ contract('GasRefundToken', function (accounts) {
             }
             assert((await this.token.remainingGasRefundPool.call()).eq(BN(18)))
             const receipt = await this.token.transfer(anotherAccount, FIFTY, {from: oneHundred, gasPrice: 1001, gasLimit: 150000})
-            assert((await this.token.remainingGasRefundPool.call()).eq(BN(15)), "pool should have 15")
+            const remainingPool1 = await this.token.remainingGasRefundPool.call()
+            assert(remainingPool1.eq(BN(15)), "pool should have 15, instead " + remainingPool1)
             await assertBalance(this.token,anotherAccount, FIFTY, "should have received $50")
             await this.token.approve(oneHundred, FIFTY, { from: anotherAccount });
             await this.token.transferFrom(anotherAccount, oneHundred, FIFTY, { from: oneHundred, gasPrice: 1001, gasLimit: 200000 });
-            assert((await this.token.remainingGasRefundPool.call()).eq(BN(13)), "pool should have 13");
+            const remainingPool2 = await this.token.remainingGasRefundPool.call()
+            assert(remainingPool2.eq(BN(13)), "pool should have 13, instead " + remainingPool2);
         })
     })
 })
