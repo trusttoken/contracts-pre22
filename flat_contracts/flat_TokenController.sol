@@ -505,8 +505,10 @@ contract ModularBasicToken is HasOwner {
     function _addBalance(address _who, uint256 _value) internal {
         _balanceOf[_who] = _balanceOf[_who].add(_value);
     }
-    function _subBalance(address _who, uint256 _value) internal {
-        _balanceOf[_who] = _balanceOf[_who].sub(_value);
+    function _subBalance(address _who, uint256 _value) internal returns (bool) {
+        uint256 updatedBalance = _balanceOf[_who].sub(_value);
+        _balanceOf[_who] = updatedBalance;
+        return updatedBalance != 0;
     }
     function _setBalance(address _who, uint256 _value) internal {
         _balanceOf[_who] = _value;
@@ -708,9 +710,91 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
     }
 }
 
+// File: contracts/GasRefundToken.sol
+
+/**  
+@title Gas Refund Token
+Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas refund mechanism in EVM
+Each time an non-empty storage slot is set to 0, evm refund 15,000 (19,000 after Constantinople) to the sender
+of the transaction. 
+*/
+contract GasRefundToken is ProxyStorage {
+
+    function sponsorGas() external {
+        uint256 len = gasRefundPool.length;
+        uint256 refundPrice = minimumGasPriceForFutureRefunds;
+        require(refundPrice > 0);
+        gasRefundPool.length = len + 9;
+        gasRefundPool[len] = refundPrice;
+        gasRefundPool[len + 1] = refundPrice;
+        gasRefundPool[len + 2] = refundPrice;
+        gasRefundPool[len + 3] = refundPrice;
+        gasRefundPool[len + 4] = refundPrice;
+        gasRefundPool[len + 5] = refundPrice;
+        gasRefundPool[len + 6] = refundPrice;
+        gasRefundPool[len + 7] = refundPrice;
+        gasRefundPool[len + 8] = refundPrice;
+    }
+
+    function minimumGasPriceForRefund() public view returns (uint256) {
+        uint256 len = gasRefundPool.length;
+        if (len > 0) {
+          return gasRefundPool[len - 1] + 1;
+        }
+        return uint256(-1);
+    }
+
+    /**  
+    @dev refund 45,000 gas for functions with gasRefund modifier.
+    @dev costs slightly more than 20,000 gas
+    */
+    function gasRefund45() internal {
+        uint256 len = gasRefundPool.length;
+        if (len > 2 && tx.gasprice > gasRefundPool[len-1]) {
+            gasRefundPool.length = len - 3;
+        }
+    }
+
+    /**  
+    @dev refund 30,000 gas for functions with gasRefund modifier.
+    @dev costs slightly more than 15,000 gas
+    */
+    function gasRefund30() internal {
+        uint256 len = gasRefundPool.length;
+        if (len > 1 && tx.gasprice > gasRefundPool[len-1]) {
+            gasRefundPool.length = len - 2;
+        }
+    }
+
+    /**  
+    @dev refund 15,000 gas for functions with gasRefund modifier.
+    @dev costs slightly more than 10,000 gas
+    */
+    function gasRefund15() internal {
+        uint256 len = gasRefundPool.length;
+        if (len > 0 && tx.gasprice > gasRefundPool[len-1]) {
+            gasRefundPool.length = len - 1;
+        }
+    }
+
+    /**  
+    *@dev Return the remaining sponsored gas slots
+    */
+    function remainingGasRefundPool() public view returns (uint) {
+        return gasRefundPool.length;
+    }
+
+    bytes32 constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";
+
+    function setMinimumGasPriceForFutureRefunds(uint256 _minimumGasPriceForFutureRefunds) public {
+        require(registry.hasAttribute(msg.sender, CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE));
+        minimumGasPriceForFutureRefunds = _minimumGasPriceForFutureRefunds;
+    }
+}
+
 // File: contracts/CompliantDepositTokenWithHook.sol
 
-contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds {
+contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
 
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
@@ -758,7 +842,12 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         _requireCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        _subBalance(_from, _value);
+        bool nonzero = _subBalance(_from, _value);
+        if (nonzero) {
+            gasRefund45();
+        } else {
+            gasRefund30();
+        }
         emit Transfer(_from, _to, _value);
         totalSupply_ = totalSupply_.sub(_value);
         emit Burn(_to, _value);
@@ -770,7 +859,12 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransferFrom(_sender, _from, _to);
         _subAllowance(_from, _sender, _value);
-        _subBalance(_from, _value);
+        bool nonzero = _subBalance(_from, _value);
+        if (nonzero) {
+            gasRefund45();
+        } else {
+            gasRefund30();
+        }
         _addBalance(_to, _value);
         emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
@@ -789,7 +883,12 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransfer(_from, _to);
-        _subBalance(_from, _value);
+        bool nonzero = _subBalance(_from, _value);
+        if (nonzero) {
+            gasRefund45();
+        } else {
+            gasRefund15();
+        }
         _addBalance(_to, _value);
         emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
