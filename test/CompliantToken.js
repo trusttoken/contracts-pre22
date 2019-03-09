@@ -13,27 +13,19 @@ import assertBalance from './helpers/assertBalance'
 function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns = false) {
     describe('--CompliantToken Tests--', function () {
         const notes = bytes32("some notes")
-        const KYCAML = bytes32("hasPassedKYC/AML")
         const BLACKLISTED = bytes32("isBlacklisted")
         const CAN_BURN = bytes32("canBurn")
 
         describe('minting', function () {
             describe('when user is on mint whitelist', function () {
                 beforeEach(async function () {
-                    assert.equal(await this.registry.subscriberCount.call(KYCAML), 1)
                     assert.equal(await this.registry.owner.call(), owner)
-                    await this.registry.setAttribute(anotherAccount, KYCAML, 1, notes, { from: owner })
                 })
 
                 mintableTokenTests([owner, oneHundred, anotherAccount])
             })
 
-            it('rejects mint when user is not on mint whitelist', async function () {
-                await assertRevert(this.token.mint(anotherAccount, BN(100*10**18), { from: owner }))
-            })
-
             it('rejects mint when user is blacklisted', async function () {
-                await this.registry.setAttribute(anotherAccount, KYCAML, 1, notes, { from: owner })
                 await this.registry.setAttribute(anotherAccount, BLACKLISTED, 1, notes, { from: owner })
                 await assertRevert(this.token.mint(anotherAccount, BN(100*10**18), { from: owner }))
             })
@@ -115,12 +107,12 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
 
         describe('CanWriteTo-', function (){
             beforeEach(async function () {
-                const canWriteToKYCAttribute = writeAttributeFor(KYCAML)
-                await this.registry.setAttribute(oneHundred, canWriteToKYCAttribute, 1, notes, { from: owner })
+                const canWriteToBlacklist = writeAttributeFor(BLACKLISTED)
+                await this.registry.setAttribute(oneHundred, canWriteToBlacklist, 1, notes, { from: owner })
             })
 
             it('address other than the owner can write attribute if they have canWrite access', async function(){
-                await this.registry.setAttribute(anotherAccount, KYCAML, 1, notes, { from: oneHundred })
+                await this.registry.setAttribute(anotherAccount, BLACKLISTED, 1, notes, { from: oneHundred })
             })
         })
 

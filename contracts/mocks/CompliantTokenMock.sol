@@ -11,4 +11,7 @@ contract CompliantTokenMock is CompliantDepositTokenWithHook {
         burnMin = 0;
         burnMax = 1000000000 * 10 ** 18;
     }
+    function canBurn() internal pure returns (bytes32) {
+        return "canBurn";
+    }
 }

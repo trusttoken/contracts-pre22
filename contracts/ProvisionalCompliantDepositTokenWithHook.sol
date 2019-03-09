@@ -24,9 +24,6 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
     function _requireCanBurn(address _from) internal view {
         ProvisionalRegistry(registry).requireCanBurn(_from);
     }
-    function balanceOf(address _who) public view returns (uint256) {
-        return _getBalance(_who);
-    }
     function migratedBalanceOf(address _who) public view returns (uint256) {
         return _balanceOf[_who];
     }
@@ -61,9 +58,6 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
             address spender = spenders[i];
             _allowance[holder][spender] = _getAllowance(holder, spender);
         }
-    }
-    function allowance(address _who, address _spender) public view returns (uint256) {
-        return _getAllowance(_who, _spender);
     }
     function migratedAllowance(address _who, address _spender) public view returns (uint256) {
         return _allowance[_who][_spender];

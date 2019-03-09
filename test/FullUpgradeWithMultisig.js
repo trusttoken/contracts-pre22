@@ -15,7 +15,6 @@ const BN = web3.utils.toBN;
 contract('--Full upgrade process with multisig--', function (accounts) {
     const [_, owner1, owner2, owner3 , oneHundred, anotherAccount, mintKey, pauseKey, approver] = accounts
     const notes = bytes32("notes")
-    const KYCAML = bytes32("hasPassedKYC/AML")
     const CAN_BURN = bytes32("canBurn")
 
     describe('--Set up contracts--', function () {
@@ -37,7 +36,6 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             this.tokenProxy = await Proxy.new({ from: owner1 })
             this.tokenImplementation = await TrueUSD.new(owner1, 0, { from: owner1 })
             this.token = await TrueUSD.at(this.tokenProxy.address)
-            await this.registry.subscribe(KYCAML, this.token.address, { from: owner1 })
             await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner1 })
             await this.tokenProxy.transferProxyOwnership(this.controller.address,{ from: owner1 } )
             await this.multisigOwner.initialize({from : owner1 })
@@ -59,9 +57,7 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             await this.multisigOwner.setRegistry(this.registry.address, { from: owner2 })
             await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner1 })
             await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner2 })
-            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner1 })
             await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner1 })
-            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner1 })
             await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, notes, { from: owner1 })
             await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner1 })
             this.balanceSheet = await BalanceSheet.new({ from: owner1 })

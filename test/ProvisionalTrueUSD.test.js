@@ -17,7 +17,6 @@ contract('ProvisionalTrueUSD', function (accounts) {
     const DOLLAR = BN(10 ** 18)
     const BLACKLISTED = bytes32("isBlacklisted")
     const CAN_BURN = bytes32("canBurn")
-    const KYCAML = bytes32("hasPassedKYC/AML")
     const BURN_ADDRESS = web3.utils.toChecksumAddress('0x0000000000000000000000000000000000011111')
 
     beforeEach(async function() {
@@ -31,7 +30,6 @@ contract('ProvisionalTrueUSD', function (accounts) {
         this.provisionalRegistry = await ProvisionalRegistry.at(this.registryProxy.address)
 
         await this.provisionalRegistry.setAttributeValue(blacklisted, BLACKLISTED, BN(1), { from: owner })
-        await this.provisionalRegistry.setAttributeValue(oneHundred, KYCAML, BN(1), { from: owner })
 
         this.tokenProxy = await Proxy.new({ from: owner })
         this.preMigrationTrueUSDImpl = await PreMigrationTrueUSDMock.new(oneHundred, 0)
@@ -39,13 +37,10 @@ contract('ProvisionalTrueUSD', function (accounts) {
         this.preMigrationToken = await PreMigrationTrueUSDMock.at(this.tokenProxy.address)
         await this.preMigrationToken.initialize({ from: owner })
         await this.preMigrationToken.setRegistry(this.provisionalRegistry.address, { from: owner })
-        console.log(9)
         await this.preMigrationToken.mint(oneHundred, BN(100).mul(DOLLAR), { from: owner })
-        console.log(3)
         await this.preMigrationToken.approve(anotherAccount, BN(50).mul(DOLLAR), { from: oneHundred });
-        console.log(2)
         await this.preMigrationToken.setBurnBounds(BN(1), BN(100).mul(DOLLAR), { from: owner })
-        console.log(1)
+        this.token = this.preMigrationToken;
     })
 
     describe('before upgrade', function() {
@@ -53,7 +48,7 @@ contract('ProvisionalTrueUSD', function (accounts) {
             await assertRevert(this.preMigrationToken.transfer(blacklisted, BN(50).mul(DOLLAR), { from: oneHundred }))
         })
         it('has correct balance', async function() {
-            await assertBalance(this.preMigrationToken, BN(100).mul(DOLLAR))
+            await assertBalance(this.preMigrationToken, oneHundred, BN(100).mul(DOLLAR))
         })
         it('has correct allowance', async function() {
             let allowance = await this.preMigrationToken.allowance.call(oneHundred, anotherAccount);
@@ -67,12 +62,13 @@ contract('ProvisionalTrueUSD', function (accounts) {
             this.provisionalTokenImpl = await ProvisionalTrueUSD.new();
             await this.tokenProxy.upgradeTo(this.provisionalTokenImpl.address, { from: owner })
             this.provisionalToken = await ProvisionalTrueUSD.at(this.tokenProxy.address);
+            this.token = this.provisionalToken;
         })
         it('heeds prior attributes', async function() {
             await assertRevert(this.provisionalToken.transfer(blacklisted, BN(50).mul(DOLLAR), { from: oneHundred }))
         })
         it('has correct balance', async function() {
-            await assertBalance(this.preMigrationToken, BN(100).mul(DOLLAR))
+            await assertBalance(this.preMigrationToken, oneHundred, BN(100).mul(DOLLAR))
         })
         it('has correct allowance', async function() {
             let allowance = await this.preMigrationToken.allowance.call(oneHundred, anotherAccount);
@@ -83,40 +79,40 @@ contract('ProvisionalTrueUSD', function (accounts) {
         describe('balance and allowance migration', function() {
             it('is not pre-migrated', async function() {
                 const preMigratedBalance = await this.provisionalToken.migratedBalanceOf(oneHundred)
-                assert(BN(0).eq(preMigratedBalance))
+                assert(BN(0).eq(preMigratedBalance), 'balance migrated already')
                 const preMigratedAllowance = await this.provisionalToken.migratedAllowance.call(oneHundred, anotherAccount)
-                assert(BN(0).eq(preMigratedAllowance))
+                assert(BN(0).eq(preMigratedAllowance), 'allowance migrated already')
             })
             it('migrates balances manually', async function() {
                 await this.provisionalToken.migrateBalances([oneHundred])
                 const migratedBalance = await this.provisionalToken.migratedBalanceOf.call(oneHundred)
-                assert(BN(100).mul(DOLLAR).eq(migratedBalance))
+                assert(BN(100).mul(DOLLAR).eq(migratedBalance), 'balance not migrated')
             })
             it('transfers migrate balances', async function() {
                 await this.provisionalToken.transfer(anotherAccount, BN(40).mul(DOLLAR), { from: oneHundred })
                 const migratedBalanceFrom = await this.provisionalToken.migratedBalanceOf.call(oneHundred)
-                assert(BN(60).mul(DOLLAR).eq(migratedBalanceFrom))
+                assert(BN(60).mul(DOLLAR).eq(migratedBalanceFrom), 'from balance not migrated')
                 const migratedBalanceTo = await this.provisionalToken.migratedBalanceOf.call(anotherAccount)
-                assert(BN(40).mul(DOLLAR).eq(migratedBalanceTo))
+                assert(BN(40).mul(DOLLAR).eq(migratedBalanceTo), 'to balance not migratred')
             })
             it('migrates allowances manually', async function() {
                 await this.provisionalToken.migrateAllowances([oneHundred], [anotherAccount])
                 const migratedAllowance = await this.provisionalToken.migratedAllowance.call(oneHundred, anotherAccount)
-                assert(BN(50).mul(DOLLAR).eq(migratedBalance))
+                assert(BN(50).mul(DOLLAR).eq(migratedAllowance), 'allowance not migrated')
             })
             it('transferFrom migrates balances and allowance', async function() {
                 await this.provisionalToken.transferFrom(oneHundred, anotherAccount, BN(40).mul(DOLLAR), { from: anotherAccount })
                 const migratedAllowance = await this.provisionalToken.migratedAllowance.call(oneHundred, anotherAccount)
-                assert(BN(10).mul(DOLLAR).eq(migratedBalance))
+                assert(BN(10).mul(DOLLAR).eq(migratedAllowance), 'allowance not migrated')
                 const migratedBalanceFrom = await this.provisionalToken.migratedBalanceOf.call(oneHundred)
-                assert(BN(60).mul(DOLLAR).eq(migratedBalanceFrom))
+                assert(BN(60).mul(DOLLAR).eq(migratedBalanceFrom), 'from balance not migrated')
                 const migratedBalanceTo = await this.provisionalToken.migratedBalanceOf.call(anotherAccount)
-                assert(BN(40).mul(DOLLAR).eq(migratedBalanceTo))
+                assert(BN(40).mul(DOLLAR).eq(migratedBalanceTo) ,'to balance not migrated')
             })
             it('transferFrom migrates balances and allowance', async function() {
                 await this.provisionalToken.transferFrom(oneHundred, anotherAccount, BN(40).mul(DOLLAR), { from: anotherAccount })
                 const migratedAllowance = await this.provisionalToken.migratedAllowance.call(oneHundred, anotherAccount)
-                assert(BN(10).mul(DOLLAR).eq(migratedBalance))
+                assert(BN(10).mul(DOLLAR).eq(migratedAllowance))
                 const migratedBalanceFrom = await this.provisionalToken.migratedBalanceOf.call(oneHundred)
                 assert(BN(60).mul(DOLLAR).eq(migratedBalanceFrom))
                 const migratedBalanceTo = await this.provisionalToken.migratedBalanceOf.call(anotherAccount)
@@ -130,7 +126,7 @@ contract('ProvisionalTrueUSD', function (accounts) {
                 it('transferFrom burns migrates balances and allowance', async function() {
                     await this.provisionalToken.transferFrom(oneHundred, BURN_ADDRESS, BN(40).mul(DOLLAR), { from: anotherAccount })
                     const migratedAllowance = await this.provisionalToken.migratedAllowance.call(oneHundred, anotherAccount)
-                    assert(BN(10).mul(DOLLAR).eq(migratedBalance))
+                    assert(BN(10).mul(DOLLAR).eq(migratedAllowance))
                     const migratedBalanceFrom = await this.provisionalToken.migratedBalanceOf.call(oneHundred)
                     assert(BN(60).mul(DOLLAR).eq(migratedBalanceFrom))
                     const supply = await this.provisionalToken.totalSupply.call()
@@ -157,9 +153,9 @@ contract('ProvisionalTrueUSD', function (accounts) {
             })
             describe('mints', function() {
                 it('mints migrate balances', async function() {
-                    await this.provisionalToken.mint(BN(100).mul(DOLLAR), { from: owner })
+                    await this.provisionalToken.mint(oneHundred, BN(100).mul(DOLLAR), { from: owner })
                     const migratedBalanceFrom = await this.provisionalToken.migratedBalanceOf.call(oneHundred)
-                    assert(BN(200).mul(DOLLAR).eq(migratedBalanceFrom))
+                    assert(BN(200).mul(DOLLAR).eq(migratedBalanceFrom), "mint balance not migrated")
                 })
             })
         })

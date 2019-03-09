@@ -52,10 +52,6 @@ GasRefundToken {
         token.transfer(_to, balance);
     }
 
-    function paused() public pure returns (bool) {
-        return false;
-    }
-
     /**  
     *@dev allows owner of TrueUSD to gain ownership of any contract that TrueUSD currently owns
     */
@@ -63,4 +59,7 @@ GasRefundToken {
         _ownable.transferOwnership(owner);
     }
 
+    function canBurn() internal pure returns (bytes32) {
+        return "canBurn";
+    }
 }

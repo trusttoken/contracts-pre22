@@ -16,7 +16,6 @@ const BN = web3.utils.toBN;
 contract('DepositToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount, thirdAddress] = accounts
     const notes = bytes32("some notes")
-    const KYCAML = bytes32("hasPassedKYC/AML")
     const IS_DEPOSIT_ADDRESS = bytes32("isDepositAddress")
     const DEPOSIT_ADDRESS = web3.utils.toChecksumAddress('0x00000' + anotherAccount.slice(2,37))
 
@@ -27,19 +26,13 @@ contract('DepositToken', function (accounts) {
             this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSD.new(owner, 0, { from: owner })
             await this.token.setRegistry(this.registry.address, { from: owner })
-            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
             await this.registry.subscribe(IS_DEPOSIT_ADDRESS, this.token.address, { from: owner })
             await this.balances.transferOwnership(this.token.address, { from: owner })
             await this.allowances.transferOwnership(this.token.address, { from: owner })
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
-            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
-            await this.registry.subscribe(IS_DEPOSIT_ADDRESS, this.token.address, { from: owner })
-
-            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
             await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
-            await this.registry.setAttribute(oneHundred, KYCAML, 0, notes, { from: owner })
             await this.registry.setAttribute(DEPOSIT_ADDRESS, IS_DEPOSIT_ADDRESS, anotherAccount, notes, { from: owner })
         })
 
@@ -73,7 +66,6 @@ contract('DepositToken', function (accounts) {
         it('emits the right events for mint', async function() {
             const ZERO = '0x0000000000000000000000000000000000000000';
             const depositAddressOne = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '00000');
-            await this.registry.setAttribute(depositAddressOne, KYCAML, 1, notes, { from: owner});
             const {logs} = await this.token.mint(depositAddressOne, BN(10*10**18),{from: owner})
             assert.equal(logs[0].args.to,depositAddressOne);
             assert(logs[0].args.value.eq(BN(10*10**18)));
@@ -99,8 +91,6 @@ contract('DepositToken', function (accounts) {
         it('deposit tokens work with minting', async function(){
             const depositAddressOne = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '00000');
             const depositAddressTwo = web3.utils.toChecksumAddress(anotherAccount.slice(0,37) + '20000');
-            await this.registry.setAttribute(depositAddressOne, KYCAML, 1, notes, { from: owner })
-            await this.registry.setAttribute(depositAddressTwo, KYCAML, 1, notes, { from: owner })
             const {logs} = await this.token.mint(depositAddressOne, BN(10*10**18), {from: owner})
             await this.token.mint(depositAddressTwo, BN(10*10**18), {from: owner})
             await assertBalance(this.token,anotherAccount, BN(20*10**18))

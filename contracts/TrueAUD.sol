@@ -35,7 +35,7 @@ GasRefundToken {
     }
 
     /**  
-    *@dev send all eth balance in the TrueUSD contract to another address
+    *@dev send all eth balance in the TrueAUD contract to another address
     */
     function reclaimEther(address _to) external onlyOwner {
         _to.transfer(address(this).balance);
@@ -43,23 +43,22 @@ GasRefundToken {
 
     /**  
     *@dev send all token balance of an arbitary erc20 token
-    in the TrueUSD contract to another address
+    in the TrueAUD contract to another address
     */
     function reclaimToken(ERC20 token, address _to) external onlyOwner {
         uint256 balance = token.balanceOf(this);
         token.transfer(_to, balance);
     }
 
-    function paused() public pure returns (bool) {
-        return false;
-    }
-
     /**  
-    *@dev allows owner of TrueUSD to gain ownership of any contract that TrueUSD currently owns
+    *@dev allows owner of TrueAUD to gain ownership of any contract that TrueAUD currently owns
     */
     function reclaimContract(Ownable _ownable) external onlyOwner {
         _ownable.transferOwnership(owner);
     }
 
+    function canBurn() internal pure returns (bytes32) {
+        return "canBurnAUD";
+    }
 }
 

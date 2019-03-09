@@ -1004,16 +1004,15 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
     }
 }
 
-// File: contracts/TrueUSD.sol
+// File: contracts/TrueGBP.sol
 
-/** @title TrueUSD
+/** @title TrueGBP
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
 * inherited - see the documentation on the corresponding contracts.
 */
-contract TrueUSD is 
+contract TrueGBP is 
 CompliantDepositTokenWithHook,
 BurnableTokenWithBounds, 
-DelegateERC20,
 GasRefundToken {
     using SafeMath for *;
 
@@ -1029,15 +1028,15 @@ GasRefundToken {
     }
 
     function name() public pure returns (string) {
-        return "TrueUSD";
+        return "TrueGBP";
     }
 
     function symbol() public pure returns (string) {
-        return "TUSD";
+        return "TGBP";
     }
 
     /**  
-    *@dev send all eth balance in the TrueUSD contract to another address
+    *@dev send all eth balance in the TrueGBP contract to another address
     */
     function reclaimEther(address _to) external onlyOwner {
         _to.transfer(address(this).balance);
@@ -1045,7 +1044,7 @@ GasRefundToken {
 
     /**  
     *@dev send all token balance of an arbitary erc20 token
-    in the TrueUSD contract to another address
+    in the TrueGBP contract to another address
     */
     function reclaimToken(ERC20 token, address _to) external onlyOwner {
         uint256 balance = token.balanceOf(this);
@@ -1053,13 +1052,13 @@ GasRefundToken {
     }
 
     /**  
-    *@dev allows owner of TrueUSD to gain ownership of any contract that TrueUSD currently owns
+    *@dev allows owner of TrueGBP to gain ownership of any contract that TrueGBP currently owns
     */
     function reclaimContract(Ownable _ownable) external onlyOwner {
         _ownable.transferOwnership(owner);
     }
 
     function canBurn() internal pure returns (bytes32) {
-        return "canBurn";
+        return "canBurnGBP";
     }
 }

@@ -11,8 +11,8 @@ contract CompliantDepositTokenWithHook is ModularBurnableToken, RegistryClone {
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
-    bytes32 constant CAN_BURN = "canBurn";
-    bytes32 constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
+
+    function canBurn() internal pure returns (bytes32);
 
     /**
     * @dev transfer token for a specified address
@@ -176,7 +176,6 @@ contract CompliantDepositTokenWithHook is ModularBurnableToken, RegistryClone {
     }
 
     function _requireCanMint(address _to) internal view returns (address, bool) {
-        require (attributes[_to][HAS_PASSED_KYC_AML] != 0, "no kycaml");
         require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
         uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
         if (depositAddressValue != 0) {
@@ -186,7 +185,11 @@ contract CompliantDepositTokenWithHook is ModularBurnableToken, RegistryClone {
     }
 
     function _requireCanBurn(address _from) internal view {
-        require (attributes[_from][CAN_BURN] != 0, "cannot burn from this address");
+        require (attributes[_from][canBurn()] != 0, "cannot burn from this address");
         require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
+    }
+
+    function paused() public pure returns (bool) {
+        return false;
     }
 }

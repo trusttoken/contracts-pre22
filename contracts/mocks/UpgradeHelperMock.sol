@@ -5,7 +5,7 @@ contract UpgradeHelperMock {
     OldTrueUSDInterface public oldTrueUSD;
     NewTrueUSDInterface public  newTrueUSD;
     TokenControllerInterface public tokenController;
-    address public constant registry = address(0x0000000000013949f288172bd7e36837bddc7211);
+    address public constant registry = address(0x0000000000013949F288172bD7E36837bDdC7211);
 
     constructor(address _oldTrueUSD, address _newTrueUSD, address _tokenController) public {
         oldTrueUSD = OldTrueUSDInterface(_oldTrueUSD);

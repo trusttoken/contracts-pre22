@@ -15,7 +15,6 @@ contract('--Full upgrade process --', function (accounts) {
     const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
 
     const notes = bytes32("notes");
-    const KYCAML = bytes32("hasPassedKYC/AML")
     const CAN_BURN = bytes32("canBurn")
     const DOLLAR = BN(10**18)
 
@@ -35,12 +34,9 @@ contract('--Full upgrade process --', function (accounts) {
             await this.controller.setTrueUSD(this.tokenProxy.address, { from: owner })
             await this.controller.transferMintKey(mintKey, { from: owner })
             await this.controller.setRegistry(this.registry.address, { from: owner })
-            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
             await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
             await this.token.setRegistry(this.registry.address, { from: owner })
-            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
             await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
-            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
             await this.registry.setAttribute(approver1, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
             await this.registry.setAttribute(approver2, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
             await this.registry.setAttribute(approver3, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
@@ -83,15 +79,6 @@ contract('--Full upgrade process --', function (accounts) {
             await this.controller.setTusdRegistry(this.registry.address, { from: owner })
             await assertBalance(this.token, oneHundred, BN(1000).mul(BN(10 ** 18)))
             await this.controller.requestMint(oneHundred, BN(10*10**8), { from: owner })
-            console.log(await this.controller.registry.call())
-            console.log(await this.token.registry.call())
-            console.log(this.registry.address)
-            console.log(await this.registry.hasAttribute(oneHundred, KYCAML))
-            console.log(owner)
-            console.log(await this.controller.owner.call())
-            console.log(await this.controller.ratifiedMintPool.call())
-            console.log(BN(10**19))
-            console.log(10**19)
             await this.controller.ratifyMint(0, oneHundred, BN(10*10**8),{ from: owner })
         })
     })

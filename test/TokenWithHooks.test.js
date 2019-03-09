@@ -14,7 +14,6 @@ contract('TokenWithHooks', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     const notes = bytes32("notes")
     const FIFTY = BN(50).mul(BN(10**18));
-    const KYCAML = bytes32("hasPassedKYC/AML")
     const REGISTERED_CONTRACT = bytes32("isRegisteredContract")
     const DEPOSIT_ADDRESS = bytes32("isDepositAddress")
 
@@ -27,16 +26,13 @@ contract('TokenWithHooks', function (accounts) {
             this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSD.new(owner, 0, { from: owner })
             await this.token.setRegistry(this.registry.address, { from: owner })
-            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
             await this.registry.subscribe(REGISTERED_CONTRACT, this.token.address, { from: owner })
             await this.registry.subscribe(DEPOSIT_ADDRESS, this.token.address, { from: owner })
             await this.balances.transferOwnership(this.token.address, { from: owner })
             await this.allowances.transferOwnership(this.token.address, { from: owner })
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
-            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
             await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
-            await this.registry.setAttribute(oneHundred, KYCAML, 0, notes, { from: owner })
             await this.registry.setAttribute(this.registeredReceiver.address, REGISTERED_CONTRACT, 1, notes, { from: owner })
         })
 
@@ -101,7 +97,6 @@ contract('TokenWithHooks', function (accounts) {
         it('fallback works for newly minted tokens', async function() {
             this.receiver = await TrueCoinReceiverMock.new({from: owner})
             await this.registry.setAttribute(this.receiver.address, REGISTERED_CONTRACT, 1, notes, { from: owner })
-            await this.registry.setAttribute(this.receiver.address, KYCAML, 1, notes, { from: owner })
             await this.token.mint(this.receiver.address, FIFTY, { from:owner });
             const newSender = await this.receiver.sender.call()
             assert.equal(newSender, '0x0000000000000000000000000000000000000000')
@@ -113,7 +108,6 @@ contract('TokenWithHooks', function (accounts) {
             await this.registry.setAttribute(depositAddress, DEPOSIT_ADDRESS, this.depositAddressReceiver.address, notes, { from: owner })
             await this.registry.setAttribute(this.depositAddressReceiver.address, REGISTERED_CONTRACT, 1, notes, { from: owner })
             const depositAddressOne = web3.utils.toChecksumAddress(this.depositAddressReceiver.address.slice(0,37) + '20000');
-            await this.registry.setAttribute(depositAddressOne, KYCAML, 1, notes, { from: owner })
             await this.token.mint(depositAddressOne, FIFTY, { from:owner });
             const newSender = await this.depositAddressReceiver.sender()
             assert.equal(newSender, depositAddressOne)

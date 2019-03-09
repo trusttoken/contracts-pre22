@@ -15,7 +15,6 @@ contract('MultisigOwner', function (accounts) {
     const [_, owner1, owner2, owner3 , oneHundred, blackListed, mintKey, pauseKey, approver] = accounts
     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
     const notes = bytes32("notes")
-    const KYCAML = bytes32("hasPassedKYC/AML")
     const PAUSER = bytes32("isTUSDMintPausers")
     const BLACKLISTED = bytes32("isBlacklisted")
 
@@ -32,9 +31,7 @@ contract('MultisigOwner', function (accounts) {
         this.ClaimableContract = await BalanceSheet.new({from: owner1})
         this.balanceSheet = await this.token.balances.call()
         this.allowanceSheet = await this.token.allowances.call()
-        await this.registry.subscribe(KYCAML, this.token.address, { from: owner1 })
         await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner1 })
-        await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner1 })
         await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, notes, { from: owner1 })
         await this.registry.setAttribute(pauseKey, PAUSER, 1, notes, { from: owner1 })
         this.multisigOwner = await MultisigOwner.new({ from: owner1 })

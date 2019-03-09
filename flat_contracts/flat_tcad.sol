@@ -951,69 +951,15 @@ contract GasRefundToken is CompliantDepositTokenWithHook {
     }
 }
 
-// File: contracts/DelegateERC20.sol
+// File: contracts/TrueCAD.sol
 
-/** @title DelegateERC20
-Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
-functions in the old contract still works (except Burn). 
-*/
-contract DelegateERC20 is CompliantDepositTokenWithHook {
-
-    address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
-    
-    modifier onlyDelegateFrom() {
-        require(msg.sender == DELEGATE_FROM);
-        _;
-    }
-
-    function delegateTotalSupply() public view returns (uint256) {
-        return totalSupply();
-    }
-
-    function delegateBalanceOf(address who) public view returns (uint256) {
-        return _getBalance(who);
-    }
-
-    function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferAllArgs(origSender, to, value);
-        return true;
-    }
-
-    function delegateAllowance(address owner, address spender) public view returns (uint256) {
-        return _getAllowance(owner, spender);
-    }
-
-    function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferFromAllArgs(from, to, value, origSender);
-        return true;
-    }
-
-    function delegateApprove(address spender, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _approveAllArgs(spender, value, origSender);
-        return true;
-    }
-
-    function delegateIncreaseApproval(address spender, uint addedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        _increaseApprovalAllArgs(spender, addedValue, origSender);
-        return true;
-    }
-
-    function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        _decreaseApprovalAllArgs(spender, subtractedValue, origSender);
-        return true;
-    }
-}
-
-// File: contracts/TrueUSD.sol
-
-/** @title TrueUSD
+/** @title TrueCAD
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
 * inherited - see the documentation on the corresponding contracts.
 */
-contract TrueUSD is 
+contract TrueCAD is 
 CompliantDepositTokenWithHook,
 BurnableTokenWithBounds, 
-DelegateERC20,
 GasRefundToken {
     using SafeMath for *;
 
@@ -1029,15 +975,15 @@ GasRefundToken {
     }
 
     function name() public pure returns (string) {
-        return "TrueUSD";
+        return "TrueCAD";
     }
 
     function symbol() public pure returns (string) {
-        return "TUSD";
+        return "TCAD";
     }
 
     /**  
-    *@dev send all eth balance in the TrueUSD contract to another address
+    *@dev send all eth balance in the TrueCAD contract to another address
     */
     function reclaimEther(address _to) external onlyOwner {
         _to.transfer(address(this).balance);
@@ -1045,7 +991,7 @@ GasRefundToken {
 
     /**  
     *@dev send all token balance of an arbitary erc20 token
-    in the TrueUSD contract to another address
+    in the TrueCAD contract to another address
     */
     function reclaimToken(ERC20 token, address _to) external onlyOwner {
         uint256 balance = token.balanceOf(this);
@@ -1053,13 +999,13 @@ GasRefundToken {
     }
 
     /**  
-    *@dev allows owner of TrueUSD to gain ownership of any contract that TrueUSD currently owns
+    *@dev allows owner of TrueCAD to gain ownership of any contract that TrueCAD currently owns
     */
     function reclaimContract(Ownable _ownable) external onlyOwner {
         _ownable.transferOwnership(owner);
     }
 
     function canBurn() internal pure returns (bytes32) {
-        return "canBurn";
+        return "canBurnCAD";
     }
 }

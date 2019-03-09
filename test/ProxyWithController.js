@@ -13,7 +13,6 @@ const BN = web3.utils.toBN;
 contract('Proxy With Controller', function (accounts) {
     const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
     const notes = bytes32("some notes")
-    const KYCAML = bytes32("hasPassedKYC/AML")
     const CAN_BURN = bytes32("canBurn")
 
     describe('--Set up proxy--', function () {
@@ -86,9 +85,7 @@ contract('Proxy With Controller', function (accounts) {
             beforeEach(async function () {
                 await this.token.setRegistry(this.registry.address, { from: owner })
                 await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
-                await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
                 await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
-                await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
                 await this.registry.setAttribute(approver1, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
                 await this.registry.setAttribute(approver2, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
                 await this.registry.setAttribute(approver3, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })

@@ -20,7 +20,6 @@ contract Proxy {
     */
     function() external payable {
         address _impl = implementation();
-        require(_impl != address(0), "implementation contract not set");
         
         assembly {
             let ptr := mload(0x40)

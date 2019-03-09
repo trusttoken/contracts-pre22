@@ -15,7 +15,6 @@ contract('TrueUSD', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     const notes = bytes32("some notes")
     const HUNDRED = BN(100).mul(BN(10**18))
-    const KYCAML = bytes32("hasPassedKYC/AML")
     const CAN_BURN = bytes32("canBurn")
     const BLACKLISTED = bytes32("isBlacklisted")
     describe('TUSD init', function(){
@@ -48,15 +47,12 @@ contract('TrueUSD', function (accounts) {
             this.token = await TrueUSDMock.new(owner, 0, { from: owner })
             await this.token.setRegistry(this.registry.address, { from: owner })
             await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
-            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
             await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
             await this.balances.transferOwnership(this.token.address, { from: owner })
             await this.allowances.transferOwnership(this.token.address, { from: owner })
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
-            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
             await this.token.mint(oneHundred, HUNDRED, { from: owner })
-            await this.registry.setAttribute(oneHundred, KYCAML, 0, notes, { from: owner })
         })
 
         it('trueUSD does not accept ether', async function(){

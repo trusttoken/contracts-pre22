@@ -22,7 +22,6 @@ contract('PausedTrueUSD', function (accounts) {
         const RATIFIER = bytes32("isTUSDMintRatifier");
         const DOLLAR = BN(10**18)
         const TEN_THOUSAND = DOLLAR.mul(BN(10000));
-        const KYCAML = bytes32("hasPassedKYC/AML");
         const CAN_BURN = bytes32("canBurn")
         const BLACKLISTED = bytes32("isBlacklisted")
 
@@ -36,7 +35,6 @@ contract('PausedTrueUSD', function (accounts) {
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
-            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
             await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
             await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
             await this.token.initialize({from: owner})
@@ -54,8 +52,6 @@ contract('PausedTrueUSD', function (accounts) {
             await this.controller.transferMintKey(mintKey, { from: owner })
             await this.tokenProxy.transferProxyOwnership(this.controller.address, {from: owner})
             await this.controller.claimTusdProxyOwnership({from: owner})
-            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
-            await this.registry.setAttribute(otherAddress, KYCAML, 1, notes, { from: owner })
             await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
             await this.registry.setAttribute(ratifier1, RATIFIER, 1, notes, { from: owner })
             await this.registry.setAttribute(ratifier2, RATIFIER, 1, notes, { from: owner })

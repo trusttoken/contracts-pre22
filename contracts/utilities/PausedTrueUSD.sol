@@ -123,11 +123,7 @@ contract PausedTrueUSD is PausedDelegateERC20, RegistryClone {
 
     uint8 public constant DECIMALS = 18;
     uint8 public constant ROUNDING = 2;
-    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
-    bytes32 public constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
-    bytes32 public constant CAN_BURN = "canBurn";
-    bytes32 public constant IS_BLACKLISTED = "isBlacklisted";
-    bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
+    bytes32 constant IS_BLACKLISTED = "isBlacklisted";
 
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);

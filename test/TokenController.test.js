@@ -20,7 +20,6 @@ contract('TokenController', function (accounts) {
         const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
         const notes = bytes32("notes")
         const DOLLAR = BN(10**18)
-        const KYCAML = bytes32("hasPassedKYC/AML")
         const CAN_BURN = bytes32("canBurn")
         const BLACKLISTED = bytes32("isBlacklisted")
 
@@ -48,12 +47,9 @@ contract('TokenController', function (accounts) {
             await this.controller.transferMintKey(mintKey, { from: owner })
             await this.tokenProxy.transferProxyOwnership(this.controller.address, {from: owner})
             await this.controller.claimTusdProxyOwnership({from: owner})
-            await this.registry.subscribe(KYCAML, this.token.address, { from: owner })
             await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
             await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
-            await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner })
             await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
-            await this.registry.setAttribute(otherAddress, KYCAML, 1, notes, { from: owner })
             await this.registry.setAttribute(ratifier1, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
             await this.registry.setAttribute(ratifier2, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
             await this.registry.setAttribute(ratifier3, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
