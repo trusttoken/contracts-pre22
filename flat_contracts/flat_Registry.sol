@@ -76,7 +76,7 @@ contract Registry {
 
     // Writes are allowed only if the accessManager approves
     function setAttribute(address _who, bytes32 _attribute, uint256 _value, bytes32 _notes) public {
-        require(confirmWrite(_attribute, msg.sender), "Insufficient permissions");
+        require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
 

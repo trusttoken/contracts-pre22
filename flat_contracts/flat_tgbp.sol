@@ -1,51 +1,9 @@
 pragma solidity ^0.4.23;
 
-// File: openzeppelin-solidity/contracts/math/SafeMath.sol
+// File: contracts/TrueCoinReceiver.sol
 
-/**
- * @title SafeMath
- * @dev Math operations with safety checks that throw on error
- */
-library SafeMath {
-
-  /**
-  * @dev Multiplies two numbers, throws on overflow.
-  */
-  function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    if (a == 0) {
-      return 0;
-    }
-    c = a * b;
-    require(c / a == b, "mul overflow");
-    return c;
-  }
-
-  /**
-  * @dev Integer division of two numbers, truncating the quotient.
-  */
-  function div(uint256 a, uint256 b) internal pure returns (uint256) {
-    // assert(b > 0); // Solidity automatically throws when dividing by 0
-    // uint256 c = a / b;
-    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-    return a / b;
-  }
-
-  /**
-  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
-  */
-  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-    require(b <= a, "sub underflow");
-    return a - b;
-  }
-
-  /**
-  * @dev Adds two numbers, throws on overflow.
-  */
-  function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    c = a + b;
-    require(c >= a, "add overflow");
-    return c;
-  }
+contract TrueCoinReceiver {
+    function tokenFallback( address from, uint256 value ) external;
 }
 
 // File: openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol
@@ -124,7 +82,7 @@ contract Registry {
 
     // Writes are allowed only if the accessManager approves
     function setAttribute(address _who, bytes32 _attribute, uint256 _value, bytes32 _notes) public {
-        require(confirmWrite(_attribute, msg.sender), "Insufficient permissions");
+        require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
 
@@ -317,6 +275,54 @@ contract Claimable is Ownable {
     emit OwnershipTransferred(owner, pendingOwner);
     owner = pendingOwner;
     pendingOwner = address(0);
+  }
+}
+
+// File: openzeppelin-solidity/contracts/math/SafeMath.sol
+
+/**
+ * @title SafeMath
+ * @dev Math operations with safety checks that throw on error
+ */
+library SafeMath {
+
+  /**
+  * @dev Multiplies two numbers, throws on overflow.
+  */
+  function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    if (a == 0) {
+      return 0;
+    }
+    c = a * b;
+    require(c / a == b, "mul overflow");
+    return c;
+  }
+
+  /**
+  * @dev Integer division of two numbers, truncating the quotient.
+  */
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
+    // assert(b > 0); // Solidity automatically throws when dividing by 0
+    // uint256 c = a / b;
+    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+    return a / b;
+  }
+
+  /**
+  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+  */
+  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+    require(b <= a, "sub underflow");
+    return a - b;
+  }
+
+  /**
+  * @dev Adds two numbers, throws on overflow.
+  */
+  function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    c = a + b;
+    require(c >= a, "add overflow");
+    return c;
   }
 }
 
@@ -643,6 +649,34 @@ contract ModularBurnableToken is ModularStandardToken {
     }
 }
 
+// File: contracts/ReclaimerToken.sol
+
+contract ReclaimerToken is ModularBurnableToken {
+    /**  
+    *@dev send all eth balance in the contract to another address
+    */
+    function reclaimEther(address _to) external onlyOwner {
+        _to.transfer(address(this).balance);
+    }
+
+    /**  
+    *@dev send all token balance of an arbitary erc20 token
+    in the contract to another address
+    */
+    function reclaimToken(ERC20 token, address _to) external onlyOwner {
+        uint256 balance = token.balanceOf(this);
+        token.transfer(_to, balance);
+    }
+
+    /**  
+    *@dev allows owner of the contract to gain ownership of any contract that the contract currently owns
+    */
+    function reclaimContract(Ownable _ownable) external onlyOwner {
+        _ownable.transferOwnership(owner);
+    }
+
+}
+
 // File: contracts/BurnableTokenWithBounds.sol
 
 /**
@@ -674,15 +708,9 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
     }
 }
 
-// File: contracts/TrueCoinReceiver.sol
-
-contract TrueCoinReceiver {
-    function tokenFallback( address from, uint256 value ) external;
-}
-
 // File: contracts/CompliantDepositTokenWithHook.sol
 
-contract CompliantDepositTokenWithHook is ModularBurnableToken, RegistryClone {
+contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds {
 
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
@@ -951,59 +979,6 @@ contract GasRefundToken is CompliantDepositTokenWithHook {
     }
 }
 
-// File: contracts/DelegateERC20.sol
-
-/** @title DelegateERC20
-Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
-functions in the old contract still works (except Burn). 
-*/
-contract DelegateERC20 is CompliantDepositTokenWithHook {
-
-    address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
-    
-    modifier onlyDelegateFrom() {
-        require(msg.sender == DELEGATE_FROM);
-        _;
-    }
-
-    function delegateTotalSupply() public view returns (uint256) {
-        return totalSupply();
-    }
-
-    function delegateBalanceOf(address who) public view returns (uint256) {
-        return _getBalance(who);
-    }
-
-    function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferAllArgs(origSender, to, value);
-        return true;
-    }
-
-    function delegateAllowance(address owner, address spender) public view returns (uint256) {
-        return _getAllowance(owner, spender);
-    }
-
-    function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferFromAllArgs(from, to, value, origSender);
-        return true;
-    }
-
-    function delegateApprove(address spender, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _approveAllArgs(spender, value, origSender);
-        return true;
-    }
-
-    function delegateIncreaseApproval(address spender, uint addedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        _increaseApprovalAllArgs(spender, addedValue, origSender);
-        return true;
-    }
-
-    function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        _decreaseApprovalAllArgs(spender, subtractedValue, origSender);
-        return true;
-    }
-}
-
 // File: contracts/TrueGBP.sol
 
 /** @title TrueGBP
@@ -1012,9 +987,7 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
 */
 contract TrueGBP is 
 CompliantDepositTokenWithHook,
-BurnableTokenWithBounds, 
 GasRefundToken {
-    using SafeMath for *;
 
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
@@ -1033,29 +1006,6 @@ GasRefundToken {
 
     function symbol() public pure returns (string) {
         return "TGBP";
-    }
-
-    /**  
-    *@dev send all eth balance in the TrueGBP contract to another address
-    */
-    function reclaimEther(address _to) external onlyOwner {
-        _to.transfer(address(this).balance);
-    }
-
-    /**  
-    *@dev send all token balance of an arbitary erc20 token
-    in the TrueGBP contract to another address
-    */
-    function reclaimToken(ERC20 token, address _to) external onlyOwner {
-        uint256 balance = token.balanceOf(this);
-        token.transfer(_to, balance);
-    }
-
-    /**  
-    *@dev allows owner of TrueGBP to gain ownership of any contract that TrueGBP currently owns
-    */
-    function reclaimContract(Ownable _ownable) external onlyOwner {
-        _ownable.transferOwnership(owner);
     }
 
     function canBurn() internal pure returns (bytes32) {

@@ -76,7 +76,7 @@ contract Registry {
 
     // Writes are allowed only if the accessManager approves
     function setAttribute(address _who, bytes32 _attribute, uint256 _value, bytes32 _notes) public {
-        require(confirmWrite(_attribute, msg.sender), "Insufficient permissions");
+        require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
 
@@ -227,7 +227,7 @@ contract ProvisionalRegistry is Registry {
     }
 
     function requireCanBurn(address _from) public view {
-        require (attributes[_from][CAN_BURN].value != 0, "cannot burn");
-        require (attributes[_from][IS_BLACKLISTED].value == 0, "blacklisted");
+        require (attributes[_from][CAN_BURN].value != 0);
+        require (attributes[_from][IS_BLACKLISTED].value == 0);
     }
 }

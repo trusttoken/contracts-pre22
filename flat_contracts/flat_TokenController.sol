@@ -124,7 +124,7 @@ contract Registry {
 
     // Writes are allowed only if the accessManager approves
     function setAttribute(address _who, bytes32 _attribute, uint256 _value, bytes32 _notes) public {
-        require(confirmWrite(_attribute, msg.sender), "Insufficient permissions");
+        require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
 
@@ -458,6 +458,12 @@ contract HasOwner is ProxyStorage {
     }
 }
 
+// File: contracts/TrueCoinReceiver.sol
+
+contract TrueCoinReceiver {
+    function tokenFallback( address from, uint256 value ) external;
+}
+
 // File: contracts/modularERC20/ModularBasicToken.sol
 
 // Version of OpenZeppelin's BasicToken whose balances mapping has been replaced
@@ -643,6 +649,34 @@ contract ModularBurnableToken is ModularStandardToken {
     }
 }
 
+// File: contracts/ReclaimerToken.sol
+
+contract ReclaimerToken is ModularBurnableToken {
+    /**  
+    *@dev send all eth balance in the contract to another address
+    */
+    function reclaimEther(address _to) external onlyOwner {
+        _to.transfer(address(this).balance);
+    }
+
+    /**  
+    *@dev send all token balance of an arbitary erc20 token
+    in the contract to another address
+    */
+    function reclaimToken(ERC20 token, address _to) external onlyOwner {
+        uint256 balance = token.balanceOf(this);
+        token.transfer(_to, balance);
+    }
+
+    /**  
+    *@dev allows owner of the contract to gain ownership of any contract that the contract currently owns
+    */
+    function reclaimContract(Ownable _ownable) external onlyOwner {
+        _ownable.transferOwnership(owner);
+    }
+
+}
+
 // File: contracts/BurnableTokenWithBounds.sol
 
 /**
@@ -674,15 +708,9 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
     }
 }
 
-// File: contracts/TrueCoinReceiver.sol
-
-contract TrueCoinReceiver {
-    function tokenFallback( address from, uint256 value ) external;
-}
-
 // File: contracts/CompliantDepositTokenWithHook.sol
 
-contract CompliantDepositTokenWithHook is ModularBurnableToken, RegistryClone {
+contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds {
 
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
@@ -868,199 +896,6 @@ contract CompliantDepositTokenWithHook is ModularBurnableToken, RegistryClone {
 
     function paused() public pure returns (bool) {
         return false;
-    }
-}
-
-// File: contracts/GasRefundToken.sol
-
-/**  
-@title Gas Refund Token
-Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas refund mechanism in EVM
-Each time an non-empty storage slot is set to 0, evm refund 15,000 (19,000 after Constantinople) to the sender
-of the transaction. 
-*/
-contract GasRefundToken is CompliantDepositTokenWithHook {
-
-    function sponsorGas() external {
-        uint256 len = gasRefundPool.length;
-        uint256 refundPrice = minimumGasPriceForFutureRefunds;
-        require(refundPrice > 0);
-        gasRefundPool.length = len + 9;
-        gasRefundPool[len] = refundPrice;
-        gasRefundPool[len + 1] = refundPrice;
-        gasRefundPool[len + 2] = refundPrice;
-        gasRefundPool[len + 3] = refundPrice;
-        gasRefundPool[len + 4] = refundPrice;
-        gasRefundPool[len + 5] = refundPrice;
-        gasRefundPool[len + 6] = refundPrice;
-        gasRefundPool[len + 7] = refundPrice;
-        gasRefundPool[len + 8] = refundPrice;
-    }
-
-    function minimumGasPriceForRefund() public view returns (uint256) {
-        uint256 len = gasRefundPool.length;
-        if (len > 0) {
-          return gasRefundPool[len - 1] + 1;
-        }
-        return uint256(-1);
-    }
-
-    /**  
-    @dev refund 45,000 gas for functions with gasRefund modifier.
-    */
-    modifier gasRefund {
-        uint256 len = gasRefundPool.length;
-        if (len > 2 && tx.gasprice > gasRefundPool[len-1]) {
-            gasRefundPool.length = len - 3;
-        }
-        _;
-    }
-
-    /**  
-    *@dev Return the remaining sponsored gas slots
-    */
-    function remainingGasRefundPool() public view returns (uint) {
-        return gasRefundPool.length;
-    }
-
-    function remainingSponsoredTransactions() public view returns (uint) {
-        return gasRefundPool.length / 3;
-    }
-
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal gasRefund {
-        super._transferAllArgs(_from, _to, _value);
-    }
-
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal gasRefund {
-        super._transferFromAllArgs(_from, _to, _value, _sender);
-    }
-
-    function _burnFromAllArgs(address _from, address _to, uint256 _value) internal gasRefund {
-        super._burnFromAllArgs(_from, _to, _value);
-    }
-
-    function mint(address _to, uint256 _value) public onlyOwner gasRefund {
-        super.mint(_to, _value);
-    }
-
-    bytes32 constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";
-
-    function setMinimumGasPriceForFutureRefunds(uint256 _minimumGasPriceForFutureRefunds) public {
-        require(registry.hasAttribute(msg.sender, CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE));
-        minimumGasPriceForFutureRefunds = _minimumGasPriceForFutureRefunds;
-    }
-}
-
-// File: contracts/DelegateERC20.sol
-
-/** @title DelegateERC20
-Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
-functions in the old contract still works (except Burn). 
-*/
-contract DelegateERC20 is CompliantDepositTokenWithHook {
-
-    address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
-    
-    modifier onlyDelegateFrom() {
-        require(msg.sender == DELEGATE_FROM);
-        _;
-    }
-
-    function delegateTotalSupply() public view returns (uint256) {
-        return totalSupply();
-    }
-
-    function delegateBalanceOf(address who) public view returns (uint256) {
-        return _getBalance(who);
-    }
-
-    function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferAllArgs(origSender, to, value);
-        return true;
-    }
-
-    function delegateAllowance(address owner, address spender) public view returns (uint256) {
-        return _getAllowance(owner, spender);
-    }
-
-    function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferFromAllArgs(from, to, value, origSender);
-        return true;
-    }
-
-    function delegateApprove(address spender, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _approveAllArgs(spender, value, origSender);
-        return true;
-    }
-
-    function delegateIncreaseApproval(address spender, uint addedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        _increaseApprovalAllArgs(spender, addedValue, origSender);
-        return true;
-    }
-
-    function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        _decreaseApprovalAllArgs(spender, subtractedValue, origSender);
-        return true;
-    }
-}
-
-// File: contracts/TrueUSD.sol
-
-/** @title TrueUSD
-* @dev This is the top-level ERC20 contract, but most of the interesting functionality is
-* inherited - see the documentation on the corresponding contracts.
-*/
-contract TrueUSD is 
-CompliantDepositTokenWithHook,
-BurnableTokenWithBounds, 
-DelegateERC20,
-GasRefundToken {
-    using SafeMath for *;
-
-    uint8 constant DECIMALS = 18;
-    uint8 constant ROUNDING = 2;
-
-    function decimals() public pure returns (uint8) {
-        return DECIMALS;
-    }
-
-    function rounding() public pure returns (uint8) {
-        return ROUNDING;
-    }
-
-    function name() public pure returns (string) {
-        return "TrueUSD";
-    }
-
-    function symbol() public pure returns (string) {
-        return "TUSD";
-    }
-
-    /**  
-    *@dev send all eth balance in the TrueUSD contract to another address
-    */
-    function reclaimEther(address _to) external onlyOwner {
-        _to.transfer(address(this).balance);
-    }
-
-    /**  
-    *@dev send all token balance of an arbitary erc20 token
-    in the TrueUSD contract to another address
-    */
-    function reclaimToken(ERC20 token, address _to) external onlyOwner {
-        uint256 balance = token.balanceOf(this);
-        token.transfer(_to, balance);
-    }
-
-    /**  
-    *@dev allows owner of TrueUSD to gain ownership of any contract that TrueUSD currently owns
-    */
-    function reclaimContract(Ownable _ownable) external onlyOwner {
-        _ownable.transferOwnership(owner);
-    }
-
-    function canBurn() internal pure returns (bytes32) {
-        return "canBurn";
     }
 }
 
@@ -1331,9 +1166,9 @@ contract TokenController {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
     
-    TrueUSD public trueUSD;
+    CompliantDepositTokenWithHook public token;
     Registry public registry;
-    address public trueUsdFastPause;
+    address public fastPause;
 
     bytes32 constant public IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
@@ -1342,7 +1177,7 @@ contract TokenController {
     address constant public PAUSED_IMPLEMENTATION = address(1); // ***To be changed the paused version of TrueUSD in Production
 
     modifier onlyFastPauseOrOwner() {
-        require(msg.sender == trueUsdFastPause || msg.sender == owner, "must be pauser or owner");
+        require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
         _;
     }
 
@@ -1378,7 +1213,7 @@ contract TokenController {
     event SetRegistry(address indexed registry);
     event TransferChild(address indexed child, address indexed newOwner);
     event RequestReclaimContract(address indexed other);
-    event SetTrueUSD(TrueUSD newContract);
+    event SetToken(CompliantDepositTokenWithHook newContract);
     
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
     event FinalizeMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -1390,7 +1225,7 @@ contract TokenController {
     event AllMintsPaused(bool status);
     event MintPaused(uint opIndex, bool status);
     event MintApproved(address approver, uint opIndex);
-    event TrueUsdFastPauseSet(address _newFastPause);
+    event FastPauseSet(address _newFastPause);
 
     event MintThresholdChanged(uint instant, uint ratified, uint multiSig);
     event MintLimitsChanged(uint instant, uint ratified, uint multiSig);
@@ -1451,15 +1286,15 @@ contract TokenController {
     */
 
     function transferTusdProxyOwnership(address _newOwner) external onlyOwner {
-        OwnedUpgradeabilityProxy(trueUSD).transferProxyOwnership(_newOwner);
+        OwnedUpgradeabilityProxy(token).transferProxyOwnership(_newOwner);
     }
 
     function claimTusdProxyOwnership() external onlyOwner {
-        OwnedUpgradeabilityProxy(trueUSD).claimProxyOwnership();
+        OwnedUpgradeabilityProxy(token).claimProxyOwnership();
     }
 
     function upgradeTusdProxyImplTo(address _implementation) external onlyOwner {
-        OwnedUpgradeabilityProxy(trueUSD).upgradeTo(_implementation);
+        OwnedUpgradeabilityProxy(token).upgradeTo(_implementation);
     }
 
     /*
@@ -1542,7 +1377,7 @@ contract TokenController {
     }
 
     /**
-     * @dev mintKey initiates a request to mint _value TrueUSD for account _to
+     * @dev mintKey initiates a request to mint _value for account _to
      * @param _to the address to mint to
      * @param _value the amount requested
      */
@@ -1563,7 +1398,7 @@ contract TokenController {
         require(_value <= instantMintPool, "instant mint pool is dry");
         instantMintPool = instantMintPool.sub(_value);
         emit InstantMint(_to, _value, msg.sender);
-        trueUSD.mint(_to, _value);
+        token.mint(_to, _value);
     }
 
 
@@ -1600,7 +1435,7 @@ contract TokenController {
             _subtractFromMintPool(value);
         }
         delete mintOperations[_index];
-        trueUSD.mint(to, value);
+        token.mint(to, value);
         emit FinalizeMint(to, value, _index, msg.sender);
     }
 
@@ -1731,12 +1566,12 @@ contract TokenController {
 
 
     /** 
-    *@dev Update this contract's trueUSD pointer to newContract (e.g. if the
+    *@dev Update this contract's token pointer to newContract (e.g. if the
     contract is upgraded)
     */
-    function setTrueUSD(TrueUSD _newContract) external onlyOwner {
-        trueUSD = _newContract;
-        emit SetTrueUSD(_newContract);
+    function setToken(CompliantDepositTokenWithHook _newContract) external onlyOwner {
+        token = _newContract;
+        emit SetToken(_newContract);
     }
 
     /** 
@@ -1748,11 +1583,11 @@ contract TokenController {
     }
 
     /** 
-    *@dev Swap out TrueUSD's permissions registry
-    *@param _registry new registry for trueUSD
+    *@dev Swap out token's permissions registry
+    *@param _registry new registry for token
     */
-    function setTusdRegistry(Registry _registry) external onlyOwner {
-        trueUSD.setRegistry(_registry);
+    function setTokenRegistry(Registry _registry) external onlyOwner {
+        token.setRegistry(_registry);
     }
 
     /** 
@@ -1770,7 +1605,7 @@ contract TokenController {
     @param _allowanceSheet HasOwner storage contract
     */
     function claimStorageForProxy(
-        TrueUSD _proxy,
+        CompliantDepositTokenWithHook _proxy,
         HasOwner _balanceSheet,
         HasOwner _allowanceSheet) external onlyOwner {
 
@@ -1791,46 +1626,46 @@ contract TokenController {
     }
 
     /** 
-    *@dev Transfer ownership of a contract from trueUSD to this TokenController.
+    *@dev Transfer ownership of a contract from token to this TokenController.
     Can be used e.g. to reclaim balance sheet
     in order to transfer it to an upgraded TrueUSD contract.
     *@param _other address of the contract to claim ownership of
     */
     function requestReclaimContract(Ownable _other) public onlyOwner {
-        trueUSD.reclaimContract(_other);
+        token.reclaimContract(_other);
         emit RequestReclaimContract(_other);
     }
 
     /** 
-    *@dev send all ether in trueUSD address to the owner of tokenController 
+    *@dev send all ether in token address to the owner of tokenController 
     */
     function requestReclaimEther() external onlyOwner {
-        trueUSD.reclaimEther(owner);
+        token.reclaimEther(owner);
     }
 
     /** 
-    *@dev transfer all tokens of a particular type in trueUSD address to the
+    *@dev transfer all tokens of a particular type in token address to the
     owner of tokenController 
     *@param _token token address of the token to transfer
     */
     function requestReclaimToken(ERC20 _token) external onlyOwner {
-        trueUSD.reclaimToken(_token, owner);
+        token.reclaimToken(_token, owner);
     }
 
     /** 
-    *@dev set new contract to which specified address can send eth to to quickly pause trueUSD
+    *@dev set new contract to which specified address can send eth to to quickly pause token
     *@param _newFastPause address of the new contract
     */
-    function setTrueUsdFastPause(address _newFastPause) external onlyOwner {
-        trueUsdFastPause = _newFastPause;
-        emit TrueUsdFastPauseSet(_newFastPause);
+    function setFastPause(address _newFastPause) external onlyOwner {
+        fastPause = _newFastPause;
+        emit FastPauseSet(_newFastPause);
     }
 
     /** 
     *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
     */
-    function pauseTrueUSD() external onlyFastPauseOrOwner {
-        OwnedUpgradeabilityProxy(trueUSD).upgradeTo(PAUSED_IMPLEMENTATION);
+    function pauseToken() external onlyFastPauseOrOwner {
+        OwnedUpgradeabilityProxy(token).upgradeTo(PAUSED_IMPLEMENTATION);
     }
     
     /** 
@@ -1838,7 +1673,7 @@ contract TokenController {
     *@param _blacklistedAddress address whose balance will be wiped
     */
     function wipeBlackListedTrueUSD(address _blacklistedAddress) external onlyOwner {
-        trueUSD.wipeBlacklistedAccount(_blacklistedAddress);
+        token.wipeBlacklistedAccount(_blacklistedAddress);
     }
 
     /** 
@@ -1848,7 +1683,7 @@ contract TokenController {
     *@param _max maximum amount user can burn at a time
     */
     function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
-        trueUSD.setBurnBounds(_min, _max);
+        token.setBurnBounds(_min, _max);
     }
 
     /** 
