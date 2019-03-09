@@ -66,6 +66,33 @@ contract PausedToken is HasOwner, RegistryClone {
         }
     }
 
+    function sponsorGas() external {
+        uint256 refundPrice = minimumGasPriceForFutureRefunds;
+        require(refundPrice > 0);
+        assembly {
+            let offset := sload(0xfffff)
+            let result := add(offset, 9)
+            sstore(0xfffff, result)
+            let position := add(offset, 0x100000)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+        }
+    }
 
     function setBalanceSheet(address _sheet) public onlyOwner returns (bool) {
         balances = BalanceSheet(_sheet);
