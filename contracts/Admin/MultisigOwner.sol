@@ -281,7 +281,7 @@ contract MultiSigOwner {
         _signOrExecute("initialize"); 
     }
 
-    function transferTusdProxyOwnership(address _newOwner) external onlyOwner {
+    function transferTusdProxyOwnership(address /*_newOwner*/) external onlyOwner {
         _signOrExecute("transferTusdProxyOwnership"); 
     }
     
@@ -289,11 +289,11 @@ contract MultiSigOwner {
         _signOrExecute("claimTusdProxyOwnership"); 
     }
 
-    function upgradeTusdProxyImplTo(address _implementation) external onlyOwner {
+    function upgradeTusdProxyImplTo(address /*_implementation*/) external onlyOwner {
         _signOrExecute("upgradeTusdProxyImplTo"); 
     }
 
-    function transferOwnership(address newOwner) external onlyOwner {
+    function transferOwnership(address /*newOwner*/) external onlyOwner {
         _signOrExecute("transferOwnership"); 
     }
 
@@ -301,11 +301,11 @@ contract MultiSigOwner {
         _signOrExecute("claimOwnership"); 
     }
 
-    function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
+    function setMintThresholds(uint256 /*_instant*/, uint256 /*_ratified*/, uint256 /*_multiSig*/) external onlyOwner {
         _signOrExecute("setMintThresholds");
     }
 
-    function setMintLimits(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
+    function setMintLimits(uint256 /*_instant*/, uint256 /*_ratified*/, uint256 /*_multiSig*/) external onlyOwner {
         _signOrExecute("setMintLimit");
     }
 
@@ -321,23 +321,23 @@ contract MultiSigOwner {
         _signOrExecute("refillMultiSigMintPool");
     }
 
-    function requestMint(address _to, uint256 _value) external onlyOwner {
+    function requestMint(address /*_to*/, uint256 /*_value*/) external onlyOwner {
         _signOrExecute("requestMint");
     }
 
-    function instantMint(address _to, uint256 _value) external onlyOwner {
+    function instantMint(address /*_to*/, uint256 /*_value*/) external onlyOwner {
         _signOrExecute("instantMint");
     }
 
-    function ratifyMint(uint256 _index, address _to, uint256 _value) external onlyOwner {
+    function ratifyMint(uint256 /*_index*/, address /*_to*/, uint256 /*_value*/) external onlyOwner {
         _signOrExecute("ratifyMint");
     }
     
-    function revokeMint(uint256 _index) external onlyOwner {
+    function revokeMint(uint256 /*_index*/) external onlyOwner {
         _signOrExecute("revokeMint");
     }
 
-    function transferMintKey(address _newMintKey) external onlyOwner {
+    function transferMintKey(address /*_newMintKey*/) external onlyOwner {
         _signOrExecute("transferMintKey");
     }
 
@@ -353,42 +353,42 @@ contract MultiSigOwner {
         _signOrExecute("unpauseMints");
     } 
 
-    function pauseMint(uint _opIndex) external onlyOwner {
+    function pauseMint(uint /*_opIndex*/) external onlyOwner {
         _signOrExecute("pauseMint");
     } 
 
-    function unpauseMint(uint _opIndex) external onlyOwner {
+    function unpauseMint(uint /*_opIndex*/) external onlyOwner {
         _signOrExecute("unpauseMint"); 
     }
 
-    function setToken(CompliantDepositTokenWithHook _newContract) external onlyOwner {
+    function setToken(CompliantDepositTokenWithHook /*_newContract*/) external onlyOwner {
         _signOrExecute("setToken"); 
     }
 
-    function setRegistry(Registry _registry) external onlyOwner {
+    function setRegistry(Registry /*_registry*/) external onlyOwner {
         _signOrExecute("setRegistry"); 
     }
 
-    function setTokenRegistry(Registry _registry) external onlyOwner {
+    function setTokenRegistry(Registry /*_registry*/) external onlyOwner {
         _signOrExecute("setTokenRegistry"); 
     }
 
-    function issueClaimOwnership(address _other) external onlyOwner {
+    function issueClaimOwnership(address /*_other*/) external onlyOwner {
         _signOrExecute("issueClaimOwnership"); 
     }
 
     function claimStorageForProxy(
-        address _delegate,
-        Ownable _balanceSheet,
-        Ownable _alowanceSheet) external onlyOwner {
+        address /*_delegate*/,
+        Ownable /*_balanceSheet*/,
+        Ownable /*_alowanceSheet*/) external onlyOwner {
         _signOrExecute("claimStorageForProxy"); 
     }
 
-    function transferChild(Ownable _child, address _newOwner) external onlyOwner {
+    function transferChild(Ownable /*_child*/, address /*_newOwner*/) external onlyOwner {
         _signOrExecute("transferChild"); 
     }
 
-    function requestReclaimContract(Ownable _other) external onlyOwner {
+    function requestReclaimContract(Ownable /*_other*/) external onlyOwner {
         _signOrExecute("requestReclaimContract"); 
     }
 
@@ -396,11 +396,11 @@ contract MultiSigOwner {
         _signOrExecute("requestReclaimEther"); 
     }
 
-    function requestReclaimToken(ERC20 _token) external onlyOwner {
+    function requestReclaimToken(ERC20 /*_token*/) external onlyOwner {
         _signOrExecute("requestReclaimToken"); 
     } 
 
-    function setFastPause(address _newFastPause) external onlyOwner {
+    function setFastPause(address /*_newFastPause*/) external onlyOwner {
         _signOrExecute("setFastPause"); 
     }
 
@@ -408,19 +408,19 @@ contract MultiSigOwner {
         _signOrExecute("pauseToken"); 
     }
 
-    function wipeBlackListedTrueUSD(address _blacklistedAddress) external onlyOwner {
+    function wipeBlackListedTrueUSD(address /*_blacklistedAddress*/) external onlyOwner {
         _signOrExecute("wipeBlackListedTrueUSD");
     }
 
-    function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
+    function setBurnBounds(uint256 /*_min*/, uint256 /*_max*/) external onlyOwner {
         _signOrExecute("setBurnBounds"); 
     }
 
-    function reclaimEther(address _to) external onlyOwner {
+    function reclaimEther(address /*_to*/) external onlyOwner {
         _signOrExecute("reclaimEther"); 
     }
 
-    function reclaimToken(ERC20 _token, address _to) external onlyOwner {
+    function reclaimToken(ERC20 /*_token*/, address /*_to*/) external onlyOwner {
         _signOrExecute("reclaimToken"); 
     }
 } 

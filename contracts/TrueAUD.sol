@@ -8,8 +8,7 @@ import "./GasRefundToken.sol";
 * inherited - see the documentation on the corresponding contracts.
 */
 contract TrueAUD is 
-CompliantDepositTokenWithHook,
-GasRefundToken {
+CompliantDepositTokenWithHook {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 

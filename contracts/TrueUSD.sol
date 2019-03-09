@@ -10,8 +10,7 @@ import "./GasRefundToken.sol";
 */
 contract TrueUSD is 
 CompliantDepositTokenWithHook,
-DelegateERC20,
-GasRefundToken {
+DelegateERC20 {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 

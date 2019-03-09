@@ -34,9 +34,10 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         uint256 balance = _getBalance(_who);
         _setBalance(_who, balance.add(_value));
     }
-    function _subBalance(address _who, uint256 _value) internal {
+    function _subBalance(address _who, uint256 _value) internal returns (bool) {
         uint256 balance = _getBalance(_who);
         _setBalance(_who, balance.sub(_value));
+        return true;
     }
     function _setBalance(address _who, uint256 _value) internal {
         balances.setBalance(_who, _value);

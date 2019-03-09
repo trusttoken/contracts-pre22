@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "./CompliantDepositTokenWithHook.sol";
+import "./ProxyStorage.sol";
 
 /**  
 @title Gas Refund Token
@@ -8,7 +8,7 @@ Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas 
 Each time an non-empty storage slot is set to 0, evm refund 15,000 (19,000 after Constantinople) to the sender
 of the transaction. 
 */
-contract GasRefundToken is CompliantDepositTokenWithHook {
+contract GasRefundToken is ProxyStorage {
 
     function sponsorGas() external {
         uint256 len = gasRefundPool.length;
@@ -36,13 +36,35 @@ contract GasRefundToken is CompliantDepositTokenWithHook {
 
     /**  
     @dev refund 45,000 gas for functions with gasRefund modifier.
+    @dev costs slightly more than 20,000 gas
     */
-    modifier gasRefund {
+    function gasRefund45() internal {
         uint256 len = gasRefundPool.length;
         if (len > 2 && tx.gasprice > gasRefundPool[len-1]) {
             gasRefundPool.length = len - 3;
         }
-        _;
+    }
+
+    /**  
+    @dev refund 30,000 gas for functions with gasRefund modifier.
+    @dev costs slightly more than 15,000 gas
+    */
+    function gasRefund30() internal {
+        uint256 len = gasRefundPool.length;
+        if (len > 1 && tx.gasprice > gasRefundPool[len-1]) {
+            gasRefundPool.length = len - 2;
+        }
+    }
+
+    /**  
+    @dev refund 15,000 gas for functions with gasRefund modifier.
+    @dev costs slightly more than 10,000 gas
+    */
+    function gasRefund15() internal {
+        uint256 len = gasRefundPool.length;
+        if (len > 0 && tx.gasprice > gasRefundPool[len-1]) {
+            gasRefundPool.length = len - 1;
+        }
     }
 
     /**  
@@ -50,26 +72,6 @@ contract GasRefundToken is CompliantDepositTokenWithHook {
     */
     function remainingGasRefundPool() public view returns (uint) {
         return gasRefundPool.length;
-    }
-
-    function remainingSponsoredTransactions() public view returns (uint) {
-        return gasRefundPool.length / 3;
-    }
-
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal gasRefund {
-        super._transferAllArgs(_from, _to, _value);
-    }
-
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal gasRefund {
-        super._transferFromAllArgs(_from, _to, _value, _sender);
-    }
-
-    function _burnFromAllArgs(address _from, address _to, uint256 _value) internal gasRefund {
-        super._burnFromAllArgs(_from, _to, _value);
-    }
-
-    function mint(address _to, uint256 _value) public onlyOwner gasRefund {
-        super.mint(_to, _value);
     }
 
     bytes32 constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";

@@ -5,8 +5,9 @@ import "../registry/contracts/Registry.sol";
 import "./ProxyStorage.sol";
 import "./ReclaimerToken.sol";
 import "./BurnableTokenWithBounds.sol";
+import "./GasRefundToken.sol";
 
-contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds {
+contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
 
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
@@ -54,7 +55,12 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         _requireCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        _subBalance(_from, _value);
+        bool nonzero = _subBalance(_from, _value);
+        if (nonzero) {
+            gasRefund45();
+        } else {
+            gasRefund30();
+        }
         emit Transfer(_from, _to, _value);
         totalSupply_ = totalSupply_.sub(_value);
         emit Burn(_to, _value);
@@ -66,7 +72,12 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransferFrom(_sender, _from, _to);
         _subAllowance(_from, _sender, _value);
-        _subBalance(_from, _value);
+        bool nonzero = _subBalance(_from, _value);
+        if (nonzero) {
+            gasRefund45();
+        } else {
+            gasRefund30();
+        }
         _addBalance(_to, _value);
         emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
@@ -85,7 +96,12 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransfer(_from, _to);
-        _subBalance(_from, _value);
+        bool nonzero = _subBalance(_from, _value);
+        if (nonzero) {
+            gasRefund45();
+        } else {
+            gasRefund15();
+        }
         _addBalance(_to, _value);
         emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {

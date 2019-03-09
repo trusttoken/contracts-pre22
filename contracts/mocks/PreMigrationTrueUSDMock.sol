@@ -7,8 +7,9 @@ contract PreMigrationTrueUSDMock is ProvisionalTrueUSD {
     function _addBalance(address _who, uint256 _value) internal {
         balances.addBalance(_who, _value);
     }
-    function _subBalance(address _who, uint256 _value) internal {
+    function _subBalance(address _who, uint256 _value) internal returns (bool) {
         balances.subBalance(_who, _value);
+        return true;
     }
     function _setBalance(address _who, uint256 _value) internal {
         balances.setBalance(_who, _value);

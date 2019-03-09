@@ -6,7 +6,7 @@ const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 const PreMigrationTrueUSDMock = artifacts.require("PreMigrationTrueUSDMock")
 const Registry = artifacts.require("RegistryMock")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
-const ProvisionalRegistry = artifacts.require("ProvisionalRegistry")
+const ProvisionalRegistry = artifacts.require("ProvisionalRegistryMock")
 const ProvisionalTrueUSD = artifacts.require("ProvisionalTrueUSD")
 
 const BN = web3.utils.toBN;

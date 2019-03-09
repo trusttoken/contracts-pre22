@@ -13,7 +13,7 @@ const fs = require('fs')
 
 let profile;
 try {
-    profile = require('../GasProfile.json') || {};
+    profile = require('./GasProfile.json') || {};
 } catch (error) {
     console.error(error);
     console.log('Creating GasProfile.json')
@@ -227,15 +227,19 @@ contract('GasProfile', function (accounts) {
                 showRegressions(expectations);
             })
         })
-        after(function() {
-            console.log('Writing GasProfile.json')
-            const updatedExpectations = JSON.stringify(profile, null, 2);
-            fs.writeFile('../GasProfile.json', updatedExpectations, (error) => {
-                if (error) {
-                    console.error(error)
-                    return
-                }
-                console.log('Wrote GasProfile.json')
+        after(async function() {
+            await new Promise((resolve, reject) => {
+                console.log('Writing GasProfile.json')
+                const updatedExpectations = JSON.stringify(profile, null, 2);
+                fs.writeFile('./GasProfile.json', updatedExpectations, (error) => {
+                    if (error) {
+                        console.error(error)
+                        reject(error)
+                        return
+                    }
+                    console.log('Wrote GasProfile.json')
+                    resolve()
+                })
             })
         })
     })
