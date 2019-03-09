@@ -128,7 +128,6 @@ contract PausedTrueUSD is PausedDelegateERC20, RegistryClone {
 
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
     event SetRegistry(address indexed registry);
-    event RedemptionAddress(address indexed addr);
 
     function decimals() public pure returns (uint8) {
         return DECIMALS;

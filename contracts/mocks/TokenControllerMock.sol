@@ -5,15 +5,15 @@ import "../Admin/TokenController.sol";
 contract TokenControllerMock is TokenController {
     address public pausedImplementation;
     
-    function setPausedImplementation(address _pausedTrueUSD) external {
-        pausedImplementation = _pausedTrueUSD;
+    function setPausedImplementation(address _pausedToken) external {
+        pausedImplementation = _pausedToken;
     }
 
     /** 
     *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
     */
-    function pauseTrueUSD() external onlyFastPauseOrOwner {
-        OwnedUpgradeabilityProxy(trueUSD).upgradeTo(pausedImplementation);
+    function pauseToken() external onlyFastPauseOrOwner {
+        OwnedUpgradeabilityProxy(token).upgradeTo(pausedImplementation);
     }
 
 }

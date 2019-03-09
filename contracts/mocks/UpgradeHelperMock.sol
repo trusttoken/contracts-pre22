@@ -37,11 +37,11 @@ contract UpgradeHelperMock {
         
         newTrueUSD.transferOwnership(tokenController);
         tokenController.issueClaimOwnership(newTrueUSD);
-        tokenController.setTrueUSD(newTrueUSD);
+        tokenController.setToken(newTrueUSD);
         tokenController.claimStorageForProxy(newTrueUSD, balanceSheetAddress, allowanceSheetAddress);
 
         // Configure TrueUSD
-        tokenController.setTusdRegistry(registry);
+        tokenController.setTokenRegistry(registry);
 
         // Point oldTrueUSD delegation to NewTrueUSD
         tokenController.transferChild(oldTrueUSD, address(this));

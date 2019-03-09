@@ -47,8 +47,8 @@ contract('PausedTrueUSD', function (accounts) {
             await this.controller.issueClaimOwnership(this.token.address, {from: owner})
             this.fastPauseMints = await FastPauseMints.new(pauseKey2, this.controller.address, { from: owner })
             await this.controller.setRegistry(this.registry.address, { from: owner })
-            await this.controller.setTrueUSD(this.token.address, { from: owner })
-            await this.controller.setTusdRegistry(this.registry.address, { from: owner })
+            await this.controller.setToken(this.token.address, { from: owner })
+            await this.controller.setTokenRegistry(this.registry.address, { from: owner })
             await this.controller.transferMintKey(mintKey, { from: owner })
             await this.tokenProxy.transferProxyOwnership(this.controller.address, {from: owner})
             await this.controller.claimTusdProxyOwnership({from: owner})
@@ -87,7 +87,7 @@ contract('PausedTrueUSD', function (accounts) {
         describe('Paused TrueUSD', function() {
             beforeEach(async function () {
                 await this.token.approve(otherAddress, BN(100*10**18), { from: oneHundred })
-                await this.controller.pauseTrueUSD({from: owner})
+                await this.controller.pauseToken({from: owner})
                 const pausedToken = await PausedTrueUSD.at(this.token.address)
                 await pausedToken.setDelegateFrom(this.original.address, {from: owner})
             })
@@ -168,7 +168,7 @@ contract('PausedTrueUSD', function (accounts) {
                 it('test admin functions', async function(){
                     await this.token.sponsorGas({from: otherAddress})
                     assert(BN(await this.token.remainingGasRefundPool.call()).eq(BN(9)))
-                    await this.controller.setTusdRegistry('0x0000000000000000000000000000000000000003',{from: owner})
+                    await this.controller.setTokenRegistry('0x0000000000000000000000000000000000000003',{from: owner})
                     assert.equal(await this.token.registry.call(), '0x0000000000000000000000000000000000000003')
                 })
 

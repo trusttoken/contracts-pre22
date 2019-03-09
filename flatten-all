@@ -14,4 +14,5 @@ truffle-flattener contracts/Admin/TokenController.sol > flat_contracts/flat_Toke
 truffle-flattener contracts/utilities/UpgradeHelper.sol > flat_contracts/flat_UpgradeHelper.sol
 truffle-flattener contracts/utilities/DepositAddressRegistrar.sol > flat_contracts/flat_depositAddressRegistrar.sol
 truffle-flattener contracts/utilities/PausedTrueUSD.sol > flat_contracts/flat_pausedTrueUSD.sol
+truffle-flattener contracts/utilities/PausedCurrencies.sol > flat_contracts/flat_pausedTrueCurrencies.sol
 truffle-flattener contracts/ProvisionalTrueUSD.sol > flat_contracts/flat_pausedTrueUSD.sol

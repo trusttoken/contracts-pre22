@@ -2,7 +2,7 @@ pragma solidity ^0.4.23;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../HasOwner.sol";
-import "../TrueUSD.sol";
+import "../CompliantDepositTokenWithHook.sol";
 import "../../registry/contracts/Registry.sol";
 import "../Proxy/OwnedUpgradeabilityProxy.sol";
 
@@ -67,9 +67,9 @@ contract TokenController {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
     
-    TrueUSD public trueUSD;
+    CompliantDepositTokenWithHook public token;
     Registry public registry;
-    address public trueUsdFastPause;
+    address public fastPause;
 
     bytes32 constant public IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
@@ -78,7 +78,7 @@ contract TokenController {
     address constant public PAUSED_IMPLEMENTATION = address(1); // ***To be changed the paused version of TrueUSD in Production
 
     modifier onlyFastPauseOrOwner() {
-        require(msg.sender == trueUsdFastPause || msg.sender == owner, "must be pauser or owner");
+        require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
         _;
     }
 
@@ -114,7 +114,7 @@ contract TokenController {
     event SetRegistry(address indexed registry);
     event TransferChild(address indexed child, address indexed newOwner);
     event RequestReclaimContract(address indexed other);
-    event SetTrueUSD(TrueUSD newContract);
+    event SetToken(CompliantDepositTokenWithHook newContract);
     
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
     event FinalizeMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -126,7 +126,7 @@ contract TokenController {
     event AllMintsPaused(bool status);
     event MintPaused(uint opIndex, bool status);
     event MintApproved(address approver, uint opIndex);
-    event TrueUsdFastPauseSet(address _newFastPause);
+    event FastPauseSet(address _newFastPause);
 
     event MintThresholdChanged(uint instant, uint ratified, uint multiSig);
     event MintLimitsChanged(uint instant, uint ratified, uint multiSig);
@@ -187,15 +187,15 @@ contract TokenController {
     */
 
     function transferTusdProxyOwnership(address _newOwner) external onlyOwner {
-        OwnedUpgradeabilityProxy(trueUSD).transferProxyOwnership(_newOwner);
+        OwnedUpgradeabilityProxy(token).transferProxyOwnership(_newOwner);
     }
 
     function claimTusdProxyOwnership() external onlyOwner {
-        OwnedUpgradeabilityProxy(trueUSD).claimProxyOwnership();
+        OwnedUpgradeabilityProxy(token).claimProxyOwnership();
     }
 
     function upgradeTusdProxyImplTo(address _implementation) external onlyOwner {
-        OwnedUpgradeabilityProxy(trueUSD).upgradeTo(_implementation);
+        OwnedUpgradeabilityProxy(token).upgradeTo(_implementation);
     }
 
     /*
@@ -278,7 +278,7 @@ contract TokenController {
     }
 
     /**
-     * @dev mintKey initiates a request to mint _value TrueUSD for account _to
+     * @dev mintKey initiates a request to mint _value for account _to
      * @param _to the address to mint to
      * @param _value the amount requested
      */
@@ -299,7 +299,7 @@ contract TokenController {
         require(_value <= instantMintPool, "instant mint pool is dry");
         instantMintPool = instantMintPool.sub(_value);
         emit InstantMint(_to, _value, msg.sender);
-        trueUSD.mint(_to, _value);
+        token.mint(_to, _value);
     }
 
 
@@ -336,7 +336,7 @@ contract TokenController {
             _subtractFromMintPool(value);
         }
         delete mintOperations[_index];
-        trueUSD.mint(to, value);
+        token.mint(to, value);
         emit FinalizeMint(to, value, _index, msg.sender);
     }
 
@@ -467,12 +467,12 @@ contract TokenController {
 
 
     /** 
-    *@dev Update this contract's trueUSD pointer to newContract (e.g. if the
+    *@dev Update this contract's token pointer to newContract (e.g. if the
     contract is upgraded)
     */
-    function setTrueUSD(TrueUSD _newContract) external onlyOwner {
-        trueUSD = _newContract;
-        emit SetTrueUSD(_newContract);
+    function setToken(CompliantDepositTokenWithHook _newContract) external onlyOwner {
+        token = _newContract;
+        emit SetToken(_newContract);
     }
 
     /** 
@@ -484,11 +484,11 @@ contract TokenController {
     }
 
     /** 
-    *@dev Swap out TrueUSD's permissions registry
-    *@param _registry new registry for trueUSD
+    *@dev Swap out token's permissions registry
+    *@param _registry new registry for token
     */
-    function setTusdRegistry(Registry _registry) external onlyOwner {
-        trueUSD.setRegistry(_registry);
+    function setTokenRegistry(Registry _registry) external onlyOwner {
+        token.setRegistry(_registry);
     }
 
     /** 
@@ -506,7 +506,7 @@ contract TokenController {
     @param _allowanceSheet HasOwner storage contract
     */
     function claimStorageForProxy(
-        TrueUSD _proxy,
+        CompliantDepositTokenWithHook _proxy,
         HasOwner _balanceSheet,
         HasOwner _allowanceSheet) external onlyOwner {
 
@@ -527,46 +527,46 @@ contract TokenController {
     }
 
     /** 
-    *@dev Transfer ownership of a contract from trueUSD to this TokenController.
+    *@dev Transfer ownership of a contract from token to this TokenController.
     Can be used e.g. to reclaim balance sheet
     in order to transfer it to an upgraded TrueUSD contract.
     *@param _other address of the contract to claim ownership of
     */
     function requestReclaimContract(Ownable _other) public onlyOwner {
-        trueUSD.reclaimContract(_other);
+        token.reclaimContract(_other);
         emit RequestReclaimContract(_other);
     }
 
     /** 
-    *@dev send all ether in trueUSD address to the owner of tokenController 
+    *@dev send all ether in token address to the owner of tokenController 
     */
     function requestReclaimEther() external onlyOwner {
-        trueUSD.reclaimEther(owner);
+        token.reclaimEther(owner);
     }
 
     /** 
-    *@dev transfer all tokens of a particular type in trueUSD address to the
+    *@dev transfer all tokens of a particular type in token address to the
     owner of tokenController 
     *@param _token token address of the token to transfer
     */
     function requestReclaimToken(ERC20 _token) external onlyOwner {
-        trueUSD.reclaimToken(_token, owner);
+        token.reclaimToken(_token, owner);
     }
 
     /** 
-    *@dev set new contract to which specified address can send eth to to quickly pause trueUSD
+    *@dev set new contract to which specified address can send eth to to quickly pause token
     *@param _newFastPause address of the new contract
     */
-    function setTrueUsdFastPause(address _newFastPause) external onlyOwner {
-        trueUsdFastPause = _newFastPause;
-        emit TrueUsdFastPauseSet(_newFastPause);
+    function setFastPause(address _newFastPause) external onlyOwner {
+        fastPause = _newFastPause;
+        emit FastPauseSet(_newFastPause);
     }
 
     /** 
     *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
     */
-    function pauseTrueUSD() external onlyFastPauseOrOwner {
-        OwnedUpgradeabilityProxy(trueUSD).upgradeTo(PAUSED_IMPLEMENTATION);
+    function pauseToken() external onlyFastPauseOrOwner {
+        OwnedUpgradeabilityProxy(token).upgradeTo(PAUSED_IMPLEMENTATION);
     }
     
     /** 
@@ -574,7 +574,7 @@ contract TokenController {
     *@param _blacklistedAddress address whose balance will be wiped
     */
     function wipeBlackListedTrueUSD(address _blacklistedAddress) external onlyOwner {
-        trueUSD.wipeBlacklistedAccount(_blacklistedAddress);
+        token.wipeBlacklistedAccount(_blacklistedAddress);
     }
 
     /** 
@@ -584,7 +584,7 @@ contract TokenController {
     *@param _max maximum amount user can burn at a time
     */
     function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
-        trueUSD.setBurnBounds(_min, _max);
+        token.setBurnBounds(_min, _max);
     }
 
     /** 

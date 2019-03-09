@@ -22,12 +22,12 @@ contract('Upgrade Helper', function (accounts) {
             await this.token.transferOwnership(this.helper.address, {from: owner})
             await this.original.transferOwnership(this.controller.address, {from: owner})
             await this.controller.issueClaimOwnership(this.original.address, {from: owner})
-            await this.controller.setTrueUSD(this.original.address, {from: owner})
+            await this.controller.setToken(this.original.address, {from: owner})
             await this.helper.upgrade({from: owner})
         })
 
         it('Controller points to new trueUSD', async function(){
-            const trueUSD = await this.controller.trueUSD.call()
+            const trueUSD = await this.controller.token.call()
             assert.equal(trueUSD, this.token.address)
         })
 

@@ -1,11 +1,12 @@
 pragma solidity ^0.4.23;
 
 import "./TrueCoinReceiver.sol";
-import "./modularERC20/ModularBurnableToken.sol";
 import "../registry/contracts/Registry.sol";
 import "./ProxyStorage.sol";
+import "./ReclaimerToken.sol";
+import "./BurnableTokenWithBounds.sol";
 
-contract CompliantDepositTokenWithHook is ModularBurnableToken, RegistryClone {
+contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds {
 
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";

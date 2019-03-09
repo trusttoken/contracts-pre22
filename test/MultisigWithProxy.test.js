@@ -53,8 +53,8 @@ contract('MultisigOwner With Proxy', function (accounts) {
         this.tokenImplementation = await TrueUSD.new(owner1, 0, { from: owner1 })
         this.token = await TrueUSD.at(this.tokenProxy.address)
 
-        await this.multisigOwner.setTrueUSD(this.token.address, {from : owner1 })
-        await this.multisigOwner.setTrueUSD(this.token.address, {from : owner2 })
+        await this.multisigOwner.setToken(this.token.address, {from : owner1 })
+        await this.multisigOwner.setToken(this.token.address, {from : owner2 })
         await this.tokenProxy.transferProxyOwnership(this.controller.address,{ from: owner1 } )
 
         await this.multisigOwner.claimTusdProxyOwnership({from : owner1 })
@@ -71,8 +71,8 @@ contract('MultisigOwner With Proxy', function (accounts) {
         await this.multisigOwner.transferMintKey(mintKey, { from: owner2 })
         await this.multisigOwner.setRegistry(this.registry.address, { from: owner1 })
         await this.multisigOwner.setRegistry(this.registry.address, { from: owner2 })
-        await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner1 })
-        await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner2 })
+        await this.multisigOwner.setTokenRegistry(this.registry.address, { from: owner1 })
+        await this.multisigOwner.setTokenRegistry(this.registry.address, { from: owner2 })
 
         await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner1 })
         await this.registry.subscribe(KYCAML, this.token.address, { from: owner1 })

@@ -361,16 +361,16 @@ contract MultiSigOwner {
         _signOrExecute("unpauseMint"); 
     }
 
-    function setTrueUSD(TrueUSD _newContract) external onlyOwner {
-        _signOrExecute("setTrueUSD"); 
+    function setToken(CompliantDepositTokenWithHook _newContract) external onlyOwner {
+        _signOrExecute("setToken"); 
     }
 
     function setRegistry(Registry _registry) external onlyOwner {
         _signOrExecute("setRegistry"); 
     }
 
-    function setTusdRegistry(Registry _registry) external onlyOwner {
-        _signOrExecute("setTusdRegistry"); 
+    function setTokenRegistry(Registry _registry) external onlyOwner {
+        _signOrExecute("setTokenRegistry"); 
     }
 
     function issueClaimOwnership(address _other) external onlyOwner {
@@ -400,12 +400,12 @@ contract MultiSigOwner {
         _signOrExecute("requestReclaimToken"); 
     } 
 
-    function setTrueUsdFastPause(address _newFastPause) external onlyOwner {
-        _signOrExecute("setTrueUsdFastPause"); 
+    function setFastPause(address _newFastPause) external onlyOwner {
+        _signOrExecute("setFastPause"); 
     }
 
-    function pauseTrueUSD() external onlyOwner {
-        _signOrExecute("pauseTrueUSD"); 
+    function pauseToken() external onlyOwner {
+        _signOrExecute("pauseToken"); 
     }
 
     function wipeBlackListedTrueUSD(address _blacklistedAddress) external onlyOwner {

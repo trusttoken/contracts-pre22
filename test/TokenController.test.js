@@ -42,8 +42,8 @@ contract('TokenController', function (accounts) {
             await this.controller.issueClaimOwnership(this.token.address, {from: owner})
             this.fastPauseMints = await FastPauseMints.new(pauseKey2, this.controller.address, { from: owner })
             await this.controller.setRegistry(this.registry.address, { from: owner })
-            await this.controller.setTrueUSD(this.token.address, { from: owner })
-            await this.controller.setTusdRegistry(this.registry.address, { from: owner })
+            await this.controller.setToken(this.token.address, { from: owner })
+            await this.controller.setTokenRegistry(this.registry.address, { from: owner })
             await this.controller.transferMintKey(mintKey, { from: owner })
             await this.tokenProxy.transferProxyOwnership(this.controller.address, {from: owner})
             await this.controller.claimTusdProxyOwnership({from: owner})
@@ -515,7 +515,7 @@ contract('TokenController', function (accounts) {
         describe('pause trueUSD and wipe accounts', function(){
             beforeEach(async function(){
                 this.fastPauseTrueUSD = await FastPauseTrueUSD.new(pauseKey, this.controller.address, { from: owner })
-                await this.controller.setTrueUsdFastPause(this.fastPauseTrueUSD.address, { from: owner })
+                await this.controller.setFastPause(this.fastPauseTrueUSD.address, { from: owner })
             })
 
             it('fastpauseTusd cannot be created with 0x0', async function(){
@@ -526,7 +526,7 @@ contract('TokenController', function (accounts) {
 
             it('TokenController can pause TrueUSD transfers', async function(){
                 await this.token.transfer(mintKey, BN(10*10**18), { from: oneHundred })
-                await this.controller.pauseTrueUSD({ from: owner })
+                await this.controller.pauseToken({ from: owner })
                 const pausedImpl = await this.tokenProxy.implementation.call()
                 assert.equal(pausedImpl, "0x0000000000000000000000000000000000000001")
                 await assertRevert(this.token.transfer(mintKey, BN(10*10**18), { from: oneHundred }))
@@ -539,7 +539,7 @@ contract('TokenController', function (accounts) {
             })
 
             it('non pauser cannot pause TrueUSD ', async function(){
-                await assertRevert(this.controller.pauseTrueUSD({ from: mintKey }));                  
+                await assertRevert(this.controller.pauseToken({ from: mintKey }));                  
             })
 
             it('non pauser cannot pause TrueUSD by sending ether to fastPause contract', async function(){

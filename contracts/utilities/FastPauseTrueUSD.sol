@@ -30,6 +30,6 @@ contract FastPauseTrueUSD {
     function() public payable onlyPauseKey {
         emit FastTrueUSDPause(msg.sender);
         msg.sender.transfer(msg.value);
-        controllerContract.pauseTrueUSD();
+        controllerContract.pauseToken();
     }
 }

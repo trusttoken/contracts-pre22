@@ -38,7 +38,7 @@ contract('Proxy With Controller', function (accounts) {
 
             await this.controller.initialize({from: owner})
             await this.controller.setRegistry(this.registry.address, { from: owner })
-            await this.controller.setTrueUSD(this.token.address, { from: owner })
+            await this.controller.setToken(this.token.address, { from: owner })
             await this.controller.transferMintKey(mintKey, { from: owner })
         })
 
@@ -76,7 +76,7 @@ contract('Proxy With Controller', function (accounts) {
             await this.token.transferOwnership(this.controller.address, { from: owner })
             assert.equal(this.controller.address, await this.token.pendingOwner.call())
             await this.controller.issueClaimOwnership(this.token.address, { from: owner })
-            await this.controller.setTusdRegistry(this.registry.address, { from: owner })
+            await this.controller.setTokenRegistry(this.registry.address, { from: owner })
             const tokenRegistry = await this.token.registry.call()
             assert.equal(tokenRegistry, this.registry.address)
         })
