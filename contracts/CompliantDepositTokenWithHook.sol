@@ -55,9 +55,9 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         _requireCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        bool nonzero = _subBalance(_from, _value);
-        if (nonzero) {
-            gasRefund45();
+        bool balanceZero = _subBalance(_from, _value);
+        if (balanceZero) {
+            // no refund
         } else {
             gasRefund30();
         }
@@ -71,14 +71,40 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransferFrom(_sender, _from, _to);
-        _subAllowance(_from, _sender, _value);
-        bool nonzero = _subBalance(_from, _value);
-        if (nonzero) {
-            gasRefund45();
+        bool allowanceZero = _subAllowance(_from, _sender, _value);
+        bool balanceZero = _subBalance(_from, _value);
+        bool balanceNew = _addBalance(_to, _value);
+        
+        if (balanceNew) {
+            if (allowanceZero) {
+                if (balanceZero) {
+                    // do not refund
+                } else {
+                    gasRefund30();
+                }
+            } else {
+                if (balanceZero) {
+                    gasRefund30();
+                } else {
+                    gasRefund45();
+                }
+            }
         } else {
-            gasRefund30();
+            if (allowanceZero) {
+                if (balanceZero) {
+                    // do not refund
+                } else {
+                    gasRefund15();
+                }
+            } else {
+                if (balanceZero) {
+                    gasRefund15();
+                } else {
+                    gasRefund30();
+                }
+            }
+
         }
-        _addBalance(_to, _value);
         emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
             emit Transfer(originalTo, _to, _value);
@@ -96,13 +122,21 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransfer(_from, _to);
-        bool nonzero = _subBalance(_from, _value);
-        if (nonzero) {
-            gasRefund45();
+        bool balanceZero = _subBalance(_from, _value);
+        bool balanceNew = _addBalance(_to, _value);
+        if (balanceZero) {
+            if (balanceNew) {
+                gasRefund30();
+            } else {
+                // do not refund
+            }
         } else {
-            gasRefund15();
+            if (balanceNew) {
+                gasRefund45();
+            } else {
+                gasRefund30();
+            }
         }
-        _addBalance(_to, _value);
         emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
             emit Transfer(originalTo, _to, _value);

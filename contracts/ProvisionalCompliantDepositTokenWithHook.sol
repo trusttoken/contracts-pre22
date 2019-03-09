@@ -30,14 +30,15 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
     function _getBalance(address _who) internal view returns (uint256) {
         return balances.balanceOf(_who);
     }
-    function _addBalance(address _who, uint256 _value) internal {
-        uint256 balance = _getBalance(_who);
-        _setBalance(_who, balance.add(_value));
+    function _addBalance(address _who, uint256 _value) internal returns (bool balanceNew) {
+        uint256 priorBalance = _getBalance(_who);
+        _setBalance(_who, priorBalance.add(_value));
+        balanceNew = priorBalance == 0;
     }
-    function _subBalance(address _who, uint256 _value) internal returns (bool) {
-        uint256 balance = _getBalance(_who);
-        _setBalance(_who, balance.sub(_value));
-        return true;
+    function _subBalance(address _who, uint256 _value) internal returns (bool balanceZero) {
+        uint256 balanceNew = _getBalance(_who).sub(_value);
+        _setBalance(_who, balanceNew);
+        balanceZero = balanceNew == 0;
     }
     function _setBalance(address _who, uint256 _value) internal {
         balances.setBalance(_who, _value);
@@ -70,9 +71,11 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         uint256 prior = _getAllowance(_who, _spender);
         _setAllowance(_who, _spender, prior.add(_value)); 
     }
-    function _subAllowance(address _who, address _spender, uint256 _value) internal {
+    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool allowanceZero) {
         uint256 prior = _getAllowance(_who, _spender);
-        _setAllowance(_who, _spender, prior.sub(_value)); 
+        uint256 updated = prior.sub(_value);
+        _setAllowance(_who, _spender, updated); 
+        allowanceZero = updated == 0;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
         _allowance[_who][_spender] = _value;

@@ -4,8 +4,9 @@ import "../ProvisionalTrueUSD.sol";
 
 // Mocks the behavior from before balances were migrated
 contract PreMigrationTrueUSDMock is ProvisionalTrueUSD {
-    function _addBalance(address _who, uint256 _value) internal {
+    function _addBalance(address _who, uint256 _value) internal returns (bool) {
         balances.addBalance(_who, _value);
+        return true;
     }
     function _subBalance(address _who, uint256 _value) internal returns (bool) {
         balances.subBalance(_who, _value);
@@ -17,8 +18,9 @@ contract PreMigrationTrueUSDMock is ProvisionalTrueUSD {
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
         allowances.addAllowance(_who, _spender, _value);
     }
-    function _subAllowance(address _who, address _spender, uint256 _value) internal {
+    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool) {
         allowances.subAllowance(_who, _spender, _value);
+        return true;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
         allowances.setAllowance(_who, _spender, _value);
