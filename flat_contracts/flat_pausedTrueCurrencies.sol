@@ -391,7 +391,7 @@ contract ProxyStorage {
     string name_Deprecated = "TrueUSD";
     string symbol_Deprecated = "TUSD";
 
-    uint[] public gasRefundPool;
+    uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
 
@@ -458,12 +458,50 @@ contract HasOwner is ProxyStorage {
     }
 }
 
-// File: contracts/utilities/PausedTrueUSD.sol
+// File: contracts/utilities/PausedToken.sol
 
-contract PausedToken is HasOwner {
+contract PausedToken is HasOwner, RegistryClone {
+    using SafeMath for uint256;
     event Transfer(address indexed from, address indexed to, uint256 value);
     event AllowanceSheetSet(address indexed sheet);
     event BalanceSheetSet(address indexed sheet);
+    uint8 constant DECIMALS = 18;
+    uint8 constant ROUNDING = 2;
+
+    event WipeBlacklistedAccount(address indexed account, uint256 balance);
+    event SetRegistry(address indexed registry);
+
+    function decimals() public pure returns (uint8) {
+        return DECIMALS;
+    }
+
+    function rounding() public pure returns (uint8) {
+        return ROUNDING;
+    }
+
+    /**  
+    *@dev send all eth balance in the TrueUSD contract to another address
+    */
+    function reclaimEther(address _to) external onlyOwner {
+        _to.transfer(address(this).balance);
+    }
+
+    /**  
+    *@dev send all token balance of an arbitary erc20 token
+    in the TrueUSD contract to another address
+    */
+    function reclaimToken(ERC20 token, address _to) external onlyOwner {
+        uint256 balance = token.balanceOf(this);
+        token.transfer(_to, balance);
+    }
+
+    /**  
+    *@dev allows owner of TrueUSD to gain ownership of any contract that TrueUSD currently owns
+    */
+    function reclaimContract(Ownable _ownable) external onlyOwner {
+        _ownable.transferOwnership(owner);
+    }
+
 
     function totalSupply() public view returns (uint256) {
         return totalSupply_;
@@ -475,6 +513,16 @@ contract PausedToken is HasOwner {
         emit AllowanceSheetSet(_sheet);
         return true;
     }
+
+    /**  
+    *@dev Return the remaining sponsored gas slots
+    */
+    function remainingGasRefundPool() public view returns (uint length) {
+        assembly {
+            length := sload(0xfffff)
+        }
+    }
+
 
     function setBalanceSheet(address _sheet) public onlyOwner returns (bool) {
         balances = BalanceSheet(_sheet);
@@ -523,6 +571,30 @@ contract PausedToken is HasOwner {
     function paused() public pure returns (bool) {
         return true;
     }
+    function setRegistry(Registry _registry) public onlyOwner {
+        registry = _registry;
+        emit SetRegistry(registry);
+    }
+
+    modifier onlyRegistry {
+      require(msg.sender == address(registry));
+      _;
+    }
+
+    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
+        attributes[_who][_attribute] = _value;
+    }
+
+    bytes32 constant IS_BLACKLISTED = "isBlacklisted";
+    function wipeBlacklistedAccount(address _account) public onlyOwner {
+        require(registry.hasAttribute(_account, IS_BLACKLISTED), "_account is not blacklisted");
+        uint256 oldValue = _balanceOf[_account];
+        _balanceOf[_account] = 0;
+        totalSupply_ = totalSupply_.sub(oldValue);
+        emit WipeBlacklistedAccount(_account, oldValue);
+        emit Transfer(_account, address(0), oldValue);
+    }
+
 }
 
 /** @title PausedDelegateERC20
@@ -571,96 +643,9 @@ contract PausedDelegateERC20 is PausedToken {
     }
 }
 
-/** @title TrueUSD
-* @dev This is the top-level ERC20 contract, but most of the interesting functionality is
-* inherited - see the documentation on the corresponding contracts.
-*/
-contract PausedTrueUSD is PausedDelegateERC20, RegistryClone {
-    using SafeMath for *;
+// File: contracts/utilities/PausedCurrencies.sol
 
-    uint8 public constant DECIMALS = 18;
-    uint8 public constant ROUNDING = 2;
-    bytes32 constant IS_BLACKLISTED = "isBlacklisted";
-
-
-    event WipeBlacklistedAccount(address indexed account, uint256 balance);
-    event SetRegistry(address indexed registry);
-
-    function decimals() public pure returns (uint8) {
-        return DECIMALS;
-    }
-
-    function rounding() public pure returns (uint8) {
-        return ROUNDING;
-    }
-
-    function setRegistry(Registry _registry) public onlyOwner {
-        registry = _registry;
-        emit SetRegistry(registry);
-    }
-
-    function sponsorGas() external {
-        uint256 len = gasRefundPool.length;
-        gasRefundPool.length = len + 9;
-        gasRefundPool[len] = 1;
-        gasRefundPool[len + 1] = 1;
-        gasRefundPool[len + 2] = 1;
-        gasRefundPool[len + 3] = 1;
-        gasRefundPool[len + 4] = 1;
-        gasRefundPool[len + 5] = 1;
-        gasRefundPool[len + 6] = 1;
-        gasRefundPool[len + 7] = 1;
-        gasRefundPool[len + 8] = 1;
-    }  
-
-    /**  
-    *@dev Return the remaining sponsored gas slots
-    */
-    function remainingGasRefundPool() public view returns(uint) {
-        return gasRefundPool.length;
-    }
-
-    modifier onlyRegistry {
-      require(msg.sender == address(registry));
-      _;
-    }
-
-    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
-        attributes[_who][_attribute] = _value;
-    }
-
-    function wipeBlacklistedAccount(address _account) public onlyOwner {
-        require(registry.hasAttribute(_account, IS_BLACKLISTED), "_account is not blacklisted");
-        uint256 oldValue = _balanceOf[_account];
-        _balanceOf[_account] = 0;
-        totalSupply_ = totalSupply_.sub(oldValue);
-        emit WipeBlacklistedAccount(_account, oldValue);
-        emit Transfer(_account, address(0), oldValue);
-    }
-
-    /**  
-    *@dev send all eth balance in the TrueUSD contract to another address
-    */
-    function reclaimEther(address _to) external onlyOwner {
-        _to.transfer(address(this).balance);
-    }
-
-    /**  
-    *@dev send all token balance of an arbitary erc20 token
-    in the TrueUSD contract to another address
-    */
-    function reclaimToken(ERC20 token, address _to) external onlyOwner {
-        uint256 balance = token.balanceOf(this);
-        token.transfer(_to, balance);
-    }
-
-    /**  
-    *@dev allows owner of TrueUSD to gain ownership of any contract that TrueUSD currently owns
-    */
-    function reclaimContract(Ownable _ownable) external onlyOwner {
-        _ownable.transferOwnership(owner);
-    }
-
+contract PausedTrueUSD is PausedDelegateERC20 {
     function name() public pure returns (string) {
         return "TrueUSD";
     }
@@ -670,9 +655,7 @@ contract PausedTrueUSD is PausedDelegateERC20, RegistryClone {
     }
 }
 
-// File: contracts/utilities/PausedCurrencies.sol
-
-contract PausedAUD is PausedTrueUSD {
+contract PausedAUD is PausedToken {
     function name() public pure returns (string) {
         return "TrueAUD";
     }
@@ -682,7 +665,7 @@ contract PausedAUD is PausedTrueUSD {
     }
 }
 
-contract PausedGBP is PausedTrueUSD {
+contract PausedGBP is PausedToken {
     function name() public pure returns (string) {
         return "TrueGBP";
     }
@@ -692,7 +675,7 @@ contract PausedGBP is PausedTrueUSD {
     }
 }
 
-contract PausedCAD is PausedTrueUSD {
+contract PausedCAD is PausedToken {
     function name() public pure returns (string) {
         return "TrueCAD";
     }

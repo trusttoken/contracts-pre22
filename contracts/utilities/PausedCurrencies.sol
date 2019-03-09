@@ -1,8 +1,18 @@
 pragma solidity ^0.4.23;
 
-import "./PausedTrueUSD.sol";
+import "./PausedToken.sol";
 
-contract PausedAUD is PausedTrueUSD {
+contract PausedTrueUSD is PausedDelegateERC20 {
+    function name() public pure returns (string) {
+        return "TrueUSD";
+    }
+
+    function symbol() public pure returns (string) {
+        return "TUSD";
+    }
+}
+
+contract PausedAUD is PausedToken {
     function name() public pure returns (string) {
         return "TrueAUD";
     }
@@ -12,7 +22,7 @@ contract PausedAUD is PausedTrueUSD {
     }
 }
 
-contract PausedGBP is PausedTrueUSD {
+contract PausedGBP is PausedToken {
     function name() public pure returns (string) {
         return "TrueGBP";
     }
@@ -22,7 +32,7 @@ contract PausedGBP is PausedTrueUSD {
     }
 }
 
-contract PausedCAD is PausedTrueUSD {
+contract PausedCAD is PausedToken {
     function name() public pure returns (string) {
         return "TrueCAD";
     }

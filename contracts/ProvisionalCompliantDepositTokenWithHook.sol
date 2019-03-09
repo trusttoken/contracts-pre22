@@ -45,7 +45,15 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         _balanceOf[_who] = _value;
     }
 
-    function migrateBalances(address[] holders) external {
+    modifier retroGasRefund45 {
+        _;
+        uint256 len = gasRefundPool_Deprecated.length;
+        if (len > 2 && tx.gasprice > gasRefundPool_Deprecated[len-1]) {
+            gasRefundPool_Deprecated.length = len - 3;
+        }
+    }
+
+    function migrateBalances(address[] holders) external retroGasRefund45 {
         uint256 i = holders.length;
         while (i --> 0) {
             address holder = holders[i];
@@ -53,7 +61,7 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         }
     }
 
-    function migrateAllowances(address[] holders, address[] spenders) external {
+    function migrateAllowances(address[] holders, address[] spenders) external retroGasRefund45 {
         uint256 i = holders.length;
         while (i --> 0) {
             address holder = holders[i];

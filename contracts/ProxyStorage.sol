@@ -30,7 +30,7 @@ contract ProxyStorage {
     string name_Deprecated = "TrueUSD";
     string symbol_Deprecated = "TUSD";
 
-    uint[] public gasRefundPool;
+    uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
 

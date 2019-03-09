@@ -44,7 +44,7 @@ contract('GasRefundToken', function (accounts) {
             const noRefundTx = await this.token.transfer(oneHundred, BN(10*10**18), { from: anotherAccount, gasPrice: 1000 });
             assert.equal(await this.token.remainingGasRefundPool(), 9, "pool should still have 9");
             const withRefundTx = await this.token.transfer(oneHundred, BN(10*10**18), { from: anotherAccount, gasPrice: 1001 });
-            assert.equal(await this.token.remainingGasRefundPool(), 6, "pool should now have 6");
+            assert.equal(await this.token.remainingGasRefundPool(), 7, "pool should now have 7");
             assert.isBelow(withRefundTx.receipt.gasUsed, noRefundTx.receipt.gasUsed, "Less gas used with refund");
         })
 
@@ -64,7 +64,7 @@ contract('GasRefundToken', function (accounts) {
             await this.token.approve(oneHundred, FIFTY, { from: anotherAccount });
             await this.token.transferFrom(anotherAccount, oneHundred, FIFTY, { from: oneHundred, gasPrice: 1001, gasLimit: 200000 });
             const remainingPool2 = await this.token.remainingGasRefundPool.call()
-            assert(remainingPool2.eq(BN(13)), "pool should have 13, instead " + remainingPool2);
+            assert(remainingPool2.eq(BN(15)), "pool should have 15, instead " + remainingPool2);
         })
     })
 })

@@ -166,7 +166,6 @@ contract('PausedTrueUSD', function (accounts) {
 
             describe('admin functions still functioning', function(){
                 it('test admin functions', async function(){
-                    await this.token.sponsorGas({from: otherAddress})
                     assert(BN(await this.token.remainingGasRefundPool.call()).eq(BN(9)))
                     await this.controller.setTokenRegistry('0x0000000000000000000000000000000000000003',{from: owner})
                     assert.equal(await this.token.registry.call(), '0x0000000000000000000000000000000000000003')
