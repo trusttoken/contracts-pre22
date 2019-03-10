@@ -13,7 +13,7 @@ const fs = require('fs')
 
 let profile;
 try {
-    profile = require('./GasProfile.json') || {};
+    profile = require('../GasProfile.json') || {};
 } catch (error) {
     console.error(error);
     console.log('Creating GasProfile.json')
