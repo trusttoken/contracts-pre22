@@ -1,6 +1,8 @@
-pragma solidity ^0.4.23;
 
 // File: openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol
+
+pragma solidity ^0.4.21;
+
 
 /**
  * @title ERC20Basic
@@ -16,6 +18,10 @@ contract ERC20Basic {
 
 // File: openzeppelin-solidity/contracts/token/ERC20/ERC20.sol
 
+pragma solidity ^0.4.21;
+
+
+
 /**
  * @title ERC20 interface
  * @dev see https://github.com/ethereum/EIPs/issues/20
@@ -28,6 +34,9 @@ contract ERC20 is ERC20Basic {
 }
 
 // File: registry/contracts/Registry.sol
+
+pragma solidity ^0.4.23;
+
 
 interface RegistryClone {
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
@@ -196,6 +205,9 @@ contract Registry {
 
 // File: openzeppelin-solidity/contracts/ownership/Ownable.sol
 
+pragma solidity ^0.4.21;
+
+
 /**
  * @title Ownable
  * @dev The Ownable contract has an owner address, and provides basic authorization control
@@ -238,6 +250,10 @@ contract Ownable {
 
 // File: openzeppelin-solidity/contracts/ownership/Claimable.sol
 
+pragma solidity ^0.4.21;
+
+
+
 /**
  * @title Claimable
  * @dev Extension for the Ownable contract, where the ownership needs to be claimed.
@@ -250,7 +266,7 @@ contract Claimable is Ownable {
    * @dev Modifier throws if called by any account other than the pendingOwner.
    */
   modifier onlyPendingOwner() {
-    require(msg.sender == pendingOwner, "not pending owner");
+    require(msg.sender == pendingOwner);
     _;
   }
 
@@ -274,6 +290,9 @@ contract Claimable is Ownable {
 
 // File: openzeppelin-solidity/contracts/math/SafeMath.sol
 
+pragma solidity ^0.4.21;
+
+
 /**
  * @title SafeMath
  * @dev Math operations with safety checks that throw on error
@@ -288,7 +307,7 @@ library SafeMath {
       return 0;
     }
     c = a * b;
-    require(c / a == b, "mul overflow");
+    assert(c / a == b);
     return c;
   }
 
@@ -306,7 +325,7 @@ library SafeMath {
   * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
   */
   function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-    require(b <= a, "sub underflow");
+    assert(b <= a);
     return a - b;
   }
 
@@ -315,12 +334,16 @@ library SafeMath {
   */
   function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
     c = a + b;
-    require(c >= a, "add overflow");
+    assert(c >= a);
     return c;
   }
 }
 
 // File: contracts/modularERC20/BalanceSheet.sol
+
+pragma solidity ^0.4.18;
+
+
 
 // A wrapper around the balanceOf mapping.
 contract BalanceSheet is Claimable {
@@ -343,6 +366,10 @@ contract BalanceSheet is Claimable {
 
 // File: contracts/modularERC20/AllowanceSheet.sol
 
+pragma solidity ^0.4.18;
+
+
+
 // A wrapper around the allowanceOf mapping.
 contract AllowanceSheet is Claimable {
     using SafeMath for uint256;
@@ -363,6 +390,11 @@ contract AllowanceSheet is Claimable {
 }
 
 // File: contracts/ProxyStorage.sol
+
+pragma solidity ^0.4.23;
+
+
+
 
 /*
 Defines the storage layout of the implementaiton (TrueUSD) contract. Any newly declared 
@@ -401,6 +433,9 @@ contract ProxyStorage {
 }
 
 // File: contracts/HasOwner.sol
+
+pragma solidity ^0.4.23;
+
 
 /**
  * @title HasOwner
@@ -459,6 +494,10 @@ contract HasOwner is ProxyStorage {
 }
 
 // File: contracts/utilities/PausedToken.sol
+
+pragma solidity ^0.4.23;
+
+
 
 contract PausedToken is HasOwner, RegistryClone {
     using SafeMath for uint256;
@@ -523,6 +562,40 @@ contract PausedToken is HasOwner, RegistryClone {
         }
     }
 
+    function sponsorGas() external {
+        uint256 refundPrice = minimumGasPriceForFutureRefunds;
+        require(refundPrice > 0);
+        assembly {
+            let offset := sload(0xfffff)
+            let result := add(offset, 9)
+            sstore(0xfffff, result)
+            let position := add(offset, 0x100000)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+        }
+    }
+
+    bytes32 constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";
+
+    function setMinimumGasPriceForFutureRefunds(uint256 _minimumGasPriceForFutureRefunds) public {
+        require(registry.hasAttribute(msg.sender, CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE));
+        minimumGasPriceForFutureRefunds = _minimumGasPriceForFutureRefunds;
+    }
 
     function setBalanceSheet(address _sheet) public onlyOwner returns (bool) {
         balances = BalanceSheet(_sheet);
@@ -644,6 +717,9 @@ contract PausedDelegateERC20 is PausedToken {
 }
 
 // File: contracts/utilities/PausedCurrencies.sol
+
+pragma solidity ^0.4.23;
+
 
 contract PausedTrueUSD is PausedDelegateERC20 {
     function name() public pure returns (string) {

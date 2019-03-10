@@ -1,12 +1,16 @@
-pragma solidity ^0.4.23;
 
 // File: contracts/TrueCoinReceiver.sol
+
+pragma solidity ^0.4.23;
 
 contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
 }
 
 // File: openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol
+
+pragma solidity ^0.4.21;
+
 
 /**
  * @title ERC20Basic
@@ -22,6 +26,10 @@ contract ERC20Basic {
 
 // File: openzeppelin-solidity/contracts/token/ERC20/ERC20.sol
 
+pragma solidity ^0.4.21;
+
+
+
 /**
  * @title ERC20 interface
  * @dev see https://github.com/ethereum/EIPs/issues/20
@@ -34,6 +42,9 @@ contract ERC20 is ERC20Basic {
 }
 
 // File: registry/contracts/Registry.sol
+
+pragma solidity ^0.4.23;
+
 
 interface RegistryClone {
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
@@ -202,6 +213,9 @@ contract Registry {
 
 // File: openzeppelin-solidity/contracts/ownership/Ownable.sol
 
+pragma solidity ^0.4.21;
+
+
 /**
  * @title Ownable
  * @dev The Ownable contract has an owner address, and provides basic authorization control
@@ -244,6 +258,10 @@ contract Ownable {
 
 // File: openzeppelin-solidity/contracts/ownership/Claimable.sol
 
+pragma solidity ^0.4.21;
+
+
+
 /**
  * @title Claimable
  * @dev Extension for the Ownable contract, where the ownership needs to be claimed.
@@ -256,7 +274,7 @@ contract Claimable is Ownable {
    * @dev Modifier throws if called by any account other than the pendingOwner.
    */
   modifier onlyPendingOwner() {
-    require(msg.sender == pendingOwner, "not pending owner");
+    require(msg.sender == pendingOwner);
     _;
   }
 
@@ -280,6 +298,9 @@ contract Claimable is Ownable {
 
 // File: openzeppelin-solidity/contracts/math/SafeMath.sol
 
+pragma solidity ^0.4.21;
+
+
 /**
  * @title SafeMath
  * @dev Math operations with safety checks that throw on error
@@ -294,7 +315,7 @@ library SafeMath {
       return 0;
     }
     c = a * b;
-    require(c / a == b, "mul overflow");
+    assert(c / a == b);
     return c;
   }
 
@@ -312,7 +333,7 @@ library SafeMath {
   * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
   */
   function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-    require(b <= a, "sub underflow");
+    assert(b <= a);
     return a - b;
   }
 
@@ -321,12 +342,16 @@ library SafeMath {
   */
   function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
     c = a + b;
-    require(c >= a, "add overflow");
+    assert(c >= a);
     return c;
   }
 }
 
 // File: contracts/modularERC20/BalanceSheet.sol
+
+pragma solidity ^0.4.18;
+
+
 
 // A wrapper around the balanceOf mapping.
 contract BalanceSheet is Claimable {
@@ -349,6 +374,10 @@ contract BalanceSheet is Claimable {
 
 // File: contracts/modularERC20/AllowanceSheet.sol
 
+pragma solidity ^0.4.18;
+
+
+
 // A wrapper around the allowanceOf mapping.
 contract AllowanceSheet is Claimable {
     using SafeMath for uint256;
@@ -369,6 +398,11 @@ contract AllowanceSheet is Claimable {
 }
 
 // File: contracts/ProxyStorage.sol
+
+pragma solidity ^0.4.23;
+
+
+
 
 /*
 Defines the storage layout of the implementaiton (TrueUSD) contract. Any newly declared 
@@ -407,6 +441,9 @@ contract ProxyStorage {
 }
 
 // File: contracts/HasOwner.sol
+
+pragma solidity ^0.4.23;
+
 
 /**
  * @title HasOwner
@@ -466,6 +503,10 @@ contract HasOwner is ProxyStorage {
 
 // File: contracts/modularERC20/ModularBasicToken.sol
 
+pragma solidity ^0.4.23;
+
+
+
 // Version of OpenZeppelin's BasicToken whose balances mapping has been replaced
 // with a separate BalanceSheet contract. remove the need to copy over balances.
 /**
@@ -518,6 +559,10 @@ contract ModularBasicToken is HasOwner {
 }
 
 // File: contracts/modularERC20/ModularStandardToken.sol
+
+pragma solidity ^0.4.23;
+
+
 
 /**
  * @title Standard ERC20 token
@@ -632,6 +677,9 @@ contract ModularStandardToken is ModularBasicToken {
 
 // File: contracts/modularERC20/ModularBurnableToken.sol
 
+pragma solidity ^0.4.23;
+
+
 /**
  * @title Burnable Token
  * @dev Token that can be irreversibly burned (destroyed).
@@ -656,6 +704,10 @@ contract ModularBurnableToken is ModularStandardToken {
 }
 
 // File: contracts/ReclaimerToken.sol
+
+pragma solidity ^0.4.23;
+
+
 
 contract ReclaimerToken is ModularBurnableToken {
     /**  
@@ -684,6 +736,9 @@ contract ReclaimerToken is ModularBurnableToken {
 }
 
 // File: contracts/BurnableTokenWithBounds.sol
+
+pragma solidity ^0.4.23;
+
 
 /**
  * @title Burnable Token WithBounds
@@ -715,6 +770,9 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
 }
 
 // File: contracts/GasRefundToken.sol
+
+pragma solidity ^0.4.23;
+
 
 /**  
 @title Gas Refund Token
@@ -841,6 +899,14 @@ contract GasRefundToken is ProxyStorage {
 }
 
 // File: contracts/CompliantDepositTokenWithHook.sol
+
+pragma solidity ^0.4.23;
+
+
+
+
+
+
 
 contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
 
@@ -1082,6 +1148,9 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
 // File: contracts/DelegateERC20.sol
 
+pragma solidity ^0.4.23;
+
+
 /** @title DelegateERC20
 Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
 functions in the old contract still works (except Burn). 
@@ -1135,6 +1204,11 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
 
 // File: contracts/TrueUSD.sol
 
+pragma solidity ^0.4.23;
+
+
+
+
 /** @title TrueUSD
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
 * inherited - see the documentation on the corresponding contracts.
@@ -1167,6 +1241,9 @@ DelegateERC20 {
 }
 
 // File: registry/contracts/ProvisionalRegistry.sol
+
+pragma solidity ^0.4.23;
+
 
 contract ProvisionalRegistry is Registry {
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
@@ -1205,6 +1282,10 @@ contract ProvisionalRegistry is Registry {
 }
 
 // File: contracts/ProvisionalCompliantDepositTokenWithHook.sol
+
+pragma solidity ^0.4.23;
+
+
 
 // Supports balance and allowance migration at great cost
 contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHook {
@@ -1295,6 +1376,10 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
 }
 
 // File: contracts/ProvisionalTrueUSD.sol
+
+pragma solidity ^0.4.23;
+
+
 
 contract ProvisionalTrueUSD is TrueUSD, ProvisionalCompliantDepositTokenWithHook {
 }

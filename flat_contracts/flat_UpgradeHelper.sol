@@ -1,7 +1,7 @@
-pragma solidity ^0.4.23;
 
 // File: contracts/utilities/UpgradeHelper.sol
 
+pragma solidity ^0.4.23;
 contract OldTrueUSDInterface {
     function delegateToNewContract(address _newContract) public;
     function claimOwnership() public;
