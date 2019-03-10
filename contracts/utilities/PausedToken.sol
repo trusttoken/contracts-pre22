@@ -94,6 +94,13 @@ contract PausedToken is HasOwner, RegistryClone {
         }
     }
 
+    bytes32 constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";
+
+    function setMinimumGasPriceForFutureRefunds(uint256 _minimumGasPriceForFutureRefunds) public {
+        require(registry.hasAttribute(msg.sender, CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE));
+        minimumGasPriceForFutureRefunds = _minimumGasPriceForFutureRefunds;
+    }
+
     function setBalanceSheet(address _sheet) public onlyOwner returns (bool) {
         balances = BalanceSheet(_sheet);
         balances.claimOwnership();

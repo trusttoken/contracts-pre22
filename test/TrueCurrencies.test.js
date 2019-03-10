@@ -49,7 +49,7 @@ contract("TrueCurrencies", function([owner, oneHundred, anotherAccount]) {
             })
         })
     }
-    describe('burn attributes', function() {
+    describe('unique burn attributes', function() {
         hasBurnAttribute("TUSD", "canBurn")
         hasBurnAttribute("TAUD", "canBurnAUD")
         hasBurnAttribute("TCAD", "canBurnCAD")

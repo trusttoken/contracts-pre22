@@ -165,10 +165,14 @@ contract('PausedTrueUSD', function (accounts) {
             })
 
             describe('admin functions still functioning', function(){
-                it('test admin functions', async function(){
+                it('can sponsor gas pool', async function(){
+                    await this.registry.setAttributeValue(oneHundred, bytes32("canSetFutureRefundMinGasPrice"), 1, { from: owner });
+                    await this.token.setMinimumGasPriceForFutureRefunds(1, { from: oneHundred })
                     await this.token.sponsorGas({ from: otherAddress })
                     const remainingPool = await this.token.remainingGasRefundPool.call()
                     assert(remainingPool.eq(BN(9)), "Pool should be 9, instead " + remainingPool)
+                })
+                it ('can set token registry', async function() {
                     await this.controller.setTokenRegistry('0x0000000000000000000000000000000000000003',{from: owner})
                     assert.equal(await this.token.registry.call(), '0x0000000000000000000000000000000000000003')
                 })

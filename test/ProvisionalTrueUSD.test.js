@@ -177,5 +177,21 @@ contract('ProvisionalTrueUSD', function (accounts) {
                 await assertRevert(this.provisionalToken.transfer(owner, DOLLAR, { from: oneHundred }))
             })
         })
+        describe('after token upgrade', function() {
+            beforeEach(async function() {
+                await this.provisionalToken.migrateBalances([oneHundred])
+                await this.provisionalToken.migrateAllowances([oneHundred], [anotherAccount])
+                this.tusdImpl = await TrueUSDMock.new()
+                await this.tokenProxy.upgradeTo(this.tusdImpl.address, { from: owner })
+                this.token = await TrueUSDMock.at(this.tokenProxy.address)
+            })
+            it('has the correct balance', async function() {
+                await assertBalance(this.token, oneHundred, BN(100).mul(DOLLAR))
+            })
+            it('has the correct allowance', async function() {
+                const allowance = await this.token.allowance(oneHundred, anotherAccount)
+                assert(allowance.eq(BN(50).mul(DOLLAR)), 'allowance is ' + allowance)
+            })
+        })
     })
 })
