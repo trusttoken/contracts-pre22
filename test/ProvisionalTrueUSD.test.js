@@ -181,7 +181,7 @@ contract('ProvisionalTrueUSD', function (accounts) {
             beforeEach(async function() {
                 await this.provisionalToken.migrateBalances([oneHundred])
                 await this.provisionalToken.migrateAllowances([oneHundred], [anotherAccount])
-                this.tusdImpl = await TrueUSDMock.new()
+                this.tusdImpl = await TrueUSDMock.new(owner, 0)
                 await this.tokenProxy.upgradeTo(this.tusdImpl.address, { from: owner })
                 this.token = await TrueUSDMock.at(this.tokenProxy.address)
             })
