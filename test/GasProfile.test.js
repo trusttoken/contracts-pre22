@@ -84,6 +84,7 @@ contract('GasProfile', function (accounts) {
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
             await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
+            await this.token.mint(owner, DOLLAR, { from: owner })
             await this.registry.setAttributeValue(oneHundred, bytes32("canSetFutureRefundMinGasPrice"), 1, { from: owner });
 
             await this.registry.setAttributeValue(BURN_ADDRESS, CAN_BURN, 1, {from: owner})
