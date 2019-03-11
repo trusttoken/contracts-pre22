@@ -972,33 +972,29 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransferFrom(_sender, _from, _to);
-        bool allowanceZero = _subAllowance(_from, _sender, _value);
-        bool balanceZero = _subBalance(_from, _value);
-        bool balanceNew = _addBalance(_to, _value);
-        
-        if (balanceNew) {
-            if (allowanceZero) {
-                if (balanceZero) {
+        if (_addBalance(_to, _value)) {
+            if (_subAllowance(_from, _sender, _value)) {
+                if (_subBalance(_from, _value)) {
                     // do not refund
                 } else {
                     gasRefund30();
                 }
             } else {
-                if (balanceZero) {
+                if (_subBalance(_from, _value)) {
                     gasRefund30();
                 } else {
                     gasRefund45();
                 }
             }
         } else {
-            if (allowanceZero) {
-                if (balanceZero) {
+            if (_subAllowance(_from, _sender, _value)) {
+                if (_subBalance(_from, _value)) {
                     // do not refund
                 } else {
                     gasRefund15();
                 }
             } else {
-                if (balanceZero) {
+                if (_subBalance(_from, _value)) {
                     gasRefund15();
                 } else {
                     gasRefund30();
@@ -1021,32 +1017,30 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         bool hasHook;
-        address originalTo = _to;
-        (_to, hasHook) = _requireCanTransfer(_from, _to);
-        bool balanceZero = _subBalance(_from, _value);
-        bool balanceNew = _addBalance(_to, _value);
-        if (balanceZero) {
-            if (balanceNew) {
+        address finalTo;
+        (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+        if (_subBalance(_from, _value)) {
+            if (_addBalance(finalTo, _value)) {
                 gasRefund30();
             } else {
                 // do not refund
             }
         } else {
-            if (balanceNew) {
+            if (_addBalance(finalTo, _value)) {
                 gasRefund45();
             } else {
                 gasRefund30();
             }
         }
-        emit Transfer(_from, originalTo, _value);
-        if (originalTo != _to) {
-            emit Transfer(originalTo, _to, _value);
+        emit Transfer(_from, _to, _value);
+        if (finalTo != _to) {
+            emit Transfer(_to, finalTo, _value);
             if (hasHook) {
-                TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
+                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
             }
         } else {
             if (hasHook) {
-                TrueCoinReceiver(_to).tokenFallback(_from, _value);
+                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
             }
         }
     }
@@ -1113,12 +1107,12 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     function _requireCanTransfer(address _from, address _to) internal view returns (address, bool) {
-        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
         uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
         }
         require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
+        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
         return (_to, attributes[_to][IS_REGISTERED_CONTRACT] != 0);
     }
 
