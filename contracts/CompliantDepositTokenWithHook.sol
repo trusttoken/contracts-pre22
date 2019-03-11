@@ -122,16 +122,14 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransfer(_from, _to);
-        bool balanceZero = _subBalance(_from, _value);
-        bool balanceNew = _addBalance(_to, _value);
-        if (balanceZero) {
-            if (balanceNew) {
+        if (_subBalance(_from, _value)) {
+            if (_addBalance(_to, _value)) {
                 gasRefund30();
             } else {
                 // do not refund
             }
         } else {
-            if (balanceNew) {
+            if (_addBalance(_to, _value)) {
                 gasRefund45();
             } else {
                 gasRefund30();
