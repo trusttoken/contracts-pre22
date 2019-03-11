@@ -34,5 +34,13 @@
   "emptyToBurnWithRefund": 21666,
   "burnMicroDollarWithRefund": 29386,
   "reduceToBurnWithChangeWithRefund": 29418,
-  "emptyToBurnWithChangeWithRefund": 29418
+  "emptyToBurnWithChangeWithRefund": 29418,
+  "reduceApprovalReducingToBurn": 50359,
+  "emptyApprovalReducingToBurn": 35423,
+  "reduceApprovalEmptyingToBurn": 25058,
+  "emptyApprovalEmptyingToBurn": 25090,
+  "reduceApprovalReducingToBurnWithRefund": 35619,
+  "emptyApprovalReducingToBurnWithRefund": 32842,
+  "reduceApprovalEmptyingToBurnWithRefund": 25058,
+  "emptyApprovalEmptyingToBurnWithRefund": 25090
 }

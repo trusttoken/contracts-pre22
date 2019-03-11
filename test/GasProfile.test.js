@@ -155,6 +155,23 @@ contract('GasProfile', function (accounts) {
                 }
                 showRegressions(expectations);
             })
+            it('transferFrom burn', async function() {
+                await this.token.approve(anotherAccount, BN(50).mul(DOLLAR), { from: oneHundred })
+                const reduceApprovalReducingToBurn = await this.token.transferFrom(oneHundred, BURN_ADDRESS, DOLLAR, { from: anotherAccount, gasPrice: 1 });
+                const emptyApprovalReducingToBurn = await this.token.transferFrom(oneHundred, BURN_ADDRESS, BN(49).mul(DOLLAR), { from: anotherAccount, gasPrice: 1});
+                await this.token.approve(anotherAccount, BN(40).mul(DOLLAR), { from: oneHundred })
+                await this.token.transfer(anotherAccount, BN(10).mul(DOLLAR), { from: oneHundred, gasPrice: 1 })
+                const emptyApprovalEmptyingToBurn = await this.token.transferFrom(oneHundred, BURN_ADDRESS, BN(40).mul(DOLLAR), { from: anotherAccount, gasPrice: 1})
+                await this.token.approve(oneHundred, BN(50).mul(DOLLAR), { from: anotherAccount })
+                const reduceApprovalEmptyingToBurn = await this.token.transferFrom(anotherAccount, BURN_ADDRESS, BN(10).mul(DOLLAR), { from: oneHundred, gasPrice: 1 })
+                const expectations = {
+                    reduceApprovalReducingToBurn: { actual: reduceApprovalReducingToBurn.receipt.gasUsed },
+                    emptyApprovalReducingToBurn: { actual: emptyApprovalReducingToBurn.receipt.gasUsed },
+                    reduceApprovalEmptyingToBurn: { actual: reduceApprovalEmptyingToBurn.receipt.gasUsed },
+                    emptyApprovalEmptyingToBurn: { actual: emptyApprovalEmptyingToBurn.receipt.gasUsed },
+                }
+                showRegressions(expectations);
+            })
         })
         describe('with refund', function() {
             beforeEach(async function() {
@@ -223,6 +240,23 @@ contract('GasProfile', function (accounts) {
                     burnMicroDollarWithRefund: { actual: burnMicroDollarWithRefund.receipt.gasUsed },
                     reduceToBurnWithChangeWithRefund: { actual: reduceToBurnWithChangeWithRefund.receipt.gasUsed },
                     emptyToBurnWithChangeWithRefund: { actual: emptyToBurnWithChangeWithRefund.receipt.gasUsed },
+                }
+                showRegressions(expectations);
+            })
+            it('transferFrom burn', async function() {
+                await this.token.approve(anotherAccount, BN(50).mul(DOLLAR), { from: oneHundred })
+                const reduceApprovalReducingToBurnWithRefund = await this.token.transferFrom(oneHundred, BURN_ADDRESS, DOLLAR, { from: anotherAccount, gasPrice: 2 });
+                const emptyApprovalReducingToBurnWithRefund = await this.token.transferFrom(oneHundred, BURN_ADDRESS, BN(49).mul(DOLLAR), { from: anotherAccount, gasPrice: 2});
+                await this.token.approve(anotherAccount, BN(40).mul(DOLLAR), { from: oneHundred })
+                await this.token.transfer(anotherAccount, BN(10).mul(DOLLAR), { from: oneHundred, gasPrice: 1 })
+                const emptyApprovalEmptyingToBurnWithRefund = await this.token.transferFrom(oneHundred, BURN_ADDRESS, BN(40).mul(DOLLAR), { from: anotherAccount, gasPrice: 2})
+                await this.token.approve(oneHundred, BN(50).mul(DOLLAR), { from: anotherAccount })
+                const reduceApprovalEmptyingToBurnWithRefund = await this.token.transferFrom(anotherAccount, BURN_ADDRESS, BN(10).mul(DOLLAR), { from: oneHundred, gasPrice: 2 })
+                const expectations = {
+                    reduceApprovalReducingToBurnWithRefund: { actual: reduceApprovalReducingToBurnWithRefund.receipt.gasUsed },
+                    emptyApprovalReducingToBurnWithRefund: { actual: emptyApprovalReducingToBurnWithRefund.receipt.gasUsed },
+                    reduceApprovalEmptyingToBurnWithRefund: { actual: reduceApprovalEmptyingToBurnWithRefund.receipt.gasUsed },
+                    emptyApprovalEmptyingToBurnWithRefund: { actual: emptyApprovalEmptyingToBurnWithRefund.receipt.gasUsed },
                 }
                 showRegressions(expectations);
             })
