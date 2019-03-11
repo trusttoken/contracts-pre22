@@ -1,5 +1,5 @@
 import assertRevert from './helpers/assertRevert'
-const Registry = artifacts.require('Registry')
+const Registry = artifacts.require('RegistryMock')
 
 function hasRegistryTests([owner, oneHundred, anotherAccount]) {
     describe('--HasRegistry Tests--', function () {
@@ -13,7 +13,7 @@ function hasRegistryTests([owner, oneHundred, anotherAccount]) {
             it('sets the registry', async function () {
                 await this.token.setRegistry(registry2.address, { from: owner })
 
-                let registry = await this.token.registry()
+                let registry = await this.token.registry.call()
                 assert.equal(registry, registry2.address)
             })
 

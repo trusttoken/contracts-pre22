@@ -1,13 +1,13 @@
 pragma solidity ^0.4.23;
 
-import "./modularERC20/ModularPausableToken.sol";
+import "./modularERC20/ModularBurnableToken.sol";
 
 /**
  * @title Burnable Token WithBounds
  * @dev Burning functions as redeeming money from the system. The platform will keep track of who burns coins,
  * and will send them back the equivalent amount of money (rounded down to the nearest cent).
  */
-contract BurnableTokenWithBounds is ModularPausableToken {
+contract BurnableTokenWithBounds is ModularBurnableToken {
 
     event SetBurnBounds(uint256 newMin, uint256 newMax);
 

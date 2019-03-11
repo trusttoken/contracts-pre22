@@ -1,13 +1,10 @@
 pragma solidity ^0.4.23;
 
-import "./modularERC20/ModularPausableToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./BurnableTokenWithBounds.sol";
-import "./CompliantToken.sol";
+import "./CompliantDepositTokenWithHook.sol";
 import "./RedeemableToken.sol";
-import "./DepositToken.sol";
 import "./GasRefundToken.sol";
-import "./TokenWithHook.sol";
 import "./DelegateERC20.sol";
 
 /** @title TrueUSD
@@ -15,38 +12,24 @@ import "./DelegateERC20.sol";
 * inherited - see the documentation on the corresponding contracts.
 */
 contract TrueUSD is 
-ModularPausableToken, 
+CompliantDepositTokenWithHook,
 BurnableTokenWithBounds, 
-CompliantToken,
 RedeemableToken,
-TokenWithHook,
 DelegateERC20,
-DepositToken,
 GasRefundToken {
     using SafeMath for *;
 
-    uint8 public constant DECIMALS = 18;
-    uint8 public constant ROUNDING = 2;
+    uint8 constant DECIMALS = 18;
+    uint8 constant ROUNDING = 2;
 
     event ChangeTokenName(string newName, string newSymbol);
 
-    /**  
-    *@dev set the totalSupply of the contract for delegation purposes
-    Can only be set once.
-    */
-    function initialize() public {
-        require(!initialized, "already initialized");
-        initialized = true;
-        owner = msg.sender;
-        burnMin = 10000 * 10**uint256(DECIMALS);
-        burnMax = 20000000 * 10**uint256(DECIMALS);
-        name = "TrueUSD";
-        symbol = "TUSD";
+    function decimals() public pure returns (uint8) {
+        return DECIMALS;
     }
 
-    function setTotalSupply(uint _totalSupply) public onlyOwner {
-        require(totalSupply_ == 0);
-        totalSupply_ = _totalSupply;
+    function rounding() public pure returns (uint8) {
+        return ROUNDING;
     }
 
     function changeTokenName(string _name, string _symbol) external onlyOwner {
@@ -69,6 +52,10 @@ GasRefundToken {
     function reclaimToken(ERC20 token, address _to) external onlyOwner {
         uint256 balance = token.balanceOf(this);
         token.transfer(_to, balance);
+    }
+
+    function paused() public pure returns (bool) {
+        return false;
     }
 
     /**  

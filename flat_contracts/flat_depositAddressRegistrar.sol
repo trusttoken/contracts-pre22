@@ -1,5 +1,7 @@
 pragma solidity ^0.4.23;
 
+// File: contracts/utilities/DepositAddressRegistrar.sol
+
 interface Registry {
     function setAttributeValue(address who, bytes32 what, uint val) external;
     function hasAttribute(address _who, bytes32 _attribute) external view returns(bool);
@@ -27,4 +29,3 @@ contract DepositAddressRegistrar {
         msg.sender.transfer(msg.value);
     }
 }
-

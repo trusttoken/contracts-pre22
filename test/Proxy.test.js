@@ -2,7 +2,7 @@ import assertRevert from './helpers/assertRevert'
 import expectThrow from './helpers/expectThrow'
 import { on } from 'cluster';
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
-const TrueUSD = artifacts.require("TrueUSD")
+const TrueUSD = artifacts.require("TrueUSDMock")
 
 contract('Proxy', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
@@ -14,22 +14,22 @@ contract('Proxy', function (accounts) {
         })
 
         it('owner is the owner of the proxy', async function(){
-            const proxyOwner = await this.proxy.proxyOwner()
+            const proxyOwner = await this.proxy.proxyOwner.call()
             assert.equal(proxyOwner, owner)
         })
 
         it('owner can transfer proxy ownership ', async function(){
-            let pendingOwner = await this.proxy.pendingProxyOwner()
+            let pendingOwner = await this.proxy.pendingProxyOwner.call()
             assert.equal(pendingOwner, ZERO_ADDRESS)
             await this.proxy.transferProxyOwnership(oneHundred, {from: owner})
-            pendingOwner = await this.proxy.pendingProxyOwner()
+            pendingOwner = await this.proxy.pendingProxyOwner.call()
             assert.equal(pendingOwner, oneHundred)
         })
 
         it('pending owner can claim ownership ', async function(){
             await this.proxy.transferProxyOwnership(oneHundred, {from: owner})
             await this.proxy.claimProxyOwnership({from: oneHundred})
-            const proxyOwner = await this.proxy.proxyOwner()
+            const proxyOwner = await this.proxy.proxyOwner.call()
             assert.equal(proxyOwner, oneHundred)
         })
 
@@ -55,7 +55,7 @@ contract('Proxy', function (accounts) {
 
         it('sets up implementation contract ', async function(){
             await this.proxy.upgradeTo(oneHundred, {from: owner})
-            const implementation = await this.proxy.implementation()
+            const implementation = await this.proxy.implementation.call()
             assert.equal(implementation, oneHundred)    
         })
 
@@ -69,7 +69,7 @@ contract('Proxy', function (accounts) {
         })
 
         it('fallback function fails when implementation not set', async function(){
-            await assertRevert(this.token.totalSupply())
+            await assertRevert(this.token.totalSupply.call())
         })
     })
 

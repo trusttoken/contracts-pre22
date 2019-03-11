@@ -1,8 +1,11 @@
 import assertRevert from '../helpers/assertRevert'
+import assertBalance from '../helpers/assertBalance'
+
+const BN = web3.utils.toBN;
 
 function mintableTokenTests([owner, oneHundred, anotherAccount]) {
     describe('-MintableToken Tests-', function () {
-        const amount = 100*10**18
+        const amount = BN(100*10**18)
 
         describe('when the sender is the token owner', function () {
             const from = owner
@@ -11,8 +14,7 @@ function mintableTokenTests([owner, oneHundred, anotherAccount]) {
             it('mints the requested amount', async function () {
                 await this.token.mint(anotherAccount, amount, { from })
 
-                const balance = await this.token.balanceOf(anotherAccount)
-                assert.equal(balance, amount)
+                await assertBalance(this.token, anotherAccount, amount);
             })
 
             it('cannot mint to 0x0', async function () {
@@ -25,7 +27,7 @@ function mintableTokenTests([owner, oneHundred, anotherAccount]) {
                 assert.equal(logs.length, 2)
                 assert.equal(logs[0].event, 'Mint')
                 assert.equal(logs[0].args.to, anotherAccount)
-                assert.equal(logs[0].args.value, amount)
+                assert(logs[0].args.value.eq(amount))
                 assert.equal(logs[1].event, 'Transfer')
             })
         })

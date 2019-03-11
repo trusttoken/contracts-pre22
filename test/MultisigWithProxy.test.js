@@ -3,17 +3,20 @@ import expectThrow from './helpers/expectThrow'
 import assertBalance from './helpers/assertBalance'
 import increaseTime, { duration } from './helpers/increaseTime'
 import { throws } from 'assert'
-const Registry = artifacts.require("Registry")
-const TrueUSD = artifacts.require("TrueUSD")
+const Registry = artifacts.require("RegistryMock")
+const TrueUSD = artifacts.require("TrueUSDMock")
 const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const TokenController = artifacts.require("TokenController")
 const MultisigOwner = artifacts.require("MultisigOwner")
-const GlobalPause = artifacts.require("GlobalPause")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
+
+const bytes32 = require('./helpers/bytes32.js')
+const BN = web3.utils.toBN;
 
 contract('MultisigOwner With Proxy', function (accounts) {
     const [_, owner1, owner2, owner3 , oneHundred, blackListed, mintKey, pauseKey, approver] = accounts
+    const notes = bytes32("notes");
     
     beforeEach(async function () {
         this.multisigProxy = await Proxy.new({ from: owner1 })
@@ -28,7 +31,6 @@ contract('MultisigOwner With Proxy', function (accounts) {
         await this.multisigOwner.msClaimProxyOwnership({from: owner2})
 
         this.registry = await Registry.new({ from: owner1 })
-        this.globalPause = await GlobalPause.new({ from: owner1 })
 
         this.controllerImplementation = await TokenController.new({ from: owner1 })
         this.controllerProxy = await Proxy.new({ from: owner1 })
@@ -46,7 +48,7 @@ contract('MultisigOwner With Proxy', function (accounts) {
         await this.multisigOwner.initialize({from : owner1 })
         await this.multisigOwner.initialize({from : owner2 })
         this.tokenProxy = await Proxy.new({ from: owner1 })
-        this.tokenImplementation = await TrueUSD.new({ from: owner1 })
+        this.tokenImplementation = await TrueUSD.new(owner1, 0, { from: owner1 })
         this.token = await TrueUSD.at(this.tokenProxy.address)
 
         await this.multisigOwner.setTrueUSD(this.token.address, {from : owner1 })
@@ -67,15 +69,13 @@ contract('MultisigOwner With Proxy', function (accounts) {
         await this.multisigOwner.transferMintKey(mintKey, { from: owner2 })
         await this.multisigOwner.setRegistry(this.registry.address, { from: owner1 })
         await this.multisigOwner.setRegistry(this.registry.address, { from: owner2 })
-        await this.multisigOwner.setGlobalPause(this.globalPause.address, { from: owner1 })
-        await this.multisigOwner.setGlobalPause(this.globalPause.address, { from: owner2 })
         await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner1 })
         await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner2 })
-        await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner1 })
-        await this.registry.setAttribute(oneHundred, "canBurn", 1, "notes", { from: owner1 })
-        await this.registry.setAttribute(oneHundred, "hasPassedKYC/AML", 1, "notes", { from: owner1 })
-        await this.registry.setAttribute(approver, "isTUSDMintApprover", 1, "notes", { from: owner1 })
-        await this.registry.setAttribute(pauseKey, "isTUSDMintPausers", 1, "notes", { from: owner1 })
+        await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner1 })
+        await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner1 })
+        await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner1 })
+        await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, notes, { from: owner1 })
+        await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner1 })
         this.balanceSheet = await BalanceSheet.new({ from: owner1 })
         this.allowanceSheet = await AllowanceSheet.new({ from: owner1 })
         await this.balanceSheet.transferOwnership(this.token.address,{ from: owner1 })
@@ -88,14 +88,14 @@ contract('MultisigOwner With Proxy', function (accounts) {
             this.balanceSheet.address,
             this.allowanceSheet.address, 
             { from: owner2 })
-        await this.multisigOwner.requestMint(oneHundred, 10*10**18,  {from: owner1})
-        await this.multisigOwner.requestMint(oneHundred, 10*10**18, {from: owner2})
-        await this.multisigOwner.ratifyMint(0,oneHundred, 10*10**18, {from: owner1})
-        await this.multisigOwner.ratifyMint(0,oneHundred, 10*10**18, {from: owner2})
+        await this.multisigOwner.requestMint(oneHundred, BN(10*10**18),  {from: owner1})
+        await this.multisigOwner.requestMint(oneHundred, BN(10*10**18), {from: owner2})
+        await this.multisigOwner.ratifyMint(0,oneHundred, BN(10*10**18), {from: owner1})
+        await this.multisigOwner.ratifyMint(0,oneHundred, BN(10*10**18), {from: owner2})
     })
 
     it('multisg proxy owns itself', async function(){
-        const proxyOwner = await this.multisigProxy.proxyOwner()
+        const proxyOwner = await this.multisigProxy.proxyOwner.call()
         assert.equal(proxyOwner,this.multisigProxy.address)
     })
 
@@ -103,7 +103,7 @@ contract('MultisigOwner With Proxy', function (accounts) {
         this.newMultisigImplementation = await MultisigOwner.new({ from: owner1 })
         await this.multisigOwner.msUpgradeImplementation(this.newMultisigImplementation.address,{from: owner1})
         await this.multisigOwner.msUpgradeImplementation(this.newMultisigImplementation.address,{from: owner2})
-        const newImplementation = await this.multisigProxy.implementation()
+        const newImplementation = await this.multisigProxy.implementation.call()
         assert.equal(newImplementation,this.newMultisigImplementation.address)
     })
 
@@ -111,7 +111,7 @@ contract('MultisigOwner With Proxy', function (accounts) {
         await this.multisigOwner.msTransferProxyOwnership(owner2,{from: owner1})
         await this.multisigOwner.msTransferProxyOwnership(owner2,{from: owner2})
         await this.multisigProxy.claimProxyOwnership({from: owner2})
-        const newProxyOwner = await this.multisigProxy.proxyOwner()
+        const newProxyOwner = await this.multisigProxy.proxyOwner.call()
         assert.equal(newProxyOwner,owner2)
     })
 

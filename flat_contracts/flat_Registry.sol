@@ -37,9 +37,10 @@ contract Registry {
         uint256 timestamp;
     }
     
+    // never remove any storage variables
     address public owner;
     address public pendingOwner;
-    bool public initialized;
+    bool initialized;
 
     // Stores arbitrary attributes for users. An example use case is an ERC20
     // token that requires its users to go through a KYC/AML check - in this case
@@ -52,6 +53,11 @@ contract Registry {
     // this accessManager, so that it may be replaced by the owner as needed
 
     bytes32 public constant WRITE_PERMISSION = keccak256("canWriteTo-");
+    bytes32 public constant IS_BLACKLISTED = "isBlacklisted";
+    bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
+    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
+    bytes32 public constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
+    bytes32 public constant CAN_BURN = "canBurn";
 
     event OwnershipTransferred(
         address indexed previousOwner,
@@ -59,13 +65,6 @@ contract Registry {
     );
     event SetAttribute(address indexed who, bytes32 attribute, uint256 value, bytes32 notes, address indexed adminAddr);
     event SetManager(address indexed oldManager, address indexed newManager);
-
-
-    function initialize() public {
-        require(!initialized, "already initialized");
-        owner = msg.sender;
-        initialized = true;
-    }
 
     function writeAttributeFor(bytes32 _attribute) public pure returns (bytes32) {
         return keccak256(WRITE_PERMISSION ^ _attribute);
@@ -124,6 +123,44 @@ contract Registry {
         return attributes[_who1][_attribute1].value != 0 || attributes[_who2][_attribute2].value != 0;
     }
 
+    function isDepositAddress(address _who) public view returns (bool) {
+        return attributes[address(uint256(_who) >> 20)][IS_DEPOSIT_ADDRESS].value != 0;
+    }
+
+    function getDepositAddress(address _who) public view returns (address) {
+        return address(attributes[address(uint256(_who) >> 20)][IS_DEPOSIT_ADDRESS].value);
+    }
+
+    function requireCanTransfer(address _from, address _to) public view returns (address, bool) {
+        require (attributes[_from][IS_BLACKLISTED].value == 0, "blacklisted");
+        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
+        if (depositAddressValue != 0) {
+            _to = address(depositAddressValue);
+        }
+        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
+        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
+    }
+
+    function requireCanTransferFrom(address _sender, address _from, address _to) public view returns (address, bool) {
+        require (attributes[_sender][IS_BLACKLISTED].value == 0, "blacklisted");
+        return requireCanTransfer(_from, _to);
+    }
+
+    function requireCanMint(address _to) public view returns (address, bool) {
+        require (attributes[_to][HAS_PASSED_KYC_AML].value != 0);
+        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
+        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
+        if (depositAddressValue != 0) {
+            _to = address(depositAddressValue);
+        }
+        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
+    }
+
+    function requireCanBurn(address _from) public view {
+        require (attributes[_from][CAN_BURN].value != 0);
+        require (attributes[_from][IS_BLACKLISTED].value == 0);
+    }
+
     // Returns the exact value of the attribute, as well as its metadata
     function getAttribute(address _who, bytes32 _attribute) public view returns (uint256, bytes32, address, uint256) {
         AttributeData memory data = attributes[_who][_attribute];
@@ -149,15 +186,6 @@ contract Registry {
     function reclaimToken(ERC20 token, address _to) external onlyOwner {
         uint256 balance = token.balanceOf(this);
         token.transfer(_to, balance);
-    }
-
-    /**
-    * @dev sets the original `owner` of the contract to the sender
-    * at construction. Must then be reinitialized 
-    */
-    constructor() public {
-        owner = msg.sender;
-        emit OwnershipTransferred(address(0), owner);
     }
 
     /**
