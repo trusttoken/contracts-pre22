@@ -206,12 +206,12 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     function _requireCanTransfer(address _from, address _to) internal view returns (address, bool) {
-        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
         uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
         }
         require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
+        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
         return (_to, attributes[_to][IS_REGISTERED_CONTRACT] != 0);
     }
 
