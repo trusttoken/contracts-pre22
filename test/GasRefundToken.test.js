@@ -14,6 +14,7 @@ contract('GasRefundToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     const notes = bytes32("some notes")
     const FIFTY = BN(50*10**18);
+    const SET_FUTURE_GAS_PRICE = bytes32("canSetFutureRefundMinGasPrice")
 
     describe('--Gas Refund Token--', function () {
         beforeEach(async function () {
@@ -28,7 +29,7 @@ contract('GasRefundToken', function (accounts) {
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
             await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
-            await this.registry.setAttributeValue(oneHundred, bytes32("canSetFutureRefundMinGasPrice"), 1, { from: owner });
+            await this.registry.setAttributeValue(oneHundred, SET_FUTURE_GAS_PRICE, 1, { from: owner });
         })
 
         it('blocks others from setting the minimum refund gas price', async function() {

@@ -18,6 +18,7 @@ contract('ProvisionalTrueUSD', function (accounts) {
     const BLACKLISTED = bytes32("isBlacklisted")
     const CAN_BURN = bytes32("canBurn")
     const BURN_ADDRESS = web3.utils.toChecksumAddress('0x0000000000000000000000000000000000011111')
+	const SET_FUTURE_GAS_PRICE = bytes32("canSetFutureRefundMinGasPrice")
 
     beforeEach(async function() {
         this.registryProxy = await Proxy.new({ from: owner })
@@ -30,6 +31,7 @@ contract('ProvisionalTrueUSD', function (accounts) {
         this.provisionalRegistry = await ProvisionalRegistry.at(this.registryProxy.address)
 
         await this.provisionalRegistry.setAttributeValue(blacklisted, BLACKLISTED, BN(1), { from: owner })
+        await this.provisionalRegistry.setAttributeValue(anotherAccount, SET_FUTURE_GAS_PRICE, BN(1), { from: owner })
 
         this.tokenProxy = await Proxy.new({ from: owner })
         this.preMigrationTrueUSDImpl = await PreMigrationTrueUSDMock.new(oneHundred, 0)
@@ -40,6 +42,8 @@ contract('ProvisionalTrueUSD', function (accounts) {
         await this.preMigrationToken.mint(oneHundred, BN(100).mul(DOLLAR), { from: owner })
         await this.preMigrationToken.approve(anotherAccount, BN(50).mul(DOLLAR), { from: oneHundred });
         await this.preMigrationToken.setBurnBounds(BN(1), BN(100).mul(DOLLAR), { from: owner })
+        await this.preMigrationToken.setMinimumGasPriceForFutureRefunds(1000, { from: anotherAccount })
+        await this.preMigrationToken.sponsorGas()
         this.token = this.preMigrationToken;
     })
 
@@ -85,6 +89,11 @@ contract('ProvisionalTrueUSD', function (accounts) {
             })
             it('migrates balances manually', async function() {
                 await this.provisionalToken.migrateBalances([oneHundred])
+                const migratedBalance = await this.provisionalToken.migratedBalanceOf.call(oneHundred)
+                assert(BN(100).mul(DOLLAR).eq(migratedBalance), 'balance not migrated')
+            })
+            it('migrates balances manually with refund', async function() {
+                await this.provisionalToken.migrateBalances([oneHundred], {from: oneHundred, gasPrice: 1001})
                 const migratedBalance = await this.provisionalToken.migratedBalanceOf.call(oneHundred)
                 assert(BN(100).mul(DOLLAR).eq(migratedBalance), 'balance not migrated')
             })
