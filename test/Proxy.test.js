@@ -67,10 +67,6 @@ contract('Proxy', function (accounts) {
             await this.proxy.upgradeTo(oneHundred, {from: owner})
             await assertRevert(this.proxy.upgradeTo(oneHundred, {from: owner}))
         })
-
-        it('fallback function fails when implementation not set', async function(){
-            await assertRevert(this.token.totalSupply.call())
-        })
     })
 
     describe('Events', async function(){
