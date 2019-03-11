@@ -8,5 +8,7 @@ contract CompliantTokenMock is CompliantDepositTokenWithHook {
         allowances = new AllowanceSheet();
         balances.setBalance(initialAccount, initialBalance);
         totalSupply_ = initialBalance;
+        burnMin = 0;
+        burnMax = 1000000000 * 10 ** 18;
     }
 }

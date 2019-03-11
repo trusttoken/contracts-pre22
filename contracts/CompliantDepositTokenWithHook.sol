@@ -7,6 +7,7 @@ contract CompliantDepositTokenWithHook is CompliantToken {
 
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
+    uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
 
     /**
     * @dev transfer token for a specified address
@@ -14,7 +15,14 @@ contract CompliantDepositTokenWithHook is CompliantToken {
     * @param _value The amount to be transferred.
     */
     function transfer(address _to, uint256 _value) public returns (bool) {
-        _transferAllArgs(msg.sender, _to, _value);
+        address _from = msg.sender;
+        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
+            registry.requireCanTransfer(_from, _to);
+            _value -= _value % CENT;
+            _burnFromAllArgs(_from, _to, _value);
+        } else {
+            _transferAllArgs(_from, _to, _value);
+        }
         return true;
     }
 
@@ -25,8 +33,26 @@ contract CompliantDepositTokenWithHook is CompliantToken {
      * @param _value uint256 the amount of tokens to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        _transferFromAllArgs(_from, _to, _value, msg.sender);
+        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
+            registry.requireCanTransferFrom(msg.sender, _from, _to);
+            _value -= _value % CENT;
+            allowances.subAllowance(_from, msg.sender, _value);
+            _burnFromAllArgs(_from, _to, _value);
+        } else {
+            _transferFromAllArgs(_from, _to, _value, msg.sender);
+        }
         return true;
+    }
+
+    function _burnFromAllArgs(address _from, address _to, uint256 _value) internal {
+        registry.requireCanBurn(_to);
+        require(_value >= burnMin, "below min burn bound");
+        require(_value <= burnMax, "exceeds max burn bound");
+        balances.subBalance(_from, _value);
+        emit Transfer(_from, _to, _value);
+        totalSupply_ = totalSupply_.sub(_value);
+        emit Burn(_to, _value);
+        emit Transfer(_to, address(0), _value);
     }
 
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {

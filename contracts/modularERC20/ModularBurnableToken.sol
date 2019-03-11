@@ -9,22 +9,16 @@ import "./ModularStandardToken.sol";
 contract ModularBurnableToken is ModularStandardToken {
     event Burn(address indexed burner, uint256 value);
     event Mint(address indexed to, uint256 value);
+    uint256 constant CENT = 10 ** 16;
 
-    /**
-     * @dev Burns a specific amount of tokens.
-     * @param _value The amount of token to be burned.
-     */
-    function burn(uint256 _value) public {
-        _burnAllArgs(msg.sender, _value);
+    function burn(uint256 _value) external {
+        _burnAllArgs(msg.sender, _value - _value % CENT);
     }
 
-    function _burnAllArgs(address _burner, uint256 _value) internal {
-        // no need to require value <= totalSupply, since that would imply the
-        // sender's balance is greater than the totalSupply, which *should* be an assertion failure
-        /* uint burnAmount = _value / (10 **16) * (10 **16); */
-        balances.subBalance(_burner, _value);
+    function _burnAllArgs(address _from, uint256 _value) internal {
+        balances.subBalance(_from, _value);
         totalSupply_ = totalSupply_.sub(_value);
-        emit Burn(_burner, _value);
-        emit Transfer(_burner, address(0), _value);
+        emit Burn(_from, _value);
+        emit Transfer(_from, address(0), _value);
     }
 }

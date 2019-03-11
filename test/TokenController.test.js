@@ -485,21 +485,6 @@ contract('TokenController', function (accounts) {
             })
         })
 
-        describe('changeTokenName', function () {
-            it('sets the token name', async function () {
-                await this.controller.changeTokenName("FooCoin", "FCN", { from: owner })
-
-                const name = await this.token.name.call()
-                assert.equal(name, "FooCoin")
-                const symbol = await this.token.symbol.call()
-                assert.equal(symbol, "FCN")
-            })
-
-            it('cannot be called by non-owner', async function () {
-                await assertRevert(this.controller.changeTokenName("FooCoin", "FCN", { from: otherAddress }))
-            })
-        })
-
         describe('setBurnBounds', function () {
             it('sets burnBounds', async function () {
                 await this.controller.setBurnBounds(BN(3*10**18), BN(4*10**18), { from: owner })

@@ -127,7 +127,6 @@ contract PausedTrueUSD is PausedDelegateERC20 {
     bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
 
 
-    event ChangeTokenName(string newName, string newSymbol);
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
     event SetRegistry(address indexed registry);
     event RedemptionAddress(address indexed addr);
@@ -138,12 +137,6 @@ contract PausedTrueUSD is PausedDelegateERC20 {
 
     function rounding() public pure returns (uint8) {
         return ROUNDING;
-    }
-
-    function changeTokenName(string _name, string _symbol) external onlyOwner {
-        name = _name;
-        symbol = _symbol;
-        emit ChangeTokenName(_name, _symbol);
     }
 
     function setRegistry(Registry _registry) public onlyOwner {
@@ -202,5 +195,13 @@ contract PausedTrueUSD is PausedDelegateERC20 {
     */
     function reclaimContract(Ownable _ownable) external onlyOwner {
         _ownable.transferOwnership(owner);
+    }
+
+    function name() public pure returns (string) {
+        return "TrueUSD";
+    }
+
+    function symbol() public pure returns (string) {
+        return "TUSD";
     }
 }

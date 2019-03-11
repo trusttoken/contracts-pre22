@@ -3,7 +3,6 @@ pragma solidity ^0.4.23;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./BurnableTokenWithBounds.sol";
 import "./CompliantDepositTokenWithHook.sol";
-import "./RedeemableToken.sol";
 import "./GasRefundToken.sol";
 import "./DelegateERC20.sol";
 
@@ -14,15 +13,12 @@ import "./DelegateERC20.sol";
 contract TrueUSD is 
 CompliantDepositTokenWithHook,
 BurnableTokenWithBounds, 
-RedeemableToken,
 DelegateERC20,
 GasRefundToken {
     using SafeMath for *;
 
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
-
-    event ChangeTokenName(string newName, string newSymbol);
 
     function decimals() public pure returns (uint8) {
         return DECIMALS;
@@ -32,10 +28,12 @@ GasRefundToken {
         return ROUNDING;
     }
 
-    function changeTokenName(string _name, string _symbol) external onlyOwner {
-        name = _name;
-        symbol = _symbol;
-        emit ChangeTokenName(_name, _symbol);
+    function name() public pure returns (string) {
+        return "TrueUSD";
+    }
+
+    function symbol() public pure returns (string) {
+        return "TUSD";
     }
 
     /**  
@@ -65,9 +63,4 @@ GasRefundToken {
         _ownable.transferOwnership(owner);
     }
 
-    function _burnAllArgs(address _burner, uint256 _value) internal {
-        //round down burn amount so that the lowest amount allowed is 1 cent
-        uint burnAmount = _value.div(10 ** uint256(DECIMALS - ROUNDING)).mul(10 ** uint256(DECIMALS - ROUNDING));
-        super._burnAllArgs(_burner, burnAmount);
-    }
 }

@@ -143,6 +143,14 @@ contract('PausedTrueUSD', function (accounts) {
                     const rounding = await this.token.rounding.call()
                     assert.equal(rounding,2)
                 })
+                it('Name', async function(){
+                    const name = await this.token.name.call()
+                    assert.equal(name,"TrueUSD")
+                })
+                it('Symbol', async function(){
+                    const symbol = await this.token.symbol.call()
+                    assert.equal(symbol,"TUSD")
+                })
             })
 
             describe('admin functions still functioning', function(){
@@ -151,7 +159,6 @@ contract('PausedTrueUSD', function (accounts) {
                     assert(BN(await this.token.remainingGasRefundPool.call()).eq(BN(9)))
                     await this.controller.setTusdRegistry('0x0000000000000000000000000000000000000003',{from: owner})
                     assert.equal(await this.token.registry.call(), '0x0000000000000000000000000000000000000003')
-                    await this.controller.changeTokenName("TerryToken","TTT", {from: owner})
                 })
 
                 it('can still wipe blacklisted account', async function(){
