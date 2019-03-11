@@ -24,7 +24,6 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     function transfer(address _to, uint256 _value) public returns (bool) {
         address _from = msg.sender;
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
-            _requireCanTransfer(_from, _to);
             _value -= _value % CENT;
             _burnFromAllArgs(_from, _to, _value);
         } else {
@@ -41,17 +40,35 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
-            _requireCanTransferFrom(msg.sender, _from, _to);
             _value -= _value % CENT;
-            _subAllowance(_from, msg.sender, _value);
-            _burnFromAllArgs(_from, _to, _value);
+            _burnFromAllowanceAllArgs(_from, _to, _value);
         } else {
             _transferFromAllArgs(_from, _to, _value, msg.sender);
         }
         return true;
     }
 
+    function _burnFromAllowanceAllArgs(address _from, address _to, uint256 _value) internal {
+        _requireCanTransferFrom(msg.sender, _from, _to);
+        _requireCanBurn(_to);
+        require(_value >= burnMin, "below min burn bound");
+        require(_value <= burnMax, "exceeds max burn bound");
+        if (_subBalance(_from, _value)) {
+            // no refund
+            _subAllowance(_from, msg.sender, _value);
+        } else if (_subAllowance(_from, msg.sender, _value)) {
+            gasRefund15();
+        } else {
+            gasRefund30();
+        }
+        emit Transfer(_from, _to, _value);
+        totalSupply_ = totalSupply_.sub(_value);
+        emit Burn(_to, _value);
+        emit Transfer(_to, address(0), _value);
+    }
+
     function _burnFromAllArgs(address _from, address _to, uint256 _value) internal {
+        _requireCanTransfer(_from, _to);
         _requireCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
