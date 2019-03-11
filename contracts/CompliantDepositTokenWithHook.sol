@@ -54,13 +54,16 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
         if (_subBalance(_from, _value)) {
-            // no refund
-            _subAllowance(_from, msg.sender, _value);
+            if (_subAllowance(_from, msg.sender, _value)) {
+                // no refund
+            } else {
+                gasRefund15();
+            }
         } else {
             if (_subAllowance(_from, msg.sender, _value)) {
                 gasRefund15();
             } else {
-                gasRefund30();
+                gasRefund45();
             }
         }
         emit Transfer(_from, _to, _value);
@@ -76,7 +79,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         require(_value <= burnMax, "exceeds max burn bound");
         bool balanceZero = _subBalance(_from, _value);
         if (balanceZero) {
-            // no refund
+            gasRefund15();
         } else {
             gasRefund30();
         }
