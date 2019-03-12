@@ -250,7 +250,7 @@ contract Claimable is Ownable {
    * @dev Modifier throws if called by any account other than the pendingOwner.
    */
   modifier onlyPendingOwner() {
-    require(msg.sender == pendingOwner, "not pending owner");
+    require(msg.sender == pendingOwner);
     _;
   }
 
@@ -288,7 +288,7 @@ library SafeMath {
       return 0;
     }
     c = a * b;
-    require(c / a == b, "mul overflow");
+    assert(c / a == b);
     return c;
   }
 
@@ -306,7 +306,7 @@ library SafeMath {
   * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
   */
   function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-    require(b <= a, "sub underflow");
+    assert(b <= a);
     return a - b;
   }
 
@@ -315,7 +315,7 @@ library SafeMath {
   */
   function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
     c = a + b;
-    require(c >= a, "add overflow");
+    assert(c >= a);
     return c;
   }
 }
