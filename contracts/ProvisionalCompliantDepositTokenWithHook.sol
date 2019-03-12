@@ -1,10 +1,11 @@
 pragma solidity ^0.4.23;
 
 import "./CompliantDepositTokenWithHook.sol";
+import "./DeprecatedGasRefundPool.sol";
 import "../registry/contracts/ProvisionalRegistry.sol";
 
 // Supports balance and allowance migration at great cost
-contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHook {
+contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHook, DeprecatedGasRefundPool {
     function _isBlacklisted(address _account) internal view returns (bool) {
         return registry.hasAttribute(_account, IS_BLACKLISTED);
     }
@@ -43,14 +44,6 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
     function _setBalance(address _who, uint256 _value) internal {
         balances.setBalance(_who, _value);
         _balanceOf[_who] = _value;
-    }
-
-    modifier retroGasRefund45 {
-        _;
-        uint256 len = gasRefundPool_Deprecated.length;
-        if (len > 2 && tx.gasprice > gasRefundPool_Deprecated[len-1]) {
-            gasRefundPool_Deprecated.length = len - 3;
-        }
     }
 
     function migrateBalances(address[] holders) external retroGasRefund45 {
