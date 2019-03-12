@@ -1,8 +1,6 @@
+pragma solidity ^0.4.23;
 
 // File: openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol
-
-pragma solidity ^0.4.21;
-
 
 /**
  * @title ERC20Basic
@@ -18,10 +16,6 @@ contract ERC20Basic {
 
 // File: openzeppelin-solidity/contracts/token/ERC20/ERC20.sol
 
-pragma solidity ^0.4.21;
-
-
-
 /**
  * @title ERC20 interface
  * @dev see https://github.com/ethereum/EIPs/issues/20
@@ -34,9 +28,6 @@ contract ERC20 is ERC20Basic {
 }
 
 // File: registry/contracts/Registry.sol
-
-pragma solidity ^0.4.23;
-
 
 interface RegistryClone {
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
@@ -204,9 +195,6 @@ contract Registry {
 }
 
 // File: registry/contracts/ProvisionalRegistry.sol
-
-pragma solidity ^0.4.23;
-
 
 contract ProvisionalRegistry is Registry {
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";

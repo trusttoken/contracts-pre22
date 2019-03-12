@@ -1,7 +1,6 @@
+pragma solidity ^0.4.23;
 
 // File: contracts/utilities/DepositAddressRegistrar.sol
-
-pragma solidity ^0.4.23;
 
 interface Registry {
     function setAttributeValue(address who, bytes32 what, uint val) external;

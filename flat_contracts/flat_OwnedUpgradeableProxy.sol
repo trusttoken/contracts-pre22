@@ -1,7 +1,6 @@
+pragma solidity ^0.4.23;
 
 // File: contracts/Proxy/Proxy.sol
-
-pragma solidity ^0.4.23;
 
 /**
  * @title Proxy
@@ -37,9 +36,6 @@ contract Proxy {
 }
 
 // File: contracts/Proxy/UpgradeabilityProxy.sol
-
-pragma solidity ^0.4.23;
-
 
 /**
  * @title UpgradeabilityProxy
@@ -90,9 +86,6 @@ contract UpgradeabilityProxy is Proxy {
 }
 
 // File: contracts/Proxy/OwnedUpgradeabilityProxy.sol
-
-pragma solidity ^0.4.23;
-
 
 /**
  * @title OwnedUpgradeabilityProxy

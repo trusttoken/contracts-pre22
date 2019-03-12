@@ -1,16 +1,12 @@
+pragma solidity ^0.4.23;
 
 // File: contracts/TrueCoinReceiver.sol
-
-pragma solidity ^0.4.23;
 
 contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
 }
 
 // File: openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol
-
-pragma solidity ^0.4.21;
-
 
 /**
  * @title ERC20Basic
@@ -26,10 +22,6 @@ contract ERC20Basic {
 
 // File: openzeppelin-solidity/contracts/token/ERC20/ERC20.sol
 
-pragma solidity ^0.4.21;
-
-
-
 /**
  * @title ERC20 interface
  * @dev see https://github.com/ethereum/EIPs/issues/20
@@ -42,9 +34,6 @@ contract ERC20 is ERC20Basic {
 }
 
 // File: registry/contracts/Registry.sol
-
-pragma solidity ^0.4.23;
-
 
 interface RegistryClone {
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
@@ -213,9 +202,6 @@ contract Registry {
 
 // File: openzeppelin-solidity/contracts/ownership/Ownable.sol
 
-pragma solidity ^0.4.21;
-
-
 /**
  * @title Ownable
  * @dev The Ownable contract has an owner address, and provides basic authorization control
@@ -258,10 +244,6 @@ contract Ownable {
 
 // File: openzeppelin-solidity/contracts/ownership/Claimable.sol
 
-pragma solidity ^0.4.21;
-
-
-
 /**
  * @title Claimable
  * @dev Extension for the Ownable contract, where the ownership needs to be claimed.
@@ -274,7 +256,7 @@ contract Claimable is Ownable {
    * @dev Modifier throws if called by any account other than the pendingOwner.
    */
   modifier onlyPendingOwner() {
-    require(msg.sender == pendingOwner);
+    require(msg.sender == pendingOwner, "not pending owner");
     _;
   }
 
@@ -298,9 +280,6 @@ contract Claimable is Ownable {
 
 // File: openzeppelin-solidity/contracts/math/SafeMath.sol
 
-pragma solidity ^0.4.21;
-
-
 /**
  * @title SafeMath
  * @dev Math operations with safety checks that throw on error
@@ -315,7 +294,7 @@ library SafeMath {
       return 0;
     }
     c = a * b;
-    assert(c / a == b);
+    require(c / a == b, "mul overflow");
     return c;
   }
 
@@ -333,7 +312,7 @@ library SafeMath {
   * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
   */
   function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-    assert(b <= a);
+    require(b <= a, "sub underflow");
     return a - b;
   }
 
@@ -342,16 +321,12 @@ library SafeMath {
   */
   function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
     c = a + b;
-    assert(c >= a);
+    require(c >= a, "add overflow");
     return c;
   }
 }
 
 // File: contracts/modularERC20/BalanceSheet.sol
-
-pragma solidity ^0.4.18;
-
-
 
 // A wrapper around the balanceOf mapping.
 contract BalanceSheet is Claimable {
@@ -374,10 +349,6 @@ contract BalanceSheet is Claimable {
 
 // File: contracts/modularERC20/AllowanceSheet.sol
 
-pragma solidity ^0.4.18;
-
-
-
 // A wrapper around the allowanceOf mapping.
 contract AllowanceSheet is Claimable {
     using SafeMath for uint256;
@@ -398,11 +369,6 @@ contract AllowanceSheet is Claimable {
 }
 
 // File: contracts/ProxyStorage.sol
-
-pragma solidity ^0.4.23;
-
-
-
 
 /*
 Defines the storage layout of the implementaiton (TrueUSD) contract. Any newly declared 
@@ -441,9 +407,6 @@ contract ProxyStorage {
 }
 
 // File: contracts/HasOwner.sol
-
-pragma solidity ^0.4.23;
-
 
 /**
  * @title HasOwner
@@ -501,11 +464,35 @@ contract HasOwner is ProxyStorage {
     }
 }
 
+// File: contracts/ReclaimerToken.sol
+
+contract ReclaimerToken is HasOwner {
+    /**  
+    *@dev send all eth balance in the contract to another address
+    */
+    function reclaimEther(address _to) external onlyOwner {
+        _to.transfer(address(this).balance);
+    }
+
+    /**  
+    *@dev send all token balance of an arbitary erc20 token
+    in the contract to another address
+    */
+    function reclaimToken(ERC20 token, address _to) external onlyOwner {
+        uint256 balance = token.balanceOf(this);
+        token.transfer(_to, balance);
+    }
+
+    /**  
+    *@dev allows owner of the contract to gain ownership of any contract that the contract currently owns
+    */
+    function reclaimContract(Ownable _ownable) external onlyOwner {
+        _ownable.transferOwnership(owner);
+    }
+
+}
+
 // File: contracts/modularERC20/ModularBasicToken.sol
-
-pragma solidity ^0.4.23;
-
-
 
 // Version of OpenZeppelin's BasicToken whose balances mapping has been replaced
 // with a separate BalanceSheet contract. remove the need to copy over balances.
@@ -559,10 +546,6 @@ contract ModularBasicToken is HasOwner {
 }
 
 // File: contracts/modularERC20/ModularStandardToken.sol
-
-pragma solidity ^0.4.23;
-
-
 
 /**
  * @title Standard ERC20 token
@@ -677,9 +660,6 @@ contract ModularStandardToken is ModularBasicToken {
 
 // File: contracts/modularERC20/ModularBurnableToken.sol
 
-pragma solidity ^0.4.23;
-
-
 /**
  * @title Burnable Token
  * @dev Token that can be irreversibly burned (destroyed).
@@ -703,42 +683,7 @@ contract ModularBurnableToken is ModularStandardToken {
     }
 }
 
-// File: contracts/ReclaimerToken.sol
-
-pragma solidity ^0.4.23;
-
-
-
-contract ReclaimerToken is ModularBurnableToken {
-    /**  
-    *@dev send all eth balance in the contract to another address
-    */
-    function reclaimEther(address _to) external onlyOwner {
-        _to.transfer(address(this).balance);
-    }
-
-    /**  
-    *@dev send all token balance of an arbitary erc20 token
-    in the contract to another address
-    */
-    function reclaimToken(ERC20 token, address _to) external onlyOwner {
-        uint256 balance = token.balanceOf(this);
-        token.transfer(_to, balance);
-    }
-
-    /**  
-    *@dev allows owner of the contract to gain ownership of any contract that the contract currently owns
-    */
-    function reclaimContract(Ownable _ownable) external onlyOwner {
-        _ownable.transferOwnership(owner);
-    }
-
-}
-
 // File: contracts/BurnableTokenWithBounds.sol
-
-pragma solidity ^0.4.23;
-
 
 /**
  * @title Burnable Token WithBounds
@@ -770,9 +715,6 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
 }
 
 // File: contracts/GasRefundToken.sol
-
-pragma solidity ^0.4.23;
-
 
 /**  
 @title Gas Refund Token
@@ -900,14 +842,6 @@ contract GasRefundToken is ProxyStorage {
 
 // File: contracts/CompliantDepositTokenWithHook.sol
 
-pragma solidity ^0.4.23;
-
-
-
-
-
-
-
 contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
 
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
@@ -925,7 +859,6 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     function transfer(address _to, uint256 _value) public returns (bool) {
         address _from = msg.sender;
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
-            _requireCanTransfer(_from, _to);
             _value -= _value % CENT;
             _burnFromAllArgs(_from, _to, _value);
         } else {
@@ -942,23 +875,46 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
-            _requireCanTransferFrom(msg.sender, _from, _to);
             _value -= _value % CENT;
-            _subAllowance(_from, msg.sender, _value);
-            _burnFromAllArgs(_from, _to, _value);
+            _burnFromAllowanceAllArgs(_from, _to, _value);
         } else {
             _transferFromAllArgs(_from, _to, _value, msg.sender);
         }
         return true;
     }
 
+    function _burnFromAllowanceAllArgs(address _from, address _to, uint256 _value) internal {
+        _requireCanTransferFrom(msg.sender, _from, _to);
+        _requireCanBurn(_to);
+        require(_value >= burnMin, "below min burn bound");
+        require(_value <= burnMax, "exceeds max burn bound");
+        if (_subBalance(_from, _value)) {
+            if (_subAllowance(_from, msg.sender, _value)) {
+                // no refund
+            } else {
+                gasRefund15();
+            }
+        } else {
+            if (_subAllowance(_from, msg.sender, _value)) {
+                gasRefund15();
+            } else {
+                gasRefund45();
+            }
+        }
+        emit Transfer(_from, _to, _value);
+        totalSupply_ = totalSupply_.sub(_value);
+        emit Burn(_to, _value);
+        emit Transfer(_to, address(0), _value);
+    }
+
     function _burnFromAllArgs(address _from, address _to, uint256 _value) internal {
+        _requireCanTransfer(_from, _to);
         _requireCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
         bool balanceZero = _subBalance(_from, _value);
         if (balanceZero) {
-            // no refund
+            gasRefund15();
         } else {
             gasRefund30();
         }
@@ -1142,9 +1098,6 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
 // File: contracts/DelegateERC20.sol
 
-pragma solidity ^0.4.23;
-
-
 /** @title DelegateERC20
 Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
 functions in the old contract still works (except Burn). 
@@ -1198,11 +1151,6 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
 
 // File: contracts/TrueUSD.sol
 
-pragma solidity ^0.4.23;
-
-
-
-
 /** @title TrueUSD
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
 * inherited - see the documentation on the corresponding contracts.
@@ -1234,10 +1182,52 @@ DelegateERC20 {
     }
 }
 
+// File: contracts/DeprecatedGasRefundPool.sol
+
+contract DeprecatedGasRefundPool is ProxyStorage {
+    modifier retroGasRefund15 {
+        _;
+        uint256 len = gasRefundPool_Deprecated.length;
+        if (len > 0 && tx.gasprice > gasRefundPool_Deprecated[len-1]) {
+            gasRefundPool_Deprecated.length = len - 1;
+        }
+    }
+    modifier retroGasRefund30 {
+        _;
+        uint256 len = gasRefundPool_Deprecated.length;
+        if (len > 1 && tx.gasprice > gasRefundPool_Deprecated[len-1]) {
+            gasRefundPool_Deprecated.length = len - 2;
+        }
+    }
+    modifier retroGasRefund45 {
+        _;
+        uint256 len = gasRefundPool_Deprecated.length;
+        if (len > 2 && tx.gasprice > gasRefundPool_Deprecated[len-1]) {
+            gasRefundPool_Deprecated.length = len - 3;
+        }
+    }
+    modifier retroSponsorGas {
+        uint256 refundPrice = minimumGasPriceForFutureRefunds;
+        require(refundPrice > 0);
+        uint256 len = gasRefundPool_Deprecated.length;
+        gasRefundPool_Deprecated.length = len + 9;
+        gasRefundPool_Deprecated[len] = refundPrice;
+        gasRefundPool_Deprecated[len + 1] = refundPrice;
+        gasRefundPool_Deprecated[len + 2] = refundPrice;
+        gasRefundPool_Deprecated[len + 3] = refundPrice;
+        gasRefundPool_Deprecated[len + 4] = refundPrice;
+        gasRefundPool_Deprecated[len + 5] = refundPrice;
+        gasRefundPool_Deprecated[len + 6] = refundPrice;
+        gasRefundPool_Deprecated[len + 7] = refundPrice;
+        gasRefundPool_Deprecated[len + 8] = refundPrice;
+        _;
+    }
+    function retroGasPoolRemaining() internal view returns (uint256) {
+        return gasRefundPool_Deprecated.length;
+    }
+}
+
 // File: registry/contracts/ProvisionalRegistry.sol
-
-pragma solidity ^0.4.23;
-
 
 contract ProvisionalRegistry is Registry {
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
@@ -1277,12 +1267,8 @@ contract ProvisionalRegistry is Registry {
 
 // File: contracts/ProvisionalCompliantDepositTokenWithHook.sol
 
-pragma solidity ^0.4.23;
-
-
-
 // Supports balance and allowance migration at great cost
-contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHook {
+contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHook, DeprecatedGasRefundPool {
     function _isBlacklisted(address _account) internal view returns (bool) {
         return registry.hasAttribute(_account, IS_BLACKLISTED);
     }
@@ -1321,14 +1307,6 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
     function _setBalance(address _who, uint256 _value) internal {
         balances.setBalance(_who, _value);
         _balanceOf[_who] = _value;
-    }
-
-    modifier retroGasRefund45 {
-        _;
-        uint256 len = gasRefundPool_Deprecated.length;
-        if (len > 2 && tx.gasprice > gasRefundPool_Deprecated[len-1]) {
-            gasRefundPool_Deprecated.length = len - 3;
-        }
     }
 
     function migrateBalances(address[] holders) external retroGasRefund45 {
@@ -1370,10 +1348,6 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
 }
 
 // File: contracts/ProvisionalTrueUSD.sol
-
-pragma solidity ^0.4.23;
-
-
 
 contract ProvisionalTrueUSD is TrueUSD, ProvisionalCompliantDepositTokenWithHook {
 }
