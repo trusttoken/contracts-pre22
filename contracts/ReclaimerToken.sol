@@ -1,9 +1,9 @@
 pragma solidity ^0.4.23;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "./modularERC20/ModularBurnableToken.sol";
+import "./HasOwner.sol";
 
-contract ReclaimerToken is ModularBurnableToken {
+contract ReclaimerToken is HasOwner {
     /**  
     *@dev send all eth balance in the contract to another address
     */
