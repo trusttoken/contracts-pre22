@@ -19,7 +19,11 @@ contract('PausedTrueUSD', function (accounts) {
         const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, ratifier1, ratifier2, ratifier3, redemptionAdmin] = accounts
         const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
         const notes = bytes32('notes')
-        const TEN_THOUSAND = BN(10**18).mul(BN(10000));
+        const RATIFIER = bytes32("isTUSDMintRatifier");
+        const DOLLAR = BN(10**18)
+        const TEN_THOUSAND = DOLLAR.mul(BN(10000));
+        const CAN_BURN = bytes32("canBurn")
+        const BLACKLISTED = bytes32("isBlacklisted")
 
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
@@ -27,13 +31,12 @@ contract('PausedTrueUSD', function (accounts) {
             this.tusdImplementation = await TrueUSD.new(owner, 0, { from: owner })
             this.token = await TrueUSD.at(this.tokenProxy.address)
             this.balanceSheet = await BalanceSheet.new({ from: owner })
-            await this.balanceSheet.setBalance(oneHundred, TEN_THOUSAND, {from:owner});
             this.allowanceSheet = await AllowanceSheet.new({ from: owner })
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
+            await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
+            await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
             await this.token.initialize({from: owner})
             await this.token.setTotalSupply(TEN_THOUSAND, {from: owner})
             await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
@@ -44,17 +47,15 @@ contract('PausedTrueUSD', function (accounts) {
             await this.controller.issueClaimOwnership(this.token.address, {from: owner})
             this.fastPauseMints = await FastPauseMints.new(pauseKey2, this.controller.address, { from: owner })
             await this.controller.setRegistry(this.registry.address, { from: owner })
-            await this.controller.setTrueUSD(this.token.address, { from: owner })
-            await this.controller.setTusdRegistry(this.registry.address, { from: owner })
+            await this.controller.setToken(this.token.address, { from: owner })
+            await this.controller.setTokenRegistry(this.registry.address, { from: owner })
             await this.controller.transferMintKey(mintKey, { from: owner })
             await this.tokenProxy.transferProxyOwnership(this.controller.address, {from: owner})
             await this.controller.claimTusdProxyOwnership({from: owner})
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.registry.setAttribute(otherAddress, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
-            await this.registry.setAttribute(ratifier1, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
-            await this.registry.setAttribute(ratifier2, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
-            await this.registry.setAttribute(ratifier3, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
+            await this.registry.setAttribute(ratifier1, RATIFIER, 1, notes, { from: owner })
+            await this.registry.setAttribute(ratifier2, RATIFIER, 1, notes, { from: owner })
+            await this.registry.setAttribute(ratifier3, RATIFIER, 1, notes, { from: owner })
             await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
             await this.registry.setAttribute(this.fastPauseMints.address, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
 
@@ -63,6 +64,15 @@ contract('PausedTrueUSD', function (accounts) {
 
             this.original = await CanDelegate.new(oneHundred, TEN_THOUSAND, {from:owner})
             await this.original.delegateToNewContract(this.token.address, {from:owner})
+
+            await this.controller.setMintThresholds(BN(10000).mul(DOLLAR),BN(30000).mul(DOLLAR),BN(1000000).mul(DOLLAR), { from: owner })
+            await this.controller.setMintLimits(BN(10000).mul(DOLLAR),BN(30000).mul(DOLLAR),BN(1000000).mul(DOLLAR),{ from: owner })
+            await this.controller.refillMultiSigMintPool({ from: owner })
+            await this.controller.refillRatifiedMintPool({ from: owner })
+            await this.controller.refillInstantMintPool({ from: owner })
+            await this.controller.instantMint(oneHundred, TEN_THOUSAND, { from: owner})
+            await this.controller.refillInstantMintPool({ from: owner })
+            await this.controller.setMintLimits(0,0,0, { from: owner })
         })
 
         it('current token is not paused', async function(){
@@ -77,8 +87,9 @@ contract('PausedTrueUSD', function (accounts) {
         describe('Paused TrueUSD', function() {
             beforeEach(async function () {
                 await this.token.approve(otherAddress, BN(100*10**18), { from: oneHundred })
-                await this.pausedTrueUSD.setDelegateFrom(this.original.address, {from: owner})
-                await this.controller.pauseTrueUSD({from: owner})
+                await this.controller.pauseToken({from: owner})
+                const pausedToken = await PausedTrueUSD.at(this.token.address)
+                await pausedToken.setDelegateFrom(this.original.address, {from: owner})
             })
 
             describe('token transfers are now paused', function(){
@@ -143,24 +154,36 @@ contract('PausedTrueUSD', function (accounts) {
                     const rounding = await this.token.rounding.call()
                     assert.equal(rounding,2)
                 })
+                it('Name', async function(){
+                    const name = await this.token.name.call()
+                    assert.equal(name,"TrueUSD")
+                })
+                it('Symbol', async function(){
+                    const symbol = await this.token.symbol.call()
+                    assert.equal(symbol,"TUSD")
+                })
             })
 
             describe('admin functions still functioning', function(){
-                it('test admin functions', async function(){
-                    await this.token.sponsorGas({from: otherAddress})
-                    assert(BN(await this.token.remainingGasRefundPool.call()).eq(BN(9)))
-                    await this.controller.setTusdRegistry('0x0000000000000000000000000000000000000003',{from: owner})
+                it('can sponsor gas pool', async function(){
+                    await this.registry.setAttributeValue(oneHundred, bytes32("canSetFutureRefundMinGasPrice"), 1, { from: owner });
+                    await this.token.setMinimumGasPriceForFutureRefunds(1, { from: oneHundred })
+                    await this.token.sponsorGas({ from: otherAddress })
+                    const remainingPool = await this.token.remainingGasRefundPool.call()
+                    assert(remainingPool.eq(BN(9)), "Pool should be 9, instead " + remainingPool)
+                })
+                it ('can set token registry', async function() {
+                    await this.controller.setTokenRegistry('0x0000000000000000000000000000000000000003',{from: owner})
                     assert.equal(await this.token.registry.call(), '0x0000000000000000000000000000000000000003')
-                    await this.controller.changeTokenName("TerryToken","TTT", {from: owner})
                 })
 
                 it('can still wipe blacklisted account', async function(){
-                    await this.registry.setAttribute(oneHundred, bytes32("isBlacklisted"), 1, notes, { from: owner })
+                    await this.registry.setAttribute(oneHundred, BLACKLISTED, 1, notes, { from: owner })
                     await this.controller.wipeBlackListedTrueUSD(oneHundred, {from : owner})
                     await assertBalance(this.token, oneHundred,0)
                 })
 
-                it('cannot  wipe blacklisted account if not blacklisted', async function(){
+                it('cannot wipe blacklisted account if not blacklisted', async function(){
                     await assertRevert(this.controller.wipeBlackListedTrueUSD(oneHundred, {from : owner}))
                 })
 

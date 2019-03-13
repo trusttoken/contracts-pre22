@@ -77,6 +77,10 @@ contract ERC20 is ERC20Basic {
 
 // File: registry/contracts/Registry.sol
 
+interface RegistryClone {
+    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
+}
+
 contract Registry {
     struct AttributeData {
         uint256 value;
@@ -96,16 +100,11 @@ contract Registry {
     // that account can use the token. This mapping stores that value (1, in the
     // example) as well as which validator last set the value and at what time,
     // so that e.g. the check can be renewed at appropriate intervals.
-    mapping(address => mapping(bytes32 => AttributeData)) public attributes;
+    mapping(address => mapping(bytes32 => AttributeData)) attributes;
     // The logic governing who is allowed to set what attributes is abstracted as
     // this accessManager, so that it may be replaced by the owner as needed
-
-    bytes32 public constant WRITE_PERMISSION = keccak256("canWriteTo-");
-    bytes32 public constant IS_BLACKLISTED = "isBlacklisted";
-    bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
-    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
-    bytes32 public constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
-    bytes32 public constant CAN_BURN = "canBurn";
+    bytes32 constant WRITE_PERMISSION = keccak256("canWriteTo-");
+    mapping(bytes32 => RegistryClone[]) subscribers;
 
     event OwnershipTransferred(
         address indexed previousOwner,
@@ -113,15 +112,13 @@ contract Registry {
     );
     event SetAttribute(address indexed who, bytes32 attribute, uint256 value, bytes32 notes, address indexed adminAddr);
     event SetManager(address indexed oldManager, address indexed newManager);
-
-    function writeAttributeFor(bytes32 _attribute) public pure returns (bytes32) {
-        return keccak256(WRITE_PERMISSION ^ _attribute);
-    }
+    event StartSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
+    event StopSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
 
     // Allows a write if either a) the writer is that Registry's owner, or
     // b) the writer is writing to attribute foo and that writer already has
     // the canWriteTo-foo attribute set (in that same Registry)
-    function confirmWrite(bytes32 _attribute, address _admin) public view returns (bool) {
+    function confirmWrite(bytes32 _attribute, address _admin) internal view returns (bool) {
         return (_admin == owner || hasAttribute(_admin, keccak256(WRITE_PERMISSION ^ _attribute)));
     }
 
@@ -130,12 +127,40 @@ contract Registry {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
+
+        RegistryClone[] storage targets = subscribers[_attribute];
+        uint256 index = targets.length;
+        while (index --> 0) {
+            targets[index].syncAttributeValue(_who, _attribute, _value);
+        }
+    }
+
+    function subscribe(bytes32 _attribute, RegistryClone _syncer) external onlyOwner {
+        subscribers[_attribute].push(_syncer);
+        emit StartSubscription(_attribute, _syncer);
+    }
+
+    function unsubscribe(bytes32 _attribute, uint256 _index) external onlyOwner {
+        uint256 length = subscribers[_attribute].length;
+        require(_index < length);
+        emit StopSubscription(_attribute, subscribers[_attribute][_index]);
+        subscribers[_attribute][_index] = subscribers[_attribute][length - 1];
+        subscribers[_attribute].length = length - 1;
+    }
+
+    function subscriberCount(bytes32 _attribute) public view returns (uint256) {
+        return subscribers[_attribute].length;
     }
 
     function setAttributeValue(address _who, bytes32 _attribute, uint256 _value) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, "", msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, "", msg.sender);
+        RegistryClone[] storage targets = subscribers[_attribute];
+        uint256 index = targets.length;
+        while (index --> 0) {
+            targets[index].syncAttributeValue(_who, _attribute, _value);
+        }
     }
 
     // Returns true if the uint256 value stored for this attribute is non-zero
@@ -143,71 +168,6 @@ contract Registry {
         return attributes[_who][_attribute].value != 0;
     }
 
-    function hasBothAttributes(address _who, bytes32 _attribute1, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who][_attribute1].value != 0 && attributes[_who][_attribute2].value != 0;
-    }
-
-    function hasEitherAttribute(address _who, bytes32 _attribute1, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who][_attribute1].value != 0 || attributes[_who][_attribute2].value != 0;
-    }
-
-    function hasAttribute1ButNotAttribute2(address _who, bytes32 _attribute1, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who][_attribute1].value != 0 && attributes[_who][_attribute2].value == 0;
-    }
-
-    function bothHaveAttribute(address _who1, address _who2, bytes32 _attribute) public view returns (bool) {
-        return attributes[_who1][_attribute].value != 0 && attributes[_who2][_attribute].value != 0;
-    }
-    
-    function eitherHaveAttribute(address _who1, address _who2, bytes32 _attribute) public view returns (bool) {
-        return attributes[_who1][_attribute].value != 0 || attributes[_who2][_attribute].value != 0;
-    }
-
-    function haveAttributes(address _who1, bytes32 _attribute1, address _who2, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who1][_attribute1].value != 0 && attributes[_who2][_attribute2].value != 0;
-    }
-
-    function haveEitherAttribute(address _who1, bytes32 _attribute1, address _who2, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who1][_attribute1].value != 0 || attributes[_who2][_attribute2].value != 0;
-    }
-
-    function isDepositAddress(address _who) public view returns (bool) {
-        return attributes[address(uint256(_who) >> 20)][IS_DEPOSIT_ADDRESS].value != 0;
-    }
-
-    function getDepositAddress(address _who) public view returns (address) {
-        return address(attributes[address(uint256(_who) >> 20)][IS_DEPOSIT_ADDRESS].value);
-    }
-
-    function requireCanTransfer(address _from, address _to) public view returns (address, bool) {
-        require (attributes[_from][IS_BLACKLISTED].value == 0, "blacklisted");
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
-        if (depositAddressValue != 0) {
-            _to = address(depositAddressValue);
-        }
-        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
-    }
-
-    function requireCanTransferFrom(address _sender, address _from, address _to) public view returns (address, bool) {
-        require (attributes[_sender][IS_BLACKLISTED].value == 0, "blacklisted");
-        return requireCanTransfer(_from, _to);
-    }
-
-    function requireCanMint(address _to) public view returns (address, bool) {
-        require (attributes[_to][HAS_PASSED_KYC_AML].value != 0);
-        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
-        if (depositAddressValue != 0) {
-            _to = address(depositAddressValue);
-        }
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
-    }
-
-    function requireCanBurn(address _from) public view {
-        require (attributes[_from][CAN_BURN].value != 0);
-        require (attributes[_from][IS_BLACKLISTED].value == 0);
-    }
 
     // Returns the exact value of the attribute, as well as its metadata
     function getAttribute(address _who, bytes32 _attribute) public view returns (uint256, bytes32, address, uint256) {
@@ -227,6 +187,18 @@ contract Registry {
         return attributes[_who][_attribute].timestamp;
     }
 
+    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] _addresses) external {
+        RegistryClone[] storage targets = subscribers[_attribute];
+        uint256 index = targets.length;
+        while (index --> _startIndex) {
+            RegistryClone target = targets[index];
+            for (uint256 i = _addresses.length; i --> 0; ) {
+                address who = _addresses[i];
+                target.syncAttributeValue(who, _attribute, attributes[who][_attribute].value);
+            }
+        }
+    }
+
     function reclaimEther(address _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
@@ -236,7 +208,7 @@ contract Registry {
         token.transfer(_to, balance);
     }
 
-    /**
+   /**
     * @dev Throws if called by any account other than the owner.
     */
     modifier onlyOwner() {
@@ -401,7 +373,7 @@ contract ProxyStorage {
     address public owner;
     address public pendingOwner;
 
-    bool public initialized;
+    bool initialized;
     
     BalanceSheet public balances;
     AllowanceSheet public allowances;
@@ -416,12 +388,16 @@ contract ProxyStorage {
 
     Registry public registry;
 
-    string public name = "TrueUSD";
-    string public symbol = "TUSD";
+    string name_Deprecated = "TrueUSD";
+    string symbol_Deprecated = "TUSD";
 
-    uint[] public gasRefundPool;
+    uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
+
+    mapping (address => uint256) _balanceOf;
+    mapping (address => mapping (address => uint256)) _allowance;
+    mapping (address => mapping (bytes32 => uint256)) attributes;
 }
 
 // File: contracts/HasOwner.sol
@@ -482,6 +458,40 @@ contract HasOwner is ProxyStorage {
     }
 }
 
+// File: contracts/TrueCoinReceiver.sol
+
+contract TrueCoinReceiver {
+    function tokenFallback( address from, uint256 value ) external;
+}
+
+// File: contracts/ReclaimerToken.sol
+
+contract ReclaimerToken is HasOwner {
+    /**  
+    *@dev send all eth balance in the contract to another address
+    */
+    function reclaimEther(address _to) external onlyOwner {
+        _to.transfer(address(this).balance);
+    }
+
+    /**  
+    *@dev send all token balance of an arbitary erc20 token
+    in the contract to another address
+    */
+    function reclaimToken(ERC20 token, address _to) external onlyOwner {
+        uint256 balance = token.balanceOf(this);
+        token.transfer(_to, balance);
+    }
+
+    /**  
+    *@dev allows owner of the contract to gain ownership of any contract that the contract currently owns
+    */
+    function reclaimContract(Ownable _ownable) external onlyOwner {
+        _ownable.transferOwnership(owner);
+    }
+
+}
+
 // File: contracts/modularERC20/ModularBasicToken.sol
 
 // Version of OpenZeppelin's BasicToken whose balances mapping has been replaced
@@ -514,13 +524,24 @@ contract ModularBasicToken is HasOwner {
         return totalSupply_;
     }
 
-    /**
-    * @dev Gets the balance of the specified address.
-    * @param _owner The address to query the the balance of.
-    * @return An uint256 representing the amount owned by the passed address.
-    */
-    function balanceOf(address _owner) public view returns (uint256 balance) {
-        return balances.balanceOf(_owner);
+    function balanceOf(address _who) public view returns (uint256) {
+        return _getBalance(_who);
+    }
+    function _getBalance(address _who) internal view returns (uint256) {
+        return _balanceOf[_who];
+    }
+    function _addBalance(address _who, uint256 _value) internal returns (bool balanceNew) {
+        uint256 priorBalance = _balanceOf[_who];
+        _balanceOf[_who] = priorBalance.add(_value);
+        balanceNew = priorBalance == 0;
+    }
+    function _subBalance(address _who, uint256 _value) internal returns (bool balanceZero) {
+        uint256 updatedBalance = _balanceOf[_who].sub(_value);
+        _balanceOf[_who] = updatedBalance;
+        balanceZero = updatedBalance == 0;
+    }
+    function _setBalance(address _who, uint256 _value) internal {
+        _balanceOf[_who] = _value;
     }
 }
 
@@ -534,6 +555,7 @@ contract ModularBasicToken is HasOwner {
  * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
  */
 contract ModularStandardToken is ModularBasicToken {
+    using SafeMath for uint256;
     
     event AllowanceSheetSet(address indexed sheet);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -565,18 +587,8 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
-        allowances.setAllowance(_tokenHolder, _spender, _value);
+        _setAllowance(_tokenHolder, _spender, _value);
         emit Approval(_tokenHolder, _spender, _value);
-    }
-
-    /**
-     * @dev Function to check the amount of tokens that an owner allowed to a spender.
-     * @param _owner address The address which owns the funds.
-     * @param _spender address The address which will spend the funds.
-     * @return A uint256 specifying the amount of tokens still available for the spender.
-     */
-    function allowance(address _owner, address _spender) public view returns (uint256) {
-        return allowances.allowanceOf(_owner, _spender);
     }
 
     /**
@@ -595,8 +607,8 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
-        allowances.addAllowance(_tokenHolder, _spender, _addedValue);
-        emit Approval(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
+        _addAllowance(_tokenHolder, _spender, _addedValue);
+        emit Approval(_tokenHolder, _spender, _getAllowance(_tokenHolder, _spender));
     }
 
     /**
@@ -615,13 +627,34 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
-        uint256 oldValue = allowances.allowanceOf(_tokenHolder, _spender);
+        uint256 oldValue = _getAllowance(_tokenHolder, _spender);
+        uint256 newValue;
         if (_subtractedValue > oldValue) {
-            allowances.setAllowance(_tokenHolder, _spender, 0);
+            newValue = 0;
         } else {
-            allowances.subAllowance(_tokenHolder, _spender, _subtractedValue);
+            newValue = oldValue - _subtractedValue;
         }
-        emit Approval(_tokenHolder,_spender, allowances.allowanceOf(_tokenHolder, _spender));
+        _setAllowance(_tokenHolder, _spender, newValue);
+        emit Approval(_tokenHolder,_spender, newValue);
+    }
+
+    function allowance(address _who, address _spender) public view returns (uint256) {
+        return _getAllowance(_who, _spender);
+    }
+
+    function _getAllowance(address _who, address _spender) internal view returns (uint256) {
+        return _allowance[_who][_spender];
+    }
+    function _addAllowance(address _who, address _spender, uint256 _value) internal {
+        _allowance[_who][_spender] = _allowance[_who][_spender].add(_value);
+    }
+    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool allowanceZero){
+        uint256 newAllowance = _allowance[_who][_spender].sub(_value);
+        _allowance[_who][_spender] = newAllowance;
+        allowanceZero = newAllowance == 0;
+    }
+    function _setAllowance(address _who, address _spender, uint256 _value) internal {
+        _allowance[_who][_spender] = _value;
     }
 }
 
@@ -634,23 +667,19 @@ contract ModularStandardToken is ModularBasicToken {
 contract ModularBurnableToken is ModularStandardToken {
     event Burn(address indexed burner, uint256 value);
     event Mint(address indexed to, uint256 value);
+    uint256 constant CENT = 10 ** 16;
 
-    /**
-     * @dev Burns a specific amount of tokens.
-     * @param _value The amount of token to be burned.
-     */
-    function burn(uint256 _value) public {
-        _burnAllArgs(msg.sender, _value);
+    function burn(uint256 _value) external {
+        _burnAllArgs(msg.sender, _value - _value % CENT);
     }
 
-    function _burnAllArgs(address _burner, uint256 _value) internal {
+    function _burnAllArgs(address _from, uint256 _value) internal {
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
-        /* uint burnAmount = _value / (10 **16) * (10 **16); */
-        balances.subBalance(_burner, _value);
+        _subBalance(_from, _value);
         totalSupply_ = totalSupply_.sub(_value);
-        emit Burn(_burner, _value);
-        emit Transfer(_burner, address(0), _value);
+        emit Burn(_from, _value);
+        emit Transfer(_from, address(0), _value);
     }
 }
 
@@ -677,186 +706,11 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
     //flexibility since burning could also be as good as disabled
     //by setting the minimum extremely high, and we don't want to lock
     //in any particular cap for the minimum)
-    function setBurnBounds(uint256 _min, uint256 _max) public onlyOwner {
+    function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
         require(_min <= _max, "min > max");
         burnMin = _min;
         burnMax = _max;
         emit SetBurnBounds(_min, _max);
-    }
-}
-
-// File: contracts/CompliantToken.sol
-
-contract CompliantToken is ModularBurnableToken {
-    // In order to deposit USD and receive newly minted TrueUSD, or to burn TrueUSD to
-    // redeem it for USD, users must first go through a KYC/AML check (which includes proving they
-    // control their ethereum address using AddressValidation.sol).
-    bytes32 constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
-    // Redeeming ("burning") TrueUSD tokens for USD requires a separate flag since
-    // users must not only be KYC/AML'ed but must also have bank information on file.
-    bytes32 constant CAN_BURN = "canBurn";
-    // Addresses can also be blacklisted, preventing them from sending or receiving
-    // TrueUSD. This can be used to prevent the use of TrueUSD by bad actors in
-    // accordance with law enforcement. See [TrueCoin Terms of Use](https://www.trusttoken.com/trueusd/terms-of-use)
-    bytes32 constant IS_BLACKLISTED = "isBlacklisted";
-
-    event WipeBlacklistedAccount(address indexed account, uint256 balance);
-    event SetRegistry(address indexed registry);
-    
-    /**
-    * @dev Point to the registry that contains all compliance related data
-    @param _registry The address of the registry instance
-    */
-    function setRegistry(Registry _registry) public onlyOwner {
-        registry = _registry;
-        emit SetRegistry(registry);
-    }
-
-    function _burnAllArgs(address _burner, uint256 _value) internal {
-        registry.requireCanBurn(_burner);
-        super._burnAllArgs(_burner, _value);
-    }
-
-    // Destroy the tokens owned by a blacklisted account
-    function wipeBlacklistedAccount(address _account) public onlyOwner {
-        require(registry.hasAttribute(_account, IS_BLACKLISTED), "_account is not blacklisted");
-        uint256 oldValue = balanceOf(_account);
-        balances.setBalance(_account, 0);
-        totalSupply_ = totalSupply_.sub(oldValue);
-        emit WipeBlacklistedAccount(_account, oldValue);
-        emit Transfer(_account, address(0), oldValue);
-    }
-}
-
-// File: contracts/TrueCoinReceiver.sol
-
-contract TrueCoinReceiver {
-    function tokenFallback( address from, uint256 value ) external;
-}
-
-// File: contracts/CompliantDepositTokenWithHook.sol
-
-contract CompliantDepositTokenWithHook is CompliantToken {
-
-    bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
-    bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
-
-    /**
-    * @dev transfer token for a specified address
-    * @param _to The address to transfer to.
-    * @param _value The amount to be transferred.
-    */
-    function transfer(address _to, uint256 _value) public returns (bool) {
-        _transferAllArgs(msg.sender, _to, _value);
-        return true;
-    }
-
-    /**
-     * @dev Transfer tokens from one address to another
-     * @param _from address The address which you want to send tokens from
-     * @param _to address The address which you want to transfer to
-     * @param _value uint256 the amount of tokens to be transferred
-     */
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        _transferFromAllArgs(_from, _to, _value, msg.sender);
-        return true;
-    }
-
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {
-        bool hasHook;
-        address originalTo = _to;
-        (_to, hasHook) = registry.requireCanTransferFrom(_sender, _from, _to);
-        allowances.subAllowance(_from, _sender, _value);
-        balances.subBalance(_from, _value);
-        balances.addBalance(_to, _value);
-        emit Transfer(_from, originalTo, _value);
-        if (originalTo != _to) {
-            emit Transfer(originalTo, _to, _value);
-            if (hasHook) {
-                TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
-            }
-        } else {
-            if (hasHook) {
-                TrueCoinReceiver(_to).tokenFallback(_from, _value);
-            }
-        }
-    }
-
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        bool hasHook;
-        address originalTo = _to;
-        (_to, hasHook) = registry.requireCanTransfer(_from, _to);
-        balances.subBalance(_from, _value);
-        balances.addBalance(_to, _value);
-        emit Transfer(_from, originalTo, _value);
-        if (originalTo != _to) {
-            emit Transfer(originalTo, _to, _value);
-            if (hasHook) {
-                TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
-            }
-        } else {
-            if (hasHook) {
-                TrueCoinReceiver(_to).tokenFallback(_from, _value);
-            }
-        }
-    }
-
-    function mint(address _to, uint256 _value) public onlyOwner {
-        require(_to != address(0), "to address cannot be zero");
-        bool hasHook;
-        address originalTo = _to;
-        (_to, hasHook) = registry.requireCanMint(_to);
-        totalSupply_ = totalSupply_.add(_value);
-        emit Mint(originalTo, _value);
-        emit Transfer(address(0), originalTo, _value);
-        if (_to != originalTo) {
-            emit Transfer(originalTo, _to, _value);
-        }
-        balances.addBalance(_to, _value);
-        if (hasHook) {
-            if (_to != originalTo) {
-                TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
-            } else {
-                TrueCoinReceiver(_to).tokenFallback(address(0), _value);
-            }
-        }
-    }
-}
-
-// File: contracts/RedeemableToken.sol
-
-/** @title Redeemable Token 
-Makes transfers to 0x0 alias to Burn
-Implement Redemption Addresses
-*/
-contract RedeemableToken is CompliantDepositTokenWithHook {
-
-    event RedemptionAddress(address indexed addr);
-
-    uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
-
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        if (_to == address(0)) {
-            revert("_to address is 0x0");
-        } else if (uint(_to) < REDEMPTION_ADDRESS_COUNT) {
-            // Transfers to redemption addresses becomes burn
-            super._transferAllArgs(_from, _to, _value);
-            _burnAllArgs(_to, _value);
-        } else {
-            super._transferAllArgs(_from, _to, _value);
-        }
-    }
-
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {
-        if (_to == address(0)) {
-            revert("_to address is 0x0");
-        } else if (uint(_to) < REDEMPTION_ADDRESS_COUNT) {
-            // Transfers to redemption addresses becomes burn
-            super._transferFromAllArgs(_from, _to, _value, _sender);
-            _burnAllArgs(_to, _value);
-        } else {
-            super._transferFromAllArgs(_from, _to, _value, _sender);
-        }
     }
 }
 
@@ -868,64 +722,114 @@ Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas 
 Each time an non-empty storage slot is set to 0, evm refund 15,000 (19,000 after Constantinople) to the sender
 of the transaction. 
 */
-contract GasRefundToken is CompliantDepositTokenWithHook {
+contract GasRefundToken is ProxyStorage {
 
     function sponsorGas() external {
-        uint256 len = gasRefundPool.length;
         uint256 refundPrice = minimumGasPriceForFutureRefunds;
         require(refundPrice > 0);
-        gasRefundPool.length = len + 9;
-        gasRefundPool[len] = refundPrice;
-        gasRefundPool[len + 1] = refundPrice;
-        gasRefundPool[len + 2] = refundPrice;
-        gasRefundPool[len + 3] = refundPrice;
-        gasRefundPool[len + 4] = refundPrice;
-        gasRefundPool[len + 5] = refundPrice;
-        gasRefundPool[len + 6] = refundPrice;
-        gasRefundPool[len + 7] = refundPrice;
-        gasRefundPool[len + 8] = refundPrice;
+        assembly {
+            let offset := sload(0xfffff)
+            let result := add(offset, 9)
+            sstore(0xfffff, result)
+            let position := add(offset, 0x100000)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+        }
     }
 
-    function minimumGasPriceForRefund() public view returns (uint256) {
-        uint256 len = gasRefundPool.length;
-        if (len > 0) {
-          return gasRefundPool[len - 1] + 1;
+    function minimumGasPriceForRefund() public view returns (uint256 result) {
+        assembly {
+            let offset := sload(0xfffff)
+            let location := add(offset, 0xfffff)
+            result := add(sload(location), 1)
         }
-        return uint256(-1);
     }
 
     /**  
     @dev refund 45,000 gas for functions with gasRefund modifier.
+    @dev costs slightly more than 20,400 gas
     */
-    modifier gasRefund {
-        uint256 len = gasRefundPool.length;
-        if (len > 2 && tx.gasprice > gasRefundPool[len-1]) {
-            gasRefundPool.length = len - 3;
+    function gasRefund45() internal {
+        assembly {
+            let offset := sload(0xfffff)
+            if gt(offset, 2) {
+                let location := add(offset, 0xfffff)
+                if gt(gasprice,sload(location)) {
+                    sstore(location, 0)
+                    location := sub(location, 1)
+                    sstore(location, 0)
+                    location := sub(location, 1)
+                    sstore(location, 0)
+                    sstore(0xfffff, sub(offset, 3))
+                }
+            }
         }
-        _;
+    }
+
+    /**  
+    @dev refund 30,000 gas for functions with gasRefund modifier.
+    @dev costs slightly more than 15,400 gas
+    */
+    function gasRefund30() internal {
+        assembly {
+            let offset := sload(0xfffff)
+            if gt(offset, 1) {
+                let location := add(offset, 0xfffff)
+                if gt(gasprice,sload(location)) {
+                    sstore(location, 0)
+                    location := sub(location, 1)
+                    sstore(location, 0)
+                    sstore(0xfffff, sub(offset, 2))
+                }
+            }
+        }
+    }
+
+    /**  
+    @dev refund 15,000 gas for functions with gasRefund modifier.
+    @dev costs slightly more than 10,200 gas
+    */
+    function gasRefund15() internal {
+        assembly {
+            let offset := sload(0xfffff)
+            if gt(offset, 1) {
+                let location := add(offset, 0xfffff)
+                if gt(gasprice,sload(location)) {
+                    sstore(location, 0)
+                    sstore(0xfffff, sub(offset, 1))
+                }
+            }
+        }
     }
 
     /**  
     *@dev Return the remaining sponsored gas slots
     */
-    function remainingGasRefundPool() public view returns (uint) {
-        return gasRefundPool.length;
+    function remainingGasRefundPool() public view returns (uint length) {
+        assembly {
+            length := sload(0xfffff)
+        }
     }
 
-    function remainingSponsoredTransactions() public view returns (uint) {
-        return gasRefundPool.length / 3;
-    }
-
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal gasRefund {
-        super._transferAllArgs(_from, _to, _value);
-    }
-
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal gasRefund {
-        super._transferFromAllArgs(_from, _to, _value, _sender);
-    }
-
-    function mint(address _to, uint256 _value) public onlyOwner gasRefund {
-        super.mint(_to, _value);
+    function gasRefundPool(uint256 _index) public view returns (uint256 gasPrice) {
+        assembly {
+            gasPrice := sload(add(0x100000, _index))
+        }
     }
 
     bytes32 constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";
@@ -936,123 +840,259 @@ contract GasRefundToken is CompliantDepositTokenWithHook {
     }
 }
 
-// File: contracts/DelegateERC20.sol
+// File: contracts/CompliantDepositTokenWithHook.sol
 
-/** @title DelegateERC20
-Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
-functions in the old contract still works (except Burn). 
-*/
-contract DelegateERC20 is CompliantDepositTokenWithHook {
+contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
 
-    address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
-    
-    modifier onlyDelegateFrom() {
-        require(msg.sender == DELEGATE_FROM);
-        _;
-    }
+    bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
+    bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
+    uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
+    bytes32 constant IS_BLACKLISTED = "isBlacklisted";
 
-    function delegateTotalSupply() public view returns (uint256) {
-        return totalSupply();
-    }
+    function canBurn() internal pure returns (bytes32);
 
-    function delegateBalanceOf(address who) public view returns (uint256) {
-        return balanceOf(who);
-    }
-
-    function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferAllArgs(origSender, to, value);
-        return true;
-    }
-
-    function delegateAllowance(address owner, address spender) public view returns (uint256) {
-        return allowance(owner, spender);
-    }
-
-    function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferFromAllArgs(from, to, value, origSender);
-        return true;
-    }
-
-    function delegateApprove(address spender, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _approveAllArgs(spender, value, origSender);
-        return true;
-    }
-
-    function delegateIncreaseApproval(address spender, uint addedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        _increaseApprovalAllArgs(spender, addedValue, origSender);
-        return true;
-    }
-
-    function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        _decreaseApprovalAllArgs(spender, subtractedValue, origSender);
-        return true;
-    }
-}
-
-// File: contracts/TrueUSD.sol
-
-/** @title TrueUSD
-* @dev This is the top-level ERC20 contract, but most of the interesting functionality is
-* inherited - see the documentation on the corresponding contracts.
-*/
-contract TrueUSD is 
-CompliantDepositTokenWithHook,
-BurnableTokenWithBounds, 
-RedeemableToken,
-DelegateERC20,
-GasRefundToken {
-    using SafeMath for *;
-
-    uint8 constant DECIMALS = 18;
-    uint8 constant ROUNDING = 2;
-
-    event ChangeTokenName(string newName, string newSymbol);
-
-    function decimals() public pure returns (uint8) {
-        return DECIMALS;
-    }
-
-    function rounding() public pure returns (uint8) {
-        return ROUNDING;
-    }
-
-    function changeTokenName(string _name, string _symbol) external onlyOwner {
-        name = _name;
-        symbol = _symbol;
-        emit ChangeTokenName(_name, _symbol);
-    }
-
-    /**  
-    *@dev send all eth balance in the TrueUSD contract to another address
+    /**
+    * @dev transfer token for a specified address
+    * @param _to The address to transfer to.
+    * @param _value The amount to be transferred.
     */
-    function reclaimEther(address _to) external onlyOwner {
-        _to.transfer(address(this).balance);
+    function transfer(address _to, uint256 _value) public returns (bool) {
+        address _from = msg.sender;
+        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
+            _value -= _value % CENT;
+            _burnFromAllArgs(_from, _to, _value);
+        } else {
+            _transferAllArgs(_from, _to, _value);
+        }
+        return true;
     }
 
-    /**  
-    *@dev send all token balance of an arbitary erc20 token
-    in the TrueUSD contract to another address
+    /**
+     * @dev Transfer tokens from one address to another
+     * @param _from address The address which you want to send tokens from
+     * @param _to address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     */
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
+            _value -= _value % CENT;
+            _burnFromAllowanceAllArgs(_from, _to, _value);
+        } else {
+            _transferFromAllArgs(_from, _to, _value, msg.sender);
+        }
+        return true;
+    }
+
+    function _burnFromAllowanceAllArgs(address _from, address _to, uint256 _value) internal {
+        _requireCanTransferFrom(msg.sender, _from, _to);
+        _requireCanBurn(_to);
+        require(_value >= burnMin, "below min burn bound");
+        require(_value <= burnMax, "exceeds max burn bound");
+        if (_subBalance(_from, _value)) {
+            if (_subAllowance(_from, msg.sender, _value)) {
+                // no refund
+            } else {
+                gasRefund15();
+            }
+        } else {
+            if (_subAllowance(_from, msg.sender, _value)) {
+                gasRefund15();
+            } else {
+                gasRefund45();
+            }
+        }
+        emit Transfer(_from, _to, _value);
+        totalSupply_ = totalSupply_.sub(_value);
+        emit Burn(_to, _value);
+        emit Transfer(_to, address(0), _value);
+    }
+
+    function _burnFromAllArgs(address _from, address _to, uint256 _value) internal {
+        _requireCanTransfer(_from, _to);
+        _requireCanBurn(_to);
+        require(_value >= burnMin, "below min burn bound");
+        require(_value <= burnMax, "exceeds max burn bound");
+        bool balanceZero = _subBalance(_from, _value);
+        if (balanceZero) {
+            gasRefund15();
+        } else {
+            gasRefund30();
+        }
+        emit Transfer(_from, _to, _value);
+        totalSupply_ = totalSupply_.sub(_value);
+        emit Burn(_to, _value);
+        emit Transfer(_to, address(0), _value);
+    }
+
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal {
+        bool hasHook;
+        address originalTo = _to;
+        (_to, hasHook) = _requireCanTransferFrom(_sender, _from, _to);
+        if (_addBalance(_to, _value)) {
+            if (_subAllowance(_from, _sender, _value)) {
+                if (_subBalance(_from, _value)) {
+                    // do not refund
+                } else {
+                    gasRefund30();
+                }
+            } else {
+                if (_subBalance(_from, _value)) {
+                    gasRefund30();
+                } else {
+                    gasRefund45();
+                }
+            }
+        } else {
+            if (_subAllowance(_from, _sender, _value)) {
+                if (_subBalance(_from, _value)) {
+                    // do not refund
+                } else {
+                    gasRefund15();
+                }
+            } else {
+                if (_subBalance(_from, _value)) {
+                    gasRefund15();
+                } else {
+                    gasRefund30();
+                }
+            }
+
+        }
+        emit Transfer(_from, originalTo, _value);
+        if (originalTo != _to) {
+            emit Transfer(originalTo, _to, _value);
+            if (hasHook) {
+                TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(_to).tokenFallback(_from, _value);
+            }
+        }
+    }
+
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
+        bool hasHook;
+        address finalTo;
+        (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+        if (_subBalance(_from, _value)) {
+            if (_addBalance(finalTo, _value)) {
+                gasRefund30();
+            } else {
+                // do not refund
+            }
+        } else {
+            if (_addBalance(finalTo, _value)) {
+                gasRefund45();
+            } else {
+                gasRefund30();
+            }
+        }
+        emit Transfer(_from, _to, _value);
+        if (finalTo != _to) {
+            emit Transfer(_to, finalTo, _value);
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+            }
+        }
+    }
+
+    function mint(address _to, uint256 _value) public onlyOwner {
+        require(_to != address(0), "to address cannot be zero");
+        bool hasHook;
+        address originalTo = _to;
+        (_to, hasHook) = _requireCanMint(_to);
+        totalSupply_ = totalSupply_.add(_value);
+        emit Mint(originalTo, _value);
+        emit Transfer(address(0), originalTo, _value);
+        if (_to != originalTo) {
+            emit Transfer(originalTo, _to, _value);
+        }
+        _addBalance(_to, _value);
+        if (hasHook) {
+            if (_to != originalTo) {
+                TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
+            } else {
+                TrueCoinReceiver(_to).tokenFallback(address(0), _value);
+            }
+        }
+    }
+
+    event WipeBlacklistedAccount(address indexed account, uint256 balance);
+    event SetRegistry(address indexed registry);
+
+    /**
+    * @dev Point to the registry that contains all compliance related data
+    @param _registry The address of the registry instance
     */
-    function reclaimToken(ERC20 token, address _to) external onlyOwner {
-        uint256 balance = token.balanceOf(this);
-        token.transfer(_to, balance);
+    function setRegistry(Registry _registry) public onlyOwner {
+        registry = _registry;
+        emit SetRegistry(registry);
+    }
+
+    modifier onlyRegistry {
+      require(msg.sender == address(registry));
+      _;
+    }
+
+    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
+        attributes[_who][_attribute] = _value;
+    }
+
+    function _burnAllArgs(address _from, uint256 _value) internal {
+        _requireCanBurn(_from);
+        super._burnAllArgs(_from, _value);
+    }
+
+    // Destroy the tokens owned by a blacklisted account
+    function wipeBlacklistedAccount(address _account) public onlyOwner {
+        require(_isBlacklisted(_account), "_account is not blacklisted");
+        uint256 oldValue = _getBalance(_account);
+        _setBalance(_account, 0);
+        totalSupply_ = totalSupply_.sub(oldValue);
+        emit WipeBlacklistedAccount(_account, oldValue);
+        emit Transfer(_account, address(0), oldValue);
+    }
+
+    function _isBlacklisted(address _account) internal view returns (bool) {
+        return attributes[_account][IS_BLACKLISTED] != 0;
+    }
+
+    function _requireCanTransfer(address _from, address _to) internal view returns (address, bool) {
+        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
+        if (depositAddressValue != 0) {
+            _to = address(depositAddressValue);
+        }
+        require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
+        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
+        return (_to, attributes[_to][IS_REGISTERED_CONTRACT] != 0);
+    }
+
+    function _requireCanTransferFrom(address _sender, address _from, address _to) internal view returns (address, bool) {
+        require (attributes[_sender][IS_BLACKLISTED] == 0, "blacklisted");
+        return _requireCanTransfer(_from, _to);
+    }
+
+    function _requireCanMint(address _to) internal view returns (address, bool) {
+        require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
+        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
+        if (depositAddressValue != 0) {
+            _to = address(depositAddressValue);
+        }
+        return (_to, attributes[_to][IS_REGISTERED_CONTRACT] != 0);
+    }
+
+    function _requireCanBurn(address _from) internal view {
+        require (attributes[_from][canBurn()] != 0, "cannot burn from this address");
+        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
     }
 
     function paused() public pure returns (bool) {
         return false;
-    }
-
-    /**  
-    *@dev allows owner of TrueUSD to gain ownership of any contract that TrueUSD currently owns
-    */
-    function reclaimContract(Ownable _ownable) external onlyOwner {
-        _ownable.transferOwnership(owner);
-    }
-
-    function _burnAllArgs(address _burner, uint256 _value) internal {
-        //round down burn amount so that the lowest amount allowed is 1 cent
-        uint burnAmount = _value.div(10 ** uint256(DECIMALS - ROUNDING)).mul(10 ** uint256(DECIMALS - ROUNDING));
-        super._burnAllArgs(_burner, burnAmount);
     }
 }
 
@@ -1076,7 +1116,6 @@ contract Proxy {
     */
     function() external payable {
         address _impl = implementation();
-        require(_impl != address(0), "implementation contract not set");
         
         assembly {
             let ptr := mload(0x40)
@@ -1324,9 +1363,9 @@ contract TokenController {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
     
-    TrueUSD public trueUSD;
+    CompliantDepositTokenWithHook public token;
     Registry public registry;
-    address public trueUsdFastPause;
+    address public fastPause;
 
     bytes32 constant public IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
@@ -1335,7 +1374,7 @@ contract TokenController {
     address constant public PAUSED_IMPLEMENTATION = address(1); // ***To be changed the paused version of TrueUSD in Production
 
     modifier onlyFastPauseOrOwner() {
-        require(msg.sender == trueUsdFastPause || msg.sender == owner, "must be pauser or owner");
+        require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
         _;
     }
 
@@ -1371,7 +1410,7 @@ contract TokenController {
     event SetRegistry(address indexed registry);
     event TransferChild(address indexed child, address indexed newOwner);
     event RequestReclaimContract(address indexed other);
-    event SetTrueUSD(TrueUSD newContract);
+    event SetToken(CompliantDepositTokenWithHook newContract);
     
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
     event FinalizeMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -1383,7 +1422,7 @@ contract TokenController {
     event AllMintsPaused(bool status);
     event MintPaused(uint opIndex, bool status);
     event MintApproved(address approver, uint opIndex);
-    event TrueUsdFastPauseSet(address _newFastPause);
+    event FastPauseSet(address _newFastPause);
 
     event MintThresholdChanged(uint instant, uint ratified, uint multiSig);
     event MintLimitsChanged(uint instant, uint ratified, uint multiSig);
@@ -1444,15 +1483,15 @@ contract TokenController {
     */
 
     function transferTusdProxyOwnership(address _newOwner) external onlyOwner {
-        OwnedUpgradeabilityProxy(trueUSD).transferProxyOwnership(_newOwner);
+        OwnedUpgradeabilityProxy(token).transferProxyOwnership(_newOwner);
     }
 
     function claimTusdProxyOwnership() external onlyOwner {
-        OwnedUpgradeabilityProxy(trueUSD).claimProxyOwnership();
+        OwnedUpgradeabilityProxy(token).claimProxyOwnership();
     }
 
     function upgradeTusdProxyImplTo(address _implementation) external onlyOwner {
-        OwnedUpgradeabilityProxy(trueUSD).upgradeTo(_implementation);
+        OwnedUpgradeabilityProxy(token).upgradeTo(_implementation);
     }
 
     /*
@@ -1466,7 +1505,7 @@ contract TokenController {
      Instant mint requires no approval, ratify mint requires 1 approval and multiSig mint requires 3 approvals
      */
     function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
-        require(_instant < _ratified && _ratified < _multiSig);
+        require(_instant <= _ratified && _ratified <= _multiSig);
         instantMintThreshold = _instant;
         ratifiedMintThreshold = _ratified;
         multiSigMintThreshold = _multiSig;
@@ -1479,10 +1518,19 @@ contract TokenController {
      before needing to refill
      */
     function setMintLimits(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
-        require(_instant < _ratified && _ratified < _multiSig);
+        require(_instant <= _ratified && _ratified <= _multiSig);
         instantMintLimit = _instant;
+        if (instantMintPool > instantMintLimit) {
+            instantMintPool = instantMintLimit;
+        }
         ratifiedMintLimit = _ratified;
+        if (ratifiedMintPool > ratifiedMintLimit) {
+            ratifiedMintPool = ratifiedMintLimit;
+        }
         multiSigMintLimit = _multiSig;
+        if (multiSigMintPool > multiSigMintLimit) {
+            multiSigMintPool = multiSigMintLimit;
+        }
         emit MintLimitsChanged(_instant, _ratified, _multiSig);
     }
 
@@ -1526,7 +1574,7 @@ contract TokenController {
     }
 
     /**
-     * @dev mintKey initiates a request to mint _value TrueUSD for account _to
+     * @dev mintKey initiates a request to mint _value for account _to
      * @param _to the address to mint to
      * @param _value the amount requested
      */
@@ -1547,7 +1595,7 @@ contract TokenController {
         require(_value <= instantMintPool, "instant mint pool is dry");
         instantMintPool = instantMintPool.sub(_value);
         emit InstantMint(_to, _value, msg.sender);
-        trueUSD.mint(_to, _value);
+        token.mint(_to, _value);
     }
 
 
@@ -1584,7 +1632,7 @@ contract TokenController {
             _subtractFromMintPool(value);
         }
         delete mintOperations[_index];
-        trueUSD.mint(to, value);
+        token.mint(to, value);
         emit FinalizeMint(to, value, _index, msg.sender);
     }
 
@@ -1715,12 +1763,12 @@ contract TokenController {
 
 
     /** 
-    *@dev Update this contract's trueUSD pointer to newContract (e.g. if the
+    *@dev Update this contract's token pointer to newContract (e.g. if the
     contract is upgraded)
     */
-    function setTrueUSD(TrueUSD _newContract) external onlyOwner {
-        trueUSD = _newContract;
-        emit SetTrueUSD(_newContract);
+    function setToken(CompliantDepositTokenWithHook _newContract) external onlyOwner {
+        token = _newContract;
+        emit SetToken(_newContract);
     }
 
     /** 
@@ -1732,18 +1780,11 @@ contract TokenController {
     }
 
     /** 
-    *@dev update TrueUSD's name and symbol
+    *@dev Swap out token's permissions registry
+    *@param _registry new registry for token
     */
-    function changeTokenName(string _name, string _symbol) external onlyOwner {
-        trueUSD.changeTokenName(_name, _symbol);
-    }
-
-    /** 
-    *@dev Swap out TrueUSD's permissions registry
-    *@param _registry new registry for trueUSD
-    */
-    function setTusdRegistry(Registry _registry) external onlyOwner {
-        trueUSD.setRegistry(_registry);
+    function setTokenRegistry(Registry _registry) external onlyOwner {
+        token.setRegistry(_registry);
     }
 
     /** 
@@ -1761,7 +1802,7 @@ contract TokenController {
     @param _allowanceSheet HasOwner storage contract
     */
     function claimStorageForProxy(
-        TrueUSD _proxy,
+        CompliantDepositTokenWithHook _proxy,
         HasOwner _balanceSheet,
         HasOwner _allowanceSheet) external onlyOwner {
 
@@ -1782,46 +1823,46 @@ contract TokenController {
     }
 
     /** 
-    *@dev Transfer ownership of a contract from trueUSD to this TokenController.
+    *@dev Transfer ownership of a contract from token to this TokenController.
     Can be used e.g. to reclaim balance sheet
     in order to transfer it to an upgraded TrueUSD contract.
     *@param _other address of the contract to claim ownership of
     */
     function requestReclaimContract(Ownable _other) public onlyOwner {
-        trueUSD.reclaimContract(_other);
+        token.reclaimContract(_other);
         emit RequestReclaimContract(_other);
     }
 
     /** 
-    *@dev send all ether in trueUSD address to the owner of tokenController 
+    *@dev send all ether in token address to the owner of tokenController 
     */
     function requestReclaimEther() external onlyOwner {
-        trueUSD.reclaimEther(owner);
+        token.reclaimEther(owner);
     }
 
     /** 
-    *@dev transfer all tokens of a particular type in trueUSD address to the
+    *@dev transfer all tokens of a particular type in token address to the
     owner of tokenController 
     *@param _token token address of the token to transfer
     */
     function requestReclaimToken(ERC20 _token) external onlyOwner {
-        trueUSD.reclaimToken(_token, owner);
+        token.reclaimToken(_token, owner);
     }
 
     /** 
-    *@dev set new contract to which specified address can send eth to to quickly pause trueUSD
+    *@dev set new contract to which specified address can send eth to to quickly pause token
     *@param _newFastPause address of the new contract
     */
-    function setTrueUsdFastPause(address _newFastPause) external onlyOwner {
-        trueUsdFastPause = _newFastPause;
-        emit TrueUsdFastPauseSet(_newFastPause);
+    function setFastPause(address _newFastPause) external onlyOwner {
+        fastPause = _newFastPause;
+        emit FastPauseSet(_newFastPause);
     }
 
     /** 
     *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
     */
-    function pauseTrueUSD() external onlyFastPauseOrOwner {
-        OwnedUpgradeabilityProxy(trueUSD).upgradeTo(PAUSED_IMPLEMENTATION);
+    function pauseToken() external onlyFastPauseOrOwner {
+        OwnedUpgradeabilityProxy(token).upgradeTo(PAUSED_IMPLEMENTATION);
     }
     
     /** 
@@ -1829,7 +1870,7 @@ contract TokenController {
     *@param _blacklistedAddress address whose balance will be wiped
     */
     function wipeBlackListedTrueUSD(address _blacklistedAddress) external onlyOwner {
-        trueUSD.wipeBlacklistedAccount(_blacklistedAddress);
+        token.wipeBlacklistedAccount(_blacklistedAddress);
     }
 
     /** 
@@ -1839,7 +1880,7 @@ contract TokenController {
     *@param _max maximum amount user can burn at a time
     */
     function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
-        trueUSD.setBurnBounds(_min, _max);
+        token.setBurnBounds(_min, _max);
     }
 
     /** 

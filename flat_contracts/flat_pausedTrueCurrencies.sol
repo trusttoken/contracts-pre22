@@ -29,6 +29,10 @@ contract ERC20 is ERC20Basic {
 
 // File: registry/contracts/Registry.sol
 
+interface RegistryClone {
+    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
+}
+
 contract Registry {
     struct AttributeData {
         uint256 value;
@@ -48,16 +52,11 @@ contract Registry {
     // that account can use the token. This mapping stores that value (1, in the
     // example) as well as which validator last set the value and at what time,
     // so that e.g. the check can be renewed at appropriate intervals.
-    mapping(address => mapping(bytes32 => AttributeData)) public attributes;
+    mapping(address => mapping(bytes32 => AttributeData)) attributes;
     // The logic governing who is allowed to set what attributes is abstracted as
     // this accessManager, so that it may be replaced by the owner as needed
-
-    bytes32 public constant WRITE_PERMISSION = keccak256("canWriteTo-");
-    bytes32 public constant IS_BLACKLISTED = "isBlacklisted";
-    bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
-    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
-    bytes32 public constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
-    bytes32 public constant CAN_BURN = "canBurn";
+    bytes32 constant WRITE_PERMISSION = keccak256("canWriteTo-");
+    mapping(bytes32 => RegistryClone[]) subscribers;
 
     event OwnershipTransferred(
         address indexed previousOwner,
@@ -65,15 +64,13 @@ contract Registry {
     );
     event SetAttribute(address indexed who, bytes32 attribute, uint256 value, bytes32 notes, address indexed adminAddr);
     event SetManager(address indexed oldManager, address indexed newManager);
-
-    function writeAttributeFor(bytes32 _attribute) public pure returns (bytes32) {
-        return keccak256(WRITE_PERMISSION ^ _attribute);
-    }
+    event StartSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
+    event StopSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
 
     // Allows a write if either a) the writer is that Registry's owner, or
     // b) the writer is writing to attribute foo and that writer already has
     // the canWriteTo-foo attribute set (in that same Registry)
-    function confirmWrite(bytes32 _attribute, address _admin) public view returns (bool) {
+    function confirmWrite(bytes32 _attribute, address _admin) internal view returns (bool) {
         return (_admin == owner || hasAttribute(_admin, keccak256(WRITE_PERMISSION ^ _attribute)));
     }
 
@@ -82,12 +79,40 @@ contract Registry {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
+
+        RegistryClone[] storage targets = subscribers[_attribute];
+        uint256 index = targets.length;
+        while (index --> 0) {
+            targets[index].syncAttributeValue(_who, _attribute, _value);
+        }
+    }
+
+    function subscribe(bytes32 _attribute, RegistryClone _syncer) external onlyOwner {
+        subscribers[_attribute].push(_syncer);
+        emit StartSubscription(_attribute, _syncer);
+    }
+
+    function unsubscribe(bytes32 _attribute, uint256 _index) external onlyOwner {
+        uint256 length = subscribers[_attribute].length;
+        require(_index < length);
+        emit StopSubscription(_attribute, subscribers[_attribute][_index]);
+        subscribers[_attribute][_index] = subscribers[_attribute][length - 1];
+        subscribers[_attribute].length = length - 1;
+    }
+
+    function subscriberCount(bytes32 _attribute) public view returns (uint256) {
+        return subscribers[_attribute].length;
     }
 
     function setAttributeValue(address _who, bytes32 _attribute, uint256 _value) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, "", msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, "", msg.sender);
+        RegistryClone[] storage targets = subscribers[_attribute];
+        uint256 index = targets.length;
+        while (index --> 0) {
+            targets[index].syncAttributeValue(_who, _attribute, _value);
+        }
     }
 
     // Returns true if the uint256 value stored for this attribute is non-zero
@@ -95,71 +120,6 @@ contract Registry {
         return attributes[_who][_attribute].value != 0;
     }
 
-    function hasBothAttributes(address _who, bytes32 _attribute1, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who][_attribute1].value != 0 && attributes[_who][_attribute2].value != 0;
-    }
-
-    function hasEitherAttribute(address _who, bytes32 _attribute1, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who][_attribute1].value != 0 || attributes[_who][_attribute2].value != 0;
-    }
-
-    function hasAttribute1ButNotAttribute2(address _who, bytes32 _attribute1, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who][_attribute1].value != 0 && attributes[_who][_attribute2].value == 0;
-    }
-
-    function bothHaveAttribute(address _who1, address _who2, bytes32 _attribute) public view returns (bool) {
-        return attributes[_who1][_attribute].value != 0 && attributes[_who2][_attribute].value != 0;
-    }
-    
-    function eitherHaveAttribute(address _who1, address _who2, bytes32 _attribute) public view returns (bool) {
-        return attributes[_who1][_attribute].value != 0 || attributes[_who2][_attribute].value != 0;
-    }
-
-    function haveAttributes(address _who1, bytes32 _attribute1, address _who2, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who1][_attribute1].value != 0 && attributes[_who2][_attribute2].value != 0;
-    }
-
-    function haveEitherAttribute(address _who1, bytes32 _attribute1, address _who2, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who1][_attribute1].value != 0 || attributes[_who2][_attribute2].value != 0;
-    }
-
-    function isDepositAddress(address _who) public view returns (bool) {
-        return attributes[address(uint256(_who) >> 20)][IS_DEPOSIT_ADDRESS].value != 0;
-    }
-
-    function getDepositAddress(address _who) public view returns (address) {
-        return address(attributes[address(uint256(_who) >> 20)][IS_DEPOSIT_ADDRESS].value);
-    }
-
-    function requireCanTransfer(address _from, address _to) public view returns (address, bool) {
-        require (attributes[_from][IS_BLACKLISTED].value == 0, "blacklisted");
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
-        if (depositAddressValue != 0) {
-            _to = address(depositAddressValue);
-        }
-        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
-    }
-
-    function requireCanTransferFrom(address _sender, address _from, address _to) public view returns (address, bool) {
-        require (attributes[_sender][IS_BLACKLISTED].value == 0, "blacklisted");
-        return requireCanTransfer(_from, _to);
-    }
-
-    function requireCanMint(address _to) public view returns (address, bool) {
-        require (attributes[_to][HAS_PASSED_KYC_AML].value != 0);
-        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
-        if (depositAddressValue != 0) {
-            _to = address(depositAddressValue);
-        }
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
-    }
-
-    function requireCanBurn(address _from) public view {
-        require (attributes[_from][CAN_BURN].value != 0);
-        require (attributes[_from][IS_BLACKLISTED].value == 0);
-    }
 
     // Returns the exact value of the attribute, as well as its metadata
     function getAttribute(address _who, bytes32 _attribute) public view returns (uint256, bytes32, address, uint256) {
@@ -179,6 +139,18 @@ contract Registry {
         return attributes[_who][_attribute].timestamp;
     }
 
+    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] _addresses) external {
+        RegistryClone[] storage targets = subscribers[_attribute];
+        uint256 index = targets.length;
+        while (index --> _startIndex) {
+            RegistryClone target = targets[index];
+            for (uint256 i = _addresses.length; i --> 0; ) {
+                address who = _addresses[i];
+                target.syncAttributeValue(who, _attribute, attributes[who][_attribute].value);
+            }
+        }
+    }
+
     function reclaimEther(address _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
@@ -188,7 +160,7 @@ contract Registry {
         token.transfer(_to, balance);
     }
 
-    /**
+   /**
     * @dev Throws if called by any account other than the owner.
     */
     modifier onlyOwner() {
@@ -401,7 +373,7 @@ contract ProxyStorage {
     address public owner;
     address public pendingOwner;
 
-    bool public initialized;
+    bool initialized;
     
     BalanceSheet public balances;
     AllowanceSheet public allowances;
@@ -416,12 +388,16 @@ contract ProxyStorage {
 
     Registry public registry;
 
-    string public name = "TrueUSD";
-    string public symbol = "TUSD";
+    string name_Deprecated = "TrueUSD";
+    string symbol_Deprecated = "TUSD";
 
-    uint[] public gasRefundPool;
+    uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
+
+    mapping (address => uint256) _balanceOf;
+    mapping (address => mapping (address => uint256)) _allowance;
+    mapping (address => mapping (bytes32 => uint256)) attributes;
 }
 
 // File: contracts/HasOwner.sol
@@ -482,136 +458,18 @@ contract HasOwner is ProxyStorage {
     }
 }
 
-// File: contracts/utilities/PausedTrueUSD.sol
+// File: contracts/utilities/PausedToken.sol
 
-contract PausedToken is HasOwner {
+contract PausedToken is HasOwner, RegistryClone {
+    using SafeMath for uint256;
     event Transfer(address indexed from, address indexed to, uint256 value);
     event AllowanceSheetSet(address indexed sheet);
     event BalanceSheetSet(address indexed sheet);
+    uint8 constant DECIMALS = 18;
+    uint8 constant ROUNDING = 2;
 
-    function totalSupply() public view returns (uint256) {
-        return totalSupply_;
-    }
-
-    function balanceOf(address _owner) public view returns (uint256 balance) {
-        return balances.balanceOf(_owner);
-    }
-
-    function allowance(address _owner, address _spender) public view returns (uint256) {
-        return allowances.allowanceOf(_owner, _spender);
-    }
-
-    function setAllowanceSheet(address _sheet) public onlyOwner returns(bool) {
-        allowances = AllowanceSheet(_sheet);
-        allowances.claimOwnership();
-        emit AllowanceSheetSet(_sheet);
-        return true;
-    }
-
-    function setBalanceSheet(address _sheet) public onlyOwner returns (bool) {
-        balances = BalanceSheet(_sheet);
-        balances.claimOwnership();
-        emit BalanceSheetSet(_sheet);
-        return true;
-    }
-
-    function transfer(address _to, uint256 _value) public returns (bool) {
-        revert("Token Paused");
-    }
-
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        revert("Token Paused");
-    }
-
-    function burn(uint256 _value) public {
-        revert("Token Paused");
-    }
-
-    function mint(address _to, uint256 _value) public onlyOwner {
-        revert("Token Paused");
-    }
-    
-    function approve(address _spender, uint256 _value) public returns (bool) {
-        revert("Token Paused");
-    }
-
-    function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
-        revert("Token Paused");
-    }
-    function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
-        revert("Token Paused");
-    }
-    function paused() public pure returns (bool) {
-        return true;
-    }
-}
-
-/** @title PausedDelegateERC20
-Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
-functions in the old contract still works (except Burn). 
-*/
-contract PausedDelegateERC20 is PausedToken {
-
-    address public constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
-    
-    modifier onlyDelegateFrom() {
-        require(msg.sender == DELEGATE_FROM);
-        _;
-    }
-
-    function delegateTotalSupply() public view returns (uint256) {
-        return totalSupply();
-    }
-
-    function delegateBalanceOf(address who) public view returns (uint256) {
-        return balanceOf(who);
-    }
-
-    function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        revert("Token Paused");
-    }
-
-    function delegateAllowance(address owner, address spender) public view returns (uint256) {
-        return allowance(owner, spender);
-    }
-
-    function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        revert("Token Paused");
-    }
-
-    function delegateApprove(address spender, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        revert("Token Paused");
-    }
-
-    function delegateIncreaseApproval(address spender, uint addedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        revert("Token Paused");
-    }
-
-    function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) public onlyDelegateFrom returns (bool) {
-        revert("Token Paused");
-    }
-}
-
-/** @title TrueUSD
-* @dev This is the top-level ERC20 contract, but most of the interesting functionality is
-* inherited - see the documentation on the corresponding contracts.
-*/
-contract PausedTrueUSD is PausedDelegateERC20 {
-    using SafeMath for *;
-
-    uint8 public constant DECIMALS = 18;
-    uint8 public constant ROUNDING = 2;
-    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
-    bytes32 public constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
-    bytes32 public constant CAN_BURN = "canBurn";
-    bytes32 public constant IS_BLACKLISTED = "isBlacklisted";
-    bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
-
-
-    event ChangeTokenName(string newName, string newSymbol);
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
     event SetRegistry(address indexed registry);
-    event RedemptionAddress(address indexed addr);
 
     function decimals() public pure returns (uint8) {
         return DECIMALS;
@@ -619,47 +477,6 @@ contract PausedTrueUSD is PausedDelegateERC20 {
 
     function rounding() public pure returns (uint8) {
         return ROUNDING;
-    }
-
-    function changeTokenName(string _name, string _symbol) external onlyOwner {
-        name = _name;
-        symbol = _symbol;
-        emit ChangeTokenName(_name, _symbol);
-    }
-
-    function setRegistry(Registry _registry) public onlyOwner {
-        registry = _registry;
-        emit SetRegistry(registry);
-    }
-
-    function sponsorGas() external {
-        uint256 len = gasRefundPool.length;
-        gasRefundPool.length = len + 9;
-        gasRefundPool[len] = 1;
-        gasRefundPool[len + 1] = 1;
-        gasRefundPool[len + 2] = 1;
-        gasRefundPool[len + 3] = 1;
-        gasRefundPool[len + 4] = 1;
-        gasRefundPool[len + 5] = 1;
-        gasRefundPool[len + 6] = 1;
-        gasRefundPool[len + 7] = 1;
-        gasRefundPool[len + 8] = 1;
-    }  
-
-    /**  
-    *@dev Return the remaining sponsored gas slots
-    */
-    function remainingGasRefundPool() public view returns(uint) {
-        return gasRefundPool.length;
-    }
-
-    function wipeBlacklistedAccount(address _account) public onlyOwner {
-        require(registry.hasAttribute(_account, IS_BLACKLISTED), "_account is not blacklisted");
-        uint256 oldValue = balanceOf(_account);
-        balances.setBalance(_account, 0);
-        totalSupply_ = totalSupply_.sub(oldValue);
-        emit WipeBlacklistedAccount(_account, oldValue);
-        emit Transfer(_account, address(0), oldValue);
     }
 
     /**  
@@ -683,5 +500,221 @@ contract PausedTrueUSD is PausedDelegateERC20 {
     */
     function reclaimContract(Ownable _ownable) external onlyOwner {
         _ownable.transferOwnership(owner);
+    }
+
+
+    function totalSupply() public view returns (uint256) {
+        return totalSupply_;
+    }
+
+    function setAllowanceSheet(address _sheet) public onlyOwner returns(bool) {
+        allowances = AllowanceSheet(_sheet);
+        allowances.claimOwnership();
+        emit AllowanceSheetSet(_sheet);
+        return true;
+    }
+
+    /**  
+    *@dev Return the remaining sponsored gas slots
+    */
+    function remainingGasRefundPool() public view returns (uint length) {
+        assembly {
+            length := sload(0xfffff)
+        }
+    }
+
+    function sponsorGas() external {
+        uint256 refundPrice = minimumGasPriceForFutureRefunds;
+        require(refundPrice > 0);
+        assembly {
+            let offset := sload(0xfffff)
+            let result := add(offset, 9)
+            sstore(0xfffff, result)
+            let position := add(offset, 0x100000)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+        }
+    }
+
+    bytes32 constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";
+
+    function setMinimumGasPriceForFutureRefunds(uint256 _minimumGasPriceForFutureRefunds) public {
+        require(registry.hasAttribute(msg.sender, CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE));
+        minimumGasPriceForFutureRefunds = _minimumGasPriceForFutureRefunds;
+    }
+
+    function setBalanceSheet(address _sheet) public onlyOwner returns (bool) {
+        balances = BalanceSheet(_sheet);
+        balances.claimOwnership();
+        emit BalanceSheetSet(_sheet);
+        return true;
+    }
+    function balanceOf(address _who) public view returns (uint256) {
+        return _getBalance(_who);
+    }
+    function _getBalance(address _who) internal view returns (uint256) {
+        return _balanceOf[_who];
+    }
+    function allowance(address _who, address _spender) public view returns (uint256) {
+        return _getAllowance(_who, _spender);
+    }
+    function _getAllowance(address _who, address _spender) internal view returns (uint256) {
+        return _allowance[_who][_spender];
+    }
+    function transfer(address /*_to*/, uint256 /*_value*/) public returns (bool) {
+        revert("Token Paused");
+    }
+
+    function transferFrom(address /*_from*/, address /*_to*/, uint256 /*_value*/) public returns (bool) {
+        revert("Token Paused");
+    }
+
+    function burn(uint256 /*_value*/) public {
+        revert("Token Paused");
+    }
+
+    function mint(address /*_to*/, uint256 /*_value*/) public onlyOwner {
+        revert("Token Paused");
+    }
+    
+    function approve(address /*_spender*/, uint256 /*_value*/) public returns (bool) {
+        revert("Token Paused");
+    }
+
+    function increaseApproval(address /*_spender*/, uint /*_addedValue*/) public returns (bool) {
+        revert("Token Paused");
+    }
+    function decreaseApproval(address /*_spender*/, uint /*_subtractedValue*/) public returns (bool) {
+        revert("Token Paused");
+    }
+    function paused() public pure returns (bool) {
+        return true;
+    }
+    function setRegistry(Registry _registry) public onlyOwner {
+        registry = _registry;
+        emit SetRegistry(registry);
+    }
+
+    modifier onlyRegistry {
+      require(msg.sender == address(registry));
+      _;
+    }
+
+    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
+        attributes[_who][_attribute] = _value;
+    }
+
+    bytes32 constant IS_BLACKLISTED = "isBlacklisted";
+    function wipeBlacklistedAccount(address _account) public onlyOwner {
+        require(registry.hasAttribute(_account, IS_BLACKLISTED), "_account is not blacklisted");
+        uint256 oldValue = _balanceOf[_account];
+        _balanceOf[_account] = 0;
+        totalSupply_ = totalSupply_.sub(oldValue);
+        emit WipeBlacklistedAccount(_account, oldValue);
+        emit Transfer(_account, address(0), oldValue);
+    }
+
+}
+
+/** @title PausedDelegateERC20
+Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
+functions in the old contract still works (except Burn). 
+*/
+contract PausedDelegateERC20 is PausedToken {
+
+    address public constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
+    
+    modifier onlyDelegateFrom() {
+        require(msg.sender == DELEGATE_FROM);
+        _;
+    }
+
+    function delegateTotalSupply() public view returns (uint256) {
+        return totalSupply();
+    }
+
+    function delegateBalanceOf(address who) public view returns (uint256) {
+        return _balanceOf[who];
+    }
+
+    function delegateTransfer(address /*to*/, uint256 /*value*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
+        revert("Token Paused");
+    }
+
+    function delegateAllowance(address owner, address spender) public view returns (uint256) {
+        return _allowance[owner][spender];
+    }
+
+    function delegateTransferFrom(address /*from*/, address /*to*/, uint256 /*value*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
+        revert("Token Paused");
+    }
+
+    function delegateApprove(address /*spender*/, uint256 /*value*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
+        revert("Token Paused");
+    }
+
+    function delegateIncreaseApproval(address /*spender*/, uint /*addedValue*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
+        revert("Token Paused");
+    }
+
+    function delegateDecreaseApproval(address /*spender*/, uint /*subtractedValue*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
+        revert("Token Paused");
+    }
+}
+
+// File: contracts/utilities/PausedCurrencies.sol
+
+contract PausedTrueUSD is PausedDelegateERC20 {
+    function name() public pure returns (string) {
+        return "TrueUSD";
+    }
+
+    function symbol() public pure returns (string) {
+        return "TUSD";
+    }
+}
+
+contract PausedAUD is PausedToken {
+    function name() public pure returns (string) {
+        return "TrueAUD";
+    }
+
+    function symbol() public pure returns (string) {
+        return "TAUD";
+    }
+}
+
+contract PausedGBP is PausedToken {
+    function name() public pure returns (string) {
+        return "TrueGBP";
+    }
+
+    function symbol() public pure returns (string) {
+        return "TGBP";
+    }
+}
+
+contract PausedCAD is PausedToken {
+    function name() public pure returns (string) {
+        return "TrueCAD";
+    }
+
+    function symbol() public pure returns (string) {
+        return "TCAD";
     }
 }

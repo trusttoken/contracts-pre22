@@ -12,7 +12,6 @@ contract('MintableToken', function ([_, owner, oneHundred, anotherAccount]) {
         const allowanceSheet = await AllowanceSheet.new({ from: owner })
         this.token = await TrueUSDMock.new(owner, 0, { from: owner })
         this.registry = await Registry.new({ from: owner });
-        await this.registry.setAttributeValue(anotherAccount, bytes32("hasPassedKYC/AML"), 1, { from: owner });
         await this.token.setRegistry(this.registry.address, { from: owner })
         await balanceSheet.transferOwnership(this.token.address, { from: owner })
         await this.token.setBalanceSheet(balanceSheet.address, { from: owner })

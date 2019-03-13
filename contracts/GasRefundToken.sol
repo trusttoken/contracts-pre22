@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "./CompliantDepositTokenWithHook.sol";
+import "./ProxyStorage.sol";
 
 /**  
 @title Gas Refund Token
@@ -8,64 +8,114 @@ Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas 
 Each time an non-empty storage slot is set to 0, evm refund 15,000 (19,000 after Constantinople) to the sender
 of the transaction. 
 */
-contract GasRefundToken is CompliantDepositTokenWithHook {
+contract GasRefundToken is ProxyStorage {
 
     function sponsorGas() external {
-        uint256 len = gasRefundPool.length;
         uint256 refundPrice = minimumGasPriceForFutureRefunds;
         require(refundPrice > 0);
-        gasRefundPool.length = len + 9;
-        gasRefundPool[len] = refundPrice;
-        gasRefundPool[len + 1] = refundPrice;
-        gasRefundPool[len + 2] = refundPrice;
-        gasRefundPool[len + 3] = refundPrice;
-        gasRefundPool[len + 4] = refundPrice;
-        gasRefundPool[len + 5] = refundPrice;
-        gasRefundPool[len + 6] = refundPrice;
-        gasRefundPool[len + 7] = refundPrice;
-        gasRefundPool[len + 8] = refundPrice;
+        assembly {
+            let offset := sload(0xfffff)
+            let result := add(offset, 9)
+            sstore(0xfffff, result)
+            let position := add(offset, 0x100000)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+            position := add(position, 1)
+            sstore(position, refundPrice)
+        }
     }
 
-    function minimumGasPriceForRefund() public view returns (uint256) {
-        uint256 len = gasRefundPool.length;
-        if (len > 0) {
-          return gasRefundPool[len - 1] + 1;
+    function minimumGasPriceForRefund() public view returns (uint256 result) {
+        assembly {
+            let offset := sload(0xfffff)
+            let location := add(offset, 0xfffff)
+            result := add(sload(location), 1)
         }
-        return uint256(-1);
     }
 
     /**  
     @dev refund 45,000 gas for functions with gasRefund modifier.
+    @dev costs slightly more than 20,400 gas
     */
-    modifier gasRefund {
-        uint256 len = gasRefundPool.length;
-        if (len > 2 && tx.gasprice > gasRefundPool[len-1]) {
-            gasRefundPool.length = len - 3;
+    function gasRefund45() internal {
+        assembly {
+            let offset := sload(0xfffff)
+            if gt(offset, 2) {
+                let location := add(offset, 0xfffff)
+                if gt(gasprice,sload(location)) {
+                    sstore(location, 0)
+                    location := sub(location, 1)
+                    sstore(location, 0)
+                    location := sub(location, 1)
+                    sstore(location, 0)
+                    sstore(0xfffff, sub(offset, 3))
+                }
+            }
         }
-        _;
+    }
+
+    /**  
+    @dev refund 30,000 gas for functions with gasRefund modifier.
+    @dev costs slightly more than 15,400 gas
+    */
+    function gasRefund30() internal {
+        assembly {
+            let offset := sload(0xfffff)
+            if gt(offset, 1) {
+                let location := add(offset, 0xfffff)
+                if gt(gasprice,sload(location)) {
+                    sstore(location, 0)
+                    location := sub(location, 1)
+                    sstore(location, 0)
+                    sstore(0xfffff, sub(offset, 2))
+                }
+            }
+        }
+    }
+
+    /**  
+    @dev refund 15,000 gas for functions with gasRefund modifier.
+    @dev costs slightly more than 10,200 gas
+    */
+    function gasRefund15() internal {
+        assembly {
+            let offset := sload(0xfffff)
+            if gt(offset, 1) {
+                let location := add(offset, 0xfffff)
+                if gt(gasprice,sload(location)) {
+                    sstore(location, 0)
+                    sstore(0xfffff, sub(offset, 1))
+                }
+            }
+        }
     }
 
     /**  
     *@dev Return the remaining sponsored gas slots
     */
-    function remainingGasRefundPool() public view returns (uint) {
-        return gasRefundPool.length;
+    function remainingGasRefundPool() public view returns (uint length) {
+        assembly {
+            length := sload(0xfffff)
+        }
     }
 
-    function remainingSponsoredTransactions() public view returns (uint) {
-        return gasRefundPool.length / 3;
-    }
-
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal gasRefund {
-        super._transferAllArgs(_from, _to, _value);
-    }
-
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _sender) internal gasRefund {
-        super._transferFromAllArgs(_from, _to, _value, _sender);
-    }
-
-    function mint(address _to, uint256 _value) public onlyOwner gasRefund {
-        super.mint(_to, _value);
+    function gasRefundPool(uint256 _index) public view returns (uint256 gasPrice) {
+        assembly {
+            gasPrice := sload(add(0x100000, _index))
+        }
     }
 
     bytes32 constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";

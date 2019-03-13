@@ -15,6 +15,8 @@ contract('MultisigOwner', function (accounts) {
     const [_, owner1, owner2, owner3 , oneHundred, blackListed, mintKey, pauseKey, approver] = accounts
     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
     const notes = bytes32("notes")
+    const PAUSER = bytes32("isTUSDMintPausers")
+    const BLACKLISTED = bytes32("isBlacklisted")
 
     beforeEach(async function () {
         this.registry = await Registry.new({ from: owner1 })
@@ -24,14 +26,14 @@ contract('MultisigOwner', function (accounts) {
         await this.controller.setRegistry(this.registry.address, { from: owner1 })
         await this.token.transferOwnership(this.controller.address, { from: owner1 })
         await this.controller.issueClaimOwnership(this.token.address, { from: owner1 })
-        await this.controller.setTrueUSD(this.token.address, { from: owner1 })
-        await this.controller.setTusdRegistry(this.registry.address, { from: owner1 })
-        this.ClaimableContract =await BalanceSheet.new({from: owner1})
+        await this.controller.setToken(this.token.address, { from: owner1 })
+        await this.controller.setTokenRegistry(this.registry.address, { from: owner1 })
+        this.ClaimableContract = await BalanceSheet.new({from: owner1})
         this.balanceSheet = await this.token.balances.call()
         this.allowanceSheet = await this.token.allowances.call()
-        await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner1 })
+        await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner1 })
         await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, notes, { from: owner1 })
-        await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner1 })
+        await this.registry.setAttribute(pauseKey, PAUSER, 1, notes, { from: owner1 })
         this.multisigOwner = await MultisigOwner.new({ from: owner1 })
         await this.multisigOwner.msInitialize([owner1, owner2, owner3], { from: owner1 })
     })
@@ -271,25 +273,16 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(mintPaused,false)
         })
 
-        it('call setTrueUSD of tokenController', async function(){
-            await this.multisigOwner.setTrueUSD(this.token.address, {from: owner1})
-            await this.multisigOwner.setTrueUSD(this.token.address, {from: owner2})
-            const trueUSD = await this.controller.trueUSD.call()
+        it('call setToken of tokenController', async function(){
+            await this.multisigOwner.setToken(this.token.address, {from: owner1})
+            await this.multisigOwner.setToken(this.token.address, {from: owner2})
+            const trueUSD = await this.controller.token.call()
             assert.equal(trueUSD,this.token.address)
         })
 
-        it('call changeTokenName of tokenController', async function(){
-            await this.multisigOwner.changeTokenName("Terry Token", "ttt", {from: owner1})
-            await this.multisigOwner.changeTokenName("Terry Token", "ttt", {from: owner2})
-            const name = await this.token.name.call()
-            const symbol = await this.token.symbol.call()
-            assert.equal(name,"Terry Token")
-            assert.equal(symbol,"ttt")
-        })
-
-        it('call setTusdRegistry of tokenController', async function(){
-            await this.multisigOwner.setTusdRegistry(this.registry.address, {from: owner1})
-            await this.multisigOwner.setTusdRegistry(this.registry.address, {from: owner2})
+        it('call setTokenRegistry of tokenController', async function(){
+            await this.multisigOwner.setTokenRegistry(this.registry.address, {from: owner1})
+            await this.multisigOwner.setTokenRegistry(this.registry.address, {from: owner2})
             const registry = await this.token.registry.call()
             assert.equal(registry,this.registry.address)
         })
@@ -346,15 +339,15 @@ contract('MultisigOwner', function (accounts) {
         })
 
     
-        it('call setTrueUsdFastPause of tokenController', async function(){
-            await this.multisigOwner.setTrueUsdFastPause(oneHundred, {from: owner1})
-            await this.multisigOwner.setTrueUsdFastPause(oneHundred, {from: owner2})
-            const trueUsdFastPause = await this.controller.trueUsdFastPause.call()
+        it('call setFastPause of tokenController', async function(){
+            await this.multisigOwner.setFastPause(oneHundred, {from: owner1})
+            await this.multisigOwner.setFastPause(oneHundred, {from: owner2})
+            const trueUsdFastPause = await this.controller.fastPause.call()
             assert.equal(trueUsdFastPause, oneHundred)
         })
 
         it('call wipeBlackListedTrueUSD of tokenController', async function(){
-            await this.registry.setAttribute(blackListed, bytes32("isBlacklisted"), 1, notes, { from: owner1 })
+            await this.registry.setAttribute(blackListed, BLACKLISTED, 1, notes, { from: owner1 })
             await this.multisigOwner.wipeBlackListedTrueUSD(blackListed, {from: owner1})
             await this.multisigOwner.wipeBlackListedTrueUSD(blackListed, {from: owner2})
         })

@@ -17,6 +17,8 @@ const BN = web3.utils.toBN;
 contract('MultisigOwner With Proxy', function (accounts) {
     const [_, owner1, owner2, owner3 , oneHundred, blackListed, mintKey, pauseKey, approver] = accounts
     const notes = bytes32("notes");
+    const KYCAML = bytes32("hasPassedKYC/AML")
+    const CAN_BURN = bytes32("canBurn")
     
     beforeEach(async function () {
         this.multisigProxy = await Proxy.new({ from: owner1 })
@@ -51,8 +53,8 @@ contract('MultisigOwner With Proxy', function (accounts) {
         this.tokenImplementation = await TrueUSD.new(owner1, 0, { from: owner1 })
         this.token = await TrueUSD.at(this.tokenProxy.address)
 
-        await this.multisigOwner.setTrueUSD(this.token.address, {from : owner1 })
-        await this.multisigOwner.setTrueUSD(this.token.address, {from : owner2 })
+        await this.multisigOwner.setToken(this.token.address, {from : owner1 })
+        await this.multisigOwner.setToken(this.token.address, {from : owner2 })
         await this.tokenProxy.transferProxyOwnership(this.controller.address,{ from: owner1 } )
 
         await this.multisigOwner.claimTusdProxyOwnership({from : owner1 })
@@ -69,25 +71,22 @@ contract('MultisigOwner With Proxy', function (accounts) {
         await this.multisigOwner.transferMintKey(mintKey, { from: owner2 })
         await this.multisigOwner.setRegistry(this.registry.address, { from: owner1 })
         await this.multisigOwner.setRegistry(this.registry.address, { from: owner2 })
-        await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner1 })
-        await this.multisigOwner.setTusdRegistry(this.registry.address, { from: owner2 })
-        await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner1 })
-        await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner1 })
-        await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner1 })
+        await this.multisigOwner.setTokenRegistry(this.registry.address, { from: owner1 })
+        await this.multisigOwner.setTokenRegistry(this.registry.address, { from: owner2 })
+
+        await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner1 })
+        await this.registry.subscribe(KYCAML, this.token.address, { from: owner1 })
+        await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner1 })
+        await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner1 })
+        await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner1 })
         await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, notes, { from: owner1 })
         await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner1 })
         this.balanceSheet = await BalanceSheet.new({ from: owner1 })
         this.allowanceSheet = await AllowanceSheet.new({ from: owner1 })
         await this.balanceSheet.transferOwnership(this.token.address,{ from: owner1 })
         await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner1 })
-        await this.multisigOwner.claimStorageForProxy(this.token.address, 
-            this.balanceSheet.address,
-            this.allowanceSheet.address, 
-            { from: owner1 })
-        await this.multisigOwner.claimStorageForProxy(this.token.address, 
-            this.balanceSheet.address,
-            this.allowanceSheet.address, 
-            { from: owner2 })
+        await this.multisigOwner.claimStorageForProxy(this.token.address, this.balanceSheet.address, this.allowanceSheet.address, { from: owner1 })
+        await this.multisigOwner.claimStorageForProxy(this.token.address, this.balanceSheet.address, this.allowanceSheet.address, { from: owner2 })
         await this.multisigOwner.requestMint(oneHundred, BN(10*10**18),  {from: owner1})
         await this.multisigOwner.requestMint(oneHundred, BN(10*10**18), {from: owner2})
         await this.multisigOwner.ratifyMint(0,oneHundred, BN(10*10**18), {from: owner1})

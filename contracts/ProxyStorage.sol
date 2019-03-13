@@ -12,7 +12,7 @@ contract ProxyStorage {
     address public owner;
     address public pendingOwner;
 
-    bool public initialized;
+    bool initialized;
     
     BalanceSheet public balances;
     AllowanceSheet public allowances;
@@ -27,10 +27,14 @@ contract ProxyStorage {
 
     Registry public registry;
 
-    string public name = "TrueUSD";
-    string public symbol = "TUSD";
+    string name_Deprecated = "TrueUSD";
+    string symbol_Deprecated = "TUSD";
 
-    uint[] public gasRefundPool;
+    uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
+
+    mapping (address => uint256) _balanceOf;
+    mapping (address => mapping (address => uint256)) _allowance;
+    mapping (address => mapping (bytes32 => uint256)) attributes;
 }

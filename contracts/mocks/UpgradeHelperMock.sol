@@ -5,9 +5,9 @@ contract UpgradeHelperMock {
     OldTrueUSDInterface public oldTrueUSD;
     NewTrueUSDInterface public  newTrueUSD;
     TokenControllerInterface public tokenController;
-    address public constant registry = address(0x0000000000013949f288172bd7e36837bddc7211);
+    address public constant registry = address(0x0000000000013949F288172bD7E36837bDdC7211);
 
-    constructor(address _oldTrueUSD, address _newTrueUSD, address _tokenController) {
+    constructor(address _oldTrueUSD, address _newTrueUSD, address _tokenController) public {
         oldTrueUSD = OldTrueUSDInterface(_oldTrueUSD);
         newTrueUSD = NewTrueUSDInterface(_newTrueUSD);
         tokenController = TokenControllerInterface(_tokenController);
@@ -37,11 +37,11 @@ contract UpgradeHelperMock {
         
         newTrueUSD.transferOwnership(tokenController);
         tokenController.issueClaimOwnership(newTrueUSD);
-        tokenController.setTrueUSD(newTrueUSD);
+        tokenController.setToken(newTrueUSD);
         tokenController.claimStorageForProxy(newTrueUSD, balanceSheetAddress, allowanceSheetAddress);
 
         // Configure TrueUSD
-        tokenController.setTusdRegistry(registry);
+        tokenController.setTokenRegistry(registry);
 
         // Point oldTrueUSD delegation to NewTrueUSD
         tokenController.transferChild(oldTrueUSD, address(this));

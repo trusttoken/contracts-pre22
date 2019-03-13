@@ -6,7 +6,7 @@ contract DelegateERC20Mock is DelegateERC20 {
     constructor(address initialAccount, uint256 initialBalance) public {
         balances = new BalanceSheet();
         allowances = new AllowanceSheet();
-        balances.setBalance(initialAccount, initialBalance);
+        _setBalance(initialAccount, initialBalance);
         totalSupply_ = initialBalance;
     }
 }

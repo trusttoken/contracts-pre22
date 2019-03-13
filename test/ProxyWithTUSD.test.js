@@ -16,23 +16,21 @@ const TusdProxy = artifacts.require("OwnedUpgradeabilityProxy")
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN;
 
-contract('Proxy', function (accounts) {
+contract('ProxyWithTUSD', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     const notes = bytes32("some notes")
-
+    const CAN_BURN = bytes32("canBurn")
     describe('--Set up proxy--', function () {
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
             this.proxy = await TusdProxy.new({ from: owner })
             this.implementation = await TrueUSD.new(owner, 0, { from: owner })
-            this.token = await TrueUSD.at(this.proxy.address)
             this.balanceSheet = await BalanceSheet.new({ from: owner })
             this.allowanceSheet = await AllowanceSheet.new({ from: owner })
+            await this.proxy.upgradeTo(this.implementation.address,{ from: owner })
+            this.token = await TrueUSD.at(this.proxy.address)
             await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
-            await this.proxy.upgradeTo(this.implementation.address,{ from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
         })
 
         it('initializes proxy/tusd contract', async function(){
@@ -69,7 +67,9 @@ contract('Proxy', function (accounts) {
                 await this.token.initialize({from: owner})
                 await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
                 await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
+                await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
                 await this.token.setRegistry(this.registry.address, { from: owner }) 
+                await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
                 await this.token.mint(oneHundred, BN(100).mul(BN(10**18)), {from: owner})
             })
             it('proxy return totalSupply', async function(){

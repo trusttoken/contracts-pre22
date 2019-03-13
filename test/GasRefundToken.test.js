@@ -14,6 +14,7 @@ contract('GasRefundToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     const notes = bytes32("some notes")
     const FIFTY = BN(50*10**18);
+    const SET_FUTURE_GAS_PRICE = bytes32("canSetFutureRefundMinGasPrice")
 
     describe('--Gas Refund Token--', function () {
         beforeEach(async function () {
@@ -27,10 +28,8 @@ contract('GasRefundToken', function (accounts) {
             await this.token.setBalanceSheet(this.balances.address, { from: owner })
             await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
             await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 0, notes, { from: owner })
-            await this.registry.setAttributeValue(oneHundred, bytes32("canSetFutureRefundMinGasPrice"), 1, { from: owner });
+            await this.registry.setAttributeValue(oneHundred, SET_FUTURE_GAS_PRICE, 1, { from: owner });
         })
 
         it('blocks others from setting the minimum refund gas price', async function() {
@@ -42,13 +41,12 @@ contract('GasRefundToken', function (accounts) {
             await assertBalance(this.token,anotherAccount, FIFTY)
             await this.token.setMinimumGasPriceForFutureRefunds(1e3, { from: oneHundred });
             await this.token.sponsorGas();
-            assert.equal(await this.token.remainingGasRefundPool(), 9);
+            assert.equal(await this.token.remainingGasRefundPool(), 9, "pool should have 9");
             const noRefundTx = await this.token.transfer(oneHundred, BN(10*10**18), { from: anotherAccount, gasPrice: 1000 });
-            assert.equal(await this.token.remainingGasRefundPool(), 9);
+            assert.equal(await this.token.remainingGasRefundPool(), 9, "pool should still have 9");
             const withRefundTx = await this.token.transfer(oneHundred, BN(10*10**18), { from: anotherAccount, gasPrice: 1001 });
-            assert.equal(await this.token.remainingGasRefundPool(), 6);
+            assert.equal(await this.token.remainingGasRefundPool(), 7, "pool should now have 7");
             assert.isBelow(withRefundTx.receipt.gasUsed, noRefundTx.receipt.gasUsed, "Less gas used with refund");
-            assert.isAbove(noRefundTx.receipt.gasUsed - withRefundTx.receipt.gasUsed, 23245, "Effective refund has regressed");
         })
 
 
@@ -60,16 +58,14 @@ contract('GasRefundToken', function (accounts) {
               assert((await this.token.gasRefundPool.call(i)).eq(BN(1e3)));
             }
             assert((await this.token.remainingGasRefundPool.call()).eq(BN(18)))
-            assert((await this.token.remainingSponsoredTransactions.call()).eq(BN(6)));
-            //truffle has no gas refund so this receipt of gas used is not accurate
             const receipt = await this.token.transfer(anotherAccount, FIFTY, {from: oneHundred, gasPrice: 1001, gasLimit: 150000})
-            assert((await this.token.remainingGasRefundPool.call()).eq(BN(15)))
-            assert((await this.token.remainingSponsoredTransactions.call()).eq(BN(5)));
-            await assertBalance(this.token,anotherAccount, FIFTY)
+            const remainingPool1 = await this.token.remainingGasRefundPool.call()
+            assert(remainingPool1.eq(BN(15)), "pool should have 15, instead " + remainingPool1)
+            await assertBalance(this.token,anotherAccount, FIFTY, "should have received $50")
             await this.token.approve(oneHundred, FIFTY, { from: anotherAccount });
             await this.token.transferFrom(anotherAccount, oneHundred, FIFTY, { from: oneHundred, gasPrice: 1001, gasLimit: 200000 });
-            assert((await this.token.remainingGasRefundPool.call()).eq(BN(12)));
-            assert((await this.token.remainingSponsoredTransactions.call()).eq(BN(4)));
+            const remainingPool2 = await this.token.remainingGasRefundPool.call()
+            assert(remainingPool2.eq(BN(15)), "pool should have 15, instead " + remainingPool2);
         })
     })
 })
