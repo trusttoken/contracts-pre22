@@ -1,3 +1,5 @@
+pragma solidity^0.4.23;
+
 import "./HasOwner.sol";
 
 contract DeprecatedGasRefundPool is ProxyStorage {
