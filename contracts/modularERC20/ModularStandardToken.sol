@@ -98,18 +98,39 @@ contract ModularStandardToken is ModularBasicToken {
         return _getAllowance(_who, _spender);
     }
 
-    function _getAllowance(address _who, address _spender) internal view returns (uint256) {
-        return _allowance[_who][_spender];
+    function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
+        bytes32 storageLocation = keccak256(uint8(8), _who, _spender);
+        assembly {
+            value := sload(storageLocation)
+        }
     }
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
-        _allowance[_who][_spender] = _allowance[_who][_spender].add(_value);
+        bytes32 storageLocation = keccak256(uint8(8), _who, _spender);
+        uint256 value;
+        assembly {
+            value := sload(storageLocation)
+        }
+        value = value.add(_value);
+        assembly {
+            sstore(storageLocation, value)
+        }
     }
     function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool allowanceZero){
-        uint256 newAllowance = _allowance[_who][_spender].sub(_value);
-        _allowance[_who][_spender] = newAllowance;
-        allowanceZero = newAllowance == 0;
+        bytes32 storageLocation = keccak256(uint8(8), _who, _spender);
+        uint256 value;
+        assembly {
+            value := sload(storageLocation)
+        }
+        value = value.sub(_value);
+        assembly {
+            sstore(storageLocation, value)
+        }
+        allowanceZero = value == 0;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
-        _allowance[_who][_spender] = _value;
+        bytes32 storageLocation = keccak256(uint8(8), _who, _spender);
+        assembly {
+            sstore(storageLocation, _value)
+        }
     }
 }

@@ -59,11 +59,11 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         while (i --> 0) {
             address holder = holders[i];
             address spender = spenders[i];
-            _allowance[holder][spender] = _getAllowance(holder, spender);
+            super._setAllowance(holder, spender, _getAllowance(holder, spender));
         }
     }
     function migratedAllowance(address _who, address _spender) public view returns (uint256) {
-        return _allowance[_who][_spender];
+        return super._getAllowance(_who, _spender);
     }
     function _getAllowance(address _who, address _spender) internal view returns (uint256) {
         return allowances.allowanceOf(_who, _spender);
@@ -79,7 +79,7 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         allowanceZero = updated == 0;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
-        _allowance[_who][_spender] = _value;
+        super._setAllowance(_who, _spender, _value);
         allowances.setAllowance(_who, _spender, _value);
     }
 }

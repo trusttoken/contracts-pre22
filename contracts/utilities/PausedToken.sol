@@ -116,8 +116,11 @@ contract PausedToken is HasOwner, RegistryClone {
     function allowance(address _who, address _spender) public view returns (uint256) {
         return _getAllowance(_who, _spender);
     }
-    function _getAllowance(address _who, address _spender) internal view returns (uint256) {
-        return _allowance[_who][_spender];
+    function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
+        bytes32 storageLocation = keccak256(uint8(8), _who, _spender);
+        assembly {
+            value := sload(storageLocation)
+        }
     }
     function transfer(address /*_to*/, uint256 /*_value*/) public returns (bool) {
         revert("Token Paused");
@@ -200,7 +203,7 @@ contract PausedDelegateERC20 is PausedToken {
     }
 
     function delegateAllowance(address owner, address spender) public view returns (uint256) {
-        return _allowance[owner][spender];
+        return _getAllowance(owner, spender);
     }
 
     function delegateTransferFrom(address /*from*/, address /*to*/, uint256 /*value*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
