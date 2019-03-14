@@ -35,5 +35,4 @@ contract ProxyStorage {
     uint256 public minimumGasPriceForFutureRefunds;
 
     mapping (address => uint256) _balanceOf;
-    mapping (address => mapping (bytes32 => uint256)) attributes;
 }

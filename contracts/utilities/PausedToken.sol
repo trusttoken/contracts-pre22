@@ -162,7 +162,10 @@ contract PausedToken is HasOwner, RegistryClone {
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
-        attributes[_who][_attribute] = _value;
+        bytes32 storageLocation = keccak256(uint8(0), _who, _attribute);
+        assembly {
+            sstore(storageLocation, _value)
+        }
     }
 
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
