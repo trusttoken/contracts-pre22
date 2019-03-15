@@ -267,7 +267,28 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             flag := sload(storageLocation)
         }
         require (flag == 0, "blacklisted");
-        return _requireCanTransfer(_from, _to);
+        storageLocation = keccak256(uint8(0), address(uint256(_to) >> 20),IS_DEPOSIT_ADDRESS);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        if (flag != 0) {
+            _to = address(flag);
+        }
+        storageLocation = keccak256(uint8(0), _to, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(uint8(0), _from, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(uint8(0), _to, IS_REGISTERED_CONTRACT);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        return (_to, flag != 0);
     }
 
     function _requireCanMint(address _to) internal view returns (address, bool) {
