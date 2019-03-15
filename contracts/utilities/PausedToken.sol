@@ -50,13 +50,6 @@ contract PausedToken is HasOwner, RegistryClone {
         return totalSupply_;
     }
 
-    function setAllowanceSheet(address _sheet) public onlyOwner returns(bool) {
-        allowances = AllowanceSheet(_sheet);
-        allowances.claimOwnership();
-        emit AllowanceSheetSet(_sheet);
-        return true;
-    }
-
     /**  
     *@dev Return the remaining sponsored gas slots
     */
@@ -101,12 +94,6 @@ contract PausedToken is HasOwner, RegistryClone {
         minimumGasPriceForFutureRefunds = _minimumGasPriceForFutureRefunds;
     }
 
-    function setBalanceSheet(address _sheet) public onlyOwner returns (bool) {
-        balances = BalanceSheet(_sheet);
-        balances.claimOwnership();
-        emit BalanceSheetSet(_sheet);
-        return true;
-    }
     function balanceOf(address _who) public view returns (uint256) {
         return _getBalance(_who);
     }

@@ -30,17 +30,11 @@ contract('PausedTrueUSD', function (accounts) {
             this.tokenProxy = await Proxy.new({ from: owner })
             this.tusdImplementation = await TrueUSD.new(owner, 0, { from: owner })
             this.token = await TrueUSD.at(this.tokenProxy.address)
-            this.balanceSheet = await BalanceSheet.new({ from: owner })
-            this.allowanceSheet = await AllowanceSheet.new({ from: owner })
-            await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
-            await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
             await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
             await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
             await this.token.initialize({from: owner})
             await this.token.setTotalSupply(TEN_THOUSAND, {from: owner})
-            await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
-            await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
             this.controller = await TokenController.new({ from: owner })
             await this.token.transferOwnership(this.controller.address, {from: owner})
             await this.controller.initialize({ from: owner })
@@ -185,17 +179,6 @@ contract('PausedTrueUSD', function (accounts) {
 
                 it('cannot wipe blacklisted account if not blacklisted', async function(){
                     await assertRevert(this.controller.wipeBlackListedTrueUSD(oneHundred, {from : owner}))
-                })
-
-                it('can still set storage contracts', async function(){
-                    this.newBalanceSheet = await BalanceSheet.new({ from: owner })
-                    this.newAllowanceSheet = await AllowanceSheet.new({ from: owner })
-                    await this.newBalanceSheet.transferOwnership(this.token.address,{ from: owner })
-                    await this.newAllowanceSheet.transferOwnership(this.token.address,{ from: owner })
-                    await this.controller.claimStorageForProxy(this.token.address, 
-                                                       this.newBalanceSheet.address,
-                                                       this.newAllowanceSheet.address, 
-                                                       { from: owner })
                 })
             })
         })

@@ -3,8 +3,7 @@ pragma solidity ^0.4.23;
 import "../HasOwner.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-// Version of OpenZeppelin's BasicToken whose balances mapping has been replaced
-// with a separate BalanceSheet contract. remove the need to copy over balances.
+// Fork of OpenZeppelin's BasicToken
 /**
  * @title Basic token
  * @dev Basic version of StandardToken, with no allowances.
@@ -12,19 +11,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract ModularBasicToken is HasOwner {
     using SafeMath for uint256;
 
-    event BalanceSheetSet(address indexed sheet);
     event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-    * @dev claim ownership of the balancesheet contract
-    * @param _sheet The address to of the balancesheet to claim.
-    */
-    function setBalanceSheet(address _sheet) public onlyOwner returns (bool) {
-        balances = BalanceSheet(_sheet);
-        balances.claimOwnership();
-        emit BalanceSheetSet(_sheet);
-        return true;
-    }
 
     /**
     * @dev total number of tokens in existence

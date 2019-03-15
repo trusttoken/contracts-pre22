@@ -14,8 +14,8 @@ contract ProxyStorage {
 
     bool initialized;
     
-    BalanceSheet public balances;
-    AllowanceSheet public allowances;
+    BalanceSheet balances_Deprecated;
+    AllowanceSheet allowances_Deprecated;
 
     uint256 totalSupply_;
     

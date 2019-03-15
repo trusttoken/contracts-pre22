@@ -2,8 +2,6 @@ const RegistryMock = artifacts.require("RegistryMock")
 const Registry = artifacts.require('Registry')
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const TrueUSD = artifacts.require("TrueUSD")
-const BalanceSheet = artifacts.require("BalanceSheet")
-const AllowanceSheet = artifacts.require("AllowanceSheet")
 const OwnedUpgradeabilityProxy = artifacts.require("OwnedUpgradeabilityProxy")
 
 
@@ -55,8 +53,6 @@ contract('GasProfile', function (accounts) {
         const CAN_BURN = bytes32("canBurn")
         const [_, owner, oneHundred, anotherAccount] = accounts.filter(hasNoZero)
         beforeEach(async function () {
-            this.balances = await BalanceSheet.new({ from: owner })
-            this.allowances = await AllowanceSheet.new({ from: owner })
             this.tokenProxy = await OwnedUpgradeabilityProxy.new({from: owner});
             this.tokenMockImpl = await TrueUSDMock.new(owner, 0);
             this.tokenImpl = await TrueUSD.new()
@@ -78,10 +74,6 @@ contract('GasProfile', function (accounts) {
             await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
 
             await this.token.setRegistry(this.registry.address, { from: owner })
-            await this.balances.transferOwnership(this.token.address, { from: owner })
-            await this.allowances.transferOwnership(this.token.address, { from: owner })
-            await this.token.setBalanceSheet(this.balances.address, { from: owner })
-            await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
             await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
             await this.token.mint(owner, DOLLAR, { from: owner })

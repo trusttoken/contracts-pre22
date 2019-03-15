@@ -13,20 +13,8 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract ModularStandardToken is ModularBasicToken {
     using SafeMath for uint256;
     
-    event AllowanceSheetSet(address indexed sheet);
     event Approval(address indexed owner, address indexed spender, uint256 value);
     
-    /**
-    * @dev claim ownership of the AllowanceSheet contract
-    * @param _sheet The address to of the AllowanceSheet to claim.
-    */
-    function setAllowanceSheet(address _sheet) public onlyOwner returns(bool) {
-        allowances = AllowanceSheet(_sheet);
-        allowances.claimOwnership();
-        emit AllowanceSheetSet(_sheet);
-        return true;
-    }
-
     /**
      * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
      *

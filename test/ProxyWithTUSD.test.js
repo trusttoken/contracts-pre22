@@ -8,8 +8,6 @@ import compliantTokenTests from './CompliantToken';
 const Registry = artifacts.require("RegistryMock")
 const TrueUSD = artifacts.require("TrueUSDMock")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
-const BalanceSheet = artifacts.require("BalanceSheet")
-const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
 const TusdProxy = artifacts.require("OwnedUpgradeabilityProxy")
 
@@ -25,12 +23,8 @@ contract('ProxyWithTUSD', function (accounts) {
             this.registry = await Registry.new({ from: owner })
             this.proxy = await TusdProxy.new({ from: owner })
             this.implementation = await TrueUSD.new(owner, 0, { from: owner })
-            this.balanceSheet = await BalanceSheet.new({ from: owner })
-            this.allowanceSheet = await AllowanceSheet.new({ from: owner })
             await this.proxy.upgradeTo(this.implementation.address,{ from: owner })
             this.token = await TrueUSD.at(this.proxy.address)
-            await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
-            await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
         })
 
         it('initializes proxy/tusd contract', async function(){
@@ -53,11 +47,6 @@ contract('ProxyWithTUSD', function (accounts) {
                 await this.token.initialize({from: owner})
             })
 
-            it ('set storage contract', async function(){
-                await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
-                await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
-            })
-
             it ('set registry', async function(){
                 await this.token.setRegistry(this.registry.address, { from: owner }) 
             })
@@ -65,8 +54,6 @@ contract('ProxyWithTUSD', function (accounts) {
         describe('---Tusd token functions---', function(){
             beforeEach(async function () {
                 await this.token.initialize({from: owner})
-                await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
-                await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
                 await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
                 await this.token.setRegistry(this.registry.address, { from: owner }) 
                 await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })

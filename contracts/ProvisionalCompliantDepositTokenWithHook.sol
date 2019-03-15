@@ -29,7 +29,7 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         return _balanceOf[_who];
     }
     function _getBalance(address _who) internal view returns (uint256) {
-        return balances.balanceOf(_who);
+        return balances_Deprecated.balanceOf(_who);
     }
     function _addBalance(address _who, uint256 _value) internal returns (bool balanceNew) {
         uint256 priorBalance = _getBalance(_who);
@@ -42,7 +42,7 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         balanceZero = balanceNew == 0;
     }
     function _setBalance(address _who, uint256 _value) internal {
-        balances.setBalance(_who, _value);
+        balances_Deprecated.setBalance(_who, _value);
         _balanceOf[_who] = _value;
     }
 
@@ -66,7 +66,7 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         return super._getAllowance(_who, _spender);
     }
     function _getAllowance(address _who, address _spender) internal view returns (uint256) {
-        return allowances.allowanceOf(_who, _spender);
+        return allowances_Deprecated.allowanceOf(_who, _spender);
     }
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
         uint256 prior = _getAllowance(_who, _spender);
@@ -80,6 +80,6 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
         super._setAllowance(_who, _spender, _value);
-        allowances.setAllowance(_who, _spender, _value);
+        allowances_Deprecated.setAllowance(_who, _spender, _value);
     }
 }

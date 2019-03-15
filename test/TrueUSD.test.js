@@ -4,8 +4,6 @@ import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
 import compliantTokenTests from './CompliantToken';
 const Registry = artifacts.require("RegistryMock")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
-const BalanceSheet = artifacts.require("BalanceSheet")
-const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
 
 const BN = web3.utils.toBN;
@@ -42,16 +40,10 @@ contract('TrueUSD', function (accounts) {
         beforeEach(async function () {
             // Set up a TrueUSD contract with 100 tokens for 'oneHundred'.
             this.registry = await Registry.new({ from: owner })
-            this.balances = await BalanceSheet.new({ from: owner })
-            this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSDMock.new(owner, 0, { from: owner })
             await this.token.setRegistry(this.registry.address, { from: owner })
             await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
             await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
-            await this.balances.transferOwnership(this.token.address, { from: owner })
-            await this.allowances.transferOwnership(this.token.address, { from: owner })
-            await this.token.setBalanceSheet(this.balances.address, { from: owner })
-            await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
             await this.token.mint(oneHundred, HUNDRED, { from: owner })
         })
 

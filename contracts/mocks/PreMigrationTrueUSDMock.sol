@@ -5,40 +5,40 @@ import "../ProvisionalTrueUSD.sol";
 // Mocks the behavior from before balances were migrated
 contract PreMigrationTrueUSDMock is ProvisionalTrueUSD {
     function _addBalance(address _who, uint256 _value) internal returns (bool) {
-        balances.addBalance(_who, _value);
+        balances_Deprecated.addBalance(_who, _value);
         return true;
     }
     function _subBalance(address _who, uint256 _value) internal returns (bool) {
-        balances.subBalance(_who, _value);
+        balances_Deprecated.subBalance(_who, _value);
         return true;
     }
     function _setBalance(address _who, uint256 _value) internal {
-        balances.setBalance(_who, _value);
+        balances_Deprecated.setBalance(_who, _value);
     }
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
-        allowances.addAllowance(_who, _spender, _value);
+        allowances_Deprecated.addAllowance(_who, _spender, _value);
     }
     function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool) {
-        allowances.subAllowance(_who, _spender, _value);
+        allowances_Deprecated.subAllowance(_who, _spender, _value);
         return true;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
-        allowances.setAllowance(_who, _spender, _value);
+        allowances_Deprecated.setAllowance(_who, _spender, _value);
     }
     constructor(address initialAccount, uint256 initialBalance) public {
-        balances = new BalanceSheet();
-        allowances = new AllowanceSheet();
+        balances_Deprecated = new BalanceSheet();
+        allowances_Deprecated = new AllowanceSheet();
         _setBalance(initialAccount, initialBalance);
         totalSupply_ = initialBalance;
         initialize();
     }
     function initialize() public {
         require(!initialized, "already initialized");
-        if (address(balances) == address(0x0)) {
-            balances = new BalanceSheet();
+        if (address(balances_Deprecated) == address(0x0)) {
+            balances_Deprecated = new BalanceSheet();
         }
-        if (address(allowances) == address(0x0)) {
-            allowances = new AllowanceSheet();
+        if (address(allowances_Deprecated) == address(0x0)) {
+            allowances_Deprecated = new AllowanceSheet();
         }
         initialized = true;
         owner = msg.sender;
@@ -59,5 +59,33 @@ contract PreMigrationTrueUSDMock is ProvisionalTrueUSD {
     }
     function remainingGasRefundPool() public view returns (uint256) {
         return retroGasPoolRemaining();
+    }
+    function allowances() public view returns (AllowanceSheet) {
+        return allowances_Deprecated;
+    }
+    function balances() public view returns (BalanceSheet) {
+        return balances_Deprecated;
+    }
+    event AllowanceSheetSet(address indexed sheet);
+    /**
+    * @dev claim ownership of the AllowanceSheet contract
+    * @param _sheet The address to of the AllowanceSheet to claim.
+    */
+    function setAllowanceSheet(address _sheet) public onlyOwner returns(bool) {
+        allowances_Deprecated = AllowanceSheet(_sheet);
+        allowances_Deprecated.claimOwnership();
+        emit AllowanceSheetSet(_sheet);
+        return true;
+    }
+    event BalanceSheetSet(address indexed sheet);
+    /**
+    * @dev claim ownership of the balancesheet contract
+    * @param _sheet The address to of the balancesheet to claim.
+    */
+    function setBalanceSheet(address _sheet) public onlyOwner returns (bool) {
+        balances_Deprecated = BalanceSheet(_sheet);
+        balances_Deprecated.claimOwnership();
+        emit BalanceSheetSet(_sheet);
+        return true;
     }
 }

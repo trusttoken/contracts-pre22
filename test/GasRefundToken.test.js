@@ -4,8 +4,6 @@ import assertBalance from './helpers/assertBalance'
 
 const Registry = artifacts.require("RegistryMock")
 const TrueUSD = artifacts.require("TrueUSDMock")
-const BalanceSheet = artifacts.require("BalanceSheet")
-const AllowanceSheet = artifacts.require("AllowanceSheet")
 
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN;
@@ -19,14 +17,8 @@ contract('GasRefundToken', function (accounts) {
     describe('--Gas Refund Token--', function () {
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
-            this.balances = await BalanceSheet.new({ from: owner })
-            this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSD.new(owner, 0, { from: owner })
             await this.token.setRegistry(this.registry.address, { from: owner })
-            await this.balances.transferOwnership(this.token.address, { from: owner })
-            await this.allowances.transferOwnership(this.token.address, { from: owner })
-            await this.token.setBalanceSheet(this.balances.address, { from: owner })
-            await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
             await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
             await this.registry.setAttributeValue(oneHundred, SET_FUTURE_GAS_PRICE, 1, { from: owner });
