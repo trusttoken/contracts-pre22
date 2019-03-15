@@ -375,8 +375,8 @@ contract ProxyStorage {
 
     bool initialized;
     
-    BalanceSheet public balances;
-    AllowanceSheet public allowances;
+    BalanceSheet balances_Deprecated;
+    AllowanceSheet allowances_Deprecated;
 
     uint256 totalSupply_;
     
@@ -396,8 +396,6 @@ contract ProxyStorage {
     uint256 public minimumGasPriceForFutureRefunds;
 
     mapping (address => uint256) _balanceOf;
-    mapping (address => mapping (address => uint256)) _allowance;
-    mapping (address => mapping (bytes32 => uint256)) attributes;
 }
 
 // File: contracts/HasOwner.sol
@@ -507,13 +505,6 @@ contract PausedToken is HasOwner, RegistryClone {
         return totalSupply_;
     }
 
-    function setAllowanceSheet(address _sheet) public onlyOwner returns(bool) {
-        allowances = AllowanceSheet(_sheet);
-        allowances.claimOwnership();
-        emit AllowanceSheetSet(_sheet);
-        return true;
-    }
-
     /**  
     *@dev Return the remaining sponsored gas slots
     */
@@ -558,12 +549,6 @@ contract PausedToken is HasOwner, RegistryClone {
         minimumGasPriceForFutureRefunds = _minimumGasPriceForFutureRefunds;
     }
 
-    function setBalanceSheet(address _sheet) public onlyOwner returns (bool) {
-        balances = BalanceSheet(_sheet);
-        balances.claimOwnership();
-        emit BalanceSheetSet(_sheet);
-        return true;
-    }
     function balanceOf(address _who) public view returns (uint256) {
         return _getBalance(_who);
     }
@@ -573,8 +558,11 @@ contract PausedToken is HasOwner, RegistryClone {
     function allowance(address _who, address _spender) public view returns (uint256) {
         return _getAllowance(_who, _spender);
     }
-    function _getAllowance(address _who, address _spender) internal view returns (uint256) {
-        return _allowance[_who][_spender];
+    function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
+        bytes32 storageLocation = keccak256(uint8(8), _who, _spender);
+        assembly {
+            value := sload(storageLocation)
+        }
     }
     function transfer(address /*_to*/, uint256 /*_value*/) public returns (bool) {
         revert("Token Paused");
@@ -616,7 +604,10 @@ contract PausedToken is HasOwner, RegistryClone {
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
-        attributes[_who][_attribute] = _value;
+        bytes32 storageLocation = keccak256(uint8(0), _who, _attribute);
+        assembly {
+            sstore(storageLocation, _value)
+        }
     }
 
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
@@ -657,7 +648,7 @@ contract PausedDelegateERC20 is PausedToken {
     }
 
     function delegateAllowance(address owner, address spender) public view returns (uint256) {
-        return _allowance[owner][spender];
+        return _getAllowance(owner, spender);
     }
 
     function delegateTransferFrom(address /*from*/, address /*to*/, uint256 /*value*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
