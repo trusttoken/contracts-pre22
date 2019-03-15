@@ -400,8 +400,6 @@ contract ProxyStorage {
     uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
-
-    mapping (address => uint256) _balanceOf;
 }
 
 // File: contracts/HasOwner.sol
@@ -512,21 +510,38 @@ contract ModularBasicToken is HasOwner {
     function balanceOf(address _who) public view returns (uint256) {
         return _getBalance(_who);
     }
-    function _getBalance(address _who) internal view returns (uint256) {
-        return _balanceOf[_who];
+    function _getBalance(address _who) internal view returns (uint256 outBalance) {
+        bytes32 storageLocation = keccak256(_who);
+        assembly {
+            outBalance := sload(storageLocation)
+        }
     }
-    function _addBalance(address _who, uint256 _value) internal returns (bool balanceNew) {
-        uint256 priorBalance = _balanceOf[_who];
-        _balanceOf[_who] = priorBalance.add(_value);
-        balanceNew = priorBalance == 0;
+    function _addBalance(address _who, uint256 _value) internal returns (uint256 priorBalance) {
+        bytes32 storageLocation = keccak256(_who);
+        assembly {
+            priorBalance := sload(storageLocation)
+        }
+        uint256 result = priorBalance.add(_value);
+        assembly {
+            sstore(storageLocation, result)
+        }
     }
-    function _subBalance(address _who, uint256 _value) internal returns (bool balanceZero) {
-        uint256 updatedBalance = _balanceOf[_who].sub(_value);
-        _balanceOf[_who] = updatedBalance;
-        balanceZero = updatedBalance == 0;
+    function _subBalance(address _who, uint256 _value) internal returns (uint256 result) {
+        bytes32 storageLocation = keccak256(_who);
+        uint256 priorBalance;
+        assembly {
+            priorBalance := sload(storageLocation)
+        }
+        result = priorBalance.sub(_value);
+        assembly {
+            sstore(storageLocation, result)
+        }
     }
     function _setBalance(address _who, uint256 _value) internal {
-        _balanceOf[_who] = _value;
+        bytes32 storageLocation = keccak256(_who);
+        assembly {
+            sstore(storageLocation, _value)
+        }
     }
 }
 
@@ -882,7 +897,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         _requireCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        if (_subBalance(_from, _value)) {
+        if (0 == _subBalance(_from, _value)) {
             if (_subAllowance(_from, msg.sender, _value)) {
                 // no refund
             } else {
@@ -906,8 +921,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         _requireCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        bool balanceZero = _subBalance(_from, _value);
-        if (balanceZero) {
+        if (0 == _subBalance(_from, _value)) {
             gasRefund15();
         } else {
             gasRefund30();
@@ -922,15 +936,15 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransferFrom(_sender, _from, _to);
-        if (_addBalance(_to, _value)) {
+        if (0 == _addBalance(_to, _value)) {
             if (_subAllowance(_from, _sender, _value)) {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     // do not refund
                 } else {
                     gasRefund30();
                 }
             } else {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     gasRefund30();
                 } else {
                     gasRefund45();
@@ -938,13 +952,13 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             }
         } else {
             if (_subAllowance(_from, _sender, _value)) {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     // do not refund
                 } else {
                     gasRefund15();
                 }
             } else {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     gasRefund15();
                 } else {
                     gasRefund30();
@@ -969,14 +983,14 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address finalTo;
         (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-        if (_subBalance(_from, _value)) {
-            if (_addBalance(finalTo, _value)) {
+        if (0 == _subBalance(_from, _value)) {
+            if (0 == _addBalance(finalTo, _value)) {
                 gasRefund30();
             } else {
                 // do not refund
             }
         } else {
-            if (_addBalance(finalTo, _value)) {
+            if (0 == _addBalance(finalTo, _value)) {
                 gasRefund45();
             } else {
                 gasRefund30();
