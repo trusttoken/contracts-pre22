@@ -25,6 +25,9 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
     function _requireCanBurn(address _from) internal view {
         ProvisionalRegistry(registry).requireCanBurn(_from);
     }
+    function _requireOnlyCanBurn(address _from) internal view {
+        ProvisionalRegistry(registry).requireCanBurn(_from);
+    }
     function migratedBalanceOf(address _who) public view returns (uint256) {
         return super._getBalance(_who);
     }

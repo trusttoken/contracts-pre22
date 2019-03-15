@@ -50,7 +50,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _burnFromAllowanceAllArgs(address _from, address _to, uint256 _value) internal {
         _requireCanTransferFrom(msg.sender, _from, _to);
-        _requireCanBurn(_to);
+        _requireOnlyCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
         if (0 == _subBalance(_from, _value)) {
@@ -74,7 +74,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _burnFromAllArgs(address _from, address _to, uint256 _value) internal {
         _requireCanTransfer(_from, _to);
-        _requireCanBurn(_to);
+        _requireOnlyCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
         if (0 == _subBalance(_from, _value)) {
@@ -309,6 +309,15 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             flag := sload(storageLocation)
         }
         return (_to, flag != 0);
+    }
+
+    function _requireOnlyCanBurn(address _from) internal view {
+        bytes32 storageLocation = keccak256(_from, canBurn());
+        uint256 flag;
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag != 0, "cannot burn from this address");
     }
 
     function _requireCanBurn(address _from) internal view {
