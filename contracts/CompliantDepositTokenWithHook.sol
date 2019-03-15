@@ -50,10 +50,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _burnFromAllowanceAllArgs(address _from, address _to, uint256 _value) internal {
         _requireCanTransferFrom(msg.sender, _from, _to);
-        _requireCanBurn(_to);
+        _requireOnlyCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        if (_subBalance(_from, _value)) {
+        if (0 == _subBalance(_from, _value)) {
             if (_subAllowance(_from, msg.sender, _value)) {
                 // no refund
             } else {
@@ -74,11 +74,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _burnFromAllArgs(address _from, address _to, uint256 _value) internal {
         _requireCanTransfer(_from, _to);
-        _requireCanBurn(_to);
+        _requireOnlyCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        bool balanceZero = _subBalance(_from, _value);
-        if (balanceZero) {
+        if (0 == _subBalance(_from, _value)) {
             gasRefund15();
         } else {
             gasRefund30();
@@ -93,15 +92,15 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransferFrom(_sender, _from, _to);
-        if (_addBalance(_to, _value)) {
+        if (0 == _addBalance(_to, _value)) {
             if (_subAllowance(_from, _sender, _value)) {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     // do not refund
                 } else {
                     gasRefund30();
                 }
             } else {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     gasRefund30();
                 } else {
                     gasRefund45();
@@ -109,13 +108,13 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             }
         } else {
             if (_subAllowance(_from, _sender, _value)) {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     // do not refund
                 } else {
                     gasRefund15();
                 }
             } else {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     gasRefund15();
                 } else {
                     gasRefund30();
@@ -140,14 +139,14 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address finalTo;
         (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-        if (_subBalance(_from, _value)) {
-            if (_addBalance(finalTo, _value)) {
+        if (0 == _subBalance(_from, _value)) {
+            if (0 == _addBalance(finalTo, _value)) {
                 gasRefund30();
             } else {
                 // do not refund
             }
         } else {
-            if (_addBalance(finalTo, _value)) {
+            if (0 == _addBalance(finalTo, _value)) {
                 gasRefund45();
             } else {
                 gasRefund30();
@@ -205,7 +204,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
-        attributes[_who][_attribute] = _value;
+        bytes32 storageLocation = keccak256(_who, _attribute);
+        assembly {
+            sstore(storageLocation, _value)
+        }
     }
 
     function _burnAllArgs(address _from, uint256 _value) internal {
@@ -223,37 +225,113 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         emit Transfer(_account, address(0), oldValue);
     }
 
-    function _isBlacklisted(address _account) internal view returns (bool) {
-        return attributes[_account][IS_BLACKLISTED] != 0;
+    function _isBlacklisted(address _account) internal view returns (bool blacklisted) {
+        bytes32 storageLocation = keccak256(_account, IS_BLACKLISTED);
+        assembly {
+            blacklisted := sload(storageLocation)
+        }
     }
 
     function _requireCanTransfer(address _from, address _to) internal view returns (address, bool) {
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
+        uint256 depositAddressValue;
+        bytes32 storageLocation = keccak256(address(uint256(_to) >> 20),IS_DEPOSIT_ADDRESS);
+        assembly {
+            depositAddressValue := sload(storageLocation)
+        }
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
         }
-        require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
-        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT] != 0);
+        uint256 flag;
+        storageLocation = keccak256(_to, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(_from, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(_to, IS_REGISTERED_CONTRACT);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        return (_to, flag != 0);
     }
 
     function _requireCanTransferFrom(address _sender, address _from, address _to) internal view returns (address, bool) {
-        require (attributes[_sender][IS_BLACKLISTED] == 0, "blacklisted");
-        return _requireCanTransfer(_from, _to);
+        uint256 flag;
+        bytes32 storageLocation = keccak256(_sender, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(address(uint256(_to) >> 20),IS_DEPOSIT_ADDRESS);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        if (flag != 0) {
+            _to = address(flag);
+        }
+        storageLocation = keccak256(_to, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(_from, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(_to, IS_REGISTERED_CONTRACT);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        return (_to, flag != 0);
     }
 
     function _requireCanMint(address _to) internal view returns (address, bool) {
-        require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
-        if (depositAddressValue != 0) {
-            _to = address(depositAddressValue);
+        uint256 flag;
+        bytes32 storageLocation = keccak256(_to, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
         }
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT] != 0);
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(address(uint256(_to) >> 20), IS_DEPOSIT_ADDRESS);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        if (flag != 0) {
+            _to = address(flag);
+        }
+        storageLocation = keccak256(_to, IS_REGISTERED_CONTRACT);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        return (_to, flag != 0);
+    }
+
+    function _requireOnlyCanBurn(address _from) internal view {
+        bytes32 storageLocation = keccak256(_from, canBurn());
+        uint256 flag;
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag != 0, "cannot burn from this address");
     }
 
     function _requireCanBurn(address _from) internal view {
-        require (attributes[_from][canBurn()] != 0, "cannot burn from this address");
-        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
+        uint256 flag;
+        bytes32 storageLocation = keccak256(_from, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(_from, canBurn());
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag != 0, "cannot burn from this address");
     }
 
     function paused() public pure returns (bool) {

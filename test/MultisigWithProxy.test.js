@@ -5,9 +5,7 @@ import increaseTime, { duration } from './helpers/increaseTime'
 import { throws } from 'assert'
 const Registry = artifacts.require("RegistryMock")
 const TrueUSD = artifacts.require("TrueUSDMock")
-const BalanceSheet = artifacts.require("BalanceSheet")
-const AllowanceSheet = artifacts.require("AllowanceSheet")
-const TokenController = artifacts.require("TokenController")
+const PreMigrationTokenController = artifacts.require("PreMigrationTokenController")
 const MultisigOwner = artifacts.require("MultisigOwner")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 
@@ -34,10 +32,10 @@ contract('MultisigOwner With Proxy', function (accounts) {
 
         this.registry = await Registry.new({ from: owner1 })
 
-        this.controllerImplementation = await TokenController.new({ from: owner1 })
+        this.controllerImplementation = await PreMigrationTokenController.new({ from: owner1 })
         this.controllerProxy = await Proxy.new({ from: owner1 })
 
-        this.controller = await TokenController.at(this.controllerProxy.address)
+        this.controller = await PreMigrationTokenController.at(this.controllerProxy.address)
         await this.multisigOwner.msSetTokenController(this.controllerProxy.address, {from : owner1 })
         await this.multisigOwner.msSetTokenController(this.controllerProxy.address, {from : owner2 })
 
@@ -81,12 +79,6 @@ contract('MultisigOwner With Proxy', function (accounts) {
         await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner1 })
         await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, notes, { from: owner1 })
         await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner1 })
-        this.balanceSheet = await BalanceSheet.new({ from: owner1 })
-        this.allowanceSheet = await AllowanceSheet.new({ from: owner1 })
-        await this.balanceSheet.transferOwnership(this.token.address,{ from: owner1 })
-        await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner1 })
-        await this.multisigOwner.claimStorageForProxy(this.token.address, this.balanceSheet.address, this.allowanceSheet.address, { from: owner1 })
-        await this.multisigOwner.claimStorageForProxy(this.token.address, this.balanceSheet.address, this.allowanceSheet.address, { from: owner2 })
         await this.multisigOwner.requestMint(oneHundred, BN(10*10**18),  {from: owner1})
         await this.multisigOwner.requestMint(oneHundred, BN(10*10**18), {from: owner2})
         await this.multisigOwner.ratifyMint(0,oneHundred, BN(10*10**18), {from: owner1})

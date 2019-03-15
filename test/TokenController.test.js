@@ -9,6 +9,8 @@ const ForceEther = artifacts.require("ForceEther")
 const FastPauseMints = artifacts.require("FastPauseMints")
 const FastPauseTrueUSD = artifacts.require("FastPauseTrueUSD")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
+const Claimable = artifacts.require("Claimable")
+const Ownable = artifacts.require("Ownable")
 
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN;
@@ -28,14 +30,8 @@ contract('TokenController', function (accounts) {
             this.tokenProxy = await Proxy.new({ from: owner })
             this.tusdImplementation = await TrueUSD.new(owner, 0, { from: owner })
             this.token = await TrueUSD.at(this.tokenProxy.address)
-            this.balanceSheet = await BalanceSheet.new({ from: owner })
-            this.allowanceSheet = await AllowanceSheet.new({ from: owner })
-            await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
-            await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
             await this.token.initialize({from: owner})
-            await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
-            await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
             this.controller = await TokenController.new({ from: owner })
             await this.token.transferOwnership(this.controller.address, {from: owner})
             await this.controller.initialize({ from: owner })
@@ -554,54 +550,35 @@ contract('TokenController', function (accounts) {
                 await assertBalance(this.token, this.token.address, 0)
             })
         })
-        describe('Claim storage contracts', function () {
-            it('can claim storage contracts for TrueUSD', async function () {
-                this.tempBalanceSheet = await BalanceSheet.new({from: owner})
-                this.tempAllowanceSheet = await AllowanceSheet.new({from: owner})
-                await this.tempBalanceSheet.transferOwnership(this.token.address, {from: owner})
-                await this.tempAllowanceSheet.transferOwnership(this.token.address, {from: owner})
-                await this.controller.claimStorageForProxy(this.token.address, this.tempBalanceSheet.address, this.tempAllowanceSheet.address,{from: owner})
-            })
-
-            it('fails when TrueUSD is not the pending owner of storage contracts', async function () {
-                this.tempBalanceSheet = await BalanceSheet.new({from: owner})
-                this.tempAllowanceSheet = await AllowanceSheet.new({from: owner})
-                await assertRevert(this.controller.claimStorageForProxy(this.token.address, this.tempBalanceSheet.address, this.tempAllowanceSheet.address,{from: owner}))
-            })
-
-            it('fails when TrueUSD is not the pending owner of one of the storage contracts', async function () {
-                this.tempBalanceSheet = await BalanceSheet.new({from: owner})
-                this.tempAllowanceSheet = await AllowanceSheet.new({from: owner})
-                await this.tempBalanceSheet.transferOwnership(this.token.address, {from: owner})
-                await assertRevert(this.controller.claimStorageForProxy(this.token.address, this.tempBalanceSheet.address, this.tempAllowanceSheet.address,{from: owner}))
-            })
-        })
-
 
         describe('requestReclaimContract', function () {
             it('reclaims the contract', async function () {
-                const balances = await this.token.balances.call()
-                let balanceOwner = await (await BalanceSheet.at(balances)).owner.call()
-                assert.equal(balanceOwner, this.token.address)
+                const ownable = await Ownable.new({from:owner});
+                await ownable.transferOwnership(this.token.address, {from:owner})
+                let ownableOwner = await ownable.owner.call()
+                assert.equal(ownableOwner, this.token.address)
 
-                await this.controller.requestReclaimContract(balances, { from: owner })
-                await this.controller.issueClaimOwnership(balances, { from: owner })
-                balanceOwner = await (await BalanceSheet.at(balances)).owner.call()
-                assert.equal(balanceOwner, this.controller.address)
-            })
+                const { logs } = await this.controller.requestReclaimContract(ownable.address, { from: owner })
+                ownableOwner = await ownable.owner.call()
+                assert.equal(ownableOwner, this.controller.address)
 
-            it('emits an event', async function () {
-                const balances = await this.token.balances.call()
-                const { logs } = await this.controller.requestReclaimContract(balances, { from: owner })
-
-                assert.equal(logs.length, 1)
-                assert.equal(logs[0].event, 'RequestReclaimContract')
-                assert.equal(logs[0].args.other, balances)
+                assert.equal(logs.length, 2)
+                assert.equal(logs[1].event, 'RequestReclaimContract')
+                assert.equal(logs[1].args.other, ownable.address)
             })
 
             it('cannot be called by non-owner', async function () {
-                const balances = await this.token.balances.call()
-                await assertRevert(this.controller.requestReclaimContract(balances, { from: mintKey }))
+                const ownable = await Ownable.new({from:owner});
+                await ownable.transferOwnership(this.token.address, {from:owner})
+                await assertRevert(this.controller.requestReclaimContract(ownable.address, { from: mintKey }))
+            })
+
+            it('issues claimOwnership', async function() {
+                const claimable = await Claimable.new({ from:owner })
+                await claimable.transferOwnership(this.controller.address, { from:owner})
+                await this.controller.issueClaimOwnership(claimable.address, { from: owner })
+                const claimableOwner = await claimable.owner.call()
+                assert.equal(claimableOwner, this.controller.address)
             })
         })
 

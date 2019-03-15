@@ -14,8 +14,8 @@ contract ProxyStorage {
 
     bool initialized;
     
-    BalanceSheet public balances;
-    AllowanceSheet public allowances;
+    BalanceSheet balances_Deprecated;
+    AllowanceSheet allowances_Deprecated;
 
     uint256 totalSupply_;
     
@@ -33,8 +33,4 @@ contract ProxyStorage {
     uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
-
-    mapping (address => uint256) _balanceOf;
-    mapping (address => mapping (address => uint256)) _allowance;
-    mapping (address => mapping (bytes32 => uint256)) attributes;
 }

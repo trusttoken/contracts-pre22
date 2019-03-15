@@ -1,12 +1,12 @@
 import assertRevert from './helpers/assertRevert'
 import assertBalance from './helpers/assertBalance'
 const Registry = artifacts.require("RegistryMock")
-const BalanceSheet = artifacts.require("BalanceSheet")
-const AllowanceSheet = artifacts.require("AllowanceSheet")
 const TokenController = artifacts.require("TokenController")
 const ForceEther = artifacts.require("ForceEther")
 const MultisigOwner = artifacts.require("MultisigOwner")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
+const Ownable = artifacts.require("Ownable")
+const Claimable = artifacts.require("Claimable")
 
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN;
@@ -28,9 +28,7 @@ contract('MultisigOwner', function (accounts) {
         await this.controller.issueClaimOwnership(this.token.address, { from: owner1 })
         await this.controller.setToken(this.token.address, { from: owner1 })
         await this.controller.setTokenRegistry(this.registry.address, { from: owner1 })
-        this.ClaimableContract = await BalanceSheet.new({from: owner1})
-        this.balanceSheet = await this.token.balances.call()
-        this.allowanceSheet = await this.token.allowances.call()
+        this.claimableContract = await Claimable.new({from: owner1})
         await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner1 })
         await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, notes, { from: owner1 })
         await this.registry.setAttribute(pauseKey, PAUSER, 1, notes, { from: owner1 })
@@ -214,8 +212,8 @@ contract('MultisigOwner', function (accounts) {
         })
 
         it('function should fail if controller call fails', async function(){
-            await this.multisigOwner.transferOwnership(this.ClaimableContract.address, {from: owner1})
-            await assertRevert(this.multisigOwner.transferOwnership(this.ClaimableContract.address, {from: owner1}))
+            await this.multisigOwner.transferOwnership(this.claimableContract.address, {from: owner1})
+            await assertRevert(this.multisigOwner.transferOwnership(this.claimableContract.address, {from: owner1}))
         })
 
         it('function should fail if controller call fails pt2', async function(){
@@ -294,18 +292,27 @@ contract('MultisigOwner', function (accounts) {
             assert.equal(pendingOwner, oneHundred)
         })
 
-        it('call requestReclaimContract of tokenController', async function(){
-            const balances = await this.token.balances.call()
-            let balanceOwner = await (await BalanceSheet.at(balances)).owner.call()
-            assert.equal(balanceOwner, this.token.address)
+        
+        it('requestReclaimContract of tokenController', async function(){
+            const ownable = await Ownable.new({from:owner1});
+            await ownable.transferOwnership(this.token.address, { from: owner1})
+            let ownableOwner = await ownable.owner.call();
+            assert.equal(ownableOwner, this.token.address)
 
-            await this.multisigOwner.requestReclaimContract(balances, { from: owner1 })
-            await this.multisigOwner.requestReclaimContract(balances, { from: owner2 })
-            await this.multisigOwner.issueClaimOwnership(balances, { from: owner1 })
-            await this.multisigOwner.issueClaimOwnership(balances, { from: owner2 })
-            balanceOwner = await (await BalanceSheet.at(balances)).owner.call()
-            assert.equal(balanceOwner, this.controller.address)
+            await this.multisigOwner.requestReclaimContract(ownable.address, { from: owner1 })
+            await this.multisigOwner.requestReclaimContract(ownable.address, { from: owner2 })
+            ownableOwner = await ownable.owner.call()
+            assert.equal(ownableOwner, this.controller.address)
+        })
 
+        it('issueClaimOwnership of tokenController', async function(){
+            let claimableOwner = await this.claimableContract.owner.call()
+            assert.equal(claimableOwner, owner1)
+            await this.claimableContract.transferOwnership(this.controller.address, { from: owner1 })
+            await this.multisigOwner.issueClaimOwnership(this.claimableContract.address, { from: owner1 })
+            await this.multisigOwner.issueClaimOwnership(this.claimableContract.address, { from: owner2 })
+            claimableOwner = await this.claimableContract.owner.call()
+            assert.equal(claimableOwner, this.controller.address)
         })
 
 

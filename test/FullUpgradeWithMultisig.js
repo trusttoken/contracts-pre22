@@ -3,10 +3,8 @@ import expectThrow from './helpers/expectThrow'
 import assertBalance from './helpers/assertBalance'
 const Registry = artifacts.require("RegistryMock")
 const TrueUSD = artifacts.require("TrueUSDMock")
-const BalanceSheet = artifacts.require("BalanceSheet")
-const AllowanceSheet = artifacts.require("AllowanceSheet")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
-const TokenController = artifacts.require("TokenController")
+const PreMigrationTokenController = artifacts.require("PreMigrationTokenController")
 const MultisigOwner = artifacts.require("MultisigOwner")
 
 const bytes32 = require('./helpers/bytes32.js')
@@ -23,9 +21,9 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             await this.multisigOwner.msInitialize([owner1, owner2, owner3],{ from: owner1 })
 
             this.registry = await Registry.new({ from: owner1 })
-            this.controllerImplementation = await TokenController.new({ from: owner1 })
+            this.controllerImplementation = await PreMigrationTokenController.new({ from: owner1 })
             this.controllerProxy = await Proxy.new({ from: owner1 })
-            this.controller = await TokenController.at(this.controllerProxy.address)
+            this.controller = await PreMigrationTokenController.at(this.controllerProxy.address)
             await this.multisigOwner.msSetTokenController(this.controllerProxy.address, {from : owner1 })
             await this.multisigOwner.msSetTokenController(this.controllerProxy.address, {from : owner2 })
             await this.controllerProxy.transferProxyOwnership(this.multisigOwner.address,{ from: owner1 } )
@@ -60,12 +58,6 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner1 })
             await this.registry.setAttribute(approver, bytes32("isTUSDMintApprover"), 1, notes, { from: owner1 })
             await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner1 })
-            this.balanceSheet = await BalanceSheet.new({ from: owner1 })
-            this.allowanceSheet = await AllowanceSheet.new({ from: owner1 })
-            await this.balanceSheet.transferOwnership(this.token.address,{ from: owner1 })
-            await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner1 })
-            await this.multisigOwner.claimStorageForProxy(this.token.address, this.balanceSheet.address, this.allowanceSheet.address, { from: owner1 })
-            await this.multisigOwner.claimStorageForProxy(this.token.address, this.balanceSheet.address, this.allowanceSheet.address, { from: owner2 })
             await this.multisigOwner.requestMint(oneHundred, BN(10*10**18),  {from: owner1})
             await this.multisigOwner.requestMint(oneHundred, BN(10*10**18), {from: owner2})
             await this.multisigOwner.ratifyMint(0,oneHundred, BN(10*10**18), {from: owner1})
@@ -85,13 +77,6 @@ contract('--Full upgrade process with multisig--', function (accounts) {
             it('token contract cannot be reinitialized', async function() {
                 await assertRevert(this.token.initialize({from: owner1}))
                 await assertRevert(this.token.initialize({from: oneHundred}))
-            })
-
-            it('storage contract owned by token proxy ', async function() {
-                const balanceSheetOwner = await this.balanceSheet.owner.call()
-                const allowanceSheetOwner = await this.allowanceSheet.owner.call()
-                assert.equal(balanceSheetOwner, this.token.address)
-                assert.equal(allowanceSheetOwner, this.token.address)
             })
 
             it('Controller owner is set', async function(){
@@ -135,7 +120,7 @@ contract('--Full upgrade process with multisig--', function (accounts) {
                 await this.multisigOwner.ratifyMint(1, oneHundred, BN(10*10**18), {from: owner2})    
             })
             it('upgrades controller implementation contract', async function() {
-                this.newControllerImplementation = await TokenController.new({ from: owner2 })
+                this.newControllerImplementation = await PreMigrationTokenController.new({ from: owner2 })
                 await this.multisigOwner.msUpgradeControllerProxyImplTo(this.newControllerImplementation.address, {from : owner1 })
                 await this.multisigOwner.msUpgradeControllerProxyImplTo(this.newControllerImplementation.address, {from : owner2 })
                 const newImplAddress = await this.controllerProxy.implementation.call()
@@ -167,9 +152,9 @@ contract('--Full upgrade process with multisig--', function (accounts) {
                 await this.newMultisigOwner.msClaimControllerProxyOwnership({from: owner2})    
             })
             it('upgrades controller proxy contract', async function() {
-                this.newControllerImplementation = await TokenController.new({ from: owner1 })
+                this.newControllerImplementation = await PreMigrationTokenController.new({ from: owner1 })
                 this.newControllerProxy = await Proxy.new({ from: owner1 })
-                this.newController = await TokenController.at(this.newControllerProxy.address)
+                this.newController = await PreMigrationTokenController.at(this.newControllerProxy.address)
                 await this.multisigOwner.transferChild(this.token.address, this.newControllerProxy.address, {from : owner1 })
                 await this.multisigOwner.transferChild(this.token.address, this.newControllerProxy.address, {from : owner2 })
                 await this.multisigOwner.transferTusdProxyOwnership(this.newControllerProxy.address, {from : owner1 })

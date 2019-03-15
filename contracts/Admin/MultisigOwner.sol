@@ -377,13 +377,6 @@ contract MultiSigOwner {
         _signOrExecute("issueClaimOwnership"); 
     }
 
-    function claimStorageForProxy(
-        address /*_delegate*/,
-        Ownable /*_balanceSheet*/,
-        Ownable /*_alowanceSheet*/) external onlyOwner {
-        _signOrExecute("claimStorageForProxy"); 
-    }
-
     function transferChild(Ownable /*_child*/, address /*_newOwner*/) external onlyOwner {
         _signOrExecute("transferChild"); 
     }

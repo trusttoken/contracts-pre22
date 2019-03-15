@@ -2,8 +2,6 @@ import assertRevert from './helpers/assertRevert'
 import expectThrow from './helpers/expectThrow'
 const Registry = artifacts.require("RegistryMock")
 const TrueUSD = artifacts.require("TrueUSDMock")
-const BalanceSheet = artifacts.require("BalanceSheet")
-const AllowanceSheet = artifacts.require("AllowanceSheet")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 const TokenController = artifacts.require("TokenController")
 
@@ -21,15 +19,9 @@ contract('Proxy With Controller', function (accounts) {
             this.tokenProxy = await Proxy.new({ from: owner })
             this.tusdImplementation = await TrueUSD.new(owner, 0, { from: owner })
             this.token = await TrueUSD.at(this.tokenProxy.address)
-            this.balanceSheet = await BalanceSheet.new({ from: owner })
-            this.allowanceSheet = await AllowanceSheet.new({ from: owner })
-            await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
-            await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
 
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
             await this.token.initialize({from: owner})
-            await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
-            await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
 
             this.controllerImplementation = await TokenController.new({ from: owner })
             this.controllerProxy = await Proxy.new({ from: owner })

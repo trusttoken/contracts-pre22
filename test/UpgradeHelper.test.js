@@ -1,6 +1,6 @@
 import assertRevert from './helpers/assertRevert'
 import expectThrow from './helpers/expectThrow'
-const Controller = artifacts.require("TokenController")
+const Controller = artifacts.require("PreMigrationTokenController")
 const CanDelegate = artifacts.require('CanDelegateMock')
 const TrueUSD = artifacts.require('PreMigrationTrueUSDMock')
 const UpgradeHelperMock = artifacts.require("UpgradeHelperMock")

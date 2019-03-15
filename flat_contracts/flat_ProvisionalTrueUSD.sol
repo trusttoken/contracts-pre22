@@ -381,8 +381,8 @@ contract ProxyStorage {
 
     bool initialized;
     
-    BalanceSheet public balances;
-    AllowanceSheet public allowances;
+    BalanceSheet balances_Deprecated;
+    AllowanceSheet allowances_Deprecated;
 
     uint256 totalSupply_;
     
@@ -400,10 +400,6 @@ contract ProxyStorage {
     uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
-
-    mapping (address => uint256) _balanceOf;
-    mapping (address => mapping (address => uint256)) _allowance;
-    mapping (address => mapping (bytes32 => uint256)) attributes;
 }
 
 // File: contracts/HasOwner.sol
@@ -494,8 +490,7 @@ contract ReclaimerToken is HasOwner {
 
 // File: contracts/modularERC20/ModularBasicToken.sol
 
-// Version of OpenZeppelin's BasicToken whose balances mapping has been replaced
-// with a separate BalanceSheet contract. remove the need to copy over balances.
+// Fork of OpenZeppelin's BasicToken
 /**
  * @title Basic token
  * @dev Basic version of StandardToken, with no allowances.
@@ -503,19 +498,7 @@ contract ReclaimerToken is HasOwner {
 contract ModularBasicToken is HasOwner {
     using SafeMath for uint256;
 
-    event BalanceSheetSet(address indexed sheet);
     event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-    * @dev claim ownership of the balancesheet contract
-    * @param _sheet The address to of the balancesheet to claim.
-    */
-    function setBalanceSheet(address _sheet) public onlyOwner returns (bool) {
-        balances = BalanceSheet(_sheet);
-        balances.claimOwnership();
-        emit BalanceSheetSet(_sheet);
-        return true;
-    }
 
     /**
     * @dev total number of tokens in existence
@@ -527,21 +510,38 @@ contract ModularBasicToken is HasOwner {
     function balanceOf(address _who) public view returns (uint256) {
         return _getBalance(_who);
     }
-    function _getBalance(address _who) internal view returns (uint256) {
-        return _balanceOf[_who];
+    function _getBalance(address _who) internal view returns (uint256 outBalance) {
+        bytes32 storageLocation = keccak256(_who);
+        assembly {
+            outBalance := sload(storageLocation)
+        }
     }
-    function _addBalance(address _who, uint256 _value) internal returns (bool balanceNew) {
-        uint256 priorBalance = _balanceOf[_who];
-        _balanceOf[_who] = priorBalance.add(_value);
-        balanceNew = priorBalance == 0;
+    function _addBalance(address _who, uint256 _value) internal returns (uint256 priorBalance) {
+        bytes32 storageLocation = keccak256(_who);
+        assembly {
+            priorBalance := sload(storageLocation)
+        }
+        uint256 result = priorBalance.add(_value);
+        assembly {
+            sstore(storageLocation, result)
+        }
     }
-    function _subBalance(address _who, uint256 _value) internal returns (bool balanceZero) {
-        uint256 updatedBalance = _balanceOf[_who].sub(_value);
-        _balanceOf[_who] = updatedBalance;
-        balanceZero = updatedBalance == 0;
+    function _subBalance(address _who, uint256 _value) internal returns (uint256 result) {
+        bytes32 storageLocation = keccak256(_who);
+        uint256 priorBalance;
+        assembly {
+            priorBalance := sload(storageLocation)
+        }
+        result = priorBalance.sub(_value);
+        assembly {
+            sstore(storageLocation, result)
+        }
     }
     function _setBalance(address _who, uint256 _value) internal {
-        _balanceOf[_who] = _value;
+        bytes32 storageLocation = keccak256(_who);
+        assembly {
+            sstore(storageLocation, _value)
+        }
     }
 }
 
@@ -557,20 +557,8 @@ contract ModularBasicToken is HasOwner {
 contract ModularStandardToken is ModularBasicToken {
     using SafeMath for uint256;
     
-    event AllowanceSheetSet(address indexed sheet);
     event Approval(address indexed owner, address indexed spender, uint256 value);
     
-    /**
-    * @dev claim ownership of the AllowanceSheet contract
-    * @param _sheet The address to of the AllowanceSheet to claim.
-    */
-    function setAllowanceSheet(address _sheet) public onlyOwner returns(bool) {
-        allowances = AllowanceSheet(_sheet);
-        allowances.claimOwnership();
-        emit AllowanceSheetSet(_sheet);
-        return true;
-    }
-
     /**
      * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
      *
@@ -642,19 +630,40 @@ contract ModularStandardToken is ModularBasicToken {
         return _getAllowance(_who, _spender);
     }
 
-    function _getAllowance(address _who, address _spender) internal view returns (uint256) {
-        return _allowance[_who][_spender];
+    function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
+        bytes32 storageLocation = keccak256(_who, _spender);
+        assembly {
+            value := sload(storageLocation)
+        }
     }
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
-        _allowance[_who][_spender] = _allowance[_who][_spender].add(_value);
+        bytes32 storageLocation = keccak256(_who, _spender);
+        uint256 value;
+        assembly {
+            value := sload(storageLocation)
+        }
+        value = value.add(_value);
+        assembly {
+            sstore(storageLocation, value)
+        }
     }
     function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool allowanceZero){
-        uint256 newAllowance = _allowance[_who][_spender].sub(_value);
-        _allowance[_who][_spender] = newAllowance;
-        allowanceZero = newAllowance == 0;
+        bytes32 storageLocation = keccak256(_who, _spender);
+        uint256 value;
+        assembly {
+            value := sload(storageLocation)
+        }
+        value = value.sub(_value);
+        assembly {
+            sstore(storageLocation, value)
+        }
+        allowanceZero = value == 0;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
-        _allowance[_who][_spender] = _value;
+        bytes32 storageLocation = keccak256(_who, _spender);
+        assembly {
+            sstore(storageLocation, _value)
+        }
     }
 }
 
@@ -885,10 +894,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _burnFromAllowanceAllArgs(address _from, address _to, uint256 _value) internal {
         _requireCanTransferFrom(msg.sender, _from, _to);
-        _requireCanBurn(_to);
+        _requireOnlyCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        if (_subBalance(_from, _value)) {
+        if (0 == _subBalance(_from, _value)) {
             if (_subAllowance(_from, msg.sender, _value)) {
                 // no refund
             } else {
@@ -909,11 +918,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _burnFromAllArgs(address _from, address _to, uint256 _value) internal {
         _requireCanTransfer(_from, _to);
-        _requireCanBurn(_to);
+        _requireOnlyCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        bool balanceZero = _subBalance(_from, _value);
-        if (balanceZero) {
+        if (0 == _subBalance(_from, _value)) {
             gasRefund15();
         } else {
             gasRefund30();
@@ -928,15 +936,15 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransferFrom(_sender, _from, _to);
-        if (_addBalance(_to, _value)) {
+        if (0 == _addBalance(_to, _value)) {
             if (_subAllowance(_from, _sender, _value)) {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     // do not refund
                 } else {
                     gasRefund30();
                 }
             } else {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     gasRefund30();
                 } else {
                     gasRefund45();
@@ -944,13 +952,13 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             }
         } else {
             if (_subAllowance(_from, _sender, _value)) {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     // do not refund
                 } else {
                     gasRefund15();
                 }
             } else {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     gasRefund15();
                 } else {
                     gasRefund30();
@@ -975,14 +983,14 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address finalTo;
         (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-        if (_subBalance(_from, _value)) {
-            if (_addBalance(finalTo, _value)) {
+        if (0 == _subBalance(_from, _value)) {
+            if (0 == _addBalance(finalTo, _value)) {
                 gasRefund30();
             } else {
                 // do not refund
             }
         } else {
-            if (_addBalance(finalTo, _value)) {
+            if (0 == _addBalance(finalTo, _value)) {
                 gasRefund45();
             } else {
                 gasRefund30();
@@ -1040,7 +1048,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
-        attributes[_who][_attribute] = _value;
+        bytes32 storageLocation = keccak256(_who, _attribute);
+        assembly {
+            sstore(storageLocation, _value)
+        }
     }
 
     function _burnAllArgs(address _from, uint256 _value) internal {
@@ -1058,37 +1069,113 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         emit Transfer(_account, address(0), oldValue);
     }
 
-    function _isBlacklisted(address _account) internal view returns (bool) {
-        return attributes[_account][IS_BLACKLISTED] != 0;
+    function _isBlacklisted(address _account) internal view returns (bool blacklisted) {
+        bytes32 storageLocation = keccak256(_account, IS_BLACKLISTED);
+        assembly {
+            blacklisted := sload(storageLocation)
+        }
     }
 
     function _requireCanTransfer(address _from, address _to) internal view returns (address, bool) {
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
+        uint256 depositAddressValue;
+        bytes32 storageLocation = keccak256(address(uint256(_to) >> 20),IS_DEPOSIT_ADDRESS);
+        assembly {
+            depositAddressValue := sload(storageLocation)
+        }
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
         }
-        require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
-        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT] != 0);
+        uint256 flag;
+        storageLocation = keccak256(_to, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(_from, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(_to, IS_REGISTERED_CONTRACT);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        return (_to, flag != 0);
     }
 
     function _requireCanTransferFrom(address _sender, address _from, address _to) internal view returns (address, bool) {
-        require (attributes[_sender][IS_BLACKLISTED] == 0, "blacklisted");
-        return _requireCanTransfer(_from, _to);
+        uint256 flag;
+        bytes32 storageLocation = keccak256(_sender, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(address(uint256(_to) >> 20),IS_DEPOSIT_ADDRESS);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        if (flag != 0) {
+            _to = address(flag);
+        }
+        storageLocation = keccak256(_to, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(_from, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(_to, IS_REGISTERED_CONTRACT);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        return (_to, flag != 0);
     }
 
     function _requireCanMint(address _to) internal view returns (address, bool) {
-        require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
-        if (depositAddressValue != 0) {
-            _to = address(depositAddressValue);
+        uint256 flag;
+        bytes32 storageLocation = keccak256(_to, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
         }
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT] != 0);
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(address(uint256(_to) >> 20), IS_DEPOSIT_ADDRESS);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        if (flag != 0) {
+            _to = address(flag);
+        }
+        storageLocation = keccak256(_to, IS_REGISTERED_CONTRACT);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        return (_to, flag != 0);
+    }
+
+    function _requireOnlyCanBurn(address _from) internal view {
+        bytes32 storageLocation = keccak256(_from, canBurn());
+        uint256 flag;
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag != 0, "cannot burn from this address");
     }
 
     function _requireCanBurn(address _from) internal view {
-        require (attributes[_from][canBurn()] != 0, "cannot burn from this address");
-        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
+        uint256 flag;
+        bytes32 storageLocation = keccak256(_from, IS_BLACKLISTED);
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag == 0, "blacklisted");
+        storageLocation = keccak256(_from, canBurn());
+        assembly {
+            flag := sload(storageLocation)
+        }
+        require (flag != 0, "cannot burn from this address");
     }
 
     function paused() public pure returns (bool) {
@@ -1183,6 +1270,9 @@ DelegateERC20 {
 }
 
 // File: contracts/DeprecatedGasRefundPool.sol
+
+pragma solidity^0.4.23;
+
 
 contract DeprecatedGasRefundPool is ProxyStorage {
     modifier retroGasRefund15 {
@@ -1288,32 +1378,33 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
     function _requireCanBurn(address _from) internal view {
         ProvisionalRegistry(registry).requireCanBurn(_from);
     }
+    function _requireOnlyCanBurn(address _from) internal view {
+        ProvisionalRegistry(registry).requireCanBurn(_from);
+    }
     function migratedBalanceOf(address _who) public view returns (uint256) {
-        return _balanceOf[_who];
+        return super._getBalance(_who);
     }
     function _getBalance(address _who) internal view returns (uint256) {
-        return balances.balanceOf(_who);
+        return balances_Deprecated.balanceOf(_who);
     }
-    function _addBalance(address _who, uint256 _value) internal returns (bool balanceNew) {
-        uint256 priorBalance = _getBalance(_who);
+    function _addBalance(address _who, uint256 _value) internal returns (uint256 priorBalance) {
+        priorBalance = _getBalance(_who);
         _setBalance(_who, priorBalance.add(_value));
-        balanceNew = priorBalance == 0;
     }
-    function _subBalance(address _who, uint256 _value) internal returns (bool balanceZero) {
-        uint256 balanceNew = _getBalance(_who).sub(_value);
+    function _subBalance(address _who, uint256 _value) internal returns (uint256 balanceNew) {
+        balanceNew = _getBalance(_who).sub(_value);
         _setBalance(_who, balanceNew);
-        balanceZero = balanceNew == 0;
     }
     function _setBalance(address _who, uint256 _value) internal {
-        balances.setBalance(_who, _value);
-        _balanceOf[_who] = _value;
+        balances_Deprecated.setBalance(_who, _value);
+        super._setBalance(_who, _value);
     }
 
     function migrateBalances(address[] holders) external retroGasRefund45 {
         uint256 i = holders.length;
         while (i --> 0) {
             address holder = holders[i];
-            _balanceOf[holder] = _getBalance(holder);
+            super._setBalance(holder, _getBalance(holder));
         }
     }
 
@@ -1322,14 +1413,14 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         while (i --> 0) {
             address holder = holders[i];
             address spender = spenders[i];
-            _allowance[holder][spender] = _getAllowance(holder, spender);
+            super._setAllowance(holder, spender, _getAllowance(holder, spender));
         }
     }
     function migratedAllowance(address _who, address _spender) public view returns (uint256) {
-        return _allowance[_who][_spender];
+        return super._getAllowance(_who, _spender);
     }
     function _getAllowance(address _who, address _spender) internal view returns (uint256) {
-        return allowances.allowanceOf(_who, _spender);
+        return allowances_Deprecated.allowanceOf(_who, _spender);
     }
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
         uint256 prior = _getAllowance(_who, _spender);
@@ -1342,8 +1433,8 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         allowanceZero = updated == 0;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
-        _allowance[_who][_spender] = _value;
-        allowances.setAllowance(_who, _spender, _value);
+        super._setAllowance(_who, _spender, _value);
+        allowances_Deprecated.setAllowance(_who, _spender, _value);
     }
 }
 
