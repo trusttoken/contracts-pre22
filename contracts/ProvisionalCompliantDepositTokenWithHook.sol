@@ -31,15 +31,13 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
     function _getBalance(address _who) internal view returns (uint256) {
         return balances_Deprecated.balanceOf(_who);
     }
-    function _addBalance(address _who, uint256 _value) internal returns (bool balanceNew) {
-        uint256 priorBalance = _getBalance(_who);
+    function _addBalance(address _who, uint256 _value) internal returns (uint256 priorBalance) {
+        priorBalance = _getBalance(_who);
         _setBalance(_who, priorBalance.add(_value));
-        balanceNew = priorBalance == 0;
     }
-    function _subBalance(address _who, uint256 _value) internal returns (bool balanceZero) {
-        uint256 balanceNew = _getBalance(_who).sub(_value);
+    function _subBalance(address _who, uint256 _value) internal returns (uint256 balanceNew) {
+        balanceNew = _getBalance(_who).sub(_value);
         _setBalance(_who, balanceNew);
-        balanceZero = balanceNew == 0;
     }
     function _setBalance(address _who, uint256 _value) internal {
         balances_Deprecated.setBalance(_who, _value);

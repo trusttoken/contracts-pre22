@@ -53,7 +53,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         _requireCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        if (_subBalance(_from, _value)) {
+        if (0 == _subBalance(_from, _value)) {
             if (_subAllowance(_from, msg.sender, _value)) {
                 // no refund
             } else {
@@ -77,8 +77,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         _requireCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        bool balanceZero = _subBalance(_from, _value);
-        if (balanceZero) {
+        if (0 == _subBalance(_from, _value)) {
             gasRefund15();
         } else {
             gasRefund30();
@@ -93,15 +92,15 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransferFrom(_sender, _from, _to);
-        if (_addBalance(_to, _value)) {
+        if (0 == _addBalance(_to, _value)) {
             if (_subAllowance(_from, _sender, _value)) {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     // do not refund
                 } else {
                     gasRefund30();
                 }
             } else {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     gasRefund30();
                 } else {
                     gasRefund45();
@@ -109,13 +108,13 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             }
         } else {
             if (_subAllowance(_from, _sender, _value)) {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     // do not refund
                 } else {
                     gasRefund15();
                 }
             } else {
-                if (_subBalance(_from, _value)) {
+                if (0 == _subBalance(_from, _value)) {
                     gasRefund15();
                 } else {
                     gasRefund30();
@@ -140,14 +139,14 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address finalTo;
         (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-        if (_subBalance(_from, _value)) {
-            if (_addBalance(finalTo, _value)) {
+        if (0 == _subBalance(_from, _value)) {
+            if (0 == _addBalance(finalTo, _value)) {
                 gasRefund30();
             } else {
                 // do not refund
             }
         } else {
-            if (_addBalance(finalTo, _value)) {
+            if (0 == _addBalance(finalTo, _value)) {
                 gasRefund45();
             } else {
                 gasRefund30();

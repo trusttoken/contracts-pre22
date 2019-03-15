@@ -4,13 +4,13 @@ import "../ProvisionalTrueUSD.sol";
 
 // Mocks the behavior from before balances were migrated
 contract PreMigrationTrueUSDMock is ProvisionalTrueUSD {
-    function _addBalance(address _who, uint256 _value) internal returns (bool) {
+    function _addBalance(address _who, uint256 _value) internal returns (uint256) {
         balances_Deprecated.addBalance(_who, _value);
-        return true;
+        return 1;
     }
-    function _subBalance(address _who, uint256 _value) internal returns (bool) {
+    function _subBalance(address _who, uint256 _value) internal returns (uint256 newBalance) {
         balances_Deprecated.subBalance(_who, _value);
-        return true;
+        return 1;
     }
     function _setBalance(address _who, uint256 _value) internal {
         balances_Deprecated.setBalance(_who, _value);
