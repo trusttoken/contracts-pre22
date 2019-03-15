@@ -616,13 +616,13 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
-        bytes32 storageLocation = keccak256(uint8(8), _who, _spender);
+        bytes32 storageLocation = keccak256(_who, _spender);
         assembly {
             value := sload(storageLocation)
         }
     }
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
-        bytes32 storageLocation = keccak256(uint8(8), _who, _spender);
+        bytes32 storageLocation = keccak256(_who, _spender);
         uint256 value;
         assembly {
             value := sload(storageLocation)
@@ -633,7 +633,7 @@ contract ModularStandardToken is ModularBasicToken {
         }
     }
     function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool allowanceZero){
-        bytes32 storageLocation = keccak256(uint8(8), _who, _spender);
+        bytes32 storageLocation = keccak256(_who, _spender);
         uint256 value;
         assembly {
             value := sload(storageLocation)
@@ -645,7 +645,7 @@ contract ModularStandardToken is ModularBasicToken {
         allowanceZero = value == 0;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
-        bytes32 storageLocation = keccak256(uint8(8), _who, _spender);
+        bytes32 storageLocation = keccak256(_who, _spender);
         assembly {
             sstore(storageLocation, _value)
         }
@@ -1034,7 +1034,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
-        bytes32 storageLocation = keccak256(uint8(0), _who, _attribute);
+        bytes32 storageLocation = keccak256(_who, _attribute);
         assembly {
             sstore(storageLocation, _value)
         }
@@ -1056,7 +1056,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     function _isBlacklisted(address _account) internal view returns (bool blacklisted) {
-        bytes32 storageLocation = keccak256(uint8(0), _account, IS_BLACKLISTED);
+        bytes32 storageLocation = keccak256(_account, IS_BLACKLISTED);
         assembly {
             blacklisted := sload(storageLocation)
         }
@@ -1064,7 +1064,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _requireCanTransfer(address _from, address _to) internal view returns (address, bool) {
         uint256 depositAddressValue;
-        bytes32 storageLocation = keccak256(uint8(0), address(uint256(_to) >> 20),IS_DEPOSIT_ADDRESS);
+        bytes32 storageLocation = keccak256(address(uint256(_to) >> 20),IS_DEPOSIT_ADDRESS);
         assembly {
             depositAddressValue := sload(storageLocation)
         }
@@ -1072,17 +1072,17 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             _to = address(depositAddressValue);
         }
         uint256 flag;
-        storageLocation = keccak256(uint8(0), _to, IS_BLACKLISTED);
+        storageLocation = keccak256(_to, IS_BLACKLISTED);
         assembly {
             flag := sload(storageLocation)
         }
         require (flag == 0, "blacklisted");
-        storageLocation = keccak256(uint8(0), _from, IS_BLACKLISTED);
+        storageLocation = keccak256(_from, IS_BLACKLISTED);
         assembly {
             flag := sload(storageLocation)
         }
         require (flag == 0, "blacklisted");
-        storageLocation = keccak256(uint8(0), _to, IS_REGISTERED_CONTRACT);
+        storageLocation = keccak256(_to, IS_REGISTERED_CONTRACT);
         assembly {
             flag := sload(storageLocation)
         }
@@ -1091,29 +1091,29 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _requireCanTransferFrom(address _sender, address _from, address _to) internal view returns (address, bool) {
         uint256 flag;
-        bytes32 storageLocation = keccak256(uint8(0), _sender, IS_BLACKLISTED);
+        bytes32 storageLocation = keccak256(_sender, IS_BLACKLISTED);
         assembly {
             flag := sload(storageLocation)
         }
         require (flag == 0, "blacklisted");
-        storageLocation = keccak256(uint8(0), address(uint256(_to) >> 20),IS_DEPOSIT_ADDRESS);
+        storageLocation = keccak256(address(uint256(_to) >> 20),IS_DEPOSIT_ADDRESS);
         assembly {
             flag := sload(storageLocation)
         }
         if (flag != 0) {
             _to = address(flag);
         }
-        storageLocation = keccak256(uint8(0), _to, IS_BLACKLISTED);
+        storageLocation = keccak256(_to, IS_BLACKLISTED);
         assembly {
             flag := sload(storageLocation)
         }
         require (flag == 0, "blacklisted");
-        storageLocation = keccak256(uint8(0), _from, IS_BLACKLISTED);
+        storageLocation = keccak256(_from, IS_BLACKLISTED);
         assembly {
             flag := sload(storageLocation)
         }
         require (flag == 0, "blacklisted");
-        storageLocation = keccak256(uint8(0), _to, IS_REGISTERED_CONTRACT);
+        storageLocation = keccak256(_to, IS_REGISTERED_CONTRACT);
         assembly {
             flag := sload(storageLocation)
         }
@@ -1122,19 +1122,19 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _requireCanMint(address _to) internal view returns (address, bool) {
         uint256 flag;
-        bytes32 storageLocation = keccak256(uint8(0), _to, IS_BLACKLISTED);
+        bytes32 storageLocation = keccak256(_to, IS_BLACKLISTED);
         assembly {
             flag := sload(storageLocation)
         }
         require (flag == 0, "blacklisted");
-        storageLocation = keccak256(uint8(0), address(uint256(_to) >> 20), IS_DEPOSIT_ADDRESS);
+        storageLocation = keccak256(address(uint256(_to) >> 20), IS_DEPOSIT_ADDRESS);
         assembly {
             flag := sload(storageLocation)
         }
         if (flag != 0) {
             _to = address(flag);
         }
-        storageLocation = keccak256(uint8(0), _to, IS_REGISTERED_CONTRACT);
+        storageLocation = keccak256(_to, IS_REGISTERED_CONTRACT);
         assembly {
             flag := sload(storageLocation)
         }
@@ -1143,12 +1143,12 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _requireCanBurn(address _from) internal view {
         uint256 flag;
-        bytes32 storageLocation = keccak256(uint8(0), _from, IS_BLACKLISTED);
+        bytes32 storageLocation = keccak256(_from, IS_BLACKLISTED);
         assembly {
             flag := sload(storageLocation)
         }
         require (flag == 0, "blacklisted");
-        storageLocation = keccak256(uint8(0), _from, canBurn());
+        storageLocation = keccak256(_from, canBurn());
         assembly {
             flag := sload(storageLocation)
         }

@@ -104,7 +104,7 @@ contract PausedToken is HasOwner, RegistryClone {
         return _getAllowance(_who, _spender);
     }
     function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
-        bytes32 storageLocation = keccak256(uint8(8), _who, _spender);
+        bytes32 storageLocation = keccak256(_who, _spender);
         assembly {
             value := sload(storageLocation)
         }
@@ -149,7 +149,7 @@ contract PausedToken is HasOwner, RegistryClone {
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
-        bytes32 storageLocation = keccak256(uint8(0), _who, _attribute);
+        bytes32 storageLocation = keccak256(_who, _attribute);
         assembly {
             sstore(storageLocation, _value)
         }
