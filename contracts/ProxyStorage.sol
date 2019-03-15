@@ -33,6 +33,4 @@ contract ProxyStorage {
     uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
-
-    mapping (address => uint256) _balanceOf;
 }

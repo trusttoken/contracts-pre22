@@ -26,7 +26,7 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         ProvisionalRegistry(registry).requireCanBurn(_from);
     }
     function migratedBalanceOf(address _who) public view returns (uint256) {
-        return _balanceOf[_who];
+        return super._getBalance(_who);
     }
     function _getBalance(address _who) internal view returns (uint256) {
         return balances_Deprecated.balanceOf(_who);
@@ -43,14 +43,14 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
     }
     function _setBalance(address _who, uint256 _value) internal {
         balances_Deprecated.setBalance(_who, _value);
-        _balanceOf[_who] = _value;
+        super._setBalance(_who, _value);
     }
 
     function migrateBalances(address[] holders) external retroGasRefund45 {
         uint256 i = holders.length;
         while (i --> 0) {
             address holder = holders[i];
-            _balanceOf[holder] = _getBalance(holder);
+            super._setBalance(holder, _getBalance(holder));
         }
     }
 

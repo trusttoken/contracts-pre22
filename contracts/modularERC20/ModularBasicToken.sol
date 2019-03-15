@@ -23,20 +23,40 @@ contract ModularBasicToken is HasOwner {
     function balanceOf(address _who) public view returns (uint256) {
         return _getBalance(_who);
     }
-    function _getBalance(address _who) internal view returns (uint256) {
-        return _balanceOf[_who];
+    function _getBalance(address _who) internal view returns (uint256 outBalance) {
+        bytes32 storageLocation = keccak256(_who);
+        assembly {
+            outBalance := sload(storageLocation)
+        }
     }
     function _addBalance(address _who, uint256 _value) internal returns (bool balanceNew) {
-        uint256 priorBalance = _balanceOf[_who];
-        _balanceOf[_who] = priorBalance.add(_value);
+        bytes32 storageLocation = keccak256(_who);
+        uint256 priorBalance;
+        assembly {
+            priorBalance := sload(storageLocation)
+        }
+        uint256 result = priorBalance.add(_value);
+        assembly {
+            sstore(storageLocation, result)
+        }
         balanceNew = priorBalance == 0;
     }
     function _subBalance(address _who, uint256 _value) internal returns (bool balanceZero) {
-        uint256 updatedBalance = _balanceOf[_who].sub(_value);
-        _balanceOf[_who] = updatedBalance;
-        balanceZero = updatedBalance == 0;
+        bytes32 storageLocation = keccak256(_who);
+        uint256 priorBalance;
+        assembly {
+            priorBalance := sload(storageLocation)
+        }
+        uint256 result = priorBalance.sub(_value);
+        assembly {
+            sstore(storageLocation, result)
+        }
+        balanceZero = result == 0;
     }
     function _setBalance(address _who, uint256 _value) internal {
-        _balanceOf[_who] = _value;
+        bytes32 storageLocation = keccak256(_who);
+        assembly {
+            sstore(storageLocation, _value)
+        }
     }
 }

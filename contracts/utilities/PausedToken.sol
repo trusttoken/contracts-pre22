@@ -97,8 +97,11 @@ contract PausedToken is HasOwner, RegistryClone {
     function balanceOf(address _who) public view returns (uint256) {
         return _getBalance(_who);
     }
-    function _getBalance(address _who) internal view returns (uint256) {
-        return _balanceOf[_who];
+    function _getBalance(address _who) internal view returns (uint256 value) {
+        bytes32 storageLocation = keccak256(_who);
+        assembly {
+            value := sload(storageLocation)
+        }
     }
     function allowance(address _who, address _spender) public view returns (uint256) {
         return _getAllowance(_who, _spender);
@@ -158,8 +161,12 @@ contract PausedToken is HasOwner, RegistryClone {
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
     function wipeBlacklistedAccount(address _account) public onlyOwner {
         require(registry.hasAttribute(_account, IS_BLACKLISTED), "_account is not blacklisted");
-        uint256 oldValue = _balanceOf[_account];
-        _balanceOf[_account] = 0;
+        bytes32 storageLocation = keccak256(_account);
+        uint256 oldValue;
+        assembly {
+            oldValue := sload(storageLocation)
+            sstore(storageLocation, 0)
+        }
         totalSupply_ = totalSupply_.sub(oldValue);
         emit WipeBlacklistedAccount(_account, oldValue);
         emit Transfer(_account, address(0), oldValue);
@@ -185,7 +192,7 @@ contract PausedDelegateERC20 is PausedToken {
     }
 
     function delegateBalanceOf(address who) public view returns (uint256) {
-        return _balanceOf[who];
+        return balanceOf(who);
     }
 
     function delegateTransfer(address /*to*/, uint256 /*value*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {
