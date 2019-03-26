@@ -730,7 +730,7 @@ contract Sheep39 {
     constructor() public {
         owner = msg.sender;
     }
-    function() external {
+    function() external payable {
         require(owner == msg.sender);
         //owner = 0;
         selfdestruct(0);
