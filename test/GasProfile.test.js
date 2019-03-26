@@ -172,6 +172,9 @@ contract('GasProfile', function (accounts) {
                 await this.token.sponsorGas({ from: oneHundred });
                 await this.token.sponsorGas({ from: owner });
                 await this.token.sponsorGas({ from: anotherAccount });
+                await this.token.sponsorGas2({ from: anotherAccount });
+                await this.token.sponsorGas2({ from: owner });
+                await this.token.sponsorGas2({ from: oneHundred });
             })
             it('transfer', async function() {
                 const reduceToNewWithRefund = await this.token.transfer(anotherAccount, DOLLAR, { from: oneHundred, gasPrice: 2 });
