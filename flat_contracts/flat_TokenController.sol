@@ -365,7 +365,7 @@ contract AllowanceSheet is Claimable {
 // File: contracts/ProxyStorage.sol
 
 /*
-Defines the storage layout of the implementaiton (TrueUSD) contract. Any newly declared 
+Defines the storage layout of the token implementaiton contract. Any newly declared
 state variables in future upgrades should be appened to the bottom. Never remove state variables
 from this list
  */
@@ -388,8 +388,8 @@ contract ProxyStorage {
 
     Registry public registry;
 
-    string name_Deprecated = "TrueUSD";
-    string symbol_Deprecated = "TUSD";
+    string name_Deprecated;
+    string symbol_Deprecated;
 
     uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
@@ -725,6 +725,18 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
 
 // File: contracts/GasRefundToken.sol
 
+contract Sheep39 {
+    address owner;
+    constructor() public {
+        owner = msg.sender;
+    }
+    function() external {
+        require(owner == msg.sender);
+        //owner = 0;
+        selfdestruct(0);
+    }
+}
+
 /**  
 @title Gas Refund Token
 Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas refund mechanism in EVM
@@ -732,6 +744,35 @@ Each time an non-empty storage slot is set to 0, evm refund 15,000 (19,000 after
 of the transaction. 
 */
 contract GasRefundToken is ProxyStorage {
+
+    function sponsorGas2() external {
+        Sheep39 sheep1 = new Sheep39();
+        Sheep39 sheep2 = new Sheep39();
+        assembly {
+            let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+            let location := sub(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe,offset)
+            sstore(location, sheep1)
+            sstore(sub(location, 1), sheep2)
+            sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, add(offset, 2))
+        }
+    }
+
+    /**
+    @dev refund 39,000 gas
+    @dev costs slightly more than 16,100 gas
+    */
+    function gasRefund39() internal {
+        assembly {
+            let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+            if gt(offset, 0) {
+              let location := sub(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,offset)
+              sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, sub(offset, 1))
+              let sheep := sload(location)
+              pop(call(gas, sheep, 0, 0, 0, 0, 0))
+              sstore(location, 0)
+            }
+        }
+    }
 
     function sponsorGas() external {
         uint256 refundPrice = minimumGasPriceForFutureRefunds;
@@ -907,7 +948,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             if (_subAllowance(_from, msg.sender, _value)) {
                 gasRefund15();
             } else {
-                gasRefund45();
+                gasRefund39();
             }
         }
         emit Transfer(_from, _to, _value);
@@ -947,7 +988,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
                 if (0 == _subBalance(_from, _value)) {
                     gasRefund30();
                 } else {
-                    gasRefund45();
+                    gasRefund39();
                 }
             }
         } else {
@@ -991,7 +1032,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             }
         } else {
             if (0 == _addBalance(finalTo, _value)) {
-                gasRefund45();
+                gasRefund39();
             } else {
                 gasRefund30();
             }
