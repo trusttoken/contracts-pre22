@@ -42,5 +42,7 @@
   "reduceApprovalReducingToBurnWithRefund": 32898,
   "emptyApprovalReducingToBurnWithRefund": 29951,
   "reduceApprovalEmptyingToBurnWithRefund": 29919,
-  "emptyApprovalEmptyingToBurnWithRefund": 24706
+  "emptyApprovalEmptyingToBurnWithRefund": 24706,
+  "sponsorGas": 208421,
+  "sponsorGas2": 210306
 }

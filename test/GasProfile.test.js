@@ -256,6 +256,15 @@ contract('GasProfile', function (accounts) {
                 }
                 showRegressions(expectations);
             })
+            it('sponsorGas', async function() {
+                const sponsorGas = await this.token.sponsorGas()
+                const sponsorGas2 = await this.token.sponsorGas2()
+                const expectations = {
+                    sponsorGas: { actual: sponsorGas.receipt.gasUsed },
+                    sponsorGas2: { actual: sponsorGas2.receipt.gasUsed },
+                }
+                showRegressions(expectations)
+            })
         })
         after(async function() {
             await new Promise((resolve, reject) => {
