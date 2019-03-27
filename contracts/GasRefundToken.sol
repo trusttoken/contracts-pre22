@@ -39,13 +39,13 @@ contract GasRefundToken is ProxyStorage {
             mstore(add(data, 12), me)
             mstore(add(data, 32), 0x14601d5780fd5bff000000000000000000000000000000000000000000000000)
             let sheep1 := create(0, data, 0x28)
-            let sheep2 := create(0, data, 0x28)
-            let sheep3 := create(0, data, 0x28)
             let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
             let location := sub(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe,offset)
             sstore(location, sheep1)
+            let sheep2 := create(0, data, 0x28)
             sstore(sub(location, 1), sheep2)
-            sstore(sub(location, 2), sheep2)
+            let sheep3 := create(0, data, 0x28)
+            sstore(sub(location, 2), sheep3)
             sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, add(offset, 3))
         }
     }
