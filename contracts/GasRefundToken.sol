@@ -108,27 +108,6 @@ contract GasRefundToken is ProxyStorage {
     }
 
     /**  
-    @dev refund 45,000 gas
-    @dev costs slightly more than 20,400 gas
-    */
-    function gasRefund45() internal {
-        assembly {
-            let offset := sload(0xfffff)
-            if gt(offset, 2) {
-                let location := add(offset, 0xfffff)
-                if gt(gasprice,sload(location)) {
-                    sstore(location, 0)
-                    location := sub(location, 1)
-                    sstore(location, 0)
-                    location := sub(location, 1)
-                    sstore(location, 0)
-                    sstore(0xfffff, sub(offset, 3))
-                }
-            }
-        }
-    }
-
-    /**  
     @dev refund 30,000 gas
     @dev costs slightly more than 15,400 gas
     */

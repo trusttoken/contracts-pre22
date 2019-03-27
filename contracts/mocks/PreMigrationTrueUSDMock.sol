@@ -57,8 +57,6 @@ contract PreMigrationTrueUSDMock is ProvisionalTrueUSD {
     }
     function gasRefund39() internal retroGasRefund45 {
     }
-    function gasRefund45() internal retroGasRefund45 {
-    }
     function remainingGasRefundPool() public view returns (uint256) {
         return retroGasPoolRemaining();
     }
