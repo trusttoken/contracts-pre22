@@ -117,7 +117,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
                 if (0 == _subBalance(_from, _value)) {
                     gasRefund15();
                 } else {
-                    gasRefund30();
+                    gasRefund39();
                 }
             }
 

@@ -22,7 +22,7 @@
   "emptyToExistingWithRefund": 24878,
   "emptyToNewWithRefund": 35196,
   "reduceApprovalReducingToNewWithRefund": 38859,
-  "reduceApprovalReducingToExistingWithRefund": 31990,
+  "reduceApprovalReducingToExistingWithRefund": 31354,
   "reduceApprovalEmptyingToNewWithRefund": 38538,
   "reduceApprovalEmptyingToExistingWithRefund": 28493,
   "emptyApprovalReducingToNewWithRefund": 38506,
