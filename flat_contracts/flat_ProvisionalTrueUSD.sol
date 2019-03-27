@@ -725,18 +725,6 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
 
 // File: contracts/GasRefundToken.sol
 
-contract Sheep39 {
-    address owner;
-    constructor() public {
-        owner = msg.sender;
-    }
-    function() external payable {
-        require(owner == msg.sender);
-        //owner = 0;
-        selfdestruct(0);
-    }
-}
-
 /**  
 @title Gas Refund Token
 Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas refund mechanism in EVM
@@ -746,9 +734,6 @@ of the transaction.
 contract GasRefundToken is ProxyStorage {
 
     function sponsorGas2() external {
-        Sheep39 sheep1;
-        Sheep39 sheep2;
-        Sheep39 sheep3;
         bytes20 me = bytes20(address(this));
         /** Sheep (31 bytes = 3 + 20 + 8)
           00 RETURNDATASIZE 3d                                            0
@@ -776,9 +761,9 @@ contract GasRefundToken is ProxyStorage {
             mstore(data,            0x601f8060093d393df33d33730000000000000000000000000000000000000000)
             mstore(add(data, 12), me)
             mstore(add(data, 32), 0x14601d5780fd5bff000000000000000000000000000000000000000000000000)
-            sheep1 := create(0, data, 0x28)
-            sheep2 := create(0, data, 0x28)
-            sheep3 := create(0, data, 0x28)
+            let sheep1 := create(0, data, 0x28)
+            let sheep2 := create(0, data, 0x28)
+            let sheep3 := create(0, data, 0x28)
             let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
             let location := sub(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe,offset)
             sstore(location, sheep1)
