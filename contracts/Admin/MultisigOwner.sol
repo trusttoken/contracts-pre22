@@ -129,7 +129,7 @@ contract MultiSigOwner {
     * @dev Replace a current owner with a new owner
     */
     function msUpdateOwner (address _oldOwner, address _newOwner) external onlyOwner {
-        require(owners[_oldOwner]);
+        require(owners[_oldOwner] && !owners[_newOwner]);
         _initOrSignOwnerAction("updateOwner");
         if (ownerAction.approveSigs > 1) {
             owners[_oldOwner] = false;

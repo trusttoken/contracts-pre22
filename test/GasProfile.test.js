@@ -172,6 +172,9 @@ contract('GasProfile', function (accounts) {
                 await this.token.sponsorGas({ from: oneHundred });
                 await this.token.sponsorGas({ from: owner });
                 await this.token.sponsorGas({ from: anotherAccount });
+                await this.token.sponsorGas2({ from: anotherAccount });
+                await this.token.sponsorGas2({ from: owner });
+                await this.token.sponsorGas2({ from: oneHundred });
             })
             it('transfer', async function() {
                 const reduceToNewWithRefund = await this.token.transfer(anotherAccount, DOLLAR, { from: oneHundred, gasPrice: 2 });
@@ -252,6 +255,15 @@ contract('GasProfile', function (accounts) {
                     emptyApprovalEmptyingToBurnWithRefund: { actual: emptyApprovalEmptyingToBurnWithRefund.receipt.gasUsed },
                 }
                 showRegressions(expectations);
+            })
+            it('sponsorGas', async function() {
+                const sponsorGas = await this.token.sponsorGas()
+                const sponsorGas2 = await this.token.sponsorGas2()
+                const expectations = {
+                    sponsorGas: { actual: sponsorGas.receipt.gasUsed },
+                    sponsorGas2: { actual: sponsorGas2.receipt.gasUsed },
+                }
+                showRegressions(expectations)
             })
         })
         after(async function() {

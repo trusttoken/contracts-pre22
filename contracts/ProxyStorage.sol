@@ -4,7 +4,7 @@ import "./modularERC20/BalanceSheet.sol";
 import "./modularERC20/AllowanceSheet.sol";
 
 /*
-Defines the storage layout of the implementaiton (TrueUSD) contract. Any newly declared 
+Defines the storage layout of the token implementaiton contract. Any newly declared
 state variables in future upgrades should be appened to the bottom. Never remove state variables
 from this list
  */
@@ -27,8 +27,8 @@ contract ProxyStorage {
 
     Registry public registry;
 
-    string name_Deprecated = "TrueUSD";
-    string symbol_Deprecated = "TUSD";
+    string name_Deprecated;
+    string symbol_Deprecated;
 
     uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;

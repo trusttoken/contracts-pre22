@@ -371,7 +371,7 @@ contract AllowanceSheet is Claimable {
 // File: contracts/ProxyStorage.sol
 
 /*
-Defines the storage layout of the implementaiton (TrueUSD) contract. Any newly declared 
+Defines the storage layout of the token implementaiton contract. Any newly declared
 state variables in future upgrades should be appened to the bottom. Never remove state variables
 from this list
  */
@@ -394,8 +394,8 @@ contract ProxyStorage {
 
     Registry public registry;
 
-    string name_Deprecated = "TrueUSD";
-    string symbol_Deprecated = "TUSD";
+    string name_Deprecated;
+    string symbol_Deprecated;
 
     uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
@@ -728,10 +728,71 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
 /**  
 @title Gas Refund Token
 Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas refund mechanism in EVM
-Each time an non-empty storage slot is set to 0, evm refund 15,000 (19,000 after Constantinople) to the sender
-of the transaction. 
+Each time an non-empty storage slot is set to 0, evm refund 15,000 to the sender
+of the transaction.
 */
 contract GasRefundToken is ProxyStorage {
+
+    /**
+      A buffer of "Sheep" runs from 0xffff...fffe down
+      They suicide when you call them, if you are their parent
+    */
+
+    function sponsorGas2() external {
+        /**
+        Deploy (9 bytes)
+          PC Assembly       Opcodes                                       Stack
+          00 PUSH1(31)      60 1f                                         1f
+          02 DUP1           80                                            1f 1f
+          03 PUSH1(9)       60 09                                         1f 1f 09
+          05 RETURNDATASIZE 3d                                            1f 1f 09 00
+          06 CODECOPY       39                                            1f
+          07 RETURNDATASIZE 3d                                            1f 00
+          08 RETURN         f3
+        Sheep (31 bytes = 3 + 20 + 8)
+          PC Assembly       Opcodes                                       Stack
+          00 RETURNDATASIZE 3d                                            0
+          01 CALLER         33                                            0 caller
+          02 PUSH20(me)     73 memememememememememememememememememememe   0 caller me
+          17 EQ             14                                            0 valid
+          18 PUSH1(1d)      60 1d                                         0 valid 1d
+          1a JUMPI          57                                            0
+          1b DUP1           80                                            0 0
+          1c REVERT         fd
+          1d JUMPDEST       5b                                            0
+          1e SELFDESTRUCT   ff
+        */
+        assembly {
+            mstore(0, or(0x601f8060093d393df33d33730000000000000000000000000000000000000000, address))
+            mstore(32,   0x14601d5780fd5bff000000000000000000000000000000000000000000000000)
+            let sheep := create(0, 0, 0x28)
+            let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+            let location := sub(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe, offset)
+            sstore(location, sheep)
+            sheep := create(0, 0, 0x28)
+            sstore(sub(location, 1), sheep)
+            sheep := create(0, 0, 0x28)
+            sstore(sub(location, 2), sheep)
+            sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, add(offset, 3))
+        }
+    }
+
+    /**
+    @dev refund 39,000 gas
+    @dev costs slightly more than 16,100 gas
+    */
+    function gasRefund39() internal {
+        assembly {
+            let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+            if gt(offset, 0) {
+              let location := sub(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,offset)
+              sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, sub(offset, 1))
+              let sheep := sload(location)
+              pop(call(gas, sheep, 0, 0, 0, 0, 0))
+              sstore(location, 0)
+            }
+        }
+    }
 
     function sponsorGas() external {
         uint256 refundPrice = minimumGasPriceForFutureRefunds;
@@ -770,28 +831,7 @@ contract GasRefundToken is ProxyStorage {
     }
 
     /**  
-    @dev refund 45,000 gas for functions with gasRefund modifier.
-    @dev costs slightly more than 20,400 gas
-    */
-    function gasRefund45() internal {
-        assembly {
-            let offset := sload(0xfffff)
-            if gt(offset, 2) {
-                let location := add(offset, 0xfffff)
-                if gt(gasprice,sload(location)) {
-                    sstore(location, 0)
-                    location := sub(location, 1)
-                    sstore(location, 0)
-                    location := sub(location, 1)
-                    sstore(location, 0)
-                    sstore(0xfffff, sub(offset, 3))
-                }
-            }
-        }
-    }
-
-    /**  
-    @dev refund 30,000 gas for functions with gasRefund modifier.
+    @dev refund 30,000 gas
     @dev costs slightly more than 15,400 gas
     */
     function gasRefund30() internal {
@@ -810,7 +850,7 @@ contract GasRefundToken is ProxyStorage {
     }
 
     /**  
-    @dev refund 15,000 gas for functions with gasRefund modifier.
+    @dev refund 15,000 gas
     @dev costs slightly more than 10,200 gas
     */
     function gasRefund15() internal {
@@ -907,7 +947,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             if (_subAllowance(_from, msg.sender, _value)) {
                 gasRefund15();
             } else {
-                gasRefund45();
+                gasRefund39();
             }
         }
         emit Transfer(_from, _to, _value);
@@ -947,7 +987,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
                 if (0 == _subBalance(_from, _value)) {
                     gasRefund30();
                 } else {
-                    gasRefund45();
+                    gasRefund39();
                 }
             }
         } else {
@@ -961,7 +1001,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
                 if (0 == _subBalance(_from, _value)) {
                     gasRefund15();
                 } else {
-                    gasRefund30();
+                    gasRefund39();
                 }
             }
 
@@ -991,7 +1031,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             }
         } else {
             if (0 == _addBalance(finalTo, _value)) {
-                gasRefund45();
+                gasRefund39();
             } else {
                 gasRefund30();
             }

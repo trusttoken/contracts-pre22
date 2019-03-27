@@ -63,7 +63,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             if (_subAllowance(_from, msg.sender, _value)) {
                 gasRefund15();
             } else {
-                gasRefund45();
+                gasRefund39();
             }
         }
         emit Transfer(_from, _to, _value);
@@ -103,7 +103,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
                 if (0 == _subBalance(_from, _value)) {
                     gasRefund30();
                 } else {
-                    gasRefund45();
+                    gasRefund39();
                 }
             }
         } else {
@@ -117,7 +117,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
                 if (0 == _subBalance(_from, _value)) {
                     gasRefund15();
                 } else {
-                    gasRefund30();
+                    gasRefund39();
                 }
             }
 
@@ -147,7 +147,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             }
         } else {
             if (0 == _addBalance(finalTo, _value)) {
-                gasRefund45();
+                gasRefund39();
             } else {
                 gasRefund30();
             }
