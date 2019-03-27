@@ -17,11 +17,11 @@
   "burnMicroDollar": 42918,
   "reduceToBurnWithChange": 42982,
   "emptyToBurnWithChange": 42982,
-  "reduceToNewWithRefund": 35642,
+  "reduceToNewWithRefund": 35523,
   "reduceToExistingWithRefund": 27659,
   "emptyToExistingWithRefund": 24878,
   "emptyToNewWithRefund": 35196,
-  "reduceApprovalReducingToNewWithRefund": 38978,
+  "reduceApprovalReducingToNewWithRefund": 38859,
   "reduceApprovalReducingToExistingWithRefund": 31990,
   "reduceApprovalEmptyingToNewWithRefund": 38538,
   "reduceApprovalEmptyingToExistingWithRefund": 28493,
@@ -39,10 +39,10 @@
   "emptyApprovalReducingToBurn": 34656,
   "reduceApprovalEmptyingToBurn": 34592,
   "emptyApprovalEmptyingToBurn": 24706,
-  "reduceApprovalReducingToBurnWithRefund": 32898,
+  "reduceApprovalReducingToBurnWithRefund": 32779,
   "emptyApprovalReducingToBurnWithRefund": 29951,
   "reduceApprovalEmptyingToBurnWithRefund": 29919,
   "emptyApprovalEmptyingToBurnWithRefund": 24706,
   "sponsorGas": 208421,
-  "sponsorGas2": 210306
+  "sponsorGas2": 145312
 }

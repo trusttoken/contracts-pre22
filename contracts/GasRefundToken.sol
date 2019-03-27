@@ -23,9 +23,37 @@ of the transaction.
 contract GasRefundToken is ProxyStorage {
 
     function sponsorGas2() external {
-        Sheep39 sheep1 = new Sheep39();
-        Sheep39 sheep2 = new Sheep39();
+        Sheep39 sheep1;
+        Sheep39 sheep2;
+        bytes20 me = bytes20(address(this));
+        /** Sheep (31 bytes = 3 + 20 + 8)
+          00 RETURNDATASIZE 3d                                            0
+          01 CALLER         33                                            0 caller
+          02 PUSH20(me)     73memememememememememememememememememememe    0 caller me
+          17 EQ             14                                            0 valid
+          18 PUSH1(1d)      601d                                          0 valid 1d
+          1a JUMPI          57                                            0
+          1b DUP1           80                                            0 0
+          1c REVERT         fd
+          1d JUMPDEST       5b                                            0
+          1e SELFDESTRUCT   ff
+        */
+        /* Deploy (9 bytes)
+          00 PUSH1(31)      60 1f                                         1f
+          02 DUP1           80                                            1f 1f
+          03 PUSH1(9)       60 09                                         1f 1f 09
+          05 RETURNDATASIZE 3d                                            1f 1f 09 00
+          06 CODECOPY       39                                            1f
+          07 RETURNDATASIZE 3d                                            1f 00
+          08 RETURN         f3
+        */
         assembly {
+            let data := mload(0x40)
+            mstore(data,            0x601f8060093d393df33d33730000000000000000000000000000000000000000)
+            mstore(add(data, 12), me)
+            mstore(add(data, 32), 0x14601d5780fd5bff000000000000000000000000000000000000000000000000)
+            sheep1 := create(0, data, 0x28)
+            sheep2 := create(0, data, 0x28)
             let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
             let location := sub(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe,offset)
             sstore(location, sheep1)
