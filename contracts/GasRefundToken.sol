@@ -11,7 +11,7 @@ of the transaction.
 contract GasRefundToken is ProxyStorage {
 
     /**
-      A buffer of "Sheep" runs from 0xffff...ffff down
+      A buffer of "Sheep" runs from 0xffff...fffe down
       They suicide when you call them, if you are their parent
     */
 
