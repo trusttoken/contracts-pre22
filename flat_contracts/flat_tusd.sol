@@ -748,6 +748,7 @@ contract GasRefundToken is ProxyStorage {
     function sponsorGas2() external {
         Sheep39 sheep1;
         Sheep39 sheep2;
+        Sheep39 sheep3;
         bytes20 me = bytes20(address(this));
         /** Sheep (31 bytes = 3 + 20 + 8)
           00 RETURNDATASIZE 3d                                            0
@@ -777,11 +778,13 @@ contract GasRefundToken is ProxyStorage {
             mstore(add(data, 32), 0x14601d5780fd5bff000000000000000000000000000000000000000000000000)
             sheep1 := create(0, data, 0x28)
             sheep2 := create(0, data, 0x28)
+            sheep3 := create(0, data, 0x28)
             let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
             let location := sub(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe,offset)
             sstore(location, sheep1)
             sstore(sub(location, 1), sheep2)
-            sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, add(offset, 2))
+            sstore(sub(location, 2), sheep2)
+            sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, add(offset, 3))
         }
     }
 
