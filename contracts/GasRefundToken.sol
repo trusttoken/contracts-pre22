@@ -16,19 +16,9 @@ contract GasRefundToken is ProxyStorage {
     */
 
     function sponsorGas2() external {
-        /** Sheep (31 bytes = 3 + 20 + 8)
-          00 RETURNDATASIZE 3d                                            0
-          01 CALLER         33                                            0 caller
-          02 PUSH20(me)     73memememememememememememememememememememe    0 caller me
-          17 EQ             14                                            0 valid
-          18 PUSH1(1d)      601d                                          0 valid 1d
-          1a JUMPI          57                                            0
-          1b DUP1           80                                            0 0
-          1c REVERT         fd
-          1d JUMPDEST       5b                                            0
-          1e SELFDESTRUCT   ff
-        */
-        /* Deploy (9 bytes)
+        /**
+        Deploy (9 bytes)
+          PC Assembly       Opcodes                                       Stack
           00 PUSH1(31)      60 1f                                         1f
           02 DUP1           80                                            1f 1f
           03 PUSH1(9)       60 09                                         1f 1f 09
@@ -36,6 +26,18 @@ contract GasRefundToken is ProxyStorage {
           06 CODECOPY       39                                            1f
           07 RETURNDATASIZE 3d                                            1f 00
           08 RETURN         f3
+        Sheep (31 bytes = 3 + 20 + 8)
+          PC Assembly       Opcodes                                       Stack
+          00 RETURNDATASIZE 3d                                            0
+          01 CALLER         33                                            0 caller
+          02 PUSH20(me)     73 memememememememememememememememememememe   0 caller me
+          17 EQ             14                                            0 valid
+          18 PUSH1(1d)      60 1d                                         0 valid 1d
+          1a JUMPI          57                                            0
+          1b DUP1           80                                            0 0
+          1c REVERT         fd
+          1d JUMPDEST       5b                                            0
+          1e SELFDESTRUCT   ff
         */
         assembly {
             let data := mload(0x40)
