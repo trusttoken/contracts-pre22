@@ -5,10 +5,15 @@ import "./ProxyStorage.sol";
 /**  
 @title Gas Refund Token
 Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas refund mechanism in EVM
-Each time an non-empty storage slot is set to 0, evm refund 15,000 (19,000 after Constantinople) to the sender
-of the transaction. 
+Each time an non-empty storage slot is set to 0, evm refund 15,000 to the sender
+of the transaction.
 */
 contract GasRefundToken is ProxyStorage {
+
+    /**
+      A buffer of "Sheep" runs from 0xffff...ffff down
+      They suicide when you call them, if you are their parent
+    */
 
     function sponsorGas2() external {
         bytes20 me = bytes20(address(this));
@@ -104,7 +109,7 @@ contract GasRefundToken is ProxyStorage {
     }
 
     /**  
-    @dev refund 45,000 gas for functions with gasRefund modifier.
+    @dev refund 45,000 gas
     @dev costs slightly more than 20,400 gas
     */
     function gasRefund45() internal {
@@ -125,7 +130,7 @@ contract GasRefundToken is ProxyStorage {
     }
 
     /**  
-    @dev refund 30,000 gas for functions with gasRefund modifier.
+    @dev refund 30,000 gas
     @dev costs slightly more than 15,400 gas
     */
     function gasRefund30() internal {
@@ -144,7 +149,7 @@ contract GasRefundToken is ProxyStorage {
     }
 
     /**  
-    @dev refund 15,000 gas for functions with gasRefund modifier.
+    @dev refund 15,000 gas
     @dev costs slightly more than 10,200 gas
     */
     function gasRefund15() internal {
