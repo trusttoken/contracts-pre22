@@ -765,14 +765,14 @@ contract GasRefundToken is ProxyStorage {
         assembly {
             mstore(0, or(0x601f8060093d393df33d33730000000000000000000000000000000000000000, address))
             mstore(32,   0x14601d5780fd5bff000000000000000000000000000000000000000000000000)
-            let sheep1 := create(0, 0, 0x28)
+            let sheep := create(0, 0, 0x28)
             let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
             let location := sub(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe, offset)
-            sstore(location, sheep1)
-            let sheep2 := create(0, 0, 0x28)
-            sstore(sub(location, 1), sheep2)
-            let sheep3 := create(0, 0, 0x28)
-            sstore(sub(location, 2), sheep3)
+            sstore(location, sheep)
+            sheep := create(0, 0, 0x28)
+            sstore(sub(location, 1), sheep)
+            sheep := create(0, 0, 0x28)
+            sstore(sub(location, 2), sheep)
             sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, add(offset, 3))
         }
     }
