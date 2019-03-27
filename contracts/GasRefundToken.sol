@@ -2,18 +2,6 @@ pragma solidity ^0.4.23;
 
 import "./ProxyStorage.sol";
 
-contract Sheep39 {
-    address owner;
-    constructor() public {
-        owner = msg.sender;
-    }
-    function() external payable {
-        require(owner == msg.sender);
-        //owner = 0;
-        selfdestruct(0);
-    }
-}
-
 /**  
 @title Gas Refund Token
 Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas refund mechanism in EVM
