@@ -33,4 +33,22 @@ contract ProxyStorage {
     uint[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
+
+
+    /* Additionally, we have several keccak-based storage locations.
+     * If you add more keccak-based storage mappings, such as mappings, you must document them here.
+     * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.
+     * A preimage collision can be used to attack the contract by treating one storage location as another,
+     * which would always be a critical issue.
+     *************************************************************************
+     ** length     input                              usage
+     *************************************************************************
+     ** 19         "trueXXX.proxy.owner"              Proxy Owner
+     ** 20         address                            balanceOf
+     ** 27         "trueXXX.pending.proxy.owner"      Pending Proxy Owner
+     ** 28         "trueXXX.proxy.implementation"     Proxy Implementation
+     ** 32         uint256(11)                        gasRefundPool_Deprecated
+     ** 40         address,address                    allowance
+     ** 52         address,bytes32                    Registry attributes
+    **/
 }
