@@ -109,8 +109,8 @@ npm test
 
 | Description  | URL |
 | ------------- | ------------- |
-| Etherscan Page | https://etherscan.io/token/0x8dd5fbce2f6a956c3022ba3663759011dd51e73e  |
-| Coinmarketcap  | https://coinmarketcap.com/currencies/true-usd/  |
+| Etherscan Page | https://etherscan.io/token/0x0000000000085d4780B73119b644AE5ecd22b376  |
+| Coinmarketcap  | https://coinmarketcap.com/currencies/trueusd/  |
 | TrueUSD’s Terms of Use  | https://www.trusttoken.com/terms-of-use/  |
 
 ## Social Links
