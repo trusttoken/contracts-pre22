@@ -98,19 +98,16 @@ contract PausedToken is HasOwner, RegistryClone {
         return _getBalance(_who);
     }
     function _getBalance(address _who) internal view returns (uint256 value) {
-        bytes32 storageLocation = keccak256(_who);
-        assembly {
-            value := sload(storageLocation)
-        }
+        return _balanceOf[_who];
+    }
+    function _setBalance(address _who, uint256 _value) internal {
+        _balanceOf[_who] = _value;
     }
     function allowance(address _who, address _spender) public view returns (uint256) {
         return _getAllowance(_who, _spender);
     }
     function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
-        bytes32 storageLocation = keccak256(_who, _spender);
-        assembly {
-            value := sload(storageLocation)
-        }
+        return _allowance[_who][_spender];
     }
     function transfer(address /*_to*/, uint256 /*_value*/) public returns (bool) {
         revert("Token Paused");
@@ -152,21 +149,14 @@ contract PausedToken is HasOwner, RegistryClone {
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
-        bytes32 storageLocation = keccak256(_who, _attribute);
-        assembly {
-            sstore(storageLocation, _value)
-        }
+        attributes[_attribute][_who] = _value;
     }
 
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
     function wipeBlacklistedAccount(address _account) public onlyOwner {
-        require(registry.hasAttribute(_account, IS_BLACKLISTED), "_account is not blacklisted");
-        bytes32 storageLocation = keccak256(_account);
-        uint256 oldValue;
-        assembly {
-            oldValue := sload(storageLocation)
-            sstore(storageLocation, 0)
-        }
+        require(attributes[IS_BLACKLISTED][_account] != 0, "_account is not blacklisted");
+        uint256 oldValue = _getBalance(_account);
+        _setBalance(_account, 0);
         totalSupply_ = totalSupply_.sub(oldValue);
         emit WipeBlacklistedAccount(_account, oldValue);
         emit Transfer(_account, address(0), oldValue);

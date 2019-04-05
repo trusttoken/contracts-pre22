@@ -23,37 +23,22 @@ contract ModularBasicToken is HasOwner {
     function balanceOf(address _who) public view returns (uint256) {
         return _getBalance(_who);
     }
-    function _getBalance(address _who) internal view returns (uint256 outBalance) {
-        bytes32 storageLocation = keccak256(_who);
-        assembly {
-            outBalance := sload(storageLocation)
-        }
+
+    function _getBalance(address _who) internal view returns (uint256) {
+        return _balanceOf[_who];
     }
+
     function _addBalance(address _who, uint256 _value) internal returns (uint256 priorBalance) {
-        bytes32 storageLocation = keccak256(_who);
-        assembly {
-            priorBalance := sload(storageLocation)
-        }
-        uint256 result = priorBalance.add(_value);
-        assembly {
-            sstore(storageLocation, result)
-        }
+        priorBalance = _balanceOf[_who];
+        _balanceOf[_who] = priorBalance.add(_value);
     }
+
     function _subBalance(address _who, uint256 _value) internal returns (uint256 result) {
-        bytes32 storageLocation = keccak256(_who);
-        uint256 priorBalance;
-        assembly {
-            priorBalance := sload(storageLocation)
-        }
-        result = priorBalance.sub(_value);
-        assembly {
-            sstore(storageLocation, result)
-        }
+        result = _balanceOf[_who].sub(_value);
+        _balanceOf[_who] = result;
     }
+
     function _setBalance(address _who, uint256 _value) internal {
-        bytes32 storageLocation = keccak256(_who);
-        assembly {
-            sstore(storageLocation, _value)
-        }
+        _balanceOf[_who] = _value;
     }
 }
