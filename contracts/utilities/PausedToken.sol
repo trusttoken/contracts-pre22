@@ -149,12 +149,12 @@ contract PausedToken is HasOwner, RegistryClone {
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
-        attributes[_who][_attribute] = _value;
+        attributes[_attribute][_who] = _value;
     }
 
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
     function wipeBlacklistedAccount(address _account) public onlyOwner {
-        require(attributes[_account][IS_BLACKLISTED] != 0, "_account is not blacklisted");
+        require(attributes[IS_BLACKLISTED][_account] != 0, "_account is not blacklisted");
         uint256 oldValue = _getBalance(_account);
         _setBalance(_account, 0);
         totalSupply_ = totalSupply_.sub(oldValue);

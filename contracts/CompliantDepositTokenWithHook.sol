@@ -204,7 +204,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
-        attributes[_who][_attribute] = _value;
+        attributes[_attribute][_who] = _value;
     }
 
     function _burnAllArgs(address _from, uint256 _value) internal {
@@ -223,47 +223,47 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     function _isBlacklisted(address _account) internal view returns (bool blacklisted) {
-        return attributes[_account][IS_BLACKLISTED] != 0;
+        return attributes[IS_BLACKLISTED][_account] != 0;
     }
 
     function _requireCanTransfer(address _from, address _to) internal view returns (address, bool) {
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
+        uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
         }
-        require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
-        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT] != 0);
+        require (attributes[IS_BLACKLISTED][_to] == 0, "blacklisted");
+        require (attributes[IS_BLACKLISTED][_from] == 0, "blacklisted");
+        return (_to, attributes[IS_REGISTERED_CONTRACT][_to] != 0);
     }
 
     function _requireCanTransferFrom(address _spender, address _from, address _to) internal view returns (address, bool) {
         uint256 flag;
-        require (attributes[_spender][IS_BLACKLISTED] == 0, "blacklisted");
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
+        require (attributes[IS_BLACKLISTED][_spender] == 0, "blacklisted");
+        uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
         }
-        require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
-        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT] != 0);
+        require (attributes[IS_BLACKLISTED][_to] == 0, "blacklisted");
+        require (attributes[IS_BLACKLISTED][_from] == 0, "blacklisted");
+        return (_to, attributes[IS_REGISTERED_CONTRACT][_to] != 0);
     }
 
     function _requireCanMint(address _to) internal view returns (address, bool) {
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS];
+        uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
         }
-        require (attributes[_to][IS_BLACKLISTED] == 0, "blacklisted");
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT] != 0);
+        require (attributes[IS_BLACKLISTED][_to] == 0, "blacklisted");
+        return (_to, attributes[IS_REGISTERED_CONTRACT][_to] != 0);
     }
 
     function _requireOnlyCanBurn(address _from) internal view {
-        require (attributes[_from][canBurn()] != 0, "cannot burn from this address");
+        require (attributes[canBurn()][_from] != 0, "cannot burn from this address");
     }
 
     function _requireCanBurn(address _from) internal view {
-        require (attributes[_from][IS_BLACKLISTED] == 0, "blacklisted");
-        require (attributes[_from][canBurn()] != 0, "cannot burn from this address");
+        require (attributes[IS_BLACKLISTED][_from] == 0, "blacklisted");
+        require (attributes[canBurn()][_from] != 0, "cannot burn from this address");
     }
 
     function paused() public pure returns (bool) {

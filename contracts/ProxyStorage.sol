@@ -36,7 +36,7 @@ contract ProxyStorage {
 
     mapping (address => uint256) _balanceOf;
     mapping (address => mapping (address => uint256)) _allowance;
-    mapping (address => mapping (bytes32 => uint256)) attributes;
+    mapping (bytes32 => mapping (address => uint256)) attributes;
 
 
     /* Additionally, we have several keccak-based storage locations.
