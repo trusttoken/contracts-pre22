@@ -21,8 +21,8 @@ contract TokenControllerInterface {
     function transferChild(address _child, address _newOwner) external;
     function requestReclaimContract(address _child) external;
     function issueClaimOwnership(address _child) external;
-    function setTrueUSD(address _newTusd) external;
-    function setTusdRegistry(address _Registry) external;
+    function setToken(address _newTusd) external;
+    function setTokenRegistry(address _Registry) external;
     function claimStorageForProxy(address _delegate,
         address _balanceSheet,
         address _alowanceSheet) external;
@@ -64,11 +64,11 @@ contract UpgradeHelper {
         
         newTrueUSD.transferOwnership(tokenController);
         tokenController.issueClaimOwnership(newTrueUSD);
-        tokenController.setTrueUSD(newTrueUSD);
+        tokenController.setToken(newTrueUSD);
         tokenController.claimStorageForProxy(newTrueUSD, balanceSheetAddress, allowanceSheetAddress);
 
         // Configure TrueUSD
-        tokenController.setTusdRegistry(registry);
+        tokenController.setTokenRegistry(registry);
 
         // Point oldTrueUSD delegation to NewTrueUSD
         tokenController.transferChild(oldTrueUSD, address(this));

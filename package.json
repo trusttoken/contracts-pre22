@@ -4,10 +4,11 @@
   "description": "",
   "main": "truffle.js",
   "directories": {
-    "test": "test"
+    "test": "./test.sh"
   },
   "scripts": {
-    "test": "./node_modules/.bin/solidity-coverage"
+    "test": "./test.sh",
+    "profile": "./profile.sh"
   },
   "author": "",
   "license": "ISC",

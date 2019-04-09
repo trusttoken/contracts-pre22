@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "../utilities/PausedTrueUSD.sol";
+import "../utilities/PausedCurrencies.sol";
 
 contract PausedTrueUSDMock is PausedTrueUSD{
     address public delegateFrom;

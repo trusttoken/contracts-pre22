@@ -20,7 +20,6 @@ contract Proxy {
     */
     function() external payable {
         address _impl = implementation();
-        require(_impl != address(0), "implementation contract not set");
         
         assembly {
             let ptr := mload(0x40)
@@ -50,7 +49,7 @@ contract UpgradeabilityProxy is Proxy {
     event Upgraded(address indexed implementation);
 
     // Storage position of the address of the current implementation
-    bytes32 private constant implementationPosition = keccak256("trueUSD.proxy.implementation");
+    bytes32 private constant implementationPosition = 0x6e41e0fbe643dfdb6043698bf865aada82dc46b953f754a3468eaa272a362dc7; //keccak256("trueUSD.proxy.implementation");
 
     /**
     * @dev Tells the address of the current implementation
@@ -108,8 +107,8 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     event NewPendingOwner(address currentOwner, address pendingOwner);
     
     // Storage position of the owner and pendingOwner of the contract
-    bytes32 private constant proxyOwnerPosition = keccak256("trueUSD.proxy.owner");
-    bytes32 private constant pendingProxyOwnerPosition = keccak256("trueUSD.pending.proxy.owner");
+    bytes32 private constant proxyOwnerPosition = 0x6279e8199720cf3557ecd8b58d667c8edc486bd1cf3ad59ea9ebdfcae0d0dfac;//keccak256("trueUSD.proxy.owner");
+    bytes32 private constant pendingProxyOwnerPosition = 0x8ddbac328deee8d986ec3a7b933a196f96986cb4ee030d86cc56431c728b83f4;//keccak256("trueUSD.pending.proxy.owner");
 
     /**
     * @dev the constructor sets the original owner of the contract to the sender account.

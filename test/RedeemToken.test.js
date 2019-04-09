@@ -4,7 +4,6 @@ import assertBalance from './helpers/assertBalance'
 
 const Registry = artifacts.require("RegistryMock")
 const TrueUSD = artifacts.require("TrueUSDMock")
-const BalanceSheet = artifacts.require("BalanceSheet")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
 
@@ -15,24 +14,18 @@ contract('RedeemToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount, cannotBurn] = accounts
     const notes = bytes32("some notes")
     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+    const CAN_BURN = bytes32("canBurn")
 
     describe('--Redeemable Token--', function () {
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
-            this.balances = await BalanceSheet.new({ from: owner })
-            this.allowances = await AllowanceSheet.new({ from: owner })
             this.token = await TrueUSD.new(owner, 0, { from: owner })
             await this.token.setRegistry(this.registry.address, { from: owner })
-            await this.balances.transferOwnership(this.token.address, { from: owner })
-            await this.allowances.transferOwnership(this.token.address, { from: owner })
-            await this.token.setBalanceSheet(this.balances.address, { from: owner })
-            await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
+            await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
 
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
             await this.token.mint(oneHundred, BN(100).mul(BN(10**18)), { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 0, notes, { from: owner })
 
-            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
+            await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
             await this.token.setBurnBounds(BN(5*10**18), BN(1000).mul(BN(10**18)), { from: owner }) 
         })
 
@@ -53,8 +46,8 @@ contract('RedeemToken', function (accounts) {
             const ADDRESS_TWO = '0x0000000000000000000000000000000000000002'
 
             it('transfers to Redemption addresses gets burned', async function(){
-                await this.registry.setAttribute(ADDRESS_ONE, bytes32("canBurn"), 1, notes, { from: owner })
-                await this.registry.setAttribute(ADDRESS_TWO, bytes32("canBurn"), 1, notes, { from: owner })
+                await this.registry.setAttribute(ADDRESS_ONE, CAN_BURN, 1, notes, { from: owner })
+                await this.registry.setAttribute(ADDRESS_TWO, CAN_BURN, 1, notes, { from: owner })
                 const {logs} = await this.token.transfer(ADDRESS_ONE, BN(10*10**18), {from : oneHundred})
                 assert.equal(logs[0].event, 'Transfer')
                 assert.equal(logs[1].event, 'Burn')

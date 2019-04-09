@@ -9,6 +9,8 @@ const ForceEther = artifacts.require("ForceEther")
 const FastPauseMints = artifacts.require("FastPauseMints")
 const FastPauseTrueUSD = artifacts.require("FastPauseTrueUSD")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
+const Claimable = artifacts.require("Claimable")
+const Ownable = artifacts.require("Ownable")
 
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN;
@@ -19,42 +21,43 @@ contract('TokenController', function (accounts) {
         const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, ratifier1, ratifier2, ratifier3, redemptionAdmin] = accounts
         const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
         const notes = bytes32("notes")
+        const DOLLAR = BN(10**18)
+        const CAN_BURN = bytes32("canBurn")
+        const BLACKLISTED = bytes32("isBlacklisted")
 
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
             this.tokenProxy = await Proxy.new({ from: owner })
             this.tusdImplementation = await TrueUSD.new(owner, 0, { from: owner })
             this.token = await TrueUSD.at(this.tokenProxy.address)
-            this.balanceSheet = await BalanceSheet.new({ from: owner })
-            await this.balanceSheet.setBalance(oneHundred, BN(10**18).mul(BN(100)), {from:owner});
-            this.allowanceSheet = await AllowanceSheet.new({ from: owner })
-            await this.balanceSheet.transferOwnership(this.token.address,{ from: owner })
-            await this.allowanceSheet.transferOwnership(this.token.address,{ from: owner })
             await this.tokenProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.registry.setAttribute(oneHundred, bytes32("canBurn"), 1, notes, { from: owner })
             await this.token.initialize({from: owner})
-            await this.token.setTotalSupply(BN(100).mul(BN(10**18)), {from: owner})
-            await this.token.setBalanceSheet(this.balanceSheet.address, { from: owner })
-            await this.token.setAllowanceSheet(this.allowanceSheet.address, { from: owner })   
             this.controller = await TokenController.new({ from: owner })
             await this.token.transferOwnership(this.controller.address, {from: owner})
             await this.controller.initialize({ from: owner })
             await this.controller.issueClaimOwnership(this.token.address, {from: owner})
             this.fastPauseMints = await FastPauseMints.new(pauseKey2, this.controller.address, { from: owner })
             await this.controller.setRegistry(this.registry.address, { from: owner })
-            await this.controller.setTrueUSD(this.token.address, { from: owner })
-            await this.controller.setTusdRegistry(this.registry.address, { from: owner })
+            await this.controller.setToken(this.token.address, { from: owner })
+            await this.controller.setTokenRegistry(this.registry.address, { from: owner })
             await this.controller.transferMintKey(mintKey, { from: owner })
             await this.tokenProxy.transferProxyOwnership(this.controller.address, {from: owner})
             await this.controller.claimTusdProxyOwnership({from: owner})
-            await this.registry.setAttribute(oneHundred, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
-            await this.registry.setAttribute(otherAddress, bytes32("hasPassedKYC/AML"), 1, notes, { from: owner })
+            await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
+            await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
+            await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
             await this.registry.setAttribute(ratifier1, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
             await this.registry.setAttribute(ratifier2, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
             await this.registry.setAttribute(ratifier3, bytes32("isTUSDMintRatifier"), 1, notes, { from: owner })
             await this.registry.setAttribute(pauseKey, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
             await this.registry.setAttribute(this.fastPauseMints.address, bytes32("isTUSDMintPausers"), 1, notes, { from: owner })
+            await this.controller.setMintThresholds(BN(200*10**18),BN(1000).mul(DOLLAR),BN(1001).mul(DOLLAR), { from: owner })
+            await this.controller.setMintLimits(BN(200*10**18),BN(300).mul(DOLLAR),BN(3000).mul(DOLLAR),{ from: owner })
+            await this.controller.refillMultiSigMintPool({ from: owner })
+            await this.controller.refillRatifiedMintPool({ from: owner })
+            await this.controller.refillInstantMintPool({ from: owner })
+            await this.controller.instantMint(oneHundred, DOLLAR.mul(BN(100)), { from: owner})
+            await this.controller.setMintLimits(0,0,0, { from: owner })
         })
 
         describe('Request and Finalize Mints (owner)', function () {
@@ -106,16 +109,16 @@ contract('TokenController', function (accounts) {
             it('request and finalize a mint', async function () {
                 await this.controller.requestMint(oneHundred, BN(10*10**18) , { from: owner })
                 const {logs} = await this.controller.ratifyMint(0, oneHundred, BN(10*10**18), {from: owner})
-                assert.equal(logs[0].event,"MintRatified");
-                assert(logs[0].args.opIndex.eq(BN(0)));
-                assert.equal(logs[0].args.ratifier,owner);
-                assert.equal(logs[1].event,"FinalizeMint");
-                assert(logs[1].args.value.eq(BN(10*10**18)));
-                assert.equal(logs[1].args.to,oneHundred);
-                assert(logs[1].args.opIndex.eq(BN(0)));
-                assert.equal(logs[1].args.mintKey,owner);
+                assert.equal(logs[0].event,"MintRatified", 'event 0 name');
+                assert(logs[0].args.opIndex.eq(BN(0)), 'event 0 opIndex');
+                assert.equal(logs[0].args.ratifier,owner, 'event 0 ratifier');
+                assert.equal(logs[1].event,"FinalizeMint", 'event 1 name');
+                assert(logs[1].args.value.eq(BN(10*10**18)), 'event 1 value');
+                assert.equal(logs[1].args.to,oneHundred, 'event 1 to');
+                assert(logs[1].args.opIndex.eq(BN(0)), 'event 1 opIndex');
+                assert.equal(logs[1].args.mintKey,owner, 'event 1 mintKey');
                 const totalSupply = await this.token.totalSupply.call()
-                assert(totalSupply.eq(BN(10**18).mul(BN(110))));
+                assert(totalSupply.eq(BN(10**18).mul(BN(110))), 'total supply');
             })
 
             it('fails to transfer mintkey to 0x0', async function () {
@@ -161,8 +164,8 @@ contract('TokenController', function (accounts) {
 
         describe('Full mint process', function () {
             beforeEach(async function () {
-                await this.controller.setMintThresholds(BN(10*10**18),BN(100).mul(BN(10**18)),BN(1000).mul(BN(10**18)), { from: owner })
-                await this.controller.setMintLimits(BN(30*10**18),BN(300).mul(BN(10**18)),BN(3000).mul(BN(10**18)),{ from: owner })
+                await this.controller.setMintThresholds(BN(10*10**18),BN(100).mul(DOLLAR),BN(1000).mul(DOLLAR), { from: owner })
+                await this.controller.setMintLimits(BN(30*10**18),BN(300).mul(DOLLAR),BN(3000).mul(DOLLAR),{ from: owner })
                 await this.controller.refillMultiSigMintPool({ from: owner })
                 await this.controller.refillRatifiedMintPool({ from: owner })
                 await this.controller.refillInstantMintPool({ from: owner })
@@ -171,15 +174,15 @@ contract('TokenController', function (accounts) {
             it('have enough approvals for mints', async function(){
                 let result = await this.controller.hasEnoughApproval.call(1,BN(50*10**18))
                 assert.equal(result,true)
-                result = await this.controller.hasEnoughApproval.call(1,BN(200).mul(BN(10**18)))
+                result = await this.controller.hasEnoughApproval.call(1,BN(200).mul(DOLLAR))
                 assert.equal(result,false)
-                result = await this.controller.hasEnoughApproval.call(3,BN(200).mul(BN(10**18)))
+                result = await this.controller.hasEnoughApproval.call(3,BN(200).mul(DOLLAR))
                 assert.equal(result,true)
-                result = await this.controller.hasEnoughApproval.call(3,BN(2000).mul(BN(10**18)))
+                result = await this.controller.hasEnoughApproval.call(3,BN(2000).mul(DOLLAR))
                 assert.equal(result,false)
-                result = await this.controller.hasEnoughApproval.call(2,BN(500).mul(BN(10**18)))
+                result = await this.controller.hasEnoughApproval.call(2,BN(500).mul(DOLLAR))
                 assert.equal(result,false)
-                result = await this.controller.hasEnoughApproval.call(0,BN(50).mul(BN(10**18)))
+                result = await this.controller.hasEnoughApproval.call(0,BN(50).mul(DOLLAR))
                 assert.equal(result,false)
             })
 
@@ -281,7 +284,8 @@ contract('TokenController', function (accounts) {
                 await this.controller.ratifyMint(0, otherAddress, BN(20*10**18) , { from: ratifier1 })
                 await assertBalance(this.token, otherAddress, BN(20*10**18))
                 const remainRatifyPool = await this.controller.ratifiedMintPool.call()
-                assert.equal(Number(remainRatifyPool),BN(250*10**18))
+                // 300 (ratified mint pool) - 30 (instant mint pool) - 20 (ratified mint) = 250
+                assert(remainRatifyPool.eq(BN(250).mul(DOLLAR)), remainRatifyPool + ' != ' + '250000000000000000000')
             })
 
             it('single approval ratify does not finalize if over the ratifiedMintthreshold', async function () {
@@ -291,15 +295,15 @@ contract('TokenController', function (accounts) {
             })
 
             it('single approval ratify mint does not finalize if over the ratifiedMintPool is dry', async function () {
-                await this.controller.requestMint(otherAddress, BN(100).mul(BN(10**18)) , { from: mintKey })
-                await this.controller.ratifyMint(0, otherAddress, BN(100).mul(BN(10**18)) , { from: ratifier1 })
-                await this.controller.requestMint(otherAddress, BN(100).mul(BN(10**18)) , { from: mintKey })
-                await this.controller.ratifyMint(1, otherAddress, BN(100).mul(BN(10**18)) , { from: ratifier1 })
+                await this.controller.requestMint(otherAddress, BN(100).mul(DOLLAR) , { from: mintKey })
+                await this.controller.ratifyMint(0, otherAddress, BN(100).mul(DOLLAR) , { from: ratifier1 })
+                await this.controller.requestMint(otherAddress, BN(100).mul(DOLLAR) , { from: mintKey })
+                await this.controller.ratifyMint(1, otherAddress, BN(100).mul(DOLLAR) , { from: ratifier1 })
                 await this.controller.requestMint(otherAddress, BN(30*10**18) , { from: mintKey })
                 await this.controller.ratifyMint(2, otherAddress, BN(30*10**18) , { from: ratifier1 })
-                await this.controller.requestMint(otherAddress, BN(50).mul(BN(10**18)) , { from: mintKey })
-                await this.controller.ratifyMint(3, otherAddress, BN(50).mul(BN(10**18)) , { from: ratifier1 })
-                await assertBalance(this.token, otherAddress, BN(230).mul(BN(10**18)))
+                await this.controller.requestMint(otherAddress, BN(50).mul(DOLLAR) , { from: mintKey })
+                await this.controller.ratifyMint(3, otherAddress, BN(50).mul(DOLLAR) , { from: ratifier1 })
+                await assertBalance(this.token, otherAddress, BN(230).mul(DOLLAR))
             })
 
             it('cannot finalize mint without enough approvers', async function(){
@@ -393,8 +397,8 @@ contract('TokenController', function (accounts) {
 
         describe('refill mint pool', function(){
             beforeEach(async function () {
-                await this.controller.setMintThresholds(BN(10*10**18),BN(100).mul(BN(10**18)),BN(1000).mul(BN(10**18)), { from: owner })
-                await this.controller.setMintLimits(BN(30).mul(BN(10**18)),BN(300).mul(BN(10**18)),BN(3000).mul(BN(10**18)),{ from: owner })
+                await this.controller.setMintThresholds(BN(10*10**18),BN(100).mul(DOLLAR),BN(1000).mul(DOLLAR), { from: owner })
+                await this.controller.setMintLimits(BN(30).mul(DOLLAR),BN(300).mul(DOLLAR),BN(3000).mul(DOLLAR),{ from: owner })
             })
 
             it('refills multiSig mint pool', async function(){
@@ -507,7 +511,7 @@ contract('TokenController', function (accounts) {
         describe('pause trueUSD and wipe accounts', function(){
             beforeEach(async function(){
                 this.fastPauseTrueUSD = await FastPauseTrueUSD.new(pauseKey, this.controller.address, { from: owner })
-                await this.controller.setTrueUsdFastPause(this.fastPauseTrueUSD.address, { from: owner })
+                await this.controller.setFastPause(this.fastPauseTrueUSD.address, { from: owner })
             })
 
             it('fastpauseTusd cannot be created with 0x0', async function(){
@@ -518,9 +522,10 @@ contract('TokenController', function (accounts) {
 
             it('TokenController can pause TrueUSD transfers', async function(){
                 await this.token.transfer(mintKey, BN(10*10**18), { from: oneHundred })
-                await this.controller.pauseTrueUSD({ from: owner })
+                await this.controller.pauseToken({ from: owner })
                 const pausedImpl = await this.tokenProxy.implementation.call()
                 assert.equal(pausedImpl, "0x0000000000000000000000000000000000000001")
+                await assertRevert(this.token.transfer(mintKey, BN(10*10**18), { from: oneHundred }))
             })
 
             it('trueUsdPauser can pause TrueUSD by sending ether to fastPause contract', async function(){
@@ -530,7 +535,7 @@ contract('TokenController', function (accounts) {
             })
 
             it('non pauser cannot pause TrueUSD ', async function(){
-                await assertRevert(this.controller.pauseTrueUSD({ from: mintKey }));                  
+                await assertRevert(this.controller.pauseToken({ from: mintKey }));                  
             })
 
             it('non pauser cannot pause TrueUSD by sending ether to fastPause contract', async function(){
@@ -540,59 +545,40 @@ contract('TokenController', function (accounts) {
             it('TokenController can wipe blacklisted account', async function(){
                 await this.token.transfer(this.token.address, BN(40).mul(BN(10**18)), { from: oneHundred })
                 await assertBalance(this.token, this.token.address, 40000000000000000000)
-                await this.registry.setAttribute(this.token.address, bytes32("isBlacklisted"), 1, notes, { from: owner })
+                await this.registry.setAttribute(this.token.address, BLACKLISTED, 1, notes, { from: owner })
                 await this.controller.wipeBlackListedTrueUSD(this.token.address, { from: owner })
                 await assertBalance(this.token, this.token.address, 0)
             })
         })
-        describe('Claim storage contracts', function () {
-            it('can claim storage contracts for TrueUSD', async function () {
-                this.tempBalanceSheet = await BalanceSheet.new({from: owner})
-                this.tempAllowanceSheet = await AllowanceSheet.new({from: owner})
-                await this.tempBalanceSheet.transferOwnership(this.token.address, {from: owner})
-                await this.tempAllowanceSheet.transferOwnership(this.token.address, {from: owner})
-                await this.controller.claimStorageForProxy(this.token.address, this.tempBalanceSheet.address, this.tempAllowanceSheet.address,{from: owner})
-            })
-
-            it('fails when TrueUSD is not the pending owner of storage contracts', async function () {
-                this.tempBalanceSheet = await BalanceSheet.new({from: owner})
-                this.tempAllowanceSheet = await AllowanceSheet.new({from: owner})
-                await assertRevert(this.controller.claimStorageForProxy(this.token.address, this.tempBalanceSheet.address, this.tempAllowanceSheet.address,{from: owner}))
-            })
-
-            it('fails when TrueUSD is not the pending owner of one of the storage contracts', async function () {
-                this.tempBalanceSheet = await BalanceSheet.new({from: owner})
-                this.tempAllowanceSheet = await AllowanceSheet.new({from: owner})
-                await this.tempBalanceSheet.transferOwnership(this.token.address, {from: owner})
-                await assertRevert(this.controller.claimStorageForProxy(this.token.address, this.tempBalanceSheet.address, this.tempAllowanceSheet.address,{from: owner}))
-            })
-        })
-
 
         describe('requestReclaimContract', function () {
             it('reclaims the contract', async function () {
-                const balances = await this.token.balances.call()
-                let balanceOwner = await (await BalanceSheet.at(balances)).owner.call()
-                assert.equal(balanceOwner, this.token.address)
+                const ownable = await Ownable.new({from:owner});
+                await ownable.transferOwnership(this.token.address, {from:owner})
+                let ownableOwner = await ownable.owner.call()
+                assert.equal(ownableOwner, this.token.address)
 
-                await this.controller.requestReclaimContract(balances, { from: owner })
-                await this.controller.issueClaimOwnership(balances, { from: owner })
-                balanceOwner = await (await BalanceSheet.at(balances)).owner.call()
-                assert.equal(balanceOwner, this.controller.address)
-            })
+                const { logs } = await this.controller.requestReclaimContract(ownable.address, { from: owner })
+                ownableOwner = await ownable.owner.call()
+                assert.equal(ownableOwner, this.controller.address)
 
-            it('emits an event', async function () {
-                const balances = await this.token.balances.call()
-                const { logs } = await this.controller.requestReclaimContract(balances, { from: owner })
-
-                assert.equal(logs.length, 1)
-                assert.equal(logs[0].event, 'RequestReclaimContract')
-                assert.equal(logs[0].args.other, balances)
+                assert.equal(logs.length, 2)
+                assert.equal(logs[1].event, 'RequestReclaimContract')
+                assert.equal(logs[1].args.other, ownable.address)
             })
 
             it('cannot be called by non-owner', async function () {
-                const balances = await this.token.balances.call()
-                await assertRevert(this.controller.requestReclaimContract(balances, { from: mintKey }))
+                const ownable = await Ownable.new({from:owner});
+                await ownable.transferOwnership(this.token.address, {from:owner})
+                await assertRevert(this.controller.requestReclaimContract(ownable.address, { from: mintKey }))
+            })
+
+            it('issues claimOwnership', async function() {
+                const claimable = await Claimable.new({ from:owner })
+                await claimable.transferOwnership(this.controller.address, { from:owner})
+                await this.controller.issueClaimOwnership(claimable.address, { from: owner })
+                const claimableOwner = await claimable.owner.call()
+                assert.equal(claimableOwner, this.controller.address)
             })
         })
 

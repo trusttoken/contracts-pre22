@@ -2,8 +2,6 @@ const RegistryMock = artifacts.require("RegistryMock")
 const Registry = artifacts.require('Registry')
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const TrueUSD = artifacts.require("TrueUSD")
-const BalanceSheet = artifacts.require("BalanceSheet")
-const AllowanceSheet = artifacts.require("AllowanceSheet")
 const OwnedUpgradeabilityProxy = artifacts.require("OwnedUpgradeabilityProxy")
 
 
@@ -52,10 +50,9 @@ contract('GasProfile', function (accounts) {
     describe('--Gas Profiling--', function () {
         const DOLLAR = BN(1*10**18);
         const BURN_ADDRESS = '0x0000000000000000000000000000000000011111';
+        const CAN_BURN = bytes32("canBurn")
         const [_, owner, oneHundred, anotherAccount] = accounts.filter(hasNoZero)
         beforeEach(async function () {
-            this.balances = await BalanceSheet.new({ from: owner })
-            this.allowances = await AllowanceSheet.new({ from: owner })
             this.tokenProxy = await OwnedUpgradeabilityProxy.new({from: owner});
             this.tokenMockImpl = await TrueUSDMock.new(owner, 0);
             this.tokenImpl = await TrueUSD.new()
@@ -74,19 +71,15 @@ contract('GasProfile', function (accounts) {
             await this.registryMock.initialize({ from: owner });
             await this.registryProxy.upgradeTo(this.registryImpl.address, { from: owner });
             this.registry = await Registry.at(this.registryProxy.address);
+            await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
 
             await this.token.setRegistry(this.registry.address, { from: owner })
-            await this.balances.transferOwnership(this.token.address, { from: owner })
-            await this.allowances.transferOwnership(this.token.address, { from: owner })
-            await this.token.setBalanceSheet(this.balances.address, { from: owner })
-            await this.token.setAllowanceSheet(this.allowances.address, { from: owner })
 
-            await this.registry.setAttributeValue(oneHundred, bytes32("hasPassedKYC/AML"), 1, { from: owner })
             await this.token.mint(oneHundred, BN(100*10**18), { from: owner })
-            await this.registry.setAttributeValue(oneHundred, bytes32("hasPassedKYC/AML"), 0, { from: owner })
+            await this.token.mint(owner, DOLLAR, { from: owner })
             await this.registry.setAttributeValue(oneHundred, bytes32("canSetFutureRefundMinGasPrice"), 1, { from: owner });
 
-            await this.registry.setAttributeValue(BURN_ADDRESS, bytes32("canBurn"), 1, {from: owner})
+            await this.registry.setAttributeValue(BURN_ADDRESS, CAN_BURN, 1, {from: owner})
             await this.token.setBurnBounds(BN(1), BN(1000).mul(BN(10**18)), {from: owner});
         })
 
@@ -155,6 +148,23 @@ contract('GasProfile', function (accounts) {
                 }
                 showRegressions(expectations);
             })
+            it('transferFrom burn', async function() {
+                await this.token.approve(anotherAccount, BN(50).mul(DOLLAR), { from: oneHundred })
+                const reduceApprovalReducingToBurn = await this.token.transferFrom(oneHundred, BURN_ADDRESS, DOLLAR, { from: anotherAccount, gasPrice: 1 });
+                const emptyApprovalReducingToBurn = await this.token.transferFrom(oneHundred, BURN_ADDRESS, BN(49).mul(DOLLAR), { from: anotherAccount, gasPrice: 1});
+                await this.token.approve(anotherAccount, BN(40).mul(DOLLAR), { from: oneHundred })
+                await this.token.transfer(anotherAccount, BN(10).mul(DOLLAR), { from: oneHundred, gasPrice: 1 })
+                const emptyApprovalEmptyingToBurn = await this.token.transferFrom(oneHundred, BURN_ADDRESS, BN(40).mul(DOLLAR), { from: anotherAccount, gasPrice: 1})
+                await this.token.approve(oneHundred, BN(50).mul(DOLLAR), { from: anotherAccount })
+                const reduceApprovalEmptyingToBurn = await this.token.transferFrom(anotherAccount, BURN_ADDRESS, BN(10).mul(DOLLAR), { from: oneHundred, gasPrice: 1 })
+                const expectations = {
+                    reduceApprovalReducingToBurn: { actual: reduceApprovalReducingToBurn.receipt.gasUsed },
+                    emptyApprovalReducingToBurn: { actual: emptyApprovalReducingToBurn.receipt.gasUsed },
+                    reduceApprovalEmptyingToBurn: { actual: reduceApprovalEmptyingToBurn.receipt.gasUsed },
+                    emptyApprovalEmptyingToBurn: { actual: emptyApprovalEmptyingToBurn.receipt.gasUsed },
+                }
+                showRegressions(expectations);
+            })
         })
         describe('with refund', function() {
             beforeEach(async function() {
@@ -162,6 +172,9 @@ contract('GasProfile', function (accounts) {
                 await this.token.sponsorGas({ from: oneHundred });
                 await this.token.sponsorGas({ from: owner });
                 await this.token.sponsorGas({ from: anotherAccount });
+                await this.token.sponsorGas2({ from: anotherAccount });
+                await this.token.sponsorGas2({ from: owner });
+                await this.token.sponsorGas2({ from: oneHundred });
             })
             it('transfer', async function() {
                 const reduceToNewWithRefund = await this.token.transfer(anotherAccount, DOLLAR, { from: oneHundred, gasPrice: 2 });
@@ -226,16 +239,46 @@ contract('GasProfile', function (accounts) {
                 }
                 showRegressions(expectations);
             })
-        })
-        after(function() {
-            console.log('Writing GasProfile.json')
-            const updatedExpectations = JSON.stringify(profile, null, 2);
-            fs.writeFile('../GasProfile.json', updatedExpectations, (error) => {
-                if (error) {
-                    console.error(error)
-                    return
+            it('transferFrom burn', async function() {
+                await this.token.approve(anotherAccount, BN(50).mul(DOLLAR), { from: oneHundred })
+                const reduceApprovalReducingToBurnWithRefund = await this.token.transferFrom(oneHundred, BURN_ADDRESS, DOLLAR, { from: anotherAccount, gasPrice: 2 });
+                const emptyApprovalReducingToBurnWithRefund = await this.token.transferFrom(oneHundred, BURN_ADDRESS, BN(49).mul(DOLLAR), { from: anotherAccount, gasPrice: 2});
+                await this.token.approve(anotherAccount, BN(40).mul(DOLLAR), { from: oneHundred })
+                await this.token.transfer(anotherAccount, BN(10).mul(DOLLAR), { from: oneHundred, gasPrice: 1 })
+                const emptyApprovalEmptyingToBurnWithRefund = await this.token.transferFrom(oneHundred, BURN_ADDRESS, BN(40).mul(DOLLAR), { from: anotherAccount, gasPrice: 2})
+                await this.token.approve(oneHundred, BN(50).mul(DOLLAR), { from: anotherAccount })
+                const reduceApprovalEmptyingToBurnWithRefund = await this.token.transferFrom(anotherAccount, BURN_ADDRESS, BN(10).mul(DOLLAR), { from: oneHundred, gasPrice: 2 })
+                const expectations = {
+                    reduceApprovalReducingToBurnWithRefund: { actual: reduceApprovalReducingToBurnWithRefund.receipt.gasUsed },
+                    emptyApprovalReducingToBurnWithRefund: { actual: emptyApprovalReducingToBurnWithRefund.receipt.gasUsed },
+                    reduceApprovalEmptyingToBurnWithRefund: { actual: reduceApprovalEmptyingToBurnWithRefund.receipt.gasUsed },
+                    emptyApprovalEmptyingToBurnWithRefund: { actual: emptyApprovalEmptyingToBurnWithRefund.receipt.gasUsed },
                 }
-                console.log('Wrote GasProfile.json')
+                showRegressions(expectations);
+            })
+            it('sponsorGas', async function() {
+                const sponsorGas = await this.token.sponsorGas()
+                const sponsorGas2 = await this.token.sponsorGas2()
+                const expectations = {
+                    sponsorGas: { actual: sponsorGas.receipt.gasUsed },
+                    sponsorGas2: { actual: sponsorGas2.receipt.gasUsed },
+                }
+                showRegressions(expectations)
+            })
+        })
+        after(async function() {
+            await new Promise((resolve, reject) => {
+                console.log('Writing GasProfile.json')
+                const updatedExpectations = JSON.stringify(profile, null, 2);
+                fs.writeFile('./GasProfile.json', updatedExpectations, (error) => {
+                    if (error) {
+                        console.error(error)
+                        reject(error)
+                        return
+                    }
+                    console.log('Wrote GasProfile.json')
+                    resolve()
+                })
             })
         })
     })

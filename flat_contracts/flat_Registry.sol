@@ -29,6 +29,10 @@ contract ERC20 is ERC20Basic {
 
 // File: registry/contracts/Registry.sol
 
+interface RegistryClone {
+    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
+}
+
 contract Registry {
     struct AttributeData {
         uint256 value;
@@ -48,16 +52,11 @@ contract Registry {
     // that account can use the token. This mapping stores that value (1, in the
     // example) as well as which validator last set the value and at what time,
     // so that e.g. the check can be renewed at appropriate intervals.
-    mapping(address => mapping(bytes32 => AttributeData)) public attributes;
+    mapping(address => mapping(bytes32 => AttributeData)) attributes;
     // The logic governing who is allowed to set what attributes is abstracted as
     // this accessManager, so that it may be replaced by the owner as needed
-
-    bytes32 public constant WRITE_PERMISSION = keccak256("canWriteTo-");
-    bytes32 public constant IS_BLACKLISTED = "isBlacklisted";
-    bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress"; 
-    bytes32 public constant IS_REGISTERED_CONTRACT = "isRegisteredContract"; 
-    bytes32 public constant HAS_PASSED_KYC_AML = "hasPassedKYC/AML";
-    bytes32 public constant CAN_BURN = "canBurn";
+    bytes32 constant WRITE_PERMISSION = keccak256("canWriteTo-");
+    mapping(bytes32 => RegistryClone[]) subscribers;
 
     event OwnershipTransferred(
         address indexed previousOwner,
@@ -65,15 +64,13 @@ contract Registry {
     );
     event SetAttribute(address indexed who, bytes32 attribute, uint256 value, bytes32 notes, address indexed adminAddr);
     event SetManager(address indexed oldManager, address indexed newManager);
-
-    function writeAttributeFor(bytes32 _attribute) public pure returns (bytes32) {
-        return keccak256(WRITE_PERMISSION ^ _attribute);
-    }
+    event StartSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
+    event StopSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
 
     // Allows a write if either a) the writer is that Registry's owner, or
     // b) the writer is writing to attribute foo and that writer already has
     // the canWriteTo-foo attribute set (in that same Registry)
-    function confirmWrite(bytes32 _attribute, address _admin) public view returns (bool) {
+    function confirmWrite(bytes32 _attribute, address _admin) internal view returns (bool) {
         return (_admin == owner || hasAttribute(_admin, keccak256(WRITE_PERMISSION ^ _attribute)));
     }
 
@@ -82,12 +79,40 @@ contract Registry {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
+
+        RegistryClone[] storage targets = subscribers[_attribute];
+        uint256 index = targets.length;
+        while (index --> 0) {
+            targets[index].syncAttributeValue(_who, _attribute, _value);
+        }
+    }
+
+    function subscribe(bytes32 _attribute, RegistryClone _syncer) external onlyOwner {
+        subscribers[_attribute].push(_syncer);
+        emit StartSubscription(_attribute, _syncer);
+    }
+
+    function unsubscribe(bytes32 _attribute, uint256 _index) external onlyOwner {
+        uint256 length = subscribers[_attribute].length;
+        require(_index < length);
+        emit StopSubscription(_attribute, subscribers[_attribute][_index]);
+        subscribers[_attribute][_index] = subscribers[_attribute][length - 1];
+        subscribers[_attribute].length = length - 1;
+    }
+
+    function subscriberCount(bytes32 _attribute) public view returns (uint256) {
+        return subscribers[_attribute].length;
     }
 
     function setAttributeValue(address _who, bytes32 _attribute, uint256 _value) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, "", msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, "", msg.sender);
+        RegistryClone[] storage targets = subscribers[_attribute];
+        uint256 index = targets.length;
+        while (index --> 0) {
+            targets[index].syncAttributeValue(_who, _attribute, _value);
+        }
     }
 
     // Returns true if the uint256 value stored for this attribute is non-zero
@@ -95,71 +120,6 @@ contract Registry {
         return attributes[_who][_attribute].value != 0;
     }
 
-    function hasBothAttributes(address _who, bytes32 _attribute1, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who][_attribute1].value != 0 && attributes[_who][_attribute2].value != 0;
-    }
-
-    function hasEitherAttribute(address _who, bytes32 _attribute1, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who][_attribute1].value != 0 || attributes[_who][_attribute2].value != 0;
-    }
-
-    function hasAttribute1ButNotAttribute2(address _who, bytes32 _attribute1, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who][_attribute1].value != 0 && attributes[_who][_attribute2].value == 0;
-    }
-
-    function bothHaveAttribute(address _who1, address _who2, bytes32 _attribute) public view returns (bool) {
-        return attributes[_who1][_attribute].value != 0 && attributes[_who2][_attribute].value != 0;
-    }
-    
-    function eitherHaveAttribute(address _who1, address _who2, bytes32 _attribute) public view returns (bool) {
-        return attributes[_who1][_attribute].value != 0 || attributes[_who2][_attribute].value != 0;
-    }
-
-    function haveAttributes(address _who1, bytes32 _attribute1, address _who2, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who1][_attribute1].value != 0 && attributes[_who2][_attribute2].value != 0;
-    }
-
-    function haveEitherAttribute(address _who1, bytes32 _attribute1, address _who2, bytes32 _attribute2) public view returns (bool) {
-        return attributes[_who1][_attribute1].value != 0 || attributes[_who2][_attribute2].value != 0;
-    }
-
-    function isDepositAddress(address _who) public view returns (bool) {
-        return attributes[address(uint256(_who) >> 20)][IS_DEPOSIT_ADDRESS].value != 0;
-    }
-
-    function getDepositAddress(address _who) public view returns (address) {
-        return address(attributes[address(uint256(_who) >> 20)][IS_DEPOSIT_ADDRESS].value);
-    }
-
-    function requireCanTransfer(address _from, address _to) public view returns (address, bool) {
-        require (attributes[_from][IS_BLACKLISTED].value == 0, "blacklisted");
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
-        if (depositAddressValue != 0) {
-            _to = address(depositAddressValue);
-        }
-        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
-    }
-
-    function requireCanTransferFrom(address _sender, address _from, address _to) public view returns (address, bool) {
-        require (attributes[_sender][IS_BLACKLISTED].value == 0, "blacklisted");
-        return requireCanTransfer(_from, _to);
-    }
-
-    function requireCanMint(address _to) public view returns (address, bool) {
-        require (attributes[_to][HAS_PASSED_KYC_AML].value != 0);
-        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
-        if (depositAddressValue != 0) {
-            _to = address(depositAddressValue);
-        }
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
-    }
-
-    function requireCanBurn(address _from) public view {
-        require (attributes[_from][CAN_BURN].value != 0);
-        require (attributes[_from][IS_BLACKLISTED].value == 0);
-    }
 
     // Returns the exact value of the attribute, as well as its metadata
     function getAttribute(address _who, bytes32 _attribute) public view returns (uint256, bytes32, address, uint256) {
@@ -179,6 +139,18 @@ contract Registry {
         return attributes[_who][_attribute].timestamp;
     }
 
+    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] _addresses) external {
+        RegistryClone[] storage targets = subscribers[_attribute];
+        uint256 index = targets.length;
+        while (index --> _startIndex) {
+            RegistryClone target = targets[index];
+            for (uint256 i = _addresses.length; i --> 0; ) {
+                address who = _addresses[i];
+                target.syncAttributeValue(who, _attribute, attributes[who][_attribute].value);
+            }
+        }
+    }
+
     function reclaimEther(address _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
@@ -188,7 +160,7 @@ contract Registry {
         token.transfer(_to, balance);
     }
 
-    /**
+   /**
     * @dev Throws if called by any account other than the owner.
     */
     modifier onlyOwner() {
