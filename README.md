@@ -1,4 +1,4 @@
-![alt tag](https://raw.github.com/trusttoken/trueUSD/readMe/Logo.png)
+![alt tag](https://raw.github.com/trusttoken/trueUSD/master/Logo.png)
 
 # TrueUSD
 
