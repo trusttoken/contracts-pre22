@@ -73,11 +73,10 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         uint256 prior = _getAllowance(_who, _spender);
         _setAllowance(_who, _spender, prior.add(_value)); 
     }
-    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool allowanceZero) {
+    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (uint256 updated) {
         uint256 prior = _getAllowance(_who, _spender);
-        uint256 updated = prior.sub(_value);
+        updated = prior.sub(_value);
         _setAllowance(_who, _spender, updated); 
-        allowanceZero = updated == 0;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
         super._setAllowance(_who, _spender, _value);
