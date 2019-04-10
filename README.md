@@ -1,119 +1,105 @@
-![alt tag](https://raw.github.com/trusttoken/trueUSD/master/Logo.png)
+![alt tag](https://raw.github.com/trusttoken/trueUSD/master/TrueUSDLogo.png)
+![alt tag](https://raw.github.com/trusttoken/trueUSD/master/TrueGBPLogo.png)
 
-# TrueUSD
+# Tokenized Currencies
+This repository contains the smart contracts for TrueUSD as well as TrueGBP, as well as the contracts that support them.
+This document contains a high-level overview of the contracts.
+For specifics, see the relevant .sol files.
 
-This repository contains the TrueUSD ERC20 contract and related contracts.
+### Proxy/...
+We use `DELEGATECALL` proxies so that we can upgrade our contracts without changing their addresses.
+We always seek a security audit before upgrading to mitigate risk.
 
-## The Contracts
-
-This is a high-level overview of the contracts. For more specifics, see the relevant .sol files.
+### ProxyStorage.sol
+All of the tokens use the storage laid out in ProxyStorage.sol.
+This mitigates the risk of the storage layout shifting between upgrades.
 
 ### modularERC20/...
 
 These contracts are inspired by and roughly equivalent to the corresponding ERC20
-token contracts from [OpenZeppelin](https://openzeppelin.org/). The main difference is
-that they keep track of balances and allowances by using separate contracts (BalanceSheet.sol
-and AllowanceSheet.sol) instead of mappings in their own storage.
+token contracts from [OpenZeppelin](https://openzeppelin.org/).
+Work is separated into internal functions that can be overridden for storage migrations.
 
-### Admins/...
-### TokenController.sol
+### Admin/...
+#### TokenController.sol
 
-This contract is the owner of TrueUSD.sol. Consists of an Owner key, Mint Pause Keys,
-Mint Key, and Mint Ratify Keys. It's also responsible for configuring constants and upgrading the token contract
+TokenController is the owner for each of our tokens.
+Power is separated between the Owner key, Mint Pause Keys, the Mint Key, and Mint Ratifier Keys, which protect the mint process.
+Risk is configurable in the mint limits.
 
-### MultiSigOwner.sol
+#### MultiSigOwner.sol
 
-This contract is the owner of TokenController.sol. It turns every function that only the owner can access into a multisig function that requires 2/3 approvals.
-
-
-### Proxy/...
-
-### ProxyStorage.sol
-Storage layout of TrueUSD. Makes upgrades safer.
+This contract can be the owner of a TokenController.
+It turns every TokenController owner function into a multisig function that requires 2/3 approvals.
 
 ### HasOwner.sol
-Our own implementation of Claimable Contract.
+Our own implementation of Claimable Contract, formerly part of [OpenZeppelin](https://openzeppelin.org/).
 
 ### BurnableTokenWithBounds.sol
 
-This limits the minimum and maximum number of tokens that can be burned (redeemed) at once.
+This limits the minimum and maximum number of tokens that can be redeemed per-transaction.
 
-### CompliantToken.sol
+### CompliantDepositTokenWithHook.sol
+This file processes attributes synced from the [Registry](https://github.com/trusttoken/registry).
 
-This ensures that only users who have passed a KYC/AML check can receive newly minted tokens.
-It also allows for blacklisting of bad actors in accordance
-with the [TrueCoin Terms of Use](https://www.trusttoken.com/terms-of-use/).
+#### Deposit addresses
+You can register your deposit address using the [Deposit Address Registrar](https://etherscan.io/address/0x00000000000Da14C27C155Bb7C1Ac9Bd7519eB3b).
+This will allow you to receive TrueUSD from several addresses.
+Such transactions will emit two `Transfer` events.
+Exchanges should register deposit addresses to reduce their operating overhead.
 
-### DepositToken.sol
-Allow users to register deposit addresses. 
+#### Redemption addresses
+You can redeem these tokens for fiat by transfering them to your redemption address, which starts with at least thirty-five zeroes.
+Sign up for your redemption address by creating a [TrustToken](https://app.trusttoken.com/) account.
+
+#### Blacklisted addresses
+TrustToken prevents you from sending our tokens to blacklisted addresses.
+We blacklist our own contracts so that you cannot send them tokens by mistake.
+TrustToken also reserves the right to blacklist accounts that violate the [TrueCoin Terms of Use](https://www.trusttoken.com/terms-of-use/).
+
+#### Registered contracts
+By contacting us, you can register a contract to receive a callback when it receives tokens.
 
 ### GasRefundToken.sol
-Enable transfer and mint methods to be sponsored. Reduce gas cost of transfer and mint.
+We reduce the amount of gas you pay by refunding gas during your transfer.
 
-### TrueUSD.sol
+### TrueUSD.sol, TrueGBP.sol, etc.
+These are the top-level ERC20 contracts.
+They inherit the aforementioned functionality.
 
-This is the top-level ERC20 contract tying together all the previously mentioned functionality.
+# Contributing
+Before creating a pull request, please run the tests and the profiler.
 
-
-## Upgrade Process
-
-There are three main parts to the system of smart contracts. TrueUSD Token, TokenController, and MultisigOwner. Each contract will sit behind a delegate proxy contract. So to upgrade, the admin needs to point the implementation in the delegate proxy to a new instance. 
-
-TokenController is the owner of TrueUSD and the also the proxyOwner of TrueUSD proxy
-Multisig is the owner of TokenController and the also the proxyOwner of TokenController proxy.
-Multisig is also the proxyOwner of its own proxy.
-
-## Testing
-
-Initialize the registry submodule in the root directory:
+## Setup
+Initialize the registry submodule in the root directory.
 ```bash
 git submodule init && git submodule update
 ```
 
-To run the tests and generate a code coverage report:
+## Testing
 ```bash
 npm install
-npm test
+npm test # runs ./test.sh
 ```
 
-## Contract Structure
+## Profiling
+To run the profiler and update `GasProfile.json`, run the profile script in the root directory.
 
-    ├── modularERC20  
-    │   ├── AllowanceSheet         
-    │   ├── BalanceSheet        
-    │   ├── ModularBasicToken        
-    │   ├── ModularStandardToken        
-    │   ├── ModularBurnableToken        
-    │   └── ModularMintableToken                
-    ├── Admin                 
-    │   ├── TokenController        
-    │   └── MultisigOwner               
-    ├── Proxy
-    │   ├── Proxy        
-    │   ├── UpgradeabilityProxy        
-    │   └── OwnedUpgradeabilityProxy               
-    ├── utilities
-    │   ├── FastPauseMints        
-    │   └── FastPauseTrueUSD               
-    ├── ProxyStorage
-    ├── HasOwner
-    ├── BurnableTokenWithBounds
-    ├── CompliantToken
-    ├── RedeemableToken
-    ├── DepositToken
-    ├── GasRefundToken
-    ├── TrueUSD
+```bash
+npm run profile # runs ./profile.sh
+```
 
-
-## Other Information
+# Links
 
 | Description  | URL |
 | ------------- | ------------- |
-| Etherscan Page | https://etherscan.io/token/0x0000000000085d4780B73119b644AE5ecd22b376  |
-| Coinmarketcap  | https://coinmarketcap.com/currencies/trueusd/  |
-| TrueUSD’s Terms of Use  | https://www.trusttoken.com/terms-of-use/  |
+| Purchase and Redeem | https://app.trusttoken.com/ |
+| TUSD Etherscan Page | https://etherscan.io/token/0x0000000000085d4780B73119b644AE5ecd22b376  |
+| TGBP Etherscan Page | https://etherscan.io/token/0x00000000441378008EA67F4284A57932B1c000a5  |
+| TUSD on CoinMarketCap  | https://coinmarketcap.com/currencies/trueusd/  |
+| Terms of Use  | https://www.trusttoken.com/terms-of-use/  |
 
-## Social Links
+## Social
 
 | Pages    | URL                                          |
 | -------- | -------------------------------------------- |
