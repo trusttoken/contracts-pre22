@@ -12,6 +12,7 @@ We always seek a security audit before upgrading, in order to mitigate risk.
 
 ### ProxyStorage.sol
 All of the tokens use the storage laid out in ProxyStorage.sol.
+Solidity storage variables for tokens should not be declared in any other file.
 This mitigates the risk of the storage layout shifting between upgrades.
 
 ### modularERC20/...
