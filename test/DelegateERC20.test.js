@@ -1,9 +1,13 @@
 const CanDelegate = artifacts.require('CanDelegateMock')
 const TrueUSD = artifacts.require('TrueUSDMock')
 import standardTokenTests from './token/StandardToken';
+import basicTokenTests from './token/BasicToken';
+import compliantTokenTests from './CompliantToken';
+import redeemTokenTests from './RedeemToken';
 const Registry = artifacts.require("RegistryMock")
 
 const BN = web3.utils.toBN;
+const bytes32 = require('./helpers/bytes32.js')
 
 contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function() {
@@ -12,7 +16,11 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
         this.delegate = await TrueUSD.new(oneHundred, this.totalSupply, { from: owner })
         this.registry = await Registry.new({ from: owner })
         await this.delegate.setRegistry(this.registry.address, { from: owner })
+        await this.registry.subscribe(bytes32("isBlacklisted"), this.delegate.address, { from: owner });
+        await this.registry.subscribe(bytes32("canBurn"), this.delegate.address, { from: owner });
         await this.original.delegateToNewContract(this.delegate.address, {from:owner})
+        await this.delegate.setDelegateFrom(this.original.address);
+        await this.delegate.setBurnBounds(BN(5*10**18), BN(1000).mul(BN(10**18)), { from: owner }) 
     })
 
     describe('--DelegateERC20 Tests--', function() {
@@ -31,7 +39,18 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount]) {
             beforeEach(async function() {
                 this.token = this.delegate
             })
+            basicTokenTests([owner, oneHundred, anotherAccount])
             standardTokenTests([owner, oneHundred, anotherAccount])    
+            compliantTokenTests([owner, oneHundred, anotherAccount])    
+            redeemTokenTests([owner, oneHundred, anotherAccount])
+        })
+        describe('Original', function() {
+            beforeEach(async function() {
+                this.token = this.original;
+            })
+            basicTokenTests([owner, oneHundred, anotherAccount])
+            standardTokenTests([owner, oneHundred, anotherAccount])    
+            redeemTokenTests([owner, oneHundred, anotherAccount])
         })
     })
 })

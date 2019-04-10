@@ -646,10 +646,9 @@ contract ModularStandardToken is ModularBasicToken {
         _allowance[_who][_spender] = _allowance[_who][_spender].add(_value);
     }
 
-    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool allowanceZero){
-        uint256 newAllowance = _allowance[_who][_spender].sub(_value);
+    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (uint256 newAllowance){
+        newAllowance = _allowance[_who][_spender].sub(_value);
         _allowance[_who][_spender] = newAllowance;
-        allowanceZero = newAllowance == 0;
     }
 
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
@@ -896,13 +895,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     * @param _value The amount to be transferred.
     */
     function transfer(address _to, uint256 _value) public returns (bool) {
-        address _from = msg.sender;
-        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
-            _value -= _value % CENT;
-            _burnFromAllArgs(_from, _to, _value);
-        } else {
-            _transferAllArgs(_from, _to, _value);
-        }
+        _transferAllArgs(msg.sender, _to, _value);
         return true;
     }
 
@@ -913,28 +906,23 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
      * @param _value uint256 the amount of tokens to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
-            _value -= _value % CENT;
-            _burnFromAllowanceAllArgs(_from, _to, _value);
-        } else {
-            _transferFromAllArgs(_from, _to, _value, msg.sender);
-        }
+        _transferFromAllArgs(_from, _to, _value, msg.sender);
         return true;
     }
 
-    function _burnFromAllowanceAllArgs(address _from, address _to, uint256 _value) internal {
-        _requireCanTransferFrom(msg.sender, _from, _to);
+    function _burnFromAllowanceAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+        _requireCanTransferFrom(_spender, _from, _to);
         _requireOnlyCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
         if (0 == _subBalance(_from, _value)) {
-            if (_subAllowance(_from, msg.sender, _value)) {
+            if (0 == _subAllowance(_from, _spender, _value)) {
                 // no refund
             } else {
                 gasRefund15();
             }
         } else {
-            if (_subAllowance(_from, msg.sender, _value)) {
+            if (0 == _subAllowance(_from, _spender, _value)) {
                 gasRefund15();
             } else {
                 gasRefund39();
@@ -963,78 +951,88 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        bool hasHook;
-        address originalTo = _to;
-        (_to, hasHook) = _requireCanTransferFrom(_spender, _from, _to);
-        if (0 == _addBalance(_to, _value)) {
-            if (_subAllowance(_from, _spender, _value)) {
-                if (0 == _subBalance(_from, _value)) {
-                    // do not refund
-                } else {
-                    gasRefund30();
-                }
-            } else {
-                if (0 == _subBalance(_from, _value)) {
-                    gasRefund30();
-                } else {
-                    gasRefund39();
-                }
-            }
+        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
+            _value -= _value % CENT;
+            _burnFromAllowanceAllArgs(_from, _to, _value, _spender);
         } else {
-            if (_subAllowance(_from, _spender, _value)) {
-                if (0 == _subBalance(_from, _value)) {
-                    // do not refund
+            bool hasHook;
+            address originalTo = _to;
+            (_to, hasHook) = _requireCanTransferFrom(_spender, _from, _to);
+            if (0 == _addBalance(_to, _value)) {
+                if (0 == _subAllowance(_from, _spender, _value)) {
+                    if (0 == _subBalance(_from, _value)) {
+                        // do not refund
+                    } else {
+                        gasRefund30();
+                    }
                 } else {
-                    gasRefund15();
+                    if (0 == _subBalance(_from, _value)) {
+                        gasRefund30();
+                    } else {
+                        gasRefund39();
+                    }
                 }
             } else {
-                if (0 == _subBalance(_from, _value)) {
-                    gasRefund15();
+                if (0 == _subAllowance(_from, _spender, _value)) {
+                    if (0 == _subBalance(_from, _value)) {
+                        // do not refund
+                    } else {
+                        gasRefund15();
+                    }
                 } else {
-                    gasRefund39();
+                    if (0 == _subBalance(_from, _value)) {
+                        gasRefund15();
+                    } else {
+                        gasRefund39();
+                    }
                 }
-            }
 
-        }
-        emit Transfer(_from, originalTo, _value);
-        if (originalTo != _to) {
-            emit Transfer(originalTo, _to, _value);
-            if (hasHook) {
-                TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
             }
-        } else {
-            if (hasHook) {
-                TrueCoinReceiver(_to).tokenFallback(_from, _value);
+            emit Transfer(_from, originalTo, _value);
+            if (originalTo != _to) {
+                emit Transfer(originalTo, _to, _value);
+                if (hasHook) {
+                    TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
+                }
+            } else {
+                if (hasHook) {
+                    TrueCoinReceiver(_to).tokenFallback(_from, _value);
+                }
             }
         }
     }
 
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        bool hasHook;
-        address finalTo;
-        (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-        if (0 == _subBalance(_from, _value)) {
-            if (0 == _addBalance(finalTo, _value)) {
-                gasRefund30();
-            } else {
-                // do not refund
-            }
+        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
+            _value -= _value % CENT;
+            _burnFromAllArgs(_from, _to, _value);
         } else {
-            if (0 == _addBalance(finalTo, _value)) {
-                gasRefund39();
+            bool hasHook;
+            address finalTo;
+            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+            if (0 == _subBalance(_from, _value)) {
+                if (0 == _addBalance(finalTo, _value)) {
+                    gasRefund30();
+                } else {
+                    // do not refund
+                }
             } else {
-                gasRefund30();
+                if (0 == _addBalance(finalTo, _value)) {
+                    gasRefund39();
+                } else {
+                    gasRefund30();
+                }
             }
-        }
-        emit Transfer(_from, _to, _value);
-        if (finalTo != _to) {
-            emit Transfer(_to, finalTo, _value);
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-            }
-        } else {
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+            emit Transfer(_from, _to, _value);
+            if (finalTo != _to) {
+                emit Transfer(_to, finalTo, _value);
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+                }
+            } else {
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                }
             }
         }
     }
@@ -1144,98 +1142,13 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 }
 
-// File: contracts/Proxy/Proxy.sol
-
-/**
- * @title Proxy
- * @dev Gives the possibility to delegate any call to a foreign implementation.
- */
-contract Proxy {
-    
-    /**
-    * @dev Tells the address of the implementation where every call will be delegated.
-    * @return address of the implementation to which it will be delegated
-    */
-    function implementation() public view returns (address);
-
-    /**
-    * @dev Fallback function allowing to perform a delegatecall to the given implementation.
-    * This function will return whatever the implementation call returns
-    */
-    function() external payable {
-        address _impl = implementation();
-        
-        assembly {
-            let ptr := mload(0x40)
-            calldatacopy(ptr, 0, calldatasize)
-            let result := delegatecall(gas, _impl, ptr, calldatasize, 0, 0)
-            let size := returndatasize
-            returndatacopy(ptr, 0, size)
-
-            switch result
-            case 0 { revert(ptr, size) }
-            default { return(ptr, size) }
-        }
-    }
-}
-
-// File: contracts/Proxy/UpgradeabilityProxy.sol
-
-/**
- * @title UpgradeabilityProxy
- * @dev This contract represents a proxy where the implementation address to which it will delegate can be upgraded
- */
-contract UpgradeabilityProxy is Proxy {
-    /**
-    * @dev This event will be emitted every time the implementation gets upgraded
-    * @param implementation representing the address of the upgraded implementation
-    */
-    event Upgraded(address indexed implementation);
-
-    // Storage position of the address of the current implementation
-    bytes32 private constant implementationPosition = 0x6e41e0fbe643dfdb6043698bf865aada82dc46b953f754a3468eaa272a362dc7; //keccak256("trueUSD.proxy.implementation");
-
-    /**
-    * @dev Tells the address of the current implementation
-    * @return address of the current implementation
-    */
-    function implementation() public view returns (address impl) {
-        bytes32 position = implementationPosition;
-        assembly {
-          impl := sload(position)
-        }
-    }
-
-    /**
-    * @dev Sets the address of the current implementation
-    * @param newImplementation address representing the new implementation to be set
-    */
-    function _setImplementation(address newImplementation) internal {
-        bytes32 position = implementationPosition;
-        assembly {
-          sstore(position, newImplementation)
-        }
-    }
-
-    /**
-    * @dev Upgrades the implementation address
-    * @param newImplementation representing the address of the new implementation to be set
-    */
-    function _upgradeTo(address newImplementation) internal {
-        address currentImplementation = implementation();
-        require(currentImplementation != newImplementation);
-        _setImplementation(newImplementation);
-        emit Upgraded(newImplementation);
-    }
-}
-
 // File: contracts/Proxy/OwnedUpgradeabilityProxy.sol
 
 /**
  * @title OwnedUpgradeabilityProxy
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
-contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
+contract OwnedUpgradeabilityProxy {
     /**
     * @dev Event to show ownership has been transferred
     * @param previousOwner representing the address of the previous owner
@@ -1344,7 +1257,50 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @param implementation representing the address of the new implementation to be set.
     */
     function upgradeTo(address implementation) external onlyProxyOwner {
-        _upgradeTo(implementation);
+        address currentImplementation;
+        bytes32 position = implementationPosition;
+        assembly {
+            currentImplementation := sload(position)
+        }
+        require(currentImplementation != implementation);
+        assembly {
+          sstore(position, implementation)
+        }
+        emit Upgraded(implementation);
+    }
+    /**
+    * @dev This event will be emitted every time the implementation gets upgraded
+    * @param implementation representing the address of the upgraded implementation
+    */
+    event Upgraded(address indexed implementation);
+
+    // Storage position of the address of the current implementation
+    bytes32 private constant implementationPosition = 0x6e41e0fbe643dfdb6043698bf865aada82dc46b953f754a3468eaa272a362dc7; //keccak256("trueUSD.proxy.implementation");
+
+    function implementation() public returns (address impl) {
+        bytes32 position = implementationPosition;
+        assembly {
+            impl := sload(position)
+        }
+    }
+
+    /**
+    * @dev Fallback function allowing to perform a delegatecall to the given implementation.
+    * This function will return whatever the implementation call returns
+    */
+    function() external payable {
+        bytes32 position = implementationPosition;
+        
+        assembly {
+            let ptr := mload(0x40)
+            calldatacopy(ptr, returndatasize, calldatasize)
+            let result := delegatecall(gas, sload(position), ptr, calldatasize, returndatasize, returndatasize)
+            returndatacopy(ptr, 0, returndatasize)
+
+            switch result
+            case 0 { revert(ptr, returndatasize) }
+            default { return(ptr, returndatasize) }
+        }
     }
 }
 
