@@ -150,8 +150,7 @@ contract OwnedUpgradeabilityProxy {
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, 0, calldatasize)
-            let impl := sload(position)
-            let result := delegatecall(gas, impl, ptr, calldatasize, 0, 0)
+            let result := delegatecall(gas, sload(position), ptr, calldatasize, 0, 0)
             let size := returndatasize
             returndatacopy(ptr, 0, size)
 
