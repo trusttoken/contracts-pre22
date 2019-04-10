@@ -69,7 +69,7 @@ These are the top-level ERC20 contracts.
 They inherit the aforementioned functionality.
 
 # Contributing
-Before creating a pull request, please run the tests and the profiler.
+Before creating a pull request, please run the tests, the profiler, and the flattener.
 
 ## Setup
 Initialize the registry submodule in the root directory.
@@ -88,6 +88,12 @@ To run the profiler and update `GasProfile.json`, run the profile script in the 
 
 ```bash
 npm run profile # runs ./profile.sh
+```
+
+## Flattening
+Run the flattener in the root directory.
+```bash
+npm run flatten # runs ./flatten-all
 ```
 
 # Links
