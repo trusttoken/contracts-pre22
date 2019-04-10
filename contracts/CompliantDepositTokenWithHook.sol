@@ -54,13 +54,13 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
         if (0 == _subBalance(_from, _value)) {
-            if (_subAllowance(_from, msg.sender, _value)) {
+            if (0 == _subAllowance(_from, msg.sender, _value)) {
                 // no refund
             } else {
                 gasRefund15();
             }
         } else {
-            if (_subAllowance(_from, msg.sender, _value)) {
+            if (0 == _subAllowance(_from, msg.sender, _value)) {
                 gasRefund15();
             } else {
                 gasRefund39();
@@ -93,7 +93,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransferFrom(_spender, _from, _to);
         if (0 == _addBalance(_to, _value)) {
-            if (_subAllowance(_from, _spender, _value)) {
+            if (0 == _subAllowance(_from, _spender, _value)) {
                 if (0 == _subBalance(_from, _value)) {
                     // do not refund
                 } else {
@@ -107,7 +107,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
                 }
             }
         } else {
-            if (_subAllowance(_from, _spender, _value)) {
+            if (0 == _subAllowance(_from, _spender, _value)) {
                 if (0 == _subBalance(_from, _value)) {
                     // do not refund
                 } else {
@@ -237,7 +237,6 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     function _requireCanTransferFrom(address _spender, address _from, address _to) internal view returns (address, bool) {
-        uint256 flag;
         require (attributes[IS_BLACKLISTED][_spender] == 0, "blacklisted");
         uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
         if (depositAddressValue != 0) {
