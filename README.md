@@ -2,7 +2,7 @@
 ![alt tag](https://raw.github.com/trusttoken/trueUSD/master/TrueGBPLogo.png)
 
 # Tokenized Currencies
-This repository contains the smart contracts for TrueUSD as well as TrueGBP, as well as the contracts that support them.
+This repository contains the smart contracts for TrueUSD and TrueGBP, as well as the contracts that support them.
 This document contains a high-level overview of the contracts.
 For specifics, see the relevant .sol files.
 
