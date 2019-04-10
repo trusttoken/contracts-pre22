@@ -33,7 +33,7 @@ function redeemTokenTests([owner, oneHundred, anotherAccount]) {
             it('transfers to Redemption addresses gets burned', async function(){
                 await this.registry.setAttribute(ADDRESS_ONE, CAN_BURN, 1, notes, { from: owner })
                 await this.registry.setAttribute(ADDRESS_TWO, CAN_BURN, 1, notes, { from: owner })
-                const {logs} = await this.token.transfer(ADDRESS_ONE, BN(10*10**18), {from : oneHundred})
+                let { logs } = await this.token.transfer(ADDRESS_ONE, BN(10*10**18), {from : oneHundred})
                 assert.equal(logs[0].event, 'Transfer')
                 assert.equal(logs[1].event, 'Burn')
                 assert.equal(logs[2].event, 'Transfer')
@@ -45,6 +45,12 @@ function redeemTokenTests([owner, oneHundred, anotherAccount]) {
                 assert((await this.token.totalSupply.call()).eq(BN(80*10**18)))
                 await this.token.transfer(ADDRESS_ONE, BN(10*10**18), {from : oneHundred})
                 assert((await this.token.totalSupply.call()).eq(BN(70*10**18)))
+                await this.token.approve(oneHundred, BN(10*10**18), {from: oneHundred})
+                logs = (await this.token.transferFrom(oneHundred, ADDRESS_TWO, BN(10*10**18), {from:oneHundred})).logs
+                assert.equal(logs[0].event, 'Transfer')
+                assert.equal(logs[1].event, 'Burn')
+                assert.equal(logs[2].event, 'Transfer')
+                assert((await this.token.totalSupply.call()).eq(BN(60*10**18)))
             })
 
             it('transfers to Redemption addresses fails if Redemption address cannot burn', async function(){
