@@ -1,12 +1,10 @@
 pragma solidity ^0.4.23;
 
-import "./UpgradeabilityProxy.sol";
-
 /**
  * @title OwnedUpgradeabilityProxy
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
-contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
+contract OwnedUpgradeabilityProxy {
     /**
     * @dev Event to show ownership has been transferred
     * @param previousOwner representing the address of the previous owner
@@ -115,6 +113,49 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @param implementation representing the address of the new implementation to be set.
     */
     function upgradeTo(address implementation) external onlyProxyOwner {
-        _upgradeTo(implementation);
+        address currentImplementation;
+        bytes32 position = implementationPosition;
+        assembly {
+            currentImplementation := sload(position)
+        }
+        require(currentImplementation != implementation);
+        assembly {
+          sstore(position, implementation)
+        }
+        emit Upgraded(implementation);
+    }
+    /**
+    * @dev This event will be emitted every time the implementation gets upgraded
+    * @param implementation representing the address of the upgraded implementation
+    */
+    event Upgraded(address indexed implementation);
+
+    // Storage position of the address of the current implementation
+    bytes32 private constant implementationPosition = 0x6e41e0fbe643dfdb6043698bf865aada82dc46b953f754a3468eaa272a362dc7; //keccak256("trueUSD.proxy.implementation");
+
+    function implementation() public returns (address impl) {
+        bytes32 position = implementationPosition;
+        assembly {
+            impl := sload(position)
+        }
+    }
+
+    /**
+    * @dev Fallback function allowing to perform a delegatecall to the given implementation.
+    * This function will return whatever the implementation call returns
+    */
+    function() external payable {
+        bytes32 position = implementationPosition;
+        
+        assembly {
+            let ptr := mload(0x40)
+            calldatacopy(ptr, returndatasize, calldatasize)
+            let result := delegatecall(gas, sload(position), ptr, calldatasize, returndatasize, returndatasize)
+            returndatacopy(ptr, 0, returndatasize)
+
+            switch result
+            case 0 { revert(ptr, returndatasize) }
+            default { return(ptr, returndatasize) }
+        }
     }
 }
