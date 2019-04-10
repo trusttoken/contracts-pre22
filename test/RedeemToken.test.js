@@ -5,6 +5,10 @@ const TrueUSD = artifacts.require("TrueUSDMock")
 const AllowanceSheet = artifacts.require("AllowanceSheet")
 const ForceEther = artifacts.require("ForceEther")
 
+const BN = web3.utils.toBN;
+const bytes32 = require('./helpers/bytes32')
+const CAN_BURN = bytes32("canBurn")
+
 contract('RedeemToken', function (accounts) {
     const [_, owner, oneHundred, anotherAccount] = accounts
     beforeEach(async function () {
