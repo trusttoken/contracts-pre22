@@ -3,7 +3,7 @@
 
 # Tokenized Currencies
 This repository contains the smart contracts for TrueUSD and TrueGBP, as well as the contracts that support them.
-This document contains a high-level overview of the contracts.
+This section contains a high-level overview of the contracts.
 For specifics, see the relevant .sol files.
 
 ### Proxy/...
