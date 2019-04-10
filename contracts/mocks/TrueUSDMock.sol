@@ -21,4 +21,15 @@ contract TrueUSDMock is TrueUSD {
         require(totalSupply_ == 0);
         totalSupply_ = _totalSupply;
     }
+
+    address delegateFrom;
+
+    function setDelegateFrom(address _delegateFrom) {
+        delegateFrom = _delegateFrom;
+    }
+
+    modifier onlyDelegateFrom() {
+        require(msg.sender == delegateFrom);
+        _;
+    }
 }
