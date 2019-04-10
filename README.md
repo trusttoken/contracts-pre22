@@ -8,7 +8,7 @@ For specifics, see the relevant .sol files.
 
 ### Proxy/...
 We use `DELEGATECALL` proxies so that we can upgrade our contracts without changing their addresses.
-We always seek a security audit before upgrading to mitigate risk.
+We always seek a security audit before upgrading, in order to mitigate risk.
 
 ### ProxyStorage.sol
 All of the tokens use the storage laid out in ProxyStorage.sol.
