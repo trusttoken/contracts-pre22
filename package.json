@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "./test.sh",
+    "flatten": "./flatten-all",
     "profile": "./profile.sh"
   },
   "author": "",
