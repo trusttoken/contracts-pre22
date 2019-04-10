@@ -18,9 +18,9 @@ contract PreMigrationTrueUSDMock is ProvisionalTrueUSD {
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
         allowances_Deprecated.addAllowance(_who, _spender, _value);
     }
-    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool) {
+    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (uint256) {
         allowances_Deprecated.subAllowance(_who, _spender, _value);
-        return true;
+        return 0;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
         allowances_Deprecated.setAllowance(_who, _spender, _value);

@@ -405,16 +405,17 @@ contract ProxyStorage {
      * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.
      * A preimage collision can be used to attack the contract by treating one storage location as another,
      * which would always be a critical issue.
-     *************************************************************************
-     ** length     input                              usage
-     *************************************************************************
-     ** 19         "trueXXX.proxy.owner"              Proxy Owner
-     ** 20         address                            balanceOf
-     ** 27         "trueXXX.pending.proxy.owner"      Pending Proxy Owner
-     ** 28         "trueXXX.proxy.implementation"     Proxy Implementation
-     ** 32         uint256(11)                        gasRefundPool_Deprecated
-     ** 40         address,address                    allowance
-     ** 52         address,bytes32                    Registry attributes
+     * Carefully examine future keccak-based storage to ensure there can be no preimage collisions.
+     *******************************************************************************************************
+     ** length     input                                                         usage
+     *******************************************************************************************************
+     ** 19         "trueXXX.proxy.owner"                                         Proxy Owner
+     ** 27         "trueXXX.pending.proxy.owner"                                 Pending Proxy Owner
+     ** 28         "trueXXX.proxy.implementation"                                Proxy Implementation
+     ** 32         uint256(11)                                                   gasRefundPool_Deprecated
+     ** 64         uint256(address),uint256(14)                                  balanceOf
+     ** 64         uint256(address),keccak256(uint256(address),uint256(15))      allowance
+     ** 64         uint256(address),keccak256(bytes32,uint256(16))               attributes
     **/
 }
 
@@ -1110,7 +1111,6 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     function _requireCanTransferFrom(address _spender, address _from, address _to) internal view returns (address, bool) {
-        uint256 flag;
         require (attributes[IS_BLACKLISTED][_spender] == 0, "blacklisted");
         uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
         if (depositAddressValue != 0) {
