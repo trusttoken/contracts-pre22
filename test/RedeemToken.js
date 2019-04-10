@@ -45,8 +45,9 @@ function redeemTokenTests([owner, oneHundred, anotherAccount]) {
                 assert((await this.token.totalSupply.call()).eq(BN(80*10**18)))
                 await this.token.transfer(ADDRESS_ONE, BN(10*10**18), {from : oneHundred})
                 assert((await this.token.totalSupply.call()).eq(BN(70*10**18)))
-                await this.token.approve(oneHundred, BN(10*10**18), {from: oneHundred})
-                logs = (await this.token.transferFrom(oneHundred, ADDRESS_TWO, BN(10*10**18), {from:oneHundred})).logs
+                const TEN = BN(10*10**18);
+                await this.token.approve(oneHundred, TEN, {from: oneHundred})
+                logs = (await this.token.transferFrom(oneHundred, ADDRESS_TWO, TEN, {from:oneHundred})).logs
                 assert.equal(logs[0].event, 'Transfer')
                 assert.equal(logs[1].event, 'Burn')
                 assert.equal(logs[2].event, 'Transfer')

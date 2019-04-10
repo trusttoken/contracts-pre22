@@ -37,19 +37,19 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         return true;
     }
 
-    function _burnFromAllowanceAllArgs(address _from, address _to, uint256 _value) internal {
-        _requireCanTransferFrom(msg.sender, _from, _to);
+    function _burnFromAllowanceAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+        _requireCanTransferFrom(_spender, _from, _to);
         _requireOnlyCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
         if (0 == _subBalance(_from, _value)) {
-            if (0 == _subAllowance(_from, msg.sender, _value)) {
+            if (0 == _subAllowance(_from, _spender, _value)) {
                 // no refund
             } else {
                 gasRefund15();
             }
         } else {
-            if (0 == _subAllowance(_from, msg.sender, _value)) {
+            if (0 == _subAllowance(_from, _spender, _value)) {
                 gasRefund15();
             } else {
                 gasRefund39();
@@ -80,7 +80,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
             _value -= _value % CENT;
-            _burnFromAllowanceAllArgs(_from, _to, _value);
+            _burnFromAllowanceAllArgs(_from, _to, _value, _spender);
         } else {
             bool hasHook;
             address originalTo = _to;
