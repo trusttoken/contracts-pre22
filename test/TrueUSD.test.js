@@ -41,6 +41,7 @@ contract('TrueUSD', function (accounts) {
             // Set up a TrueUSD contract with 100 tokens for 'oneHundred'.
             this.registry = await Registry.new({ from: owner })
             this.token = await TrueUSDMock.new(owner, 0, { from: owner })
+            this.mintableToken = this.token
             await this.token.setRegistry(this.registry.address, { from: owner })
             await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
             await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })

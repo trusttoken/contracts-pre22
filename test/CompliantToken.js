@@ -27,7 +27,7 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
 
             it('rejects mint when user is blacklisted', async function () {
                 await this.registry.setAttribute(anotherAccount, BLACKLISTED, 1, notes, { from: owner })
-                await assertRevert(this.token.mint(anotherAccount, BN(100*10**18), { from: owner }))
+                await assertRevert(this.mintableToken.mint(anotherAccount, BN(100*10**18), { from: owner }))
             })
         })
 
@@ -41,12 +41,12 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
 
                 it('rejects burn when user is on blacklist', async function () {
                     await this.registry.setAttribute(oneHundred, BLACKLISTED, 1, notes, { from: owner })
-                    await assertRevert(this.token.burn(BN(20*10**18), { from: oneHundred }))
+                    await assertRevert(this.mintableToken.burn(BN(20*10**18), { from: oneHundred }))
                 })
             })
 
             it('rejects burn when user is not on burn whitelist', async function () {
-                await assertRevert(this.token.burn(BN(20*10**18), { from: oneHundred }))
+                await assertRevert(this.mintableToken.burn(BN(20*10**18), { from: oneHundred }))
             })
         })
 
@@ -123,16 +123,16 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
 
             it('will not wipe non-blacklisted account', async function () {
                 await this.registry.setAttribute(oneHundred, BLACKLISTED, 0, notes, { from: owner })
-                await assertRevert(this.token.wipeBlacklistedAccount(oneHundred, { from: owner }))
+                await assertRevert(this.mintableToken.wipeBlacklistedAccount(oneHundred, { from: owner }))
             })
 
             it('sets balance to 0', async function () {
-                await this.token.wipeBlacklistedAccount(oneHundred, { from: owner })
+                await this.mintableToken.wipeBlacklistedAccount(oneHundred, { from: owner })
                 await assertBalance(this.token, oneHundred, 0);
             })
 
             it('emits events', async function () {
-                const { logs } = await this.token.wipeBlacklistedAccount(oneHundred, { from: owner })
+                const { logs } = await this.mintableToken.wipeBlacklistedAccount(oneHundred, { from: owner })
 
                 assert.equal(logs.length, 2)
                 assert.equal(logs[0].event, 'WipeBlacklistedAccount')
@@ -145,7 +145,7 @@ function compliantTokenTests([owner, oneHundred, anotherAccount], transfersToZer
             })
 
             it('cannot be called by non-owner', async function () {
-                await assertRevert(this.token.wipeBlacklistedAccount(oneHundred, { from: anotherAccount }))
+                await assertRevert(this.mintableToken.wipeBlacklistedAccount(oneHundred, { from: anotherAccount }))
             })
         })
     })

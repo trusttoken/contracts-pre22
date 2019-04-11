@@ -55,6 +55,7 @@ contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount, third
             })
             basicTokenTests([owner, oneHundred, anotherAccount])
             standardTokenTests([owner, oneHundred, anotherAccount])
+            compliantTokenTests([owner, oneHundred, anotherAccount])
             redeemTokenTests([owner, oneHundred, anotherAccount])
             depositTokenTests([owner, oneHundred, anotherAccount, thirdAddress])
         })
