@@ -1,14 +1,9 @@
 import assertRevert from './helpers/assertRevert'
 import expectThrow from './helpers/expectThrow'
-import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
 import basicTokenTests from './token/BasicToken';
 import standardTokenTests from './token/StandardToken';
-import burnableTokenTests from './token/BurnableToken';
-import compliantTokenTests from './CompliantToken';
 const Registry = artifacts.require("RegistryMock")
 const TrueUSD = artifacts.require("TrueUSDMock")
-const TrueUSDMock = artifacts.require("TrueUSDMock")
-const ForceEther = artifacts.require("ForceEther")
 const TusdProxy = artifacts.require("OwnedUpgradeabilityProxy")
 
 const bytes32 = require('./helpers/bytes32.js')

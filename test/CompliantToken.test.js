@@ -11,6 +11,7 @@ contract('CompliantToken', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function () {
         this.registry = await Registry.new({ from: owner })
         this.token = await CompliantTokenMock.new(oneHundred, BN(100*10**18), { from: owner })
+        this.mintableToken = this.token
         await this.token.setRegistry(this.registry.address, { from: owner })
         await this.registry.subscribe(bytes32("isBlacklisted"), this.token.address, { from: owner });
         await this.registry.subscribe(bytes32("canBurn"), this.token.address, { from: owner });
