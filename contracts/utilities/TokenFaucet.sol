@@ -45,12 +45,25 @@ contract TokenFaucet {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event NewOwnerPending(address indexed currentOwner, address indexed pendingOwner);
     event TransferChild(address indexed child, address indexed newOwner);
+    event MintThresholdChanged(uint instant, uint ratified, uint multiSig);
+    event InstantMint(address indexed to, uint256 indexed value, address indexed mintKey);
 
     function faucet(uint256 _amount) external {
         registry.setAttributeValue(msg.sender, 0x6861735061737365644b59432f414d4c00000000000000000000000000000000, 1);
+        require(_amount <= instantMintThreshold);
         token.mint(msg.sender, _amount);
+        emit InstantMint(msg.sender, _amount, msg.sender);
     }
-    
+
+    function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
+        require(_instant <= _ratified && _ratified <= _multiSig);
+        instantMintThreshold = _instant;
+        ratifiedMintThreshold = _ratified;
+        multiSigMintThreshold = _multiSig;
+        emit MintThresholdChanged(_instant, _ratified, _multiSig);
+    }
+
+ 
     /**
     * @dev Throws if called by any account other than the owner.
     */
