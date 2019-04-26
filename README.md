@@ -1,6 +1,32 @@
 ![alt tag](https://raw.github.com/trusttoken/trueUSD/master/TrueUSDLogo.png)
 ![alt tag](https://raw.github.com/trusttoken/trueUSD/master/TrueGBPLogo.png)
 
+# Deployments
+For all of our deployments, the address is the same between mainnet and testnet.
+Our source code is verified on Etherscan.
+
+| Contract | Address | Mainnet | Rinkeby |
+| ---------|:-------:|:-------:|:-------:|
+| Registry | `0x0000000000013949F288172bD7E36837bDdC7211` | ✅ | ✅ |
+| Autosweep Registrar | `0x00000000000Da14C27C155Bb7C1Ac9Bd7519eB3b` | ✅ | ✅ |
+| TrueUSD | `0x0000000000085d4780B73119b644AE5ecd22b376` | ✅ | ✅ |
+| TrueGBP | `0x00000000441378008EA67F4284A57932B1c000a5` | ✅ | ✅ |
+| TrueAUD | `0x00006100f7090010005f1bd7ae6122c3c2cf0090` | ✅ | ✅ |
+| TrueUSD Controller | `0x0000000000075EfBeE23fe2de1bd0b7690883cc9` | ✅ | ✅ |
+| TrueGBP Controller | `0x00000000BbcF7700A1b403C9EB666f350707b900` | ✅ | ✅ |
+| TrueAUD Controller | `0x0000109a8344DE9c00465264006C0000769A2770` | ✅ | ✅ |
+
+## Registering for Autosweep
+Sending any transaction to the [Autosweep Registrar](contracts/utilities/DepositAddressRegistrar.sol) registers your deposit address for all tokens.
+See the section on [Autosweep](#Autosweep).
+
+## Getting Testnet Tokens
+For the testnet tokens, the controller is a [TokenFaucet](contracts/utilities/TokenFaucet.sol), so anybody can mint as many test tokens as they want.
+Send `faucet(uint256)` to the appropriate controller to obtain funds.
+The method ID is `0x5c3976a8`.
+Note that the tokens have 18 decimal places of precision.
+You can mint up to 1,000,000,000,000 tokens per transaction.
+
 # Tokenized Currencies
 This repository contains the smart contracts for TrueUSD and TrueGBP, as well as the contracts that support them.
 This section contains a high-level overview of the contracts.
@@ -43,10 +69,16 @@ This limits the minimum and maximum number of tokens that can be redeemed per-tr
 ### CompliantDepositTokenWithHook.sol
 This file processes attributes synced from the [Registry](https://github.com/trusttoken/registry).
 
-#### Deposit addresses
-You can register your deposit address using the [Deposit Address Registrar](https://etherscan.io/address/0x00000000000Da14C27C155Bb7C1Ac9Bd7519eB3b).
-This will allow you to receive TrueUSD from several addresses.
+#### Autosweep
+Registering a wallet creates a million deposit addresses that automatically forward their True Currency balances.
+The created deposit addresses share the first 35 characters of their address with the registering wallet.
+You can register your deposit address using the [Autosweep Registrar](https://etherscan.io/address/0x00000000000Da14C27C155Bb7C1Ac9Bd7519eB3b).
+
+Transfers to any of your deposit addresses will forward to your wallet in the same transaction.
 Such transactions will emit two `Transfer` events.
+The first event documents the expected value transfer from the sender to the deposit address.
+The second event documents the automatic sweep from the deposit address to the wallet.
+
 Exchanges should register deposit addresses to reduce their operating overhead.
 
 #### Redemption addresses
