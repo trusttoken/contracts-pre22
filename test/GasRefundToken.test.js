@@ -81,13 +81,13 @@ contract('GasRefundToken', function (accounts) {
                 const sheepCode = await web3.eth.getCode(contract)
                 assert.equal(sheepCode.length, 56, 'sheep wrong size');
                 const Sheep = await TrueUSD.at(contract)
+                // verify that calling the sheep improperly causes revert or assert
                 await assertRevert(Sheep.totalSupply(), {from: anotherAccount})
             }
             const reduceToNewWithRefund = await this.token.transfer(owner, BN(20*10**18), { from: oneHundred })
             const poolSizeUsed = await web3.eth.getStorageAt(this.token.address, '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
             assert.equal(poolSizeUsed, '0x02')
             assert.isBelow(reduceToNewWithRefund.receipt.gasUsed, reduceToNewNoRefund.receipt.gasUsed)
-            // verify that calling the sheep impoperly causes revert
             const selfdestructCode = await web3.eth.getCode(thirdContract)
             assert.equal(selfdestructCode,'0x', 'contract did not self destruct');
         })
