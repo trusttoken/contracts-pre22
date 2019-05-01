@@ -27,7 +27,7 @@ You can mint up to 1,000,000,000,000 tokens per transaction.
 | Autosweep Registrar | `0x00000000000Da14C27C155Bb7C1Ac9Bd7519eB3b` | ✅ | ✅ |
 
 ### Registering for Autosweep
-Sending any transaction to the [Autosweep Registrar](contracts/utilities/DepositAddressRegistrar.sol) registers your deposit address for all tokens.
+Sending any transaction to the [Autosweep Registrar](contracts/utilities/DepositAddressRegistrar.sol) registers your deposit address for all of our tokens.
 See the section on [Autosweep](#Autosweep).
 
 # Tokenized Currencies
