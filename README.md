@@ -13,22 +13,22 @@ Our source code is verified on Etherscan.
 | TrueAUD | `0x00006100f7090010005f1bd7ae6122c3c2cf0090` | `0x0000109a8344DE9c00465264006C0000769A2770` | ✅ | ✅ |
 | TrueCAD | `0x00000100F2A2bd000715001920eB70D229700085` | `0x00005cAD001e0900002979f7314D00Fc480a29bD` | ✅ | ✅ |
 
+### Getting Testnet Tokens
+For the testnet tokens, the controller is a [TokenFaucet](contracts/utilities/TokenFaucet.sol), so anybody can mint as many test tokens as they want.
+Send `faucet(uint256)` (`0x5c3976a8`) to the appropriate controller to obtain funds.
+[Here](https://rinkeby.etherscan.io/tx/0x692ba78f1486f2e7203a7e45a5b7de66c2ff9b0a20a4ee03d640275611ba3e7a) is an example.
+Note that the tokens have 18 decimal places of precision.
+You can mint up to 1,000,000,000,000 tokens per transaction.
+
 ## Utilities
 | Contract | Address | Mainnet | Rinkeby |
 | ---------|:-------:|:-------:|:-------:|
 | Registry            | `0x0000000000013949F288172bD7E36837bDdC7211` | ✅ | ✅ |
 | Autosweep Registrar | `0x00000000000Da14C27C155Bb7C1Ac9Bd7519eB3b` | ✅ | ✅ |
 
-## Registering for Autosweep
+### Registering for Autosweep
 Sending any transaction to the [Autosweep Registrar](contracts/utilities/DepositAddressRegistrar.sol) registers your deposit address for all tokens.
 See the section on [Autosweep](#Autosweep).
-
-## Getting Testnet Tokens
-For the testnet tokens, the controller is a [TokenFaucet](contracts/utilities/TokenFaucet.sol), so anybody can mint as many test tokens as they want.
-Send `faucet(uint256)` to the appropriate controller to obtain funds.
-The method ID is `0x5c3976a8`.
-Note that the tokens have 18 decimal places of precision.
-You can mint up to 1,000,000,000,000 tokens per transaction.
 
 # Tokenized Currencies
 This repository contains the smart contracts for TrueUSD and TrueGBP, as well as the contracts that support them.
@@ -136,10 +136,12 @@ npm run flatten # runs ./flatten-all
 | Description  | URL |
 | ------------- | ------------- |
 | Purchase and Redeem | https://app.trusttoken.com/ |
-| TUSD Etherscan Page | https://etherscan.io/token/0x0000000000085d4780B73119b644AE5ecd22b376  |
-| TGBP Etherscan Page | https://etherscan.io/token/0x00000000441378008EA67F4284A57932B1c000a5  |
-| TUSD on CoinMarketCap  | https://coinmarketcap.com/currencies/trueusd/  |
 | Terms of Use  | https://www.trusttoken.com/terms-of-use/  |
+| Etherscan: TUSD | https://etherscan.io/token/0x0000000000085d4780B73119b644AE5ecd22b376 |
+| Etherscan: TGBP | https://etherscan.io/token/0x00000000441378008EA67F4284A57932B1c000a5 |
+| Etherscan: TAUD | https://etherscan.io/token/0x00006100F7090010005F1bd7aE6122c3C2CF0090 |
+| Etherscan: TCAD | https://etherscan.io/token/0x00000100F2A2bd000715001920eB70D229700085 |
+| CoinMarketCap: TUSD  | https://coinmarketcap.com/currencies/trueusd/  |
 
 ## Social
 
