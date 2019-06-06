@@ -252,6 +252,7 @@ contract TokenController {
      */
     function refillRatifiedMintPool() external onlyMintRatifierOrOwner {
         if (msg.sender != owner) {
+            require(ratifiedMintPool != ratifiedMintLimit);
             address[2] memory refillApprovals = ratifiedPoolRefillApprovals;
             require(msg.sender != refillApprovals[0] && msg.sender != refillApprovals[1]);
             if (refillApprovals[0] == address(0)) {
