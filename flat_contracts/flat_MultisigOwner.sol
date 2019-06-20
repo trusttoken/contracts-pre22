@@ -1160,8 +1160,8 @@ contract OwnedUpgradeabilityProxy {
     event NewPendingOwner(address currentOwner, address pendingOwner);
     
     // Storage position of the owner and pendingOwner of the contract
-    bytes32 private constant proxyOwnerPosition = 0x6279e8199720cf3557ecd8b58d667c8edc486bd1cf3ad59ea9ebdfcae0d0dfac;//keccak256("trueUSD.proxy.owner");
-    bytes32 private constant pendingProxyOwnerPosition = 0x8ddbac328deee8d986ec3a7b933a196f96986cb4ee030d86cc56431c728b83f4;//keccak256("trueUSD.pending.proxy.owner");
+    bytes32 private constant proxyOwnerPosition = 0x694c83c02d0f62c26352cb2d947e2f3d43c28959df09aa728c1937be0db4f629;//keccak256("trueHKD.proxy.owner");
+    bytes32 private constant pendingProxyOwnerPosition = 0x6dd3140f324ae1c14ee501ef56b899935ef394e2a1b2a0e41ec6b40fd725799c;//keccak256("trueHKD.pending.proxy.owner");
 
     /**
     * @dev the constructor sets the original owner of the contract to the sender account.
@@ -1271,7 +1271,7 @@ contract OwnedUpgradeabilityProxy {
     event Upgraded(address indexed implementation);
 
     // Storage position of the address of the current implementation
-    bytes32 private constant implementationPosition = 0x6e41e0fbe643dfdb6043698bf865aada82dc46b953f754a3468eaa272a362dc7; //keccak256("trueUSD.proxy.implementation");
+    bytes32 private constant implementationPosition = 0x3e9d19baa8ecfb799f8603bb69f8a220a1c51ff5c34c24b0d981ca8973276561; //keccak256("trueHKD.proxy.implementation");
 
     function implementation() public view returns (address impl) {
         bytes32 position = implementationPosition;
@@ -1303,10 +1303,10 @@ contract OwnedUpgradeabilityProxy {
 // File: contracts/Admin/TokenController.sol
 
 /** @title TokenController
-@dev This contract allows us to split ownership of the TrueUSD contract
-into two addresses. One, called the "owner" address, has unfettered control of the TrueUSD contract -
+@dev This contract allows us to split ownership of the TrueHKD contract
+into two addresses. One, called the "owner" address, has unfettered control of the TrueHKD contract -
 it can mint new tokens, transfer ownership of the contract, etc. However to make
-extra sure that TrueUSD is never compromised, this owner key will not be used in
+extra sure that TrueHKD is never compromised, this owner key will not be used in
 day-to-day operations, allowing it to be stored at a heightened level of security.
 Instead, the owner appoints an various "admin" address. 
 There are 3 different types of admin addresses;  MintKey, MintRatifier, and MintPauser. 
@@ -1371,7 +1371,7 @@ contract TokenController {
     bytes32 constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 constant public IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
 
-    address constant public PAUSED_IMPLEMENTATION = address(1); // ***To be changed the paused version of TrueUSD in Production
+    address constant public PAUSED_IMPLEMENTATION = address(0x5eC598418A249f7cf67eBC42CB9D88378EDcF71F); // ***To be changed the paused version of TrueHKD in Production
 
     modifier onlyFastPauseOrOwner() {
         require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
@@ -1809,7 +1809,7 @@ contract TokenController {
     /** 
     *@dev Transfer ownership of a contract from token to this TokenController.
     Can be used e.g. to reclaim balance sheet
-    in order to transfer it to an upgraded TrueUSD contract.
+    in order to transfer it to an upgraded TrueHKD contract.
     *@param _other address of the contract to claim ownership of
     */
     function requestReclaimContract(Ownable _other) public onlyOwner {
@@ -1843,7 +1843,7 @@ contract TokenController {
     }
 
     /** 
-    *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
+    *@dev pause all pausable actions on TrueHKD, mints/burn/transfer/approve
     */
     function pauseToken() external onlyFastPauseOrOwner {
         OwnedUpgradeabilityProxy(token).upgradeTo(PAUSED_IMPLEMENTATION);
@@ -1853,12 +1853,12 @@ contract TokenController {
     *@dev wipe balance of a blacklisted address
     *@param _blacklistedAddress address whose balance will be wiped
     */
-    function wipeBlackListedTrueUSD(address _blacklistedAddress) external onlyOwner {
+    function wipeBlackListedTrueHKD(address _blacklistedAddress) external onlyOwner {
         token.wipeBlacklistedAccount(_blacklistedAddress);
     }
 
     /** 
-    *@dev Change the minimum and maximum amounts that TrueUSD users can
+    *@dev Change the minimum and maximum amounts that TrueHKD users can
     burn to newMin and newMax
     *@param _min minimum amount user can burn at a time
     *@param _max maximum amount user can burn at a time
