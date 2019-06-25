@@ -22,8 +22,8 @@ contract OwnedUpgradeabilityProxy {
     event NewPendingOwner(address currentOwner, address pendingOwner);
     
     // Storage position of the owner and pendingOwner of the contract
-    bytes32 private constant proxyOwnerPosition = 0x694c83c02d0f62c26352cb2d947e2f3d43c28959df09aa728c1937be0db4f629;//keccak256("trueHKD.proxy.owner");
-    bytes32 private constant pendingProxyOwnerPosition = 0x6dd3140f324ae1c14ee501ef56b899935ef394e2a1b2a0e41ec6b40fd725799c;//keccak256("trueHKD.pending.proxy.owner");
+    bytes32 private constant proxyOwnerPosition = 0x6279e8199720cf3557ecd8b58d667c8edc486bd1cf3ad59ea9ebdfcae0d0dfac;//keccak256("trueUSD.proxy.owner");
+    bytes32 private constant pendingProxyOwnerPosition = 0x8ddbac328deee8d986ec3a7b933a196f96986cb4ee030d86cc56431c728b83f4;//keccak256("trueUSD.pending.proxy.owner");
 
     /**
     * @dev the constructor sets the original owner of the contract to the sender account.
@@ -133,7 +133,7 @@ contract OwnedUpgradeabilityProxy {
     event Upgraded(address indexed implementation);
 
     // Storage position of the address of the current implementation
-    bytes32 private constant implementationPosition = 0x3e9d19baa8ecfb799f8603bb69f8a220a1c51ff5c34c24b0d981ca8973276561; //keccak256("trueHKD.proxy.implementation");
+    bytes32 private constant implementationPosition = 0x6e41e0fbe643dfdb6043698bf865aada82dc46b953f754a3468eaa272a362dc7; //keccak256("trueUSD.proxy.implementation");
 
     function implementation() public view returns (address impl) {
         bytes32 position = implementationPosition;
