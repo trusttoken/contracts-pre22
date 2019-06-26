@@ -12,6 +12,7 @@ Our source code is verified on Etherscan.
 | TrueGBP | `0x00000000441378008EA67F4284A57932B1c000a5` | `0x00000000BbcF7700A1b403C9EB666f350707b900` | ✅ | ✅ |
 | TrueAUD | `0x00006100f7090010005f1bd7ae6122c3c2cf0090` | `0x0000109a8344DE9c00465264006C0000769A2770` | ✅ | ✅ |
 | TrueCAD | `0x00000100F2A2bd000715001920eB70D229700085` | `0x00005cAD001e0900002979f7314D00Fc480a29bD` | ✅ | ✅ |
+| TrueHKD | `0x0000852600CEB001E08e00bC008be620d60031F2` | `0x0000107d120000E00095Cf06b787a0a900B1F8Bd` | ✅ | ✅ |
 
 ### Getting Testnet Tokens
 For the testnet tokens, the controller is a [TokenFaucet](contracts/utilities/TokenFaucet.sol), so anybody can mint as many test tokens as they want.

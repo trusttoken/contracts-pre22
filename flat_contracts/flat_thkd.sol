@@ -1138,15 +1138,14 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 }
 
-// File: contracts/TrueGBP.sol
+// File: contracts/TrueHKD.sol
 
-/** @title TrueGBP
+/** @title TrueHKD
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
 * inherited - see the documentation on the corresponding contracts.
 */
-contract TrueGBP is 
+contract TrueHKD is 
 CompliantDepositTokenWithHook {
-
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
@@ -1159,14 +1158,14 @@ CompliantDepositTokenWithHook {
     }
 
     function name() public pure returns (string) {
-        return "TrueGBP";
+        return "TrueHKD";
     }
 
     function symbol() public pure returns (string) {
-        return "TGBP";
+        return "THKD";
     }
 
     function canBurn() internal pure returns (bytes32) {
-        return "canBurnGBP";
+        return "canBurnHKD";
     }
 }

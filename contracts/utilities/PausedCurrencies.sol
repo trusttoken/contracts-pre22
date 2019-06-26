@@ -41,3 +41,13 @@ contract PausedCAD is PausedToken {
         return "TCAD";
     }
 }
+
+contract PausedHKD is PausedToken {
+    function name() public pure returns (string) {
+        return "TrueHKD";
+    }
+
+    function symbol() public pure returns (string) {
+        return "THKD";
+    }
+}
