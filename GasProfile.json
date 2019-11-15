@@ -44,5 +44,13 @@
   "reduceApprovalEmptyingToBurnWithRefund": 29896,
   "emptyApprovalEmptyingToBurnWithRefund": 24683,
   "sponsorGas": 208304,
-  "sponsorGas2": 200949
+  "sponsorGas2": 200949,
+  "infiniteApprovalReducingToNewWithRefund": 36282,
+  "infiniteApprovalReducingToExistingWithRefund": 28777,
+  "infiniteApprovalEmptyingToNewWithRefund": 41835,
+  "infiniteApprovalEmptyingToExistingWithRefund": 26760,
+  "infiniteApprovalReducingToNew": 56589,
+  "infiniteApprovalReducingToExisting": 41578,
+  "infiniteApprovalEmptyingToNew": 41600,
+  "infiniteApprovalEmptyingToExisting": 26525
 }
