@@ -2,6 +2,7 @@ import assertRevert from '../helpers/assertRevert'
 import assertBalance from '../helpers/assertBalance'
 
 const BN = web3.utils.toBN;
+const INFINITE_AMOUNT = BN('ff00000000000000000000000000000000000000000000000000000000000000')
 
 function standardTokenTests([owner, oneHundred, anotherAccount]) {
     describe('--StandardToken Tests--', function () {
@@ -142,6 +143,22 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                             assert.equal(logs[0].args.from, oneHundred)
                             assert.equal(logs[0].args.to, to)
                             assert(logs[0].args.value.eq(amount))
+                        })
+                    })
+
+                    describe('when the spender had infinite approval', function() {
+                        const amount = BN(100*10**18)
+
+                        beforeEach(async function() {
+                            await this.token.approve(spender, INFINITE_AMOUNT, { from: oneHundred });
+                        })
+
+                        it('does not decrease allowance', async function() {
+                            const { logs } = await this.token.transferFrom(oneHundred, to, amount, { from: spender })
+                            const allowance = await this.token.allowance.call(oneHundred, spender)
+                            assert(allowance.eq(INFINITE_AMOUNT))
+                            const balance = await this.token.balanceOf(to)
+                            assert(amount.eq(balance))
                         })
                     })
 
