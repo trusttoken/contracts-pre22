@@ -8,6 +8,7 @@ const OwnedUpgradeabilityProxy = artifacts.require("OwnedUpgradeabilityProxy")
 const bytes32 = require('./helpers/bytes32.js');
 const BN = web3.utils.toBN;
 const fs = require('fs')
+const INFINITE = BN('ff00000000000000000000000000000000000000000000000000000000000000')
 
 let profile;
 try {
@@ -113,6 +114,12 @@ contract('GasProfile', function (accounts) {
                 const emptyApprovalEmptyingToNew = await this.token.transferFrom(oneHundred, anotherAccount, BN(100).mul(DOLLAR), { from: anotherAccount, gasPrice: 1});
                 const approve101 = await this.token.approve(oneHundred, BN(101).mul(DOLLAR), { from: anotherAccount, gasPrice: 1 });
                 const reduceApprovalEmptyingToNew = await this.token.transferFrom(anotherAccount, oneHundred, BN(100).mul(DOLLAR), { from: oneHundred, gasPrice: 1} );
+                const approveInfinite = await this.token.approve(oneHundred, INFINITE, { from: anotherAccount })
+                const approveInfinite2 = await this.token.approve(anotherAccount, INFINITE, { from: oneHundred })
+                const infiniteApprovalReducingToNew = await this.token.transferFrom(oneHundred, anotherAccount, BN(50).mul(DOLLAR), { from: anotherAccount })
+                const infiniteApprovalReducingToExisting = await this.token.transferFrom(oneHundred, anotherAccount, BN(40).mul(DOLLAR), { from: anotherAccount })
+                const infiniteApprovalEmptyingToExisting = await this.token.transferFrom(oneHundred, anotherAccount, BN(10).mul(DOLLAR), { from: anotherAccount })
+                const infiniteApprovalEmptyingToNew = await this.token.transferFrom(anotherAccount, oneHundred, BN(100).mul(DOLLAR), { from: oneHundred })
 
                 const expectations = {
                     reduceApprovalReducingToNew : { actual: reduceApprovalReducingToNew.receipt.gasUsed },
@@ -123,6 +130,10 @@ contract('GasProfile', function (accounts) {
                     emptyApprovalReducingToExisting : { actual: emptyApprovalReducingToExisting.receipt.gasUsed },
                     emptyApprovalEmptyingToNew : { actual: emptyApprovalEmptyingToNew.receipt.gasUsed },
                     emptyApprovalEmptyingToExisting : { actual: emptyApprovalEmptyingToExisting.receipt.gasUsed },
+                    infiniteApprovalReducingToNew: { actual: infiniteApprovalReducingToNew.receipt.gasUsed },
+                    infiniteApprovalReducingToExisting: { actual: infiniteApprovalReducingToExisting.receipt.gasUsed },
+                    infiniteApprovalEmptyingToNew: { actual: infiniteApprovalEmptyingToNew.receipt.gasUsed },
+                    infiniteApprovalEmptyingToExisting: { actual: infiniteApprovalEmptyingToExisting.receipt.gasUsed },
                     approve50: { actual: approve50.receipt.gasUsed },
                 };
                 showRegressions(expectations);
@@ -172,8 +183,12 @@ contract('GasProfile', function (accounts) {
                 await this.token.sponsorGas({ from: oneHundred });
                 await this.token.sponsorGas({ from: owner });
                 await this.token.sponsorGas({ from: anotherAccount });
+                await this.token.sponsorGas({ from: anotherAccount });
+                await this.token.sponsorGas({ from: anotherAccount });
                 await this.token.sponsorGas2({ from: anotherAccount });
                 await this.token.sponsorGas2({ from: owner });
+                await this.token.sponsorGas2({ from: oneHundred });
+                await this.token.sponsorGas2({ from: oneHundred });
                 await this.token.sponsorGas2({ from: oneHundred });
             })
             it('transfer', async function() {
@@ -205,6 +220,13 @@ contract('GasProfile', function (accounts) {
                 const approve101WithRefund = await this.token.approve(oneHundred, BN(101).mul(DOLLAR), { from: anotherAccount, gasPrice: 2 });
                 const reduceApprovalEmptyingToNewWithRefund = await this.token.transferFrom(anotherAccount, oneHundred, BN(100).mul(DOLLAR), { from: oneHundred, gasPrice: 2} );
 
+                const approveInfinite = await this.token.approve(oneHundred, INFINITE, { from: anotherAccount })
+                const approveInfinite2 = await this.token.approve(anotherAccount, INFINITE, { from: oneHundred })
+                const infiniteApprovalReducingToNewWithRefund = await this.token.transferFrom(oneHundred, anotherAccount, BN(50).mul(DOLLAR), { from: anotherAccount })
+                const infiniteApprovalReducingToExistingWithRefund = await this.token.transferFrom(oneHundred, anotherAccount, BN(40).mul(DOLLAR), { from: anotherAccount })
+                const infiniteApprovalEmptyingToExistingWithRefund = await this.token.transferFrom(oneHundred, anotherAccount, BN(10).mul(DOLLAR), { from: anotherAccount })
+                const infiniteApprovalEmptyingToNewWithRefund = await this.token.transferFrom(anotherAccount, oneHundred, BN(100).mul(DOLLAR), { from: oneHundred })
+
                 const expectations = {
                     reduceApprovalReducingToNewWithRefund : { actual: reduceApprovalReducingToNewWithRefund.receipt.gasUsed },
                     reduceApprovalReducingToExistingWithRefund : { actual: reduceApprovalReducingToExistingWithRefund.receipt.gasUsed },
@@ -214,6 +236,10 @@ contract('GasProfile', function (accounts) {
                     emptyApprovalReducingToExistingWithRefund : { actual: emptyApprovalReducingToExistingWithRefund.receipt.gasUsed },
                     emptyApprovalEmptyingToNewWithRefund : { actual: emptyApprovalEmptyingToNewWithRefund.receipt.gasUsed },
                     emptyApprovalEmptyingToExistingWithRefund : { actual: emptyApprovalEmptyingToExistingWithRefund.receipt.gasUsed },
+                    infiniteApprovalReducingToNewWithRefund: { actual: infiniteApprovalReducingToNewWithRefund.receipt.gasUsed },
+                    infiniteApprovalReducingToExistingWithRefund: { actual: infiniteApprovalReducingToExistingWithRefund.receipt.gasUsed },
+                    infiniteApprovalEmptyingToNewWithRefund: { actual: infiniteApprovalEmptyingToNewWithRefund.receipt.gasUsed },
+                    infiniteApprovalEmptyingToExistingWithRefund: { actual: infiniteApprovalEmptyingToExistingWithRefund.receipt.gasUsed },
                     approve50WithRefund: { actual: approve50WithRefund.receipt.gasUsed },
                 };
                 showRegressions(expectations);
