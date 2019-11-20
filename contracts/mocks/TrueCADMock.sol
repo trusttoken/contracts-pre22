@@ -1,8 +1,8 @@
 pragma solidity ^0.5.13;
 
-import "../TrueGBP.sol";
+import "../TrueCAD.sol";
 
-contract TrueGBPMock is TrueGBP {
+contract TrueCADMock is TrueCAD {
     function initialize() public {
         require(!initialized, "already initialized");
         initialized = true;

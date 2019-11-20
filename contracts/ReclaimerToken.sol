@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 import "./HasOwner.sol";
 
@@ -6,7 +6,7 @@ contract ReclaimerToken is HasOwner {
     /**  
     *@dev send all eth balance in the contract to another address
     */
-    function reclaimEther(address _to) external onlyOwner {
+    function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
@@ -15,7 +15,7 @@ contract ReclaimerToken is HasOwner {
     in the contract to another address
     */
     function reclaimToken(ERC20 token, address _to) external onlyOwner {
-        uint256 balance = token.balanceOf(this);
+        uint256 balance = token.balanceOf(address(this));
         token.transfer(_to, balance);
     }
 

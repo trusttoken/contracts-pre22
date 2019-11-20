@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 import "../TrueUSD.sol";
 
@@ -24,7 +24,7 @@ contract TrueUSDMock is TrueUSD {
 
     address delegateFrom;
 
-    function setDelegateFrom(address _delegateFrom) {
+    function setDelegateFrom(address _delegateFrom) external {
         delegateFrom = _delegateFrom;
     }
 

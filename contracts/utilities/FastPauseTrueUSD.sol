@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 import "../Admin/TokenController.sol";
 
@@ -27,7 +27,7 @@ contract FastPauseTrueUSD {
     }
 
     //fallback function used to pause trueUSD when it receives eth
-    function() public payable onlyPauseKey {
+    function() external payable onlyPauseKey {
         emit FastTrueUSDPause(msg.sender);
         msg.sender.transfer(msg.value);
         controllerContract.pauseToken();

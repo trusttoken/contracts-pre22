@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 import "../utilities/UpgradeHelper.sol";
 
 contract UpgradeHelperMock {
@@ -30,27 +30,27 @@ contract UpgradeHelperMock {
         tokenController.requestReclaimContract(allowanceSheetAddress);
 
         // Transfer storage contract to controller then transfer it to NewTrueUSD
-        tokenController.issueClaimOwnership(balanceSheetAddress);
-        tokenController.issueClaimOwnership(allowanceSheetAddress);
-        tokenController.transferChild(balanceSheetAddress, newTrueUSD);
-        tokenController.transferChild(allowanceSheetAddress, newTrueUSD);
+        tokenController.issueClaimOwnership(address(balanceSheetAddress));
+        tokenController.issueClaimOwnership(address(allowanceSheetAddress));
+        tokenController.transferChild(address(balanceSheetAddress), address(newTrueUSD));
+        tokenController.transferChild(address(allowanceSheetAddress), address(newTrueUSD));
         
-        newTrueUSD.transferOwnership(tokenController);
-        tokenController.issueClaimOwnership(newTrueUSD);
-        tokenController.setToken(newTrueUSD);
-        tokenController.claimStorageForProxy(newTrueUSD, balanceSheetAddress, allowanceSheetAddress);
+        newTrueUSD.transferOwnership(address(tokenController));
+        tokenController.issueClaimOwnership(address(newTrueUSD));
+        tokenController.setToken(address(newTrueUSD));
+        tokenController.claimStorageForProxy(address(newTrueUSD), balanceSheetAddress, allowanceSheetAddress);
 
         // Configure TrueUSD
         tokenController.setTokenRegistry(registry);
 
         // Point oldTrueUSD delegation to NewTrueUSD
-        tokenController.transferChild(oldTrueUSD, address(this));
+        tokenController.transferChild(address(oldTrueUSD), address(this));
         oldTrueUSD.claimOwnership();
-        oldTrueUSD.delegateToNewContract(newTrueUSD);
+        oldTrueUSD.delegateToNewContract(address(newTrueUSD));
         
         // Controller owns both old and new TrueUSD
-        oldTrueUSD.transferOwnership(tokenController);
-        tokenController.issueClaimOwnership(oldTrueUSD);
+        oldTrueUSD.transferOwnership(address(tokenController));
+        tokenController.issueClaimOwnership(address(oldTrueUSD));
         tokenController.transferOwnership(endOwner);
     }
 }

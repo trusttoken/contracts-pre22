@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 import "./CompliantDepositTokenWithHook.sol";
 import "./GasRefundToken.sol";
@@ -20,11 +20,11 @@ CompliantDepositTokenWithHook {
         return ROUNDING;
     }
 
-    function name() public pure returns (string) {
+    function name() public pure returns (string memory) {
         return "TrueAUD";
     }
 
-    function symbol() public pure returns (string) {
+    function symbol() public pure returns (string memory) {
         return "TAUD";
     }
 

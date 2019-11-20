@@ -1,6 +1,6 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./modularERC20/Ownable.sol";
 
 // This is a truffle contract, needed for truffle integration.
 contract Migrations is Ownable {

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 import "./TrueCoinReceiver.sol";
 import "../registry/contracts/Registry.sol";
@@ -194,7 +194,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     */
     function setRegistry(Registry _registry) public onlyOwner {
         registry = _registry;
-        emit SetRegistry(registry);
+        emit SetRegistry(address(registry));
     }
 
     modifier onlyRegistry {

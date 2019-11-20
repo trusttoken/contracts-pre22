@@ -1,4 +1,4 @@
-pragma solidity^0.4.23;
+pragma solidity^0.5.13;
 
 import "../HasOwner.sol";
 import "../CompliantDepositTokenWithHook.sol";
@@ -41,10 +41,10 @@ contract TokenFaucet {
     Registry public registry;
 
     event SetToken(CompliantDepositTokenWithHook newContract);
-    event SetRegistry(address indexed registry);
+    event SetRegistry(Registry indexed registry);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event NewOwnerPending(address indexed currentOwner, address indexed pendingOwner);
-    event TransferChild(address indexed child, address indexed newOwner);
+    event TransferChild(HasOwner indexed child, address indexed newOwner);
     event MintThresholdChanged(uint instant, uint ratified, uint multiSig);
     event InstantMint(address indexed to, uint256 indexed value, address indexed mintKey);
 
