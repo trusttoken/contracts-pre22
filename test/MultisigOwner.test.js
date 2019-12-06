@@ -130,7 +130,7 @@ contract('MultisigOwner', function (accounts) {
 
         it ('owners can reclaim ether',async function(){
             const emptyAddress = "0x0000000000000000000000000000000000000002"
-            await this.multisigOwner.sendTransaction({from: oneHundred, gas: 30000, value: BN(10*10**18)});
+            await this.multisigOwner.sendTransaction({from: oneHundred, gas: 50000, value: BN(10*10**18)});
             const balanceWithEther = web3.utils.fromWei(await web3.eth.getBalance(this.multisigOwner.address), 'ether')
             assert.equal(balanceWithEther, 10)
             await this.multisigOwner.msReclaimEther(emptyAddress, {from : owner1 })

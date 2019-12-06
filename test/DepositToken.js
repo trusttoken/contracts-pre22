@@ -104,7 +104,7 @@ function depositTokenTests([owner, oneHundred, anotherAccount, thirdAddress]) {
             })
 
             it('Registrar can register deposit address through fallback function', async function(){
-                await this.registrar.sendTransaction({from: thirdAddress, gas: 600000, value: 10})
+                await this.registrar.sendTransaction({from: thirdAddress, gas: 900000, value: 10})
                 const depositAddressOne = web3.utils.toChecksumAddress(thirdAddress.slice(0,37) + '00000');
                 const depositAddressTwo = web3.utils.toChecksumAddress(thirdAddress.slice(0,37) + '20000');
                 const depositAddressThree = web3.utils.toChecksumAddress(thirdAddress.slice(0,37) + '40000');
@@ -117,8 +117,8 @@ function depositTokenTests([owner, oneHundred, anotherAccount, thirdAddress]) {
             })
 
             it('cannot register for deposit address twice', async function(){
-                await this.registrar.sendTransaction({from: thirdAddress, gas: 600000})
-                await assertRevert(this.registrar.sendTransaction({from: thirdAddress, gas: 600000}))
+                await this.registrar.sendTransaction({from: thirdAddress, gas: 900000})
+                await assertRevert(this.registrar.sendTransaction({from: thirdAddress, gas: 900000}))
             })
 
             it('cannot register for deposit address twice', async function(){

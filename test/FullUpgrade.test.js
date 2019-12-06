@@ -25,7 +25,7 @@ contract('--Full upgrade process --', function (accounts) {
             this.tokenImplementation = await TrueUSDMock.new(owner, BN(0), { from: owner })
             this.token = await TrueUSDMock.at(this.tokenProxy.address)
             await this.tokenProxy.upgradeTo(this.tokenImplementation.address,{ from: owner })
-            this.token.initialize({ from:owner });
+            await this.token.initialize({ from:owner });
             this.controllerImplementation = await PreMigrationTokenController.new({ from: owner })
             this.controllerProxy = await Proxy.new({ from: owner })
             await this.controllerProxy.upgradeTo(this.controllerImplementation.address,{ from: owner })

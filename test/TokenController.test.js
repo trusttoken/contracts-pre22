@@ -242,11 +242,11 @@ contract('TokenController', function (accounts) {
             })
 
             it('pauseKey2 should be able to pause mints by sending in ether', async function(){
-                await this.fastPauseMints.sendTransaction({from: pauseKey2, gas: 600000, value: 10});                  
+                await this.fastPauseMints.sendTransaction({from: pauseKey2, gas: 800000, value: 10});                  
                 let paused = await this.controller.mintPaused.call()    
                 assert.equal(paused, true)
                 await assertRevert(this.controller.requestMint(oneHundred, BN(10*10**18) , { from: mintKey }))
-                await assertRevert(this.fastPauseMints.sendTransaction({from: pauseKey, gas: 600000, value: 10}));                  
+                await assertRevert(this.fastPauseMints.sendTransaction({from: pauseKey, gas: 800000, value: 10}));                  
                 await this.controller.unpauseMints({ from: owner })
                 paused = await this.controller.mintPaused.call()  
                 assert.equal(paused, false)  
@@ -529,7 +529,7 @@ contract('TokenController', function (accounts) {
             })
 
             it('trueUsdPauser can pause TrueUSD by sending ether to fastPause contract', async function(){
-                await this.fastPauseTrueUSD.sendTransaction({from: pauseKey, gas: 600000, value: 10}); 
+                await this.fastPauseTrueUSD.sendTransaction({from: pauseKey, gas: 800000, value: 10}); 
                 const pausedImpl = await this.tokenProxy.implementation.call()
                 assert.equal(pausedImpl, "0x0000000000000000000000000000000000000001")                 
             })
@@ -539,7 +539,7 @@ contract('TokenController', function (accounts) {
             })
 
             it('non pauser cannot pause TrueUSD by sending ether to fastPause contract', async function(){
-                await assertRevert(this.fastPauseTrueUSD.sendTransaction({from: pauseKey2, gas: 600000, value: 10}));                  
+                await assertRevert(this.fastPauseTrueUSD.sendTransaction({from: pauseKey2, gas: 800000, value: 10}));                  
             })
 
             it('TokenController can wipe blacklisted account', async function(){
