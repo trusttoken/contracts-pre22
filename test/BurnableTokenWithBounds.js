@@ -1,5 +1,5 @@
 import assertRevert from './helpers/assertRevert'
-import burnableTokenTests from './token/BurnableToken'
+import burnableTokenTests from './BurnableToken'
 
 const BN = web3.utils.toBN;
 

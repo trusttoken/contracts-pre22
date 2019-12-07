@@ -2,7 +2,7 @@ import mintableTokenTests from './MintableToken'
 const TrueUSDMock = artifacts.require('TrueUSDMock')
 const Registry = artifacts.require('RegistryMock')
 
-const bytes32 = require('../helpers/bytes32.js')
+const bytes32 = require('./helpers/bytes32.js')
 
 contract('MintableToken', function ([_, owner, oneHundred, anotherAccount]) {
     beforeEach(async function () {

@@ -1,6 +1,6 @@
-import assertRevert from '../helpers/assertRevert'
-import assertBalance from '../helpers/assertBalance'
-import expectThrow from '../helpers/expectThrow'
+import assertRevert from './helpers/assertRevert'
+import assertBalance from './helpers/assertBalance'
+import expectThrow from './helpers/expectThrow'
 const BalanceSheet = artifacts.require('BalanceSheet')
 
 const BN = web3.utils.toBN;
