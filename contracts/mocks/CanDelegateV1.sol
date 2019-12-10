@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 // CanDelegateV1: the subset of V1 required for CanDelegate
 
@@ -72,7 +72,7 @@ contract OwnableV1 {
    */
   function transferOwnership(address newOwner) public onlyOwner {
     require(newOwner != address(0));
-    OwnershipTransferred(owner, newOwner);
+    emit OwnershipTransferred(owner, newOwner);
     owner = newOwner;
   }
 
@@ -115,7 +115,7 @@ contract ClaimableV1 is OwnableV1 {
    * @dev Allows the pendingOwner address to finalize the transfer.
    */
   function claimOwnership() onlyPendingOwner public {
-    OwnershipTransferred(owner, pendingOwner);
+    emit OwnershipTransferred(owner, pendingOwner);
     owner = pendingOwner;
     pendingOwner = address(0);
   }
@@ -193,7 +193,7 @@ contract BasicTokenV1 is ERC20BasicV1, ClaimableV1 {
     // SafeMath.sub will throw if there is not enough balance.
     balances.subBalance(_from, _value);
     balances.addBalance(_to, _value);
-    Transfer(_from, _to, _value);
+    emit Transfer(_from, _to, _value);
   }
 
   /**
@@ -249,7 +249,7 @@ contract StandardTokenV1 is ERC20V1, BasicTokenV1 {
 
   function approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
     allowances.setAllowance(_tokenHolder, _spender, _value);
-    Approval(_tokenHolder, _spender, _value);
+    emit Approval(_tokenHolder, _spender, _value);
   }
 
   /**
@@ -279,7 +279,7 @@ contract StandardTokenV1 is ERC20V1, BasicTokenV1 {
 
   function increaseApprovalAllArgs(address _spender, uint _addedValue, address tokenHolder) internal {
     allowances.addAllowance(tokenHolder, _spender, _addedValue);
-    Approval(tokenHolder, _spender, allowances.allowanceOf(tokenHolder, _spender));
+    emit Approval(tokenHolder, _spender, allowances.allowanceOf(tokenHolder, _spender));
   }
 
   /**
@@ -304,19 +304,19 @@ contract StandardTokenV1 is ERC20V1, BasicTokenV1 {
     } else {
       allowances.subAllowance(tokenHolder, _spender, _subtractedValue);
     }
-    Approval(tokenHolder, _spender, allowances.allowanceOf(tokenHolder, _spender));
+    emit Approval(tokenHolder, _spender, allowances.allowanceOf(tokenHolder, _spender));
   }
 
 }
 interface DelegateERC20V1 {
-  function delegateTotalSupply() public view returns (uint256);
-  function delegateBalanceOf(address who) public view returns (uint256);
-  function delegateTransfer(address to, uint256 value, address origSender) public returns (bool);
-  function delegateAllowance(address owner, address spender) public view returns (uint256);
-  function delegateTransferFrom(address from, address to, uint256 value, address origSender) public returns (bool);
-  function delegateApprove(address spender, uint256 value, address origSender) public returns (bool);
-  function delegateIncreaseApproval(address spender, uint addedValue, address origSender) public returns (bool);
-  function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) public returns (bool);
+  function delegateTotalSupply() external view returns (uint256);
+  function delegateBalanceOf(address who) external view returns (uint256);
+  function delegateTransfer(address to, uint256 value, address origSender) external returns (bool);
+  function delegateAllowance(address owner, address spender) external view returns (uint256);
+  function delegateTransferFrom(address from, address to, uint256 value, address origSender) external returns (bool);
+  function delegateApprove(address spender, uint256 value, address origSender) external returns (bool);
+  function delegateIncreaseApproval(address spender, uint addedValue, address origSender) external returns (bool);
+  function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) external returns (bool);
 }
 contract CanDelegateV1 is StandardTokenV1 {
     // If this contract needs to be upgraded, the new contract will be stored
@@ -328,7 +328,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     // Can undelegate by passing in newContract = address(0)
     function delegateToNewContract(DelegateERC20V1 newContract) public onlyOwner {
         delegate = newContract;
-        DelegatedTo(delegate);
+        emit DelegatedTo(address(delegate));
     }
 
     function transferChild(address _child, address _newOwner) public onlyOwner {
@@ -337,7 +337,7 @@ contract CanDelegateV1 is StandardTokenV1 {
 
     // If a delegate has been designated, all ERC20 calls are forwarded to it
     function transfer(address to, uint256 value) public returns (bool) {
-        if (delegate == address(0)) {
+        if (address(delegate) == address(0)) {
             return super.transfer(to, value);
         } else {
             return delegate.delegateTransfer(to, value, msg.sender);
@@ -345,7 +345,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     }
 
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
-        if (delegate == address(0)) {
+        if (address(delegate) == address(0)) {
             return super.transferFrom(from, to, value);
         } else {
             return delegate.delegateTransferFrom(from, to, value, msg.sender);
@@ -353,7 +353,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     }
 
     function balanceOf(address who) public view returns (uint256) {
-        if (delegate == address(0)) {
+        if (address(delegate) == address(0)) {
             return super.balanceOf(who);
         } else {
             return delegate.delegateBalanceOf(who);
@@ -361,7 +361,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     }
 
     function approve(address spender, uint256 value) public returns (bool) {
-        if (delegate == address(0)) {
+        if (address(delegate) == address(0)) {
             return super.approve(spender, value);
         } else {
             return delegate.delegateApprove(spender, value, msg.sender);
@@ -369,7 +369,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     }
 
     function allowance(address _owner, address spender) public view returns (uint256) {
-        if (delegate == address(0)) {
+        if (address(delegate) == address(0)) {
             return super.allowance(_owner, spender);
         } else {
             return delegate.delegateAllowance(_owner, spender);
@@ -377,7 +377,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     }
 
     function totalSupply() public view returns (uint256) {
-        if (delegate == address(0)) {
+        if (address(delegate) == address(0)) {
             return super.totalSupply();
         } else {
             return delegate.delegateTotalSupply();
@@ -385,7 +385,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     }
 
     function increaseApproval(address spender, uint addedValue) public returns (bool) {
-        if (delegate == address(0)) {
+        if (address(delegate) == address(0)) {
             return super.increaseApproval(spender, addedValue);
         } else {
             return delegate.delegateIncreaseApproval(spender, addedValue, msg.sender);
@@ -393,7 +393,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     }
 
     function decreaseApproval(address spender, uint subtractedValue) public returns (bool) {
-        if (delegate == address(0)) {
+        if (address(delegate) == address(0)) {
             return super.decreaseApproval(spender, subtractedValue);
         } else {
             return delegate.delegateDecreaseApproval(spender, subtractedValue, msg.sender);

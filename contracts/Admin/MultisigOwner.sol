@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 import "./TokenController.sol";
 import "../Proxy/OwnedUpgradeabilityProxy.sol";
@@ -58,7 +58,7 @@ contract MultiSigOwner {
 
 
     //Initial Owners are set during deployment
-    function msInitialize(address[3] _initialOwners) public {
+    function msInitialize(address[3] calldata _initialOwners) external {
         require(!initialized);
         require(_initialOwners[0] != address(0) &&
         _initialOwners[1] != address(0) &&
@@ -80,7 +80,7 @@ contract MultiSigOwner {
     or sign the current action if the second owner is calling the same 
     function with the same parameters (same call data)
     */
-    function _initOrSignOwnerAction(string _actionName) internal {
+    function _initOrSignOwnerAction(string memory _actionName) internal {
         require(!voted[msg.sender], "already voted");
         if (ownerAction.callData.length == 0) {
             emit ActionInitiated(_actionName);
@@ -177,7 +177,7 @@ contract MultiSigOwner {
     * @dev Transfer all eth in this contract address to another address
     *@param _to The eth will be send to this address
     */
-    function msReclaimEther(address _to) external onlyOwner {
+    function msReclaimEther(address payable _to) external onlyOwner {
         _initOrSignOwnerAction("msReclaimEther");
         if (ownerAction.approveSigs > 1) {
             _to.transfer(address(this).balance);
@@ -194,7 +194,7 @@ contract MultiSigOwner {
     function msReclaimToken(ERC20 _token, address _to) external onlyOwner {
         _initOrSignOwnerAction("msReclaimToken");
         if (ownerAction.approveSigs > 1) {
-            uint256 balance = _token.balanceOf(this);
+            uint256 balance = _token.balanceOf(address(this));
             _token.transfer(_to, balance);
             emit ActionExecuted("msReclaimToken");
             _deleteOwnerAction();
@@ -216,7 +216,7 @@ contract MultiSigOwner {
     function msTransferControllerProxyOwnership(address _newOwner) external onlyOwner {
         _initOrSignOwnerAction("msTransferControllerProxyOwnership");
         if (ownerAction.approveSigs > 1) {
-            OwnedUpgradeabilityProxy(tokenController).transferProxyOwnership(_newOwner);
+            OwnedUpgradeabilityProxy(address(uint160(address(tokenController)))).transferProxyOwnership(_newOwner);
             emit ActionExecuted("msTransferControllerProxyOwnership");
             _deleteOwnerAction();
         }
@@ -225,7 +225,7 @@ contract MultiSigOwner {
     function msClaimControllerProxyOwnership() external onlyOwner {
         _initOrSignOwnerAction("msClaimControllerProxyOwnership");
         if (ownerAction.approveSigs > 1) {
-            OwnedUpgradeabilityProxy(tokenController).claimProxyOwnership();
+            OwnedUpgradeabilityProxy(address(uint160(address(tokenController)))).claimProxyOwnership();
             emit ActionExecuted("msClaimControllerProxyOwnership");
             _deleteOwnerAction();
         }
@@ -234,7 +234,7 @@ contract MultiSigOwner {
     function msUpgradeControllerProxyImplTo(address _implementation) external onlyOwner {
         _initOrSignOwnerAction("msUpgradeControllerProxyImplTo");
         if (ownerAction.approveSigs > 1) {
-            OwnedUpgradeabilityProxy(tokenController).upgradeTo(_implementation);
+            OwnedUpgradeabilityProxy(address(uint160(address(tokenController)))).upgradeTo(_implementation);
             emit ActionExecuted("msUpgradeControllerProxyImplTo");
             _deleteOwnerAction();
         }
@@ -261,10 +261,11 @@ contract MultiSigOwner {
     If no in flight action, create a new one. Otherwise sign and the action
     if the msg.data matches call data matches. Reverts otherwise
     */
-    function _signOrExecute(string _actionName) internal {
+    function _signOrExecute(string memory _actionName) internal {
         _initOrSignOwnerAction(_actionName);
         if (ownerAction.approveSigs > 1) {
-            require(address(tokenController).call(msg.data), "tokenController call failed");
+            (bool success,) = address(tokenController).call(msg.data);
+            require(success, "tokenController call failed");
             emit ActionExecuted(_actionName);
             _deleteOwnerAction();
         }

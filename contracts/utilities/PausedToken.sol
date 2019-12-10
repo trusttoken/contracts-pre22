@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 import "../HasOwner.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -25,7 +25,7 @@ contract PausedToken is HasOwner, RegistryClone {
     /**  
     *@dev send all eth balance in the TrueUSD contract to another address
     */
-    function reclaimEther(address _to) external onlyOwner {
+    function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
@@ -34,7 +34,7 @@ contract PausedToken is HasOwner, RegistryClone {
     in the TrueUSD contract to another address
     */
     function reclaimToken(ERC20 token, address _to) external onlyOwner {
-        uint256 balance = token.balanceOf(this);
+        uint256 balance = token.balanceOf(address(this));
         token.transfer(_to, balance);
     }
 
@@ -140,7 +140,7 @@ contract PausedToken is HasOwner, RegistryClone {
     }
     function setRegistry(Registry _registry) public onlyOwner {
         registry = _registry;
-        emit SetRegistry(registry);
+        emit SetRegistry(address(registry));
     }
 
     modifier onlyRegistry {

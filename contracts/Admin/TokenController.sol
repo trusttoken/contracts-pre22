@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../HasOwner.sol";
@@ -40,8 +40,8 @@ contract TokenController {
         mapping(address => bool) approved; 
     }
 
-    address public owner;
-    address public pendingOwner;
+    address payable public owner;
+    address payable public pendingOwner;
 
     bool public initialized;
 
@@ -166,16 +166,16 @@ contract TokenController {
     * @dev Allows the current owner to set the pendingOwner address.
     * @param newOwner The address to transfer ownership to.
     */
-    function transferOwnership(address newOwner) external onlyOwner {
+    function transferOwnership(address payable newOwner) external onlyOwner {
         pendingOwner = newOwner;
-        emit NewOwnerPending(owner, pendingOwner);
+        emit NewOwnerPending(address(owner), address(pendingOwner));
     }
 
     /**
     * @dev Allows the pendingOwner address to finalize the transfer.
     */
     function claimOwnership() external onlyPendingOwner {
-        emit OwnershipTransferred(owner, pendingOwner);
+        emit OwnershipTransferred(address(owner), address(pendingOwner));
         owner = pendingOwner;
         pendingOwner = address(0);
     }
@@ -187,15 +187,15 @@ contract TokenController {
     */
 
     function transferTusdProxyOwnership(address _newOwner) external onlyOwner {
-        OwnedUpgradeabilityProxy(token).transferProxyOwnership(_newOwner);
+        OwnedUpgradeabilityProxy(address(uint160(address(token)))).transferProxyOwnership(_newOwner);
     }
 
     function claimTusdProxyOwnership() external onlyOwner {
-        OwnedUpgradeabilityProxy(token).claimProxyOwnership();
+        OwnedUpgradeabilityProxy(address(uint160(address(token)))).claimProxyOwnership();
     }
 
     function upgradeTusdProxyImplTo(address _implementation) external onlyOwner {
-        OwnedUpgradeabilityProxy(token).upgradeTo(_implementation);
+        OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(_implementation);
     }
 
     /*
@@ -480,7 +480,7 @@ contract TokenController {
     */
     function setRegistry(Registry _registry) external onlyOwner {
         registry = _registry;
-        emit SetRegistry(registry);
+        emit SetRegistry(address(registry));
     }
 
     /** 
@@ -507,7 +507,7 @@ contract TokenController {
     */
     function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
         _child.transferOwnership(_newOwner);
-        emit TransferChild(_child, _newOwner);
+        emit TransferChild(address(_child), _newOwner);
     }
 
     /** 
@@ -518,7 +518,7 @@ contract TokenController {
     */
     function requestReclaimContract(Ownable _other) public onlyOwner {
         token.reclaimContract(_other);
-        emit RequestReclaimContract(_other);
+        emit RequestReclaimContract(address(_other));
     }
 
     /** 
@@ -543,14 +543,14 @@ contract TokenController {
     */
     function setFastPause(address _newFastPause) external onlyOwner {
         fastPause = _newFastPause;
-        emit FastPauseSet(_newFastPause);
+        emit FastPauseSet(address(_newFastPause));
     }
 
     /** 
     *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
     */
     function pauseToken() external onlyFastPauseOrOwner {
-        OwnedUpgradeabilityProxy(token).upgradeTo(PAUSED_IMPLEMENTATION);
+        OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
     }
     
     /** 
@@ -575,7 +575,7 @@ contract TokenController {
     *@dev Owner can send ether balance in contract address
     *@param _to address to which the funds will be send to
     */
-    function reclaimEther(address _to) external onlyOwner {
+    function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
@@ -585,7 +585,7 @@ contract TokenController {
     *@param _to address to which the funds will be send to
     */
     function reclaimToken(ERC20 _token, address _to) external onlyOwner {
-        uint256 balance = _token.balanceOf(this);
+        uint256 balance = _token.balanceOf(address(this));
         _token.transfer(_to, balance);
     }
 }

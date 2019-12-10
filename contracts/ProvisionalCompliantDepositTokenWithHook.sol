@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 import "./CompliantDepositTokenWithHook.sol";
 import "./DeprecatedGasRefundPool.sol";
@@ -11,22 +11,22 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
     }
 
     function _requireCanTransfer(address _from, address _to) internal view returns (address, bool) {
-        return ProvisionalRegistry(registry).requireCanTransfer(_from, _to);
+        return ProvisionalRegistry(address(registry)).requireCanTransfer(_from, _to);
     }
 
     function _requireCanTransferFrom(address _sender, address _from, address _to) internal view returns (address, bool) {
-        return ProvisionalRegistry(registry).requireCanTransferFrom(_sender, _from, _to);
+        return ProvisionalRegistry(address(registry)).requireCanTransferFrom(_sender, _from, _to);
     }
 
     function _requireCanMint(address _to) internal view returns (address, bool) {
-        return ProvisionalRegistry(registry).requireCanMint(_to);
+        return ProvisionalRegistry(address(registry)).requireCanMint(_to);
     }
 
     function _requireCanBurn(address _from) internal view {
-        ProvisionalRegistry(registry).requireCanBurn(_from);
+        ProvisionalRegistry(address(registry)).requireCanBurn(_from);
     }
     function _requireOnlyCanBurn(address _from) internal view {
-        ProvisionalRegistry(registry).requireCanBurn(_from);
+        ProvisionalRegistry(address(registry)).requireCanBurn(_from);
     }
     function migratedBalanceOf(address _who) public view returns (uint256) {
         return super._getBalance(_who);
@@ -47,7 +47,7 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         super._setBalance(_who, _value);
     }
 
-    function migrateBalances(address[] holders) external retroGasRefund45 {
+    function migrateBalances(address[] calldata holders) external retroGasRefund45 {
         uint256 i = holders.length;
         while (i --> 0) {
             address holder = holders[i];
@@ -55,7 +55,7 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
         }
     }
 
-    function migrateAllowances(address[] holders, address[] spenders) external retroGasRefund45 {
+    function migrateAllowances(address[] calldata holders, address[] calldata spenders) external retroGasRefund45 {
         uint256 i = holders.length;
         while (i --> 0) {
             address holder = holders[i];

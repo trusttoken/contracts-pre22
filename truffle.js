@@ -4,16 +4,10 @@ require('babel-polyfill');
 var HDWalletProvider = require("truffle-hdwallet-provider");
 
 module.exports = {
-  solc: {
-    version: "0.4.23",
-    optimizer: {
-      enabled: true,
-      runs: 20000
-    }
-  },
   compilers: {
     solc: {
-      version: "0.4.23",
+      version: "0.5.13",
+      evmVersion: "istanbul",
       optimizer: {
         enabled: true,
         runs: 20000
@@ -24,7 +18,7 @@ module.exports = {
     development: {
       host: "localhost",
       port: 8545,
-      gas: 7990000,
+      gas: 12990000,
       gasPrice: 1, // Specified in Wei
       network_id: "*" // Match any network id
     },

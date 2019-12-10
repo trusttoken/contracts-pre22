@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 import "./CompliantDepositTokenWithHook.sol";
 import "./DelegateERC20.sol";
@@ -22,11 +22,11 @@ DelegateERC20 {
         return ROUNDING;
     }
 
-    function name() public pure returns (string) {
+    function name() public pure returns (string memory) {
         return "TrueUSD";
     }
 
-    function symbol() public pure returns (string) {
+    function symbol() public pure returns (string memory) {
         return "TUSD";
     }
 

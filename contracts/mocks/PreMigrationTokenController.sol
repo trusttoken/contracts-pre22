@@ -1,4 +1,4 @@
-pragma solidity^0.4.23;
+pragma solidity^0.5.13;
 
 import "../Admin/TokenController.sol";
 
@@ -17,7 +17,7 @@ contract PreMigrationTokenController is TokenController {
         HasOwner _allowanceSheet) external onlyOwner {
 
         //call to claim the storage contract with the new delegate contract
-        _proxy.setBalanceSheet(_balanceSheet);
-        _proxy.setAllowanceSheet(_allowanceSheet);
+        _proxy.setBalanceSheet(address(_balanceSheet));
+        _proxy.setAllowanceSheet(address(_allowanceSheet));
     }
 }

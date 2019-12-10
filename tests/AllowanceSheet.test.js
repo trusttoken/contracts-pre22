@@ -1,5 +1,5 @@
-import assertRevert from '../helpers/assertRevert'
-import expectThrow from '../helpers/expectThrow'
+import assertRevert from './helpers/assertRevert'
+import expectThrow from './helpers/expectThrow'
 const AllowanceSheet = artifacts.require('AllowanceSheet')
 
 const BN = web3.utils.toBN;

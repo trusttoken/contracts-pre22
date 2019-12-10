@@ -93,7 +93,7 @@ contract('--Full upgrade process with multisig--', function (accounts) {
                 await assertRevert(this.controller.sendTransaction({ 
                     value: 33, 
                     from: owner3, 
-                    gas: 300000 
+                    gas: 400000 
                  }));             
             })
 
@@ -101,7 +101,7 @@ contract('--Full upgrade process with multisig--', function (accounts) {
                 await assertRevert(this.token.sendTransaction({ 
                     value: 33, 
                     from: owner3, 
-                    gas: 300000 
+                    gas: 400000 
                  }));             
             })
         })

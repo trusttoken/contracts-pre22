@@ -49,7 +49,7 @@ contract('TrueUSD', function (accounts) {
         })
 
         it('trueUSD does not accept ether', async function(){
-            await assertRevert(this.token.sendTransaction({from: oneHundred, gas: 600000, value: 1000}));                  
+            await assertRevert(this.token.sendTransaction({from: oneHundred, gas: 800000, value: 1000}));                  
             const balanceWithEther = web3.utils.fromWei(await web3.eth.getBalance(this.token.address), 'ether')
             assert.equal(balanceWithEther, 0)
         })

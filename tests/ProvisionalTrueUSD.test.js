@@ -1,6 +1,6 @@
 import assertRevert from './helpers/assertRevert'
 import assertBalance from './helpers/assertBalance'
-import basicTokenTests from './token/BasicToken';
+import basicTokenTests from './BasicToken';
 
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 const PreMigrationTrueUSDMock = artifacts.require("PreMigrationTrueUSDMock")

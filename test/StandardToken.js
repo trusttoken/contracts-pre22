@@ -1,5 +1,5 @@
-import assertRevert from '../helpers/assertRevert'
-import assertBalance from '../helpers/assertBalance'
+import assertRevert from './helpers/assertRevert'
+import assertBalance from './helpers/assertBalance'
 
 const BN = web3.utils.toBN;
 const INFINITE_AMOUNT = BN('ff00000000000000000000000000000000000000000000000000000000000000')

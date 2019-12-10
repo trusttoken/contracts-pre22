@@ -1,8 +1,8 @@
 import assertRevert from './helpers/assertRevert'
-import mintableTokenTests from './token/MintableToken';
-import burnableTokenTests from './token/BurnableToken';
-import standardTokenTests from './token/StandardToken';
-import basicTokenTests from './token/BasicToken';
+import mintableTokenTests from './MintableToken';
+import burnableTokenTests from './BurnableToken';
+import standardTokenTests from './StandardToken';
+import basicTokenTests from './BasicToken';
 const Registry = artifacts.require('RegistryMock')
 
 const writeAttributeFor = require('./helpers/writeAttributeFor.js')

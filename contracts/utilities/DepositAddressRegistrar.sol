@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 interface Registry {
     function setAttributeValue(address who, bytes32 what, uint val) external;
