@@ -14,7 +14,7 @@ contract ReclaimerToken is HasOwner {
     *@dev send all token balance of an arbitary erc20 token
     in the contract to another address
     */
-    function reclaimToken(ERC20 token, address _to) external onlyOwner {
+    function reclaimToken(IERC20 token, address _to) external onlyOwner {
         uint256 balance = token.balanceOf(address(this));
         token.transfer(_to, balance);
     }

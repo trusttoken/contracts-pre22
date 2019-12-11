@@ -191,7 +191,7 @@ contract MultiSigOwner {
     *@param _token The token address of the token
     *@param _to The tokens will be send to this address
     */
-    function msReclaimToken(ERC20 _token, address _to) external onlyOwner {
+    function msReclaimToken(IERC20 _token, address _to) external onlyOwner {
         _initOrSignOwnerAction("msReclaimToken");
         if (ownerAction.approveSigs > 1) {
             uint256 balance = _token.balanceOf(address(this));
@@ -391,7 +391,7 @@ contract MultiSigOwner {
         _signOrExecute("requestReclaimEther"); 
     }
 
-    function requestReclaimToken(ERC20 /*_token*/) external onlyOwner {
+    function requestReclaimToken(IERC20 /*_token*/) external onlyOwner {
         _signOrExecute("requestReclaimToken"); 
     } 
 
@@ -415,7 +415,7 @@ contract MultiSigOwner {
         _signOrExecute("reclaimEther"); 
     }
 
-    function reclaimToken(ERC20 /*_token*/, address /*_to*/) external onlyOwner {
+    function reclaimToken(IERC20 /*_token*/, address /*_to*/) external onlyOwner {
         _signOrExecute("reclaimToken"); 
     }
 } 

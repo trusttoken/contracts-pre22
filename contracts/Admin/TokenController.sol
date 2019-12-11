@@ -533,7 +533,7 @@ contract TokenController {
     owner of tokenController 
     *@param _token token address of the token to transfer
     */
-    function requestReclaimToken(ERC20 _token) external onlyOwner {
+    function requestReclaimToken(IERC20 _token) external onlyOwner {
         token.reclaimToken(_token, owner);
     }
 
@@ -584,7 +584,7 @@ contract TokenController {
     *@param _token address of the token to send
     *@param _to address to which the funds will be send to
     */
-    function reclaimToken(ERC20 _token, address _to) external onlyOwner {
+    function reclaimToken(IERC20 _token, address _to) external onlyOwner {
         uint256 balance = _token.balanceOf(address(this));
         _token.transfer(_to, balance);
     }
