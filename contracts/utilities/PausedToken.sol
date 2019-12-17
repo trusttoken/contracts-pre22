@@ -129,10 +129,10 @@ contract PausedToken is HasOwner, RegistryClone {
         revert("Token Paused");
     }
 
-    function increaseApproval(address /*_spender*/, uint /*_addedValue*/) public returns (bool) {
+    function increaseAllowance(address /*_spender*/, uint /*_addedValue*/) public returns (bool) {
         revert("Token Paused");
     }
-    function decreaseApproval(address /*_spender*/, uint /*_subtractedValue*/) public returns (bool) {
+    function decreaseAllowance(address /*_spender*/, uint /*_subtractedValue*/) public returns (bool) {
         revert("Token Paused");
     }
     function paused() public pure returns (bool) {

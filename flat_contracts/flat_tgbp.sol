@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.13;
 
 // File: contracts/TrueCoinReceiver.sol
 
@@ -6,31 +6,81 @@ contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
 }
 
-// File: openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol
+// File: openzeppelin-solidity/contracts/token/ERC20/IERC20.sol
 
 /**
- * @title ERC20Basic
- * @dev Simpler version of ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/179
+ * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
+ * the optional functions; to access them see {ERC20Detailed}.
  */
-contract ERC20Basic {
-  function totalSupply() public view returns (uint256);
-  function balanceOf(address who) public view returns (uint256);
-  function transfer(address to, uint256 value) public returns (bool);
-  event Transfer(address indexed from, address indexed to, uint256 value);
-}
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
 
-// File: openzeppelin-solidity/contracts/token/ERC20/ERC20.sol
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
 
-/**
- * @title ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/20
- */
-contract ERC20 is ERC20Basic {
-  function allowance(address owner, address spender) public view returns (uint256);
-  function transferFrom(address from, address to, uint256 value) public returns (bool);
-  function approve(address spender, uint256 value) public returns (bool);
-  event Approval(address indexed owner, address indexed spender, uint256 value);
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
 // File: registry/contracts/Registry.sol
@@ -52,7 +102,7 @@ contract Registry {
     address public pendingOwner;
     bool initialized;
 
-    // Stores arbitrary attributes for users. An example use case is an ERC20
+    // Stores arbitrary attributes for users. An example use case is an IERC20
     // token that requires its users to go through a KYC/AML check - in this case
     // a validator can set an account's "hasPassedKYC/AML" attribute to 1 to indicate
     // that account can use the token. This mapping stores that value (1, in the
@@ -77,7 +127,7 @@ contract Registry {
     // b) the writer is writing to attribute foo and that writer already has
     // the canWriteTo-foo attribute set (in that same Registry)
     function confirmWrite(bytes32 _attribute, address _admin) internal view returns (bool) {
-        return (_admin == owner || hasAttribute(_admin, keccak256(WRITE_PERMISSION ^ _attribute)));
+        return (_admin == owner || hasAttribute(_admin, keccak256(abi.encodePacked(WRITE_PERMISSION ^ _attribute))));
     }
 
     // Writes are allowed only if the accessManager approves
@@ -145,7 +195,7 @@ contract Registry {
         return attributes[_who][_attribute].timestamp;
     }
 
-    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] _addresses) external {
+    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] calldata _addresses) external {
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
         while (index --> _startIndex) {
@@ -157,12 +207,12 @@ contract Registry {
         }
     }
 
-    function reclaimEther(address _to) external onlyOwner {
+    function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
-    function reclaimToken(ERC20 token, address _to) external onlyOwner {
-        uint256 balance = token.balanceOf(this);
+    function reclaimToken(IERC20 token, address _to) external onlyOwner {
+        uint256 balance = token.balanceOf(address(this));
         token.transfer(_to, balance);
     }
 
@@ -200,7 +250,7 @@ contract Registry {
     }
 }
 
-// File: openzeppelin-solidity/contracts/ownership/Ownable.sol
+// File: contracts/modularERC20/Ownable.sol
 
 /**
  * @title Ownable
@@ -218,7 +268,7 @@ contract Ownable {
    * @dev The Ownable constructor sets the original `owner` of the contract to the sender
    * account.
    */
-  function Ownable() public {
+  constructor() public {
     owner = msg.sender;
   }
 
@@ -242,7 +292,7 @@ contract Ownable {
 
 }
 
-// File: openzeppelin-solidity/contracts/ownership/Claimable.sol
+// File: contracts/modularERC20/Claimable.sol
 
 /**
  * @title Claimable
@@ -281,49 +331,158 @@ contract Claimable is Ownable {
 // File: openzeppelin-solidity/contracts/math/SafeMath.sol
 
 /**
- * @title SafeMath
- * @dev Math operations with safety checks that throw on error
+ * @dev Wrappers over Solidity's arithmetic operations with added overflow
+ * checks.
+ *
+ * Arithmetic operations in Solidity wrap on overflow. This can easily result
+ * in bugs, because programmers usually assume that an overflow raises an
+ * error, which is the standard behavior in high level programming languages.
+ * `SafeMath` restores this intuition by reverting the transaction when an
+ * operation overflows.
+ *
+ * Using this library instead of the unchecked operations eliminates an entire
+ * class of bugs, so it's recommended to use it always.
  */
 library SafeMath {
+    /**
+     * @dev Returns the addition of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `+` operator.
+     *
+     * Requirements:
+     * - Addition cannot overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
 
-  /**
-  * @dev Multiplies two numbers, throws on overflow.
-  */
-  function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    if (a == 0) {
-      return 0;
+        return c;
     }
-    c = a * b;
-    assert(c / a == b);
-    return c;
-  }
 
-  /**
-  * @dev Integer division of two numbers, truncating the quotient.
-  */
-  function div(uint256 a, uint256 b) internal pure returns (uint256) {
-    // assert(b > 0); // Solidity automatically throws when dividing by 0
-    // uint256 c = a / b;
-    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-    return a / b;
-  }
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return sub(a, b, "SafeMath: subtraction overflow");
+    }
 
-  /**
-  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
-  */
-  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-    assert(b <= a);
-    return a - b;
-  }
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     * - Subtraction cannot overflow.
+     *
+     * _Available since v2.4.0._
+     */
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
 
-  /**
-  * @dev Adds two numbers, throws on overflow.
-  */
-  function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    c = a + b;
-    assert(c >= a);
-    return c;
-  }
+        return c;
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `*` operator.
+     *
+     * Requirements:
+     * - Multiplication cannot overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     *
+     * _Available since v2.4.0._
+     */
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0, errorMessage);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        return mod(a, b, "SafeMath: modulo by zero");
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts with custom message when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     *
+     * _Available since v2.4.0._
+     */
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b != 0, errorMessage);
+        return a % b;
+    }
 }
 
 // File: contracts/modularERC20/BalanceSheet.sol
@@ -489,7 +648,7 @@ contract ReclaimerToken is HasOwner {
     /**  
     *@dev send all eth balance in the contract to another address
     */
-    function reclaimEther(address _to) external onlyOwner {
+    function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
@@ -497,8 +656,8 @@ contract ReclaimerToken is HasOwner {
     *@dev send all token balance of an arbitary erc20 token
     in the contract to another address
     */
-    function reclaimToken(ERC20 token, address _to) external onlyOwner {
-        uint256 balance = token.balanceOf(this);
+    function reclaimToken(IERC20 token, address _to) external onlyOwner {
+        uint256 balance = token.balanceOf(address(this));
         token.transfer(_to, balance);
     }
 
@@ -566,6 +725,9 @@ contract ModularStandardToken is ModularBasicToken {
     using SafeMath for uint256;
     
     event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    uint256 constant INFINITE_ALLOWANCE = 0xfe00000000000000000000000000000000000000000000000000000000000000;
+
     
     /**
      * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
@@ -597,12 +759,12 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _addedValue The amount of tokens to increase the allowance by.
      */
-    function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
-        _increaseApprovalAllArgs(_spender, _addedValue, msg.sender);
+    function increaseAllowance(address _spender, uint _addedValue) public returns (bool) {
+        _increaseAllowanceAllArgs(_spender, _addedValue, msg.sender);
         return true;
     }
 
-    function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
+    function _increaseAllowanceAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
         _addAllowance(_tokenHolder, _spender, _addedValue);
         emit Approval(_tokenHolder, _spender, _getAllowance(_tokenHolder, _spender));
     }
@@ -617,12 +779,12 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _subtractedValue The amount of tokens to decrease the allowance by.
      */
-    function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
-        _decreaseApprovalAllArgs(_spender, _subtractedValue, msg.sender);
+    function decreaseAllowance(address _spender, uint _subtractedValue) public returns (bool) {
+        _decreaseAllowanceAllArgs(_spender, _subtractedValue, msg.sender);
         return true;
     }
 
-    function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
+    function _decreaseAllowanceAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
         uint256 oldValue = _getAllowance(_tokenHolder, _spender);
         uint256 newValue;
         if (_subtractedValue > oldValue) {
@@ -648,7 +810,9 @@ contract ModularStandardToken is ModularBasicToken {
 
     function _subAllowance(address _who, address _spender, uint256 _value) internal returns (uint256 newAllowance){
         newAllowance = _allowance[_who][_spender].sub(_value);
-        _allowance[_who][_spender] = newAllowance;
+        if (newAllowance < INFINITE_ALLOWANCE) {
+            _allowance[_who][_spender] = newAllowance;
+        }
     }
 
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
@@ -1063,7 +1227,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     */
     function setRegistry(Registry _registry) public onlyOwner {
         registry = _registry;
-        emit SetRegistry(registry);
+        emit SetRegistry(address(registry));
     }
 
     modifier onlyRegistry {
@@ -1158,11 +1322,11 @@ CompliantDepositTokenWithHook {
         return ROUNDING;
     }
 
-    function name() public pure returns (string) {
+    function name() public pure returns (string memory) {
         return "TrueGBP";
     }
 
-    function symbol() public pure returns (string) {
+    function symbol() public pure returns (string memory) {
         return "TGBP";
     }
 

@@ -203,7 +203,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                     const amount = BN(100*10**18)
 
                     it('emits an approval event', async function () {
-                        const { logs } = await this.token.decreaseApproval(spender, amount, { from: oneHundred })
+                        const { logs } = await this.token.decreaseAllowance(spender, amount, { from: oneHundred })
 
                         assert.equal(logs.length, 1)
                         assert.equal(logs[0].event, 'Approval')
@@ -214,7 +214,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                     describe('when there was no approved amount before', function () {
                         it('keeps the allowance to zero', async function () {
-                            await this.token.decreaseApproval(spender, amount, { from: oneHundred })
+                            await this.token.decreaseAllowance(spender, amount, { from: oneHundred })
 
                             const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert(allowance.eq(BN(0)), `${allowance} should equal 0`)
@@ -227,7 +227,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         })
 
                         it('decreases the spender allowance subtracting the requested amount', async function () {
-                            await this.token.decreaseApproval(spender, amount, { from: oneHundred })
+                            await this.token.decreaseAllowance(spender, amount, { from: oneHundred })
 
                             const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert(allowance.eq(BN(1*10**18)), `${allowance} should equal 1e18`)
@@ -239,7 +239,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                     const amount = BN(101*10**18)
 
                     it('emits an approval event', async function () {
-                        const { logs } = await this.token.decreaseApproval(spender, amount, { from: oneHundred })
+                        const { logs } = await this.token.decreaseAllowance(spender, amount, { from: oneHundred })
 
                         assert.equal(logs.length, 1)
                         assert.equal(logs[0].event, 'Approval')
@@ -250,7 +250,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                     describe('when there was no approved amount before', function () {
                         it('keeps the allowance to zero', async function () {
-                            await this.token.decreaseApproval(spender, amount, { from: oneHundred })
+                            await this.token.decreaseAllowance(spender, amount, { from: oneHundred })
 
                             const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert(allowance.eq(BN(0)), `${allowance} should equal 0`)
@@ -263,7 +263,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         })
 
                         it('decreases the spender allowance subtracting the requested amount', async function () {
-                            await this.token.decreaseApproval(spender, amount, { from: oneHundred })
+                            await this.token.decreaseAllowance(spender, amount, { from: oneHundred })
 
                             const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert(allowance.eq(BN(1*10**18)), `${allowance} should equal 1e18`)
@@ -277,14 +277,14 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                 const spender = ZERO_ADDRESS
 
                 it('decreases the requested amount', async function () {
-                    await this.token.decreaseApproval(spender, amount, { from: oneHundred })
+                    await this.token.decreaseAllowance(spender, amount, { from: oneHundred })
 
                     const allowance = await this.token.allowance.call(oneHundred, spender)
                     assert(allowance.eq(BN(0)))
                 })
 
                 it('emits an approval event', async function () {
-                    const { logs } = await this.token.decreaseApproval(spender, amount, { from: oneHundred })
+                    const { logs } = await this.token.decreaseAllowance(spender, amount, { from: oneHundred })
 
                     assert.equal(logs.length, 1)
                     assert.equal(logs[0].event, 'Approval')
@@ -303,7 +303,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                 describe('when the sender has enough balance', function () {
                     it('emits an approval event', async function () {
-                        const { logs } = await this.token.increaseApproval(spender, amount, { from: oneHundred })
+                        const { logs } = await this.token.increaseAllowance(spender, amount, { from: oneHundred })
 
                         assert.equal(logs.length, 1)
                         assert.equal(logs[0].event, 'Approval')
@@ -314,7 +314,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                     describe('when there was no approved amount before', function () {
                         it('approves the requested amount', async function () {
-                            await this.token.increaseApproval(spender, amount, { from: oneHundred })
+                            await this.token.increaseAllowance(spender, amount, { from: oneHundred })
 
                             const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert(allowance.eq(amount))
@@ -327,7 +327,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         })
 
                         it('increases the spender allowance adding the requested amount', async function () {
-                            await this.token.increaseApproval(spender, amount, { from: oneHundred })
+                            await this.token.increaseAllowance(spender, amount, { from: oneHundred })
 
                             const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert(allowance, BN(amount).add(BN(1*10**18)))
@@ -339,7 +339,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                     const amount = BN(101*10**18)
 
                     it('emits an approval event', async function () {
-                        const { logs } = await this.token.increaseApproval(spender, amount, { from: oneHundred })
+                        const { logs } = await this.token.increaseAllowance(spender, amount, { from: oneHundred })
 
                         assert.equal(logs.length, 1)
                         assert.equal(logs[0].event, 'Approval')
@@ -350,7 +350,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
 
                     describe('when there was no approved amount before', function () {
                         it('approves the requested amount', async function () {
-                            await this.token.increaseApproval(spender, amount, { from: oneHundred })
+                            await this.token.increaseAllowance(spender, amount, { from: oneHundred })
 
                             const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert(allowance.eq(amount))
@@ -363,7 +363,7 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                         })
 
                         it('increases the spender allowance adding the requested amount', async function () {
-                            await this.token.increaseApproval(spender, amount, { from: oneHundred })
+                            await this.token.increaseAllowance(spender, amount, { from: oneHundred })
 
                             const allowance = await this.token.allowance.call(oneHundred, spender)
                             assert(allowance.eq(BN(amount).add(BN(1*10**18))))
@@ -376,14 +376,14 @@ function standardTokenTests([owner, oneHundred, anotherAccount]) {
                 const spender = ZERO_ADDRESS
 
                 it('approves the requested amount', async function () {
-                    await this.token.increaseApproval(spender, amount, { from: oneHundred })
+                    await this.token.increaseAllowance(spender, amount, { from: oneHundred })
 
                     const allowance = await this.token.allowance.call(oneHundred, spender)
                     assert(allowance.eq(amount))
                 })
 
                 it('emits an approval event', async function () {
-                    const { logs } = await this.token.increaseApproval(spender, amount, { from: oneHundred })
+                    const { logs } = await this.token.increaseAllowance(spender, amount, { from: oneHundred })
 
                     assert.equal(logs.length, 1)
                     assert.equal(logs[0].event, 'Approval')

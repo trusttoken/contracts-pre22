@@ -272,12 +272,12 @@ contract StandardTokenV1 is ERC20V1, BasicTokenV1 {
    * @param _spender The address which will spend the funds.
    * @param _addedValue The amount of tokens to increase the allowance by.
    */
-  function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
-    increaseApprovalAllArgs(_spender, _addedValue, msg.sender);
+  function increaseAllowance(address _spender, uint _addedValue) public returns (bool) {
+    increaseAllowanceAllArgs(_spender, _addedValue, msg.sender);
     return true;
   }
 
-  function increaseApprovalAllArgs(address _spender, uint _addedValue, address tokenHolder) internal {
+  function increaseAllowanceAllArgs(address _spender, uint _addedValue, address tokenHolder) internal {
     allowances.addAllowance(tokenHolder, _spender, _addedValue);
     emit Approval(tokenHolder, _spender, allowances.allowanceOf(tokenHolder, _spender));
   }
@@ -292,12 +292,12 @@ contract StandardTokenV1 is ERC20V1, BasicTokenV1 {
    * @param _spender The address which will spend the funds.
    * @param _subtractedValue The amount of tokens to decrease the allowance by.
    */
-  function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
-    decreaseApprovalAllArgs(_spender, _subtractedValue, msg.sender);
+  function decreaseAllowance(address _spender, uint _subtractedValue) public returns (bool) {
+    decreaseAllowanceAllArgs(_spender, _subtractedValue, msg.sender);
     return true;
   }
 
-  function decreaseApprovalAllArgs(address _spender, uint _subtractedValue, address tokenHolder) internal {
+  function decreaseAllowanceAllArgs(address _spender, uint _subtractedValue, address tokenHolder) internal {
     uint oldValue = allowances.allowanceOf(tokenHolder, _spender);
     if (_subtractedValue > oldValue) {
       allowances.setAllowance(tokenHolder, _spender, 0);
@@ -384,17 +384,17 @@ contract CanDelegateV1 is StandardTokenV1 {
         }
     }
 
-    function increaseApproval(address spender, uint addedValue) public returns (bool) {
+    function increaseAllowance(address spender, uint addedValue) public returns (bool) {
         if (address(delegate) == address(0)) {
-            return super.increaseApproval(spender, addedValue);
+            return super.increaseAllowance(spender, addedValue);
         } else {
             return delegate.delegateIncreaseApproval(spender, addedValue, msg.sender);
         }
     }
 
-    function decreaseApproval(address spender, uint subtractedValue) public returns (bool) {
+    function decreaseAllowance(address spender, uint subtractedValue) public returns (bool) {
         if (address(delegate) == address(0)) {
-            return super.decreaseApproval(spender, subtractedValue);
+            return super.decreaseAllowance(spender, subtractedValue);
         } else {
             return delegate.delegateDecreaseApproval(spender, subtractedValue, msg.sender);
         }

@@ -99,8 +99,8 @@ contract('PausedTrueUSD', function (accounts) {
 
                 it('approve is now paused', async function(){
                     await assertRevert(this.token.approve(otherAddress, BN(100*10**18), { from: oneHundred }))
-                    await assertRevert(this.token.increaseApproval(otherAddress, BN(100*10**18), { from: oneHundred }))
-                    await assertRevert(this.token.decreaseApproval(otherAddress, BN(100*10**18), { from: oneHundred }))
+                    await assertRevert(this.token.increaseAllowance(otherAddress, BN(100*10**18), { from: oneHundred }))
+                    await assertRevert(this.token.decreaseAllowance(otherAddress, BN(100*10**18), { from: oneHundred }))
                 })    
 
                 it('transferFroms is now paused', async function(){
