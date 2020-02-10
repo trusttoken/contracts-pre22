@@ -16,6 +16,27 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function canBurn() internal pure returns (bytes32);
 
+    /**
+    * @dev transfer token for a specified address
+    * @param _to The address to transfer to.
+    * @param _value The amount to be transferred.
+    */
+    function transfer(address _to, uint256 _value) public returns (bool) {
+        _transferAllArgs(msg.sender, _to, _value);
+        return true;
+    }
+
+    /**
+     * @dev Transfer tokens from one address to another
+     * @param _from address The address which you want to send tokens from
+     * @param _to address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     */
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+        _transferFromAllArgs(_from, _to, _value, msg.sender);
+        return true;
+    }
+
     function _burnFromAllowanceAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         _requireCanTransferFrom(_spender, _from, _to);
         _requireOnlyCanBurn(_to);

@@ -39,6 +39,7 @@ contract ProxyStorage {
     mapping (bytes32 => mapping (address => uint256)) attributes;
 
     address public rewardManager;
+    // mapping (address => uint256) _collatereral ;
 
 
     /* Additionally, we have several keccak-based storage locations.

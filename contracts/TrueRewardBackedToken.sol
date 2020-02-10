@@ -23,8 +23,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     * @param _value The amount to be transferred.
     */
     function transfer(address _to, uint256 _value) public returns (bool) {
-        super._transferAllArgs(msg.sender, _to, _value);
-        return true;
+        return super.transfer(_to, _value);
     }
 
     /**
@@ -34,8 +33,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * @param _value uint256 the amount of tokens to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        super._transferFromAllArgs(_from, _to, _value, msg.sender);
-        return true;
+        return super.transferFrom(_from, _to, _value);
     }
 
 }
