@@ -1,6 +1,3 @@
-![alt tag](https://raw.github.com/trusttoken/trueUSD/master/TrueUSDLogo.png)
-![alt tag](https://raw.github.com/trusttoken/trueUSD/master/TrueGBPLogo.png)
-
 # Deployments
 For all of our deployments, the address is the same between mainnet and testnet.
 Our source code is verified on Etherscan.
