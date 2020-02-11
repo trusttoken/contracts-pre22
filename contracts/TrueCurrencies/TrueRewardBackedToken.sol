@@ -17,8 +17,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         _;
     }
 
-    function backedByCollateral(address _address) internal view {
-        return _balanceOfCollateralBackedTokens[_address] != 0;
+    function backedByCollateral(address _address) internal view  returns (bool) {
+        return _balanceOfLoanBackedTokens[_address] != 0;
     }
 
     /**
@@ -45,5 +45,19 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         }
         return super.transferFrom(_from, _to, _value);
     }
+    function rebalanceTokenCollateralization(address[] memory _financialOpportunities, uint[] memory _distributions) public {
+        // TODO work out math
+        uint total_distribution;
+        for(uint i;i < _distributions.length;i++){
+            total_distribution += _distributions[i];
+        }
+        require(total_distribution <= 100, '');
+        uint totalValue = total_distribution * balanceOf(msg.sender) / 100;
+        _approveAllArgs(rewardManager, totalValue, msg.sender);
 
+    }
+
+    function debitCollateralBackedTokens(address _account) external {
+
+    }
 }
