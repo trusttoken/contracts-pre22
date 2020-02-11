@@ -17,12 +17,19 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         _;
     }
 
+    function backedByCollateral(address _address) internal view {
+        return _balanceOfCollateralBackedTokens[_address] != 0;
+    }
+
     /**
     * @dev transfer token for a specified address
     * @param _to The address to transfer to.
     * @param _value The amount to be transferred.
     */
     function transfer(address _to, uint256 _value) public returns (bool) {
+        if (backedByCollateral(msg.sender)) {
+            
+        }
         return super.transfer(_to, _value);
     }
 
@@ -33,6 +40,9 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * @param _value uint256 the amount of tokens to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+        if (backedByCollateral(msg.sender)) {
+
+        }
         return super.transferFrom(_from, _to, _value);
     }
 
