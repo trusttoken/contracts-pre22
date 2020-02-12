@@ -2,7 +2,7 @@ pragma solidity ^0.5.13;
 
 import "./CompliantDepositTokenWithHook.sol";
 import "./DeprecatedGasRefundPool.sol";
-import "../registry/contracts/ProvisionalRegistry.sol";
+import "../../registry/contracts/ProvisionalRegistry.sol";
 
 // Supports balance and allowance migration at great cost
 contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHook, DeprecatedGasRefundPool {

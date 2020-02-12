@@ -1,6 +1,6 @@
 pragma solidity ^0.5.13;
 
-import "./CompliantDepositTokenWithHook.sol";
+import "./TrueRewardBackedToken.sol";
 import "./DelegateERC20.sol";
 import "./GasRefundToken.sol";
 
@@ -9,7 +9,7 @@ import "./GasRefundToken.sol";
 * inherited - see the documentation on the corresponding contracts.
 */
 contract TrueUSD is 
-CompliantDepositTokenWithHook,
+TrueRewardBackedToken,
 DelegateERC20 {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;

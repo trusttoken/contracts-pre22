@@ -1,5 +1,5 @@
 pragma solidity ^0.5.13;
-import "../registry/contracts/Registry.sol";
+import "../../registry/contracts/Registry.sol";
 import "./modularERC20/BalanceSheet.sol";
 import "./modularERC20/AllowanceSheet.sol";
 
@@ -37,6 +37,9 @@ contract ProxyStorage {
     mapping (address => uint256) _balanceOf;
     mapping (address => mapping (address => uint256)) _allowance;
     mapping (bytes32 => mapping (address => uint256)) attributes;
+
+    address public rewardManager;
+    mapping (address => uint256) _balanceOfLoanBackedTokens;
 
 
     /* Additionally, we have several keccak-based storage locations.
