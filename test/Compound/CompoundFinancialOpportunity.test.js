@@ -1,3 +1,5 @@
+import assertBalance from '../helpers/assertBalance'
+
 const Registry = artifacts.require('Registry')
 const CompliantTokenMock = artifacts.require('CompliantTokenMock')
 const MockCErc20 = artifacts.require('MockCErc20')
@@ -32,7 +34,19 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred]) {
     await this.token.transfer(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
     await this.financialOpportunity.tokenFallback(oneHundred, BN(10*10**18))
 
-    const balance = await this.financialOpportunity.balanceOf(oneHundred)
-    assert(balance.eq(BN(10*10**18)))
+    assertBalance(this.financialOpportunity, oneHundred, BN(10*10**18))
+    assertBalance(this.token, oneHundred, BN(90*10**18))
+    assertBalance(this.token, this.cToken.address, BN(10*10**18))
+  })
+
+  it('can withdraw', async function () {
+    await this.token.transfer(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
+    await this.financialOpportunity.tokenFallback(oneHundred, BN(10*10**18))
+
+    await this.financialOpportunity.withdraw(BN(5*10**18), { from: oneHundred })
+
+    assertBalance(this.financialOpportunity, oneHundred, BN(5*10**18))
+    assertBalance(this.token, oneHundred, BN(95*10**18))
+    assertBalance(this.token, this.cToken.address, BN(5*10**18))
   })
 })

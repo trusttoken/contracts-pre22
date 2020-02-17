@@ -20,7 +20,7 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver {
         return address(cToken);
     }
 
-    function tokenAddress() public view returns(address ) {
+    function tokenAddress() public view returns(address) {
         return address(token);
     }
 
@@ -33,5 +33,21 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver {
 
     function balanceOf(address owner) public view returns(uint256) {
         return cTokenBalance[owner];
+    }
+
+    function withdraw(uint256 amount) external {
+        _withdraw(msg.sender, amount);
+    }
+
+    function withdrawManager(address owner, uint256 amount) external {
+        // require(msg.sender == address(manager), "only manager")
+        _withdraw(owner, amount);
+    }
+
+    function _withdraw(address owner, uint256 amount) internal {
+        require(cTokenBalance[owner] >= amount, "not enough balance");
+        require(cToken.redeem(amount) == 0, "redeem failed");
+        require(token.transfer(owner, amount), "transfer failed");
+        cTokenBalance[owner] -= amount;
     }
 }
