@@ -14,8 +14,8 @@ contract MockCErc20 is CErc20Interface {
   }
 
   function mint(uint mintAmount) external returns (uint) {
-    require(token.allowance(msg.sender, address(this)) < mintAmount, "Not enough allowance");
-    require(token.balanceOf(msg.sender) < mintAmount, "Not enough balance");
+    require(token.allowance(msg.sender, address(this)) >= mintAmount, "Not enough allowance");
+    require(token.balanceOf(msg.sender) >= mintAmount, "Not enough balance");
 
     require(token.transferFrom(msg.sender, address(this), mintAmount), "transfer failed");
     balance[msg.sender] += mintAmount;
