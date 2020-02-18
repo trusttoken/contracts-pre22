@@ -37,14 +37,6 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, Ownable {
         rewardManager = _rewardManager;
     }
 
-    function cTokenAddress() public view returns(address) {
-        return address(cToken);
-    }
-
-    function tokenAddress() public view returns(address) {
-        return address(token);
-    }
-
     function tokenFallback(address from, uint256 value) external /* onlyToken */ {
         require(token.approve(address(cToken), value), "approve failed");
         require(cToken.mint(value) == 0, "mint failed");

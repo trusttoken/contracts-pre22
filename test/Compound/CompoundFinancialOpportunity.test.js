@@ -24,10 +24,10 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, reward
   })
 
   it('configured to proper addresses', async function () {
-    const cTokenAddress = await this.financialOpportunity.cTokenAddress()
+    const cTokenAddress = await this.financialOpportunity.cToken()
     assert.equal(cTokenAddress, this.cToken.address)
 
-    const tokenAddress = await this.financialOpportunity.tokenAddress()
+    const tokenAddress = await this.financialOpportunity.token()
     assert.equal(tokenAddress, this.token.address)
 
     const rewardManagerAddress = await this.financialOpportunity.rewardManager()
@@ -37,10 +37,10 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, reward
   it('can reconfigure', async function () {
     await this.financialOpportunity.configure(address1, address2, address3, { from: owner })
 
-    const cTokenAddress = await this.financialOpportunity.cTokenAddress()
+    const cTokenAddress = await this.financialOpportunity.cToken()
     assert.equal(cTokenAddress, address1)
 
-    const tokenAddress = await this.financialOpportunity.tokenAddress()
+    const tokenAddress = await this.financialOpportunity.token()
     assert.equal(tokenAddress, address2)
 
     const rewardManagerAddress = await this.financialOpportunity.rewardManager()
