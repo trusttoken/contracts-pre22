@@ -70,4 +70,22 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, reward
     await assertBalance(this.token, oneHundred, BN(95*10**18))
     await assertBalance(this.token, this.cToken.address, BN(5*10**18))
   })
+
+  it('can withdraw as reward manager', async function () {
+    await this.token.transfer(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
+    await this.financialOpportunity.tokenFallback(oneHundred, BN(10*10**18))
+
+    await this.financialOpportunity.withdrawFor(oneHundred, BN(5*10**18), { from: rewardManager })
+
+    await assertBalance(this.financialOpportunity, oneHundred, BN(5*10**18))
+    await assertBalance(this.token, oneHundred, BN(95*10**18))
+    await assertBalance(this.token, this.cToken.address, BN(5*10**18))
+  })
+
+  it('cannot withdraw for different user if not calling from reward manager', async function () {
+    await this.token.transfer(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
+    await this.financialOpportunity.tokenFallback(oneHundred, BN(10*10**18))
+
+    await assertRevert(this.financialOpportunity.withdrawFor(oneHundred, BN(5*10**18), { from: address1 }))
+  })
 })

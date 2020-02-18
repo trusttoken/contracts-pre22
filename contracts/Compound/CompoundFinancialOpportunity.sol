@@ -51,7 +51,7 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, Ownable {
         _withdraw(msg.sender, amount);
     }
 
-    function withdrawManager(address owner, uint256 amount) external onlyRewardManager {
+    function withdrawFor(address owner, uint256 amount) external onlyRewardManager {
         _withdraw(owner, amount);
     }
 
