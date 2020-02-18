@@ -6,25 +6,35 @@ import "./CErc20Interface.sol";
 contract CompoundFinancialOpportunity is TrueCoinReceiver, Ownable {
     CErc20Interface public cToken;
     TrueRewardBackedToken public token;
+    IRewardManager public rewardManager;
     mapping (address => uint256) public cTokenBalance;
 
-    constructor(CErc20Interface _cToken, TrueRewardBackedToken _token) public {
-        configure(_cToken, _token);
+    constructor(
+        CErc20Interface _cToken,
+        TrueRewardBackedToken _token,
+        IRewardManager _rewardManager
+    ) public {
+        configure(_cToken, _token, _rewardManager);
     }
 
-    modifier onlyManager() {
-        // require(msg.sender == address(manager), "only manager")
+    modifier onlyRewardManager() {
+        require(msg.sender == address(rewardManager), "only reward manager");
         _;
     }
 
     modifier onlyToken() {
-        // require(msg.sender == address(token), "fallback must be called from token's address");
+        require(msg.sender == address(token), "only token");
         _;
     }
 
-    function configure(CErc20Interface _cToken, TrueRewardBackedToken _token) public onlyOwner {
+    function configure(
+        CErc20Interface _cToken,
+        TrueRewardBackedToken _token,
+        IRewardManager _rewardManager
+    ) public onlyOwner {
         cToken = _cToken;
         token = _token;
+        rewardManager = _rewardManager;
     }
 
     function cTokenAddress() public view returns(address) {
@@ -35,7 +45,7 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, Ownable {
         return address(token);
     }
 
-    function tokenFallback(address from, uint256 value) external onlyToken {
+    function tokenFallback(address from, uint256 value) external /* onlyToken */ {
         require(token.approve(address(cToken), value), "approve failed");
         require(cToken.mint(value) == 0, "mint failed");
         cTokenBalance[from] += value;
@@ -49,7 +59,7 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, Ownable {
         _withdraw(msg.sender, amount);
     }
 
-    function withdrawManager(address owner, uint256 amount) external onlyManager {
+    function withdrawManager(address owner, uint256 amount) external onlyRewardManager {
         _withdraw(owner, amount);
     }
 

@@ -1,3 +1,6 @@
 [submodule "registry"]
 	path = registry
 	url = https://github.com/trusttoken/registry
+[submodule "compound-protocol"]
+	path = compound-protocol
+	url = git@github.com:compound-finance/compound-protocol.git

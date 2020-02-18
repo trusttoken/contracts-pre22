@@ -9,7 +9,7 @@ const CompoundFinancialOpportunity = artifacts.require('CompoundFinancialOpportu
 const BN = web3.utils.toBN;
 const bytes32 = require('../helpers/bytes32.js')
 
-contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, address1, address2]) {
+contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, rewardManager, address1, address2, address3]) {
   const IS_REGISTERED_CONTRACT = bytes32('isRegisteredContract');
 
   beforeEach(async function () {
@@ -19,7 +19,7 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, addres
     
     this.cToken = await MockCErc20.new(this.token.address, { from: owner })
 
-    this.financialOpportunity = await CompoundFinancialOpportunity.new(this.cToken.address, this.token.address, { from: owner })
+    this.financialOpportunity = await CompoundFinancialOpportunity.new(this.cToken.address, this.token.address, rewardManager, { from: owner })
     await this.registry.setAttributeValue(this.financialOpportunity.address, IS_REGISTERED_CONTRACT, this.financialOpportunity.address, { from: owner });
   })
 
@@ -29,20 +29,26 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, addres
 
     const tokenAddress = await this.financialOpportunity.tokenAddress()
     assert.equal(tokenAddress, this.token.address)
+
+    const rewardManagerAddress = await this.financialOpportunity.rewardManager()
+    assert.equal(rewardManagerAddress, rewardManager)
   })
 
   it('can reconfigure', async function () {
-    await this.financialOpportunity.configure(address1, address2, { from: owner })
+    await this.financialOpportunity.configure(address1, address2, address3, { from: owner })
 
     const cTokenAddress = await this.financialOpportunity.cTokenAddress()
     assert.equal(cTokenAddress, address1)
 
     const tokenAddress = await this.financialOpportunity.tokenAddress()
     assert.equal(tokenAddress, address2)
+
+    const rewardManagerAddress = await this.financialOpportunity.rewardManager()
+    assert.equal(rewardManagerAddress, address3)
   })
 
   it('non-owner cannot reconfigure', async function () {
-    await assertRevert(this.financialOpportunity.configure(address1, address2, { from: oneHundred }))
+    await assertRevert(this.financialOpportunity.configure(address1, address2, address3, { from: oneHundred }))
   })
 
   it('mints cTokens on transfer', async function () {
