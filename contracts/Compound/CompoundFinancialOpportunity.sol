@@ -12,6 +12,16 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, Ownable {
         configure(_cToken, _token);
     }
 
+    modifier onlyManager() {
+        // require(msg.sender == address(manager), "only manager")
+        _;
+    }
+
+    modifier onlyToken() {
+        // require(msg.sender == address(token), "fallback must be called from token's address");
+        _;
+    }
+
     function configure(CErc20Interface _cToken, TrueRewardBackedToken _token) public onlyOwner {
         cToken = _cToken;
         token = _token;
@@ -25,8 +35,7 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, Ownable {
         return address(token);
     }
 
-    function tokenFallback(address from, uint256 value) external {
-        // require(msg.sender == address(token), "fallback must be called from token's address");
+    function tokenFallback(address from, uint256 value) external onlyToken {
         require(token.approve(address(cToken), value), "approve failed");
         require(cToken.mint(value) == 0, "mint failed");
         cTokenBalance[from] += value;
@@ -40,8 +49,7 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, Ownable {
         _withdraw(msg.sender, amount);
     }
 
-    function withdrawManager(address owner, uint256 amount) external {
-        // require(msg.sender == address(manager), "only manager")
+    function withdrawManager(address owner, uint256 amount) external onlyManager {
         _withdraw(owner, amount);
     }
 
