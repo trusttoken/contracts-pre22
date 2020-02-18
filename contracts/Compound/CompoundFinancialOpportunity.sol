@@ -3,15 +3,16 @@ pragma solidity ^0.5.13;
 import "../TrueCurrencies/TrueRewardBackedToken.sol";
 import "./CErc20Interface.sol";
 
-contract CompoundFinancialOpportunity is TrueCoinReceiver {
+contract CompoundFinancialOpportunity is TrueCoinReceiver, Ownable {
     CErc20Interface public cToken;
     TrueRewardBackedToken public token;
     mapping (address => uint256) public cTokenBalance;
 
-    constructor(
-        CErc20Interface _cToken,
-        TrueRewardBackedToken _token
-    ) public {
+    constructor(CErc20Interface _cToken, TrueRewardBackedToken _token) public {
+        configure(_cToken, _token);
+    }
+
+    function configure(CErc20Interface _cToken, TrueRewardBackedToken _token) public onlyOwner {
         cToken = _cToken;
         token = _token;
     }

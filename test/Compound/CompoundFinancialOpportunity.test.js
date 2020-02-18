@@ -1,4 +1,5 @@
 import assertBalance from '../helpers/assertBalance'
+import assertRevert from '../../registry/test/helpers/assertRevert'
 
 const Registry = artifacts.require('Registry')
 const CompliantTokenMock = artifacts.require('CompliantTokenMock')
@@ -8,7 +9,7 @@ const CompoundFinancialOpportunity = artifacts.require('CompoundFinancialOpportu
 const BN = web3.utils.toBN;
 const bytes32 = require('../helpers/bytes32.js')
 
-contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred]) {
+contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, address1, address2]) {
   const IS_REGISTERED_CONTRACT = bytes32('isRegisteredContract');
 
   beforeEach(async function () {
@@ -22,12 +23,26 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred]) {
     // await this.registry.setAttributeValue(this.cToken.address, IS_REGISTERED_CONTRACT, this.cToken.address, { from: owner });
   })
 
-  it('initialized to proper addresses', async function () {
-    const tokenAddress = await this.financialOpportunity.tokenAddress()
-    assert.equal(tokenAddress, this.token.address)
-
+  it('configured to proper addresses', async function () {
     const cTokenAddress = await this.financialOpportunity.cTokenAddress()
     assert.equal(cTokenAddress, this.cToken.address)
+
+    const tokenAddress = await this.financialOpportunity.tokenAddress()
+    assert.equal(tokenAddress, this.token.address)
+  })
+
+  it('can reconfigure', async function () {
+    await this.financialOpportunity.configure(address1, address2, { from: owner })
+
+    const cTokenAddress = await this.financialOpportunity.cTokenAddress()
+    assert.equal(cTokenAddress, address1)
+
+    const tokenAddress = await this.financialOpportunity.tokenAddress()
+    assert.equal(tokenAddress, address2)
+  })
+
+  it('non-owner cannot reconfigure', async function () {
+    assertRevert(this.financialOpportunity.configure(address1, address2, { from: oneHundred }))
   })
 
   it('mints cTokens on transfer', async function () {
