@@ -1,7 +1,7 @@
 import assertBalance from '../helpers/assertBalance'
 import assertRevert from '../../registry/test/helpers/assertRevert'
 
-const Registry = artifacts.require('Registry')
+const Registry = artifacts.require('RegistryMock')
 const CompliantTokenMock = artifacts.require('CompliantTokenMock')
 const MockCErc20 = artifacts.require('MockCErc20')
 const CompoundFinancialOpportunity = artifacts.require('CompoundFinancialOpportunity')
@@ -20,7 +20,7 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, addres
     this.cToken = await MockCErc20.new(this.token.address, { from: owner })
 
     this.financialOpportunity = await CompoundFinancialOpportunity.new(this.cToken.address, this.token.address, { from: owner })
-    // await this.registry.setAttributeValue(this.cToken.address, IS_REGISTERED_CONTRACT, this.cToken.address, { from: owner });
+    await this.registry.setAttributeValue(this.financialOpportunity.address, IS_REGISTERED_CONTRACT, this.financialOpportunity.address, { from: owner });
   })
 
   it('configured to proper addresses', async function () {
@@ -42,16 +42,16 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, addres
   })
 
   it('non-owner cannot reconfigure', async function () {
-    assertRevert(this.financialOpportunity.configure(address1, address2, { from: oneHundred }))
+    await assertRevert(this.financialOpportunity.configure(address1, address2, { from: oneHundred }))
   })
 
   it('mints cTokens on transfer', async function () {
     await this.token.transfer(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
     await this.financialOpportunity.tokenFallback(oneHundred, BN(10*10**18))
 
-    assertBalance(this.financialOpportunity, oneHundred, BN(10*10**18))
-    assertBalance(this.token, oneHundred, BN(90*10**18))
-    assertBalance(this.token, this.cToken.address, BN(10*10**18))
+    await assertBalance(this.financialOpportunity, oneHundred, BN(10*10**18))
+    await assertBalance(this.token, oneHundred, BN(90*10**18))
+    await assertBalance(this.token, this.cToken.address, BN(10*10**18))
   })
 
   it('can withdraw', async function () {
@@ -60,8 +60,8 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, addres
 
     await this.financialOpportunity.withdraw(BN(5*10**18), { from: oneHundred })
 
-    assertBalance(this.financialOpportunity, oneHundred, BN(5*10**18))
-    assertBalance(this.token, oneHundred, BN(95*10**18))
-    assertBalance(this.token, this.cToken.address, BN(5*10**18))
+    await assertBalance(this.financialOpportunity, oneHundred, BN(5*10**18))
+    await assertBalance(this.token, oneHundred, BN(95*10**18))
+    await assertBalance(this.token, this.cToken.address, BN(5*10**18))
   })
 })
