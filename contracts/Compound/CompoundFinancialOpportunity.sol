@@ -2,19 +2,17 @@ pragma solidity ^0.5.13;
 
 import "../TrueCurrencies/TrueRewardBackedToken.sol";
 import "./CErc20Interface.sol";
+import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 
-contract CompoundFinancialOpportunity is TrueCoinReceiver, Ownable {
+contract CompoundFinancialOpportunity is TrueCoinReceiver {
     CErc20Interface public cToken;
     TrueRewardBackedToken public token;
     IRewardManager public rewardManager;
     mapping (address => uint256) public cTokenBalance;
 
-    constructor(
-        CErc20Interface _cToken,
-        TrueRewardBackedToken _token,
-        IRewardManager _rewardManager
-    ) public {
-        configure(_cToken, _token, _rewardManager);
+    modifier onlyOwner() {
+        require(msg.sender == proxyOwner(), "only owner");
+        _;
     }
 
     modifier onlyRewardManager() {
@@ -35,6 +33,10 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, Ownable {
         cToken = _cToken;
         token = _token;
         rewardManager = _rewardManager;
+    }
+
+    function proxyOwner() public view returns(address) {
+        return OwnedUpgradeabilityProxy(address(this)).proxyOwner();
     }
 
     function tokenFallback(address from, uint256 value) external /* onlyToken */ {
@@ -60,5 +62,8 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, Ownable {
         require(cToken.redeem(amount) == 0, "redeem failed");
         require(token.transfer(owner, amount), "transfer failed");
         cTokenBalance[owner] -= amount;
+    }
+
+    function() external payable {
     }
 }

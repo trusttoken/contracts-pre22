@@ -5,6 +5,7 @@ const Registry = artifacts.require('RegistryMock')
 const CompliantTokenMock = artifacts.require('CompliantTokenMock')
 const MockCErc20 = artifacts.require('MockCErc20')
 const CompoundFinancialOpportunity = artifacts.require('CompoundFinancialOpportunity')
+const OwnedUpgradeabilityProxy = artifacts.require('OwnedUpgradeabilityProxy')
 
 const BN = web3.utils.toBN;
 const bytes32 = require('../helpers/bytes32.js')
@@ -19,7 +20,12 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, reward
     
     this.cToken = await MockCErc20.new(this.token.address, { from: owner })
 
-    this.financialOpportunity = await CompoundFinancialOpportunity.new(this.cToken.address, this.token.address, rewardManager, { from: owner })
+    this.financialOpportunityImpl = await CompoundFinancialOpportunity.new({ from: owner })
+    this.financialOpportunityProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
+    this.financialOpportunity = await CompoundFinancialOpportunity.at(this.financialOpportunityProxy.address)
+    await this.financialOpportunityProxy.upgradeTo(this.financialOpportunityImpl.address, { from: owner })
+    await this.financialOpportunity.configure(this.cToken.address, this.token.address, rewardManager, { from: owner })
+
     await this.registry.setAttributeValue(this.financialOpportunity.address, IS_REGISTERED_CONTRACT, this.financialOpportunity.address, { from: owner });
   })
 
