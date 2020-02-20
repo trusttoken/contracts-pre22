@@ -16,15 +16,21 @@ contract MockCErc20 is CErc20Interface {
   }
 
   function mint(uint mintAmount) external returns (uint) {
-    require(token.allowance(msg.sender, address(this)) >= mintAmount, "Not enough allowance");
-    require(token.balanceOf(msg.sender) >= mintAmount, "Not enough balance");
+    if(token.allowance(msg.sender, address(this)) < mintAmount) {
+      return 1;
+    }
+    if(token.balanceOf(msg.sender) < mintAmount) {
+      return 1;
+    }
 
     require(token.transferFrom(msg.sender, address(this), mintAmount), "transfer failed");
     balance[msg.sender] += tokenCountOf(mintAmount);
   }
 
   function redeem(uint redeemTokens) external returns (uint) {
-    require(balance[msg.sender] >= redeemTokens, "Not enough tokens");
+    if(balance[msg.sender] < redeemTokens) {
+      return 1;
+    }
 
     balance[msg.sender] -= redeemTokens;
     require(token.transfer(msg.sender, underlyingValueOf(redeemTokens)), "transfer failed");
@@ -37,7 +43,6 @@ contract MockCErc20 is CErc20Interface {
   function tokenCountOf(uint256 value) internal returns (uint) {
     return value * (10**18) / exchangeRate;
   }
-
 
   function balanceOf(address owner) external view returns (uint256) {
     return balance[owner];
