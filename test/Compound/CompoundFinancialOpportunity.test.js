@@ -136,5 +136,16 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, reward
       await assertBalance(this.token, oneHundred, BN(90*10**18))
       await assertBalance(this.token, this.cToken.address, BN(10*10**18))
     })
+
+    it('sets the failed withdrawal for the user', async function () {
+      await this.token.transfer(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
+      await this.financialOpportunity.tokenFallback(oneHundred, BN(10*10**18))
+  
+      await this.financialOpportunity.withdraw(BN(5*10**18), { from: oneHundred })
+
+      const failedWithdrawal = await this.financialOpportunity.failedWithdrawals(oneHundred)
+      assert(failedWithdrawal.timestamp > 0)
+      assert(failedWithdrawal.amount.eq(BN(5*10**18)))
+    })
   })
 })

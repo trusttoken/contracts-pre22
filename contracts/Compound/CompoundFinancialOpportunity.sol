@@ -3,12 +3,21 @@ pragma solidity ^0.5.13;
 import "../TrueCurrencies/TrueRewardBackedToken.sol";
 import "./CErc20Interface.sol";
 import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
+import "./IdGenerator.sol";
 
-contract CompoundFinancialOpportunity is TrueCoinReceiver {
+contract CompoundFinancialOpportunity is TrueCoinReceiver, IdGenerator {
     CErc20Interface public cToken;
     TrueRewardBackedToken public token;
     IRewardManager public rewardManager;
     mapping (address => uint256) public cTokenBalance;
+
+    struct FailedWithdrawal {
+        uint256 id;
+        uint256 timestamp;
+        uint256 amount;
+    }
+
+    mapping (address => FailedWithdrawal) public failedWithdrawals;
 
     modifier onlyOwner() {
         require(msg.sender == proxyOwner(), "only owner");
@@ -68,6 +77,9 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver {
 
         uint256 balanceBefore = token.balanceOf(address(this));
         if(cToken.redeem(amount) != 0) {
+            failedWithdrawals[owner].id = getNextId();
+            failedWithdrawals[owner].timestamp = block.timestamp;
+            failedWithdrawals[owner].amount = amount;
             return 1;
         }
         uint256 balanceAfter = token.balanceOf(address(this));
