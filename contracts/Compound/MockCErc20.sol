@@ -6,6 +6,8 @@ import "./CErc20Interface.sol";
 contract MockCErc20 is CErc20Interface {
   IERC20 public token;
   mapping (address => uint256) public balance;
+  uint256 public exchangeRate = 1*10**18;
+  bool public redeemEnabled = true;
 
   constructor(
     IERC20 _token
@@ -18,17 +20,38 @@ contract MockCErc20 is CErc20Interface {
     require(token.balanceOf(msg.sender) >= mintAmount, "Not enough balance");
 
     require(token.transferFrom(msg.sender, address(this), mintAmount), "transfer failed");
-    balance[msg.sender] += mintAmount;
+    balance[msg.sender] += tokenCountOf(mintAmount);
   }
 
   function redeem(uint redeemTokens) external returns (uint) {
     require(balance[msg.sender] >= redeemTokens, "Not enough tokens");
 
     balance[msg.sender] -= redeemTokens;
-    require(token.transfer(msg.sender, redeemTokens), "transfer failed");
+    require(token.transfer(msg.sender, underlyingValueOf(redeemTokens)), "transfer failed");
+  }
+
+  function underlyingValueOf(uint256 tokens) internal returns (uint) {
+    return tokens * exchangeRate / (10**18);
+  }
+
+  function tokenCountOf(uint256 value) internal returns (uint) {
+    return value * (10**18) / exchangeRate;
+  }
+
+
+  function balanceOf(address owner) external view returns (uint256) {
+    return balance[owner];
   }
 
   function balanceOfUnderlying(address owner) external returns (uint) {
-    return balance[owner];
+    return underlyingValueOf(balance[owner]);
+  }
+
+  function setExchangeRate(uint256 _exchangeRate) external {
+    exchangeRate = _exchangeRate;
+  }
+
+  function setRedeemEnabled(bool _redeemEnabled) external {
+    redeemEnabled = _redeemEnabled;
   }
 }

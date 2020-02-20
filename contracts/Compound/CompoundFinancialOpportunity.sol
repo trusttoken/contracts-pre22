@@ -41,8 +41,14 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver {
 
     function tokenFallback(address from, uint256 value) external /* onlyToken */ {
         require(token.approve(address(cToken), value), "approve failed");
+        
+        uint256 balanceBefore = cToken.balanceOf(address(this));
         require(cToken.mint(value) == 0, "mint failed");
-        cTokenBalance[from] += value;
+        uint256 balanceAfter = cToken.balanceOf(address(this));
+        uint256 tokensMinted = balanceAfter - balanceBefore;
+        require(tokensMinted >= 0);
+
+        cTokenBalance[from] += tokensMinted;
     }
 
     function balanceOf(address owner) public view returns(uint256) {
@@ -59,10 +65,13 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver {
 
     function _withdraw(address owner, uint256 amount) internal {
         require(cTokenBalance[owner] >= amount, "not enough balance");
+
         uint256 balanceBefore = token.balanceOf(address(this));
         require(cToken.redeem(amount) == 0, "redeem failed");
         uint256 balanceAfter = token.balanceOf(address(this));
-        require(token.transfer(owner, balanceAfter - balanceBefore), "transfer failed");
+        uint256 fundsWithdrawn = balanceAfter - balanceBefore;
+
+        require(token.transfer(owner, fundsWithdrawn), "transfer failed");
         cTokenBalance[owner] -= amount;
     }
 

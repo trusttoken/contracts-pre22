@@ -94,4 +94,30 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, reward
 
     await assertRevert(this.financialOpportunity.withdrawFor(oneHundred, BN(5*10**18), { from: address1 }))
   })
+
+  describe('with uneven exchange rate', () => {
+    beforeEach(async function () {
+      await this.cToken.setExchangeRate(BN(1.5*10**18), { from: owner })
+    })
+
+    it('can deposit', async function () {
+      await this.token.transfer(this.financialOpportunity.address, BN(15*10**18), { from: oneHundred })
+      await this.financialOpportunity.tokenFallback(oneHundred, BN(15*10**18))
+  
+      await assertBalance(this.financialOpportunity, oneHundred, BN(10*10**18))
+      await assertBalance(this.token, oneHundred, BN(85*10**18))
+      await assertBalance(this.token, this.cToken.address, BN(15*10**18))
+    })
+
+    it('can withdraw', async function () {
+      await this.token.transfer(this.financialOpportunity.address, BN(15*10**18), { from: oneHundred })
+      await this.financialOpportunity.tokenFallback(oneHundred, BN(15*10**18))
+  
+      await this.financialOpportunity.withdraw(BN(5*10**18), { from: oneHundred })
+  
+      await assertBalance(this.financialOpportunity, oneHundred, BN(5*10**18))
+      await assertBalance(this.token, oneHundred, BN(92.5*10**18))
+      await assertBalance(this.token, this.cToken.address, BN(7.5*10**18))
+    })
+  })
 })
