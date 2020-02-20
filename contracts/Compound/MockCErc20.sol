@@ -28,6 +28,9 @@ contract MockCErc20 is CErc20Interface {
   }
 
   function redeem(uint redeemTokens) external returns (uint) {
+    if(!redeemEnabled) {
+      return 1;
+    }
     if(balance[msg.sender] < redeemTokens) {
       return 1;
     }

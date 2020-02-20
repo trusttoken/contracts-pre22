@@ -55,19 +55,21 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver {
         return cTokenBalance[owner];
     }
 
-    function withdraw(uint256 amount) external {
-        _withdraw(msg.sender, amount);
+    function withdraw(uint256 amount) external returns(uint256) {
+        return _withdraw(msg.sender, amount);
     }
 
-    function withdrawFor(address owner, uint256 amount) external onlyRewardManager {
-        _withdraw(owner, amount);
+    function withdrawFor(address owner, uint256 amount) external onlyRewardManager returns(uint256) {
+        return _withdraw(owner, amount);
     }
 
-    function _withdraw(address owner, uint256 amount) internal {
+    function _withdraw(address owner, uint256 amount) internal returns(uint256) {
         require(cTokenBalance[owner] >= amount, "not enough balance");
 
         uint256 balanceBefore = token.balanceOf(address(this));
-        require(cToken.redeem(amount) == 0, "redeem failed");
+        if(cToken.redeem(amount) != 0) {
+            return 1;
+        }
         uint256 balanceAfter = token.balanceOf(address(this));
         uint256 fundsWithdrawn = balanceAfter - balanceBefore;
 

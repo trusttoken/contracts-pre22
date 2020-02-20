@@ -120,4 +120,21 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, reward
       await assertBalance(this.token, this.cToken.address, BN(7.5*10**18))
     })
   })
+
+  describe('failed withdrawals', function () {
+    beforeEach(async function () {
+      await this.cToken.setRedeemEnabled(false, { from: owner })
+    })
+
+    it('balances stay unchanged', async function () {
+      await this.token.transfer(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
+      await this.financialOpportunity.tokenFallback(oneHundred, BN(10*10**18))
+  
+      await this.financialOpportunity.withdraw(BN(5*10**18), { from: oneHundred })
+  
+      await assertBalance(this.financialOpportunity, oneHundred, BN(10*10**18))
+      await assertBalance(this.token, oneHundred, BN(90*10**18))
+      await assertBalance(this.token, this.cToken.address, BN(10*10**18))
+    })
+  })
 })
