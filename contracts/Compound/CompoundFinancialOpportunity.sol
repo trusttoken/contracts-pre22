@@ -89,6 +89,20 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, IdGenerator {
         cTokenBalance[owner] -= amount;
     }
 
+    function hasFailedWithdrawal(address owner) public view returns(bool) {
+        return failedWithdrawals[owner].timestamp > 0;
+    }
+
+    function replayFailedWithdrawal(address owner) external onlyRewardManager {
+        require(hasFailedWithdrawal(owner), "no failed withdrawals");
+
+        require(_withdraw(owner, failedWithdrawals[owner].amount) == 0);
+
+        failedWithdrawals[owner].id = 0;
+        failedWithdrawals[owner].timestamp = 0;
+        failedWithdrawals[owner].amount = 0;
+    }
+
     function() external payable {
     }
 }

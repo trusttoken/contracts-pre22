@@ -148,4 +148,44 @@ contract('CompoundFinancialOpportunity', function ([_, owner, oneHundred, reward
       assert(failedWithdrawal.amount.eq(BN(5*10**18)))
     })
   })
+
+  describe('replay failed withdrawal', function () {
+    beforeEach(async function () {
+      await this.cToken.setRedeemEnabled(false, { from: owner })
+
+      await this.token.transfer(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
+      await this.financialOpportunity.tokenFallback(oneHundred, BN(10*10**18))
+  
+      await this.financialOpportunity.withdraw(BN(5*10**18), { from: oneHundred })
+    })
+
+    it('can replay failed withdrawal', async function () {
+      await this.cToken.setRedeemEnabled(true, { from: owner })
+
+      await this.financialOpportunity.replayFailedWithdrawal(oneHundred, { from: rewardManager })
+
+      assert(!await this.financialOpportunity.hasFailedWithdrawal(oneHundred))
+      await assertBalance(this.financialOpportunity, oneHundred, BN(5*10**18))
+      await assertBalance(this.token, oneHundred, BN(95*10**18))
+      await assertBalance(this.token, this.cToken.address, BN(5*10**18))
+    })
+
+    it('transaction reverts if the withdrawal still fails', async function () {
+      await assertRevert(this.financialOpportunity.replayFailedWithdrawal(oneHundred, { from: rewardManager }))
+
+      assert(await this.financialOpportunity.hasFailedWithdrawal(oneHundred))
+      await assertBalance(this.financialOpportunity, oneHundred, BN(10*10**18))
+      await assertBalance(this.token, oneHundred, BN(90*10**18))
+      await assertBalance(this.token, this.cToken.address, BN(10*10**18))
+    })
+
+    it('only reward manager can call', async function () {
+      await this.cToken.setRedeemEnabled(true, { from: owner })
+
+      await assertRevert(this.financialOpportunity.replayFailedWithdrawal(oneHundred, { from: oneHundred }))
+      await assertRevert(this.financialOpportunity.replayFailedWithdrawal(oneHundred, { from: owner }))
+
+      assert(await this.financialOpportunity.hasFailedWithdrawal(oneHundred))
+    })
+  })
 })
