@@ -49,6 +49,9 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, IdGenerator {
     }
 
     function tokenFallback(address from, uint256 value) external /* onlyToken */ {
+        if(from == address(cToken)) {
+            return;
+        }
         require(token.approve(address(cToken), value), "approve failed");
         
         uint256 balanceBefore = cToken.balanceOf(address(this));
@@ -85,8 +88,8 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, IdGenerator {
         uint256 balanceAfter = token.balanceOf(address(this));
         uint256 fundsWithdrawn = balanceAfter - balanceBefore;
 
-        require(token.transfer(owner, fundsWithdrawn), "transfer failed");
         cTokenBalance[owner] -= amount;
+        require(token.transfer(owner, fundsWithdrawn), "transfer failed");
     }
 
     function hasFailedWithdrawal(address owner) public view returns(bool) {
@@ -96,11 +99,11 @@ contract CompoundFinancialOpportunity is TrueCoinReceiver, IdGenerator {
     function replayFailedWithdrawal(address owner) external onlyRewardManager {
         require(hasFailedWithdrawal(owner), "no failed withdrawals");
 
-        require(_withdraw(owner, failedWithdrawals[owner].amount) == 0);
-
         failedWithdrawals[owner].id = 0;
         failedWithdrawals[owner].timestamp = 0;
         failedWithdrawals[owner].amount = 0;
+
+        require(_withdraw(owner, failedWithdrawals[owner].amount) == 0);
     }
 
     function() external payable {
