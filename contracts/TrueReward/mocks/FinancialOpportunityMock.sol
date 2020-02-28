@@ -1,12 +1,6 @@
 pragma solidity ^0.5.13;
 
-contract FinancialOpportunityMock {
-    /**
-    * @dev deposits TUSD into interface first then transfer 
-    * @param _to The address to transfer to.
-    * @param _value The amount to be transferred.
-    */
-    
+contract FinancialOpportunityMock {    
     function deposit(address _account, uint _amount) external returns(uint) {
 
     }

@@ -6,7 +6,7 @@ interface FinancialOpportunity {
     function deposit(address _account, uint _amount) external returns(uint);
     function withdraw(address _account, uint _amount) external returns(uint);
     function withdrawAll(address _account) external returns(uint);
-    function perTokenValue() external returns(uint);
+    function perTokenValue() external view returns(uint);
 }
 
 contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
@@ -25,7 +25,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         return _totalIearnSupply;
     }
 
-    function accountTotalLoanBackedBalance(address _account) internal view {
+    function accountTotalLoanBackedBalance(address _account) internal view returns (uint) {
         // this works for single opportunity
         return _financialOpportunityBalances[_account][iEarnInterfaceAddress()];
     }
@@ -49,7 +49,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         _enableIearn();
         uint balance = _getBalance(msg.sender);
         approve(iEarnInterfaceAddress(), balance);
-        uint yTUSDAmount = FinancialOpportunityInterface(iEarnInterfaceAddress()).deposit(msg.sender, balance);
+        uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(msg.sender, balance);
         // emit some event
         _totalIearnSupply = _totalIearnSupply.add(yTUSDAmount);
         _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].add(yTUSDAmount);
@@ -59,12 +59,12 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         require(trueRewardEnabled(msg.sender), "already turned on");
         _disableIearn();
         // should this fail right now?
-        FinancialOpportunityInterface(iEarnInterfaceAddress()).withdrawAll(msg.sender);
+        FinancialOpportunity(iEarnInterfaceAddress()).withdrawAll(msg.sender);
     }
 
     function balanceOf(address _who) public view returns (uint256) {
         if (trueRewardEnabled(_who)) {
-            uint ratio = FinancialOpportunityInterface(iEarnInterfaceAddress()).perTokenValue();
+            uint ratio = FinancialOpportunity(iEarnInterfaceAddress()).perTokenValue();
             return ratio.mul(accountTotalLoanBackedBalance(_who));
         }
         return super.balanceOf(_who);
@@ -76,13 +76,13 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         // consider the recursive case where interface is also enabled?
         if (senderTrueRewardEnabled) {
             // sender enabled receiver not enabled
-            FinancialOpportunityInterface(iEarnInterfaceAddress()).withdraw(_to, _value);
+            FinancialOpportunity(iEarnInterfaceAddress()).withdraw(_to, _value);
         }
-        if (receiverTrueRewardEnabled & !senderTrueRewardEnabled) {
+        if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             // sender not enabled receiver enabled
-            FinancialOpportunityInterface(iEarnInterfaceAddress()).deposit(_to, _value);
+            FinancialOpportunity(iEarnInterfaceAddress()).deposit(_to, _value);
         }
-        if (!senderTrueRewardEnabled & !receiverTrueRewardEnabled) {
+        if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
             // sender not enabled receiver not enabled
             return super._transferAllArgs(_from, _to, _value);
         }
@@ -92,9 +92,9 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         bool senderTrueRewardEnabled = trueRewardEnabled(_from);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (senderTrueRewardEnabled) {
-            FinancialOpportunityInterface(iEarnInterfaceAddress()).withdraw(_to, _value);
+            FinancialOpportunity(iEarnInterfaceAddress()).withdraw(_to, _value);
         }
-        if (!senderTrueRewardEnabled & !receiverTrueRewardEnabled) {
+        if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
             // sender not enabled receiver not enabled
             return super._transferFromAllArgs(_from, _to, _value, _spender);
         }
@@ -106,7 +106,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         if (receiverTrueRewardEnabled) {
             uint balance = _getBalance(msg.sender);
             approve(iEarnInterfaceAddress(), balance);
-            uint yTUSDAmount = FinancialOpportunityInterface(iEarnInterfaceAddress()).deposit(msg.sender, balance);
+            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(msg.sender, balance);
             // emit some event
             _totalIearnSupply = _totalIearnSupply.add(yTUSDAmount);
             _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].add(yTUSDAmount);
