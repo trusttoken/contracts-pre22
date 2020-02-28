@@ -73,13 +73,17 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     function transfer(address _to, uint256 _value) public returns (bool) {
         bool senderTrueRewardEnabled = trueRewardEnabled(msg.sender);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
+        // consider the recursive case where interface is also enabled?
         if (senderTrueRewardEnabled) {
+            // sender enabled receiver not enabled
             FinancialOpportunityInterface(IEARN_INTERFACE).withdraw(_to, _value);
         }
-        if (receiverTrueRewardEnabled & !senderTrueRewardEnabled) { //???
+        if (receiverTrueRewardEnabled & !senderTrueRewardEnabled) {
+            // sender not enabled receiver enabled
             FinancialOpportunityInterface(IEARN_INTERFACE).deposit(_to, _value);
         }
         if (!senderTrueRewardEnabled & !receiverTrueRewardEnabled) {
+            // sender not enabled receiver not enabled
             return super.transfer(_to, _value);
         }
     }
@@ -91,13 +95,25 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * @param _value uint256 the amount of tokens to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        bool senderTrueRewardEnabled = trueRewardEnabled(msg.sender);
-        bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
-        if (trueRewardTurnedOn(_from)) {
+        // bool senderTrueRewardEnabled = trueRewardEnabled(msg.sender);
+        // bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
+        // if (senderTrueRewardEnabled) {
 
-        }
-        return super.transferFrom(_from, _to, _value);
+        // }
+        // return super.transferFrom(_from, _to, _value);
     }
 
+    function mint(address _to, uint256 _value) public onlyOwner {
+        super.mint(_to, _value);
+        bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
+        if (receiverTrueRewardEnabled) {
+            uint balance = _getBalance(msg.sender);
+            approve(IEARN_INTERFACE, balance);
+            uint yTUSDAmount = FinancialOpportunityInterface(IEARN_INTERFACE).deposit(msg.sender, balance);
+            // emit some event
+            _totalIearnSupply = _totalIearnSupply.add(yTUSDAmount);
+            _financialOpportunityBalances[msg.sender][IEARN_INTERFACE] = _financialOpportunityBalances[msg.sender][IEARN_INTERFACE].add(yTUSDAmount);
+        }
+    }
 
 }
