@@ -10,11 +10,16 @@ interface FinancialOpportunityInterface {
 }
 
 contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
+    // Move these to proxy storage
     struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
     mapping(address => FinancialOpportunityAllocation[]) private _trueRewardDistribution;
     mapping (address => mapping (address => uint256)) private _financialOpportunityBalances;
     address public constant IEARN_INTERFACE = 0x151B0E171A7fe3dB4d7B62FdB9Da6eBD1f5167bd;
     uint public _totalIearnSupply;
+
+    function iEarnInterfaceAddress() public view returns (address) {
+        return IEARN_INTERFACE;
+    }
 
     function totalIearnSupply() public view returns(uint){
         return _totalIearnSupply;
@@ -22,7 +27,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
     function accountTotalLoanBackedBalance(address _account) internal view {
         // this works for single opportunity
-        return _financialOpportunityBalances[_account][IEARN_INTERFACE];
+        return _financialOpportunityBalances[_account][iEarnInterfaceAddress()];
     }
 
     function trueRewardEnabled(address _address) internal view  returns (bool) {
@@ -31,7 +36,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
     function _enableIearn() internal {
         require(_trueRewardDistribution[msg.sender].length == 0);
-        _trueRewardDistribution[msg.sender].push(FinancialOpportunityAllocation(IEARN_INTERFACE, 1));
+        _trueRewardDistribution[msg.sender].push(FinancialOpportunityAllocation(iEarnInterfaceAddress(), 1));
     }
 
     function _disableIearn() internal {
@@ -43,23 +48,23 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         require(!trueRewardEnabled(msg.sender), "not turned on");
         _enableIearn();
         uint balance = _getBalance(msg.sender);
-        approve(IEARN_INTERFACE, balance);
-        uint yTUSDAmount = FinancialOpportunityInterface(IEARN_INTERFACE).deposit(msg.sender, balance);
+        approve(iEarnInterfaceAddress(), balance);
+        uint yTUSDAmount = FinancialOpportunityInterface(iEarnInterfaceAddress()).deposit(msg.sender, balance);
         // emit some event
         _totalIearnSupply = _totalIearnSupply.add(yTUSDAmount);
-        _financialOpportunityBalances[msg.sender][IEARN_INTERFACE] = _financialOpportunityBalances[msg.sender][IEARN_INTERFACE].add(yTUSDAmount);
+        _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].add(yTUSDAmount);
     }
 
     function disableTrueReward() external {
         require(trueRewardEnabled(msg.sender), "already turned on");
         _disableIearn();
         // should this fail right now?
-        FinancialOpportunityInterface(IEARN_INTERFACE).withdrawAll(msg.sender);
+        FinancialOpportunityInterface(iEarnInterfaceAddress()).withdrawAll(msg.sender);
     }
 
     function balanceOf(address _who) public view returns (uint256) {
         if (trueRewardEnabled(_who)) {
-            uint ratio = FinancialOpportunityInterface(IEARN_INTERFACE).perTokenValue();
+            uint ratio = FinancialOpportunityInterface(iEarnInterfaceAddress()).perTokenValue();
             return ratio.mul(accountTotalLoanBackedBalance(_who));
         }
         return super.balanceOf(_who);
@@ -76,11 +81,11 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         // consider the recursive case where interface is also enabled?
         if (senderTrueRewardEnabled) {
             // sender enabled receiver not enabled
-            FinancialOpportunityInterface(IEARN_INTERFACE).withdraw(_to, _value);
+            FinancialOpportunityInterface(iEarnInterfaceAddress()).withdraw(_to, _value);
         }
         if (receiverTrueRewardEnabled & !senderTrueRewardEnabled) {
             // sender not enabled receiver enabled
-            FinancialOpportunityInterface(IEARN_INTERFACE).deposit(_to, _value);
+            FinancialOpportunityInterface(iEarnInterfaceAddress()).deposit(_to, _value);
         }
         if (!senderTrueRewardEnabled & !receiverTrueRewardEnabled) {
             // sender not enabled receiver not enabled
@@ -95,12 +100,15 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * @param _value uint256 the amount of tokens to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        // bool senderTrueRewardEnabled = trueRewardEnabled(msg.sender);
-        // bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
-        // if (senderTrueRewardEnabled) {
-
-        // }
-        // return super.transferFrom(_from, _to, _value);
+        bool senderTrueRewardEnabled = trueRewardEnabled(_from);
+        bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
+        if (senderTrueRewardEnabled) {
+            FinancialOpportunityInterface(iEarnInterfaceAddress()).withdraw(_to, _value);
+        }
+        if (!senderTrueRewardEnabled & !receiverTrueRewardEnabled) {
+            // sender not enabled receiver not enabled
+            return super.transferFrom(_from, _to, _value);
+        }
     }
 
     function mint(address _to, uint256 _value) public onlyOwner {
@@ -108,11 +116,11 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (receiverTrueRewardEnabled) {
             uint balance = _getBalance(msg.sender);
-            approve(IEARN_INTERFACE, balance);
-            uint yTUSDAmount = FinancialOpportunityInterface(IEARN_INTERFACE).deposit(msg.sender, balance);
+            approve(iEarnInterfaceAddress(), balance);
+            uint yTUSDAmount = FinancialOpportunityInterface(iEarnInterfaceAddress()).deposit(msg.sender, balance);
             // emit some event
             _totalIearnSupply = _totalIearnSupply.add(yTUSDAmount);
-            _financialOpportunityBalances[msg.sender][IEARN_INTERFACE] = _financialOpportunityBalances[msg.sender][IEARN_INTERFACE].add(yTUSDAmount);
+            _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].add(yTUSDAmount);
         }
     }
 
