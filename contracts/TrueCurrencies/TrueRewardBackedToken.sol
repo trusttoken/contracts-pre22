@@ -2,7 +2,7 @@ pragma solidity ^0.5.13;
 
 import "./CompliantDepositTokenWithHook.sol";
 
-interface FinancialOpportunityInterface {
+interface FinancialOpportunity {
     function deposit(address _account, uint _amount) external returns(uint);
     function withdraw(address _account, uint _amount) external returns(uint);
     function withdrawAll(address _account) external returns(uint);
