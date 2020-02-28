@@ -17,7 +17,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     address public constant IEARN_INTERFACE = 0x151B0E171A7fe3dB4d7B62FdB9Da6eBD1f5167bd;
     uint public _totalIearnSupply;
 
-    function iEarnInterfaceAddress() public view returns (address) {
+    function iEarnInterfaceAddress() internal view returns (address) {
         return IEARN_INTERFACE;
     }
 
