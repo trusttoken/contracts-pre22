@@ -25,12 +25,12 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         return _totalIearnSupply;
     }
 
-    function accountTotalLoanBackedBalance(address _account) internal view returns (uint) {
+    function accountTotalLoanBackedBalance(address _account) public view returns (uint) {
         // this works for single opportunity
         return _financialOpportunityBalances[_account][iEarnInterfaceAddress()];
     }
 
-    function trueRewardEnabled(address _address) internal view  returns (bool) {
+    function trueRewardEnabled(address _address) public view returns (bool) {
         return _trueRewardDistribution[_address].length != 0;
     }
 
@@ -48,6 +48,9 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         require(!trueRewardEnabled(msg.sender), "not turned on");
         _enableIearn();
         uint balance = _getBalance(msg.sender);
+        if (balance == 0) {
+            return;
+        }
         approve(iEarnInterfaceAddress(), balance);
         uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(msg.sender, balance);
         // emit some event

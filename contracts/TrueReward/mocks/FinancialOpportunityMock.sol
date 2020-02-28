@@ -2,7 +2,7 @@ pragma solidity ^0.5.13;
 
 contract FinancialOpportunityMock {    
     function deposit(address _account, uint _amount) external returns(uint) {
-
+        return _amount * 101 / 103;
     }
     function withdraw(address _account, uint _amount) external returns(uint) {
 
