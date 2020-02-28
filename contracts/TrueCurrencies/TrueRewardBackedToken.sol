@@ -115,5 +115,4 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].add(yTUSDAmount);
         }
     }
-
 }

@@ -1,5 +1,4 @@
 pragma solidity ^0.5.13;
 
 contract IEarnFinancialOpportunity {
-    //69807
 }
