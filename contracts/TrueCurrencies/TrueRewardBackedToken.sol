@@ -70,12 +70,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         return super.balanceOf(_who);
     }
 
-    /**
-    * @dev transfer token for a specified address
-    * @param _to The address to transfer to.
-    * @param _value The amount to be transferred.
-    */
-    function transfer(address _to, uint256 _value) public returns (bool) {
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         bool senderTrueRewardEnabled = trueRewardEnabled(msg.sender);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         // consider the recursive case where interface is also enabled?
@@ -89,17 +84,11 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         }
         if (!senderTrueRewardEnabled & !receiverTrueRewardEnabled) {
             // sender not enabled receiver not enabled
-            return super.transfer(_to, _value);
+            return super._transferAllArgs(_from, _to, _value);
         }
     }
 
-    /**
-     * @dev Transfer tokens from one address to another
-     * @param _from address The address which you want to send tokens from
-     * @param _to address The address which you want to transfer to
-     * @param _value uint256 the amount of tokens to be transferred
-     */
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         bool senderTrueRewardEnabled = trueRewardEnabled(_from);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (senderTrueRewardEnabled) {
@@ -107,7 +96,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         }
         if (!senderTrueRewardEnabled & !receiverTrueRewardEnabled) {
             // sender not enabled receiver not enabled
-            return super.transferFrom(_from, _to, _value);
+            return super._transferFromAllArgs(_from, _to, _value, _spender);
         }
     }
 
