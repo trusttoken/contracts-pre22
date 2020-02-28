@@ -4,7 +4,7 @@ import "./CompliantDepositTokenWithHook.sol";
 
 interface FinancialOpportunity {
     function deposit(address _account, uint _amount) external returns(uint);
-    function withdraw(address _account, uint _amount) external returns(uint);
+    function withdraw(address _from, address _account, uint _amount) external returns(uint);
     function withdrawAll(address _account) external returns(uint);
     function perTokenValue() external view returns(uint);
 }
@@ -74,12 +74,12 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     }
 
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        bool senderTrueRewardEnabled = trueRewardEnabled(msg.sender);
+        bool senderTrueRewardEnabled = trueRewardEnabled(_from);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         // consider the recursive case where interface is also enabled?
         if (senderTrueRewardEnabled) {
             // sender enabled receiver not enabled
-            FinancialOpportunity(iEarnInterfaceAddress()).withdraw(_to, _value);
+            FinancialOpportunity(iEarnInterfaceAddress()).withdraw(_from, _to, _value);
         }
         if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             // sender not enabled receiver enabled

@@ -4,7 +4,7 @@ contract FinancialOpportunityMock {
     function deposit(address _account, uint _amount) external returns(uint) {
         return _amount * 101 / 103;
     }
-    function withdraw(address _account, uint _amount) external returns(uint) {
+    function withdraw(address _from, address _account, uint _amount) external returns(uint) {
 
     }
     function withdrawAll(address _account) external returns(uint) {
