@@ -73,9 +73,12 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     }
 
     function totalSupply() public view returns (uint256) {
-        uint ratio = FinancialOpportunity(iEarnInterfaceAddress()).perTokenValue();
-        uint iEarnSupply = ratio.mul(totalIearnSupply()).div(10 ** 18);
-        return totalSupply_.add(iEarnSupply);
+        if (totalIearnSupply() != 0) {
+            uint ratio = FinancialOpportunity(iEarnInterfaceAddress()).perTokenValue();
+            uint iEarnSupply = ratio.mul(totalIearnSupply()).div(10 ** 18);
+            return totalSupply_.add(iEarnSupply);
+        }
+        return super.totalSupply();
     }
 
     function balanceOf(address _who) public view returns (uint256) {
