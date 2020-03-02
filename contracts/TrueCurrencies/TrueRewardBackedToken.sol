@@ -108,7 +108,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         bool senderTrueRewardEnabled = trueRewardEnabled(_from);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (senderTrueRewardEnabled) {
-            FinancialOpportunity(iEarnInterfaceAddress()).withdrawAndTransfer(_to, _value);
+            FinancialOpportunity(iEarnInterfaceAddress()).withdrawAndTransfer(_from, _to, _value);
         }
         if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
             // sender not enabled receiver not enabled
