@@ -4,18 +4,11 @@ import "./CompliantDepositTokenWithHook.sol";
 
 interface FinancialOpportunity {
     function deposit(address _account, uint _amount) external returns(uint);
-    function withdraw(address _from, address _account, uint _amount) external returns(uint);
+    function transfer(address _from, address _to, uint _amount) external returns(uint);
     function withdrawAll(address _account) external returns(uint);
     function perTokenValue() external view returns(uint);
 }
 
-sender calls transfer
-1. withdraw from Financial opportunity to interface
-event financial opportunity = > interface
-2. transfer from interface to sender
-event interface = > sender
-3. transfer from sender to receipient
-event sender = > receipient
 
 contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     // Move these to proxy storage
@@ -69,8 +62,9 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     function disableTrueReward() external {
         require(trueRewardEnabled(msg.sender), "already turned on");
         _disableIearn();
-        // should this fail right now?
-        FinancialOpportunity(iEarnInterfaceAddress()).withdrawAll(msg.sender);
+        uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawAll(msg.sender);
+        _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
+        _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = 0;
     }
 
     function balanceOf(address _who) public view returns (uint256) {
@@ -84,27 +78,24 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         bool senderTrueRewardEnabled = trueRewardEnabled(_from);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
-        // consider the recursive case where interface is also enabled?
-        // this doesn't work with events
-        // if (senderTrueRewardEnabled) {
-        //     // sender enabled receiver not enabled
-        //     FinancialOpportunity(iEarnInterfaceAddress()).withdraw(_from, _to, _value);
-        // }
-        // if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
-        //     // sender not enabled receiver enabled
-        //     FinancialOpportunity(iEarnInterfaceAddress()).deposit(_to, _value);
-        // }
+        if (senderTrueRewardEnabled) {
+            // sender enabled receiver not enabled
+            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdraw(_from, _to, _value);
+            _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
+            _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].sub(yTUSDAmount);
+            // emit event to burn TUSD
+        }
+        if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
+            // sender not enabled receiver enabled
+            setAllowance(_to, iEarnInterfaceAddress(), _value);
+            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(_to, _value);
+            _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
+            _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].add(yTUSDAmount);
+        }
         if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
             // sender not enabled receiver not enabled
             return super._transferAllArgs(_from, _to, _value);
         }
-    }
-
-    function transferRedirect(address _redirect, address _finalDestination, uint _value) public {
-        // emit from msg.sender to redirect,
-        super._transferAllArgs(msg.sender, _redirect, _value);
-        emit Transfer(_redirect, _finalDestination, _value);
-        super._transferAllArgs(_redirect, _finalDestination, _value);
     }
 
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
