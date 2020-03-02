@@ -31,11 +31,13 @@ contract('TrueRewardBackedToken', function (accounts) {
             const enabled = await this.token.trueRewardEnabled.call(oneHundred);
             console.log(enabled)
             const interfaceBalance = await this.token.balanceOf.call(this.financialOpportunity.address);
-            console.log(interfaceBalance)
+            console.log(Number(interfaceBalance))
             const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(oneHundred);
             const totalIearnSupply = await this.token.totalIearnSupply.call();
-            console.log(loanBackedTokenBalance)
-            console.log(totalIearnSupply)
+            console.log(Number(loanBackedTokenBalance))
+            console.log(Number(totalIearnSupply))
+            const totalSupply = await this.token.totalSupply.call();
+            console.log(Number(totalSupply))
         })
     })
 })

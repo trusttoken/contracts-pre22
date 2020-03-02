@@ -75,6 +75,20 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         return super.balanceOf(_who);
     }
 
+    function totalSupply() public view returns (uint256) {
+        uint ratio = FinancialOpportunity(iEarnInterfaceAddress()).perTokenValue();
+        uint iEarnSupply = ratio.mul(totalIearnSupply());
+        return totalSupply_.add(iEarnSupply);
+    }
+
+    function balanceOf(address _who) public view returns (uint256) {
+        if (trueRewardEnabled(_who)) {
+            uint ratio = FinancialOpportunity(iEarnInterfaceAddress()).perTokenValue();
+            return ratio.mul(accountTotalLoanBackedBalance(_who));
+        }
+        return super.balanceOf(_who);
+    }
+
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         bool senderTrueRewardEnabled = trueRewardEnabled(_from);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
@@ -87,7 +101,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         }
         if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             // sender not enabled receiver enabled
-            setAllowance(_to, iEarnInterfaceAddress(), _value);
+            _setAllowance(_to, iEarnInterfaceAddress(), _value);
             uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(_to, _value);
             _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
             _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].add(yTUSDAmount);
