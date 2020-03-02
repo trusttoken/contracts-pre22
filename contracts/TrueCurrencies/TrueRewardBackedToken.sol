@@ -67,14 +67,6 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = 0;
     }
 
-    function balanceOf(address _who) public view returns (uint256) {
-        if (trueRewardEnabled(_who)) {
-            uint ratio = FinancialOpportunity(iEarnInterfaceAddress()).perTokenValue();
-            return ratio.mul(accountTotalLoanBackedBalance(_who));
-        }
-        return super.balanceOf(_who);
-    }
-
     function totalSupply() public view returns (uint256) {
         uint ratio = FinancialOpportunity(iEarnInterfaceAddress()).perTokenValue();
         uint iEarnSupply = ratio.mul(totalIearnSupply());
