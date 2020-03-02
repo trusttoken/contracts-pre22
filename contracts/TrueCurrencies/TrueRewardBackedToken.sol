@@ -4,7 +4,7 @@ import "./CompliantDepositTokenWithHook.sol";
 
 interface FinancialOpportunity {
     function deposit(address _account, uint _amount) external returns(uint);
-    function transfer(address _from, address _to, uint _amount) external returns(uint);
+    function withdrawAndTransfer(address _from, address _to, uint _amount) external returns(uint);
     function withdrawAll(address _account) external returns(uint);
     function perTokenValue() external view returns(uint);
 }
@@ -94,7 +94,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (senderTrueRewardEnabled) {
             // sender enabled receiver not enabled
-            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdraw(_from, _to, _value);
+            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawAndTransfer(_from, _to, _value);
             _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
             _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].sub(yTUSDAmount);
             // emit event to burn TUSD
@@ -116,7 +116,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         bool senderTrueRewardEnabled = trueRewardEnabled(_from);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (senderTrueRewardEnabled) {
-            FinancialOpportunity(iEarnInterfaceAddress()).withdraw(_to, _value);
+            FinancialOpportunity(iEarnInterfaceAddress()).withdrawAndTransfer(_to, _value);
         }
         if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
             // sender not enabled receiver not enabled
