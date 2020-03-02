@@ -7,7 +7,7 @@ contract FinancialOpportunityMock {
     function withdraw(address _from, address _account, uint _amount) external returns(uint) {
 
     }
-    function withdrawAll(address _account) external returns(uint) {
+    function withdrawAll(address _account) external returns(uint, uint) {
 
     }
     function perTokenValue() external returns(uint) {

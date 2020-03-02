@@ -29,15 +29,34 @@ contract('TrueRewardBackedToken', function (accounts) {
         it ('enables trueReward with 100 balance', async function(){
             await this.token.enableTrueReward({from: oneHundred});
             const enabled = await this.token.trueRewardEnabled.call(oneHundred);
-            console.log(enabled)
+            assert.equal(enabled, true) 
             const interfaceBalance = await this.token.balanceOf.call(this.financialOpportunity.address);
-            console.log(Number(interfaceBalance))
+            assert.equal(Number(interfaceBalance), 0)
+            const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(oneHundred);
+            const totalIearnSupply = await this.token.totalIearnSupply.call();
+            const desiredNumberWithRoundingError = Number(HUNDRED)* 101/103;
+            console.log(Number(loanBackedTokenBalance))
+            console.log(Number(totalIearnSupply))
+            const totalSupply = await this.token.totalSupply.call();
+            console.log(Number(totalSupply))
+            const balance = await this.token.balanceOf.call(oneHundred);
+            console.log(Number(balance))
+        })
+        it ('disables trueReward', async function(){
+            await this.token.enableTrueReward({from: oneHundred});
+            const enabled = await this.token.trueRewardEnabled.call(oneHundred);
+            assert.equal(enabled, true) 
+            const interfaceBalance = await this.token.balanceOf.call(this.financialOpportunity.address);
+            assert.equal(Number(interfaceBalance), 0)
             const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(oneHundred);
             const totalIearnSupply = await this.token.totalIearnSupply.call();
             console.log(Number(loanBackedTokenBalance))
             console.log(Number(totalIearnSupply))
             const totalSupply = await this.token.totalSupply.call();
             console.log(Number(totalSupply))
+            const balance = await this.token.balanceOf.call(oneHundred);
+            console.log(Number(balance))
         })
+
     })
 })
