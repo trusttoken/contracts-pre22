@@ -17,6 +17,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     mapping (address => mapping (address => uint256)) private _financialOpportunityBalances;
     address public constant IEARN_INTERFACE = 0x151B0E171A7fe3dB4d7B62FdB9Da6eBD1f5167bd;
     address public constant ZERO = 0x0000000000000000000000000000000000000000;
+    address public constant TUSD_RESERVE = 0xf000000000000000000000000000000000000001;
     uint public _totalIearnSupply;
 
     function iEarnInterfaceAddress() internal view returns (address) {
