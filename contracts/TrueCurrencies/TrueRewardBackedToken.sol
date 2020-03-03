@@ -4,8 +4,8 @@ import "./CompliantDepositTokenWithHook.sol";
 
 interface FinancialOpportunity {
     function deposit(address _account, uint _amount) external returns(uint);
-    function withdrawAndTransfer(address _from, address _to, uint _amount) external returns(uint);
-    function withdrawAll(address _account) external returns(uint, uint);
+    function withdrawTo(address _from, address _to, uint _amount) external returns(uint);
+    function withdrawAll(address _account) external returns(uint);
     function perTokenValue() external view returns(uint);
 }
 
@@ -64,12 +64,10 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     function disableTrueReward() external {
         require(trueRewardEnabled(msg.sender), "already turned on");
         _disableIearn();
-        uint yTUSDAmount;
-        uint originalBalance;
-        (yTUSDAmount, originalBalance) = FinancialOpportunity(iEarnInterfaceAddress()).withdrawAll(msg.sender);
+        uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawAll(msg.sender);
         _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
         _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = 0;
-        emit Transfer(msg.sender, ZERO, originalBalance); // This is the last part that might not work
+        emit Transfer(msg.sender, ZERO, yTUSDAmount); // This is the last part that might not work
     }
 
     function totalSupply() public view returns (uint256) {
@@ -96,7 +94,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             // sender enabled receiver not enabled
             emit Transfer(_from, iEarnInterfaceAddress(), _value);
             emit Transfer(iEarnInterfaceAddress(), ZERO, _value);
-            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawAndTransfer(_from, _to, _value);
+            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawTo(_from, _to, _value);
             _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
             _financialOpportunityBalances[_from][iEarnInterfaceAddress()] = _financialOpportunityBalances[_from][iEarnInterfaceAddress()].sub(yTUSDAmount);
         }
@@ -121,7 +119,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             // sender enabled receiver not enabled
             emit Transfer(_from, iEarnInterfaceAddress(), _value);
             emit Transfer(iEarnInterfaceAddress(), ZERO, _value);
-            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawAndTransfer(_from, _to, _value);
+            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawTo(_from, _to, _value);
             _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
             _financialOpportunityBalances[_from][iEarnInterfaceAddress()] = _financialOpportunityBalances[_from][iEarnInterfaceAddress()].sub(yTUSDAmount);
         }
