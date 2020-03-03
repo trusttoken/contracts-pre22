@@ -17,8 +17,28 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     mapping (address => mapping (address => uint256)) private _financialOpportunityBalances;
     address public constant IEARN_INTERFACE = 0x151B0E171A7fe3dB4d7B62FdB9Da6eBD1f5167bd;
     address public constant ZERO = 0x0000000000000000000000000000000000000000;
-    address public constant TUSD_RESERVE = 0xf000000000000000000000000000000000000001;
+    address public constant RESERVE = 0xf000000000000000000000000000000000000000;
     uint public _totalIearnSupply;
+    function addNewTrueCurrencyToReserve(address _from, uint _value) external onlyOwner {
+
+    }
+    function convertToTrueCurrencyReserve(uint _value) external onlyOwner {
+        uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawAndTransfer(RESERVE, RESERVE, _value);
+        _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
+        _financialOpportunityBalances[RESERVE][iEarnInterfaceAddress()] = _financialOpportunityBalances[RESERVE][iEarnInterfaceAddress()].sub(yTUSDAmount);
+    }
+
+    function convertToIearnReserve(uint _value) external onlyOwner {
+        uint balance = _getBalance(RESERVE);
+        if (balance < _value) {
+            return;
+        }
+        approve(iEarnInterfaceAddress(), _value);
+        uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(RESERVE, amount);
+        _totalIearnSupply = _totalIearnSupply.add(yTUSDAmount);
+        _financialOpportunityBalances[RESERVE][iEarnInterfaceAddress()] = _financialOpportunityBalances[RESERVE][iEarnInterfaceAddress()].add(yTUSDAmount);
+        emit Transfer(ZERO, RESERVE, _value);
+    }
 
     function iEarnInterfaceAddress() internal view returns (address) {
         return IEARN_INTERFACE;
@@ -99,14 +119,14 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             emit Transfer(iEarnInterfaceAddress(), ZERO, _value);
             uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawAndTransfer(_from, _to, _value);
             _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
-            _financialOpportunityBalances[_to][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].sub(yTUSDAmount);
+            _financialOpportunityBalances[_from][iEarnInterfaceAddress()] = _financialOpportunityBalances[_from][iEarnInterfaceAddress()].sub(yTUSDAmount);
         }
         if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             // sender not enabled receiver enabled
             _setAllowance(_to, iEarnInterfaceAddress(), _value);
             uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(_to, _value);
             _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
-            _financialOpportunityBalances[_to][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].add(yTUSDAmount);
+            _financialOpportunityBalances[_to][iEarnInterfaceAddress()] = _financialOpportunityBalances[_to][iEarnInterfaceAddress()].add(yTUSDAmount);
             emit Transfer(ZERO, _to, _value);
         }
         if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
@@ -124,14 +144,14 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             emit Transfer(iEarnInterfaceAddress(), ZERO, _value);
             uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawAndTransfer(_from, _to, _value);
             _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
-            _financialOpportunityBalances[_to][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].sub(yTUSDAmount);
+            _financialOpportunityBalances[_from][iEarnInterfaceAddress()] = _financialOpportunityBalances[_from][iEarnInterfaceAddress()].sub(yTUSDAmount);
         }
         if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             // sender not enabled receiver enabled
             _setAllowance(_to, iEarnInterfaceAddress(), _value);
             uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(_to, _value);
             _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
-            _financialOpportunityBalances[_to][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].add(yTUSDAmount);
+            _financialOpportunityBalances[_to][iEarnInterfaceAddress()] = _financialOpportunityBalances[_to][iEarnInterfaceAddress()].add(yTUSDAmount);
             emit Transfer(ZERO, _to, _value);
         }
         if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
@@ -145,10 +165,10 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (receiverTrueRewardEnabled) {
             approve(iEarnInterfaceAddress(), _value);
-            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(msg.sender, _value);
+            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(_to, _value);
             _totalIearnSupply = _totalIearnSupply.add(yTUSDAmount);
-            _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].add(yTUSDAmount);
-            emit Transfer(ZERO, msg.sender, _value); //confirm that this amount is right
+            _financialOpportunityBalances[_to][iEarnInterfaceAddress()] = _financialOpportunityBalances[_to][iEarnInterfaceAddress()].add(yTUSDAmount);
+            emit Transfer(ZERO, _to, _value); //confirm that this amount is right
         }
     }
 }
