@@ -21,10 +21,10 @@ contract IEarnFinancialOpportunity {
     }
 
     function configure(
-        yTrueUSDInterface _cToken,
+        yTrueUSDInterface _yToken,
         TrueRewardBackedToken _token
     ) public onlyOwner {
-        yToken = _cToken;
+        yToken = _yToken;
         token = _token;
     }
 
