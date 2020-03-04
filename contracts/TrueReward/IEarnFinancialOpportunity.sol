@@ -32,35 +32,35 @@ contract IEarnFinancialOpportunity {
         return OwnedUpgradeabilityProxy(address(this)).proxyOwner();
     }
 
-    function deposit(address from, uint256 value) external /* onlyToken */ {
-        if(from == address(yToken)) {
+    function deposit(address _account, uint256 _amount) external /* onlyToken */ {
+        if(_account == address(yToken)) {
             return;
         }
-        require(token.approve(address(yToken), value), "approve failed");
+        require(token.approve(address(yToken), _amount), "approve failed");
         
         uint256 balanceBefore = yToken.balanceOf(address(this));
-        yToken.deposit(value);
+        yToken.deposit(_amount);
         uint256 balanceAfter = yToken.balanceOf(address(this));
         uint256 tokensMinted = balanceAfter - balanceBefore;
         require(tokensMinted >= 0);
 
-        yTokenBalance[from] += tokensMinted;
+        yTokenBalance[_account] += tokensMinted;
     }
 
     function balanceOf(address owner) public view returns(uint256) {
         return yTokenBalance[owner];
     }
 
-    function withdraw(address owner, uint256 shares) external {
-        require(yTokenBalance[owner] >= shares, "not enough balance");
+    function withdrawTo(address _from, address _to, uint256 shares) external {
+        require(yTokenBalance[_from] >= shares, "not enough balance");
 
         uint256 balanceBefore = token.balanceOf(address(this));
         yToken.withdraw(shares);
         uint256 balanceAfter = token.balanceOf(address(this));
         uint256 fundsWithdrawn = balanceAfter - balanceBefore;
 
-        yTokenBalance[owner] -= shares;
-        require(token.transfer(owner, fundsWithdrawn), "transfer failed");
+        yTokenBalance[_from] -= shares;
+        require(token.transfer(_to, fundsWithdrawn), "transfer failed");
     }
 
     function() external payable {
