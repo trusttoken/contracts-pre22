@@ -3,9 +3,10 @@ pragma solidity ^0.5.13;
 import "../TrueCurrencies/TrueRewardBackedToken.sol";
 import "./yTrueUSDInterface.sol";
 import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
+import "../TrueCurrencies/IFinancialOpportunity.sol";
 import "./IdGenerator.sol";
 
-contract IEarnFinancialOpportunity {
+contract IEarnFinancialOpportunity is IFinancialOpportunity {
     yTrueUSDInterface public yToken;
     TrueRewardBackedToken public token;
     mapping (address => uint256) public yTokenBalance;
@@ -32,26 +33,24 @@ contract IEarnFinancialOpportunity {
         return OwnedUpgradeabilityProxy(address(this)).proxyOwner();
     }
 
-    function deposit(address _account, uint256 _amount) external /* onlyToken */ {
-        if(_account == address(yToken)) {
-            return;
-        }
+    function deposit(address _account, uint256 _amount) external returns(uint256) {
         require(token.approve(address(yToken), _amount), "approve failed");
         
         uint256 balanceBefore = yToken.balanceOf(address(this));
         yToken.deposit(_amount);
         uint256 balanceAfter = yToken.balanceOf(address(this));
-        uint256 tokensMinted = balanceAfter - balanceBefore;
-        require(tokensMinted >= 0);
+        uint256 sharesMinted = balanceAfter - balanceBefore;
+        require(sharesMinted >= 0);
 
-        yTokenBalance[_account] += tokensMinted;
+        yTokenBalance[_account] += sharesMinted;
+        return sharesMinted;
     }
 
     function balanceOf(address owner) public view returns(uint256) {
         return yTokenBalance[owner];
     }
 
-    function _withdrawShares(address _from, address _to, uint256 _shares) internal returns(uint) {
+    function _withdrawShares(address _from, address _to, uint256 _shares) internal returns(uint256) {
         require(yTokenBalance[_from] >= _shares, "not enough balance");
 
         uint256 balanceBefore = token.balanceOf(address(this));
@@ -64,12 +63,12 @@ contract IEarnFinancialOpportunity {
         return _shares;
     }
 
-    function withdrawTo(address _from, address _to, uint256 _amount) external returns(uint) {
+    function withdrawTo(address _from, address _to, uint256 _amount) external returns(uint256) {
         uint256 shares = _amount * 10**18 / perTokenValue();
         return _withdrawShares(_from, _to, shares);
     }
 
-    function withdrawAll(address _account) external returns(uint) {
+    function withdrawAll(address _account) external returns(uint256) {
         return _withdrawShares(_account, _account, yTokenBalance[_account]);
     }
 
