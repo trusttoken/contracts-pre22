@@ -16,26 +16,26 @@ contract yTrueUSDMock is yTrueUSDInterface, ERC20 {
     }
 
     function deposit(uint mintAmount) external {
-        require(token.allowance(msg.sender, address(this)) >= mintAmount);
-        require(token.balanceOf(msg.sender) >= mintAmount);
+        require(token.allowance(msg.sender, address(this)) >= mintAmount, "not enough allowance");
+        require(token.balanceOf(msg.sender) >= mintAmount, "not enough balance");
 
         require(token.transferFrom(msg.sender, address(this), mintAmount), "transfer failed");
-        balance[msg.sender] += tokenCountOf(mintAmount);
+        balance[msg.sender] += shareCountOf(mintAmount);
     }
 
-    function withdraw(uint redeemTokens) external {
-        require(redeemEnabled);
-        require(balance[msg.sender] < redeemTokens);
+    function withdraw(uint shares) external {
+        require(redeemEnabled, "redeem disabled");
+        require(balance[msg.sender] >= shares, "not enough shares");
 
-        balance[msg.sender] -= redeemTokens;
-        require(token.transfer(msg.sender, underlyingValueOf(redeemTokens)), "transfer failed");
+        balance[msg.sender] -= shares;
+        require(token.transfer(msg.sender, underlyingValueOf(shares)), "transfer failed");
     }
 
-    function underlyingValueOf(uint256 tokens) internal returns (uint) {
-        return tokens * exchangeRate / (10**18);
+    function underlyingValueOf(uint256 shares) internal returns (uint) {
+        return shares * exchangeRate / (10**18);
     }
 
-    function tokenCountOf(uint256 value) internal returns (uint) {
+    function shareCountOf(uint256 value) internal returns (uint) {
         return value * (10**18) / exchangeRate;
     }
 

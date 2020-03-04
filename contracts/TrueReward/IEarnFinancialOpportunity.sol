@@ -51,15 +51,15 @@ contract IEarnFinancialOpportunity {
         return yTokenBalance[owner];
     }
 
-    function withdraw(address owner, uint256 amount) external returns(uint256) {
-        require(yTokenBalance[owner] >= amount, "not enough balance");
+    function withdraw(address owner, uint256 shares) external {
+        require(yTokenBalance[owner] >= shares, "not enough balance");
 
         uint256 balanceBefore = token.balanceOf(address(this));
-        yToken.withdraw(amount);
+        yToken.withdraw(shares);
         uint256 balanceAfter = token.balanceOf(address(this));
         uint256 fundsWithdrawn = balanceAfter - balanceBefore;
 
-        yTokenBalance[owner] -= amount;
+        yTokenBalance[owner] -= shares;
         require(token.transfer(owner, fundsWithdrawn), "transfer failed");
     }
 
