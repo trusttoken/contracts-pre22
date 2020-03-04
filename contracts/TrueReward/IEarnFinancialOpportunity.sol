@@ -51,7 +51,8 @@ contract IEarnFinancialOpportunity {
         return yTokenBalance[owner];
     }
 
-    function withdrawTo(address _from, address _to, uint256 shares) external {
+    function withdrawTo(address _from, address _to, uint256 _amount) external {
+        uint256 shares = _amount * 10**18 / perTokenValue();
         require(yTokenBalance[_from] >= shares, "not enough balance");
 
         uint256 balanceBefore = token.balanceOf(address(this));
