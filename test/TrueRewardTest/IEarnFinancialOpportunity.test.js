@@ -51,8 +51,8 @@ contract('IEarnFinancialOpportunity', function ([_, owner, oneHundred, rewardMan
     await assertRevert(this.financialOpportunity.configure(address1, address2, { from: oneHundred }))
   })
 
-  it('mints cTokens on transfer', async function () {
-    await this.token.transfer(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
+  it('can deposit', async function () {
+    await this.token.approve(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
     await this.financialOpportunity.deposit(oneHundred, BN(10*10**18))
 
     await assertBalance(this.financialOpportunity, oneHundred, BN(10*10**18))
@@ -61,7 +61,7 @@ contract('IEarnFinancialOpportunity', function ([_, owner, oneHundred, rewardMan
   })
 
   it('can withdraw', async function () {
-    await this.token.transfer(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
+    await this.token.approve(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
     await this.financialOpportunity.deposit(oneHundred, BN(10*10**18))
 
     await this.financialOpportunity.withdrawTo(oneHundred, address1, BN(5*10**18), { from: owner })
@@ -73,7 +73,7 @@ contract('IEarnFinancialOpportunity', function ([_, owner, oneHundred, rewardMan
   })
 
   it('withdrawAll', async function () {
-    await this.token.transfer(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
+    await this.token.approve(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
     await this.financialOpportunity.deposit(oneHundred, BN(10*10**18))
 
     await this.financialOpportunity.withdrawAll(oneHundred, { from: owner })
@@ -94,7 +94,7 @@ contract('IEarnFinancialOpportunity', function ([_, owner, oneHundred, rewardMan
     })
 
     it('can deposit', async function () {
-      await this.token.transfer(this.financialOpportunity.address, BN(15*10**18), { from: oneHundred })
+      await this.token.approve(this.financialOpportunity.address, BN(15*10**18), { from: oneHundred })
       await this.financialOpportunity.deposit(oneHundred, BN(15*10**18))
   
       await assertBalance(this.financialOpportunity, oneHundred, BN(10*10**18))
@@ -103,7 +103,7 @@ contract('IEarnFinancialOpportunity', function ([_, owner, oneHundred, rewardMan
     })
 
     it('can withdraw', async function () {
-      await this.token.transfer(this.financialOpportunity.address, BN(15*10**18), { from: oneHundred })
+      await this.token.approve(this.financialOpportunity.address, BN(15*10**18), { from: oneHundred })
       await this.financialOpportunity.deposit(oneHundred, BN(15*10**18))
   
       await this.financialOpportunity.withdrawTo(oneHundred, address1, BN(7.5*10**18), { from: owner })
@@ -115,7 +115,7 @@ contract('IEarnFinancialOpportunity', function ([_, owner, oneHundred, rewardMan
     }) 
     
     it('withdrawAll', async function () {
-      await this.token.transfer(this.financialOpportunity.address, BN(15*10**18), { from: oneHundred })
+      await this.token.approve(this.financialOpportunity.address, BN(15*10**18), { from: oneHundred })
       await this.financialOpportunity.deposit(oneHundred, BN(15*10**18))
   
       await this.financialOpportunity.withdrawAll(oneHundred, { from: owner })

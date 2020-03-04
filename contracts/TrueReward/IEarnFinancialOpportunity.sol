@@ -34,6 +34,7 @@ contract IEarnFinancialOpportunity is IFinancialOpportunity {
     }
 
     function deposit(address _account, uint256 _amount) external returns(uint256) {
+        require(token.transferFrom(_account, address(this), _amount), "transfer from failed");
         require(token.approve(address(yToken), _amount), "approve failed");
         
         uint256 balanceBefore = yToken.balanceOf(address(this));
