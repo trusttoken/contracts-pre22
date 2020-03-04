@@ -19,13 +19,16 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     address public constant ZERO = 0x0000000000000000000000000000000000000000;
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
     uint public _totalIearnSupply;
-    function addNewTrueCurrencyToReserve(address _from, uint _value) external onlyOwner {
 
+    function drainTrueCurrencyReserve(address _to, uint _value) external onlyOwner {
+        super._transferAllArgs(RESERVE, _to, _value);
     }
+
     function convertToTrueCurrencyReserve(uint _value) external onlyOwner {
         uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawAndTransfer(RESERVE, RESERVE, _value);
         _totalIearnSupply = _totalIearnSupply.sub(yTUSDAmount);
         _financialOpportunityBalances[RESERVE][iEarnInterfaceAddress()] = _financialOpportunityBalances[RESERVE][iEarnInterfaceAddress()].sub(yTUSDAmount);
+        emit Transfer(RESERVE, ZERO, _value);
     }
 
     function convertToIearnReserve(uint _value) external onlyOwner {
