@@ -72,6 +72,10 @@ contract('IEarnFinancialOpportunity', function ([_, owner, oneHundred, rewardMan
     await assertBalance(this.token, this.yToken.address, BN(5*10**18))
   })
 
+  it('perTokenValue', async function () {
+    const perTokenValue = await this.financialOpportunity.perTokenValue()
+    assert(perTokenValue.eq(BN(1*10**18)))
+  })
 
   describe('with uneven exchange rate', () => {
     beforeEach(async function () {
@@ -97,6 +101,11 @@ contract('IEarnFinancialOpportunity', function ([_, owner, oneHundred, rewardMan
       await assertBalance(this.token, oneHundred, BN(85*10**18))
       await assertBalance(this.token, address1, BN(7.5*10**18))
       await assertBalance(this.token, this.yToken.address, BN(7.5*10**18))
+    })
+
+    it('perTokenValue', async function () {
+      const perTokenValue = await this.financialOpportunity.perTokenValue()
+      assert(perTokenValue.eq(BN(1.5*10**18)))
     })
   })
 })

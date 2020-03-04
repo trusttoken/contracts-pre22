@@ -63,6 +63,10 @@ contract IEarnFinancialOpportunity {
         require(token.transfer(_to, fundsWithdrawn), "transfer failed");
     }
 
+    function perTokenValue() public view returns(uint) {
+        return yToken.getPricePerFullShare();
+    }
+
     function() external payable {
     }
 }

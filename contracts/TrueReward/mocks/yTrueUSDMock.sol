@@ -54,4 +54,8 @@ contract yTrueUSDMock is yTrueUSDInterface, ERC20 {
     function setRedeemEnabled(bool _redeemEnabled) external {
         redeemEnabled = _redeemEnabled;
     }
+
+    function getPricePerFullShare() public view returns(uint256) {
+        return exchangeRate;
+    }
 }
