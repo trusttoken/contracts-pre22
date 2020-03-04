@@ -7,6 +7,8 @@ import "../TrueCurrencies/IFinancialOpportunity.sol";
 import "./IdGenerator.sol";
 
 contract IEarnFinancialOpportunity is IFinancialOpportunity {
+    using SafeMath for uint256;
+
     yTrueUSDInterface public yToken;
     TrueRewardBackedToken public token;
     mapping (address => uint256) public yTokenBalance;
@@ -40,10 +42,10 @@ contract IEarnFinancialOpportunity is IFinancialOpportunity {
         uint256 balanceBefore = yToken.balanceOf(address(this));
         yToken.deposit(_amount);
         uint256 balanceAfter = yToken.balanceOf(address(this));
-        uint256 sharesMinted = balanceAfter - balanceBefore;
+        uint256 sharesMinted = balanceAfter.sub(balanceBefore);
         require(sharesMinted >= 0);
 
-        yTokenBalance[_account] += sharesMinted;
+        yTokenBalance[_account] = yTokenBalance[_account].add(sharesMinted);
         return sharesMinted;
     }
 
@@ -57,15 +59,15 @@ contract IEarnFinancialOpportunity is IFinancialOpportunity {
         uint256 balanceBefore = token.balanceOf(address(this));
         yToken.withdraw(_shares);
         uint256 balanceAfter = token.balanceOf(address(this));
-        uint256 fundsWithdrawn = balanceAfter - balanceBefore;
+        uint256 fundsWithdrawn = balanceAfter.sub(balanceBefore);
 
-        yTokenBalance[_from] -= _shares;
+        yTokenBalance[_from] = yTokenBalance[_from].sub(_shares);
         require(token.transfer(_to, fundsWithdrawn), "transfer failed");
         return _shares;
     }
 
     function withdrawTo(address _from, address _to, uint256 _amount) external returns(uint256) {
-        uint256 shares = _amount * 10**18 / perTokenValue();
+        uint256 shares = _amount.mul(10**18).div(perTokenValue());
         return _withdrawShares(_from, _to, shares);
     }
 
