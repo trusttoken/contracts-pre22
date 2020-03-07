@@ -9,7 +9,9 @@ interface FinancialOpportunity {
     function perTokenValue() external view returns(uint);
 }
 
-
+/**
+ * True Reward Backed Token
+**/
 contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     // Move these to proxy storage
     struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
