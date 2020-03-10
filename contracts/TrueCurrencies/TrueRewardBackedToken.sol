@@ -29,7 +29,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
     function accountTotalLoanBackedBalance(address _account) public view returns (uint) {
         // this works for single opportunity
-        return _financialOpportunityBalances[_account][iEarnInterfaceAddress()];
+        return _financialOpportunityBalances[_account][aaveInterfaceAddress()];
     }
 
     function trueRewardEnabled(address _address) public view returns (bool) {
@@ -38,7 +38,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
     function _enableAave() internal {
         require(_trueRewardDistribution[msg.sender].length == 0);
-        _trueRewardDistribution[msg.sender].push(FinancialOpportunityAllocation(iEarnInterfaceAddress(), 1));
+        _trueRewardDistribution[msg.sender].push(FinancialOpportunityAllocation(aaveInterfaceAddress(), 1));
     }
 
     function _disableAave() internal {
@@ -53,35 +53,35 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         if (balance == 0) {
             return;
         }
-        approve(iEarnInterfaceAddress(), balance);
-        uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(msg.sender, balance);
+        approve(aaveInterfaceAddress(), balance);
+        uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(msg.sender, balance);
         // emit some event
         _totalAaveSupply = _totalAaveSupply.add(yTUSDAmount);
-        _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()].add(yTUSDAmount);
+        _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()].add(yTUSDAmount);
         emit Transfer(ZERO, msg.sender, balance); //confirm that this amount is right
     }
 
     function disableTrueReward() external {
         require(trueRewardEnabled(msg.sender), "already turned on");
         _disableAave();
-        uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawAll(msg.sender);
+        uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawAll(msg.sender);
         _totalAaveSupply = _totalAaveSupply.sub(yTUSDAmount);
-        _financialOpportunityBalances[msg.sender][iEarnInterfaceAddress()] = 0;
+        _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = 0;
         emit Transfer(msg.sender, ZERO, yTUSDAmount); // This is the last part that might not work
     }
 
     function totalSupply() public view returns (uint256) {
         if (totalAaveSupply() != 0) {
-            uint ratio = FinancialOpportunity(iEarnInterfaceAddress()).perTokenValue();
-            uint iEarnSupply = ratio.mul(totalAaveSupply()).div(10 ** 18);
-            return totalSupply_.add(iEarnSupply);
+            uint ratio = FinancialOpportunity(aaveInterfaceAddress()).perTokenValue();
+            uint aaveSupply = ratio.mul(totalAaveSupply()).div(10 ** 18);
+            return totalSupply_.add(aaveSupply);
         }
         return super.totalSupply();
     }
 
     function balanceOf(address _who) public view returns (uint256) {
         if (trueRewardEnabled(_who)) {
-            uint ratio = FinancialOpportunity(iEarnInterfaceAddress()).perTokenValue();
+            uint ratio = FinancialOpportunity(aaveInterfaceAddress()).perTokenValue();
             return ratio.mul(accountTotalLoanBackedBalance(_who)).div(10 ** 18);
         }
         return super.balanceOf(_who);
@@ -92,18 +92,18 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (senderTrueRewardEnabled) {
             // sender enabled receiver not enabled
-            emit Transfer(_from, iEarnInterfaceAddress(), _value);
-            emit Transfer(iEarnInterfaceAddress(), ZERO, _value);
-            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawTo(_from, _to, _value);
+            emit Transfer(_from, aaveInterfaceAddress(), _value);
+            emit Transfer(aaveInterfaceAddress(), ZERO, _value);
+            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(_from, _to, _value);
             _totalAaveSupply = _totalAaveSupply.sub(yTUSDAmount);
-            _financialOpportunityBalances[_from][iEarnInterfaceAddress()] = _financialOpportunityBalances[_from][iEarnInterfaceAddress()].sub(yTUSDAmount);
+            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(yTUSDAmount);
         }
         if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             // sender not enabled receiver enabled
-            _setAllowance(_to, iEarnInterfaceAddress(), _value);
-            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(_to, _value);
+            _setAllowance(_to, aaveInterfaceAddress(), _value);
+            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(_to, _value);
             _totalAaveSupply = _totalAaveSupply.sub(yTUSDAmount);
-            _financialOpportunityBalances[_to][iEarnInterfaceAddress()] = _financialOpportunityBalances[_to][iEarnInterfaceAddress()].add(yTUSDAmount);
+            _financialOpportunityBalances[_to][aaveInterfaceAddress()] = _financialOpportunityBalances[_to][aaveInterfaceAddress()].add(yTUSDAmount);
             emit Transfer(ZERO, _to, _value);
         }
         if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
@@ -117,18 +117,18 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (senderTrueRewardEnabled) {
             // sender enabled receiver not enabled
-            emit Transfer(_from, iEarnInterfaceAddress(), _value);
-            emit Transfer(iEarnInterfaceAddress(), ZERO, _value);
-            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).withdrawTo(_from, _to, _value);
+            emit Transfer(_from, aaveInterfaceAddress(), _value);
+            emit Transfer(aaveInterfaceAddress(), ZERO, _value);
+            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(_from, _to, _value);
             _totalAaveSupply = _totalAaveSupply.sub(yTUSDAmount);
-            _financialOpportunityBalances[_from][iEarnInterfaceAddress()] = _financialOpportunityBalances[_from][iEarnInterfaceAddress()].sub(yTUSDAmount);
+            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(yTUSDAmount);
         }
         if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             // sender not enabled receiver enabled
-            _setAllowance(_to, iEarnInterfaceAddress(), _value);
-            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(_to, _value);
+            _setAllowance(_to, aaveInterfaceAddress(), _value);
+            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(_to, _value);
             _totalAaveSupply = _totalAaveSupply.sub(yTUSDAmount);
-            _financialOpportunityBalances[_to][iEarnInterfaceAddress()] = _financialOpportunityBalances[_to][iEarnInterfaceAddress()].add(yTUSDAmount);
+            _financialOpportunityBalances[_to][aaveInterfaceAddress()] = _financialOpportunityBalances[_to][aaveInterfaceAddress()].add(yTUSDAmount);
             emit Transfer(ZERO, _to, _value);
         }
         if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
@@ -141,10 +141,10 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         super.mint(_to, _value);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (receiverTrueRewardEnabled) {
-            approve(iEarnInterfaceAddress(), _value);
-            uint yTUSDAmount = FinancialOpportunity(iEarnInterfaceAddress()).deposit(_to, _value);
+            approve(aaveInterfaceAddress(), _value);
+            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(_to, _value);
             _totalAaveSupply = _totalAaveSupply.add(yTUSDAmount);
-            _financialOpportunityBalances[_to][iEarnInterfaceAddress()] = _financialOpportunityBalances[_to][iEarnInterfaceAddress()].add(yTUSDAmount);
+            _financialOpportunityBalances[_to][aaveInterfaceAddress()] = _financialOpportunityBalances[_to][aaveInterfaceAddress()].add(yTUSDAmount);
             emit Transfer(ZERO, _to, _value); //confirm that this amount is right
         }
     }

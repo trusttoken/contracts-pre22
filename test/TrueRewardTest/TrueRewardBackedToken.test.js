@@ -15,7 +15,7 @@ contract('TrueRewardBackedToken', function (accounts) {
         beforeEach(async function () {
             this.token = await TrueUSDMock.new(oneHundred, HUNDRED, { from: owner })
             this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
-            await this.token.setiEarnInterfaceAddress(this.financialOpportunity.address, {from: owner})
+            await this.token.setAaveInterfaceAddress(this.financialOpportunity.address, {from: owner})
         })
 
         it ('enables trueReward with 0 balance', async function(){

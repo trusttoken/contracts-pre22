@@ -32,14 +32,14 @@ contract TrueUSDMock is TrueUSD {
         require(msg.sender == delegateFrom);
         _;
     }
-    address iEarnAddress;
+    address aaveAddress;
 
-    function setiEarnInterfaceAddress(address _iEarnAddress) external {
-        iEarnAddress = _iEarnAddress;
+    function setAaveInterfaceAddress(address _aaveAddress) external {
+        aaveAddress = _aaveAddress;
     }
 
-    function iEarnInterfaceAddress() internal view returns (address) {
-        return iEarnAddress;
+    function aaveInterfaceAddress() internal view returns (address) {
+        return aaveAddress;
     }
 
 }
