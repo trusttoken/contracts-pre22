@@ -3,6 +3,8 @@ version: 2.1
 commands:
   install_dependencies:
     steps:
+      - run:
+          git submodule update --init --recursive
       - restore_cache:
           name: Restore node modules
           keys:
