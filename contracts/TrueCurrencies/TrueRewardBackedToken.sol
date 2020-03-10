@@ -21,7 +21,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     uint public _totalIearnSupply;
 
     function drainTrueCurrencyReserve(address _to, uint _value) external onlyOwner {
-        super._transferAllArgs(RESERVE, _to, _value);
+        _transferAllArgs(RESERVE, _to, _value);
     }
 
     function convertToTrueCurrencyReserve(uint _value) external onlyOwner {
@@ -62,7 +62,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
     function _enableIearn() internal {
         require(_trueRewardDistribution[msg.sender].length == 0);
-        _trueRewardDistribution[msg.sender].push(FinancialOpportunityAllocation(iEarnInterfaceAddress(), 1));
+        _trueRewardDistribution[msg.sender].push(FinancialOpportunityAllocation(iEarnInterfaceAddress(), 100));
     }
 
     function _disableIearn() internal {
