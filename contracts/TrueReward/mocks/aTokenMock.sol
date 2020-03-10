@@ -1,9 +1,9 @@
 pragma solidity ^0.5.13;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "../yTrueUSDInterface.sol";
+import "../IAToken.sol";
 
-contract aTokenMock is yTrueUSDInterface, ERC20 {
+contract ATokenMock is IAToken, ERC20 {
     IERC20 public token;
     mapping (address => uint256) public balance;
     uint256 public exchangeRate = 1*10**18;
@@ -15,16 +15,18 @@ contract aTokenMock is yTrueUSDInterface, ERC20 {
         token = _token;
     }
 
-    function mint(uint mintAmount) external {
-        require(token.allowance(msg.sender, address(this)) >= mintAmount, "not enough allowance");
-        require(token.balanceOf(msg.sender) >= mintAmount, "not enough balance");
+    function mint(address to, uint mintAmount) external {
+        require(token.allowance(to, address(this)) >= mintAmount, "not enough allowance");
+        require(token.balanceOf(to) >= mintAmount, "not enough balance");
 
-        require(token.transferFrom(msg.sender, address(this), mintAmount), "transfer failed");
-        balance[msg.sender] += shareCountOf(mintAmount);
+        require(token.transferFrom(to, address(this), mintAmount), "transfer failed");
+        balance[to] += shareCountOf(mintAmount);
     }
 
-    function redeem(uint shares) external {
+    function redeem(uint amount) external {
         require(redeemEnabled, "redeem disabled");
+
+        uint shares = shareCountOf(amount);
         require(balance[msg.sender] >= shares, "not enough shares");
 
         balance[msg.sender] -= shares;

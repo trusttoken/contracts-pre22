@@ -5,6 +5,7 @@ import "./IAToken.sol";
 import "./ILendingPool.sol";
 import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import "../TrueCurrencies/IFinancialOpportunity.sol";
+import "./ILendingPoolCore.sol";
 import "./IdGenerator.sol";
 
 contract IEarnFinancialOpportunity is IFinancialOpportunity {
@@ -14,7 +15,6 @@ contract IEarnFinancialOpportunity is IFinancialOpportunity {
     ILendingPool public lendingPool;
     TrueRewardBackedToken public token;
     mapping (address => uint256) public shares;
-    mapping (address => uint256) public lastIndex;
 
     modifier onlyOwner() {
         require(msg.sender == proxyOwner(), "only owner");
@@ -40,62 +40,59 @@ contract IEarnFinancialOpportunity is IFinancialOpportunity {
         return OwnedUpgradeabilityProxy(address(this)).proxyOwner();
     }
 
-    function cumulateIntereset(address _account) internal {
+    function perTokenValue() public view returns(uint256) {
         ILendingPoolCore core = ILendingPoolCore(lendingPool.core());
-        uint256 incomeIndex = core.getReserveNormalizedIncome();
-
-        shares[_account] = shares[_account] * incomeIndex / lastIndex[_account]; // TODO use same math lib as AAVE
-        lastIndex[_account] = incomeIndex;
+        return core.getReserveNormalizedIncome(address(token)) / 10**(27-18);
     }
 
-    function deposit(address _account, uint256 _amount) external returns(uint256) {
-        cumulateIntereset(_account);
+    function getValueInShares(uint256 _amount) public view returns(uint256) {
+        return _amount.mul(10**18).div(perTokenValue());
+    }
 
-        require(token.transferFrom(_account, address(this), _amount), "transfer from failed");
-        require(token.approve(address(yToken), _amount), "approve failed");
-        
-        uint256 balanceBefore = sharesToken.balanceOf(address(this));
-        yToken.deposit(_amount);
-        uint256 balanceAfter = sharesToken.balanceOf(address(this));
-        uint256 sharesMinted = balanceAfter.sub(balanceBefore);
-        require(sharesMinted >= 0);
-
-        yTokenBalance[_account] = yTokenBalance[_account].add(sharesMinted);
-        return sharesMinted;
+    function getSharesValue(uint256 _shares) public view returns(uint256) {
+        return _shares.mul(perTokenValue()).div(10**18);
     }
 
     function balanceOf(address _account) public view returns(uint256) {
-        ILendingPoolCore core = ILendingPoolCore(lendingPool.core());
-        uint256 incomeIndex = core.getReserveNormalizedIncome();
-
-        return shares[_account] * incomeIndex / lastIndex[_account]; // TODO use same math lib as AAVE
+        return shares[_account];
     }
 
-    function _withdraw(address _from, address _to, uint256 _amount) internal returns(uint256) {
-        require(yTokenBalance[_from] >= _shares, "not enough balance");
+    function deposit(address _account, uint256 _amount) external returns(uint256) {
+        require(token.transferFrom(_account, address(this), _amount), "transfer from failed");
+        require(token.approve(address(lendingPool), _amount), "approve failed");
+        
+        uint256 balanceBefore = sharesToken.balanceOf(address(this));
+        lendingPool.deposit(address(token), _amount, 0);
+        uint256 balanceAfter = sharesToken.balanceOf(address(this));
+        uint256 sharesMinted = getValueInShares(balanceAfter.sub(balanceBefore));
+        require(sharesMinted >= 0);
+
+        shares[_account] = shares[_account].add(sharesMinted);
+        return sharesMinted;
+    }
+
+    function _withdraw(address _from, address _to, uint256 _shares) internal returns(uint256) {
+        require(shares[_from] >= _shares, "not enough balance");
+        
+        uint256 amount = getSharesValue(_shares);
 
         uint256 balanceBefore = token.balanceOf(address(this));
-        yToken.withdraw(_amount);
+        sharesToken.redeem(amount);
         uint256 balanceAfter = token.balanceOf(address(this));
         uint256 fundsWithdrawn = balanceAfter.sub(balanceBefore);
+        uint256 sharesWithdrawn = getValueInShares(fundsWithdrawn);
 
-        yTokenBalance[_from] = yTokenBalance[_from].sub(_amount);
+        shares[_from] = shares[_from].sub(sharesWithdrawn);
         require(token.transfer(_to, fundsWithdrawn), "transfer failed");
-        return _amount;
+        return sharesWithdrawn;
     }
 
     function withdrawTo(address _from, address _to, uint256 _amount) external returns(uint256) {
-        cumulateIntereset(_account);
-        return _withdrawShares(_from, _to, _amount);
+        return _withdraw(_from, _to, getValueInShares(_amount));
     }
 
     function withdrawAll(address _account) external returns(uint256) {
-        cumulateIntereset(_account);
-        return _withdrawShares(_account, _account, yTokenBalance[_account]);
-    }
-
-    function perTokenValue() public view returns(uint) {
-        return yToken.getPricePerFullShare();
+        return _withdraw(_account, _account, shares[_account]);
     }
 
     function() external payable {
