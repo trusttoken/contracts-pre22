@@ -1,0 +1,34 @@
+version: 2.1
+
+commands:
+  install_dependencies:
+    steps:
+      - run:
+          git submodule update --init --recursive
+      - restore_cache:
+          name: Restore NPM cache
+          keys:
+            - npm-packages-{{ checksum "package-lock.json" }}
+      - run:
+          name: Install Dependencies
+          command: npm ci
+      - save_cache:
+          name: Save NPM cache
+          key: npm-packages-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
+
+jobs:
+  test:
+    docker:
+      - image: circleci/node:11.15
+    steps:
+      - checkout
+      - install_dependencies
+      - run: npm test
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test

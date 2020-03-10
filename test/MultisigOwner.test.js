@@ -3,7 +3,7 @@ import assertBalance from './helpers/assertBalance'
 const Registry = artifacts.require("RegistryMock")
 const TokenController = artifacts.require("TokenController")
 const ForceEther = artifacts.require("ForceEther")
-const MultisigOwner = artifacts.require("MultisigOwner")
+const MultisigOwner = artifacts.require("MultiSigOwner")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const Ownable = artifacts.require("Ownable")
 const Claimable = artifacts.require("Claimable")
