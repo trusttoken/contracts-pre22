@@ -520,7 +520,7 @@ contract('TokenController', function (accounts) {
             })
 
 
-            it('TokenController can pause TrueUSD transfers', async function(){
+            it.skip('TokenController can pause TrueUSD transfers', async function(){
                 await this.token.transfer(mintKey, BN(10*10**18), { from: oneHundred })
                 await this.controller.pauseToken({ from: owner })
                 const pausedImpl = await this.tokenProxy.implementation.call()
