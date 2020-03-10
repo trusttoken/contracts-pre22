@@ -20,7 +20,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     uint public _totalAaveSupply;
 
     function aaveInterfaceAddress() internal view returns (address) {
-        return IEARN_INTERFACE;
+        return AAVE_INTERFACE;
     }
 
     function totalAaveSupply() public view returns(uint){
