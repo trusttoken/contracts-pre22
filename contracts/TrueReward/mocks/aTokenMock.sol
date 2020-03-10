@@ -16,10 +16,6 @@ contract ATokenMock is IAToken, ERC20 {
     }
 
     function mint(address to, uint mintAmount) external {
-        require(token.allowance(to, address(this)) >= mintAmount, "not enough allowance");
-        require(token.balanceOf(to) >= mintAmount, "not enough balance");
-
-        require(token.transferFrom(to, address(this), mintAmount), "transfer failed");
         balance[to] += shareCountOf(mintAmount);
     }
 

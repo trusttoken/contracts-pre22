@@ -8,7 +8,7 @@ import "../TrueCurrencies/IFinancialOpportunity.sol";
 import "./ILendingPoolCore.sol";
 import "./IdGenerator.sol";
 
-contract IEarnFinancialOpportunity is IFinancialOpportunity {
+contract AaveFinancialOpportunity is IFinancialOpportunity {
     using SafeMath for uint256;
 
     IAToken public sharesToken;
