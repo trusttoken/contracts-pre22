@@ -8,82 +8,105 @@ import "../../trusttokens/contracts/StakingAsset.sol";
  * AssuredFinancialOpportunity
  *
  * Wrap financial opportunity with Assurance Pool.
+ * TUSD is never held in this contract, only yTUSD which represents oppurtunity value
+ * When yTUSD is exchanged, the resulting tUSD is always sent to a reciever
  * If a transfer fails, stake is sold from the staking pool for TUSD.
- * When stake is liquidated, the debt is transferred to a pool.
+ * When stake is liquidated, the TUSD is sent out in the same transaction (Flash Assurance).
  * Can attempt to sell bad debt at a later date and return value to the pool.
  * Keeps track of rewards stream for assurance pool.
+ * 
+ * todo:
+ * - sync with others on event structure
+ * - implement exponent library
+ * - add requires & asserts
+ * - handle case where assurance pool is insolvent
+ * - test floating point calculations
+ * - renaming TrustToken contracts
+ * - make contract upgradeable
+ * - decide whether to add a constructor or hard code other contract addr
+ * 
 **/
 contract AssuredFinancialOpportunity is FinancialOpportunity {
     // todo feewet: do we need these failure events or should we just emit liquidation
-    event widthdrawToFailed(address _from, address _to, uint _amount);
-    event widthdrawAllFailed(address _account);
+    event widthdrawToSuccess(address _from, address _to, uint _amount);
+    event widthdrawAllSuccess(address _account);
+    event widthdrawToFailure(address _from, address _to, uint _amount);
+    event widthdrawAllFailure(address _account);
     event stakeLiquidated(address _reciever, int256 _debt);
-    event poolRewarded(uint256 _amount);
-    event debtSold(uint256 _amount);
+    event awardPoolSuccess(uint256 _amount);
+    event sellDebtSuccess(uint256 _amount);
+    event sellDebtFailure(uint256 _amount);
+    event assuranceFailure(); // todo feewet handle insolvent assurer
 
     uint256 balance; // in yTUSD
-    uint256 rewardBalance; // in yTUSD
+    uint256 poolAward; // in yTUSD
     uint256 unsoldDebt; // in yTUSD
+    uint256 assuranceBasis = 3000; // basis for insurance split. 100 = 1%
 
+    address owner;
     address opportunityAddress;
     address assuranceAddress;
     address liquidatorAddress;
+
+    // todo feewet onlyOwner
+    constructor(address _opportunityAddress, address _assuranceAddress, address _liquidatorAddress) public {
+        owner = msg.sender;
+        opportunityAddress = _opportunityAddress;
+        assuranceAddress = _assuranceAddress;
+        liquidatorAddress = _liquidatorAddress;
+    }
 
     /** Deposit TUSD into wrapped opportunity **/
     function deposit(address _account, uint _amount) external returns(uint) {
         opportunity().deposit(_account, _amount);
     }
 
+    /** Calculate per token value minus assurance pool reward **/
+    function perTokenValue() external view returns(uint) {
+        // todo feewet: calculate value based on rewards split
+        return opportunity().perTokenValue() * (1 - assuranceBasis);
+    }
+
     /** Widhdraw amount of TUSD to an address. Liquidate if opportunity fails to return TUSD. **/
     function widthdrawTo(address _from, address _to, uint _amount) external returns(uint) {
-        bool returnedBool;
-        uint returnedAmount;
-        // attempt to widthdraw
-        (bool success, bytes memory returnData) =
-            address(opportunity()).call(abi.encodePacked(
-                opportunity().withdrawTo.selector, abi.encode(_from, _to, _amount)));
+        // attmept widthdraw
+        (bool success, uint returnedAmount) = attemptWidthdrawTo(_from, _to, _amount);
 
+        // todo feewet - do we want to check if a txn returns 0 as well?
+        // or returnedAmount < _amount
         if (success) {
-            // successfully got TUSD :)
-            (returnedBool, returnedAmount) = abi.decode(returnData, (bool, uint));
-        } 
-        else {
-            // widthdrawal reverted! liquidate :(
-            emit widthdrawToFailed(_from, _to, _amount);
-            // todo feewet make sure conversion is accurate
-            int256 liquidateAmount = int256(_amount);
-            returnedAmount = liquidate(_to, liquidateAmount);
+            emit widthdrawToSuccess(_from, _to, _amount);
         }
-        return returnedAmount;
+        else {
+            // widthdrawal failed! liquidate :(
+            emit widthdrawToFailure(_from, _to, _amount);
+
+            // todo feewet make sure conversion is accurate
+            int256 liquidateAmount = int256(_amount); 
+            liquidate(_to, liquidateAmount); // todo feewet check if liquidation succeeds
+            returnedAmount = _amount;
+        }
+
+        return returnedAmount; // todo feewet do we want returnedAmount or _amount
     }
 
     /** Widthdraw all TUSD to an account. Liquidate if opportunity fails to return TUSD. **/
     function widthdrawAll(address _account) external returns(uint) {
-        bool returnedBool;
-        uint returnedAmount;
-        // attempt to widthdraw
-        (bool success, bytes memory returnData) =
-            address(opportunity()).call(
-                abi.encodePacked(opportunity().withdrawAll.selector, abi.encode(_account))
-            );
+        // attempt widthdraw
+        (bool success, uint returnedAmount) = attemptWidthdrawAll(_account);
+
         if (success) {
-            // successfully got TUSD :)
-            (returnedBool, returnedAmount) = abi.decode(returnData, (bool, uint));
-        } 
+            emit widthdrawAllSuccess(_account); // todo feewet: sync with
+        }
         else {
             // widthdrawal reverted! liquidate :(
-            emit widthdrawAllFailed(_account);
+            emit widthdrawAllFailure(_account);
             // todo feewet get account value and pass to liquidation
             int256 accountBalance = 1;
             returnedAmount = liquidate(_account, accountBalance);
+            returnedAmount = uint(accountBalance);
         }
         return returnedAmount;
-    }
-
-    /** Calculate per token value minus assurance pool reward **/
-    function perTokenValue() external view returns(uint) {
-        // todo feewet: calculate value based on rewards split
-        return opportunity().perTokenValue();
     }
 
     /** Liquidate some amount of staked token and send tUSD to reciever **/
@@ -96,31 +119,82 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
         return 0;
     }
 
-    /** Deposit TUSD into staking pool **/
-    function reward(uint256 _amount) external {
-        assurance().deposit(_amount);
-        emit poolRewarded(_amount);
+    /** Sell yTUSD for TUSD and deposit into staking pool **/
+    function awardPool() external {
+        require(poolAward > 0, "assurance pool must have positive balance");
+        assurance().award(poolAward);
+        emit awardPoolSuccess(poolAward);
+        poolAward = 0;
     }
 
-    /** Attempt to sell yTUSD purchased by assurer **/
-    function sellDebt(uint256 _amount) external {
-        // todo feewet
-        // this function allows
-        emit debtSold(_amount);
+    /** 
+     * Attempt to sell yTUSD purchased by assurer
+     * this function allows us to sell defaulted debt purchased by the assurance pool
+     * ideally we want to eventually exchange this for TrustToken
+    **/
+    function sellDebt() external {
+        // attempt widthdraw to assurance address (will deposit in TokenFallback)
+        (bool success, uint returnedAmount) = attemptWidthdrawAll(assuranceAddress);
+
+        if (success) { 
+            emit sellDebtSuccess(returnedAmount);
+        } 
+        else { 
+            emit sellDebtFailure(0);
+        }
     }
 
-    /** Financial Opportunity **/
+    /** Try to widthdrawAll and return success and amount **/
+    function attemptWidthdrawAll(address _account) internal returns (bool, uint) {
+        uint returnedAmount;
+
+        // attempt to widthdraw from oppurtunity
+        (bool success, bytes memory returnData) =
+            address(opportunity()).call(
+                abi.encodePacked(opportunity().withdrawAll.selector, abi.encode(_account))
+            );
+
+        if (success) { // successfully got TUSD :)
+            returnedAmount = abi.decode(returnData, (uint));
+            success = true;
+        }
+        else { // failed get TUSD :(
+            success = false;
+            returnedAmount = 0;
+        }
+        return (success, returnedAmount);
+    }
+
+    /** Try to widthdrawTo and return success and amount **/
+    function attemptWidthdrawTo(address _from, address _to, uint _amount) internal returns (bool, uint) {
+        uint returnedAmount;
+
+        // attempt to widthdraw from oppurtunity
+        (bool success, bytes memory returnData) =
+            address(opportunity()).call(
+                abi.encodePacked(opportunity().withdrawTo.selector, abi.encode(_from, _to, _amount))
+            );
+
+        if (success) { // successfully got TUSD :)
+            returnedAmount = abi.decode(returnData, (uint));
+            success = false;
+        }
+        else { // failed get TUSD :(
+            success = false;
+            returnedAmount = 0;
+        }
+        return (success, returnedAmount);
+    }
+    
     function opportunity() internal view returns(FinancialOpportunity) {
         return FinancialOpportunity(opportunityAddress);
     }
 
-    /** Assurance Pool **/
     function assurance() internal view returns(StakedToken) {
-        // todo feewet rename StakedToken to AssuranceOpportunity
+        // todo feewet rename StakedToken to AssuranceOpportunity/Pool
         return StakedToken(assuranceAddress);
     }
 
-    /** Assurance Pool Liquidator **/
     function liquidator() internal view returns (Liquidator) {
         return Liquidator(liquidatorAddress);
     }
