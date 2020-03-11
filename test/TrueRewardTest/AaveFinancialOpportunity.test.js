@@ -131,4 +131,14 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, address1, addr
       })
     })
   })
+
+  it('perTokenValue is always equal to exchange rate', async function () {
+    const perTokenValue = await this.financialOpportunity.perTokenValue()
+    assert(perTokenValue.eq(to18Decimals(1)))
+
+    await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5))
+
+    const perTokenValue2 = await this.financialOpportunity.perTokenValue()
+    assert(perTokenValue2.eq(to18Decimals(1.5)))
+  })
 })
