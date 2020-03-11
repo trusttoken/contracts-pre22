@@ -19,14 +19,15 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
 
   beforeEach(async function () {
     this.registry = await Registry.new({ from: owner })
-    this.token = await CompliantTokenMock.new(holder, to18Decimals(100), { from: owner })
+    this.token = await CompliantTokenMock.new(holder, to18Decimals(300), { from: owner })
     await this.token.setRegistry(this.registry.address, { from: owner })
     
     this.lendingPoolCore = await LendingPoolCoreMock.new({ from: owner })
     this.sharesToken = await ATokenMock.new(this.token.address, this.lendingPoolCore.address, { from: owner })
     this.lendingPool = await LendingPoolMock.new(this.lendingPoolCore.address, this.sharesToken.address, { from: owner })
     
-    await this.token.transfer(this.sharesToken.address, to18Decimals(50), { from: holder })
+    await this.token.transfer(this.sharesToken.address, to18Decimals(100), { from: holder })
+    await this.token.transfer(holder2, to18Decimals(100), { from: holder })
 
     this.financialOpportunityImpl = await AaveFinancialOpportunity.new({ from: owner })
     this.financialOpportunityProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
@@ -142,8 +143,6 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
 
   describe('multiple holders', function () {
     beforeEach(async function () {
-      await this.token.transfer(holder2, to18Decimals(25), { from: holder })
-
       await this.token.approve(this.financialOpportunity.address, to18Decimals(25), { from: holder })
       await this.financialOpportunity.deposit(holder, to18Decimals(25))
 
@@ -155,7 +154,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
       await this.financialOpportunity.withdrawTo(holder, address1, to18Decimals(25), { from: owner })
     
       await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
-      await assertBalance(this.token, address1, to18Decimals(25))
+      await assertBalance(this.token, address1, to18Decimals(100))
     })
 
     it('holder cannot withdraw more than he deposited', async function() {
@@ -166,8 +165,51 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
       await this.financialOpportunity.withdrawAll(holder, { from: owner })
     
       await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
-      await assertBalance(this.token, holder, to18Decimals(25))
+      await assertBalance(this.token, holder, to18Decimals(100))
     })
+  })
+
+  it('balance in shares does not change when exchange rate changes', async function () {
+    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder })
+    await this.financialOpportunity.deposit(holder, to18Decimals(10))
+
+    await assertBalance(this.financialOpportunity, holder, to18Decimals(10))
+
+    await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
+    await assertBalance(this.financialOpportunity, holder, to18Decimals(10))
+
+    await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(20), { from: owner })
+    await assertBalance(this.financialOpportunity, holder, to18Decimals(10))
+  })
+
+  it('multiple holders with changing exchange rates', async function() { 
+    await this.token.transfer(holder2, to18Decimals(25), { from: holder })
+
+    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder })
+    await this.financialOpportunity.deposit(holder, to18Decimals(10))
+
+    await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(2), { from: owner })
+
+    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder2 })
+    await this.financialOpportunity.deposit(holder2, to18Decimals(10))
+
+    await assertBalance(this.financialOpportunity, holder, to18Decimals(10))
+    await assertBalance(this.financialOpportunity, holder2, to18Decimals(5))
+
+    await assertRevert(this.financialOpportunity.withdrawTo(holder, address1, to18Decimals(21), { from: owner }))
+    await assertRevert(this.financialOpportunity.withdrawTo(holder2, address1, to18Decimals(11), { from: owner }))
+
+    await this.financialOpportunity.withdrawTo(holder, address1, to18Decimals(20), { from: owner })
+    
+    await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
+    await assertBalance(this.financialOpportunity, holder2, to18Decimals(5))
+    await assertBalance(this.token, address1, to18Decimals(20))
+
+    await this.financialOpportunity.withdrawAll(holder2, { from: owner })
+
+    await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
+    await assertBalance(this.financialOpportunity, holder2, to18Decimals(0))
+    await assertBalance(this.token, holder2, to18Decimals(100))
   })
 
   it('perTokenValue is always equal to exchange rate', async function () {
