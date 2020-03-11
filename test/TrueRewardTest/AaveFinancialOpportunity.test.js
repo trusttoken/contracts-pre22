@@ -15,7 +15,7 @@ const bytes32 = require('../helpers/bytes32.js')
 const to18Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**8))
 const to27Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**17))
 
-contract('AaveFinancialOpportunity', function ([_, owner, holder, address1, address2, address3]) {
+contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, address1, address2, address3]) {
 
   beforeEach(async function () {
     this.registry = await Registry.new({ from: owner })
@@ -94,6 +94,10 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, address1, addr
       await assertBalance(this.token, address1, to18Decimals(5))
       await assertBalance(this.token, holder, to18Decimals(40))
     })
+
+    it('cannot withdraw more then deposited amount', async function() {
+      await assertRevert(this.financialOpportunity.withdrawTo(holder, address1, to18Decimals(15), { from: owner }))
+    })
   
     it('withdrawAll', async function () {
       await this.financialOpportunity.withdrawAll(holder, { from: owner })
@@ -122,6 +126,10 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, address1, addr
         await assertBalance(this.token, holder, to18Decimals(40))
         await assertBalance(this.token, address1, to18Decimals(15))
       }) 
+
+      it('cannot withdraw more then deposited amount', async function() {
+        await assertRevert(this.financialOpportunity.withdrawTo(holder, address1, to18Decimals(20), { from: owner }))
+      })
       
       it('withdrawAll', async function () {
         await this.financialOpportunity.withdrawAll(holder, { from: owner })
@@ -129,6 +137,36 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, address1, addr
         await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
         await assertBalance(this.token, holder, to18Decimals(55))
       })
+    })
+  })
+
+  describe('multiple holders', function () {
+    beforeEach(async function () {
+      await this.token.transfer(holder2, to18Decimals(25), { from: holder })
+
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(25), { from: holder })
+      await this.financialOpportunity.deposit(holder, to18Decimals(25))
+
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(25), { from: holder2 })
+      await this.financialOpportunity.deposit(holder2, to18Decimals(25))
+    })
+
+    it('holder can withdraw full amount', async function() {
+      await this.financialOpportunity.withdrawTo(holder, address1, to18Decimals(25), { from: owner })
+    
+      await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
+      await assertBalance(this.token, address1, to18Decimals(25))
+    })
+
+    it('holder cannot withdraw more than he deposited', async function() {
+      await assertRevert(this.financialOpportunity.withdrawTo(holder, address1, to18Decimals(30), { from: owner }))
+    })
+
+    it('withdrawAll', async function () {
+      await this.financialOpportunity.withdrawAll(holder, { from: owner })
+    
+      await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
+      await assertBalance(this.token, holder, to18Decimals(25))
     })
   })
 
