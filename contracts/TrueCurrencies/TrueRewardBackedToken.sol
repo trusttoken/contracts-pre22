@@ -1,7 +1,7 @@
 pragma solidity ^0.5.13;
 
 import "./CompliantDepositTokenWithHook.sol";
-import "./IFinancialOpportunity.sol";
+import "./FinancialOpportunity.sol";
 
 contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     // Move these to proxy storage

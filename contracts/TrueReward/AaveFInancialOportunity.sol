@@ -4,11 +4,11 @@ import "../TrueCurrencies/TrueRewardBackedToken.sol";
 import "./IAToken.sol";
 import "./ILendingPool.sol";
 import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
-import "../TrueCurrencies/IFinancialOpportunity.sol";
+import "../TrueCurrencies/FinancialOpportunity.sol";
 import "./ILendingPoolCore.sol";
 import "./IdGenerator.sol";
 
-contract AaveFinancialOpportunity is IFinancialOpportunity {
+contract AaveFinancialOpportunity is FinancialOpportunity {
     using SafeMath for uint256;
 
     IAToken public sharesToken;
