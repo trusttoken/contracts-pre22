@@ -42,7 +42,7 @@ contract AaveFinancialOpportunity is IFinancialOpportunity {
 
     function perTokenValue() public view returns(uint256) {
         ILendingPoolCore core = ILendingPoolCore(lendingPool.core());
-        return core.getReserveNormalizedIncome(address(token)) / 10**(27-18);
+        return core.getReserveNormalizedIncome(address(token)).div(10**(27-18));
     }
 
     function getValueInShares(uint256 _amount) public view returns(uint256) {
