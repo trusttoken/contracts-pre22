@@ -31,7 +31,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         emit Transfer(RESERVE, ZERO, _value);
     }
 
-    function convertToAaveReserve(uint _value) external onlyOwner {
+    function convertToYTUSDReserve(uint _value) external onlyOwner {
         uint balance = _getBalance(RESERVE);
         if (balance < _value) {
             return;
@@ -42,6 +42,11 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()].add(yTUSDAmount);
         emit Transfer(ZERO, RESERVE, _value);
     }
+
+    function yTUSDReserveBalance() public view returns (uint) {
+        return _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()];
+    }
+
 
     function aaveInterfaceAddress() internal view returns (address) {
         return AAVE_INTERFACE;
@@ -54,6 +59,16 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     function accountTotalLoanBackedBalance(address _account) public view returns (uint) {
         // this works for single opportunity
         return _financialOpportunityBalances[_account][aaveInterfaceAddress()];
+    }
+
+    function _TUSDToYTUSD(uint _amount) internal view returns (uint) {
+        uint ratio = FinancialOpportunity(aaveInterfaceAddress()).perTokenValue();
+        return _amount.div(ratio).mul(10 ** 18);
+    }
+
+    function _yTUSDToTUSD(uint _amount) internal view returns (uint) {
+        uint ratio = FinancialOpportunity(aaveInterfaceAddress()).perTokenValue();
+        return ratio.mul(_amount).div(10 ** 18);
     }
 
     function trueRewardEnabled(address _address) public view returns (bool) {
@@ -96,8 +111,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
     function totalSupply() public view returns (uint256) {
         if (totalAaveSupply() != 0) {
-            uint ratio = FinancialOpportunity(aaveInterfaceAddress()).perTokenValue();
-            uint aaveSupply = ratio.mul(totalAaveSupply()).div(10 ** 18);
+            uint aaveSupply = _yTUSDToTUSD(totalAaveSupply());
             return totalSupply_.add(aaveSupply);
         }
         return super.totalSupply();
@@ -105,8 +119,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
     function balanceOf(address _who) public view returns (uint256) {
         if (trueRewardEnabled(_who)) {
-            uint ratio = FinancialOpportunity(aaveInterfaceAddress()).perTokenValue();
-            return ratio.mul(accountTotalLoanBackedBalance(_who)).div(10 ** 18);
+            return _yTUSDToTUSD(accountTotalLoanBackedBalance(_who));
         }
         return super.balanceOf(_who);
     }
@@ -114,7 +127,16 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         bool senderTrueRewardEnabled = trueRewardEnabled(_from);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
+        //         uint amountInYTUSD = _TUSDToYTUSD(balance);
+        // if (amountInYTUSD < yTUSDReserveBalance()) 
+
         if (senderTrueRewardEnabled) {
+            if (_value < _getBalance(RESERVE)) {
+                // withdraw to user
+                if (receiverTrueRewardEnabled) {
+                    
+                }
+            }
             // sender enabled receiver not enabled
             emit Transfer(_from, aaveInterfaceAddress(), _value);
             emit Transfer(aaveInterfaceAddress(), ZERO, _value);
