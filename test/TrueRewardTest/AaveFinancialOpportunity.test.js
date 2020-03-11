@@ -20,14 +20,14 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
 
   beforeEach(async function () {
     this.registry = await Registry.new({ from: owner })
-    this.token = await CompliantTokenMock.new(oneHundred, BN(100*10**18), { from: owner })
+    this.token = await CompliantTokenMock.new(oneHundred, to18Decimals(100), { from: owner })
     await this.token.setRegistry(this.registry.address, { from: owner })
     
     this.lendingPoolCore = await LendingPoolCoreMock.new({ from: owner })
     this.sharesToken = await ATokenMock.new(this.token.address, this.lendingPoolCore.address, { from: owner })
     this.lendingPool = await LendingPoolMock.new(this.lendingPoolCore.address, this.sharesToken.address, { from: owner })
     
-    await this.token.transfer(this.sharesToken.address, BN(50*10**18), { from: oneHundred })
+    await this.token.transfer(this.sharesToken.address, to18Decimals(50), { from: oneHundred })
 
     this.financialOpportunityImpl = await AaveFinancialOpportunity.new({ from: owner })
     this.financialOpportunityProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
@@ -65,37 +65,37 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
   })
 
   it('can deposit', async function () {
-    await this.token.approve(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
-    await this.financialOpportunity.deposit(oneHundred, BN(10*10**18))
+    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: oneHundred })
+    await this.financialOpportunity.deposit(oneHundred, to18Decimals(10))
 
-    await assertBalance(this.financialOpportunity, oneHundred, BN(10*10**18))
-    await assertBalance(this.token, oneHundred, BN(40*10**18))
+    await assertBalance(this.financialOpportunity, oneHundred, to18Decimals(10))
+    await assertBalance(this.token, oneHundred, to18Decimals(40))
   })
 
   it('can withdraw', async function () {
-    await this.token.approve(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
-    await this.financialOpportunity.deposit(oneHundred, BN(10*10**18))
+    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: oneHundred })
+    await this.financialOpportunity.deposit(oneHundred, to18Decimals(10))
 
-    await this.financialOpportunity.withdrawTo(oneHundred, address1, BN(5*10**18), { from: owner })
+    await this.financialOpportunity.withdrawTo(oneHundred, address1, to18Decimals(5), { from: owner })
 
-    await assertBalance(this.financialOpportunity, oneHundred, BN(5*10**18))
-    await assertBalance(this.token, address1, BN(5*10**18))
-    await assertBalance(this.token, oneHundred, BN(40*10**18))
+    await assertBalance(this.financialOpportunity, oneHundred, to18Decimals(5))
+    await assertBalance(this.token, address1, to18Decimals(5))
+    await assertBalance(this.token, oneHundred, to18Decimals(40))
   })
 
   it('withdrawAll', async function () {
-    await this.token.approve(this.financialOpportunity.address, BN(10*10**18), { from: oneHundred })
-    await this.financialOpportunity.deposit(oneHundred, BN(10*10**18))
+    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: oneHundred })
+    await this.financialOpportunity.deposit(oneHundred, to18Decimals(10))
 
     await this.financialOpportunity.withdrawAll(oneHundred, { from: owner })
 
-    await assertBalance(this.financialOpportunity, oneHundred, BN(0))
-    await assertBalance(this.token, oneHundred, BN(50*10**18))
+    await assertBalance(this.financialOpportunity, oneHundred, to18Decimals(0))
+    await assertBalance(this.token, oneHundred, to18Decimals(50))
   })
 
   it('perTokenValue', async function () {
     const perTokenValue = await this.financialOpportunity.perTokenValue()
-    assert(perTokenValue.eq(BN(1*10**18)))
+    assert(perTokenValue.eq(to18Decimals(1)))
   })
 
   describe('with uneven exchange rate', () => {
@@ -104,37 +104,37 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
     })
 
     it('can deposit', async function () {
-      await this.token.approve(this.financialOpportunity.address, BN(15*10**18), { from: oneHundred })
-      await this.financialOpportunity.deposit(oneHundred, BN(15*10**18))
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(15), { from: oneHundred })
+      await this.financialOpportunity.deposit(oneHundred, to18Decimals(15))
   
-      await assertBalance(this.financialOpportunity, oneHundred, BN(10*10**18))
-      await assertBalance(this.token, oneHundred, BN(35*10**18))
+      await assertBalance(this.financialOpportunity, oneHundred, to18Decimals(10))
+      await assertBalance(this.token, oneHundred, to18Decimals(35))
     })
 
     it('can withdraw', async function () {
-      await this.token.approve(this.financialOpportunity.address, BN(15*10**18), { from: oneHundred })
-      await this.financialOpportunity.deposit(oneHundred, BN(15*10**18))
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(15), { from: oneHundred })
+      await this.financialOpportunity.deposit(oneHundred, to18Decimals(15))
   
-      await this.financialOpportunity.withdrawTo(oneHundred, address1, BN(7.5*10**18), { from: owner })
+      await this.financialOpportunity.withdrawTo(oneHundred, address1, to18Decimals(7.5), { from: owner })
   
-      await assertBalance(this.financialOpportunity, oneHundred, BN(5*10**18))
-      await assertBalance(this.token, oneHundred, BN(35*10**18))
-      await assertBalance(this.token, address1, BN(7.5*10**18))
+      await assertBalance(this.financialOpportunity, oneHundred, to18Decimals(5))
+      await assertBalance(this.token, oneHundred, to18Decimals(35))
+      await assertBalance(this.token, address1, to18Decimals(7.5))
     }) 
     
     it('withdrawAll', async function () {
-      await this.token.approve(this.financialOpportunity.address, BN(15*10**18), { from: oneHundred })
-      await this.financialOpportunity.deposit(oneHundred, BN(15*10**18))
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(15), { from: oneHundred })
+      await this.financialOpportunity.deposit(oneHundred, to18Decimals(15))
   
       await this.financialOpportunity.withdrawAll(oneHundred, { from: owner })
   
-      await assertBalance(this.financialOpportunity, oneHundred, BN(0))
-      await assertBalance(this.token, oneHundred, BN(50*10**18))
+      await assertBalance(this.financialOpportunity, oneHundred, to18Decimals(0))
+      await assertBalance(this.token, oneHundred, to18Decimals(50))
     })
 
     it('perTokenValue', async function () {
       const perTokenValue = await this.financialOpportunity.perTokenValue()
-      assert(perTokenValue.eq(BN(1.5*10**18)))
+      assert(perTokenValue.eq(to18Decimals(1.5)))
     })
   })
 })
