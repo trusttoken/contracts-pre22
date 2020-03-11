@@ -6,7 +6,7 @@ import { throws } from 'assert'
 const Registry = artifacts.require("RegistryMock")
 const TrueUSD = artifacts.require("TrueUSDMock")
 const PreMigrationTokenController = artifacts.require("PreMigrationTokenController")
-const MultisigOwner = artifacts.require("MultisigOwner")
+const MultisigOwner = artifacts.require("MultiSigOwner")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 
 const bytes32 = require('./helpers/bytes32.js')
