@@ -15,19 +15,18 @@ const bytes32 = require('../helpers/bytes32.js')
 const to18Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**8))
 const to27Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**17))
 
-contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, address2, address3]) {
-  const IS_REGISTERED_CONTRACT = bytes32('isRegisteredContract');
+contract('AaveFinancialOpportunity', function ([_, owner, holder, address1, address2, address3]) {
 
   beforeEach(async function () {
     this.registry = await Registry.new({ from: owner })
-    this.token = await CompliantTokenMock.new(oneHundred, to18Decimals(100), { from: owner })
+    this.token = await CompliantTokenMock.new(holder, to18Decimals(100), { from: owner })
     await this.token.setRegistry(this.registry.address, { from: owner })
     
     this.lendingPoolCore = await LendingPoolCoreMock.new({ from: owner })
     this.sharesToken = await ATokenMock.new(this.token.address, this.lendingPoolCore.address, { from: owner })
     this.lendingPool = await LendingPoolMock.new(this.lendingPoolCore.address, this.sharesToken.address, { from: owner })
     
-    await this.token.transfer(this.sharesToken.address, to18Decimals(50), { from: oneHundred })
+    await this.token.transfer(this.sharesToken.address, to18Decimals(50), { from: holder })
 
     this.financialOpportunityImpl = await AaveFinancialOpportunity.new({ from: owner })
     this.financialOpportunityProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
@@ -61,36 +60,36 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
   })
 
   it('non-owner cannot reconfigure', async function () {
-    await assertRevert(this.financialOpportunity.configure(address1, address2, address3, { from: oneHundred }))
+    await assertRevert(this.financialOpportunity.configure(address1, address2, address3, { from: holder }))
   })
 
   it('can deposit', async function () {
-    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: oneHundred })
-    await this.financialOpportunity.deposit(oneHundred, to18Decimals(10))
+    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder })
+    await this.financialOpportunity.deposit(holder, to18Decimals(10))
 
-    await assertBalance(this.financialOpportunity, oneHundred, to18Decimals(10))
-    await assertBalance(this.token, oneHundred, to18Decimals(40))
+    await assertBalance(this.financialOpportunity, holder, to18Decimals(10))
+    await assertBalance(this.token, holder, to18Decimals(40))
   })
 
   it('can withdraw', async function () {
-    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: oneHundred })
-    await this.financialOpportunity.deposit(oneHundred, to18Decimals(10))
+    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder })
+    await this.financialOpportunity.deposit(holder, to18Decimals(10))
 
-    await this.financialOpportunity.withdrawTo(oneHundred, address1, to18Decimals(5), { from: owner })
+    await this.financialOpportunity.withdrawTo(holder, address1, to18Decimals(5), { from: owner })
 
-    await assertBalance(this.financialOpportunity, oneHundred, to18Decimals(5))
+    await assertBalance(this.financialOpportunity, holder, to18Decimals(5))
     await assertBalance(this.token, address1, to18Decimals(5))
-    await assertBalance(this.token, oneHundred, to18Decimals(40))
+    await assertBalance(this.token, holder, to18Decimals(40))
   })
 
   it('withdrawAll', async function () {
-    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: oneHundred })
-    await this.financialOpportunity.deposit(oneHundred, to18Decimals(10))
+    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder })
+    await this.financialOpportunity.deposit(holder, to18Decimals(10))
 
-    await this.financialOpportunity.withdrawAll(oneHundred, { from: owner })
+    await this.financialOpportunity.withdrawAll(holder, { from: owner })
 
-    await assertBalance(this.financialOpportunity, oneHundred, to18Decimals(0))
-    await assertBalance(this.token, oneHundred, to18Decimals(50))
+    await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
+    await assertBalance(this.token, holder, to18Decimals(50))
   })
 
   it('perTokenValue', async function () {
@@ -104,32 +103,32 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
     })
 
     it('can deposit', async function () {
-      await this.token.approve(this.financialOpportunity.address, to18Decimals(15), { from: oneHundred })
-      await this.financialOpportunity.deposit(oneHundred, to18Decimals(15))
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(15), { from: holder })
+      await this.financialOpportunity.deposit(holder, to18Decimals(15))
   
-      await assertBalance(this.financialOpportunity, oneHundred, to18Decimals(10))
-      await assertBalance(this.token, oneHundred, to18Decimals(35))
+      await assertBalance(this.financialOpportunity, holder, to18Decimals(10))
+      await assertBalance(this.token, holder, to18Decimals(35))
     })
 
     it('can withdraw', async function () {
-      await this.token.approve(this.financialOpportunity.address, to18Decimals(15), { from: oneHundred })
-      await this.financialOpportunity.deposit(oneHundred, to18Decimals(15))
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(15), { from: holder })
+      await this.financialOpportunity.deposit(holder, to18Decimals(15))
   
-      await this.financialOpportunity.withdrawTo(oneHundred, address1, to18Decimals(7.5), { from: owner })
+      await this.financialOpportunity.withdrawTo(holder, address1, to18Decimals(7.5), { from: owner })
   
-      await assertBalance(this.financialOpportunity, oneHundred, to18Decimals(5))
-      await assertBalance(this.token, oneHundred, to18Decimals(35))
+      await assertBalance(this.financialOpportunity, holder, to18Decimals(5))
+      await assertBalance(this.token, holder, to18Decimals(35))
       await assertBalance(this.token, address1, to18Decimals(7.5))
     }) 
     
     it('withdrawAll', async function () {
-      await this.token.approve(this.financialOpportunity.address, to18Decimals(15), { from: oneHundred })
-      await this.financialOpportunity.deposit(oneHundred, to18Decimals(15))
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(15), { from: holder })
+      await this.financialOpportunity.deposit(holder, to18Decimals(15))
   
-      await this.financialOpportunity.withdrawAll(oneHundred, { from: owner })
+      await this.financialOpportunity.withdrawAll(holder, { from: owner })
   
-      await assertBalance(this.financialOpportunity, oneHundred, to18Decimals(0))
-      await assertBalance(this.token, oneHundred, to18Decimals(50))
+      await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
+      await assertBalance(this.token, holder, to18Decimals(50))
     })
 
     it('perTokenValue', async function () {
