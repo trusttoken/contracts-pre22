@@ -12,6 +12,9 @@ const OwnedUpgradeabilityProxy = artifacts.require('OwnedUpgradeabilityProxy')
 const BN = web3.utils.toBN;
 const bytes32 = require('../helpers/bytes32.js')
 
+const to18Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**8))
+const to27Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**17))
+
 contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, address2, address3]) {
   const IS_REGISTERED_CONTRACT = bytes32('isRegisteredContract');
 
@@ -20,10 +23,11 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
     this.token = await CompliantTokenMock.new(oneHundred, BN(100*10**18), { from: owner })
     await this.token.setRegistry(this.registry.address, { from: owner })
     
-    this.sharesToken = await ATokenMock.new(this.token.address, { from: owner })
-    await this.token.transfer(this.sharesToken.address, BN(50*10**18))
     this.lendingPoolCore = await LendingPoolCoreMock.new({ from: owner })
+    this.sharesToken = await ATokenMock.new(this.token.address, this.lendingPoolCore.address, { from: owner })
     this.lendingPool = await LendingPoolMock.new(this.lendingPoolCore.address, this.sharesToken.address, { from: owner })
+    
+    await this.token.transfer(this.sharesToken.address, BN(50*10**18), { from: oneHundred })
 
     this.financialOpportunityImpl = await AaveFinancialOpportunity.new({ from: owner })
     this.financialOpportunityProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
@@ -65,8 +69,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
     await this.financialOpportunity.deposit(oneHundred, BN(10*10**18))
 
     await assertBalance(this.financialOpportunity, oneHundred, BN(10*10**18))
-    await assertBalance(this.token, oneHundred, BN(90*10**18))
-    await assertBalance(this.token, this.yToken.address, BN(10*10**18))
+    await assertBalance(this.token, oneHundred, BN(40*10**18))
   })
 
   it('can withdraw', async function () {
@@ -77,8 +80,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
 
     await assertBalance(this.financialOpportunity, oneHundred, BN(5*10**18))
     await assertBalance(this.token, address1, BN(5*10**18))
-    await assertBalance(this.token, oneHundred, BN(90*10**18))
-    await assertBalance(this.token, this.yToken.address, BN(5*10**18))
+    await assertBalance(this.token, oneHundred, BN(40*10**18))
   })
 
   it('withdrawAll', async function () {
@@ -88,8 +90,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
     await this.financialOpportunity.withdrawAll(oneHundred, { from: owner })
 
     await assertBalance(this.financialOpportunity, oneHundred, BN(0))
-    await assertBalance(this.token, oneHundred, BN(100*10**18))
-    await assertBalance(this.token, this.yToken.address, BN(0))
+    await assertBalance(this.token, oneHundred, BN(50*10**18))
   })
 
   it('perTokenValue', async function () {
@@ -99,7 +100,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
 
   describe('with uneven exchange rate', () => {
     beforeEach(async function () {
-      await this.yToken.setExchangeRate(BN(1.5*10**18), { from: owner })
+      await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
     })
 
     it('can deposit', async function () {
@@ -107,8 +108,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
       await this.financialOpportunity.deposit(oneHundred, BN(15*10**18))
   
       await assertBalance(this.financialOpportunity, oneHundred, BN(10*10**18))
-      await assertBalance(this.token, oneHundred, BN(85*10**18))
-      await assertBalance(this.token, this.yToken.address, BN(15*10**18))
+      await assertBalance(this.token, oneHundred, BN(35*10**18))
     })
 
     it('can withdraw', async function () {
@@ -118,9 +118,8 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
       await this.financialOpportunity.withdrawTo(oneHundred, address1, BN(7.5*10**18), { from: owner })
   
       await assertBalance(this.financialOpportunity, oneHundred, BN(5*10**18))
-      await assertBalance(this.token, oneHundred, BN(85*10**18))
+      await assertBalance(this.token, oneHundred, BN(35*10**18))
       await assertBalance(this.token, address1, BN(7.5*10**18))
-      await assertBalance(this.token, this.yToken.address, BN(7.5*10**18))
     }) 
     
     it('withdrawAll', async function () {
@@ -130,8 +129,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, oneHundred, address1, 
       await this.financialOpportunity.withdrawAll(oneHundred, { from: owner })
   
       await assertBalance(this.financialOpportunity, oneHundred, BN(0))
-      await assertBalance(this.token, oneHundred, BN(100*10**18))
-      await assertBalance(this.token, this.yToken.address, BN(0))
+      await assertBalance(this.token, oneHundred, BN(50*10**18))
     })
 
     it('perTokenValue', async function () {

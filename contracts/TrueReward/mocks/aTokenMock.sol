@@ -2,17 +2,20 @@ pragma solidity ^0.5.13;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "../IAToken.sol";
+import "./LendingPoolCoreMock.sol";
 
 contract ATokenMock is IAToken, ERC20 {
     IERC20 public token;
+    LendingPoolCoreMock core;
     mapping (address => uint256) public balance;
-    uint256 public exchangeRate = 1*10**18;
-    bool public redeemEnabled = true;
+    uint256 public exchangeRate = 1*10**28;
 
     constructor(
-        IERC20 _token
+        IERC20 _token,
+        LendingPoolCoreMock _core
     ) public {
         token = _token;
+        core = _core;
     }
 
     function mint(address to, uint mintAmount) external {
@@ -20,8 +23,6 @@ contract ATokenMock is IAToken, ERC20 {
     }
 
     function redeem(uint amount) external {
-        require(redeemEnabled, "redeem disabled");
-
         uint shares = shareCountOf(amount);
         require(balance[msg.sender] >= shares, "not enough shares");
 
@@ -29,31 +30,15 @@ contract ATokenMock is IAToken, ERC20 {
         require(token.transfer(msg.sender, underlyingValueOf(shares)), "transfer failed");
     }
 
-    function underlyingValueOf(uint256 shares) internal returns (uint) {
-        return shares * exchangeRate / (10**18);
+    function underlyingValueOf(uint256 shares) internal view returns (uint) {
+        return shares * core.getReserveNormalizedIncome(address(token)) / (10**28);
     }
 
-    function shareCountOf(uint256 value) internal returns (uint) {
-        return value * (10**18) / exchangeRate;
+    function shareCountOf(uint256 value) internal view returns (uint) {
+        return value * (10**28) / core.getReserveNormalizedIncome(address(token));
     }
 
     function balanceOf(address owner) public view returns (uint256) {
-        return balance[owner];
-    }
-
-    function balanceOfUnderlying(address owner) external returns (uint) {
         return underlyingValueOf(balance[owner]);
-    }
-
-    function setExchangeRate(uint256 _exchangeRate) external {
-        exchangeRate = _exchangeRate;
-    }
-
-    function setRedeemEnabled(bool _redeemEnabled) external {
-        redeemEnabled = _redeemEnabled;
-    }
-
-    function getPricePerFullShare() public view returns(uint256) {
-        return exchangeRate;
     }
 }
