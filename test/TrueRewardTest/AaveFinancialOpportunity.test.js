@@ -68,7 +68,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
       await this.financialOpportunity.deposit(holder, to18Decimals(10))
 
       await assertBalance(this.financialOpportunity, holder, to18Decimals(10))
-      await assertBalance(this.token, holder, to18Decimals(40))
+      await assertBalance(this.token, holder, to18Decimals(90))
     })
 
     it('with exchange rate = 1.5', async function () {
@@ -78,7 +78,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
       await this.financialOpportunity.deposit(holder, to18Decimals(15))
   
       await assertBalance(this.financialOpportunity, holder, to18Decimals(10))
-      await assertBalance(this.token, holder, to18Decimals(35))
+      await assertBalance(this.token, holder, to18Decimals(85))
     })
   })
 
@@ -93,7 +93,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
   
       await assertBalance(this.financialOpportunity, holder, to18Decimals(5))
       await assertBalance(this.token, address1, to18Decimals(5))
-      await assertBalance(this.token, holder, to18Decimals(40))
+      await assertBalance(this.token, holder, to18Decimals(90))
     })
 
     it('cannot withdraw more then deposited amount', async function() {
@@ -104,7 +104,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
       await this.financialOpportunity.withdrawAll(holder, { from: owner })
   
       await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
-      await assertBalance(this.token, holder, to18Decimals(50))
+      await assertBalance(this.token, holder, to18Decimals(100))
     })
 
     describe('with exchange rate = 1.5', async function() {
@@ -116,7 +116,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
         await this.financialOpportunity.withdrawTo(holder, address1, to18Decimals(7.5), { from: owner })
     
         await assertBalance(this.financialOpportunity, holder, to18Decimals(5))
-        await assertBalance(this.token, holder, to18Decimals(40))
+        await assertBalance(this.token, holder, to18Decimals(90))
         await assertBalance(this.token, address1, to18Decimals(7.5))
       }) 
 
@@ -124,7 +124,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
         await this.financialOpportunity.withdrawTo(holder, address1, to18Decimals(15), { from: owner })
     
         await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
-        await assertBalance(this.token, holder, to18Decimals(40))
+        await assertBalance(this.token, holder, to18Decimals(90))
         await assertBalance(this.token, address1, to18Decimals(15))
       }) 
 
@@ -136,7 +136,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
         await this.financialOpportunity.withdrawAll(holder, { from: owner })
     
         await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
-        await assertBalance(this.token, holder, to18Decimals(55))
+        await assertBalance(this.token, holder, to18Decimals(105))
       })
     })
   })
@@ -154,7 +154,7 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
       await this.financialOpportunity.withdrawTo(holder, address1, to18Decimals(25), { from: owner })
     
       await assertBalance(this.financialOpportunity, holder, to18Decimals(0))
-      await assertBalance(this.token, address1, to18Decimals(100))
+      await assertBalance(this.token, address1, to18Decimals(25))
     })
 
     it('holder cannot withdraw more than he deposited', async function() {
@@ -183,8 +183,6 @@ contract('AaveFinancialOpportunity', function ([_, owner, holder, holder2, addre
   })
 
   it('multiple holders with changing exchange rates', async function() { 
-    await this.token.transfer(holder2, to18Decimals(25), { from: holder })
-
     await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder })
     await this.financialOpportunity.deposit(holder, to18Decimals(10))
 
