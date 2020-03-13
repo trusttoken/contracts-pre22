@@ -3,7 +3,8 @@ pragma solidity ^0.5.13;
 import "./FinancialOpportunity.sol";
 import "../../trusttokens/contracts/Liquidator.sol";
 import "../../trusttokens/contracts/StakingAsset.sol";
-import { FractionalExponents } from "./utilities/FractionalExponents.sol";
+//import { FractionalExponents } from "./utilities/FractionalExponents.sol";
+import "./utilities/FractionalExponents.sol";
 import { SafeMath } from "../TrueCurrencies/Admin/TokenController.sol";
 
 /**
@@ -33,9 +34,10 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
     address opportunityAddress;
     address assuranceAddress;
     address liquidatorAddress;
+    address exponentContractAddress;
 
-    using FractionalExponents for FractionalExponents.power;
     using SafeMath for uint;
+    using SafeMath for uint32;
     using SafeMath for uint256;
 
     constructor(address _opportunityAddress, address _assuranceAddress, address _liquidatorAddress) public {
@@ -72,8 +74,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
     **/
     function _perTokenValue() internal view returns(uint256) {
         // (_baseN / _baseD) ^ (_expN / _expD) * 2 ^ precision
-        (uint256 result, uint8 precision) = FractionalExponents.power(
-            opportunity().perTokenValue(), 1, TOTAL_BASIS - ASSURANCE_BASIS, TOTAL_BASIS, 18);
+        (uint256 result, uint8 precision) = exponents().power(
+            opportunity().perTokenValue(), 1, uint32(TOTAL_BASIS.sub(ASSURANCE_BASIS)), uint32(TOTAL_BASIS));
     }
 
     /** 
@@ -136,7 +138,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
     function _liquidate(address _reciever, int256 _debt) internal returns (uint) {
         liquidator().reclaim(_reciever, _debt);
         emit stakeLiquidated(_reciever, _debt);
-        return _debt;
+        return uint(_debt);
     }
 
     /** 
@@ -161,7 +163,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
 
     // todo feewet remove from interface
     function withdrawAll(address _to) external returns(uint) {
-        return;
+        return _withdrawTo(_to, _getBalance());
     }
 
     function getBalance() external view returns (uint) {
@@ -178,5 +180,9 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
 
     function liquidator() internal view returns (Liquidator) {
         return Liquidator(liquidatorAddress);
+    }
+
+    function exponents() internal view returns (FractionalExponents){
+        return FractionalExponents(exponentContractAddress);
     }
 }
