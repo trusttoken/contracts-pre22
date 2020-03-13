@@ -9,10 +9,8 @@ contract AssuredFinancialOpportunityMock is AssuredFinancialOpportunity {
     address liquidatorAddress_ = 0x151B0E171A7fe3dB4d7B62FdB9Da6eBD1f5167bd;
 
     constructor() public {
-    	owner = msg.sender;
         opportunityAddress = opportunityAddress_;
         assuranceAddress = assuranceAddress_;
         liquidatorAddress = liquidatorAddress_;
-        assuracneBasis = 300;
     }
 }

@@ -27,4 +27,6 @@ interface FinancialOpportunity {
      * @return TUSD / yTUSD price ratio
      */
     function perTokenValue() external view returns(uint);
+
+    function getBalance() external view returns(uint);
 }
