@@ -14,7 +14,6 @@ contract AaveFinancialOpportunity is FinancialOpportunity {
     IAToken public sharesToken;
     ILendingPool public lendingPool;
     TrueRewardBackedToken public token;
-    mapping (address => uint256) public shares;
 
     modifier onlyOwner() {
         require(msg.sender == proxyOwner(), "only owner");
@@ -45,54 +44,42 @@ contract AaveFinancialOpportunity is FinancialOpportunity {
         return core.getReserveNormalizedIncome(address(token)).div(10**(27-18));
     }
 
+    function getBalance() public view returns(uint256) {
+        return sharesToken.balanceOf(address(this));
+    }
+
     function getValueInShares(uint256 _amount) public view returns(uint256) {
         return _amount.mul(10**18).div(perTokenValue());
     }
 
-    function getSharesValue(uint256 _shares) public view returns(uint256) {
-        return _shares.mul(perTokenValue()).div(10**18);
-    }
-
-    function balanceOf(address _account) public view returns(uint256) {
-        return shares[_account];
-    }
-
-    function deposit(address _account, uint256 _amount) external returns(uint256) {
-        require(token.transferFrom(_account, address(this), _amount), "transfer from failed");
+    function deposit(address _from, uint256 _amount) external returns(uint256) {
+        require(token.transferFrom(_from, address(this), _amount), "transfer from failed");
         require(token.approve(address(lendingPool), _amount), "approve failed");
         
-        uint256 balanceBefore = sharesToken.balanceOf(address(this));
+        uint256 balanceBefore = getBalance();
         lendingPool.deposit(address(token), _amount, 0);
-        uint256 balanceAfter = sharesToken.balanceOf(address(this));
-        uint256 sharesMinted = getValueInShares(balanceAfter.sub(balanceBefore));
-        require(sharesMinted >= 0);
+        uint256 balanceAfter = getBalance();
 
-        shares[_account] = shares[_account].add(sharesMinted);
-        return sharesMinted;
+        return getValueInShares(balanceAfter.sub(balanceBefore));
     }
 
-    function _withdraw(address _from, address _to, uint256 _shares) internal returns(uint256) {
-        require(shares[_from] >= _shares, "not enough balance");
-        
-        uint256 amount = getSharesValue(_shares);
-
+    function _withdraw(address _to, uint256 _amount) internal returns(uint256) {
         uint256 balanceBefore = token.balanceOf(address(this));
-        sharesToken.redeem(amount);
+        sharesToken.redeem(_amount);
         uint256 balanceAfter = token.balanceOf(address(this));
         uint256 fundsWithdrawn = balanceAfter.sub(balanceBefore);
-        uint256 sharesWithdrawn = getValueInShares(fundsWithdrawn);
 
-        shares[_from] = shares[_from].sub(sharesWithdrawn);
         require(token.transfer(_to, fundsWithdrawn), "transfer failed");
-        return sharesWithdrawn;
+
+        return getValueInShares(fundsWithdrawn);
     }
 
-    function withdrawTo(address _from, address _to, uint256 _amount) external returns(uint256) {
-        return _withdraw(_from, _to, getValueInShares(_amount));
+    function withdrawTo(address _to, uint256 _amount) external returns(uint256) {
+        return _withdraw(_to, _amount);
     }
 
-    function withdrawAll(address _account) external returns(uint256) {
-        return _withdraw(_account, _account, shares[_account]);
+    function withdrawAll(address _to) external returns(uint256) {
+        return _withdraw(_to, getBalance());
     }
 
     function() external payable {
