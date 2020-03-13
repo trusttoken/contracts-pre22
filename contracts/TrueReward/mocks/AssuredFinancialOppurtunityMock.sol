@@ -4,7 +4,6 @@ import "../AssuredFinancialOpportunity.sol";
 
 contract AssuredFinancialOpportunityMock is AssuredFinancialOpportunity {
 
-    // todo feewet: either add a constructor
     address opportunityAddress_ = 0x151B0E171A7fe3dB4d7B62FdB9Da6eBD1f5167bd;
     address assuranceAddress_ = 0x151B0E171A7fe3dB4d7B62FdB9Da6eBD1f5167bd;
     address liquidatorAddress_ = 0x151B0E171A7fe3dB4d7B62FdB9Da6eBD1f5167bd;
@@ -14,6 +13,6 @@ contract AssuredFinancialOpportunityMock is AssuredFinancialOpportunity {
         opportunityAddress = opportunityAddress_;
         assuranceAddress = assuranceAddress_;
         liquidatorAddress = liquidatorAddress_;
-        //super(opportunityAddress_, assuranceAddress_, liquidatorAddress_);
+        assuracneBasis = 300;
     }
 }
