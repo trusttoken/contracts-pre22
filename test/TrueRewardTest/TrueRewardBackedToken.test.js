@@ -15,7 +15,7 @@ contract('TrueRewardBackedToken', function (accounts) {
         beforeEach(async function () {
             this.token = await TrueUSDMock.new(oneHundred, HUNDRED, { from: owner })
             this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
-            await this.token.setiEarnInterfaceAddress(this.financialOpportunity.address, {from: owner})
+            await this.token.setAaveInterfaceAddress(this.financialOpportunity.address, {from: owner})
         })
 
         it ('enables trueReward with 0 balance', async function(){
@@ -33,10 +33,10 @@ contract('TrueRewardBackedToken', function (accounts) {
             const interfaceBalance = await this.token.balanceOf.call(this.financialOpportunity.address);
             assert.equal(Number(interfaceBalance), 0)
             const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(oneHundred);
-            const totalIearnSupply = await this.token.totalIearnSupply.call();
+            const totalAaveSupply = await this.token.totalAaveSupply.call();
             const desiredNumberWithRoundingError = Number(HUNDRED)* 101/103;
             console.log(Number(loanBackedTokenBalance))
-            console.log(Number(totalIearnSupply))
+            console.log(Number(totalAaveSupply))
             const totalSupply = await this.token.totalSupply.call();
             console.log(Number(totalSupply))
             const balance = await this.token.balanceOf.call(oneHundred);
@@ -49,9 +49,9 @@ contract('TrueRewardBackedToken', function (accounts) {
             const interfaceBalance = await this.token.balanceOf.call(this.financialOpportunity.address);
             assert.equal(Number(interfaceBalance), 0)
             const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(oneHundred);
-            const totalIearnSupply = await this.token.totalIearnSupply.call();
+            const totalAaveSupply = await this.token.totalAaveSupply.call();
             console.log(Number(loanBackedTokenBalance))
-            console.log(Number(totalIearnSupply))
+            console.log(Number(totalAaveSupply))
             const totalSupply = await this.token.totalSupply.call();
             console.log(Number(totalSupply))
             const balance = await this.token.balanceOf.call(oneHundred);
