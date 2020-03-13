@@ -19,4 +19,6 @@ interface FinancialOpportunity {
     // withdrawll actually withdraw all tokens in finOp
     function withdrawAll(address _to) external returns(uint);
     function perTokenValue() external view returns(uint);
+
+    function getBalance() external view returns(uint);
 }
