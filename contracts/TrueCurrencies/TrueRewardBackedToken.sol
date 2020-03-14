@@ -1,14 +1,7 @@
 pragma solidity ^0.5.13;
 
 import "./CompliantDepositTokenWithHook.sol";
-
-interface FinancialOpportunity {
-    function deposit(address _account, uint _amount) external returns(uint);
-    function withdrawTo(address _from, address _to, uint _amount) external returns(uint);
-    function withdrawAll(address _account) external returns(uint);
-    function perTokenValue() external view returns(uint);
-}
-
+import "./FinancialOpportunity.sol";
 
 contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     // Move these to proxy storage
@@ -109,6 +102,16 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         emit Transfer(msg.sender, ZERO, yTUSDAmount); // This is the last part that might not work
     }
 
+    function _TUSDToYTUSD(uint _amount) internal view returns (uint) {
+        uint ratio = FinancialOpportunity(aaveInterfaceAddress()).perTokenValue();
+        return _amount.div(ratio).mul(10 ** 18);
+    }
+
+    function _yTUSDToTUSD(uint _amount) internal view returns (uint) {
+        uint ratio = FinancialOpportunity(aaveInterfaceAddress()).perTokenValue();
+        return ratio.mul(_amount).div(10 ** 18);
+    }
+
     function totalSupply() public view returns (uint256) {
         if (totalAaveSupply() != 0) {
             uint aaveSupply = _yTUSDToTUSD(totalAaveSupply());
@@ -140,7 +143,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             // sender enabled receiver not enabled
             emit Transfer(_from, aaveInterfaceAddress(), _value);
             emit Transfer(aaveInterfaceAddress(), ZERO, _value);
-            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(_from, _to, _value);
+            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(_to, _value);
             _totalAaveSupply = _totalAaveSupply.sub(yTUSDAmount);
             _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(yTUSDAmount);
         }
@@ -165,7 +168,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             // sender enabled receiver not enabled
             emit Transfer(_from, aaveInterfaceAddress(), _value);
             emit Transfer(aaveInterfaceAddress(), ZERO, _value);
-            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(_from, _to, _value);
+            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(_to, _value);
             _totalAaveSupply = _totalAaveSupply.sub(yTUSDAmount);
             _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(yTUSDAmount);
         }
