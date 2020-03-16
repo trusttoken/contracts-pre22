@@ -1,13 +1,32 @@
 import assertRevert from '../helpers/assertRevert'
 import expectThrow from '../helpers/expectThrow'
-const BN = web3.utils.toBN;
 const bytes32 = require('../helpers/bytes32.js')
 const TrueUSDMock = artifacts.require("TrueUSDMock")
 const FinancialOpportunityMock = artifacts.require("FinancialOpportunityMock")
-
+const Liquidator = artifacts.require('LiquidatorMock')
+const BN = web3.utils.toBN
+const ONE_ETHER = BN(1e18)
+const ONE_HUNDRED_ETHER = BN(100).mul(ONE_ETHER)
+const MockTrustToken = artifacts.require('MockTrustToken')
+const TrueUSD = artifacts.require('TrueUSD')
+const Airswap = artifacts.require('Swap')
+const AirswapERC20TransferHandler = artifacts.require('AirswapERC20TransferHandler')
+const TransferHandlerRegistry = artifacts.require('TransferHandlerRegistry')
+const UniswapFactory = artifacts.require('uniswap_factory')
+const UniswapExchange = artifacts.require('uniswap_exchange')
+const Registry = artifacts.require('RegistryMock')
+const { Order, hashDomain } = require('./lib/airswap.js')
+const Types = artifacts.require('Types')
+const ERC20_KIND = '0x36372b07'
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000'
+const bytes32 = require('../true-currencies/test/helpers/bytes32.js')
+const AIRSWAP_VALIDATOR = bytes32('AirswapValidatorDomain')
+const APPROVED_BENEFICIARY = bytes32('approvedBeneficiary')
 
 contract('AssuredFinancialOppurtunity', function(accounts) {
-    const [_, owner, issuer, oneHundred, approvedBeneficiary, account2, kycAccount, fakePool] = accounts
+    const [_, owner, issuer, oneHundred, approvedBeneficiary, account2, kycAccount, 
+        fakePool, owner, oneHundred, anotherAccount, emptyAccount] = accounts
     beforeEach(async function() {
         // Assurance Pool Setup
         this.uniswapFactory = await UniswapFactory.new();
@@ -50,11 +69,15 @@ contract('AssuredFinancialOppurtunity', function(accounts) {
         await this.token.setiEarnInterfaceAddress(this.financialOpportunity.address, {from: owner})
 
         // Assurance Pool Setup
-        this.AssuredFinancialOppurtunity = await AssuredFinancialOppurtunity.new() // todo feewet
+        this.AssuredFinancialOppurtunity = await AssuredFinancialOppurtunity.new()
     })
-    describe('Liquidate Oppurtunity Default', function() {
-
-    }
+    describe('Assured Opportunity Setup', function() {
+        it('deposit', async function() {
+            // enable true reward
+            await this.token.enableTrueReward({from: oneHundred});
+            assert.equal(true, true);
+        })
+    })
 })
 
 contract('TrueRewardBackedToken', function (accounts) {
