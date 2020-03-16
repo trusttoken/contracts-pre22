@@ -38,7 +38,7 @@ contract TrueUSDMock is TrueUSD {
         aaveAddress = _aaveAddress;
     }
 
-    function aaveInterfaceAddress() internal view returns (address) {
+    function aaveInterfaceAddress() public view returns (address) {
         return aaveAddress;
     }
 
