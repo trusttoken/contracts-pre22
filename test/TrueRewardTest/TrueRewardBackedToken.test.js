@@ -109,6 +109,20 @@ contract('TrueRewardBackedToken', function (accounts) {
             assert.equal(Number(balance), to18Decimals(100))
         })
 
+        it ('two accounts enable truereward', async function(){
+            await this.token.enableTrueReward({from: holder})
+            await this.token.enableTrueReward({from: holder2})
+            const interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.financialOpportunity.address);
+            assert.equal(Number(interfaceSharesTokenBalance), to18Decimals(200))
+            const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder);
+            const totalAaveSupply = await this.token.totalAaveSupply.call();
+            assert.equal(Number(loanBackedTokenBalance), to18Decimals(200))
+            assert.equal(Number(totalAaveSupply), to18Decimals(200))
+            const totalSupply = await this.token.totalSupply.call();
+            assert.equal(Number(totalSupply), to18Decimals(500))
+        })
+
+
         it ('balance increases after perTokenValue increases', async function(){
             let balance = await this.token.balanceOf.call(holder);
             assert.equal(Number(balance),to18Decimals(100))
@@ -175,7 +189,7 @@ contract('TrueRewardBackedToken', function (accounts) {
             const receipientBalance = await this.token.balanceOf.call(receipient);
             console.log('senderBalance',Number(senderBalance))
             console.log('receipientBalance', Number(receipientBalance))
-            const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(sender);
+            const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(receipient);
             const totalAaveSupply = await this.token.totalAaveSupply.call();
             console.log('loanBackedTokenBalance',Number(loanBackedTokenBalance))
             console.log('totalAaveSupply',Number(totalAaveSupply))
@@ -185,6 +199,18 @@ contract('TrueRewardBackedToken', function (accounts) {
             console.log('interfaceSharesTokenBalance',Number(interfaceSharesTokenBalance))
         })
 
-    })
+        describe('Truereward - aave with interest', function(){
+            it ('sender truereward enabled receipient not enabled', async function(){
+                
+            })
 
+            it ('sender truereward enabled receipient enabled', async function(){
+                
+            })
+            it ('sender truereward not enabled receipient enabled', async function(){
+                
+            })
+
+        })
+    })
 })
