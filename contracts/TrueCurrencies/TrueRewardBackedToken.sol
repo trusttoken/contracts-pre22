@@ -12,7 +12,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     address public constant ZERO = 0x0000000000000000000000000000000000000000;
     uint public _totalAaveSupply;
 
-    function aaveInterfaceAddress() internal view returns (address) {
+    function aaveInterfaceAddress() public view returns (address) {
         return AAVE_INTERFACE;
     }
 
@@ -41,13 +41,14 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
     function enableTrueReward() external {
         require(!trueRewardEnabled(msg.sender), "not turned on");
-        _enableAave();
         uint balance = _getBalance(msg.sender);
         if (balance == 0) {
+            _enableAave();
             return;
         }
         approve(aaveInterfaceAddress(), balance);
         uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(msg.sender, balance);
+        _enableAave();
         // emit some event
         _totalAaveSupply = _totalAaveSupply.add(yTUSDAmount);
         _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()].add(yTUSDAmount);
@@ -101,9 +102,9 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         }
         if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             // sender not enabled receiver enabled
-            _setAllowance(_to, aaveInterfaceAddress(), _value);
-            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(_to, _value);
-            _totalAaveSupply = _totalAaveSupply.sub(yTUSDAmount);
+            _setAllowance(_from, aaveInterfaceAddress(), _value);
+            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(_from, _value);
+            _totalAaveSupply = _totalAaveSupply.add(yTUSDAmount);
             _financialOpportunityBalances[_to][aaveInterfaceAddress()] = _financialOpportunityBalances[_to][aaveInterfaceAddress()].add(yTUSDAmount);
             emit Transfer(ZERO, _to, _value);
         }
@@ -126,9 +127,9 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         }
         if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             // sender not enabled receiver enabled
-            _setAllowance(_to, aaveInterfaceAddress(), _value);
-            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(_to, _value);
-            _totalAaveSupply = _totalAaveSupply.sub(yTUSDAmount);
+            _setAllowance(_from, aaveInterfaceAddress(), _value);
+            uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(_from, _value);
+            _totalAaveSupply = _totalAaveSupply.add(yTUSDAmount);
             _financialOpportunityBalances[_to][aaveInterfaceAddress()] = _financialOpportunityBalances[_to][aaveInterfaceAddress()].add(yTUSDAmount);
             emit Transfer(ZERO, _to, _value);
         }
