@@ -1,3 +1,12 @@
 [submodule "registry"]
 	path = registry
 	url = https://github.com/trusttoken/registry
+[submodule "contracts/TrueReward/contracts-vyper"]
+	path = contracts/TrueReward/contracts-vyper
+	url = https://github.com/Uniswap/contracts-vyper.git
+[submodule "contracts/TrueReward/uniswap"]
+	path = contracts/TrueReward/uniswap
+	url = https://github.com/Uniswap/contracts-vyper.git
+[submodule "uniswap"]
+	path = uniswap
+	url = https://github.com/Uniswap/contracts-vyper.git
