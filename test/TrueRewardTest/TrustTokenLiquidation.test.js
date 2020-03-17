@@ -1,8 +1,15 @@
 import assertRevert from '../helpers/assertRevert'
 import expectThrow from '../helpers/expectThrow'
+import assertBalance from '../helpers/assertBalance'
+
+// types
+const to18Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**8))
+const to27Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**17))
 const bytes32 = require('../helpers/bytes32.js')
+const Types = artifacts.require('Types')
+
+// TrustTokens & liquidator dependencies
 const TrueUSDMock = artifacts.require("TrueUSDMock")
-const FinancialOpportunityMock = artifacts.require("FinancialOpportunityMock")
 const Liquidator = artifacts.require('LiquidatorMock')
 const BN = web3.utils.toBN
 const ONE_ETHER = BN(1e18)
@@ -14,19 +21,29 @@ const AirswapERC20TransferHandler = artifacts.require('AirswapERC20TransferHandl
 const TransferHandlerRegistry = artifacts.require('TransferHandlerRegistry')
 const UniswapFactory = artifacts.require('uniswap_factory')
 const UniswapExchange = artifacts.require('uniswap_exchange')
-const Registry = artifacts.require('RegistryMock')
 const { Order, hashDomain } = require('./lib/airswap.js')
-const Types = artifacts.require('Types')
 const ERC20_KIND = '0x36372b07'
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000'
-const bytes32 = require('../true-currencies/test/helpers/bytes32.js')
 const AIRSWAP_VALIDATOR = bytes32('AirswapValidatorDomain')
 const APPROVED_BENEFICIARY = bytes32('approvedBeneficiary')
 
+// opportunities dependencies
+const Registry = artifacts.require('RegistryMock')
+const CompliantTokenMock = artifacts.require('CompliantTokenMock')
+const ATokenMock = artifacts.require('ATokenMock')
+const LendingPoolMock = artifacts.require('LendingPoolMock')
+const LendingPoolCoreMock = artifacts.require('LendingPoolCoreMock')
+const AaveFinancialOpportunity = artifacts.require('AaveFinancialOpportunity')
+const OwnedUpgradeabilityProxy = artifacts.require('OwnedUpgradeabilityProxy')
+const FinancialOpportunityMock = artifacts.require("FinancialOpportunityMock")
+
+// assured financial opportunities dependencies
+const AssuredFinancialOppurtunityMock = artifacts.require("AssuredFinancialOpportunityMock")
+
 contract('AssuredFinancialOppurtunity', function(accounts) {
     const [_, owner, issuer, oneHundred, approvedBeneficiary, account2, kycAccount, 
-        fakePool, owner, oneHundred, anotherAccount, emptyAccount] = accounts
+        fakePool, anotherAccount, emptyAccount] = accounts
     beforeEach(async function() {
         // Assurance Pool Setup
         this.uniswapFactory = await UniswapFactory.new();
@@ -68,6 +85,7 @@ contract('AssuredFinancialOppurtunity', function(accounts) {
         this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
         await this.token.setiEarnInterfaceAddress(this.financialOpportunity.address, {from: owner})
 
+
         // Assurance Pool Setup
         this.AssuredFinancialOppurtunity = await AssuredFinancialOppurtunity.new()
     })
@@ -97,7 +115,7 @@ contract('TrueRewardBackedToken', function (accounts) {
             assert.equal(enabled, false) 
             await this.token.enableTrueReward({from: anotherAccount});
             enabled = await this.token.trueRewardEnabled.call(anotherAccount);
-            assert.equal(enabled, true) 
+            assert.equal(enabled, true)
         })
 
         it ('enables trueReward with 100 balance', async function(){
@@ -131,6 +149,132 @@ contract('TrueRewardBackedToken', function (accounts) {
             const balance = await this.token.balanceOf.call(oneHundred);
             console.log(Number(balance))
         })
-
     })
 })
+
+contract('AaveAssuredFinancialOpportunity', function ([_, owner, holder, holder2, address1, address2, address3]) {
+
+  beforeEach(async function () {
+    this.registry = await Registry.new({ from: owner })
+    this.token = await CompliantTokenMock.new(holder, to18Decimals(200), { from: owner })
+    await this.token.setRegistry(this.registry.address, { from: owner })
+    
+    this.lendingPoolCore = await LendingPoolCoreMock.new({ from: owner })
+    this.sharesToken = await ATokenMock.new(this.token.address, this.lendingPoolCore.address, { from: owner })
+    this.lendingPool = await LendingPoolMock.new(this.lendingPoolCore.address, this.sharesToken.address, { from: owner })
+    
+    await this.token.transfer(this.sharesToken.address, to18Decimals(100), { from: holder })
+
+    this.financialOpportunityImpl = await AaveFinancialOpportunity.new({ from: owner })
+    this.financialOpportunityProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
+    this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
+    await this.financialOpportunityProxy.upgradeTo(this.financialOpportunityImpl.address, { from: owner })
+    await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, { from: owner })
+  })
+
+  describe('configure', function () {
+    it('configured to proper addresses', async function () {
+      const sharesTokenAddress = await this.financialOpportunity.sharesToken()
+      const lendingPoolAddress = await this.financialOpportunity.lendingPool()
+      const tokenAddress = await this.financialOpportunity.token()
+      assert.equal(sharesTokenAddress, this.sharesToken.address)
+      assert.equal(lendingPoolAddress, this.lendingPool.address)
+      assert.equal(tokenAddress, this.token.address)
+    })
+  
+    it('can reconfigure', async function () {
+      await this.financialOpportunity.configure(address1, address2, address3, { from: owner })
+  
+      const sharesTokenAddress = await this.financialOpportunity.sharesToken()
+      const lendingPoolAddress = await this.financialOpportunity.lendingPool()
+      const tokenAddress = await this.financialOpportunity.token()
+      assert.equal(sharesTokenAddress, address1)
+      assert.equal(lendingPoolAddress, address2)
+      assert.equal(tokenAddress, address3)
+    })
+
+    it('non-owner cannot reconfigure', async function () {
+      await assertRevert(this.financialOpportunity.configure(address1, address2, address3, { from: holder }))
+    })
+  })
+
+  describe('deposit', async function() {
+    it('with exchange rate = 1', async function () {
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder })
+      await this.financialOpportunity.deposit(holder, to18Decimals(10))
+
+      await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(10)))
+      await assertBalance(this.token, holder, to18Decimals(90))
+    })
+
+    it('with exchange rate = 1.5', async function () {
+      await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
+
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(15), { from: holder })
+      await this.financialOpportunity.deposit(holder, to18Decimals(15))
+  
+      await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(15)))
+      await assertBalance(this.token, holder, to18Decimals(85))
+    })
+  })
+
+  describe('withdraw', async function() {
+    beforeEach(async function() {
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder })
+      await this.financialOpportunity.deposit(holder, to18Decimals(10))
+    })
+
+    it('withdraw', async function () {
+      await this.financialOpportunity.withdrawTo(address1, to18Decimals(5), { from: owner })
+  
+      await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(5)))
+      await assertBalance(this.token, address1, to18Decimals(5))
+      await assertBalance(this.token, holder, to18Decimals(90))
+    })
+
+    it('withdrawAll', async function () {
+      await this.financialOpportunity.withdrawAll(address1, { from: owner })
+  
+      await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(0)))
+      await assertBalance(this.token, address1, to18Decimals(10))
+    })
+
+    describe('with exchange rate = 1.5', async function() {
+      beforeEach(async function () {
+        await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
+      })
+  
+      it('can withdraw 50%', async function () {
+        await this.financialOpportunity.withdrawTo(address1, to18Decimals(7.5), { from: owner })
+    
+        await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(7.5)))
+        await assertBalance(this.token, address1, to18Decimals(7.5))
+      }) 
+
+      it('can withdraw 100%', async function () {
+        await this.financialOpportunity.withdrawTo(address1, to18Decimals(15), { from: owner })
+    
+        await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(0)))
+        await assertBalance(this.token, address1, to18Decimals(15))
+      }) 
+
+      it('withdrawAll', async function () {
+        await this.financialOpportunity.withdrawAll(address1, { from: owner })
+    
+        await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(0)))
+        await assertBalance(this.token, address1, to18Decimals(15))
+      })
+    })
+  })
+
+  it('perTokenValue is always equal to exchange rate', async function () {
+    const perTokenValue = await this.financialOpportunity.perTokenValue()
+    assert(perTokenValue.eq(to18Decimals(1)))
+
+    await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5))
+
+    const perTokenValue2 = await this.financialOpportunity.perTokenValue()
+    assert(perTokenValue2.eq(to18Decimals(1.5)))
+  })
+})
+

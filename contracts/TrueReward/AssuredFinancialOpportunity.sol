@@ -3,7 +3,7 @@ pragma solidity ^0.5.13;
 import "./FinancialOpportunity.sol";
 import "../../trusttokens/contracts/Liquidator.sol";
 import "../../trusttokens/contracts/StakingAsset.sol";
-//import { FractionalExponents } from "./utilities/FractionalExponents.sol";
+import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import "./utilities/FractionalExponents.sol";
 import { SafeMath } from "../TrueCurrencies/Admin/TokenController.sol";
 
@@ -17,6 +17,9 @@ import { SafeMath } from "../TrueCurrencies/Admin/TokenController.sol";
  * When stake is liquidated, the TUSD is sent out in the same transaction (Flash Assurance).
  * Can attempt to sell bad debt at a later date and return value to the pool.
  * Keeps track of rewards stream for assurance pool.
+ *
+ * todo:
+ * - make contract only callable by TrueUSD contract
  *
 **/
 contract AssuredFinancialOpportunity is FinancialOpportunity {
@@ -39,6 +42,27 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
     using SafeMath for uint;
     using SafeMath for uint32;
     using SafeMath for uint256;
+
+    modifier onlyOwner() {
+        require(msg.sender == proxyOwner(), "only owner");
+        _;
+    }
+
+    function configure(
+        address _opportunityAddress, 
+        address _assuranceAddress, 
+        address _liquidatorAddress,
+        address _exponentContractAddress)
+    public onlyOwner {
+        opportunityAddress = _opportunityAddress;
+        assuranceAddress = _assuranceAddress;
+        liquidatorAddress = _liquidatorAddress;
+        exponentContractAddress = _exponentContractAddress;
+    }
+
+    function proxyOwner() public view returns(address) {
+        return OwnedUpgradeabilityProxy(address(this)).proxyOwner();
+    }
 
     constructor(address _opportunityAddress, address _assuranceAddress, address _liquidatorAddress) public {
         opportunityAddress = _opportunityAddress;
@@ -83,7 +107,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
      * todo feewet we might need to check that user has the right balance here
      * does this mean we need account? Or do we have whatever calls this check
     **/
-    function _withdrawTo(address _to, uint _amount) internal returns(uint) {
+    function _withdraw(address _to, uint _amount) internal returns(uint) {
 
         // attmept withdraw
         (bool success, uint returnedAmount) = _attemptWithdrawTo(_to, _amount);
@@ -158,12 +182,12 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
     }
 
     function withdrawTo(address _to, uint _amount) external returns(uint) {
-        return _withdrawTo(_to, _amount);
+        return _withdraw(_to, _amount);
     }
 
     // todo feewet remove from interface
     function withdrawAll(address _to) external returns(uint) {
-        return _withdrawTo(_to, _getBalance());
+        return _withdraw(_to, _getBalance());
     }
 
     function getBalance() external view returns (uint) {
@@ -185,4 +209,6 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
     function exponents() internal view returns (FractionalExponents){
         return FractionalExponents(exponentContractAddress);
     }
+
+    function() external payable {}
 }
