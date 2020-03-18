@@ -6,33 +6,30 @@ import "./ILendingPool.sol";
 import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import "../TrueCurrencies/FinancialOpportunity.sol";
 import "./ILendingPoolCore.sol";
-import "./IdGenerator.sol";
+import "../TrueCurrencies/modularERC20/Ownable.sol";
 
-contract AaveFinancialOpportunity is FinancialOpportunity {
+contract AaveFinancialOpportunity is FinancialOpportunity, Ownable {
     using SafeMath for uint256;
 
     IAToken public sharesToken;
     ILendingPool public lendingPool;
     TrueRewardBackedToken public token;
 
-    modifier onlyOwner() {
-        require(msg.sender == proxyOwner(), "only owner");
-        _;
-    }
-
-    modifier onlyToken() {
-        require(msg.sender == address(token), "only token");
+    modifier onlyProxyOwner() {
+        require(msg.sender == proxyOwner(), "only proxy owner");
         _;
     }
 
     function configure(
         IAToken _sharesToken,
         ILendingPool _lendingPool,
-        TrueRewardBackedToken _token
-    ) public onlyOwner {
+        TrueRewardBackedToken _token,
+        address _owner
+    ) public onlyProxyOwner {
         sharesToken = _sharesToken;
         lendingPool = _lendingPool;
         token = _token;
+        owner = _owner;
     }
 
     function proxyOwner() public view returns(address) {
@@ -52,10 +49,10 @@ contract AaveFinancialOpportunity is FinancialOpportunity {
         return _amount.mul(10**18).div(perTokenValue());
     }
 
-    function deposit(address _from, uint256 _amount) external returns(uint256) {
+    function deposit(address _from, uint256 _amount) external onlyOwner returns(uint256) {
         require(token.transferFrom(_from, address(this), _amount), "transfer from failed");
         require(token.approve(address(lendingPool), _amount), "approve failed");
-        
+
         uint256 balanceBefore = getBalance();
         lendingPool.deposit(address(token), _amount, 0);
         uint256 balanceAfter = getBalance();
@@ -74,11 +71,11 @@ contract AaveFinancialOpportunity is FinancialOpportunity {
         return getValueInShares(fundsWithdrawn);
     }
 
-    function withdrawTo(address _to, uint256 _amount) external returns(uint256) {
+    function withdrawTo(address _to, uint256 _amount) external onlyOwner returns(uint256) {
         return _withdraw(_to, _amount);
     }
 
-    function withdrawAll(address _to) external returns(uint256) {
+    function withdrawAll(address _to) external onlyOwner returns(uint256) {
         return _withdraw(_to, getBalance());
     }
 
