@@ -8,12 +8,15 @@
   },
   "scripts": {
     "test": "./test.sh",
+    "coverage": "./coverage.sh",
     "flatten": "./flatten-all",
     "profile": "./profile.sh"
   },
   "author": "",
   "license": "ISC",
-  "devDependencies": {},
+  "devDependencies": {
+    "solidity-coverage": "^0.7.0"
+  },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",

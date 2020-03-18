@@ -7,3 +7,5 @@ allFiredEvents
 coverage
 coverage.json
 coverageEnv
+/.coverage_artifacts
+/.coverage_contracts
