@@ -8,9 +8,10 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
     mapping(address => FinancialOpportunityAllocation[]) private _trueRewardDistribution;
     mapping (address => mapping (address => uint256)) private _financialOpportunityBalances;
-    address public constant AAVE_INTERFACE = 0x151B0E171A7fe3dB4d7B62FdB9Da6eBD1f5167bd;
-    address public constant RESERVE = 0xf000000000000000000000000000000000000000;
     uint public _totalAaveSupply;
+
+    address public constant AAVE_INTERFACE = address(0);
+    address public constant RESERVE = 0xf000000000000000000000000000000000000000;
 
     function drainTrueCurrencyReserve(address _to, uint _value) external onlyOwner {
         _transferAllArgs(RESERVE, _to, _value);
@@ -98,7 +99,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
     function _TUSDToYTUSD(uint _amount) internal view returns (uint) {
         uint ratio = FinancialOpportunity(aaveInterfaceAddress()).perTokenValue();
-        return _amount.div(ratio).mul(10 ** 18);
+        return _amount.mul(10 ** 18).div(ratio);
     }
 
     function _yTUSDToTUSD(uint _amount) internal view returns (uint) {

@@ -53,9 +53,7 @@ contract('TrueRewardBackedToken', function (accounts) {
 
         it('convert aave float reserve back to TUSD', async function() {
             await this.token.transfer(this.reserve, to18Decimals(200), { from: holder })
-            console.log(Number(await this.token.balanceOf.call(this.lendingPool.address)))
             await this.token.convertToYTUSDReserve(to18Decimals(100), {from: owner})
-            console.log(Number(await this.token.balanceOf.call(this.lendingPool.address)))
             await this.token.convertToTrueCurrencyReserve(to18Decimals(50), {from: owner})
             const reserveYTUSDBalance = await this.token.yTUSDReserveBalance.call()
             assert.equal(Number(reserveYTUSDBalance), to18Decimals(50))
