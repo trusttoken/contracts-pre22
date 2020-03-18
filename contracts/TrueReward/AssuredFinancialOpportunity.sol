@@ -17,7 +17,7 @@ import { SafeMath } from "../TrueCurrencies/Admin/TokenController.sol";
  * When stake is liquidated, the TUSD is sent out in the same transaction (Flash Assurance).
  * Can attempt to sell bad debt at a later date and return value to the pool.
  * Keeps track of rewards stream for assurance pool.
- *
+ * 
  * todo:
  * - make contract only callable by TrueUSD contract
  *
@@ -52,7 +52,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
         address _opportunityAddress, 
         address _assuranceAddress, 
         address _liquidatorAddress,
-        address _exponentContractAddress)
+        address _exponentContractAddress
+    )
     public onlyOwner {
         opportunityAddress = _opportunityAddress;
         assuranceAddress = _assuranceAddress;
@@ -60,14 +61,9 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
         exponentContractAddress = _exponentContractAddress;
     }
 
+
     function proxyOwner() public view returns(address) {
         return OwnedUpgradeabilityProxy(address(this)).proxyOwner();
-    }
-
-    constructor(address _opportunityAddress, address _assuranceAddress, address _liquidatorAddress) public {
-        opportunityAddress = _opportunityAddress;
-        assuranceAddress = _assuranceAddress;
-        liquidatorAddress = _liquidatorAddress;
     }
 
     /** 
@@ -132,7 +128,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
         return returnedAmount; // todo feewet do we want returnedAmount or _amount
     }
 
-    /** 
+    /**
      * Try to withdrawTo and return success and amount 
     **/
     function _attemptWithdrawTo(address _to, uint _amount) internal returns (bool, uint) {
@@ -177,6 +173,10 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
         emit awardPoolSuccess(returnedAmount);
     }
 
+    function perTokenValue() external view returns(uint256) {
+        return _perTokenValue();
+    }
+
     function deposit(address _account, uint _amount) external returns(uint) {
         return _deposit(_account, _amount);
     }
@@ -185,7 +185,6 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
         return _withdraw(_to, _amount);
     }
 
-    // todo feewet remove from interface
     function withdrawAll(address _to) external returns(uint) {
         return _withdraw(_to, _getBalance());
     }
