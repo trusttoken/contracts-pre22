@@ -53,5 +53,6 @@ module.exports = {
       gas: 7990000,
       gasPrice: 7000000000
     },
-  }
+  },
+  plugins: ["solidity-coverage"]
 };
