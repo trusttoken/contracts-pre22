@@ -144,19 +144,19 @@ contract('TrueRewardBackedToken', function (accounts) {
             await this.token.enableTrueReward({from: sender})
             const {logs} = await this.token.transfer(receipient, to18Decimals(50), {from: sender})
             // console.log(logs)
+            // logs should be 
             const senderBalance = await this.token.balanceOf.call(sender);
             const receipientBalance = await this.token.balanceOf.call(receipient);
-            assert.equal(Number(senderBalance), to18Decimals(50))
-            assert.equal(Number(receipientBalance), to18Decimals(50))
             const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(sender);
             const totalAaveSupply = await this.token.totalAaveSupply.call();
-            console.log('loanBackedTokenBalance',Number(loanBackedTokenBalance))
-            console.log('totalAaveSupply',Number(totalAaveSupply))
             const totalSupply = await this.token.totalSupply.call();
-            console.log('totalSupply',Number(totalSupply))
             const interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.financialOpportunity.address);
-            console.log('interfaceSharesTokenBalance',Number(interfaceSharesTokenBalance))
-
+            assert.equal(Number(senderBalance),to18Decimals(50))
+            assert.equal(Number(receipientBalance),to18Decimals(50))
+            assert.equal(Number(loanBackedTokenBalance),to18Decimals(50))
+            assert.equal(Number(totalAaveSupply),to18Decimals(50))
+            assert.equal(Number(totalSupply),to18Decimals(350))
+            assert.equal(Number(interfaceSharesTokenBalance),to18Decimals(50))
         })
     
         it ('sender truereward enabled receipient enabled perTokenValue = 1', async function(){
@@ -167,17 +167,16 @@ contract('TrueRewardBackedToken', function (accounts) {
             // console.log(logs)
             const senderBalance = await this.token.balanceOf.call(sender);
             const receipientBalance = await this.token.balanceOf.call(receipient);
-            console.log('senderBalance',Number(senderBalance))
-            console.log('receipientBalance', Number(receipientBalance))
             const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(sender);
             const totalAaveSupply = await this.token.totalAaveSupply.call();
-            console.log('loanBackedTokenBalance',Number(loanBackedTokenBalance))
-            console.log('totalAaveSupply',Number(totalAaveSupply))
             const totalSupply = await this.token.totalSupply.call();
-            console.log('totalSupply',Number(totalSupply))
             const interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.financialOpportunity.address);
-            console.log('interfaceSharesTokenBalance',Number(interfaceSharesTokenBalance))
-
+            assert.equal(Number(senderBalance),to18Decimals(50))
+            assert.equal(Number(receipientBalance),to18Decimals(50))
+            assert.equal(Number(loanBackedTokenBalance),to18Decimals(50))
+            assert.equal(Number(totalAaveSupply),to18Decimals(100))
+            assert.equal(Number(totalSupply),to18Decimals(400))
+            assert.equal(Number(interfaceSharesTokenBalance),to18Decimals(100))
         })
     
         it ('sender truereward not enabled receipient enabled perTokenValue = 1', async function(){
@@ -187,21 +186,38 @@ contract('TrueRewardBackedToken', function (accounts) {
             // console.log(logs)
             const senderBalance = await this.token.balanceOf.call(sender);
             const receipientBalance = await this.token.balanceOf.call(receipient);
-            console.log('senderBalance',Number(senderBalance))
-            console.log('receipientBalance', Number(receipientBalance))
             const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(receipient);
             const totalAaveSupply = await this.token.totalAaveSupply.call();
-            console.log('loanBackedTokenBalance',Number(loanBackedTokenBalance))
-            console.log('totalAaveSupply',Number(totalAaveSupply))
             const totalSupply = await this.token.totalSupply.call();
-            console.log('totalSupply',Number(totalSupply))
             const interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.financialOpportunity.address);
-            console.log('interfaceSharesTokenBalance',Number(interfaceSharesTokenBalance))
+            assert.equal(Number(senderBalance),to18Decimals(50))
+            assert.equal(Number(receipientBalance),to18Decimals(50))
+            assert.equal(Number(loanBackedTokenBalance),to18Decimals(50))
+            assert.equal(Number(totalAaveSupply),to18Decimals(50))
+            assert.equal(Number(totalSupply),to18Decimals(350))
+            assert.equal(Number(interfaceSharesTokenBalance),to18Decimals(50))
+
         })
 
         describe('Truereward - aave with interest', function(){
             it ('sender truereward enabled receipient not enabled', async function(){
-                
+                await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
+                await this.token.transfer(sender, to18Decimals(100), { from: holder })
+                await this.token.enableTrueReward({from: sender})
+                const {logs} = await this.token.transfer(receipient, to18Decimals(50), {from: sender})
+                // console.log(logs)
+                const senderBalance = await this.token.balanceOf.call(sender);
+                const receipientBalance = await this.token.balanceOf.call(receipient);
+                const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(sender);
+                const totalAaveSupply = await this.token.totalAaveSupply.call();
+                const totalSupply = await this.token.totalSupply.call();
+                const interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.financialOpportunity.address);
+                assert.equal(Number(senderBalance),to18Decimals(50))
+                assert.equal(Number(receipientBalance),to18Decimals(50))
+                assert.equal(Number(loanBackedTokenBalance),33333333333333330000) // 50 / 1.5 
+                assert.equal(Number(totalAaveSupply),33333333333333330000)
+                assert.equal(Number(totalSupply),to18Decimals(350))
+                assert.equal(Number(interfaceSharesTokenBalance),to18Decimals(50))    
             })
 
             it ('sender truereward enabled receipient enabled', async function(){
