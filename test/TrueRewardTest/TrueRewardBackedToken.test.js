@@ -42,12 +42,12 @@ contract('TrueRewardBackedToken', function (accounts) {
             assert.equal(enabled, true) 
             const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder);
             const totalAaveSupply = await this.token.totalAaveSupply.call();
-            assert.equal(Number(loanBackedTokenBalance), 98058252427184470000) // 100*101/103
-            assert.equal(Number(totalAaveSupply), 98058252427184470000)
+            assert.equal(loanBackedTokenBalance, 98058252427184470000) // 100*101/103
+            assert.equal(totalAaveSupply, 98058252427184470000)
             const totalSupply = await this.token.totalSupply.call();
-            assert.equal(Number(totalSupply), 198466689448144200000) // 100 + 100*101/103
+            assert.equal(totalSupply, 198466689448144200000) // 100 + 100*101/103
             const balance = await this.token.balanceOf.call(holder);
-            assert.equal(Number(balance), 98466689448144200000) // 100*101/103 * perTokenValue
+            assert.equal(balance, 98466689448144200000) // 100*101/103 * perTokenValue
         })
         it ('disables trueReward', async function(){
             await this.token.enableTrueReward({from: holder});
@@ -58,12 +58,12 @@ contract('TrueRewardBackedToken', function (accounts) {
             assert.equal(enabled, false) 
             const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder);
             const totalAaveSupply = await this.token.totalAaveSupply.call();
-            assert.equal(Number(loanBackedTokenBalance), 0)
-            assert.equal(Number(totalAaveSupply), 0)
+            assert.equal(loanBackedTokenBalance, 0)
+            assert.equal(totalAaveSupply, 0)
             const totalSupply = await this.token.totalSupply.call();
-            assert.equal(Number(totalSupply), 100000000000000000000)
+            assert.equal(totalSupply, 100000000000000000000)
             const balance = await this.token.balanceOf.call(holder);
-            assert.equal(Number(balance), 100000000000000000000)
+            assert.equal(balance, 100000000000000000000)
         })
 
     })
@@ -98,7 +98,7 @@ contract('TrueRewardBackedToken', function (accounts) {
             interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.financialOpportunity.address);
             assert.equal(Number(interfaceSharesTokenBalance), to18Decimals(100))
             const interfaceBalance= await this.token.balanceOf.call(this.financialOpportunity.address);
-            assert.equal(Number(interfaceBalance), 0)
+            assert.equal(interfaceBalance, 0)
             const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder);
             const totalAaveSupply = await this.token.totalAaveSupply.call();
             assert.equal(Number(loanBackedTokenBalance), to18Decimals(100))
@@ -114,9 +114,7 @@ contract('TrueRewardBackedToken', function (accounts) {
             await this.token.enableTrueReward({from: holder2})
             const interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.financialOpportunity.address);
             assert.equal(Number(interfaceSharesTokenBalance), to18Decimals(200))
-            const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder);
             const totalAaveSupply = await this.token.totalAaveSupply.call();
-            assert.equal(Number(loanBackedTokenBalance), to18Decimals(200))
             assert.equal(Number(totalAaveSupply), to18Decimals(200))
             const totalSupply = await this.token.totalSupply.call();
             assert.equal(Number(totalSupply), to18Decimals(500))
