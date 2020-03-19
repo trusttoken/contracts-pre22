@@ -43,8 +43,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
     using SafeMath for uint32;
     using SafeMath for uint256;
 
-    modifier onlyOwner() {
-        require(msg.sender == proxyOwner(), "only owner");
+    modifier onlyProxyOwner() {
+        require(msg.sender == proxyOwner(), "only proxy owner");
         _;
     }
 
@@ -54,13 +54,12 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
         address _liquidatorAddress,
         address _exponentContractAddress
     )
-    public onlyOwner {
+    public {
         opportunityAddress = _opportunityAddress;
         assuranceAddress = _assuranceAddress;
         liquidatorAddress = _liquidatorAddress;
         exponentContractAddress = _exponentContractAddress;
     }
-
 
     function proxyOwner() public view returns(address) {
         return OwnedUpgradeabilityProxy(address(this)).proxyOwner();
