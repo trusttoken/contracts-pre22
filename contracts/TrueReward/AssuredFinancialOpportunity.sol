@@ -20,7 +20,7 @@ import { SafeMath } from "../TrueCurrencies/Admin/TokenController.sol";
  *
 **/
 contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
-    event deposit(uint _account, uint amount);
+    event depositSuccess(address _account, uint amount);
     event withdrawToSuccess(address _to, uint _amount);
     event withdrawToFailure(address _to, uint _amount);
     event stakeLiquidated(address _reciever, int256 _debt);
@@ -76,7 +76,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
 
         // update zTUSDIssued
         zTUSDIssued = zTUSDIssued.add(zTUSDValue);
-        emit deposit(address _account uint _amount)
+        emit depositSuccess(_account, _amount);
         return zTUSDValue;
     }
 
@@ -176,8 +176,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
         // compute what is owed in TUSD
         // (opportunityValue * opportunityBalance)
         // - (assuredOpportunityBalance * assuredOpportunityTokenValue)
-        uint awardAmount = opportunity().perTokenValue().mul(
-            opportunity().getBalance()).sub(_getBalance().mul(_perTokenValue()));
+        uint awardAmount = opportunity().perTokenValue().mul(opportunity().getBalance()).sub(_getBalance().mul(_perTokenValue()));
 
         // sell pool debt and award TUSD to pool
         (bool success, uint returnedAmount) = _attemptWithdrawTo(assuranceAddress, awardAmount);

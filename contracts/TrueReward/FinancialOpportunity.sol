@@ -31,5 +31,9 @@ interface FinancialOpportunity {
      */
     function perTokenValue() external view returns(uint);
 
-    function getBalance() external view returns(uint);
+    /** 
+     * Returns full balance of opportunity
+     * @return yTUSD balance of opportunity
+    **/
+    function getBalance() external view returns (uint);
 }

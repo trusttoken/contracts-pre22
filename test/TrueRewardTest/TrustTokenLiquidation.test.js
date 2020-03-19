@@ -143,8 +143,16 @@ contract('AssuredFinancialOpportunity', function(accounts) {
                 this.pool.address, this.liquidator.address, this.exponentContract.address, {from: owner})
             await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, {from: owner})
         })
+        it('enable truerewards', async function() {
+            let interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.assuredFinancialOpportunity.address);
+            assert.equal(Number(interfaceSharesTokenBalance), 0)
+            const {logs} = await this.token.enableTrueReward({from: holder})
+            // console.log(logs);
+            const perTokenValue = await this.assuredFinancialOpportunity.perTokenValue.call()
+            assert.equal(Number(perTokenValue), 1000000000000000000)
+        })
         it('deposit', async function() {
-            
+
         })
         it('withdraw', async function() {
 
