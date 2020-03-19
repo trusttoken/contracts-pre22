@@ -148,16 +148,30 @@ contract('AssuredFinancialOpportunity', function(accounts) {
             // assert.equal(Number(interfaceSharesTokenBalance), 0)
             // const {logs} = await this.token.enableTrueReward({from: holder})
             // console.log(logs);
+            await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.0), { from: owner })
+            const finOpPerTokenValue = await this.financialOpportunity.perTokenValue.call()
+            const perTokenValue = await this.assuredFinancialOpportunity.perTokenValue.call()
+            console.log(Number(finOpPerTokenValue));
+            console.log(Number(perTokenValue));
+            console.log(Math.pow(Number(finOpPerTokenValue),0.7))
+
+            await assert.equal(Number(perTokenValue), 398107170314200)
+        })
+        it('assurace complex', async function() {
+            // let interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.assuredFinancialOpportunity.address);
+            // assert.equal(Number(interfaceSharesTokenBalance), 0)
+            // const {logs} = await this.token.enableTrueReward({from: holder})
+            // console.log(logs);
             await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
             const finOpPerTokenValue = await this.financialOpportunity.perTokenValue.call()
             const perTokenValue = await this.assuredFinancialOpportunity.perTokenValue.call()
             console.log(Number(finOpPerTokenValue));
             console.log(Number(perTokenValue));
             console.log(Math.pow(Number(finOpPerTokenValue),0.7))
-            // assert.equal(Number(perTokenValue), 1000000000000000000)
+            await assert.equal(Number(perTokenValue), 528766437241700)
         })
         it('deposit', async function() {
-
+            console.log('depoit ')
         })
         // it('withdraw', async function() {
 

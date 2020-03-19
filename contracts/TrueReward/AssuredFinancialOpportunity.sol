@@ -92,7 +92,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
         (uint256 result, uint8 precision) = exponents().power(
             opportunity().perTokenValue().div(10**12), 1,
             REWARD_BASIS, TOTAL_BASIS);
-        return result.mul(251188643).div(2 ** uint256(precision)) ;
+        return result.mul(251188643).div(2 ** uint256(precision)).mul(100);
         // 251188643 = (10 ^ 12) ^ 0.7 = 10 ^ (12 * 0.7)
     }
 
