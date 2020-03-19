@@ -1,6 +1,4 @@
 pragma solidity ^0.5.13;
-
-/** Interface for Financial Opportunities. **/
 interface FinancialOpportunity {
     /**
      * @dev deposits TrueUSD into finOP using transferFrom
@@ -16,9 +14,16 @@ interface FinancialOpportunity {
      * @return yTUSD amount deducted
      */
     function withdrawTo(address _to, uint _amount) external returns(uint);
-    // withdrawll actually withdraw all tokens in finOp
+    /**
+     * @dev Withdraws all TUSD from finOp
+     * @param _to account withdarw TUSD to
+     * @return yTUSD amount deducted
+     */
     function withdrawAll(address _to) external returns(uint);
-    function perTokenValue() external view returns(uint);
 
-    function getBalance() external view returns(uint);
+    /**
+     * Exchange rate between TUSD and yTUSD  
+     * @return TUSD / yTUSD price ratio
+     */
+    function perTokenValue() external view returns(uint);
 }

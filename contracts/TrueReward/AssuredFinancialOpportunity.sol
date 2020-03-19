@@ -89,7 +89,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
         // (_baseN / _baseD) ^ (_expN / _expD) * 2 ^ precision
         // 10000 - 3000 / 10000 = 0.7
         (uint256 result, uint8 precision) = exponents().power(
-            opportunity().perTokenValue(), 1, uint32(TOTAL_BASIS.sub(ASSURANCE_BASIS)), uint32(TOTAL_BASIS));
+            opportunity().perTokenValue(), 1,
+            uint32(TOTAL_BASIS.sub(ASSURANCE_BASIS)), uint32(TOTAL_BASIS));
     }
 
     /**
@@ -173,8 +174,10 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
     **/
     function awardPool() external {
         // compute what is owed in TUSD
-        // opportunityValue * opportunityBalance - assuredOpportunityBalance * assuredOpportunityTokenValue
-        uint awardAmount = opportunity().perTokenValue() * opportunity().getBalance() - _getBalance() * _perTokenValue();
+        // (opportunityValue * opportunityBalance)
+        // - (assuredOpportunityBalance * assuredOpportunityTokenValue)
+        uint awardAmount = opportunity().perTokenValue().mul(
+            opportunity().getBalance()).sub(_getBalance().mul(_perTokenValue()));
 
         // sell pool debt and award TUSD to pool
         (bool success, uint returnedAmount) = _attemptWithdrawTo(assuranceAddress, awardAmount);
