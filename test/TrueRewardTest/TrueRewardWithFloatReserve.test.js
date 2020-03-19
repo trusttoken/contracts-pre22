@@ -91,10 +91,10 @@ contract('TrueRewardBackedToken', function (accounts) {
             const receipientBalance = await this.token.balanceOf.call(receipient);
             const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve);
             const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call();
-            console.log('senderBalance',Number(senderBalance))
-            console.log('receipientBalance',Number(receipientBalance))
-            console.log('TUSDReserveBalance',Number(TUSDReserveBalance))
-            console.log('zTUSDReserveBalance',Number(zTUSDReserveBalance))
+            assert.equal(Number(senderBalance), to18Decimals(50))
+            assert.equal(Number(receipientBalance), to18Decimals(50))
+            assert.equal(Number(TUSDReserveBalance), to18Decimals(100))
+            assert.equal(Number(zTUSDReserveBalance), to18Decimals(100))
         })
 
         it('sender truereward enabled receipient not enabled', async function(){
@@ -105,10 +105,10 @@ contract('TrueRewardBackedToken', function (accounts) {
             const receipientBalance = await this.token.balanceOf.call(receipient);
             const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve);
             const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call();
-            console.log('senderBalance',Number(senderBalance))
-            console.log('receipientBalance',Number(receipientBalance))
-            console.log('TUSDReserveBalance',Number(TUSDReserveBalance))
-            console.log('zTUSDReserveBalance',Number(zTUSDReserveBalance))
+            assert.equal(Number(senderBalance), to18Decimals(50))
+            assert.equal(Number(receipientBalance), to18Decimals(50))
+            assert.equal(Number(TUSDReserveBalance), to18Decimals(50))
+            assert.equal(Number(zTUSDReserveBalance), to18Decimals(150))
         })
 
         it('sender truereward not enabled receipient enabled', async function(){
@@ -119,10 +119,10 @@ contract('TrueRewardBackedToken', function (accounts) {
             const receipientBalance = await this.token.balanceOf.call(receipient);
             const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve);
             const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call();
-            console.log('senderBalance',Number(senderBalance))
-            console.log('receipientBalance',Number(receipientBalance))
-            console.log('TUSDReserveBalance',Number(TUSDReserveBalance))
-            console.log('zTUSDReserveBalance',Number(zTUSDReserveBalance))
+            assert.equal(Number(senderBalance), to18Decimals(50))
+            assert.equal(Number(receipientBalance), to18Decimals(50))
+            assert.equal(Number(TUSDReserveBalance), to18Decimals(150))
+            assert.equal(Number(zTUSDReserveBalance), to18Decimals(50))
         })
 
         it('sender truereward enabled receipient enabled', async function(){
@@ -134,10 +134,10 @@ contract('TrueRewardBackedToken', function (accounts) {
             const receipientBalance = await this.token.balanceOf.call(receipient);
             const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve);
             const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call();
-            console.log('senderBalance',Number(senderBalance))
-            console.log('receipientBalance',Number(receipientBalance))
-            console.log('TUSDReserveBalance',Number(TUSDReserveBalance))
-            console.log('zTUSDReserveBalance',Number(zTUSDReserveBalance))
+            assert.equal(Number(senderBalance), to18Decimals(50))
+            assert.equal(Number(receipientBalance), to18Decimals(50))
+            assert.equal(Number(TUSDReserveBalance), to18Decimals(100))
+            assert.equal(Number(zTUSDReserveBalance), to18Decimals(100))
         })
     })
 })
