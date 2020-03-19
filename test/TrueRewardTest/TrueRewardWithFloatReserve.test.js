@@ -18,7 +18,7 @@ const to27Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**17))
 
 
 contract('TrueRewardBackedToken', function (accounts) {
-    const [_, owner, holder, holder2, sender, receipient, address3] = accounts
+    const [_, owner, holder, holder2, sender, receipient] = accounts
     describe('TrueReward with float admin', function(){
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
@@ -35,7 +35,7 @@ contract('TrueRewardBackedToken', function (accounts) {
             this.financialOpportunityProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
             this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
             await this.financialOpportunityProxy.upgradeTo(this.financialOpportunityImpl.address, { from: owner })
-            await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, { from: owner })
+            await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, this.token.address, { from: owner })
             await this.token.setAaveInterfaceAddress(this.financialOpportunity.address, {from: owner})
             this.reserve = await this.token.RESERVE.call();
         })
@@ -78,7 +78,7 @@ contract('TrueRewardBackedToken', function (accounts) {
             this.financialOpportunityProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
             this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
             await this.financialOpportunityProxy.upgradeTo(this.financialOpportunityImpl.address, { from: owner })
-            await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, { from: owner })
+            await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, this.token.address, { from: owner })
             await this.token.setAaveInterfaceAddress(this.financialOpportunity.address, {from: owner})
             this.reserve = await this.token.RESERVE.call();
             await this.token.transfer(this.reserve, to18Decimals(200), { from: holder })
