@@ -144,7 +144,7 @@ contract('AssuredFinancialOpportunity', function(accounts) {
             await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, {from: owner})
         })
         it('deposit', async function() {
-
+            
         })
         it('withdraw', async function() {
 
