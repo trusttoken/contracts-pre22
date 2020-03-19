@@ -1,5 +1,8 @@
 pragma solidity ^0.5.13;
+<<<<<<< HEAD
 
+=======
+>>>>>>> remove duplicate FinancialOpportunity.sol
 interface FinancialOpportunity {
     /**
      * @dev deposits TrueUSD into finOP using transferFrom
