@@ -42,21 +42,21 @@ contract('TrueRewardBackedToken', function (accounts) {
 
         it('convert TUSD reserve into aave float reserve', async function() {
             await this.token.transfer(this.reserve, to18Decimals(200), { from: holder })
-            let reserveYTUSDBalance = await this.token.yTUSDReserveBalance.call()
-            assert.equal(reserveYTUSDBalance, 0)
-            await this.token.convertToYTUSDReserve(to18Decimals(100), {from: owner})
-            reserveYTUSDBalance = await this.token.yTUSDReserveBalance.call()
-            assert.equal(Number(reserveYTUSDBalance), to18Decimals(100))
+            let reserveZTUSDBalance = await this.token.zTUSDReserveBalance.call()
+            assert.equal(reserveZTUSDBalance, 0)
+            await this.token.convertToZTUSDReserve(to18Decimals(100), {from: owner})
+            reserveZTUSDBalance = await this.token.zTUSDReserveBalance.call()
+            assert.equal(Number(reserveZTUSDBalance), to18Decimals(100))
             const reserveTUSDBalance = await this.token.balanceOf.call(this.reserve)
             assert.equal(Number(reserveTUSDBalance), to18Decimals(100))
         })
 
         it('convert aave float reserve back to TUSD', async function() {
             await this.token.transfer(this.reserve, to18Decimals(200), { from: holder })
-            await this.token.convertToYTUSDReserve(to18Decimals(100), {from: owner})
+            await this.token.convertToZTUSDReserve(to18Decimals(100), {from: owner})
             await this.token.convertToTrueCurrencyReserve(to18Decimals(50), {from: owner})
-            const reserveYTUSDBalance = await this.token.yTUSDReserveBalance.call()
-            assert.equal(Number(reserveYTUSDBalance), to18Decimals(50))
+            const reserveZTUSDBalance = await this.token.zTUSDReserveBalance.call()
+            assert.equal(Number(reserveZTUSDBalance), to18Decimals(50))
             const reserveTUSDBalance = await this.token.balanceOf.call(this.reserve)
             assert.equal(Number(reserveTUSDBalance), to18Decimals(150))
         })
@@ -82,7 +82,7 @@ contract('TrueRewardBackedToken', function (accounts) {
             await this.token.setAaveInterfaceAddress(this.financialOpportunity.address, {from: owner})
             this.reserve = await this.token.RESERVE.call();
             await this.token.transfer(this.reserve, to18Decimals(200), { from: holder })
-            await this.token.convertToYTUSDReserve(to18Decimals(100), {from: owner})
+            await this.token.convertToZTUSDReserve(to18Decimals(100), {from: owner})
         })
         it('transfer without trueReward', async function(){
             await this.token.transfer(sender, to18Decimals(100), { from: holder })
@@ -90,11 +90,11 @@ contract('TrueRewardBackedToken', function (accounts) {
             const senderBalance = await this.token.balanceOf.call(sender);
             const receipientBalance = await this.token.balanceOf.call(receipient);
             const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve);
-            const yTUSDReserveBalance = await this.token.yTUSDReserveBalance.call();
+            const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call();
             console.log('senderBalance',Number(senderBalance))
             console.log('receipientBalance',Number(receipientBalance))
             console.log('TUSDReserveBalance',Number(TUSDReserveBalance))
-            console.log('yTUSDReserveBalance',Number(yTUSDReserveBalance))
+            console.log('zTUSDReserveBalance',Number(zTUSDReserveBalance))
         })
 
         it('sender truereward enabled receipient not enabled', async function(){
@@ -104,11 +104,11 @@ contract('TrueRewardBackedToken', function (accounts) {
             const senderBalance = await this.token.balanceOf.call(sender);
             const receipientBalance = await this.token.balanceOf.call(receipient);
             const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve);
-            const yTUSDReserveBalance = await this.token.yTUSDReserveBalance.call();
+            const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call();
             console.log('senderBalance',Number(senderBalance))
             console.log('receipientBalance',Number(receipientBalance))
             console.log('TUSDReserveBalance',Number(TUSDReserveBalance))
-            console.log('yTUSDReserveBalance',Number(yTUSDReserveBalance))
+            console.log('zTUSDReserveBalance',Number(zTUSDReserveBalance))
         })
 
         it('sender truereward not enabled receipient enabled', async function(){
@@ -118,11 +118,11 @@ contract('TrueRewardBackedToken', function (accounts) {
             const senderBalance = await this.token.balanceOf.call(sender);
             const receipientBalance = await this.token.balanceOf.call(receipient);
             const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve);
-            const yTUSDReserveBalance = await this.token.yTUSDReserveBalance.call();
+            const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call();
             console.log('senderBalance',Number(senderBalance))
             console.log('receipientBalance',Number(receipientBalance))
             console.log('TUSDReserveBalance',Number(TUSDReserveBalance))
-            console.log('yTUSDReserveBalance',Number(yTUSDReserveBalance))
+            console.log('zTUSDReserveBalance',Number(zTUSDReserveBalance))
         })
 
         it('sender truereward enabled receipient enabled', async function(){
@@ -133,11 +133,11 @@ contract('TrueRewardBackedToken', function (accounts) {
             const senderBalance = await this.token.balanceOf.call(sender);
             const receipientBalance = await this.token.balanceOf.call(receipient);
             const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve);
-            const yTUSDReserveBalance = await this.token.yTUSDReserveBalance.call();
+            const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call();
             console.log('senderBalance',Number(senderBalance))
             console.log('receipientBalance',Number(receipientBalance))
             console.log('TUSDReserveBalance',Number(TUSDReserveBalance))
-            console.log('yTUSDReserveBalance',Number(yTUSDReserveBalance))
+            console.log('zTUSDReserveBalance',Number(zTUSDReserveBalance))
         })
     })
 })
