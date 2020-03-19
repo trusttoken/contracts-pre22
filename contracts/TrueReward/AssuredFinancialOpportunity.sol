@@ -27,8 +27,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
     event awardPoolSuccess(uint256 _amount);
     event awardPoolFailure(uint256 _amount);
 
-    uint256 constant ASSURANCE_BASIS = 3000; // basis for insurance split. 100 = 1%
-    uint256 constant TOTAL_BASIS = 10000; // total basis points
+    uint32 constant REWARD_BASIS = 7000; // basis for insurance split. 100 = 1%
+    uint32 constant TOTAL_BASIS = 10000; // total basis points
     uint zTUSDIssued = 0; // how much zTUSD we've issued
 
     address opportunityAddress;
@@ -80,6 +80,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
         return zTUSDValue;
     }
 
+
     /** 
      * Calculate TUSD / zTUSD (opportunity value minus pool award)
      * We assume opportunity perTokenValue always goes up
@@ -89,8 +90,10 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
         // (_baseN / _baseD) ^ (_expN / _expD) * 2 ^ precision
         // 10000 - 3000 / 10000 = 0.7
         (uint256 result, uint8 precision) = exponents().power(
-            opportunity().perTokenValue(), 1,
-            uint32(TOTAL_BASIS.sub(ASSURANCE_BASIS)), uint32(TOTAL_BASIS));
+            opportunity().perTokenValue().div(10**12), 1,
+            REWARD_BASIS, TOTAL_BASIS);
+        return result.mul(251188643).div(2 ** uint256(precision)) ;
+        // 251188643 = (10 ^ 12) ^ 0.7 = 10 ^ (12 * 0.7)
     }
 
     /**
