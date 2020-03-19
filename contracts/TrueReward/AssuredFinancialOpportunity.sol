@@ -10,9 +10,9 @@ import { SafeMath } from "../TrueCurrencies/Admin/TokenController.sol";
 /**
  * AssuredFinancialOpportunity
  *
- * Wrap financial opportunity with Assurance Pool.
+ * Wrap financial opportunity with Assurance.
  * TUSD is never held in this contract, only zTUSD which represents value we owe.
- * When zTUSD is exchanged, the resulting TUSD is always sent to a reciever.
+ * When zTUSD is exchanged, the resulting TUSD is always sent to a recipient.
  * If a transfer fails, stake is sold from the staking pool for TUSD.
  * When stake is liquidated, the TUSD is sent out in the same transaction (Flash Assurance).
  * Can attempt to sell bad debt at a later date and return value to the pool.
@@ -20,6 +20,7 @@ import { SafeMath } from "../TrueCurrencies/Admin/TokenController.sol";
  *
 **/
 contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
+    event deposit(uint _account, uint amount);
     event withdrawToSuccess(address _to, uint _amount);
     event withdrawToFailure(address _to, uint _amount);
     event stakeLiquidated(address _reciever, int256 _debt);
@@ -63,7 +64,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
         return zTUSDIssued;
     }
 
-    /** 
+    /**
      * Deposit TUSD into wrapped opportunity. Calculate zTUSD value and add to issuance value.
     **/
     function _deposit(address _account, uint _amount) internal returns(uint) {
@@ -75,6 +76,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
 
         // update zTUSDIssued
         zTUSDIssued = zTUSDIssued.add(zTUSDValue);
+        emit deposit(address _account uint _amount)
         return zTUSDValue;
     }
 
