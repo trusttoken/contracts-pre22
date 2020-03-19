@@ -27,8 +27,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
     event awardPoolSuccess(uint256 _amount);
     event awardPoolFailure(uint256 _amount);
 
-    uint32 constant REWARD_BASIS = 7000; // basis for insurance split. 100 = 1%
-    uint32 constant TOTAL_BASIS = 10000; // total basis points
+    uint32 constant REWARD_BASIS = 700; // basis for insurance split. 100 = 1%
+    uint32 constant TOTAL_BASIS = 1000; // total basis points
     uint zTUSDIssued = 0; // how much zTUSD we've issued
 
     address opportunityAddress;
@@ -87,15 +87,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
      * todo feewet: this might be really expensive, how can we optimize? (cache by perTokenValue)
     **/
     function _perTokenValue() internal view returns(uint256) {
-        // (_baseN / _baseD) ^ (_expN / _expD) * 2 ^ precision
-        // 10000 - 3000 / 10000 = 0.7
         (uint256 result, uint8 precision) = exponents().power(
-            opportunity().perTokenValue().div(10**12), 1,
+            opportunity().perTokenValue(), 10**18,
             REWARD_BASIS, TOTAL_BASIS);
-        return result.mul(251188643).div(2 ** uint256(precision)).mul(100);
-        // 251188643 = (10 ^ 12) ^ 0.7 = 10 ^ (12 * 0.7)
+        return result.mul(10**18).div(2 ** uint256(precision));
     }
-
     /**
      * Withdraw amount of TUSD to an address. Liquidate if opportunity fails to return TUSD. 
      * todo feewet we might need to check that user has the right balance here
