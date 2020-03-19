@@ -192,8 +192,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         }
         else if (senderTrueRewardEnabled) {
             // sender enabled receiver not enabled
-            emit Transfer(_from, aaveInterfaceAddress(), _value);
-            emit Transfer(aaveInterfaceAddress(), address(0), _value);
+            emit Transfer(_from, address(this), _value);
+            emit Transfer(address(this), address(0), _value);
             uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(_to, _value);
             _totalAaveSupply = _totalAaveSupply.sub(yTUSDAmount);
             // watchout for reentrancy
@@ -212,26 +212,88 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         bool senderTrueRewardEnabled = trueRewardEnabled(_from);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
-        if (senderTrueRewardEnabled) {
+        if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
+            // sender not enabled receiver not enabled
+            super._transferFromAllArgs(_from, _to, _value, _spender);
+            return;
+        }
+        require(balanceOf(_from) >= _value, 'not enough balance');
+        uint valueInYTUSD = _TUSDToYTUSD(_value);
+        if (senderTrueRewardEnabled && !receiverTrueRewardEnabled && _value < _getBalance(RESERVE)) {
+            bool hasHook;
+            address finalTo;
+            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+            _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()].add(valueInYTUSD);
+            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(valueInYTUSD);
+            _subBalance(RESERVE, _value);
+            _addBalance(finalTo, _value);
+            emit Transfer(_from, _to, _value);
+            if (finalTo != _to) {
+                emit Transfer(_to, finalTo, _value);
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+                }
+            } else {
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                }
+            }
+        }
+        else if (!senderTrueRewardEnabled && receiverTrueRewardEnabled && _value < _yTUSDToTUSD(yTUSDReserveBalance())) {
+            bool hasHook;
+            address finalTo;
+            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+            _subBalance(_from, _value);
+            _addBalance(RESERVE, _value);
+            _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()].sub(valueInYTUSD);
+            _financialOpportunityBalances[finalTo][aaveInterfaceAddress()] = _financialOpportunityBalances[finalTo][aaveInterfaceAddress()].add(valueInYTUSD);
+            emit Transfer(_from, _to, _value);
+            if (finalTo != _to) {
+                emit Transfer(_to, finalTo, _value);
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+                }
+            } else {
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                }
+            }
+        }
+        else if (senderTrueRewardEnabled && receiverTrueRewardEnabled) {
+            bool hasHook;
+            address finalTo;
+            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(valueInYTUSD);
+            _financialOpportunityBalances[finalTo][aaveInterfaceAddress()] = _financialOpportunityBalances[finalTo][aaveInterfaceAddress()].add(valueInYTUSD);
+            emit Transfer(_from, _to, _value);
+            if (finalTo != _to) {
+                emit Transfer(_to, finalTo, _value);
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+                }
+            } else {
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                }
+            }
+        }
+        else if (senderTrueRewardEnabled) {
             // sender enabled receiver not enabled
-            emit Transfer(_from, aaveInterfaceAddress(), _value);
-            emit Transfer(aaveInterfaceAddress(), address(0), _value);
+            emit Transfer(_from, address(this), _value);
+            emit Transfer(address(this), address(0), _value);
             uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(_to, _value);
             _totalAaveSupply = _totalAaveSupply.sub(yTUSDAmount);
+            // watchout for reentrancy
             _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(yTUSDAmount);
         }
-        if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
+        else if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             // sender not enabled receiver enabled
             _setAllowance(_from, aaveInterfaceAddress(), _value);
             uint yTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(_from, _value);
             _totalAaveSupply = _totalAaveSupply.add(yTUSDAmount);
             _financialOpportunityBalances[_to][aaveInterfaceAddress()] = _financialOpportunityBalances[_to][aaveInterfaceAddress()].add(yTUSDAmount);
             emit Transfer(address(0), _to, _value);
-        }
-        if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
-            // sender not enabled receiver not enabled
-            return super._transferFromAllArgs(_from, _to, _value, _spender);
-        }
+        }        
     }
 
     function mint(address _to, uint256 _value) public onlyOwner {
