@@ -86,14 +86,14 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
                                                     [msg.sender][aaveInterfaceAddress()].add(zTUSDAmount);
         emit Transfer(address(0), msg.sender, balance); //confirm that this amount is right
     }
-    
+
     function disableTrueReward() external {
         require(trueRewardEnabled(msg.sender), "already turned on");
         _disableAave();
         uint availableTUSDBalance = balanceOf(msg.sender);
-        _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = 0;
         uint zTUSDWithdrawn = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(msg.sender, availableTUSDBalance);
         _totalAaveSupply = _totalAaveSupply.sub(_financialOpportunityBalances[msg.sender][aaveInterfaceAddress()]);
+        _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = 0;
         emit Transfer(msg.sender, address(0), zTUSDWithdrawn); // This is the last part that might not work
     }
 
