@@ -18,7 +18,7 @@ module.exports = {
     development: {
       host: "localhost",
       port: 8545,
-      gas: 12990000,
+      gas: 129900000,
       gasPrice: 1, // Specified in Wei
       network_id: "*" // Match any network id
     },
