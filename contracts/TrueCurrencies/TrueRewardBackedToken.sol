@@ -92,8 +92,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         _disableAave();
         uint availableTUSDBalance = balanceOf(msg.sender);
         _totalAaveSupply = _totalAaveSupply.sub(yTUSDWithdrawn);
-        uint yTUSDWithdrawn = _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = 0;
-        FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(msg.sender, availableTUSDBalance);
+        _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = 0;
+        uint yTUSDWithdrawn = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(msg.sender, availableTUSDBalance);
         emit Transfer(msg.sender, address(0), yTUSDWithdrawn); // This is the last part that might not work
     }
 
