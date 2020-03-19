@@ -24,9 +24,11 @@
     "babel-preset-stage-3": "^6.17.0",
     "babel-register": "^6.26.0",
     "ganache-cli": "6.8.0-istanbul.0",
+    "ganache-time-traveler": "^1.0.14",
     "openzeppelin-solidity": "2.4.0",
     "truffle": "5.0.43",
     "truffle-hdwallet-provider": "0.0.3",
-    "web3": "1.2.4"
+    "web3": "1.2.4",
+    "wjm-airswap-swap": "^5.0.1"
   }
 }

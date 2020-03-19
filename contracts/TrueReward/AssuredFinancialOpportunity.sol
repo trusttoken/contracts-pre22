@@ -17,18 +17,14 @@ import { SafeMath } from "../TrueCurrencies/Admin/TokenController.sol";
  * When stake is liquidated, the TUSD is sent out in the same transaction (Flash Assurance).
  * Can attempt to sell bad debt at a later date and return value to the pool.
  * Keeps track of rewards stream for assurance pool.
- * 
- * todo:
- * - make contract only callable by TrueUSD contract
  *
 **/
-contract AssuredFinancialOpportunity is FinancialOpportunity {
+contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
     event withdrawToSuccess(address _to, uint _amount);
-    event withdrawAllSuccess(address _account);
     event withdrawToFailure(address _to, uint _amount);
-    event withdrawAllFailure(address _account);
     event stakeLiquidated(address _reciever, int256 _debt);
     event awardPoolSuccess(uint256 _amount);
+    event awardPoolFailure(uint256 _amount);
 
     uint256 constant ASSURANCE_BASIS = 3000; // basis for insurance split. 100 = 1%
     uint256 constant TOTAL_BASIS = 10000; // total basis points
@@ -43,18 +39,13 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
     using SafeMath for uint32;
     using SafeMath for uint256;
 
-    modifier onlyProxyOwner() {
-        require(msg.sender == proxyOwner(), "only proxy owner");
-        _;
-    }
-
     function configure(
         address _opportunityAddress, 
         address _assuranceAddress, 
         address _liquidatorAddress,
         address _exponentContractAddress
     )
-    public {
+    public onlyOwner {
         opportunityAddress = _opportunityAddress;
         assuranceAddress = _assuranceAddress;
         liquidatorAddress = _liquidatorAddress;
@@ -76,28 +67,30 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
      * Deposit TUSD into wrapped opportunity. Calculate zTUSD value and add to issuance value.
     **/
     function _deposit(address _account, uint _amount) internal returns(uint) {
-        // deposit TUSD
+        // deposit TUSD into opportunity
         uint opportunityAmount = opportunity().deposit(_account, _amount);
 
         // calculate zTUSD value of deposit
         uint zTUSDValue = zTUSDIssued.add(_amount.div(_perTokenValue()));
 
-        // calculate new zTUSDIssued
+        // update zTUSDIssued
         zTUSDIssued = zTUSDIssued.add(zTUSDValue);
         return zTUSDValue;
     }
 
     /** 
      * Calculate TUSD / zTUSD (opportunity value minus pool award)
-     * todo feewet: this might be really expensive, how can we optimize? (cache)
+     * We assume opportunity perTokenValue always goes up
+     * todo feewet: this might be really expensive, how can we optimize? (cache by perTokenValue)
     **/
     function _perTokenValue() internal view returns(uint256) {
         // (_baseN / _baseD) ^ (_expN / _expD) * 2 ^ precision
+        // 10000 - 3000 / 10000 = 0.7
         (uint256 result, uint8 precision) = exponents().power(
             opportunity().perTokenValue(), 1, uint32(TOTAL_BASIS.sub(ASSURANCE_BASIS)), uint32(TOTAL_BASIS));
     }
 
-    /** 
+    /**
      * Withdraw amount of TUSD to an address. Liquidate if opportunity fails to return TUSD. 
      * todo feewet we might need to check that user has the right balance here
      * does this mean we need account? Or do we have whatever calls this check
@@ -107,7 +100,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
         // attmept withdraw
         (bool success, uint returnedAmount) = _attemptWithdrawTo(_to, _amount);
 
-        // todo feewet - check returnedAmount >= _amount
+        // todo feewet do we want best effort
         if (success) {
             emit withdrawToSuccess(_to, _amount);
         }
@@ -115,16 +108,22 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
             // withdrawal failed! liquidate :(
             emit withdrawToFailure(_to, _amount);
 
-            // todo feewet make sure conversion is accurate
-            int256 liquidateAmount = int256(_amount); 
-            _liquidate(_to, liquidateAmount); // todo feewet check if liquidation succeeds
-            returnedAmount = _amount;
+            int256 liquidateAmount = int256(_amount);
+            bool canLiquidate = _canLiquidate(_amount);
+            if (canLiquidate) {
+                _liquidate(_to, liquidateAmount);
+                returnedAmount = _amount;
+            }
+            else {
+                emit withdrawToFailure(_to, _amount);
+                returnedAmount = 0;
+            }
         }
 
         // calculate new amount issued
-        zTUSDIssued = zTUSDIssued.sub(_amount.div(_perTokenValue()));
+        zTUSDIssued = zTUSDIssued.sub(returnedAmount.div(_perTokenValue()));
 
-        return returnedAmount; // todo feewet do we want returnedAmount or _amount
+        return returnedAmount;
     }
 
     /**
@@ -150,9 +149,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
         return (success, returnedAmount);
     }
 
-    /** 
+    /**
      * Liquidate staked tokens to pay for debt.
-     * todo feewet: handle situation where staking pool is empty.
     **/
     function _liquidate(address _reciever, int256 _debt) internal returns (uint) {
         liquidator().reclaim(_reciever, _debt);
@@ -161,30 +159,44 @@ contract AssuredFinancialOpportunity is FinancialOpportunity {
     }
 
     /** 
+     * Return true if assurance pool can liquidate
+    **/
+    function _canLiquidate(uint _amount) internal returns (bool) {
+        //assurance().canLiquidate(_amount);
+        return true;
+    }
+
+    /** 
      * Sell yTUSD for TUSD and deposit into staking pool.
     **/
     function awardPool() external {
         // compute what is owed in TUSD
+        // opportunityValue * opportunityBalance - assuredOpportunityBalance * assuredOpportunityTokenValue
         uint awardAmount = opportunity().perTokenValue() * opportunity().getBalance() - _getBalance() * _perTokenValue();
 
         // sell pool debt and award TUSD to pool
         (bool success, uint returnedAmount) = _attemptWithdrawTo(assuranceAddress, awardAmount);
-        emit awardPoolSuccess(returnedAmount);
+        if (success) {
+            emit awardPoolSuccess(returnedAmount);
+        }
+        else {
+            emit awardPoolFailure(returnedAmount);
+        }
     }
 
     function perTokenValue() external view returns(uint256) {
         return _perTokenValue();
     }
 
-    function deposit(address _account, uint _amount) external returns(uint) {
+    function deposit(address _account, uint _amount) external onlyOwner returns(uint) {
         return _deposit(_account, _amount);
     }
 
-    function withdrawTo(address _to, uint _amount) external returns(uint) {
+    function withdrawTo(address _to, uint _amount) external onlyOwner returns(uint) {
         return _withdraw(_to, _amount);
     }
 
-    function withdrawAll(address _to) external returns(uint) {
+    function withdrawAll(address _to) external onlyOwner returns(uint) {
         return _withdraw(_to, _getBalance());
     }
 
