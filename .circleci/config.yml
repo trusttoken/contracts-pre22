@@ -22,10 +22,16 @@ jobs:
   test:
     docker:
       - image: circleci/node:11.15
+      - image: circleci/python:3.6.4
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
     steps:
       - checkout
       - install_dependencies
-      - run: npm test
+      - run: 
+        command: |
+          pip install vyper==0.1.0
+          npm test
 
 workflows:
   version: 2
