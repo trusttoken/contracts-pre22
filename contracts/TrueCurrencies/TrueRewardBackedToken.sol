@@ -13,6 +13,9 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     address public constant AAVE_INTERFACE = address(0);
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
 
+    event TrueRewardEnabled(address _account);
+    event TrueRewardDisabled(address _account);
+
     function drainTrueCurrencyReserve(address _to, uint _value) external onlyOwner {
         _transferAllArgs(RESERVE, _to, _value);
     }
@@ -84,6 +87,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         _totalAaveSupply = _totalAaveSupply.add(zTUSDAmount);
         _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = _financialOpportunityBalances
                                                     [msg.sender][aaveInterfaceAddress()].add(zTUSDAmount);
+        emit TrueRewardEnabled(msg.sender);
         emit Transfer(address(0), msg.sender, balance); //confirm that this amount is right
     }
 
@@ -94,6 +98,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         uint zTUSDWithdrawn = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(msg.sender, availableTUSDBalance);
         _totalAaveSupply = _totalAaveSupply.sub(_financialOpportunityBalances[msg.sender][aaveInterfaceAddress()]);
         _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = 0;
+        emit TrueRewardDisabled(msg.sender);
         emit Transfer(msg.sender, address(0), zTUSDWithdrawn); // This is the last part that might not work
     }
 
