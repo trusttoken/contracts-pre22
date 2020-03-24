@@ -4,7 +4,7 @@ import "../TrueCurrencies/TrueRewardBackedToken.sol";
 import "./IAToken.sol";
 import "./ILendingPool.sol";
 import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
-import "../TrueCurrencies/FinancialOpportunity.sol";
+import "./FinancialOpportunity.sol";
 import "./ILendingPoolCore.sol";
 import "../TrueCurrencies/modularERC20/Ownable.sol";
 
