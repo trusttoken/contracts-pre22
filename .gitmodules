@@ -1,3 +1,0 @@
-[submodule "registry"]
-	path = registry
-	url = https://github.com/trusttoken/registry
