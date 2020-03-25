@@ -127,20 +127,22 @@ contract('AssuredFinancialOpportunity', function(accounts) {
                 this.token.address, {from: owner})
             await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, {from: owner})
             await this.financialOpportunity.configure(
-                this.sharesToken.address, this.lendingPool.address, this.token.address, this.assuredFinancialOpportunity.address, { from: owner })
-
+                this.sharesToken.address, this.lendingPool.address, this.token.address, this.assuredFinancialOpportunity.address, { from: owner }
+            )
+            await this.liquidator.transferOwnership(this.this.assuredFinancialOpportunity.address, {from: owner})
+            await this.assuredFinancialOpportunity.claimLiquidatorOwnership({from: owner})
         })
 
-        // it('test perTokenValue exponentiaion 1', async function() {
-        //     await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.0), { from: owner })
-        //     const finOpPerTokenValue = await this.financialOpportunity.perTokenValue.call()
-        //     const perTokenValue = await this.assuredFinancialOpportunity.perTokenValue.call()
-        //     console.log(Number(finOpPerTokenValue));
-        //     console.log(Number(perTokenValue)/ 10 ** 18);
-        //     console.log(Math.pow(Number(finOpPerTokenValue)/ 10 ** 18,0.7))
+        it('test perTokenValue exponentiaion 1', async function() {
+            await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.0), { from: owner })
+            const finOpPerTokenValue = await this.financialOpportunity.perTokenValue.call()
+            const perTokenValue = await this.assuredFinancialOpportunity.perTokenValue.call()
+            console.log(Number(finOpPerTokenValue));
+            console.log(Number(perTokenValue)/ 10 ** 18);
+            console.log(Math.pow(Number(finOpPerTokenValue)/ 10 ** 18,0.7))
 
-        //     await assert.equal(Number(perTokenValue)/ 10 ** 18, Math.pow(Number(finOpPerTokenValue)/ 10 ** 18,0.7))
-        // })
+            await assert.equal(Number(perTokenValue)/ 10 ** 18, Math.pow(Number(finOpPerTokenValue)/ 10 ** 18,0.7))
+        })
 
         it('test perTokenValue exponentiaion 1.5', async function() {
             await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
@@ -176,8 +178,7 @@ contract('AssuredFinancialOpportunity', function(accounts) {
             assert.equal(enabled, true) 
             await this.token.disableTrueReward({from: holder2});
             enabled = await this.token.trueRewardEnabled.call(holder2);
-            assert.equal(enabled, false) 
-
+            assert.equal(enabled, false)
         })
 
 
