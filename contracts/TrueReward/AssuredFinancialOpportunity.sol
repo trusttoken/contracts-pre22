@@ -1,5 +1,7 @@
 pragma solidity ^0.5.13;
 
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "../TrueCurrencies/modularERC20/Claimable.sol";
 import "./FinancialOpportunity.sol";
 import "../../trusttokens/contracts/Liquidator.sol";
 import "../../trusttokens/contracts/StakingAsset.sol";
@@ -19,7 +21,7 @@ import { SafeMath } from "../TrueCurrencies/Admin/TokenController.sol";
  * Keeps track of rewards stream for assurance pool.
  *
 **/
-contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
+contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
     event depositSuccess(address _account, uint amount);
     event withdrawToSuccess(address _to, uint _amount);
     event withdrawToFailure(address _to, uint _amount);
@@ -30,11 +32,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
     uint32 constant REWARD_BASIS = 700; // basis for insurance split. 100 = 1%
     uint32 constant TOTAL_BASIS = 1000; // total basis points
     uint zTUSDIssued = 0; // how much zTUSD we've issued
-
     address opportunityAddress;
     address assuranceAddress;
     address liquidatorAddress;
     address exponentContractAddress;
+    address trueRewardBackedTokenAddress;
 
     using SafeMath for uint;
     using SafeMath for uint32;
@@ -44,17 +46,20 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
         address _opportunityAddress, 
         address _assuranceAddress, 
         address _liquidatorAddress,
-        address _exponentContractAddress
+        address _exponentContractAddress,
+        address _trueRewardBackedTokenAddress
     )
     public onlyOwner {
         opportunityAddress = _opportunityAddress;
         assuranceAddress = _assuranceAddress;
         liquidatorAddress = _liquidatorAddress;
         exponentContractAddress = _exponentContractAddress;
+        trueRewardBackedTokenAddress = _trueRewardBackedTokenAddress;
     }
 
-    function proxyOwner() public view returns(address) {
-        return OwnedUpgradeabilityProxy(address(this)).proxyOwner();
+    modifier onlyToken() {
+        require(msg.sender == trueRewardBackedTokenAddress, "only token");
+        _;
     }
 
     /** 
@@ -68,18 +73,20 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
      * Deposit TUSD into wrapped opportunity. Calculate zTUSD value and add to issuance value.
     **/
     function _deposit(address _account, uint _amount) internal returns(uint) {
+        token().transferFrom(_account, address(this), _amount);
+
         // deposit TUSD into opportunity
-        uint opportunityAmount = opportunity().deposit(_account, _amount);
+        token().approve(opportunityAddress, _amount);
+        opportunity().deposit(_account, _amount);
 
         // calculate zTUSD value of deposit
-        uint zTUSDValue = zTUSDIssued.add(_amount.div(_perTokenValue()));
+        uint zTUSDValue = zTUSDIssued.add(_amount.mul(_perTokenValue()).div(10 ** 18));
 
         // update zTUSDIssued
         zTUSDIssued = zTUSDIssued.add(zTUSDValue);
         emit depositSuccess(_account, _amount);
         return zTUSDValue;
     }
-
 
     /** 
      * Calculate TUSD / zTUSD (opportunity value minus pool award)
@@ -92,6 +99,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
             REWARD_BASIS, TOTAL_BASIS);
         return result.mul(10**18).div(2 ** uint256(precision));
     }
+
     /**
      * Withdraw amount of TUSD to an address. Liquidate if opportunity fails to return TUSD. 
      * todo feewet we might need to check that user has the right balance here
@@ -115,8 +123,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
             if (canLiquidate) {
                 _liquidate(_to, liquidateAmount);
                 returnedAmount = _amount;
-            }
-            else {
+            } else {
                 emit withdrawToFailure(_to, _amount);
                 returnedAmount = 0;
             }
@@ -191,11 +198,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
         return _perTokenValue();
     }
 
-    function deposit(address _account, uint _amount) external onlyOwner returns(uint) {
+    function deposit(address _account, uint _amount) external onlyToken returns(uint) {
         return _deposit(_account, _amount);
     }
 
-    function withdrawTo(address _to, uint _amount) external onlyOwner returns(uint) {
+    function withdrawTo(address _to, uint _amount) external onlyToken returns(uint) {
         return _withdraw(_to, _amount);
     }
 
@@ -221,6 +228,10 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Ownable {
 
     function exponents() internal view returns (FractionalExponents){
         return FractionalExponents(exponentContractAddress);
+    }
+
+    function token() internal view returns (IERC20){
+        return IERC20(trueRewardBackedTokenAddress);
     }
 
     function() external payable {}
