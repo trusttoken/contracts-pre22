@@ -51,15 +51,12 @@ const FinancialOpportunityMock = artifacts.require("FinancialOpportunityMock")
 const AssuredFinancialOpportunity = artifacts.require("AssuredFinancialOpportunity")
 const FractionalExponents = artifacts.require("FractionalExponents")
 
-const timeMachine = require('ganache-time-traveler')
-
 contract('AssuredFinancialOpportunity', function(accounts) {
     const [_, owner, issuer, oneHundred, approvedBeneficiary,
      holder, holder2, sender, receipient, kycAccount] = accounts
     //const kycAccount = '0x835c247d2f6524009d38dc52d95a929f62888df6'
     const CAN_BURN = bytes32("canBurn")
     const BLACKLISTED = bytes32("isBlacklisted")
-    const HUNDRED = BN(100).mul(BN(10**18))
     describe('TrueReward setup', function(){
         beforeEach(async function() {
             // Liquidation Setup
@@ -67,8 +64,7 @@ contract('AssuredFinancialOpportunity', function(accounts) {
             this.uniswapTemplate = await UniswapExchange.new();
             this.uniswapFactory.initializeFactory(this.uniswapTemplate.address)
             this.registry = await Registry.new({ from: owner });
-            //this.token = await TrueUSD.new({ from: issuer });
-            this.token = await TrueUSDMock.new(holder, HUNDRED, { from: issuer })
+            this.token = await TrueUSDMock.new(holder, to18Decimals(400), { from: issuer })
             this.stakeToken = await MockTrustToken.new(this.registry.address, { from: issuer });
             this.outputUniswapAddress = (await this.uniswapFactory.createExchange(this.token.address)).logs[0].args.exchange
             this.outputUniswap = await UniswapExchange.at(this.outputUniswapAddress)
@@ -111,30 +107,17 @@ contract('AssuredFinancialOpportunity', function(accounts) {
             await this.registry.setAttributeValue(this.airswap.address, AIRSWAP_VALIDATOR, hashDomain(this.airswap.address), {from: owner})
             await this.registry.setAttributeValue(approvedBeneficiary, APPROVED_BENEFICIARY, 1, {from: owner})
             await this.token.approve(this.airswap.address, ONE_HUNDRED_ETHER, {from: oneHundred})
-            //await this.stakeToken.approve(this.liquidator.address, ONE_HUNDRED_ETHER, { from: this.pool.address })
 
-            // TrueRewards Setup With Mock
-            //this.token = await TrueUSDMock.new(holder, HUNDRED, { from: owner })
-            //this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
-
-            // Aave Opportunity Setup
-            //this.registry = await Registry.new({ from: owner })
-            //this.token = await TrueUSDMock.new(holder, to18Decimals(300), { from: owner })
-            //await this.token.setRegistry(this.registry.address, { from: owner })
             this.lendingPoolCore = await LendingPoolCoreMock.new({ from: owner })
             this.sharesToken = await ATokenMock.new(this.token.address, this.lendingPoolCore.address, { from: owner })
             this.lendingPool = await LendingPoolMock.new(this.lendingPoolCore.address, this.sharesToken.address, { from: owner })
 
             await this.token.transfer(this.sharesToken.address, to18Decimals(100), { from: holder })
-            //await this.token.transfer(holder2, to18Decimals(100), { from: holder })
 
             this.financialOpportunityImpl = await AaveFinancialOpportunity.new({ from: owner })
             this.financialOpportunityProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
             this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
             await this.financialOpportunityProxy.upgradeTo(this.financialOpportunityImpl.address, { from: owner })
-            await this.financialOpportunity.configure(
-                this.sharesToken.address, this.lendingPool.address, this.token.address, this.token.address, { from: owner })
-            await this.token.setAaveInterfaceAddress(this.financialOpportunity.address, {from: owner})
 
             // setup assured opportunity
             this.exponentContract = await FractionalExponents.new({ from: owner });
@@ -143,18 +126,21 @@ contract('AssuredFinancialOpportunity', function(accounts) {
                 this.pool.address, this.liquidator.address, this.exponentContract.address, 
                 this.token.address, {from: owner})
             await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, {from: owner})
+            await this.financialOpportunity.configure(
+                this.sharesToken.address, this.lendingPool.address, this.token.address, this.assuredFinancialOpportunity.address, { from: owner })
+
         })
 
-        it('test perTokenValue exponentiaion 1', async function() {
-            await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.0), { from: owner })
-            const finOpPerTokenValue = await this.financialOpportunity.perTokenValue.call()
-            const perTokenValue = await this.assuredFinancialOpportunity.perTokenValue.call()
-            console.log(Number(finOpPerTokenValue));
-            console.log(Number(perTokenValue)/ 10 ** 18);
-            console.log(Math.pow(Number(finOpPerTokenValue)/ 10 ** 18,0.7))
+        // it('test perTokenValue exponentiaion 1', async function() {
+        //     await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.0), { from: owner })
+        //     const finOpPerTokenValue = await this.financialOpportunity.perTokenValue.call()
+        //     const perTokenValue = await this.assuredFinancialOpportunity.perTokenValue.call()
+        //     console.log(Number(finOpPerTokenValue));
+        //     console.log(Number(perTokenValue)/ 10 ** 18);
+        //     console.log(Math.pow(Number(finOpPerTokenValue)/ 10 ** 18,0.7))
 
-            await assert.equal(Number(perTokenValue)/ 10 ** 18, Math.pow(Number(finOpPerTokenValue)/ 10 ** 18,0.7))
-        })
+        //     await assert.equal(Number(perTokenValue)/ 10 ** 18, Math.pow(Number(finOpPerTokenValue)/ 10 ** 18,0.7))
+        // })
 
         it('test perTokenValue exponentiaion 1.5', async function() {
             await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
@@ -165,14 +151,57 @@ contract('AssuredFinancialOpportunity', function(accounts) {
             console.log(Math.pow(Number(finOpPerTokenValue)/ 10 ** 18,0.7))
             await assert.equal(Number(perTokenValue)/ 10 ** 18, Math.pow(Number(finOpPerTokenValue)/ 10 ** 18,0.7))
         })
-        it('deposit', async function() {
+    
+        it('enables truereward', async function() {
+            await this.token.transfer(holder2, to18Decimals(100), { from: holder })
             let interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.assuredFinancialOpportunity.address);
             assert.equal(Number(interfaceSharesTokenBalance), 0)
-            const {logs} = await this.token.enableTrueReward({from: holder})
+            const {logs} = await this.token.enableTrueReward({from: holder2})
+            const enabled = await this.token.trueRewardEnabled.call(holder2);
+            assert.equal(enabled, true) 
+            const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder2);
+            const totalAaveSupply = await this.token.totalAaveSupply.call();
+            const totalSupply = await this.token.totalSupply.call();
+            const balance = await this.token.balanceOf.call(holder2);
+            assert.equal(Number(loanBackedTokenBalance), to18Decimals(100))
+            assert.equal(Number(totalAaveSupply), to18Decimals(100))
+            assert.equal(Number(totalSupply), to18Decimals(800))
+            assert.equal(Number(balance), to18Decimals(100))
         })
-        // it('withdraw', async function() {
 
-        // })
+        it('disables truereward', async function() {
+            await this.token.transfer(holder2, to18Decimals(100), { from: holder })
+            await this.token.enableTrueReward({from: holder2});
+            let enabled = await this.token.trueRewardEnabled.call(holder2);
+            assert.equal(enabled, true) 
+            await this.token.disableTrueReward({from: holder2});
+            enabled = await this.token.trueRewardEnabled.call(holder2);
+            assert.equal(enabled, false) 
+
+        })
+
+
+        it('calculate interest correctly', async function() {
+            let totalSupply = await this.token.totalSupply.call();
+            assert.equal(Number(totalSupply), to18Decimals(700))
+            await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
+            await this.token.transfer(holder2, to18Decimals(100), { from: holder })
+            await this.token.enableTrueReward({from: holder2})
+            let loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder2);
+            let totalAaveSupply = await this.token.totalAaveSupply.call();
+            totalSupply = await this.token.totalSupply.call();
+            let balance = await this.token.balanceOf.call(holder2);
+            assert.equal(Number(loanBackedTokenBalance), 75289795697123700000)
+            assert.equal(Number(totalAaveSupply), 75289795697123700000)
+            assert.equal(Number(totalSupply), to18Decimals(800))
+            assert.equal(Number(balance), to18Decimals(100))
+            await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.6), { from: owner })
+            totalSupply = await this.token.totalSupply.call();
+            balance = await this.token.balanceOf.call(holder2);
+            assert.equal(Number(totalSupply), 804621298639582300000)
+            assert.equal(Number(balance), 104621298639582200000)
+        })
+
         // it('reward', async function() {
 
         // })
