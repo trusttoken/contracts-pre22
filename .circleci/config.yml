@@ -5,7 +5,7 @@ commands:
     steps:
       - run:
           name: Install Python
-          command: sudo apt install python3-pip
+          command: sudo apt install python-pip
       - run:
           name: Install Vyper
           command: sudo pip install vyper
