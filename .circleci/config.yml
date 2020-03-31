@@ -4,14 +4,8 @@ commands:
   setup_vyper:
     steps:
       - run:
-          name: Update
-          command: sudo apt update
-      - run:
-          name: Install Python
-          command: sudo apt install python3.6
-      - run:
-          name: Install Vyper
-          command: sudo pip3 install vyper
+          name: Setup native vyper
+          command: sudo cp ~/project/.circleci/vyper /bin && sudo chmod a+x /bin/vyper
   pull_submodules:
     steps:
       - run:
@@ -38,9 +32,10 @@ jobs:
       - image: circleci/node:11.15
     steps:
       - checkout
-      - setup_vyper
+      - setup_remote_docker
       - pull_submodules
       - install_dependencies
+      - setup_vyper
       - run: npm test
 
 workflows:
