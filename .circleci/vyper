@@ -1,0 +1,1 @@
+docker run -i ethereum/vyper:0.1.0b13 $@
