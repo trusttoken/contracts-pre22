@@ -11,7 +11,7 @@ commands:
           command: sudo apt install python3-pip
       - run:
           name: Install Vyper
-          command: sudo pip3 install vyper
+          command: sudo pip install vyper
   pull_submodules:
     steps:
       - run:
