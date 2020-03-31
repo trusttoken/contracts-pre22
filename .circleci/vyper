@@ -1,4 +1,4 @@
 #!/bin/bash
 OPTS=$@
-OPTS=${OPTS//\/home/\~\/home}
+OPTS=${OPTS//home\/circleci\//\~\/}
 docker run -i --privileged -v $(pwd):/code ethereum/vyper:0.1.0b13 $OPTS
