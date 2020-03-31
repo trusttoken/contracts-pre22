@@ -5,7 +5,7 @@ commands:
     steps:
       - run:
           name: Setup native vyper
-          command: sh sudo cp ~/project/.circleci/vyper /bin
+          command: sudo cp ~/project/.circleci/vyper /bin
   pull_submodules:
     steps:
       - run:
