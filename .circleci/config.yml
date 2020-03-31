@@ -4,6 +4,9 @@ commands:
   setup_vyper:
     steps:
       - run:
+          name: Update
+          command: sudo apt update
+      - run:
           name: Install Python
           command: sudo apt install python3-pip
       - run:
