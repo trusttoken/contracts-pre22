@@ -1,2 +1,2 @@
 #!/bin/bash
-docker run -i --privileged -w ~/ ethereum/vyper:0.1.0b13 $@
+docker run -i --privileged -v $(pwd):/code ethereum/vyper:0.1.0b13 /code/$@
