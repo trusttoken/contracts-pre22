@@ -1,2 +1,6 @@
 #!/bin/bash
-docker run -i --privileged -v $(pwd):/home/circleci/project ethereum/vyper:0.1.0b13 $@
+if [ $@ == "--version" ] ; then
+    docker run -i --privileged ethereum/vyper:0.1.0b13 $@
+else
+    docker run -i --privileged -v $(pwd):/code ethereum/vyper:0.1.0b13 /code/$@
+fi
