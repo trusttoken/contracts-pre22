@@ -8,10 +8,10 @@ commands:
           command: sudo apt update
       - run:
           name: Install Python
-          command: sudo apt install python-pip
+          command: sudo apt-get install python3.6
       - run:
           name: Install Vyper
-          command: sudo pip install vyper
+          command: sudo pip3 install vyper
   pull_submodules:
     steps:
       - run:
