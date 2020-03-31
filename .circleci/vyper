@@ -1,4 +1,4 @@
 #!/bin/bash
 OPTS=$@
 OPTS=${OPTS//home/code\/home}
-docker run -i --privileged -v $(pwd):/code ethereum/vyper:0.1.0b13 OPTS
+docker run -i --privileged -v $(pwd):/code ethereum/vyper:0.1.0b13 $OPTS
