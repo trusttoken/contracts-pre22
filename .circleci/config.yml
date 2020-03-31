@@ -5,10 +5,10 @@ commands:
     steps:
       - run:
           name: Install Python
-          command: sudo apt install python-pip
+          command: sudo apt-get -y install python3-pip
       - run:
           name: Install Vyper
-          command: sudo pip install vyper==0.1.0b17
+          command: sudo pip3 install vyper
   pull_submodules:
     steps:
       - run:
@@ -35,9 +35,9 @@ jobs:
       - image: circleci/node:11.15
     steps:
       - checkout
+      - setup_vyper
       - pull_submodules
       - install_dependencies
-      - setup_vyper
       - run: npm test
 
 workflows:
