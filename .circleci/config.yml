@@ -33,9 +33,9 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - setup_vyper
       - pull_submodules
       - install_dependencies
+      - setup_vyper
       - run: npm test
 
 workflows:
