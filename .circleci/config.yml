@@ -1,6 +1,23 @@
 version: 2.1
 
 commands:
+  install_node:
+    steps:
+      - run:
+          name: Install Node
+          command: |
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+            echo 'export NVM_DIR="$HOME/.nvm"' >> $BASH_ENV
+            echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
+            source $BASH_ENV
+            nvm install 11.4.0
+  
+  install_vyper:
+     steps:
+      - run:
+          name: Install vyper
+          command: sudo pip install vyper
+
   install_dependencies:
     steps:
       - restore_cache:
@@ -19,11 +36,15 @@ commands:
 jobs:
   test:
     docker:
-      - image: circleci/node:11.15
+      - image: circleci/python:3.6.4
     steps:
+      - install_node
+      - install_vyper
       - checkout
       - install_dependencies
-      - run: npm test
+      - run: |
+          unset npm_config_prefix
+          npm test
 
 workflows:
   version: 2
