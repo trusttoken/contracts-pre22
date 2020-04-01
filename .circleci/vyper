@@ -1,4 +1,2 @@
 #!/bin/bash
-OPTS=$@
-#OPTS=${OPTS//\/home\/circleci\/project\/contracts/\.\/contracts}
-docker run -i --privileged vyper $OPTS
+docker run -i --privileged vyper $@
