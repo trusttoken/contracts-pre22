@@ -26,7 +26,10 @@ commands:
             - npm-packages-{{ checksum "package-lock.json" }}
       - run:
           name: Install Dependencies
-          command: npm ci
+          command: |
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use default
+            npm ci
       - save_cache:
           name: Save NPM cache
           key: npm-packages-{{ checksum "package-lock.json" }}
@@ -42,7 +45,10 @@ jobs:
       - install_vyper
       - checkout
       - install_dependencies
-      - run: npm test
+      - run: |
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use default
+          npm test
 
 workflows:
   version: 2
