@@ -7,7 +7,7 @@
     "test": "./test.sh"
   },
   "scripts": {
-    "test": "pwd && ls && ./test.sh",
+    "test": "pwd && ls && cd contracts && ls && cd lib && ls && cd uniswap && ls && cd contracts && ls && ../../../../ && ./test.sh",
     "flatten": "./flatten-all",
     "profile": "./profile.sh"
   },
