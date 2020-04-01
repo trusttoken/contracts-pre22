@@ -8,7 +8,7 @@ commands:
           command: sudo apt update
       - run:
           name: Setup native vyper
-          command: sudo apt install vyper
+          command: sudo pip3 install vyper
   pull_submodules:
     steps:
       - run:
