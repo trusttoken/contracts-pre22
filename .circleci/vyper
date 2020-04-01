@@ -1,4 +1,4 @@
 #!/bin/bash
 OPTS=$@
-OPTS=${OPTS//home\/circleci\/project\//\.\/}
-docker run -i --privileged -v $(pwd):/code vyperlang/vyper:0.1.0b17 $OPTS
+#OPTS=${OPTS//contracts\/lib/$(pwd)\/contracts\/lib}
+docker run -i --privileged -v $(pwd):$(pwd) vyperlang/vyper:0.1.0b17 $OPTS
