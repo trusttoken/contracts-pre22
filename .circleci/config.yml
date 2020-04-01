@@ -11,7 +11,6 @@ commands:
             echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
             source $BASH_ENV
             nvm install 11.4.0
-            unset npm_config_prefix
   
   install_vyper:
      steps:
@@ -43,7 +42,9 @@ jobs:
       - install_vyper
       - checkout
       - install_dependencies
-      - run: npm test
+      - run: |
+          unset npm_config_prefix
+          npm test
 
 workflows:
   version: 2
