@@ -4,5 +4,4 @@ WORKDIR /
 
 COPY ./contracts ./home/circleci/project/contracts
 
-
 ENTRYPOINT ["/usr/local/bin/vyper"]

@@ -1,2 +1,2 @@
 #!/bin/bash
-docker run -i --privileged vyper $@
+docker run -i vyper $@
