@@ -5,7 +5,7 @@ commands:
     steps:
       - run:
           name: Build vyper docker image
-          command: ddocker build . -f ~/project/.circleci -t vyper
+          command: docker build . -f ~/project/.circleci -t vyper
       - run:
           name: Setup native vyper
           command: sudo cp ~/project/.circleci/vyper /bin && sudo chmod a+x /bin/vyper
