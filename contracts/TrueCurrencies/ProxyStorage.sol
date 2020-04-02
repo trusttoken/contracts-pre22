@@ -1,5 +1,5 @@
 pragma solidity ^0.5.13;
-import "../../registry/contracts/Registry.sol";
+import "@trusttoken/registry/contracts/Registry.sol";
 import "./modularERC20/BalanceSheet.sol";
 import "./modularERC20/AllowanceSheet.sol";
 

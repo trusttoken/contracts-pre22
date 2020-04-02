@@ -4,7 +4,6 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "@trusttoken/registry/contracts/Registry.sol";
 import "../HasOwner.sol";
 import "../CompliantDepositTokenWithHook.sol";
-import "../../../registry/contracts/Registry.sol";
 import "../Proxy/OwnedUpgradeabilityProxy.sol";
 
 /** @title TokenController

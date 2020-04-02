@@ -6,9 +6,9 @@ import "./ILendingPool.sol";
 import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import "./FinancialOpportunity.sol";
 import "./ILendingPoolCore.sol";
-import "../TrueCurrencies/modularERC20/Ownable.sol";
+import "../TrueCurrencies/modularERC20/InstantiatableOwnable.sol";
 
-contract AaveFinancialOpportunity is FinancialOpportunity, Ownable {
+contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable {
     using SafeMath for uint256;
 
     IAToken public sharesToken;
