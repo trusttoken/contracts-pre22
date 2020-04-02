@@ -1,15 +1,15 @@
 pragma solidity ^0.5.13;
 
 
-import "./Ownable.sol";
+import "./InstantiatableOwnable.sol";
 
 
 /**
  * @title Claimable
- * @dev Extension for the Ownable contract, where the ownership needs to be claimed.
+ * @dev Extension for the InstantiatableOwnable contract, where the ownership needs to be claimed.
  * This allows the new owner to accept the transfer.
  */
-contract Claimable is Ownable {
+contract Claimable is InstantiatableOwnable {
   address public pendingOwner;
 
   /**

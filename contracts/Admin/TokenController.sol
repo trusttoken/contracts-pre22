@@ -516,7 +516,7 @@ contract TokenController {
     in order to transfer it to an upgraded TrueUSD contract.
     *@param _other address of the contract to claim ownership of
     */
-    function requestReclaimContract(Ownable _other) public onlyOwner {
+    function requestReclaimContract(InstantiatableOwnable _other) public onlyOwner {
         token.reclaimContract(_other);
         emit RequestReclaimContract(address(_other));
     }
