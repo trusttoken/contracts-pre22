@@ -41,7 +41,7 @@ contract PausedToken is HasOwner, RegistryClone {
     /**  
     *@dev allows owner of TrueUSD to gain ownership of any contract that TrueUSD currently owns
     */
-    function reclaimContract(Ownable _ownable) external onlyOwner {
+    function reclaimContract(InstantiatableOwnable _ownable) external onlyOwner {
         _ownable.transferOwnership(owner);
     }
 
