@@ -5,7 +5,7 @@ const TokenController = artifacts.require("TokenController")
 const ForceEther = artifacts.require("ForceEther")
 const MultisigOwner = artifacts.require("MultiSigOwner")
 const TrueUSDMock = artifacts.require("TrueUSDMock")
-const Ownable = artifacts.require("Ownable")
+const InstantiatableOwnable = artifacts.require("InstantiatableOwnable")
 const Claimable = artifacts.require("Claimable")
 
 const bytes32 = require('./helpers/bytes32.js')
@@ -294,7 +294,7 @@ contract('MultisigOwner', function (accounts) {
 
         
         it('requestReclaimContract of tokenController', async function(){
-            const ownable = await Ownable.new({from:owner1});
+            const ownable = await InstantiatableOwnable.new({from:owner1});
             await ownable.transferOwnership(this.token.address, { from: owner1})
             let ownableOwner = await ownable.owner.call();
             assert.equal(ownableOwner, this.token.address)

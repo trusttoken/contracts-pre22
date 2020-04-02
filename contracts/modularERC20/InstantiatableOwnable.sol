@@ -2,11 +2,11 @@ pragma solidity ^0.5.13;
 
 
 /**
- * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * @title InstantiatableOwnable
+ * @dev The InstantiatableOwnable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
-contract Ownable {
+contract InstantiatableOwnable {
   address public owner;
 
 
@@ -14,7 +14,7 @@ contract Ownable {
 
 
   /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+   * @dev The InstantiatableOwnable constructor sets the original `owner` of the contract to the sender
    * account.
    */
   constructor() public {
