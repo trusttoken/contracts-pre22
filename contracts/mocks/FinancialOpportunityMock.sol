@@ -7,6 +7,7 @@ contract FinancialOpportunityMock is FinancialOpportunity {
   IERC20 token;
   uint balance;
   uint perTokenValueField = 1*10**18;
+  bool withdrawalEnabled = true;
 
   constructor(IERC20 _token) public {
     token = _token;
@@ -20,6 +21,7 @@ contract FinancialOpportunityMock is FinancialOpportunity {
   }
 
   function withdrawTo(address _to, uint _amount) external returns(uint) {
+    require(withdrawalEnabled, "FinOpMock/withdrawTo/withdrawalEnabled");
     uint shares = _amount * 10**18 / perTokenValueField;
     require(shares <= balance, "FinOpMock/withdrawTo/balanceCheck");
     require(token.transfer(_to, _amount), "FinOpMock/withdrawTo/trasfer");
@@ -28,6 +30,7 @@ contract FinancialOpportunityMock is FinancialOpportunity {
   }
   
   function withdrawAll(address _to) external returns(uint) {
+    require(withdrawalEnabled, "FinOpMock/withdrawTo/withdrawalEnabled");
     uint shares = balance;
     uint tokens = shares * perTokenValueField / 10**18;
     require(token.transfer(_to, tokens), "FinOpMock/withdrawAll/trasfer");
@@ -47,5 +50,9 @@ contract FinancialOpportunityMock is FinancialOpportunity {
 
   function setPerTokenValue(uint _perTokenValue) external {
     perTokenValueField = _perTokenValue;
+  }
+
+  function setWithdrawalEnabled(bool _withdrawalEnabled) external {
+    withdrawalEnabled = _withdrawalEnabled;
   }
 }

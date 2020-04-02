@@ -85,6 +85,7 @@ contract AssuranceRegistry is OwnedUpgradeabilityProxy {
         _assuranceRegistry[id].liquidatorAddress = liquidatorAddress;
         _assuranceRegistry[id].opportunityAddress = FinancialOpportunity(_opportunity);
         _assuranceRegistry[id].assuranceBasis = defaultAssuranceBasis;
+        _assuranceRegistry[id].zTUSDIssued = 0;
 
         return id;
     }
