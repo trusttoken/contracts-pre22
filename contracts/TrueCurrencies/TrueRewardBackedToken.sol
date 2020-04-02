@@ -4,12 +4,6 @@ import "./CompliantDepositTokenWithHook.sol";
 import "../TrueReward/FinancialOpportunity.sol";
 
 contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
-    // Move these to proxy storage
-    struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
-    mapping(address => FinancialOpportunityAllocation[]) private _trueRewardDistribution;
-    mapping (address => mapping (address => uint256)) private _financialOpportunityBalances;
-    uint public _totalAaveSupply;
-
     address public constant AAVE_INTERFACE = address(0);
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
 
