@@ -1,9 +1,9 @@
 pragma solidity ^0.5.13;
 
-import "./modularERC20/Ownable.sol";
+import "./modularERC20/InstantiatableOwnable.sol";
 
 // This is a truffle contract, needed for truffle integration.
-contract Migrations is Ownable {
+contract Migrations is InstantiatableOwnable {
     uint256 public lastCompletedMigration;
 
     constructor() public {
