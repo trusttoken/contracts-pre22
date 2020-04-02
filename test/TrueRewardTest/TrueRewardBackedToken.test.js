@@ -51,7 +51,7 @@ contract('TrueRewardBackedToken', function (accounts) {
             await this.token.enableTrueReward({from: holder});
             let enabled = await this.token.trueRewardEnabled.call(holder);
             assert.equal(enabled, true) 
-            await this.token.disableTrueReward({from: holder});
+            const {logs} = await this.token.disableTrueReward({from: holder});
             enabled = await this.token.trueRewardEnabled.call(holder);
             assert.equal(enabled, false) 
             const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder);
