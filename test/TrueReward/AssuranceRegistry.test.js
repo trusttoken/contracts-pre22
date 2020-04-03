@@ -105,4 +105,24 @@ contract('AssuranceRegistry', function ([owner, address1]) {
     const poolAddress = await this.assuranceRegistry.assurance(0)
     assertApprox(await this.token.balanceOf(poolAddress), to18Decimals(3.8), to18Decimals(0.1))
   })
+
+  it('works with multiple opportunities', async function () {
+    const secondFinancialOpportunity = await FinancialOpportunityMock.new(this.token.address)
+    await this.assuranceRegistry.register(secondFinancialOpportunity.address)
+    await this.token.transfer(secondFinancialOpportunity.address, to18Decimals(100)) // for interest payouts
+
+    await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: owner })
+    await this.assuranceRegistry.deposit(0, owner, to18Decimals(10))
+
+    await this.token.approve(secondFinancialOpportunity.address, to18Decimals(10), { from: owner })
+    await this.assuranceRegistry.deposit(1, owner, to18Decimals(10))
+
+    assert((await this.assuranceRegistry.getBalance(0)).eq(to18Decimals(10)))
+    assert((await this.assuranceRegistry.getBalance(1)).eq(to18Decimals(10)))
+
+    await this.assuranceRegistry.withdrawTo(0, address1, to18Decimals(5))
+    await assertBalance(this.token, address1, to18Decimals(5))
+    await this.assuranceRegistry.withdrawTo(1, address1, to18Decimals(5))
+    await assertBalance(this.token, address1, to18Decimals(10))
+  })
 })
