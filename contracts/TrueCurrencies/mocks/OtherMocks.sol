@@ -1,6 +1,6 @@
 pragma solidity ^0.5.13;
 
-import "../../../registry/contracts/mocks/RegistryMock.sol";
+import "@trusttoken/registry/contracts/mocks/RegistryMock.sol";
 
 // Source: openzeppelin-solidity/contracts/mocks/ForceEther.sol
 // @title Force Ether into a contract.

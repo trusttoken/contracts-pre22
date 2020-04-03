@@ -1,10 +1,21 @@
 version: 2.1
 
 commands:
-  install_dependencies:
+  setup_vyper:
     steps:
       - run:
-          git submodule update --init --recursive
+          name: Build vyper docker image
+          command: docker build . -f ~/project/VyperCircleCIDockerfile -t vyper
+      - run:
+          name: Setup vyper
+          command: sudo cp ~/project/.circleci/vyper /bin && sudo chmod a+x /bin/vyper
+  pull_submodules:
+    steps:
+      - run:
+          name: Pull submodules
+          command: git submodule init && git submodule update
+  install_dependencies:
+    steps:
       - restore_cache:
           name: Restore NPM cache
           keys:
@@ -27,11 +38,11 @@ jobs:
           PIPENV_VENV_IN_PROJECT: true
     steps:
       - checkout
+      - setup_remote_docker
+      - pull_submodules
       - install_dependencies
-      - run: 
-        command: |
-          pip install vyper==0.1.0
-          npm test
+      - setup_vyper
+      - run: npm test
 
 workflows:
   version: 2

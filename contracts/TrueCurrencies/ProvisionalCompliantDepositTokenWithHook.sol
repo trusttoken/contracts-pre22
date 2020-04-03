@@ -1,8 +1,8 @@
 pragma solidity ^0.5.13;
 
+import "@trusttoken/registry/contracts/ProvisionalRegistry.sol";
 import "./CompliantDepositTokenWithHook.sol";
 import "./DeprecatedGasRefundPool.sol";
-import "../../registry/contracts/ProvisionalRegistry.sol";
 
 // Supports balance and allowance migration at great cost
 contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHook, DeprecatedGasRefundPool {
@@ -71,12 +71,12 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
     }
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
         uint256 prior = _getAllowance(_who, _spender);
-        _setAllowance(_who, _spender, prior.add(_value)); 
+        _setAllowance(_who, _spender, prior.add(_value));
     }
     function _subAllowance(address _who, address _spender, uint256 _value) internal returns (uint256 updated) {
         uint256 prior = _getAllowance(_who, _spender);
         updated = prior.sub(_value);
-        _setAllowance(_who, _spender, updated); 
+        _setAllowance(_who, _spender, updated);
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
         super._setAllowance(_who, _spender, _value);

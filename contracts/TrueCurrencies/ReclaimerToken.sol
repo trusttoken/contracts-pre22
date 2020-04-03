@@ -22,7 +22,7 @@ contract ReclaimerToken is HasOwner {
     /**  
     *@dev allows owner of the contract to gain ownership of any contract that the contract currently owns
     */
-    function reclaimContract(Ownable _ownable) external onlyOwner {
+    function reclaimContract(InstantiatableOwnable _ownable) external onlyOwner {
         _ownable.transferOwnership(owner);
     }
 

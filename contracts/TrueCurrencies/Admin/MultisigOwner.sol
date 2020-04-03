@@ -166,7 +166,7 @@ contract MultiSigOwner {
     function msReclaimContract(address _contractAddr, address _newOwner) external onlyOwner {
         _initOrSignOwnerAction("msReclaimContract");
         if (ownerAction.approveSigs > 1) {
-            Ownable contractInst = Ownable(_contractAddr);
+            InstantiatableOwnable contractInst = InstantiatableOwnable(_contractAddr);
             contractInst.transferOwnership(_newOwner);
             emit ActionExecuted("msReclaimContract");
             _deleteOwnerAction();
@@ -379,11 +379,11 @@ contract MultiSigOwner {
         _signOrExecute("issueClaimOwnership"); 
     }
 
-    function transferChild(Ownable /*_child*/, address /*_newOwner*/) external onlyOwner {
+    function transferChild(InstantiatableOwnable /*_child*/, address /*_newOwner*/) external onlyOwner {
         _signOrExecute("transferChild"); 
     }
 
-    function requestReclaimContract(Ownable /*_other*/) external onlyOwner {
+    function requestReclaimContract(InstantiatableOwnable /*_other*/) external onlyOwner {
         _signOrExecute("requestReclaimContract"); 
     }
 

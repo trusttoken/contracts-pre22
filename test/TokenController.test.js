@@ -10,7 +10,7 @@ const FastPauseMints = artifacts.require("FastPauseMints")
 const FastPauseTrueUSD = artifacts.require("FastPauseTrueUSD")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 const Claimable = artifacts.require("Claimable")
-const Ownable = artifacts.require("Ownable")
+const InstantiatableOwnable = artifacts.require("InstantiatableOwnable")
 
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN;
@@ -553,7 +553,7 @@ contract('TokenController', function (accounts) {
 
         describe('requestReclaimContract', function () {
             it('reclaims the contract', async function () {
-                const ownable = await Ownable.new({from:owner});
+                const ownable = await InstantiatableOwnable.new({from:owner});
                 await ownable.transferOwnership(this.token.address, {from:owner})
                 let ownableOwner = await ownable.owner.call()
                 assert.equal(ownableOwner, this.token.address)
@@ -568,7 +568,7 @@ contract('TokenController', function (accounts) {
             })
 
             it('cannot be called by non-owner', async function () {
-                const ownable = await Ownable.new({from:owner});
+                const ownable = await InstantiatableOwnable.new({from:owner});
                 await ownable.transferOwnership(this.token.address, {from:owner})
                 await assertRevert(this.controller.requestReclaimContract(ownable.address, { from: mintKey }))
             })
