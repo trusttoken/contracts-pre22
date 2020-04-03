@@ -9,6 +9,7 @@ const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
 const writeAttributeFor = require('../helpers/writeAttributeFor.js')
 const bytes32 = require('../helpers/bytes32.js')
 import assertBalance from '../helpers/assertBalance'
+import assertRevert from '../helpers/assertRevert'
 import { assertApprox } from '../helpers/assertApprox'
 
 const BN = web3.utils.toBN
@@ -73,6 +74,10 @@ contract('AssuranceRegistry', function ([owner, address1]) {
     it('can withdraw', async function() {
       await this.assuranceRegistry.withdrawTo(0, address1, to18Decimals(5))
       await assertBalance(this.token, address1, to18Decimals(5))
+    })
+
+    it('cannot withdraw more than is available', async function() {
+      await assertRevert(this.assuranceRegistry.withdrawTo(0, address1, to18Decimals(15)))
     })
 
     it('can withdraw more with increased per token value', async function () {
