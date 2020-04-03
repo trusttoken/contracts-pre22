@@ -103,6 +103,6 @@ contract('AssuranceRegistry', function ([owner, address1]) {
     await this.financialOpportunity.setPerTokenValue(to18Decimals(2))
     await this.assuranceRegistry.awardPool(0)
     const poolAddress = await this.assuranceRegistry.assurance(0)
-    await assertBalance(this.token, poolAddress, to18Decimals(3.8))
+    assertApprox(await this.token.balanceOf(poolAddress), to18Decimals(3.8), to18Decimals(0.1))
   })
 })

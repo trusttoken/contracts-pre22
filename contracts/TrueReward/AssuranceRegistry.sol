@@ -125,10 +125,14 @@ contract AssuranceRegistry is OwnedUpgradeabilityProxy {
         }
     }
 
+    event LogAwardPool(uint amount);
+
     function awardPool(uint _id) external registeredFinOp(_id) {
         // rewardAmount = (opportunityValue * opportunityBalance) - (assuredOpportunityBalance * assuredOpportunityTokenValue)
-        uint awardAmount = opportunity(_id).perTokenValue().mul(opportunity(_id).getBalance())
-            .sub(getBalance(_id).mul(perTokenValue(_id)));
+        uint awardAmount = opportunity(_id).perTokenValue().mul(opportunity(_id).getBalance()).div(10**18)
+            .sub(getBalance(_id).mul(perTokenValue(_id)).div(10**18));
+
+        emit LogAwardPool(awardAmount);
 
         (bool success, uint returnedAmount) = _attemptWithdrawTo(_id, address(assurance(_id)), awardAmount);
         require(success, "withdrawal failed");
