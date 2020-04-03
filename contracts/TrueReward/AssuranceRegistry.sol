@@ -115,6 +115,7 @@ contract AssuranceRegistry is OwnedUpgradeabilityProxy {
         registeredFinOp(_id)
         returns (uint)
     {
+        require(_amount <= _assuranceRegistry[_id].zTUSDIssued * perTokenValue(_id), "cannot withdraw more than is available");
         (bool success, uint returnedAmount) = _attemptWithdrawTo(_id, _to, _amount);
         if (success) {
             _assuranceRegistry[_id].zTUSDIssued = _assuranceRegistry[_id].zTUSDIssued.sub(returnedAmount);
