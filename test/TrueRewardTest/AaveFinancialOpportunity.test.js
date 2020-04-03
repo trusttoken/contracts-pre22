@@ -1,5 +1,5 @@
 import assertBalance from '../helpers/assertBalance'
-import assertRevert from '../../registry/test/helpers/assertRevert'
+import assertRevert from '@trusttoken/registry/test/helpers/assertRevert'
 
 const Registry = artifacts.require('RegistryMock')
 const CompliantTokenMock = artifacts.require('CompliantTokenMock')
