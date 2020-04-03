@@ -15,7 +15,7 @@ import { assertApprox } from '../helpers/assertApprox'
 const BN = web3.utils.toBN
 const to18Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**8))
 
-contract.only('AssuranceRegistry', function ([owner, address1]) {
+contract('AssuranceRegistry', function ([owner, address1]) {
   beforeEach(async function () {
     this.fractinalExponents = await FractionalExponents.new()
     this.stakedTokenImpl = await StakedTokenProxyImplementation.new()
