@@ -131,6 +131,7 @@ contract AssuranceRegistry is OwnedUpgradeabilityProxy {
             .sub(getBalance(_id).mul(perTokenValue(_id)));
 
         (bool success, uint returnedAmount) = _attemptWithdrawTo(_id, address(assurance(_id)), awardAmount);
+        require(success, "withdrawal failed");
     }
 
     function _liquidate(uint _id, address _receiver, uint256 _debt) internal {
