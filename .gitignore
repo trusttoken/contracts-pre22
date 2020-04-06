@@ -9,3 +9,4 @@ coverage.json
 coverageEnv
 /.coverage_artifacts
 /.coverage_contracts
+.DS_Store
