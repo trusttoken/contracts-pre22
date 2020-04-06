@@ -1,9 +1,29 @@
 {
-    "solidity.linter": "solhint",
-    "solidity.solhintRules": {
-        "avoid-throw": true,
-        "avoid-suicide": "error",
-        "avoid-sha3": "warn",
-        "indent": ["warn", 4]
+    "extends": "solhint:default",
+    "plugins": [],
+    "rules": {
+     "avoid-throw": true,
+      "const-name-snakecase": "off",
+      "avoid-suicide": "error",
+      "avoid-sha3": "warn",
+      "avoid-tx-origin:": "warn",
+      "indent": ["warn", 4],
+      "not-rely-on-block-hash": "warn",
+      "no-empty-blocks": "warn",
+      "no-unused-vars": "warn",
+      "bracket-align": "warn",
+      "expression-indent": "warn",
+      "no-mix-tabs-and-spaces": "warn",
+      "no-spaces-before-semicolon": "warn",
+      "space-after-comma": "warn",
+      "statement-indent": "warn",
+      "quotes": "warn",
+      "contract-name-camelcase": "warn",
+      "func-name-mixedcase": "warn",
+      "var-name-mixedcase": "warn",
+      "separate-by-one-line-in-contract": "warn",
+      "visibility-modifier-order": "warn",
+      "func-visibility": "error",
+      "reentrancy": "error"
     }
-}
+  }

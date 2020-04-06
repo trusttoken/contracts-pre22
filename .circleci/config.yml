@@ -33,6 +33,9 @@ jobs:
   test:
     docker:
       - image: circleci/node:11.15
+      - image: circleci/python:3.6.4
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
     steps:
       - checkout
       - setup_remote_docker
