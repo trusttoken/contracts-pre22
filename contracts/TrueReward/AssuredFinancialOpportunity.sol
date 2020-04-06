@@ -80,7 +80,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
     event awardPoolSuccess(uint256 _amount);
     event awardPoolFailure(uint256 _amount);
 
-    uint32 constant REWARD_BASIS = 700; // basis for insurance split. 100 = 1%
+    uint32 constant REWARD_BASIS = 1000; // basis for insurance split. 1000 for MVP
     uint32 constant TOTAL_BASIS = 1000; // total basis points
     uint zTUSDIssued = 0; // how much zTUSD we've issued
     address opportunityAddress;
@@ -130,7 +130,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
 
     /**
      * Deposit TUSD into wrapped opportunity. Calculate zTUSD value and add to issuance value.
-    **/
+     */
     function _deposit(address _account, uint _amount) internal returns(uint) {
         token().transferFrom(_account, address(this), _amount);
 
@@ -151,8 +151,14 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
      * Calculate TUSD / zTUSD (opportunity value minus pool award)
      * We assume opportunity perTokenValue always goes up
      * todo feewet: this might be really expensive, how can we optimize? (cache by perTokenValue)
-    **/
+     */
     function _perTokenValue() internal view returns(uint256) {
+        // if no assurance, use  opportunity perTokenValue
+        if (REWARD_BASIS == TOTAL_BASIS) {
+            return opportunity().perTokenValue();
+        }
+
+        // otherwise calcualte perTokenValue 
         (uint256 result, uint8 precision) = exponents().power(
             opportunity().perTokenValue(), 10**18,
             REWARD_BASIS, TOTAL_BASIS);
@@ -163,7 +169,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
      * Withdraw amount of TUSD to an address. Liquidate if opportunity fails to return TUSD. 
      * todo feewet we might need to check that user has the right balance here
      * does this mean we need account? Or do we have whatever calls this check
-    **/
+     */
     function _withdraw(address _to, uint _amount) internal returns(uint) {
 
         // attmept withdraw
