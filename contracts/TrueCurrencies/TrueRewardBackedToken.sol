@@ -10,11 +10,19 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     mapping (address => mapping (address => uint256)) private _financialOpportunityBalances;
     uint public _totalAaveSupply;
 
-    address public constant AAVE_INTERFACE = address(0);
+    address aaveInterfaceAddress_;
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
 
     event TrueRewardEnabled(address _account);
     event TrueRewardDisabled(address _account);
+
+    function setAaveInterfaceAddress(address _aaveInterfaceAddress) external onlyOwner {
+        aaveInterfaceAddress_ = _aaveInterfaceAddress;
+    }
+
+    function aaveInterfaceAddress() public view returns (address) {
+        return aaveInterfaceAddress_;
+    }
 
     function drainTrueCurrencyReserve(address _to, uint _value) external onlyOwner {
         _transferAllArgs(RESERVE, _to, _value);
@@ -44,10 +52,6 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
     function zTUSDReserveBalance() public view returns (uint) {
         return _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()];
-    }
-
-    function aaveInterfaceAddress() public view returns (address) {
-        return AAVE_INTERFACE;
     }
 
     function totalAaveSupply() public view returns(uint) {
