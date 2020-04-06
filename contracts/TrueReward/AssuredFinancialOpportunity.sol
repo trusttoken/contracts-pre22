@@ -2,8 +2,8 @@ pragma solidity ^0.5.13;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./FinancialOpportunity.sol";
-import "../../trusttokens/contracts/Liquidator.sol";
-import "../../trusttokens/contracts/StakingAsset.sol";
+import "@trusttoken/trusttokens/contracts/Liquidator.sol";
+import "@trusttoken/trusttokens/contracts/StakingAsset.sol";
 import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import "./utilities/FractionalExponents.sol";
 import { SafeMath } from "../TrueCurrencies/Admin/TokenController.sol";
@@ -121,11 +121,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
     }
 
     function claimLiquidatorOwnership() external onlyOwner {
-        Claimable(liquidator()).claimOwnership();
+        liquidator().claimOwnership();
     }
 
     function transferLiquidatorOwnership(address newOwner) external onlyOwner {
-        Claimable(liquidator()).transferOwnership(newOwner);
+        liquidator().transferOwnership(newOwner);
     }
 
     /**

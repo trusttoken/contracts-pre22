@@ -3,7 +3,7 @@ pragma solidity ^0.5.13;
 pragma experimental ABIEncoderV2;
 
 
-import "../../../trusttokens/contracts/Liquidator.sol";
+import "@trusttoken/trusttokens/contracts/Liquidator.sol";
 
 contract LiquidatorMock is Liquidator {
     address mockPool;

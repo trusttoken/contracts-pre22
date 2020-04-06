@@ -1,3 +1,16 @@
+# Setup
+```
+git submodule update --init --recursive
+npm install
+brew install python3
+brew install gmp leveldb
+pip3 install virtualenv
+python3 -m venv ~/vyper-env
+source ~/vyper-env/bin/activate
+pip install vyper
+./test.sh
+```
+
 # Deployments
 For all of our deployments, the address is the same between mainnet and testnet.
 Our source code is verified on Etherscan.

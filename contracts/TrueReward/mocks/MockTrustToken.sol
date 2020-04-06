@@ -1,6 +1,6 @@
 pragma solidity ^0.5.13;
 
-import "../../../trusttokens/contracts/TrustToken.sol";
+import "@trusttoken/trusttokens/contracts/TrustToken.sol";
 
 contract MockTrustToken is TrustToken {
     Registry registry_;
