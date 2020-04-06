@@ -4,13 +4,8 @@ import "./CompliantDepositTokenWithHook.sol";
 import "../TrueReward/FinancialOpportunity.sol";
 
 contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
-    // Move these to proxy storage
-    struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
-    mapping(address => FinancialOpportunityAllocation[]) private _trueRewardDistribution;
-    mapping (address => mapping (address => uint256)) private _financialOpportunityBalances;
-    uint public _totalAaveSupply;
-
-    address aaveInterfaceAddress_;
+    // todo feewet: edit these to not be constants
+    address public constant AAVE_INTERFACE = address(0);
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
 
     event TrueRewardEnabled(address _account);
@@ -102,7 +97,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         uint zTUSDWithdrawn = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(msg.sender, availableTUSDBalance);
         _totalAaveSupply = _totalAaveSupply.sub(_financialOpportunityBalances[msg.sender][aaveInterfaceAddress()]);
         _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = 0;
-        emit TrueRewardDisabled(msg.sender); 
+        emit TrueRewardDisabled(msg.sender);
         emit Transfer(msg.sender, address(0), zTUSDWithdrawn); // This is the last part that might not work
     }
 
