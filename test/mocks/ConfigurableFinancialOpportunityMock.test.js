@@ -3,13 +3,13 @@ import assertRevert from '@trusttoken/registry/test/helpers/assertRevert'
 
 const Registry = artifacts.require('RegistryMock')
 const CompliantTokenMock = artifacts.require('CompliantTokenMock')
-const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
+const FinancialOpportunityMock = artifacts.require('ConfigurableFinancialOpportunityMock')
 
 const BN = web3.utils.toBN;
 
 const to18Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**8))
 
-contract.only('FinancialOpportunityMock', function([owner, address1]){
+contract('ConfigurableFinancialOpportunityMock', function([owner, address1]){
   beforeEach(async function () {
     this.registry = await Registry.new()
     this.token = await CompliantTokenMock.new(owner, to18Decimals(200))

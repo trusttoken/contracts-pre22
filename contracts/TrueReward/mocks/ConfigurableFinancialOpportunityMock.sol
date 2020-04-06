@@ -5,7 +5,7 @@ import "../../TrueCurrencies/modularERC20/InstantiatableOwnable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-contract FinancialOpportunityMock is FinancialOpportunity, InstantiatableOwnable {
+contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, InstantiatableOwnable {
   using SafeMath for uint;
 
   IERC20 token;
