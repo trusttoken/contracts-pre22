@@ -70,6 +70,7 @@ contract TokenController {
     CompliantDepositTokenWithHook public token;
     Registry public registry;
     address public fastPause;
+    address public trueRewardManager;
 
     bytes32 constant public IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
@@ -101,6 +102,12 @@ contract TokenController {
         require(registry.hasAttribute(msg.sender, IS_REDEMPTION_ADMIN) || msg.sender == owner, "must be Redemption admin or owner");
         _;
     }
+
+    modifier onlyTrueRewardManager() {
+        require(msg.sender == trueRewardManager, "must be trueRewardManager");
+        _;
+    }
+
 
     //mint operations by the mintkey cannot be processed on when mints are paused
     modifier mintNotPaused() {
@@ -587,5 +594,27 @@ contract TokenController {
     function reclaimToken(IERC20 _token, address _to) external onlyOwner {
         uint256 balance = _token.balanceOf(address(this));
         _token.transfer(_to, balance);
+    }
+
+    /*
+    ========================================
+    Truereward
+    ========================================
+    */
+
+    function setTrueRewardManager(address _newTrueRewardManager) external onlyOwner {
+        trueRewardManager = _newTrueRewardManager
+    }
+
+    function drainTrueCurrencyReserve(address _to, uint _value) external onlyTrueRewardManager {
+        token.drainTrueCurrencyReserve(_to, _value);
+    }
+
+    function convertToTrueCurrencyReserve(uint _value) external onlyTrueRewardManager {
+        token.convertToTrueCurrencyReserve(_value);
+    }
+
+    function convertToZTUSDReserve(uint _value) external onlyTrueRewardManager {
+        token.convertToTrueCurrencyReserve(_value);
     }
 }
