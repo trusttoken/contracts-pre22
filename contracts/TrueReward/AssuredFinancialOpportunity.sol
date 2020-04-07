@@ -1,12 +1,12 @@
 pragma solidity ^0.5.13;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "@trusttoken/trusttokens/contracts/Liquidator.sol";
 import "@trusttoken/trusttokens/contracts/StakingAsset.sol";
 import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import "./utilities/FractionalExponents.sol";
 import "./FinancialOpportunity.sol";
-import { SafeMath } from "../TrueCurrencies/Admin/TokenController.sol";
 
 /**
  * AssuredFinancialOpportunity
