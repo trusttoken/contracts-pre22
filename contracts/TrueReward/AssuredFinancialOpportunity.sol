@@ -1,64 +1,12 @@
 pragma solidity ^0.5.13;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "./FinancialOpportunity.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "@trusttoken/trusttokens/contracts/Liquidator.sol";
 import "@trusttoken/trusttokens/contracts/StakingAsset.sol";
 import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import "./utilities/FractionalExponents.sol";
-import { SafeMath } from "../TrueCurrencies/Admin/TokenController.sol";
-
-contract Claimable {
-    address public owner;
-    address public pendingOwner;
-
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
-
-    /**
-    * @dev sets the original `owner` of the contract to the sender
-    * at construction. Must then be reinitialized 
-    */
-    constructor() public {
-        owner = msg.sender;
-        emit OwnershipTransferred(address(0), owner);
-    }
-
-    /**
-    * @dev Throws if called by any account other than the owner.
-    */
-    modifier onlyOwner() {
-        require(msg.sender == owner, "only Owner");
-        _;
-    }
-
-    /**
-    * @dev Modifier throws if called by any account other than the pendingOwner.
-    */
-    modifier onlyPendingOwner() {
-        require(msg.sender == pendingOwner);
-        _;
-    }
-
-    /**
-    * @dev Allows the current owner to set the pendingOwner address.
-    * @param newOwner The address to transfer ownership to.
-    */
-    function transferOwnership(address newOwner) public onlyOwner {
-        pendingOwner = newOwner;
-    }
-
-    /**
-    * @dev Allows the pendingOwner address to finalize the transfer.
-    */
-    function claimOwnership() public onlyPendingOwner {
-        emit OwnershipTransferred(owner, pendingOwner);
-        owner = pendingOwner;
-        pendingOwner = address(0);
-    }
-}
+import "./FinancialOpportunity.sol";
 
 /**
  * AssuredFinancialOpportunity
@@ -72,7 +20,7 @@ contract Claimable {
  * Keeps track of rewards stream for assurance pool.
  *
 **/
-contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
+contract AssuredFinancialOpportunity is FinancialOpportunity, OwnedUpgradeabilityProxy {
     event depositSuccess(address _account, uint amount);
     event withdrawToSuccess(address _to, uint _amount);
     event withdrawToFailure(address _to, uint _amount);
@@ -156,7 +104,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
         address _exponentContractAddress,
         address _trueRewardBackedTokenAddress
     )
-    public onlyOwner {
+    public onlyProxyOwner {
         opportunityAddress = _opportunityAddress;
         assuranceAddress = _assuranceAddress;
         liquidatorAddress = _liquidatorAddress;
@@ -169,11 +117,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
         _;
     }
 
-    function claimLiquidatorOwnership() external onlyOwner {
+    function claimLiquidatorOwnership() external onlyProxyOwner {
         liquidator().claimOwnership();
     }
 
-    function transferLiquidatorOwnership(address newOwner) external onlyOwner {
+    function transferLiquidatorOwnership(address newOwner) external onlyProxyOwner {
         liquidator().transferOwnership(newOwner);
     }
 
@@ -298,7 +246,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
         return _withdraw(_to, _amount);
     }
 
-    function withdrawAll(address _to) external onlyOwner returns(uint) {
+    function withdrawAll(address _to) external onlyProxyOwner returns(uint) {
         return _withdraw(_to, _getBalance());
     }
 
