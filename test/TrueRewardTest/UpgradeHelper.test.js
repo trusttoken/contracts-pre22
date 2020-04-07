@@ -25,7 +25,8 @@ contract('UpgradeHelper', function ([owner]) {
     this.upgradeHelper = await UpgradeHelper.new({ from: owner })
 
     await this.tusdProxy.transferProxyOwnership(this.upgradeHelper.address, {from: owner})
-    await (await TrueUSD.at(this.tusdProxy.address)).transferOwnership(this.upgradeHelper.address)
+    this.tusd = await TrueUSD.at(this.tusdProxy.address)
+    await this.tusd.transferOwnership(this.upgradeHelper.address)
     await this.assuredFinancialOpportunityProxy.transferProxyOwnership(this.upgradeHelper.address, {from: owner})
 
     await this.upgradeHelper.performUpgrade(
@@ -40,7 +41,27 @@ contract('UpgradeHelper', function ([owner]) {
   
   it('works', async function() {
     // ownership
-    // aaveInterface address
     // try to enable true reward for some account (optional)
   })
+
+  describe('TrueUSD', function() {
+    it.only('ownership is properly set', async function() {
+        assert.equal((await this.tusd.owner()), owner)
+        assert.equal((await this.tusd.proxyOwner()), owner)
+    })
+
+    it('properly assigns aaveInterface address', async function() {
+        assert.equal((await this.tusd.aaveInterfaceAddress()), this.assuredFinancialOpportunityProxy.address)
+    })
+
+    it('properly assigns aaveInterface address', async function() {
+    })
+  })
+
+  describe('AssuredFinancialOpportunity', function() {
+    it('ownership is properly set', async function() {
+        assert.equal((await this.AssuredFinancialOpportunity.owner()), owner)
+    })
+  })
+  
 })
