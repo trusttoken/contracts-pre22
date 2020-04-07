@@ -6,7 +6,7 @@ const FractionalExponents = artifacts.require("FractionalExponents")
 const ConfigurableFinancialOpportunityMock = artifacts.require("ConfigurableFinancialOpportunityMock")
 const UpgradeHelper = artifacts.require('UpgradeHelper')
 
-contract('UpgradeHelper', function ([owner]) {
+contract.skip('UpgradeHelper', function ([owner]) {
   beforeEach(async function () {
     this.fractionalExponents = await FractionalExponents.new({from: owner})
 
@@ -45,7 +45,7 @@ contract('UpgradeHelper', function ([owner]) {
   })
 
   describe('TrueUSD', function() {
-    it.only('ownership is properly set', async function() {
+    it('ownership is properly set', async function() {
         assert.equal((await this.tusd.owner()), owner)
         assert.equal((await this.tusd.proxyOwner()), owner)
     })
