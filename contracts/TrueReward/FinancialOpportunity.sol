@@ -1,5 +1,10 @@
 pragma solidity ^0.5.13;
 
+/**
+ * @title FinancialOpportunity
+ * @dev Interface for third parties to implement financial opportunities
+ * for TrueReward with Assurance.
+ */
 interface FinancialOpportunity {
     /**
      * @dev deposits TrueUSD into finOP using transferFrom

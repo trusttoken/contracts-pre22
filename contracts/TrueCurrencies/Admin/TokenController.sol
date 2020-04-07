@@ -5,6 +5,7 @@ import "@trusttoken/registry/contracts/Registry.sol";
 import "../HasOwner.sol";
 import "../CompliantDepositTokenWithHook.sol";
 import "../Proxy/OwnedUpgradeabilityProxy.sol";
+import "../TrueRewardBackedToken.sol";
 
 /** @title TokenController
 @dev This contract allows us to split ownership of the TrueUSD contract
@@ -67,7 +68,7 @@ contract TokenController {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    CompliantDepositTokenWithHook public token;
+    TrueRewardBackedToken public token;
     Registry public registry;
     address public fastPause;
     address public trueRewardManager;
@@ -121,7 +122,7 @@ contract TokenController {
     event SetRegistry(address indexed registry);
     event TransferChild(address indexed child, address indexed newOwner);
     event RequestReclaimContract(address indexed other);
-    event SetToken(CompliantDepositTokenWithHook newContract);
+    event SetToken(TrueRewardBackedToken newContract);
 
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
     event FinalizeMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -477,7 +478,7 @@ contract TokenController {
     *@dev Update this contract's token pointer to newContract (e.g. if the
     contract is upgraded)
     */
-    function setToken(CompliantDepositTokenWithHook _newContract) external onlyOwner {
+    function setToken(TrueRewardBackedToken _newContract) external onlyOwner {
         token = _newContract;
         emit SetToken(_newContract);
     }
@@ -601,19 +602,38 @@ contract TokenController {
     Truereward
     ========================================
     */
-
+    
+    /**
+     * @dev Sets the contract which has permissions to manage truerewards reserve
+     * Controls access to reserve functions to allow providing liquidity
+     */
     function setTrueRewardManager(address _newTrueRewardManager) external onlyOwner {
-        trueRewardManager = _newTrueRewardManager
+        trueRewardManager = _newTrueRewardManager;
     }
 
+    /**
+     * @dev Withdraw all TrueCurrencies from reserve
+     */
     function drainTrueCurrencyReserve(address _to, uint _value) external onlyTrueRewardManager {
         token.drainTrueCurrencyReserve(_to, _value);
     }
 
+    /**
+     * @dev Allow this contract to rebalance currency reserves
+     * This is called when there is too much money in an opportunity and we want
+     * to get more TrueCurrency.
+     * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
+     */
     function convertToTrueCurrencyReserve(uint _value) external onlyTrueRewardManager {
         token.convertToTrueCurrencyReserve(_value);
     }
 
+    /**
+     * @dev Allow this contract to rebalance currency reserves
+     * This is called when there is not enough money in an opportunity and we want
+     * to get more Opportunity tokens
+     * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
+     */
     function convertToZTUSDReserve(uint _value) external onlyTrueRewardManager {
         token.convertToTrueCurrencyReserve(_value);
     }
