@@ -93,6 +93,62 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
     using SafeMath for uint32;
     using SafeMath for uint256;
 
+    function perTokenValue() external view returns(uint256) {
+        return _perTokenValue();
+    }
+    
+    function getBalance() external view returns (uint) {
+        return _getBalance();
+    }
+    
+    function opportunity() internal view returns(FinancialOpportunity) {
+        return FinancialOpportunity(opportunityAddress);
+    }
+
+    function assurance() internal view returns(StakedToken) {
+        return StakedToken(assuranceAddress); // StakedToken is assurance staking pool
+    }
+
+    function liquidator() internal view returns (Liquidator) {
+        return Liquidator(liquidatorAddress);
+    }
+
+    function exponents() internal view returns (FractionalExponents){
+        return FractionalExponents(exponentContractAddress);
+    }
+
+    function token() internal view returns (IERC20){
+        return IERC20(trueRewardBackedTokenAddress);
+    }
+
+    /** 
+     * Calculate TUSD / zTUSD (opportunity value minus pool award)
+     * We assume opportunity perTokenValue always goes up
+     * todo feewet: this might be really expensive, how can we optimize? (cache by perTokenValue)
+     */
+    function _perTokenValue() internal view returns(uint256) {
+        // if no assurance, use  opportunity perTokenValue
+        if (REWARD_BASIS == TOTAL_BASIS) {
+            return opportunity().perTokenValue();
+        }
+
+        // otherwise calcualte perTokenValue 
+        (uint256 result, uint8 precision) = exponents().power(
+            opportunity().perTokenValue(), 10**18,
+            REWARD_BASIS, TOTAL_BASIS);
+        return result.mul(10**18).div(2 ** uint256(precision));
+    }
+
+    /** 
+     * Get total amount of zTUSD issued
+    **/
+    function _getBalance() internal view returns (uint) {
+        return zTUSDIssued;
+    }
+
+    /**
+     * @dev configure assured opportunity
+     */
     function configure(
         address _opportunityAddress, 
         address _assuranceAddress, 
@@ -111,13 +167,6 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
     modifier onlyToken() {
         require(msg.sender == trueRewardBackedTokenAddress, "only token");
         _;
-    }
-
-    /** 
-     * Get total amount of zTUSD issued
-    **/
-    function _getBalance() internal view returns (uint) {
-        return zTUSDIssued;
     }
 
     function claimLiquidatorOwnership() external onlyOwner {
@@ -145,24 +194,6 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
         zTUSDIssued = zTUSDIssued.add(zTUSDValue);
         emit depositSuccess(_account, _amount);
         return zTUSDValue;
-    }
-
-    /** 
-     * Calculate TUSD / zTUSD (opportunity value minus pool award)
-     * We assume opportunity perTokenValue always goes up
-     * todo feewet: this might be really expensive, how can we optimize? (cache by perTokenValue)
-     */
-    function _perTokenValue() internal view returns(uint256) {
-        // if no assurance, use  opportunity perTokenValue
-        if (REWARD_BASIS == TOTAL_BASIS) {
-            return opportunity().perTokenValue();
-        }
-
-        // otherwise calcualte perTokenValue 
-        (uint256 result, uint8 precision) = exponents().power(
-            opportunity().perTokenValue(), 10**18,
-            REWARD_BASIS, TOTAL_BASIS);
-        return result.mul(10**18).div(2 ** uint256(precision));
     }
 
     /**
@@ -259,10 +290,6 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
         }
     }
 
-    function perTokenValue() external view returns(uint256) {
-        return _perTokenValue();
-    }
-
     function deposit(address _account, uint _amount) external onlyToken returns(uint) {
         return _deposit(_account, _amount);
     }
@@ -273,30 +300,6 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, Claimable {
 
     function withdrawAll(address _to) external onlyOwner returns(uint) {
         return _withdraw(_to, _getBalance());
-    }
-
-    function getBalance() external view returns (uint) {
-        return _getBalance();
-    }
-    
-    function opportunity() internal view returns(FinancialOpportunity) {
-        return FinancialOpportunity(opportunityAddress);
-    }
-
-    function assurance() internal view returns(StakedToken) {
-        return StakedToken(assuranceAddress); // StakedToken is assurance staking pool
-    }
-
-    function liquidator() internal view returns (Liquidator) {
-        return Liquidator(liquidatorAddress);
-    }
-
-    function exponents() internal view returns (FractionalExponents){
-        return FractionalExponents(exponentContractAddress);
-    }
-
-    function token() internal view returns (IERC20){
-        return IERC20(trueRewardBackedTokenAddress);
     }
 
     function() external payable {}
