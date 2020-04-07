@@ -19,6 +19,7 @@ contract.skip('UpgradeHelper', function ([owner]) {
 
     this.tusdImplementation = await TrueUSD.new({from: owner})
     this.assuredFinancialOpportunityImplementation = await AssuredFinancialOpportunity.new({from: owner})
+    this.assuredFinancialOpportunityImplementation.configure(owner)
 
     this.financialOpportunityMock = await ConfigurableFinancialOpportunityMock.new(this.tusdProxy.address, { from: owner })
 
