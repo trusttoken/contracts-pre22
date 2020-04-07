@@ -22,25 +22,25 @@ contract('AaveFinancialOpportunity', function ([_, proxyOwner, holder, owner, ad
     await this.token.setRegistry(this.registry.address, { from: proxyOwner })
 
     this.lendingPoolCore = await LendingPoolCoreMock.new({ from: proxyOwner })
-    this.sharesToken = await ATokenMock.new(this.token.address, this.lendingPoolCore.address, { from: proxyOwner })
-    this.lendingPool = await LendingPoolMock.new(this.lendingPoolCore.address, this.sharesToken.address, { from: proxyOwner })
+    this.stakeToken = await ATokenMock.new(this.token.address, this.lendingPoolCore.address, { from: proxyOwner })
+    this.lendingPool = await LendingPoolMock.new(this.lendingPoolCore.address, this.stakeToken.address, { from: proxyOwner })
 
-    await this.token.transfer(this.sharesToken.address, to18Decimals(100), { from: holder })
+    await this.token.transfer(this.stakeToken.address, to18Decimals(100), { from: holder })
 
     this.financialOpportunityImpl = await AaveFinancialOpportunity.new({ from: proxyOwner })
     this.financialOpportunityProxy = await OwnedUpgradeabilityProxy.new({ from: proxyOwner })
     this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
     await this.financialOpportunityProxy.upgradeTo(this.financialOpportunityImpl.address, { from: proxyOwner })
-    await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, owner, { from: proxyOwner })
+    await this.financialOpportunity.configure(this.stakeToken.address, this.lendingPool.address, this.token.address, owner, { from: proxyOwner })
   })
 
   describe('configure', function () {
     it('configured to proper addresses', async function () {
-      const sharesTokenAddress = await this.financialOpportunity.sharesToken()
+      const stakeTokenAddress = await this.financialOpportunity.stakeToken()
       const lendingPoolAddress = await this.financialOpportunity.lendingPool()
       const tokenAddress = await this.financialOpportunity.token()
       const ownerAddress = await this.financialOpportunity.owner()
-      assert.equal(sharesTokenAddress, this.sharesToken.address)
+      assert.equal(stakeTokenAddress, this.stakeToken.address)
       assert.equal(lendingPoolAddress, this.lendingPool.address)
       assert.equal(tokenAddress, this.token.address)
       assert.equal(ownerAddress, owner)
@@ -50,11 +50,11 @@ contract('AaveFinancialOpportunity', function ([_, proxyOwner, holder, owner, ad
     it('can reconfigure', async function () {
       await this.financialOpportunity.configure(address1, address2, address3, address4, { from: proxyOwner })
 
-      const sharesTokenAddress = await this.financialOpportunity.sharesToken()
+      const stakeTokenAddress = await this.financialOpportunity.stakeToken()
       const lendingPoolAddress = await this.financialOpportunity.lendingPool()
       const tokenAddress = await this.financialOpportunity.token()
       const ownerAddress = await this.financialOpportunity.owner()
-      assert.equal(sharesTokenAddress, address1)
+      assert.equal(stakeTokenAddress, address1)
       assert.equal(lendingPoolAddress, address2)
       assert.equal(tokenAddress, address3)
       assert.equal(ownerAddress, address4)
