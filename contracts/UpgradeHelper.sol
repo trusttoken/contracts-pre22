@@ -40,12 +40,7 @@ contract UpgradeHelper {
 
     assuredOpportunityProxy.upgradeTo(assuredOpportunityImplementation);
 
-    assuredOpportunityProxy.transferProxyOwnership(proxyOwner);
-
     AssuredFinancialOpportunity assuredOpportunity = AssuredFinancialOpportunity(address(assuredOpportunityProxy));
-    address owner = assuredOpportunity.owner();
-    assuredOpportunity.claimOwnership();
-
     assuredOpportunity.configure(
       mockedOpportunity, // address _opportunityAddress
       address(0), // address _assuranceAddress
@@ -54,7 +49,7 @@ contract UpgradeHelper {
       trueRewardBackedTokenAddress // address _trueRewardBackedTokenAddress
     );
 
-    assuredOpportunity.transferOwnership(owner);
+    assuredOpportunityProxy.transferProxyOwnership(proxyOwner);
   }
 
   function initTrueUsd(
