@@ -1,8 +1,8 @@
 pragma solidity ^0.5.13;
 
-import { OwnedUpgradeabilityProxy } from "./TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
-import { TrueRewardBackedToken } from "./TrueCurrencies/TrueRewardBackedToken.sol";
-import { AssuredFinancialOpportunity } from "./TrueReward/AssuredFinancialOpportunity.sol";
+import { OwnedUpgradeabilityProxy } from "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
+import { TrueRewardBackedToken } from "../TrueCurrencies/TrueRewardBackedToken.sol";
+import { AssuredFinancialOpportunity } from "../TrueReward/AssuredFinancialOpportunity.sol";
 
 contract UpgradeHelper {
   function performUpgrade(
@@ -68,7 +68,6 @@ contract UpgradeHelper {
     trueUsd.claimOwnership();
 
     trueUsd.setAaveInterfaceAddress(address(assuredOpportunityProxy));
-    trueUsd.enableTrueReward();
 
     trueUsd.transferOwnership(trueUsdOwner);
   }
