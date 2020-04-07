@@ -4,7 +4,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "@trusttoken/trusttokens/contracts/Liquidator.sol";
 import "@trusttoken/trusttokens/contracts/StakingAsset.sol";
-import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
+import "../TrueCurrencies/AssuredFinancialOpportunityStorage.sol";
 import "./utilities/FractionalExponents.sol";
 import "./FinancialOpportunity.sol";
 
@@ -20,7 +20,7 @@ import "./FinancialOpportunity.sol";
  * Keeps track of rewards stream for assurance pool.
  *
 **/
-contract AssuredFinancialOpportunity is FinancialOpportunity, OwnedUpgradeabilityProxy {
+contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOpportunityStorage {
     event depositSuccess(address _account, uint amount);
     event withdrawToSuccess(address _to, uint _amount);
     event withdrawToFailure(address _to, uint _amount);
