@@ -5,6 +5,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "@trusttoken/trusttokens/contracts/Liquidator.sol";
 import "@trusttoken/trusttokens/contracts/StakingAsset.sol";
 import "../TrueCurrencies/AssuredFinancialOpportunityStorage.sol";
+import "../TrueCurrencies/modularERC20/InitializableClaimable.sol";
 import "./utilities/FractionalExponents.sol";
 import "./FinancialOpportunity.sol";
 
@@ -20,7 +21,7 @@ import "./FinancialOpportunity.sol";
  * Keeps track of rewards stream for assurance pool.
  *
 **/
-contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOpportunityStorage {
+contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOpportunityStorage, InitializableClaimable {
     event depositSuccess(address _account, uint amount);
     event withdrawToSuccess(address _to, uint _amount);
     event withdrawToFailure(address _to, uint _amount);
@@ -104,7 +105,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         address _exponentContractAddress,
         address _trueRewardBackedTokenAddress
     )
-    public onlyProxyOwner {
+    public {
+        super.configure();
         opportunityAddress = _opportunityAddress;
         assuranceAddress = _assuranceAddress;
         liquidatorAddress = _liquidatorAddress;
@@ -117,11 +119,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         _;
     }
 
-    function claimLiquidatorOwnership() external onlyProxyOwner {
+    function claimLiquidatorOwnership() external onlyOwner {
         liquidator().claimOwnership();
     }
 
-    function transferLiquidatorOwnership(address newOwner) external onlyProxyOwner {
+    function transferLiquidatorOwnership(address newOwner) external onlyOwner {
         liquidator().transferOwnership(newOwner);
     }
 
@@ -246,7 +248,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return _withdraw(_to, _amount);
     }
 
-    function withdrawAll(address _to) external onlyProxyOwner returns(uint) {
+    function withdrawAll(address _to) external onlyOwner returns(uint) {
         return _withdraw(_to, _getBalance());
     }
 
