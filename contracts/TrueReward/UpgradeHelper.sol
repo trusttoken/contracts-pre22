@@ -50,6 +50,7 @@ contract UpgradeHelper {
     );
 
     assuredOpportunityProxy.transferProxyOwnership(proxyOwner);
+    assuredOpportunity.transferOwnership(proxyOwner);
   }
 
   function initTrueUsd(

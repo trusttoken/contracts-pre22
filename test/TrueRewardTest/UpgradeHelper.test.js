@@ -6,7 +6,7 @@ const FractionalExponents = artifacts.require("FractionalExponents")
 const ConfigurableFinancialOpportunityMock = artifacts.require("ConfigurableFinancialOpportunityMock")
 const UpgradeHelper = artifacts.require('UpgradeHelper')
 
-contract.skip('UpgradeHelper', function ([owner]) {
+contract('UpgradeHelper', function ([owner]) {
   beforeEach(async function () {
     this.fractionalExponents = await FractionalExponents.new({from: owner})
 
@@ -19,7 +19,7 @@ contract.skip('UpgradeHelper', function ([owner]) {
 
     this.tusdImplementation = await TrueUSD.new({from: owner})
     this.assuredFinancialOpportunityImplementation = await AssuredFinancialOpportunity.new({from: owner})
-    this.assuredFinancialOpportunityImplementation.configure(owner)
+    this.assuredFinancialOpportunity = await AssuredFinancialOpportunity.at(this.assuredFinancialOpportunityProxy.address)
 
     this.financialOpportunityMock = await ConfigurableFinancialOpportunityMock.new(this.tusdProxy.address, { from: owner })
 
@@ -29,6 +29,8 @@ contract.skip('UpgradeHelper', function ([owner]) {
     this.tusd = await TrueUSD.at(this.tusdProxy.address)
     await this.tusd.transferOwnership(this.upgradeHelper.address)
     await this.assuredFinancialOpportunityProxy.transferProxyOwnership(this.upgradeHelper.address, {from: owner})
+
+    
 
     await this.upgradeHelper.performUpgrade(
       this.tusdProxy.address,
@@ -40,29 +42,27 @@ contract.skip('UpgradeHelper', function ([owner]) {
     )
   })
   
-  it('works', async function() {
-    // ownership
-    // try to enable true reward for some account (optional)
-  })
-
   describe('TrueUSD', function() {
     it('ownership is properly set', async function() {
-        assert.equal((await this.tusd.owner()), owner)
-        assert.equal((await this.tusd.proxyOwner()), owner)
+      assert.equal((await this.tusd.pendingOwner()), owner)
+    })
+
+    it('ownership is properly set', async function() {
+      assert.equal((await this.tusdProxy.pendingProxyOwner()), owner)
     })
 
     it('properly assigns aaveInterface address', async function() {
-        assert.equal((await this.tusd.aaveInterfaceAddress()), this.assuredFinancialOpportunityProxy.address)
-    })
-
-    it('properly assigns aaveInterface address', async function() {
+      assert.equal((await this.tusd.aaveInterfaceAddress()), this.assuredFinancialOpportunityProxy.address)
     })
   })
 
   describe('AssuredFinancialOpportunity', function() {
     it('ownership is properly set', async function() {
-        assert.equal((await this.AssuredFinancialOpportunity.owner()), owner)
+      assert.equal((await this.assuredFinancialOpportunity.pendingOwner()), owner)
+    })
+
+    it('proxy ownership is properly set', async function() {
+      assert.equal((await this.assuredFinancialOpportunityProxy.pendingProxyOwner()), owner)
     })
   })
-  
 })
