@@ -104,8 +104,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         address _liquidatorAddress,
         address _exponentContractAddress,
         address _trueRewardBackedTokenAddress
-    ) public {
-        super.configure();
+    ) external {
+        super._configure();
         opportunityAddress = _opportunityAddress;
         assuranceAddress = _assuranceAddress;
         liquidatorAddress = _liquidatorAddress;
@@ -118,11 +118,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         _;
     }
 
-    function claimLiquidatorOwnership() external onlyProxyOwner {
+    function claimLiquidatorOwnership() external onlyOwner {
         liquidator().claimOwnership();
     }
 
-    function transferLiquidatorOwnership(address newOwner) external onlyProxyOwner {
+    function transferLiquidatorOwnership(address newOwner) external onlyOwner {
         liquidator().transferOwnership(newOwner);
     }
 
@@ -247,7 +247,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return _withdraw(_to, _amount);
     }
 
-    function withdrawAll(address _to) external onlyProxyOwner returns(uint) {
+    function withdrawAll(address _to) external onlyOwner returns(uint) {
         return _withdraw(_to, _getBalance());
     }
 

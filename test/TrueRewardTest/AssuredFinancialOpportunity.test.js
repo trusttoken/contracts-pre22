@@ -123,7 +123,6 @@ contract('AssuredFinancialOpportunity', function(accounts) {
             this.exponentContract = await FractionalExponents.new({ from: owner });
 
             this.assuredFinancialOpportunityImplementation = await AssuredFinancialOpportunity.new({ from: owner })
-            this.assuredFinancialOpportunityImplementation.configure(owner)
 
             this.assuredFinancialOpportunityProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
             this.assuredFinancialOpportunity = await AssuredFinancialOpportunity.at(this.assuredFinancialOpportunityProxy.address)

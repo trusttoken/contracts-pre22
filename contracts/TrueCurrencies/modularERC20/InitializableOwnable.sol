@@ -18,7 +18,7 @@ contract InitializableOwnable {
    * @dev The InitializableOwnable constructor sets the original `owner` of the contract to the sender
    * account.
    */
-  function configure() public {
+  function _configure() internal {
     require(!configured);
     owner = msg.sender;
     configured = true;
