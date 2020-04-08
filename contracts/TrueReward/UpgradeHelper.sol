@@ -11,7 +11,9 @@ contract UpgradeHelper {
     OwnedUpgradeabilityProxy assuredOpportunityProxy,
     address assuredOpportunityImplementation,
     address mockedOpportunity,
-    address exponentContractAddress
+    address exponentContractAddress,
+    OwnedUpgradeabilityProxy tokenControllerProxy,
+    address tokenControllerImplmentation
   ) external {
     initAssuredFinancialOpportunity(
       assuredOpportunityProxy,
@@ -25,6 +27,11 @@ contract UpgradeHelper {
       trueUsdProxy,
       newTrueUsdImplementation,
       assuredOpportunityProxy
+    );
+
+    upgradeTokenController(
+      tokenControllerProxy,
+      tokenControllerImplmentation
     );
   }
 
@@ -71,6 +78,16 @@ contract UpgradeHelper {
     trueUsd.setAaveInterfaceAddress(address(assuredOpportunityProxy));
 
     trueUsd.transferOwnership(trueUsdOwner);
+  }
+
+  function upgradeTokenController(
+    OwnedUpgradeabilityProxy proxy,
+    address implementation
+  ) internal {
+    address owner = proxy.proxyOwner();
+    proxy.claimProxyOwnership();
+    proxy.upgradeTo(implementation);
+    proxy.transferProxyOwnership(owner);
   }
 }
 

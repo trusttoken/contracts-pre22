@@ -5,6 +5,7 @@ const AssuredFinancialOpportunity = artifacts.require("AssuredFinancialOpportuni
 const FractionalExponents = artifacts.require("FractionalExponents")
 const ConfigurableFinancialOpportunityMock = artifacts.require("ConfigurableFinancialOpportunityMock")
 const UpgradeHelper = artifacts.require('UpgradeHelper')
+const TokenController = artifacts.require('TokenController')
 
 contract('UpgradeHelper', function ([owner]) {
   beforeEach(async function () {
@@ -30,7 +31,9 @@ contract('UpgradeHelper', function ([owner]) {
     await this.tusd.transferOwnership(this.upgradeHelper.address)
     await this.assuredFinancialOpportunityProxy.transferProxyOwnership(this.upgradeHelper.address, {from: owner})
 
-    
+    this.tokenControllerProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
+    this.tokenControllerImplementation = await TokenController.new({ from: owner })
+    await this.tokenControllerProxy.transferProxyOwnership(this.upgradeHelper.address)
 
     await this.upgradeHelper.performUpgrade(
       this.tusdProxy.address,
@@ -38,7 +41,9 @@ contract('UpgradeHelper', function ([owner]) {
       this.assuredFinancialOpportunityProxy.address,
       this.assuredFinancialOpportunityImplementation.address,
       this.financialOpportunityMock.address,
-      this.fractionalExponents.address
+      this.fractionalExponents.address,
+      this.tokenControllerProxy.address,
+      this.tokenControllerImplementation.address,
     )
   })
   
@@ -63,6 +68,12 @@ contract('UpgradeHelper', function ([owner]) {
 
     it('proxy ownership is properly set', async function() {
       assert.equal((await this.assuredFinancialOpportunityProxy.pendingProxyOwner()), owner)
+    })
+  })
+
+  describe('TokenController', async function() {
+    it('proxy ownership is properly set', async function() {
+      assert.equal((await this.tokenControllerProxy.pendingProxyOwner()), owner)
     })
   })
 })
