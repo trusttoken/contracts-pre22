@@ -42,4 +42,7 @@ contract TrueUSDMock is TrueUSD {
         return aaveAddress;
     }
 
+    function setOwner(address _owner) external {
+        owner = _owner;
+    }
 }
