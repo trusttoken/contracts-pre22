@@ -253,6 +253,3 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
     function() external payable {}
 }
-
-/// @dev Proxy for AssuredFinancialOpportunity
-contract AssuranceProxy is OwnedUpgradeabilityProxy {}

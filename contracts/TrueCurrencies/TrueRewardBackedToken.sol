@@ -30,13 +30,13 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     */
 
     // Aave Interface address
-    address public constant AAVE_INTERFACE = address(0);
+    //address public constant AAVE_INTERFACE = address(0);
 
     // Reserve is an address which nobody has the private key to
     // Reserves of TUSD and TrueRewardBackedToken are held at this addess
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
     uint public _totalAaveSupply;
-    address public aaveInterfaceAddress_ = AAVE_INTERFACE;
+    address public aaveInterfaceAddress_;
 
     event TrueRewardEnabled(address _account);
     event TrueRewardDisabled(address _account);

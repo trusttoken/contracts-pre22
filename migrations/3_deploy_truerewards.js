@@ -1,11 +1,12 @@
 var TrueUSD = artifacts.require("TrueUSD");
-var AaveFinancialOpportuity = artifacts.require("AaveFinancialOpportuity")
-var AssuredFinancialOpportuity = artifacts.require("AssuredFinancialOpportuity")
+var AaveFinancialOpportunity = artifacts.require("AaveFinancialOpportunity")
+var AssuredFinancialOpportunity = artifacts.require("AssuredFinancialOpportunity")
 var TokenController = artifacts.require("TokenController")
 var Liquidator = artifacts.require("Liquidator")
 var StakingAsset = artifacts.require("StakingAsset")
 var FractionalExponents = artifacts.require("FractionalExponents")
-var AssuranceProxy = artifacts.require("AssuranceProxy")
+var OwnedUpgradeabilityProxy = artifacts.require("OwnedUpgradeabilityProxy")
+var UpgradeHelper = artifacts.require("UpgradeHelper")
 
 module.exports = async (deployer, network, accounts) => {
     var defaultAccount;
@@ -25,24 +26,41 @@ module.exports = async (deployer, network, accounts) => {
 
     // Deploy TrueUSD
     await deployer.deploy(TrueUSD)
-    trueUSDContract = TrueUSD.deployed()
-    console.log("TrueUSD address: " TrueUSD.address)
+    trueUSDContract = await TrueUSD.deployed()
+    console.log("TrueUSD address: ", TrueUSD.address)
 
     // Deploy TokenController
-    await TokenController.deploy(TokenController)
-    tokenControllerContract = TokenController.deployed()
-    console.log("TokenController address: " TokenController.address)
+    await deployer.deploy(TokenController)
+    tokenControllerContract = await TokenController.deployed()
+    console.log("TokenController address: ", TokenController.address)
 
     // Deploy Aave Financial Opportunity
-    await deployer.deploy(AaveFinancialOpportuity)
-    aaveFinancialOpportuityContract = AaveFinancialOpportuity.deployed()
-    console.log("AaveFinancialOpportuity address: " AaveFinancialOpportuity.address)
+    await deployer.deploy(AaveFinancialOpportunity)
+    AaveFinancialOpportunityContract = await AaveFinancialOpportunity.deployed()
+    console.log("AaveFinancialOpportunity address: ", AaveFinancialOpportunity.address)
 
     // Deploy Assured Financial Opportunity
     await deployer.deploy(AssuredFinancialOpportunity)
-    assuredFinancialOpportunityContract = AssuredFinancialOpportunity.deployed()
-    console.log("AssuredFinancialOpportunity address: " AssuredFinancialOpportunity.address)
-    
+    assuredFinancialOpportunityContract = await AssuredFinancialOpportunity.deployed()
+    console.log("AssuredFinancialOpportunity address: ", AssuredFinancialOpportunity.address)
+
+    // Deploy Financial Opportunity Proxy
+    OwnedUpgradeabilityProxy
+    await deployer.deploy(OwnedUpgradeabilityProxy)
+    OwnedUpgradeabilityProxyContract = await OwnedUpgradeabilityProxy.deployed()
+    console.log("OwnedUpgradeabilityProxy address: ", OwnedUpgradeabilityProxy.address)
+
+    // Deploy Exponents Contract
+    await deployer.deploy(FractionalExponents)
+    FractionalExponentsContract = await FractionalExponents.deployed()
+    console.log("FractionalExponents address: ", FractionalExponents.address)
+
     // Deploy StakingAsset (Staking Pool)
+    // todo feewet
+
+    // Call Upgrade Helper
+    await deployer.deploy(FractionalExponents)
+    FractionalExponentsContract = await FractionalExponents.deployed()
+    console.log("FractionalExponents address: ", FractionalExponents.address)
     
 }
