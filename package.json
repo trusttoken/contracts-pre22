@@ -10,7 +10,8 @@
     "test": "./test.sh",
     "coverage": "./coverage.sh",
     "flatten": "./flatten-all",
-    "profile": "./profile.sh"
+    "profile": "./profile.sh",
+    "build": "waffle .waffle.json"
   },
   "author": "",
   "license": "ISC",
@@ -25,6 +26,8 @@
     "babel-preset-stage-2": "^6.18.0",
     "babel-preset-stage-3": "^6.17.0",
     "babel-register": "^6.26.0",
+    "ethereum-waffle": "^2.4.0",
+    "ethers": "^4.0.46",
     "ganache-cli": "6.8.1",
     "ganache-time-traveler": "^1.0.14",
     "openzeppelin-solidity": "2.4.0",
