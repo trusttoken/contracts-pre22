@@ -4,14 +4,14 @@ import "./CompliantDepositTokenWithHook.sol";
 import "../TrueReward/FinancialOpportunity.sol";
 
 /**
- * @title TrueRewardBackedToken (zTUSD)
- * @dev TrueRewardBackedToken (or zTUSD) is TrueUSD backed by debt.
- * zTUSD represents 1 dollar of debt owed to the zTUSD holder
+ * @title TrueRewardBackedToken
+ * @dev TrueRewardBackedToken is TrueUSD backed by debt.
+ *
+ * zTUSD represents an amount of TUSD owed to the zTUSD holder
+ * zTUSD is calculated by calling perTokenValue on a financial opportunity
  * zTUSD is not transferrable in that the token itself is never tranferred
  * Rather, we override our transfer functions to account for user balances
- *
- * yTUSD represents 1 opportunity token as returned by perTokenValue()
- * We assume yTUSD always increases in value
+ * We assume zTUSD always increases in value
  *
  * This contract uses a reserve holding of TUSD and zTUSD to save on gas costs
  * because calling the financial opportunity deposit() and withdraw() everytime
@@ -22,6 +22,7 @@ import "../TrueReward/FinancialOpportunity.sol";
  * so some of the code is built to support this
  */
 contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
+    
     /* Variables in Proxy Storage:
      * struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
      * mapping(address => FinancialOpportunityAllocation[]) _trueRewardDistribution;
