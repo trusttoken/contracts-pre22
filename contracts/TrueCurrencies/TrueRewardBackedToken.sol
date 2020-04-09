@@ -135,7 +135,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * to get more TrueCurrency.
      * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
      */
-    function convertToTrueCurrencyReserve(uint _value) external onlyOwner {
+    function convertToTrueCurrencyReserve(uint _value) external {
+        require(msg.sender == owner);
         uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(RESERVE, _value);
         _totalAaveSupply = _totalAaveSupply.sub(zTUSDAmount);
         // reentrancy
@@ -150,7 +151,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * to get more Opportunity tokens
      * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
      */
-    function convertToZTUSDReserve(uint _value) external onlyOwner {
+    function convertToZTUSDReserve(uint _value) external {
+        require(msg.sender == owner);
         uint balance = _getBalance(RESERVE);
         if (balance < _value) {
             return;
@@ -168,7 +170,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * Set allocation to 100% since we only have a single opportunity
      */
     function _enableAave() internal {
-        require(_trueRewardDistribution[msg.sender].length == 0, "aave already enabled");
+        require(_trueRewardDistribution[msg.sender].length == 0, "already enabled");
         _trueRewardDistribution[msg.sender].push(FinancialOpportunityAllocation(aaveInterfaceAddress(), 100));
     }
 
@@ -346,7 +348,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     }
 
     /**
-     * @dev TransferAll helper function for TrueRewardBackedToken
+     * @dev TransferFromAll helper function for TrueRewardBackedToken
      * Uses reserve float to save gas costs for transactions with value < reserve balance.
      * Case #2 and #3 use reserve balances.
      *
@@ -424,8 +426,10 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             bool hasHook;
             address finalTo;
             (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(valueInZTUSD);
-            _financialOpportunityBalances[finalTo][aaveInterfaceAddress()] = _financialOpportunityBalances[finalTo][aaveInterfaceAddress()].add(valueInZTUSD);
+            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = 
+                _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(valueInZTUSD);
+            _financialOpportunityBalances[finalTo][aaveInterfaceAddress()] = 
+                _financialOpportunityBalances[finalTo][aaveInterfaceAddress()].add(valueInZTUSD);
             emit Transfer(_from, _to, _value);
             if (finalTo != _to) {
                 emit Transfer(_to, finalTo, _value);
@@ -463,7 +467,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * Mints TrueUSD backed by debt
      * When we add multiple opportunities, this needs to work for mutliple interfaces
      */
-    function mint(address _to, uint256 _value) public onlyOwner {
+    function mint(address _to, uint256 _value) public {
+        require(msg.sender == owner);
         super.mint(_to, _value);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (receiverTrueRewardEnabled) {
