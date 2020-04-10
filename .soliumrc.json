@@ -27,7 +27,6 @@
       "error-reason": "off",
       "security/no-low-level-calls": "off",
       "security/no-inline-assembly": "off",
-      "security/no-assign-params": "off",
-      "whitespace": "off"
+      "security/no-assign-params": "off"
     }
   }

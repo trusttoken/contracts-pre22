@@ -43,11 +43,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
         if (0 == _subBalance(_from, _value)) {
-            if (0 == _subAllowance(_from, _spender, _value)) {
-                // no refund
-            } else {
+            if (0 != _subAllowance(_from, _spender, _value)) {
                 gasRefund15();
             }
+            // else no refund
         } else {
             if (0 == _subAllowance(_from, _spender, _value)) {
                 gasRefund15();
@@ -87,11 +86,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             (_to, hasHook) = _requireCanTransferFrom(_spender, _from, _to);
             if (0 == _addBalance(_to, _value)) {
                 if (0 == _subAllowance(_from, _spender, _value)) {
-                    if (0 == _subBalance(_from, _value)) {
-                        // do not refund
-                    } else {
+                    if (0 != _subBalance(_from, _value)) {
                         gasRefund30();
                     }
+                    // else do not refund
                 } else {
                     if (0 == _subBalance(_from, _value)) {
                         gasRefund30();
@@ -101,11 +99,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
                 }
             } else {
                 if (0 == _subAllowance(_from, _spender, _value)) {
-                    if (0 == _subBalance(_from, _value)) {
-                        // do not refund
-                    } else {
+                    if (0 != _subBalance(_from, _value)) {
                         gasRefund15();
                     }
+                    // else do not refund
                 } else {
                     if (0 == _subBalance(_from, _value)) {
                         gasRefund15();
@@ -140,9 +137,8 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             if (0 == _subBalance(_from, _value)) {
                 if (0 == _addBalance(finalTo, _value)) {
                     gasRefund30();
-                } else {
-                    // do not refund
                 }
+                // else do not refund
             } else {
                 if (0 == _addBalance(finalTo, _value)) {
                     gasRefund39();
