@@ -370,14 +370,45 @@ contract FractionalExponents  {
         uint256 z;
         uint256 w;
 
-        if (x >= 0xd3094c70f034de4b96ff7d5b6f99fcd8) {res += 0x40000000000000000000000000000000; x = x * FIXED_1 / 0xd3094c70f034de4b96ff7d5b6f99fcd8;}
-        if (x >= 0xa45af1e1f40c333b3de1db4dd55f29a7) {res += 0x20000000000000000000000000000000; x = x * FIXED_1 / 0xa45af1e1f40c333b3de1db4dd55f29a7;}
-        if (x >= 0x910b022db7ae67ce76b441c27035c6a1) {res += 0x10000000000000000000000000000000; x = x * FIXED_1 / 0x910b022db7ae67ce76b441c27035c6a1;}
-        if (x >= 0x88415abbe9a76bead8d00cf112e4d4a8) {res += 0x08000000000000000000000000000000; x = x * FIXED_1 / 0x88415abbe9a76bead8d00cf112e4d4a8;}
-        if (x >= 0x84102b00893f64c705e841d5d4064bd3) {res += 0x04000000000000000000000000000000; x = x * FIXED_1 / 0x84102b00893f64c705e841d5d4064bd3;}
-        if (x >= 0x8204055aaef1c8bd5c3259f4822735a2) {res += 0x02000000000000000000000000000000; x = x * FIXED_1 / 0x8204055aaef1c8bd5c3259f4822735a2;}
-        if (x >= 0x810100ab00222d861931c15e39b44e99) {res += 0x01000000000000000000000000000000; x = x * FIXED_1 / 0x810100ab00222d861931c15e39b44e99;}
-        if (x >= 0x808040155aabbbe9451521693554f733) {res += 0x00800000000000000000000000000000; x = x * FIXED_1 / 0x808040155aabbbe9451521693554f733;}
+        if (x >= 0xd3094c70f034de4b96ff7d5b6f99fcd8) {
+            res += 0x40000000000000000000000000000000;
+            x = x * FIXED_1 / 0xd3094c70f034de4b96ff7d5b6f99fcd8;
+        }
+
+        if (x >= 0xa45af1e1f40c333b3de1db4dd55f29a7) {
+            res += 0x20000000000000000000000000000000;
+            x = x * FIXED_1 / 0xa45af1e1f40c333b3de1db4dd55f29a7;
+        }
+
+        if (x >= 0x910b022db7ae67ce76b441c27035c6a1) {
+            res += 0x10000000000000000000000000000000;
+            x = x * FIXED_1 / 0x910b022db7ae67ce76b441c27035c6a1;
+        }
+
+        if (x >= 0x88415abbe9a76bead8d00cf112e4d4a8) {
+            res += 0x08000000000000000000000000000000;
+            x = x * FIXED_1 / 0x88415abbe9a76bead8d00cf112e4d4a8;
+        }
+
+        if (x >= 0x84102b00893f64c705e841d5d4064bd3) {
+            res += 0x04000000000000000000000000000000;
+            x = x * FIXED_1 / 0x84102b00893f64c705e841d5d4064bd3;
+        }
+
+        if (x >= 0x8204055aaef1c8bd5c3259f4822735a2) {
+            res += 0x02000000000000000000000000000000;
+            x = x * FIXED_1 / 0x8204055aaef1c8bd5c3259f4822735a2;
+        }
+
+        if (x >= 0x810100ab00222d861931c15e39b44e99) {
+            res += 0x01000000000000000000000000000000;
+            x = x * FIXED_1 / 0x810100ab00222d861931c15e39b44e99;
+        }
+
+        if (x >= 0x808040155aabbbe9451521693554f733) {
+            res += 0x00800000000000000000000000000000;
+            x = x * FIXED_1 / 0x808040155aabbbe9451521693554f733;
+        }
 
         z = y = x - FIXED_1;
         w = y * y / FIXED_1;
@@ -479,13 +510,33 @@ contract FractionalExponents  {
 
         res = res / 0x21c3677c82b40000 + y + FIXED_1; // divide by 20! and then add y^1 / 1! + y^0 / 0!
 
-        if ((x & 0x010000000000000000000000000000000) != 0) res = res * 0x1c3d6a24ed82218787d624d3e5eba95f9 / 0x18ebef9eac820ae8682b9793ac6d1e776;
-        if ((x & 0x020000000000000000000000000000000) != 0) res = res * 0x18ebef9eac820ae8682b9793ac6d1e778 / 0x1368b2fc6f9609fe7aceb46aa619baed4;
-        if ((x & 0x040000000000000000000000000000000) != 0) res = res * 0x1368b2fc6f9609fe7aceb46aa619baed5 / 0x0bc5ab1b16779be3575bd8f0520a9f21f;
-        if ((x & 0x080000000000000000000000000000000) != 0) res = res * 0x0bc5ab1b16779be3575bd8f0520a9f21e / 0x0454aaa8efe072e7f6ddbab84b40a55c9;
-        if ((x & 0x100000000000000000000000000000000) != 0) res = res * 0x0454aaa8efe072e7f6ddbab84b40a55c5 / 0x00960aadc109e7a3bf4578099615711ea;
-        if ((x & 0x200000000000000000000000000000000) != 0) res = res * 0x00960aadc109e7a3bf4578099615711d7 / 0x0002bf84208204f5977f9a8cf01fdce3d;
-        if ((x & 0x400000000000000000000000000000000) != 0) res = res * 0x0002bf84208204f5977f9a8cf01fdc307 / 0x0000003c6ab775dd0b95b4cbee7e65d11;
+        if ((x & 0x010000000000000000000000000000000) != 0) {
+            res = res * 0x1c3d6a24ed82218787d624d3e5eba95f9 / 0x18ebef9eac820ae8682b9793ac6d1e776;
+        }
+
+        if ((x & 0x020000000000000000000000000000000) != 0) {
+            res = res * 0x18ebef9eac820ae8682b9793ac6d1e778 / 0x1368b2fc6f9609fe7aceb46aa619baed4;
+        }
+
+        if ((x & 0x040000000000000000000000000000000) != 0) {
+            res = res * 0x1368b2fc6f9609fe7aceb46aa619baed5 / 0x0bc5ab1b16779be3575bd8f0520a9f21f;
+        }
+
+        if ((x & 0x080000000000000000000000000000000) != 0) {
+            res = res * 0x0bc5ab1b16779be3575bd8f0520a9f21e / 0x0454aaa8efe072e7f6ddbab84b40a55c9;
+        }
+
+        if ((x & 0x100000000000000000000000000000000) != 0) {
+            res = res * 0x0454aaa8efe072e7f6ddbab84b40a55c5 / 0x00960aadc109e7a3bf4578099615711ea;
+        }
+
+        if ((x & 0x200000000000000000000000000000000) != 0) {
+            res = res * 0x00960aadc109e7a3bf4578099615711d7 / 0x0002bf84208204f5977f9a8cf01fdce3d;
+        }
+
+        if ((x & 0x400000000000000000000000000000000) != 0) {
+            res = res * 0x0002bf84208204f5977f9a8cf01fdc307 / 0x0000003c6ab775dd0b95b4cbee7e65d11;
+        }
 
         return res;
     }

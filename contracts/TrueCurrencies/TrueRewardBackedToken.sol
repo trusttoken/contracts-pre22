@@ -138,7 +138,10 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(RESERVE, _value);
         _totalAaveSupply = _totalAaveSupply.sub(zTUSDAmount);
         // reentrancy
-        _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()].sub(zTUSDAmount);
+
+        _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()]
+            .sub(zTUSDAmount);
+
         emit Transfer(RESERVE, address(0), _value);
     }
 
@@ -156,7 +159,10 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         _setAllowance(RESERVE, aaveInterfaceAddress(), _value);
         uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(RESERVE, _value);
         _totalAaveSupply = _totalAaveSupply.add(zTUSDAmount);
-        _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()].add(zTUSDAmount);
+
+        _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()]
+            .add(zTUSDAmount);
+
         emit Transfer(address(0), RESERVE, _value);
     }
 

@@ -23,7 +23,6 @@
         ]
       ],
       "no-empty-blocks": "off",
-      "max-len": "off",
       "error-reason": "off",
       "security/no-low-level-calls": "off",
       "security/no-inline-assembly": "off",
