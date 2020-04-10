@@ -1,8 +1,8 @@
 
 (async () => {
     const ethers = require('ethers')
-    const provider = new ethers.providers.JsonRpcProvider(/* ENTER JSON RPC URL HERE */)
-    const wallet = new ethers.Wallet(/* ENTER PRIVATE KEY WITH FUNDS HERE */, provider)
+    const provider = new ethers.providers.JsonRpcProvider('https://ropsten.infura.io/v3/2021bd729a8e4d848f3cdbf8bc300881')
+    const wallet = new ethers.Wallet('0xfe7c874c470d8353ecb20a2bbad8aa953b1952901f340e699a0c83e0a9557942', provider)
 
     const deploy = async (contractName) => {
             const contractJson = require(`../build/${contractName}.json`)
@@ -24,7 +24,7 @@
     const fractionalExponentsContract = await deploy('FractionalExponents')
     const stakingAssetContract = await deploy('StakingAsset')
     // Access contract's address by address property
-    // For example: trueUSDContract.address
+    // For example trueUSDContract.address
 
     // Deploy UpgradeHelper
     const upgradeHelperContract = await deploy('UpgradeHelper')
