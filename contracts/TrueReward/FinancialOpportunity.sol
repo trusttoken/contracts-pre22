@@ -28,12 +28,12 @@ interface FinancialOpportunity {
     function withdrawAll(address _to) external returns(uint);
 
     /**
-     * Exchange rate between TUSD and yTUSD  
+     * Exchange rate between TUSD and yTUSD
      * @return TUSD / yTUSD price ratio
      */
     function perTokenValue() external view returns(uint);
 
-    /** 
+    /**
      * Returns full balance of opportunity
      * @return yTUSD balance of opportunity
     **/

@@ -10,7 +10,7 @@ contract CanDelegateMock is CanDelegateV1 {
         balances.setBalance(initialAccount, initialBalance);
         totalSupply_ = initialBalance;
     }
-    
+
     function reclaimContract(OwnableV1 _ownable) external onlyOwner {
         _ownable.transferOwnership(owner);
     }

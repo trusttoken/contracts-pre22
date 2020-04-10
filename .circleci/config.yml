@@ -33,9 +33,6 @@ jobs:
   test:
     docker:
       - image: circleci/node:11.15
-      - image: circleci/python:3.6.4
-        environment:
-          PIPENV_VENV_IN_PROJECT: true
     steps:
       - checkout
       - setup_remote_docker
@@ -43,6 +40,13 @@ jobs:
       - install_dependencies
       - setup_vyper
       - run: npm test
+  lint:
+    docker:
+      - image: circleci/node:11.15
+    steps:
+      - checkout
+      - install_dependencies
+      - run: npm run-script lint
 
 workflows:
   version: 2

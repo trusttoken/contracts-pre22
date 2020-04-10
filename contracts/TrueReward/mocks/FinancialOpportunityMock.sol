@@ -2,7 +2,7 @@ pragma solidity ^0.5.13;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-contract FinancialOpportunityMock {    
+contract FinancialOpportunityMock {
     using SafeMath for uint256;
 
     function deposit(address _from, uint _amount) external returns(uint) {

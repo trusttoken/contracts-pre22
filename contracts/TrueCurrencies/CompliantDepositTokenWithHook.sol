@@ -198,8 +198,8 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     modifier onlyRegistry {
-      require(msg.sender == address(registry));
-      _;
+        require(msg.sender == address(registry));
+        _;
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {

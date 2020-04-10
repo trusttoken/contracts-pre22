@@ -10,12 +10,18 @@
     "test": "./test.sh",
     "coverage": "./coverage.sh",
     "flatten": "./flatten-all",
-    "profile": "./profile.sh"
+    "profile": "./profile.sh",
+    "lint:sol": "solium --no-soliumignore -d contracts/",
+    "lint:js": "eslint 'test/**/*.{js,ts}'",
+    "lint": "npm run-script lint:js && npm run-script lint:sol"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "solidity-coverage": "^0.7.0"
+    "babel-eslint": "^10.1.0",
+    "eslint": "^6.8.0",
+    "solidity-coverage": "^0.7.0",
+    "solium": "^1.2.5"
   },
   "dependencies": {
     "@trusttoken/registry": "0.1.2",
