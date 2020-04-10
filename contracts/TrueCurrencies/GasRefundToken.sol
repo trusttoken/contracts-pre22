@@ -2,7 +2,7 @@ pragma solidity ^0.5.13;
 
 import "./ProxyStorage.sol";
 
-/**  
+/**
 @title Gas Refund Token
 Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas refund mechanism in EVM
 Each time an non-empty storage slot is set to 0, evm refund 15,000 to the sender
@@ -103,7 +103,7 @@ contract GasRefundToken is ProxyStorage {
         }
     }
 
-    /**  
+    /**
     @dev refund 30,000 gas
     @dev costs slightly more than 15,400 gas
     */
@@ -122,7 +122,7 @@ contract GasRefundToken is ProxyStorage {
         }
     }
 
-    /**  
+    /**
     @dev refund 15,000 gas
     @dev costs slightly more than 10,200 gas
     */
@@ -139,7 +139,7 @@ contract GasRefundToken is ProxyStorage {
         }
     }
 
-    /**  
+    /**
     *@dev Return the remaining sponsored gas slots
     */
     function remainingGasRefundPool() public view returns (uint length) {

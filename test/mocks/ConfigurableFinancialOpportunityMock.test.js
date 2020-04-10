@@ -5,21 +5,21 @@ const Registry = artifacts.require('RegistryMock')
 const CompliantTokenMock = artifacts.require('CompliantTokenMock')
 const FinancialOpportunityMock = artifacts.require('ConfigurableFinancialOpportunityMock')
 
-const BN = web3.utils.toBN;
+const BN = web3.utils.toBN
 
-const to18Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**8))
+const to18Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 8))
 
-contract('ConfigurableFinancialOpportunityMock', function([owner, address1]){
+contract('ConfigurableFinancialOpportunityMock', function ([owner, address1]) {
   beforeEach(async function () {
     this.registry = await Registry.new()
     this.token = await CompliantTokenMock.new(owner, to18Decimals(200))
     await this.token.setRegistry(this.registry.address)
 
-    this.financialOpportunity = await FinancialOpportunityMock.new(this.token.address);
+    this.financialOpportunity = await FinancialOpportunityMock.new(this.token.address)
     await this.token.transfer(this.financialOpportunity.address, to18Decimals(100))
   })
 
-  describe('deposit', async function() {
+  describe('deposit', async function () {
     it('with exchange rate = 1', async function () {
       await this.token.approve(this.financialOpportunity.address, to18Decimals(10))
       await this.financialOpportunity.deposit(owner, to18Decimals(10))
@@ -43,8 +43,8 @@ contract('ConfigurableFinancialOpportunityMock', function([owner, address1]){
     })
   })
 
-  describe('withdraw', async function() {
-    beforeEach(async function() {
+  describe('withdraw', async function () {
+    beforeEach(async function () {
       await this.token.approve(this.financialOpportunity.address, to18Decimals(10))
       await this.financialOpportunity.deposit(owner, to18Decimals(10))
     })
@@ -72,7 +72,7 @@ contract('ConfigurableFinancialOpportunityMock', function([owner, address1]){
       assertRevert(this.financialOpportunity.withdrawAll(address1), { from: address1 })
     })
 
-    describe('with exchange rate = 1.5', async function() {
+    describe('with exchange rate = 1.5', async function () {
       beforeEach(async function () {
         await this.financialOpportunity.increasePerTokenValue(to18Decimals(0.5))
       })

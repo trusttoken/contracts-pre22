@@ -45,11 +45,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     function perTokenValue() external view returns(uint256) {
         return _perTokenValue();
     }
-    
+
     function getBalance() external view returns (uint) {
         return _getBalance();
     }
-    
+
     function opportunity() internal view returns(FinancialOpportunity) {
         return FinancialOpportunity(opportunityAddress);
     }
@@ -70,7 +70,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return IERC20(trueRewardBackedTokenAddress);
     }
 
-    /** 
+    /**
      * Calculate TUSD / zTUSD (opportunity value minus pool award)
      * We assume opportunity perTokenValue always goes up
      * todo feewet: this might be really expensive, how can we optimize? (cache by perTokenValue)
@@ -81,14 +81,14 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
             return opportunity().perTokenValue();
         }
 
-        // otherwise calcualte perTokenValue 
+        // otherwise calcualte perTokenValue
         (uint256 result, uint8 precision) = exponents().power(
             opportunity().perTokenValue(), 10**18,
             rewardBasis, TOTAL_BASIS);
         return result.mul(10**18).div(2 ** uint256(precision));
     }
 
-    /** 
+    /**
      * Get total amount of zTUSD issued
     **/
     function _getBalance() internal view returns (uint) {
@@ -99,8 +99,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @dev configure assured opportunity
      */
     function configure(
-        address _opportunityAddress, 
-        address _assuranceAddress, 
+        address _opportunityAddress,
+        address _assuranceAddress,
         address _liquidatorAddress,
         address _exponentContractAddress,
         address _trueRewardBackedTokenAddress
@@ -146,7 +146,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * Withdraw amount of TUSD to an address. Liquidate if opportunity fails to return TUSD. 
+     * Withdraw amount of TUSD to an address. Liquidate if opportunity fails to return TUSD.
      * todo feewet we might need to check that user has the right balance here
      * does this mean we need account? Or do we have whatever calls this check
      */
@@ -154,7 +154,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
         // attmept withdraw
         (bool success, uint returnedAmount) = _attemptWithdrawTo(_to, _amount);
-        
+
         // todo feewet do we want best effort
         if (success) {
             emit withdrawToSuccess(_to, _amount);
@@ -181,16 +181,15 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * Try to withdrawTo and return success and amount 
+     * Try to withdrawTo and return success and amount
     **/
     function _attemptWithdrawTo(address _to, uint _amount) internal returns (bool, uint) {
         uint returnedAmount;
 
         // attempt to withdraw from oppurtunity
-        (bool success, bytes memory returnData) =
-            address(opportunity()).call(
-                abi.encodePacked(opportunity().withdrawTo.selector, abi.encode(_to, _amount))
-            );
+        (bool success, bytes memory returnData) = address(opportunity()).call(
+            abi.encodePacked(opportunity().withdrawTo.selector, abi.encode(_to, _amount))
+        );
 
         if (success) { // successfully got TUSD :)
             returnedAmount = abi.decode(returnData, (uint));
@@ -212,7 +211,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return uint(_debt);
     }
 
-    /** 
+    /**
      * Return true if assurance pool can liquidate
     **/
     function _canLiquidate(uint _amount) internal returns (bool) {
@@ -220,7 +219,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return true;
     }
 
-    /** 
+    /**
      * Sell yTUSD for TUSD and deposit into staking pool.
     **/
     function awardPool() external {

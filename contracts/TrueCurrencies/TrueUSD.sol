@@ -4,13 +4,12 @@ import "./TrueRewardBackedToken.sol";
 import "./DelegateERC20.sol";
 import "./GasRefundToken.sol";
 
+
 /** @title TrueUSD
-* @dev This is the top-level ERC20 contract, but most of the interesting functionality is
-* inherited - see the documentation on the corresponding contracts.
-*/
-contract TrueUSD is 
-TrueRewardBackedToken,
-DelegateERC20 {
+ * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
+ * inherited - see the documentation on the corresponding contracts.
+ */
+contract TrueUSD is TrueRewardBackedToken, DelegateERC20 {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 

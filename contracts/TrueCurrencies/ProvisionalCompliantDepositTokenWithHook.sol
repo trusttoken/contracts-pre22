@@ -49,7 +49,7 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
 
     function migrateBalances(address[] calldata holders) external retroGasRefund45 {
         uint256 i = holders.length;
-        while (i --> 0) {
+        while (i-- > 0) {
             address holder = holders[i];
             super._setBalance(holder, _getBalance(holder));
         }
@@ -57,7 +57,7 @@ contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHo
 
     function migrateAllowances(address[] calldata holders, address[] calldata spenders) external retroGasRefund45 {
         uint256 i = holders.length;
-        while (i --> 0) {
+        while (i-- > 0) {
             address holder = holders[i];
             address spender = spenders[i];
             super._setAllowance(holder, spender, _getAllowance(holder, spender));

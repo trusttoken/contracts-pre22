@@ -602,7 +602,7 @@ contract TokenController {
     Truereward
     ========================================
     */
-    
+
     /**
      * @dev Sets the contract which has permissions to manage truerewards reserve
      * Controls access to reserve functions to allow providing liquidity
