@@ -107,7 +107,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         address _exponentContractAddress,
         address _trueRewardBackedTokenAddress
     ) external {
-        super._configure();
+        super._configure(); // sender claims ownership here
         opportunityAddress = _opportunityAddress;
         assuranceAddress = _assuranceAddress;
         liquidatorAddress = _liquidatorAddress;

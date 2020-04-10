@@ -28,7 +28,6 @@ const config = {
             
     }
 
-
     // Deploy all contracts
     const trueUSDContract = await deploy('TrueUSD')
     console.log("TrueUSD: ", trueUSDContract.address)
@@ -50,10 +49,10 @@ const config = {
     // For example: trueUSDContract.address
 
     // Deploy UpgradeHelper
-    const upgradeHelperContract = await deploy('UpgradeHelper')
+    const deployHelperContract = await deploy('DeployHelper')
     
     // Run upgrade (pass all proper arguments)
-    await upgradeHelperContract.performUpgrade(
+    await deployHelperContract.setUp(
         // trueUsdProxy,
         // newTrueUsdImplementation,
         // assuredOpportunityProxy,
