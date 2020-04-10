@@ -131,6 +131,7 @@ contract('AssuredFinancialOpportunity', function(accounts) {
             await this.assuredFinancialOpportunity.configure(this.financialOpportunity.address,
                 this.pool.address, this.liquidator.address, this.exponentContract.address, 
                 this.token.address, {from: owner})
+            await this.assuredFinancialOpportunity.setRewardBasis(1 * 1000, { from: owner })
 
             await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, {from: owner})
             await this.financialOpportunity.configure(
@@ -139,13 +140,11 @@ contract('AssuredFinancialOpportunity', function(accounts) {
             await this.liquidator.transferOwnership(this.assuredFinancialOpportunity.address, {from: owner})
         })
 
-        it.skip('test perTokenValue exponentiaion 1.5', async function() {
+        it('test perTokenValue exponentiaion 1.5', async function() {
             await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
+            await this.assuredFinancialOpportunity.setRewardBasis(0.7 * 1000, { from: owner })
             const finOpPerTokenValue = await this.financialOpportunity.perTokenValue.call()
             const perTokenValue = await this.assuredFinancialOpportunity.perTokenValue.call()
-            console.log(Number(finOpPerTokenValue));
-            console.log(Number(perTokenValue)/ 10 ** 18);
-            console.log(Math.pow(Number(finOpPerTokenValue)/ 10 ** 18,0.7))
             await assert.equal(Number(perTokenValue)/ 10 ** 18, Math.pow(Number(finOpPerTokenValue)/ 10 ** 18,0.7))
         })
 
@@ -183,10 +182,11 @@ contract('AssuredFinancialOpportunity', function(accounts) {
             assert.equal(enabled, false)
         })
 
-        it.skip('calculate interest correctly', async function() {
+        it('calculate interest correctly', async function() {
             let totalSupply = await this.token.totalSupply.call();
             assert.equal(Number(totalSupply), to18Decimals(700))
             await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
+            await this.assuredFinancialOpportunity.setRewardBasis(0.7 * 1000, { from: owner })
             await this.token.transfer(holder2, to18Decimals(100), { from: holder })
             await this.token.enableTrueReward({from: holder2})
             let loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder2);
