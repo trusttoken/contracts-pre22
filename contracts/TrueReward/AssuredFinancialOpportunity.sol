@@ -29,7 +29,6 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     event awardPoolSuccess(uint256 _amount);
     event awardPoolFailure(uint256 _amount);
 
-    uint32 constant REWARD_BASIS = 1000; // basis for insurance split. 1000 for MVP
     uint32 constant TOTAL_BASIS = 1000; // total basis points
     uint zTUSDIssued = 0; // how much zTUSD we've issued
     address opportunityAddress;
@@ -37,6 +36,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     address liquidatorAddress;
     address exponentContractAddress;
     address trueRewardBackedTokenAddress;
+    uint32 rewardBasis;
 
     using SafeMath for uint;
     using SafeMath for uint32;
@@ -77,14 +77,14 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      */
     function _perTokenValue() internal view returns(uint256) {
         // if no assurance, use  opportunity perTokenValue
-        if (REWARD_BASIS == TOTAL_BASIS) {
+        if (rewardBasis == TOTAL_BASIS) {
             return opportunity().perTokenValue();
         }
 
         // otherwise calcualte perTokenValue 
         (uint256 result, uint8 precision) = exponents().power(
             opportunity().perTokenValue(), 10**18,
-            REWARD_BASIS, TOTAL_BASIS);
+            rewardBasis, TOTAL_BASIS);
         return result.mul(10**18).div(2 ** uint256(precision));
     }
 
@@ -249,6 +249,10 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
     function withdrawAll(address _to) external onlyOwner returns(uint) {
         return _withdraw(_to, _getBalance());
+    }
+
+    function setRewardBasis(uint32 _value) external onlyOwner {
+        rewardBasis = _value;
     }
 
     function() external payable {}
