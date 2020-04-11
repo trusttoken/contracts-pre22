@@ -8,22 +8,22 @@ var FractionalExponents = artifacts.require("FractionalExponents")
 var OwnedUpgradeabilityProxy = artifacts.require("OwnedUpgradeabilityProxy")
 var UpgradeHelper = artifacts.require("UpgradeHelper")
 
+/* 
+ * TrueUSD & TrueRewards deployment process
+ * 1. Deploy TrueUSD and TokenController
+ * 2. Deploy Assured & Aave Financial Opportunity
+ * 3. Deploy StakingAsset (Staking Pool) & Liquidator
+ * 4. Call UpgradeHelper contract with addresses
+ */
 module.exports = async (deployer, network, accounts) => {
+    /*
     var defaultAccount;
     if (network == "live") {
         defaultAccount = accounts[0]
     } else {
         defaultAccount = accounts[1]
     }
-
-    /* 
-     * TrueUSD & TrueRewards deployment process
-     * 1. Deploy TrueUSD and TokenController
-     * 2. Deploy Assured & Aave Financial Opportunity
-     * 3. Deploy StakingAsset (Staking Pool) & Liquidator
-     * 4. Call UpgradeHelper contract with addresses
-    */
-
+    
     // Deploy TrueUSD
     await deployer.deploy(TrueUSD)
     trueUSDContract = await TrueUSD.deployed()
@@ -62,5 +62,5 @@ module.exports = async (deployer, network, accounts) => {
     await deployer.deploy(FractionalExponents)
     FractionalExponentsContract = await FractionalExponents.deployed()
     console.log("FractionalExponents address: ", FractionalExponents.address)
-    
+    */
 }

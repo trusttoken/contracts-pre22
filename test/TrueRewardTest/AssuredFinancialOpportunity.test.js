@@ -18,7 +18,7 @@ const ZERO_BYTES32 = '0x00000000000000000000000000000000000000000000000000000000
 
 // Liquidator Dependencies
 const TrueUSDMock = artifacts.require("TrueUSDMock")
-const Liquidator = artifacts.require('LiquidatorMock')
+const Liquidator = artifacts.require('Liquidator')
 const MockTrustToken = artifacts.require('MockTrustToken')
 const TrueUSD = artifacts.require('TrueUSD')
 const Airswap = artifacts.require('Swap')
@@ -32,7 +32,7 @@ const AIRSWAP_VALIDATOR = bytes32('AirswapValidatorDomain')
 const APPROVED_BENEFICIARY = bytes32('approvedBeneficiary')
 
 // staking dependencies
-const StakedToken = artifacts.require('MockStakedToken')
+const StakedToken = artifacts.require('StakedToken')
 const IS_DEPOSIT_ADDRESS = bytes32('isDepositAddress')
 const IS_REGISTERED_CONTRACT = bytes32('isRegisteredContract')
 const PASSED_KYCAML = bytes32('hasPassedKYC/AML')

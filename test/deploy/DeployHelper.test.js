@@ -34,60 +34,71 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
     describe('--Set up proxy--', function () {
         beforeEach(async function () {
             this.registry = await Registry.new({ from: owner })
-            this.tokenProxy = await Proxy.new({ from: owner })
-            this.tokenImplementation = await TrueUSDMock.new(owner, BN(0), { from: owner })
-            //this.token = await TrueUSDMock.at(this.tokenProxy.address)
-            //this.token = await TrueUSDMock.new({ from: owner })
-            this.token = await TrueUSD.new({ from: owner })
-            this.tokenController = await TokenController.new({ from:owner })
-
-            //await this.tokenProxy.upgradeTo(this.tokenImplementation.address,{ from: owner })
-            //await this.token.initialize({ from:owner });
+            this.tusdProxy = await Proxy.new({ from: owner })
+            //this.tusdImplementation = await TrueUSDMock.new(owner, BN(0), { from: owner })
+            //this.tusd = await TrueUSDMock.at(this.tusdProxy.address)
+            //this.tusd = await TrueUSDMock.new({ from: owner })
+            this.tusd = await TrueUSD.new({ from: owner })
+            this.tusdController = await TokenController.new({ from:owner })
+            await this.tusdController.initialize({from: owner})
+            await this.tusdController.transferMintKey(mintKey, { from: owner })
+            //await this.tusdProxy.upgradeTo(this.tusdImplementation.address,{ from: owner })
+            //await this.tusd.initialize({ from:owner });
             //this.controllerImplementation = await PreMigrationTokenController.new({ from: owner })
             
             this.controllerProxy = await Proxy.new({ from: owner })
             //await this.controllerProxy.upgradeTo(this.controllerImplementation.address,{ from: owner })
 
-            this.trusttoken = await TrustToken.new({ from: owner })
-            this.uniswapFactory = await UniswapFactory.new({ from: owner })
-            this.uniswapTemplate = await UniswapExchange.new({ from: owner })
+            // deploy trusttoken
+            this.trusttoken = await TrustToken.new(this.registry.address, { from: owner })
+
+            // deploy uniswap for liquidator
+            this.uniswapFactory = await UniswapFactory.new()
+            this.uniswapTemplate = await UniswapExchange.new()
             await this.uniswapFactory.initializeFactory(this.uniswapTemplate.address)
             this.tusdUniswapAddress = (await this.uniswapFactory.createExchange(this.tusd.address)).logs[0].args.exchange
             this.tusdUniswap = await UniswapExchange.at(this.tusdUniswapAddress)
-            this.trustUniswapAddress = (await this.uniswapFactory.createExchange(this.trust.address)).logs[0].args.exchange
+            this.trustUniswapAddress = (await this.uniswapFactory.createExchange(this.trusttoken.address)).logs[0].args.exchange
             this.trustUniswap = await UniswapExchange.at(this.trustUniswapAddress)
+
+            // deploy liquidator
+            this.liquidator = await Liquidator.new(this.registry.address, 
+                this.tusd.address, this.trusttoken.address, this.tusdUniswap.address, 
+                this.trustUniswap.address, {from:owner})
             
-            // deploy trusttoken contracts
-            this.liquidator = await Liquidator.new(
-                registry, token, trusttoken, tusdUniswap, trustUniswap, { from:owner });
-    
-            this.assurancePool = await StakedToken.new({ from:owner });
+            // deploy assurance pool
+            this.assurancePool = await StakedToken.new(this.trusttoken.address,
+                this.tusd.address, this.registry.address,
+                this.liquidator.address, { from: owner });
 
             // deploy opportunity contracts
-            this.exponentContract = ExponentContract.new({ from: owner })
+            this.exponentContract = await ExponentContract.new({ from: owner })
             this.financialOpportunity = await AaveFinancialOpportunity.new({ from: owner })
-            this.assuredOpportunity = await AssuredFinancialOpportunity.new({ from:owner })
-            this.assuredOpportunityProxy = await Proxy.new( {from:owner} )
+            this.assuredOpportunity = await AssuredFinancialOpportunity.new({ from: owner })
+            this.assuredOpportunityProxy = await Proxy.new( {from: owner} )
 
-            //await this.token.transferOwnership(this.controller.address, {from: owner})
-            //await this.controller.issueClaimOwnership(this.token.address, {from :owner})
+            //await this.tusd.transferOwnership(this.controller.address, {from: owner})
+            //await this.controller.issueClaimOwnership(this.tusd.address, {from :owner})
         })
         it('deploy contract using DeployHelper', async function(){
             this.deployHelper = await DeployHelper.new({from: owner})
 
             // transfer contracts to deploy helper
-            await this.trueUSD.transferOwnership(this.deployHelper.address, { from: owner })
-            await this.trueUSDProxy.transferOwnership(this.deployHelper.address, { from: owner })
-            await this.tokenController.transferOwnership(this.deployHelper.address, { from: owner })
-            await this.tokenControllerProxy.transferOwnership(this.deployHelper.address, { from: owner })
+            await this.tusd.transferOwnership(this.deployHelper.address, { from: owner })
+            await this.tusdProxy.transferProxyOwnership(this.deployHelper.address, { from: owner })
+            await this.tusdController.transferOwnership(this.deployHelper.address, { from: owner })
+            await this.controllerProxy.transferProxyOwnership(this.deployHelper.address, { from: owner })
             await this.liquidator.transferOwnership(this.deployHelper.address, { from: owner })
-            await this.assurancePool.transferOwnership(this.deployHelper.address, { from: owner })
+            //await this.assuredOpportunity.transferOwnership(this.deployHelper.address, { from: owner })
+            await this.assuredOpportunityProxy.transferProxyOwnership(this.deployHelper.address, { from: owner })
+            //await this.assurancePool.transferOwnership(this.deployHelper.address, { from: owner })
 
-            await this.deployHelper.deploy(
+            // call deployHelper
+            await this.deployHelper.setup(
                 this.registry.address,
-                this.token.address,
-                this.tokenProxy.address,
-                this.controller.address,
+                this.tusd.address,
+                this.tusdProxy.address,
+                this.tusdController.address,
                 this.controllerProxy.address,
                 this.assuredOpportunity.address,
                 this.assuredOpportunityProxy.address,
@@ -99,13 +110,13 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
             );
 
             // setup controller through proxy
-            this.controller = await TokenController.at(this.controllerProxy.address)
+            //this.controller = await TokenController.at(this.controllerProxy.address)
             //await this.controller.initialize({from: owner})
-            //await this.controller.setToken(this.tokenProxy.address, { from: owner })
-            await this.controller.transferMintKey(mintKey, { from: owner })
+            //await this.controller.setToken(this.tusdProxy.address, { from: owner })
             //await this.controller.setRegistry(this.registry.address, { from: owner })
-            await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
-            //await this.token.setRegistry(this.registry.address, { from: owner })
+            await this.registry.subscribe(CAN_BURN, this.tusd.address, { from: owner })
+            //await this.tusd.setRegistry(this.registry.address, { from: owner })
+            /*
             await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
             await this.registry.setAttribute(approver1, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
             await this.registry.setAttribute(approver2, bytes32("isTUSDMintApprover"), 1, notes, { from: owner })
@@ -116,6 +127,7 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
             await this.controller.refillMultiSigMintPool({ from: owner })
             await this.controller.refillRatifiedMintPool({ from: owner })
             await this.controller.refillInstantMintPool({ from: owner })
+            */
         })
     })
 })
