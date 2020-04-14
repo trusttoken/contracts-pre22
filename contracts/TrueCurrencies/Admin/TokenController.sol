@@ -6,6 +6,7 @@ import "../HasOwner.sol";
 import "../CompliantDepositTokenWithHook.sol";
 import "../Proxy/OwnedUpgradeabilityProxy.sol";
 import "../TrueRewardBackedToken.sol";
+import "../TrueUSD.sol";
 
 /** @title TokenController
 @dev This contract allows us to split ownership of the TrueUSD contract
@@ -122,7 +123,7 @@ contract TokenController {
     event SetRegistry(address indexed registry);
     event TransferChild(address indexed child, address indexed newOwner);
     event RequestReclaimContract(address indexed other);
-    event SetToken(TrueRewardBackedToken newContract);
+    event SetToken(TrueUSD newContract);
 
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
     event FinalizeMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -478,7 +479,7 @@ contract TokenController {
     *@dev Update this contract's token pointer to newContract (e.g. if the
     contract is upgraded)
     */
-    function setToken(TrueRewardBackedToken _newContract) external onlyOwner {
+    function setToken(TrueUSD _newContract) external onlyOwner {
         token = _newContract;
         emit SetToken(_newContract);
     }
@@ -609,6 +610,14 @@ contract TokenController {
      */
     function setTrueRewardManager(address _newTrueRewardManager) external onlyOwner {
         trueRewardManager = _newTrueRewardManager;
+    }
+
+    /**
+     * @dev Sets the contract which has permissions to manage truerewards reserve
+     * Controls access to reserve functions to allow providing liquidity
+     */
+    function setAaveInterfaceAddress(address _aaveInterfaceAddress) external onlyOwner {
+        token.setAaveInterfaceAddress(_aaveInterfaceAddress);
     }
 
     /**

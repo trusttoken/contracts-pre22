@@ -30,7 +30,7 @@
     "ethers": "^4.0.46",
     "ganache-cli": "6.8.1",
     "ganache-time-traveler": "^1.0.14",
-    "openzeppelin-solidity": "2.4.0",
+    "openzeppelin-solidity": "^2.4.0",
     "truffle": "5.1.11",
     "truffle-hdwallet-provider": "0.0.3",
     "web3": "1.2.4",

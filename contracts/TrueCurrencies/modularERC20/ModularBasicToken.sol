@@ -1,6 +1,8 @@
 pragma solidity ^0.5.13;
 
 import "../HasOwner.sol";
+import "../ProxyStorage.sol";
+import "./InitializableClaimable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 // Fork of OpenZeppelin's BasicToken
@@ -8,6 +10,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @title Basic token
  * @dev Basic version of StandardToken, with no allowances.
  */
+ //is  { 
 contract ModularBasicToken is HasOwner {
     using SafeMath for uint256;
 

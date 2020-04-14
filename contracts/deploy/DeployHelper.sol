@@ -2,6 +2,7 @@ pragma solidity ^0.5.13;
 
 import { Registry } from "@trusttoken/registry/contracts/Registry.sol";
 import { TrueUSD } from "../TrueCurrencies/TrueUSD.sol";
+import { RegistryImplementation } from "../mocks/RegistryImplementation.sol";
 import { OwnedUpgradeabilityProxy } from "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import { TokenController } from "../TrueCurrencies/admin/TokenController.sol";
 import { AssuredFinancialOpportunity } from "../TrueReward/AssuredFinancialOpportunity.sol";
@@ -17,20 +18,32 @@ import { Liquidator } from "@trusttoken/trusttokens/contracts/Liquidator.sol";
  * Deployer of DeployHelper will be final owner of proxy contracts
  *
  * Use UpgradeHelper to upgrade existing contracts
+ *
+ * Right now this is only working with TrueUSDMock, we need to
+ * add an initialize fucntion to TrueUSD contract
  */
 contract DeployHelper {
-    address payable owner;
-    Registry registry;
-    TrueUSD trueUSD;
+    address payable public owner;
+    RegistryImplementation registry;
+    TrueUSD trueUSD; // behind proxy
     OwnedUpgradeabilityProxy trueUSDProxy;
-    TokenController tokenController;
+    TokenController tokenController; // behind proxy
     OwnedUpgradeabilityProxy tokenControllerProxy;
-    AssuredFinancialOpportunity assuredOpportunity;
+    AssuredFinancialOpportunity assuredOpportunity; // behind proxy
     OwnedUpgradeabilityProxy assuredOpportunityProxy;
     FinancialOpportunity financialOpportunity;
     IExponentContract exponentContract;
     StakedToken assurancePool;
     Liquidator liquidator;
+
+    constructor() public {
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
 
     /**
      * @dev Setup TrueUSD
@@ -51,8 +64,7 @@ contract DeployHelper {
         address exponentContractAddress,
         address assurancePoolAddress,
         address liquidatorAddress
-    ) public {
-        owner = msg.sender;
+    ) public onlyOwner {
         require(registryAddress != address(0), "cannot be address(0)");
         require(trueUSDAddress != address(0), "cannot be address(0)");
         require(trueUSDProxyAddress != address(0), "cannot be address(0)");
@@ -65,69 +77,89 @@ contract DeployHelper {
         require(assurancePoolAddress != address(0), "cannot be address(0)");
         require(liquidatorAddress != address(0), "cannot be address(0)");
 
-        // setup TrueUSD implementations
+        // setup TrueUSD interfaces
         setUpTrueUSD(
             registryAddress, 
-            trueUSDAddress,
             trueUSDProxyAddress,
-            tokenControllerAddress,
             tokenControllerProxyAddress
-        );
+        ); // pass 
 
+        // setup Assurance interfaces
         setUpAssurance(
-            assuredOpportunityAddress,
             assuredOpportunityProxyAddress,
             financialOpportunityAddress,
             exponentContractAddress,
             assurancePoolAddress,
             liquidatorAddress
-        );
+        ); // pass
 
         // Init TrueUSD & TokenController
-        initTrueUSD();
+        initTrueUSD(trueUSDAddress, tokenControllerAddress); // pass
 
         // 2. Init Assurance
-        initAssurance();
+        initAssurance(assuredOpportunityAddress); // pass
     }
 
     // @dev Init TrueUSD & TokenController
-    function initTrueUSD() internal {
-        require(trueUSDProxy.pendingProxyOwner() == address(this), "not pending proxy owner");
+    function initTrueUSD(
+        address trueUSDAddress, 
+        address tokenControllerAddress
+    ) internal {
+        require(trueUSDProxy.pendingProxyOwner() == address(this), "not token proxy owner");
+        require(tokenControllerProxy.pendingProxyOwner() == address(this), "not controller proxy owner");
+        
+        // get implementations and claim
+        TrueUSD trueUSDImplemetation = TrueUSD(trueUSDAddress);
+        TokenController tokenControllerImplemetation = TokenController(tokenControllerAddress);
 
-        // claim ownership of contracts
-        tokenController.claimOwnership();
+        // claim ownership of proxies
         tokenControllerProxy.claimProxyOwnership();
-        trueUSD.claimOwnership();
-        trueUSDProxy.claimProxyOwnership();
+        trueUSDProxy.claimProxyOwnership(); //pass
+        registry.claimOwnership();
 
-        // setup trueUSD
-        trueUSD.setAaveInterfaceAddress(address(assuredOpportunityProxy));
-        trueUSD.setRegistry(registry);
+        // setup registry here
 
-        // transfer token ownership to controller
+        // use proxies as implementations
+        trueUSDProxy.upgradeTo(trueUSDAddress);
+        trueUSD = TrueUSD(address(trueUSDProxy));
+        tokenControllerProxy.upgradeTo(tokenControllerAddress);
+        tokenController = TokenController(address(tokenControllerProxy)); //pass
+
+        // init token controller and registry
+        registry.initialize();
+        tokenController.initialize(); // pass
+
+        // init trueUSD, & transfer to controller
+        trueUSD.initialize(); // sets owner to this
         trueUSD.transferOwnership(address(tokenController));
         tokenController.issueClaimOwnership(address(trueUSD));
 
-        // Setup Token controller
+        // set token and registry for controller
         tokenController.setToken(trueUSD);
         tokenController.setTokenRegistry(registry);
-        
-        // Point proxy to trueUSD address
-        trueUSDProxy.upgradeTo(address(trueUSD));
+        tokenController.setRegistry(registry);
+        tokenController.setAaveInterfaceAddress(address(assuredOpportunityProxy));
 
-        // Transfer ownership of proxy and controller to owner
-        tokenController.transferOwnership(address(tokenControllerProxy));
+        // transfer ownership to owner
+        tokenController.transferOwnership(address(owner));
         tokenControllerProxy.transferProxyOwnership(owner);
+        trueUSDProxy.transferProxyOwnership(owner);
+        registry.transferOwnership(owner);
     }
 
     /// @dev Initialize Assurance
-    function initAssurance() internal {
+    function initAssurance(address assuredOpportunityAddress) internal {
+        // claim proxy
+        assuredOpportunityProxy.claimProxyOwnership();
+
+        // Use proxy as implementation
+        assuredOpportunityProxy.upgradeTo(assuredOpportunityAddress);
+        assuredOpportunity = AssuredFinancialOpportunity(address(assuredOpportunityProxy));
+
         // assurancePool is set up during constructor
         liquidator.claimOwnership();
         liquidator.setPool(address(assurancePool));
-        assuredOpportunityProxy.claimProxyOwnership();
         
-
         assuredOpportunity.configure(
             address(financialOpportunity),
             address(assurancePool),
@@ -136,13 +168,12 @@ contract DeployHelper {
             address(trueUSD)
         );
 
-
         // Transfer ownership to proxy
-        assuredOpportunity.transferOwnership(address(assuredOpportunityProxy));
-        assuredOpportunityProxy.upgradeTo(address(assuredOpportunity));
+        //assuredOpportunity.transferOwnership(address(assuredOpportunityProxy));
 
         // Transfer proxy to owner
         assuredOpportunityProxy.transferProxyOwnership(owner);
+        liquidator.transferOwnership(owner);
     }
 
     /**
@@ -150,15 +181,11 @@ contract DeployHelper {
      */
     function setUpTrueUSD(
         address registryAddress,
-        address trueUSDAddress,
         address payable trueUSDProxyAddress,
-        address payable tokenControllerAddress,
         address payable tokenControllerProxyAddress
     ) internal {
-        registry = Registry(registryAddress);
-        trueUSD = TrueUSD(trueUSDAddress);
+        registry = RegistryImplementation(registryAddress);
         trueUSDProxy = OwnedUpgradeabilityProxy(trueUSDProxyAddress);
-        tokenController = TokenController(tokenControllerAddress);
         tokenControllerProxy = OwnedUpgradeabilityProxy(tokenControllerProxyAddress);
     }
 
@@ -166,14 +193,13 @@ contract DeployHelper {
      * @dev Set up contract interfaces
      */
     function setUpAssurance(
-        address payable assuredOpportunityAddress,
+        //address payable assuredOpportunityAddress,
         address payable assuredOpportunityProxyAddress,
         address financialOpportunityAddress,
         address exponentContractAddress,
         address assurancePoolAddress,
         address liquidatorAddress
     ) internal {
-        assuredOpportunity = AssuredFinancialOpportunity(assuredOpportunityAddress);
         assuredOpportunityProxy =  OwnedUpgradeabilityProxy(assuredOpportunityProxyAddress);
         financialOpportunity = FinancialOpportunity(financialOpportunityAddress);
         exponentContract = IExponentContract(exponentContractAddress);
