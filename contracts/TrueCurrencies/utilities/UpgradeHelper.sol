@@ -20,7 +20,8 @@ contract TokenControllerInterface {
     function issueClaimOwnership(address _child) external;
     function setToken(address _newTusd) external;
     function setTokenRegistry(address _Registry) external;
-    function claimStorageForProxy(address _delegate,
+    function claimStorageForProxy(
+        address _delegate,
         address _balanceSheet,
         address _alowanceSheet) external;
     function transferOwnership(address _newOwner) external;
@@ -58,7 +59,7 @@ contract UpgradeHelper {
         tokenController.issueClaimOwnership(allowanceSheetAddress);
         tokenController.transferChild(balanceSheetAddress, address(newTrueUSD));
         tokenController.transferChild(allowanceSheetAddress, address(newTrueUSD));
-        
+
         newTrueUSD.transferOwnership(address(tokenController));
         tokenController.issueClaimOwnership(address(newTrueUSD));
         tokenController.setToken(address(newTrueUSD));
@@ -71,7 +72,7 @@ contract UpgradeHelper {
         tokenController.transferChild(address(oldTrueUSD), address(this));
         oldTrueUSD.claimOwnership();
         oldTrueUSD.delegateToNewContract(address(newTrueUSD));
-        
+
         // Controller owns both old and new TrueUSD
         oldTrueUSD.transferOwnership(address(tokenController));
         tokenController.issueClaimOwnership(address(oldTrueUSD));

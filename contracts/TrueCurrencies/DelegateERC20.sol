@@ -4,12 +4,12 @@ import "./CompliantDepositTokenWithHook.sol";
 
 /** @title DelegateERC20
 Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
-functions in the old contract still works (except Burn). 
+functions in the old contract still works (except Burn).
 */
 contract DelegateERC20 is CompliantDepositTokenWithHook {
 
     address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
-    
+
     modifier onlyDelegateFrom() {
         require(msg.sender == DELEGATE_FROM);
         _;

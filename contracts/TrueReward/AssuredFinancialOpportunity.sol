@@ -31,7 +31,6 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     event awardPoolSuccess(uint256 _amount);
     event awardPoolFailure(uint256 _amount);
 
-    uint32 constant REWARD_BASIS = 1000; // basis for insurance split. 1000 for MVP
     uint32 constant TOTAL_BASIS = 1000; // total basis points
     uint zTUSDIssued = 0; // how much zTUSD we've issued
     address opportunityAddress;
@@ -39,6 +38,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     address liquidatorAddress;
     address exponentContractAddress;
     address trueRewardBackedTokenAddress;
+    uint32 rewardBasis;
 
     using SafeMath for uint;
     using SafeMath for uint32;
@@ -47,11 +47,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     function perTokenValue() external view returns(uint256) {
         return _perTokenValue();
     }
-    
+
     function getBalance() external view returns (uint) {
         return _getBalance();
     }
-    
+
     function opportunity() internal view returns(FinancialOpportunity) {
         return FinancialOpportunity(opportunityAddress);
     }
@@ -72,25 +72,25 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return IERC20(trueRewardBackedTokenAddress);
     }
 
-    /** 
+    /**
      * Calculate TUSD / zTUSD (opportunity value minus pool award)
      * We assume opportunity perTokenValue always goes up
      * todo feewet: this might be really expensive, how can we optimize? (cache by perTokenValue)
      */
     function _perTokenValue() internal view returns(uint256) {
         // if no assurance, use  opportunity perTokenValue
-        if (REWARD_BASIS == TOTAL_BASIS) {
+        if (rewardBasis == TOTAL_BASIS) {
             return opportunity().perTokenValue();
         }
 
-        // otherwise calcualte perTokenValue 
+        // otherwise calcualte perTokenValue
         (uint256 result, uint8 precision) = exponents().power(
             opportunity().perTokenValue(), 10**18,
-            REWARD_BASIS, TOTAL_BASIS);
+            rewardBasis, TOTAL_BASIS);
         return result.mul(10**18).div(2 ** uint256(precision));
     }
 
-    /** 
+    /**
      * Get total amount of zTUSD issued
     **/
     function _getBalance() internal view returns (uint) {
@@ -101,8 +101,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @dev configure assured opportunity
      */
     function configure(
-        address _opportunityAddress, 
-        address _assuranceAddress, 
+        address _opportunityAddress,
+        address _assuranceAddress,
         address _liquidatorAddress,
         address _exponentContractAddress,
         address _trueRewardBackedTokenAddress
@@ -148,7 +148,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * Withdraw amount of TUSD to an address. Liquidate if opportunity fails to return TUSD. 
+     * Withdraw amount of TUSD to an address. Liquidate if opportunity fails to return TUSD.
      * todo feewet we might need to check that user has the right balance here
      * does this mean we need account? Or do we have whatever calls this check
      */
@@ -156,7 +156,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
         // attmept withdraw
         (bool success, uint returnedAmount) = _attemptWithdrawTo(_to, _amount);
-        
+
         // todo feewet do we want best effort
         if (success) {
             emit withdrawToSuccess(_to, _amount);
@@ -183,16 +183,15 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * Try to withdrawTo and return success and amount 
+     * Try to withdrawTo and return success and amount
     **/
     function _attemptWithdrawTo(address _to, uint _amount) internal returns (bool, uint) {
         uint returnedAmount;
 
         // attempt to withdraw from oppurtunity
-        (bool success, bytes memory returnData) =
-            address(opportunity()).call(
-                abi.encodePacked(opportunity().withdrawTo.selector, abi.encode(_to, _amount))
-            );
+        (bool success, bytes memory returnData) = address(opportunity()).call(
+            abi.encodePacked(opportunity().withdrawTo.selector, abi.encode(_to, _amount))
+        );
 
         if (success) { // successfully got TUSD :)
             returnedAmount = abi.decode(returnData, (uint));
@@ -214,7 +213,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return uint(_debt);
     }
 
-    /** 
+    /**
      * Return true if assurance pool can liquidate
     **/
     function _canLiquidate(uint _amount) internal returns (bool) {
@@ -222,7 +221,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return true;
     }
 
-    /** 
+    /**
      * Sell yTUSD for TUSD and deposit into staking pool.
     **/
     function awardPool() external {
@@ -251,6 +250,10 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
     function withdrawAll(address _to) external onlyOwner returns(uint) {
         return _withdraw(_to, _getBalance());
+    }
+
+    function setRewardBasis(uint32 _value) external onlyOwner {
+        rewardBasis = _value;
     }
 
     function() external payable {}
