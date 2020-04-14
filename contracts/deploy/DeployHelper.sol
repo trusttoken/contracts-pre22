@@ -123,14 +123,14 @@ contract DeployHelper {
         trueUSDProxy.upgradeTo(trueUSDAddress);
         trueUSD = TrueUSD(address(trueUSDProxy));
         tokenControllerProxy.upgradeTo(tokenControllerAddress);
-        tokenController = TokenController(address(tokenControllerProxy)); //pass
+        tokenController = TokenController(address(tokenControllerProxy));
 
-        // init token controller and registry
+        // initialize contracts for ownership
         registry.initialize();
-        tokenController.initialize(); // pass
+        tokenController.initialize();
+        trueUSD.initialize();
 
-        // init trueUSD, & transfer to controller
-        trueUSD.initialize(); // sets owner to this
+        // transfer trueUSD ownership to controller
         trueUSD.transferOwnership(address(tokenController));
         tokenController.issueClaimOwnership(address(trueUSD));
 

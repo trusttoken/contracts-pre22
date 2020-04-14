@@ -2,9 +2,7 @@ import assertRevert from '../helpers/assertRevert'
 import expectThrow from '../helpers/expectThrow'
 import assertBalance from '../helpers/assertBalance'
 
-//const Registry = artifacts.require("Registry")
 const Registry = artifacts.require("ProvisionalRegistryImplementation")
-//const TrueUSDMock = artifacts.require("PreMigrationTrueUSDMock")
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
 const TokenController = artifacts.require("TokenController")
 const TrueUSD = artifacts.require("TrueUSD")
@@ -15,8 +13,6 @@ const FinancialOpportunity = artifacts.require("FinancialOpportunity")
 const ExponentContract = artifacts.require("FractionalExponents")
 const StakedToken = artifacts.require("StakedToken")
 const Liquidator = artifacts.require("Liquidator")
-// const StakedToken = artifacts.require("MockStakedToken")
-// const Liquidator = artifacts.require("LiquidatorMock")
 const DeployHelper = artifacts.require("DeployHelper")
 const UniswapFactory = artifacts.require('uniswap_factory')
 const UniswapExchange = artifacts.require('uniswap_exchange')
