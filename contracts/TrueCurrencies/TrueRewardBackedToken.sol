@@ -135,8 +135,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * to get more TrueCurrency.
      * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
      */
-    function convertToTrueCurrencyReserve(uint _value) external {
-        require(msg.sender == owner);
+    function convertToTrueCurrencyReserve(uint _value) external onlyOwner {
         uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(RESERVE, _value);
         _totalAaveSupply = _totalAaveSupply.sub(zTUSDAmount);
         // reentrancy
