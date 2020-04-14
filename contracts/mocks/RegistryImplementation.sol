@@ -32,6 +32,7 @@ contract RegistryImplementation is Registry {
  * @title RegistryImplementation
  * Used as implementation for registry in truecurrencies
  */
-contract ProvisionalRegistryImplementation is 
-    RegistryImplementation, 
-    ProvisionalRegistry {}
+contract ProvisionalRegistryImplementation is
+    RegistryImplementation,
+    ProvisionalRegistry {
+}
