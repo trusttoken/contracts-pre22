@@ -42,6 +42,7 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
       this.trusttoken = await TrustToken.new(this.registry.address, { from: owner })
 
       // deploy uniswap for liquidator
+      /*
       this.uniswapFactory = await UniswapFactory.new()
       this.uniswapTemplate = await UniswapExchange.new()
       await this.uniswapFactory.initializeFactory(this.uniswapTemplate.address)
@@ -49,6 +50,7 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
       this.tusdUniswap = await UniswapExchange.at(this.tusdUniswapAddress)
       this.trustUniswapAddress = (await this.uniswapFactory.createExchange(this.trusttoken.address)).logs[0].args.exchange
       this.trustUniswap = await UniswapExchange.at(this.trustUniswapAddress)
+    */
 
       // deploy liquidator
       this.liquidator = await Liquidator.new(this.registry.address,

@@ -1,7 +1,7 @@
 pragma solidity^0.5.13;
 
 import "../HasOwner.sol";
-import "../CompliantDepositTokenWithHook.sol";
+import "../TrueUSD.sol";
 
 contract TokenFaucet {
     struct MintOperation {
@@ -36,17 +36,24 @@ contract TokenFaucet {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    CompliantDepositTokenWithHook public token;
+    TrueUSD public token;
 
     Registry public registry;
 
-    event SetToken(CompliantDepositTokenWithHook newContract);
+    event SetToken(TrueUSD newContract);
     event SetRegistry(Registry indexed registry);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event NewOwnerPending(address indexed currentOwner, address indexed pendingOwner);
     event TransferChild(HasOwner indexed child, address indexed newOwner);
     event MintThresholdChanged(uint instant, uint ratified, uint multiSig);
     event InstantMint(address indexed to, uint256 indexed value, address indexed mintKey);
+
+    function initialize() public {
+        require(initialized!=true, "already initalized");
+        owner = msg.sender;
+        initialized = true;
+        emit OwnershipTransferred(address(0), owner);
+    }
 
     function faucet(uint256 _amount) external {
         registry.setAttributeValue(msg.sender, 0x6861735061737365644b59432f414d4c00000000000000000000000000000000, 1);
@@ -120,9 +127,17 @@ contract TokenFaucet {
     *@dev Update this contract's token pointer to newContract (e.g. if the
     contract is upgraded)
     */
-    function setToken(CompliantDepositTokenWithHook _newContract) external onlyOwner {
+    function setToken(TrueUSD _newContract) external onlyOwner {
         token = _newContract;
         emit SetToken(_newContract);
+    }
+
+    /**
+    *@dev Swap out token's permissions registry
+    *@param _registry new registry for token
+    */
+    function setTokenRegistry(Registry _registry) external onlyOwner {
+        token.setRegistry(_registry);
     }
 
     /**
@@ -131,6 +146,14 @@ contract TokenFaucet {
     function setRegistry(Registry _registry) external onlyOwner {
         registry = _registry;
         emit SetRegistry(registry);
+    }
+
+    /**
+     * @dev Sets the contract which has permissions to manage truerewards reserve
+     * Controls access to reserve functions to allow providing liquidity
+     */
+    function setAaveInterfaceAddress(address _aaveInterfaceAddress) external onlyOwner {
+        token.setAaveInterfaceAddress(_aaveInterfaceAddress);
     }
 
 
