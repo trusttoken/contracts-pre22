@@ -10,7 +10,6 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @title Basic token
  * @dev Basic version of StandardToken, with no allowances.
  */
- //is  { 
 contract ModularBasicToken is HasOwner {
     using SafeMath for uint256;
 

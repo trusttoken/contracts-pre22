@@ -152,8 +152,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * to get more Opportunity tokens
      * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
      */
-    function convertToZTUSDReserve(uint _value) external {
-        require(msg.sender == owner);
+    function convertToZTUSDReserve(uint _value) external onlyOwner {
         uint balance = _getBalance(RESERVE);
         if (balance < _value) {
             return;

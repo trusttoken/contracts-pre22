@@ -168,9 +168,6 @@ contract DeployHelper {
             address(trueUSD)
         );
 
-        // Transfer ownership to proxy
-        //assuredOpportunity.transferOwnership(address(assuredOpportunityProxy));
-
         // Transfer proxy to owner
         assuredOpportunityProxy.transferProxyOwnership(owner);
         liquidator.transferOwnership(owner);
