@@ -76,10 +76,10 @@ contract DeployHelper {
 
         // setup TrueUSD interfaces
         setUpTrueUSD(
-            registryAddress, 
+            registryAddress,
             trueUSDProxyAddress,
             tokenControllerProxyAddress
-        ); // pass 
+        ); // pass
 
         // setup Assurance interfaces
         setUpAssurance(
@@ -99,15 +99,15 @@ contract DeployHelper {
 
     // @dev Init TrueUSD & TokenController
     function initTrueUSD(
-        address trueUSDAddress, 
+        address trueUSDAddress,
         address tokenControllerAddress
     ) internal {
         require(trueUSDProxy.pendingProxyOwner() == address(this), "not token proxy owner");
         require(tokenControllerProxy.pendingProxyOwner() == address(this), "not controller proxy owner");
-        
+
         // get implementations and claim
-        TrueUSD trueUSDImplemetation = TrueUSD(trueUSDAddress);
-        TokenController tokenControllerImplemetation = TokenController(tokenControllerAddress);
+        // TrueUSD trueUSDImplemetation = TrueUSD(trueUSDAddress);
+        // TokenController tokenControllerImplemetation = TokenController(tokenControllerAddress);
 
         // claim ownership of proxies
         tokenControllerProxy.claimProxyOwnership();
@@ -156,7 +156,7 @@ contract DeployHelper {
         // assurancePool is set up during constructor
         liquidator.claimOwnership();
         liquidator.setPool(address(assurancePool));
-        
+
         assuredOpportunity.configure(
             address(financialOpportunity),
             address(assurancePool),
@@ -194,7 +194,7 @@ contract DeployHelper {
         address assurancePoolAddress,
         address liquidatorAddress
     ) internal {
-        assuredOpportunityProxy =  OwnedUpgradeabilityProxy(assuredOpportunityProxyAddress);
+        assuredOpportunityProxy = OwnedUpgradeabilityProxy(assuredOpportunityProxyAddress);
         financialOpportunity = FinancialOpportunity(financialOpportunityAddress);
         exponentContract = IExponentContract(exponentContractAddress);
         assurancePool = StakedToken(assurancePoolAddress);

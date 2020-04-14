@@ -8,25 +8,23 @@
  */
 
 // this might be unsafe. We want to use ethereum accounts
-const config = {
-    rpc: 'localhost:7585',
-    accountPrivateKey: 'ac74a462679b69b28f5c3c124eda5cc521a0d3d5ca9b0877f9e500ed94c24414'
-}
 
 (async () => {
+    const config = {
+        rpc: process.argv[3] || 'http://localhost:7545',
+        accountPrivateKey: process.argv[2],
+        network: 5777
+    }
+
     const ethers = require('ethers')
+    const { setupDeployer, validatePrivateKey } = require('./utils')
+    
+    validatePrivateKey(config.accountPrivateKey)
+
     const provider = new ethers.providers.JsonRpcProvider(config.rpc)
     const wallet = new ethers.Wallet(config.accountPrivateKey, provider)
 
-    const deploy = async (contractName) => {
-            const contractJson = require(`../build/${contractName}.json`)
-            const deployTransaction = new ethers.ContractFactory(contractJson.abi, contractJson.bytecode).getDeployTransaction()
-            const transaction = await wallet.sendTransaction(deployTransaction, { gas: 40000000 })
-            const receipt = await wallet.provider.waitForTransaction(transaction.hash)
-            console.log(`${contractName} address: ${receipt.contractAddress}`)
-            return new ethers.Contract(receipt.contractAddress, contractJson.abi, wallet)
-            
-    }
+    const deploy = setupDeployer(ethers, wallet)
 
     // Deploy all contracts
     const trueUSDContract = await deploy('TrueUSD')

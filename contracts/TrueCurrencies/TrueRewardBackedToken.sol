@@ -22,7 +22,7 @@ import "../TrueReward/FinancialOpportunity.sol";
  * so some of the code is built to support this
  */
 contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
-    
+
     /* Variables in Proxy Storage:
      * struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
      * mapping(address => FinancialOpportunityAllocation[]) _trueRewardDistribution;
@@ -414,10 +414,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             bool hasHook;
             address finalTo;
             (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = 
-                _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(valueInZTUSD);
-            _financialOpportunityBalances[finalTo][aaveInterfaceAddress()] = 
-                _financialOpportunityBalances[finalTo][aaveInterfaceAddress()].add(valueInZTUSD);
+            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(valueInZTUSD);
+            _financialOpportunityBalances[finalTo][aaveInterfaceAddress()] = _financialOpportunityBalances[finalTo][aaveInterfaceAddress()].add(valueInZTUSD);
             emit Transfer(_from, _to, _value);
             if (finalTo != _to) {
                 emit Transfer(_to, finalTo, _value);

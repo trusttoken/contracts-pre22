@@ -15,7 +15,6 @@ contract UpgradeHelper {
         OwnedUpgradeabilityProxy tokenControllerProxy,
         address tokenControllerImplmentation
     ) external {
-        
         initAssuredFinancialOpportunity(
             assuredOpportunityProxy,
             assuredOpportunityImplementation,
@@ -61,7 +60,7 @@ contract UpgradeHelper {
         assuredOpportunity.transferOwnership(proxyOwner);
     }
 
-  function initTrueUsd(
+    function initTrueUsd(
         OwnedUpgradeabilityProxy trueUsdProxy,
         address newTrueUsdImplementation,
         OwnedUpgradeabilityProxy assuredOpportunityProxy
