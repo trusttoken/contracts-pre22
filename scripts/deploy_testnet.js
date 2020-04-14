@@ -10,8 +10,13 @@
  */
 
 (async () => {
+  const rpcOptions = {
+    rinkeby: 'https://rinkeby.infura.io/v3/81447a33c1cd4eb09efb1e8c388fb28e',
+    development: 'http://localhost:7545'
+  }
+
   const config = {
-    rpc: process.argv[3] || 'https://rinkeby.infura.io/v3/81447a33c1cd4eb09efb1e8c388fb28e',
+    rpc: process.argv[3] || rpcOptions.rinkeby,
     accountPrivateKey: process.argv[2],
     network: 'rinkeby',
     gas: 40000000
@@ -31,9 +36,11 @@
   const ZERO = '0x0000000000000000000000000000000000000000'
 
   this.tusdProxy = await deploy('OwnedUpgradeabilityProxy')
+  console.log("deployed tusdProxy at: ", this.tusdProxy.address)
   this.controllerProxy = await deploy('OwnedUpgradeabilityProxy')
-  this.assuranceProxy = await deploy('OwnedUpgradeabilityProxy')
+  console.log("deployed controllerProxy at: ", this.controllerProxy.address)
   this.assuredOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
+  console.log("deployed assuredOpportunityProxy at: ", this.assuredOpportunityProxy.address)
 
   // Deploy all contracts
   this.tusd = await deploy('TrueUSD')
@@ -97,9 +104,13 @@
   
   // transfer proxy ownership to deploy helper
   await this.controllerProxy.transferProxyOwnership(this.deployHelper.address)
+  console.log("controller proxy transfer ownership")
   await this.tusdProxy.transferProxyOwnership(this.deployHelper.address)
+  console.log("tusdProxy proxy transfer ownership")
   await this.liquidator.transferOwnership(this.deployHelper.address)
+  console.log("liquidator proxy transfer ownership")
   await this.assuredOpportunityProxy.transferProxyOwnership(this.deployHelper.address)
+  console.log("assuredOpportunityProxy proxy transfer ownership")
   await this.registry.transferOwnership(this.deployHelper.address)
 
   // call deployHelper
@@ -114,19 +125,29 @@
     this.financialOpportunity.address,
     this.exponentContract.address,
     this.assurancePool.address,
-    this.liquidator.address
+    this.liquidator.address,
+    { gasLimit: 5000000 }
   )
+  console.log("deployHelper: setup")
 
   // reclaim ownership
-  await this.controllerProxy.claimProxyOwnership()
-  await this.tusdProxy.claimProxyOwnership()
-  await this.liquidator.claimOwnership()
-  await this.assuredOpportunityProxy.claimProxyOwnership()
-  await this.registry.claimOwnership()
+  await this.controllerProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  console.log("controllerProxy claim ownership")
+  await this.tusdProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  console.log("tusdProxy claim ownership")
+  await this.liquidator.claimOwnership({ gasLimit: 5000000 })
+  console.log("liquidator claim ownership")
+  await this.assuredOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  console.log("assuredOpportunityProxy claim ownership")
+  await this.registry.claimOwnership({ gasLimit: 5000000 })
+  console.log("registry claim ownership")
 
   // setup controller through proxy
   this.controller = await contractAt('TokenFaucet', 
     this.controllerProxy.address)
-  await this.controller.claimOwnership()
+  await this.controller.claimOwnership({ gasLimit: 5000000 })
+  console.log("TokenFaucet claim ownership")
+
+  console.log("\n\nSUCCESSFULLY DEPLOYED TO NETWORK: ", config.rpc, "\n\n")
 
 })()
