@@ -10,12 +10,13 @@
 // this might be unsafe. We want to use ethereum accounts instead of hardcode pk
 
 (async () => {
-        const config = {
+
+    const config = {
         rpc: 'http://localhost:7545',
         accountPrivateKey: 'ac74a462679b69b28f5c3c124eda5cc521a0d3d5ca9b0877f9e500ed94c24414',
         network: 5777,
         gas: 40000000
-    };
+    }
 
     const ethers = require('ethers')
     const provider = new ethers.providers.JsonRpcProvider(config.rpc)
@@ -36,8 +37,8 @@
     }
 
     this.tusdProxy = await deploy('OwnedUpgradeabilityProxy')
-    this.controllerProxy = await deploy('OwnedUpgradeabilityProxy');
-    this.assuranceProxy = await deploy('OwnedUpgradeabilityProxy');
+    this.controllerProxy = await deploy('OwnedUpgradeabilityProxy')
+    this.assuranceProxy = await deploy('OwnedUpgradeabilityProxy')
 
     // Deploy all contracts
     this.tusd = await deploy('TrueUSD')
@@ -70,7 +71,7 @@
     // deploy assurance pool
     this.assurancePool = await deploy('StakedToken', this.trusttoken.address,
         this.tusd.address, this.registry.address,
-        this.liquidator.address);
+        this.liquidator.address)
     
     // Deploy UpgradeHelper
     this.deployHelper = await deploy('DeployHelper')
@@ -82,4 +83,4 @@
     await this.assuredOpportunityProxy.transferProxyOwnership(this.deployHelper.address)
     await this.registry.transferOwnership(this.deployHelper.address)
 
-})();
+})()
