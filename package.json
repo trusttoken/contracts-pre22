@@ -11,7 +11,8 @@
     "coverage": "./coverage.sh",
     "flatten": "./flatten-all",
     "profile": "./profile.sh",
-    "build": "waffle .waffle.json",
+    "clean": "rm -rf ./build",
+    "build": "npm run-script clean && waffle .waffle.json && bash ./compileUniswap.sh",
     "lint:sol": "solium --no-soliumignore -d contracts/",
     "lint:js": "eslint 'test/**/*.{js,ts}'",
     "lint": "npm run-script lint:js && npm run-script lint:sol"
