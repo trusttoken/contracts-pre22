@@ -12,11 +12,17 @@ const setupDeployer = (ethers, wallet) => async (contractName, ...args) => {
     return new ethers.Contract(receipt.contractAddress, contractJson.abi, wallet) 
 }
 
+const getContract = (ethers, wallet) => async (contractName, contractAddress) => {
+    const contractJson = require(`../build/${contractName}.json`)
+    return new ethers.Contract(contractAddress, contractJson.abi, wallet)
+}
+
 const validatePrivateKey = (subject) => {
     if (!(/^0x[0-9-a-fA-F]{64}$/.test(subject))) throw new Error('Pass proper private key')
 }
 
 module.exports =  {
     setupDeployer,
+    getContract,
     validatePrivateKey,
 }
