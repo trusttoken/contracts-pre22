@@ -1,9 +1,9 @@
 const OwnedUpgradeabilityProxy = artifacts.require('OwnedUpgradeabilityProxy')
-const TrueUSD = artifacts.require("TrueUSD")
-const TrueUSDMock = artifacts.require("TrueUSDMock")
-const AssuredFinancialOpportunity = artifacts.require("AssuredFinancialOpportunity")
-const FractionalExponents = artifacts.require("FractionalExponents")
-const ConfigurableFinancialOpportunityMock = artifacts.require("ConfigurableFinancialOpportunityMock")
+const TrueUSD = artifacts.require('TrueUSD')
+const TrueUSDMock = artifacts.require('TrueUSDMock')
+const AssuredFinancialOpportunity = artifacts.require('AssuredFinancialOpportunity')
+const FractionalExponents = artifacts.require('FractionalExponents')
+const ConfigurableFinancialOpportunityMock = artifacts.require('ConfigurableFinancialOpportunityMock')
 const UpgradeHelper = artifacts.require('UpgradeHelper')
 const TokenController = artifacts.require('TokenController')
 
@@ -46,33 +46,33 @@ contract('UpgradeHelper', function ([owner]) {
       this.tokenControllerImplementation.address,
     )
   })
-  
-  describe('TrueUSD', function() {
-    it('ownership is properly set', async function() {
+
+  describe('TrueUSD', function () {
+    it('ownership is properly set', async function () {
       assert.equal((await this.tusd.pendingOwner()), owner)
     })
 
-    it('ownership is properly set', async function() {
+    it('ownership is properly set', async function () {
       assert.equal((await this.tusdProxy.pendingProxyOwner()), owner)
     })
 
-    it('properly assigns aaveInterface address', async function() {
+    it('properly assigns aaveInterface address', async function () {
       assert.equal((await this.tusd.aaveInterfaceAddress()), this.assuredFinancialOpportunityProxy.address)
     })
   })
 
-  describe('AssuredFinancialOpportunity', function() {
-    it('ownership is properly set', async function() {
+  describe('AssuredFinancialOpportunity', function () {
+    it('ownership is properly set', async function () {
       assert.equal((await this.assuredFinancialOpportunity.pendingOwner()), owner)
     })
 
-    it('proxy ownership is properly set', async function() {
+    it('proxy ownership is properly set', async function () {
       assert.equal((await this.assuredFinancialOpportunityProxy.pendingProxyOwner()), owner)
     })
   })
 
-  describe('TokenController', async function() {
-    it('proxy ownership is properly set', async function() {
+  describe('TokenController', async function () {
+    it('proxy ownership is properly set', async function () {
       assert.equal((await this.tokenControllerProxy.pendingProxyOwner()), owner)
     })
   })

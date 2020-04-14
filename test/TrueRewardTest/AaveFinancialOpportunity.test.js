@@ -9,13 +9,12 @@ const LendingPoolCoreMock = artifacts.require('LendingPoolCoreMock')
 const AaveFinancialOpportunity = artifacts.require('AaveFinancialOpportunity')
 const OwnedUpgradeabilityProxy = artifacts.require('OwnedUpgradeabilityProxy')
 
-const BN = web3.utils.toBN;
+const BN = web3.utils.toBN
 
-const to18Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**8))
-const to27Decimals = value => BN(Math.floor(value*10**10)).mul(BN(10**17))
+const to18Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 8))
+const to27Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 17))
 
 contract('AaveFinancialOpportunity', function ([_, proxyOwner, holder, owner, address1, address2, address3, address4]) {
-
   beforeEach(async function () {
     this.registry = await Registry.new({ from: proxyOwner })
     this.token = await CompliantTokenMock.new(holder, to18Decimals(200), { from: proxyOwner })
@@ -44,7 +43,6 @@ contract('AaveFinancialOpportunity', function ([_, proxyOwner, holder, owner, ad
       assert.equal(lendingPoolAddress, this.lendingPool.address)
       assert.equal(tokenAddress, this.token.address)
       assert.equal(ownerAddress, owner)
-
     })
 
     it('can reconfigure', async function () {
@@ -69,7 +67,7 @@ contract('AaveFinancialOpportunity', function ([_, proxyOwner, holder, owner, ad
     })
   })
 
-  describe('deposit', async function() {
+  describe('deposit', async function () {
     it('with exchange rate = 1', async function () {
       await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder })
       await this.financialOpportunity.deposit(holder, to18Decimals(10), { from: owner })
@@ -94,8 +92,8 @@ contract('AaveFinancialOpportunity', function ([_, proxyOwner, holder, owner, ad
     })
   })
 
-  describe('withdraw', async function() {
-    beforeEach(async function() {
+  describe('withdraw', async function () {
+    beforeEach(async function () {
       await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder })
       await this.financialOpportunity.deposit(holder, to18Decimals(10), { from: owner })
     })
@@ -125,7 +123,7 @@ contract('AaveFinancialOpportunity', function ([_, proxyOwner, holder, owner, ad
       assertRevert(this.financialOpportunity.withdrawAll(address1, { from: holder }))
     })
 
-    describe('with exchange rate = 1.5', async function() {
+    describe('with exchange rate = 1.5', async function () {
       beforeEach(async function () {
         await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
       })

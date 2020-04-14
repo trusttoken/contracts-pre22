@@ -3,12 +3,12 @@ pragma solidity ^0.5.13;
 import "./CompliantDepositTokenWithHook.sol";
 import "./GasRefundToken.sol";
 
+
 /** @title TrueHKD
-* @dev This is the top-level ERC20 contract, but most of the interesting functionality is
-* inherited - see the documentation on the corresponding contracts.
-*/
-contract TrueHKD is 
-CompliantDepositTokenWithHook {
+ * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
+ * inherited - see the documentation on the corresponding contracts.
+ */
+contract TrueHKD is CompliantDepositTokenWithHook {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 

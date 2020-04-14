@@ -10,7 +10,7 @@ contract TokenFaucet {
         uint256 requestedBlock;
         uint256 numberOfApproval;
         bool paused;
-        mapping(address => bool) approved; 
+        mapping(address => bool) approved;
     }
 
     // same storage as TokenController
@@ -22,12 +22,12 @@ contract TokenFaucet {
     uint256 public ratifiedMintThreshold;
     uint256 public multiSigMintThreshold;
 
-    uint256 public instantMintLimit; 
-    uint256 public ratifiedMintLimit; 
+    uint256 public instantMintLimit;
+    uint256 public ratifiedMintLimit;
     uint256 public multiSigMintLimit;
 
-    uint256 public instantMintPool; 
-    uint256 public ratifiedMintPool; 
+    uint256 public instantMintPool;
+    uint256 public ratifiedMintPool;
     uint256 public multiSigMintPool;
     address[2] public ratifiedPoolRefillApprovals;
 
@@ -35,7 +35,7 @@ contract TokenFaucet {
     uint256 public mintReqInvalidBeforeThisBlock; //all mint request before this block are invalid
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
-    
+
     CompliantDepositTokenWithHook public token;
 
     Registry public registry;
@@ -63,7 +63,7 @@ contract TokenFaucet {
         emit MintThresholdChanged(_instant, _ratified, _multiSig);
     }
 
- 
+
     /**
     * @dev Throws if called by any account other than the owner.
     */
@@ -97,18 +97,18 @@ contract TokenFaucet {
         owner = pendingOwner;
         pendingOwner = address(0);
     }
- 
-    /** 
+
+    /**
     *@dev Claim ownership of an arbitrary HasOwner contract
     */
     function issueClaimOwnership(address _other) public onlyOwner {
         HasOwner other = HasOwner(_other);
         other.claimOwnership();
     }
-    /** 
+    /**
     *@dev Transfer ownership of _child to _newOwner.
     Can be used e.g. to upgrade this TokenController contract.
-    *@param _child contract that tokenController currently Owns 
+    *@param _child contract that tokenController currently Owns
     *@param _newOwner new owner/pending owner of _child
     */
     function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
@@ -116,7 +116,7 @@ contract TokenFaucet {
         emit TransferChild(_child, _newOwner);
     }
 
-    /** 
+    /**
     *@dev Update this contract's token pointer to newContract (e.g. if the
     contract is upgraded)
     */
@@ -125,7 +125,7 @@ contract TokenFaucet {
         emit SetToken(_newContract);
     }
 
-    /** 
+    /**
     *@dev Update this contract's registry pointer to _registry
     */
     function setRegistry(Registry _registry) external onlyOwner {

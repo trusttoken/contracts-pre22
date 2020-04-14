@@ -7,9 +7,7 @@ import "./GasRefundToken.sol";
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
 * inherited - see the documentation on the corresponding contracts.
 */
-contract TrueGBP is 
-CompliantDepositTokenWithHook {
-
+contract TrueGBP is CompliantDepositTokenWithHook {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 

@@ -16,28 +16,29 @@ const Types = artifacts.require('Types')
 const UniswapFactory = artifacts.require('uniswap_factory')	
 const UniswapExchange = artifacts.require('uniswap_exchange')	
 
-const timeMachine = require('ganache-time-traveler')	
-const bytes32 = require('@trusttoken/registry/test/helpers/bytes32.js')	
-const assertRevert = require('@trusttoken/registry/test/helpers/assertRevert.js')	
-const writeAttributeFor = require('@trusttoken/registry/test/helpers/writeAttributeFor.js')	
-const IS_DEPOSIT_ADDRESS = bytes32('isDepositAddress')	
-const IS_REGISTERED_CONTRACT = bytes32('isRegisteredContract')	
-const BLACKLISTED = '0x6973426c61636b6c697374656400000000000000000000000000000000000000'	
-const PASSED_KYCAML = bytes32('hasPassedKYC/AML')	
-const AIRSWAP_VALIDATOR = bytes32('AirswapValidatorDomain')	
-const APPROVED_BENEFICIARY = bytes32('approvedBeneficiary')	
-const BN = web3.utils.toBN	
-const ONE_ETHER = BN(1e18)	
-const ONE_HUNDRED_ETHER = BN(100).mul(ONE_ETHER)	
-const ONE_BITCOIN = BN(1e8)	
-const ONE_HUNDRED_BITCOIN = BN(100).mul(ONE_BITCOIN)	
-const DEFAULT_RATIO = BN(1000);	
-const ERC20_KIND = '0x36372b07'	
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'	
-const { addressBytes32, uint256Bytes32 } = require('./lib/abi.js')	
-const { hashDomain, Order } = require('./lib/airswap.js')	
-const { signAction } = require('./lib/multisigLiquidator.js')	
+const timeMachine = require('ganache-time-traveler')
+const bytes32 = require('@trusttoken/registry/test/helpers/bytes32.js')
+const assertRevert = require('@trusttoken/registry/test/helpers/assertRevert.js')
+const writeAttributeFor = require('@trusttoken/registry/test/helpers/writeAttributeFor.js')
+const IS_DEPOSIT_ADDRESS = bytes32('isDepositAddress')
+const IS_REGISTERED_CONTRACT = bytes32('isRegisteredContract')
+const BLACKLISTED = '0x6973426c61636b6c697374656400000000000000000000000000000000000000'
+const PASSED_KYCAML = bytes32('hasPassedKYC/AML')
+const AIRSWAP_VALIDATOR = bytes32('AirswapValidatorDomain')
+const APPROVED_BENEFICIARY = bytes32('approvedBeneficiary')
+const BN = web3.utils.toBN
+const ONE_ETHER = BN(1e18)
+const ONE_HUNDRED_ETHER = BN(100).mul(ONE_ETHER)
+const ONE_BITCOIN = BN(1e8)
+const ONE_HUNDRED_BITCOIN = BN(100).mul(ONE_BITCOIN)
+const DEFAULT_RATIO = BN(1000)
+const ERC20_KIND = '0x36372b07'
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+const { addressBytes32, uint256Bytes32 } = require('./lib/abi.js')
+const { hashDomain, Order } = require('./lib/airswap.js')
+const { signAction } = require('./lib/multisigLiquidator.js')
 
+<<<<<<< HEAD
 
 contract('Deployment', function(accounts) {	
     const [_, account1, account2, deployer, owner, fakeController, oneHundred, kycAccount, kycWriteKey, auditor, manager, approvedBeneficiary] = accounts	
@@ -261,5 +262,5 @@ contract('Deployment', function(accounts) {
                 })	
             })	
         })	
-    })	
+    })
 })

@@ -4,7 +4,7 @@ import "./TokenController.sol";
 import "../Proxy/OwnedUpgradeabilityProxy.sol";
 
 /*
-This contract is the owner of TokenController. 
+This contract is the owner of TokenController.
 This contract is responsible for calling all onlyOwner functions in
 TokenController.
 This contract has a copy of all functions in TokenController.
@@ -14,10 +14,10 @@ MultiSigOwner contract has three owners
 The first time a function is called, an action is created.
 The action is in pending state until another owner approve the action.
 Once another owner approves, the action will be executed immediately.
-There can only be one pending/in flight action at a time. 
+There can only be one pending/in flight action at a time.
 To approve an action the owner needs to call the same function with the
 same parameter. If the function or parameter doesn't match the current in
-flight action, it is reverted. 
+flight action, it is reverted.
 Each owner can only approve/veto the current action once.
 Vetoing an in flight also requires 2/3 owners to veto.
 */
@@ -60,9 +60,7 @@ contract MultiSigOwner {
     //Initial Owners are set during deployment
     function msInitialize(address[3] calldata _initialOwners) external {
         require(!initialized);
-        require(_initialOwners[0] != address(0) &&
-        _initialOwners[1] != address(0) &&
-        _initialOwners[2] != address(0));
+        require(_initialOwners[0] != address(0) && _initialOwners[1] != address(0) && _initialOwners[2] != address(0));
         owners[_initialOwners[0]] = true;
         owners[_initialOwners[1]] = true;
         owners[_initialOwners[2]] = true;
@@ -77,7 +75,7 @@ contract MultiSigOwner {
 
     /**
     * @dev initialize an action if there's no in flight action
-    or sign the current action if the second owner is calling the same 
+    or sign the current action if the second owner is calling the same
     function with the same parameters (same call data)
     */
     function _initOrSignOwnerAction(string memory _actionName) internal {
@@ -104,7 +102,7 @@ contract MultiSigOwner {
             OwnedUpgradeabilityProxy(address(this)).upgradeTo(_newImplementation);
             emit ActionExecuted("msUpgradeImplementation");
             _deleteOwnerAction();
-        } 
+        }
     }
 
     function msTransferProxyOwnership(address _newProxyOwner) external onlyOwner {
@@ -113,7 +111,7 @@ contract MultiSigOwner {
             OwnedUpgradeabilityProxy(address(this)).transferProxyOwnership(_newProxyOwner);
             emit ActionExecuted("msTransferProxyOwnership");
             _deleteOwnerAction();
-        } 
+        }
     }
 
     function msClaimProxyOwnership() external onlyOwner {
@@ -122,7 +120,7 @@ contract MultiSigOwner {
             OwnedUpgradeabilityProxy(address(this)).claimProxyOwnership();
             emit ActionExecuted("msClaimProxyOwnership");
             _deleteOwnerAction();
-        } 
+        }
     }
 
     /**
@@ -134,14 +132,14 @@ contract MultiSigOwner {
         if (ownerAction.approveSigs > 1) {
             owners[_oldOwner] = false;
             owners[_newOwner] = true;
-            for (uint8 i; i < 3; i++) {
+            for (uint8 i;i < 3;i++) {
                 if (ownerList[i] == _oldOwner) {
                     ownerList[i] = _newOwner;
                 }
             }
             emit ActionExecuted("updateOwner");
             _deleteOwnerAction();
-        } 
+        }
     }
 
 
@@ -155,7 +153,7 @@ contract MultiSigOwner {
             other.claimOwnership();
             emit ActionExecuted("msIssueClaimContract");
             _deleteOwnerAction();
-        } 
+        }
     }
 
     /**
@@ -210,7 +208,7 @@ contract MultiSigOwner {
             tokenController = TokenController(_newController);
             emit ActionExecuted("msSetTokenController");
             _deleteOwnerAction();
-        }    
+        }
     }
 
     function msTransferControllerProxyOwnership(address _newOwner) external onlyOwner {
@@ -280,27 +278,27 @@ contract MultiSigOwner {
     */
 
     function initialize() external onlyOwner {
-        _signOrExecute("initialize"); 
+        _signOrExecute("initialize");
     }
 
     function transferTusdProxyOwnership(address /*_newOwner*/) external onlyOwner {
-        _signOrExecute("transferTusdProxyOwnership"); 
+        _signOrExecute("transferTusdProxyOwnership");
     }
-    
+
     function claimTusdProxyOwnership() external onlyOwner {
-        _signOrExecute("claimTusdProxyOwnership"); 
+        _signOrExecute("claimTusdProxyOwnership");
     }
 
     function upgradeTusdProxyImplTo(address /*_implementation*/) external onlyOwner {
-        _signOrExecute("upgradeTusdProxyImplTo"); 
+        _signOrExecute("upgradeTusdProxyImplTo");
     }
 
     function transferOwnership(address /*newOwner*/) external onlyOwner {
-        _signOrExecute("transferOwnership"); 
+        _signOrExecute("transferOwnership");
     }
 
     function claimOwnership() external onlyOwner {
-        _signOrExecute("claimOwnership"); 
+        _signOrExecute("claimOwnership");
     }
 
     function setMintThresholds(uint256 /*_instant*/, uint256 /*_ratified*/, uint256 /*_multiSig*/) external onlyOwner {
@@ -334,7 +332,7 @@ contract MultiSigOwner {
     function ratifyMint(uint256 /*_index*/, address /*_to*/, uint256 /*_value*/) external onlyOwner {
         _signOrExecute("ratifyMint");
     }
-    
+
     function revokeMint(uint256 /*_index*/) external onlyOwner {
         _signOrExecute("revokeMint");
     }
@@ -345,62 +343,62 @@ contract MultiSigOwner {
 
     function invalidateAllPendingMints() external onlyOwner {
         _signOrExecute("invalidateAllPendingMints");
-    } 
+    }
 
     function pauseMints() external onlyOwner {
         _signOrExecute("pauseMints");
-    } 
+    }
 
     function unpauseMints() external onlyOwner {
         _signOrExecute("unpauseMints");
-    } 
+    }
 
     function pauseMint(uint /*_opIndex*/) external onlyOwner {
         _signOrExecute("pauseMint");
-    } 
+    }
 
     function unpauseMint(uint /*_opIndex*/) external onlyOwner {
-        _signOrExecute("unpauseMint"); 
+        _signOrExecute("unpauseMint");
     }
 
     function setToken(CompliantDepositTokenWithHook /*_newContract*/) external onlyOwner {
-        _signOrExecute("setToken"); 
+        _signOrExecute("setToken");
     }
 
     function setRegistry(Registry /*_registry*/) external onlyOwner {
-        _signOrExecute("setRegistry"); 
+        _signOrExecute("setRegistry");
     }
 
     function setTokenRegistry(Registry /*_registry*/) external onlyOwner {
-        _signOrExecute("setTokenRegistry"); 
+        _signOrExecute("setTokenRegistry");
     }
 
     function issueClaimOwnership(address /*_other*/) external onlyOwner {
-        _signOrExecute("issueClaimOwnership"); 
+        _signOrExecute("issueClaimOwnership");
     }
 
     function transferChild(InstantiatableOwnable /*_child*/, address /*_newOwner*/) external onlyOwner {
-        _signOrExecute("transferChild"); 
+        _signOrExecute("transferChild");
     }
 
     function requestReclaimContract(InstantiatableOwnable /*_other*/) external onlyOwner {
-        _signOrExecute("requestReclaimContract"); 
+        _signOrExecute("requestReclaimContract");
     }
 
     function requestReclaimEther() external onlyOwner {
-        _signOrExecute("requestReclaimEther"); 
+        _signOrExecute("requestReclaimEther");
     }
 
     function requestReclaimToken(IERC20 /*_token*/) external onlyOwner {
-        _signOrExecute("requestReclaimToken"); 
-    } 
+        _signOrExecute("requestReclaimToken");
+    }
 
     function setFastPause(address /*_newFastPause*/) external onlyOwner {
-        _signOrExecute("setFastPause"); 
+        _signOrExecute("setFastPause");
     }
 
     function pauseToken() external onlyOwner {
-        _signOrExecute("pauseToken"); 
+        _signOrExecute("pauseToken");
     }
 
     function wipeBlackListedTrueUSD(address /*_blacklistedAddress*/) external onlyOwner {
@@ -408,14 +406,14 @@ contract MultiSigOwner {
     }
 
     function setBurnBounds(uint256 /*_min*/, uint256 /*_max*/) external onlyOwner {
-        _signOrExecute("setBurnBounds"); 
+        _signOrExecute("setBurnBounds");
     }
 
     function reclaimEther(address /*_to*/) external onlyOwner {
-        _signOrExecute("reclaimEther"); 
+        _signOrExecute("reclaimEther");
     }
 
     function reclaimToken(IERC20 /*_token*/, address /*_to*/) external onlyOwner {
-        _signOrExecute("reclaimToken"); 
+        _signOrExecute("reclaimToken");
     }
-} 
+}

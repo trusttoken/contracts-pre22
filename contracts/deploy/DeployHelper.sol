@@ -18,9 +18,6 @@ import { Liquidator } from "@trusttoken/trusttokens/contracts/Liquidator.sol";
  * Deployer of DeployHelper will be final owner of proxy contracts
  *
  * Use UpgradeHelper to upgrade existing contracts
- *
- * Right now this is only working with TrueUSDMock, we need to
- * add an initialize fucntion to TrueUSD contract
  */
 contract DeployHelper {
     address payable public owner;
@@ -167,9 +164,6 @@ contract DeployHelper {
             address(exponentContract),
             address(trueUSD)
         );
-
-        // Transfer ownership to proxy
-        //assuredOpportunity.transferOwnership(address(assuredOpportunityProxy));
 
         // Transfer proxy to owner
         assuredOpportunityProxy.transferProxyOwnership(owner);

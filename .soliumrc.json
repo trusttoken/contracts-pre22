@@ -1,0 +1,31 @@
+{
+    "extends": "solium:recommended",
+    "plugins": [
+      "security"
+    ],
+    "rules": {
+      "quotes": [
+        "error",
+        "double"
+      ],
+      "indentation": [
+        "error",
+        4
+      ],
+      "arg-overflow": [
+        "warning",
+        6
+      ],
+      "security/no-block-members": [
+        1,
+        [
+          "blockhash"
+        ]
+      ],
+      "no-empty-blocks": "off",
+      "error-reason": "off",
+      "security/no-low-level-calls": "off",
+      "security/no-inline-assembly": "off",
+      "security/no-assign-params": "off"
+    }
+  }
