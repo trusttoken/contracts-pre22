@@ -131,7 +131,6 @@ contract('AssuredFinancialOpportunity', function (accounts) {
       await this.assuredFinancialOpportunity.configure(this.financialOpportunity.address,
         this.pool.address, this.liquidator.address, this.exponentContract.address,
         this.token.address, { from: owner })
-      await this.assuredFinancialOpportunity.setRewardBasis(1 * 1000, { from: owner })
 
       await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, { from: owner })
       await this.financialOpportunity.configure(
@@ -141,8 +140,8 @@ contract('AssuredFinancialOpportunity', function (accounts) {
     })
 
     it('test perTokenValue exponentiaion 1.5', async function () {
-      await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
       await this.assuredFinancialOpportunity.setRewardBasis(0.7 * 1000, { from: owner })
+      await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
       const finOpPerTokenValue = await this.financialOpportunity.perTokenValue.call()
       const perTokenValue = await this.assuredFinancialOpportunity.perTokenValue.call()
       await assert.equal(Number(perTokenValue) / 10 ** 18, Math.pow(Number(finOpPerTokenValue) / 10 ** 18, 0.7))
@@ -185,8 +184,8 @@ contract('AssuredFinancialOpportunity', function (accounts) {
     it('calculate interest correctly', async function () {
       let totalSupply = await this.token.totalSupply.call()
       assert.equal(Number(totalSupply), to18Decimals(700))
-      await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
       await this.assuredFinancialOpportunity.setRewardBasis(0.7 * 1000, { from: owner })
+      await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
       await this.token.transfer(holder2, to18Decimals(100), { from: holder })
       await this.token.enableTrueReward({ from: holder2 })
       const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder2)
@@ -202,6 +201,14 @@ contract('AssuredFinancialOpportunity', function (accounts) {
       balance = await this.token.balanceOf.call(holder2)
       assert.equal(Number(totalSupply), 804621298639582300000)
       assert.equal(Number(balance), 104621298639582200000)
+    })
+
+    it('per token value is adjusted when reward basis changes', async function () {
+      await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
+      const perTokenValueBefore = await this.assuredFinancialOpportunity.perTokenValue.call()
+      await this.assuredFinancialOpportunity.setRewardBasis(0.7 * 1000, { from: owner })
+      const perTokenValueAfter = await this.assuredFinancialOpportunity.perTokenValue.call()
+      await assert.equal(Number(perTokenValueBefore), Number(perTokenValueAfter))
     })
 
     // it('reward', async function() {
