@@ -112,6 +112,7 @@ contract TokenFaucet {
         HasOwner other = HasOwner(_other);
         other.claimOwnership();
     }
+    
     /**
     *@dev Transfer ownership of _child to _newOwner.
     Can be used e.g. to upgrade this TokenController contract.

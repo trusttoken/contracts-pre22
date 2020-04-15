@@ -2,7 +2,7 @@
 /**
  * Waffle Deploy Script
  *
- * 
+ * node scripts/deploy_testnet.js "{private_key}" "{rpc_url}"
  *
  * We use waffle to deploy our contracts from scratch.
  * For upgrades, use deploy/upgrade.js
@@ -16,7 +16,7 @@
   }
 
   const config = {
-    rpc: process.argv[3] || rpcOptions.rinkeby,
+    rpc: process.argv[3] || rpcOptions.development,
     accountPrivateKey: process.argv[2],
     network: 'rinkeby',
     gas: 40000000
@@ -147,6 +147,13 @@
     this.controllerProxy.address)
   await this.controller.claimOwnership({ gasLimit: 5000000 })
   console.log("TokenFaucet claim ownership")
+
+  await this.controller.setMintThresholds(
+    ethers.utils.bigNumberify('1000000000000000000000'),
+    ethers.utils.bigNumberify('10000000000000000000000'),
+    ethers.utils.bigNumberify('100000000000000000000000')
+  )
+  console.log("set mint thresholds")
 
   console.log("\n\nSUCCESSFULLY DEPLOYED TO NETWORK: ", config.rpc, "\n\n")
 
