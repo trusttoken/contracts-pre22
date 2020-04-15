@@ -38,6 +38,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     address trueRewardBackedTokenAddress;
     uint32 rewardBasis;
     uint rewardBasisAjustmentFactor;
+    uint minPerTokenValue;
 
     using SafeMath for uint;
     using SafeMath for uint32;
@@ -89,7 +90,12 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
             return opportunity().perTokenValue();
         }
 
-        return _calculatePerTokenValue(rewardBasis).mul(rewardBasisAjustmentFactor).div(10**18);
+        uint calculatedValue = _calculatePerTokenValue(rewardBasis).mul(rewardBasisAjustmentFactor).div(10**18);
+        if(calculatedValue < minPerTokenValue) {
+            return minPerTokenValue;
+        } else {
+            return calculatedValue;
+        }
     }
 
     /**
@@ -257,6 +263,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     function setRewardBasis(uint32 _value) external onlyOwner {
+        minPerTokenValue = _perTokenValue();
+
         rewardBasisAjustmentFactor = rewardBasisAjustmentFactor
             .mul(_calculatePerTokenValue(rewardBasis))
             .div(_calculatePerTokenValue(_value));
