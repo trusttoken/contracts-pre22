@@ -16,7 +16,8 @@ contract('UpgradeHelper', function ([owner]) {
 
     this.oldTusdImplementation = await TrueUSDMock.new(owner, 0)
     await this.tusdProxy.upgradeTo(this.oldTusdImplementation.address)
-    await (await TrueUSDMock.at(this.tusdProxy.address)).setOwner(owner)
+    this.tusdMock = await TrueUSDMock.at(this.tusdProxy.address)
+    await this.tusdMock.initialize()
     this.tusdImplementation = await TrueUSD.new()
 
     this.assuredFinancialOpportunityImplementation = await AssuredFinancialOpportunity.new()
