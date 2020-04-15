@@ -5,7 +5,7 @@ const setupDeployer = (ethers, wallet) => async (contractName, ...args) => {
         contractJson.bytecode
     ).getDeployTransaction(...args)
     
-    const transaction = await wallet.sendTransaction(deployTransaction, { gas: 40000000 })
+    const transaction = await wallet.sendTransaction(deployTransaction, { gas: 4004588 })
     const receipt = await wallet.provider.waitForTransaction(transaction.hash)
     
     console.log(`${contractName} address: ${receipt.contractAddress}`)

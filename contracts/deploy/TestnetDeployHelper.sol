@@ -2,9 +2,9 @@ pragma solidity ^0.5.13;
 
 import { Registry } from "@trusttoken/registry/contracts/Registry.sol";
 import { TrueUSD } from "../TrueCurrencies/TrueUSD.sol";
-import { RegistryImplementation } from "../mocks/RegistryImplementation.sol";
+import { ProvisionalRegistryImplementation } from "../mocks/RegistryImplementation.sol";
 import { OwnedUpgradeabilityProxy } from "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
-import { TokenController } from "../TrueCurrencies/admin/TokenController.sol";
+import { TokenFaucet } from "../TrueCurrencies/utilities/TokenFaucet.sol";
 import { AssuredFinancialOpportunity } from "../TrueReward/AssuredFinancialOpportunity.sol";
 import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
 import { IExponentContract } from "../TrueReward/utilities/IExponentContract.sol";
@@ -19,12 +19,12 @@ import { Liquidator } from "@trusttoken/trusttokens/contracts/Liquidator.sol";
  *
  * Use UpgradeHelper to upgrade existing contracts
  */
-contract DeployHelper {
+contract TestnetDeployHelper {
     address payable public owner;
-    RegistryImplementation registry;
+    ProvisionalRegistryImplementation registry;
     TrueUSD trueUSD; // behind proxy
     OwnedUpgradeabilityProxy trueUSDProxy;
-    TokenController tokenController; // behind proxy
+    TokenFaucet tokenController; // behind proxy
     OwnedUpgradeabilityProxy tokenControllerProxy;
     AssuredFinancialOpportunity assuredOpportunity; // behind proxy
     OwnedUpgradeabilityProxy assuredOpportunityProxy;
@@ -116,7 +116,7 @@ contract DeployHelper {
         trueUSDProxy.upgradeTo(trueUSDAddress);
         trueUSD = TrueUSD(address(trueUSDProxy));
         tokenControllerProxy.upgradeTo(tokenControllerAddress);
-        tokenController = TokenController(address(tokenControllerProxy));
+        tokenController = TokenFaucet(address(tokenControllerProxy));
 
         // initialize contracts for ownership
         registry.initialize();
@@ -134,7 +134,7 @@ contract DeployHelper {
         tokenController.setAaveInterfaceAddress(address(assuredOpportunityProxy));
 
         // transfer ownership to owner
-        tokenController.transferOwnership(address(owner));
+        tokenController.transferOwnership(owner);
         tokenControllerProxy.transferProxyOwnership(owner);
         trueUSDProxy.transferProxyOwnership(owner);
         registry.transferOwnership(owner);
@@ -174,7 +174,7 @@ contract DeployHelper {
         address payable trueUSDProxyAddress,
         address payable tokenControllerProxyAddress
     ) internal {
-        registry = RegistryImplementation(registryAddress);
+        registry = ProvisionalRegistryImplementation(registryAddress);
         trueUSDProxy = OwnedUpgradeabilityProxy(trueUSDProxyAddress);
         tokenControllerProxy = OwnedUpgradeabilityProxy(tokenControllerProxyAddress);
     }

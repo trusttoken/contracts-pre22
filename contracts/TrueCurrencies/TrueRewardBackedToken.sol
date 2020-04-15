@@ -29,9 +29,6 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * mapping (address => mapping (address => uint256)) _financialOpportunityBalances;
     */
 
-    // Aave Interface address
-    //address public constant AAVE_INTERFACE = address(0);
-
     // Reserve is an address which nobody has the private key to
     // Reserves of TUSD and TrueRewardBackedToken are held at this addess
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
@@ -453,8 +450,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * Mints TrueUSD backed by debt
      * When we add multiple opportunities, this needs to work for mutliple interfaces
      */
-    function mint(address _to, uint256 _value) public {
-        require(msg.sender == owner);
+    function mint(address _to, uint256 _value) public onlyOwner {
         super.mint(_to, _value);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (receiverTrueRewardEnabled) {
