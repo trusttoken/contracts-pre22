@@ -39,7 +39,7 @@ const { hashDomain, Order } = require('./lib/airswap.js')
 const { signAction } = require('./lib/multisigLiquidator.js')
 
 contract('Deployment', function (accounts) {
-  const [_, account1, account2, deployer, owner, fakeController, oneHundred, kycAccount, kycWriteKey, auditor, manager, approvedBeneficiary] = accounts
+  const [, account1, account2, deployer, owner, fakeController, oneHundred, kycAccount, kycWriteKey, auditor, manager, approvedBeneficiary] = accounts
   console.log({ approvedBeneficiary })
   console.log(accounts)
   describe('TrueUSD and Registry', function () {

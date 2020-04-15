@@ -3,7 +3,7 @@ const BurnableTokenWithBoundsMock = artifacts.require('BurnableTokenWithBoundsMo
 
 const BN = web3.utils.toBN
 
-contract('BurnableTokenWithBounds', function ([_, owner, oneHundred, anotherAccount]) {
+contract('BurnableTokenWithBounds', function ([, owner, oneHundred, anotherAccount]) {
   beforeEach(async function () {
     this.token = await BurnableTokenWithBoundsMock.new(oneHundred, BN(100 * 10 ** 18), { from: owner })
     this.mintableToken = this.token

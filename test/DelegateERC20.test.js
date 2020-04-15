@@ -11,7 +11,7 @@ const BN = web3.utils.toBN
 const bytes32 = require('./helpers/bytes32.js')
 const IS_DEPOSIT_ADDRESS = bytes32('isDepositAddress')
 
-contract('DelegateERC20', function ([_, owner, oneHundred, anotherAccount, thirdAddress]) {
+contract('DelegateERC20', function ([, owner, oneHundred, anotherAccount, thirdAddress]) {
   beforeEach(async function () {
     this.totalSupply = BN(100 * 10 ** 18)
     this.original = await CanDelegate.new(oneHundred, this.totalSupply, { from: owner })

@@ -14,7 +14,7 @@ const BN = web3.utils.toBN
 const to18Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 8))
 const to27Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 17))
 
-contract('AaveFinancialOpportunity', function ([_, proxyOwner, holder, owner, address1, address2, address3, address4]) {
+contract('AaveFinancialOpportunity', function ([, proxyOwner, holder, owner, address1, address2, address3, address4]) {
   beforeEach(async function () {
     this.registry = await Registry.new({ from: proxyOwner })
     this.token = await CompliantTokenMock.new(holder, to18Decimals(200), { from: proxyOwner })

@@ -4,7 +4,7 @@ const AllowanceSheet = artifacts.require('AllowanceSheet')
 
 const BN = web3.utils.toBN
 
-contract('AllowanceSheet', function ([_, owner, account2, account3]) {
+contract('AllowanceSheet', function ([, owner, account2, account3]) {
   beforeEach(async function () {
     this.sheet = await AllowanceSheet.new({ from: owner })
     await this.sheet.addAllowance(account2, account3, BN(100 * 10 ** 18), { from: owner })

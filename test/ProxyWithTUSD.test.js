@@ -1,5 +1,4 @@
 import assertRevert from './helpers/assertRevert'
-import expectThrow from './helpers/expectThrow'
 import basicTokenTests from './BasicToken'
 import standardTokenTests from './StandardToken'
 const Registry = artifacts.require('RegistryMock')
@@ -10,7 +9,7 @@ const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN
 
 contract('ProxyWithTUSD', function (accounts) {
-  const [_, owner, oneHundred, anotherAccount] = accounts
+  const [, owner, oneHundred, anotherAccount] = accounts
   const notes = bytes32('some notes')
   const CAN_BURN = bytes32('canBurn')
   describe('--Set up proxy--', function () {

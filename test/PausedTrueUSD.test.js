@@ -1,8 +1,6 @@
 import assertRevert from './helpers/assertRevert'
 import assertBalance from './helpers/assertBalance'
 const Registry = artifacts.require('RegistryMock')
-const BalanceSheet = artifacts.require('BalanceSheet')
-const AllowanceSheet = artifacts.require('AllowanceSheet')
 const TokenController = artifacts.require('TokenControllerMock')
 const FastPauseMints = artifacts.require('FastPauseMints')
 const Proxy = artifacts.require('OwnedUpgradeabilityProxy')
@@ -15,8 +13,7 @@ const BN = web3.utils.toBN
 
 contract('PausedTrueUSD', function (accounts) {
   describe('--PausedTrueUSD Tests--', function () {
-    const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, ratifier1, ratifier2, ratifier3, redemptionAdmin] = accounts
-    const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+    const [, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, ratifier1, ratifier2, ratifier3] = accounts
     const notes = bytes32('notes')
     const RATIFIER = bytes32('isTUSDMintRatifier')
     const DOLLAR = BN(10 ** 18)

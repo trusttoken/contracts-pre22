@@ -13,7 +13,7 @@ const BN = web3.utils.toBN
 const bytes32 = require('./helpers/bytes32.js')
 
 contract('ProvisionalTrueUSD', function (accounts) {
-  const [_, owner, oneHundred, anotherAccount, blacklisted] = accounts
+  const [, owner, oneHundred, anotherAccount, blacklisted] = accounts
   const DOLLAR = BN(10 ** 18)
   const BLACKLISTED = bytes32('isBlacklisted')
   const CAN_BURN = bytes32('canBurn')

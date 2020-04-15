@@ -3,7 +3,7 @@ import assertBalance from './helpers/assertBalance'
 
 const BN = web3.utils.toBN
 
-function basicTokenTests ([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns = false) {
+function basicTokenTests ([owner, oneHundred, anotherAccount]) {
   describe('--BasicToken Tests--', function () {
     describe('total supply', function () {
       it('returns the total amount of tokens', async function () {
