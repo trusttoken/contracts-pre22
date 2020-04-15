@@ -1,7 +1,3 @@
-import assertRevert from '../helpers/assertRevert'
-import expectThrow from '../helpers/expectThrow'
-import assertBalance from '../helpers/assertBalance'
-
 const Registry = artifacts.require('ProvisionalRegistryImplementation')
 const Proxy = artifacts.require('OwnedUpgradeabilityProxy')
 const TokenController = artifacts.require('TokenController')
@@ -9,19 +5,16 @@ const TrueUSD = artifacts.require('TrueUSD')
 const TrustToken = artifacts.require('MockTrustToken')
 const AssuredFinancialOpportunity = artifacts.require('AssuredFinancialOpportunity')
 const AaveFinancialOpportunity = artifacts.require('AaveFinancialOpportunity')
-const FinancialOpportunity = artifacts.require('FinancialOpportunity')
 const ExponentContract = artifacts.require('FractionalExponents')
 const StakedToken = artifacts.require('StakedToken')
 const Liquidator = artifacts.require('Liquidator')
 const DeployHelper = artifacts.require('DeployHelper')
-const UniswapFactory = artifacts.require('uniswap_factory')
-const UniswapExchange = artifacts.require('uniswap_exchange')
 
 const bytes32 = require('../helpers/bytes32.js')
 const BN = web3.utils.toBN
 
 contract('-----Full Deploy From Scratch-----', function (accounts) {
-  const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
+  const [, owner, pauseKey, approver1, approver2, approver3] = accounts
 
   const notes = bytes32('notes')
   const CAN_BURN = bytes32('canBurn')

@@ -79,7 +79,7 @@ contract('UpgradeHelper', function ([owner]) {
 })
 
 // used to check bytesize of contract
-contract('Check TrueUSD Gas', function (accounts) {
+contract('Check TrueUSD Gas', function () {
   it('get the size of the TrueUSD contract', function () {
     return TrueUSD.deployed().then(function (instance) {
       var bytecode = instance.constructor._json.bytecode
