@@ -13,7 +13,7 @@
     "profile": "./profile.sh",
     "lint:sol": "solium --no-soliumignore -d contracts/",
     "lint:js": "eslint 'test/**/*.{js,ts}'",
-    "lint": "npm run-script lint:js && npm run-script lint:sol"
+    "lint": "yarn lint:js && yarn lint:sol"
   },
   "author": "",
   "license": "ISC",
