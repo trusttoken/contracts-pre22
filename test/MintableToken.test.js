@@ -2,7 +2,7 @@ import mintableTokenTests from './MintableToken'
 const TrueUSDMock = artifacts.require('TrueUSDMock')
 const Registry = artifacts.require('RegistryMock')
 
-contract('MintableToken', function ([, owner, oneHundred, anotherAccount]) {
+contract('MintableToken', function ([, owner, anotherAccount]) {
   beforeEach(async function () {
     this.token = await TrueUSDMock.new(owner, 0, { from: owner })
     this.mintableToken = this.token
