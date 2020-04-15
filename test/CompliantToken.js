@@ -21,7 +21,7 @@ function compliantTokenTests ([owner, oneHundred, anotherAccount], transfersToZe
           assert.equal(await this.registry.owner.call(), owner)
         })
 
-        mintableTokenTests([owner, oneHundred, anotherAccount])
+        mintableTokenTests([owner, anotherAccount])
       })
 
       it('rejects mint when user is blacklisted', async function () {

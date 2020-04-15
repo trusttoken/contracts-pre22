@@ -10,5 +10,5 @@ contract('MintableToken', function ([, owner, oneHundred, anotherAccount]) {
     await this.token.setRegistry(this.registry.address, { from: owner })
   })
 
-  mintableTokenTests([owner, oneHundred, anotherAccount])
+  mintableTokenTests([owner, anotherAccount])
 })
