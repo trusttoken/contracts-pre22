@@ -23,6 +23,11 @@ contract TrustTokenDependencies is StakedToken {}
 
 contract TrustTokenLiquidator is Liquidator {}
 
-contract TrustTokenUnlockTrustTokens is UnlockTrustTokens {}
+contract TrustTokenUnlockTrustTokens is UnlockTrustTokens {
+    constructor(TrustTokenVault _trustTokenVault) UnlockTrustTokens(_trustTokenVault) public {}
+}
 
-contract TrustTokenTrustTokenVault is TrustTokenVault {}
+contract TrustTokenTrustTokenVault is TrustTokenVault {
+    constructor(TrustToken _trustToken) TrustTokenVault(_trustToken) public {}
+
+}
