@@ -117,7 +117,7 @@ contract('Deployment', function (accounts) {
           await this.trust.transferOwnership(this.vault.address, { from: deployer })
           await this.vault.transferOwnership(this.unlock.address, { from: deployer })
           await this.vault.claimTokenOwnership({ from: deployer })
-          await this.vault.mintTrustTokens({from: deployer});
+          await this.vault.mintTrustTokens({ from: deployer })
           await this.unlock.claimVaultOwnership({ from: deployer })
           await this.unlock.transferOwnership(owner, { from: deployer })
           await this.unlock.claimOwnership({ from: owner })
