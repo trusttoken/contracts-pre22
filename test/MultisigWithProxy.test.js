@@ -1,8 +1,3 @@
-import assertRevert from './helpers/assertRevert'
-import expectThrow from './helpers/expectThrow'
-import assertBalance from './helpers/assertBalance'
-import increaseTime, { duration } from './helpers/increaseTime'
-import { throws } from 'assert'
 const Registry = artifacts.require('RegistryMock')
 const TrueUSD = artifacts.require('TrueUSDMock')
 const PreMigrationTokenController = artifacts.require('PreMigrationTokenController')
@@ -13,7 +8,7 @@ const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN
 
 contract('MultisigOwner With Proxy', function (accounts) {
-  const [_, owner1, owner2, owner3, oneHundred, blackListed, mintKey, pauseKey, approver] = accounts
+  const [, owner1, owner2, owner3, oneHundred, mintKey, pauseKey, approver] = accounts
   const notes = bytes32('notes')
   const KYCAML = bytes32('hasPassedKYC/AML')
   const CAN_BURN = bytes32('canBurn')

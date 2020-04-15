@@ -1,5 +1,3 @@
-import assertRevert from './helpers/assertRevert'
-import expectThrow from './helpers/expectThrow'
 import assertBalance from './helpers/assertBalance'
 const Registry = artifacts.require('ProvisionalRegistryMock')
 const TrueUSDMock = artifacts.require('PreMigrationTrueUSDMock')
@@ -12,7 +10,7 @@ const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN
 
 contract('--Full upgrade process --', function (accounts) {
-  const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
+  const [, owner, oneHundred, mintKey, pauseKey, approver1, approver2, approver3] = accounts
 
   const notes = bytes32('notes')
   const CAN_BURN = bytes32('canBurn')

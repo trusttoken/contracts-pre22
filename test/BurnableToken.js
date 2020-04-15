@@ -3,7 +3,7 @@ import assertBalance from './helpers/assertBalance'
 
 const BN = web3.utils.toBN
 
-function burnableTokenTests ([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns = false) {
+function burnableTokenTests ([, oneHundred], transfersToZeroBecomeBurns = false) {
   describe('--BurnableToken Tests--', function () {
     const from = oneHundred
     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'

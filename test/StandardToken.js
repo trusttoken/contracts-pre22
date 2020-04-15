@@ -154,7 +154,7 @@ function standardTokenTests ([owner, oneHundred, anotherAccount]) {
             })
 
             it('does not decrease allowance', async function () {
-              const { logs } = await this.token.transferFrom(oneHundred, to, amount, { from: spender })
+              await this.token.transferFrom(oneHundred, to, amount, { from: spender })
               const allowance = await this.token.allowance.call(oneHundred, spender)
               assert(allowance.eq(INFINITE_AMOUNT))
               const balance = await this.token.balanceOf(to)

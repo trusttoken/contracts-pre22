@@ -3,7 +3,6 @@ import mintableTokenTests from './MintableToken'
 import burnableTokenTests from './BurnableToken'
 import standardTokenTests from './StandardToken'
 import basicTokenTests from './BasicToken'
-const Registry = artifacts.require('RegistryMock')
 
 const writeAttributeFor = require('./helpers/writeAttributeFor.js')
 const bytes32 = require('./helpers/bytes32.js')

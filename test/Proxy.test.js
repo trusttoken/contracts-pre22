@@ -1,11 +1,9 @@
 import assertRevert from './helpers/assertRevert'
-import expectThrow from './helpers/expectThrow'
-import { on } from 'cluster'
 const Proxy = artifacts.require('OwnedUpgradeabilityProxy')
 const TrueUSD = artifacts.require('TrueUSDMock')
 
 contract('Proxy', function (accounts) {
-  const [_, owner, oneHundred, anotherAccount] = accounts
+  const [, owner, oneHundred, anotherAccount] = accounts
   const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
   describe('Proxy ownership', async function () {

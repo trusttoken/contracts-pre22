@@ -1,6 +1,4 @@
 import assertRevert from './helpers/assertRevert'
-import expectThrow from './helpers/expectThrow'
-import assertBalance from './helpers/assertBalance'
 const Registry = artifacts.require('RegistryMock')
 const TrueUSD = artifacts.require('TrueUSDMock')
 const Proxy = artifacts.require('OwnedUpgradeabilityProxy')
@@ -11,7 +9,7 @@ const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN
 
 contract('--Full upgrade process with multisig--', function (accounts) {
-  const [_, owner1, owner2, owner3, oneHundred, anotherAccount, mintKey, pauseKey, approver] = accounts
+  const [, owner1, owner2, owner3, oneHundred, mintKey, pauseKey, approver] = accounts
   const notes = bytes32('notes')
   const CAN_BURN = bytes32('canBurn')
 
