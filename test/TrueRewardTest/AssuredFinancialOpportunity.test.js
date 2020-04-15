@@ -11,7 +11,7 @@ const ONE_HUNDRED_BITCOIN = BN(100).mul(ONE_BITCOIN)
 
 // Liquidator Dependencies
 const TrueUSDMock = artifacts.require('TrueUSDMock')
-const Liquidator = artifacts.require('LiquidatorMock')
+const Liquidator = artifacts.require('Liquidator')
 const MockTrustToken = artifacts.require('MockTrustToken')
 const Airswap = artifacts.require('Swap')
 const AirswapERC20TransferHandler = artifacts.require('AirswapERC20TransferHandler')
@@ -24,7 +24,7 @@ const AIRSWAP_VALIDATOR = bytes32('AirswapValidatorDomain')
 const APPROVED_BENEFICIARY = bytes32('approvedBeneficiary')
 
 // staking dependencies
-const StakedToken = artifacts.require('MockStakedToken')
+const StakedToken = artifacts.require('StakedToken')
 const IS_REGISTERED_CONTRACT = bytes32('isRegisteredContract')
 const PASSED_KYCAML = bytes32('hasPassedKYC/AML')
 
@@ -119,7 +119,7 @@ contract('AssuredFinancialOpportunity', function (accounts) {
         this.pool.address, this.liquidator.address, this.exponentContract.address,
         this.token.address, { from: owner })
 
-      await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, { from: owner })
+      await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, { from: issuer })
       await this.financialOpportunity.configure(
         this.sharesToken.address, this.lendingPool.address, this.token.address, this.assuredFinancialOpportunity.address, { from: owner },
       )
