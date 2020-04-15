@@ -19,15 +19,15 @@ commands:
       - restore_cache:
           name: Restore NPM cache
           keys:
-            - npm-packages-{{ checksum "yarn.lock" }}
+            - node_modules-{{ checksum "yarn.lock" }}
       - run:
           name: Install Dependencies
           command: yarn install --frozen-lockfile
       - save_cache:
           name: Save NPM cache
-          key: npm-packages-{{ checksum "yarn.lock" }}
+          key: node_modules-{{ checksum "yarn.lock" }}
           paths:
-            - ~/.npm
+            - ./node_modules
 
 jobs:
   test:
