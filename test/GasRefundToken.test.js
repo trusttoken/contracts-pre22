@@ -1,5 +1,4 @@
 import assertRevert from './helpers/assertRevert'
-import expectThrow from './helpers/expectThrow'
 import assertBalance from './helpers/assertBalance'
 
 const Registry = artifacts.require('RegistryMock')
@@ -9,8 +8,7 @@ const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN
 
 contract('GasRefundToken', function (accounts) {
-  const [_, owner, oneHundred, anotherAccount] = accounts
-  const notes = bytes32('some notes')
+  const [, owner, oneHundred, anotherAccount] = accounts
   const FIFTY = BN(50 * 10 ** 18)
   const SET_FUTURE_GAS_PRICE = bytes32('canSetFutureRefundMinGasPrice')
 
@@ -29,7 +27,7 @@ contract('GasRefundToken', function (accounts) {
     })
 
     it('transfer to anotherAccount without gas refund', async function () {
-      const receipt = await this.token.transfer(anotherAccount, FIFTY, { from: oneHundred })
+      await this.token.transfer(anotherAccount, FIFTY, { from: oneHundred })
       await assertBalance(this.token, anotherAccount, FIFTY)
       await this.token.setMinimumGasPriceForFutureRefunds(1e3, { from: oneHundred })
       await this.token.sponsorGas()
@@ -50,7 +48,7 @@ contract('GasRefundToken', function (accounts) {
         assert((await this.token.gasRefundPool.call(i)).eq(BN(1e3)))
       }
       assert((await this.token.remainingGasRefundPool.call()).eq(BN(18)))
-      const receipt = await this.token.transfer(anotherAccount, FIFTY.sub(BN(1)), { from: oneHundred, gasPrice: 1001, gasLimit: 150000 })
+      await this.token.transfer(anotherAccount, FIFTY.sub(BN(1)), { from: oneHundred, gasPrice: 1001, gasLimit: 150000 })
       const remainingPool1 = await this.token.remainingGasRefundPool.call()
       assert(remainingPool1.eq(BN(16)), 'pool should have 16, instead ' + remainingPool1)
       await assertBalance(this.token, anotherAccount, FIFTY, 'should have received $50')

@@ -5,7 +5,7 @@ const BalanceSheet = artifacts.require('BalanceSheet')
 
 const BN = web3.utils.toBN
 
-contract('BalanceSheet', function ([_, owner, anotherAccount]) {
+contract('BalanceSheet', function ([, owner, anotherAccount]) {
   beforeEach(async function () {
     this.sheet = await BalanceSheet.new({ from: owner })
     await this.sheet.addBalance(anotherAccount, BN(100).mul(BN(10 ** 18)), { from: owner })

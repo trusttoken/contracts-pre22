@@ -12,7 +12,7 @@ const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN
 
 contract('MultisigOwner', function (accounts) {
-  const [_, owner1, owner2, owner3, oneHundred, blackListed, mintKey, pauseKey, approver] = accounts
+  const [, owner1, owner2, owner3, oneHundred, blackListed, mintKey, pauseKey, approver] = accounts
   const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
   const notes = bytes32('notes')
   const PAUSER = bytes32('isTUSDMintPausers')

@@ -3,7 +3,7 @@ import assertBalance from './helpers/assertBalance'
 
 const BN = web3.utils.toBN
 
-function mintableTokenTests ([owner, oneHundred, anotherAccount]) {
+function mintableTokenTests ([owner, anotherAccount]) {
   describe('-MintableToken Tests-', function () {
     const amount = BN(100 * 10 ** 18)
 

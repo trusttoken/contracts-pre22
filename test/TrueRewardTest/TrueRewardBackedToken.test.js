@@ -1,11 +1,7 @@
-import assertRevert from '../helpers/assertRevert'
-import expectThrow from '../helpers/expectThrow'
 const BN = web3.utils.toBN
-const bytes32 = require('../helpers/bytes32.js')
 const TrueUSDMock = artifacts.require('TrueUSDMock')
 const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
 const Registry = artifacts.require('RegistryMock')
-const CompliantTokenMock = artifacts.require('CompliantTokenMock')
 const ATokenMock = artifacts.require('ATokenMock')
 const LendingPoolMock = artifacts.require('LendingPoolMock')
 const LendingPoolCoreMock = artifacts.require('LendingPoolCoreMock')
@@ -16,7 +12,7 @@ const to18Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 8))
 const to27Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 17))
 
 contract('TrueRewardBackedToken', function (accounts) {
-  const [_, owner, holder, holder2, sender, receipient] = accounts
+  const [, owner, holder, holder2, sender, receipient] = accounts
   const HUNDRED = BN(100).mul(BN(10 ** 18))
   describe('TrueReward setup', function () {
     beforeEach(async function () {
@@ -50,7 +46,7 @@ contract('TrueRewardBackedToken', function (accounts) {
       await this.token.enableTrueReward({ from: holder })
       let enabled = await this.token.trueRewardEnabled.call(holder)
       assert.equal(enabled, true)
-      const { logs } = await this.token.disableTrueReward({ from: holder })
+      await this.token.disableTrueReward({ from: holder })
       enabled = await this.token.trueRewardEnabled.call(holder)
       assert.equal(enabled, false)
       const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder)
@@ -87,7 +83,7 @@ contract('TrueRewardBackedToken', function (accounts) {
     it('enables truereward', async function () {
       let interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.financialOpportunity.address)
       assert.equal(Number(interfaceSharesTokenBalance), 0)
-      const { logs } = await this.token.enableTrueReward({ from: holder })
+      await this.token.enableTrueReward({ from: holder })
       // console.log(logs);
       const perTokenValue = await this.financialOpportunity.perTokenValue.call()
       assert.equal(Number(perTokenValue), 1000000000000000000)
@@ -135,7 +131,7 @@ contract('TrueRewardBackedToken', function (accounts) {
     it('sender truereward enabled receipient not enabled perTokenValue = 1', async function () {
       await this.token.transfer(sender, to18Decimals(100), { from: holder })
       await this.token.enableTrueReward({ from: sender })
-      const { logs } = await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+      await this.token.transfer(receipient, to18Decimals(50), { from: sender })
       // console.log(logs)
       // logs should be
       const senderBalance = await this.token.balanceOf.call(sender)
@@ -156,7 +152,7 @@ contract('TrueRewardBackedToken', function (accounts) {
       await this.token.transfer(sender, to18Decimals(100), { from: holder })
       await this.token.enableTrueReward({ from: sender })
       await this.token.enableTrueReward({ from: receipient })
-      const { logs } = await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+      await this.token.transfer(receipient, to18Decimals(50), { from: sender })
       // console.log(logs)
       const senderBalance = await this.token.balanceOf.call(sender)
       const receipientBalance = await this.token.balanceOf.call(receipient)
@@ -175,7 +171,7 @@ contract('TrueRewardBackedToken', function (accounts) {
     it('sender truereward not enabled receipient enabled perTokenValue = 1', async function () {
       await this.token.transfer(sender, to18Decimals(100), { from: holder })
       await this.token.enableTrueReward({ from: receipient })
-      const { logs } = await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+      await this.token.transfer(receipient, to18Decimals(50), { from: sender })
       // console.log(logs)
       const senderBalance = await this.token.balanceOf.call(sender)
       const receipientBalance = await this.token.balanceOf.call(receipient)
@@ -196,7 +192,7 @@ contract('TrueRewardBackedToken', function (accounts) {
         await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
         await this.token.transfer(sender, to18Decimals(100), { from: holder })
         await this.token.enableTrueReward({ from: sender })
-        const { logs } = await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+        await this.token.transfer(receipient, to18Decimals(50), { from: sender })
         // console.log(logs)
         const senderBalance = await this.token.balanceOf.call(sender)
         const receipientBalance = await this.token.balanceOf.call(receipient)
@@ -217,7 +213,7 @@ contract('TrueRewardBackedToken', function (accounts) {
         await this.token.transfer(sender, to18Decimals(100), { from: holder })
         await this.token.enableTrueReward({ from: sender })
         await this.token.enableTrueReward({ from: receipient })
-        const { logs } = await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+        await this.token.transfer(receipient, to18Decimals(50), { from: sender })
         const senderBalance = await this.token.balanceOf.call(sender)
         const receipientBalance = await this.token.balanceOf.call(receipient)
         const senderLoanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(sender)
@@ -238,7 +234,7 @@ contract('TrueRewardBackedToken', function (accounts) {
         await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
         await this.token.transfer(sender, to18Decimals(100), { from: holder })
         await this.token.enableTrueReward({ from: receipient })
-        const { logs } = await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+        await this.token.transfer(receipient, to18Decimals(50), { from: sender })
         // console.log(logs)
         const senderBalance = await this.token.balanceOf.call(sender)
         const receipientBalance = await this.token.balanceOf.call(receipient)
@@ -262,7 +258,7 @@ contract('TrueRewardBackedToken', function (accounts) {
         await this.token.transfer(sender, to18Decimals(100), { from: holder })
         await this.token.enableTrueReward({ from: sender })
         await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.6), { from: owner })
-        const { logs } = await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+        await this.token.transfer(receipient, to18Decimals(50), { from: sender })
         const senderBalance = await this.token.balanceOf.call(sender)
         const receipientBalance = await this.token.balanceOf.call(receipient)
         const senderLoanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(sender)
@@ -285,7 +281,7 @@ contract('TrueRewardBackedToken', function (accounts) {
         await this.token.enableTrueReward({ from: sender })
         await this.token.enableTrueReward({ from: receipient })
         await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.6), { from: owner })
-        const { logs } = await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+        await this.token.transfer(receipient, to18Decimals(50), { from: sender })
         const senderBalance = await this.token.balanceOf.call(sender)
         const receipientBalance = await this.token.balanceOf.call(receipient)
         const senderLoanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(sender)
@@ -307,7 +303,7 @@ contract('TrueRewardBackedToken', function (accounts) {
         await this.token.transfer(sender, to18Decimals(100), { from: holder })
         await this.token.enableTrueReward({ from: receipient })
         await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.6), { from: owner })
-        const { logs } = await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+        await this.token.transfer(receipient, to18Decimals(50), { from: sender })
         const senderBalance = await this.token.balanceOf.call(sender)
         const receipientBalance = await this.token.balanceOf.call(receipient)
         const senderLoanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(sender)
