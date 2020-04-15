@@ -64,15 +64,15 @@
   // setup uniswap
   // needs to compile using truffle compile
   /*
-  this.uniswapFactory = await deploy('contracts/uniswap_factory')
-  this.uniswapTemplate = await deploy('contracts/uniswap_exchange')
+  this.uniswapFactory = await deploy('uniswap_factory')
+  this.uniswapTemplate = await deploy('uniswap_exchange')
   await this.uniswapFactory.initializeFactory(this.uniswapTemplate.address)
   this.tusdUniswapExchange = await this.uniswapFactory.createExchange(this.tusd.address)
   
   console.log(this.tusdUniswapExchange)
   // this.tusdUniswapAddress = (await this.uniswapFactory.createExchange(
   //   this.tusdProxy.address))//.logs[0].args.exchange
-  this.tusdUniswap = await contractAt('contracts/uniswap_exchange', 
+  this.tusdUniswap = await contractAt('uniswap_exchange', 
     this.tusdUniswap.address)
 
   this.trustUniswapAddress = (await this.uniswapFactory.createExchange(
