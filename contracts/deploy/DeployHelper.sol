@@ -4,7 +4,7 @@ import { Registry } from "@trusttoken/registry/contracts/Registry.sol";
 import { TrueUSD } from "../TrueCurrencies/TrueUSD.sol";
 import { RegistryImplementation } from "../mocks/RegistryImplementation.sol";
 import { OwnedUpgradeabilityProxy } from "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
-import { TokenController } from "../TrueCurrencies/admin/TokenController.sol";
+import { TokenController } from "../TrueCurrencies/Admin/TokenController.sol";
 import { AssuredFinancialOpportunity } from "../TrueReward/AssuredFinancialOpportunity.sol";
 import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
 import { IExponentContract } from "../TrueReward/utilities/IExponentContract.sol";
