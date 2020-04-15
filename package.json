@@ -16,7 +16,7 @@
     "build:vy": "bash ./compileUniswap.sh",
     "build": "yarn clean && yarn build:vy && yarn build:sol",
     "lint:sol": "solium --no-soliumignore -d contracts/",
-    "lint:js": "eslint 'test/**/*.{js,ts}'",
+    "lint:js": "eslint '{test,scripts}/**/*.{js,ts}'",
     "lint": "yarn lint:js && yarn lint:sol"
   },
   "author": "",

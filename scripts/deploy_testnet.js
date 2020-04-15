@@ -12,19 +12,19 @@
 (async () => {
   const rpcOptions = {
     rinkeby: 'https://rinkeby.infura.io/v3/81447a33c1cd4eb09efb1e8c388fb28e',
-    development: 'http://localhost:7545'
+    development: 'http://localhost:7545',
   }
 
   const config = {
     rpc: process.argv[3] || rpcOptions.development,
     accountPrivateKey: process.argv[2],
     network: 'rinkeby',
-    gas: 40000000
+    gas: 40000000,
   }
 
   const ethers = require('ethers')
   const { setupDeployer, getContract, validatePrivateKey } = require('./utils')
-  
+
   validatePrivateKey(config.accountPrivateKey)
 
   const provider = new ethers.providers.JsonRpcProvider(config.rpc)
@@ -36,11 +36,11 @@
   const ZERO = '0x0000000000000000000000000000000000000000'
 
   this.tusdProxy = await deploy('OwnedUpgradeabilityProxy')
-  console.log("deployed tusdProxy at: ", this.tusdProxy.address)
+  console.log('deployed tusdProxy at: ', this.tusdProxy.address)
   this.controllerProxy = await deploy('OwnedUpgradeabilityProxy')
-  console.log("deployed controllerProxy at: ", this.controllerProxy.address)
+  console.log('deployed controllerProxy at: ', this.controllerProxy.address)
   this.assuredOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
-  console.log("deployed assuredOpportunityProxy at: ", this.assuredOpportunityProxy.address)
+  console.log('deployed assuredOpportunityProxy at: ', this.assuredOpportunityProxy.address)
 
   // Deploy all contracts
   this.tusd = await deploy('TrueUSD')
@@ -68,11 +68,11 @@
   this.uniswapTemplate = await deploy('uniswap_exchange')
   await this.uniswapFactory.initializeFactory(this.uniswapTemplate.address)
   this.tusdUniswapExchange = await this.uniswapFactory.createExchange(this.tusd.address)
-  
+
   console.log(this.tusdUniswapExchange)
   // this.tusdUniswapAddress = (await this.uniswapFactory.createExchange(
   //   this.tusdProxy.address))//.logs[0].args.exchange
-  this.tusdUniswap = await contractAt('uniswap_exchange', 
+  this.tusdUniswap = await contractAt('uniswap_exchange',
     this.tusdUniswap.address)
 
   this.trustUniswapAddress = (await this.uniswapFactory.createExchange(
@@ -80,20 +80,20 @@
 
   this.trustUniswap = await UniswapExchange.at(this.trustUniswapAddress)
   // deploy liquidator
-  this.liquidator = await deploy('Liquidator', this.registry.address, 
-    this.tusd.address, this.trusttoken.address, this.tusdUniswap.address, 
+  this.liquidator = await deploy('Liquidator', this.registry.address,
+    this.tusd.address, this.trusttoken.address, this.tusdUniswap.address,
     this.trustUniswap.address)
-  
+
   // deploy assurance pool
   this.assurancePool = await deploy('StakedToken', this.trusttoken.address,
     this.tusd.address, this.registry.address,
     this.liquidator.address)
   */
   // deploy liquidator
-  this.liquidator = await deploy('Liquidator', this.registry.address, 
-    this.tusd.address, this.trusttoken.address, ZERO, 
+  this.liquidator = await deploy('Liquidator', this.registry.address,
+    this.tusd.address, this.trusttoken.address, ZERO,
     ZERO)
-  
+
   // deploy assurance pool
   this.assurancePool = await deploy('StakedToken', this.trusttoken.address,
     this.tusd.address, this.registry.address,
@@ -101,16 +101,16 @@
 
   // Deploy UpgradeHelper
   this.deployHelper = await deploy('TestnetDeployHelper')
-  
+
   // transfer proxy ownership to deploy helper
   await this.controllerProxy.transferProxyOwnership(this.deployHelper.address)
-  console.log("controller proxy transfer ownership")
+  console.log('controller proxy transfer ownership')
   await this.tusdProxy.transferProxyOwnership(this.deployHelper.address)
-  console.log("tusdProxy proxy transfer ownership")
+  console.log('tusdProxy proxy transfer ownership')
   await this.liquidator.transferOwnership(this.deployHelper.address)
-  console.log("liquidator proxy transfer ownership")
+  console.log('liquidator proxy transfer ownership')
   await this.assuredOpportunityProxy.transferProxyOwnership(this.deployHelper.address)
-  console.log("assuredOpportunityProxy proxy transfer ownership")
+  console.log('assuredOpportunityProxy proxy transfer ownership')
   await this.registry.transferOwnership(this.deployHelper.address)
 
   // call deployHelper
@@ -126,35 +126,34 @@
     this.exponentContract.address,
     this.assurancePool.address,
     this.liquidator.address,
-    { gasLimit: 5000000 }
+    { gasLimit: 5000000 },
   )
-  console.log("deployHelper: setup")
+  console.log('deployHelper: setup')
 
   // reclaim ownership
   await this.controllerProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  console.log("controllerProxy claim ownership")
+  console.log('controllerProxy claim ownership')
   await this.tusdProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  console.log("tusdProxy claim ownership")
+  console.log('tusdProxy claim ownership')
   await this.liquidator.claimOwnership({ gasLimit: 5000000 })
-  console.log("liquidator claim ownership")
+  console.log('liquidator claim ownership')
   await this.assuredOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  console.log("assuredOpportunityProxy claim ownership")
+  console.log('assuredOpportunityProxy claim ownership')
   await this.registry.claimOwnership({ gasLimit: 5000000 })
-  console.log("registry claim ownership")
+  console.log('registry claim ownership')
 
   // setup controller through proxy
-  this.controller = await contractAt('TokenFaucet', 
+  this.controller = await contractAt('TokenFaucet',
     this.controllerProxy.address)
   await this.controller.claimOwnership({ gasLimit: 5000000 })
-  console.log("TokenFaucet claim ownership")
+  console.log('TokenFaucet claim ownership')
 
   await this.controller.setMintThresholds(
     ethers.utils.bigNumberify('1000000000000000000000'),
     ethers.utils.bigNumberify('10000000000000000000000'),
-    ethers.utils.bigNumberify('100000000000000000000000')
+    ethers.utils.bigNumberify('100000000000000000000000'),
   )
-  console.log("set mint thresholds")
+  console.log('set mint thresholds')
 
-  console.log("\n\nSUCCESSFULLY DEPLOYED TO NETWORK: ", config.rpc, "\n\n")
-
+  console.log('\n\nSUCCESSFULLY DEPLOYED TO NETWORK: ', config.rpc, '\n\n')
 })()
