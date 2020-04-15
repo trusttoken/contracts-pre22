@@ -39,6 +39,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     address exponentContractAddress;
     address trueRewardBackedTokenAddress;
     uint32 rewardBasis;
+    uint rewardBasisAjustmentFactor;
+    uint minPerTokenValue;
 
     using SafeMath for uint;
     using SafeMath for uint32;
@@ -72,6 +74,13 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return IERC20(trueRewardBackedTokenAddress);
     }
 
+    function _calculatePerTokenValue(uint32 _rewardBasis) internal view returns(uint256) {
+        (uint256 result, uint8 precision) = exponents().power(
+            opportunity().perTokenValue(), 10**18,
+            _rewardBasis, TOTAL_BASIS);
+        return result.mul(10**18).div(2 ** uint256(precision));
+    }
+
     /**
      * Calculate TUSD / zTUSD (opportunity value minus pool award)
      * We assume opportunity perTokenValue always goes up
@@ -83,11 +92,12 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
             return opportunity().perTokenValue();
         }
 
-        // otherwise calcualte perTokenValue
-        (uint256 result, uint8 precision) = exponents().power(
-            opportunity().perTokenValue(), 10**18,
-            rewardBasis, TOTAL_BASIS);
-        return result.mul(10**18).div(2 ** uint256(precision));
+        uint calculatedValue = _calculatePerTokenValue(rewardBasis).mul(rewardBasisAjustmentFactor).div(10**18);
+        if(calculatedValue < minPerTokenValue) {
+            return minPerTokenValue;
+        } else {
+            return calculatedValue;
+        }
     }
 
     /**
@@ -113,6 +123,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         liquidatorAddress = _liquidatorAddress;
         exponentContractAddress = _exponentContractAddress;
         trueRewardBackedTokenAddress = _trueRewardBackedTokenAddress;
+        rewardBasis = TOTAL_BASIS;
+        rewardBasisAjustmentFactor = 1*10**18;
     }
 
     modifier onlyToken() {
@@ -253,6 +265,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     function setRewardBasis(uint32 _value) external onlyOwner {
+        minPerTokenValue = _perTokenValue();
+
+        rewardBasisAjustmentFactor = rewardBasisAjustmentFactor
+            .mul(_calculatePerTokenValue(rewardBasis))
+            .div(_calculatePerTokenValue(_value));
         rewardBasis = _value;
     }
 
