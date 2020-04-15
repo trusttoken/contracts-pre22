@@ -29,5 +29,4 @@ contract TrustTokenUnlockTrustTokens is UnlockTrustTokens {
 
 contract TrustTokenTrustTokenVault is TrustTokenVault {
     constructor(TrustToken _trustToken) TrustTokenVault(_trustToken) public {}
-
 }
