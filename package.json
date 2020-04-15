@@ -12,7 +12,9 @@
     "flatten": "./flatten-all",
     "profile": "./profile.sh",
     "clean": "rm -rf ./build",
-    "build": "npm run-script clean && waffle .waffle.json && bash ./compileUniswap.sh",
+    "build:sol": "waffle .waffle.json",
+    "build:vy": "bash ./compileUniswap.sh",
+    "build": "yarn clean && yarn build:vy && yarn build:sol",
     "lint:sol": "solium --no-soliumignore -d contracts/",
     "lint:js": "eslint 'test/**/*.{js,ts}'",
     "lint": "yarn lint:js && yarn lint:sol"
@@ -27,12 +29,14 @@
     "babel-preset-stage-3": "^6.17.0",
     "babel-register": "^6.26.0",
     "eslint": "^6.8.0",
+    "ethereum-waffle": "^2.4.1",
     "solidity-coverage": "^0.7.0",
     "solium": "^1.2.5"
   },
   "dependencies": {
     "@trusttoken/registry": "0.1.2",
     "@trusttoken/trusttokens": "0.1.4",
+    "ethers": "^4.0.46",
     "ganache-cli": "6.8.1",
     "ganache-time-traveler": "^1.0.14",
     "openzeppelin-solidity": "^2.4.0",
