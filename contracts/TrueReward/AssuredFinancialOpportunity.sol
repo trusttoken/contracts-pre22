@@ -3,10 +3,12 @@ pragma solidity ^0.5.13;
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "@trusttoken/trusttokens/contracts/Liquidator.sol";
-import "@trusttoken/trusttokens/contracts/StakingAsset.sol";
+import "@trusttoken/trusttokens/contracts/StakedToken.sol";
 import "../TrueCurrencies/AssuredFinancialOpportunityStorage.sol";
 import "../TrueCurrencies/modularERC20/InitializableClaimable.sol";
 import "./utilities/FractionalExponents.sol";
+import "../TrueCurrencies/AssuredFinancialOpportunityStorage.sol";
+import "../TrueCurrencies/modularERC20/InitializableClaimable.sol";
 import "./FinancialOpportunity.sol";
 
 /**
@@ -118,7 +120,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         address _exponentContractAddress,
         address _trueRewardBackedTokenAddress
     ) external {
-        super._configure();
+        super._configure(); // sender claims ownership here
         opportunityAddress = _opportunityAddress;
         assuranceAddress = _assuranceAddress;
         liquidatorAddress = _liquidatorAddress;

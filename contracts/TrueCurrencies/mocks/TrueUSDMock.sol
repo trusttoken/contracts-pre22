@@ -34,15 +34,4 @@ contract TrueUSDMock is TrueUSD {
     }
     address aaveAddress;
 
-    function setAaveInterfaceAddress(address _aaveAddress) external {
-        aaveAddress = _aaveAddress;
-    }
-
-    function aaveInterfaceAddress() public view returns (address) {
-        return aaveAddress;
-    }
-
-    function setOwner(address _owner) external {
-        owner = _owner;
-    }
 }

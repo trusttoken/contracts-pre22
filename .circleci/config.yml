@@ -17,17 +17,17 @@ commands:
   install_dependencies:
     steps:
       - restore_cache:
-          name: Restore NPM cache
+          name: Restore modules cache
           keys:
-            - npm-packages-{{ checksum "package-lock.json" }}
+            - node_modules-{{ checksum "yarn.lock" }}
       - run:
           name: Install Dependencies
-          command: npm ci
+          command: yarn install --frozen-lockfile
       - save_cache:
-          name: Save NPM cache
-          key: npm-packages-{{ checksum "package-lock.json" }}
+          name: Save modules cache
+          key: node_modules-{{ checksum "yarn.lock" }}
           paths:
-            - ~/.npm
+            - ./node_modules
 
 jobs:
   test:
@@ -39,8 +39,8 @@ jobs:
       - pull_submodules
       - install_dependencies
       - setup_vyper
-      - run: npm run-script lint
-      - run: npm test
+      - run: yarn lint
+      - run: yarn test
 
 workflows:
   version: 2

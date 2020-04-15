@@ -32,4 +32,15 @@ contract TrueUSD is TrueRewardBackedToken, DelegateERC20 {
     function canBurn() internal pure returns (bytes32) {
         return "canBurn";
     }
+
+    // used by proxy to initalize
+    // must create proxy and initalize in same transaction
+    // this sets the owner to msg.sender
+    // may be a security risk for deployment
+    function initialize() external {
+        require(!initialized, "already initialized");
+        initialized = true;
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
+    }
 }

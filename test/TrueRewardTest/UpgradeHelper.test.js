@@ -16,7 +16,8 @@ contract('UpgradeHelper', function ([owner]) {
 
     this.oldTusdImplementation = await TrueUSDMock.new(owner, 0)
     await this.tusdProxy.upgradeTo(this.oldTusdImplementation.address)
-    await (await TrueUSDMock.at(this.tusdProxy.address)).setOwner(owner)
+    this.tusdMock = await TrueUSDMock.at(this.tusdProxy.address)
+    await this.tusdMock.initialize()
     this.tusdImplementation = await TrueUSD.new()
 
     this.assuredFinancialOpportunityImplementation = await AssuredFinancialOpportunity.new()
@@ -74,6 +75,21 @@ contract('UpgradeHelper', function ([owner]) {
   describe('TokenController', async function () {
     it('proxy ownership is properly set', async function () {
       assert.equal((await this.tokenControllerProxy.pendingProxyOwner()), owner)
+    })
+  })
+})
+
+// used to check bytesize of contract
+contract('Check TrueUSD Gas', function () {
+  it('get the size of the TrueUSD contract', function () {
+    return TrueUSD.deployed().then(function (instance) {
+      var bytecode = instance.constructor._json.bytecode
+      var deployed = instance.constructor._json.deployedBytecode
+      var sizeOfB = bytecode.length / 2
+      var sizeOfD = deployed.length / 2
+      console.log('size of bytecode in bytes = ', sizeOfB)
+      console.log('size of deployed in bytes = ', sizeOfD)
+      console.log('initialisation and constructor code in bytes = ', sizeOfB - sizeOfD)
     })
   })
 })

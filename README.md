@@ -1,7 +1,10 @@
 # Setup
+Our development environment uses Truffle and Solidity. We require vyper as a dependency for uniswap.
+
+## Develop
 ```
 git submodule update --init --recursive
-npm install
+yarn install
 brew install python3
 brew install gmp leveldb
 pip3 install virtualenv
@@ -11,6 +14,12 @@ pip install vyper
 ./test.sh
 ```
 
+## Build
+For more efficient compilation and deployment, we use waffle (https://getwaffle.io/).
+```
+npm run-script build
+node scripts/deploy_testnet.js
+```
 # Deployments
 For all of our deployments, the address is the same between mainnet and testnet.
 Our source code is verified on Etherscan.
@@ -125,21 +134,21 @@ git submodule init && git submodule update
 
 ## Testing
 ```bash
-npm install
-npm test # runs ./test.sh
+yarn install
+yarn test # runs ./test.sh
 ```
 
 ## Profiling
 To run the profiler and update `GasProfile.json`, run the profile script in the root directory.
 
 ```bash
-npm run profile # runs ./profile.sh
+yarn profile # runs ./profile.sh
 ```
 
 ## Flattening
 Run the flattener in the root directory.
 ```bash
-npm run flatten # runs ./flatten-all
+yarn flatten # runs ./flatten-all
 ```
 
 # Links

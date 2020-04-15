@@ -1,10 +1,6 @@
 import assertRevert from './helpers/assertRevert'
-import expectThrow from './helpers/expectThrow'
 import assertBalance from './helpers/assertBalance'
 
-const Registry = artifacts.require('RegistryMock')
-const TrueUSD = artifacts.require('TrueUSDMock')
-const ForceEther = artifacts.require('ForceEther')
 const DepositAddressRegistrar = artifacts.require('DepositAddressRegistrar')
 
 const writeAttributeFor = require('./helpers/writeAttributeFor.js')
@@ -75,7 +71,7 @@ function depositTokenTests ([owner, oneHundred, anotherAccount, thirdAddress]) {
     it('deposit tokens work with minting', async function () {
       const depositAddressOne = web3.utils.toChecksumAddress(anotherAccount.slice(0, 37) + '00000')
       const depositAddressTwo = web3.utils.toChecksumAddress(anotherAccount.slice(0, 37) + '20000')
-      const { logs } = await this.mintableToken.mint(depositAddressOne, BN(10 * 10 ** 18), { from: owner })
+      await this.mintableToken.mint(depositAddressOne, BN(10 * 10 ** 18), { from: owner })
       await this.mintableToken.mint(depositAddressTwo, BN(10 * 10 ** 18), { from: owner })
       await assertBalance(this.token, anotherAccount, BN(20 * 10 ** 18))
     })

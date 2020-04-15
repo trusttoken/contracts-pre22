@@ -1,5 +1,4 @@
 import assertRevert from './helpers/assertRevert'
-import expectThrow from './helpers/expectThrow'
 const Registry = artifacts.require('RegistryMock')
 const TrueUSD = artifacts.require('TrueUSDMock')
 const Proxy = artifacts.require('OwnedUpgradeabilityProxy')
@@ -9,7 +8,7 @@ const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN
 
 contract('Proxy With Controller', function (accounts) {
-  const [_, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, approver1, approver2, approver3, spender] = accounts
+  const [, owner, oneHundred, otherAddress, mintKey, pauseKey, approver1, approver2, approver3] = accounts
   const notes = bytes32('some notes')
   const CAN_BURN = bytes32('canBurn')
 

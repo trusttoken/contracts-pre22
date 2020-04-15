@@ -257,6 +257,7 @@
       "no-unreachable": "error",
       "no-unsafe-finally": "error",
       "no-unsafe-negation": "error",
+      "no-unused-vars": [2, {"vars": "all", "args": "after-used"}],
       "no-restricted-imports": ["error", {
         "patterns": ["original-works-core/src", "original-works-core/dist"]
       }],
@@ -424,13 +425,5 @@
         "error",
         "never"
       ]
-    },
-    "overrides": [
-      {
-        "files": ["test/**/*.{js,ts,tsx}"],
-        "rules": {
-          "no-unused-expressions": "off"
-        }
-      }
-    ]
+    }
   }

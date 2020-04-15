@@ -1,16 +1,14 @@
 import assertRevert from './helpers/assertRevert'
-import expectThrow from './helpers/expectThrow'
 import burnableTokenWithBoundsTests from './BurnableTokenWithBounds'
 import compliantTokenTests from './CompliantToken'
 const Registry = artifacts.require('RegistryMock')
 const TrueUSDMock = artifacts.require('TrueUSDMock')
-const ForceEther = artifacts.require('ForceEther')
 
 const BN = web3.utils.toBN
 const bytes32 = require('./helpers/bytes32.js')
 
 contract('TrueUSD', function (accounts) {
-  const [_, owner, oneHundred, anotherAccount] = accounts
+  const [, owner, oneHundred, anotherAccount] = accounts
   const notes = bytes32('some notes')
   const HUNDRED = BN(100).mul(BN(10 ** 18))
   const CAN_BURN = bytes32('canBurn')

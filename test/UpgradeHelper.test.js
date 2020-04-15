@@ -1,5 +1,3 @@
-import assertRevert from './helpers/assertRevert'
-import expectThrow from './helpers/expectThrow'
 const Controller = artifacts.require('PreMigrationTokenController')
 const CanDelegate = artifacts.require('CanDelegateMock')
 const TrueUSD = artifacts.require('PreMigrationTrueUSDMock')
@@ -8,8 +6,7 @@ const UpgradeHelperMock = artifacts.require('UpgradeHelperMock')
 const BN = web3.utils.toBN
 
 contract('Upgrade Helper', function (accounts) {
-  const [_, owner, oneHundred, anotherAccount, thirdAddress] = accounts
-  const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+  const [, owner, oneHundred] = accounts
 
   describe('upgrade using Upgrade Helper', function () {
     beforeEach(async function () {

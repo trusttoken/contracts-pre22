@@ -1,7 +1,3 @@
-import assertRevert from '../helpers/assertRevert'
-import expectThrow from '../helpers/expectThrow'
-import assertBalance from '../helpers/assertBalance'
-
 // types and values
 const to18Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 8))
 const to27Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 17))
@@ -12,51 +8,42 @@ const ONE_ETHER = BN(1e18)
 const ONE_HUNDRED_ETHER = BN(100).mul(ONE_ETHER)
 const ONE_BITCOIN = BN(1e8)
 const ONE_HUNDRED_BITCOIN = BN(100).mul(ONE_BITCOIN)
-const DEFAULT_RATIO = BN(1000)
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
-const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000'
 
 // Liquidator Dependencies
 const TrueUSDMock = artifacts.require('TrueUSDMock')
-const Liquidator = artifacts.require('LiquidatorMock')
+const Liquidator = artifacts.require('Liquidator')
 const MockTrustToken = artifacts.require('MockTrustToken')
-const TrueUSD = artifacts.require('TrueUSD')
 const Airswap = artifacts.require('Swap')
 const AirswapERC20TransferHandler = artifacts.require('AirswapERC20TransferHandler')
 const TransferHandlerRegistry = artifacts.require('TransferHandlerRegistry')
 const UniswapFactory = artifacts.require('uniswap_factory')
 const UniswapExchange = artifacts.require('uniswap_exchange')
-const { Order, hashDomain } = require('./lib/airswap.js')
+const { hashDomain } = require('./lib/airswap.js')
 const ERC20_KIND = '0x36372b07'
 const AIRSWAP_VALIDATOR = bytes32('AirswapValidatorDomain')
 const APPROVED_BENEFICIARY = bytes32('approvedBeneficiary')
 
 // staking dependencies
-const StakedToken = artifacts.require('MockStakedToken')
-const IS_DEPOSIT_ADDRESS = bytes32('isDepositAddress')
+const StakedToken = artifacts.require('StakedToken')
 const IS_REGISTERED_CONTRACT = bytes32('isRegisteredContract')
 const PASSED_KYCAML = bytes32('hasPassedKYC/AML')
 
 // opportunities dependencies
 const Registry = artifacts.require('RegistryMock')
-const CompliantTokenMock = artifacts.require('CompliantTokenMock')
 const ATokenMock = artifacts.require('ATokenMock')
 const LendingPoolMock = artifacts.require('LendingPoolMock')
 const LendingPoolCoreMock = artifacts.require('LendingPoolCoreMock')
 const AaveFinancialOpportunity = artifacts.require('AaveFinancialOpportunity')
 const OwnedUpgradeabilityProxy = artifacts.require('OwnedUpgradeabilityProxy')
-const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
 
 // assured financial opportunities dependencies
 const AssuredFinancialOpportunity = artifacts.require('AssuredFinancialOpportunity')
 const FractionalExponents = artifacts.require('FractionalExponents')
 
 contract('AssuredFinancialOpportunity', function (accounts) {
-  const [_, owner, issuer, oneHundred, approvedBeneficiary,
-    holder, holder2, sender, receipient, kycAccount] = accounts
+  const [, owner, issuer, oneHundred, approvedBeneficiary,
+    holder, holder2, kycAccount] = accounts
   // const kycAccount = '0x835c247d2f6524009d38dc52d95a929f62888df6'
-  const CAN_BURN = bytes32('canBurn')
-  const BLACKLISTED = bytes32('isBlacklisted')
   describe('TrueReward setup', function () {
     beforeEach(async function () {
       // Liquidation Setup
@@ -132,7 +119,7 @@ contract('AssuredFinancialOpportunity', function (accounts) {
         this.pool.address, this.liquidator.address, this.exponentContract.address,
         this.token.address, { from: owner })
 
-      await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, { from: owner })
+      await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, { from: issuer })
       await this.financialOpportunity.configure(
         this.sharesToken.address, this.lendingPool.address, this.token.address, this.assuredFinancialOpportunity.address, { from: owner },
       )
@@ -158,7 +145,7 @@ contract('AssuredFinancialOpportunity', function (accounts) {
       await this.token.transfer(holder2, to18Decimals(100), { from: holder })
       const interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.assuredFinancialOpportunity.address)
       assert.equal(Number(interfaceSharesTokenBalance), 0)
-      const { logs } = await this.token.enableTrueReward({ from: holder2 })
+      await this.token.enableTrueReward({ from: holder2 })
       const enabled = await this.token.trueRewardEnabled.call(holder2)
       assert.equal(enabled, true)
       const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder2)

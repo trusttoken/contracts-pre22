@@ -4,14 +4,14 @@ import "./CompliantDepositTokenWithHook.sol";
 import "../TrueReward/FinancialOpportunity.sol";
 
 /**
- * @title TrueRewardBackedToken (zTUSD)
- * @dev TrueRewardBackedToken (or zTUSD) is TrueUSD backed by debt.
- * zTUSD represents 1 dollar of debt owed to the zTUSD holder
+ * @title TrueRewardBackedToken
+ * @dev TrueRewardBackedToken is TrueUSD backed by debt.
+ *
+ * zTUSD represents an amount of TUSD owed to the zTUSD holder
+ * zTUSD is calculated by calling perTokenValue on a financial opportunity
  * zTUSD is not transferrable in that the token itself is never tranferred
  * Rather, we override our transfer functions to account for user balances
- *
- * yTUSD represents 1 opportunity token as returned by perTokenValue()
- * We assume yTUSD always increases in value
+ * We assume zTUSD always increases in value
  *
  * This contract uses a reserve holding of TUSD and zTUSD to save on gas costs
  * because calling the financial opportunity deposit() and withdraw() everytime
@@ -22,20 +22,18 @@ import "../TrueReward/FinancialOpportunity.sol";
  * so some of the code is built to support this
  */
 contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
+
     /* Variables in Proxy Storage:
      * struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
      * mapping(address => FinancialOpportunityAllocation[]) _trueRewardDistribution;
      * mapping (address => mapping (address => uint256)) _financialOpportunityBalances;
     */
 
-    // Aave Interface address
-    address public constant AAVE_INTERFACE = address(0);
-
     // Reserve is an address which nobody has the private key to
     // Reserves of TUSD and TrueRewardBackedToken are held at this addess
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
     uint public _totalAaveSupply;
-    address public aaveInterfaceAddress_ = AAVE_INTERFACE;
+    address public aaveInterfaceAddress_;
 
     event TrueRewardEnabled(address _account);
     event TrueRewardDisabled(address _account);
@@ -171,7 +169,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * Set allocation to 100% since we only have a single opportunity
      */
     function _enableAave() internal {
-        require(_trueRewardDistribution[msg.sender].length == 0, "aave already enabled");
+        require(_trueRewardDistribution[msg.sender].length == 0, "already enabled");
         _trueRewardDistribution[msg.sender].push(FinancialOpportunityAllocation(aaveInterfaceAddress(), 100));
     }
 
@@ -339,7 +337,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     }
 
     /**
-     * @dev TransferAll helper function for TrueRewardBackedToken
+     * @dev TransferFromAll helper function for TrueRewardBackedToken
      * Uses reserve float to save gas costs for transactions with value < reserve balance.
      * Case #2 and #3 use reserve balances.
      *
