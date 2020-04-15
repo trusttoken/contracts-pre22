@@ -119,7 +119,7 @@ contract('AssuredFinancialOpportunity', function (accounts) {
         this.pool.address, this.liquidator.address, this.exponentContract.address,
         this.token.address, { from: owner })
 
-      await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, { from: owner })
+      await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, { from: issuer })
       await this.financialOpportunity.configure(
         this.sharesToken.address, this.lendingPool.address, this.token.address, this.assuredFinancialOpportunity.address, { from: owner },
       )

@@ -15,6 +15,7 @@ const BN = web3.utils.toBN
 
 contract('-----Full Deploy From Scratch-----', function (accounts) {
   const [, owner, pauseKey, approver1, approver2, approver3] = accounts
+  const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
   const notes = bytes32('notes')
   const CAN_BURN = bytes32('canBurn')
@@ -47,8 +48,8 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
 
       // deploy liquidator
       this.liquidator = await Liquidator.new(this.registry.address,
-        this.tusd.address, this.trusttoken.address, this.tusdUniswap.address,
-        this.trustUniswap.address, { from: owner })
+        this.tusd.address, this.trusttoken.address, ZERO_ADDRESS,
+        ZERO_ADDRESS, { from: owner })
 
       // deploy assurance pool
       this.assurancePool = await StakedToken.new(this.trusttoken.address,
