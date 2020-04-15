@@ -24,19 +24,21 @@ import "./FinancialOpportunity.sol";
 contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOpportunityStorage, InitializableClaimable {
     event depositSuccess(address _account, uint amount);
     event withdrawToSuccess(address _to, uint _amount);
-    event withdrawToFailure(address _to, uint _amount);
     event stakeLiquidated(address _reciever, int256 _debt);
     event awardPoolSuccess(uint256 _amount);
     event awardPoolFailure(uint256 _amount);
 
-    uint32 constant TOTAL_BASIS = 1000; // total basis points
+    uint32 constant TOTAL_BASIS = 1000; // total basis points for pool rewards
     uint zTUSDIssued = 0; // how much zTUSD we've issued
     address opportunityAddress;
     address assuranceAddress;
     address liquidatorAddress;
     address exponentContractAddress;
     address trueRewardBackedTokenAddress;
-    uint32 rewardBasis;
+
+    // percentage of interest for staking pool
+    uint32 rewardBasis; // 1% = 10
+    // adjustment factor used when changing reward basis
     uint rewardBasisAjustmentFactor;
     uint minPerTokenValue;
 
@@ -72,6 +74,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return IERC20(trueRewardBackedTokenAddress);
     }
 
+    // todo feewet document
     function _calculatePerTokenValue(uint32 _rewardBasis) internal view returns(uint256) {
         (uint256 result, uint8 precision) = exponents().power(
             opportunity().perTokenValue(), 10**18,
@@ -173,17 +176,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         }
         else {
             // withdrawal failed! liquidate :(
-            emit withdrawToFailure(_to, _amount);
-
-            int256 liquidateAmount = int256(_amount);
-            bool canLiquidate = _canLiquidate(_amount);
-            if (canLiquidate) {
-                _liquidate(_to, liquidateAmount);
-                returnedAmount = _amount;
-            } else {
-                emit withdrawToFailure(_to, _amount);
-                returnedAmount = 0;
-            }
+            _liquidate(_to, int256(_amount));
         }
 
         // calculate new amount issued
@@ -224,14 +217,6 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * Return true if assurance pool can liquidate
-    **/
-    function _canLiquidate(uint _amount) internal returns (bool) {
-        //assurance().canLiquidate(_amount);
-        return true;
-    }
-
-    /**
      * Sell yTUSD for TUSD and deposit into staking pool.
     **/
     function awardPool() external {
@@ -262,6 +247,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return _withdraw(_to, _getBalance());
     }
 
+    /**
+     * @dev set new reward basis for opportunity
+     * recalculate perTokenValue
+     * ensure perTokenValue never decreases
+     */
     function setRewardBasis(uint32 _value) external onlyOwner {
         minPerTokenValue = _perTokenValue();
 
