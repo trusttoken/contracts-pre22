@@ -12,6 +12,7 @@ const StakedTokenProxy = artifacts.require('StakedTokenProxy')
 const Liquidator = artifacts.require('LiquidatorMock')
 const MultisigLiquidator = artifacts.require('MultisigLiquidatorMock')
 const Unlock = artifacts.require('TrustTokenUnlockTrustTokens')
+const Vault = artifacts.require('TrustTokenTrustTokenVault')
 const Types = artifacts.require('Types')
 const UniswapFactory = artifacts.require('uniswap_factory')
 const UniswapExchange = artifacts.require('uniswap_exchange')
@@ -110,7 +111,8 @@ contract('Deployment', function (accounts) {
       })
       describe('unlock', function () {
         beforeEach(async function () {
-          this.unlock = await Unlock.new(this.trust.address, { from: deployer })
+          this.vault = await Vault.new(this.trust.address, { from: deployer })
+          this.unlock = await Unlock.new(this.vault.address, { from: deployer })
           await this.trust.transferOwnership(this.unlock.address, { from: deployer })
           await this.unlock.transferOwnership(owner, { from: deployer })
           await this.unlock.claimTokenOwnership({ from: deployer })
