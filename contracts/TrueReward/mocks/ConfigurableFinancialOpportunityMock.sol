@@ -51,11 +51,11 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
         perTokenValueField = perTokenValueField.add(_by);
     }
 
-    function _getAmountInShares(uint _amount) internal returns (uint) {
+    function _getAmountInShares(uint _amount) internal view returns (uint) {
         return _amount.mul(10**18).div(perTokenValueField);
     }
 
-    function _getSharesAmount(uint _shares) internal returns (uint) {
+    function _getSharesAmount(uint _shares) internal view returns (uint) {
         return _shares.mul(perTokenValueField).div(10**18);
     }
 }

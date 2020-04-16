@@ -135,7 +135,7 @@ contract PausedToken is HasOwner, RegistryClone {
     function transfer(
         address, /*_to*/
         uint256 /*_value*/
-    ) public returns (bool) {
+    ) public pure returns (bool) {
         revert("Token Paused");
     }
 
@@ -143,41 +143,41 @@ contract PausedToken is HasOwner, RegistryClone {
         address, /*_from*/
         address, /*_to*/
         uint256 /*_value*/
-    ) public returns (bool) {
+    ) public pure returns (bool) {
         revert("Token Paused");
     }
 
     function burn(
         uint256 /*_value*/
-    ) public {
+    ) public pure {
         revert("Token Paused");
     }
 
     function mint(
         address, /*_to*/
         uint256 /*_value*/
-    ) public onlyOwner {
+    ) public view onlyOwner {
         revert("Token Paused");
     }
 
     function approve(
         address, /*_spender*/
         uint256 /*_value*/
-    ) public returns (bool) {
+    ) public pure returns (bool) {
         revert("Token Paused");
     }
 
     function increaseAllowance(
         address, /*_spender*/
         uint256 /*_addedValue*/
-    ) public returns (bool) {
+    ) public pure returns (bool) {
         revert("Token Paused");
     }
 
     function decreaseAllowance(
         address, /*_spender*/
         uint256 /*_subtractedValue*/
-    ) public returns (bool) {
+    ) public pure returns (bool) {
         revert("Token Paused");
     }
 
@@ -243,7 +243,7 @@ contract PausedDelegateERC20 is PausedToken {
         address, /*to*/
         uint256, /*value*/
         address /*origSender*/
-    ) public onlyDelegateFrom returns (bool) {
+    ) public view onlyDelegateFrom returns (bool) {
         revert("Token Paused");
     }
 
@@ -260,7 +260,7 @@ contract PausedDelegateERC20 is PausedToken {
         address, /*to*/
         uint256, /*value*/
         address /*origSender*/
-    ) public onlyDelegateFrom returns (bool) {
+    ) public view onlyDelegateFrom returns (bool) {
         revert("Token Paused");
     }
 
@@ -268,7 +268,7 @@ contract PausedDelegateERC20 is PausedToken {
         address, /*spender*/
         uint256, /*value*/
         address /*origSender*/
-    ) public onlyDelegateFrom returns (bool) {
+    ) public view onlyDelegateFrom returns (bool) {
         revert("Token Paused");
     }
 
@@ -276,7 +276,7 @@ contract PausedDelegateERC20 is PausedToken {
         address, /*spender*/
         uint256, /*addedValue*/
         address /*origSender*/
-    ) public onlyDelegateFrom returns (bool) {
+    ) public view onlyDelegateFrom returns (bool) {
         revert("Token Paused");
     }
 
@@ -284,7 +284,7 @@ contract PausedDelegateERC20 is PausedToken {
         address, /*spender*/
         uint256, /*subtractedValue*/
         address /*origSender*/
-    ) public onlyDelegateFrom returns (bool) {
+    ) public view onlyDelegateFrom returns (bool) {
         revert("Token Paused");
     }
 }
