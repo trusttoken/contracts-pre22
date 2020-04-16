@@ -2,12 +2,13 @@ import { Wallet, Contract } from 'ethers'
 import { parseEther, BigNumber } from 'ethers/utils'
 import { MockProvider, deployContract, solidity } from 'ethereum-waffle'
 import { use, expect } from 'chai'
-
-import AssuredFinancialOpportunityJSON from '../../build/AssuredFinancialOpportunity.json'
-import ConfigurableFinancialOpportunityMockJSON from '../../build/ConfigurableFinancialOpportunityMock.json'
-import FractionalExponentsJSON from '../../build/FractionalExponents.json'
-import SimpleLiquidatorMockJSON from '../../build/SimpleLiquidatorMock.json'
-import MockERC20 from '../../build/MockERC20.json'
+import {
+  AssuredFinancialOpportunityJSON,
+  ConfigurableFinancialOpportunityMockJSON,
+  FractionalExponentsJSON,
+  SimpleLiquidatorMockJSON,
+  MockERC20,
+} from '../../build'
 
 use(solidity)
 
