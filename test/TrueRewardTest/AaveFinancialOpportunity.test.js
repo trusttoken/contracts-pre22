@@ -67,6 +67,31 @@ contract('AaveFinancialOpportunity', function ([, proxyOwner, holder, owner, add
     })
   })
 
+  describe('deposit', async function () {
+    it('with exchange rate = 1', async function () {
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder })
+      await this.financialOpportunity.deposit(holder, to18Decimals(10), { from: owner })
+
+      await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(10)))
+      await assertBalance(this.token, holder, to18Decimals(90))
+    })
+
+    it('with exchange rate = 1.5', async function () {
+      await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: proxyOwner })
+
+      await this.token.approve(this.financialOpportunity.address, to18Decimals(15), { from: holder })
+      await this.financialOpportunity.deposit(holder, to18Decimals(15), { from: owner })
+
+      await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(15)))
+      await assertBalance(this.token, holder, to18Decimals(85))
+    })
+
+    it('only owner can call', async function () {
+      assertRevert(this.financialOpportunity.deposit(holder, to18Decimals(10), { from: proxyOwner }))
+      assertRevert(this.financialOpportunity.deposit(holder, to18Decimals(10), { from: holder }))
+    })
+  })
+
   describe('withdraw', async function () {
     beforeEach(async function () {
       await this.token.approve(this.financialOpportunity.address, to18Decimals(10), { from: holder })
