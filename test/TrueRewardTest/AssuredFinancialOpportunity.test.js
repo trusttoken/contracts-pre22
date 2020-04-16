@@ -115,30 +115,21 @@ contract('AssuredFinancialOpportunity', function (accounts) {
       this.assuredFinancialOpportunity = await AssuredFinancialOpportunity.at(this.assuredFinancialOpportunityProxy.address)
       await this.assuredFinancialOpportunityProxy.upgradeTo(this.assuredFinancialOpportunityImplementation.address, { from: owner })
 
-      await this.assuredFinancialOpportunity.configure(this.financialOpportunity.address,
-        this.pool.address, this.liquidator.address, this.exponentContract.address,
-        this.token.address, { from: owner })
+      await this.assuredFinancialOpportunity.configure(
+        this.financialOpportunity.address,
+        this.pool.address,
+        this.liquidator.address,
+        this.exponentContract.address,
+        this.token.address,
+        this.token.address,
+        { from: owner },
+      )
 
       await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, { from: issuer })
       await this.financialOpportunity.configure(
         this.sharesToken.address, this.lendingPool.address, this.token.address, this.assuredFinancialOpportunity.address, { from: owner },
       )
       await this.liquidator.transferOwnership(this.assuredFinancialOpportunity.address, { from: owner })
-    })
-
-    it('test perTokenValue exponentiaion 1.5', async function () {
-      await this.assuredFinancialOpportunity.setRewardBasis(0.7 * 1000, { from: owner })
-      await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
-      const finOpPerTokenValue = await this.financialOpportunity.perTokenValue.call()
-      const perTokenValue = await this.assuredFinancialOpportunity.perTokenValue.call()
-      await assert.equal(Number(perTokenValue) / 10 ** 18, Math.pow(Number(finOpPerTokenValue) / 10 ** 18, 0.7))
-    })
-
-    it('test assurance perTokenValue with 100% award', async function () {
-      await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
-      const finOpPerTokenValue = await this.financialOpportunity.perTokenValue.call()
-      const perTokenValue = await this.assuredFinancialOpportunity.perTokenValue.call()
-      await assert.equal(Number(perTokenValue) / 10 ** 18, Number(finOpPerTokenValue) / 10 ** 18)
     })
 
     it('enables truereward', async function () {
