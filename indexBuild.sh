@@ -12,8 +12,8 @@ do
     regex='\/([a-zA-Z0-9_]+)\.'
     [[ $file =~ $regex ]]
     name=${BASH_REMATCH[1]}
-    if [ name != "index" ]
-	then echo "const $name = require(\"$name.json\")" >> $outputDir/index.js
+    if [ $name != "index" ]
+	    then echo "const $name = require(\"./$name.json\")" >> $outputDir/index.js
     fi
 done
 
@@ -25,8 +25,8 @@ do
     regex='\/([a-zA-Z0-9_]+)\.'
     [[ $file =~ $regex ]]
     name=${BASH_REMATCH[1]}
-    if [ name != "index" ]
-	then echo "$name," >> $outputDir/index.js
+    if [ $name != "index" ]
+	    then echo "  $name," >> $outputDir/index.js
     fi
 done
 
