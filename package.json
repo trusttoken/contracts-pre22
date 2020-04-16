@@ -22,16 +22,22 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/chai": "^4.2.11",
+    "@types/mocha": "^7.0.2",
     "babel-eslint": "^10.1.0",
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-preset-stage-2": "^6.18.0",
     "babel-preset-stage-3": "^6.17.0",
     "babel-register": "^6.26.0",
+    "chai": "^4.2.0",
     "eslint": "^6.8.0",
     "ethereum-waffle": "^2.4.1",
+    "mocha": "^7.1.1",
     "solidity-coverage": "^0.7.0",
-    "solium": "^1.2.5"
+    "solium": "^1.2.5",
+    "ts-node": "^8.8.2",
+    "typescript": "^3.8.3"
   },
   "dependencies": {
     "@trusttoken/registry": "0.1.2",
