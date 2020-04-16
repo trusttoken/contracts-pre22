@@ -18,7 +18,7 @@
     "lint": "yarn lint:ts && yarn lint:js && yarn lint:sol",
     "build:sol": "waffle .waffle.json",
     "build:vy": "bash ./compileUniswap.sh",
-    "build": "yarn clean && yarn build:sol && bash ./indexBuild.sh",
+    "build": "yarn clean && yarn build:sol && yarn build:vy && bash ./indexBuild.sh",
     "test:js": "./test.sh",
     "test:ts": "mocha -r ts-node/register 'test-ts/**/*.test.{ts,js}'",
     "test": "yarn test:ts && yarn test:js",

@@ -8,8 +8,16 @@ regex=': \"(.+)\"'
 outputDir=${BASH_REMATCH[1]}
 mkdir -p $outputDir
 
-UFabi=$(vyper ./contracts/lib/uniswap/contracts/uniswap_factory.vy -f abi)
-UFbytecode=$(vyper ./contracts/lib/uniswap/contracts/uniswap_factory.vy -f bytecode)
+
+if [[ $CI == true ]];
+then
+ path="./home/circleci/project/contracts"
+else
+ path="./contracts"
+fi
+
+UFabi=$(vyper $path/lib/uniswap/contracts/uniswap_factory.vy -f abi)
+UFbytecode=$(vyper $path/lib/uniswap/contracts/uniswap_factory.vy -f bytecode)
 touch $outputDir/uniswap_factory.json
 rm -rf $outputDir/uniswap_factory.json
 echo "{
@@ -17,8 +25,8 @@ echo "{
     \"abi\": $UFabi
 }" >> $outputDir/uniswap_factory.json
 
-UEabi=$(vyper ./contracts/lib/uniswap/contracts/uniswap_exchange.vy -f abi)
-UEbytecode=$(vyper ./contracts/lib/uniswap/contracts/uniswap_exchange.vy -f bytecode)
+UEabi=$(vyper $path/lib/uniswap/contracts/uniswap_exchange.vy -f abi)
+UEbytecode=$(vyper $path/lib/uniswap/contracts/uniswap_exchange.vy -f bytecode)
 touch $outputDir/uniswap_exchange.json
 rm -rf $outputDir/uniswap_exchange.json
 echo "{
