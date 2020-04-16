@@ -53,6 +53,7 @@ contract UpgradeHelper {
             address(0), // address _assuranceAddress
             address(0), // address _liquidatorAddress
             exponentContractAddress, // address _exponentContractAddress
+            trueRewardBackedTokenAddress, // address _trueRewardBackedTokenAddress
             trueRewardBackedTokenAddress // address _trueRewardBackedTokenAddress
         );
 
