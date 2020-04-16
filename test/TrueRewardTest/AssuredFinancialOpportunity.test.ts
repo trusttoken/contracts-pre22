@@ -3,10 +3,10 @@ import { parseEther, BigNumber } from 'ethers/utils'
 import { MockProvider, deployContract, solidity } from 'ethereum-waffle'
 import { use, expect } from 'chai'
 import {
-  AssuredFinancialOpportunityJSON,
-  ConfigurableFinancialOpportunityMockJSON,
-  FractionalExponentsJSON,
-  SimpleLiquidatorMockJSON,
+  AssuredFinancialOpportunity,
+  ConfigurableFinancialOpportunityMock,
+  FractionalExponents,
+  SimpleLiquidatorMock,
   MockERC20,
 } from '../../build'
 
@@ -35,11 +35,11 @@ describe('AssuredFinancialOpportunity', () => {
     token = await deployContract(wallet, MockERC20)
     await token.mint(holder.address, parseEther('100'))
 
-    financialOpportunity = await deployContract(wallet, ConfigurableFinancialOpportunityMockJSON, [token.address])
-    fractionalExponents = await deployContract(wallet, FractionalExponentsJSON)
-    liquidator = await deployContract(wallet, SimpleLiquidatorMockJSON, [token.address])
+    financialOpportunity = await deployContract(wallet, ConfigurableFinancialOpportunityMock, [token.address])
+    fractionalExponents = await deployContract(wallet, FractionalExponents)
+    liquidator = await deployContract(wallet, SimpleLiquidatorMock, [token.address])
 
-    assuredFinancialOpportunity = await deployContract(wallet, AssuredFinancialOpportunityJSON)
+    assuredFinancialOpportunity = await deployContract(wallet, AssuredFinancialOpportunity)
     await assuredFinancialOpportunity.configure(
       financialOpportunity.address,
       mockPoolAddress,
