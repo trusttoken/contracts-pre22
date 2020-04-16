@@ -1,10 +1,12 @@
 #!/bin/bash
 
+set -e
+
 ODline=$(grep 'outputDirectory' .waffle.json)
 regex=': \"(.+)\"'
 [[ $ODline =~ $regex ]]
 outputDir=${BASH_REMATCH[1]}
-mkdir $outputDir
+mkdir -p $outputDir
 
 UFabi=$(vyper ./contracts/lib/uniswap/contracts/uniswap_factory.vy -f abi)
 UFbytecode=$(vyper ./contracts/lib/uniswap/contracts/uniswap_factory.vy -f bytecode)

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 ODline=$(grep 'outputDirectory' .waffle.json)
 regex=': \"(.+)\"'
 [[ $ODline =~ $regex ]]
