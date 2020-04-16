@@ -7,18 +7,20 @@
     "test": "./test.sh"
   },
   "scripts": {
-    "test": "./test.sh",
     "coverage": "./coverage.sh",
     "flatten": "./flatten-all",
     "profile": "./profile.sh",
     "clean": "rm -rf ./build",
+    "test:js": "./test.sh",
+    "test:ts": "mocha -r ts-node/register/transpile-only 'test/**/*.test.ts'",
+    "test": "yarn test:ts && yarn test:js",
     "build:sol": "waffle .waffle.json",
     "build:vy": "bash ./compileUniswap.sh",
     "build": "yarn clean && yarn build:vy && yarn build:sol",
     "lint:sol": "solium --no-soliumignore -d contracts/",
     "lint:js": "eslint '{test,scripts}/**/*.js'",
     "lint:ts": "eslint '{test,scripts}/**/*.ts'",
-    "lint": "yarn lint:js && yarn lint:ts && yarn lint:sol"
+    "lint": "yarn lint:ts && yarn lint:js && yarn lint:sol"
   },
   "author": "",
   "license": "ISC",
