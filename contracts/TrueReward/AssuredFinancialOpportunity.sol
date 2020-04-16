@@ -159,7 +159,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         opportunity().deposit(address(this), _amount);
 
         // calculate zTUSD value of deposit
-        uint zTUSDValue = zTUSDIssued.add(_amount.mul(10 ** 18).div(_perTokenValue()));
+        uint zTUSDValue = _amount.mul(10 ** 18).div(_perTokenValue());
 
         // update zTUSDIssued
         zTUSDIssued = zTUSDIssued.add(zTUSDValue);
@@ -187,7 +187,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         }
 
         // calculate new amount issued
-        zTUSDIssued = zTUSDIssued.sub(returnedAmount.div(_perTokenValue()));
+        zTUSDIssued = zTUSDIssued.sub(returnedAmount);
 
         return returnedAmount;
     }
@@ -251,7 +251,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     function withdrawAll(address _to) external onlyOwner returns(uint) {
-        return _withdraw(_to, _getBalance());
+        return _withdraw(_to, _getBalance().mul(_perTokenValue()).div(10**18));
     }
 
     /**

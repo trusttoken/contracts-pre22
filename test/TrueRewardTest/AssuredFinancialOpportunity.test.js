@@ -181,14 +181,6 @@ contract('AssuredFinancialOpportunity', function (accounts) {
       assert.equal(Number(balance), 104621298639582200000)
     })
 
-    it('per token value is adjusted when reward basis changes', async function () {
-      await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
-      const perTokenValueBefore = await this.assuredFinancialOpportunity.perTokenValue.call()
-      await this.assuredFinancialOpportunity.setRewardBasis(0.7 * 1000, { from: owner })
-      const perTokenValueAfter = await this.assuredFinancialOpportunity.perTokenValue.call()
-      await assert.equal(Number(perTokenValueBefore), Number(perTokenValueAfter))
-    })
-
     // it('reward', async function() {
 
     // })
