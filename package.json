@@ -20,7 +20,7 @@
     "build:vy": "bash ./compileUniswap.sh",
     "build": "yarn clean && yarn build:vy && yarn build:sol",
     "test:js": "./test.sh",
-    "test:ts": "mocha -r ts-node/register 'test/**/*.test.ts'",
+    "test:ts": "yarn build && mocha -r ts-node/register 'test/**/*.test.ts'",
     "test": "yarn test:ts && yarn test:js",
     "checks": "yarn lint && yarn typecheck && yarn test"
   },
