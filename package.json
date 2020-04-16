@@ -16,14 +16,17 @@
     "build:vy": "bash ./compileUniswap.sh",
     "build": "yarn clean && yarn build:vy && yarn build:sol",
     "lint:sol": "solium --no-soliumignore -d contracts/",
-    "lint:js": "eslint '{test,scripts}/**/*.{js,ts}'",
-    "lint": "yarn lint:js && yarn lint:sol"
+    "lint:js": "eslint '{test,scripts}/**/*.js'",
+    "lint:ts": "eslint '{test,scripts}/**/*.ts'",
+    "lint": "yarn lint:js && yarn lint:ts && yarn lint:sol"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/chai": "^4.2.11",
     "@types/mocha": "^7.0.2",
+    "@typescript-eslint/eslint-plugin": "^2.28.0",
+    "@typescript-eslint/parser": "^2.28.0",
     "babel-eslint": "^10.1.0",
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
