@@ -250,8 +250,17 @@ describe('AssuredFinancialOpportunity', () => {
     })
   })
 
-  describe('award pool', () => {
-    it('awards 0 when reward basis is 100%')
+  describe.only('award pool', () => {
+    it('awards 0 when reward basis is 100%', async () => {
+      await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
+      await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
+
+      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      
+      await assuredFinancialOpportunity.awardPool()
+
+      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.equal(0)
+    })
 
     it('awards proper amount', async () => {
       await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
