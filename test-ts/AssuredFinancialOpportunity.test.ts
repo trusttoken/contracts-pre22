@@ -1,6 +1,6 @@
 import { Wallet, Contract } from 'ethers'
 import { parseEther, BigNumber } from 'ethers/utils'
-import { MockProvider, deployContract, solidity } from 'ethereum-waffle'
+import { MockProvider, deployContract, solidity, loadFixture } from 'ethereum-waffle'
 import { use, expect } from 'chai'
 
 import {
@@ -30,18 +30,19 @@ describe('AssuredFinancialOpportunity', () => {
 
   const mockPoolAddress = Wallet.createRandom().address
 
-  beforeEach(async () => {
-    provider = new MockProvider();
-    [wallet, holder, beneficiary] = provider.getWallets()
+  async function fixture(p: MockProvider) {
+    provider = p
+
+    ; [wallet, holder, beneficiary] = provider.getWallets()
 
     token = await deployContract(wallet, MockERC20)
     await token.mint(holder.address, parseEther('100'))
 
     fractionalExponents = await deployContract(wallet, FractionalExponents)
     liquidator = await deployContract(wallet, SimpleLiquidatorMock, [token.address])
+    await token.mint(liquidator.address, parseEther('1000'))
 
     financialOpportunity = await deployContract(wallet, ConfigurableFinancialOpportunityMock, [token.address])
-
     await token.mint(financialOpportunity.address, parseEther('100'))
 
     assuredFinancialOpportunity = await deployContract(wallet, AssuredFinancialOpportunity)
@@ -53,7 +54,8 @@ describe('AssuredFinancialOpportunity', () => {
       token.address,
       wallet.address,
     )
-  })
+  }
+  beforeEach(() => loadFixture(fixture))
 
   describe('perTokenValue', () => {
     it('1.5 perTokenValue with 100% reward basis', async function () {
@@ -216,6 +218,13 @@ describe('AssuredFinancialOpportunity', () => {
   })
 
   it.skip('liquidation', async () => {
+    await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
+    await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
 
+    await financialOpportunity.increasePerTokenValue(parseEther('11'))
+
+    await assuredFinancialOpportunity.withdrawTo(beneficiary.address, parseEther('110'))
+
+    expect(await token.balanceOf(beneficiary.address)).to.equal(parseEther('110'))
   })
 })
