@@ -1,5 +1,5 @@
 import { Wallet, Contract } from 'ethers'
-import { parseEther, BigNumber } from 'ethers/utils'
+import { parseEther, BigNumber, formatEther } from 'ethers/utils'
 import { MockProvider, deployContract, solidity } from 'ethereum-waffle'
 import { use, expect } from 'chai'
 import { beforeEachWithFixture } from './utils'
@@ -229,10 +229,41 @@ describe('AssuredFinancialOpportunity', () => {
     expect(await assuredFinancialOpportunity.getBalance()).to.equal(parseEther('10'))
   })
 
+  describe('award amount', () => {
+    it('0 when reward basis is 100%', async () => {
+      await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
+      await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
+      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+
+      expect(await assuredFinancialOpportunity.awardAmount()).to.eq(0)
+    })
+
+    it('properly calculated when reward basis is 70%', async () => {
+      await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
+      await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
+
+      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+
+      expect(from18Decimals(await assuredFinancialOpportunity.awardAmount()))
+        .to.be.closeTo(10 * (1.5 - 1.5**0.7), 10**(-10))
+    })
+  })
+
   describe('award pool', () => {
     it('awards 0 when reward basis is 100%')
 
-    it('awards proper amount without liquidation')
+    it('awards proper amount', async () => {
+      await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
+      await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
+
+      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      
+      await assuredFinancialOpportunity.awardPool()
+
+      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5**0.7), 10**(-10))
+    })
 
     it('awards 0 on subsequent calls')
 
@@ -241,5 +272,7 @@ describe('AssuredFinancialOpportunity', () => {
     it('awards proper amount when reward basis changes between calls')
 
     it('reverts if the withdrawal fails')
+
+    it('anyone can call')
   })
 })
