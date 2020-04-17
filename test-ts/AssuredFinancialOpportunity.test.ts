@@ -254,6 +254,7 @@ describe('AssuredFinancialOpportunity', () => {
       await assuredFinancialOpportunity.awardPool()
 
       expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.equal(0)
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(10, 10**(-10))
     })
 
     it('awards proper amount', async () => {
@@ -264,11 +265,34 @@ describe('AssuredFinancialOpportunity', () => {
       await assuredFinancialOpportunity.awardPool()
 
       expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5**0.7), 10**(-10))
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(8.8546749330, 10**(-10))
     })
 
-    it('awards 0 on subsequent calls')
+    it('awards 0 on subsequent calls', async () => {
+      await deposit(holder, parseEther('10'))
+      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      
+      await assuredFinancialOpportunity.awardPool()      
+      expect(from18Decimals(await assuredFinancialOpportunity.awardAmount())).to.closeTo(0, 10**(-10))
+      await assuredFinancialOpportunity.awardPool()
+      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5**0.7), 10**(-10))
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(8.8546749330, 10**(-10))
+    })
 
-    it('awards proper amount when per token value increases between calls')
+    it('awards proper amount when per token value increases between calls', async () => {
+      await deposit(holder, parseEther('10'))
+      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      
+      await assuredFinancialOpportunity.awardPool()
+      await financialOpportunity.increasePerTokenValue(parseEther('1'))
+      await assuredFinancialOpportunity.awardPool()
+
+      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(4.8632301096462145, 10**(-10))
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(7.596577929323739, 10**(-10))
+    })
+
 
     it('awards proper amount when reward basis changes between calls')
 
