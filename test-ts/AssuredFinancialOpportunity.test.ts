@@ -217,14 +217,29 @@ describe('AssuredFinancialOpportunity', () => {
     })
   })
 
-  it.skip('liquidation', async () => {
+  it('liquidation', async () => {
     await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
     await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
 
-    await financialOpportunity.increasePerTokenValue(parseEther('11'))
+    await financialOpportunity.increasePerTokenValue(parseEther('19'))
 
-    await assuredFinancialOpportunity.withdrawTo(beneficiary.address, parseEther('110'))
+    await assuredFinancialOpportunity.withdrawTo(beneficiary.address, parseEther('200'))
 
-    expect(await token.balanceOf(beneficiary.address)).to.equal(parseEther('110'))
+    expect(await token.balanceOf(beneficiary.address)).to.equal(parseEther('200'))
+    expect(await assuredFinancialOpportunity.getBalance()).to.equal(parseEther('10'))
+  })
+
+  describe('award pool', () => {
+    it('awards 0 when reward basis is 100%')
+
+    it('awards proper amount without liquidation')
+
+    it('awards 0 on subsequent calls')
+
+    it('awards proper amount when per token value increases between calls')
+
+    it('awards proper amount when reward basis changes between calls')
+
+    it('reverts if the withdrawal fails')
   })
 })
