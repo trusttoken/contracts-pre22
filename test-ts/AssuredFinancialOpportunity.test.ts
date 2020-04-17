@@ -1,5 +1,5 @@
 import { Wallet, Contract } from 'ethers'
-import { parseEther, BigNumber, formatEther } from 'ethers/utils'
+import { parseEther, BigNumber, formatEther, BigNumberish } from 'ethers/utils'
 import { MockProvider, deployContract, solidity } from 'ethereum-waffle'
 import { use, expect } from 'chai'
 import { beforeEachWithFixture } from './utils'
@@ -30,6 +30,11 @@ describe('AssuredFinancialOpportunity', () => {
   let beneficiary: Wallet
 
   const mockPoolAddress = Wallet.createRandom().address
+
+  async function deposit(from: Wallet, value: BigNumberish) {
+    await token.connect(from).approve(assuredFinancialOpportunity.address, value)
+    await assuredFinancialOpportunity.deposit(from.address, value)
+  }
 
   beforeEachWithFixture(async (p: MockProvider) => {
     provider = p
@@ -86,8 +91,7 @@ describe('AssuredFinancialOpportunity', () => {
 
   describe('deposit', async function () {
     it('with exchange rate = 1', async function () {
-      await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
-      await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
+      await deposit(holder, parseEther('10'))
       const finOpBalance = await assuredFinancialOpportunity.getBalance()
       const remaingTokenBalance = await token.balanceOf(holder.address)
 
@@ -97,8 +101,7 @@ describe('AssuredFinancialOpportunity', () => {
 
     it('with exchange rate = 1.5', async function () {
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
-      await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('15'))
-      await assuredFinancialOpportunity.deposit(holder.address, parseEther('15'))
+      await deposit(holder, parseEther('15'))
       const finOpBalance = await assuredFinancialOpportunity.getBalance()
       const remaingTokenBalance = await token.balanceOf(holder.address)
 
@@ -113,8 +116,7 @@ describe('AssuredFinancialOpportunity', () => {
     })
 
     it('two deposits in a row', async function () {
-      await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('15'))
-      await assuredFinancialOpportunity.deposit(holder.address, parseEther('15'))
+      await deposit(holder, parseEther('15'))
 
       await financialOpportunity.increasePerTokenValue(parseEther('1'))
 
@@ -127,8 +129,7 @@ describe('AssuredFinancialOpportunity', () => {
 
   describe('withdraw', async function () {
     beforeEach(async function () {
-      await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
-      await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
+      await deposit(holder, parseEther('10'))
     })
 
     it('withdrawTo', async function () {
@@ -218,11 +219,9 @@ describe('AssuredFinancialOpportunity', () => {
   })
 
   it('liquidation', async () => {
-    await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
-    await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
-
+    await deposit(holder, parseEther('10'))
     await financialOpportunity.increasePerTokenValue(parseEther('19'))
-
+    
     await assuredFinancialOpportunity.withdrawTo(beneficiary.address, parseEther('200'))
 
     expect(await token.balanceOf(beneficiary.address)).to.equal(parseEther('200'))
@@ -231,17 +230,14 @@ describe('AssuredFinancialOpportunity', () => {
 
   describe('award amount', () => {
     it('0 when reward basis is 100%', async () => {
-      await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
-      await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
+      await deposit(holder, parseEther('10'))
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
 
       expect(await assuredFinancialOpportunity.awardAmount()).to.eq(0)
     })
 
     it('properly calculated when reward basis is 70%', async () => {
-      await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
-      await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
-
+      await deposit(holder, parseEther('10'))
       await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
 
@@ -252,9 +248,7 @@ describe('AssuredFinancialOpportunity', () => {
 
   describe.only('award pool', () => {
     it('awards 0 when reward basis is 100%', async () => {
-      await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
-      await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
-
+      await deposit(holder, parseEther('10'))
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
       
       await assuredFinancialOpportunity.awardPool()
@@ -263,9 +257,7 @@ describe('AssuredFinancialOpportunity', () => {
     })
 
     it('awards proper amount', async () => {
-      await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
-      await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
-
+      await deposit(holder, parseEther('10'))
       await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
       
