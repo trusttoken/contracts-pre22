@@ -1,7 +1,8 @@
 import { Wallet, Contract } from 'ethers'
 import { parseEther, BigNumber } from 'ethers/utils'
-import { MockProvider, deployContract, solidity, loadFixture } from 'ethereum-waffle'
+import { MockProvider, deployContract, solidity } from 'ethereum-waffle'
 import { use, expect } from 'chai'
+import { beforeEachWithFixture } from './utils'
 
 import {
   AssuredFinancialOpportunity,
@@ -30,7 +31,7 @@ describe('AssuredFinancialOpportunity', () => {
 
   const mockPoolAddress = Wallet.createRandom().address
 
-  async function fixture(p: MockProvider) {
+  beforeEachWithFixture(async (p: MockProvider) => {
     provider = p
 
     ; [wallet, holder, beneficiary] = provider.getWallets()
@@ -54,8 +55,7 @@ describe('AssuredFinancialOpportunity', () => {
       token.address,
       wallet.address,
     )
-  }
-  beforeEach(() => loadFixture(fixture))
+  })
 
   describe('perTokenValue', () => {
     it('1.5 perTokenValue with 100% reward basis', async function () {
