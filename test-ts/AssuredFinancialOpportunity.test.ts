@@ -293,11 +293,41 @@ describe('AssuredFinancialOpportunity', () => {
       expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(7.596577929323739, 10**(-10))
     })
 
+    it('not additional awards when reward basis changes between calls', async () => {
+      await deposit(holder, parseEther('10'))
+      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      
+      await assuredFinancialOpportunity.awardPool()
+      await assuredFinancialOpportunity.setRewardBasis(0.5*1000)
 
-    it('awards proper amount when reward basis changes between calls')
+      expect(from18Decimals(await assuredFinancialOpportunity.awardAmount())).to.closeTo(0, 10**(-10))
+      await assuredFinancialOpportunity.awardPool()
 
-    it('reverts if the withdrawal fails')
+      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5**0.7), 10**(-10))
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(8.8546749330, 10**(-10))
+    })
 
-    it('anyone can call')
+    it('does NOT revert if the withdrawal fails', async () => {
+      await deposit(holder, parseEther('10'))
+      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await financialOpportunity.increasePerTokenValue(parseEther('99'))
+      
+      await assuredFinancialOpportunity.awardPool()
+
+      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.equal(0)
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.equal(10)
+    })
+
+    it('anyone can call', async () => {
+      await deposit(holder, parseEther('10'))
+      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      
+      await assuredFinancialOpportunity.connect(holder).awardPool()
+
+      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5**0.7), 10**(-10))
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(8.8546749330, 10**(-10))
+    })
   })
 })
