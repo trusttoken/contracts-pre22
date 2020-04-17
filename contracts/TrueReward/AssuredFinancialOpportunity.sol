@@ -44,6 +44,9 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     uint rewardBasisAjustmentFactor;
     uint minPerTokenValue;
 
+    // address allowed to withdraw/deposit, usually set to address of TUSD smart contract
+    address fundsManager;
+
     using SafeMath for uint;
     using SafeMath for uint32;
     using SafeMath for uint256;
@@ -118,7 +121,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         address _assuranceAddress,
         address _liquidatorAddress,
         address _exponentContractAddress,
-        address _trueRewardBackedTokenAddress
+        address _trueRewardBackedTokenAddress,
+        address _fundsManager
     ) external {
         super._configure(); // sender claims ownership here
         opportunityAddress = _opportunityAddress;
@@ -126,12 +130,13 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         liquidatorAddress = _liquidatorAddress;
         exponentContractAddress = _exponentContractAddress;
         trueRewardBackedTokenAddress = _trueRewardBackedTokenAddress;
+        fundsManager = _fundsManager;
         rewardBasis = TOTAL_BASIS;
         rewardBasisAjustmentFactor = 1*10**18;
     }
 
-    modifier onlyToken() {
-        require(msg.sender == trueRewardBackedTokenAddress, "only token");
+    modifier onlyFundsManager() {
+        require(msg.sender == fundsManager, "only funds manager");
         _;
     }
 
@@ -154,7 +159,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         opportunity().deposit(address(this), _amount);
 
         // calculate zTUSD value of deposit
-        uint zTUSDValue = zTUSDIssued.add(_amount.mul(10 ** 18).div(_perTokenValue()));
+        uint zTUSDValue = _amount.mul(10 ** 18).div(_perTokenValue());
 
         // update zTUSDIssued
         zTUSDIssued = zTUSDIssued.add(zTUSDValue);
@@ -182,7 +187,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         }
 
         // calculate new amount issued
-        zTUSDIssued = zTUSDIssued.sub(returnedAmount.div(_perTokenValue()));
+        zTUSDIssued = zTUSDIssued.sub(returnedAmount);
 
         return returnedAmount;
     }
@@ -237,16 +242,16 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         }
     }
 
-    function deposit(address _account, uint _amount) external onlyToken returns(uint) {
+    function deposit(address _account, uint _amount) external onlyFundsManager returns(uint) {
         return _deposit(_account, _amount);
     }
 
-    function withdrawTo(address _to, uint _amount) external onlyToken returns(uint) {
+    function withdrawTo(address _to, uint _amount) external onlyFundsManager returns(uint) {
         return _withdraw(_to, _amount);
     }
 
     function withdrawAll(address _to) external onlyOwner returns(uint) {
-        return _withdraw(_to, _getBalance());
+        return _withdraw(_to, _getBalance().mul(_perTokenValue()).div(10**18));
     }
 
     /**

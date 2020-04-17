@@ -40,6 +40,7 @@ jobs:
       - install_dependencies
       - setup_vyper
       - run: yarn lint
+      - run: yarn build
       - run: yarn test
 
 workflows:

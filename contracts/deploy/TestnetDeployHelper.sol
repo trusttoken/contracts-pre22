@@ -158,6 +158,7 @@ contract TestnetDeployHelper {
             address(assurancePool),
             address(liquidator),
             address(exponentContract),
+            address(trueUSD),
             address(trueUSD)
         );
 
