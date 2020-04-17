@@ -246,7 +246,7 @@ describe('AssuredFinancialOpportunity', () => {
     })
   })
 
-  describe.only('award pool', () => {
+  describe('award pool', () => {
     it('awards 0 when reward basis is 100%', async () => {
       await deposit(holder, parseEther('10'))
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
