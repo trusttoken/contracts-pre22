@@ -1,8 +1,8 @@
-import { MockProvider, loadFixture } from "ethereum-waffle";
-import { Wallet } from "ethers";
+import { MockProvider, loadFixture } from 'ethereum-waffle'
+import { Wallet } from 'ethers'
 
 type Fixture<T> = (provider: MockProvider, wallets: Wallet[]) => Promise<T>;
 
-export function beforeEachWithFixture(fixture: Fixture<void>) {
+export function beforeEachWithFixture (fixture: Fixture<void>) {
   beforeEach(() => loadFixture(fixture))
 }

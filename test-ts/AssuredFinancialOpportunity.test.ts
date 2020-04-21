@@ -1,5 +1,5 @@
 import { Wallet, Contract } from 'ethers'
-import { parseEther, BigNumber, formatEther, BigNumberish } from 'ethers/utils'
+import { parseEther, BigNumber, BigNumberish } from 'ethers/utils'
 import { MockProvider, deployContract, solidity } from 'ethereum-waffle'
 import { use, expect } from 'chai'
 import { beforeEachWithFixture } from './utils'
@@ -31,7 +31,7 @@ describe('AssuredFinancialOpportunity', () => {
 
   const mockPoolAddress = Wallet.createRandom().address
 
-  async function deposit(from: Wallet, value: BigNumberish) {
+  async function deposit (from: Wallet, value: BigNumberish) {
     await token.connect(from).approve(assuredFinancialOpportunity.address, value)
     await assuredFinancialOpportunity.deposit(from.address, value)
   }
@@ -221,7 +221,7 @@ describe('AssuredFinancialOpportunity', () => {
   it('liquidation', async () => {
     await deposit(holder, parseEther('10'))
     await financialOpportunity.increasePerTokenValue(parseEther('19'))
-    
+
     await assuredFinancialOpportunity.withdrawTo(beneficiary.address, parseEther('200'))
 
     expect(await token.balanceOf(beneficiary.address)).to.equal(parseEther('200'))
@@ -238,11 +238,11 @@ describe('AssuredFinancialOpportunity', () => {
 
     it('properly calculated when reward basis is 70%', async () => {
       await deposit(holder, parseEther('10'))
-      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
 
       expect(from18Decimals(await assuredFinancialOpportunity.awardAmount()))
-        .to.be.closeTo(10 * (1.5 - 1.5**0.7), 10**(-10))
+        .to.be.closeTo(10 * (1.5 - 1.5 ** 0.7), 10 ** (-10))
     })
   })
 
@@ -250,69 +250,69 @@ describe('AssuredFinancialOpportunity', () => {
     it('awards 0 when reward basis is 100%', async () => {
       await deposit(holder, parseEther('10'))
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
-      
+
       await assuredFinancialOpportunity.awardPool()
 
       expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.equal(0)
-      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(10, 10**(-10))
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(10, 10 ** (-10))
     })
 
     it('awards proper amount', async () => {
       await deposit(holder, parseEther('10'))
-      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
-      
+
       await assuredFinancialOpportunity.awardPool()
 
-      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5**0.7), 10**(-10))
-      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(8.8546749330, 10**(-10))
+      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5 ** 0.7), 10 ** (-10))
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(8.8546749330, 10 ** (-10))
     })
 
     it('awards 0 on subsequent calls', async () => {
       await deposit(holder, parseEther('10'))
-      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
-      
-      await assuredFinancialOpportunity.awardPool()      
-      expect(from18Decimals(await assuredFinancialOpportunity.awardAmount())).to.closeTo(0, 10**(-10))
+
       await assuredFinancialOpportunity.awardPool()
-      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5**0.7), 10**(-10))
-      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(8.8546749330, 10**(-10))
+      expect(from18Decimals(await assuredFinancialOpportunity.awardAmount())).to.closeTo(0, 10 ** (-10))
+      await assuredFinancialOpportunity.awardPool()
+      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5 ** 0.7), 10 ** (-10))
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(8.8546749330, 10 ** (-10))
     })
 
     it('awards proper amount when per token value increases between calls', async () => {
       await deposit(holder, parseEther('10'))
-      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
-      
+
       await assuredFinancialOpportunity.awardPool()
       await financialOpportunity.increasePerTokenValue(parseEther('1'))
       await assuredFinancialOpportunity.awardPool()
 
-      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(4.8632301096462145, 10**(-10))
-      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(7.596577929323739, 10**(-10))
+      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(4.8632301096462145, 10 ** (-10))
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(7.596577929323739, 10 ** (-10))
     })
 
     it('not additional awards when reward basis changes between calls', async () => {
       await deposit(holder, parseEther('10'))
-      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
-      
-      await assuredFinancialOpportunity.awardPool()
-      await assuredFinancialOpportunity.setRewardBasis(0.5*1000)
 
-      expect(from18Decimals(await assuredFinancialOpportunity.awardAmount())).to.closeTo(0, 10**(-10))
+      await assuredFinancialOpportunity.awardPool()
+      await assuredFinancialOpportunity.setRewardBasis(0.5 * 1000)
+
+      expect(from18Decimals(await assuredFinancialOpportunity.awardAmount())).to.closeTo(0, 10 ** (-10))
       await assuredFinancialOpportunity.awardPool()
 
-      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5**0.7), 10**(-10))
-      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(8.8546749330, 10**(-10))
+      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5 ** 0.7), 10 ** (-10))
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(8.8546749330, 10 ** (-10))
     })
 
     it('does NOT revert if the withdrawal fails', async () => {
       await deposit(holder, parseEther('10'))
-      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
       await financialOpportunity.increasePerTokenValue(parseEther('99'))
-      
+
       await assuredFinancialOpportunity.awardPool()
 
       expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.equal(0)
@@ -321,13 +321,13 @@ describe('AssuredFinancialOpportunity', () => {
 
     it('anyone can call', async () => {
       await deposit(holder, parseEther('10'))
-      await assuredFinancialOpportunity.setRewardBasis(0.7*1000)
+      await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
       await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
-      
+
       await assuredFinancialOpportunity.connect(holder).awardPool()
 
-      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5**0.7), 10**(-10))
-      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(8.8546749330, 10**(-10))
+      expect(from18Decimals(await token.balanceOf(mockPoolAddress))).to.be.closeTo(10 * (1.5 - 1.5 ** 0.7), 10 ** (-10))
+      expect(from18Decimals(await financialOpportunity.getBalance())).to.be.closeTo(8.8546749330, 10 ** (-10))
     })
   })
 })
