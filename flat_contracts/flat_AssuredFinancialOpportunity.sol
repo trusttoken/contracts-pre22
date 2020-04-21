@@ -657,7 +657,7 @@ contract TransferHandlerRegistry is Ownable {
 */
 
 pragma solidity 0.5.13;
-//pragma experimental ABIEncoderV2;
+pragma experimental ABIEncoderV2;
 
 /**
   * @title Types: Library of Swap Protocol Types and Hashes
@@ -814,7 +814,7 @@ library Types {
 */
 
 pragma solidity 0.5.13;
-//pragma experimental ABIEncoderV2;
+pragma experimental ABIEncoderV2;
 
 
 interface ISwap {
@@ -951,7 +951,7 @@ interface ISwap {
 */
 
 pragma solidity 0.5.13;
-//pragma experimental ABIEncoderV2;
+pragma experimental ABIEncoderV2;
 
 
 
@@ -1318,7 +1318,7 @@ contract Swap is ISwap {
 
 pragma solidity ^0.5.13;
 
-//pragma experimental ABIEncoderV2;
+pragma experimental ABIEncoderV2;
 
 
 
@@ -1960,7 +1960,7 @@ contract ALiquidator {
 
 pragma solidity ^0.5.13;
 
-//pragma experimental ABIEncoderV2;
+pragma experimental ABIEncoderV2;
 
 
 /**
