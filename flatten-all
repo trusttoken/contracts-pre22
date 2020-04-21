@@ -18,3 +18,10 @@ truffle-flattener contracts/TrueCurrencies/Admin/TokenController.sol > flat_cont
 truffle-flattener contracts/TrueCurrencies/utilities/DepositAddressRegistrar.sol > flat_contracts/flat_depositAddressRegistrar.sol
 truffle-flattener contracts/TrueCurrencies/utilities/PausedCurrencies.sol > flat_contracts/flat_pausedTrueCurrencies.sol
 truffle-flattener contracts/TrueCurrencies/Admin/MultisigOwner.sol > flat_contracts/flat_MultisigOwner.sol
+
+truffle-flattener contracts/TrueReward/AssuredFinancialOpportunity.sol > flat_contracts/flat_AssuredFinancialOpportunity.sol
+truffle-flattener contracts/TrueReward/mocks/LendingPoolCoreMock.sol > flat_contracts/flat_LendingPoolCoreMock.sol
+truffle-flattener contracts/TrueReward/FinancialOpportunity.sol > flat_contracts/flat_thkd.sol
+truffle-flattener contracts/TrueReward/mocks/ATokenMock.sol > flat_contracts/flat_ATokenMock.sol
+truffle-flattener contracts/TrueReward/mocks/ConfigurableFinancialOpportunityMock.sol > flat_contracts/flat_ConfigurableFinancialOpportunityMock.sol
+truffle-flattener contracts/TrueCurrencies/utilities/TokenFaucet.sol > flat_contracts/flat_TokenFaucet.sol
