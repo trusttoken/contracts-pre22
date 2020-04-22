@@ -17,9 +17,14 @@ import "../TrueCurrencies/modularERC20/InstantiatableOwnable.sol";
 contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable {
     using SafeMath for uint256;
 
-    IAToken public stakeToken; // aToken
-    ILendingPool public lendingPool; // lending pool
-    TrueRewardBackedToken public token; // TrueRewardBackedToken (TrueUSD)
+    /** aTUSD token contract from AAVE */
+    IAToken public stakeToken;
+
+    /** LendingPool contract from AAVE */
+    ILendingPool public lendingPool;
+
+    /** TrueUSD */
+    TrueRewardBackedToken public token;
 
     modifier onlyProxyOwner() {
         require(msg.sender == proxyOwner(), "only proxy owner");
@@ -45,11 +50,19 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
         return OwnedUpgradeabilityProxy(address(this)).proxyOwner();
     }
 
+    /**
+     * Exchange rate between TUSD and zTUSD
+     * @return TUSD / zTUSD price ratio (18 decimals of percision)
+     */
     function perTokenValue() public view returns(uint256) {
         ILendingPoolCore core = ILendingPoolCore(lendingPool.core());
         return core.getReserveNormalizedIncome(address(token)).div(10**(27-18));
     }
 
+    /**
+     * Returns full balance of opportunity
+     * @return TUSD balance of opportunity
+    **/
     function getBalance() public view returns(uint256) {
         return stakeToken.balanceOf(address(this));
     }
@@ -59,7 +72,12 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
         return _amount.mul(10**18).div(perTokenValue());
     }
 
-    /** @dev Deposit TUSD into Aave */
+     /**
+     * @dev deposits TrueUSD into AAVE using transferFrom
+     * @param _from account to transferFrom
+     * @param _amount amount in TUSD to deposit to AAVE
+     * @return zTUSD minted from this deposit
+     */
     function deposit(address _from, uint256 _amount) external onlyOwner returns(uint256) {
         require(token.transferFrom(_from, address(this), _amount), "transfer from failed");
         require(token.approve(address(lendingPool), _amount), "approve failed");
@@ -83,10 +101,21 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
         return getValueInStake(fundsWithdrawn);
     }
 
+    /**
+     * @dev Withdraw from AACE to _to account
+     * @param _to account withdarw TUSD to
+     * @param _amount amount in TUSD to withdraw from AAVE
+     * @return zTUSD amount deducted
+     */
     function withdrawTo(address _to, uint256 _amount) external onlyOwner returns(uint256) {
         return _withdraw(_to, _amount);
     }
 
+    /**
+     * @dev Withdraws all TUSD from AAVE
+     * @param _to account withdarw TUSD to
+     * @return zTUSD amount deducted
+     */
     function withdrawAll(address _to) external onlyOwner returns(uint256) {
         return _withdraw(_to, getBalance());
     }
