@@ -1,7 +1,7 @@
-import {expect, use} from 'chai'
-import {Contract, Wallet} from 'ethers'
-import {deployContract, solidity} from 'ethereum-waffle'
-import {beforeEachWithFixture} from './utils'
+import { expect, use } from 'chai'
+import { Contract, Wallet } from 'ethers'
+import { deployContract, solidity } from 'ethereum-waffle'
+import { beforeEachWithFixture } from './utils'
 import {
   AaveFinancialOpportunity,
   AssuredFinancialOpportunity,
@@ -15,7 +15,7 @@ import {
   SimpleLiquidatorMock,
   TrueUSD,
 } from '../build'
-import {parseEther} from 'ethers/utils'
+import { parseEther } from 'ethers/utils'
 
 use(solidity)
 
