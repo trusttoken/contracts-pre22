@@ -114,6 +114,16 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
+     * Get amount pending to be awarded
+     * Calculated as (opportunityValue * opportunityBalance) - (assuredOpportunityBalance * assuredOpportunityTokenValue)
+     */
+    function awardAmount() public view returns (uint) {
+        uint underlyingTusdValue = opportunity().perTokenValue().mul(opportunity().getBalance()).div(10**18);
+        uint ownTusdValue = _getBalance().mul(_perTokenValue()).div(10**18);
+        return underlyingTusdValue.sub(ownTusdValue);
+    }
+
+    /**
      * @dev configure assured opportunity
      */
     function configure(
@@ -227,10 +237,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * Sell yTUSD for TUSD and deposit into staking pool.
     **/
     function awardPool() external {
-        // compute what is owed in TUSD
-        // (opportunityValue * opportunityBalance)
-        // - (assuredOpportunityBalance * assuredOpportunityTokenValue)
-        uint awardAmount = opportunity().perTokenValue().mul(opportunity().getBalance()).sub(_getBalance().mul(_perTokenValue()));
+        uint awardAmount = awardAmount();
 
         // sell pool debt and award TUSD to pool
         (bool success, uint returnedAmount) = _attemptWithdrawTo(assuranceAddress, awardAmount);
