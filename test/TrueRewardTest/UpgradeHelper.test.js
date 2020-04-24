@@ -50,31 +50,31 @@ contract('UpgradeHelper', function ([owner]) {
 
   describe('TrueUSD', function () {
     it('ownership is properly set', async function () {
-      assert.equal((await this.tusd.pendingOwner()), owner)
+      assert.equal(await this.tusd.pendingOwner(), owner)
     })
 
     it('ownership is properly set', async function () {
-      assert.equal((await this.tusdProxy.pendingProxyOwner()), owner)
+      assert.equal(await this.tusdProxy.pendingProxyOwner(), owner)
     })
 
     it('properly assigns aaveInterface address', async function () {
-      assert.equal((await this.tusd.aaveInterfaceAddress()), this.assuredFinancialOpportunityProxy.address)
+      assert.equal(await this.tusd.aaveInterfaceAddress(), this.assuredFinancialOpportunityProxy.address)
     })
   })
 
   describe('AssuredFinancialOpportunity', function () {
     it('ownership is properly set', async function () {
-      assert.equal((await this.assuredFinancialOpportunity.pendingOwner()), owner)
+      assert.equal(await this.assuredFinancialOpportunity.pendingOwner(), owner)
     })
 
     it('proxy ownership is properly set', async function () {
-      assert.equal((await this.assuredFinancialOpportunityProxy.pendingProxyOwner()), owner)
+      assert.equal(await this.assuredFinancialOpportunityProxy.pendingProxyOwner(), owner)
     })
   })
 
   describe('TokenController', async function () {
     it('proxy ownership is properly set', async function () {
-      assert.equal((await this.tokenControllerProxy.pendingProxyOwner()), owner)
+      assert.equal(await this.tokenControllerProxy.pendingProxyOwner(), owner)
     })
   })
 })
