@@ -234,7 +234,7 @@ describe('TrueRewardBackedToken', () => {
         expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('49999999999999999999')
       })
     })
-    
+
     describe('Aave ears interest', () => {
       beforeEach(async () => {
         await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
