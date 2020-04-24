@@ -596,7 +596,7 @@ contract('TokenController', function (accounts) {
         await assertRevert(this.controller.requestReclaimEther({ from: otherAddress }))
       })
 
-      it.only('can reclaim ether in the controller contract address', async function () {
+      it('can reclaim ether in the controller contract address', async function () {
         const forceEther = await ForceEther.new({ from: oneHundred, value: '10000000000000000000' })
         await forceEther.destroyAndSend(this.controller.address)
         const balance1 = BN(await web3.eth.getBalance(owner))
