@@ -10,7 +10,7 @@ const OwnedUpgradeabilityProxy = artifacts.require('OwnedUpgradeabilityProxy')
 const to18Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 8))
 
 contract('TrueRewardBackedToken', function (accounts) {
-  const [, owner, holder, holder2, sender, receipient] = accounts
+  const [, owner, holder, holder2, sender, recipient] = accounts
   describe('TrueReward with float admin', function () {
     beforeEach(async function () {
       this.registry = await Registry.new({ from: owner })
@@ -78,9 +78,9 @@ contract('TrueRewardBackedToken', function (accounts) {
     })
     it('transfer without trueReward', async function () {
       await this.token.transfer(sender, to18Decimals(100), { from: holder })
-      await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+      await this.token.transfer(recipient, to18Decimals(50), { from: sender })
       const senderBalance = await this.token.balanceOf.call(sender)
-      const receipientBalance = await this.token.balanceOf.call(receipient)
+      const receipientBalance = await this.token.balanceOf.call(recipient)
       const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve)
       const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call()
       assert.equal(senderBalance, to18Decimals(50))
@@ -89,12 +89,12 @@ contract('TrueRewardBackedToken', function (accounts) {
       assert.equal(zTUSDReserveBalance, to18Decimals(100))
     })
 
-    it('sender truereward enabled receipient not enabled', async function () {
+    it('sender truereward enabled recipient not enabled', async function () {
       await this.token.transfer(sender, to18Decimals(100), { from: holder })
       await this.token.enableTrueReward({ from: sender })
-      await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+      await this.token.transfer(recipient, to18Decimals(50), { from: sender })
       const senderBalance = await this.token.balanceOf.call(sender)
-      const receipientBalance = await this.token.balanceOf.call(receipient)
+      const receipientBalance = await this.token.balanceOf.call(recipient)
       const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve)
       const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call()
       assert.equal(senderBalance, to18Decimals(50))
@@ -103,12 +103,12 @@ contract('TrueRewardBackedToken', function (accounts) {
       assert.equal(zTUSDReserveBalance, to18Decimals(150))
     })
 
-    it('sender truereward not enabled receipient enabled', async function () {
+    it('sender truereward not enabled recipient enabled', async function () {
       await this.token.transfer(sender, to18Decimals(100), { from: holder })
-      await this.token.enableTrueReward({ from: receipient })
-      await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+      await this.token.enableTrueReward({ from: recipient })
+      await this.token.transfer(recipient, to18Decimals(50), { from: sender })
       const senderBalance = await this.token.balanceOf.call(sender)
-      const receipientBalance = await this.token.balanceOf.call(receipient)
+      const receipientBalance = await this.token.balanceOf.call(recipient)
       const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve)
       const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call()
       assert.equal(senderBalance, to18Decimals(50))
@@ -117,13 +117,13 @@ contract('TrueRewardBackedToken', function (accounts) {
       assert.equal(zTUSDReserveBalance, to18Decimals(50))
     })
 
-    it('sender truereward enabled receipient enabled', async function () {
+    it('sender truereward enabled recipient enabled', async function () {
       await this.token.transfer(sender, to18Decimals(100), { from: holder })
       await this.token.enableTrueReward({ from: sender })
-      await this.token.enableTrueReward({ from: receipient })
-      await this.token.transfer(receipient, to18Decimals(50), { from: sender })
+      await this.token.enableTrueReward({ from: recipient })
+      await this.token.transfer(recipient, to18Decimals(50), { from: sender })
       const senderBalance = await this.token.balanceOf.call(sender)
-      const receipientBalance = await this.token.balanceOf.call(receipient)
+      const receipientBalance = await this.token.balanceOf.call(recipient)
       const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve)
       const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call()
       assert.equal(senderBalance, to18Decimals(50))

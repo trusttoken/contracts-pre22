@@ -207,8 +207,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      */
     function disableTrueReward() external {
         require(trueRewardEnabled(msg.sender), "already disabled");
-        _disableAave();
         uint availableTUSDBalance = balanceOf(msg.sender);
+        _disableAave();
         uint zTUSDWithdrawn = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(msg.sender, availableTUSDBalance);
         _totalAaveSupply = _totalAaveSupply.sub(_financialOpportunityBalances[msg.sender][aaveInterfaceAddress()]);
         _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = 0;
@@ -222,12 +222,12 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * Case #2 and #3 use reserve balances.
      *
      * There are 6 transfer cases
-     *  1. Both sender and reciever are disabled
-     *  2. Sender enabled, reciever disabled, value < reserve TUSD balance
-     *  3. Sender disabled, reciever enabled, value < reserve zTUSD balance (in TUSD)
-     *  4. Both sender and reciever are enabled
-     *  5. Sender enabled, reciever disabled, value > reserve TUSD balance
-     *  6. Sender disabled, reciever enabled, value > reserve zTUSD balance (in TUSD)
+     *  1. Both sender and receiver are disabled
+     *  2. Sender enabled, receiver disabled, value < reserve TUSD balance
+     *  3. Sender disabled, receiver enabled, value < reserve zTUSD balance (in TUSD)
+     *  4. Both sender and receiver are enabled
+     *  5. Sender enabled, receiver disabled, value > reserve TUSD balance
+     *  6. Sender disabled, receiver enabled, value > reserve zTUSD balance (in TUSD)
      *
      * When we upgrade to support multiple opportunities, here we also want to check
      * If the transfer is between the same opportunities.
@@ -235,7 +235,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         bool senderTrueRewardEnabled = trueRewardEnabled(_from);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
-        // 1. Both sender and reciever are disabled
+        // 1. Both sender and receiver are disabled
         // Exchange is in TUSD -> call the normal transfer function
         if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
             // sender not enabled receiver not enabled
@@ -247,13 +247,13 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         // calculate zTUSD balance
         uint valueInZTUSD = _TUSDToZTUSD(_value);
 
-        // 2. Sender enabled, reciever disabled, value < reserve TUSD balance
+        // 2. Sender enabled, receiver disabled, value < reserve TUSD balance
         // Use reserve balance to transfer so we can save gas
         if (senderTrueRewardEnabled && !receiverTrueRewardEnabled && _value < _getBalance(RESERVE)) {
             bool hasHook;
             address finalTo;
             (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-            // use reserve to withdraw from financial opportunity reserve and transfer TUSD to reciever
+            // use reserve to withdraw from financial opportunity reserve and transfer TUSD to receiver
             _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()].add(valueInZTUSD);
             _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(valueInZTUSD);
             _subBalance(RESERVE, _value);
@@ -270,7 +270,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
                 }
             }
         }
-        // 3. Sender disabled, reciever enabled, value < reserve zTUSD balance (in TUSD)
+        // 3. Sender disabled, receiver enabled, value < reserve zTUSD balance (in TUSD)
         // Use reserve balance to transfer so we can save gas
         else if (!senderTrueRewardEnabled && receiverTrueRewardEnabled && _value < _zTUSDToTUSD(zTUSDReserveBalance())) {
             bool hasHook;
@@ -292,8 +292,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
                 }
             }
         }
-        // 4. Sender and reciever are enabled
-        // Here we simply transfer zTUSD from the sender to the reciever
+        // 4. Sender and receiver are enabled
+        // Here we simply transfer zTUSD from the sender to the receiver
         else if (senderTrueRewardEnabled && receiverTrueRewardEnabled) {
             bool hasHook;
             address finalTo;
@@ -312,8 +312,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
                 }
             }
         }
-        // 5. Sender enabled, reciever disabled, value > reserve TUSD balance
-        // Withdraw TUSD from opportunity, send to reciever, and burn zTUSD
+        // 5. Sender enabled, receiver disabled, value > reserve TUSD balance
+        // Withdraw TUSD from opportunity, send to receiver, and burn zTUSD
         else if (senderTrueRewardEnabled) {
             emit Transfer(_from, address(this), _value); // transfer value to this contract
             emit Transfer(address(this), address(0), _value); // burn value
@@ -323,8 +323,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             // watchout for reentrancy
             _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(zTUSDAmount);
         }
-        // 6. Sender disabled, reciever enabled, value > reserve zTUSD balance (in TUSD)
-        // Deposit TUSD into opportunity, mint zTUSD, and increase reciever zTUSD balance
+        // 6. Sender disabled, receiver enabled, value > reserve zTUSD balance (in TUSD)
+        // Deposit TUSD into opportunity, mint zTUSD, and increase receiver zTUSD balance
         else if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             _setAllowance(_from, aaveInterfaceAddress(), _value);
             uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress())
@@ -332,7 +332,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             _totalAaveSupply = _totalAaveSupply.add(zTUSDAmount);
             _financialOpportunityBalances[_to][aaveInterfaceAddress()] = _financialOpportunityBalances[_to][aaveInterfaceAddress()].add(zTUSDAmount);
             emit Transfer(address(0), address(this), _value); // mint value
-            emit Transfer(address(this), _to, _value); // send value to reciever
+            emit Transfer(address(this), _to, _value); // send value to receiver
         }
     }
 
@@ -342,12 +342,12 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * Case #2 and #3 use reserve balances.
      *
      * There are 6 transfer cases
-     *  1. Both sender and reciever are disabled
-     *  2. Sender enabled, reciever disabled, value < reserve TUSD balance
-     *  3. Sender disabled, reciever enabled, value < reserve zTUSD balance (in TUSD)
-     *  4. Both sender and reciever are enabled
-     *  5. Sender enabled, reciever disabled, value > reserve TUSD balance
-     *  6. Sender disabled, reciever enabled, value > reserve zTUSD balance (in TUSD)
+     *  1. Both sender and receiver are disabled
+     *  2. Sender enabled, receiver disabled, value < reserve TUSD balance
+     *  3. Sender disabled, receiver enabled, value < reserve zTUSD balance (in TUSD)
+     *  4. Both sender and receiver are enabled
+     *  5. Sender enabled, receiver disabled, value > reserve TUSD balance
+     *  6. Sender disabled, receiver enabled, value > reserve zTUSD balance (in TUSD)
      *
      * When we upgrade to support multiple opportunities, here we also want to check
      * If the transfer is between the same opportunities.
@@ -355,7 +355,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
         bool senderTrueRewardEnabled = trueRewardEnabled(_from);
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
-        // 1. Both sender and reciever are disabled -> normal transfer
+        // 1. Both sender and receiver are disabled -> normal transfer
         if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
             super._transferFromAllArgs(_from, _to, _value, _spender);
             return;
@@ -364,7 +364,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         // calculate zTUSD value
         uint valueInZTUSD = _TUSDToZTUSD(_value);
 
-        // 2. Sender enabled, reciever disabled, value < reserve TUSD balance
+        // 2. Sender enabled, receiver disabled, value < reserve TUSD balance
         if (senderTrueRewardEnabled && !receiverTrueRewardEnabled && _value < _getBalance(RESERVE)) {
             bool hasHook;
             address finalTo;
@@ -385,7 +385,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
                 }
             }
         }
-        // 3. Sender disabled, reciever enabled, value < reserve zTUSD balance (in TUSD)
+        // 3. Sender disabled, receiver enabled, value < reserve zTUSD balance (in TUSD)
         else if (!senderTrueRewardEnabled && receiverTrueRewardEnabled && _value < _zTUSDToTUSD(zTUSDReserveBalance())) {
             bool hasHook;
             address finalTo;
@@ -406,7 +406,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
                 }
             }
         }
-        // 4. Both sender and reciever are enabled
+        // 4. Both sender and receiver are enabled
         else if (senderTrueRewardEnabled && receiverTrueRewardEnabled) {
             bool hasHook;
             address finalTo;
@@ -425,7 +425,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
                 }
             }
         }
-        // 5. Sender enabled, reciever disabled, value > reserve TUSD balance
+        // 5. Sender enabled, receiver disabled, value > reserve TUSD balance
         else if (senderTrueRewardEnabled) {
             emit Transfer(_from, address(this), _value);
             emit Transfer(address(this), address(0), _value);
@@ -434,14 +434,14 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             // watchout for reentrancy
             _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(zTUSDAmount);
         }
-        // 6. Sender disabled, reciever enabled, value > reserve zTUSD balance (in TUSD)
+        // 6. Sender disabled, receiver enabled, value > reserve zTUSD balance (in TUSD)
         else if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             _setAllowance(_from, aaveInterfaceAddress(), _value);
             uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(_from, _value);
             _totalAaveSupply = _totalAaveSupply.add(zTUSDAmount);
             _financialOpportunityBalances[_to][aaveInterfaceAddress()] = _financialOpportunityBalances[_to][aaveInterfaceAddress()].add(zTUSDAmount);
             emit Transfer(address(0), _to, _value); // // mint value
-            emit Transfer(address(this), _to, _value); // send value to reciever
+            emit Transfer(address(this), _to, _value); // send value to receiver
         }
     }
 
