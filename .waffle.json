@@ -1,6 +1,5 @@
 {
-    "compilerType": "dockerized-solc",
-    "compilerVersion": "0.5.13",
+    "compilerVersion": "v0.5.13+commit.5b0b510c",
     "compilerOptions": {
         "optimizer": {
           "enabled": true
