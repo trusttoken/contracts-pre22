@@ -596,12 +596,12 @@ contract('TokenController', function (accounts) {
         await assertRevert(this.controller.requestReclaimEther({ from: otherAddress }))
       })
 
-      it('can reclaim ether in the controller contract address', async function () {
+      it.only('can reclaim ether in the controller contract address', async function () {
         const forceEther = await ForceEther.new({ from: oneHundred, value: '10000000000000000000' })
         await forceEther.destroyAndSend(this.controller.address)
-        const balance1 = BN(web3.utils.fromWei(await web3.eth.getBalance(owner), 'ether'))
+        const balance1 = BN(await web3.eth.getBalance(owner))
         await this.controller.reclaimEther(owner, { from: owner })
-        const balance2 = BN(web3.utils.fromWei(await web3.eth.getBalance(owner), 'ether'))
+        const balance2 = BN(await web3.eth.getBalance(owner))
         assert(balance2.gt(balance1))
       })
     })
