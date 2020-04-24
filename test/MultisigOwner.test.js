@@ -145,8 +145,8 @@ contract('MultisigOwner', function (accounts) {
       await this.multisigOwner.msReclaimToken(this.basicToken.address, oneHundred, { from: owner2 })
       const contractBalance = await this.basicToken.balanceOf.call(this.multisigOwner.address)
       const userBalance = await this.basicToken.balanceOf.call(oneHundred)
-      assert.equal(Number(contractBalance), 0)
-      assert.equal(Number(userBalance), 100)
+      assert.equal((contractBalance), 0)
+      assert.equal((userBalance), 100)
     })
 
     it('owners can veto actions', async function () {
@@ -311,11 +311,11 @@ contract('MultisigOwner', function (accounts) {
     it('call requestReclaimEther of tokenController', async function () {
       const forceEther = await ForceEther.new({ from: oneHundred, value: '10000000000000000000' })
       await forceEther.destroyAndSend(this.token.address)
-      const balance1 = Number(web3.utils.fromWei(await web3.eth.getBalance(this.multisigOwner.address), 'ether'))
+      const balance1 = BN(web3.utils.fromWei(await web3.eth.getBalance(this.multisigOwner.address), 'ether'))
       await this.multisigOwner.requestReclaimEther({ from: owner1 })
       await this.multisigOwner.requestReclaimEther({ from: owner2 })
-      const balance2 = Number(web3.utils.fromWei(await web3.eth.getBalance(this.multisigOwner.address), 'ether'))
-      assert.isAbove(balance2, balance1)
+      const balance2 = BN(web3.utils.fromWei(await web3.eth.getBalance(this.multisigOwner.address), 'ether'))
+      assert(balance2.gt(balance1))
     })
 
     it('call requestReclaimToken of tokenController', async function () {
@@ -327,14 +327,14 @@ contract('MultisigOwner', function (accounts) {
 
       const tokenContractBalance = await this.basicToken.balanceOf.call(this.token.address)
       const multiSigBalance = await this.basicToken.balanceOf.call(this.multisigOwner.address)
-      assert.equal(Number(tokenContractBalance), 0)
-      assert.equal(Number(multiSigBalance), 100)
+      assert.equal((tokenContractBalance), 0)
+      assert.equal((multiSigBalance), 100)
 
       await this.multisigOwner.msReclaimToken(this.basicToken.address, oneHundred, { from: owner1 })
       await this.multisigOwner.msReclaimToken(this.basicToken.address, oneHundred, { from: owner2 })
 
       const userBalance = await this.basicToken.balanceOf.call(oneHundred)
-      assert.equal(Number(userBalance), 100)
+      assert.equal((userBalance), 100)
     })
 
     it('call setFastPause of tokenController', async function () {

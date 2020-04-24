@@ -20,8 +20,8 @@ contract('TrueUSD', function (accounts) {
 
     it('owner can set totalsupply', async function () {
       await this.token.setTotalSupply(HUNDRED, { from: owner })
-      const totalSupply = Number(await this.token.totalSupply.call())
-      assert.equal(HUNDRED, totalSupply)
+      const totalSupply = (await this.token.totalSupply.call())
+      assert.equal(HUNDRED.toString(), totalSupply.toString())
     })
 
     it('totalsupply cannot be set when it is not zero', async function () {
