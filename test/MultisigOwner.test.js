@@ -145,8 +145,8 @@ contract('MultisigOwner', function (accounts) {
       await this.multisigOwner.msReclaimToken(this.basicToken.address, oneHundred, { from: owner2 })
       const contractBalance = await this.basicToken.balanceOf.call(this.multisigOwner.address)
       const userBalance = await this.basicToken.balanceOf.call(oneHundred)
-      assert.equal((contractBalance), 0)
-      assert.equal((userBalance), 100)
+      assert.equal(contractBalance, 0)
+      assert.equal(userBalance, 100)
     })
 
     it('owners can veto actions', async function () {
@@ -327,14 +327,14 @@ contract('MultisigOwner', function (accounts) {
 
       const tokenContractBalance = await this.basicToken.balanceOf.call(this.token.address)
       const multiSigBalance = await this.basicToken.balanceOf.call(this.multisigOwner.address)
-      assert.equal((tokenContractBalance), 0)
-      assert.equal((multiSigBalance), 100)
+      assert.equal(tokenContractBalance, 0)
+      assert.equal(multiSigBalance, 100)
 
       await this.multisigOwner.msReclaimToken(this.basicToken.address, oneHundred, { from: owner1 })
       await this.multisigOwner.msReclaimToken(this.basicToken.address, oneHundred, { from: owner2 })
 
       const userBalance = await this.basicToken.balanceOf.call(oneHundred)
-      assert.equal((userBalance), 100)
+      assert.equal(userBalance, 100)
     })
 
     it('call setFastPause of tokenController', async function () {

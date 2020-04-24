@@ -20,7 +20,7 @@ contract('TrueUSD', function (accounts) {
 
     it('owner can set totalsupply', async function () {
       await this.token.setTotalSupply(HUNDRED, { from: owner })
-      const totalSupply = (await this.token.totalSupply.call())
+      const totalSupply = await this.token.totalSupply.call()
       assert.equal(HUNDRED.toString(), totalSupply.toString())
     })
 
