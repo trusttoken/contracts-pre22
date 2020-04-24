@@ -26,7 +26,7 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
     function withdrawTo(address _to, uint _amount) external returns(uint) {
         uint shares = _getAmountInShares(_amount);
         require(shares <= balance, "FinOpMock/withdrawTo/balanceCheck");
-        require(token.transfer(_to, _amount), "FinOpMock/withdrawTo/trasfer");
+        require(token.transfer(_to, _amount), "FinOpMock/withdrawTo/transfer");
         balance = balance.sub(shares);
         return shares;
     }

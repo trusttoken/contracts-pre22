@@ -116,9 +116,9 @@ contract('PausedTrueUSD', function (accounts) {
 
       describe('getter functions still functioning', function () {
         it('balanceOf', async function () {
-          const balance = Number(await this.token.balanceOf.call(oneHundred))
-          const balanceOrg = Number(await this.original.balanceOf.call(oneHundred))
-          assert.equal(balance, balanceOrg)
+          const balance = await this.token.balanceOf.call(oneHundred)
+          const balanceOrg = await this.original.balanceOf.call(oneHundred)
+          assert.equal(balance.toString(), balanceOrg.toString())
         })
         it('allowance', async function () {
           const allowance = await this.token.allowance.call(oneHundred, otherAddress)
