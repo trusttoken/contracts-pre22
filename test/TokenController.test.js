@@ -324,7 +324,7 @@ contract('TokenController', function (accounts) {
         await this.controller.ratifyMint(0, otherAddress, BN(200).mul(BN(10 ** 18)), { from: ratifier3 })
         await assertBalance(this.token, otherAddress, BN(200).mul(BN(10 ** 18)))
         const remainMultiSigPool = await this.controller.multiSigMintPool.call()
-        assert.equal(Number(remainMultiSigPool), BN(2500).mul(BN(10 ** 18)))
+        assert.equal(remainMultiSigPool.toString(), BN(2500).mul(BN(10 ** 18)).toString())
       })
 
       it('multiSig mint does not finalize if over the jumbpMintthreshold', async function () {
@@ -398,7 +398,7 @@ contract('TokenController', function (accounts) {
         const { logs } = await this.controller.refillMultiSigMintPool({ from: owner })
         assert.equal(logs[0].event, 'MultiSigPoolRefilled')
         const multiSigPool = await this.controller.multiSigMintPool.call()
-        assert.equal(Number(multiSigPool), 3000 * 10 ** 18)
+        assert.equal(multiSigPool, 3000 * 10 ** 18)
       })
 
       it('refills ratify mint pool', async function () {
@@ -408,9 +408,9 @@ contract('TokenController', function (accounts) {
         const { logs } = await this.controller.refillRatifiedMintPool({ from: ratifier3 })
         assert.equal(logs[0].event, 'RatifyPoolRefilled')
         const ratifyPool = await this.controller.ratifiedMintPool.call()
-        assert.equal(Number(ratifyPool), 300 * 10 ** 18)
+        assert.equal(ratifyPool, 300 * 10 ** 18)
         const multiSigPool = await this.controller.multiSigMintPool.call()
-        assert.equal(Number(multiSigPool), 2700 * 10 ** 18)
+        assert.equal(multiSigPool, 2700 * 10 ** 18)
       })
 
       it('refills instant mint pool', async function () {
@@ -419,11 +419,11 @@ contract('TokenController', function (accounts) {
         const { logs } = await this.controller.refillInstantMintPool({ from: owner })
         assert.equal(logs[0].event, 'InstantPoolRefilled')
         const ratifyPool = await this.controller.ratifiedMintPool.call()
-        assert.equal(Number(ratifyPool), 270 * 10 ** 18)
+        assert.equal(ratifyPool, 270 * 10 ** 18)
         const multiSigPool = await this.controller.multiSigMintPool.call()
-        assert.equal(Number(multiSigPool), 2700 * 10 ** 18)
+        assert.equal(multiSigPool, 2700 * 10 ** 18)
         const instantPool = await this.controller.instantMintPool.call()
-        assert.equal(Number(instantPool), 30 * 10 ** 18)
+        assert.equal(instantPool, 30 * 10 ** 18)
       })
 
       it('Ratifier cannot refill RatifiedMintPool alone', async function () {
@@ -584,10 +584,10 @@ contract('TokenController', function (accounts) {
       it('reclaims ether', async function () {
         const forceEther = await ForceEther.new({ from: oneHundred, value: '10000000000000000000' })
         await forceEther.destroyAndSend(this.token.address)
-        const balance1 = web3.utils.fromWei(await web3.eth.getBalance(owner), 'ether')
+        const balance1 = BN(await web3.eth.getBalance(owner))
         await this.controller.requestReclaimEther({ from: owner })
-        const balance2 = web3.utils.fromWei(await web3.eth.getBalance(owner), 'ether')
-        assert.isAbove(Number(balance2), Number(balance1))
+        const balance2 = BN(await web3.eth.getBalance(owner))
+        assert.isAbove(balance2, balance1)
       })
 
       it('cannot be called by non-owner', async function () {
@@ -602,7 +602,7 @@ contract('TokenController', function (accounts) {
         const balance1 = web3.utils.fromWei(await web3.eth.getBalance(owner), 'ether')
         await this.controller.reclaimEther(owner, { from: owner })
         const balance2 = web3.utils.fromWei(await web3.eth.getBalance(owner), 'ether')
-        assert.isAbove(Number(balance2), Number(balance1))
+        assert.isAbove(balance2, balance1)
       })
     })
 
