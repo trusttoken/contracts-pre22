@@ -81,7 +81,7 @@ describe('TrueRewardBackedToken', function () {
     })
   })
 
-  describe.only('TrueReward with Aave', function () {
+  describe('TrueReward with Aave', function () {
     let sharesToken: Contract
     let lendingPoolCore: Contract
     let lendingPool: Contract
@@ -222,7 +222,7 @@ describe('TrueRewardBackedToken', function () {
         await token.connect(holder).transfer(sender.address, parseEther('100'))
         await token.connect(receipient).enableTrueReward()
         await token.connect(sender).transfer(receipient.address, parseEther('50'))
-        
+
         expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
         expect(await token.balanceOf(receipient.address)).to.equal('49999999999999999999')
         expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('0')
@@ -234,52 +234,52 @@ describe('TrueRewardBackedToken', function () {
     })
     describe('Truereward - aave with interest ', function () {
       it('sender truereward enabled receipient not enabled', async function () {
-          await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
-          await token.connect(holder).transfer(sender.address, parseEther('100'))
-          await token.connect(sender).enableTrueReward()
-          await lendingPoolCore.setReserveNormalizedIncome(parseEther('1600000000'))
-          await token.connect(sender).transfer(receipient.address, parseEther('50'))
-        
-          expect(await token.balanceOf(sender.address)).to.equal('56666666666666666665') // (100/1.5)*1.6 - 50
-          expect(await token.balanceOf(receipient.address)).to.equal(parseEther('50'))
-          expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('35416666666666666666') // 56666666666666660000/1.6
-          expect(await token.accountTotalLoanBackedBalance(receipient.address)).to.equal('0')
-          expect(await token.totalAaveSupply()).to.equal('35416666666666666666')
-          expect(await token.totalSupply()).to.equal('356666666666666666665')
-          expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('56666666666666666666')
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+        await token.connect(holder).transfer(sender.address, parseEther('100'))
+        await token.connect(sender).enableTrueReward()
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1600000000'))
+        await token.connect(sender).transfer(receipient.address, parseEther('50'))
+
+        expect(await token.balanceOf(sender.address)).to.equal('56666666666666666665') // (100/1.5)*1.6 - 50
+        expect(await token.balanceOf(receipient.address)).to.equal(parseEther('50'))
+        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('35416666666666666666') // 56666666666666660000/1.6
+        expect(await token.accountTotalLoanBackedBalance(receipient.address)).to.equal('0')
+        expect(await token.totalAaveSupply()).to.equal('35416666666666666666')
+        expect(await token.totalSupply()).to.equal('356666666666666666665')
+        expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('56666666666666666666')
       })
 
       it('sender truereward enabled receipient enabled', async function () {
-          await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
-          await token.connect(holder).transfer(sender.address, parseEther('100'))
-          await token.connect(sender).enableTrueReward()
-          await token.connect(receipient).enableTrueReward()
-          await lendingPoolCore.setReserveNormalizedIncome(parseEther('1600000000'))
-          await token.connect(sender).transfer(receipient.address, parseEther('50'))
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+        await token.connect(holder).transfer(sender.address, parseEther('100'))
+        await token.connect(sender).enableTrueReward()
+        await token.connect(receipient).enableTrueReward()
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1600000000'))
+        await token.connect(sender).transfer(receipient.address, parseEther('50'))
 
-          expect(await token.balanceOf(sender.address)).to.equal('56666666666666666665')
-          expect(await token.balanceOf(receipient.address)).to.equal('50000000000000000000')
-          expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('35416666666666666666')
-          expect(await token.accountTotalLoanBackedBalance(receipient.address)).to.equal('31250000000000000000')
-          expect(await token.totalAaveSupply()).to.equal('66666666666666666666')
-          expect(await token.totalSupply()).to.equal('406666666666666666665')
-          expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('106666666666666666666')
+        expect(await token.balanceOf(sender.address)).to.equal('56666666666666666665')
+        expect(await token.balanceOf(receipient.address)).to.equal('50000000000000000000')
+        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('35416666666666666666')
+        expect(await token.accountTotalLoanBackedBalance(receipient.address)).to.equal('31250000000000000000')
+        expect(await token.totalAaveSupply()).to.equal('66666666666666666666')
+        expect(await token.totalSupply()).to.equal('406666666666666666665')
+        expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('106666666666666666666')
       })
 
       it('sender truereward not enabled receipient enabled', async function () {
-          await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
-          await token.connect(holder).transfer(sender.address, parseEther('100'))
-          await token.connect(receipient).enableTrueReward()
-          await lendingPoolCore.setReserveNormalizedIncome(parseEther('1600000000'))
-          await token.connect(sender).transfer(receipient.address, parseEther('50'))
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+        await token.connect(holder).transfer(sender.address, parseEther('100'))
+        await token.connect(receipient).enableTrueReward()
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1600000000'))
+        await token.connect(sender).transfer(receipient.address, parseEther('50'))
 
-          expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
-          expect(await token.balanceOf(receipient.address)).to.equal(parseEther('50'))
-          expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal(0)
-          expect(await token.accountTotalLoanBackedBalance(receipient.address)).to.equal(parseEther('31.25')) // 31.25*1.6
-          expect(await token.totalAaveSupply()).to.equal(parseEther('31.25'))
-          expect(await token.totalSupply()).to.equal(parseEther('350'))
-          expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal(parseEther('50'))
+        expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
+        expect(await token.balanceOf(receipient.address)).to.equal(parseEther('50'))
+        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal(0)
+        expect(await token.accountTotalLoanBackedBalance(receipient.address)).to.equal(parseEther('31.25')) // 31.25*1.6
+        expect(await token.totalAaveSupply()).to.equal(parseEther('31.25'))
+        expect(await token.totalSupply()).to.equal(parseEther('350'))
+        expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal(parseEther('50'))
       })
     })
   })
