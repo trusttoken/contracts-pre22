@@ -11,7 +11,7 @@ const OwnedUpgradeabilityProxy = artifacts.require('OwnedUpgradeabilityProxy')
 const to18Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 8))
 const to27Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 17))
 
-contract('TrueRewardBackedToken', function (accounts) {
+contract.skip('TrueRewardBackedToken', function (accounts) {
   const [, owner, holder, holder2, sender, recipient] = accounts
   const HUNDRED = BN(100).mul(BN(10 ** 18))
   describe('TrueReward setup', function () {
