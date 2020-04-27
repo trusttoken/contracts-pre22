@@ -1,0 +1,19 @@
+{
+    "tusdProxyAddress": "0xe9cefa5388684484765958ed93dc6fd94bb91a17",
+    "controllerProxyAddress": "0xee1b83f3423290c6b222cad87bbf037132d43753",
+    "assuredOpportunityProxyAddress": "0xf467dbab503c367d7fb78ab55575f5f2b564f93f",
+    "trueUSDAddress": "0x0708d91c94154bcb14327d489179a79d236fb763",
+    "provisionalRegistryImplementationAddress": "0x8ec260d632f96083d508422a562aa2b1b2332e61",
+    "tokenFaucetAddress": "0xb6197b4c11b1985d974d2646ec564cbb8db2f9cc",
+    "depositAddressRegistrarAddress": "0x641C5F46Ebf380a639ef703B1D99ad2E1a9dA04b",
+    "lendingPoolCoreMockAddress": "0xc0d6e9dd75c93c590e0f37848d853ac239bb8959",
+    "aTokenMockAddress": "0xb87088387bcc6896d3d72edc587fb4983729a94b",
+    "configurableFinancialOpportunityMockAddress": "0x5dc5e415035b5c7e653ab13a6e67e93d92f648ef",
+    "assuredFinancialOpportunityAddress": "0x4d4060af357eac7e460866e57b01d47bbed6de61",
+    "fractionalExponentsAddress": "0x0512b43e6395368331b4e2ff345591da06c70968",
+    "aMockTrustTokenAddress": "0x686de35f654ef28aee4846ce705e05930d2bddf4",
+    "liquidatorAddress": "0x59b8240357aea13b639ef495c413c72c83f48f84",
+    "stakedTokenAddress": "0xc91e77f1f8d8591b6b876aa3c069d9e0d922010d",
+    "testnetDeployHelperAddress": "0xea3032fb52e9dca40674116eda104857a3be27fa",
+    "ownerAddress": "0xF5aabc6E4cDa33f2c60c255c230AaC0CF6eF7b24"
+}

@@ -235,7 +235,7 @@ describe('TrueRewardBackedToken', () => {
       })
     })
 
-    describe('Aave ears interest', () => {
+    describe('Aave earns interest', () => {
       beforeEach(async () => {
         await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
         await token.connect(holder).transfer(sender.address, parseEther('100'))

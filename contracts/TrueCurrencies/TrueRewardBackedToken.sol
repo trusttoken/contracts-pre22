@@ -8,7 +8,7 @@ import "../TrueReward/FinancialOpportunity.sol";
  * @dev TrueRewardBackedToken is TrueUSD backed by debt.
  *
  * zTUSD represents an amount of TUSD owed to the zTUSD holder
- * zTUSD is calculated by calling perTokenValue on a financial opportunity
+ * TUSD owed = zTUSD * perTokenValue of a financial opportunity
  * zTUSD is not transferrable in that the token itself is never tranferred
  * Rather, we override our transfer functions to account for user balances
  * We assume zTUSD always increases in value
@@ -32,7 +32,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     // Reserve is an address which nobody has the private key to
     // Reserves of TUSD and TrueRewardBackedToken are held at this addess
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
-    uint public _totalAaveSupply;
+    uint public _totalAaveSupply; // in yTUSD
     address public aaveInterfaceAddress_;
 
     event TrueRewardEnabled(address _account);
@@ -76,7 +76,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      */
     function rewardBalanceOf(address _account) public view returns (uint) {
         uint loanBackedBalance = accountTotalLoanBackedBalance(_account);
-        return _zTUSDToTUSD(loanBackedBalance) - loanBackedBalance;
+        return _zTUSDToTUSD(loanBackedBalance) - _zTUSDToTUSD(loanBackedBalance);
     }
 
     /**

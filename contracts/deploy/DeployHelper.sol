@@ -18,6 +18,7 @@ import { Liquidator } from "@trusttoken/trusttokens/contracts/Liquidator.sol";
  * Deployer of DeployHelper will be final owner of proxy contracts
  *
  * Use UpgradeHelper to upgrade existing contracts
+ * see also: deploy_mainnet.js
  */
 contract DeployHelper {
     address payable public owner;
@@ -79,7 +80,7 @@ contract DeployHelper {
             registryAddress,
             trueUSDProxyAddress,
             tokenControllerProxyAddress
-        ); // pass
+        );
 
         // setup Assurance interfaces
         setUpAssurance(
@@ -88,13 +89,13 @@ contract DeployHelper {
             exponentContractAddress,
             assurancePoolAddress,
             liquidatorAddress
-        ); // pass
+        );
 
         // Init TrueUSD & TokenController
-        initTrueUSD(trueUSDAddress, tokenControllerAddress); // pass
+        initTrueUSD(trueUSDAddress, tokenControllerAddress);
 
         // 2. Init Assurance
-        initAssurance(assuredOpportunityAddress); // pass
+        initAssurance(assuredOpportunityAddress);
     }
 
     // @dev Init TrueUSD & TokenController
@@ -107,7 +108,7 @@ contract DeployHelper {
 
         // claim ownership of proxies
         tokenControllerProxy.claimProxyOwnership();
-        trueUSDProxy.claimProxyOwnership(); //pass
+        trueUSDProxy.claimProxyOwnership();
         registry.claimOwnership();
 
         // setup registry here

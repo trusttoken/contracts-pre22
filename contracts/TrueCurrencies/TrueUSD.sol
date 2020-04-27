@@ -34,7 +34,6 @@ contract TrueUSD is TrueRewardBackedToken, DelegateERC20 {
     }
 
     // used by proxy to initalize
-    // must create proxy and initalize in same transaction
     // this sets the owner to msg.sender
     // may be a security risk for deployment
     function initialize() external {

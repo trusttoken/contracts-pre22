@@ -1,25 +1,26 @@
 
 /**
- * Waffle Deploy Script
+ * Pattern to upgrade existing testnet smart contracts
+ * Must be run by current owner of smart contracts
  *
  * node scripts/deploy_testnet.js "{private_key}" "{rpc_url}"
  *
- * We use ethers to deploy our contract.
- * For upgrades, use deploy/upgrade_testnet.js
+ * We use ethers to upgrade our contracts.
+ * For  deployment, use deploy/deploy_testnet.js
  * Use the config object to set paramaters for deployment
  */
 
 (async () => {
   const rpcOptions = {
     rinkeby: 'https://rinkeby.infura.io/v3/81447a33c1cd4eb09efb1e8c388fb28e',
-    development: 'http://localhost:7545',
+    development: 'http://localhost:7545'
   }
 
   const config = {
     rpc: process.argv[3] || rpcOptions.development,
     accountPrivateKey: process.argv[2],
     network: 'rinkeby',
-    gas: 40000000,
+    gas: 40000000
   }
 
   const ethers = require('ethers')
@@ -35,31 +36,63 @@
 
   const ZERO = '0x0000000000000000000000000000000000000000'
 
-  this.tusdProxy = await deploy('OwnedUpgradeabilityProxy')
-  console.log('deployed tusdProxy at: ', this.tusdProxy.address)
-  this.controllerProxy = await deploy('OwnedUpgradeabilityProxy')
-  console.log('deployed controllerProxy at: ', this.controllerProxy.address)
-  this.assuredOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
-  console.log('deployed assuredOpportunityProxy at: ', this.assuredOpportunityProxy.address)
+  const contracts = require('./deployed/rinkeby_deployed.json')
+
+  // deploy and return upgrade helper
+  const deployAndGetUpgradeHelper = async() => {
+    const upgradeHelper = await deploy('UpgradeHelper')
+    await upgradeHelper.setup(
+      contract.registryAddress,
+      //contract.tusd.address,
+      contract.tusdProxyAddress,
+      //contract.tusdController.address,
+      contract.controllerProxyAddress,
+      //contract.assuredOpportunity.address,
+      contract.assuredOpportunityProxyAddress,
+      contract.financialOpportunityAddress,
+      contract.exponentContractAddress,
+      contract.assurancePoolAddress,
+      contract.liquidatorAddress,
+      { gasLimit: 5000000 }
+    )
+    return upgradeHelper
+  }
+
+  const upgradeTrueUSD = async (upgradeHelper, newTusdAddress) => {
+    this.tusd = await deploy('TrueUSD')
+  }
+
+  // deploy and upgrade assured opportunity
+  const upgradeAssuredOpportunity = async (upgradeHelper, newOpportunityAddress) => {
+    this.lendingPoolCoreMock = await deploy('LendingPoolCoreMock')
+    this.aTokenMock = await deploy(
+      'ATokenMock', this.tusdProxy.address, this.lendingPoolCoreMock.address)
+    this.financialOpportunity = await deploy(
+      'ConfigurableFinancialOpportunityMock', this.aTokenMock.address)
+    this.assuredOpportunity = await deploy('AssuredFinancialOpportunity')
+    this.exponentContract = await deploy('FractionalExponents')
+    this.trusttoken = await deploy('MockTrustToken', this.registry.address)
+  }
+
+  const upgradeTokenController = async (upgradeHelper, newTokenControllerAddress) => {
+
+  }
+
+  // get existing proxies (for upgrade calls)
+  this.tusdProxy = contractAt(contracts.tusdProxyAddress)
+  this.assuredOpportunityProxy = contractAt(contracts.assuredOpportunityProxyAddress)
+  this.tokenControllerProxy = contractAt(contracts.controllerProxyAddress)
+
+  // init deploy helper
+  this.upgradeHelper = deployAndGetUpgradeHelper()
+
+  // call upgrade functions
+  upgradeTrueUSD(tusdProxy, tusd)
 
   // Deploy all contracts
-  this.tusd = await deploy('TrueUSD')
+  
   this.registry = await deploy('ProvisionalRegistryImplementation')
   this.tusdController = await deploy('TokenFaucet')
-
-  this.lendingPoolCoreMock = await deploy('LendingPoolCoreMock')
-
-  this.aTokenMock = await deploy(
-    'ATokenMock', this.tusdProxy.address, this.lendingPoolCoreMock.address)
-
-  this.financialOpportunity = await deploy(
-    'ConfigurableFinancialOpportunityMock', this.aTokenMock.address)
-
-  this.assuredOpportunity = await deploy('AssuredFinancialOpportunity')
-  this.exponentContract = await deploy('FractionalExponents')
-
-  // deploy trusttoken
-  this.trusttoken = await deploy('MockTrustToken', this.registry.address)
 
   // setup uniswap
   // needs to compile using truffle compile
@@ -112,23 +145,6 @@
   await this.assuredOpportunityProxy.transferProxyOwnership(this.deployHelper.address)
   console.log('assuredOpportunityProxy proxy transfer ownership')
   await this.registry.transferOwnership(this.deployHelper.address)
-
-  // call deployHelper
-  await this.deployHelper.setup(
-    this.registry.address,
-    this.tusd.address,
-    this.tusdProxy.address,
-    this.tusdController.address,
-    this.controllerProxy.address,
-    this.assuredOpportunity.address,
-    this.assuredOpportunityProxy.address,
-    this.financialOpportunity.address,
-    this.exponentContract.address,
-    this.assurancePool.address,
-    this.liquidator.address,
-    { gasLimit: 5000000 },
-  )
-  console.log('deployHelper: setup')
 
   // reclaim ownership
   await this.controllerProxy.claimProxyOwnership({ gasLimit: 5000000 })
