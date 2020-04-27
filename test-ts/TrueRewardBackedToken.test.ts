@@ -286,7 +286,7 @@ describe('TrueRewardBackedToken', () => {
     })
   })
 
-  describe.only('with Aave and AssuredFinancialOpportunity', () => {
+  describe('with Aave and AssuredFinancialOpportunity', () => {
     let lendingPoolCore: Contract 
     let sharesToken: Contract
     let aaveFinancialOpportunity: Contract
