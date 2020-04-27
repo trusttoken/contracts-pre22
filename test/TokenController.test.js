@@ -587,7 +587,7 @@ contract('TokenController', function (accounts) {
         const balance1 = BN(await web3.eth.getBalance(owner))
         await this.controller.requestReclaimEther({ from: owner })
         const balance2 = BN(await web3.eth.getBalance(owner))
-        assert.isAbove(balance2, balance1)
+        assert(balance2.gt(balance1))
       })
 
       it('cannot be called by non-owner', async function () {
@@ -599,10 +599,10 @@ contract('TokenController', function (accounts) {
       it('can reclaim ether in the controller contract address', async function () {
         const forceEther = await ForceEther.new({ from: oneHundred, value: '10000000000000000000' })
         await forceEther.destroyAndSend(this.controller.address)
-        const balance1 = web3.utils.fromWei(await web3.eth.getBalance(owner), 'ether')
+        const balance1 = BN(await web3.eth.getBalance(owner))
         await this.controller.reclaimEther(owner, { from: owner })
-        const balance2 = web3.utils.fromWei(await web3.eth.getBalance(owner), 'ether')
-        assert.isAbove(balance2, balance1)
+        const balance2 = BN(await web3.eth.getBalance(owner))
+        assert(balance2.gt(balance1))
       })
     })
 
