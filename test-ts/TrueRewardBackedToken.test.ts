@@ -512,7 +512,7 @@ describe('TrueRewardBackedToken', () => {
     })
 
     describe('Transfers using reserve mechanism', () => {
-      let reserveAddress: string;
+      let reserveAddress: string
 
       beforeEach(async () => {
         reserveAddress = await token.RESERVE()
@@ -524,7 +524,7 @@ describe('TrueRewardBackedToken', () => {
           await token.connect(holder).transfer(reserveAddress, parseEther('60'))
           await token.connect(sender).enableTrueReward()
         })
-        
+
         it('total token supply should remain the same', async () => {
           expect(await token.totalSupply()).to.equal(parseEther('1340'))
           await token.connect(sender).transfer(recipient.address, parseEther('40'))
@@ -587,7 +587,7 @@ describe('TrueRewardBackedToken', () => {
           await token.connect(recipient).enableTrueReward()
           await token.connect(recipient).transfer(sender.address, parseEther('40'))
         })
-        
+
         it('total token supply should remain the same', async () => {
           expect(await token.totalSupply()).to.equal(parseEther('1340'))
           await token.connect(sender).transfer(recipient.address, parseEther('20'))
