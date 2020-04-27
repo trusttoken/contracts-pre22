@@ -643,5 +643,57 @@ describe('TrueRewardBackedToken', () => {
         })
       })
     })
+
+    describe('award amount', () => {
+      it('0 when reward basis is 100%', async () => {
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+
+        expect(await financialOpportunity.awardAmount()).to.eq(0)
+      })
+
+      it('properly calculated when per token value rose by 50%', async () => {
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+        await token.connect(holder).enableTrueReward()
+
+        expect(await financialOpportunity.awardAmount()).to.equal('49999999999999999999')
+      })
+    })
+
+    describe('award pool', () => {
+      beforeEach(async () => {
+        await token.connect(holder).enableTrueReward()
+      })
+
+      it('awards 0 when reward basis is 100%', async () => {
+        await financialOpportunity.awardPool()
+
+        expect(await token.balanceOf(mockPoolAddress)).to.equal(0)
+        expect(await aaveFinancialOpportunity.getBalance()).to.equal(parseEther('100'))
+      })
+
+      it('awards proper amount', async () => {
+        expect(await token.balanceOf(mockPoolAddress)).to.equal(parseEther('0'))
+        expect(await financialOpportunity.getBalance()).to.equal(parseEther('100'))
+
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+        await expect(financialOpportunity.awardPool()).to.emit(financialOpportunity, 'awardPoolSuccess').withArgs(parseEther('50'))
+
+        expect(await token.balanceOf(mockPoolAddress)).to.equal(parseEther('75'))
+        expect(await financialOpportunity.getBalance()).to.equal(parseEther('100'))
+      })
+
+      // This test fails
+      it.only('awards 0 on subsequent calls', async () => {
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+
+        await financialOpportunity.awardPool()
+
+        expect(await financialOpportunity.awardAmount()).to.equal(0)
+        await financialOpportunity.awardPool()
+        expect(await token.balanceOf(mockPoolAddress)).to.equal(parseEther('75'))
+        expect(await financialOpportunity.getBalance()).to.equal(parseEther('100'))
+      })
+    })
   })
+})
 })
