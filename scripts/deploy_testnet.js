@@ -35,7 +35,7 @@
 
   const ZERO = '0x0000000000000000000000000000000000000000'
 
-  this.safeMath = await deploy('SafeMath') 
+  this.safeMath = await deploy('SafeMath')
   console.log('deployed SafeMath at: ', this.safeMath.address)
   this.tusdProxy = await deploy('OwnedUpgradeabilityProxy')
   console.log('deployed tusdProxy at: ', this.tusdProxy.address)
@@ -154,7 +154,7 @@
     ethers.utils.bigNumberify('1000000000000000000000'),
     ethers.utils.bigNumberify('10000000000000000000000'),
     ethers.utils.bigNumberify('100000000000000000000000'),
-    { gasLimit: 5000000 }
+    { gasLimit: 5000000 },
   )
   console.log('set mint thresholds')
 
