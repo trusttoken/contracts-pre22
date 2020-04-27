@@ -314,7 +314,10 @@ describe('TrueRewardBackedToken', () => {
       aaveFinancialOpportunity = aaveFinancialOpportunityImpl.attach(aaveFinancialOpportunityProxy.address)
       await aaveFinancialOpportunityProxy.upgradeTo(aaveFinancialOpportunityImpl.address)
 
-      financialOpportunity = await deployContract(owner, AssuredFinancialOpportunity)
+      const financialOpportunityImpl = await deployContract(owner, AssuredFinancialOpportunity)
+      const financialOpportunityProxy = await deployContract(owner, OwnedUpgradeabilityProxy)
+      financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
+      await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
 
       await aaveFinancialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, financialOpportunity.address)
       await financialOpportunity.configure(
