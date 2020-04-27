@@ -20,7 +20,7 @@
     "build:vy": "bash ./compileUniswap.sh",
     "build": "yarn clean && yarn build:sol && yarn build:vy && bash ./indexBuild.sh",
     "test:js": "./test.sh",
-    "test:ts": "mocha -r ts-node/register --timeout 10000 'test-ts/**/*.test.{ts,js}'",
+    "test:ts": "mocha",
     "test": "yarn test:ts && yarn test:js",
     "checks": "yarn lint && yarn typecheck && yarn test"
   },

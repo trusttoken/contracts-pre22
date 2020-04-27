@@ -30,7 +30,7 @@ function showRegression (type, actual) {
     console.log('\x1b[32m', type, 'improvement:', expected, '->', actual, '\x1b[0m')
   } else if (actual > expected) {
     console.log('\x1b[31m', type, 'regression:', expected, '->', actual, '\x1b[0m')
-  } else if (typeof (expected) === 'undefined') {
+  } else if (typeof expected === 'undefined') {
     console.log(type, '=', actual)
   }
   profile[type] = actual
@@ -294,7 +294,7 @@ contract('GasProfile', function (accounts) {
       await new Promise((resolve, reject) => {
         console.log('Writing GasProfile.json')
         const updatedExpectations = JSON.stringify(profile, null, 2)
-        fs.writeFile('./GasProfile.json', updatedExpectations, (error) => {
+        fs.writeFile('./GasProfile.json', updatedExpectations, error => {
           if (error) {
             console.error(error)
             reject(error)
