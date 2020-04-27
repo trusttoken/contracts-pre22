@@ -79,7 +79,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return IERC20(trueRewardBackedTokenAddress);
     }
 
-    // todo feewet document
+    // zTUSD = yTUSD ^ 0.7
     function _calculatePerTokenValue(uint32 _rewardBasis) internal view returns(uint256) {
         (uint256 result, uint8 precision) = exponents().power(
             opportunity().perTokenValue(), 10**18,
