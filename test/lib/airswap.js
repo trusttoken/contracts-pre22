@@ -33,7 +33,7 @@ function hashOrder (order) {
 }
 
 function hashDomain (verifyingContract) {
-  domain = (EIP712_DOMAIN_TYPEHASH +
+  const domain = (EIP712_DOMAIN_TYPEHASH +
         web3.utils.sha3(DOMAIN_NAME).slice(2) +
         web3.utils.sha3(DOMAIN_VERSION).slice(2) +
         addressBytes32(verifyingContract)
