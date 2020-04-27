@@ -24,7 +24,7 @@ describe('TrueRewardBackedToken', () => {
   let token: Contract
   let financialOpportunity: Contract
   const mockPoolAddress = Wallet.createRandom().address
-  
+
   describe('with AssuredFinancialOpportunity', () => {
     let configurableFinancialOpportunity: Contract
 
@@ -287,7 +287,7 @@ describe('TrueRewardBackedToken', () => {
   })
 
   describe('with Aave and AssuredFinancialOpportunity', () => {
-    let lendingPoolCore: Contract 
+    let lendingPoolCore: Contract
     let sharesToken: Contract
     let aaveFinancialOpportunity: Contract
 
@@ -295,15 +295,14 @@ describe('TrueRewardBackedToken', () => {
       ([owner, holder, holder2, sender, recipient] = wallets)
 
       token = await deployContract(owner, TrueUSD, [], { gasLimit: 5_000_000 })
-      
+
       const registry = await deployContract(owner, RegistryMock)
       const fractionalExponents = await deployContract(owner, FractionalExponents)
       const liquidator = await deployContract(owner, SimpleLiquidatorMock, [token.address])
       lendingPoolCore = await deployContract(owner, LendingPoolCoreMock)
       sharesToken = await deployContract(owner, ATokenMock, [token.address, lendingPoolCore.address])
       const lendingPool = await deployContract(owner, LendingPoolMock, [lendingPoolCore.address, sharesToken.address])
-      
-    
+
       await token.mint(liquidator.address, parseEther('1000'))
       await token.mint(holder.address, parseEther('300'))
       await token.setRegistry(registry.address)
@@ -314,9 +313,9 @@ describe('TrueRewardBackedToken', () => {
       const aaveFinancialOpportunityProxy = await deployContract(owner, OwnedUpgradeabilityProxy)
       aaveFinancialOpportunity = aaveFinancialOpportunityImpl.attach(aaveFinancialOpportunityProxy.address)
       await aaveFinancialOpportunityProxy.upgradeTo(aaveFinancialOpportunityImpl.address)
-      
+
       financialOpportunity = await deployContract(owner, AssuredFinancialOpportunity)
-      
+
       await aaveFinancialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, financialOpportunity.address)
       await financialOpportunity.configure(
         aaveFinancialOpportunity.address,
