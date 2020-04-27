@@ -16,7 +16,7 @@
   }
 
   const config = {
-    rpc: process.argv[3] || rpcOptions.development,
+    rpc: process.argv[3] || rpcOptions.rinkeby,
     accountPrivateKey: process.argv[2],
     network: 'rinkeby',
     gas: 40000000,
@@ -35,6 +35,8 @@
 
   const ZERO = '0x0000000000000000000000000000000000000000'
 
+  this.safeMath = await deploy('SafeMath')
+  console.log('deployed SafeMath at: ', this.safeMath.address)
   this.tusdProxy = await deploy('OwnedUpgradeabilityProxy')
   console.log('deployed tusdProxy at: ', this.tusdProxy.address)
   this.controllerProxy = await deploy('OwnedUpgradeabilityProxy')
@@ -152,6 +154,7 @@
     ethers.utils.bigNumberify('1000000000000000000000'),
     ethers.utils.bigNumberify('10000000000000000000000'),
     ethers.utils.bigNumberify('100000000000000000000000'),
+    { gasLimit: 5000000 },
   )
   console.log('set mint thresholds')
 
