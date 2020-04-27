@@ -510,5 +510,138 @@ describe('TrueRewardBackedToken', () => {
         expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(parseEther('50'))
       })
     })
+
+    describe('Transfers using reserve mechanism', () => {
+      let reserveAddress: string
+
+      beforeEach(async () => {
+        reserveAddress = await token.RESERVE()
+      })
+
+      describe('sender with truereward enabled sends to recipient with truereward disabled', async () => {
+        beforeEach(async () => {
+          await token.connect(holder).transfer(sender.address, parseEther('40'))
+          await token.connect(holder).transfer(reserveAddress, parseEther('60'))
+          await token.connect(sender).enableTrueReward()
+        })
+
+        it('total token supply should remain the same', async () => {
+          expect(await token.totalSupply()).to.equal(parseEther('1340'))
+          await token.connect(sender).transfer(recipient.address, parseEther('40'))
+          expect(await token.totalSupply()).to.equal(parseEther('1340'))
+        })
+
+        it('token reserve should decrease', async () => {
+          expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('60'))
+          await token.connect(sender).transfer(recipient.address, parseEther('40'))
+          expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('20'))
+        })
+
+        it('zToken reserve should increase', async () => {
+          expect(await token.zTUSDReserveBalance()).to.equal('0')
+          await token.connect(sender).transfer(recipient.address, parseEther('40'))
+          expect(await token.zTUSDReserveBalance()).to.equal(parseEther('40'))
+        })
+
+        it('token balance of the sender should decrease', async () => {
+          expect(await token.balanceOf(sender.address)).to.equal(parseEther('40'))
+          await token.connect(sender).transfer(recipient.address, parseEther('40'))
+          expect(await token.balanceOf(sender.address)).to.equal('0')
+        })
+
+        it('token balance of the recipient should increase', async () => {
+          expect(await token.balanceOf(recipient.address)).to.equal('0')
+          await token.connect(sender).transfer(recipient.address, parseEther('40'))
+          expect(await token.balanceOf(recipient.address)).to.equal(parseEther('40'))
+        })
+
+        it('loan backed balance of the sender should decrease', async () => {
+          expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal(parseEther('40'))
+          await token.connect(sender).transfer(recipient.address, parseEther('40'))
+          expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('0')
+        })
+
+        it('loan backed balance of the recipient should remain the same', async () => {
+          expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('0')
+          await token.connect(sender).transfer(recipient.address, parseEther('40'))
+          expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('0')
+        })
+
+        it('total aave supply should remain the same', async () => {
+          expect(await token.totalAaveSupply()).to.equal(parseEther('40'))
+          await token.connect(sender).transfer(recipient.address, parseEther('40'))
+          expect(await token.totalAaveSupply()).to.equal(parseEther('40'))
+        })
+
+        it('balance of the shares token should remain the same', async () => {
+          expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+          await token.connect(sender).transfer(recipient.address, parseEther('40'))
+          expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+        })
+      })
+
+      describe('sender with truereward disabled sends to recipient with truereward enabled', async () => {
+        beforeEach(async () => {
+          await token.connect(holder).transfer(recipient.address, parseEther('40'))
+          await token.connect(holder).transfer(reserveAddress, parseEther('60'))
+          await token.connect(recipient).enableTrueReward()
+          await token.connect(recipient).transfer(sender.address, parseEther('40'))
+        })
+
+        it('total token supply should remain the same', async () => {
+          expect(await token.totalSupply()).to.equal(parseEther('1340'))
+          await token.connect(sender).transfer(recipient.address, parseEther('20'))
+          expect(await token.totalSupply()).to.equal(parseEther('1340'))
+        })
+
+        it('token reserve should increase', async () => {
+          expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('20'))
+          await token.connect(sender).transfer(recipient.address, parseEther('20'))
+          expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('40'))
+        })
+
+        it('zToken reserve should decrease', async () => {
+          expect(await token.zTUSDReserveBalance()).to.equal(parseEther('40'))
+          await token.connect(sender).transfer(recipient.address, parseEther('20'))
+          expect(await token.zTUSDReserveBalance()).to.equal(parseEther('20'))
+        })
+
+        it('token balance of the sender should decrease', async () => {
+          expect(await token.balanceOf(sender.address)).to.equal(parseEther('40'))
+          await token.connect(sender).transfer(recipient.address, parseEther('20'))
+          expect(await token.balanceOf(sender.address)).to.equal(parseEther('20'))
+        })
+
+        it('token balance of the recipient should increase', async () => {
+          expect(await token.balanceOf(recipient.address)).to.equal('0')
+          await token.connect(sender).transfer(recipient.address, parseEther('20'))
+          expect(await token.balanceOf(recipient.address)).to.equal(parseEther('20'))
+        })
+
+        it('loan backed balance of the sender should remain the same', async () => {
+          expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('0')
+          await token.connect(sender).transfer(recipient.address, parseEther('20'))
+          expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('0')
+        })
+
+        it('loan backed balance of the recipient should increase', async () => {
+          expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('0')
+          await token.connect(sender).transfer(recipient.address, parseEther('20'))
+          expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal(parseEther('20'))
+        })
+
+        it('total aave supply should remain the same', async () => {
+          expect(await token.totalAaveSupply()).to.equal(parseEther('40'))
+          await token.connect(sender).transfer(recipient.address, parseEther('20'))
+          expect(await token.totalAaveSupply()).to.equal(parseEther('40'))
+        })
+
+        it('balance of the shares token should remain the same', async () => {
+          expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+          await token.connect(sender).transfer(recipient.address, parseEther('20'))
+          expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+        })
+      })
+    })
   })
 })
