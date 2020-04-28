@@ -125,7 +125,7 @@ contract.skip('AssuredFinancialOpportunity', function (accounts) {
         { from: owner },
       )
 
-      await this.token.setAaveInterfaceAddress(this.assuredFinancialOpportunity.address, { from: issuer })
+      await this.token.setFinOpAddress(this.assuredFinancialOpportunity.address, { from: issuer })
       await this.financialOpportunity.configure(
         this.sharesToken.address, this.lendingPool.address, this.token.address, this.assuredFinancialOpportunity.address, { from: owner },
       )
@@ -140,11 +140,11 @@ contract.skip('AssuredFinancialOpportunity', function (accounts) {
       const enabled = await this.token.trueRewardEnabled.call(holder2)
       assert.equal(enabled, true)
       const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder2)
-      const totalAaveSupply = await this.token.totalAaveSupply.call()
+      const finOpSupply = await this.token.finOpSupply.call()
       const totalSupply = await this.token.totalSupply.call()
       const balance = await this.token.balanceOf.call(holder2)
       assert.equal(loanBackedTokenBalance, to18Decimals(100))
-      assert.equal(totalAaveSupply, to18Decimals(100))
+      assert.equal(finOpSupply, to18Decimals(100))
       assert.equal(totalSupply, to18Decimals(800))
       assert.equal(balance, to18Decimals(100))
     })
@@ -167,11 +167,11 @@ contract.skip('AssuredFinancialOpportunity', function (accounts) {
       await this.token.transfer(holder2, to18Decimals(100), { from: holder })
       await this.token.enableTrueReward({ from: holder2 })
       const loanBackedTokenBalance = await this.token.accountTotalLoanBackedBalance.call(holder2)
-      const totalAaveSupply = await this.token.totalAaveSupply.call()
+      const finOpSupply = await this.token.finOpSupply.call()
       totalSupply = await this.token.totalSupply.call()
       let balance = await this.token.balanceOf.call(holder2)
       assert.equal(loanBackedTokenBalance, 75289795697123700000)
-      assert.equal(totalAaveSupply, 75289795697123700000)
+      assert.equal(finOpSupply, 75289795697123700000)
       assert.equal(totalSupply, to18Decimals(800))
       assert.equal(balance, to18Decimals(100))
       await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.6), { from: owner })

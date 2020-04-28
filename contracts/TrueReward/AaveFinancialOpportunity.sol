@@ -102,7 +102,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     }
 
     /**
-     * @dev Withdraw from AACE to _to account
+     * @dev Withdraw from Aave to _to account
      * @param _to account withdarw TUSD to
      * @param _amount amount in TUSD to withdraw from AAVE
      * @return zTUSD amount deducted

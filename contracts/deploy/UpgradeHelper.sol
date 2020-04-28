@@ -76,7 +76,7 @@ contract UpgradeHelper {
         address trueUsdOwner = trueUsd.owner();
         trueUsd.claimOwnership();
 
-        trueUsd.setAaveInterfaceAddress(address(assuredOpportunityProxy));
+        trueUsd.setFinOpAddress(address(assuredOpportunityProxy));
 
         trueUsd.transferOwnership(trueUsdOwner);
     }

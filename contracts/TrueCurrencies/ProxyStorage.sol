@@ -38,9 +38,10 @@ contract ProxyStorage {
     mapping (address => mapping (address => uint256)) _allowance;
     mapping (bytes32 => mapping (address => uint256)) attributes;
 
-    struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
-    mapping(address => FinancialOpportunityAllocation[]) _trueRewardDistribution;
-    mapping (address => mapping (address => uint256)) _financialOpportunityBalances;
+    // proportion: 1000 = 100%
+    struct RewardAllocation { address finOpAddress; uint proportion; }
+    mapping(address => RewardAllocation[]) _rewardDistribution;
+    mapping (address => mapping (address => uint256)) _finOpBalances;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.

@@ -12,15 +12,34 @@ import "../TrueCurrencies/modularERC20/InitializableClaimable.sol";
 import "./FinancialOpportunity.sol";
 
 /**
- * AssuredFinancialOpportunity
+ * @title AssuredFinancialOpportunity
+ * @dev Wrap financial opportunity with Assurance
  *
- * Wrap financial opportunity with Assurance.
- * TUSD is never held in this contract, only zTUSD which represents value we owe.
- * When zTUSD is exchanged, the resulting TUSD is always sent to a recipient.
- * If a transfer fails, stake is sold from the staking pool for TUSD.
- * When stake is liquidated, the TUSD is sent out in the same transaction (Flash Assurance).
- * Can attempt to sell bad debt at a later date and return value to the pool.
- * Keeps track of rewards stream for assurance pool.
+ * -- Overview -- 
+ * Rewards are earned as perTokenValue() increases in the underlying opportunity
+ * TUSD is never held in this contract - zTUSD represents value we owe to depositors
+ *
+ * -- zTUSD vs yTUSD --
+ * zTUSD represents an amount of ASSURED TUSD owed to the zTUSD holder (depositors)
+ * 1 zTUSD = AssuranceOpportunity perTokenValue() = (yTUSD ^ assurance ratio)
+ * yTUSD represents an amount of NON-ASSURED TUSD owed to this contract
+ * 1 yTUSD = FinancialOpportunity perTokenValue()
+ *
+ * -- Awarding the Assurance Pool
+ * The difference increases when depositors withdraw
+ * Pool award is calculated as follows
+ * (finOpValue * finOpBalance) - (assuredOpportunityBalance * assuredOpportunityTokenValue)
+ * 
+ * -- Flash Assurance --
+ * If a transfer fails, stake is sold from the assurance pool for TUSD
+ * When stake is liquidated, the TUSD is sent out in the same transaction
+ * Can attempt to sell bad debt at a later date and return value to the pool
+ *
+ * -- Assumptions --
+ * perTokenValue can never decrease for this contract. We want to guarantee
+ * the awards earned on deposited TUSD and liquidate trusttokens for this amount
+ * We allow the rewardBasis to be adjusted, but since we still need to maintain
+ * the perTokenValue, we calculate an adjustment factor and set minPerTokenValue
  *
 **/
 contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOpportunityStorage, InitializableClaimable {
@@ -30,18 +49,28 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     event awardPoolSuccess(uint256 _amount);
     event awardPoolFailure(uint256 _amount);
 
-    uint32 constant TOTAL_BASIS = 1000; // total basis points for pool rewards
-    uint zTUSDIssued = 0; // how much zTUSD we've issued
+    // external contracts
     address opportunityAddress;
     address assuranceAddress;
     address liquidatorAddress;
     address exponentContractAddress;
     address trueRewardBackedTokenAddress;
 
+    // how much zTUSD we've issued (total supply)
+    uint zTUSDIssued; 
+
+    // total basis points for pool awards
+    uint32 constant TOTAL_BASIS = 1000; 
+    
     // percentage of interest for staking pool
-    uint32 rewardBasis; // 1% = 10
+    // 1% = 10
+    uint32 rewardBasis;
+
     // adjustment factor used when changing reward basis
-    uint rewardBasisAjustmentFactor;
+    // we change the adjustment factor
+    uint adjustmentFactor;
+
+    // minPerTokenValue can never decrease
     uint minPerTokenValue;
 
     // address allowed to withdraw/deposit, usually set to address of TUSD smart contract
@@ -79,7 +108,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return IERC20(trueRewardBackedTokenAddress);
     }
 
-    // todo feewet document
+    // zTUSD = yTUSD ^ 0.7
     function _calculatePerTokenValue(uint32 _rewardBasis) internal view returns(uint256) {
         (uint256 result, uint8 precision) = exponents().power(
             opportunity().perTokenValue(), 10**18,
@@ -98,7 +127,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
             return opportunity().perTokenValue();
         }
 
-        uint calculatedValue = _calculatePerTokenValue(rewardBasis).mul(rewardBasisAjustmentFactor).div(10**18);
+        uint calculatedValue = _calculatePerTokenValue(rewardBasis).mul(adjustmentFactor).div(10**18);
         if(calculatedValue < minPerTokenValue) {
             return minPerTokenValue;
         } else {
@@ -115,7 +144,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
     /**
      * Get amount pending to be awarded
-     * Calculated as (opportunityValue * opportunityBalance) - (assuredOpportunityBalance * assuredOpportunityTokenValue)
+     * Calculated as (opportunityValue * opportunityBalance) 
+     * - (assuredOpportunityBalance * assuredOpportunityTokenValue)
      */
     function awardAmount() public view returns (uint) {
         uint underlyingTusdValue = opportunity().perTokenValue().mul(opportunity().getBalance()).div(10**18);
@@ -127,12 +157,12 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @dev configure assured opportunity
      */
     function configure(
-        address _opportunityAddress,
-        address _assuranceAddress,
-        address _liquidatorAddress,
-        address _exponentContractAddress,
-        address _trueRewardBackedTokenAddress,
-        address _fundsManager
+        address _opportunityAddress,            // finOp to assure
+        address _assuranceAddress,              // assurance pool
+        address _liquidatorAddress,             // trusttoken liqudiator
+        address _exponentContractAddress,       // exponent contract
+        address _trueRewardBackedTokenAddress,  // token
+        address _fundsManager                   // funds manager
     ) external {
         super._configure(); // sender claims ownership here
         opportunityAddress = _opportunityAddress;
@@ -141,10 +171,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         exponentContractAddress = _exponentContractAddress;
         trueRewardBackedTokenAddress = _trueRewardBackedTokenAddress;
         fundsManager = _fundsManager;
-        rewardBasis = TOTAL_BASIS;
-        rewardBasisAjustmentFactor = 1*10**18;
+        rewardBasis = TOTAL_BASIS; // set to 100% by default
+        adjustmentFactor = 1*10**18;
     }
 
+    /// funds manager can deposit/withdraw from this opportunity
     modifier onlyFundsManager() {
         require(msg.sender == fundsManager, "only funds manager");
         _;
@@ -159,7 +190,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * Deposit TUSD into wrapped opportunity. Calculate zTUSD value and add to issuance value.
+     * @dev Deposit TUSD into wrapped opportunity. 
+     * Calculate zTUSD value and add to issuance value.
      */
     function _deposit(address _account, uint _amount) internal returns(uint) {
         token().transferFrom(_account, address(this), _amount);
@@ -178,7 +210,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * Withdraw amount of TUSD to an address. Liquidate if opportunity fails to return TUSD.
+     * @dev Withdraw amount of TUSD to an address. Liquidate if opportunity fails to return TUSD.
      * todo feewet we might need to check that user has the right balance here
      * does this mean we need account? Or do we have whatever calls this check
      */
@@ -203,7 +235,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * Try to withdrawTo and return success and amount
+     * @dev Try to withdrawTo and return success and amount
     **/
     function _attemptWithdrawTo(address _to, uint _amount) internal returns (bool, uint) {
         uint returnedAmount;
@@ -225,7 +257,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * Liquidate staked tokens to pay for debt.
+     * @dev Liquidate tokens in staking pool to cover debt
     **/
     function _liquidate(address _reciever, int256 _debt) internal returns (uint) {
         liquidator().reclaim(_reciever, _debt);
@@ -234,13 +266,13 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * Sell yTUSD for TUSD and deposit into staking pool.
+     * @dev Sell yTUSD for TUSD and deposit into staking pool.
     **/
     function awardPool() external {
-        uint awardAmount = awardAmount();
+        uint amount = awardAmount();
 
         // sell pool debt and award TUSD to pool
-        (bool success, uint returnedAmount) = _attemptWithdrawTo(assuranceAddress, awardAmount);
+        (bool success, uint returnedAmount) = _attemptWithdrawTo(assuranceAddress, amount);
         if (success) {
             emit awardPoolSuccess(returnedAmount);
         }
@@ -269,7 +301,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     function setRewardBasis(uint32 _value) external onlyOwner {
         minPerTokenValue = _perTokenValue();
 
-        rewardBasisAjustmentFactor = rewardBasisAjustmentFactor
+        adjustmentFactor = adjustmentFactor
             .mul(_calculatePerTokenValue(rewardBasis))
             .div(_calculatePerTokenValue(_value));
         rewardBasis = _value;
