@@ -35,33 +35,28 @@
 
   const ZERO = '0x0000000000000000000000000000000000000000'
 
-  this.safeMath = await deploy('SafeMath')
-  console.log('deployed SafeMath at: ', this.safeMath.address)
-  this.tusdProxy = await deploy('OwnedUpgradeabilityProxy')
-  console.log('deployed tusdProxy at: ', this.tusdProxy.address)
-  this.controllerProxy = await deploy('OwnedUpgradeabilityProxy')
-  console.log('deployed controllerProxy at: ', this.controllerProxy.address)
-  this.assuredOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
-  console.log('deployed assuredOpportunityProxy at: ', this.assuredOpportunityProxy.address)
+  const safeMath = await deploy('SafeMath')
+  console.log('deployed SafeMath at: ', safeMath.address)
 
-  // Deploy all contracts
-  this.tusd = await deploy('TrueUSD')
-  this.registry = await deploy('ProvisionalRegistryImplementation')
-  this.tusdController = await deploy('TokenFaucet')
+  const tusd = await deploy('TrueUSD')
+  const tusdProxy = await deploy('OwnedUpgradeabilityProxy')
+  console.log('deployed tusdProxy at: ', tusdProxy.address)
 
-  this.lendingPoolCoreMock = await deploy('LendingPoolCoreMock')
+  const tusdController = await deploy('TokenFaucet')
+  const controllerProxy = await deploy('OwnedUpgradeabilityProxy')
+  console.log('deployed controllerProxy at: ', controllerProxy.address)
 
-  this.aTokenMock = await deploy(
-    'ATokenMock', this.tusdProxy.address, this.lendingPoolCoreMock.address)
+  const assuredOpportunity = await deploy('AssuredFinancialOpportunity')
+  const assuredOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
+  console.log('deployed assuredOpportunityProxy at: ', assuredOpportunityProxy.address)
 
-  this.financialOpportunity = await deploy(
-    'ConfigurableFinancialOpportunityMock', this.aTokenMock.address)
-
-  this.assuredOpportunity = await deploy('AssuredFinancialOpportunity')
-  this.exponentContract = await deploy('FractionalExponents')
-
-  // deploy trusttoken
-  this.trusttoken = await deploy('MockTrustToken', this.registry.address)
+  // Deploy the rest of the contracts
+  const registry = await deploy('ProvisionalRegistryImplementation')
+  const lendingPoolCoreMock = await deploy('LendingPoolCoreMock')
+  const aTokenMock = await deploy('ATokenMock', tusdProxy.address, lendingPoolCoreMock.address)
+  const financialOpportunity = await deploy('ConfigurableFinancialOpportunityMock', aTokenMock.address)
+  const exponentContract = await deploy('FractionalExponents')
+  const trustToken = await deploy('MockTrustToken', registry.address)
 
   // setup uniswap
   // needs to compile using truffle compile
@@ -92,65 +87,65 @@
     this.liquidator.address)
   */
   // deploy liquidator
-  this.liquidator = await deploy('Liquidator', this.registry.address,
-    this.tusd.address, this.trusttoken.address, ZERO,
+  const liquidator = await deploy('Liquidator', registry.address,
+    tusd.address, trustToken.address, ZERO,
     ZERO)
 
   // deploy assurance pool
-  this.assurancePool = await deploy('StakedToken', this.trusttoken.address,
-    this.tusd.address, this.registry.address,
-    this.liquidator.address)
+  const assurancePool = await deploy('StakedToken', trustToken.address,
+    tusd.address, registry.address,
+    liquidator.address)
 
   // Deploy UpgradeHelper
-  this.deployHelper = await deploy('TestnetDeployHelper')
+  const deployHelper = await deploy('TestnetDeployHelper')
 
   // transfer proxy ownership to deploy helper
-  await this.controllerProxy.transferProxyOwnership(this.deployHelper.address)
+  await controllerProxy.transferProxyOwnership(deployHelper.address)
   console.log('controller proxy transfer ownership')
-  await this.tusdProxy.transferProxyOwnership(this.deployHelper.address)
+  await tusdProxy.transferProxyOwnership(deployHelper.address)
   console.log('tusdProxy proxy transfer ownership')
-  await this.liquidator.transferOwnership(this.deployHelper.address)
+  await liquidator.transferOwnership(deployHelper.address)
   console.log('liquidator proxy transfer ownership')
-  await this.assuredOpportunityProxy.transferProxyOwnership(this.deployHelper.address)
+  await assuredOpportunityProxy.transferProxyOwnership(deployHelper.address)
   console.log('assuredOpportunityProxy proxy transfer ownership')
-  await this.registry.transferOwnership(this.deployHelper.address)
+  await registry.transferOwnership(deployHelper.address)
 
   // call deployHelper
-  await this.deployHelper.setup(
-    this.registry.address,
-    this.tusd.address,
-    this.tusdProxy.address,
-    this.tusdController.address,
-    this.controllerProxy.address,
-    this.assuredOpportunity.address,
-    this.assuredOpportunityProxy.address,
-    this.financialOpportunity.address,
-    this.exponentContract.address,
-    this.assurancePool.address,
-    this.liquidator.address,
+  await deployHelper.setup(
+    registry.address,
+    tusd.address,
+    tusdProxy.address,
+    tusdController.address,
+    controllerProxy.address,
+    assuredOpportunity.address,
+    assuredOpportunityProxy.address,
+    financialOpportunity.address,
+    exponentContract.address,
+    assurancePool.address,
+    liquidator.address,
     { gasLimit: 5000000 },
   )
   console.log('deployHelper: setup')
 
   // reclaim ownership
-  await this.controllerProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await controllerProxy.claimProxyOwnership({ gasLimit: 5000000 })
   console.log('controllerProxy claim ownership')
-  await this.tusdProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await tusdProxy.claimProxyOwnership({ gasLimit: 5000000 })
   console.log('tusdProxy claim ownership')
-  await this.liquidator.claimOwnership({ gasLimit: 5000000 })
+  await liquidator.claimOwnership({ gasLimit: 5000000 })
   console.log('liquidator claim ownership')
-  await this.assuredOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await assuredOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
   console.log('assuredOpportunityProxy claim ownership')
-  await this.registry.claimOwnership({ gasLimit: 5000000 })
+  await registry.claimOwnership({ gasLimit: 5000000 })
   console.log('registry claim ownership')
 
   // setup controller through proxy
-  this.controller = await contractAt('TokenFaucet',
-    this.controllerProxy.address)
-  await this.controller.claimOwnership({ gasLimit: 5000000 })
+  const controller = await contractAt('TokenFaucet',
+    controllerProxy.address)
+  await controller.claimOwnership({ gasLimit: 5000000 })
   console.log('TokenFaucet claim ownership')
 
-  await this.controller.setMintThresholds(
+  await controller.setMintThresholds(
     ethers.utils.bigNumberify('1000000000000000000000'),
     ethers.utils.bigNumberify('10000000000000000000000'),
     ethers.utils.bigNumberify('100000000000000000000000'),
