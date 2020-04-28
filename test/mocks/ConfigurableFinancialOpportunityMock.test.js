@@ -34,7 +34,7 @@ contract('ConfigurableFinancialOpportunityMock', function ([owner, address1]) {
       await this.token.approve(this.financialOpportunity.address, to18Decimals(15))
       await this.financialOpportunity.deposit(owner, to18Decimals(15))
 
-      await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(10)))
+      await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(15)))
       await assertBalance(this.token, owner, to18Decimals(85))
     })
 
@@ -80,7 +80,7 @@ contract('ConfigurableFinancialOpportunityMock', function ([owner, address1]) {
       it('can withdraw 50%', async function () {
         await this.financialOpportunity.withdrawTo(address1, to18Decimals(7.5))
 
-        await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(5)))
+        await assert((await this.financialOpportunity.getBalance()).eq(to18Decimals(7.5)))
         await assertBalance(this.token, address1, to18Decimals(7.5))
       })
 

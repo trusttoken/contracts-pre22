@@ -44,7 +44,7 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
     }
 
     function getBalance() external view returns(uint) {
-        return balance;
+        return _getSharesAmount(balance);
     }
 
     function increasePerTokenValue(uint _by) external {

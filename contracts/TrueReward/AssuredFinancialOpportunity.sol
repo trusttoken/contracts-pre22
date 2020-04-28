@@ -85,7 +85,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     function getBalance() external view returns (uint) {
-        return _getBalance();
+        return _getBalance().mul(_perTokenValue()).div(10**18);
     }
 
     function opportunity() internal view returns(FinancialOpportunity) {
@@ -148,7 +148,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * - (assuredOpportunityBalance * assuredOpportunityTokenValue)
      */
     function awardAmount() public view returns (uint) {
-        uint underlyingTusdValue = opportunity().perTokenValue().mul(opportunity().getBalance()).div(10**18);
+        uint underlyingTusdValue = opportunity().getBalance();
         uint ownTusdValue = _getBalance().mul(_perTokenValue()).div(10**18);
         return underlyingTusdValue.sub(ownTusdValue);
     }

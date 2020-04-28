@@ -314,10 +314,7 @@ describe('TrueRewardBackedToken', () => {
       aaveFinancialOpportunity = aaveFinancialOpportunityImpl.attach(aaveFinancialOpportunityProxy.address)
       await aaveFinancialOpportunityProxy.upgradeTo(aaveFinancialOpportunityImpl.address)
 
-      const financialOpportunityImpl = await deployContract(owner, AssuredFinancialOpportunity)
-      const financialOpportunityProxy = await deployContract(owner, OwnedUpgradeabilityProxy)
-      financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
-      await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
+      financialOpportunity = await deployContract(owner, AssuredFinancialOpportunity)
 
       await aaveFinancialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, financialOpportunity.address)
       await financialOpportunity.configure(
@@ -644,18 +641,23 @@ describe('TrueRewardBackedToken', () => {
       })
     })
 
+    /**
+     * Note: See magic numbers explanation in AssuredFinancialOpportunity tests
+     */
     describe('award amount', () => {
       it('0 when reward basis is 100%', async () => {
+        await token.connect(holder).enableTrueReward()
         await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
 
         expect(await financialOpportunity.awardAmount()).to.eq(0)
       })
 
-      it('properly calculated when per token value rose by 50%', async () => {
-        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+      it('properly calculated when reward basis is 70%', async () => {
         await token.connect(holder).enableTrueReward()
+        await financialOpportunity.setRewardBasis(0.7 * 1000)
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
 
-        expect(await financialOpportunity.awardAmount()).to.equal('49999999999999999999')
+        expect(await financialOpportunity.awardAmount()).to.equal('17179876005666582700')
       })
     })
 
@@ -665,33 +667,87 @@ describe('TrueRewardBackedToken', () => {
       })
 
       it('awards 0 when reward basis is 100%', async () => {
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
         await financialOpportunity.awardPool()
 
         expect(await token.balanceOf(mockPoolAddress)).to.equal(0)
-        expect(await aaveFinancialOpportunity.getBalance()).to.equal(parseEther('100'))
+        expect(await aaveFinancialOpportunity.getBalance()).to.equal(parseEther('150'))
       })
 
       it('awards proper amount', async () => {
-        expect(await token.balanceOf(mockPoolAddress)).to.equal(parseEther('0'))
-        expect(await financialOpportunity.getBalance()).to.equal(parseEther('100'))
-
+        await financialOpportunity.setRewardBasis(0.7 * 1000)
         await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
-        await expect(financialOpportunity.awardPool()).to.emit(financialOpportunity, 'awardPoolSuccess').withArgs(parseEther('50'))
 
-        expect(await token.balanceOf(mockPoolAddress)).to.equal(parseEther('75'))
-        expect(await financialOpportunity.getBalance()).to.equal(parseEther('100'))
+        expect(await token.balanceOf(mockPoolAddress)).to.equal(parseEther('0'))
+        expect(await financialOpportunity.getBalance()).to.equal('132820123994333417300')
+        expect((await financialOpportunity.getBalance()).div(await financialOpportunity.perTokenValue())).to.equal('100')
+
+        await expect(financialOpportunity.awardPool()).to.emit(financialOpportunity, 'awardPoolSuccess').withArgs('11453250670444388466')
+
+        expect(await token.balanceOf(mockPoolAddress)).to.equal('17179876005666582699')
+        expect(await financialOpportunity.getBalance()).to.equal('132820123994333417300')
       })
 
-      // This test fails
-      it.only('awards 0 on subsequent calls', async () => {
+      it('awards 0 on subsequent calls', async () => {
+        await financialOpportunity.setRewardBasis(0.7 * 1000)
         await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
 
         await financialOpportunity.awardPool()
 
         expect(await financialOpportunity.awardAmount()).to.equal(0)
         await financialOpportunity.awardPool()
-        expect(await token.balanceOf(mockPoolAddress)).to.equal(parseEther('75'))
-        expect(await financialOpportunity.getBalance()).to.equal(parseEther('100'))
+        expect(await token.balanceOf(mockPoolAddress)).to.equal('17179876005666582699')
+        expect(await financialOpportunity.getBalance()).to.equal('132820123994333417300')
+      })
+
+      it('awards proper amount when per token value increases between calls', async () => {
+        await financialOpportunity.setRewardBasis(0.7 * 1000)
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+
+        const firstTUsdAmount = '11453250670444388466' // 100 * (1.5 - 1.5 ^ 0.7) / 1.5
+        const secondTUsdAmount = '12580970036318224093' // 100 * (2.5 - 2.5 ^ 0.7) / 2.5 - firstTUsdAmount
+
+        await expect(financialOpportunity.awardPool()).to.emit(financialOpportunity, 'awardPoolSuccess').withArgs(firstTUsdAmount)
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('2500000000'))
+        await expect(financialOpportunity.awardPool()).to.emit(financialOpportunity, 'awardPoolSuccess').withArgs(secondTUsdAmount)
+
+        // 1 wei error
+        expect(await token.balanceOf(mockPoolAddress)).to.equal('48632301096462142932') // firstTUsdAmount * 1.5 + secondTUsdAmount * 2.5
+        expect(await aaveFinancialOpportunity.getBalance()).to.equal('189914448233093468600') // (100 - firstTUsdAmount - secondTUsdAmount) * 2.5
+      })
+
+      it('no additional awards when reward basis changes between calls', async () => {
+        await financialOpportunity.setRewardBasis(0.7 * 1000)
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+
+        await financialOpportunity.awardPool()
+        await financialOpportunity.setRewardBasis(0.5 * 1000)
+
+        expect(await financialOpportunity.awardAmount()).to.equal(0)
+        await financialOpportunity.awardPool()
+
+        expect(await token.balanceOf(mockPoolAddress)).to.equal('17179876005666582699')
+        expect(await financialOpportunity.getBalance()).to.equal('132820123994333417300')
+      })
+
+      it('does NOT revert if the withdrawal fails', async () => {
+        await financialOpportunity.setRewardBasis(0.7 * 1000)
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('20000000000')) // 20x
+
+        await financialOpportunity.awardPool()
+
+        expect(await token.balanceOf(mockPoolAddress)).to.equal(0)
+        expect(await aaveFinancialOpportunity.getBalance()).to.equal(parseEther('2000'))
+      })
+
+      it('anyone can call', async () => {
+        await financialOpportunity.setRewardBasis(0.7 * 1000)
+        await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+
+        await financialOpportunity.connect(holder).awardPool()
+
+        expect(await token.balanceOf(mockPoolAddress)).to.equal('17179876005666582699')
+        expect(await financialOpportunity.getBalance()).to.equal('132820123994333417300')
       })
     })
   })

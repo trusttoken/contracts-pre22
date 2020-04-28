@@ -104,7 +104,7 @@ describe('AssuredFinancialOpportunity', () => {
       const finOpBalance = await assuredFinancialOpportunity.getBalance()
       const remaingTokenBalance = await token.balanceOf(holder.address)
 
-      expect(finOpBalance).to.equal(parseEther('10'))
+      expect(finOpBalance).to.equal(parseEther('15'))
       expect(remaingTokenBalance).to.equal(parseEther('85'))
     })
 
@@ -122,7 +122,7 @@ describe('AssuredFinancialOpportunity', () => {
       await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
       await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
 
-      expect(await assuredFinancialOpportunity.getBalance()).to.equal(parseEther('20'))
+      expect(await assuredFinancialOpportunity.getBalance()).to.equal(parseEther('40'))
     })
   })
 
@@ -179,7 +179,7 @@ describe('AssuredFinancialOpportunity', () => {
         await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
 
         expect(await assuredFinancialOpportunity.perTokenValue()).to.equal(parseEther('1.5'))
-        expect(await assuredFinancialOpportunity.getBalance()).to.equal(parseEther('10'))
+        expect(await assuredFinancialOpportunity.getBalance()).to.equal(parseEther('15'))
       })
 
       it('withdrawAll', async function () {
@@ -203,7 +203,7 @@ describe('AssuredFinancialOpportunity', () => {
 
         const { newBeneficiarysTokenBalance, financialOpportunityBalance } = await checkBalances()
         expect(newBeneficiarysTokenBalance).to.equal(parseEther('7.5'))
-        expect(financialOpportunityBalance).to.equal(parseEther('5'))
+        expect(financialOpportunityBalance).to.equal(parseEther('7.5'))
       })
 
       it('can withdraw twice in a row', async () => {
@@ -212,7 +212,7 @@ describe('AssuredFinancialOpportunity', () => {
 
         const { newBeneficiarysTokenBalance, financialOpportunityBalance } = await checkBalances()
         expect(newBeneficiarysTokenBalance).to.equal(parseEther('4.5'))
-        expect(financialOpportunityBalance).to.equal(parseEther('7'))
+        expect(financialOpportunityBalance).to.equal(parseEther('10.5'))
       })
     })
   })
@@ -224,7 +224,7 @@ describe('AssuredFinancialOpportunity', () => {
     await assuredFinancialOpportunity.withdrawTo(beneficiary.address, parseEther('200'))
 
     expect(await token.balanceOf(beneficiary.address)).to.equal(parseEther('200'))
-    expect(await assuredFinancialOpportunity.getBalance()).to.equal(parseEther('10'))
+    expect(await assuredFinancialOpportunity.getBalance()).to.equal(parseEther('200'))
   })
 
   describe('award amount', () => {
@@ -252,7 +252,7 @@ describe('AssuredFinancialOpportunity', () => {
       await assuredFinancialOpportunity.awardPool()
 
       expect(await token.balanceOf(mockPoolAddress)).to.equal(0)
-      expect(await financialOpportunity.getBalance()).to.equal(parseEther('10'))
+      expect(await financialOpportunity.getBalance()).to.equal(parseEther('15'))
     })
 
     it('awards proper amount', async () => {
@@ -264,7 +264,7 @@ describe('AssuredFinancialOpportunity', () => {
       await expect(assuredFinancialOpportunity.awardPool()).to.emit(assuredFinancialOpportunity, 'awardPoolSuccess').withArgs(expectedAward)
 
       expect(await token.balanceOf(mockPoolAddress)).to.equal('1717987600566658270') // 10 * (1.5 - 1.5 ^ 0.7)
-      expect(await financialOpportunity.getBalance()).to.equal(parseEther('10').sub('1145325067044438846'))
+      expect(await financialOpportunity.getBalance()).to.equal('13282012399433341731') // (10-expectedAward)*1.5
     })
 
     it('awards 0 on subsequent calls', async () => {
@@ -278,7 +278,7 @@ describe('AssuredFinancialOpportunity', () => {
       expect(await assuredFinancialOpportunity.awardAmount()).to.equal(1)
       await assuredFinancialOpportunity.awardPool()
       expect(await token.balanceOf(mockPoolAddress)).to.equal('1717987600566658271')
-      expect(await financialOpportunity.getBalance()).to.equal(parseEther('10').sub('1145325067044438846'))
+      expect(await financialOpportunity.getBalance()).to.equal('13282012399433341731')
     })
 
     it('awards proper amount when per token value increases between calls', async () => {
@@ -295,7 +295,7 @@ describe('AssuredFinancialOpportunity', () => {
 
       // 1 wei error
       expect(await token.balanceOf(mockPoolAddress)).to.equal('4863230109646214295') // firstTUsdAmount * 1.5 + secondTUsdAmount * 2.5
-      expect(await financialOpportunity.getBalance()).to.equal('7596577929323738744') // 10 - firstTUsdAmount - secondTUsdAmount
+      expect(await financialOpportunity.getBalance()).to.equal('18991444823309346860') // (10 - firstTUsdAmount - secondTUsdAmount) * 2.5
     })
 
     it('not additional awards when reward basis changes between calls', async () => {
@@ -312,7 +312,7 @@ describe('AssuredFinancialOpportunity', () => {
 
       // 1 wei error
       expect(await token.balanceOf(mockPoolAddress)).to.equal('1717987600566658271')
-      expect(await financialOpportunity.getBalance()).to.equal(parseEther('10').sub('1145325067044438846'))
+      expect(await financialOpportunity.getBalance()).to.equal('13282012399433341731')
     })
 
     it('does NOT revert if the withdrawal fails', async () => {
@@ -323,7 +323,7 @@ describe('AssuredFinancialOpportunity', () => {
       await assuredFinancialOpportunity.awardPool()
 
       expect(await token.balanceOf(mockPoolAddress)).to.equal(0)
-      expect(await financialOpportunity.getBalance()).to.equal(parseEther('10'))
+      expect(await financialOpportunity.getBalance()).to.equal(parseEther('1000'))
     })
 
     it('anyone can call', async () => {
@@ -334,7 +334,7 @@ describe('AssuredFinancialOpportunity', () => {
       await assuredFinancialOpportunity.connect(holder).awardPool()
 
       expect(await token.balanceOf(mockPoolAddress)).to.equal('1717987600566658270')
-      expect(await financialOpportunity.getBalance()).to.equal(parseEther('10').sub('1145325067044438846'))
+      expect(await financialOpportunity.getBalance()).to.equal('13282012399433341731')
     })
   })
 })
