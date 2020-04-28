@@ -169,7 +169,7 @@ contract UpgradeHelper {
         tokenController.setToken(trueUSD);
         tokenController.setTokenRegistry(registry);
         tokenController.setRegistry(registry);
-        tokenController.setAaveInterfaceAddress(address(assuredOpportunityProxy));
+        tokenController.setFinOpAddress(address(assuredOpportunityProxy));
 
         // set new token controller
         tokenController = tokenController;

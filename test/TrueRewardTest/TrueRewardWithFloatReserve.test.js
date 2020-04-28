@@ -28,7 +28,7 @@ contract('TrueRewardBackedToken', function (accounts) {
       this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
       await this.financialOpportunityProxy.upgradeTo(this.financialOpportunityImpl.address, { from: owner })
       await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, this.token.address, { from: owner })
-      await this.token.setAaveInterfaceAddress(this.financialOpportunity.address, { from: owner })
+      await this.token.setFinOpAddress(this.financialOpportunity.address, { from: owner })
       this.reserve = await this.token.RESERVE.call()
     })
 
@@ -71,7 +71,7 @@ contract('TrueRewardBackedToken', function (accounts) {
       this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
       await this.financialOpportunityProxy.upgradeTo(this.financialOpportunityImpl.address, { from: owner })
       await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, this.token.address, { from: owner })
-      await this.token.setAaveInterfaceAddress(this.financialOpportunity.address, { from: owner })
+      await this.token.setFinOpAddress(this.financialOpportunity.address, { from: owner })
       this.reserve = await this.token.RESERVE.call()
       await this.token.transfer(this.reserve, to18Decimals(200), { from: holder })
       await this.token.convertToZTUSDReserve(to18Decimals(100), { from: owner })

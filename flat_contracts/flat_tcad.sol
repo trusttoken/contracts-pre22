@@ -1,12 +1,15 @@
-pragma solidity ^0.5.13;
 
-// File: contracts/TrueCoinReceiver.sol
+// File: contracts/TrueCurrencies/TrueCoinReceiver.sol
+
+pragma solidity ^0.5.13;
 
 contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
 }
 
 // File: openzeppelin-solidity/contracts/token/ERC20/IERC20.sol
+
+pragma solidity ^0.5.0;
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
@@ -83,7 +86,10 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-// File: registry/contracts/Registry.sol
+// File: @trusttoken/registry/contracts/Registry.sol
+
+pragma solidity ^0.5.13;
+
 
 interface RegistryClone {
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
@@ -250,85 +256,94 @@ contract Registry {
     }
 }
 
-// File: contracts/modularERC20/Ownable.sol
+// File: contracts/TrueCurrencies/modularERC20/InstantiatableOwnable.sol
+
+pragma solidity ^0.5.13;
+
 
 /**
- * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * @title InstantiatableOwnable
+ * @dev The InstantiatableOwnable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
-contract Ownable {
-  address public owner;
+contract InstantiatableOwnable {
+    address public owner;
 
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
-  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    /**
+     * @dev The InstantiatableOwnable constructor sets the original `owner` of the contract to the sender
+     * account.
+     */
+    constructor() public {
+        owner = msg.sender;
+    }
 
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
 
-  /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
-   * account.
-   */
-  constructor() public {
-    owner = msg.sender;
-  }
-
-  /**
-   * @dev Throws if called by any account other than the owner.
-   */
-  modifier onlyOwner() {
-    require(msg.sender == owner);
-    _;
-  }
-
-  /**
-   * @dev Allows the current owner to transfer control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
-   */
-  function transferOwnership(address newOwner) public onlyOwner {
-    require(newOwner != address(0));
-    emit OwnershipTransferred(owner, newOwner);
-    owner = newOwner;
-  }
-
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0));
+        emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
+    }
 }
 
-// File: contracts/modularERC20/Claimable.sol
+// File: contracts/TrueCurrencies/modularERC20/Claimable.sol
+
+pragma solidity ^0.5.13;
+
+
 
 /**
  * @title Claimable
- * @dev Extension for the Ownable contract, where the ownership needs to be claimed.
+ * @dev Extension for the InstantiatableOwnable contract, where the ownership needs to be claimed.
  * This allows the new owner to accept the transfer.
  */
-contract Claimable is Ownable {
-  address public pendingOwner;
+contract Claimable is InstantiatableOwnable {
+    address public pendingOwner;
 
-  /**
-   * @dev Modifier throws if called by any account other than the pendingOwner.
-   */
-  modifier onlyPendingOwner() {
-    require(msg.sender == pendingOwner);
-    _;
-  }
+    /**
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
+    modifier onlyPendingOwner() {
+        require(msg.sender == pendingOwner);
+        _;
+    }
 
-  /**
-   * @dev Allows the current owner to set the pendingOwner address.
-   * @param newOwner The address to transfer ownership to.
-   */
-  function transferOwnership(address newOwner) onlyOwner public {
-    pendingOwner = newOwner;
-  }
+    /**
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        pendingOwner = newOwner;
+    }
 
-  /**
-   * @dev Allows the pendingOwner address to finalize the transfer.
-   */
-  function claimOwnership() onlyPendingOwner public {
-    emit OwnershipTransferred(owner, pendingOwner);
-    owner = pendingOwner;
-    pendingOwner = address(0);
-  }
+    /**
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
+    function claimOwnership() public onlyPendingOwner {
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
+    }
 }
 
 // File: openzeppelin-solidity/contracts/math/SafeMath.sol
+
+pragma solidity ^0.5.0;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -485,7 +500,11 @@ library SafeMath {
     }
 }
 
-// File: contracts/modularERC20/BalanceSheet.sol
+// File: contracts/TrueCurrencies/modularERC20/BalanceSheet.sol
+
+pragma solidity ^0.5.13;
+
+
 
 // A wrapper around the balanceOf mapping.
 contract BalanceSheet is Claimable {
@@ -506,7 +525,11 @@ contract BalanceSheet is Claimable {
     }
 }
 
-// File: contracts/modularERC20/AllowanceSheet.sol
+// File: contracts/TrueCurrencies/modularERC20/AllowanceSheet.sol
+
+pragma solidity ^0.5.13;
+
+
 
 // A wrapper around the allowanceOf mapping.
 contract AllowanceSheet is Claimable {
@@ -527,7 +550,12 @@ contract AllowanceSheet is Claimable {
     }
 }
 
-// File: contracts/ProxyStorage.sol
+// File: contracts/TrueCurrencies/ProxyStorage.sol
+
+pragma solidity ^0.5.13;
+
+
+
 
 /*
 Defines the storage layout of the token implementaiton contract. Any newly declared
@@ -539,12 +567,12 @@ contract ProxyStorage {
     address public pendingOwner;
 
     bool initialized;
-    
+
     BalanceSheet balances_Deprecated;
     AllowanceSheet allowances_Deprecated;
 
     uint256 totalSupply_;
-    
+
     bool private paused_Deprecated = false;
     address private globalPause_Deprecated;
 
@@ -564,6 +592,9 @@ contract ProxyStorage {
     mapping (address => mapping (address => uint256)) _allowance;
     mapping (bytes32 => mapping (address => uint256)) attributes;
 
+    struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
+    mapping(address => FinancialOpportunityAllocation[]) _trueRewardDistribution;
+    mapping (address => mapping (address => uint256)) _financialOpportunityBalances;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
@@ -584,12 +615,15 @@ contract ProxyStorage {
     **/
 }
 
-// File: contracts/HasOwner.sol
+// File: contracts/TrueCurrencies/HasOwner.sol
+
+pragma solidity ^0.5.13;
+
 
 /**
  * @title HasOwner
- * @dev The HasOwner contract is a copy of Claimable Contract by Zeppelin. 
- and provides basic authorization control functions. Inherits storage layout of 
+ * @dev The HasOwner contract is a copy of Claimable Contract by Zeppelin.
+ and provides basic authorization control functions. Inherits storage layout of
  ProxyStorage.
  */
 contract HasOwner is ProxyStorage {
@@ -601,7 +635,7 @@ contract HasOwner is ProxyStorage {
 
     /**
     * @dev sets the original `owner` of the contract to the sender
-    * at construction. Must then be reinitialized 
+    * at construction. Must then be reinitialized
     */
     constructor() public {
         owner = msg.sender;
@@ -642,17 +676,20 @@ contract HasOwner is ProxyStorage {
     }
 }
 
-// File: contracts/ReclaimerToken.sol
+// File: contracts/TrueCurrencies/ReclaimerToken.sol
+
+pragma solidity ^0.5.13;
+
 
 contract ReclaimerToken is HasOwner {
-    /**  
+    /**
     *@dev send all eth balance in the contract to another address
     */
     function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
-    /**  
+    /**
     *@dev send all token balance of an arbitary erc20 token
     in the contract to another address
     */
@@ -661,16 +698,109 @@ contract ReclaimerToken is HasOwner {
         token.transfer(_to, balance);
     }
 
-    /**  
+    /**
     *@dev allows owner of the contract to gain ownership of any contract that the contract currently owns
     */
-    function reclaimContract(Ownable _ownable) external onlyOwner {
+    function reclaimContract(InstantiatableOwnable _ownable) external onlyOwner {
         _ownable.transferOwnership(owner);
     }
-
 }
 
-// File: contracts/modularERC20/ModularBasicToken.sol
+// File: contracts/TrueCurrencies/modularERC20/InitializableOwnable.sol
+
+pragma solidity ^0.5.13;
+
+
+/**
+ * @title InitializableOwnable
+ * @dev The InitializableOwnable contract has an owner address, and provides basic authorization control
+ * functions, this simplifies the implementation of "user permissions".
+ */
+contract InitializableOwnable {
+    address public owner;
+    bool configured = false;
+
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
+
+    /**
+     * @dev The InitializableOwnable constructor sets the original `owner` of the contract to the sender
+     * account.
+     */
+    function _configure() internal {
+        require(!configured);
+        owner = msg.sender;
+        configured = true;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
+
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0));
+        emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
+    }
+}
+
+// File: contracts/TrueCurrencies/modularERC20/InitializableClaimable.sol
+
+pragma solidity ^0.5.13;
+
+
+
+/**
+ * @title InitializableOwnable
+ * @dev Extension for the InstantiatableOwnable contract, where the ownership needs to be claimed.
+ * This allows the new owner to accept the transfer.
+ */
+contract InitializableClaimable is InitializableOwnable {
+    address public pendingOwner;
+
+    /**
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
+    modifier onlyPendingOwner() {
+        require(msg.sender == pendingOwner);
+        _;
+    }
+
+    /**
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        pendingOwner = newOwner;
+    }
+
+    /**
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
+    function claimOwnership() public onlyPendingOwner {
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
+    }
+}
+
+// File: contracts/TrueCurrencies/modularERC20/ModularBasicToken.sol
+
+pragma solidity ^0.5.13;
+
+
+
+
 
 // Fork of OpenZeppelin's BasicToken
 /**
@@ -712,7 +842,12 @@ contract ModularBasicToken is HasOwner {
     }
 }
 
-// File: contracts/modularERC20/ModularStandardToken.sol
+// File: contracts/TrueCurrencies/modularERC20/ModularStandardToken.sol
+
+pragma solidity ^0.5.13;
+
+
+
 
 /**
  * @title Standard ERC20 token
@@ -723,12 +858,15 @@ contract ModularBasicToken is HasOwner {
  */
 contract ModularStandardToken is ModularBasicToken {
     using SafeMath for uint256;
-    
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 
     uint256 constant INFINITE_ALLOWANCE = 0xfe00000000000000000000000000000000000000000000000000000000000000;
 
-    
     /**
      * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
      *
@@ -744,7 +882,11 @@ contract ModularStandardToken is ModularBasicToken {
         return true;
     }
 
-    function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
+    function _approveAllArgs(
+        address _spender,
+        uint256 _value,
+        address _tokenHolder
+    ) internal {
         _setAllowance(_tokenHolder, _spender, _value);
         emit Approval(_tokenHolder, _spender, _value);
     }
@@ -759,14 +901,25 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _addedValue The amount of tokens to increase the allowance by.
      */
-    function increaseAllowance(address _spender, uint _addedValue) public returns (bool) {
+    function increaseAllowance(address _spender, uint256 _addedValue)
+        public
+        returns (bool)
+    {
         _increaseAllowanceAllArgs(_spender, _addedValue, msg.sender);
         return true;
     }
 
-    function _increaseAllowanceAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
+    function _increaseAllowanceAllArgs(
+        address _spender,
+        uint256 _addedValue,
+        address _tokenHolder
+    ) internal {
         _addAllowance(_tokenHolder, _spender, _addedValue);
-        emit Approval(_tokenHolder, _spender, _getAllowance(_tokenHolder, _spender));
+        emit Approval(
+            _tokenHolder,
+            _spender,
+            _getAllowance(_tokenHolder, _spender)
+        );
     }
 
     /**
@@ -779,12 +932,19 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _subtractedValue The amount of tokens to decrease the allowance by.
      */
-    function decreaseAllowance(address _spender, uint _subtractedValue) public returns (bool) {
+    function decreaseAllowance(address _spender, uint256 _subtractedValue)
+        public
+        returns (bool)
+    {
         _decreaseAllowanceAllArgs(_spender, _subtractedValue, msg.sender);
         return true;
     }
 
-    function _decreaseAllowanceAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
+    function _decreaseAllowanceAllArgs(
+        address _spender,
+        uint256 _subtractedValue,
+        address _tokenHolder
+    ) internal {
         uint256 oldValue = _getAllowance(_tokenHolder, _spender);
         uint256 newValue;
         if (_subtractedValue > oldValue) {
@@ -793,34 +953,52 @@ contract ModularStandardToken is ModularBasicToken {
             newValue = oldValue - _subtractedValue;
         }
         _setAllowance(_tokenHolder, _spender, newValue);
-        emit Approval(_tokenHolder,_spender, newValue);
+        emit Approval(_tokenHolder, _spender, newValue);
     }
 
-    function allowance(address _who, address _spender) public view returns (uint256) {
+    function allowance(address _who, address _spender)
+        public
+        view
+        returns (uint256)
+    {
         return _getAllowance(_who, _spender);
     }
 
-    function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
+    function _getAllowance(address _who, address _spender)
+        internal
+        view
+        returns (uint256 value)
+    {
         return _allowance[_who][_spender];
     }
 
-    function _addAllowance(address _who, address _spender, uint256 _value) internal {
+    function _addAllowance(address _who, address _spender, uint256 _value)
+        internal
+    {
         _allowance[_who][_spender] = _allowance[_who][_spender].add(_value);
     }
 
-    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (uint256 newAllowance){
+    function _subAllowance(address _who, address _spender, uint256 _value)
+        internal
+        returns (uint256 newAllowance)
+    {
         newAllowance = _allowance[_who][_spender].sub(_value);
         if (newAllowance < INFINITE_ALLOWANCE) {
             _allowance[_who][_spender] = newAllowance;
         }
     }
 
-    function _setAllowance(address _who, address _spender, uint256 _value) internal {
+    function _setAllowance(address _who, address _spender, uint256 _value)
+        internal
+    {
         _allowance[_who][_spender] = _value;
     }
 }
 
-// File: contracts/modularERC20/ModularBurnableToken.sol
+// File: contracts/TrueCurrencies/modularERC20/ModularBurnableToken.sol
+
+pragma solidity ^0.5.13;
+
 
 /**
  * @title Burnable Token
@@ -845,7 +1023,10 @@ contract ModularBurnableToken is ModularStandardToken {
     }
 }
 
-// File: contracts/BurnableTokenWithBounds.sol
+// File: contracts/TrueCurrencies/BurnableTokenWithBounds.sol
+
+pragma solidity ^0.5.13;
+
 
 /**
  * @title Burnable Token WithBounds
@@ -876,9 +1057,12 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
     }
 }
 
-// File: contracts/GasRefundToken.sol
+// File: contracts/TrueCurrencies/GasRefundToken.sol
 
-/**  
+pragma solidity ^0.5.13;
+
+
+/**
 @title Gas Refund Token
 Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas refund mechanism in EVM
 Each time an non-empty storage slot is set to 0, evm refund 15,000 to the sender
@@ -979,7 +1163,7 @@ contract GasRefundToken is ProxyStorage {
         }
     }
 
-    /**  
+    /**
     @dev refund 30,000 gas
     @dev costs slightly more than 15,400 gas
     */
@@ -998,7 +1182,7 @@ contract GasRefundToken is ProxyStorage {
         }
     }
 
-    /**  
+    /**
     @dev refund 15,000 gas
     @dev costs slightly more than 10,200 gas
     */
@@ -1015,7 +1199,7 @@ contract GasRefundToken is ProxyStorage {
         }
     }
 
-    /**  
+    /**
     *@dev Return the remaining sponsored gas slots
     */
     function remainingGasRefundPool() public view returns (uint length) {
@@ -1038,7 +1222,15 @@ contract GasRefundToken is ProxyStorage {
     }
 }
 
-// File: contracts/CompliantDepositTokenWithHook.sol
+// File: contracts/TrueCurrencies/CompliantDepositTokenWithHook.sol
+
+pragma solidity ^0.5.13;
+
+
+
+
+
+
 
 contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
 
@@ -1076,11 +1268,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
         if (0 == _subBalance(_from, _value)) {
-            if (0 == _subAllowance(_from, _spender, _value)) {
-                // no refund
-            } else {
+            if (0 != _subAllowance(_from, _spender, _value)) {
                 gasRefund15();
             }
+            // else no refund
         } else {
             if (0 == _subAllowance(_from, _spender, _value)) {
                 gasRefund15();
@@ -1120,11 +1311,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             (_to, hasHook) = _requireCanTransferFrom(_spender, _from, _to);
             if (0 == _addBalance(_to, _value)) {
                 if (0 == _subAllowance(_from, _spender, _value)) {
-                    if (0 == _subBalance(_from, _value)) {
-                        // do not refund
-                    } else {
+                    if (0 != _subBalance(_from, _value)) {
                         gasRefund30();
                     }
+                    // else do not refund
                 } else {
                     if (0 == _subBalance(_from, _value)) {
                         gasRefund30();
@@ -1134,11 +1324,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
                 }
             } else {
                 if (0 == _subAllowance(_from, _spender, _value)) {
-                    if (0 == _subBalance(_from, _value)) {
-                        // do not refund
-                    } else {
+                    if (0 != _subBalance(_from, _value)) {
                         gasRefund15();
                     }
+                    // else do not refund
                 } else {
                     if (0 == _subBalance(_from, _value)) {
                         gasRefund15();
@@ -1173,9 +1362,8 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             if (0 == _subBalance(_from, _value)) {
                 if (0 == _addBalance(finalTo, _value)) {
                     gasRefund30();
-                } else {
-                    // do not refund
                 }
+                // else do not refund
             } else {
                 if (0 == _addBalance(finalTo, _value)) {
                     gasRefund39();
@@ -1231,8 +1419,8 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     modifier onlyRegistry {
-      require(msg.sender == address(registry));
-      _;
+        require(msg.sender == address(registry));
+        _;
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
@@ -1302,14 +1490,17 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 }
 
-// File: contracts/TrueCAD.sol
+// File: contracts/TrueCurrencies/TrueCAD.sol
+
+pragma solidity ^0.5.13;
+
+
 
 /** @title TrueCAD
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
 * inherited - see the documentation on the corresponding contracts.
 */
-contract TrueCAD is 
-CompliantDepositTokenWithHook {
+contract TrueCAD is CompliantDepositTokenWithHook {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
