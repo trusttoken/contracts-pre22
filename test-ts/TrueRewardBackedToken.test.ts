@@ -752,4 +752,3 @@ describe('TrueRewardBackedToken', () => {
     })
   })
 })
-})
