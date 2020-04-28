@@ -9,6 +9,7 @@ import {
   FractionalExponents,
   SimpleLiquidatorMock,
   MockERC20,
+  OwnedUpgradeabilityProxy,
 } from '../build'
 
 use(solidity)
@@ -50,8 +51,11 @@ describe('AssuredFinancialOpportunity', () => {
     financialOpportunity = await deployContract(wallet, ConfigurableFinancialOpportunityMock, [token.address])
     await token.mint(financialOpportunity.address, parseEther('100'))
 
-    assuredFinancialOpportunity = await deployContract(wallet, AssuredFinancialOpportunity)
-    await assuredFinancialOpportunity.configure(
+    const assuredFinancialOpportunityImpl = await deployContract(wallet, AssuredFinancialOpportunity)
+    const assuredFinancialOpportunityProxy = await deployContract(wallet, OwnedUpgradeabilityProxy)
+    assuredFinancialOpportunity = assuredFinancialOpportunityImpl.attach(assuredFinancialOpportunityProxy.address)
+    await assuredFinancialOpportunityProxy.upgradeTo(assuredFinancialOpportunityImpl.address)
+    await assuredFinancialOpportunity.configure(  
       financialOpportunity.address,
       mockPoolAddress,
       liquidator.address,

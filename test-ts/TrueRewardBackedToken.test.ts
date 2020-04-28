@@ -41,7 +41,10 @@ describe('TrueRewardBackedToken', () => {
       configurableFinancialOpportunity = await deployContract(owner, ConfigurableFinancialOpportunityMock, [token.address])
       await token.mint(configurableFinancialOpportunity.address, parseEther('100'))
 
-      financialOpportunity = await deployContract(owner, AssuredFinancialOpportunity)
+      const financialOpportunityImpl = await deployContract(owner, AssuredFinancialOpportunity)
+      const financialOpportunityProxy = await deployContract(owner, OwnedUpgradeabilityProxy)
+      financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
+      await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
       await financialOpportunity.configure(
         configurableFinancialOpportunity.address,
         mockPoolAddress,
