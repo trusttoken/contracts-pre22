@@ -37,30 +37,25 @@
 
   const safeMath = await deploy('SafeMath')
   console.log('deployed SafeMath at: ', safeMath.address)
+
+  const tusd = await deploy('TrueUSD')
   const tusdProxy = await deploy('OwnedUpgradeabilityProxy')
   console.log('deployed tusdProxy at: ', tusdProxy.address)
+  
+  const tusdController = await deploy('TokenFaucet')
   const controllerProxy = await deploy('OwnedUpgradeabilityProxy')
   console.log('deployed controllerProxy at: ', controllerProxy.address)
+
+  const assuredOpportunity = await deploy('AssuredFinancialOpportunity')
   const assuredOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
   console.log('deployed assuredOpportunityProxy at: ', assuredOpportunityProxy.address)
 
-  // Deploy all contracts
-  const tusd = await deploy('TrueUSD')
+  // Deploy the rest of the contracts
   const registry = await deploy('ProvisionalRegistryImplementation')
-  const tusdController = await deploy('TokenFaucet')
-
   const lendingPoolCoreMock = await deploy('LendingPoolCoreMock')
-
-  const aTokenMock = await deploy(
-    'ATokenMock', tusdProxy.address, lendingPoolCoreMock.address)
-
-  const financialOpportunity = await deploy(
-    'ConfigurableFinancialOpportunityMock', aTokenMock.address)
-
-  const assuredOpportunity = await deploy('AssuredFinancialOpportunity')
+  const aTokenMock = await deploy('ATokenMock', tusdProxy.address, lendingPoolCoreMock.address)
+  const financialOpportunity = await deploy('ConfigurableFinancialOpportunityMock', aTokenMock.address)
   const exponentContract = await deploy('FractionalExponents')
-
-  // deploy trusttoken
   const trustToken = await deploy('MockTrustToken', registry.address)
 
   // setup uniswap
