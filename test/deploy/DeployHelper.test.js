@@ -9,6 +9,9 @@ const ExponentContract = artifacts.require('FractionalExponents')
 const StakedToken = artifacts.require('StakedToken')
 const Liquidator = artifacts.require('Liquidator')
 const DeployHelper = artifacts.require('DeployHelper')
+const LendingPoolCoreMock = artifacts.require('LendingPoolCoreMock')
+const ATokenMock = artifacts.require('ATokenMock')
+const LendingPoolMock = artifacts.require('LendingPoolMock')
 
 const bytes32 = require('../helpers/bytes32.js')
 const BN = web3.utils.toBN
@@ -56,9 +59,14 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
         this.tusd.address, this.registry.address,
         this.liquidator.address, { from: owner })
 
+      this.lendingPoolCore = await LendingPoolCoreMock.new()
+      this.sharesToken = await ATokenMock.new(this.tusd.address, this.lendingPoolCore.address)
+      this.lendingPool = await LendingPoolMock.new(this.lendingPoolCore.address, this.sharesToken.address)
+
       // deploy opportunity contracts
       this.exponentContract = await ExponentContract.new({ from: owner })
       this.financialOpportunity = await AaveFinancialOpportunity.new({ from: owner })
+      this.financialOpportunityProxy = await Proxy.new({ from: owner })
       this.assuredOpportunity = await AssuredFinancialOpportunity.new({ from: owner })
       this.assuredOpportunityProxy = await Proxy.new({ from: owner })
     })
@@ -70,6 +78,7 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
       await this.tusdProxy.transferProxyOwnership(this.deployHelper.address, { from: owner })
       await this.liquidator.transferOwnership(this.deployHelper.address, { from: owner })
       await this.assuredOpportunityProxy.transferProxyOwnership(this.deployHelper.address, { from: owner })
+      await this.financialOpportunityProxy.transferProxyOwnership(this.deployHelper.address, { from: owner })
       await this.registry.transferOwnership(this.deployHelper.address, { from: owner })
 
       // call deployHelper
@@ -82,9 +91,12 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
         this.assuredOpportunity.address,
         this.assuredOpportunityProxy.address,
         this.financialOpportunity.address,
+        this.financialOpportunityProxy.address,
         this.exponentContract.address,
         this.assurancePool.address,
         this.liquidator.address,
+        this.sharesToken.address,
+        this.lendingPool.address,
         { from: owner },
       )
 
@@ -104,6 +116,8 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
       await assert.equal((await this.tusdProxy.proxyOwner()), owner)
       await assert.equal((await this.assuredOpportunityProxy.proxyOwner()), owner)
       await assert.equal((await this.registry.registryOwner()), owner)
+      await assert.equal((await this.financialOpportunityProxy.proxyOwner()), owner)
+      await assert.equal((await this.financialOpportunityProxy.owner()), this.assuredOpportunityProxy.address)
 
       await this.controller.setMintThresholds(BN(10 * 10 ** 18), BN(100 * 10 ** 18), DOLLAR.mul(BN(1000)), { from: owner })
       await this.controller.setMintLimits(BN(30 * 10 ** 18), BN(300).mul(DOLLAR), DOLLAR.mul(BN(3000)), { from: owner })
