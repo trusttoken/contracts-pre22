@@ -15,7 +15,7 @@ import "./FinancialOpportunity.sol";
  * @title AssuredFinancialOpportunity
  * @dev Wrap financial opportunity with Assurance
  *
- * -- Overview -- 
+ * -- Overview --
  * Rewards are earned as perTokenValue() increases in the underlying opportunity
  * TUSD is never held in this contract - zTUSD represents value we owe to depositors
  *
@@ -29,7 +29,7 @@ import "./FinancialOpportunity.sol";
  * The difference increases when depositors withdraw
  * Pool award is calculated as follows
  * (finOpValue * finOpBalance) - (assuredOpportunityBalance * assuredOpportunityTokenValue)
- * 
+ *
  * -- Flash Assurance --
  * If a transfer fails, stake is sold from the assurance pool for TUSD
  * When stake is liquidated, the TUSD is sent out in the same transaction
@@ -49,29 +49,15 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     event awardPoolSuccess(uint256 _amount);
     event awardPoolFailure(uint256 _amount);
 
+    // total basis points for pool awards
+    uint32 constant TOTAL_BASIS = 1000;
+
     // external contracts
     address opportunityAddress;
     address assuranceAddress;
     address liquidatorAddress;
     address exponentContractAddress;
     address trueRewardBackedTokenAddress;
-
-    // how much zTUSD we've issued (total supply)
-    uint zTUSDIssued; 
-
-    // total basis points for pool awards
-    uint32 constant TOTAL_BASIS = 1000; 
-    
-    // percentage of interest for staking pool
-    // 1% = 10
-    uint32 rewardBasis;
-
-    // adjustment factor used when changing reward basis
-    // we change the adjustment factor
-    uint adjustmentFactor;
-
-    // minPerTokenValue can never decrease
-    uint minPerTokenValue;
 
     // address allowed to withdraw/deposit, usually set to address of TUSD smart contract
     address fundsManager;
@@ -144,7 +130,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
     /**
      * Get amount pending to be awarded
-     * Calculated as (opportunityValue * opportunityBalance) 
+     * Calculated as (opportunityValue * opportunityBalance)
      * - (assuredOpportunityBalance * assuredOpportunityTokenValue)
      */
     function awardAmount() public view returns (uint) {
@@ -190,7 +176,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * @dev Deposit TUSD into wrapped opportunity. 
+     * @dev Deposit TUSD into wrapped opportunity.
      * Calculate zTUSD value and add to issuance value.
      */
     function _deposit(address _account, uint _amount) internal returns(uint) {
