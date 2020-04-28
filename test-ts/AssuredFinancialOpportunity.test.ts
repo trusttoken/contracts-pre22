@@ -55,7 +55,7 @@ describe('AssuredFinancialOpportunity', () => {
     const assuredFinancialOpportunityProxy = await deployContract(wallet, OwnedUpgradeabilityProxy)
     assuredFinancialOpportunity = assuredFinancialOpportunityImpl.attach(assuredFinancialOpportunityProxy.address)
     await assuredFinancialOpportunityProxy.upgradeTo(assuredFinancialOpportunityImpl.address)
-    await assuredFinancialOpportunity.configure(  
+    await assuredFinancialOpportunity.configure(
       financialOpportunity.address,
       mockPoolAddress,
       liquidator.address,
