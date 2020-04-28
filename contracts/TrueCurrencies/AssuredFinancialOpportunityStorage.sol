@@ -6,6 +6,22 @@ state variables in future upgrades should be appened to the bottom. Never remove
 from this list
  */
 contract AssuredFinancialOpportunityStorage {
+
+    // how much zTUSD we've issued (total supply)
+    uint zTUSDIssued;
+
+    // percentage of interest for staking pool
+    // 1% = 10
+    uint32 rewardBasis;
+
+    // adjustment factor used when changing reward basis
+    // we change the adjustment factor
+    uint adjustmentFactor;
+
+    // minPerTokenValue can never decrease
+    uint minPerTokenValue;
+
+
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
      * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.

@@ -24,6 +24,7 @@
       ],
       "no-empty-blocks": "off",
       "error-reason": "off",
+      "operator-whitespace": "off",
       "security/no-low-level-calls": "off",
       "security/no-inline-assembly": "off",
       "security/no-assign-params": "off"
