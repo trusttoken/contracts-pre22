@@ -41,7 +41,7 @@
   const tusd = await deploy('TrueUSD')
   const tusdProxy = await deploy('OwnedUpgradeabilityProxy')
   console.log('deployed tusdProxy at: ', tusdProxy.address)
-  
+
   const tusdController = await deploy('TokenFaucet')
   const controllerProxy = await deploy('OwnedUpgradeabilityProxy')
   console.log('deployed controllerProxy at: ', controllerProxy.address)
