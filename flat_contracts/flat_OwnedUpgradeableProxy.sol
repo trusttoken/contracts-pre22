@@ -1,6 +1,7 @@
-pragma solidity ^0.5.13;
 
-// File: contracts/Proxy/OwnedUpgradeabilityProxy.sol
+// File: contracts/TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol
+
+pragma solidity ^0.5.13;
 
 /**
  * @title OwnedUpgradeabilityProxy
@@ -20,10 +21,13 @@ contract OwnedUpgradeabilityProxy {
     * @param pendingOwner representing the address of the pending owner
     */
     event NewPendingOwner(address currentOwner, address pendingOwner);
-    
+
     // Storage position of the owner and pendingOwner of the contract
-    bytes32 private constant proxyOwnerPosition = 0x6279e8199720cf3557ecd8b58d667c8edc486bd1cf3ad59ea9ebdfcae0d0dfac;//keccak256("trueUSD.proxy.owner");
-    bytes32 private constant pendingProxyOwnerPosition = 0x8ddbac328deee8d986ec3a7b933a196f96986cb4ee030d86cc56431c728b83f4;//keccak256("trueUSD.pending.proxy.owner");
+    bytes32 private constant proxyOwnerPosition = 0x6279e8199720cf3557ecd8b58d667c8edc486bd1cf3ad59ea9ebdfcae0d0dfac;
+    //keccak256("trueUSD.proxy.owner");
+
+    bytes32 private constant pendingProxyOwnerPosition = 0x8ddbac328deee8d986ec3a7b933a196f96986cb4ee030d86cc56431c728b83f4;
+    //keccak256("trueUSD.pending.proxy.owner");
 
     /**
     * @dev the constructor sets the original owner of the contract to the sender account.
@@ -126,6 +130,7 @@ contract OwnedUpgradeabilityProxy {
         }
         emit Upgraded(implementation);
     }
+
     /**
     * @dev This event will be emitted every time the implementation gets upgraded
     * @param implementation representing the address of the upgraded implementation
@@ -133,7 +138,8 @@ contract OwnedUpgradeabilityProxy {
     event Upgraded(address indexed implementation);
 
     // Storage position of the address of the current implementation
-    bytes32 private constant implementationPosition = 0x6e41e0fbe643dfdb6043698bf865aada82dc46b953f754a3468eaa272a362dc7; //keccak256("trueUSD.proxy.implementation");
+    bytes32 private constant implementationPosition = 0x6e41e0fbe643dfdb6043698bf865aada82dc46b953f754a3468eaa272a362dc7;
+    //keccak256("trueUSD.proxy.implementation");
 
     function implementation() public view returns (address impl) {
         bytes32 position = implementationPosition;
@@ -148,7 +154,7 @@ contract OwnedUpgradeabilityProxy {
     */
     function() external payable {
         bytes32 position = implementationPosition;
-        
+
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, returndatasize, calldatasize)
