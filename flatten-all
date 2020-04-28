@@ -26,3 +26,4 @@ truffle-flattener contracts/TrueReward/FinancialOpportunity.sol > flat_contracts
 truffle-flattener contracts/TrueReward/mocks/ATokenMock.sol > flat_contracts/flat_ATokenMock.sol
 truffle-flattener contracts/TrueReward/mocks/ConfigurableFinancialOpportunityMock.sol > flat_contracts/flat_ConfigurableFinancialOpportunityMock.sol
 truffle-flattener contracts/TrueCurrencies/utilities/TokenFaucet.sol > flat_contracts/flat_TokenFaucet.sol
+
