@@ -7,43 +7,46 @@ import "../TrueReward/FinancialOpportunity.sol";
  * @title TrueRewardBackedToken
  * @dev TrueRewardBackedToken is TrueUSD backed by debt
  *
+ * -- Overview -- 
  * Enabling TrueRewards deposits TUSD into a financial opportunity
  * Financial opportunities provide awards over time
  * Awards are reflected in the wallet balance updated block-by-block
  *
+ * -- zTUSD vs yTUSD --
  * zTUSD represents an amount of ASSURED TUSD owed to the zTUSD holder
  * yTUSD represents an amount of NON-ASSURED TUSD owed to a yTUSD holder
  * For this contract, we only handle zTUSD (Assured Opportunities)
  *
- * TUSD Amount = zTUSD * financial opportunity perTokenValue()
- * We assume perTokenValue never decreases for assured financial opportunities
+ * -- Calculating zTUSD --
+ * 1 zTUSD = FinancialOpportunity.perTokenValue()
+ * TUSD Value = zTUSD * financial opportunity perTokenValue()
  *
+ * -- zTUSD Assumptions -- 
+ * We assume perTokenValue never decreases for assured financial opportunities
  * zTUSD is not transferrable in that the token itself is never tranferred
  * Rather, we override our transfer functions to account for user balances
  *
+ * -- Reserve --
  * This contract uses a reserve holding of TUSD and zTUSD to save on gas costs
  * because calling the financial opportunity deposit() and withdraw() everytime
  * can be expensive.
  *
+ * -- Future Upgrades to Financial Opportunity --
  * Currently, we only have a single financial opportunity.
  * We plan on upgrading this contract to support a multiple financial opportunity,
  * so some of the code is built to support this
  */
 contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
-
     /* Variables in Proxy Storage:
-
-    struct RewardAllocation { address finOp; uint proportion; }
+    struct RewardAllocation { address finOpAddress; uint proportion; }
     mapping(address => RewardAllocation[]) _rewardDistribution;
-    mapping (address => mapping (address => uint256)) _finOpBalances; 
-
-    */
+    mapping (address => mapping (address => uint256)) _finOpBalances; */
 
     // Reserve is an address which nobody has the private key to
     // Reserves of TUSD and TrueRewardBackedToken are held at this addess
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
-    uint public _finOpSupply; // in zTUSD
-    address public finOpAddress_;
+    uint public _finOpSupply; // total supply in zTUSD
+    address public finOpAddress_; // assuredFinancialOpportunity address
 
     event TrueRewardEnabled(address _account);
     event TrueRewardDisabled(address _account);
@@ -53,7 +56,9 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         return _rewardDistribution[_address].length != 0;
     }
 
-    /** @dev set new Financial Opportunity address */
+    /** @dev set new Financial Opportunity address 
+     * This is usually an assuredFinancialOpportunity
+     */
     function setFinOpAddress(address _finOpAddress) external onlyOwner {
         finOpAddress_ = _finOpAddress;
     }
@@ -64,7 +69,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     }
 
     /** @dev get total aave supply in zTUSD */
-    function opportunitySupply() public view returns(uint) {
+    function finOpSupply() public view returns(uint) {
         return _finOpSupply;
     }
 
@@ -87,7 +92,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      */
     function rewardBalanceOf(address _account) public view returns (uint) {
         uint loanBackedBalance = accountTotalLoanBackedBalance(_account);
-        return _toTUSD(loanBackedBalance) - loanBackedBalance;
+        return _toTUSD(loanBackedBalance) - _toTUSD(loanBackedBalance);
     }
 
     /**
@@ -95,8 +100,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * This amount includes accrued rewards.
      */
     function totalSupply() public view returns (uint256) {
-        if (opportunitySupply != 0) {
-            uint aaveSupply = _toTUSD(opportunitySupply);
+        if (_finOpSupply != 0) {
+            uint aaveSupply = _toTUSD(_finOpSupply);
             return totalSupply_.add(aaveSupply);
         }
         return super.totalSupply();
@@ -116,18 +121,18 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * @dev Utility to convert TUSD value to zTUSD value
      * zTUSD is TUSD backed by TrueRewards debt
      */
-    function _toZTUSD(uint _amount) internal view returns (uint) {
+    function _toZTUSD(uint _tusdAmount) internal view returns (uint) {
         uint ratio = FinancialOpportunity(finOpAddress()).perTokenValue();
-        return _amount.mul(10 ** 18).div(ratio);
+        return _tusdAmount.mul(10 ** 18).div(ratio);
     }
 
     /**
      * @dev Utility to convert zTUSD value to TUSD value
      * zTUSD is TUSD backed by TrueRewards debt
      */
-    function _toTUSD(uint _amount) internal view returns (uint) {
+    function _toTUSD(uint _ztusdAmount) internal view returns (uint) {
         uint ratio = FinancialOpportunity(finOpAddress()).perTokenValue();
-        return ratio.mul(_amount).div(10 ** 18);
+        return ratio.mul(_ztusdAmount).div(10 ** 18);
     }
 
     /**
@@ -182,7 +187,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     function _enableFinOp() internal {
         require(_rewardDistribution[msg.sender].length == 0, "already enabled");
         _rewardDistribution[msg.sender].push(
-            RewardAllocation(finOpAddress(), 100));
+            RewardAllocation(finOpAddress(), 1000));
     }
 
     /**

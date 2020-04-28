@@ -38,7 +38,8 @@ contract ProxyStorage {
     mapping (address => mapping (address => uint256)) _allowance;
     mapping (bytes32 => mapping (address => uint256)) attributes;
 
-    struct RewardAllocation { address finOp; uint proportion; }
+    // proportion: 1000 = 100%
+    struct RewardAllocation { address finOpAddress; uint proportion; }
     mapping(address => RewardAllocation[]) _rewardDistribution;
     mapping (address => mapping (address => uint256)) _finOpBalances;
 
