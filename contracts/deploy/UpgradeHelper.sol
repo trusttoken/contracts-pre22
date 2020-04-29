@@ -107,9 +107,15 @@ contract UpgradeHelper {
      * @dev Return proxy ownership to owner
      */
     function transferProxiesToOwner() internal {
-        tokenControllerProxy.transferProxyOwnership(address(owner));
-        trueUSDProxy.transferProxyOwnership(address(owner));
-        assuredOpportunityProxy.transferProxyOwnership(address(owner));
+        tokenControllerProxy.transferProxyOwnership(owner);
+        trueUSDProxy.transferProxyOwnership(owner);
+        assuredOpportunityProxy.transferProxyOwnership(owner);
+        require(trueUSDProxy.pendingProxyOwner() == owner, 
+            "must transfer token proxy to owner");
+        require(tokenControllerProxy.pendingProxyOwner() == owner, 
+            "must transfer controller proxy to owner");
+        require(assuredOpportunityProxy.pendingProxyOwner() == owner, 
+            "must transfer assurance proxy to owner");
     }
 
     /**
@@ -125,24 +131,14 @@ contract UpgradeHelper {
 
         // upgrade TrueUSD and use proxy as implementation
         trueUSDProxy.upgradeTo(newTrueUSDAddress);
-        trueUSD = TrueUSD(address(trueUSDProxy));
 
-        // claim ownership of TrueUSD
-        //trueUSD.initialize();
-        //revert("init tusd");
-        // transfer trueUSD ownership to controller
-        //trueUSD.transferOwnership(address(tokenController));
-        //tokenController.issueClaimOwnership(address(trueUSD));
-        //revert("transfer tusd ownership to controller");
-        // setup token
+        // point controller to new token
         tokenController.setToken(trueUSD);
         tokenController.setTokenRegistry(registry);
-        tokenController.setAaveInterfaceAddress(address(assuredOpportunityProxy));
-        revert("setup token");
+
         // transfer ownership to owner
         tokenController.transferOwnership(address(owner));
         transferProxiesToOwner();
-        revert("transfer proxies to owner");
     }
 
     /**
@@ -153,26 +149,26 @@ contract UpgradeHelper {
     external onlyOwner {
         claimProxyOwnership();
 
+        //tokenController.claimOwnership();
+        //trueUSD.claimOwnership();
+
         // upgrade proxy to new token controller
-        // we keep the old token controller in case we need to call the contract
         tokenControllerProxy.upgradeTo(newControllerAddress);
         tokenController = TokenController(address(tokenControllerProxy));
 
         // initialize contracts for ownership
-        tokenController.initialize();
+        //tokenController.initialize();
 
         // transfer trueUSD ownership to controller
-        trueUSD.transferOwnership(address(tokenController));
-        tokenController.issueClaimOwnership(address(trueUSD));
-
+        //trueUSD.transferOwnership(address(tokenController));
+        //tokenController.issueClaimOwnership(address(trueUSD));
+        //revert("transfer tusd ownership to controller");
         // set token and registry for controller
-        tokenController.setToken(trueUSD);
-        tokenController.setTokenRegistry(registry);
-        tokenController.setRegistry(registry);
-        tokenController.setFinOpAddress(address(assuredOpportunityProxy));
-
-        // set new token controller
-        tokenController = tokenController;
+        //tokenController.setToken(trueUSD);
+        //tokenController.setTokenRegistry(registry);
+        //tokenController.setRegistry(registry);
+        //tokenController.setFinOpAddress(address(assuredOpportunityProxy));
+        revert("setup token controller");
 
         // transfer ownership to owner
         tokenController.transferOwnership(address(owner));

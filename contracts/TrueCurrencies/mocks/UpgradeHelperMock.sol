@@ -1,5 +1,5 @@
 pragma solidity ^0.5.13;
-import "../utilities/UpgradeHelper.sol";
+import "../utilities/UpgradeHelperDepricated.sol";
 
 
 contract UpgradeHelperMock {

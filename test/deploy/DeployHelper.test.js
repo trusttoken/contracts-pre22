@@ -23,7 +23,7 @@ contract('-----Test Deploy & Upgrade Contracts-----', function (accounts) {
   const DOLLAR = BN(10 ** 18)
 
   describe('--Set Up--', function () {
-    beforeEach(async function () {
+    before(async function () {
       this.registry = await Registry.new({ from: owner })
       this.tusdProxy = await Proxy.new({ from: owner })
       this.tusd = await TrueUSD.new({ from: owner })
@@ -122,21 +122,6 @@ contract('-----Test Deploy & Upgrade Contracts-----', function (accounts) {
       await this.registry.setAttribute(pauseKey, bytes32('isTUSDMintPausers'), 1, notes, { from: owner })
     })
     describe('Upgrade Helper Setup', async function () {
-      this.assertContractOwnership = async function() {
-        // assert proxies are owned by owner
-        await assert.equal((await this.controllerProxy.proxyOwner()), owner)
-        await assert.equal((await this.tusdProxy.proxyOwner()), owner)
-        await assert.equal((await this.assuredOpportunityProxy.proxyOwner()), owner)
-        await assert.equal((await this.registry.registryOwner()), owner)
-      }
-
-      this.claimProxyOwnership = async function() {
-        await this.controllerProxy.claimProxyOwnership({ from: owner })
-        await this.tusdProxy.claimProxyOwnership({ from: owner })
-        await this.liquidator.claimOwnership({ from: owner })
-        await this.assuredOpportunityProxy.claimProxyOwnership({ from: owner })
-        await this.registry.claimOwnership({ from: owner })
-      }
 
       before(async function() {
         // deploy upgrade helper
@@ -161,32 +146,35 @@ contract('-----Test Deploy & Upgrade Contracts-----', function (accounts) {
         )
       })
       beforeEach(async function () {
-        // transfer proxy ownership to upgrade helper
         await this.controllerProxy.transferProxyOwnership(this.upgradeHelper.address, { from: owner })
         await this.tusdProxy.transferProxyOwnership(this.upgradeHelper.address, { from: owner })
-        await this.liquidator.transferOwnership(this.upgradeHelper.address, { from: owner })
         await this.assuredOpportunityProxy.transferProxyOwnership(this.upgradeHelper.address, { from: owner })
-        await this.registry.transferOwnership(this.upgradeHelper.address, { from: owner })
+      })
+      afterEach(async function() {
+        // claim ownership
+        await this.controllerProxy.claimProxyOwnership({ from: owner })
+        await this.tusdProxy.claimProxyOwnership({ from: owner })
+        await this.assuredOpportunityProxy.claimProxyOwnership({ from: owner })
+
+        // assert ownership
+        await assert.equal((await this.controllerProxy.proxyOwner()), owner)
+        await assert.equal((await this.tusdProxy.proxyOwner()), owner)
+        await assert.equal((await this.assuredOpportunityProxy.proxyOwner()), owner)
+        await assert.equal((await this.registry.registryOwner()), owner)
       })
       it('Upgrade TrueUSD', async function () {
-        //this.trueUSDImplementation = await TrueUSD.at(this.tusdProxy.address)
         await this.controller.transferOwnership(this.upgradeHelper.address, { from: owner })
         this.newTrueUSD = await TrueUSD.new({ from: owner })
         await this.upgradeHelper.upgradeTrueUSD(this.newTrueUSD.address, { from: owner })
-        // reclaim ownership
-        await this.claimProxyOwnership()
-        // assert ownership
-        await this.assertContractOwnership()
       })
-      it.skip('Upgrade TokenController', async function () {
+      it('Upgrade TokenController', async function () {
         // create new token controller
         this.newTokenController = await TokenController.new({ from: owner })
+        this.newTokenController.transferOwnership
+        //this.oldTokenCntroller = await TokenController.at(this.controllerProxy.address)
+        //await this.oldTokenCntroller.transferOwnership(this.upgradeHelper.address, { from: owner} )
         // upgrade
         await this.upgradeHelper.upgradeController(this.newTokenController.address, { from: owner })
-        // reclaim ownership
-        await this.claimProxyOwnership()
-        // assert ownership
-        await this.assertContractOwnership()
         // setup token controller (using proxy)
         await this.controller.setMintThresholds(BN(10 * 10 ** 18), BN(100 * 10 ** 18), DOLLAR.mul(BN(1000)), { from: owner })
         await this.controller.setMintLimits(BN(30 * 10 ** 18), BN(300).mul(DOLLAR), DOLLAR.mul(BN(3000)), { from: owner })
@@ -197,12 +185,10 @@ contract('-----Test Deploy & Upgrade Contracts-----', function (accounts) {
       it.skip('Upgrade Registry', async function () {
         // create new registry
         this.newRegistry = await Registry.new({ from: owner })
+        this.registry.transferOwnership(this.upgradeHelper.address, { from: owner})
         // upgrade
         await this.upgradeHelper.upgradeRegistry(this.newRegistry.address, { from: owner })
-        // reclaim ownership
-        await this.claimProxyOwnership()
-        // assert ownership
-        await this.assertContractOwnership()
+        await this.registry.claimOwnership({ from: owner }) // claim old registry
         // setup registry attributes
         await this.newRegistry.subscribe(CAN_BURN, this.tusdProxy.address, { from: owner })
         // await this.newRegistry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
@@ -212,14 +198,12 @@ contract('-----Test Deploy & Upgrade Contracts-----', function (accounts) {
         await this.newRegistry.setAttribute(pauseKey, bytes32('isTUSDMintPausers'), 1, notes, { from: owner })
       })
       it.skip('Upgrade Assurance', async function () {
+        await this.liquidator.transferOwnership(this.upgradeHelper.address, { from: owner })
         // create new opportunity
         this.newAssuredOpportunity = await AssuredFinancialOpportunity.new({ from: owner })
         // upgrade
         await this.upgradeHelper.upgradeAssurance(this.newAssuredOpportunity.address, { from: owner })
-        // reclaim ownership
-        await this.claimProxyOwnership()
-        // assert ownership
-        await this.assertContractOwnership()
+        await this.liquidator.claimOwnership({ from: owner })
       })
     })
   })

@@ -30,7 +30,7 @@ contract TokenControllerInterface {
 
 /**
  */
-contract UpgradeHelper {
+contract UpgradeHelperDepricated {
     OldTrueUSDInterface public constant oldTrueUSD = OldTrueUSDInterface(0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E);
     NewTrueUSDInterface public constant newTrueUSD = NewTrueUSDInterface(0x0000000000085d4780B73119b644AE5ecd22b376);
     TokenControllerInterface public constant tokenController = TokenControllerInterface(0x0000000000075EfBeE23fe2de1bd0b7690883cc9);
