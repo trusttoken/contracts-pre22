@@ -16,7 +16,7 @@ const LendingPoolMock = artifacts.require('LendingPoolMock')
 const bytes32 = require('../helpers/bytes32.js')
 const BN = web3.utils.toBN
 
-contract('-----Full Deploy From Scratch-----', function (accounts) {
+contract.skip('-----Full Deploy From Scratch-----', function (accounts) {
   const [, owner, pauseKey, approver1, approver2, approver3] = accounts
   const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
