@@ -191,6 +191,8 @@ contract DeployHelper {
             address(trueUSD)
         );
 
+        assuredFinancialOpportunity.transferOwnership(owner);
+
         // Transfer proxy to owner
         assuredFinancialOpportunityProxy.transferProxyOwnership(owner);
         aaveFinancialOpportunityProxy.transferProxyOwnership(owner);

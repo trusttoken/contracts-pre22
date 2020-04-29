@@ -112,7 +112,8 @@ describe('DeployHelper', () => {
     await assuredFinancialOpportunityProxy.claimProxyOwnership()
     await tokenControllerProxy.claimProxyOwnership()
     await trueUSDProxy.claimProxyOwnership()
-
+    
+    await assuredFinancialOpportunity.claimOwnership()
     await tokenController.claimOwnership()
     await liquidator.claimOwnership()
     await registry.claimOwnership()
@@ -204,8 +205,8 @@ describe('DeployHelper', () => {
       expect(await assuredFinancialOpportunityProxy.proxyOwner()).to.equal(deployer.address)
     })
 
-    it('[WARNING!!!] implementation should be owned by DeployerHelper', async () => {
-      expect(await assuredFinancialOpportunity.owner()).to.equal(deployHelper.address)
+    it('implementation should be owned by deplyer', async () => {
+      expect(await assuredFinancialOpportunity.owner()).to.equal(deployer.address)
     })
 
     it('should have opportunity properly set', async () => {
