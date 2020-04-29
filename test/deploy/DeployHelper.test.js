@@ -105,7 +105,10 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
       await this.tusdProxy.claimProxyOwnership({ from: owner })
       await this.liquidator.claimOwnership({ from: owner })
       await this.assuredOpportunityProxy.claimProxyOwnership({ from: owner })
+      await this.financialOpportunityProxy.claimProxyOwnership({ from: owner })
       await this.registry.claimOwnership({ from: owner })
+
+      this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
 
       // setup controller through proxy
       this.controller = await TokenController.at(this.controllerProxy.address)
@@ -116,8 +119,10 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
       await assert.equal((await this.tusdProxy.proxyOwner()), owner)
       await assert.equal((await this.assuredOpportunityProxy.proxyOwner()), owner)
       await assert.equal((await this.registry.registryOwner()), owner)
+      
+      
       await assert.equal((await this.financialOpportunityProxy.proxyOwner()), owner)
-      await assert.equal((await this.financialOpportunityProxy.owner()), this.assuredOpportunityProxy.address)
+      await assert.equal((await this.financialOpportunity.owner()), this.assuredOpportunityProxy.address)
 
       await this.controller.setMintThresholds(BN(10 * 10 ** 18), BN(100 * 10 ** 18), DOLLAR.mul(BN(1000)), { from: owner })
       await this.controller.setMintLimits(BN(30 * 10 ** 18), BN(300).mul(DOLLAR), DOLLAR.mul(BN(3000)), { from: owner })

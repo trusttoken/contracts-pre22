@@ -172,6 +172,7 @@ contract DeployHelper {
 
         // assurancePool is set up during constructor
         liquidator.claimOwnership();
+        liquidator.configure();
         liquidator.setPool(address(assurancePool));
 
         aaveFinancialOpportunity.configure(
@@ -192,6 +193,7 @@ contract DeployHelper {
 
         // Transfer proxy to owner
         assuredFinancialOpportunityProxy.transferProxyOwnership(owner);
+        aaveFinancialOpportunityProxy.transferProxyOwnership(owner);
         liquidator.transferOwnership(owner);
     }
 

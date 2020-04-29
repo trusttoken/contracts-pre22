@@ -74,23 +74,23 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return _getBalance();
     }
 
-    function opportunity() internal view returns(FinancialOpportunity) {
+    function opportunity() public view returns(FinancialOpportunity) {
         return FinancialOpportunity(opportunityAddress);
     }
 
-    function assurance() internal view returns(StakedToken) {
+    function assurance() public view returns(StakedToken) {
         return StakedToken(assuranceAddress); // StakedToken is assurance staking pool
     }
 
-    function liquidator() internal view returns (Liquidator) {
+    function liquidator() public view returns (Liquidator) {
         return Liquidator(liquidatorAddress);
     }
 
-    function exponents() internal view returns (FractionalExponents){
+    function exponents() public view returns (FractionalExponents){
         return FractionalExponents(exponentContractAddress);
     }
 
-    function token() internal view returns (IERC20){
+    function token() public view returns (IERC20){
         return IERC20(trueRewardBackedTokenAddress);
     }
 
