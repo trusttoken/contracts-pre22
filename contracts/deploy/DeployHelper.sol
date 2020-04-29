@@ -31,7 +31,7 @@ contract DeployHelper {
     OwnedUpgradeabilityProxy tokenControllerProxy;
     AssuredFinancialOpportunity assuredFinancialOpportunity; // behind proxy
     OwnedUpgradeabilityProxy assuredFinancialOpportunityProxy;
-    AaveFinancialOpportunity aaveFinancialOpportunity;
+    AaveFinancialOpportunity aaveFinancialOpportunity; // behind proxy
     OwnedUpgradeabilityProxy aaveFinancialOpportunityProxy;
     IExponentContract exponentContract;
     StakedToken assurancePool;
