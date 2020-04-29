@@ -112,7 +112,7 @@ describe('DeployHelper', () => {
     await assuredFinancialOpportunityProxy.claimProxyOwnership()
     await tokenControllerProxy.claimProxyOwnership()
     await trueUSDProxy.claimProxyOwnership()
-    
+
     await assuredFinancialOpportunity.claimOwnership()
     await tokenController.claimOwnership()
     await liquidator.claimOwnership()
