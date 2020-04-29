@@ -119,8 +119,7 @@ contract('-----Full Deploy From Scratch-----', function (accounts) {
       await assert.equal((await this.tusdProxy.proxyOwner()), owner)
       await assert.equal((await this.assuredOpportunityProxy.proxyOwner()), owner)
       await assert.equal((await this.registry.registryOwner()), owner)
-      
-      
+
       await assert.equal((await this.financialOpportunityProxy.proxyOwner()), owner)
       await assert.equal((await this.financialOpportunity.owner()), this.assuredOpportunityProxy.address)
 
