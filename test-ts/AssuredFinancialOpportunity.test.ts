@@ -65,30 +65,30 @@ describe('AssuredFinancialOpportunity', () => {
     )
   })
 
-  describe('perTokenValue', () => {
-    it('1.5 perTokenValue with 100% reward basis', async function () {
-      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
-      const finOpPerTokenValue = await financialOpportunity.perTokenValue()
-      const perTokenValue = await assuredFinancialOpportunity.perTokenValue()
+  describe('tokenValue', () => {
+    it('1.5 tokenValue with 100% reward basis', async function () {
+      await financialOpportunity.increasetokenValue(parseEther('0.5'))
+      const finOptokenValue = await financialOpportunity.tokenValue()
+      const tokenValue = await assuredFinancialOpportunity.tokenValue()
 
-      expect(perTokenValue).to.equal(finOpPerTokenValue)
+      expect(tokenValue).to.equal(finOptokenValue)
     })
 
-    it('1.5 perTokenValue with 70% reward basis', async function () {
+    it('1.5 tokenValue with 70% reward basis', async function () {
       await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
-      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
-      const perTokenValue = await assuredFinancialOpportunity.perTokenValue()
+      await financialOpportunity.increasetokenValue(parseEther('0.5'))
+      const tokenValue = await assuredFinancialOpportunity.tokenValue()
 
-      expect(perTokenValue).to.equal('1328201239943334173') // 1.5^0.7
+      expect(tokenValue).to.equal('1328201239943334173') // 1.5^0.7
     })
 
     it('adjusted when reward basis changes', async () => {
-      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
-      const perTokenValueBefore = await assuredFinancialOpportunity.perTokenValue()
+      await financialOpportunity.increasetokenValue(parseEther('0.5'))
+      const tokenValueBefore = await assuredFinancialOpportunity.tokenValue()
       await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
-      const perTokenValueAfter = await assuredFinancialOpportunity.perTokenValue()
+      const tokenValueAfter = await assuredFinancialOpportunity.tokenValue()
 
-      expect(perTokenValueAfter).to.equal(perTokenValueBefore)
+      expect(tokenValueAfter).to.equal(tokenValueBefore)
     })
   })
 
@@ -103,7 +103,7 @@ describe('AssuredFinancialOpportunity', () => {
     })
 
     it('with exchange rate = 1.5', async function () {
-      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      await financialOpportunity.increasetokenValue(parseEther('0.5'))
       await deposit(holder, parseEther('15'))
       const finOpBalance = await assuredFinancialOpportunity.getBalance()
       const remaingTokenBalance = await token.balanceOf(holder.address)
@@ -121,7 +121,7 @@ describe('AssuredFinancialOpportunity', () => {
     it('two deposits in a row', async function () {
       await deposit(holder, parseEther('15'))
 
-      await financialOpportunity.increasePerTokenValue(parseEther('1'))
+      await financialOpportunity.increasetokenValue(parseEther('1'))
 
       await token.connect(holder).approve(assuredFinancialOpportunity.address, parseEther('10'))
       await assuredFinancialOpportunity.deposit(holder.address, parseEther('10'))
@@ -180,9 +180,9 @@ describe('AssuredFinancialOpportunity', () => {
       })
 
       beforeEach(async function () {
-        await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+        await financialOpportunity.increasetokenValue(parseEther('0.5'))
 
-        expect(await assuredFinancialOpportunity.perTokenValue()).to.equal(parseEther('1.5'))
+        expect(await assuredFinancialOpportunity.tokenValue()).to.equal(parseEther('1.5'))
         expect(await assuredFinancialOpportunity.getBalance()).to.equal(parseEther('10'))
       })
 
@@ -223,7 +223,7 @@ describe('AssuredFinancialOpportunity', () => {
 
   it('liquidation', async () => {
     await deposit(holder, parseEther('10'))
-    await financialOpportunity.increasePerTokenValue(parseEther('19'))
+    await financialOpportunity.increasetokenValue(parseEther('19'))
 
     await assuredFinancialOpportunity.withdrawTo(beneficiary.address, parseEther('200'))
 
@@ -234,7 +234,7 @@ describe('AssuredFinancialOpportunity', () => {
   describe('award amount', () => {
     it('0 when reward basis is 100%', async () => {
       await deposit(holder, parseEther('10'))
-      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      await financialOpportunity.increasetokenValue(parseEther('0.5'))
 
       expect(await assuredFinancialOpportunity.awardAmount()).to.eq(0)
     })
@@ -242,7 +242,7 @@ describe('AssuredFinancialOpportunity', () => {
     it('properly calculated when reward basis is 70%', async () => {
       await deposit(holder, parseEther('10'))
       await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
-      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      await financialOpportunity.increasetokenValue(parseEther('0.5'))
       // 10 * (1.5 - 1.5 ^ 0.7) = 1717987600566658261 - 9 wei error
       expect(await assuredFinancialOpportunity.awardAmount()).to.equal('1717987600566658270')
     })
@@ -251,7 +251,7 @@ describe('AssuredFinancialOpportunity', () => {
   describe('award pool', () => {
     it('awards 0 when reward basis is 100%', async () => {
       await deposit(holder, parseEther('10'))
-      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      await financialOpportunity.increasetokenValue(parseEther('0.5'))
 
       await assuredFinancialOpportunity.awardPool()
 
@@ -262,7 +262,7 @@ describe('AssuredFinancialOpportunity', () => {
     it('awards proper amount', async () => {
       await deposit(holder, parseEther('10'))
       await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
-      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      await financialOpportunity.increasetokenValue(parseEther('0.5'))
 
       const expectedAward = '1145325067044438846' // 10 * (1.5 - 1.5 ^ 0.7) / 1.5
       await expect(assuredFinancialOpportunity.awardPool()).to.emit(assuredFinancialOpportunity, 'awardPoolSuccess').withArgs(expectedAward)
@@ -274,7 +274,7 @@ describe('AssuredFinancialOpportunity', () => {
     it('awards 0 on subsequent calls', async () => {
       await deposit(holder, parseEther('10'))
       await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
-      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      await financialOpportunity.increasetokenValue(parseEther('0.5'))
 
       await assuredFinancialOpportunity.awardPool()
 
@@ -288,13 +288,13 @@ describe('AssuredFinancialOpportunity', () => {
     it('awards proper amount when per token value increases between calls', async () => {
       await deposit(holder, parseEther('10'))
       await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
-      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      await financialOpportunity.increasetokenValue(parseEther('0.5'))
 
       const firstTUsdAmount = '1145325067044438846' // 10 * (1.5 - 1.5 ^ 0.7) / 1.5
       const secondTUsdAmount = '1258097003631822410' // 10 * (2.5 - 2.5 ^ 0.7) / 2.5 - firstTUsdAmount
 
       await expect(assuredFinancialOpportunity.awardPool()).to.emit(assuredFinancialOpportunity, 'awardPoolSuccess').withArgs(firstTUsdAmount)
-      await financialOpportunity.increasePerTokenValue(parseEther('1'))
+      await financialOpportunity.increasetokenValue(parseEther('1'))
       await expect(assuredFinancialOpportunity.awardPool()).to.emit(assuredFinancialOpportunity, 'awardPoolSuccess').withArgs(secondTUsdAmount)
 
       // 1 wei error
@@ -305,7 +305,7 @@ describe('AssuredFinancialOpportunity', () => {
     it('not additional awards when reward basis changes between calls', async () => {
       await deposit(holder, parseEther('10'))
       await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
-      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      await financialOpportunity.increasetokenValue(parseEther('0.5'))
 
       await assuredFinancialOpportunity.awardPool()
       await assuredFinancialOpportunity.setRewardBasis(0.5 * 1000)
@@ -322,7 +322,7 @@ describe('AssuredFinancialOpportunity', () => {
     it('does NOT revert if the withdrawal fails', async () => {
       await deposit(holder, parseEther('10'))
       await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
-      await financialOpportunity.increasePerTokenValue(parseEther('99'))
+      await financialOpportunity.increasetokenValue(parseEther('99'))
 
       await assuredFinancialOpportunity.awardPool()
 
@@ -333,7 +333,7 @@ describe('AssuredFinancialOpportunity', () => {
     it('anyone can call', async () => {
       await deposit(holder, parseEther('10'))
       await assuredFinancialOpportunity.setRewardBasis(0.7 * 1000)
-      await financialOpportunity.increasePerTokenValue(parseEther('0.5'))
+      await financialOpportunity.increasetokenValue(parseEther('0.5'))
 
       await assuredFinancialOpportunity.connect(holder).awardPool()
 

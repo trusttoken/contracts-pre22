@@ -114,7 +114,7 @@ describe('TrueRewardBackedToken', () => {
     it('holder enables truereward', async () => {
       expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal(0)
       await token.connect(holder).enableTrueReward()
-      expect(await financialOpportunity.perTokenValue()).to.equal(parseEther('1'))
+      expect(await financialOpportunity.tokenValue()).to.equal(parseEther('1'))
       expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal(parseEther('100'))
       expect(await token.balanceOf(financialOpportunity.address)).to.equal(0)
       expect(await token.accountTotalLoanBackedBalance(holder.address)).to.equal(parseEther('100'))
@@ -131,7 +131,7 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.totalSupply()).to.equal(parseEther('500'))
     })
 
-    it('holders balance increases after perTokenValue increases', async () => {
+    it('holders balance increases after tokenValue increases', async () => {
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
       await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
       await token.connect(holder).enableTrueReward()
@@ -147,7 +147,7 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('58'))
     })
 
-    describe('perTokenValue == 1', () => {
+    describe('tokenValue == 1', () => {
       beforeEach(async () => {
         await token.connect(holder).transfer(sender.address, parseEther('100'))
       })
@@ -192,7 +192,7 @@ describe('TrueRewardBackedToken', () => {
       })
     })
 
-    describe('perTokenValue != 1', () => {
+    describe('tokenValue != 1', () => {
       beforeEach(async () => {
         await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
         await token.connect(holder).transfer(sender.address, parseEther('100'))
@@ -339,7 +339,7 @@ describe('TrueRewardBackedToken', () => {
       expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(0)
       await token.connect(holder).enableTrueReward()
 
-      expect(await financialOpportunity.perTokenValue()).to.equal(parseEther('1'))
+      expect(await financialOpportunity.tokenValue()).to.equal(parseEther('1'))
       expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(parseEther('100'))
       expect(await token.balanceOf(financialOpportunity.address)).to.equal(0)
       expect(await token.accountTotalLoanBackedBalance(holder.address)).to.equal(parseEther('100'))
@@ -357,7 +357,7 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.totalSupply()).to.equal(parseEther('1500'))
     })
 
-    it('holders balance increases after perTokenValue increases', async () => {
+    it('holders balance increases after tokenValue increases', async () => {
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
       await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
       await token.connect(holder).enableTrueReward()
@@ -373,7 +373,7 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('58'))
     })
 
-    describe('perTokenValue == 1', () => {
+    describe('tokenValue == 1', () => {
       beforeEach(async () => {
         await token.connect(holder).transfer(sender.address, parseEther('100'))
       })
@@ -418,7 +418,7 @@ describe('TrueRewardBackedToken', () => {
       })
     })
 
-    describe('perTokenValue != 1', () => {
+    describe('tokenValue != 1', () => {
       beforeEach(async () => {
         await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
         await token.connect(holder).transfer(sender.address, parseEther('100'))

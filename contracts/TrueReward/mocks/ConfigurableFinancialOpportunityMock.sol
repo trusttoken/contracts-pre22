@@ -10,7 +10,7 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
 
     IERC20 token;
     uint balance;
-    uint perTokenValueField = 1*10**18;
+    uint tokenValueField = 1*10**18;
 
     constructor(IERC20 _token) public {
         token = _token;
@@ -39,23 +39,23 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
         return shares;
     }
 
-    function perTokenValue() external view returns(uint) {
-        return perTokenValueField;
+    function tokenValue() external view returns(uint) {
+        return tokenValueField;
     }
 
     function getBalance() external view returns(uint) {
         return balance;
     }
 
-    function increasePerTokenValue(uint _by) external {
-        perTokenValueField = perTokenValueField.add(_by);
+    function increasetokenValue(uint _by) external {
+        tokenValueField = tokenValueField.add(_by);
     }
 
     function _getAmountInShares(uint _amount) internal view returns (uint) {
-        return _amount.mul(10**18).div(perTokenValueField);
+        return _amount.mul(10**18).div(tokenValueField);
     }
 
     function _getSharesAmount(uint _shares) internal view returns (uint) {
-        return _shares.mul(perTokenValueField).div(10**18);
+        return _shares.mul(tokenValueField).div(10**18);
     }
 }
