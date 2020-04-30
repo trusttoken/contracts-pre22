@@ -43,9 +43,9 @@ import "./FinancialOpportunity.sol";
  *
 **/
 contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOpportunityStorage, InitializableClaimable {
-    using SafeMath for uint256 ;
     using SafeMath for uint256;
-    
+    using SafeMath for uint256;
+
     // total basis points for pool awards
     uint32 constant TOTAL_BASIS = 1000;
 
@@ -92,7 +92,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         adjustmentFactor = 1*10**18;
     }
 
-    /** 
+    /**
      * @dev total supply of zTUSD
      * inherited from FinancialOpportunity.sol
      */
@@ -110,7 +110,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return _tokenValue();
     }
 
-    /** 
+    /**
      * @dev deposit TUSD for zTUSD
      * inherited from FinancialOpportunity.sol
      *
@@ -122,7 +122,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         return _deposit(from, amount);
     }
 
-    /** 
+    /**
      * @dev redeem zTUSD for TUSD
      * inherited from FinancialOpportunity.sol
      *
@@ -158,7 +158,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
         // sell pool debt and award TUSD to pool
         (bool success, uint256 returnedAmount) = _attemptRedeem(address(this), ytusd);
-        
+
         if (success) {
             token().transfer(address(pool()), returnedAmount);
             emit AwardPool(returnedAmount);
@@ -228,7 +228,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     /**
      * @dev Deposit TUSD into wrapped opportunity.
      * Calculate zTUSD value and add to issuance value.
-     * 
+     *
      * @param _account account to deposit tusd from
      * @param _amount amount of tusd to deposit
      */
@@ -281,7 +281,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
         // transfer token to redeemer
         require(token().transfer(_to, returnedAmount), "transfer failed");
-        
+
         emit Redemption(_to, ztusd, returnedAmount);
         return returnedAmount;
     }

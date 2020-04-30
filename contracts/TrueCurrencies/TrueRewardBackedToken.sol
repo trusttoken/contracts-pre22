@@ -432,11 +432,11 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     }
 
     function postReserveTransfer(
-        address _from, 
-        address _to, 
-        uint _value, 
-        address finalTo, 
-        bool hasHook) 
+        address _from,
+        address _to,
+        uint _value,
+        address finalTo,
+        bool hasHook)
     internal {
         emit Transfer(_from, _to, _value);
         if (finalTo != _to) {
