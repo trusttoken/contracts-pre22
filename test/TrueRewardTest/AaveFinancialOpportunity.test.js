@@ -151,13 +151,13 @@ contract('AaveFinancialOpportunity', function ([, proxyOwner, holder, owner, add
     })
   })
 
-  it('perTokenValue is always equal to exchange rate', async function () {
-    const perTokenValue = await this.financialOpportunity.perTokenValue()
-    assert(perTokenValue.eq(to18Decimals(1)))
+  it('tokenValue is always equal to exchange rate', async function () {
+    const tokenValue = await this.financialOpportunity.tokenValue()
+    assert(tokenValue.eq(to18Decimals(1)))
 
     await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5))
 
-    const perTokenValue2 = await this.financialOpportunity.perTokenValue()
-    assert(perTokenValue2.eq(to18Decimals(1.5)))
+    const tokenValue2 = await this.financialOpportunity.tokenValue()
+    assert(tokenValue2.eq(to18Decimals(1.5)))
   })
 })

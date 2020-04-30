@@ -29,7 +29,7 @@ contract('ConfigurableFinancialOpportunityMock', function ([owner, address1]) {
     })
 
     it('with exchange rate = 1.5', async function () {
-      await this.financialOpportunity.increasePerTokenValue(to18Decimals(0.5))
+      await this.financialOpportunity.increasetokenValue(to18Decimals(0.5))
 
       await this.token.approve(this.financialOpportunity.address, to18Decimals(15))
       await this.financialOpportunity.deposit(owner, to18Decimals(15))
@@ -74,7 +74,7 @@ contract('ConfigurableFinancialOpportunityMock', function ([owner, address1]) {
 
     describe('with exchange rate = 1.5', async function () {
       beforeEach(async function () {
-        await this.financialOpportunity.increasePerTokenValue(to18Decimals(0.5))
+        await this.financialOpportunity.increasetokenValue(to18Decimals(0.5))
       })
 
       it('can withdraw 50%', async function () {

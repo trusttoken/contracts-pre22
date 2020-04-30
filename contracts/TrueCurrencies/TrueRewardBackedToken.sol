@@ -18,17 +18,17 @@ import "../TrueReward/FinancialOpportunity.sol";
  * For this contract, we only handle zTUSD (Assured Opportunities)
  *
  * -- Calculating zTUSD --
- * 1 zTUSD = FinancialOpportunity.perTokenValue()
- * TUSD Value = zTUSD * financial opportunity perTokenValue()
+ * 1 zTUSD = FinancialOpportunity.tokenValue()
+ * TUSD Value = zTUSD * financial opportunity tokenValue()
  *
  * -- zTUSD Assumptions --
- * We assume perTokenValue never decreases for assured financial opportunities
+ * We assume tokenValue never decreases for assured financial opportunities
  * zTUSD is not transferrable in that the token itself is never tranferred
  * Rather, we override our transfer functions to account for user balances
  *
  * -- Reserve --
  * This contract uses a reserve holding of TUSD and zTUSD to save on gas costs
- * because calling the financial opportunity deposit() and withdraw() everytime
+ * because calling the financial opportunity deposit() and redeem() everytime
  * can be expensive.
  *
  * -- Future Upgrades to Financial Opportunity --
@@ -118,11 +118,21 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     }
 
     /**
+     * @dev get debt balance of account in ztusd
+     *
+     * @param account account to get ztusd balance of
+     * @param finOp financial opportunity
+     */
+    function _zTUSDBalance(address account, address finOp) internal view returns (uint) {
+        return _finOpBalances[finOp][account];
+    }
+
+    /**
      * @dev Utility to convert TUSD value to zTUSD value
      * zTUSD is TUSD backed by TrueRewards debt
      */
     function _toZTUSD(uint _tusdAmount) internal view returns (uint) {
-        uint ratio = FinancialOpportunity(finOpAddress()).perTokenValue();
+        uint ratio = FinancialOpportunity(finOpAddress()).tokenValue();
         return _tusdAmount.mul(10 ** 18).div(ratio);
     }
 
@@ -130,9 +140,9 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * @dev Utility to convert zTUSD value to TUSD value
      * zTUSD is TUSD backed by TrueRewards debt
      */
-    function _toTUSD(uint _ztusdAmount) internal view returns (uint) {
-        uint ratio = FinancialOpportunity(finOpAddress()).perTokenValue();
-        return ratio.mul(_ztusdAmount).div(10 ** 18);
+    function _toTUSD(uint _ztusd) internal view returns (uint) {
+        uint ratio = FinancialOpportunity(finOpAddress()).tokenValue();
+        return ratio.mul(_ztusd).div(10 ** 18);
     }
 
     /**
@@ -148,15 +158,14 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * to get more TrueCurrency.
      * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
      */
-    function convertToTrueCurrencyReserve(uint _value) external onlyOwner {
-        uint zTUSDAmount = FinancialOpportunity(finOpAddress()).withdrawTo(RESERVE, _value);
-        _finOpSupply = _finOpSupply.sub(zTUSDAmount);
-        // reentrancy
+    function convertToTrueCurrencyReserve(uint ztusd) external onlyOwner {
+        uint tusd = FinancialOpportunity(finOpAddress()).redeem(RESERVE, ztusd);
+        _finOpSupply = _finOpSupply.sub(ztusd);
 
         _finOpBalances[RESERVE][finOpAddress()] = _finOpBalances[RESERVE][finOpAddress()]
-            .sub(zTUSDAmount);
+            .sub(ztusd);
 
-        emit Transfer(RESERVE, address(0), _value);
+        emit Transfer(RESERVE, address(0), tusd);
     }
 
     /**
@@ -165,19 +174,19 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * to get more Opportunity tokens
      * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
      */
-    function convertToZTUSDReserve(uint _value) external onlyOwner {
+    function convertToZTUSDReserve(uint tusd) external onlyOwner {
         uint balance = _getBalance(RESERVE);
-        if (balance < _value) {
+        if (balance < tusd) {
             return;
         }
-        _setAllowance(RESERVE, finOpAddress(), _value);
-        uint zTUSDAmount = FinancialOpportunity(finOpAddress()).deposit(RESERVE, _value);
-        _finOpSupply = _finOpSupply.add(zTUSDAmount);
+        _setAllowance(RESERVE, finOpAddress(), tusd);
+        uint ztusd = FinancialOpportunity(finOpAddress()).deposit(RESERVE, tusd);
+        _finOpSupply = _finOpSupply.add(ztusd);
 
         _finOpBalances[RESERVE][finOpAddress()] = _finOpBalances[RESERVE][finOpAddress()]
-            .add(zTUSDAmount);
+            .add(ztusd);
 
-        emit Transfer(address(0), RESERVE, _value);
+        emit Transfer(address(0), RESERVE, tusd);
     }
 
     /**
@@ -210,14 +219,14 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             return;
         }
         approve(finOpAddress(), balance);
-        uint zTUSDAmount = FinancialOpportunity(
+        uint ztusd = FinancialOpportunity(
             finOpAddress()).deposit(msg.sender, balance);
         _enableFinOp();
-        _finOpSupply = _finOpSupply.add(zTUSDAmount);
+        _finOpSupply = _finOpSupply.add(ztusd);
         _finOpBalances[msg.sender][finOpAddress()] = _finOpBalances
-            [msg.sender][finOpAddress()].add(zTUSDAmount);
+            [msg.sender][finOpAddress()].add(ztusd);
         emit TrueRewardEnabled(msg.sender);
-        emit Transfer(address(0), msg.sender, balance); //confirm that this amount is right
+        emit Transfer(address(0), msg.sender, balance);
     }
 
     /**
@@ -226,16 +235,16 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     function disableTrueReward() external {
         require(trueRewardEnabled(msg.sender), "already disabled");
         // get balance
-        uint tusdBalance = balanceOf(msg.sender);
-        // disable
+        uint ztusd = _zTUSDBalance(msg.sender, finOpAddress());
+        // disable finOp
         _disableFinOp();
-        uint zTUSDWithdrawn = FinancialOpportunity(
-            finOpAddress()).withdrawTo(msg.sender, tusdBalance);
-        _finOpSupply = _finOpSupply.sub(
-            _finOpBalances[msg.sender][finOpAddress()]);
+        // redeem
+        uint tusd = FinancialOpportunity(
+            finOpAddress()).redeem(msg.sender, ztusd);
+        _finOpSupply = _finOpSupply.sub(ztusd);
         _finOpBalances[msg.sender][finOpAddress()] = 0;
         emit TrueRewardDisabled(msg.sender);
-        emit Transfer(msg.sender, address(0), zTUSDWithdrawn); // This is the last part that might not work
+        emit Transfer(msg.sender, address(0), ztusd);
     }
 
     /**
@@ -267,7 +276,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         require(balanceOf(_from) >= _value, "not enough balance");
 
         // calculate zTUSD balance
-        uint valueInZTUSD = _toZTUSD(_value);
+        uint ztusd = _toZTUSD(_value);
 
         // 2. Sender enabled, receiver disabled, value < reserve TUSD balance
         // Use reserve balance to transfer so we can save gas
@@ -278,24 +287,14 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
             // use reserve to withdraw from financial opportunity reserve and transfer TUSD to receiver
             _finOpBalances[RESERVE][finOpAddress()] =
-                _finOpBalances[RESERVE][finOpAddress()].add(valueInZTUSD);
+                _finOpBalances[RESERVE][finOpAddress()].add(ztusd);
             _finOpBalances[_from][finOpAddress()] =
-                _finOpBalances[_from][finOpAddress()].sub(valueInZTUSD);
+                _finOpBalances[_from][finOpAddress()].sub(ztusd);
 
             // update TUSD balances
             _subBalance(RESERVE, _value);
             _addBalance(finalTo, _value);
-            emit Transfer(_from, _to, _value);
-            if (finalTo != _to) {
-                emit Transfer(_to, finalTo, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-                }
-            } else {
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-                }
-            }
+            postReserveTransfer(_from, _to, _value, finalTo, hasHook);
         }
         // 3. Sender disabled, receiver enabled, value < reserve zTUSD balance (in TUSD)
         // Use reserve balance to transfer so we can save gas
@@ -307,21 +306,11 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             _addBalance(RESERVE, _value);
 
             _finOpBalances[RESERVE][finOpAddress()] =
-                _finOpBalances[RESERVE][finOpAddress()].sub(valueInZTUSD);
+                _finOpBalances[RESERVE][finOpAddress()].sub(ztusd);
             _finOpBalances[finalTo][finOpAddress()] =
-                _finOpBalances[finalTo][finOpAddress()].add(valueInZTUSD);
+                _finOpBalances[finalTo][finOpAddress()].add(ztusd);
 
-            emit Transfer(_from, _to, _value);
-            if (finalTo != _to) {
-                emit Transfer(_to, finalTo, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-                }
-            } else {
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-                }
-            }
+            postReserveTransfer(_from, _to, _value, finalTo, hasHook);
         }
         // 4. Sender and receiver are enabled
         // Here we simply transfer zTUSD from the sender to the receiver
@@ -331,43 +320,33 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             (finalTo, hasHook) = _requireCanTransfer(_from, _to);
 
             _finOpBalances[_from][finOpAddress()] =
-                _finOpBalances[_from][finOpAddress()].sub(valueInZTUSD);
+                _finOpBalances[_from][finOpAddress()].sub(ztusd);
             _finOpBalances[finalTo][finOpAddress()] =
-                _finOpBalances[finalTo][finOpAddress()].add(valueInZTUSD);
+                _finOpBalances[finalTo][finOpAddress()].add(ztusd);
 
-            emit Transfer(_from, _to, _value);
-            if (finalTo != _to) {
-                emit Transfer(_to, finalTo, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-                }
-            } else {
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-                }
-            }
+            postReserveTransfer(_from, _to, _value, finalTo, hasHook);
         }
         // 5. Sender enabled, receiver disabled, value > reserve TUSD balance
         // Withdraw TUSD from opportunity, send to receiver, and burn zTUSD
         else if (senderTrueRewardEnabled) {
             emit Transfer(_from, address(this), _value); // transfer value to this contract
             emit Transfer(address(this), address(0), _value); // burn value
-            uint zTUSDAmount = FinancialOpportunity(finOpAddress())
-                .withdrawTo(_to, _value);
-            _finOpSupply = _finOpSupply.sub(zTUSDAmount);
+            uint tusd = FinancialOpportunity(finOpAddress())
+                .redeem(_to, _value);
+            _finOpSupply = _finOpSupply.sub(ztusd);
             // watchout for reentrancy
             _finOpBalances[_from][finOpAddress()] =
-                _finOpBalances[_from][finOpAddress()].sub(zTUSDAmount);
+                _finOpBalances[_from][finOpAddress()].sub(ztusd);
         }
         // 6. Sender disabled, receiver enabled, value > reserve zTUSD balance (in TUSD)
         // Deposit TUSD into opportunity, mint zTUSD, and increase receiver zTUSD balance
         else if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             _setAllowance(_from, finOpAddress(), _value);
-            uint zTUSDAmount = FinancialOpportunity(finOpAddress())
+            ztusd = FinancialOpportunity(finOpAddress())
                 .deposit(_from, _value);
-            _finOpSupply = _finOpSupply.add(zTUSDAmount);
+            _finOpSupply = _finOpSupply.add(ztusd);
             _finOpBalances[_to][finOpAddress()] =
-                _finOpBalances[_to][finOpAddress()].add(zTUSDAmount);
+                _finOpBalances[_to][finOpAddress()].add(ztusd);
             emit Transfer(address(0), address(this), _value); // mint _value
             emit Transfer(address(this), _to, _value); // send value to receiver
         }
@@ -399,28 +378,18 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         }
         require(balanceOf(_from) >= _value, "not enough balance");
         // calculate zTUSD value
-        uint valueInZTUSD = _toZTUSD(_value);
+        uint ztusd = _toZTUSD(_value);
 
         // 2. Sender enabled, receiver disabled, value < reserve TUSD balance
         if (senderTrueRewardEnabled && !receiverTrueRewardEnabled && _value < _getBalance(RESERVE)) {
             bool hasHook;
             address finalTo;
             (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-            _finOpBalances[RESERVE][finOpAddress()] = _finOpBalances[RESERVE][finOpAddress()].add(valueInZTUSD);
-            _finOpBalances[_from][finOpAddress()] = _finOpBalances[_from][finOpAddress()].sub(valueInZTUSD);
+            _finOpBalances[RESERVE][finOpAddress()] = _finOpBalances[RESERVE][finOpAddress()].add(ztusd);
+            _finOpBalances[_from][finOpAddress()] = _finOpBalances[_from][finOpAddress()].sub(ztusd);
             _subBalance(RESERVE, _value);
             _addBalance(finalTo, _value);
-            emit Transfer(_from, _to, _value);
-            if (finalTo != _to) {
-                emit Transfer(_to, finalTo, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-                }
-            } else {
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-                }
-            }
+            postReserveTransfer(_from, _to, _value, finalTo, hasHook);
         }
         // 3. Sender disabled, receiver enabled, value < reserve zTUSD balance (in TUSD)
         else if (!senderTrueRewardEnabled && receiverTrueRewardEnabled && _value < _toTUSD(zTUSDReserveBalance())) {
@@ -429,56 +398,56 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             (finalTo, hasHook) = _requireCanTransfer(_from, _to);
             _subBalance(_from, _value);
             _addBalance(RESERVE, _value);
-            _finOpBalances[RESERVE][finOpAddress()] = _finOpBalances[RESERVE][finOpAddress()].sub(valueInZTUSD);
-            _finOpBalances[finalTo][finOpAddress()] = _finOpBalances[finalTo][finOpAddress()].add(valueInZTUSD);
-            emit Transfer(_from, _to, _value);
-            if (finalTo != _to) {
-                emit Transfer(_to, finalTo, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-                }
-            } else {
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-                }
-            }
+            _finOpBalances[RESERVE][finOpAddress()] = _finOpBalances[RESERVE][finOpAddress()].sub(ztusd);
+            _finOpBalances[finalTo][finOpAddress()] = _finOpBalances[finalTo][finOpAddress()].add(ztusd);
+            postReserveTransfer(_from, _to, _value, finalTo, hasHook);
         }
         // 4. Both sender and receiver are enabled
         else if (senderTrueRewardEnabled && receiverTrueRewardEnabled) {
             bool hasHook;
             address finalTo;
             (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-            _finOpBalances[_from][finOpAddress()] = _finOpBalances[_from][finOpAddress()].sub(valueInZTUSD);
-            _finOpBalances[finalTo][finOpAddress()] = _finOpBalances[finalTo][finOpAddress()].add(valueInZTUSD);
-            emit Transfer(_from, _to, _value);
-            if (finalTo != _to) {
-                emit Transfer(_to, finalTo, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-                }
-            } else {
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-                }
-            }
+            _finOpBalances[_from][finOpAddress()] = _finOpBalances[_from][finOpAddress()].sub(ztusd);
+            _finOpBalances[finalTo][finOpAddress()] = _finOpBalances[finalTo][finOpAddress()].add(ztusd);
+            postReserveTransfer(_from, _to, _value, finalTo, hasHook);
         }
         // 5. Sender enabled, receiver disabled, value > reserve TUSD balance
         else if (senderTrueRewardEnabled) {
             emit Transfer(_from, address(this), _value);
             emit Transfer(address(this), address(0), _value);
-            uint zTUSDAmount = FinancialOpportunity(finOpAddress()).withdrawTo(_to, _value);
-            _finOpSupply = _finOpSupply.sub(zTUSDAmount);
+            uint tusd = FinancialOpportunity(finOpAddress()).redeem(_to, ztusd);
+            _finOpSupply = _finOpSupply.sub(ztusd);
             // watchout for reentrancy
-            _finOpBalances[_from][finOpAddress()] = _finOpBalances[_from][finOpAddress()].sub(zTUSDAmount);
+            _finOpBalances[_from][finOpAddress()] = _finOpBalances[_from][finOpAddress()].sub(ztusd);
         }
         // 6. Sender disabled, receiver enabled, value > reserve zTUSD balance (in TUSD)
         else if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
             _setAllowance(_from, finOpAddress(), _value);
-            uint zTUSDAmount = FinancialOpportunity(finOpAddress()).deposit(_from, _value);
-            _finOpSupply = _finOpSupply.add(zTUSDAmount);
-            _finOpBalances[_to][finOpAddress()] = _finOpBalances[_to][finOpAddress()].add(zTUSDAmount);
+            ztusd = FinancialOpportunity(finOpAddress()).deposit(_from, _value);
+            _finOpSupply = _finOpSupply.add(ztusd);
+            _finOpBalances[_to][finOpAddress()] = _finOpBalances[_to][finOpAddress()].add(ztusd);
             emit Transfer(address(0), _to, _value); // // mint value
             emit Transfer(address(this), _to, _value); // send value to receiver
+        }
+    }
+
+    function postReserveTransfer(
+        address _from, 
+        address _to, 
+        uint _value, 
+        address finalTo, 
+        bool hasHook) 
+    internal {
+        emit Transfer(_from, _to, _value);
+        if (finalTo != _to) {
+            emit Transfer(_to, finalTo, _value);
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+            }
         }
     }
 
@@ -492,9 +461,9 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         if (receiverTrueRewardEnabled) {
             approve(finOpAddress(), _value);
-            uint zTUSDAmount = FinancialOpportunity(finOpAddress()).deposit(_to, _value);
-            _finOpSupply = _finOpSupply.add(zTUSDAmount);
-            _finOpBalances[_to][finOpAddress()] = _finOpBalances[_to][finOpAddress()].add(zTUSDAmount);
+            uint ztusd = FinancialOpportunity(finOpAddress()).deposit(_to, _value);
+            _finOpSupply = _finOpSupply.add(ztusd);
+            _finOpBalances[_to][finOpAddress()] = _finOpBalances[_to][finOpAddress()].add(ztusd);
             emit Transfer(address(0), _to, _value);
         }
     }

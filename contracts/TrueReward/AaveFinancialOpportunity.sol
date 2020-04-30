@@ -12,7 +12,7 @@ import "../TrueCurrencies/modularERC20/InstantiatableOwnable.sol";
  * @title AaveFinancialOpportunity
  * @dev Financial Opportunity to earn TrueUSD with Aave.
  * stakeToken = aTUSD on Aave
- * We assume perTokenValue always increases
+ * We assume tokenValue always increases
  */
 contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable {
     using SafeMath for uint256;
@@ -54,7 +54,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
      * Exchange rate between TUSD and zTUSD
      * @return TUSD / zTUSD price ratio (18 decimals of percision)
      */
-    function perTokenValue() public view returns(uint256) {
+    function tokenValue() public view returns(uint256) {
         ILendingPoolCore core = ILendingPoolCore(lendingPool.core());
         return core.getReserveNormalizedIncome(address(token)).div(10**(27-18));
     }
@@ -69,7 +69,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
 
     /** @dev Return value of stake in TUSD */
     function getValueInStake(uint256 _amount) public view returns(uint256) {
-        return _amount.mul(10**18).div(perTokenValue());
+        return _amount.mul(10**18).div(tokenValue());
     }
 
      /**
