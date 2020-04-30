@@ -40,7 +40,7 @@ contract.skip('TrueRewardBackedToken', function (accounts) {
       const totalSupply = await this.token.totalSupply.call()
       assert.equal(totalSupply, 198466689448144200000) // 100 + 100*101/103
       const balance = await this.token.balanceOf.call(holder)
-      assert.equal(balance, 98466689448144200000) // 100*101/103 * perTokenValue
+      assert.equal(balance, 98466689448144200000) // 100*101/103 * tokenValue
     })
     it('disables trueReward', async function () {
       await this.token.enableTrueReward({ from: holder })
@@ -85,8 +85,8 @@ contract.skip('TrueRewardBackedToken', function (accounts) {
       assert.equal(interfaceSharesTokenBalance, 0)
       await this.token.enableTrueReward({ from: holder })
       // console.log(logs);
-      const perTokenValue = await this.financialOpportunity.perTokenValue.call()
-      assert.equal(perTokenValue, 1000000000000000000)
+      const tokenValue = await this.financialOpportunity.tokenValue.call()
+      assert.equal(tokenValue, 1000000000000000000)
       interfaceSharesTokenBalance = await this.sharesToken.balanceOf.call(this.financialOpportunity.address)
       assert.equal(interfaceSharesTokenBalance, to18Decimals(100))
       const interfaceBalance = await this.token.balanceOf.call(this.financialOpportunity.address)
@@ -112,7 +112,7 @@ contract.skip('TrueRewardBackedToken', function (accounts) {
       assert.equal(totalSupply, to18Decimals(500))
     })
 
-    it('balance increases after perTokenValue increases', async function () {
+    it('balance increases after tokenValue increases', async function () {
       let balance = await this.token.balanceOf.call(holder)
       assert.equal(balance, to18Decimals(100))
       await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
@@ -128,7 +128,7 @@ contract.skip('TrueRewardBackedToken', function (accounts) {
 
     })
 
-    it('sender truereward enabled recipient not enabled perTokenValue = 1', async function () {
+    it('sender truereward enabled recipient not enabled tokenValue = 1', async function () {
       await this.token.transfer(sender, to18Decimals(100), { from: holder })
       await this.token.enableTrueReward({ from: sender })
       await this.token.transfer(recipient, to18Decimals(50), { from: sender })
@@ -148,7 +148,7 @@ contract.skip('TrueRewardBackedToken', function (accounts) {
       assert.equal(interfaceSharesTokenBalance, to18Decimals(50))
     })
 
-    it('sender truereward enabled recipient enabled perTokenValue = 1', async function () {
+    it('sender truereward enabled recipient enabled tokenValue = 1', async function () {
       await this.token.transfer(sender, to18Decimals(100), { from: holder })
       await this.token.enableTrueReward({ from: sender })
       await this.token.enableTrueReward({ from: recipient })
@@ -168,7 +168,7 @@ contract.skip('TrueRewardBackedToken', function (accounts) {
       assert.equal(interfaceSharesTokenBalance, to18Decimals(100))
     })
 
-    it('sender truereward not enabled recipient enabled perTokenValue = 1', async function () {
+    it('sender truereward not enabled recipient enabled tokenValue = 1', async function () {
       await this.token.transfer(sender, to18Decimals(100), { from: holder })
       await this.token.enableTrueReward({ from: recipient })
       await this.token.transfer(recipient, to18Decimals(50), { from: sender })
@@ -187,7 +187,7 @@ contract.skip('TrueRewardBackedToken', function (accounts) {
       assert.equal(interfaceSharesTokenBalance, to18Decimals(50))
     })
 
-    describe('Truereward - pertokenvalue != 1 ', function () {
+    describe('Truereward - tokenValue != 1 ', function () {
       it('sender truereward enabled recipient not enabled', async function () {
         await this.lendingPoolCore.setReserveNormalizedIncome(to27Decimals(1.5), { from: owner })
         await this.token.transfer(sender, to18Decimals(100), { from: holder })
