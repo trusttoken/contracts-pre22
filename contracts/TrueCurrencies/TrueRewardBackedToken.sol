@@ -331,8 +331,8 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         else if (senderTrueRewardEnabled) {
             emit Transfer(_from, address(this), _value); // transfer value to this contract
             emit Transfer(address(this), address(0), _value); // burn value
-            uint tusd = FinancialOpportunity(finOpAddress())
-                .redeem(_to, _value);
+            FinancialOpportunity(finOpAddress())
+                .redeem(_to, ztusd);
             _finOpSupply = _finOpSupply.sub(ztusd);
             // watchout for reentrancy
             _finOpBalances[_from][finOpAddress()] =
@@ -415,7 +415,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         else if (senderTrueRewardEnabled) {
             emit Transfer(_from, address(this), _value);
             emit Transfer(address(this), address(0), _value);
-            uint tusd = FinancialOpportunity(finOpAddress()).redeem(_to, ztusd);
+            FinancialOpportunity(finOpAddress()).redeem(_to, ztusd);
             _finOpSupply = _finOpSupply.sub(ztusd);
             // watchout for reentrancy
             _finOpBalances[_from][finOpAddress()] = _finOpBalances[_from][finOpAddress()].sub(ztusd);

@@ -19,7 +19,7 @@ contract AssuredFinancialOpportunityStorage {
     uint adjustmentFactor;
 
     // mintokenValue can never decrease
-    uint mintokenValue;
+    uint minTokenValue;
 
 
     /* Additionally, we have several keccak-based storage locations.
