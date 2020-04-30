@@ -437,7 +437,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * @param _from transfer from address
      * @param _to transfer to address
      * @param _value transfer value
-     * @param _finalTo finalTo value for hook
+     * @param finalTo finalTo value for hook
      * @param hasHook if reciever has hook function
      */
     function _postReserveTransfer(
