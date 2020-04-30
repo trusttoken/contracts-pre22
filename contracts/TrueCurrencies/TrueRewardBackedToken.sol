@@ -123,7 +123,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * @param finOp financial opportunity
      */
     function _zTUSDBalance(address account, address finOp) internal view returns (uint) {
-        return _finOpBalances[finOp][account];
+        return _finOpBalances[account][finOp];
     }
 
     /**
