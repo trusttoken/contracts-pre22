@@ -39,7 +39,7 @@ import "./FinancialOpportunity.sol";
  * tokenValue can never decrease for this contract. We want to guarantee
  * the awards earned on deposited TUSD and liquidate trusttokens for this amount
  * We allow the rewardBasis to be adjusted, but since we still need to maintain
- * the tokenValue, we calculate an adjustment factor and set mintokenValue
+ * the tokenValue, we calculate an adjustment factor and set minTokenValue
  *
 **/
 contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOpportunityStorage, InitializableClaimable {
@@ -175,7 +175,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param newBasis new reward basis
      */
     function setRewardBasis(uint32 newBasis) external onlyOwner {
-        mintokenValue = _tokenValue();
+        minTokenValue = _tokenValue();
 
         adjustmentFactor = adjustmentFactor
             .mul(_calculateTokenValue(rewardBasis))
@@ -203,8 +203,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
             return finOp().tokenValue();
         }
         uint256 calculatedValue = _calculateTokenValue(rewardBasis).mul(adjustmentFactor).div(10**18);
-        if(calculatedValue < mintokenValue) {
-            return mintokenValue;
+        if(calculatedValue < minTokenValue) {
+            return minTokenValue;
         } else {
             return calculatedValue;
         }
