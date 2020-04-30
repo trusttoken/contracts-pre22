@@ -21,9 +21,9 @@ import "./FinancialOpportunity.sol";
  *
  * -- zTUSD vs yTUSD --
  * zTUSD represents an amount of ASSURED TUSD owed to the zTUSD holder (depositors)
- * 1 zTUSD = AssuranceOpportunity tokenValue() = (yTUSD ^ assurance ratio)
+ * 1 zTUSD = (yTUSD ^ assurance ratio)
  * yTUSD represents an amount of NON-ASSURED TUSD owed to this contract
- * 1 yTUSD = FinancialOpportunity tokenValue()
+ * TUSD value = yTUSD * finOp.tokenValue()
  *
  * -- Awarding the Assurance Pool
  * The difference increases when depositors withdraw

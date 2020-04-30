@@ -18,7 +18,6 @@ import "../TrueReward/FinancialOpportunity.sol";
  * For this contract, we only handle zTUSD (Assured Opportunities)
  *
  * -- Calculating zTUSD --
- * 1 zTUSD = FinancialOpportunity.tokenValue()
  * TUSD Value = zTUSD * financial opportunity tokenValue()
  *
  * -- zTUSD Assumptions --
@@ -293,7 +292,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             // update TUSD balances
             _subBalance(RESERVE, _value);
             _addBalance(finalTo, _value);
-            postReserveTransfer(_from, _to, _value, finalTo, hasHook);
+            _postReserveTransfer(_from, _to, _value, finalTo, hasHook);
         }
         // 3. Sender disabled, receiver enabled, value < reserve zTUSD balance (in TUSD)
         // Use reserve balance to transfer so we can save gas
@@ -309,7 +308,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             _finOpBalances[finalTo][finOpAddress()] =
                 _finOpBalances[finalTo][finOpAddress()].add(ztusd);
 
-            postReserveTransfer(_from, _to, _value, finalTo, hasHook);
+            _postReserveTransfer(_from, _to, _value, finalTo, hasHook);
         }
         // 4. Sender and receiver are enabled
         // Here we simply transfer zTUSD from the sender to the receiver
@@ -323,7 +322,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             _finOpBalances[finalTo][finOpAddress()] =
                 _finOpBalances[finalTo][finOpAddress()].add(ztusd);
 
-            postReserveTransfer(_from, _to, _value, finalTo, hasHook);
+            _postReserveTransfer(_from, _to, _value, finalTo, hasHook);
         }
         // 5. Sender enabled, receiver disabled, value > reserve TUSD balance
         // Withdraw TUSD from opportunity, send to receiver, and burn zTUSD
@@ -388,7 +387,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             _finOpBalances[_from][finOpAddress()] = _finOpBalances[_from][finOpAddress()].sub(ztusd);
             _subBalance(RESERVE, _value);
             _addBalance(finalTo, _value);
-            postReserveTransfer(_from, _to, _value, finalTo, hasHook);
+            _postReserveTransfer(_from, _to, _value, finalTo, hasHook);
         }
         // 3. Sender disabled, receiver enabled, value < reserve zTUSD balance (in TUSD)
         else if (!senderTrueRewardEnabled && receiverTrueRewardEnabled && _value < _toTUSD(zTUSDReserveBalance())) {
@@ -399,7 +398,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             _addBalance(RESERVE, _value);
             _finOpBalances[RESERVE][finOpAddress()] = _finOpBalances[RESERVE][finOpAddress()].sub(ztusd);
             _finOpBalances[finalTo][finOpAddress()] = _finOpBalances[finalTo][finOpAddress()].add(ztusd);
-            postReserveTransfer(_from, _to, _value, finalTo, hasHook);
+            _postReserveTransfer(_from, _to, _value, finalTo, hasHook);
         }
         // 4. Both sender and receiver are enabled
         else if (senderTrueRewardEnabled && receiverTrueRewardEnabled) {
@@ -408,7 +407,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
             (finalTo, hasHook) = _requireCanTransfer(_from, _to);
             _finOpBalances[_from][finOpAddress()] = _finOpBalances[_from][finOpAddress()].sub(ztusd);
             _finOpBalances[finalTo][finOpAddress()] = _finOpBalances[finalTo][finOpAddress()].add(ztusd);
-            postReserveTransfer(_from, _to, _value, finalTo, hasHook);
+            _postReserveTransfer(_from, _to, _value, finalTo, hasHook);
         }
         // 5. Sender enabled, receiver disabled, value > reserve TUSD balance
         else if (senderTrueRewardEnabled) {
@@ -430,7 +429,18 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         }
     }
 
-    function postReserveTransfer(
+    /**
+     * @dev called post reserve transfer for token hook
+     * emits transfer event and calls hook if hook exitsts
+     * hooks only called for registered TrueUSD contracts
+     *
+     * @param _from transfer from address
+     * @param _to transfer to address
+     * @param _value transfer value
+     * @param _finalTo finalTo value for hook
+     * @param hasHook if reciever has hook function
+     */
+    function _postReserveTransfer(
         address _from,
         address _to,
         uint _value,
