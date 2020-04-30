@@ -239,8 +239,7 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         // disable finOp
         _disableFinOp();
         // redeem
-        uint tusd = FinancialOpportunity(
-            finOpAddress()).redeem(msg.sender, ztusd);
+        FinancialOpportunity(finOpAddress()).redeem(msg.sender, ztusd);
         _finOpSupply = _finOpSupply.sub(ztusd);
         _finOpBalances[msg.sender][finOpAddress()] = 0;
         emit TrueRewardDisabled(msg.sender);
@@ -432,11 +431,11 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     }
 
     function postReserveTransfer(
-        address _from, 
-        address _to, 
-        uint _value, 
-        address finalTo, 
-        bool hasHook) 
+        address _from,
+        address _to,
+        uint _value,
+        address finalTo,
+        bool hasHook)
     internal {
         emit Transfer(_from, _to, _value);
         if (finalTo != _to) {
