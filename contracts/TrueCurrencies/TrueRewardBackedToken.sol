@@ -47,7 +47,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     uint256 maxRewardProportion = 1000;
     */
 
-    address public aaveAddress_;
+    address public opportunity_;
 
     event TrueRewardEnabled(address _account);
     event TrueRewardDisabled(address _account);
@@ -62,7 +62,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * todo feewet fix this function, can we actually calc this??
      */
     function rewardsAccrued(address account, address finOp) public view returns (uint) {
-        uint rewardBalance = rewardTokenBalance(account, aaveAddress());
+        uint rewardBalance = rewardTokenBalance(account, opportunity());
         return _toToken(rewardBalance, finOp) - _toToken(rewardBalance, finOp);
     }
 
@@ -74,11 +74,11 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @return total supply in trueCurrency
      */
     function totalSupply() public view returns (uint256) {
-        // if supply in aave finOp, return value including finOp value
+        // if supply in opportunity finOp, return value including finOp value
         // otherwise call super to return normal totalSupply
-        if (aaveSupply() != 0) {
+        if (opportunitySupply() != 0) {
             // calculate depositToken value of finOp total supply
-            uint depositValue = _toToken(aaveSupply(), aaveAddress());
+            uint depositValue = _toToken(opportunitySupply(), opportunity());
 
             // return token total supply plus deposit token value
             return totalSupply_.add(depositValue);
@@ -96,7 +96,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // if trueReward enabled, return token value of reward balance
         // otherwise call token balanceOf
         if (trueRewardEnabled(_who)) {
-            return _toToken(rewardTokenBalance(_who, aaveAddress()), aaveAddress());
+            return _toToken(rewardTokenBalance(_who, opportunity()), opportunity());
         }
         return super.balanceOf(_who);
     }
@@ -114,14 +114,14 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
 
         // set reward distribution
         // we set max distribution since we only have one opportunity
-        _setDistribution(maxRewardProportion, aaveAddress());
+        _setDistribution(maxRewardProportion, opportunity());
         // no balance to deposit, enable finOp and return
         if (balance == 0) {
             return;
         }
 
         // mint reward token
-        mintRewardToken(msg.sender, balance, aaveAddress());
+        mintRewardToken(msg.sender, balance, opportunity());
 
         // emit enable event
         emit TrueRewardEnabled(msg.sender);
@@ -135,13 +135,13 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // require TrueReward is enabled
         require(trueRewardEnabled(msg.sender), "TrueReward already disabled");
         // get balance
-        uint rewardBalance = rewardTokenBalance(msg.sender, aaveAddress());
+        uint rewardBalance = rewardTokenBalance(msg.sender, opportunity());
 
         // remove reward distribution
-        _removeDistribution(aaveAddress());
+        _removeDistribution(opportunity());
 
         // redeem for token
-        redeemRewardToken(msg.sender, rewardBalance, aaveAddress());
+        redeemRewardToken(msg.sender, rewardBalance, opportunity());
 
         // emit disable event
         emit TrueRewardDisabled(msg.sender);
@@ -157,7 +157,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         super.mint(_to, _value);
         bool toEnabled = trueRewardEnabled(_to);
         if (toEnabled) {
-            mintRewardToken(_to, _value, aaveAddress());
+            mintRewardToken(_to, _value, opportunity());
             emit Transfer(address(0), _to, _value);
         }
     }
@@ -167,41 +167,41 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * This is called by the TokenController to balance the reserve
      * @param _value amount of Token to deposit for rewardTokens
      */
-    function aaveReserveRedeem(uint256 _value) external onlyOwner {
-        reserveRedeem(_value, aaveAddress());
+    function opportunityReserveRedeem(uint256 _value) external onlyOwner {
+        reserveRedeem(_value, opportunity());
     }
 
     /**
-     * @dev mint reserve rewardTokens for Aave given a Token deposit
+     * @dev mint reserve rewardTokens for opportunity given a Token deposit
      * This is called by the TokenController to balance the reserve
      * @param _value amount of Token to deposit for rewardTokens
      */
-    function aaveReserveMint(uint256 _value) external onlyOwner {
-        reserveMint(_value, aaveAddress());
+    function opportunityReserveMint(uint256 _value) external onlyOwner {
+        reserveMint(_value, opportunity());
     }
 
     /**
-     * @dev set a new aave financial opportunity address
-     * @param _aaveAddress new aaveAddress to set
+     * @dev set a new opportunity financial opportunity address
+     * @param _opportunity new opportunity to set
      */
-    function setAaveAddress(address _aaveAddress) external onlyOwner {
-        aaveAddress_ = _aaveAddress;
+    function setOpportunityAddress(address _opportunity) external onlyOwner {
+        opportunity_ = _opportunity;
     }
 
     /**
-     * @dev Get aave financial opportunity address
-     * @return address Aave financial opportunity address
+     * @dev Get opportunity financial opportunity address
+     * @return address opportunity financial opportunity address
      */
-    function aaveAddress() public view returns (address) {
-        return aaveAddress_;
+    function opportunity() public view returns (address) {
+        return opportunity_;
     }
 
     /**
-     * @dev Get total supply of aave rewardTokens
-     * @return total supply of aave rewardTokens
+     * @dev Get total supply of opportunity rewardTokens
+     * @return total supply of opportunity rewardTokens
      */
-    function aaveSupply() internal view returns (uint256) {
-        return rewardTokenSupply(aaveAddress());
+    function opportunitySupply() internal view returns (uint256) {
+        return rewardTokenSupply(opportunity());
     }
 
     /**
@@ -231,8 +231,8 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         bool fromEnabled = trueRewardEnabled(_from);
         bool toEnabled = trueRewardEnabled(_to);
 
-        // get aave address
-        address finOp = aaveAddress();
+        // get opportunity address
+        address finOp = opportunity();
 
         // calculate rewardToken balance
         uint rewardAmount = _toRewardToken(_value, finOp);

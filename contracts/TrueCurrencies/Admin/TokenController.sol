@@ -616,8 +616,8 @@ contract TokenController {
      * @dev Sets the contract which has permissions to manage truerewards reserve
      * Controls access to reserve functions to allow providing liquidity
      */
-    function setAaveAddress(address _aaveAddress) external onlyOwner {
-        token.setAaveAddress(_aaveAddress);
+    function setOpportunityAddress(address _opportunityAddress) external onlyOwner {
+        token.setOpportunityAddress(_opportunityAddress);
     }
 
     /**
@@ -631,23 +631,23 @@ contract TokenController {
 
     /**
      * @dev Allow this contract to rebalance currency reserves
-     * This is called when there is not enough money in aave reserve and we want
-     * to get more aave tokens
+     * This is called when there is not enough money in opportunity reserve and we want
+     * to get more opportunity tokens
      *
-     * @param _value amount to exchange for aave rewardTokens
+     * @param _value amount to exchange for opportunity rewardTokens
      */
-    function aaveReserveMint(uint256 _value) external onlyTrueRewardManager {
-        token.aaveReserveMint(_value);
+    function opportunityReserveMint(uint256 _value) external onlyTrueRewardManager {
+        token.opportunityReserveMint(_value);
     }
 
     /**
      * @dev Allow this contract to rebalance currency reserves
-     * This is called when there is too much money in aave and we want
+     * This is called when there is too much money in opportunity and we want
      * to get more TrueCurrency.
      *
-     * @param _value amount of Aave rewardTokens to redeem for TrueCurrency
+     * @param _value amount of opportunity rewardTokens to redeem for TrueCurrency
      */
-    function aaveReserveRedeem(uint256 _value) external onlyTrueRewardManager {
-        token.aaveReserveRedeem(_value);
+    function opportunityReserveRedeem(uint256 _value) external onlyTrueRewardManager {
+        token.opportunityReserveRedeem(_value);
     }
 }

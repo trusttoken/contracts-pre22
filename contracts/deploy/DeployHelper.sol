@@ -144,7 +144,7 @@ contract DeployHelper {
         tokenController.setToken(trueUSD);
         tokenController.setTokenRegistry(registry);
         tokenController.setRegistry(registry);
-        tokenController.setAaveAddress(address(assuredFinancialOpportunityProxy));
+        tokenController.setOpportunityAddress(address(assuredFinancialOpportunityProxy));
 
         // transfer ownership to owner
         tokenController.transferOwnership(address(owner));

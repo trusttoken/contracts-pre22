@@ -352,28 +352,28 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
     /// @dev getter for financial opportuniry
     /// @return financial opportunity
-    function finOp() internal view returns(FinancialOpportunity) {
+    function finOp() public view returns(FinancialOpportunity) {
         return FinancialOpportunity(finOpAddress);
     }
 
     /// @dev getter for staking pool
     /// @return staking pool
-    function pool() internal view returns(StakedToken) {
+    function pool() public view returns(StakedToken) {
         return StakedToken(assuranceAddress); // StakedToken is assurance staking pool
     }
 
     /// @dev getter for liquidator
-    function liquidator() internal view returns (Liquidator) {
+    function liquidator() public view returns (Liquidator) {
         return Liquidator(liquidatorAddress);
     }
 
     /// @dev getter for exponents contract
-    function exponents() internal view returns (FractionalExponents){
+    function exponents() public view returns (FractionalExponents){
         return FractionalExponents(exponentContractAddress);
     }
 
     /// @dev deposit token (TrueUSD)
-    function token() internal view returns (IERC20){
+    function token() public view returns (IERC20){
         return IERC20(trueRewardBackedTokenAddress);
     }
 

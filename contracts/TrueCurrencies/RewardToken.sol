@@ -88,7 +88,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
         address finOp
     ) internal validFinOp(finOp) {
         // require suffiient balance 
-        require(balanceOf(account) >= amount, "insufficient balance");
+        require(super.balanceOf(account) >= amount, "insufficient token balance");
 
         // approve finOp can spend Token
         approve(finOp, amount);
@@ -123,7 +123,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
         address finOp
     ) internal validFinOp(finOp) {
         // require sufficient balance
-        require(rewardTokenBalance(account, finOp) >= amount, "insufficient balance");
+        require(rewardTokenBalance(account, finOp) >= amount, "insufficient reward balance");
 
         // withdraw from finOp
         uint256 tokenAmount = _getFinOp(finOp).redeem(account, amount);

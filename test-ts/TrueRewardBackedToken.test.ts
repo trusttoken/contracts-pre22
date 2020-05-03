@@ -53,7 +53,7 @@ describe('TrueRewardBackedToken', () => {
         token.address,
         token.address,
       )
-      await token.setFinOpAddress(financialOpportunity.address)
+      await token.setOpportunityAddress(financialOpportunity.address)
     })
 
     it('holder enables trueReward with 0 balance', async () => {
@@ -108,7 +108,7 @@ describe('TrueRewardBackedToken', () => {
       financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
       await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
       await financialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, token.address)
-      await token.setFinOpAddress(financialOpportunity.address)
+      await token.setOpportunityAddress(financialOpportunity.address)
     })
 
     it('holder enables truereward', async () => {
@@ -332,7 +332,7 @@ describe('TrueRewardBackedToken', () => {
         token.address,
       )
 
-      await token.setFinOpAddress(financialOpportunity.address)
+      await token.setOpportunityAddress(financialOpportunity.address)
     })
 
     it('holder enables truereward', async () => {
