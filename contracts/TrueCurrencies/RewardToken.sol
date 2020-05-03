@@ -2,17 +2,15 @@ import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
 import { CompliantDepositTokenWithHook } from "./CompliantDepositTokenWithHook.sol";
 
 /**
- * @title CompliantRewardToken
+ * @title RewardToken
  * @dev Non-transferrable token meant to represent 
  * RewardTokens are TrueCurrencies owed by a financial opportunity
  *
  * -- Overview --
- * RewardTokens are redeemable for an underlying DepositToken.
- * RewardTokens are non-transferrable for compliance purposes, since
- * they represent an asset which might increase in value
+ * RewardTokens are redeemable for an underlying Token.
+ * RewardTokens are non-transferrable for compliance reasons
  * The caller of depositor is responsible for exchanging their
- * tokens, so we never actually create a new asset, rather just
- * keep accounting of user rewardToken balances
+ * tokens, rather just keep accounting of user rewardToken balances
  *
  * -- Financial Opportunity -- 
  * RewardTokens are backed by an underlying financial opportunity
@@ -26,29 +24,18 @@ import { CompliantDepositTokenWithHook } from "./CompliantDepositTokenWithHook.s
  * time we would want to burn rewardTokens is if the underlying opportunity
  * is no longer redeemable, and we want to wipe the debt.
  *
- *
- * -- Reserve --
- * A reserve of rewardTokens and depositTokens are used to save on gas costs
- * This reserve is accessed via "swap" functions
- * When depositing/redeeming from a FinancialOpportunity, gas costs can be
- * relatively high, so rather than doing this, we can keep a reserve of
- * DepositTokens and RewardTokens, and for small amounts, use these balances
- *
  */
 contract RewardToken is CompliantDepositTokenWithHook {
 
-    // move to proxy storage
+    /* variables in proxy storage
     mapping(address => FinancialOpportunity) finOps;
     mapping(address => mapping(address => uint256)) finOpBalances;
     mapping(address => uint256) finOpSupply;
-
-    address public constant RESERVE = 0xf000000000000000000000000000000000000000;
+    */
 
     event MintRewardToken(address account, uint256 amount, address finOp);
     event RedeemRewardToken(address account, uint256 amount, address finOp);
     event BurnRewardToken(address account, uint256 amount, address finOp);
-    event SwapRewardToken(address account, uint256 amount, address finOp);
-    event SwapDepositToken(address account, uint256 amount, address finOp);
 
     /**
      * @dev Only addresses registered in this contract's mapping are valid
@@ -63,13 +50,24 @@ contract RewardToken is CompliantDepositTokenWithHook {
     /**
      * @dev get debt balance of account in rewardToken
      *
+     * @param finOp financial opportunity
+     */
+    function rewardTokenSupply(
+        address finOp
+    ) public view validFinOp(finOp) returns (uint256) {
+        return finOpSupply[finOp];
+    }
+
+    /**
+     * @dev get debt balance of account in rewardToken
+     *
      * @param account account to get rewardToken balance of
      * @param finOp financial opportunity
      */
     function rewardTokenBalance(
-        address account, 
+        address account,
         address finOp
-    ) public validFinOp(finOp) returns (uint256) {
+    ) public view validFinOp(finOp) returns (uint256) {
         return finOpBalances[finOp][account];
     }
 
@@ -85,8 +83,8 @@ contract RewardToken is CompliantDepositTokenWithHook {
      * @param finOp financial opportunity address
      */
     function mintRewardToken(
-        address account, 
-        uint256 amount, 
+        address account,
+        uint256 amount,
         address finOp
     ) internal validFinOp(finOp) {
         // require suffiient balance 
@@ -96,10 +94,10 @@ contract RewardToken is CompliantDepositTokenWithHook {
         approve(finOp, amount);
 
         // deposit into finOp
-        uint256 rewardToken = _getFinOp(finOp).deposit(account, amount);
+        uint256 rewardAmount = _getFinOp(finOp).deposit(account, amount);
 
         // increase finOp rewardToken supply
-        finOpSupply[finOp].add(rewardToken);
+        finOpSupply[finOp].add(rewardAmount);
 
         // increase account rewardToken balance
         _addRewardBalance(account, amount, finOp);
@@ -128,7 +126,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
         require(rewardTokenBalance(account, finOp) >= amount, "insufficient balance");
 
         // withdraw from finOp
-        uint256 depositToken = _getFinOp(finOp).redeem(account, amount);
+        uint256 tokenAmount = _getFinOp(finOp).redeem(account, amount);
 
         // increase finOp rewardToken supply
         finOpSupply[finOp].sub(amount);
@@ -137,7 +135,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
         _subRewardBalance(account, amount, finOp);
 
         // emit mint event
-        emit RedeemRewardToken(account, depositToken, finOp);
+        emit RedeemRewardToken(account, tokenAmount, finOp);
     }
 
     /**
@@ -171,75 +169,6 @@ contract RewardToken is CompliantDepositTokenWithHook {
 
         // burn event
         emit BurnRewardToken(account, amount, finOp);
-    }
-
-    /**
-     * @dev Use reserve to swap depositToken for rewardToken
-     * 
-     * @param account account to give rewardToken to
-     * @param amount depositToken amount to exchange for rewardToken
-     * @param finOp financial opportunity
-     */
-    function swapDepositToken(
-        address account, 
-        uint256 amount,
-        address finOp
-    ) internal validFinOp(finOp) {
-        // require account has sufficient balance
-        require(balanceOf(account) >= amount,
-            "insufficient balance");
-
-        // calculate rewardToken value for depositToken amount
-        uint256 rewardAmount = _toRewardToken(amount, finOp);
-
-        // require reserve
-        require(rewardTokenBalance(RESERVE, finOp) >= rewardAmount,
-            "not enough rewardToken in reserve");
-
-        // sub from account and add to reserve for depositToken
-        _subBalance(account, amount);
-        _addBalance(RESERVE, amount);
-
-        // sub from reserve and add to account for rewardToken
-        _subRewardBalance(RESERVE, rewardAmount, finOp);
-        _addRewardBalance(account, rewardAmount, finOp);
-
-        // emit event
-        emit SwapDepositToken(account, amount, finOp);
-    }
-
-    /**
-     * @dev Use reserve to swap rewardToken for Token
-     * 
-     * @param account account to give Token to
-     * @param amount amount of depositToken to exchange for rewardToken
-     * @param finOp financial opportunity
-     */
-    function swapRewardToken(
-        address account,
-        uint256 amount,
-        address finOp
-    ) internal validFinOp(finOp) {
-        // require sufficient balance
-        require (rewardTokenBalance(account, finOp) >= amount,
-            "insufficient rewardToken balance");
-
-        // get deposit value for reward token amount
-        uint256 depositAmount = _toRewardToken(amount, finOp);
-
-        // ensure reserve has enough balance
-        require(balanceOf(RESERVE) >= depositAmount, "not enough depositToken in reserve");
-
-        // sub account and add reserve for rewardToken
-        _subRewardBalance(account, amount, finOp);
-        _addRewardBalance(RESERVE, amount, finOp);
-
-        // add account and add reserve for depositToken
-        _subBalance(RESERVE, depositAmount);
-        _addBalance(account, depositAmount);
-
-        // emit event
-        emit SwapRewardToken(account, amount, finOp);
     }
 
     /**
@@ -281,7 +210,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
      * @param amount rewardToken amount to convert to depositToken
      * @param finOp financial opportunity address
      */
-     function _toDepositToken(uint amount, address finOp) internal view returns (uint256) {
+     function _toToken(uint amount, address finOp) internal view returns (uint256) {
         uint256 ratio = _getFinOp(finOp).tokenValue();
         return ratio.mul(amount).div(10 ** 18);
     }

@@ -153,8 +153,8 @@ contract TokenFaucet {
      * @dev Sets the contract which has permissions to manage truerewards reserve
      * Controls access to reserve functions to allow providing liquidity
      */
-    function setFinOpAddress(address _finOpAddress) external onlyOwner {
-        token.setFinOpAddress(_finOpAddress);
+    function setAaveAddress(address _aaveAddress) external onlyOwner {
+        token.setAaveAddress(_aaveAddress);
     }
 
 

@@ -1,7 +1,8 @@
 pragma solidity ^0.5.13;
 
-import "./CompliantDepositTokenWithHook.sol";
-import "../TrueReward/FinancialOpportunity.sol";
+import { TrueCoinReceiver } from "./TrueCoinReceiver.sol";
+import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
+import { RewardTokenWithReserve } from "./RewardTokenWithReserve.sol";
 
 /**
  * @title TrueRewardBackedToken
@@ -12,40 +13,41 @@ import "../TrueReward/FinancialOpportunity.sol";
  * Financial opportunities provide awards over time
  * Awards are reflected in the wallet balance updated block-by-block
  *
- * -- zTUSD vs yTUSD --
- * zTUSD represents an amount of ASSURED TUSD owed to the zTUSD holder
- * yTUSD represents an amount of NON-ASSURED TUSD owed to a yTUSD holder
- * For this contract, we only handle zTUSD (Assured Opportunities)
+ * -- rewardToken vs yToken --
+ * rewardToken represents an amount of ASSURED TUSD owed to the rewardToken holder
+ * yToken represents an amount of NON-ASSURED TUSD owed to a fToken holder
+ * For this contract, we only handle rewardToken (Assured Opportunities)
  *
- * -- Calculating zTUSD --
- * TUSD Value = zTUSD * financial opportunity tokenValue()
+ * -- Calculating rewardToken --
+ * TUSD Value = rewardToken * financial opportunity tokenValue()
  *
- * -- zTUSD Assumptions --
+ * -- rewardToken Assumptions --
  * We assume tokenValue never decreases for assured financial opportunities
- * zTUSD is not transferrable in that the token itself is never tranferred
+ * rewardToken is not transferrable in that the token itself is never tranferred
  * Rather, we override our transfer functions to account for user balances
  *
  * -- Reserve --
- * This contract uses a reserve holding of TUSD and zTUSD to save on gas costs
+ * This contract uses a reserve holding of TUSD and rewardToken to save on gas costs
  * because calling the financial opportunity deposit() and redeem() everytime
- * can be expensive.
+ * can be expensive
+ * See RewardTokenWithReserve.sol
  *
  * -- Future Upgrades to Financial Opportunity --
- * Currently, we only have a single financial opportunity.
+ * Currently, we only have a single financial opportunity
  * We plan on upgrading this contract to support a multiple financial opportunity,
  * so some of the code is built to support this
+ *
  */
-contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
-    /* Variables in Proxy Storage:
-    struct RewardAllocation { address finOpAddress; uint proportion; }
-    mapping(address => RewardAllocation[]) _rewardDistribution;
-    mapping (address => mapping (address => uint256)) _finOpBalances; */
+contract TrueRewardBackedToken is RewardTokenWithReserve {
 
-    // Reserve is an address which nobody has the private key to
-    // Reserves of TUSD and TrueRewardBackedToken are held at this addess
-    address public constant RESERVE = 0xf000000000000000000000000000000000000000;
-    uint public _finOpSupply; // total supply in zTUSD
-    address public finOpAddress_; // assuredFinancialOpportunity address
+    /* variables in Proxy Storage:
+    struct RewardAllocation { uint proportion; address finOp; }
+    mapping(address => RewardAllocation[]) _rewardDistribution;
+    mapping (address => mapping (address => uint256)) _finOpBalances;
+    uint256 maxRewardProportion = 1000;
+    */
+
+    address public aaveAddress_;
 
     event TrueRewardEnabled(address _account);
     event TrueRewardDisabled(address _account);
@@ -55,398 +57,280 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         return _rewardDistribution[_address].length != 0;
     }
 
-    /** @dev set new Financial Opportunity address
-     * This is usually an assuredFinancialOpportunity
-     */
-    function setFinOpAddress(address _finOpAddress) external onlyOwner {
-        finOpAddress_ = _finOpAddress;
-    }
-
-    /** @dev return aave financial opportunity address */
-    function finOpAddress() public view returns (address) {
-        return finOpAddress_;
-    }
-
-    /** @dev get total aave supply in zTUSD */
-    function finOpSupply() public view returns(uint) {
-        return _finOpSupply;
-    }
-
-    /** @dev get zTUSD reserve balance */
-    function zTUSDReserveBalance() public view returns (uint) {
-        return _finOpBalances[RESERVE][finOpAddress()];
-    }
-
-    /**
-     * @dev get total zTUSD balance of a given account
-     * this only works for a single opportunity
-     */
-    function accountTotalLoanBackedBalance(address _account) public view returns (uint) {
-        return _finOpBalances[_account][finOpAddress()];
-    }
-
     /*
      * @dev calculate rewards earned since last deposit
-     * // todo feewet fix this function
+     * todo feewet fix this function, can we actually calc this??
      */
-    function rewardBalanceOf(address _account) public view returns (uint) {
-        uint loanBackedBalance = accountTotalLoanBackedBalance(_account);
-        return _toTUSD(loanBackedBalance) - _toTUSD(loanBackedBalance);
+    function rewardsAccrued(address account, address finOp) public view returns (uint) {
+        uint rewardBalance = rewardTokenBalance(account, aaveAddress());
+        return _toToken(rewardBalance, finOp) - _toToken(rewardBalance, finOp);
     }
 
     /**
      * @dev Get total supply of all TUSD backed by debt.
      * This amount includes accrued rewards.
+     * Currently works for a single finOp
+     *
+     * @return total supply in trueCurrency
      */
     function totalSupply() public view returns (uint256) {
-        if (_finOpSupply != 0) {
-            uint aaveSupply = _toTUSD(_finOpSupply);
-            return totalSupply_.add(aaveSupply);
+        // if supply in aave finOp, return value including finOp value
+        // otherwise call super to return normal totalSupply
+        if (aaveSupply() != 0) {
+            // calculate depositToken value of finOp total supply
+            uint depositValue = _toToken(aaveSupply(), aaveAddress());
+
+            // return token total supply plus deposit token value
+            return totalSupply_.add(depositValue);
         }
         return super.totalSupply();
     }
 
     /**
      * @dev Get balance of TUSD including rewards for an address
+     *
+     * @param _who address of account to get balanceOf for
+     * @return balance total balance of address including rewards
      */
     function balanceOf(address _who) public view returns (uint256) {
+        // if trueReward enabled, return token value of reward balance
+        // otherwise call token balanceOf
         if (trueRewardEnabled(_who)) {
-            return _toTUSD(accountTotalLoanBackedBalance(_who));
+            return _toToken(rewardTokenBalance(_who, aaveAddress()), aaveAddress());
         }
         return super.balanceOf(_who);
     }
 
     /**
-     * @dev get debt balance of account in ztusd
-     *
-     * @param account account to get ztusd balance of
-     * @param finOp financial opportunity
-     */
-    function _zTUSDBalance(address account, address finOp) internal view returns (uint) {
-        return _finOpBalances[account][finOp];
-    }
-
-    /**
-     * @dev Utility to convert TUSD value to zTUSD value
-     * zTUSD is TUSD backed by TrueRewards debt
-     */
-    function _toZTUSD(uint _tusdAmount) internal view returns (uint) {
-        uint ratio = FinancialOpportunity(finOpAddress()).tokenValue();
-        return _tusdAmount.mul(10 ** 18).div(ratio);
-    }
-
-    /**
-     * @dev Utility to convert zTUSD value to TUSD value
-     * zTUSD is TUSD backed by TrueRewards debt
-     */
-    function _toTUSD(uint _ztusd) internal view returns (uint) {
-        uint ratio = FinancialOpportunity(finOpAddress()).tokenValue();
-        return ratio.mul(_ztusd).div(10 ** 18);
-    }
-
-    /**
-     * @dev Withdraw all TrueCurrencies from reserve
-     */
-    function drainTrueCurrencyReserve(address _to, uint _value) external onlyOwner {
-        _transferAllArgs(RESERVE, _to, _value);
-    }
-
-    /**
-     * @dev Allow this contract to rebalance currency reserves
-     * This is called when there is too much money in an opportunity and we want
-     * to get more TrueCurrency.
-     * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
-     */
-    function convertToTrueCurrencyReserve(uint ztusd) external onlyOwner {
-        uint tusd = FinancialOpportunity(finOpAddress()).redeem(RESERVE, ztusd);
-        _finOpSupply = _finOpSupply.sub(ztusd);
-
-        _finOpBalances[RESERVE][finOpAddress()] = _finOpBalances[RESERVE][finOpAddress()]
-            .sub(ztusd);
-
-        emit Transfer(RESERVE, address(0), tusd);
-    }
-
-    /**
-     * @dev Allow this contract to rebalance currency reserves
-     * This is called when there is not enough money in an opportunity and we want
-     * to get more Opportunity tokens
-     * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
-     */
-    function convertToZTUSDReserve(uint tusd) external onlyOwner {
-        uint balance = _getBalance(RESERVE);
-        if (balance < tusd) {
-            return;
-        }
-        _setAllowance(RESERVE, finOpAddress(), tusd);
-        uint ztusd = FinancialOpportunity(finOpAddress()).deposit(RESERVE, tusd);
-        _finOpSupply = _finOpSupply.add(ztusd);
-
-        _finOpBalances[RESERVE][finOpAddress()] = _finOpBalances[RESERVE][finOpAddress()]
-            .add(ztusd);
-
-        emit Transfer(address(0), RESERVE, tusd);
-    }
-
-    /**
-     * @dev enable Aave financial opportunity
-     * Set allocation to 100% since we only have a single opportunity
-     */
-    function _enableFinOp() internal {
-        require(_rewardDistribution[msg.sender].length == 0, "already enabled");
-        _rewardDistribution[msg.sender].push(
-            RewardAllocation(finOpAddress(), 1000));
-    }
-
-    /**
-     * @dev disable Aave financial opportunity
-     * Set allocation to 0% since we only have a single opportunity
-     */
-    function _disableFinOp() internal {
-        delete _rewardDistribution[msg.sender][0];
-        _rewardDistribution[msg.sender].length--;
-    }
-
-    /**
      * @dev Enable TrueReward and deposit user balance into opportunity.
+     * Currently supports a single financial opportunity
      */
     function enableTrueReward() external {
-        require(!trueRewardEnabled(msg.sender), "not turned on");
+        // require TrueReward is not enabled
+        require(!trueRewardEnabled(msg.sender), "TrueReward already enabled");
+
+        // get sender balance
         uint balance = _getBalance(msg.sender);
+
+        // set reward distribution
+        // we set max distribution since we only have one opportunity
+        _setDistribution(maxRewardProportion, aaveAddress());
+        // no balance to deposit, enable finOp and return
         if (balance == 0) {
-            _enableFinOp();
             return;
         }
-        approve(finOpAddress(), balance);
-        uint ztusd = FinancialOpportunity(
-            finOpAddress()).deposit(msg.sender, balance);
-        _enableFinOp();
-        _finOpSupply = _finOpSupply.add(ztusd);
-        _finOpBalances[msg.sender][finOpAddress()] = _finOpBalances
-            [msg.sender][finOpAddress()].add(ztusd);
+
+        // mint reward token
+        mintRewardToken(msg.sender, balance, aaveAddress());
+
+        // emit enable event
         emit TrueRewardEnabled(msg.sender);
-        emit Transfer(address(0), msg.sender, balance);
+        //emit Transfer(address(0), msg.sender, balance);
     }
 
     /**
      * @dev Disable TrueReward and withdraw user balance from opportunity.
      */
     function disableTrueReward() external {
-        require(trueRewardEnabled(msg.sender), "already disabled");
+        // require TrueReward is enabled
+        require(trueRewardEnabled(msg.sender), "TrueReward already disabled");
         // get balance
-        uint ztusd = _zTUSDBalance(msg.sender, finOpAddress());
-        // disable finOp
-        _disableFinOp();
-        // redeem
-        FinancialOpportunity(finOpAddress()).redeem(msg.sender, ztusd);
-        _finOpSupply = _finOpSupply.sub(ztusd);
-        _finOpBalances[msg.sender][finOpAddress()] = 0;
+        uint rewardBalance = rewardTokenBalance(msg.sender, aaveAddress());
+
+        // remove reward distribution
+        _removeDistribution(aaveAddress());
+
+        // redeem for token
+        redeemRewardToken(msg.sender, rewardBalance, aaveAddress());
+
+        // emit disable event
         emit TrueRewardDisabled(msg.sender);
-        emit Transfer(msg.sender, address(0), ztusd);
+        // emit Transfer(msg.sender, address(0), ztusd);
     }
 
     /**
-     * @dev Transfer helper function for TrueRewardBackedToken
-     * Uses reserve float to save gas costs for transactions with value < reserve balance.
-     * Case #2 and #3 use reserve balances.
+     * @dev mint function for TrueRewardBackedToken
+     * Mints TrueUSD backed by debt
+     * When we add multiple opportunities, this needs to work for mutliple interfaces
+     */
+    function mint(address _to, uint256 _value) public onlyOwner {
+        super.mint(_to, _value);
+        bool toEnabled = trueRewardEnabled(_to);
+        if (toEnabled) {
+            mintRewardToken(_to, _value, aaveAddress());
+            emit Transfer(address(0), _to, _value);
+        }
+    }
+
+    /**
+     * @dev redeem reserve rewardTokens for Token given a rewardToken amount
+     * This is called by the TokenController to balance the reserve
+     * @param _value amount of Token to deposit for rewardTokens
+     */
+    function aaveReserveRedeem(uint256 _value) external onlyOwner {
+        reserveRedeem(_value, aaveAddress());
+    }
+
+    /**
+     * @dev mint reserve rewardTokens for Aave given a Token deposit
+     * This is called by the TokenController to balance the reserve
+     * @param _value amount of Token to deposit for rewardTokens
+     */
+    function aaveReserveMint(uint256 _value) external onlyOwner {
+        reserveMint(_value, aaveAddress());
+    }
+
+    /**
+     * @dev set a new aave financial opportunity address
+     * @param _aaveAddress new aaveAddress to set
+     */
+    function setAaveAddress(address _aaveAddress) external onlyOwner {
+        aaveAddress_ = _aaveAddress;
+    }
+
+    /**
+     * @dev Get aave financial opportunity address
+     * @return address Aave financial opportunity address
+     */
+    function aaveAddress() public view returns (address) {
+        return aaveAddress_;
+    }
+
+    /**
+     * @dev Get total supply of aave rewardTokens
+     * @return total supply of aave rewardTokens
+     */
+    function aaveSupply() internal view returns (uint256) {
+        return rewardTokenSupply(aaveAddress());
+    }
+
+    /**
+     * @dev Transfer helper for accounts with rewardToken balances
+     * Uses reserve float to save gas costs for transactions with value < reserve balance
+     * Case #2 and #3 use reserve balances
      *
      * There are 6 transfer cases
      *  1. Both sender and receiver are disabled
      *  2. Sender enabled, receiver disabled, value < reserve TUSD balance
-     *  3. Sender disabled, receiver enabled, value < reserve zTUSD balance (in TUSD)
+     *  3. Sender disabled, receiver enabled, value < reserve rewardToken balance (in TUSD)
      *  4. Both sender and receiver are enabled
      *  5. Sender enabled, receiver disabled, value > reserve TUSD balance
-     *  6. Sender disabled, receiver enabled, value > reserve zTUSD balance (in TUSD)
+     *  6. Sender disabled, receiver enabled, value > reserve rewardToken balance (in TUSD)
      *
-     * When we upgrade to support multiple opportunities, here we also want to check
-     * If the transfer is between the same opportunities.
+     * @param _from account to transfer from
+     * @param _to account to transfer to
+     * @param _value value in Token to transfer
+     * @return actual value transferred
+     */
+    function _transferWithRewards(
+        address _from,
+        address _to,
+        uint256 _value
+    ) internal returns (uint256) {
+        // get enable stat
+        bool fromEnabled = trueRewardEnabled(_from);
+        bool toEnabled = trueRewardEnabled(_to);
+
+        // get aave address
+        address finOp = aaveAddress();
+
+        // calculate rewardToken balance
+        uint rewardAmount = _toRewardToken(_value, finOp);
+
+        // 1. Sender enabled, receiver disabled, value < reserve TUSD balance
+        // Swap rewardToken for Token through reserve
+        if (fromEnabled && !toEnabled && _value < reserveBalance()) {
+            swapRewardForToken(_from, _to, _value, finOp);
+        }
+        // 2. Sender disabled, receiver enabled, value < reserve rewardToken balance
+        // Swap Token for rewardToken through reserve
+        else if (!fromEnabled && toEnabled && _value < reserveBalance()) {
+            swapTokenForReward(_from, _to, rewardAmount, finOp);
+        }
+        // 3. Sender and receiver are enabled
+        // Here we simply transfer rewardToken from the sender to the receiver
+        else if (fromEnabled && toEnabled) {
+            _subRewardBalance(_from, rewardAmount, finOp);
+            _addRewardBalance(_to, rewardAmount, finOp);
+        }
+        // 4. Sender enabled, receiver disabled, value > reserve TUSD balance
+        // Recalculate value based on redeem value returned and give value to receiver
+        else if (!toEnabled && fromEnabled) {
+            redeemRewardToken(_from, _value, finOp);
+            _subBalance(_from, _value);
+            _addBalance(_to, _value);
+        }
+        // 5. Sender disabled, receiver enabled, value > reserve rewardToken balance
+        // Transfer Token value between accounts and mint reward token for receiver
+        else if (toEnabled && !fromEnabled) {
+            _subBalance(_from, _value);
+            _addBalance(_to, _value);
+            mintRewardToken(_to, _value, finOp);
+        }
+        // We return this since value might be recalculated based on redeem
+        return _value;
+    }
+
+    /**
+     * @dev Transfer helper function for TrueRewardBackedToken
      */
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        bool senderTrueRewardEnabled = trueRewardEnabled(_from);
-        bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
         // 1. Both sender and receiver are disabled
         // Exchange is in TUSD -> call the normal transfer function
-        if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
+        if (!trueRewardEnabled(_from) && !trueRewardEnabled(_to)) {
             // sender not enabled receiver not enabled
             super._transferAllArgs(_from, _to, _value);
             return;
         }
         require(balanceOf(_from) >= _value, "not enough balance");
 
-        // calculate zTUSD balance
-        uint ztusd = _toZTUSD(_value);
+        // require account is not blacklisted and check if hook is registered
+        (address finalTo, bool hasHook) = _requireCanTransfer(_from, _to);
 
-        // 2. Sender enabled, receiver disabled, value < reserve TUSD balance
-        // Use reserve balance to transfer so we can save gas
-        if (senderTrueRewardEnabled && !receiverTrueRewardEnabled && _value < _getBalance(RESERVE)) {
-            bool hasHook;
-            address finalTo;
-            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+        _value = _transferWithRewards(_from, _to, _value);
 
-            // use reserve to withdraw from financial opportunity reserve and transfer TUSD to receiver
-            _finOpBalances[RESERVE][finOpAddress()] =
-                _finOpBalances[RESERVE][finOpAddress()].add(ztusd);
-            _finOpBalances[_from][finOpAddress()] =
-                _finOpBalances[_from][finOpAddress()].sub(ztusd);
-
-            // update TUSD balances
-            _subBalance(RESERVE, _value);
-            _addBalance(finalTo, _value);
-            _postReserveTransfer(_from, _to, _value, finalTo, hasHook);
+        // emit transfer event for from
+        emit Transfer(_from, _to, _value);
+        if (finalTo != _to) {
+            emit Transfer(_to, finalTo, _value);
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+            }
         }
-        // 3. Sender disabled, receiver enabled, value < reserve zTUSD balance (in TUSD)
-        // Use reserve balance to transfer so we can save gas
-        else if (!senderTrueRewardEnabled && receiverTrueRewardEnabled && _value < _toTUSD(zTUSDReserveBalance())) {
-            bool hasHook;
-            address finalTo;
-            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-            _subBalance(_from, _value);
-            _addBalance(RESERVE, _value);
 
-            _finOpBalances[RESERVE][finOpAddress()] =
-                _finOpBalances[RESERVE][finOpAddress()].sub(ztusd);
-            _finOpBalances[finalTo][finOpAddress()] =
-                _finOpBalances[finalTo][finOpAddress()].add(ztusd);
-
-            _postReserveTransfer(_from, _to, _value, finalTo, hasHook);
-        }
-        // 4. Sender and receiver are enabled
-        // Here we simply transfer zTUSD from the sender to the receiver
-        else if (senderTrueRewardEnabled && receiverTrueRewardEnabled) {
-            bool hasHook;
-            address finalTo;
-            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-
-            _finOpBalances[_from][finOpAddress()] =
-                _finOpBalances[_from][finOpAddress()].sub(ztusd);
-            _finOpBalances[finalTo][finOpAddress()] =
-                _finOpBalances[finalTo][finOpAddress()].add(ztusd);
-
-            _postReserveTransfer(_from, _to, _value, finalTo, hasHook);
-        }
-        // 5. Sender enabled, receiver disabled, value > reserve TUSD balance
-        // Withdraw TUSD from opportunity, send to receiver, and burn zTUSD
-        else if (senderTrueRewardEnabled) {
-            emit Transfer(_from, address(this), _value); // transfer value to this contract
-            emit Transfer(address(this), address(0), _value); // burn value
-            FinancialOpportunity(finOpAddress())
-                .redeem(_to, ztusd);
-            _finOpSupply = _finOpSupply.sub(ztusd);
-            // watchout for reentrancy
-            _finOpBalances[_from][finOpAddress()] =
-                _finOpBalances[_from][finOpAddress()].sub(ztusd);
-        }
-        // 6. Sender disabled, receiver enabled, value > reserve zTUSD balance (in TUSD)
-        // Deposit TUSD into opportunity, mint zTUSD, and increase receiver zTUSD balance
-        else if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
-            _setAllowance(_from, finOpAddress(), _value);
-            ztusd = FinancialOpportunity(finOpAddress())
-                .deposit(_from, _value);
-            _finOpSupply = _finOpSupply.add(ztusd);
-            _finOpBalances[_to][finOpAddress()] =
-                _finOpBalances[_to][finOpAddress()].add(ztusd);
-            emit Transfer(address(0), address(this), _value); // mint _value
-            emit Transfer(address(this), _to, _value); // send value to receiver
-        }
     }
 
     /**
      * @dev TransferFromAll helper function for TrueRewardBackedToken
-     * Uses reserve float to save gas costs for transactions with value < reserve balance.
-     * Case #2 and #3 use reserve balances.
-     *
-     * There are 6 transfer cases
-     *  1. Both sender and receiver are disabled
-     *  2. Sender enabled, receiver disabled, value < reserve TUSD balance
-     *  3. Sender disabled, receiver enabled, value < reserve zTUSD balance (in TUSD)
-     *  4. Both sender and receiver are enabled
-     *  5. Sender enabled, receiver disabled, value > reserve TUSD balance
-     *  6. Sender disabled, receiver enabled, value > reserve zTUSD balance (in TUSD)
-     *
-     * When we upgrade to support multiple opportunities, here we also want to check
-     * If the transfer is between the same opportunities.
      */
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
-        bool senderTrueRewardEnabled = trueRewardEnabled(_from);
-        bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
+    function _transferFromAllArgs(
+        address _from,
+        address _to,
+        uint256 _value,
+        address _spender
+    ) internal {
+        bool fromEnabled = trueRewardEnabled(_from);
         // 1. Both sender and receiver are disabled -> normal transfer
-        if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
+        if (!trueRewardEnabled(_from) && !trueRewardEnabled(_to)) {
             super._transferFromAllArgs(_from, _to, _value, _spender);
             return;
         }
+
+        // check balance
         require(balanceOf(_from) >= _value, "not enough balance");
-        // calculate zTUSD value
-        uint ztusd = _toZTUSD(_value);
 
-        // 2. Sender enabled, receiver disabled, value < reserve TUSD balance
-        if (senderTrueRewardEnabled && !receiverTrueRewardEnabled && _value < _getBalance(RESERVE)) {
-            bool hasHook;
-            address finalTo;
-            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-            _finOpBalances[RESERVE][finOpAddress()] = _finOpBalances[RESERVE][finOpAddress()].add(ztusd);
-            _finOpBalances[_from][finOpAddress()] = _finOpBalances[_from][finOpAddress()].sub(ztusd);
-            _subBalance(RESERVE, _value);
-            _addBalance(finalTo, _value);
-            _postReserveTransfer(_from, _to, _value, finalTo, hasHook);
-        }
-        // 3. Sender disabled, receiver enabled, value < reserve zTUSD balance (in TUSD)
-        else if (!senderTrueRewardEnabled && receiverTrueRewardEnabled && _value < _toTUSD(zTUSDReserveBalance())) {
-            bool hasHook;
-            address finalTo;
-            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-            _subBalance(_from, _value);
-            _addBalance(RESERVE, _value);
-            _finOpBalances[RESERVE][finOpAddress()] = _finOpBalances[RESERVE][finOpAddress()].sub(ztusd);
-            _finOpBalances[finalTo][finOpAddress()] = _finOpBalances[finalTo][finOpAddress()].add(ztusd);
-            _postReserveTransfer(_from, _to, _value, finalTo, hasHook);
-        }
-        // 4. Both sender and receiver are enabled
-        else if (senderTrueRewardEnabled && receiverTrueRewardEnabled) {
-            bool hasHook;
-            address finalTo;
-            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-            _finOpBalances[_from][finOpAddress()] = _finOpBalances[_from][finOpAddress()].sub(ztusd);
-            _finOpBalances[finalTo][finOpAddress()] = _finOpBalances[finalTo][finOpAddress()].add(ztusd);
-            _postReserveTransfer(_from, _to, _value, finalTo, hasHook);
-        }
-        // 5. Sender enabled, receiver disabled, value > reserve TUSD balance
-        else if (senderTrueRewardEnabled) {
-            emit Transfer(_from, address(this), _value);
-            emit Transfer(address(this), address(0), _value);
-            FinancialOpportunity(finOpAddress()).redeem(_to, ztusd);
-            _finOpSupply = _finOpSupply.sub(ztusd);
-            // watchout for reentrancy
-            _finOpBalances[_from][finOpAddress()] = _finOpBalances[_from][finOpAddress()].sub(ztusd);
-        }
-        // 6. Sender disabled, receiver enabled, value > reserve zTUSD balance (in TUSD)
-        else if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
-            _setAllowance(_from, finOpAddress(), _value);
-            ztusd = FinancialOpportunity(finOpAddress()).deposit(_from, _value);
-            _finOpSupply = _finOpSupply.add(ztusd);
-            _finOpBalances[_to][finOpAddress()] = _finOpBalances[_to][finOpAddress()].add(ztusd);
-            emit Transfer(address(0), _to, _value); // // mint value
-            emit Transfer(address(this), _to, _value); // send value to receiver
-        }
-    }
+        (address finalTo, bool hasHook) = _requireCanTransferFrom(_spender, _from, _to);
 
-    /**
-     * @dev called post reserve transfer for token hook
-     * emits transfer event and calls hook if hook exitsts
-     * hooks only called for registered TrueUSD contracts
-     *
-     * @param _from transfer from address
-     * @param _to transfer to address
-     * @param _value transfer value
-     * @param finalTo finalTo value for hook
-     * @param hasHook if reciever has hook function
-     */
-    function _postReserveTransfer(
-        address _from,
-        address _to,
-        uint _value,
-        address finalTo,
-        bool hasHook)
-    internal {
+
+        // call transfer helper
+        _value = _transferWithRewards(_from, _to, _value);
+
+        // emit transfer event. For hook emit second transfer event
+        // call fallback function for valid hook
         emit Transfer(_from, _to, _value);
         if (finalTo != _to) {
             emit Transfer(_to, finalTo, _value);
@@ -461,19 +345,24 @@ contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     }
 
     /**
-     * @dev mint function for TrueRewardBackedToken
-     * Mints TrueUSD backed by debt
-     * When we add multiple opportunities, this needs to work for mutliple interfaces
+     * @dev Set reward distribution for an opportunity
+     *
+     * @param proportion to set
+     * @param finOp financial opportunity to set proportion for
      */
-    function mint(address _to, uint256 _value) public onlyOwner {
-        super.mint(_to, _value);
-        bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
-        if (receiverTrueRewardEnabled) {
-            approve(finOpAddress(), _value);
-            uint ztusd = FinancialOpportunity(finOpAddress()).deposit(_to, _value);
-            _finOpSupply = _finOpSupply.add(ztusd);
-            _finOpBalances[_to][finOpAddress()] = _finOpBalances[_to][finOpAddress()].add(ztusd);
-            emit Transfer(address(0), _to, _value);
-        }
+    function _setDistribution(uint256 proportion, address finOp) internal {
+        require(proportion <= maxRewardProportion, "exceeds maximum proportion");
+        require(_rewardDistribution[msg.sender].length == 0, "already enabled");
+        _rewardDistribution[msg.sender].push(
+            RewardAllocation(proportion, finOp));
+    }
+
+    /**
+     * @dev Remove reward distribution for a financial opportunity
+     * Remove
+     */
+    function _removeDistribution(address finOp) internal {
+        delete _rewardDistribution[msg.sender][0];
+        _rewardDistribution[msg.sender].length--;
     }
 }

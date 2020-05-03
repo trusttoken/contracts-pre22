@@ -61,7 +61,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
     event Deposit(address account, uint256 tusd, uint256 ztusd);
     event Redemption(address to, uint256 ztusd, uint256 tusd);
-    event Liquidation(address reciever, int256 debt);
+    event Liquidation(address receiver, int256 debt);
     event AwardPool(uint256 amount);
     event AwardFailure(uint256 amount);
 
@@ -310,15 +310,15 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
     /**
      * @dev Liquidate tokens in staking pool to cover debt
-     * Sends tusd to reciever
+     * Sends tusd to receiver
      *
-     * @param _reciever address to recieve tusd
+     * @param _receiver address to recieve tusd
      * @param _debt tusd debt to be liquidated
      * @return amount liquidated
     **/
-    function _liquidate(address _reciever, int256 _debt) internal returns (uint256) {
-        liquidator().reclaim(_reciever, _debt);
-        emit Liquidation(_reciever, _debt);
+    function _liquidate(address _receiver, int256 _debt) internal returns (uint256) {
+        liquidator().reclaim(_receiver, _debt);
+        emit Liquidation(_receiver, _debt);
         return uint(_debt);
     }
 

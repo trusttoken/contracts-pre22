@@ -7,6 +7,7 @@ import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import "./FinancialOpportunity.sol";
 import "./ILendingPoolCore.sol";
 import "../TrueCurrencies/modularERC20/InstantiatableOwnable.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title AaveFinancialOpportunity
