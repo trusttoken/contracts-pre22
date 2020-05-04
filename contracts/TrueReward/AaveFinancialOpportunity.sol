@@ -67,7 +67,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
         return stakeToken.balanceOf(address(this));
     }
 
-    /** @dev Return value of stake in TUSD */
+    /** @dev Return value of stake in yTUSD */
     function getValueInStake(uint256 _amount) public view returns(uint256) {
         return _amount.mul(10**18).div(tokenValue());
     }
@@ -90,9 +90,10 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     }
 
     /** @dev Helper to withdraw TUSD from Aave */
-    function _redeem(address _to, uint256 _amount) internal returns(uint256) {
+    function _redeem(address _to, uint256 ytusd) internal returns(uint256) {
+        uint tusd = ytusd.mul(tokenValue()).div(10**18);
         uint256 balanceBefore = token.balanceOf(address(this));
-        stakeToken.redeem(_amount);
+        stakeToken.redeem(tusd);
         uint256 balanceAfter = token.balanceOf(address(this));
         uint256 fundsWithdrawn = balanceAfter.sub(balanceBefore);
 

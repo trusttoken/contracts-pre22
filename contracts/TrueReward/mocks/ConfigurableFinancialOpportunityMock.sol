@@ -9,7 +9,7 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
     using SafeMath for uint;
 
     IERC20 token;
-    uint balance;
+    uint supply;
     uint tokenValueField = 1*10**18;
 
     constructor(IERC20 _token) public {
@@ -19,35 +19,27 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
     function deposit(address _from, uint _amount) external returns(uint) {
         uint shares = _getAmountInShares(_amount);
         require(token.transferFrom(_from, address(this), _amount), "FinOpMock/deposit/transferFrom");
-        balance = balance.add(shares);
+        supply = supply.add(shares);
         return shares;
     }
 
-    function withdrawTo(address _to, uint _amount) external returns(uint) {
-        uint shares = _getAmountInShares(_amount);
-        require(shares <= balance, "FinOpMock/withdrawTo/balanceCheck");
-        require(token.transfer(_to, _amount), "FinOpMock/withdrawTo/transfer");
-        balance = balance.sub(shares);
-        return shares;
-    }
-
-    function withdrawAll(address _to) external returns(uint) {
-        uint shares = balance;
-        uint tokens = _getSharesAmount(shares);
-        require(token.transfer(_to, tokens), "FinOpMock/withdrawAll/trasfer");
-        balance = 0;
-        return shares;
+    function redeem(address _to, uint ztusd) external returns(uint) {
+        uint tusd = _getSharesAmount(ztusd);
+        require(ztusd <= supply, "FinOpMock/withdrawTo/balanceCheck");
+        require(token.transfer(_to, tusd), "FinOpMock/withdrawTo/transfer");
+        supply = supply.sub(ztusd);
+        return tusd;
     }
 
     function tokenValue() external view returns(uint) {
         return tokenValueField;
     }
 
-    function getBalance() external view returns(uint) {
-        return balance;
+    function totalSupply() external view returns(uint) {
+        return supply;
     }
 
-    function increasetokenValue(uint _by) external {
+    function increaseTokenValue(uint _by) external {
         tokenValueField = tokenValueField.add(_by);
     }
 

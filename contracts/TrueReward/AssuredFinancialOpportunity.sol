@@ -268,16 +268,15 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         // todo feewet: check if expected amount is correct
         // possible use percision threshold or smart rounding
         // to eliminate micro liquidations
-        uint256 expectedAmount = _tokenValue() * ztusd;
+        uint256 expectedAmount = _tokenValue().mul(ztusd).div(10**18);
 
         if (!success) {
             // withdrawal failed! liquidate :(
             // transfers tokens to this contract
             returnedAmount = _liquidate(address(this), int256(expectedAmount));
+        } else {
+            zTUSDIssued = zTUSDIssued.sub(ztusd);
         }
-
-        // calculate new zTUSD issued
-        zTUSDIssued = zTUSDIssued.sub(ztusd);
 
         // transfer token to redeemer
         require(token().transfer(_to, returnedAmount), "transfer failed");
@@ -329,16 +328,16 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @return yTUSD value of TUSD
      */
     function _yTUSD(uint256 _tusd) internal view returns (uint256) {
-        return _tusd.mul(finOp().tokenValue());
+        return _tusd.mul(10**18).div(finOp().tokenValue());
     }
 
     /**
-     * @dev convert tusd value into yTUSD value
+     * @dev convert tusd value into zTUSD value
      * @param _tusd TUSD to convert
-     * @return yTUSD value of TUSD
+     * @return zTUSD value of TUSD
      */
     function _zTUSD(uint256 _tusd) internal view returns (uint256) {
-        return _tusd.mul(_tokenValue());
+        return _tusd.mul(10**18).div(_tokenValue());
     }
 
     /// @dev claim ownership of liquidator
