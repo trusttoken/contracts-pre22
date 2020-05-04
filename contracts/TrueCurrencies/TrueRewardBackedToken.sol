@@ -41,9 +41,9 @@ import { RewardTokenWithReserve } from "./RewardTokenWithReserve.sol";
 contract TrueRewardBackedToken is RewardTokenWithReserve {
 
     /* variables in Proxy Storage:
-    struct RewardAllocation { uint proportion; address finOp; }
-    mapping(address => RewardAllocation[]) _rewardDistribution;
-    mapping (address => mapping (address => uint256)) _finOpBalances;
+    mapping(address => FinancialOpportunity) finOps;
+    mapping(address => mapping(address => uint256)) finOpBalances;
+    mapping(address => uint256) finOpSupply;
     uint256 maxRewardProportion = 1000;
     */
 
@@ -115,6 +115,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // set reward distribution
         // we set max distribution since we only have one opportunity
         _setDistribution(maxRewardProportion, opportunity());
+
         // no balance to deposit, enable finOp and return
         if (balance == 0) {
             return;
@@ -255,19 +256,18 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         }
         // 4. Sender enabled, receiver disabled, value > reserve TUSD balance
         // Recalculate value based on redeem value returned and give value to receiver
-        else if (!toEnabled && fromEnabled) {
-            redeemRewardToken(_from, _value, finOp);
+        else if (fromEnabled && !toEnabled) {
+            uint256 returnedAmount = redeemRewardToken(_from, _value, finOp);
             _subBalance(_from, _value);
-            _addBalance(_to, _value);
+            _addBalance(_to, returnedAmount);
         }
         // 5. Sender disabled, receiver enabled, value > reserve rewardToken balance
         // Transfer Token value between accounts and mint reward token for receiver
-        else if (toEnabled && !fromEnabled) {
+        else if (!fromEnabled && toEnabled) {
             _subBalance(_from, _value);
             _addBalance(_to, _value);
             mintRewardToken(_to, _value, finOp);
         }
-        // We return this since value might be recalculated based on redeem
         return _value;
     }
 
@@ -287,7 +287,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // require account is not blacklisted and check if hook is registered
         (address finalTo, bool hasHook) = _requireCanTransfer(_from, _to);
 
-        _value = _transferWithRewards(_from, _to, _value);
+        _value = _transferWithRewards(_from, finalTo, _value);
 
         // emit transfer event for from
         emit Transfer(_from, _to, _value);
@@ -301,7 +301,6 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
                 TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
             }
         }
-
     }
 
     /**
@@ -325,9 +324,11 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
 
         (address finalTo, bool hasHook) = _requireCanTransferFrom(_spender, _from, _to);
 
-
         // call transfer helper
-        _value = _transferWithRewards(_from, _to, _value);
+        _value = _transferWithRewards(_from, finalTo, _value);
+
+        // sub allowance of spender
+        _subAllowance(_from, _spender, _value);
 
         // emit transfer event. For hook emit second transfer event
         // call fallback function for valid hook

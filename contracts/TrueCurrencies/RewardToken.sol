@@ -43,7 +43,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
      * @param finOp reverts if this finOp is not registered
      */
     modifier validFinOp(address finOp) {
-        require(finOp != address(0), "unregisterd opportunity");
+        require(finOp != address(0), "invalid opportunity");
         _;
     }
 
@@ -125,10 +125,10 @@ contract RewardToken is CompliantDepositTokenWithHook {
         // require sufficient balance
         require(rewardTokenBalance(account, finOp) >= amount, "insufficient reward balance");
 
-        // withdraw from finOp
+        // withdraw from finOp, giving TUSD to account
         uint256 tokenAmount = _getFinOp(finOp).redeem(account, amount);
 
-        // increase finOp rewardToken supply
+        // decrease finOp rewardToken supply
         finOpSupply[finOp].sub(amount);
 
         // increase account rewardToken balance
