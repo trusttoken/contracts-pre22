@@ -112,17 +112,14 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // get sender balance
         uint balance = _getBalance(msg.sender);
 
+        if (balance != 0) {
+            // mint reward token
+            mintRewardToken(msg.sender, balance, opportunity());
+        }
+
         // set reward distribution
         // we set max distribution since we only have one opportunity
         _setDistribution(maxRewardProportion, opportunity());
-
-        // no balance to deposit, enable finOp and return
-        if (balance == 0) {
-            return;
-        }
-
-        // mint reward token
-        mintRewardToken(msg.sender, balance, opportunity());
 
         // emit enable event
         emit TrueRewardEnabled(msg.sender);
@@ -211,7 +208,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * Case #2 and #3 use reserve balances
      *
      * There are 6 transfer cases
-     *  1. Both sender and receiver are disabled
+     *  1. Both sender and receiver are disabled (see _transferAllArgs)
      *  2. Sender enabled, receiver disabled, value < reserve TUSD balance
      *  3. Sender disabled, receiver enabled, value < reserve rewardToken balance (in TUSD)
      *  4. Both sender and receiver are enabled
@@ -238,35 +235,45 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // calculate rewardToken balance
         uint rewardAmount = _toRewardToken(_value, finOp);
 
-        // 1. Sender enabled, receiver disabled, value < reserve TUSD balance
+        // 2. Sender enabled, receiver disabled, value < reserve TUSD balance
         // Swap rewardToken for Token through reserve
-        if (fromEnabled && !toEnabled && _value < reserveBalance()) {
+        if (fromEnabled && !toEnabled && _value <= reserveBalance()) {
             swapRewardForToken(_from, _to, _value, finOp);
         }
-        // 2. Sender disabled, receiver enabled, value < reserve rewardToken balance
+        // 3. Sender disabled, receiver enabled, value < reserve rewardToken balance
         // Swap Token for rewardToken through reserve
-        else if (!fromEnabled && toEnabled && _value < reserveBalance()) {
-            swapTokenForReward(_from, _to, rewardAmount, finOp);
+        else if (!fromEnabled && toEnabled && rewardAmount <= rewardTokenBalance(RESERVE, finOp)) {
+            swapTokenForReward(_from, _to, _value, finOp);
         }
-        // 3. Sender and receiver are enabled
+        // 4. Sender and receiver are enabled
         // Here we simply transfer rewardToken from the sender to the receiver
         else if (fromEnabled && toEnabled) {
             _subRewardBalance(_from, rewardAmount, finOp);
             _addRewardBalance(_to, rewardAmount, finOp);
         }
-        // 4. Sender enabled, receiver disabled, value > reserve TUSD balance
+        // 5. Sender enabled, receiver disabled, value > reserve TUSD balance
         // Recalculate value based on redeem value returned and give value to receiver
         else if (fromEnabled && !toEnabled) {
-            uint256 returnedAmount = redeemRewardToken(_from, _value, finOp);
-            _subBalance(_from, _value);
-            _addBalance(_to, returnedAmount);
+            _getFinOp(finOp).redeem(_to, rewardAmount);
+
+            // decrease finOp rewardToken supply
+            finOpSupply[finOp] = finOpSupply[finOp].sub(rewardAmount);
+
+            // decrease account rewardToken balance
+            _subRewardBalance(_from, rewardAmount, finOp);
         }
-        // 5. Sender disabled, receiver enabled, value > reserve rewardToken balance
+        // 6. Sender disabled, receiver enabled, value > reserve rewardToken balance
         // Transfer Token value between accounts and mint reward token for receiver
         else if (!fromEnabled && toEnabled) {
-            _subBalance(_from, _value);
-            _addBalance(_to, _value);
-            mintRewardToken(_to, _value, finOp);
+            // deposit into finOp
+            approve(finOp, _value);
+            uint256 depositedAmount = _getFinOp(finOp).deposit(_from, _value);
+
+            // increase finOp rewardToken supply
+            finOpSupply[finOp] = finOpSupply[finOp].add(depositedAmount);
+
+            // increase account rewardToken balance
+            _addRewardBalance(_to, depositedAmount, finOp);
         }
         return _value;
     }
@@ -312,7 +319,6 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         uint256 _value,
         address _spender
     ) internal {
-        bool fromEnabled = trueRewardEnabled(_from);
         // 1. Both sender and receiver are disabled -> normal transfer
         if (!trueRewardEnabled(_from) && !trueRewardEnabled(_to)) {
             super._transferFromAllArgs(_from, _to, _value, _spender);

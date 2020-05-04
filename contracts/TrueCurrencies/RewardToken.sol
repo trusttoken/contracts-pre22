@@ -1,9 +1,11 @@
+pragma solidity ^0.5.13;
+
 import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
 import { CompliantDepositTokenWithHook } from "./CompliantDepositTokenWithHook.sol";
 
 /**
  * @title RewardToken
- * @dev Non-transferrable token meant to represent 
+ * @dev Non-transferrable token meant to represent
  * RewardTokens are TrueCurrencies owed by a financial opportunity
  *
  * -- Overview --
@@ -12,7 +14,7 @@ import { CompliantDepositTokenWithHook } from "./CompliantDepositTokenWithHook.s
  * The caller of depositor is responsible for exchanging their
  * tokens, rather just keep accounting of user rewardToken balances
  *
- * -- Financial Opportunity -- 
+ * -- Financial Opportunity --
  * RewardTokens are backed by an underlying financial opportunity
  * Each financial opportunity can accept Token deposits for
  * See FinancialOpportunity.sol
@@ -87,20 +89,20 @@ contract RewardToken is CompliantDepositTokenWithHook {
         uint256 amount,
         address finOp
     ) internal validFinOp(finOp) {
-        // require suffiient balance 
+        // require sufficient balance
         require(super.balanceOf(account) >= amount, "insufficient token balance");
 
         // approve finOp can spend Token
-        approve(finOp, amount);
+        _setAllowance(account, finOp, amount);
 
         // deposit into finOp
         uint256 rewardAmount = _getFinOp(finOp).deposit(account, amount);
 
         // increase finOp rewardToken supply
-        finOpSupply[finOp].add(rewardAmount);
+        finOpSupply[finOp] = finOpSupply[finOp].add(rewardAmount);
 
         // increase account rewardToken balance
-        _addRewardBalance(account, amount, finOp);
+        _addRewardBalance(account, rewardAmount, finOp);
 
         // emit mint event
         emit MintRewardToken(account, amount, finOp);
@@ -121,7 +123,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
         address account,
         uint256 amount,
         address finOp
-    ) internal validFinOp(finOp) {
+    ) internal validFinOp(finOp) returns (uint256) {
         // require sufficient balance
         require(rewardTokenBalance(account, finOp) >= amount, "insufficient reward balance");
 
@@ -129,13 +131,15 @@ contract RewardToken is CompliantDepositTokenWithHook {
         uint256 tokenAmount = _getFinOp(finOp).redeem(account, amount);
 
         // decrease finOp rewardToken supply
-        finOpSupply[finOp].sub(amount);
+        finOpSupply[finOp] = finOpSupply[finOp].sub(amount);
 
-        // increase account rewardToken balance
+        // decrease account rewardToken balance
         _subRewardBalance(account, amount, finOp);
 
         // emit mint event
         emit RedeemRewardToken(account, tokenAmount, finOp);
+
+        return tokenAmount;
     }
 
     /**
@@ -210,7 +214,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
      * @param amount rewardToken amount to convert to depositToken
      * @param finOp financial opportunity address
      */
-     function _toToken(uint amount, address finOp) internal view returns (uint256) {
+    function _toToken(uint amount, address finOp) internal view returns (uint256) {
         uint256 ratio = _getFinOp(finOp).tokenValue();
         return ratio.mul(amount).div(10 ** 18);
     }

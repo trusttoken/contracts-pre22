@@ -73,12 +73,12 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
         return _amount.mul(10**18).div(tokenValue());
     }
 
-     /**
-     * @dev deposits TrueUSD into AAVE using transferFrom
-     * @param _from account to transferFrom
-     * @param _amount amount in TUSD to deposit to AAVE
-     * @return yTUSD minted from this deposit
-     */
+    /**
+    * @dev deposits TrueUSD into AAVE using transferFrom
+    * @param _from account to transferFrom
+    * @param _amount amount in TUSD to deposit to AAVE
+    * @return yTUSD minted from this deposit
+    */
     function deposit(address _from, uint256 _amount) external onlyOwner returns(uint256) {
         require(token.transferFrom(_from, address(this), _amount), "transfer from failed");
         require(token.approve(address(lendingPool), _amount), "approve failed");

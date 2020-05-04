@@ -9,7 +9,7 @@ const OwnedUpgradeabilityProxy = artifacts.require('OwnedUpgradeabilityProxy')
 
 const to18Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 8))
 
-contract('TrueRewardBackedToken', function (accounts) {
+contract('TrueRewardWithFloatReserve', function (accounts) {
   const [, owner, holder, holder2, sender, recipient] = accounts
   describe('TrueReward with float admin', function () {
     beforeEach(async function () {
@@ -28,16 +28,22 @@ contract('TrueRewardBackedToken', function (accounts) {
       this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
       await this.financialOpportunityProxy.upgradeTo(this.financialOpportunityImpl.address, { from: owner })
       await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, this.token.address, { from: owner })
-      await this.token.setFinOpAddress(this.financialOpportunity.address, { from: owner })
+      await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
       this.reserve = await this.token.RESERVE.call()
     })
 
     it('convert TUSD reserve into aave float reserve', async function () {
       await this.token.transfer(this.reserve, to18Decimals(200), { from: holder })
-      let reserveZTUSDBalance = await this.token.zTUSDReserveBalance.call()
+      let reserveZTUSDBalance = await this.token.rewardTokenBalance.call(
+        this.reserve,
+        this.financialOpportunity.address,
+      )
       assert.equal(reserveZTUSDBalance, 0)
-      await this.token.convertToZTUSDReserve(to18Decimals(100), { from: owner })
-      reserveZTUSDBalance = await this.token.zTUSDReserveBalance.call()
+      await this.token.opportunityReserveMint(to18Decimals(100), { from: owner })
+      reserveZTUSDBalance = await this.token.rewardTokenBalance.call(
+        this.reserve,
+        this.financialOpportunity.address,
+      )
       assert.equal(reserveZTUSDBalance.toString(), to18Decimals(100).toString())
       const reserveTUSDBalance = await this.token.balanceOf.call(this.reserve)
       assert.equal(reserveTUSDBalance.toString(), to18Decimals(100).toString())
@@ -45,9 +51,12 @@ contract('TrueRewardBackedToken', function (accounts) {
 
     it('convert aave float reserve back to TUSD', async function () {
       await this.token.transfer(this.reserve, to18Decimals(200), { from: holder })
-      await this.token.convertToZTUSDReserve(to18Decimals(100), { from: owner })
-      await this.token.convertToTrueCurrencyReserve(to18Decimals(50), { from: owner })
-      const reserveZTUSDBalance = await this.token.zTUSDReserveBalance.call()
+      await this.token.opportunityReserveMint(to18Decimals(100), { from: owner })
+      await this.token.opportunityReserveRedeem(to18Decimals(50), { from: owner })
+      const reserveZTUSDBalance = await this.token.rewardTokenBalance.call(
+        this.reserve,
+        this.financialOpportunity.address,
+      )
       assert.equal(reserveZTUSDBalance.toString(), to18Decimals(50).toString())
       const reserveTUSDBalance = await this.token.balanceOf.call(this.reserve)
       assert.equal(reserveTUSDBalance.toString(), to18Decimals(150).toString())
@@ -71,10 +80,10 @@ contract('TrueRewardBackedToken', function (accounts) {
       this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
       await this.financialOpportunityProxy.upgradeTo(this.financialOpportunityImpl.address, { from: owner })
       await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, this.token.address, { from: owner })
-      await this.token.setFinOpAddress(this.financialOpportunity.address, { from: owner })
+      await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
       this.reserve = await this.token.RESERVE.call()
       await this.token.transfer(this.reserve, to18Decimals(200), { from: holder })
-      await this.token.convertToZTUSDReserve(to18Decimals(100), { from: owner })
+      await this.token.opportunityReserveMint(to18Decimals(100), { from: owner })
     })
     it('transfer without trueReward', async function () {
       await this.token.transfer(sender, to18Decimals(100), { from: holder })
@@ -82,7 +91,10 @@ contract('TrueRewardBackedToken', function (accounts) {
       const senderBalance = await this.token.balanceOf.call(sender)
       const receipientBalance = await this.token.balanceOf.call(recipient)
       const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve)
-      const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call()
+      const zTUSDReserveBalance = await this.token.rewardTokenBalance.call(
+        this.reserve,
+        this.financialOpportunity.address,
+      )
       assert.equal(senderBalance.toString(), to18Decimals(50).toString())
       assert.equal(receipientBalance.toString(), to18Decimals(50).toString())
       assert.equal(TUSDReserveBalance.toString(), to18Decimals(100).toString())
@@ -96,7 +108,10 @@ contract('TrueRewardBackedToken', function (accounts) {
       const senderBalance = await this.token.balanceOf.call(sender)
       const receipientBalance = await this.token.balanceOf.call(recipient)
       const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve)
-      const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call()
+      const zTUSDReserveBalance = await this.token.rewardTokenBalance.call(
+        this.reserve,
+        this.financialOpportunity.address,
+      )
       assert.equal(senderBalance.toString(), to18Decimals(50).toString())
       assert.equal(receipientBalance.toString(), to18Decimals(50).toString())
       assert.equal(TUSDReserveBalance.toString(), to18Decimals(50).toString())
@@ -110,7 +125,10 @@ contract('TrueRewardBackedToken', function (accounts) {
       const senderBalance = await this.token.balanceOf.call(sender)
       const receipientBalance = await this.token.balanceOf.call(recipient)
       const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve)
-      const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call()
+      const zTUSDReserveBalance = await this.token.rewardTokenBalance.call(
+        this.reserve,
+        this.financialOpportunity.address,
+      )
       assert.equal(senderBalance.toString(), to18Decimals(50).toString())
       assert.equal(receipientBalance.toString(), to18Decimals(50).toString())
       assert.equal(TUSDReserveBalance.toString(), to18Decimals(150).toString())
@@ -125,7 +143,10 @@ contract('TrueRewardBackedToken', function (accounts) {
       const senderBalance = await this.token.balanceOf.call(sender)
       const receipientBalance = await this.token.balanceOf.call(recipient)
       const TUSDReserveBalance = await this.token.balanceOf.call(this.reserve)
-      const zTUSDReserveBalance = await this.token.zTUSDReserveBalance.call()
+      const zTUSDReserveBalance = await this.token.rewardTokenBalance.call(
+        this.reserve,
+        this.financialOpportunity.address,
+      )
       assert.equal(senderBalance.toString(), to18Decimals(50).toString())
       assert.equal(receipientBalance.toString(), to18Decimals(50).toString())
       assert.equal(TUSDReserveBalance.toString(), to18Decimals(100).toString())

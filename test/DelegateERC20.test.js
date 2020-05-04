@@ -6,6 +6,7 @@ import compliantTokenTests from './CompliantToken'
 import depositTokenTests from './DepositToken'
 import redeemTokenTests from './RedeemToken'
 const Registry = artifacts.require('RegistryMock')
+const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
 
 const BN = web3.utils.toBN
 const bytes32 = require('./helpers/bytes32.js')
@@ -16,6 +17,7 @@ contract('DelegateERC20', function ([, owner, oneHundred, anotherAccount, thirdA
     this.totalSupply = BN(100 * 10 ** 18)
     this.original = await CanDelegate.new(oneHundred, this.totalSupply, { from: owner })
     this.delegate = await TrueUSD.new(oneHundred, this.totalSupply, { from: owner })
+    this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
     this.mintableToken = this.delegate
     this.registry = await Registry.new({ from: owner })
     await this.delegate.setRegistry(this.registry.address, { from: owner })
@@ -24,6 +26,7 @@ contract('DelegateERC20', function ([, owner, oneHundred, anotherAccount, thirdA
     await this.registry.subscribe(IS_DEPOSIT_ADDRESS, this.delegate.address, { from: owner })
     await this.original.delegateToNewContract(this.delegate.address, { from: owner })
     await this.delegate.setDelegateFrom(this.original.address)
+    await this.delegate.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
     await this.delegate.setBurnBounds(BN(5 * 10 ** 18), BN(1000).mul(BN(10 ** 18)), { from: owner })
   })
 
