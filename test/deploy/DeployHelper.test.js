@@ -109,7 +109,6 @@ contract.skip('-----Test Deploy & Upgrade Contracts-----', function (accounts) {
       await this.registry.claimOwnership({ from: owner })
     })
     it('Owner has control of deployed contracts', async function () {
-
       this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
 
       // setup controller through proxy
@@ -140,8 +139,7 @@ contract.skip('-----Test Deploy & Upgrade Contracts-----', function (accounts) {
       await this.registry.setAttribute(pauseKey, bytes32('isTUSDMintPausers'), 1, notes, { from: owner })
     })
     describe('Upgrade Helper Setup', async function () {
-
-      before(async function() {
+      before(async function () {
         // deploy upgrade helper
         this.upgradeHelper = await UpgradeHelper.new({ from: owner })
         // transfer proxy ownership to upgrade helper
@@ -160,7 +158,7 @@ contract.skip('-----Test Deploy & Upgrade Contracts-----', function (accounts) {
           this.exponentContract.address,
           this.assurancePool.address,
           this.liquidator.address,
-          { from: owner }
+          { from: owner },
         )
       })
       beforeEach(async function () {
@@ -168,7 +166,7 @@ contract.skip('-----Test Deploy & Upgrade Contracts-----', function (accounts) {
         await this.tusdProxy.transferProxyOwnership(this.upgradeHelper.address, { from: owner })
         await this.assuredOpportunityProxy.transferProxyOwnership(this.upgradeHelper.address, { from: owner })
       })
-      afterEach(async function() {
+      afterEach(async function () {
         // claim ownership
         await this.controllerProxy.claimProxyOwnership({ from: owner })
         await this.tusdProxy.claimProxyOwnership({ from: owner })
@@ -189,8 +187,8 @@ contract.skip('-----Test Deploy & Upgrade Contracts-----', function (accounts) {
         // create new token controller
         this.newTokenController = await TokenController.new({ from: owner })
         this.newTokenController.transferOwnership
-        //this.oldTokenCntroller = await TokenController.at(this.controllerProxy.address)
-        //await this.oldTokenCntroller.transferOwnership(this.upgradeHelper.address, { from: owner} )
+        // this.oldTokenCntroller = await TokenController.at(this.controllerProxy.address)
+        // await this.oldTokenCntroller.transferOwnership(this.upgradeHelper.address, { from: owner} )
         // upgrade
         await this.upgradeHelper.upgradeController(this.newTokenController.address, { from: owner })
         // setup token controller (using proxy)
@@ -203,7 +201,7 @@ contract.skip('-----Test Deploy & Upgrade Contracts-----', function (accounts) {
       it.skip('Upgrade Registry', async function () {
         // create new registry
         this.newRegistry = await Registry.new({ from: owner })
-        this.registry.transferOwnership(this.upgradeHelper.address, { from: owner})
+        this.registry.transferOwnership(this.upgradeHelper.address, { from: owner })
         // upgrade
         await this.upgradeHelper.upgradeRegistry(this.newRegistry.address, { from: owner })
         await this.registry.claimOwnership({ from: owner }) // claim old registry

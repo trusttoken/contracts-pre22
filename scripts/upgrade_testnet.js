@@ -13,14 +13,14 @@
 (async () => {
   const rpcOptions = {
     rinkeby: 'https://rinkeby.infura.io/v3/81447a33c1cd4eb09efb1e8c388fb28e',
-    development: 'http://localhost:7545'
+    development: 'http://localhost:7545',
   }
 
   const config = {
     rpc: process.argv[3] || rpcOptions.development,
     accountPrivateKey: process.argv[2],
     network: 'rinkeby',
-    gas: 40000000
+    gas: 40000000,
   }
 
   const ethers = require('ethers')
@@ -34,24 +34,10 @@
   const deploy = setupDeployer(ethers, wallet)
   const contractAt = getContract(ethers, wallet)
 
-  const ZERO = '0x0000000000000000000000000000000000000000'
-
   const contracts = require('./deployed/rinkeby_deployed.json')
 
-  const upgradeTrueUSD = async () => {
-    // todo
-  }
-
-  const upgradeAssuredOpportunity = async () => {
-    // todo
-  }
-
-  const upgradeTokenController = async () => {
-    // todo
-  }
-
   // deploy and return upgrade helper
-  this.deployAndGetUpgradeHelper = async() => {
+  this.deployAndGetUpgradeHelper = async () => {
     const upgradeHelper = await deploy('UpgradeHelper')
     await upgradeHelper.setup(
       contract.registryAddress,
@@ -62,7 +48,7 @@
       contract.exponentContractAddress,
       contract.assurancePoolAddress,
       contract.liquidatorAddress,
-      { gasLimit: 5000000 }
+      { gasLimit: 5000000 },
     )
     return upgradeHelper
   }
@@ -89,7 +75,7 @@
 
   // call upgrade function
   this.upgradeTrueUSD()
-  console.log("upgrade TUSD");
+  console.log('upgrade TUSD')
 
   // reclaim ownership
   await this.controllerProxy.claimProxyOwnership({ gasLimit: 5000000 })

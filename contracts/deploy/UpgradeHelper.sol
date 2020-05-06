@@ -92,12 +92,9 @@ contract UpgradeHelper {
      */
     function claimProxyOwnership() internal {
         require(initalized, "must be initalized");
-        require(trueUSDProxy.pendingProxyOwner() == address(this), 
-            "not token proxy owner");
-        require(tokenControllerProxy.pendingProxyOwner() == address(this), 
-            "not controller proxy owner");
-        require(assuredOpportunityProxy.pendingProxyOwner() == address(this), 
-            "not assurance proxy owner");
+        require(trueUSDProxy.pendingProxyOwner() == address(this), "not token proxy owner");
+        require(tokenControllerProxy.pendingProxyOwner() == address(this), "not controller proxy owner");
+        require(assuredOpportunityProxy.pendingProxyOwner() == address(this), "not assurance proxy owner");
         tokenControllerProxy.claimProxyOwnership();
         trueUSDProxy.claimProxyOwnership();
         assuredOpportunityProxy.claimProxyOwnership();
@@ -110,12 +107,9 @@ contract UpgradeHelper {
         tokenControllerProxy.transferProxyOwnership(owner);
         trueUSDProxy.transferProxyOwnership(owner);
         assuredOpportunityProxy.transferProxyOwnership(owner);
-        require(trueUSDProxy.pendingProxyOwner() == owner, 
-            "must transfer token proxy to owner");
-        require(tokenControllerProxy.pendingProxyOwner() == owner, 
-            "must transfer controller proxy to owner");
-        require(assuredOpportunityProxy.pendingProxyOwner() == owner, 
-            "must transfer assurance proxy to owner");
+        require(trueUSDProxy.pendingProxyOwner() == owner, "must transfer token proxy to owner");
+        require(tokenControllerProxy.pendingProxyOwner() == owner, "must transfer controller proxy to owner");
+        require(assuredOpportunityProxy.pendingProxyOwner() == owner, "must transfer assurance proxy to owner");
     }
 
     /**
@@ -194,7 +188,7 @@ contract UpgradeHelper {
         address newAssuredOpportunityAddress
     ) external onlyOwner {
         claimProxyOwnership();
-        
+
         // Upgrade to new assurance address
         assuredOpportunityProxy.upgradeTo(newAssuredOpportunityAddress);
         assuredOpportunity = AssuredFinancialOpportunity(address(assuredOpportunityProxy));

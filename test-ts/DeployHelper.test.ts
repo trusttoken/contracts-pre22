@@ -32,28 +32,23 @@ describe('DeployHelper', () => {
   let mockTrustToken: Contract
 
   let registry: Contract
-  let newRegistry: Contract
   let liquidator: Contract
   let fractionalExponents: Contract
 
   let trueUSD: Contract
   let trueUSDImplementation: Contract
-  let newTrueUSDImplementation: Contract
   let trueUSDProxy: Contract
 
   let tokenController: Contract
   let tokenControllerImplementation: Contract
-  let newTokenControllerImplementation: Contract
   let tokenControllerProxy: Contract
 
   let aaveFinancialOpportunity: Contract
   let aaveFinancialOpportunityImplementation: Contract
-  let newAaveFinancialOpportunityImplementation: Contract
   let aaveFinancialOpportunityProxy: Contract
 
   let assuredFinancialOpportunity: Contract
   let assuredFinancialOpportunityImplementation: Contract
-  let newAssuredFinancialOpportunityImplementation: Contract
   let assuredFinancialOpportunityProxy: Contract
 
   let deployHelper: Contract
@@ -114,7 +109,6 @@ describe('DeployHelper', () => {
       mockATokenAddress,
       mockLendingPoolAddress,
     )
-
     await aaveFinancialOpportunityProxy.claimProxyOwnership()
     await assuredFinancialOpportunityProxy.claimProxyOwnership()
     await tokenControllerProxy.claimProxyOwnership()
@@ -272,9 +266,9 @@ describe('DeployHelper', () => {
         aaveFinancialOpportunityProxy.address,
         fractionalExponents.address,
         mockAssurancePoolAddress,
-        liquidator.address
+        liquidator.address,
       )
-      
+
       await aaveFinancialOpportunityProxy.transferProxyOwnership(upgradeHelper.address)
       await assuredFinancialOpportunityProxy.transferProxyOwnership(upgradeHelper.address)
       await tokenControllerProxy.transferProxyOwnership(upgradeHelper.address)
@@ -292,9 +286,9 @@ describe('DeployHelper', () => {
       await liquidator.claimOwnership(upgradeHelper.address)
     })
 
-    it.skip('upgrade TrueUSD', async () => {
-      let newTrueUSDImplementation = await deployContract(deployer, TrueUSD, [], { gasLimit: 5000000 })
-      await upgradeHelper.upgradeTUSD(newTrueUSDImplementation)
+    it('upgrade TrueUSD', async () => {
+      const newTrueUSDImplementation = await deployContract(deployer, TrueUSD, [], { gasLimit: 5000000 })
+      await upgradeHelper.upgradeTrueUSD(newTrueUSDImplementation.address)
     })
 
     it.skip('upgrade Registry', async () => {
@@ -312,6 +306,5 @@ describe('DeployHelper', () => {
     it.skip('upgrade FinancialOpportunity', async () => {
       // todo
     })
-
   })
 })
