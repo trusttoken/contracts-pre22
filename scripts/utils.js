@@ -4,12 +4,12 @@ const setupDeployer = (ethers, wallet) => async (contractName, ...args) => {
     contractJson.abi,
     contractJson.bytecode,
   ).getDeployTransaction(...args)
-  
+
   let transaction
   let receipt
-  
+
   let transactionSuccess = false
-  while(!transactionSuccess) {
+  while (!transactionSuccess) {
     try {
       transaction = await wallet.sendTransaction(deployTransaction, { gas: 4004588 })
       transactionSuccess = true
@@ -20,7 +20,7 @@ const setupDeployer = (ethers, wallet) => async (contractName, ...args) => {
   }
 
   let awaitingSuccess = false
-  while(!awaitingSuccess) {
+  while (!awaitingSuccess) {
     try {
       receipt = await wallet.provider.waitForTransaction(transaction.hash)
       awaitingSuccess = true

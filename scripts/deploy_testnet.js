@@ -23,7 +23,7 @@
   }
 
   const ethers = require('ethers')
-  const { setupDeployer, getContract, validatePrivateKey } = require('./utils')
+  const { setupDeployer, validatePrivateKey } = require('./utils')
 
   validatePrivateKey(config.accountPrivateKey)
 
@@ -62,7 +62,6 @@
 
   const financialOpportunityImplementation = await deploy('ConfigurableFinancialOpportunityMock', aTokenMock.address)
   const financialOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
-  const financialOpportunity = financialOpportunityImplementation.attach(financialOpportunityProxy.address)
   console.log('deployed financialOpportunityProxy at: ', financialOpportunityProxy.address)
 
   // setup uniswap
@@ -134,12 +133,10 @@
   await wallet.provider.waitForTransaction(tx.hash)
   console.log('financialOpportunityProxy proxy transfer ownership')
 
-
-  
   tx = await liquidator.transferOwnership(deployHelper.address)
   await wallet.provider.waitForTransaction(tx.hash)
   console.log('liquidator transfer ownership')
-  
+
   tx = await registry.transferOwnership(deployHelper.address)
   await wallet.provider.waitForTransaction(tx.hash)
   console.log('registry transfer ownership')
@@ -182,7 +179,6 @@
   await wallet.provider.waitForTransaction(tx.hash)
   console.log('financialOpportunityProxy claim ownership')
 
-
   tx = await assuredFinancialOpportunity.claimOwnership({ gasLimit: 5000000 })
   await wallet.provider.waitForTransaction(tx.hash)
   console.log('assuredFinancialOpportunity claim ownership')
@@ -198,7 +194,6 @@
   tx = await liquidator.claimOwnership({ gasLimit: 5000000 })
   await wallet.provider.waitForTransaction(tx.hash)
   console.log('liquidator claim ownership')
-
 
   tx = await tokenController.setMintThresholds(
     ethers.utils.bigNumberify('1000000000000000000000'),
