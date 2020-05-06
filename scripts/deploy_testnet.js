@@ -16,7 +16,7 @@
   }
 
   const config = {
-    rpc: process.argv[3] || rpcOptions.rinkeby,
+    rpc: process.argv[3] || rpcOptions.development,
     accountPrivateKey: process.argv[2],
     network: 'rinkeby',
     gas: 40000000,

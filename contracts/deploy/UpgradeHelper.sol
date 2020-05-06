@@ -149,25 +149,11 @@ contract UpgradeHelper {
     external onlyOwner {
         claimProxyOwnership();
 
-        //tokenController.claimOwnership();
-        //trueUSD.claimOwnership();
-
         // upgrade proxy to new token controller
         tokenControllerProxy.upgradeTo(newControllerAddress);
         tokenController = TokenController(address(tokenControllerProxy));
 
         trueUSD.setOpportunityAddress(address(assuredOpportunityProxy));
-
-        // transfer trueUSD ownership to controller
-        //trueUSD.transferOwnership(address(tokenController));
-        //tokenController.issueClaimOwnership(address(trueUSD));
-        //revert("transfer tusd ownership to controller");
-        // set token and registry for controller
-        //tokenController.setToken(trueUSD);
-        //tokenController.setTokenRegistry(registry);
-        //tokenController.setRegistry(registry);
-        //tokenController.setFinOpAddress(address(assuredOpportunityProxy));
-        revert("setup token controller");
 
         // transfer ownership to owner
         tokenController.transferOwnership(address(owner));

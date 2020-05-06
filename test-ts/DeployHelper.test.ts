@@ -8,6 +8,7 @@ import {
   AaveFinancialOpportunity,
   AssuredFinancialOpportunity,
   DeployHelper,
+  UpgradeHelper,
   FractionalExponents,
   Liquidator,
   OwnedUpgradeabilityProxy,
@@ -31,26 +32,32 @@ describe('DeployHelper', () => {
   let mockTrustToken: Contract
 
   let registry: Contract
+  let newRegistry: Contract
   let liquidator: Contract
   let fractionalExponents: Contract
 
   let trueUSD: Contract
   let trueUSDImplementation: Contract
+  let newTrueUSDImplementation: Contract
   let trueUSDProxy: Contract
 
   let tokenController: Contract
   let tokenControllerImplementation: Contract
+  let newTokenControllerImplementation: Contract
   let tokenControllerProxy: Contract
 
   let aaveFinancialOpportunity: Contract
   let aaveFinancialOpportunityImplementation: Contract
+  let newAaveFinancialOpportunityImplementation: Contract
   let aaveFinancialOpportunityProxy: Contract
 
   let assuredFinancialOpportunity: Contract
   let assuredFinancialOpportunityImplementation: Contract
+  let newAssuredFinancialOpportunityImplementation: Contract
   let assuredFinancialOpportunityProxy: Contract
 
   let deployHelper: Contract
+  let upgradeHelper: Contract
 
   beforeEachWithFixture(async (provider, wallets) => {
     ([deployer] = wallets)
@@ -252,5 +259,59 @@ describe('DeployHelper', () => {
         await tokenController.refillInstantMintPool()
       })
     })
+  })
+  describe('UpgradeHelper', () => {
+    beforeEach(async () => {
+      upgradeHelper = await deployContract(deployer, UpgradeHelper)
+
+      await upgradeHelper.setup(
+        registry.address,
+        trueUSDProxy.address,
+        tokenControllerProxy.address,
+        assuredFinancialOpportunityProxy.address,
+        aaveFinancialOpportunityProxy.address,
+        fractionalExponents.address,
+        mockAssurancePoolAddress,
+        liquidator.address
+      )
+      
+      await aaveFinancialOpportunityProxy.transferProxyOwnership(upgradeHelper.address)
+      await assuredFinancialOpportunityProxy.transferProxyOwnership(upgradeHelper.address)
+      await tokenControllerProxy.transferProxyOwnership(upgradeHelper.address)
+      await trueUSDProxy.transferProxyOwnership(upgradeHelper.address)
+      await registry.transferOwnership(upgradeHelper.address)
+      await liquidator.transferOwnership(upgradeHelper.address)
+    })
+
+    afterEach(async () => {
+      await aaveFinancialOpportunityProxy.claimProxyOwnership(upgradeHelper.address)
+      await assuredFinancialOpportunityProxy.claimProxyOwnership(upgradeHelper.address)
+      await tokenControllerProxy.claimProxyOwnership(upgradeHelper.address)
+      await trueUSDProxy.transferProxyOwnership(upgradeHelper.address)
+      await registry.claimOwnership(upgradeHelper.address)
+      await liquidator.claimOwnership(upgradeHelper.address)
+    })
+
+    it.skip('upgrade TrueUSD', async () => {
+      let newTrueUSDImplementation = await deployContract(deployer, TrueUSD, [], { gasLimit: 5000000 })
+      await upgradeHelper.upgradeTUSD(newTrueUSDImplementation)
+    })
+
+    it.skip('upgrade Registry', async () => {
+      // todo
+    })
+
+    it.skip('upgrade TokenController', async () => {
+      // todo
+    })
+
+    it.skip('upgrade Assurance', async () => {
+      // todo
+    })
+
+    it.skip('upgrade FinancialOpportunity', async () => {
+      // todo
+    })
+
   })
 })
