@@ -53,7 +53,7 @@ describe('TrueRewardBackedToken', () => {
         token.address,
         token.address,
       )
-      await token.setFinOpAddress(financialOpportunity.address)
+      await token.setOpportunityAddress(financialOpportunity.address)
     })
 
     it('holder enables trueReward with 0 balance', async () => {
@@ -65,8 +65,8 @@ describe('TrueRewardBackedToken', () => {
     it('holder enables trueReward with 100 balance', async () => {
       await token.connect(holder).enableTrueReward()
       expect(await token.trueRewardEnabled(holder.address)).to.be.true
-      expect(await token.accountTotalLoanBackedBalance(holder.address)).to.equal(parseEther('100'))
-      expect(await token.finOpSupply()).to.equal(parseEther('100'))
+      expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(parseEther('100'))
+      expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('100'))
       expect(await token.totalSupply()).to.equal(parseEther('1300'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
     })
@@ -77,8 +77,8 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.trueRewardEnabled(holder.address)).to.be.true
       await expect(token.connect(holder).disableTrueReward()).to.emit(financialOpportunity, 'Redemption').withArgs(holder.address, parseEther('100'), parseEther('100'))
       expect(await token.trueRewardEnabled(holder.address)).to.be.false
-      expect(await token.accountTotalLoanBackedBalance(holder.address)).to.equal(0)
-      expect(await token.finOpSupply()).to.equal(0)
+      expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(0)
+      expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(0)
       expect(await token.totalSupply()).to.equal(parseEther('1200'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
     })
@@ -108,7 +108,7 @@ describe('TrueRewardBackedToken', () => {
       financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
       await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
       await financialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, token.address)
-      await token.setFinOpAddress(financialOpportunity.address)
+      await token.setOpportunityAddress(financialOpportunity.address)
     })
 
     it('holder enables truereward', async () => {
@@ -117,17 +117,17 @@ describe('TrueRewardBackedToken', () => {
       expect(await financialOpportunity.tokenValue()).to.equal(parseEther('1'))
       expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal(parseEther('100'))
       expect(await token.balanceOf(financialOpportunity.address)).to.equal(0)
-      expect(await token.accountTotalLoanBackedBalance(holder.address)).to.equal(parseEther('100'))
-      expect(await token.finOpSupply()).to.equal(parseEther('100'))
+      expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(parseEther('100'))
+      expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('100'))
       expect(await token.totalSupply()).to.equal(parseEther('400'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
     })
 
-    it('two holderss enable truereward', async () => {
+    it('two holders enable truereward', async () => {
       await token.connect(holder).enableTrueReward()
       await token.connect(holder2).enableTrueReward()
       expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal(parseEther('200'))
-      expect(await token.finOpSupply()).to.equal(parseEther('200'))
+      expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('200'))
       expect(await token.totalSupply()).to.equal(parseEther('500'))
     })
 
@@ -160,8 +160,8 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
         expect(await token.balanceOf(recipient.address)).to.equal(parseEther('50'))
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal(parseEther('50'))
-        expect(await token.finOpSupply()).to.equal(parseEther('50'))
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal(parseEther('50'))
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('50'))
         expect(await token.totalSupply()).to.equal(parseEther('350'))
         expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal(parseEther('50'))
       })
@@ -173,8 +173,8 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
         expect(await token.balanceOf(recipient.address)).to.equal(parseEther('50'))
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal(parseEther('50'))
-        expect(await token.finOpSupply()).to.equal(parseEther('100'))
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal(parseEther('50'))
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('100'))
         expect(await token.totalSupply()).to.equal(parseEther('400'))
         expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal(parseEther('100'))
       })
@@ -185,8 +185,8 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
         expect(await token.balanceOf(recipient.address)).to.equal(parseEther('50'))
-        expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal(parseEther('50'))
-        expect(await token.finOpSupply()).to.equal(parseEther('50'))
+        expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal(parseEther('50'))
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('50'))
         expect(await token.totalSupply()).to.equal(parseEther('350'))
         expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal(parseEther('50'))
       })
@@ -204,8 +204,8 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address), 'sender').to.equal('49999999999999999999')
         expect(await token.balanceOf(recipient.address), 'recipient').to.equal('49999999999999999998')
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('33333333333333333333') // 50 / 1.5
-        expect(await token.finOpSupply()).to.equal('33333333333333333333')
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('33333333333333333333') // 50 / 1.5
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('33333333333333333333')
         expect(await token.totalSupply()).to.equal('349999999999999999999')
         expect(await sharesToken.balanceOf(financialOpportunity.address), 'shares').to.equal('50000000000000000001')
       })
@@ -217,9 +217,9 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal('49999999999999999999')
         expect(await token.balanceOf(recipient.address)).to.equal('49999999999999999999')
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('33333333333333333333')
-        expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('33333333333333333333')
-        expect(await token.finOpSupply()).to.equal('66666666666666666666')
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('33333333333333333333')
+        expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('33333333333333333333')
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('66666666666666666666')
         expect(await token.totalSupply()).to.equal('399999999999999999999')
         expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('99999999999999999999')
       })
@@ -230,9 +230,9 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
         expect(await token.balanceOf(recipient.address)).to.equal('49999999999999999998')
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('0')
-        expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('33333333333333333332')
-        expect(await token.finOpSupply()).to.equal('33333333333333333332')
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('0')
+        expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('33333333333333333332')
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('33333333333333333332')
         expect(await token.totalSupply()).to.equal('349999999999999999998')
         expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('49999999999999999999')
       })
@@ -251,9 +251,9 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal('56666666666666666665') // (100/1.5)*1.6 - 50
         expect(await token.balanceOf(recipient.address)).to.equal(parseEther('50'))
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('35416666666666666666') // 56666666666666660000/1.6
-        expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('0')
-        expect(await token.finOpSupply()).to.equal('35416666666666666666')
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('35416666666666666666') // 56666666666666660000/1.6
+        expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('0')
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('35416666666666666666')
         expect(await token.totalSupply()).to.equal('356666666666666666665')
         expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('56666666666666666666')
       })
@@ -266,9 +266,9 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal('56666666666666666665')
         expect(await token.balanceOf(recipient.address)).to.equal('50000000000000000000')
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('35416666666666666666')
-        expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('31250000000000000000')
-        expect(await token.finOpSupply()).to.equal('66666666666666666666')
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('35416666666666666666')
+        expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('31250000000000000000')
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('66666666666666666666')
         expect(await token.totalSupply()).to.equal('406666666666666666665')
         expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('106666666666666666666')
       })
@@ -280,9 +280,9 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
         expect(await token.balanceOf(recipient.address)).to.equal(parseEther('50'))
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal(0)
-        expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal(parseEther('31.25')) // 31.25*1.6
-        expect(await token.finOpSupply()).to.equal(parseEther('31.25'))
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal(0)
+        expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal(parseEther('31.25')) // 31.25*1.6
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('31.25'))
         expect(await token.totalSupply()).to.equal(parseEther('350'))
         expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal(parseEther('50'))
       })
@@ -332,7 +332,7 @@ describe('TrueRewardBackedToken', () => {
         token.address,
       )
 
-      await token.setFinOpAddress(financialOpportunity.address)
+      await token.setOpportunityAddress(financialOpportunity.address)
     })
 
     it('holder enables truereward', async () => {
@@ -342,8 +342,8 @@ describe('TrueRewardBackedToken', () => {
       expect(await financialOpportunity.tokenValue()).to.equal(parseEther('1'))
       expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(parseEther('100'))
       expect(await token.balanceOf(financialOpportunity.address)).to.equal(0)
-      expect(await token.accountTotalLoanBackedBalance(holder.address)).to.equal(parseEther('100'))
-      expect(await token.finOpSupply()).to.equal(parseEther('100'))
+      expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(parseEther('100'))
+      expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('100'))
       expect(await token.totalSupply()).to.equal(parseEther('1400'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
     })
@@ -353,7 +353,7 @@ describe('TrueRewardBackedToken', () => {
       await token.connect(holder2).enableTrueReward()
 
       expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(parseEther('200'))
-      expect(await token.finOpSupply()).to.equal(parseEther('200'))
+      expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('200'))
       expect(await token.totalSupply()).to.equal(parseEther('1500'))
     })
 
@@ -386,8 +386,8 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
         expect(await token.balanceOf(recipient.address)).to.equal(parseEther('50'))
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal(parseEther('50'))
-        expect(await token.finOpSupply()).to.equal(parseEther('50'))
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal(parseEther('50'))
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('50'))
         expect(await token.totalSupply()).to.equal(parseEther('1350'))
         expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(parseEther('50'))
       })
@@ -399,8 +399,8 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
         expect(await token.balanceOf(recipient.address)).to.equal(parseEther('50'))
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal(parseEther('50'))
-        expect(await token.finOpSupply()).to.equal(parseEther('100'))
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal(parseEther('50'))
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('100'))
         expect(await token.totalSupply()).to.equal(parseEther('1400'))
         expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(parseEther('100'))
       })
@@ -411,8 +411,8 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
         expect(await token.balanceOf(recipient.address)).to.equal(parseEther('50'))
-        expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal(parseEther('50'))
-        expect(await token.finOpSupply()).to.equal(parseEther('50'))
+        expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal(parseEther('50'))
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('50'))
         expect(await token.totalSupply()).to.equal(parseEther('1350'))
         expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(parseEther('50'))
       })
@@ -430,8 +430,8 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address), 'sender').to.equal('49999999999999999999')
         expect(await token.balanceOf(recipient.address), 'recipient').to.equal('49999999999999999998')
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('33333333333333333333') // 50 / 1.5
-        expect(await token.finOpSupply()).to.equal('33333333333333333333')
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('33333333333333333333') // 50 / 1.5
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('33333333333333333333')
         expect(await token.totalSupply()).to.equal('1349999999999999999999')
         expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address), 'shares').to.equal('50000000000000000001')
       })
@@ -443,9 +443,9 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal('49999999999999999999')
         expect(await token.balanceOf(recipient.address)).to.equal('49999999999999999999')
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('33333333333333333333')
-        expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('33333333333333333333')
-        expect(await token.finOpSupply()).to.equal('66666666666666666666')
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('33333333333333333333')
+        expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('33333333333333333333')
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('66666666666666666666')
         expect(await token.totalSupply()).to.equal('1399999999999999999999')
         expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal('99999999999999999999')
       })
@@ -456,9 +456,9 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
         expect(await token.balanceOf(recipient.address)).to.equal('49999999999999999999')
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('0')
-        expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('33333333333333333333')
-        expect(await token.finOpSupply()).to.equal('33333333333333333333')
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('0')
+        expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('33333333333333333333')
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('33333333333333333333')
         expect(await token.totalSupply()).to.equal('1349999999999999999999')
         expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal('49999999999999999999')
       })
@@ -477,9 +477,9 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal('56666666666666666665') // (100/1.5)*1.6 - 50
         expect(await token.balanceOf(recipient.address)).to.equal(parseEther('50'))
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('35416666666666666666') // 56666666666666660000/1.6
-        expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('0')
-        expect(await token.finOpSupply()).to.equal('35416666666666666666')
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('35416666666666666666') // 56666666666666660000/1.6
+        expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('0')
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('35416666666666666666')
         expect(await token.totalSupply()).to.equal('1356666666666666666665')
         expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal('56666666666666666666')
       })
@@ -492,9 +492,9 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal('56666666666666666665')
         expect(await token.balanceOf(recipient.address)).to.equal('50000000000000000000')
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('35416666666666666666')
-        expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('31250000000000000000')
-        expect(await token.finOpSupply()).to.equal('66666666666666666666')
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('35416666666666666666')
+        expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('31250000000000000000')
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('66666666666666666666')
         expect(await token.totalSupply()).to.equal('1406666666666666666665')
         expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal('106666666666666666666')
       })
@@ -506,9 +506,9 @@ describe('TrueRewardBackedToken', () => {
 
         expect(await token.balanceOf(sender.address)).to.equal(parseEther('50'))
         expect(await token.balanceOf(recipient.address)).to.equal(parseEther('50'))
-        expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal(0)
-        expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal(parseEther('31.25')) // 31.25*1.6
-        expect(await token.finOpSupply()).to.equal(parseEther('31.25'))
+        expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal(0)
+        expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal(parseEther('31.25')) // 31.25*1.6
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('31.25'))
         expect(await token.totalSupply()).to.equal(parseEther('1350'))
         expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(parseEther('50'))
       })
@@ -528,58 +528,120 @@ describe('TrueRewardBackedToken', () => {
           await token.connect(sender).enableTrueReward()
         })
 
-        it('total token supply should remain the same', async () => {
-          expect(await token.totalSupply()).to.equal(parseEther('1340'))
-          await token.connect(sender).transfer(recipient.address, parseEther('40'))
-          expect(await token.totalSupply()).to.equal(parseEther('1340'))
+        describe('tokenValue = 1', () => {
+          it('total token supply should remain the same', async () => {
+            expect(await token.totalSupply()).to.equal(parseEther('1340'))
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.totalSupply()).to.equal(parseEther('1340'))
+          })
+
+          it('token reserve should decrease', async () => {
+            expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('60'))
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('20'))
+          })
+
+          it('zToken reserve should increase', async () => {
+            expect(await token.rewardTokenBalance(reserveAddress, financialOpportunity.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.rewardTokenBalance(reserveAddress, financialOpportunity.address)).to.equal(parseEther('40'))
+          })
+
+          it('token balance of the sender should decrease', async () => {
+            expect(await token.balanceOf(sender.address)).to.equal(parseEther('40'))
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.balanceOf(sender.address)).to.equal('0')
+          })
+
+          it('token balance of the recipient should increase', async () => {
+            expect(await token.balanceOf(recipient.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.balanceOf(recipient.address)).to.equal(parseEther('40'))
+          })
+
+          it('loan backed balance of the sender should decrease', async () => {
+            expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal(parseEther('40'))
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('0')
+          })
+
+          it('loan backed balance of the recipient should remain the same', async () => {
+            expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('0')
+          })
+
+          it('total aave supply should remain the same', async () => {
+            expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('40'))
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('40'))
+          })
+
+          it('balance of the shares token should remain the same', async () => {
+            expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+          })
         })
 
-        it('token reserve should decrease', async () => {
-          expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('60'))
-          await token.connect(sender).transfer(recipient.address, parseEther('40'))
-          expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('20'))
-        })
+        describe('tokenValue != 1', () => {
+          beforeEach(async () => {
+            await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+          })
 
-        it('zToken reserve should increase', async () => {
-          expect(await token.zTUSDReserveBalance()).to.equal('0')
-          await token.connect(sender).transfer(recipient.address, parseEther('40'))
-          expect(await token.zTUSDReserveBalance()).to.equal(parseEther('40'))
-        })
+          it('total token supply should remain the same', async () => {
+            expect(await token.totalSupply()).to.equal(parseEther('1360'))
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.totalSupply()).to.equal(parseEther('1360'))
+          })
 
-        it('token balance of the sender should decrease', async () => {
-          expect(await token.balanceOf(sender.address)).to.equal(parseEther('40'))
-          await token.connect(sender).transfer(recipient.address, parseEther('40'))
-          expect(await token.balanceOf(sender.address)).to.equal('0')
-        })
+          it('token reserve should decrease', async () => {
+            expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('60'))
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('20'))
+          })
 
-        it('token balance of the recipient should increase', async () => {
-          expect(await token.balanceOf(recipient.address)).to.equal('0')
-          await token.connect(sender).transfer(recipient.address, parseEther('40'))
-          expect(await token.balanceOf(recipient.address)).to.equal(parseEther('40'))
-        })
+          it('zToken reserve should increase', async () => {
+            expect(await token.rewardTokenBalance(reserveAddress, financialOpportunity.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('30'))
+            expect(await token.rewardTokenBalance(reserveAddress, financialOpportunity.address)).to.equal(parseEther('20'))
+          })
 
-        it('loan backed balance of the sender should decrease', async () => {
-          expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal(parseEther('40'))
-          await token.connect(sender).transfer(recipient.address, parseEther('40'))
-          expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('0')
-        })
+          it('token balance of the sender should decrease', async () => {
+            expect(await token.balanceOf(sender.address)).to.equal(parseEther('60'))
+            await token.connect(sender).transfer(recipient.address, parseEther('60'))
+            expect(await token.balanceOf(sender.address)).to.equal('0')
+          })
 
-        it('loan backed balance of the recipient should remain the same', async () => {
-          expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('0')
-          await token.connect(sender).transfer(recipient.address, parseEther('40'))
-          expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('0')
-        })
+          it('token balance of the recipient should increase', async () => {
+            expect(await token.balanceOf(recipient.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.balanceOf(recipient.address)).to.equal(parseEther('40'))
+          })
 
-        it('total aave supply should remain the same', async () => {
-          expect(await token.finOpSupply()).to.equal(parseEther('40'))
-          await token.connect(sender).transfer(recipient.address, parseEther('40'))
-          expect(await token.finOpSupply()).to.equal(parseEther('40'))
-        })
+          it('loan backed balance of the sender should decrease', async () => {
+            expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal(parseEther('40'))
+            await token.connect(sender).transfer(recipient.address, parseEther('60'))
+            expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('0')
+          })
 
-        it('balance of the shares token should remain the same', async () => {
-          expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
-          await token.connect(sender).transfer(recipient.address, parseEther('40'))
-          expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+          it('loan backed balance of the recipient should remain the same', async () => {
+            expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('0')
+          })
+
+          it('total aave supply should remain the same', async () => {
+            expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('40'))
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('40'))
+          })
+
+          it('balance of the shares token should remain the same', async () => {
+            expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('40'))
+            expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+          })
         })
       })
 
@@ -591,58 +653,120 @@ describe('TrueRewardBackedToken', () => {
           await token.connect(recipient).transfer(sender.address, parseEther('40'))
         })
 
-        it('total token supply should remain the same', async () => {
-          expect(await token.totalSupply()).to.equal(parseEther('1340'))
-          await token.connect(sender).transfer(recipient.address, parseEther('20'))
-          expect(await token.totalSupply()).to.equal(parseEther('1340'))
+        describe('tokenValue = 1', () => {
+          it('total token supply should remain the same', async () => {
+            expect(await token.totalSupply()).to.equal(parseEther('1340'))
+            await expect(token.connect(sender).transfer(recipient.address, parseEther('20'))).to.emit(token, 'SwapTokenForReward')
+            expect(await token.totalSupply()).to.equal(parseEther('1340'))
+          })
+
+          it('token reserve should increase', async () => {
+            expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('20'))
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('40'))
+          })
+
+          it('zToken reserve should decrease', async () => {
+            expect(await token.rewardTokenBalance(reserveAddress, financialOpportunity.address)).to.equal(parseEther('40'))
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await token.rewardTokenBalance(reserveAddress, financialOpportunity.address)).to.equal(parseEther('20'))
+          })
+
+          it('token balance of the sender should decrease', async () => {
+            expect(await token.balanceOf(sender.address)).to.equal(parseEther('40'))
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await token.balanceOf(sender.address)).to.equal(parseEther('20'))
+          })
+
+          it('token balance of the recipient should increase', async () => {
+            expect(await token.balanceOf(recipient.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await token.balanceOf(recipient.address)).to.equal(parseEther('20'))
+          })
+
+          it('loan backed balance of the sender should remain the same', async () => {
+            expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('0')
+          })
+
+          it('loan backed balance of the recipient should increase', async () => {
+            expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal(parseEther('20'))
+          })
+
+          it('total aave supply should remain the same', async () => {
+            expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('40'))
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('40'))
+          })
+
+          it('balance of the shares token should remain the same', async () => {
+            expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+          })
         })
 
-        it('token reserve should increase', async () => {
-          expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('20'))
-          await token.connect(sender).transfer(recipient.address, parseEther('20'))
-          expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('40'))
-        })
+        describe('tokenValue != 1', () => {
+          beforeEach(async () => {
+            await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+          })
 
-        it('zToken reserve should decrease', async () => {
-          expect(await token.zTUSDReserveBalance()).to.equal(parseEther('40'))
-          await token.connect(sender).transfer(recipient.address, parseEther('20'))
-          expect(await token.zTUSDReserveBalance()).to.equal(parseEther('20'))
-        })
+          it('total token supply should remain the same', async () => {
+            expect(await token.totalSupply()).to.equal(parseEther('1360'))
+            await expect(token.connect(sender).transfer(recipient.address, parseEther('20'))).to.emit(token, 'SwapTokenForReward')
+            expect(await token.totalSupply()).to.equal(parseEther('1360'))
+          })
 
-        it('token balance of the sender should decrease', async () => {
-          expect(await token.balanceOf(sender.address)).to.equal(parseEther('40'))
-          await token.connect(sender).transfer(recipient.address, parseEther('20'))
-          expect(await token.balanceOf(sender.address)).to.equal(parseEther('20'))
-        })
+          it('token reserve should increase', async () => {
+            expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('20'))
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await token.balanceOf(reserveAddress)).to.equal(parseEther('40'))
+          })
 
-        it('token balance of the recipient should increase', async () => {
-          expect(await token.balanceOf(recipient.address)).to.equal('0')
-          await token.connect(sender).transfer(recipient.address, parseEther('20'))
-          expect(await token.balanceOf(recipient.address)).to.equal(parseEther('20'))
-        })
+          it('zToken reserve should decrease', async () => {
+            expect(await token.rewardTokenBalance(reserveAddress, financialOpportunity.address)).to.equal(parseEther('40'))
+            await token.connect(sender).transfer(recipient.address, parseEther('30'))
+            expect(await token.rewardTokenBalance(reserveAddress, financialOpportunity.address)).to.equal(parseEther('20'))
+          })
 
-        it('loan backed balance of the sender should remain the same', async () => {
-          expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('0')
-          await token.connect(sender).transfer(recipient.address, parseEther('20'))
-          expect(await token.accountTotalLoanBackedBalance(sender.address)).to.equal('0')
-        })
+          it('token balance of the sender should decrease', async () => {
+            expect(await token.balanceOf(sender.address)).to.equal(parseEther('40'))
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await token.balanceOf(sender.address)).to.equal(parseEther('20'))
+          })
 
-        it('loan backed balance of the recipient should increase', async () => {
-          expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal('0')
-          await token.connect(sender).transfer(recipient.address, parseEther('20'))
-          expect(await token.accountTotalLoanBackedBalance(recipient.address)).to.equal(parseEther('20'))
-        })
+          it('token balance of the recipient should increase', async () => {
+            expect(await token.balanceOf(recipient.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await token.balanceOf(recipient.address)).to.equal('19999999999999999999')
+          })
 
-        it('total aave supply should remain the same', async () => {
-          expect(await token.finOpSupply()).to.equal(parseEther('40'))
-          await token.connect(sender).transfer(recipient.address, parseEther('20'))
-          expect(await token.finOpSupply()).to.equal(parseEther('40'))
-        })
+          it('loan backed balance of the sender should remain the same', async () => {
+            expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('0')
+          })
 
-        it('balance of the shares token should remain the same', async () => {
-          expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
-          await token.connect(sender).transfer(recipient.address, parseEther('20'))
-          expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+          it('loan backed balance of the recipient should increase', async () => {
+            expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('30'))
+            expect(await token.rewardTokenBalance(recipient.address, financialOpportunity.address)).to.equal(parseEther('20'))
+          })
+
+          it('total aave supply should remain the same', async () => {
+            expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('40'))
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('40'))
+          })
+
+          it('balance of the shares token should remain the same', async () => {
+            expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+            await token.connect(sender).transfer(recipient.address, parseEther('20'))
+            expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+          })
         })
       })
     })

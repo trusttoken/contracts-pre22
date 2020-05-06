@@ -8,6 +8,7 @@ const Registry = artifacts.require('RegistryMock')
 const TrueUSDMock = artifacts.require('TrueUSDMock')
 const ProvisionalRegistry = artifacts.require('ProvisionalRegistryMock')
 const ProvisionalTrueUSD = artifacts.require('ProvisionalTrueUSD')
+const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
 
 const BN = web3.utils.toBN
 const bytes32 = require('./helpers/bytes32.js')
@@ -45,6 +46,8 @@ contract('ProvisionalTrueUSD', function (accounts) {
     await this.preMigrationToken.setMinimumGasPriceForFutureRefunds(1000, { from: anotherAccount })
     await this.preMigrationToken.sponsorGas()
     this.token = this.preMigrationToken
+    this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
+    await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
   })
 
   describe('before upgrade', function () {

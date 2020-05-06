@@ -133,7 +133,7 @@ describe('DeployHelper', () => {
     })
 
     it('should have finOpAddress properly set', async () => {
-      expect(await trueUSD.finOpAddress_()).to.equal(assuredFinancialOpportunity.address)
+      expect(await trueUSD.opportunity_()).to.equal(assuredFinancialOpportunity.address)
     })
 
     it('should have registry properly set', async () => {
