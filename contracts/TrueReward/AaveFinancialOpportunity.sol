@@ -7,12 +7,13 @@ import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import "./FinancialOpportunity.sol";
 import "./ILendingPoolCore.sol";
 import "../TrueCurrencies/modularERC20/InstantiatableOwnable.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title AaveFinancialOpportunity
  * @dev Financial Opportunity to earn TrueUSD with Aave.
  * stakeToken = aTUSD on Aave
- * We assume perTokenValue always increases
+ * We assume tokenValue always increases
  */
 contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable {
     using SafeMath for uint256;
@@ -54,7 +55,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
      * Exchange rate between TUSD and zTUSD
      * @return TUSD / zTUSD price ratio (18 decimals of percision)
      */
-    function perTokenValue() public view returns(uint256) {
+    function tokenValue() public view returns(uint256) {
         ILendingPoolCore core = ILendingPoolCore(lendingPool.core());
         return core.getReserveNormalizedIncome(address(token)).div(10**(27-18));
     }
@@ -63,52 +64,53 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
      * Returns full balance of opportunity
      * @return TUSD balance of opportunity
     **/
-    function getBalance() public view returns(uint256) {
+    function totalSupply() public view returns(uint256) {
         return stakeToken.balanceOf(address(this));
     }
 
-    /** @dev Return value of stake in TUSD */
+    /** @dev Return value of stake in yTUSD */
     function getValueInStake(uint256 _amount) public view returns(uint256) {
-        return _amount.mul(10**18).div(perTokenValue());
+        return _amount.mul(10**18).div(tokenValue());
     }
 
-     /**
-     * @dev deposits TrueUSD into AAVE using transferFrom
-     * @param _from account to transferFrom
-     * @param _amount amount in TUSD to deposit to AAVE
-     * @return zTUSD minted from this deposit
-     */
+    /**
+    * @dev deposits TrueUSD into AAVE using transferFrom
+    * @param _from account to transferFrom
+    * @param _amount amount in TUSD to deposit to AAVE
+    * @return yTUSD minted from this deposit
+    */
     function deposit(address _from, uint256 _amount) external onlyOwner returns(uint256) {
         require(token.transferFrom(_from, address(this), _amount), "transfer from failed");
         require(token.approve(address(lendingPool), _amount), "approve failed");
 
-        uint256 balanceBefore = getBalance();
+        uint256 balanceBefore = totalSupply();
         lendingPool.deposit(address(token), _amount, 0);
-        uint256 balanceAfter = getBalance();
+        uint256 balanceAfter = totalSupply();
 
         return getValueInStake(balanceAfter.sub(balanceBefore));
     }
 
     /** @dev Helper to withdraw TUSD from Aave */
-    function _withdraw(address _to, uint256 _amount) internal returns(uint256) {
+    function _redeem(address _to, uint256 ytusd) internal returns(uint256) {
+        uint tusd = ytusd.mul(tokenValue()).div(10**18);
         uint256 balanceBefore = token.balanceOf(address(this));
-        stakeToken.redeem(_amount);
+        stakeToken.redeem(tusd);
         uint256 balanceAfter = token.balanceOf(address(this));
         uint256 fundsWithdrawn = balanceAfter.sub(balanceBefore);
 
         require(token.transfer(_to, fundsWithdrawn), "transfer failed");
 
-        return getValueInStake(fundsWithdrawn);
+        return fundsWithdrawn;
     }
 
     /**
      * @dev Withdraw from Aave to _to account
      * @param _to account withdarw TUSD to
      * @param _amount amount in TUSD to withdraw from AAVE
-     * @return zTUSD amount deducted
+     * @return TUSD amount redeemed
      */
-    function withdrawTo(address _to, uint256 _amount) external onlyOwner returns(uint256) {
-        return _withdraw(_to, _amount);
+    function redeem(address _to, uint256 _amount) external onlyOwner returns(uint256) {
+        return _redeem(_to, _amount);
     }
 
     /**
@@ -116,8 +118,8 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
      * @param _to account withdarw TUSD to
      * @return zTUSD amount deducted
      */
-    function withdrawAll(address _to) external onlyOwner returns(uint256) {
-        return _withdraw(_to, getBalance());
+    function redeemAll(address _to) external onlyOwner returns(uint256) {
+        return _redeem(_to, totalSupply());
     }
 
     function() external payable {

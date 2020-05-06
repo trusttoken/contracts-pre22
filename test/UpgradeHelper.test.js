@@ -2,6 +2,7 @@ const Controller = artifacts.require('PreMigrationTokenController')
 const CanDelegate = artifacts.require('CanDelegateMock')
 const TrueUSD = artifacts.require('PreMigrationTrueUSDMock')
 const UpgradeHelperMock = artifacts.require('UpgradeHelperMock')
+const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
 
 const BN = web3.utils.toBN
 
@@ -13,6 +14,10 @@ contract('Upgrade Helper', function (accounts) {
       this.original = await CanDelegate.new(oneHundred, BN(10 * 10 ** 18), { from: owner })
       this.controller = await Controller.new({ from: owner })
       this.token = await TrueUSD.new(owner, 0, { from: owner })
+
+      this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
+      await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
+
       await this.controller.initialize({ from: owner })
       this.helper = await UpgradeHelperMock.new(this.original.address, this.token.address, this.controller.address, { from: owner })
       await this.controller.transferOwnership(this.helper.address, { from: owner })
@@ -47,6 +52,7 @@ contract('Upgrade Helper', function (accounts) {
       const totalSupply = await this.token.totalSupply.call()
       assert(totalSupply.eq(BN(10 * 10 ** 18)))
     })
+
     it('token has correct balance and allowance sheet', async function () {
       const balanceSheet = await this.token.balances.call()
       assert.equal(balanceSheet, await this.original.balances.call())

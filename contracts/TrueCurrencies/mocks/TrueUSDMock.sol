@@ -32,6 +32,4 @@ contract TrueUSDMock is TrueUSD {
         require(msg.sender == delegateFrom);
         _;
     }
-    address aaveAddress;
-
 }

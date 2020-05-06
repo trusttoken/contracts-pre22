@@ -58,7 +58,7 @@ contract('UpgradeHelper', function ([owner]) {
     })
 
     it('properly assigns aaveInterface address', async function () {
-      assert.equal(await this.tusd.finOpAddress(), this.assuredFinancialOpportunityProxy.address)
+      assert.equal(await this.tusd.opportunity(), this.assuredFinancialOpportunityProxy.address)
     })
   })
 

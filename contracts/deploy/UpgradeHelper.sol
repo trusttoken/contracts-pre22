@@ -156,8 +156,7 @@ contract UpgradeHelper {
         tokenControllerProxy.upgradeTo(newControllerAddress);
         tokenController = TokenController(address(tokenControllerProxy));
 
-        // initialize contracts for ownership
-        //tokenController.initialize();
+        trueUSD.setOpportunityAddress(address(assuredOpportunityProxy));
 
         // transfer trueUSD ownership to controller
         //trueUSD.transferOwnership(address(tokenController));
