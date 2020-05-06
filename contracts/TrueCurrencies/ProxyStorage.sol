@@ -5,8 +5,8 @@ import "./modularERC20/AllowanceSheet.sol";
 import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
 
 /*
-Defines the storage layout of the token implementaiton contract. Any newly declared
-state variables in future upgrades should be appened to the bottom. Never remove state variables
+Defines the storage layout of the token implementation contract. Any newly declared
+state variables in future upgrades should be appended to the bottom. Never remove state variables
 from this list
  */
 contract ProxyStorage {

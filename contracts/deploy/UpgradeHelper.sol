@@ -179,29 +179,12 @@ contract UpgradeHelper {
      * @dev Upgrade AssuredFinancialOpportunity contract
      */
     function upgradeAssurance(
-        address newAssuredOpportunityAddress
+        address payable newAssuredOpportunityAddress
     ) external onlyOwner {
         claimProxyOwnership();
 
-        // Upgrade to new assurance address
         assuredOpportunityProxy.upgradeTo(newAssuredOpportunityAddress);
-        assuredOpportunity = AssuredFinancialOpportunity(address(assuredOpportunityProxy));
 
-        // assurancePool is set up during constructor
-        liquidator.claimOwnership();
-        liquidator.setPool(address(assurancePool));
-
-        assuredOpportunity.configure(
-            address(financialOpportunity),
-            address(assurancePool),
-            address(liquidator),
-            address(exponentContract),
-            address(trueUSD),
-            address(trueUSD)
-        );
-
-        // Transfer proxy to owner
-        liquidator.transferOwnership(owner);
         transferProxiesToOwner();
     }
 
