@@ -131,7 +131,7 @@ contract TestnetDeployHelper {
         tokenController.setToken(trueUSD);
         tokenController.setTokenRegistry(registry);
         tokenController.setRegistry(registry);
-        tokenController.setFinOpAddress(address(assuredOpportunityProxy));
+        tokenController.setOpportunityAddress(address(assuredOpportunityProxy));
 
         // transfer ownership to owner
         tokenController.transferOwnership(owner);

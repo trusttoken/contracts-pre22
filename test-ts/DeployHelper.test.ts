@@ -133,7 +133,7 @@ describe('DeployHelper', () => {
     })
 
     it('should have finOpAddress properly set', async () => {
-      expect(await trueUSD.finOpAddress_()).to.equal(assuredFinancialOpportunity.address)
+      expect(await trueUSD.opportunity_()).to.equal(assuredFinancialOpportunity.address)
     })
 
     it('should have registry properly set', async () => {
@@ -207,26 +207,6 @@ describe('DeployHelper', () => {
 
     it('implementation should be owned by deplyer', async () => {
       expect(await assuredFinancialOpportunity.owner()).to.equal(deployer.address)
-    })
-
-    it('should have opportunity properly set', async () => {
-      expect(await assuredFinancialOpportunity.opportunity()).to.equal(aaveFinancialOpportunity.address)
-    })
-
-    it('should have assurance properly set', async () => {
-      expect(await assuredFinancialOpportunity.assurance()).to.equal(mockAssurancePoolAddress)
-    })
-
-    it('should have liquidator properly set', async () => {
-      expect(await assuredFinancialOpportunity.liquidator()).to.equal(liquidator.address)
-    })
-
-    it('should have exponents properly set', async () => {
-      expect(await assuredFinancialOpportunity.exponents()).to.equal(fractionalExponents.address)
-    })
-
-    it('should have token properly set', async () => {
-      expect(await assuredFinancialOpportunity.token()).to.equal(trueUSD.address)
     })
   })
 

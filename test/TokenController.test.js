@@ -9,6 +9,7 @@ const FastPauseTrueUSD = artifacts.require('FastPauseTrueUSD')
 const Proxy = artifacts.require('OwnedUpgradeabilityProxy')
 const Claimable = artifacts.require('Claimable')
 const InstantiatableOwnable = artifacts.require('InstantiatableOwnable')
+const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
 
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN
@@ -29,6 +30,10 @@ contract('TokenController', function (accounts) {
       this.token = await TrueUSD.at(this.tokenProxy.address)
       await this.tokenProxy.upgradeTo(this.tusdImplementation.address, { from: owner })
       await this.token.initialize({ from: owner })
+
+      this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
+      await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
+
       this.controller = await TokenController.new({ from: owner })
       await this.token.transferOwnership(this.controller.address, { from: owner })
       await this.controller.initialize({ from: owner })
