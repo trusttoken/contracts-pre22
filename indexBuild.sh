@@ -31,16 +31,3 @@ do
 done
 
 echo "}" >> $outputDir/index.js
-
-touch $outputDir/types/index.d.ts
-> $outputDir/types/index.d.ts
-
-for file in $outputDir/types/*
-do
-    regex='\/([a-zA-Z0-9_]+)\.'
-    [[ $file =~ $regex ]]
-    name=${BASH_REMATCH[1]}
-    if [ $name != "index" ]
-	    then echo "export { $name } from '$name'" >> $outputDir/types/index.d.ts
-    fi
-done

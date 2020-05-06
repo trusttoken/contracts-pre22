@@ -10,7 +10,7 @@ import {
   OwnedUpgradeabilityProxy,
   RegistryMock,
 } from '../build'
-import { AaveFinancialOpportunityFactory } from '../build/types'
+import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
 import { beforeEachWithFixture } from './utils'
 
 use(solidity)
