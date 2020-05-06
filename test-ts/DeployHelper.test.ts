@@ -277,18 +277,15 @@ describe('DeployHelper', () => {
       await liquidator.transferOwnership(upgradeHelper.address)
     })
 
-    afterEach(async () => {
-      await aaveFinancialOpportunityProxy.claimProxyOwnership(upgradeHelper.address)
-      await assuredFinancialOpportunityProxy.claimProxyOwnership(upgradeHelper.address)
-      await tokenControllerProxy.claimProxyOwnership(upgradeHelper.address)
-      await trueUSDProxy.transferProxyOwnership(upgradeHelper.address)
-      await registry.claimOwnership(upgradeHelper.address)
-      await liquidator.claimOwnership(upgradeHelper.address)
-    })
-
     it('upgrade TrueUSD', async () => {
       const newTrueUSDImplementation = await deployContract(deployer, TrueUSD, [], { gasLimit: 5000000 })
       await upgradeHelper.upgradeTrueUSD(newTrueUSDImplementation.address)
+      await trueUSDProxy.claimProxyOwnership()
+      expect(await trueUSDProxy.proxyOwner()).to.eq(deployer.address, 'proxy owner')
+      expect(await tokenController.token()).to.eq(trueUSDProxy.address, 'token')
+      expect(await tokenController.registry()).to.eq(registry.address, 'registry')
+      expect(await tokenControllerProxy.pendingProxyOwner()).to.eq(deployer.address, 'pending controller proxy owner')
+      expect(await tokenController.owner()).to.eq(deployer.address, 'pending controller owner')
     })
 
     it.skip('upgrade Registry', async () => {

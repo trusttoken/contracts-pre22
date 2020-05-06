@@ -121,14 +121,9 @@ contract UpgradeHelper {
     ) external onlyOwner {
         // claim ownership
         claimProxyOwnership();
-        tokenController.claimOwnership();
 
         // upgrade TrueUSD and use proxy as implementation
         trueUSDProxy.upgradeTo(newTrueUSDAddress);
-
-        // point controller to new token
-        tokenController.setToken(trueUSD);
-        tokenController.setTokenRegistry(registry);
 
         // transfer ownership to owner
         tokenController.transferOwnership(address(owner));
@@ -238,8 +233,8 @@ contract UpgradeHelper {
         address assurancePoolAddress,
         address liquidatorAddress
     ) internal {
-        assuredOpportunityProxy = OwnedUpgradeabilityProxy(assuredOpportunityProxyAddress);
-        assuredOpportunity = AssuredFinancialOpportunity(assuredOpportunityProxyAddress);
+            assuredOpportunityProxy = OwnedUpgradeabilityProxy(assuredOpportunityProxyAddress);
+            assuredOpportunity = AssuredFinancialOpportunity(assuredOpportunityProxyAddress);
         financialOpportunity = FinancialOpportunity(financialOpportunityAddress);
         exponentContract = IExponentContract(exponentContractAddress);
         assurancePool = StakedToken(assurancePoolAddress);
