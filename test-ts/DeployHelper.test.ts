@@ -1,22 +1,31 @@
 import { expect, use } from 'chai'
-import { Contract, Wallet } from 'ethers'
+import { Wallet } from 'ethers'
 import { parseEther } from 'ethers/utils'
-import { deployContract, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 import { beforeEachWithFixture } from './utils'
 import bytes32 from '../test/helpers/bytes32'
-import {
-  AaveFinancialOpportunity,
-  AssuredFinancialOpportunity,
-  DeployHelper,
-  UpgradeHelper,
-  FractionalExponents,
-  Liquidator,
-  OwnedUpgradeabilityProxy,
-  ProvisionalRegistryImplementation,
-  TokenController,
-  MockTrustToken,
-  TrueUSD,
-} from '../build'
+import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
+import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
+import { DeployHelperFactory } from '../build/types/DeployHelperFactory'
+import { UpgradeHelperFactory } from '../build/types/UpgradeHelperFactory'
+import { FractionalExponentsFactory } from '../build/types/FractionalExponentsFactory'
+import { LiquidatorFactory } from '../build/types/LiquidatorFactory'
+import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
+import { ProvisionalRegistryImplementationFactory } from '../build/types/ProvisionalRegistryImplementationFactory'
+import { TokenControllerFactory } from '../build/types/TokenControllerFactory'
+import { MockTrustTokenFactory } from '../build/types/MockTrustTokenFactory'
+import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
+import { UpgradeHelper } from '../build/types/UpgradeHelper'
+import { DeployHelper } from '../build/types/DeployHelper'
+import { OwnedUpgradeabilityProxy } from '../build/types/OwnedUpgradeabilityProxy'
+import { AssuredFinancialOpportunity } from '../build/types/AssuredFinancialOpportunity'
+import { AaveFinancialOpportunity } from '../build/types/AaveFinancialOpportunity'
+import { TokenController } from '../build/types/TokenController'
+import { TrueUsd } from '../build/types/TrueUsd'
+import { FractionalExponents } from '../build/types/FractionalExponents'
+import { Liquidator } from '../build/types/Liquidator'
+import { Registry } from '../build/types/Registry'
+import { MockTrustToken } from '../build/types/MockTrustToken'
 
 use(solidity)
 
@@ -29,61 +38,61 @@ describe('DeployHelper', () => {
   const mockATokenAddress = Wallet.createRandom().address
   const mockLendingPoolAddress = Wallet.createRandom().address
 
-  let mockTrustToken: Contract
+  let mockTrustToken: MockTrustToken
 
-  let registry: Contract
-  let liquidator: Contract
-  let fractionalExponents: Contract
+  let registry: Registry
+  let liquidator: Liquidator
+  let fractionalExponents: FractionalExponents
 
-  let trueUSD: Contract
-  let trueUSDImplementation: Contract
-  let trueUSDProxy: Contract
+  let trueUSD: TrueUsd
+  let trueUSDImplementation: TrueUsd
+  let trueUSDProxy: OwnedUpgradeabilityProxy
 
-  let tokenController: Contract
-  let tokenControllerImplementation: Contract
-  let tokenControllerProxy: Contract
+  let tokenController: TokenController
+  let tokenControllerImplementation: TokenController
+  let tokenControllerProxy: OwnedUpgradeabilityProxy
 
-  let aaveFinancialOpportunity: Contract
-  let aaveFinancialOpportunityImplementation: Contract
-  let aaveFinancialOpportunityProxy: Contract
+  let aaveFinancialOpportunity: AaveFinancialOpportunity
+  let aaveFinancialOpportunityImplementation: AaveFinancialOpportunity
+  let aaveFinancialOpportunityProxy: OwnedUpgradeabilityProxy
 
-  let assuredFinancialOpportunity: Contract
-  let assuredFinancialOpportunityImplementation: Contract
-  let assuredFinancialOpportunityProxy: Contract
+  let assuredFinancialOpportunity: AssuredFinancialOpportunity
+  let assuredFinancialOpportunityImplementation: AssuredFinancialOpportunity
+  let assuredFinancialOpportunityProxy: OwnedUpgradeabilityProxy
 
-  let deployHelper: Contract
-  let upgradeHelper: Contract
+  let deployHelper: DeployHelper
+  let upgradeHelper: UpgradeHelper
 
   beforeEachWithFixture(async (provider, wallets) => {
     ([deployer] = wallets)
 
-    aaveFinancialOpportunityProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
-    assuredFinancialOpportunityProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
-    tokenControllerProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
-    trueUSDProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
+    aaveFinancialOpportunityProxy = await new OwnedUpgradeabilityProxyFactory(deployer).deploy()
+    assuredFinancialOpportunityProxy = await new OwnedUpgradeabilityProxyFactory(deployer).deploy()
+    tokenControllerProxy = await new OwnedUpgradeabilityProxyFactory(deployer).deploy()
+    trueUSDProxy = await new OwnedUpgradeabilityProxyFactory(deployer).deploy()
 
-    aaveFinancialOpportunityImplementation = await deployContract(deployer, AaveFinancialOpportunity)
-    assuredFinancialOpportunityImplementation = await deployContract(deployer, AssuredFinancialOpportunity)
-    tokenControllerImplementation = await deployContract(deployer, TokenController)
-    trueUSDImplementation = await deployContract(deployer, TrueUSD, [], { gasLimit: 5000000 })
+    aaveFinancialOpportunityImplementation = await new AaveFinancialOpportunityFactory(deployer).deploy()
+    assuredFinancialOpportunityImplementation = await new AssuredFinancialOpportunityFactory(deployer).deploy()
+    tokenControllerImplementation = await new TokenControllerFactory(deployer).deploy()
+    trueUSDImplementation = await new TrueUsdFactory(deployer).deploy({ gasLimit: 5000000 })
 
     trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
     tokenController = tokenControllerImplementation.attach(tokenControllerProxy.address)
     aaveFinancialOpportunity = aaveFinancialOpportunityImplementation.attach(aaveFinancialOpportunityProxy.address)
     assuredFinancialOpportunity = assuredFinancialOpportunityImplementation.attach(assuredFinancialOpportunityProxy.address)
 
-    fractionalExponents = await deployContract(deployer, FractionalExponents)
-    registry = await deployContract(deployer, ProvisionalRegistryImplementation)
-    mockTrustToken = await deployContract(deployer, MockTrustToken, [registry.address])
-    liquidator = await deployContract(deployer, Liquidator, [
+    fractionalExponents = await new FractionalExponentsFactory(deployer).deploy()
+    registry = await new ProvisionalRegistryImplementationFactory(deployer).deploy()
+    mockTrustToken = await new MockTrustTokenFactory(deployer).deploy(registry.address)
+    liquidator = await new LiquidatorFactory(deployer).deploy(
       registry.address,
       trueUSD.address,
       mockTrustToken.address,
       mockOutputUniswapAddress,
       mockStakeUniswapAddress,
-    ])
+    )
 
-    deployHelper = await deployContract(deployer, DeployHelper)
+    deployHelper = await new DeployHelperFactory(deployer).deploy()
 
     await aaveFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
     await assuredFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
@@ -256,7 +265,7 @@ describe('DeployHelper', () => {
   })
   describe('UpgradeHelper', () => {
     beforeEach(async () => {
-      upgradeHelper = await deployContract(deployer, UpgradeHelper)
+      upgradeHelper = await new UpgradeHelperFactory(deployer).deploy()
 
       await upgradeHelper.setup(
         registry.address,
@@ -278,7 +287,7 @@ describe('DeployHelper', () => {
     })
 
     it('upgrade TrueUSD', async () => {
-      const newTrueUSDImplementation = await deployContract(deployer, TrueUSD, [], { gasLimit: 5000000 })
+      const newTrueUSDImplementation = await new TrueUsdFactory(deployer).deploy({ gasLimit: 5000000 })
       await upgradeHelper.upgradeTrueUSD(newTrueUSDImplementation.address)
       await trueUSDProxy.claimProxyOwnership()
       expect(await trueUSDProxy.proxyOwner()).to.eq(deployer.address, 'proxy owner')
@@ -296,8 +305,14 @@ describe('DeployHelper', () => {
       // todo
     })
 
-    it.skip('upgrade Assurance', async () => {
-      // todo
+    it('upgrade Assurance', async () => {
+      await liquidator.transferOwnership(upgradeHelper.address)
+      const newAssuredFinancialOpportunityImplementation = await new AssuredFinancialOpportunityFactory(deployer).deploy()
+      expect(await assuredFinancialOpportunityProxy.implementation()).to.eq(assuredFinancialOpportunityImplementation.address, 'before')
+      await expect(upgradeHelper.upgradeAssurance(newAssuredFinancialOpportunityImplementation.address))
+        .to.emit(assuredFinancialOpportunityProxy, 'Upgraded')
+        .withArgs(newAssuredFinancialOpportunityImplementation.address)
+      expect(await assuredFinancialOpportunityProxy.implementation()).to.eq(newAssuredFinancialOpportunityImplementation.address, 'after')
     })
 
     it.skip('upgrade FinancialOpportunity', async () => {

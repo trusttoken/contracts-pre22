@@ -126,7 +126,6 @@ contract UpgradeHelper {
         trueUSDProxy.upgradeTo(newTrueUSDAddress);
 
         // transfer ownership to owner
-        tokenController.transferOwnership(address(owner));
         transferProxiesToOwner();
     }
 
