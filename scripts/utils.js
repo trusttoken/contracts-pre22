@@ -4,9 +4,31 @@ const setupDeployer = (ethers, wallet) => async (contractName, ...args) => {
     contractJson.abi,
     contractJson.bytecode,
   ).getDeployTransaction(...args)
+  
+  let transaction
+  let receipt
+  
+  let transactionSuccess = false
+  while(!transactionSuccess) {
+    try {
+      transaction = await wallet.sendTransaction(deployTransaction, { gas: 4004588 })
+      transactionSuccess = true
+    } catch (e) {
+      console.log(JSON.stringify(e))
+      console.log('Retrying')
+    }
+  }
 
-  const transaction = await wallet.sendTransaction(deployTransaction, { gas: 4004588 })
-  const receipt = await wallet.provider.waitForTransaction(transaction.hash)
+  let awaitingSuccess = false
+  while(!awaitingSuccess) {
+    try {
+      receipt = await wallet.provider.waitForTransaction(transaction.hash)
+      awaitingSuccess = true
+    } catch (e) {
+      console.log(JSON.stringify(e))
+      console.log('Retrying')
+    }
+  }
 
   console.log(`${contractName} address: ${receipt.contractAddress}`)
   return new ethers.Contract(receipt.contractAddress, contractJson.abi, wallet)

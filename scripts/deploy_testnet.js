@@ -113,25 +113,39 @@
   )
 
   // Deploy UpgradeHelper
-  const deployHelper = await deploy('TestnetDeployHelper')
+  const deployHelper = await deploy('DeployHelper')
+
+  let tx
 
   // transfer proxy ownership to deploy helper
-  await tokenControllerProxy.transferProxyOwnership(deployHelper.address)
+  tx = await tokenControllerProxy.transferProxyOwnership(deployHelper.address)
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('controller proxy transfer ownership')
-  await trueUSDProxy.transferProxyOwnership(deployHelper.address)
+
+  tx = await trueUSDProxy.transferProxyOwnership(deployHelper.address)
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('trueUSDProxy proxy transfer ownership')
-  await assuredFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
+
+  tx = await assuredFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('assuredFinancialOpportunityProxy proxy transfer ownership')
-  await financialOpportunityProxy.transferProxyOwnership(deployHelper.address)
+
+  tx = await financialOpportunityProxy.transferProxyOwnership(deployHelper.address)
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('financialOpportunityProxy proxy transfer ownership')
+
+
   
-  await liquidator.transferOwnership(deployHelper.address)
+  tx = await liquidator.transferOwnership(deployHelper.address)
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('liquidator transfer ownership')
-  await registry.transferOwnership(deployHelper.address)
+  
+  tx = await registry.transferOwnership(deployHelper.address)
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('registry transfer ownership')
 
   // call deployHelper
-  await deployHelper.setup(
+  tx = await deployHelper.setup(
     registry.address,
     trueUSDImplementation.address,
     trueUSDProxy.address,
@@ -148,35 +162,51 @@
     lendingPoolMock.address,
     { gasLimit: 5000000 },
   )
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('deployHelper: setup')
 
   // reclaim ownership
-  await tokenControllerProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  tx = await tokenControllerProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('tokenControllerProxy claim ownership')
-  await trueUSDProxy.claimProxyOwnership({ gasLimit: 5000000 })
+
+  tx = await trueUSDProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('trueUSDProxy claim ownership')
-  await assuredFinancialOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
+
+  tx = await assuredFinancialOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('assuredFinancialOpportunityProxy claim ownership')
-  await financialOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
+
+  tx = await financialOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('financialOpportunityProxy claim ownership')
 
 
-  await assuredFinancialOpportunity.claimOwnership({ gasLimit: 5000000 })
+  tx = await assuredFinancialOpportunity.claimOwnership({ gasLimit: 5000000 })
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('assuredFinancialOpportunity claim ownership')
-  await tokenController.claimOwnership({ gasLimit: 5000000 })
+
+  tx = await tokenController.claimOwnership({ gasLimit: 5000000 })
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('tokenController claim ownership')
-  await registry.claimOwnership({ gasLimit: 5000000 })
+
+  tx = await registry.claimOwnership({ gasLimit: 5000000 })
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('registry claim ownership')
-  await liquidator.claimOwnership({ gasLimit: 5000000 })
+
+  tx = await liquidator.claimOwnership({ gasLimit: 5000000 })
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('liquidator claim ownership')
 
 
-  await tokenController.setMintThresholds(
+  tx = await tokenController.setMintThresholds(
     ethers.utils.bigNumberify('1000000000000000000000'),
     ethers.utils.bigNumberify('10000000000000000000000'),
     ethers.utils.bigNumberify('100000000000000000000000'),
     { gasLimit: 5000000 },
   )
+  await wallet.provider.waitForTransaction(tx.hash)
   console.log('set mint thresholds')
 
   console.log('\n\nSUCCESSFULLY DEPLOYED TO NETWORK: ', config.rpc, '\n\n')
