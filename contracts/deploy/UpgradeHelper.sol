@@ -32,6 +32,7 @@ contract UpgradeHelper {
     AssuredFinancialOpportunity assuredOpportunity; // behind proxy
     OwnedUpgradeabilityProxy assuredOpportunityProxy;
     FinancialOpportunity financialOpportunity;
+    OwnedUpgradeabilityProxy financialOpportunityProxy;
     IExponentContract exponentContract;
     StakedToken assurancePool;
     Liquidator liquidator;
@@ -55,7 +56,7 @@ contract UpgradeHelper {
         address payable trueUSDProxyAddress,
         address payable tokenControllerProxyAddress,
         address payable assuredOpportunityProxyAddress,
-        address financialOpportunityAddress,
+        address payable financialOpportunityProxyAddress,
         address exponentContractAddress,
         address assurancePoolAddress,
         address liquidatorAddress
@@ -63,7 +64,7 @@ contract UpgradeHelper {
         require(registryAddress != address(0), "cannot be address(0)");
         require(trueUSDProxyAddress != address(0), "cannot be address(0)");
         require(assuredOpportunityProxyAddress != address(0), "cannot be address(0)");
-        require(financialOpportunityAddress != address(0), "cannot be address(0)");
+        require(financialOpportunityProxyAddress != address(0), "cannot be address(0)");
         require(exponentContractAddress != address(0), "cannot be address(0)");
         require(tokenControllerProxyAddress != address(0), "cannot be address(0)");
         require(assurancePoolAddress != address(0), "cannot be address(0)");
@@ -77,7 +78,7 @@ contract UpgradeHelper {
 
         setUpAssurance(
             assuredOpportunityProxyAddress,
-            financialOpportunityAddress,
+            financialOpportunityProxyAddress,
             exponentContractAddress,
             assurancePoolAddress,
             liquidatorAddress
@@ -90,26 +91,17 @@ contract UpgradeHelper {
      * @dev Claim ownership of proxies
      * Proxy ownership be transferred to this contract
      */
-    function claimProxyOwnership() internal {
+    function claimProxyOwnership(OwnedUpgradeabilityProxy proxy) internal {
         require(initalized, "must be initalized");
-        require(trueUSDProxy.pendingProxyOwner() == address(this), "not token proxy owner");
-        require(tokenControllerProxy.pendingProxyOwner() == address(this), "not controller proxy owner");
-        require(assuredOpportunityProxy.pendingProxyOwner() == address(this), "not assurance proxy owner");
-        tokenControllerProxy.claimProxyOwnership();
-        trueUSDProxy.claimProxyOwnership();
-        assuredOpportunityProxy.claimProxyOwnership();
+        require(proxy.pendingProxyOwner() == address(this), "not a proxy owner");
+        proxy.claimProxyOwnership();
     }
 
     /**
      * @dev Return proxy ownership to owner
      */
-    function transferProxiesToOwner() internal {
-        tokenControllerProxy.transferProxyOwnership(owner);
-        trueUSDProxy.transferProxyOwnership(owner);
-        assuredOpportunityProxy.transferProxyOwnership(owner);
-        require(trueUSDProxy.pendingProxyOwner() == owner, "must transfer token proxy to owner");
-        require(tokenControllerProxy.pendingProxyOwner() == owner, "must transfer controller proxy to owner");
-        require(assuredOpportunityProxy.pendingProxyOwner() == owner, "must transfer assurance proxy to owner");
+    function transferProxiesToOwner(OwnedUpgradeabilityProxy proxy) internal {
+        proxy.transferProxyOwnership(owner);
     }
 
     /**
@@ -120,13 +112,30 @@ contract UpgradeHelper {
         address newTrueUSDAddress
     ) external onlyOwner {
         // claim ownership
-        claimProxyOwnership();
+        claimProxyOwnership(trueUSDProxy);
 
         // upgrade TrueUSD and use proxy as implementation
         trueUSDProxy.upgradeTo(newTrueUSDAddress);
 
         // transfer ownership to owner
-        transferProxiesToOwner();
+        transferProxiesToOwner(trueUSDProxy);
+    }
+
+    /**
+     * @dev Upgrade TrueUSD contract
+     * Must call transferOwnership on TUSD proxy
+     */
+    function upgradeFinancialOpportunity(
+        address newFinancialOpportunityAddress
+    ) external onlyOwner {
+        // claim ownership
+        claimProxyOwnership(financialOpportunityProxy);
+
+        // upgrade TrueUSD and use proxy as implementation
+        financialOpportunityProxy.upgradeTo(newFinancialOpportunityAddress);
+
+        // transfer ownership to owner
+        transferProxiesToOwner(financialOpportunityProxy);
     }
 
     /**
@@ -135,18 +144,11 @@ contract UpgradeHelper {
     function upgradeController(
         address newControllerAddress)
     external onlyOwner {
-        claimProxyOwnership();
+        claimProxyOwnership(tokenControllerProxy);
 
-        // upgrade proxy to new token controller
         tokenControllerProxy.upgradeTo(newControllerAddress);
-        tokenController = TokenController(address(tokenControllerProxy));
 
-        trueUSD.setOpportunityAddress(address(assuredOpportunityProxy));
-
-        // transfer ownership to owner
-        tokenController.transferOwnership(address(owner));
-        registry.transferOwnership(owner);
-        transferProxiesToOwner();
+        transferProxiesToOwner(tokenControllerProxy);
     }
 
     /**
@@ -158,34 +160,32 @@ contract UpgradeHelper {
     function upgradeRegistry(
         address newRegistryAddress)
     external onlyOwner {
-        claimProxyOwnership();
-        RegistryImplementation newRegistry = RegistryImplementation(newRegistryAddress);
-        registry.claimOwnership();
-        newRegistry.claimOwnership();
+        tokenController.claimOwnership();
 
-        // initalize registry
+        RegistryImplementation newRegistry = RegistryImplementation(newRegistryAddress);
+
+        // initialize registry
         newRegistry.initialize();
 
         tokenController.setTokenRegistry(newRegistry);
         tokenController.setRegistry(newRegistry);
 
         // transfer Ownership to owner
-        registry.transferOwnership(owner);
         newRegistry.transferOwnership(owner);
-        transferProxiesToOwner();
+        tokenController.transferOwnership(owner);
     }
 
     /**
      * @dev Upgrade AssuredFinancialOpportunity contract
      */
     function upgradeAssurance(
-        address payable newAssuredOpportunityAddress
+        address newAssuredOpportunityAddress
     ) external onlyOwner {
-        claimProxyOwnership();
+        claimProxyOwnership(assuredOpportunityProxy);
 
         assuredOpportunityProxy.upgradeTo(newAssuredOpportunityAddress);
 
-        transferProxiesToOwner();
+        transferProxiesToOwner(assuredOpportunityProxy);
     }
 
     /**
@@ -210,14 +210,15 @@ contract UpgradeHelper {
      */
     function setUpAssurance(
         address payable assuredOpportunityProxyAddress,
-        address financialOpportunityAddress,
+        address payable financialOpportunityProxyAddress,
         address exponentContractAddress,
         address assurancePoolAddress,
         address liquidatorAddress
     ) internal {
-            assuredOpportunityProxy = OwnedUpgradeabilityProxy(assuredOpportunityProxyAddress);
-            assuredOpportunity = AssuredFinancialOpportunity(assuredOpportunityProxyAddress);
-        financialOpportunity = FinancialOpportunity(financialOpportunityAddress);
+        assuredOpportunityProxy = OwnedUpgradeabilityProxy(assuredOpportunityProxyAddress);
+        assuredOpportunity = AssuredFinancialOpportunity(assuredOpportunityProxyAddress);
+        financialOpportunityProxy = OwnedUpgradeabilityProxy(financialOpportunityProxyAddress);
+        financialOpportunity = FinancialOpportunity(financialOpportunityProxyAddress);
         exponentContract = IExponentContract(exponentContractAddress);
         assurancePool = StakedToken(assurancePoolAddress);
         liquidator = Liquidator(liquidatorAddress);

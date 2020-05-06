@@ -263,6 +263,7 @@ describe('DeployHelper', () => {
       })
     })
   })
+
   describe('UpgradeHelper', () => {
     beforeEach(async () => {
       upgradeHelper = await new UpgradeHelperFactory(deployer).deploy()
@@ -293,30 +294,44 @@ describe('DeployHelper', () => {
       expect(await trueUSDProxy.proxyOwner()).to.eq(deployer.address, 'proxy owner')
       expect(await tokenController.token()).to.eq(trueUSDProxy.address, 'token')
       expect(await tokenController.registry()).to.eq(registry.address, 'registry')
-      expect(await tokenControllerProxy.pendingProxyOwner()).to.eq(deployer.address, 'pending controller proxy owner')
+      expect(await tokenControllerProxy.proxyOwner()).to.eq(deployer.address, 'controller proxy owner')
       expect(await tokenController.owner()).to.eq(deployer.address, 'pending controller owner')
     })
 
-    it.skip('upgrade Registry', async () => {
-      // todo
+    it('upgrade Registry', async () => {
+      const newRegistry = await new ProvisionalRegistryImplementationFactory(deployer).deploy()
+      await tokenController.transferOwnership(upgradeHelper.address)
+      await upgradeHelper.upgradeRegistry(newRegistry.address)
+      expect(await registry.owner()).to.eq(deployer.address)
+      expect(await newRegistry.pendingOwner()).to.eq(deployer.address)
+      expect(await tokenController.registry()).to.eq(newRegistry.address)
+      expect(await tokenController.registry()).to.eq(newRegistry.address)
+      expect(await trueUSD.registry()).to.eq(newRegistry.address)
     })
 
-    it.skip('upgrade TokenController', async () => {
-      // todo
+    it('upgrade TokenController', async () => {
+      const newTokenControllerImplementation = await new TokenControllerFactory(deployer).deploy()
+      await expect(upgradeHelper.upgradeController(newTokenControllerImplementation.address))
+        .to.emit(tokenControllerProxy, 'Upgraded')
+        .withArgs(newTokenControllerImplementation.address)
+      expect(await tokenControllerProxy.implementation()).to.eq(newTokenControllerImplementation.address)
     })
 
     it('upgrade Assurance', async () => {
-      await liquidator.transferOwnership(upgradeHelper.address)
       const newAssuredFinancialOpportunityImplementation = await new AssuredFinancialOpportunityFactory(deployer).deploy()
-      expect(await assuredFinancialOpportunityProxy.implementation()).to.eq(assuredFinancialOpportunityImplementation.address, 'before')
+      expect(await assuredFinancialOpportunityProxy.implementation()).to.eq(assuredFinancialOpportunityImplementation.address)
       await expect(upgradeHelper.upgradeAssurance(newAssuredFinancialOpportunityImplementation.address))
         .to.emit(assuredFinancialOpportunityProxy, 'Upgraded')
         .withArgs(newAssuredFinancialOpportunityImplementation.address)
-      expect(await assuredFinancialOpportunityProxy.implementation()).to.eq(newAssuredFinancialOpportunityImplementation.address, 'after')
+      expect(await assuredFinancialOpportunityProxy.implementation()).to.eq(newAssuredFinancialOpportunityImplementation.address)
     })
 
-    it.skip('upgrade FinancialOpportunity', async () => {
-      // todo
+    it('upgrade FinancialOpportunity', async () => {
+      const newFinancialOpportunityImplementation = await new AaveFinancialOpportunityFactory(deployer).deploy()
+      await expect(upgradeHelper.upgradeFinancialOpportunity(newFinancialOpportunityImplementation.address))
+        .to.emit(aaveFinancialOpportunityProxy, 'Upgraded')
+        .withArgs(newFinancialOpportunityImplementation.address)
+      expect(await aaveFinancialOpportunityProxy.implementation()).to.eq(newFinancialOpportunityImplementation.address)
     })
   })
 })
