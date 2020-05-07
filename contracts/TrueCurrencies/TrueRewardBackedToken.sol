@@ -46,7 +46,12 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     mapping(address => uint256) finOpSupply;
     uint256 maxRewardProportion = 1000;
     */
+    
+    // registry attribute for whitelist
+    // 0x6973547275655265776172647357686974656c69737465640000000000000000
+    bytes32 constant IS_TRUEREWARDS_WHITELISTED = "isTrueRewardsWhitelisted";
 
+    // financial opportunity address
     address public opportunity_;
 
     event TrueRewardEnabled(address _account);
