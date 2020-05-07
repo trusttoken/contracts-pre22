@@ -3,7 +3,6 @@ import { deployContract, solidity } from 'ethereum-waffle'
 import { parseEther } from 'ethers/utils'
 import { expect, use } from 'chai'
 import {
-  AaveFinancialOpportunity,
   ATokenMock,
   CompliantTokenMock,
   LendingPoolCoreMock,
@@ -11,6 +10,7 @@ import {
   OwnedUpgradeabilityProxy,
   RegistryMock,
 } from '../build'
+import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
 import { beforeEachWithFixture } from './utils'
 
 use(solidity)
@@ -36,7 +36,7 @@ describe('AaveFinancialOpportunity', () => {
     lendingPool = await deployContract(proxyOwner, LendingPoolMock, [lendingPoolCore.address, stakeToken.address])
     await token.connect(holder).transfer(stakeToken.address, parseEther('100'))
 
-    const financialOpportunityImpl = await deployContract(proxyOwner, AaveFinancialOpportunity)
+    const financialOpportunityImpl = await new AaveFinancialOpportunityFactory(proxyOwner).deploy()
     const financialOpportunityProxy = await deployContract(proxyOwner, OwnedUpgradeabilityProxy)
     financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
     await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
