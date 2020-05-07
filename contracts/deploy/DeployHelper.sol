@@ -24,21 +24,54 @@ import { Liquidator } from "@trusttoken/trusttokens/contracts/Liquidator.sol";
  */
 contract DeployHelper {
     address payable public owner;
-    RegistryImplementation registry;
-    TrueUSD trueUSD; // behind proxy
+
     OwnedUpgradeabilityProxy public trueUSDProxy;
-    TokenController tokenController; // behind proxy
     OwnedUpgradeabilityProxy public tokenControllerProxy;
-    AssuredFinancialOpportunity assuredFinancialOpportunity; // behind proxy
     OwnedUpgradeabilityProxy public assuredFinancialOpportunityProxy;
-    AaveFinancialOpportunity aaveFinancialOpportunity; // behind proxy
     OwnedUpgradeabilityProxy public aaveFinancialOpportunityProxy;
+    OwnedUpgradeabilityProxy public liquidatorProxy;
+
+    RegistryImplementation registry;
     IExponentContract exponentContract;
     StakedToken assurancePool;
+
+    TrueUSD trueUSD;
+    TokenController tokenController;
+    AssuredFinancialOpportunity assuredFinancialOpportunity;
+    AaveFinancialOpportunity aaveFinancialOpportunity;
     Liquidator liquidator;
 
-    constructor() public {
+    constructor(
+        address payable trueUSDProxyAddress,
+        address payable tokenControllerProxyAddress,
+        address payable assuredFinancialOpportunityProxyAddress,
+        address payable aaveFinancialOpportunityProxyAddress,
+        address payable liquidatorProxyAddress,
+        address registryAddress,
+        address exponentContractAddress,
+        address assurancePoolAddress
+    ) public {
+        require(trueUSDProxyAddress != address(0), "trueUSDProxyAddress cannot be address(0)");
+        require(tokenControllerProxyAddress != address(0), "tokenControllerProxyAddress cannot be address(0)");
+        require(assuredFinancialOpportunityProxyAddress != address(0), "assuredFinancialOpportunityProxyAddress cannot be address(0)");
+        require(aaveFinancialOpportunityProxyAddress != address(0), "aaveFinancialOpportunityProxyAddress cannot be address(0)");
+        require(liquidatorProxyAddress != address(0), "liquidatorProxyAddress cannot be address(0)");
+
+        require(registryAddress != address(0), "registryAddress cannot be address(0)");
+        require(exponentContractAddress != address(0), "exponentContractAddress cannot be address(0)");
+        require(assurancePoolAddress != address(0), "assurancePoolAddress cannot be address(0)");
+
         owner = msg.sender;
+
+        trueUSDProxy = OwnedUpgradeabilityProxy(trueUSDProxyAddress);
+        tokenControllerProxy = OwnedUpgradeabilityProxy(tokenControllerProxyAddress);
+        assuredFinancialOpportunityProxy = OwnedUpgradeabilityProxy(assuredFinancialOpportunityProxyAddress);
+        aaveFinancialOpportunityProxy = OwnedUpgradeabilityProxy(aaveFinancialOpportunityProxyAddress);
+        liquidatorProxy = OwnedUpgradeabilityProxy(liquidatorProxyAddress);
+
+        registry = RegistryImplementation(registryAddress);
+        exponentContract = IExponentContract(exponentContractAddress);
+        assurancePool = StakedToken(assurancePoolAddress);
     }
 
     modifier onlyOwner() {
@@ -54,125 +87,106 @@ contract DeployHelper {
      * liquidator, assurancePool
      */
     function setup(
-        address registryAddress,
-        address trueUSDAddress,
-        address payable trueUSDProxyAddress,
-        address payable tokenControllerAddress,
-        address payable tokenControllerProxyAddress,
-        address payable assuredFinancialOpportunityAddress,
-        address payable assuredFinancialOpportunityProxyAddress,
-        address payable aaveFinancialOpportunityAddress,
-        address payable aaveFinancialOpportunityProxyAddress,
-        address exponentContractAddress,
-        address assurancePoolAddress,
-        address liquidatorAddress,
+        address trueUSDImplAddress,
+        address payable tokenControllerImplAddress,
+        address payable assuredFinancialOpportunityImplAddress,
+        address payable aaveFinancialOpportunityImplAddress,
+        address payable liquidatorImplAddress,
         address aTokenAddress,
-        address lendingPoolAddress
+        address lendingPoolAddress,
+        address trustTokenAddress,
+        address outputUniswapAddress,
+        address stakeUniswapAddress
     ) public onlyOwner {
-        require(registryAddress != address(0), "registryAddress cannot be address(0)");
-        require(trueUSDAddress != address(0), "trueUSDAddress cannot be address(0)");
-        require(trueUSDProxyAddress != address(0), "trueUSDProxyAddress cannot be address(0)");
-        require(assuredFinancialOpportunityProxyAddress != address(0), "assuredFinancialOpportunityProxyAddress cannot be address(0)");
-        require(assuredFinancialOpportunityAddress != address(0), "assuredFinancialOpportunityAddress cannot be address(0)");
-        require(aaveFinancialOpportunityAddress != address(0), "aaveFinancialOpportunityAddress cannot be address(0)");
-        require(aaveFinancialOpportunityProxyAddress != address(0), "aaveFinancialOpportunityProxyAddress cannot be address(0)");
-        require(exponentContractAddress != address(0), "exponentContractAddress cannot be address(0)");
-        require(tokenControllerAddress != address(0), "tokenControllerAddress cannot be address(0)");
-        require(tokenControllerProxyAddress != address(0), "tokenControllerProxyAddress cannot be address(0)");
-        require(assurancePoolAddress != address(0), "assurancePoolAddress cannot be address(0)");
-        require(liquidatorAddress != address(0), "liquidatorAddress cannot be address(0)");
+        require(trueUSDImplAddress != address(0), "trueUSDImplAddress cannot be address(0)");
+        require(tokenControllerImplAddress != address(0), "tokenControllerImplAddress cannot be address(0)");
+        require(assuredFinancialOpportunityImplAddress != address(0), "assuredFinancialOpportunityImplAddress cannot be address(0)");
+        require(aaveFinancialOpportunityImplAddress != address(0), "aaveFinancialOpportunityImplAddress cannot be address(0)");
+        require(liquidatorImplAddress != address(0), "liquidatorImplAddress cannot be address(0)");
 
-        // setup TrueUSD interfaces
-        setUpTrueUSD(
-            registryAddress,
-            trueUSDProxyAddress,
-            tokenControllerProxyAddress
-        ); // pass
 
-        // setup Assurance interfaces
-        setUpAssurance(
-            assuredFinancialOpportunityProxyAddress,
-            aaveFinancialOpportunityProxyAddress,
-            exponentContractAddress,
-            assurancePoolAddress,
-            liquidatorAddress
-        ); // pass
+        initTrueUSD(
+            trueUSDImplAddress,
+            tokenControllerImplAddress
+        );
 
-        // Init TrueUSD & TokenController
-        initTrueUSD(trueUSDAddress, tokenControllerAddress); // pass
-
-        // 2. Init Assurance
         initAssurance(
-            assuredFinancialOpportunityAddress,
-            aaveFinancialOpportunityAddress,
+            assuredFinancialOpportunityImplAddress,
+            aaveFinancialOpportunityImplAddress,
+            liquidatorImplAddress,
             aTokenAddress,
-            lendingPoolAddress
-        ); // pass
+            lendingPoolAddress,
+            trustTokenAddress,
+            outputUniswapAddress,
+            stakeUniswapAddress
+        );
     }
 
     // @dev Init TrueUSD & TokenController
     function initTrueUSD(
-        address trueUSDAddress,
-        address tokenControllerAddress
+        address trueUSDImplAddress,
+        address tokenControllerImplAddress
     ) internal {
         require(trueUSDProxy.pendingProxyOwner() == address(this), "not token proxy owner");
         require(tokenControllerProxy.pendingProxyOwner() == address(this), "not controller proxy owner");
 
-        // claim ownership of proxies
-        tokenControllerProxy.claimProxyOwnership();
         trueUSDProxy.claimProxyOwnership(); //pass
-        registry.claimOwnership();
-
-        // setup registry here
-
-        // use proxies as implementations
-        trueUSDProxy.upgradeTo(trueUSDAddress);
+        trueUSDProxy.upgradeTo(trueUSDImplAddress);
         trueUSD = TrueUSD(address(trueUSDProxy));
-        tokenControllerProxy.upgradeTo(tokenControllerAddress);
-        tokenController = TokenController(address(tokenControllerProxy));
-
-        // initialize contracts for ownership
-        registry.initialize();
-        tokenController.initialize();
         trueUSD.initialize();
 
-        // transfer trueUSD ownership to controller
+        tokenControllerProxy.claimProxyOwnership();
+        tokenControllerProxy.upgradeTo(tokenControllerImplAddress);
+        tokenController = TokenController(address(tokenControllerProxy));
+        tokenController.initialize();
+
+        registry.claimOwnership();
+        registry.initialize();
+
         trueUSD.transferOwnership(address(tokenController));
         tokenController.issueClaimOwnership(address(trueUSD));
 
-        // set token and registry for controller
         tokenController.setToken(trueUSD);
         tokenController.setTokenRegistry(registry);
         tokenController.setRegistry(registry);
         tokenController.setOpportunityAddress(address(assuredFinancialOpportunityProxy));
 
-        // transfer ownership to owner
+        trueUSDProxy.transferProxyOwnership(owner);
         tokenController.transferOwnership(address(owner));
         tokenControllerProxy.transferProxyOwnership(owner);
-        trueUSDProxy.transferProxyOwnership(owner);
         registry.transferOwnership(owner);
     }
 
     /// @dev Initialize Assurance
     function initAssurance(
-        address assuredFinancialOpportunityAddress,
-        address aaveFinancialOpportunityAddress,
+        address assuredFinancialOpportunityImplAddress,
+        address aaveFinancialOpportunityImplAddress,
+        address liquidatorImplAddress,
         address aTokenAddress,
-        address lendingPoolAddress
+        address lendingPoolAddress,
+        address trustTokenAddress,
+        address outputUniswapAddress,
+        address stakeUniswapAddress
     ) internal {
-        // claim proxy
         assuredFinancialOpportunityProxy.claimProxyOwnership();
-        aaveFinancialOpportunityProxy.claimProxyOwnership();
-
-        // Use proxy as implementation
-        assuredFinancialOpportunityProxy.upgradeTo(assuredFinancialOpportunityAddress);
+        assuredFinancialOpportunityProxy.upgradeTo(assuredFinancialOpportunityImplAddress);
         assuredFinancialOpportunity = AssuredFinancialOpportunity(address(assuredFinancialOpportunityProxy));
-        aaveFinancialOpportunityProxy.upgradeTo(aaveFinancialOpportunityAddress);
+
+        aaveFinancialOpportunityProxy.claimProxyOwnership();
+        aaveFinancialOpportunityProxy.upgradeTo(aaveFinancialOpportunityImplAddress);
         aaveFinancialOpportunity = AaveFinancialOpportunity(address(aaveFinancialOpportunityProxy));
 
-        // assurancePool is set up during constructor
-        liquidator.claimOwnership();
-        liquidator.configure();
+        liquidatorProxy.claimProxyOwnership();
+        liquidatorProxy.upgradeTo(liquidatorImplAddress);
+        liquidator = Liquidator(address(liquidatorProxy));
+
+        liquidator.configure(
+            address(registry),
+            address(trueUSDProxy),
+            trustTokenAddress,
+            outputUniswapAddress,
+            stakeUniswapAddress
+        );
         liquidator.setPool(address(assurancePool));
 
         aaveFinancialOpportunity.configure(
@@ -191,43 +205,14 @@ contract DeployHelper {
             address(trueUSD)
         );
 
+        liquidator.transferOwnership(address(assuredFinancialOpportunity));
+
+        assuredFinancialOpportunity.claimLiquidatorOwnership();
         assuredFinancialOpportunity.transferOwnership(owner);
 
-        // Transfer proxy to owner
+        liquidatorProxy.transferProxyOwnership(owner);
         assuredFinancialOpportunityProxy.transferProxyOwnership(owner);
         aaveFinancialOpportunityProxy.transferProxyOwnership(owner);
-        liquidator.transferOwnership(owner);
-    }
-
-    /**
-     * @dev Set up contract interfaces
-     */
-    function setUpTrueUSD(
-        address registryAddress,
-        address payable trueUSDProxyAddress,
-        address payable tokenControllerProxyAddress
-    ) internal {
-        registry = RegistryImplementation(registryAddress);
-        trueUSDProxy = OwnedUpgradeabilityProxy(trueUSDProxyAddress);
-        tokenControllerProxy = OwnedUpgradeabilityProxy(tokenControllerProxyAddress);
-    }
-
-    /**
-     * @dev Set up contract interfaces
-     */
-    function setUpAssurance(
-        //address payable assuredFinancialOpportunityAddress,
-        address payable assuredFinancialOpportunityProxyAddress,
-        address payable aaveFinancialOpportunityProxyAddress,
-        address exponentContractAddress,
-        address assurancePoolAddress,
-        address liquidatorAddress
-    ) internal {
-        assuredFinancialOpportunityProxy = OwnedUpgradeabilityProxy(assuredFinancialOpportunityProxyAddress);
-        aaveFinancialOpportunityProxy = OwnedUpgradeabilityProxy(aaveFinancialOpportunityProxyAddress);
-        exponentContract = IExponentContract(exponentContractAddress);
-        assurancePool = StakedToken(assurancePoolAddress);
-        liquidator = Liquidator(liquidatorAddress);
     }
 }
 
