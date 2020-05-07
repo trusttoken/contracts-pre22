@@ -32,7 +32,7 @@ describe.only('DeployHelper', () => {
 
   let registry: Contract
   let fractionalExponents: Contract
-  
+
   let liquidator: Contract
   let liquidatorImplementation: Contract
   let liquidatorProxy: Contract

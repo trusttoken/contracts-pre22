@@ -43,7 +43,6 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   const assuredFinancialOpportunity = assuredFinancialOpportunityImplementation.attach(assuredFinancialOpportunityProxy.address)
   console.log('deployed assuredFinancialOpportunityProxy at: ', assuredFinancialOpportunityProxy.address)
 
-
   // Deploy the rest of the contracts
   const registry = await deploy('ProvisionalRegistryImplementation')
   const lendingPoolCoreMock = await deploy('LendingPoolCoreMock')
@@ -111,7 +110,7 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     registry.address,
     fractionalExponents.address,
     assurancePool.address,
-    )
+  )
 
   let tx
 
