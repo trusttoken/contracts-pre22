@@ -62,6 +62,10 @@ contract TokenFaucet {
         emit InstantMint(msg.sender, _amount, msg.sender);
     }
 
+    function whitelistTrueRewards() external {
+        registry.setAttributeValue(msg.sender, 0x6973547275655265776172647357686974656c69737465640000000000000000, 1);
+    }
+
     function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
         require(_instant <= _ratified && _ratified <= _multiSig);
         instantMintThreshold = _instant;

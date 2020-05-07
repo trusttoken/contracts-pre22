@@ -112,6 +112,8 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      */
     function enableTrueReward() external {
         // require TrueReward is not enabled
+        require(registry.hasAttribute(msg.sender, IS_TRUEREWARDS_WHITELISTED),
+            "must be whitelisted to enable TrueRewards");
         require(!trueRewardEnabled(msg.sender), "TrueReward already enabled");
 
         // get sender balance
