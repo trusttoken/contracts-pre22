@@ -1,36 +1,27 @@
-
 /**
- * Waffle Deploy Script
+ * Ethers Deploy Script
  *
- * node scripts/deploy_testnet.js "{private_key}" "{rpc_url}"
+ * ts-node scripts/deploy_testnet.ts "{private_key}" "{rpc_url}"
  *
- * We use waffle to deploy our contracts from scratch.
- * For upgrades, use deploy/upgrade.js
- * Use the config object to set paramaters for deployment
+ * We use ethers to deploy our contracts from scratch.
+ * For upgrades, use deploy/upgrade.ts
+ * Use the config object to set parameters for deployment
  */
 
-(async () => {
-  const rpcOptions = {
-    rinkeby: 'https://rinkeby.infura.io/v3/81447a33c1cd4eb09efb1e8c388fb28e',
-    development: 'http://localhost:7545',
-  }
+import { ethers, providers } from 'ethers'
+import { setupDeployer, validatePrivateKey } from './utils'
 
-  const config = {
-    rpc: process.argv[3] || rpcOptions.rinkeby,
-    accountPrivateKey: process.argv[2],
-    network: 'rinkeby',
-    gas: 40000000,
-  }
+const rpcOptions = {
+  rinkeby: 'https://rinkeby.infura.io/v3/81447a33c1cd4eb09efb1e8c388fb28e',
+  development: 'http://localhost:7545',
+}
 
-  const ethers = require('ethers')
-  const { setupDeployer, validatePrivateKey } = require('./utils')
+export const deploy = async (accountPrivateKey: string, provider: providers.JsonRpcProvider) => {
+  validatePrivateKey(accountPrivateKey)
 
-  validatePrivateKey(config.accountPrivateKey)
+  const wallet = new ethers.Wallet(accountPrivateKey, provider)
 
-  const provider = new ethers.providers.JsonRpcProvider(config.rpc)
-  const wallet = new ethers.Wallet(config.accountPrivateKey, provider)
-
-  const deploy = setupDeployer(ethers, wallet)
+  const deploy = setupDeployer(wallet)
 
   const ZERO = '0x0000000000000000000000000000000000000000'
 
@@ -42,7 +33,7 @@
   const trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
   console.log('deployed trueUSDProxy at: ', trueUSDProxy.address)
 
-  const tokenControllerImplementation = await deploy('TokenFaucet')
+  const tokenControllerImplementation = await deploy('TokenController')
   const tokenControllerProxy = await deploy('OwnedUpgradeabilityProxy')
   const tokenController = tokenControllerImplementation.attach(tokenControllerProxy.address)
   console.log('deployed tokenControllerProxy at: ', tokenControllerProxy.address)
@@ -60,9 +51,9 @@
   const fractionalExponents = await deploy('FractionalExponents')
   const trustToken = await deploy('MockTrustToken', registry.address)
 
-  const financialOpportunityImplementation = await deploy('ConfigurableFinancialOpportunityMock', aTokenMock.address)
+  const financialOpportunityImplementation = await deploy('AaveFinancialOpportunity')
   const financialOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
-  console.log('deployed financialOpportunityProxy at: ', financialOpportunityProxy.address)
+  console.log('deployed aaveFinancialOpportunityProxy at: ', financialOpportunityProxy.address)
 
   // setup uniswap
   // needs to compile using truffle compile
@@ -204,5 +195,10 @@
   await wallet.provider.waitForTransaction(tx.hash)
   console.log('set mint thresholds')
 
-  console.log('\n\nSUCCESSFULLY DEPLOYED TO NETWORK: ', config.rpc, '\n\n')
-})()
+  console.log('\n\nSUCCESSFULLY DEPLOYED TO NETWORK: ', provider.connection.url, '\n\n')
+}
+
+if (require.main === module) {
+  const provider = new ethers.providers.JsonRpcProvider(process.argv[3] || rpcOptions.development)
+  deploy(process.argv[2], provider).catch(console.error)
+}

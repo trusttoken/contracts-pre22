@@ -1,9 +1,11 @@
-const setupDeployer = (ethers, wallet) => async (contractName, ...args) => {
+import { Wallet, ethers } from 'ethers'
+
+export const setupDeployer = (wallet: Wallet) => async (contractName: string, ...args) => {
   const contractJson = require(`../build/${contractName}.json`)
   const deployTransaction = new ethers.ContractFactory(
     contractJson.abi,
     contractJson.bytecode,
-  ).getDeployTransaction(...args)
+  ).getDeployTransaction(...args, { gasLimit: 4004588 })
 
   let transaction
   let receipt
@@ -11,7 +13,7 @@ const setupDeployer = (ethers, wallet) => async (contractName, ...args) => {
   let transactionSuccess = false
   while (!transactionSuccess) {
     try {
-      transaction = await wallet.sendTransaction(deployTransaction, { gas: 4004588 })
+      transaction = await wallet.sendTransaction(deployTransaction)
       transactionSuccess = true
     } catch (e) {
       console.log(JSON.stringify(e))
@@ -34,17 +36,19 @@ const setupDeployer = (ethers, wallet) => async (contractName, ...args) => {
   return new ethers.Contract(receipt.contractAddress, contractJson.abi, wallet)
 }
 
-const getContract = (ethers, wallet) => async (contractName, contractAddress) => {
+export const getContract = (wallet: ethers.Wallet) => (contractName: string, contractAddress: string) => {
   const contractJson = require(`../build/${contractName}.json`)
   return new ethers.Contract(contractAddress, contractJson.abi, wallet)
 }
 
-const validatePrivateKey = (subject) => {
+export const validatePrivateKey = (subject: string) => {
   if (!(/^0x[0-9-a-fA-F]{64}$/.test(subject))) throw new Error('Pass proper private key')
 }
 
-module.exports = {
-  setupDeployer,
-  getContract,
-  validatePrivateKey,
+export const validateAddress = (subject: string) => {
+  try {
+    ethers.utils.getAddress(subject)
+  } catch (e) {
+    throw new Error('Pass proper deploy helper address')
+  }
 }
