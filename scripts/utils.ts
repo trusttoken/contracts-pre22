@@ -1,6 +1,7 @@
 import { Wallet, ethers } from 'ethers'
 
 export const setupDeployer = (wallet: Wallet) => async (contractName: string, ...args) => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const contractJson = require(`../build/${contractName}.json`)
   const deployTransaction = new ethers.ContractFactory(
     contractJson.abi,
@@ -37,6 +38,7 @@ export const setupDeployer = (wallet: Wallet) => async (contractName: string, ..
 }
 
 export const getContract = (wallet: ethers.Wallet) => (contractName: string, contractAddress: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const contractJson = require(`../build/${contractName}.json`)
   return new ethers.Contract(contractAddress, contractJson.abi, wallet)
 }
