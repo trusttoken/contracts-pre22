@@ -9,7 +9,6 @@ import { AssuredFinancialOpportunity } from "../TrueReward/AssuredFinancialOppor
 import { AaveFinancialOpportunity } from "../TrueReward/AaveFinancialOpportunity.sol";
 import { IAToken } from "../TrueReward/IAToken.sol";
 import { ILendingPool } from "../TrueReward/ILendingPool.sol";
-import { TrueRewardBackedToken } from "../TrueCurrencies/TrueRewardBackedToken.sol";
 import { IExponentContract } from "../TrueReward/utilities/IExponentContract.sol";
 import { StakedToken } from "@trusttoken/trusttokens/contracts/StakedToken.sol";
 import { Liquidator } from "@trusttoken/trusttokens/contracts/Liquidator.sol";
@@ -195,7 +194,7 @@ contract DeployHelper {
         aaveFinancialOpportunity.configure(
             IAToken(aTokenAddress),
             ILendingPool(lendingPoolAddress),
-            TrueRewardBackedToken(trueUSD),
+            TrueUSD(trueUSD),
             address(assuredFinancialOpportunity)
         );
 
