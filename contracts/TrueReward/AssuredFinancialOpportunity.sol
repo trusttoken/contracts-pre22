@@ -94,7 +94,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         exponentContractAddress = _exponentContractAddress;
         trueRewardBackedTokenAddress = _trueRewardBackedTokenAddress;
         fundsManager = _fundsManager;
-        // only update factors if they are not zero
+        // only update factors if they are zero (default)
         if (adjustmentFactor == 0) {
             adjustmentFactor = 1*10**18;
         }
