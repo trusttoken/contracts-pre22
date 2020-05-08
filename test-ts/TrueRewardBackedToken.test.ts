@@ -56,11 +56,11 @@ describe('TrueRewardBackedToken', () => {
       )
       await token.setOpportunityAddress(financialOpportunity.address)
 
-      await registry.setAttributeValue(owner.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
-      await registry.setAttributeValue(holder.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
-      await registry.setAttributeValue(holder2.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
-      await registry.setAttributeValue(sender.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
-      await registry.setAttributeValue(recipient.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
+      await registry.setAttributeValue(owner.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(holder.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(holder2.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(sender.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(recipient.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
     })
 
     it('holder enables trueReward with 0 balance', async () => {
@@ -74,7 +74,7 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
 
       await expect(token.connect(notWhitelisted).enableTrueReward()).to.be.revertedWith(
-        'must be whitelisted to enable TrueRewards');
+        'must be whitelisted to enable TrueRewards')
       expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
     })
 
@@ -126,11 +126,11 @@ describe('TrueRewardBackedToken', () => {
       await financialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, token.address)
       await token.setOpportunityAddress(financialOpportunity.address)
 
-      await registry.setAttributeValue(owner.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
-      await registry.setAttributeValue(holder.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
-      await registry.setAttributeValue(holder2.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
-      await registry.setAttributeValue(sender.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
-      await registry.setAttributeValue(recipient.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
+      await registry.setAttributeValue(owner.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(holder.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(holder2.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(sender.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(recipient.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
     })
 
     it('holder enables truereward', async () => {
@@ -356,11 +356,11 @@ describe('TrueRewardBackedToken', () => {
 
       await token.setOpportunityAddress(financialOpportunity.address)
 
-      await registry.setAttributeValue(owner.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
-      await registry.setAttributeValue(holder.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
-      await registry.setAttributeValue(holder2.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
-      await registry.setAttributeValue(sender.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
-      await registry.setAttributeValue(recipient.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1);
+      await registry.setAttributeValue(owner.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(holder.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(holder2.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(sender.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(recipient.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
     })
 
     it('holder enables truereward', async () => {
