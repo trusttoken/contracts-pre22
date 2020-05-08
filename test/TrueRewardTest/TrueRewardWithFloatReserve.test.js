@@ -30,11 +30,11 @@ contract('TrueRewardWithFloatReserve', function (accounts) {
       await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, this.token.address, { from: owner })
       await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
       this.reserve = await this.token.RESERVE.call()
-      await registry.setAttributeValue(owner.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
-      await registry.setAttributeValue(holder.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
-      await registry.setAttributeValue(holder2.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
-      await registry.setAttributeValue(sender.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
-      await registry.setAttributeValue(recipient.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await this.registry.setAttributeValue(owner.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await this.registry.setAttributeValue(holder.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await this.registry.setAttributeValue(holder2.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await this.registry.setAttributeValue(sender.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await this.registry.setAttributeValue(recipient.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
     })
 
     it('convert TUSD reserve into aave float reserve', async function () {
