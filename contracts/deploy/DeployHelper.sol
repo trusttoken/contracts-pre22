@@ -26,13 +26,13 @@ contract DeployHelper {
     address payable public owner;
     RegistryImplementation registry;
     TrueUSD trueUSD; // behind proxy
-    OwnedUpgradeabilityProxy trueUSDProxy;
+    OwnedUpgradeabilityProxy public trueUSDProxy;
     TokenController tokenController; // behind proxy
-    OwnedUpgradeabilityProxy tokenControllerProxy;
+    OwnedUpgradeabilityProxy public tokenControllerProxy;
     AssuredFinancialOpportunity assuredFinancialOpportunity; // behind proxy
-    OwnedUpgradeabilityProxy assuredFinancialOpportunityProxy;
+    OwnedUpgradeabilityProxy public assuredFinancialOpportunityProxy;
     AaveFinancialOpportunity aaveFinancialOpportunity; // behind proxy
-    OwnedUpgradeabilityProxy aaveFinancialOpportunityProxy;
+    OwnedUpgradeabilityProxy public aaveFinancialOpportunityProxy;
     IExponentContract exponentContract;
     StakedToken assurancePool;
     Liquidator liquidator;
@@ -131,10 +131,11 @@ contract DeployHelper {
         tokenControllerProxy.upgradeTo(tokenControllerAddress);
         tokenController = TokenController(address(tokenControllerProxy));
 
-        // initialize contracts for ownership
-        registry.initialize();
-        tokenController.initialize();
-        trueUSD.initialize();
+        // try to initialize contracts for ownership
+        // ignore errors if contracts were initialized beforehand
+        address(registry).call(abi.encodeWithSignature("initialize()"));
+        address(tokenController).call(abi.encodeWithSignature("initialize()"));
+        address(trueUSD).call(abi.encodeWithSignature("initialize()"));
 
         // transfer trueUSD ownership to controller
         trueUSD.transferOwnership(address(tokenController));

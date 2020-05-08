@@ -18,7 +18,7 @@ pip install vyper
 For more efficient compilation and deployment, we use waffle (https://getwaffle.io/).
 ```
 npm run-script build
-node scripts/deploy_testnet.js
+ts-node scripts/deploy_testnet.ts
 ```
 # Deployments
 For all of our deployments, the address is the same between mainnet and testnet.
