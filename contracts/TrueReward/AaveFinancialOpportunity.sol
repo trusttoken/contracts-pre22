@@ -1,6 +1,6 @@
 pragma solidity ^0.5.13;
 
-import "../TrueCurrencies/TrueRewardBackedToken.sol";
+import "../TrueCurrencies/TrueUSD.sol";
 import "./IAToken.sol";
 import "./ILendingPool.sol";
 import "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
@@ -25,7 +25,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     ILendingPool public lendingPool;
 
     /** TrueUSD */
-    TrueRewardBackedToken public token;
+    TrueUSD public token;
 
     modifier onlyProxyOwner() {
         require(msg.sender == proxyOwner(), "only proxy owner");
@@ -36,11 +36,15 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
      * @dev Set up Aave Opportunity
      */
     function configure(
-        IAToken _stakeToken,            // aToken
-        ILendingPool _lendingPool,      // lendingPool interface
-        TrueRewardBackedToken _token,   // TrueRewardBackedToken
-        address _owner                  // owner
+        IAToken _stakeToken,        // aToken
+        ILendingPool _lendingPool,  // lendingPool interface
+        TrueUSD _token,             // TrueUSD
+        address _owner              // owner
     ) public onlyProxyOwner {
+        require(address(_stakeToken) != address(0), "stakeToken cannot be address(0)");
+        require(address(_lendingPool) != address(0), "lendingPool  cannot be address(0)");
+        require(address(_token) != address(0), "TrueUSD cannot be address(0)");
+        require(_owner != address(0), "Owner cannot be address(0)");
         stakeToken = _stakeToken;
         lendingPool = _lendingPool;
         token = _token;
