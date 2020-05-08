@@ -103,9 +103,6 @@ describe('DeployHelper', () => {
     await trueUSDProxy.transferProxyOwnership(deployHelper.address)
     await registryProxy.transferProxyOwnership(deployHelper.address)
 
-    await liquidator.transferOwnership(deployHelper.address)
-    await registry.transferOwnership(deployHelper.address)
-
     await deployHelper.setup(
       trueUSDImplementation.address,
       tokenControllerImplementation.address,
@@ -124,6 +121,8 @@ describe('DeployHelper', () => {
     await assuredFinancialOpportunityProxy.claimProxyOwnership()
     await tokenControllerProxy.claimProxyOwnership()
     await trueUSDProxy.claimProxyOwnership()
+    await registryProxy.claimProxyOwnership()
+    await liquidatorProxy.claimProxyOwnership()
 
     await assuredFinancialOpportunity.claimOwnership()
     await tokenController.claimOwnership()

@@ -165,6 +165,10 @@ contract DeployHelper {
         tokenController.transferOwnership(owner);
         tokenControllerProxy.transferProxyOwnership(owner);
         registryProxy.transferProxyOwnership(owner);
+
+        if (registry.owner() == address(this)) {
+            registry.transferOwnership(owner);
+        }
     }
 
     /// @dev Initialize Assurance
