@@ -140,8 +140,11 @@ contract DeployHelper {
         tokenController = TokenController(address(tokenControllerProxy));
         tokenController.initialize();
 
-        registry.claimOwnership();
-        registry.initialize();
+        // try to initialize contracts for ownership
+        // ignore errors if contracts were initialized beforehand
+        address(registry).call(abi.encodeWithSignature("initialize()"));
+        address(tokenController).call(abi.encodeWithSignature("initialize()"));
+        address(trueUSD).call(abi.encodeWithSignature("initialize()"));
 
         trueUSD.transferOwnership(address(tokenController));
         tokenController.issueClaimOwnership(address(trueUSD));
