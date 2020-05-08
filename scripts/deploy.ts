@@ -53,7 +53,7 @@ Owner is: ${trueUsdOwner}`)
   }
 
   const registryImplementation = await deploy('ProvisionalRegistryImplementation')
-  const registryProxy = contractAt('RegistryImplementation', deployedAddresses.registry)
+  const registryProxy = contractAt('OwnedUpgradeabilityProxy', deployedAddresses.registry)
   const registry = registryImplementation.attach(registryProxy.address)
 
   const registryOwner = await registry.owner()
@@ -137,7 +137,7 @@ Owner is: ${trueUsdOwner}`)
 
   tx = await trueUSD.transferOwnership(deployHelper.address)
   await tx.wait()
-  console.log('trueUSDProxy proxy transfer ownership')
+  console.log('trueUSDP transfer ownership')
 
   tx = await assuredFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
