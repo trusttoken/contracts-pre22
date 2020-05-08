@@ -1,7 +1,7 @@
 /**
  * Ethers Deploy Script
  *
- * ts-node scripts/deploy_testnet.ts "{private_key}" "{rpc_url}"
+ * ts-node scripts/deploy.ts "{private_key}" "{network}"
  *
  * We use ethers to deploy our contracts from scratch.
  * For upgrades, use deploy/upgrade.ts
@@ -9,29 +9,39 @@
  */
 
 import { ethers, providers } from 'ethers'
-import { setupDeployer, validatePrivateKey } from './utils'
+import { getContract, setupDeployer, validatePrivateKey } from './utils'
 
-const rpcOptions = {
-  rinkeby: 'https://rinkeby.infura.io/v3/81447a33c1cd4eb09efb1e8c388fb28e',
-  development: 'http://localhost:7545',
+interface DeployedAddresses {
+  trueUsd: string,
+  registry: string,
+  aaveLendingPool: string,
+  aaveLendingPoolCore: string,
+  aTUSD: string,
+  uniswapFactory: string,
 }
 
-export const deploy = async (accountPrivateKey: string, provider: providers.JsonRpcProvider) => {
+export const deploy = async (accountPrivateKey: string, provider: providers.JsonRpcProvider, network: string) => {
   validatePrivateKey(accountPrivateKey)
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const deployedAddresses: DeployedAddresses = require(`./deployedAddresses/${network}.json`)
+
+  for (const [name, address] of Object.entries(deployedAddresses)) {
+    const code = await provider.getCode(address)
+    if (!code || code === '0x') {
+      throw new Error(`Did not find contract ${name} under ${address} :(`)
+    }
+  }
 
   const wallet = new ethers.Wallet(accountPrivateKey, provider)
 
   const deploy = setupDeployer(wallet)
-
-  const ZERO = '0x0000000000000000000000000000000000000000'
+  const contractAt = getContract(wallet)
 
   const safeMath = await deploy('SafeMath')
   console.log('deployed SafeMath at: ', safeMath.address)
 
   const trueUSDImplementation = await deploy('TrueUSD')
-  const trueUSDProxy = await deploy('OwnedUpgradeabilityProxy')
-  const trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
-  console.log('deployed trueUSDProxy at: ', trueUSDProxy.address)
+  const trueUSDProxy = contractAt('TrueUSD', deployedAddresses.trueUsd)
 
   const tokenControllerImplementation = await deploy('TokenController')
   const tokenControllerProxy = await deploy('OwnedUpgradeabilityProxy')
@@ -44,73 +54,43 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   console.log('deployed assuredFinancialOpportunityProxy at: ', assuredFinancialOpportunityProxy.address)
 
   // Deploy the rest of the contracts
-  const registry = await deploy('ProvisionalRegistryImplementation')
-  const lendingPoolCoreMock = await deploy('LendingPoolCoreMock')
-  const aTokenMock = await deploy('ATokenMock', trueUSDProxy.address, lendingPoolCoreMock.address)
-  const lendingPoolMock = await deploy('LendingPoolMock', lendingPoolCoreMock.address, aTokenMock.address)
+  const registry = contractAt('Registry', deployedAddresses.registry)
+  const lendingPool = contractAt('LendingPool', deployedAddresses.aaveLendingPool)
+  const aTokenMock = await deploy('IAToken', deployedAddresses.aTUSD)
   const fractionalExponents = await deploy('FractionalExponents')
-  const trustToken = await deploy('MockTrustToken', registry.address)
+  const trustToken = await deploy('TrustToken', registry.address)
 
   const financialOpportunityImplementation = await deploy('AaveFinancialOpportunity')
   const financialOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
   console.log('deployed aaveFinancialOpportunityProxy at: ', financialOpportunityProxy.address)
 
-  const liquidatorImplementation = await deploy('Liquidator')
-  const liquidatorProxy = await deploy('OwnedUpgradeabilityProxy')
-  const liquidator = liquidatorImplementation.attach(liquidatorProxy.address)
-  console.log('deployed liquidatorProxy at: ', liquidatorProxy.address)
-
   // setup uniswap
-  // needs to compile using truffle compile
-  /*
-  this.uniswapFactory = await deploy('uniswap_factory')
-  this.uniswapTemplate = await deploy('uniswap_exchange')
-  await this.uniswapFactory.initializeFactory(this.uniswapTemplate.address)
-  this.trueUSDUniswapExchange = await this.uniswapFactory.createExchange(this.trueUSD.address)
+  const uniswapFactory = contractAt('uniswap_factory', deployedAddresses.uniswapFactory)
+  const uniswapTemplate = await deploy('uniswap_exchange')
+  await uniswapFactory.initializeFactory(uniswapTemplate.address)
 
-  console.log(this.trueUSDUniswapExchange)
-  // this.trueUSDUniswapAddress = (await this.uniswapFactory.createExchange(
-  //   this.trueUSDProxy.address))//.logs[0].args.exchange
-  this.trueUSDUniswap = await contractAt('uniswap_exchange',
-    this.trueUSDUniswap.address)
+  const trueUSDUniswapExchange = await uniswapFactory.createExchange(trueUSDProxy.address)
+  console.log('created trueUSDUniswapExchange at: ', trueUSDUniswapExchange.address)
 
-  this.trustUniswapAddress = (await this.uniswapFactory.createExchange(
-    this.trusttoken.address)).logs[0].args.exchange
+  const trustTokenUniswapExchange = await uniswapFactory.createExchange(trustToken.address)
+  console.log('created trustTokenUniswapExchange at: ', trustTokenUniswapExchange.address)
 
-  this.trustUniswap = await UniswapExchange.at(this.trustUniswapAddress)
   // deploy liquidator
-  this.liquidator = await deploy('Liquidator', this.registry.address,
-    this.trueUSD.address, this.trusttoken.address, this.trueUSDUniswap.address,
-    this.trustUniswap.address)
-
-  // deploy assurance pool
-  this.assurancePool = await deploy('StakedToken', this.trusttoken.address,
-    this.trueUSD.address, this.registry.address,
-    this.liquidator.address)
-  */
-  // deploy liquidator
+  const liquidator = await deploy('Liquidator',
+    registry.address, trueUSDProxy.address, trustToken.address,
+    trueUSDUniswapExchange.address, trueUSDUniswapExchange.address)
 
   // deploy assurance pool
   const assurancePool = await deploy(
     'StakedToken',
     trustToken.address,
-    trueUSD.address,
+    trueUSDProxy.address,
     registry.address,
     liquidator.address,
   )
 
   // Deploy UpgradeHelper
-  const deployHelper = await deploy(
-    'DeployHelper',
-    trueUSDProxy.address,
-    tokenControllerProxy.address,
-    assuredFinancialOpportunityProxy.address,
-    financialOpportunityProxy.address,
-    liquidatorProxy.address,
-    registry.address,
-    fractionalExponents.address,
-    assurancePool.address,
-  )
+  const deployHelper = await deploy('DeployHelper')
 
   let tx
 
@@ -141,16 +121,20 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
 
   // call deployHelper
   tx = await deployHelper.setup(
+    registry.address,
     trueUSDImplementation.address,
+    trueUSDProxy.address,
     tokenControllerImplementation.address,
+    tokenControllerProxy.address,
     assuredFinancialOpportunityImplementation.address,
+    assuredFinancialOpportunityProxy.address,
     financialOpportunityImplementation.address,
-    liquidatorImplementation.address,
+    financialOpportunityProxy.address,
+    fractionalExponents.address,
+    assurancePool.address,
+    liquidator.address,
     aTokenMock.address,
-    lendingPoolMock.address,
-    trustToken.address,
-    ZERO,
-    ZERO,
+    lendingPool.address,
     { gasLimit: 5000000 },
   )
   await wallet.provider.waitForTransaction(tx.hash)
@@ -202,6 +186,9 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
 }
 
 if (require.main === module) {
-  const provider = new ethers.providers.JsonRpcProvider(process.argv[3] || rpcOptions.development)
-  deploy(process.argv[2], provider).catch(console.error)
+  if (!['mainnet', 'kovan', 'ropsten', 'rinkeby'].includes(process.argv[3])) {
+    throw new Error(`Unknown network: ${process.argv[3]}`)
+  }
+  const provider = new ethers.providers.InfuraProvider(process.argv[3], '81447a33c1cd4eb09efb1e8c388fb28e')
+  deploy(process.argv[2], provider, process.argv[3]).catch(console.error)
 }
