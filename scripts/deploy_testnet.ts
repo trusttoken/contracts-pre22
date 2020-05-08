@@ -55,6 +55,11 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   const financialOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
   console.log('deployed aaveFinancialOpportunityProxy at: ', financialOpportunityProxy.address)
 
+  const liquidatorImplementation = await deploy('Liquidator')
+  const liquidatorProxy = await deploy('OwnedUpgradeabilityProxy')
+  const liquidator = liquidatorImplementation.attach(liquidatorProxy.address)
+  console.log('deployed liquidatorProxy at: ', liquidatorProxy.address)
+
   // setup uniswap
   // needs to compile using truffle compile
   /*
@@ -84,14 +89,6 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     this.liquidator.address)
   */
   // deploy liquidator
-  const liquidator = await deploy(
-    'Liquidator',
-    registry.address,
-    trueUSD.address,
-    trustToken.address,
-    ZERO,
-    ZERO,
-  )
 
   // deploy assurance pool
   const assurancePool = await deploy(
@@ -103,7 +100,17 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   )
 
   // Deploy UpgradeHelper
-  const deployHelper = await deploy('DeployHelper')
+  const deployHelper = await deploy(
+    'DeployHelper',
+    trueUSDProxy.address,
+    tokenControllerProxy.address,
+    assuredFinancialOpportunityProxy.address,
+    financialOpportunityProxy.address,
+    liquidatorProxy.address,
+    registry.address,
+    fractionalExponents.address,
+    assurancePool.address,
+  )
 
   let tx
 
@@ -134,20 +141,16 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
 
   // call deployHelper
   tx = await deployHelper.setup(
-    registry.address,
     trueUSDImplementation.address,
-    trueUSDProxy.address,
     tokenControllerImplementation.address,
-    tokenControllerProxy.address,
     assuredFinancialOpportunityImplementation.address,
-    assuredFinancialOpportunityProxy.address,
     financialOpportunityImplementation.address,
-    financialOpportunityProxy.address,
-    fractionalExponents.address,
-    assurancePool.address,
-    liquidator.address,
+    liquidatorImplementation.address,
     aTokenMock.address,
     lendingPoolMock.address,
+    trustToken.address,
+    ZERO,
+    ZERO,
     { gasLimit: 5000000 },
   )
   await wallet.provider.waitForTransaction(tx.hash)

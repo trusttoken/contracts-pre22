@@ -19,7 +19,7 @@ import {
 
 use(solidity)
 
-describe('DeployHelper', () => {
+describe.only('DeployHelper', () => {
   let deployer: Wallet
 
   const mockOutputUniswapAddress = Wallet.createRandom().address
@@ -31,8 +31,11 @@ describe('DeployHelper', () => {
   let mockTrustToken: Contract
 
   let registry: Contract
-  let liquidator: Contract
   let fractionalExponents: Contract
+
+  let liquidator: Contract
+  let liquidatorImplementation: Contract
+  let liquidatorProxy: Contract
 
   let trueUSD: Contract
   let trueUSDImplementation: Contract
@@ -55,16 +58,19 @@ describe('DeployHelper', () => {
   beforeEachWithFixture(async (provider, wallets) => {
     ([deployer] = wallets)
 
+    liquidatorProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
     aaveFinancialOpportunityProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
     assuredFinancialOpportunityProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
     tokenControllerProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
     trueUSDProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
 
+    liquidatorImplementation = await deployContract(deployer, Liquidator)
     aaveFinancialOpportunityImplementation = await deployContract(deployer, AaveFinancialOpportunity)
     assuredFinancialOpportunityImplementation = await deployContract(deployer, AssuredFinancialOpportunity)
     tokenControllerImplementation = await deployContract(deployer, TokenController)
     trueUSDImplementation = await deployContract(deployer, TrueUSD, [], { gasLimit: 5000000 })
 
+    liquidator = liquidatorImplementation.attach(liquidatorProxy.address)
     trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
     tokenController = tokenControllerImplementation.attach(tokenControllerProxy.address)
     aaveFinancialOpportunity = aaveFinancialOpportunityImplementation.attach(aaveFinancialOpportunityProxy.address)
@@ -73,16 +79,19 @@ describe('DeployHelper', () => {
     fractionalExponents = await deployContract(deployer, FractionalExponents)
     registry = await deployContract(deployer, ProvisionalRegistryImplementation)
     mockTrustToken = await deployContract(deployer, MockTrustToken, [registry.address])
-    liquidator = await deployContract(deployer, Liquidator, [
+
+    deployHelper = await deployContract(deployer, DeployHelper, [
+      trueUSDProxy.address,
+      tokenControllerProxy.address,
+      assuredFinancialOpportunityProxy.address,
+      aaveFinancialOpportunityProxy.address,
+      liquidatorProxy.address,
       registry.address,
-      trueUSD.address,
-      mockTrustToken.address,
-      mockOutputUniswapAddress,
-      mockStakeUniswapAddress,
+      fractionalExponents.address,
+      mockAssurancePoolAddress,
     ])
 
-    deployHelper = await deployContract(deployer, DeployHelper)
-
+    await liquidatorProxy.transferProxyOwnership(deployHelper.address)
     await aaveFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
     await assuredFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
     await tokenControllerProxy.transferProxyOwnership(deployHelper.address)
@@ -92,20 +101,16 @@ describe('DeployHelper', () => {
     await registry.transferOwnership(deployHelper.address)
 
     await deployHelper.setup(
-      registry.address,
       trueUSDImplementation.address,
-      trueUSDProxy.address,
       tokenControllerImplementation.address,
-      tokenControllerProxy.address,
       assuredFinancialOpportunityImplementation.address,
-      assuredFinancialOpportunityProxy.address,
       aaveFinancialOpportunityImplementation.address,
-      aaveFinancialOpportunityProxy.address,
-      fractionalExponents.address,
-      mockAssurancePoolAddress,
-      liquidator.address,
+      liquidatorImplementation.address,
       mockATokenAddress,
       mockLendingPoolAddress,
+      mockTrustToken.address,
+      mockOutputUniswapAddress,
+      mockStakeUniswapAddress,
     )
 
     await aaveFinancialOpportunityProxy.claimProxyOwnership()
@@ -115,7 +120,6 @@ describe('DeployHelper', () => {
 
     await assuredFinancialOpportunity.claimOwnership()
     await tokenController.claimOwnership()
-    await liquidator.claimOwnership()
     await registry.claimOwnership()
   })
 
@@ -169,12 +173,18 @@ describe('DeployHelper', () => {
   })
 
   describe('Liquidator', () => {
-    it('should be owned by deployer', async () => {
-      expect(await liquidator.owner()).to.equal(deployer.address)
+    it('should be owned by AssuredFinancialOpportunity', async () => {
+      expect(await liquidator.owner()).to.equal(assuredFinancialOpportunity.address)
     })
 
     it('should not be possible to configured again', async () => {
-      await expect(liquidator.configure()).to.be.reverted
+      await expect(liquidator.configure(
+        registry.address,
+        trueUSD.address,
+        mockTrustToken.address,
+        mockOutputUniswapAddress,
+        mockStakeUniswapAddress,
+      )).to.be.reverted
     })
   })
 
