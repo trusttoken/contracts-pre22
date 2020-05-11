@@ -19,11 +19,11 @@ describe('Upgrading', () => {
   let provider: MockProvider
   const deployHelperAddress = '0xbAe83CF0cd8DE043A9A2188833e8cB69aB6c7103'
   const trueUsdProxyAddress = '0xaC8444e7d45c34110B34Ed269AD86248884E78C7'
-  const tokenControllerProxyAddress = '0xFf807885934003A35b1284d7445fc83Fd23417e5'
-  const assuredOpportunityProxyAddress = '0x956dA338C1518a7FB213042b70c60c021aeBd554'
+  const registryProxyAddress = '0xFf807885934003A35b1284d7445fc83Fd23417e5'
+  const tokenControllerProxyAddress = '0x956dA338C1518a7FB213042b70c60c021aeBd554'
+  const assuredOpportunityProxyAddress = '0x84e924C5E04438D2c1Df1A981f7E7104952e6de1'
   const aaveOpportunityProxyAddress = '0x6f2fa37EBfaf089C4Fd7e6124C1028306943D11d'
   const liquidatorProxyAddress = '0xbF42E6bD8fA05956E28F7DBE274657c262526F3D'
-  const registryProxyAddress = '0x84e924C5E04438D2c1Df1A981f7E7104952e6de1'
 
   beforeEachWithFixture(async (_provider, wallets) => {
     ([deployer, holder] = wallets)

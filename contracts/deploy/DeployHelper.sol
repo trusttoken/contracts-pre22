@@ -26,12 +26,11 @@ contract DeployHelper {
     address payable public owner;
 
     OwnedUpgradeabilityProxy public trueUSDProxy;
-    OwnedUpgradeabilityProxy public tokenControllerProxy;
     OwnedUpgradeabilityProxy public registryProxy;
+    OwnedUpgradeabilityProxy public tokenControllerProxy;
     OwnedUpgradeabilityProxy public assuredFinancialOpportunityProxy;
     OwnedUpgradeabilityProxy public aaveFinancialOpportunityProxy;
     OwnedUpgradeabilityProxy public liquidatorProxy;
-    OwnedUpgradeabilityProxy public registryProxy;
 
     IExponentContract exponentContract;
     StakedToken assurancePool;
@@ -41,7 +40,7 @@ contract DeployHelper {
     AssuredFinancialOpportunity assuredFinancialOpportunity;
     AaveFinancialOpportunity aaveFinancialOpportunity;
     Liquidator liquidator;
-    RegistryImplementation registry;
+    ProvisionalRegistryImplementation registry;
 
     constructor(
         address payable trueUSDProxyAddress,
@@ -89,12 +88,11 @@ contract DeployHelper {
      */
     function setup(
         address trueUSDImplAddress,
-        address registryImplAddress,
+        address payable registryImplAddress,
         address payable tokenControllerImplAddress,
         address payable assuredFinancialOpportunityImplAddress,
         address payable aaveFinancialOpportunityImplAddress,
         address payable liquidatorImplAddress,
-        address payable registryImplAddress,
         address aTokenAddress,
         address lendingPoolAddress,
         address trustTokenAddress,
@@ -154,7 +152,7 @@ contract DeployHelper {
 
         registryProxy.claimProxyOwnership();
         registryProxy.upgradeTo(registryImplAddress);
-        registry = RegistryImplementation(address(registryProxy));
+        registry = ProvisionalRegistryImplementation(address(registryProxy));
         address(registry).call(abi.encodeWithSignature("initialize()"));
 
         tokenController.setToken(trueUSD);

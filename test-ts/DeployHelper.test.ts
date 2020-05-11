@@ -111,7 +111,6 @@ describe('DeployHelper', () => {
       assuredFinancialOpportunityImplementation.address,
       aaveFinancialOpportunityImplementation.address,
       liquidatorImplementation.address,
-      registryImplementation.address,
       mockATokenAddress,
       mockLendingPoolAddress,
       mockTrustToken.address,
@@ -131,7 +130,7 @@ describe('DeployHelper', () => {
   })
 
   describe('True USD', () => {
-    it('proxy should be owned by deployer', async () => {
+    it('truystproxy should be owned by deployer', async () => {
       expect(await trueUSDProxy.proxyOwner()).to.equal(deployer.address)
     })
 
