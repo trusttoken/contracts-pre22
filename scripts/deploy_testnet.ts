@@ -108,6 +108,7 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     'DeployHelper',
     trueUSDProxy.address,
     registryProxy.address,
+    registryProxy.address,
     tokenControllerProxy.address,
     assuredFinancialOpportunityProxy.address,
     financialOpportunityProxy.address,
@@ -120,11 +121,11 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
 
   // transfer proxy ownership to deploy helper
   tx = await tokenControllerProxy.transferProxyOwnership(deployHelper.address)
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('controller proxy transfer ownership')
 
   tx = await trueUSDProxy.transferProxyOwnership(deployHelper.address)
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('trueUSDProxy proxy transfer ownership')
 
   // transfer proxy ownership to deploy helper
@@ -133,22 +134,21 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   console.log('registry proxy transfer ownership')
 
   tx = await assuredFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('assuredFinancialOpportunityProxy proxy transfer ownership')
 
   tx = await financialOpportunityProxy.transferProxyOwnership(deployHelper.address)
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('financialOpportunityProxy proxy transfer ownership')
 
-  tx = await liquidator.transferOwnership(deployHelper.address)
-  await wallet.provider.waitForTransaction(tx.hash)
-  console.log('liquidator transfer ownership')
+  tx = await registryProxy.transferProxyOwnership(deployHelper.address)
+  await tx.wait()
+  console.log('registryProxy proxy transfer ownership')
 
-  // tx = await registry.transferOwnership(deployHelper.address)
-  // await wallet.provider.waitForTransaction(tx.hash)
-  // console.log('registry transfer ownership')
+  tx = await liquidatorProxy.transferProxyOwnership(deployHelper.address)
+  await tx.wait()
+  console.log('liquidator proxy transfer ownership')
 
-  // call deployHelper
   tx = await deployHelper.setup(
     trueUSDImplementation.address,
     registryImplementation.address,
@@ -156,6 +156,7 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     assuredFinancialOpportunityImplementation.address,
     financialOpportunityImplementation.address,
     liquidatorImplementation.address,
+    registryImplementation.address,
     aTokenMock.address,
     lendingPoolMock.address,
     trustToken.address,
@@ -163,16 +164,16 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     ZERO,
     { gasLimit: 5000000 },
   )
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('deployHelper: setup')
 
   // reclaim ownership
   tx = await tokenControllerProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('tokenControllerProxy claim ownership')
 
   tx = await trueUSDProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('trueUSDProxy claim ownership')
 
   // reclaim ownership
@@ -181,28 +182,28 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   console.log('registryProxy  claim ownership')
 
   tx = await assuredFinancialOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('assuredFinancialOpportunityProxy claim ownership')
 
   tx = await financialOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('financialOpportunityProxy claim ownership')
 
   tx = await assuredFinancialOpportunity.claimOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('assuredFinancialOpportunity claim ownership')
 
   tx = await tokenController.claimOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('tokenController claim ownership')
 
-  tx = await registry.claimOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
-  console.log('registry claim ownership')
+  tx = await registryProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await tx.wait()
+  console.log('registry proxy claim ownership')
 
-  tx = await liquidator.claimOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
-  console.log('liquidator claim ownership')
+  tx = await liquidatorProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await tx.wait()
+  console.log('liquidator proxy claim ownership')
 
   tx = await tokenController.setMintThresholds(
     ethers.utils.bigNumberify('1000000000000000000000'),
@@ -210,7 +211,7 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     ethers.utils.bigNumberify('100000000000000000000000'),
     { gasLimit: 5000000 },
   )
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('set mint thresholds')
 
   console.log('\n\nSUCCESSFULLY DEPLOYED TO NETWORK: ', provider.connection.url, '\n\n')

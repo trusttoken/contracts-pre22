@@ -17,12 +17,13 @@ describe('Upgrading', () => {
   let deployer: Wallet
   let holder: Wallet
   let provider: MockProvider
-  const deployHelperAddress = '0xbF42E6bD8fA05956E28F7DBE274657c262526F3D'
+  const deployHelperAddress = '0xbAe83CF0cd8DE043A9A2188833e8cB69aB6c7103'
   const trueUsdProxyAddress = '0xaC8444e7d45c34110B34Ed269AD86248884E78C7'
   const tokenControllerProxyAddress = '0xFf807885934003A35b1284d7445fc83Fd23417e5'
   const assuredOpportunityProxyAddress = '0x956dA338C1518a7FB213042b70c60c021aeBd554'
-  const aaveOpportunityProxyAddress = '0x0BDb999cFA9c47d6d62323a1905F8Eb7B3c9B119'
-  const registryProxyAddress = '0xFf807885934003A35b1284d7445fc83Fd23417e5'
+  const aaveOpportunityProxyAddress = '0x6f2fa37EBfaf089C4Fd7e6124C1028306943D11d'
+  const liquidatorProxyAddress = '0xbF42E6bD8fA05956E28F7DBE274657c262526F3D'
+  const registryProxyAddress = '0x84e924C5E04438D2c1Df1A981f7E7104952e6de1'
 
   beforeEachWithFixture(async (_provider, wallets) => {
     ([deployer, holder] = wallets)
@@ -60,9 +61,11 @@ describe('Upgrading', () => {
     expect(await tokenController.ratifiedMintThreshold()).to.equal(parseEther('2'))
     expect(await assuredFinancialOpportunity.totalSupply()).to.equal(parseEther('1'))
 
-    expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(trueUsdProxyAddress).implementation()).to.equal('0x7E56a2E586d46d59fA300e40Ba5fc191eFb522Fe')
-    expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(tokenControllerProxyAddress).implementation()).to.equal('0xD2cE141C577c80eb67e4549061A8837ac2Bfa020')
-    expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(aaveOpportunityProxyAddress).implementation()).to.equal('0x86Da7600BA11A5D40088AA3871273f0a23d1Ca31')
-    expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(assuredOpportunityProxyAddress).implementation()).to.equal('0x8C73904FB36c8a844143B694C2A10343d0BFF896')
+    expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(trueUsdProxyAddress).implementation()).to.equal('0x86Da7600BA11A5D40088AA3871273f0a23d1Ca31')
+    expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(tokenControllerProxyAddress).implementation()).to.equal('0x8C73904FB36c8a844143B694C2A10343d0BFF896')
+    expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(aaveOpportunityProxyAddress).implementation()).to.equal('0x3d65305F56baB9Cb512142e57936027329bA7624')
+    expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(assuredOpportunityProxyAddress).implementation()).to.equal('0x2d245Cc3806fceAE0994142B75665E0343f150aE')
+    expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(liquidatorProxyAddress).implementation()).to.equal('0xD095E3Fb03A4B1a9A80C936cAF99e5a60aFaDeaA')
+    expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(registryProxyAddress).implementation()).to.equal('0xF81ced20aFE509f19766ca7d9859c6C1a7D01965')
   })
 })

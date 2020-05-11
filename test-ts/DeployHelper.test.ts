@@ -81,6 +81,7 @@ describe('DeployHelper', () => {
     tokenController = tokenControllerImplementation.attach(tokenControllerProxy.address)
     aaveFinancialOpportunity = aaveFinancialOpportunityImplementation.attach(aaveFinancialOpportunityProxy.address)
     assuredFinancialOpportunity = assuredFinancialOpportunityImplementation.attach(assuredFinancialOpportunityProxy.address)
+    registry = registryImplementation.attach(registryProxy.address)
 
     fractionalExponents = await deployContract(deployer, FractionalExponents)
     mockTrustToken = await deployContract(deployer, MockTrustToken, [registry.address])
@@ -103,9 +104,6 @@ describe('DeployHelper', () => {
     await trueUSDProxy.transferProxyOwnership(deployHelper.address)
     await registryProxy.transferProxyOwnership(deployHelper.address)
 
-    await liquidator.transferOwnership(deployHelper.address)
-    await registry.transferOwnership(deployHelper.address)
-
     await deployHelper.setup(
       trueUSDImplementation.address,
       registryImplementation.address,
@@ -113,6 +111,7 @@ describe('DeployHelper', () => {
       assuredFinancialOpportunityImplementation.address,
       aaveFinancialOpportunityImplementation.address,
       liquidatorImplementation.address,
+      registryImplementation.address,
       mockATokenAddress,
       mockLendingPoolAddress,
       mockTrustToken.address,
@@ -125,7 +124,7 @@ describe('DeployHelper', () => {
     await tokenControllerProxy.claimProxyOwnership()
     await trueUSDProxy.claimProxyOwnership()
     await registryProxy.claimProxyOwnership()
-
+    await liquidatorProxy.claimProxyOwnership()
     await assuredFinancialOpportunity.claimOwnership()
     await tokenController.claimOwnership()
     await registry.claimOwnership()

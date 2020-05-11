@@ -1,6 +1,5 @@
 pragma solidity ^0.5.13;
 
-import { Registry } from "@trusttoken/registry/contracts/Registry.sol";
 import { TrueUSD } from "../TrueCurrencies/TrueUSD.sol";
 import { ProvisionalRegistryImplementation } from "../mocks/RegistryImplementation.sol";
 import { OwnedUpgradeabilityProxy } from "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
@@ -20,6 +19,8 @@ import { Liquidator } from "@trusttoken/trusttokens/contracts/Liquidator.sol";
  * Deployer of DeployHelper will be final owner of proxy contracts
  *
  * Use UpgradeHelper to upgrade existing contracts
+ *
+ * __WARNING__ TrueUSD and Registry contract are expected to be initialized manually
  */
 contract DeployHelper {
     address payable public owner;
@@ -30,8 +31,8 @@ contract DeployHelper {
     OwnedUpgradeabilityProxy public assuredFinancialOpportunityProxy;
     OwnedUpgradeabilityProxy public aaveFinancialOpportunityProxy;
     OwnedUpgradeabilityProxy public liquidatorProxy;
+    OwnedUpgradeabilityProxy public registryProxy;
 
-    ProvisionalRegistryImplementation registry;
     IExponentContract exponentContract;
     StakedToken assurancePool;
 
@@ -40,6 +41,7 @@ contract DeployHelper {
     AssuredFinancialOpportunity assuredFinancialOpportunity;
     AaveFinancialOpportunity aaveFinancialOpportunity;
     Liquidator liquidator;
+    RegistryImplementation registry;
 
     constructor(
         address payable trueUSDProxyAddress,
@@ -68,7 +70,7 @@ contract DeployHelper {
         assuredFinancialOpportunityProxy = OwnedUpgradeabilityProxy(assuredFinancialOpportunityProxyAddress);
         aaveFinancialOpportunityProxy = OwnedUpgradeabilityProxy(aaveFinancialOpportunityProxyAddress);
         liquidatorProxy = OwnedUpgradeabilityProxy(liquidatorProxyAddress);
-
+        registryProxy = OwnedUpgradeabilityProxy(registryProxyAddress);
         exponentContract = IExponentContract(exponentContractAddress);
         assurancePool = StakedToken(assurancePoolAddress);
     }
@@ -92,6 +94,7 @@ contract DeployHelper {
         address payable assuredFinancialOpportunityImplAddress,
         address payable aaveFinancialOpportunityImplAddress,
         address payable liquidatorImplAddress,
+        address payable registryImplAddress,
         address aTokenAddress,
         address lendingPoolAddress,
         address trustTokenAddress,
@@ -103,6 +106,7 @@ contract DeployHelper {
         require(assuredFinancialOpportunityImplAddress != address(0), "assuredFinancialOpportunityImplAddress cannot be address(0)");
         require(aaveFinancialOpportunityImplAddress != address(0), "aaveFinancialOpportunityImplAddress cannot be address(0)");
         require(liquidatorImplAddress != address(0), "liquidatorImplAddress cannot be address(0)");
+        require(registryImplAddress != address(0), "registryImplAddress cannot be address(0)");
 
         initTrueUSD(
             trueUSDImplAddress,
@@ -130,29 +134,28 @@ contract DeployHelper {
     ) internal {
         require(trueUSDProxy.pendingProxyOwner() == address(this), "not token proxy owner");
         require(tokenControllerProxy.pendingProxyOwner() == address(this), "not controller proxy owner");
+        require(registryProxy.pendingProxyOwner() == address(this), "not registry proxy owner");
 
-        trueUSDProxy.claimProxyOwnership(); //pass
+        trueUSDProxy.claimProxyOwnership();
         trueUSDProxy.upgradeTo(trueUSDImplAddress);
         trueUSD = TrueUSD(address(trueUSDProxy));
-        trueUSD.initialize();
+        // Either initialize or claim ownership
+        address(trueUSD).call(abi.encodeWithSignature("initialize()"));
+        address(trueUSD).call(abi.encodeWithSignature("claimOwnership()"));
+        require(trueUSD.owner() == address(this), "not TrueUSD owner");
 
         tokenControllerProxy.claimProxyOwnership();
         tokenControllerProxy.upgradeTo(tokenControllerImplAddress);
         tokenController = TokenController(address(tokenControllerProxy));
         tokenController.initialize();
 
-        registryProxy.claimProxyOwnership();
-        registryProxy.upgradeTo(registryImplAddress);
-        registry = ProvisionalRegistryImplementation(address(registryProxy));
-
-        // try to initialize contracts for ownership
-        // ignore errors if contracts were initialized beforehand
-        address(registry).call(abi.encodeWithSignature("initialize()"));
-        address(tokenController).call(abi.encodeWithSignature("initialize()"));
-        address(trueUSD).call(abi.encodeWithSignature("initialize()"));
-
         trueUSD.transferOwnership(address(tokenController));
         tokenController.issueClaimOwnership(address(trueUSD));
+
+        registryProxy.claimProxyOwnership();
+        registryProxy.upgradeTo(registryImplAddress);
+        registry = RegistryImplementation(address(registryProxy));
+        address(registry).call(abi.encodeWithSignature("initialize()"));
 
         tokenController.setToken(trueUSD);
         tokenController.setTokenRegistry(registry);
@@ -162,8 +165,11 @@ contract DeployHelper {
         trueUSDProxy.transferProxyOwnership(owner);
         tokenController.transferOwnership(owner);
         tokenControllerProxy.transferProxyOwnership(owner);
-        registry.transferOwnership(owner);
         registryProxy.transferProxyOwnership(owner);
+
+        if (registry.owner() == address(this)) {
+            registry.transferOwnership(owner);
+        }
     }
 
     /// @dev Initialize Assurance
