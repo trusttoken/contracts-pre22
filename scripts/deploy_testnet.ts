@@ -33,6 +33,11 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   const trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
   console.log('deployed trueUSDProxy at: ', trueUSDProxy.address)
 
+  const registryImplementation = await deploy('ProvisionalRegistryImplementation')
+  const registryProxy = await deploy('OwnedUpgradeabilityProxy')
+  const registry = registryImplementation.attach(registryProxy.address)
+  console.log('deployed registryProxy at: ', registryProxy.address)
+
   const tokenControllerImplementation = await deploy('TokenController')
   const tokenControllerProxy = await deploy('OwnedUpgradeabilityProxy')
   const tokenController = tokenControllerImplementation.attach(tokenControllerProxy.address)
@@ -44,7 +49,6 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   console.log('deployed assuredFinancialOpportunityProxy at: ', assuredFinancialOpportunityProxy.address)
 
   // Deploy the rest of the contracts
-  const registry = await deploy('ProvisionalRegistryImplementation')
   const lendingPoolCoreMock = await deploy('LendingPoolCoreMock')
   const aTokenMock = await deploy('ATokenMock', trueUSDProxy.address, lendingPoolCoreMock.address)
   const lendingPoolMock = await deploy('LendingPoolMock', lendingPoolCoreMock.address, aTokenMock.address)
@@ -103,11 +107,11 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   const deployHelper = await deploy(
     'DeployHelper',
     trueUSDProxy.address,
+    registryProxy.address,
     tokenControllerProxy.address,
     assuredFinancialOpportunityProxy.address,
     financialOpportunityProxy.address,
     liquidatorProxy.address,
-    registry.address,
     fractionalExponents.address,
     assurancePool.address,
   )
@@ -123,6 +127,11 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   await wallet.provider.waitForTransaction(tx.hash)
   console.log('trueUSDProxy proxy transfer ownership')
 
+  // transfer proxy ownership to deploy helper
+  tx = await registryProxy.transferProxyOwnership(deployHelper.address)
+  await wallet.provider.waitForTransaction(tx.hash)
+  console.log('registry proxy transfer ownership')
+
   tx = await assuredFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
   await wallet.provider.waitForTransaction(tx.hash)
   console.log('assuredFinancialOpportunityProxy proxy transfer ownership')
@@ -135,13 +144,14 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   await wallet.provider.waitForTransaction(tx.hash)
   console.log('liquidator transfer ownership')
 
-  tx = await registry.transferOwnership(deployHelper.address)
-  await wallet.provider.waitForTransaction(tx.hash)
-  console.log('registry transfer ownership')
+  // tx = await registry.transferOwnership(deployHelper.address)
+  // await wallet.provider.waitForTransaction(tx.hash)
+  // console.log('registry transfer ownership')
 
   // call deployHelper
   tx = await deployHelper.setup(
     trueUSDImplementation.address,
+    registryImplementation.address,
     tokenControllerImplementation.address,
     assuredFinancialOpportunityImplementation.address,
     financialOpportunityImplementation.address,
@@ -164,6 +174,11 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   tx = await trueUSDProxy.claimProxyOwnership({ gasLimit: 5000000 })
   await wallet.provider.waitForTransaction(tx.hash)
   console.log('trueUSDProxy claim ownership')
+
+  // reclaim ownership
+  tx = await registryProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await wallet.provider.waitForTransaction(tx.hash)
+  console.log('registryProxy  claim ownership')
 
   tx = await assuredFinancialOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
   await wallet.provider.waitForTransaction(tx.hash)

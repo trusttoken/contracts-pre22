@@ -2,7 +2,7 @@ pragma solidity ^0.5.13;
 
 import { Registry } from "@trusttoken/registry/contracts/Registry.sol";
 import { TrueUSD } from "../TrueCurrencies/TrueUSD.sol";
-import { RegistryImplementation } from "../mocks/RegistryImplementation.sol";
+import { ProvisionalRegistryImplementation } from "../mocks/RegistryImplementation.sol";
 import { OwnedUpgradeabilityProxy } from "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import { TokenController } from "../TrueCurrencies/Admin/TokenController.sol";
 import { AssuredFinancialOpportunity } from "../TrueReward/AssuredFinancialOpportunity.sol";
@@ -26,11 +26,12 @@ contract DeployHelper {
 
     OwnedUpgradeabilityProxy public trueUSDProxy;
     OwnedUpgradeabilityProxy public tokenControllerProxy;
+    OwnedUpgradeabilityProxy public registryProxy;
     OwnedUpgradeabilityProxy public assuredFinancialOpportunityProxy;
     OwnedUpgradeabilityProxy public aaveFinancialOpportunityProxy;
     OwnedUpgradeabilityProxy public liquidatorProxy;
 
-    RegistryImplementation registry;
+    ProvisionalRegistryImplementation registry;
     IExponentContract exponentContract;
     StakedToken assurancePool;
 
@@ -42,11 +43,11 @@ contract DeployHelper {
 
     constructor(
         address payable trueUSDProxyAddress,
+        address payable registryProxyAddress,
         address payable tokenControllerProxyAddress,
         address payable assuredFinancialOpportunityProxyAddress,
         address payable aaveFinancialOpportunityProxyAddress,
         address payable liquidatorProxyAddress,
-        address registryAddress,
         address exponentContractAddress,
         address assurancePoolAddress
     ) public {
@@ -55,8 +56,7 @@ contract DeployHelper {
         require(assuredFinancialOpportunityProxyAddress != address(0), "assuredFinancialOpportunityProxyAddress cannot be address(0)");
         require(aaveFinancialOpportunityProxyAddress != address(0), "aaveFinancialOpportunityProxyAddress cannot be address(0)");
         require(liquidatorProxyAddress != address(0), "liquidatorProxyAddress cannot be address(0)");
-
-        require(registryAddress != address(0), "registryAddress cannot be address(0)");
+        require(registryProxyAddress != address(0), "registryProxyAddress cannot be address(0)");
         require(exponentContractAddress != address(0), "exponentContractAddress cannot be address(0)");
         require(assurancePoolAddress != address(0), "assurancePoolAddress cannot be address(0)");
 
@@ -64,11 +64,11 @@ contract DeployHelper {
 
         trueUSDProxy = OwnedUpgradeabilityProxy(trueUSDProxyAddress);
         tokenControllerProxy = OwnedUpgradeabilityProxy(tokenControllerProxyAddress);
+        registryProxy = OwnedUpgradeabilityProxy(registryProxyAddress);
         assuredFinancialOpportunityProxy = OwnedUpgradeabilityProxy(assuredFinancialOpportunityProxyAddress);
         aaveFinancialOpportunityProxy = OwnedUpgradeabilityProxy(aaveFinancialOpportunityProxyAddress);
         liquidatorProxy = OwnedUpgradeabilityProxy(liquidatorProxyAddress);
 
-        registry = RegistryImplementation(registryAddress);
         exponentContract = IExponentContract(exponentContractAddress);
         assurancePool = StakedToken(assurancePoolAddress);
     }
@@ -87,6 +87,7 @@ contract DeployHelper {
      */
     function setup(
         address trueUSDImplAddress,
+        address registryImplAddress,
         address payable tokenControllerImplAddress,
         address payable assuredFinancialOpportunityImplAddress,
         address payable aaveFinancialOpportunityImplAddress,
@@ -103,10 +104,10 @@ contract DeployHelper {
         require(aaveFinancialOpportunityImplAddress != address(0), "aaveFinancialOpportunityImplAddress cannot be address(0)");
         require(liquidatorImplAddress != address(0), "liquidatorImplAddress cannot be address(0)");
 
-
         initTrueUSD(
             trueUSDImplAddress,
-            tokenControllerImplAddress
+            tokenControllerImplAddress,
+            registryImplAddress
         );
 
         initAssurance(
@@ -124,7 +125,8 @@ contract DeployHelper {
     // @dev Init TrueUSD & TokenController
     function initTrueUSD(
         address trueUSDImplAddress,
-        address tokenControllerImplAddress
+        address tokenControllerImplAddress,
+        address registryImplAddress
     ) internal {
         require(trueUSDProxy.pendingProxyOwner() == address(this), "not token proxy owner");
         require(tokenControllerProxy.pendingProxyOwner() == address(this), "not controller proxy owner");
@@ -138,6 +140,10 @@ contract DeployHelper {
         tokenControllerProxy.upgradeTo(tokenControllerImplAddress);
         tokenController = TokenController(address(tokenControllerProxy));
         tokenController.initialize();
+
+        registryProxy.claimProxyOwnership();
+        registryProxy.upgradeTo(registryImplAddress);
+        registry = ProvisionalRegistryImplementation(address(registryProxy));
 
         // try to initialize contracts for ownership
         // ignore errors if contracts were initialized beforehand
@@ -154,9 +160,10 @@ contract DeployHelper {
         tokenController.setOpportunityAddress(address(assuredFinancialOpportunityProxy));
 
         trueUSDProxy.transferProxyOwnership(owner);
-        tokenController.transferOwnership(address(owner));
+        tokenController.transferOwnership(owner);
         tokenControllerProxy.transferProxyOwnership(owner);
         registry.transferOwnership(owner);
+        registryProxy.transferProxyOwnership(owner);
     }
 
     /// @dev Initialize Assurance

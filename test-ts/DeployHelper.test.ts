@@ -30,7 +30,6 @@ describe('DeployHelper', () => {
 
   let mockTrustToken: Contract
 
-  let registry: Contract
   let fractionalExponents: Contract
 
   let liquidator: Contract
@@ -40,6 +39,10 @@ describe('DeployHelper', () => {
   let trueUSD: Contract
   let trueUSDImplementation: Contract
   let trueUSDProxy: Contract
+
+  let registry: Contract
+  let registryImplementation: Contract
+  let registryProxy: Contract
 
   let tokenController: Contract
   let tokenControllerImplementation: Contract
@@ -63,30 +66,32 @@ describe('DeployHelper', () => {
     assuredFinancialOpportunityProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
     tokenControllerProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
     trueUSDProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
+    registryProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
 
     liquidatorImplementation = await deployContract(deployer, Liquidator)
     aaveFinancialOpportunityImplementation = await deployContract(deployer, AaveFinancialOpportunity)
     assuredFinancialOpportunityImplementation = await deployContract(deployer, AssuredFinancialOpportunity)
     tokenControllerImplementation = await deployContract(deployer, TokenController)
     trueUSDImplementation = await deployContract(deployer, TrueUSD, [], { gasLimit: 5000000 })
+    registryImplementation = await deployContract(deployer, ProvisionalRegistryImplementation)
 
     liquidator = liquidatorImplementation.attach(liquidatorProxy.address)
     trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
+    registry = registryImplementation.attach(registryProxy.address)
     tokenController = tokenControllerImplementation.attach(tokenControllerProxy.address)
     aaveFinancialOpportunity = aaveFinancialOpportunityImplementation.attach(aaveFinancialOpportunityProxy.address)
     assuredFinancialOpportunity = assuredFinancialOpportunityImplementation.attach(assuredFinancialOpportunityProxy.address)
 
     fractionalExponents = await deployContract(deployer, FractionalExponents)
-    registry = await deployContract(deployer, ProvisionalRegistryImplementation)
     mockTrustToken = await deployContract(deployer, MockTrustToken, [registry.address])
 
     deployHelper = await deployContract(deployer, DeployHelper, [
       trueUSDProxy.address,
+      registryProxy.address,
       tokenControllerProxy.address,
       assuredFinancialOpportunityProxy.address,
       aaveFinancialOpportunityProxy.address,
       liquidatorProxy.address,
-      registry.address,
       fractionalExponents.address,
       mockAssurancePoolAddress,
     ])
@@ -96,12 +101,14 @@ describe('DeployHelper', () => {
     await assuredFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
     await tokenControllerProxy.transferProxyOwnership(deployHelper.address)
     await trueUSDProxy.transferProxyOwnership(deployHelper.address)
+    await registryProxy.transferProxyOwnership(deployHelper.address)
 
     await liquidator.transferOwnership(deployHelper.address)
     await registry.transferOwnership(deployHelper.address)
 
     await deployHelper.setup(
       trueUSDImplementation.address,
+      registryImplementation.address,
       tokenControllerImplementation.address,
       assuredFinancialOpportunityImplementation.address,
       aaveFinancialOpportunityImplementation.address,
@@ -117,6 +124,7 @@ describe('DeployHelper', () => {
     await assuredFinancialOpportunityProxy.claimProxyOwnership()
     await tokenControllerProxy.claimProxyOwnership()
     await trueUSDProxy.claimProxyOwnership()
+    await registryProxy.claimProxyOwnership()
 
     await assuredFinancialOpportunity.claimOwnership()
     await tokenController.claimOwnership()
@@ -146,6 +154,10 @@ describe('DeployHelper', () => {
   })
 
   describe('Registry', () => {
+    it('proxy should be owned by deployer', async () => {
+      expect(await registryProxy.proxyOwner()).to.equal(deployer.address)
+    })
+
     it('should be owned by deployer', async () => {
       expect(await registry.owner()).to.equal(deployer.address)
     })

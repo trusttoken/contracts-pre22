@@ -6,6 +6,7 @@ import { beforeEachWithFixture } from '../utils'
 import { deploy } from '../../scripts/deploy_testnet'
 import { upgrade } from '../../scripts/upgrade'
 import { TrueUsdFactory } from '../../build/types/TrueUsdFactory'
+import { ProvisionalRegistryImplementationFactory } from '../../build/types/ProvisionalRegistryImplementationFactory'
 import { TokenControllerFactory } from '../../build/types/TokenControllerFactory'
 import { AssuredFinancialOpportunityFactory } from '../../build/types/AssuredFinancialOpportunityFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../../build/types/OwnedUpgradeabilityProxyFactory'
@@ -21,6 +22,7 @@ describe('Upgrading', () => {
   const tokenControllerProxyAddress = '0xFf807885934003A35b1284d7445fc83Fd23417e5'
   const assuredOpportunityProxyAddress = '0x956dA338C1518a7FB213042b70c60c021aeBd554'
   const aaveOpportunityProxyAddress = '0x0BDb999cFA9c47d6d62323a1905F8Eb7B3c9B119'
+  const registryProxyAddress = '0xFf807885934003A35b1284d7445fc83Fd23417e5'
 
   beforeEachWithFixture(async (_provider, wallets) => {
     ([deployer, holder] = wallets)
@@ -32,6 +34,7 @@ describe('Upgrading', () => {
     const tokenController = new TokenControllerFactory(deployer).attach(tokenControllerProxyAddress)
     const trueUsd = new TrueUsdFactory(deployer).attach(trueUsdProxyAddress)
     const assuredFinancialOpportunity = new AssuredFinancialOpportunityFactory(deployer).attach(assuredOpportunityProxyAddress)
+    const registry = new ProvisionalRegistryImplementationFactory(deployer).attach(registryProxyAddress)
 
     await tokenController.setMintThresholds(parseEther('1'), parseEther('2'), parseEther('3'))
     await tokenController.setMintLimits(parseEther('1'), parseEther('2'), parseEther('3'))

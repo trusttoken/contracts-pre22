@@ -19,8 +19,10 @@ export const upgrade = async (deployHelperAddress: string, accountPrivateKey: st
 
   const deploy = setupDeployer(wallet)
   const contract = getContract(wallet)
+
   // Deploy all contracts
   const trueUSDContract = await deploy('TrueUSD')
+  const registryContract = await deploy('ProvisionalRegistryImplementation')
   const tokenControllerContract = await deploy('TokenController')
   const aaveFinancialOpportunityContract = await deploy('AaveFinancialOpportunity')
   const assuredFinancialOpportunityContract = await deploy('AssuredFinancialOpportunity')
@@ -28,11 +30,15 @@ export const upgrade = async (deployHelperAddress: string, accountPrivateKey: st
   const deployHelper = contract('DeployHelper', deployHelperAddress)
   const tokenControllerProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.tokenControllerProxy())
   const trueUsdProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.trueUSDProxy())
+  const registryProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.registryProxy())
+  console.log("registryProxy: ", registryProxy)
   const assuredFinancialOpportunityProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.assuredFinancialOpportunityProxy())
   const aaveFinancialOpportunityProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.aaveFinancialOpportunityProxy())
 
   console.log('Upgrading TrueUSD...')
   await (await trueUsdProxy.upgradeTo(trueUSDContract.address)).wait()
+  console.log('Upgrading Registry...')
+  await (await registryProxy.upgradeTo(registryContract.address)).wait()
   console.log('Upgrading TokenController...')
   await (await tokenControllerProxy.upgradeTo(tokenControllerContract.address)).wait()
   console.log('Upgrading AssuredFinancialOpportunity...')
