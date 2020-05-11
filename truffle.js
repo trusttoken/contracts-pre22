@@ -18,8 +18,8 @@ module.exports = {
     development: {
       host: "localhost",
       port: 8545,
-      gas: 129900000,
-      gasPrice: 1, // Specified in Wei
+      gas: 7990000,
+      gasPrice: 0, // Specified in Wei
       network_id: "*" // Match any network id
     },
     ropsten: {

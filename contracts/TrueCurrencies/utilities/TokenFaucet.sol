@@ -77,7 +77,6 @@ contract TokenFaucet {
         emit MintThresholdChanged(_instant, _ratified, _multiSig);
     }
 
-
     /**
     * @dev Throws if called by any account other than the owner.
     */
