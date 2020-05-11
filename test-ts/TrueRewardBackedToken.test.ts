@@ -73,14 +73,6 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.trueRewardEnabled(holder2.address)).to.be.true
     })
 
-    it('holder fails to enable trueReward when not whitelisted', async () => {
-      expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
-
-      await expect(token.connect(notWhitelisted).enableTrueReward()).to.be.revertedWith(
-        'must be whitelisted to enable TrueRewards')
-      expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
-    })
-
     it('holder enables trueReward with 100 balance', async () => {
       await token.connect(holder).enableTrueReward()
       expect(await token.trueRewardEnabled(holder.address)).to.be.true
@@ -101,11 +93,14 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.totalSupply()).to.equal(parseEther('1200'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
     })
-    it('not whitelisted account cannot enable trueReward'), async () => {
-      expect(await token.trueRewardEnabled(holder2.address)).to.be.false
-      await token.connect(holder2).enableTrueReward() //.to.be.revertedWith('Insufficient funds');
-      expect(await token.trueRewardEnabled(holder2.address)).to.be.false
-    }
+
+    it('holder fails to enable trueReward when not whitelisted', async () => {
+      expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
+
+      await expect(token.connect(notWhitelisted).enableTrueReward()).to.be.revertedWith(
+        'must be whitelisted to enable TrueRewards')
+      expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
+    })
   })
 
   describe('with Aave', () => {
@@ -115,11 +110,12 @@ describe('TrueRewardBackedToken', () => {
 
     beforeEachWithFixture(async (provider, wallets) => {
       ([owner, holder, holder2, sender, recipient] = wallets)
-      //const registry = await deployContract(owner, RegistryMock)
       token = await deployContract(owner, TrueUSD, [], { gasLimit: 5_000_000 })
-
       await token.mint(holder.address, parseEther('300'))
-      //await token.setRegistry(registry.address)
+
+      registry = await deployContract(owner, RegistryMock)
+      await token.setRegistry(registry.address)
+
       lendingPoolCore = await deployContract(owner, LendingPoolCoreMock)
       sharesToken = await deployContract(owner, ATokenMock, [token.address, lendingPoolCore.address])
       lendingPool = await deployContract(owner, LendingPoolMock, [lendingPoolCore.address, sharesToken.address])
@@ -134,11 +130,11 @@ describe('TrueRewardBackedToken', () => {
       await financialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, token.address)
       await token.setOpportunityAddress(financialOpportunity.address)
 
-      await registry.setAttributeValue(owner.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
-      await registry.setAttributeValue(holder.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
-      await registry.setAttributeValue(holder2.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
-      await registry.setAttributeValue(sender.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
-      await registry.setAttributeValue(recipient.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+      await registry.setAttributeValue(owner.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(holder.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(holder2.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(sender.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(recipient.address, WHITELIST_TRUEREWARD, 1)
     })
 
     it('holder enables truereward', async () => {
