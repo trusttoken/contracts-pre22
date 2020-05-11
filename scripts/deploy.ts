@@ -10,12 +10,12 @@
 
 import { ethers, providers } from 'ethers'
 import { getContract, setupDeployer, validatePrivateKey } from './utils'
+import { TransactionResponse } from 'ethers/providers'
 
 interface DeployedAddresses {
   trueUsd: string,
   registry: string,
   aaveLendingPool: string,
-  aaveLendingPoolCore: string,
   aTUSD: string,
   uniswapFactory: string,
 }
@@ -32,6 +32,8 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     }
   }
 
+  let tx: TransactionResponse
+
   const wallet = new ethers.Wallet(accountPrivateKey, provider)
 
   const deploy = setupDeployer(wallet)
@@ -41,7 +43,24 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   console.log('deployed SafeMath at: ', safeMath.address)
 
   const trueUSDImplementation = await deploy('TrueUSD')
-  const trueUSDProxy = contractAt('TrueUSD', deployedAddresses.trueUsd)
+  const trueUSDProxy = contractAt('OwnedUpgradeabilityProxy', deployedAddresses.trueUsd)
+  const trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
+
+  const trueUsdOwner = await trueUSD.owner()
+  if (trueUsdOwner !== wallet.address) {
+    throw new Error(`${wallet.address} is not a TrueUSD owner.
+Owner is: ${trueUsdOwner}`)
+  }
+
+  const registryImplementation = await deploy('ProvisionalRegistryImplementation')
+  const registryProxy = contractAt('OwnedUpgradeabilityProxy', deployedAddresses.registry)
+  const registry = registryImplementation.attach(registryProxy.address)
+
+  const registryOwner = await registry.owner()
+  if (registryOwner !== wallet.address) {
+    throw new Error(`${wallet.address} is not a Registry owner.
+Owner is: ${trueUsdOwner}`)
+  }
 
   const tokenControllerImplementation = await deploy('TokenController')
   const tokenControllerProxy = await deploy('OwnedUpgradeabilityProxy')
@@ -54,11 +73,10 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   console.log('deployed assuredFinancialOpportunityProxy at: ', assuredFinancialOpportunityProxy.address)
 
   // Deploy the rest of the contracts
-  const registry = contractAt('Registry', deployedAddresses.registry)
-  const lendingPool = contractAt('LendingPool', deployedAddresses.aaveLendingPool)
-  const aTokenMock = await deploy('IAToken', deployedAddresses.aTUSD)
+  const lendingPool = contractAt('ILendingPool', deployedAddresses.aaveLendingPool)
+  const aToken = contractAt('IAToken', deployedAddresses.aTUSD)
   const fractionalExponents = await deploy('FractionalExponents')
-  const trustToken = await deploy('TrustToken', registry.address)
+  const trustToken = await deploy('MockTrustToken', registryProxy.address)
 
   const financialOpportunityImplementation = await deploy('AaveFinancialOpportunity')
   const financialOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
@@ -66,112 +84,127 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
 
   // setup uniswap
   const uniswapFactory = contractAt('uniswap_factory', deployedAddresses.uniswapFactory)
-  const uniswapTemplate = await deploy('uniswap_exchange')
-  await uniswapFactory.initializeFactory(uniswapTemplate.address)
+  let trueUSDUniswapExchange = await uniswapFactory.getExchange(trueUSDProxy.address)
+  if (trueUSDUniswapExchange === '0x0000000000000000000000000000000000000000') {
+    tx = await uniswapFactory.createExchange(trueUSDProxy.address, { gasLimit: 5_000_000 })
+    await tx.wait()
+    trueUSDUniswapExchange = await uniswapFactory.getExchange(trueUSDProxy.address)
+    console.log('created trueUSDUniswapExchange at: ', trueUSDUniswapExchange)
+  } else {
+    console.log('trueUSDUniswapExchange found at: ', trueUSDUniswapExchange)
+  }
 
-  const trueUSDUniswapExchange = await uniswapFactory.createExchange(trueUSDProxy.address)
-  console.log('created trueUSDUniswapExchange at: ', trueUSDUniswapExchange.address)
-
-  const trustTokenUniswapExchange = await uniswapFactory.createExchange(trustToken.address)
-  console.log('created trustTokenUniswapExchange at: ', trustTokenUniswapExchange.address)
+  tx = await uniswapFactory.createExchange(trustToken.address, { gasLimit: 5_000_000 })
+  await tx.wait()
+  const trustTokenUniswapExchange = await uniswapFactory.getExchange(trustToken.address)
+  console.log('created trustTokenUniswapExchange at: ', trustTokenUniswapExchange)
 
   // deploy liquidator
-  const liquidator = await deploy('Liquidator',
-    registry.address, trueUSDProxy.address, trustToken.address,
-    trueUSDUniswapExchange.address, trueUSDUniswapExchange.address)
+  const liquidatorImplementation = await deploy('Liquidator')
+  const liquidatorProxy = await deploy('OwnedUpgradeabilityProxy')
+  const liquidator = liquidatorImplementation.attach(liquidatorProxy.address)
 
   // deploy assurance pool
   const assurancePool = await deploy(
     'StakedToken',
     trustToken.address,
     trueUSDProxy.address,
-    registry.address,
+    registryProxy.address,
     liquidator.address,
   )
 
   // Deploy UpgradeHelper
-  const deployHelper = await deploy('DeployHelper')
-
-  let tx
+  const deployHelper = await deploy(
+    'DeployHelper',
+    trueUSDProxy.address,
+    tokenControllerProxy.address,
+    assuredFinancialOpportunityProxy.address,
+    financialOpportunityProxy.address,
+    liquidatorProxy.address,
+    registryProxy.address,
+    fractionalExponents.address,
+    assurancePool.address,
+  )
 
   // transfer proxy ownership to deploy helper
   tx = await tokenControllerProxy.transferProxyOwnership(deployHelper.address)
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('controller proxy transfer ownership')
 
   tx = await trueUSDProxy.transferProxyOwnership(deployHelper.address)
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('trueUSDProxy proxy transfer ownership')
 
+  tx = await trueUSD.transferOwnership(deployHelper.address)
+  await tx.wait()
+  console.log('trueUSDP transfer ownership')
+
   tx = await assuredFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('assuredFinancialOpportunityProxy proxy transfer ownership')
 
   tx = await financialOpportunityProxy.transferProxyOwnership(deployHelper.address)
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('financialOpportunityProxy proxy transfer ownership')
 
-  tx = await liquidator.transferOwnership(deployHelper.address)
-  await wallet.provider.waitForTransaction(tx.hash)
+  tx = await liquidatorProxy.transferProxyOwnership(deployHelper.address)
+  await tx.wait()
   console.log('liquidator transfer ownership')
 
-  tx = await registry.transferOwnership(deployHelper.address)
-  await wallet.provider.waitForTransaction(tx.hash)
+  tx = await registryProxy.transferProxyOwnership(deployHelper.address)
+  await tx.wait()
   console.log('registry transfer ownership')
 
   // call deployHelper
   tx = await deployHelper.setup(
-    registry.address,
     trueUSDImplementation.address,
-    trueUSDProxy.address,
     tokenControllerImplementation.address,
-    tokenControllerProxy.address,
     assuredFinancialOpportunityImplementation.address,
-    assuredFinancialOpportunityProxy.address,
     financialOpportunityImplementation.address,
-    financialOpportunityProxy.address,
-    fractionalExponents.address,
-    assurancePool.address,
-    liquidator.address,
-    aTokenMock.address,
+    liquidatorImplementation.address,
+    registryImplementation.address,
+    aToken.address,
     lendingPool.address,
+    trustToken.address,
+    trueUSDUniswapExchange,
+    trueUSDUniswapExchange,
     { gasLimit: 5000000 },
   )
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('deployHelper: setup')
 
   // reclaim ownership
   tx = await tokenControllerProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('tokenControllerProxy claim ownership')
 
   tx = await trueUSDProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('trueUSDProxy claim ownership')
 
   tx = await assuredFinancialOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('assuredFinancialOpportunityProxy claim ownership')
 
   tx = await financialOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('financialOpportunityProxy claim ownership')
 
   tx = await assuredFinancialOpportunity.claimOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('assuredFinancialOpportunity claim ownership')
 
   tx = await tokenController.claimOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('tokenController claim ownership')
 
-  tx = await registry.claimOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
-  console.log('registry claim ownership')
+  tx = await registryProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await tx.wait()
+  console.log('registry claim proxy ownership')
 
-  tx = await liquidator.claimOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
-  console.log('liquidator claim ownership')
+  tx = await liquidatorProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await tx.wait()
+  console.log('liquidator claim proxy ownership')
 
   tx = await tokenController.setMintThresholds(
     ethers.utils.bigNumberify('1000000000000000000000'),
@@ -179,7 +212,7 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     ethers.utils.bigNumberify('100000000000000000000000'),
     { gasLimit: 5000000 },
   )
-  await wallet.provider.waitForTransaction(tx.hash)
+  await tx.wait()
   console.log('set mint thresholds')
 
   console.log('\n\nSUCCESSFULLY DEPLOYED TO NETWORK: ', provider.connection.url, '\n\n')

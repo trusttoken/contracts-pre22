@@ -1,3 +1,4 @@
+import { use, expect } from 'chai'
 import {
   RegistryMock,
   CompliantTokenMock,
@@ -5,7 +6,6 @@ import {
 } from '../build'
 import { deployContract, loadFixture, solidity } from 'ethereum-waffle'
 import { parseEther } from 'ethers/utils'
-import { use, expect } from 'chai'
 
 use(solidity)
 
