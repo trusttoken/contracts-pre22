@@ -32,7 +32,7 @@ describe('TrueRewardBackedToken', () => {
 
     beforeEachWithFixture(async (provider, wallets) => {
       ([owner, holder, holder2, sender, recipient, notWhitelisted] = wallets)
-      
+
       token = await deployContract(owner, TrueUSD, [], { gasLimit: 5_000_000 })
       await token.mint(holder.address, parseEther('100'))
       registry = await deployContract(owner, RegistryMock)

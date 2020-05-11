@@ -6,10 +6,10 @@ import { beforeEachWithFixture } from '../utils'
 import { deploy } from '../../scripts/deploy_testnet'
 import { upgrade } from '../../scripts/upgrade'
 import { TrueUsdFactory } from '../../build/types/TrueUsdFactory'
-import { ProvisionalRegistryImplementationFactory } from '../../build/types/ProvisionalRegistryImplementationFactory'
 import { TokenControllerFactory } from '../../build/types/TokenControllerFactory'
 import { AssuredFinancialOpportunityFactory } from '../../build/types/AssuredFinancialOpportunityFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../../build/types/OwnedUpgradeabilityProxyFactory'
+import { ProvisionalRegistryImplementationFactory } from '../../build/types/ProvisionalRegistryImplementationFactory'
 
 use(solidity)
 
@@ -36,6 +36,9 @@ describe('Upgrading', () => {
     const trueUsd = new TrueUsdFactory(deployer).attach(trueUsdProxyAddress)
     const assuredFinancialOpportunity = new AssuredFinancialOpportunityFactory(deployer).attach(assuredOpportunityProxyAddress)
     const registry = new ProvisionalRegistryImplementationFactory(deployer).attach(registryProxyAddress)
+    console.log('here')
+    await registry.setAttributeValue(holder.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)
+    console.log('there')
 
     await tokenController.setMintThresholds(parseEther('1'), parseEther('2'), parseEther('3'))
     await tokenController.setMintLimits(parseEther('1'), parseEther('2'), parseEther('3'))

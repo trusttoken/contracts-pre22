@@ -32,7 +32,7 @@ export const upgrade = async (deployHelperAddress: string, accountPrivateKey: st
   const tokenControllerProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.tokenControllerProxy())
   const trueUsdProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.trueUSDProxy())
   const registryProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.registryProxy())
-  console.log("registryProxy: ", registryProxy)
+  console.log('registryProxy: ', registryProxy)
   const assuredFinancialOpportunityProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.assuredFinancialOpportunityProxy())
   const aaveFinancialOpportunityProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.aaveFinancialOpportunityProxy())
   const liquidatorProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.liquidatorProxy())

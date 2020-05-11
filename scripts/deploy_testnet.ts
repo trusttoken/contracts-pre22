@@ -174,11 +174,6 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   await tx.wait()
   console.log('trueUSDProxy claim ownership')
 
-  // reclaim ownership
-  tx = await registryProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  await wallet.provider.waitForTransaction(tx.hash)
-  console.log('registryProxy  claim ownership')
-
   tx = await assuredFinancialOpportunityProxy.claimProxyOwnership({ gasLimit: 5000000 })
   await tx.wait()
   console.log('assuredFinancialOpportunityProxy claim ownership')
