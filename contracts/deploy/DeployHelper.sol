@@ -11,6 +11,7 @@ import { ILendingPool } from "../TrueReward/ILendingPool.sol";
 import { IExponentContract } from "../TrueReward/utilities/IExponentContract.sol";
 import { StakedToken } from "@trusttoken/trusttokens/contracts/StakedToken.sol";
 import { Liquidator } from "@trusttoken/trusttokens/contracts/Liquidator.sol";
+import { TrustToken } from "@trusttoken/trusttokens/contracts/TrustToken.sol";
 import { StakingAsset } from "@trusttoken/trusttokens/contracts/StakingAsset.sol";
 
 /**
@@ -27,6 +28,7 @@ contract DeployHelper {
     OwnedUpgradeabilityProxy public trueUSDProxy;
     OwnedUpgradeabilityProxy public registryProxy;
     OwnedUpgradeabilityProxy public tokenControllerProxy;
+    OwnedUpgradeabilityProxy public trustTokenProxy;
     OwnedUpgradeabilityProxy public assuredFinancialOpportunityProxy;
     OwnedUpgradeabilityProxy public aaveFinancialOpportunityProxy;
     OwnedUpgradeabilityProxy public stakedTokenProxy;
@@ -37,6 +39,7 @@ contract DeployHelper {
 
     TrueUSD trueUSD;
     TokenController tokenController;
+    TrustToken trustToken;
     AssuredFinancialOpportunity assuredFinancialOpportunity;
     AaveFinancialOpportunity aaveFinancialOpportunity;
     Liquidator liquidator;
@@ -49,6 +52,7 @@ contract DeployHelper {
         address payable trueUSDProxyAddress,
         address payable registryProxyAddress,
         address payable tokenControllerProxyAddress,
+        address payable trustTokenProxyAddress,
         address payable assuredFinancialOpportunityProxyAddress,
         address payable aaveFinancialOpportunityProxyAddress,
         address payable stakedTokenProxyAddress,
@@ -57,6 +61,7 @@ contract DeployHelper {
     ) public {
         require(trueUSDProxyAddress != address(0), "trueUSDProxyAddress cannot be address(0)");
         require(tokenControllerProxyAddress != address(0), "tokenControllerProxyAddress cannot be address(0)");
+        require(trustTokenProxyAddress != address(0), "trustTokenProxyAddress cannot be address(0)");
         require(assuredFinancialOpportunityProxyAddress != address(0), "assuredFinancialOpportunityProxyAddress cannot be address(0)");
         require(aaveFinancialOpportunityProxyAddress != address(0), "aaveFinancialOpportunityProxyAddress cannot be address(0)");
         require(stakedTokenProxyAddress != address(0), "stakedTokenAddress cannot be address(0)");
@@ -68,6 +73,7 @@ contract DeployHelper {
 
         trueUSDProxy = OwnedUpgradeabilityProxy(trueUSDProxyAddress);
         tokenControllerProxy = OwnedUpgradeabilityProxy(tokenControllerProxyAddress);
+        trustTokenProxy = OwnedUpgradeabilityProxy(trustTokenProxyAddress);
         registryProxy = OwnedUpgradeabilityProxy(registryProxyAddress);
         assuredFinancialOpportunityProxy = OwnedUpgradeabilityProxy(assuredFinancialOpportunityProxyAddress);
         aaveFinancialOpportunityProxy = OwnedUpgradeabilityProxy(aaveFinancialOpportunityProxyAddress);
@@ -78,7 +84,7 @@ contract DeployHelper {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "only owner");
         _;
     }
 
@@ -93,18 +99,19 @@ contract DeployHelper {
         address trueUSDImplAddress,
         address payable registryImplAddress,
         address payable tokenControllerImplAddress,
+        address payable trustTokenImplAddress,
         address payable assuredFinancialOpportunityImplAddress,
         address payable aaveFinancialOpportunityImplAddress,
         address payable stakedTokenImplAddress,
         address payable liquidatorImplAddress,
         address aTokenAddress,
         address lendingPoolAddress,
-        address trustTokenAddress,
         address outputUniswapAddress,
         address stakeUniswapAddress
     ) public onlyOwner {
         require(trueUSDImplAddress != address(0), "trueUSDImplAddress cannot be address(0)");
         require(tokenControllerImplAddress != address(0), "tokenControllerImplAddress cannot be address(0)");
+        require(trustTokenImplAddress != address(0), "trustTokenImplAddress cannot be address(0)");
         require(assuredFinancialOpportunityImplAddress != address(0), "assuredFinancialOpportunityImplAddress cannot be address(0)");
         require(aaveFinancialOpportunityImplAddress != address(0), "aaveFinancialOpportunityImplAddress cannot be address(0)");
         require(stakedTokenImplAddress != address(0), "stakedTokenImplAddress cannot be address(0)");
@@ -117,6 +124,8 @@ contract DeployHelper {
             registryImplAddress
         );
 
+        trustToken = TrustToken(address(trustTokenProxy));
+
         initAssurance(
             assuredFinancialOpportunityImplAddress,
             aaveFinancialOpportunityImplAddress,
@@ -124,7 +133,6 @@ contract DeployHelper {
             liquidatorImplAddress,
             aTokenAddress,
             lendingPoolAddress,
-            trustTokenAddress,
             outputUniswapAddress,
             stakeUniswapAddress
         );
@@ -187,7 +195,6 @@ contract DeployHelper {
         address liquidatorImplAddress,
         address aTokenAddress,
         address lendingPoolAddress,
-        address trustTokenAddress,
         address outputUniswapAddress,
         address stakeUniswapAddress
     ) internal {
@@ -217,7 +224,7 @@ contract DeployHelper {
         liquidator.configure(
             address(registry),
             address(trueUSDProxy),
-            trustTokenAddress,
+            address(trustTokenProxy),
             outputUniswapAddress,
             stakeUniswapAddress
         );

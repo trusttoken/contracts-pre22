@@ -9,7 +9,7 @@
  */
 
 import { ethers } from 'ethers'
-import { getContract, setupDeployer, validatePrivateKey } from './utils'
+import { deployBehindTimeProxy, getContract, setupDeployer, validatePrivateKey } from './utils'
 import { JsonRpcProvider, TransactionResponse } from 'ethers/providers'
 
 interface DeployedAddresses {
@@ -20,7 +20,7 @@ interface DeployedAddresses {
   uniswapFactory: string,
 }
 
-async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, provider: JsonRpcProvider) {
+export async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, provider: JsonRpcProvider) {
   validatePrivateKey(accountPrivateKey)
 
   for (const [name, address] of Object.entries(deployedAddresses)) {
@@ -74,7 +74,16 @@ Owner is: ${trueUsdOwner}`)
   const lendingPool = contractAt('ILendingPool', deployedAddresses.aaveLendingPool)
   const aToken = contractAt('IAToken', deployedAddresses.aTUSD)
   const fractionalExponents = await deploy('FractionalExponents')
-  const trustToken = await deploy('MockTrustToken', registryProxy.address)
+
+  const trustTokenImplementation = await deploy('MockTrustToken', registryProxy.address)
+  const trustTokenProxy = await deploy('OwnedUpgradeabilityProxy')
+  const trustToken = trustTokenImplementation.attach(trustTokenProxy.address)
+
+  // const [trustTokenImplementation, trustTokenProxy, trustToken] = await deployBehindTimeProxy(wallet, 'MockTrustToken', registryProxy.address)
+  tx = await trustTokenProxy.upgradeTo(trustTokenImplementation.address)
+  await tx.wait()
+  tx = await trustToken.initialize()
+  await tx.wait()
 
   const financialOpportunityImplementation = await deploy('AaveFinancialOpportunity')
   const financialOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
@@ -105,7 +114,7 @@ Owner is: ${trueUsdOwner}`)
   // deploy assurance pool
   const assurancePool = await deploy(
     'StakedToken',
-    trustToken.address,
+    trustTokenProxy.address,
     trueUSDProxy.address,
     registryProxy.address,
     liquidator.address,
@@ -115,11 +124,12 @@ Owner is: ${trueUsdOwner}`)
   const deployHelper = await deploy(
     'DeployHelper',
     trueUSDProxy.address,
+    registryProxy.address,
     tokenControllerProxy.address,
+    trustTokenProxy.address,
     assuredFinancialOpportunityProxy.address,
     financialOpportunityProxy.address,
     liquidatorProxy.address,
-    registryProxy.address,
     fractionalExponents.address,
     assurancePool.address,
   )
@@ -147,23 +157,23 @@ Owner is: ${trueUsdOwner}`)
 
   tx = await liquidatorProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
-  console.log('liquidator transfer ownership')
+  console.log('liquidator transfer proxy ownership')
 
   tx = await registryProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
-  console.log('registry transfer ownership')
+  console.log('registry transfer proxy ownership')
 
   // call deployHelper
   tx = await deployHelper.setup(
     trueUSDImplementation.address,
+    registryImplementation.address,
     tokenControllerImplementation.address,
+    trustTokenImplementation.address,
     assuredFinancialOpportunityImplementation.address,
     financialOpportunityImplementation.address,
     liquidatorImplementation.address,
-    registryImplementation.address,
     aToken.address,
     lendingPool.address,
-    trustToken.address,
     trueUSDUniswapExchange,
     trueUSDUniswapExchange,
     { gasLimit: 5000000 },

@@ -283,7 +283,7 @@ contract Registry {
         address adminAddr;
         uint256 timestamp;
     }
-    
+
     // never remove any storage variables
     address public owner;
     address public pendingOwner;
@@ -1975,10 +1975,10 @@ contract Liquidator is ALiquidator {
     UniswapV1 outputUniswap_;
     UniswapV1 stakeUniswap_;
     constructor(
-        address registryAddress, 
-        address outputTokenAddress, 
-        address stakeTokenAddress, 
-        address outputUniswapAddress, 
+        address registryAddress,
+        address outputTokenAddress,
+        address stakeTokenAddress,
+        address outputUniswapAddress,
         address stakeUniswapAddress
     ) public {
         registry_ = Registry(registryAddress);
@@ -2093,9 +2093,9 @@ contract ModularBasicToken is ProxyStorage {
 contract ModularStandardToken is ModularBasicToken {
     using ValSafeMath for uint256;
     uint256 constant INFINITE_ALLOWANCE = 0xfe00000000000000000000000000000000000000000000000000000000000000;
-    
+
     event Approval(address indexed owner, address indexed spender, uint256 value);
-    
+
     /**
      * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
      *
@@ -2430,7 +2430,7 @@ contract AStakedToken is ValTokenWithHook {
      * @dev Initialize function called by constructor
      * Approves liqudiator for maximum amount
     */
-    function initialize() internal {
+    function initialize() external {
         stakeAsset().approve(liquidator(), MAX_UINT256);
     }
 
@@ -2579,7 +2579,7 @@ contract AStakedToken is ValTokenWithHook {
     /**
      * @dev Initialize unstake. Can specify a portion of your balance to unstake.
      * @param _maxAmount max amount caller wishes to unstake (in this.balanceOf units)
-     * @return unstake_ 
+     * @return unstake_
     */
     function initUnstake(uint256 _maxAmount) external returns (uint256 unstake_) {
         unstake_ = balanceOf[msg.sender];
@@ -2599,17 +2599,17 @@ contract AStakedToken is ValTokenWithHook {
      * Loop over timestamps
      * Checks if unstake perioud has passed, if yes, calculate how much stake account get
      * @param recipient recipient of
-     * @param _timestamps timestamps to 
+     * @param _timestamps timestamps to
      */
     function finalizeUnstake(address recipient, uint256[] calldata _timestamps) external {
         uint256 totalUnstake = 0;
         // loop through timestamps and calculate total unstake
         for (uint256 i = _timestamps.length; i --> 0;) {
-            uint256 timestamp = _timestamps[i]; 
+            uint256 timestamp = _timestamps[i];
             require(timestamp + UNSTAKE_PERIOD <= now, "must wait 4 weeks to unstake");
             // add to total unstake amount
             totalUnstake = totalUnstake.add(pendingWithdrawals[msg.sender][timestamp], "stake overflow");
-            
+
             pendingWithdrawals[msg.sender][timestamp] = 0;
         }
         IERC20 stake = stakeAsset(); // get stake asset
@@ -2657,7 +2657,7 @@ contract AStakedToken is ValTokenWithHook {
     function claimRewards(address _destination) external {
         // check KYC attribte
         require(attributes[uint144(uint160(msg.sender) >> 20)] & ACCOUNT_KYC != 0 || registry().getAttributeValue(msg.sender, PASSED_KYCAML) != 0, "please register at app.trusttoken.com");
-        
+
         // calculate how much stake and rewards account has
         uint256 stake = balanceOf[msg.sender];
         if (stake == 0) {
