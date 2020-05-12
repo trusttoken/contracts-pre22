@@ -30,10 +30,6 @@ describe('DeployHelper', () => {
 
   let mockTrustToken: Contract
 
-  let registry: Contract
-  let registryImplementation: Contract
-  let registryProxy: Contract
-
   let fractionalExponents: Contract
 
   let liquidator: Contract
@@ -43,6 +39,10 @@ describe('DeployHelper', () => {
   let trueUSD: Contract
   let trueUSDImplementation: Contract
   let trueUSDProxy: Contract
+
+  let registry: Contract
+  let registryImplementation: Contract
+  let registryProxy: Contract
 
   let tokenController: Contract
   let tokenControllerImplementation: Contract
@@ -77,6 +77,7 @@ describe('DeployHelper', () => {
 
     liquidator = liquidatorImplementation.attach(liquidatorProxy.address)
     trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
+    registry = registryImplementation.attach(registryProxy.address)
     tokenController = tokenControllerImplementation.attach(tokenControllerProxy.address)
     aaveFinancialOpportunity = aaveFinancialOpportunityImplementation.attach(aaveFinancialOpportunityProxy.address)
     assuredFinancialOpportunity = assuredFinancialOpportunityImplementation.attach(assuredFinancialOpportunityProxy.address)
@@ -87,11 +88,11 @@ describe('DeployHelper', () => {
 
     deployHelper = await deployContract(deployer, DeployHelper, [
       trueUSDProxy.address,
+      registryProxy.address,
       tokenControllerProxy.address,
       assuredFinancialOpportunityProxy.address,
       aaveFinancialOpportunityProxy.address,
       liquidatorProxy.address,
-      registryProxy.address,
       fractionalExponents.address,
       mockAssurancePoolAddress,
     ])
@@ -105,11 +106,11 @@ describe('DeployHelper', () => {
 
     await deployHelper.setup(
       trueUSDImplementation.address,
+      registryImplementation.address,
       tokenControllerImplementation.address,
       assuredFinancialOpportunityImplementation.address,
       aaveFinancialOpportunityImplementation.address,
       liquidatorImplementation.address,
-      registryImplementation.address,
       mockATokenAddress,
       mockLendingPoolAddress,
       mockTrustToken.address,
@@ -123,14 +124,13 @@ describe('DeployHelper', () => {
     await trueUSDProxy.claimProxyOwnership()
     await registryProxy.claimProxyOwnership()
     await liquidatorProxy.claimProxyOwnership()
-
     await assuredFinancialOpportunity.claimOwnership()
     await tokenController.claimOwnership()
     await registry.claimOwnership()
   })
 
   describe('True USD', () => {
-    it('proxy should be owned by deployer', async () => {
+    it('truystproxy should be owned by deployer', async () => {
       expect(await trueUSDProxy.proxyOwner()).to.equal(deployer.address)
     })
 
@@ -152,6 +152,10 @@ describe('DeployHelper', () => {
   })
 
   describe('Registry', () => {
+    it('proxy should be owned by deployer', async () => {
+      expect(await registryProxy.proxyOwner()).to.equal(deployer.address)
+    })
+
     it('should be owned by deployer', async () => {
       expect(await registry.owner()).to.equal(deployer.address)
     })

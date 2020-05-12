@@ -33,6 +33,11 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   const trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
   console.log('deployed trueUSDProxy at: ', trueUSDProxy.address)
 
+  const registryImplementation = await deploy('ProvisionalRegistryImplementation')
+  const registryProxy = await deploy('OwnedUpgradeabilityProxy')
+  const registry = registryImplementation.attach(registryProxy.address)
+  console.log('deployed registryProxy at: ', registryProxy.address)
+
   const tokenControllerImplementation = await deploy('TokenController')
   const tokenControllerProxy = await deploy('OwnedUpgradeabilityProxy')
   const tokenController = tokenControllerImplementation.attach(tokenControllerProxy.address)
@@ -42,11 +47,6 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   const assuredFinancialOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
   const assuredFinancialOpportunity = assuredFinancialOpportunityImplementation.attach(assuredFinancialOpportunityProxy.address)
   console.log('deployed assuredFinancialOpportunityProxy at: ', assuredFinancialOpportunityProxy.address)
-
-  const registryImplementation = await deploy('ProvisionalRegistryImplementation')
-  const registryProxy = await deploy('OwnedUpgradeabilityProxy')
-  const registry = registryImplementation.attach(registryProxy.address)
-  console.log('deployed registryProxy at: ', registryProxy.address)
 
   // Deploy the rest of the contracts
   const lendingPoolCoreMock = await deploy('LendingPoolCoreMock')
@@ -107,11 +107,11 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   const deployHelper = await deploy(
     'DeployHelper',
     trueUSDProxy.address,
+    registryProxy.address,
     tokenControllerProxy.address,
     assuredFinancialOpportunityProxy.address,
     financialOpportunityProxy.address,
     liquidatorProxy.address,
-    registryProxy.address,
     fractionalExponents.address,
     assurancePool.address,
   )
@@ -126,6 +126,11 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   tx = await trueUSDProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
   console.log('trueUSDProxy proxy transfer ownership')
+
+  // transfer proxy ownership to deploy helper
+  tx = await registryProxy.transferProxyOwnership(deployHelper.address)
+  await wallet.provider.waitForTransaction(tx.hash)
+  console.log('registry proxy transfer ownership')
 
   tx = await assuredFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
@@ -145,11 +150,11 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
 
   tx = await deployHelper.setup(
     trueUSDImplementation.address,
+    registryImplementation.address,
     tokenControllerImplementation.address,
     assuredFinancialOpportunityImplementation.address,
     financialOpportunityImplementation.address,
     liquidatorImplementation.address,
-    registryImplementation.address,
     aTokenMock.address,
     lendingPoolMock.address,
     trustToken.address,
