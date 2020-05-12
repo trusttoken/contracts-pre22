@@ -9,7 +9,7 @@
  */
 
 import { ethers } from 'ethers'
-import { deployBehindTimeProxy, getContract, setupDeployer, validatePrivateKey } from './utils'
+import { getContract, setupDeployer, validatePrivateKey } from './utils'
 import { JsonRpcProvider, TransactionResponse } from 'ethers/providers'
 
 interface DeployedAddresses {
