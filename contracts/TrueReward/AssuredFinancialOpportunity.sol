@@ -74,13 +74,19 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @dev configure assured opportunity
      */
     function configure(
-        address _finOpAddress,            // finOp to assure
+        address _finOpAddress,                  // finOp to assure
         address _assuranceAddress,              // assurance pool
         address _liquidatorAddress,             // trusttoken liqudiator
         address _exponentContractAddress,       // exponent contract
         address _trueRewardBackedTokenAddress,  // token
         address _fundsManager                   // funds manager
     ) external {
+        require(_finOpAddress != address(0), "finOp cannot be address(0)");
+        require(_assuranceAddress != address(0), "assurance pool cannot be address(0)");
+        require(_liquidatorAddress != address(0), "liquidator cannot be address(0)");
+        require(_exponentContractAddress != address(0), "exponent cannot be address(0)");
+        require(_trueRewardBackedTokenAddress != address(0), "token cannot be address(0)");
+        require(_fundsManager != address(0), "findsManager cannot be address(0)");
         super._configure(); // sender claims ownership here
         finOpAddress = _finOpAddress;
         assuranceAddress = _assuranceAddress;
@@ -88,8 +94,13 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         exponentContractAddress = _exponentContractAddress;
         trueRewardBackedTokenAddress = _trueRewardBackedTokenAddress;
         fundsManager = _fundsManager;
-        rewardBasis = TOTAL_BASIS; // set to 100% by default
-        adjustmentFactor = 1*10**18;
+        // only update factors if they are zero (default)
+        if (adjustmentFactor == 0) {
+            adjustmentFactor = 1*10**18;
+        }
+        if (rewardBasis == 0) {
+            rewardBasis = TOTAL_BASIS; // set to 100% by default
+        }
     }
 
     /**

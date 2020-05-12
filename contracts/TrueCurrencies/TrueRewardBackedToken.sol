@@ -15,7 +15,7 @@ import { RewardTokenWithReserve } from "./RewardTokenWithReserve.sol";
  *
  * -- rewardToken vs yToken --
  * rewardToken represents an amount of ASSURED TUSD owed to the rewardToken holder
- * yToken represents an amount of NON-ASSURED TUSD owed to a fToken holder
+ * yToken represents an amount of NON-ASSURED TUSD owed to a yToken holder
  * For this contract, we only handle rewardToken (Assured Opportunities)
  *
  * -- Calculating rewardToken --
