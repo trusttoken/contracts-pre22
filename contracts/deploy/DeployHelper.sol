@@ -1,7 +1,7 @@
 pragma solidity ^0.5.13;
 
 import { TrueUSD } from "../TrueCurrencies/TrueUSD.sol";
-import { RegistryImplementation } from "../mocks/RegistryImplementation.sol";
+import { ProvisionalRegistryImplementation } from "../mocks/RegistryImplementation.sol";
 import { OwnedUpgradeabilityProxy } from "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import { TokenController } from "../TrueCurrencies/Admin/TokenController.sol";
 import { AssuredFinancialOpportunity } from "../TrueReward/AssuredFinancialOpportunity.sol";
@@ -26,11 +26,11 @@ contract DeployHelper {
     address payable public owner;
 
     OwnedUpgradeabilityProxy public trueUSDProxy;
+    OwnedUpgradeabilityProxy public registryProxy;
     OwnedUpgradeabilityProxy public tokenControllerProxy;
     OwnedUpgradeabilityProxy public assuredFinancialOpportunityProxy;
     OwnedUpgradeabilityProxy public aaveFinancialOpportunityProxy;
     OwnedUpgradeabilityProxy public liquidatorProxy;
-    OwnedUpgradeabilityProxy public registryProxy;
 
     IExponentContract exponentContract;
     StakedToken assurancePool;
@@ -40,15 +40,15 @@ contract DeployHelper {
     AssuredFinancialOpportunity assuredFinancialOpportunity;
     AaveFinancialOpportunity aaveFinancialOpportunity;
     Liquidator liquidator;
-    RegistryImplementation registry;
+    ProvisionalRegistryImplementation registry;
 
     constructor(
         address payable trueUSDProxyAddress,
+        address payable registryProxyAddress,
         address payable tokenControllerProxyAddress,
         address payable assuredFinancialOpportunityProxyAddress,
         address payable aaveFinancialOpportunityProxyAddress,
         address payable liquidatorProxyAddress,
-        address payable registryProxyAddress,
         address exponentContractAddress,
         address assurancePoolAddress
     ) public {
@@ -58,7 +58,6 @@ contract DeployHelper {
         require(aaveFinancialOpportunityProxyAddress != address(0), "aaveFinancialOpportunityProxyAddress cannot be address(0)");
         require(liquidatorProxyAddress != address(0), "liquidatorProxyAddress cannot be address(0)");
         require(registryProxyAddress != address(0), "registryProxyAddress cannot be address(0)");
-
         require(exponentContractAddress != address(0), "exponentContractAddress cannot be address(0)");
         require(assurancePoolAddress != address(0), "assurancePoolAddress cannot be address(0)");
 
@@ -66,11 +65,11 @@ contract DeployHelper {
 
         trueUSDProxy = OwnedUpgradeabilityProxy(trueUSDProxyAddress);
         tokenControllerProxy = OwnedUpgradeabilityProxy(tokenControllerProxyAddress);
+        registryProxy = OwnedUpgradeabilityProxy(registryProxyAddress);
         assuredFinancialOpportunityProxy = OwnedUpgradeabilityProxy(assuredFinancialOpportunityProxyAddress);
         aaveFinancialOpportunityProxy = OwnedUpgradeabilityProxy(aaveFinancialOpportunityProxyAddress);
         liquidatorProxy = OwnedUpgradeabilityProxy(liquidatorProxyAddress);
         registryProxy = OwnedUpgradeabilityProxy(registryProxyAddress);
-
         exponentContract = IExponentContract(exponentContractAddress);
         assurancePool = StakedToken(assurancePoolAddress);
     }
@@ -89,11 +88,11 @@ contract DeployHelper {
      */
     function setup(
         address trueUSDImplAddress,
+        address payable registryImplAddress,
         address payable tokenControllerImplAddress,
         address payable assuredFinancialOpportunityImplAddress,
         address payable aaveFinancialOpportunityImplAddress,
         address payable liquidatorImplAddress,
-        address payable registryImplAddress,
         address aTokenAddress,
         address lendingPoolAddress,
         address trustTokenAddress,
@@ -153,7 +152,7 @@ contract DeployHelper {
 
         registryProxy.claimProxyOwnership();
         registryProxy.upgradeTo(registryImplAddress);
-        registry = RegistryImplementation(address(registryProxy));
+        registry = ProvisionalRegistryImplementation(address(registryProxy));
         address(registry).call(abi.encodeWithSignature("initialize()"));
 
         tokenController.setToken(trueUSD);

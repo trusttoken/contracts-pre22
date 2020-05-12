@@ -20,19 +20,23 @@ import { parseEther } from 'ethers/utils'
 use(solidity)
 
 describe('TrueRewardBackedToken', () => {
-  let owner: Wallet, holder: Wallet, holder2: Wallet, sender: Wallet, recipient: Wallet
+  let owner: Wallet, holder: Wallet, holder2: Wallet, sender: Wallet, recipient: Wallet, notWhitelisted:Wallet
   let token: Contract
+  let registry: Contract
   let financialOpportunity: Contract
   const mockPoolAddress = Wallet.createRandom().address
+  const WHITELIST_TRUEREWARD = '0x6973547275655265776172647357686974656c69737465640000000000000000'
 
   describe('with AssuredFinancialOpportunity', () => {
     let configurableFinancialOpportunity: Contract
 
     beforeEachWithFixture(async (provider, wallets) => {
-      ([owner, holder, holder2, sender, recipient] = wallets)
+      ([owner, holder, holder2, sender, recipient, notWhitelisted] = wallets)
 
       token = await deployContract(owner, TrueUSD, [], { gasLimit: 5_000_000 })
       await token.mint(holder.address, parseEther('100'))
+      registry = await deployContract(owner, RegistryMock)
+      await token.setRegistry(registry.address)
 
       const fractionalExponents = await deployContract(owner, FractionalExponents)
       const liquidator = await deployContract(owner, SimpleLiquidatorMock, [token.address])
@@ -54,10 +58,17 @@ describe('TrueRewardBackedToken', () => {
         token.address,
       )
       await token.setOpportunityAddress(financialOpportunity.address)
+
+      await registry.setAttributeValue(owner.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(holder.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(holder2.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(sender.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(recipient.address, WHITELIST_TRUEREWARD, 1)
     })
 
     it('holder enables trueReward with 0 balance', async () => {
       expect(await token.trueRewardEnabled(holder2.address)).to.be.false
+
       await token.connect(holder2).enableTrueReward()
       expect(await token.trueRewardEnabled(holder2.address)).to.be.true
     })
@@ -82,6 +93,14 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.totalSupply()).to.equal(parseEther('1200'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
     })
+
+    it('holder fails to enable trueReward when not whitelisted', async () => {
+      expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
+
+      await expect(token.connect(notWhitelisted).enableTrueReward()).to.be.revertedWith(
+        'must be whitelisted to enable TrueRewards')
+      expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
+    })
   })
 
   describe('with Aave', () => {
@@ -91,11 +110,12 @@ describe('TrueRewardBackedToken', () => {
 
     beforeEachWithFixture(async (provider, wallets) => {
       ([owner, holder, holder2, sender, recipient] = wallets)
-      const registry = await deployContract(owner, RegistryMock)
       token = await deployContract(owner, TrueUSD, [], { gasLimit: 5_000_000 })
-
       await token.mint(holder.address, parseEther('300'))
+
+      registry = await deployContract(owner, RegistryMock)
       await token.setRegistry(registry.address)
+
       lendingPoolCore = await deployContract(owner, LendingPoolCoreMock)
       sharesToken = await deployContract(owner, ATokenMock, [token.address, lendingPoolCore.address])
       lendingPool = await deployContract(owner, LendingPoolMock, [lendingPoolCore.address, sharesToken.address])
@@ -109,6 +129,12 @@ describe('TrueRewardBackedToken', () => {
       await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
       await financialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, token.address)
       await token.setOpportunityAddress(financialOpportunity.address)
+
+      await registry.setAttributeValue(owner.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(holder.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(holder2.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(sender.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(recipient.address, WHITELIST_TRUEREWARD, 1)
     })
 
     it('holder enables truereward', async () => {
@@ -333,6 +359,12 @@ describe('TrueRewardBackedToken', () => {
       )
 
       await token.setOpportunityAddress(financialOpportunity.address)
+
+      await registry.setAttributeValue(owner.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(holder.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(holder2.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(sender.address, WHITELIST_TRUEREWARD, 1)
+      await registry.setAttributeValue(recipient.address, WHITELIST_TRUEREWARD, 1)
     })
 
     it('holder enables truereward', async () => {

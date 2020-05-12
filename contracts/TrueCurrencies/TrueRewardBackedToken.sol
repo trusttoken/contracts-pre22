@@ -47,6 +47,11 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     uint256 maxRewardProportion = 1000;
     */
 
+    // registry attribute for whitelist
+    // 0x6973547275655265776172647357686974656c69737465640000000000000000
+    bytes32 constant IS_TRUEREWARDS_WHITELISTED = "isTrueRewardsWhitelisted";
+
+    // financial opportunity address
     address public opportunity_;
 
     event TrueRewardEnabled(address _account);
@@ -107,6 +112,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      */
     function enableTrueReward() external {
         // require TrueReward is not enabled
+        require(registry.hasAttribute(msg.sender, IS_TRUEREWARDS_WHITELISTED), "must be whitelisted to enable TrueRewards");
         require(!trueRewardEnabled(msg.sender), "TrueReward already enabled");
 
         // get sender balance

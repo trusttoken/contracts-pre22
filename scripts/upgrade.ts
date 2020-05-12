@@ -19,24 +19,27 @@ export const upgrade = async (deployHelperAddress: string, accountPrivateKey: st
 
   const deploy = setupDeployer(wallet)
   const contract = getContract(wallet)
+
   // Deploy all contracts
   const trueUSDContract = await deploy('TrueUSD')
+  const registryContract = await deploy('ProvisionalRegistryImplementation')
   const tokenControllerContract = await deploy('TokenController')
   const aaveFinancialOpportunityContract = await deploy('AaveFinancialOpportunity')
   const assuredFinancialOpportunityContract = await deploy('AssuredFinancialOpportunity')
   const liquidatorContract = await deploy('Liquidator')
-  const registryContract = await deploy('ProvisionalRegistryImplementation')
 
   const deployHelper = contract('DeployHelper', deployHelperAddress)
   const tokenControllerProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.tokenControllerProxy())
   const trueUsdProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.trueUSDProxy())
+  const registryProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.registryProxy())
   const assuredFinancialOpportunityProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.assuredFinancialOpportunityProxy())
   const aaveFinancialOpportunityProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.aaveFinancialOpportunityProxy())
   const liquidatorProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.liquidatorProxy())
-  const registryProxy = contract('OwnedUpgradeabilityProxy', await deployHelper.registryProxy())
 
   console.log('Upgrading TrueUSD...')
   await (await trueUsdProxy.upgradeTo(trueUSDContract.address)).wait()
+  console.log('Upgrading Registry...')
+  await (await registryProxy.upgradeTo(registryContract.address)).wait()
   console.log('Upgrading TokenController...')
   await (await tokenControllerProxy.upgradeTo(tokenControllerContract.address)).wait()
   console.log('Upgrading AssuredFinancialOpportunity...')
@@ -45,8 +48,6 @@ export const upgrade = async (deployHelperAddress: string, accountPrivateKey: st
   await (await aaveFinancialOpportunityProxy.upgradeTo(aaveFinancialOpportunityContract.address)).wait()
   console.log('Upgrading Liquidator...')
   await (await liquidatorProxy.upgradeTo(liquidatorContract.address)).wait()
-  console.log('Upgrading Registry...')
-  await (await registryProxy.upgradeTo(registryContract.address)).wait()
 
   console.log('\n\nSUCCESSFULLY UPGRADED', '\n\n')
 }

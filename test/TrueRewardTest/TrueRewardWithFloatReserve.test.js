@@ -11,6 +11,7 @@ const to18Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 8))
 
 contract('TrueRewardWithFloatReserve', function (accounts) {
   const [, owner, holder, holder2, sender, recipient] = accounts
+  const WHITELIST_TRUEREWARD = '0x6973547275655265776172647357686974656c69737465640000000000000000'
   describe('TrueReward with float admin', function () {
     beforeEach(async function () {
       this.registry = await Registry.new({ from: owner })
@@ -30,6 +31,13 @@ contract('TrueRewardWithFloatReserve', function (accounts) {
       await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, this.token.address, { from: owner })
       await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
       this.reserve = await this.token.RESERVE.call()
+
+      await this.registry.setAttributeValue(this.reserve, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(owner, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(holder, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(holder2, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(sender, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(recipient, WHITELIST_TRUEREWARD, 1, { from: owner })
     })
 
     it('convert TUSD reserve into aave float reserve', async function () {
@@ -82,6 +90,14 @@ contract('TrueRewardWithFloatReserve', function (accounts) {
       await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, this.token.address, { from: owner })
       await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
       this.reserve = await this.token.RESERVE.call()
+
+      await this.registry.setAttributeValue(this.reserve, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(owner, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(holder, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(holder2, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(sender, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(recipient, WHITELIST_TRUEREWARD, 1, { from: owner })
+
       await this.token.transfer(this.reserve, to18Decimals(200), { from: holder })
       await this.token.opportunityReserveMint(to18Decimals(100), { from: owner })
     })
