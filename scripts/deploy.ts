@@ -8,9 +8,9 @@
  * Use the config object to set parameters for deployment
  */
 
-import { ethers, providers } from 'ethers'
+import { ethers } from 'ethers'
 import { getContract, setupDeployer, validatePrivateKey } from './utils'
-import { TransactionResponse } from 'ethers/providers'
+import { JsonRpcProvider, TransactionResponse } from 'ethers/providers'
 
 interface DeployedAddresses {
   trueUsd: string,
@@ -20,10 +20,8 @@ interface DeployedAddresses {
   uniswapFactory: string,
 }
 
-export const deploy = async (accountPrivateKey: string, provider: providers.JsonRpcProvider, network: string) => {
+async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, provider: JsonRpcProvider) {
   validatePrivateKey(accountPrivateKey)
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const deployedAddresses: DeployedAddresses = require(`./deployedAddresses/${network}.json`)
 
   for (const [name, address] of Object.entries(deployedAddresses)) {
     const code = await provider.getCode(address)
@@ -216,6 +214,12 @@ Owner is: ${trueUsdOwner}`)
   console.log('set mint thresholds')
 
   console.log('\n\nSUCCESSFULLY DEPLOYED TO NETWORK: ', provider.connection.url, '\n\n')
+}
+
+export const deploy = async (accountPrivateKey: string, provider: JsonRpcProvider, network: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const deployedAddresses: DeployedAddresses = require(`./deployedAddresses/${network}.json`)
+  await deployWithExisting(accountPrivateKey, deployedAddresses, provider)
 }
 
 if (require.main === module) {
