@@ -32,12 +32,12 @@ contract('TrueRewardWithFloatReserve', function (accounts) {
       await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
       this.reserve = await this.token.RESERVE.call()
 
-      await this.registry.setAttributeValue(this.reserve, WHITELIST_TRUEREWARD, 1, {from: owner})
-      await this.registry.setAttributeValue(owner, WHITELIST_TRUEREWARD, 1, {from: owner})
-      await this.registry.setAttributeValue(holder, WHITELIST_TRUEREWARD, 1, {from: owner})
-      await this.registry.setAttributeValue(holder2, WHITELIST_TRUEREWARD, 1, {from: owner})
-      await this.registry.setAttributeValue(sender, WHITELIST_TRUEREWARD, 1, {from: owner})
-      await this.registry.setAttributeValue(recipient, WHITELIST_TRUEREWARD, 1, {from: owner})
+      await this.registry.setAttributeValue(this.reserve, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(owner, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(holder, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(holder2, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(sender, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(recipient, WHITELIST_TRUEREWARD, 1, { from: owner })
     })
 
     it('convert TUSD reserve into aave float reserve', async function () {
@@ -91,12 +91,12 @@ contract('TrueRewardWithFloatReserve', function (accounts) {
       await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
       this.reserve = await this.token.RESERVE.call()
 
-      await this.registry.setAttributeValue(this.reserve, WHITELIST_TRUEREWARD, 1, {from: owner})
-      await this.registry.setAttributeValue(owner, WHITELIST_TRUEREWARD, 1, {from: owner})
-      await this.registry.setAttributeValue(holder, WHITELIST_TRUEREWARD, 1, {from: owner})
-      await this.registry.setAttributeValue(holder2, WHITELIST_TRUEREWARD, 1, {from: owner})
-      await this.registry.setAttributeValue(sender, WHITELIST_TRUEREWARD, 1, {from: owner})
-      await this.registry.setAttributeValue(recipient, WHITELIST_TRUEREWARD, 1, {from: owner})
+      await this.registry.setAttributeValue(this.reserve, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(owner, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(holder, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(holder2, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(sender, WHITELIST_TRUEREWARD, 1, { from: owner })
+      await this.registry.setAttributeValue(recipient, WHITELIST_TRUEREWARD, 1, { from: owner })
 
       await this.token.transfer(this.reserve, to18Decimals(200), { from: holder })
       await this.token.opportunityReserveMint(to18Decimals(100), { from: owner })
