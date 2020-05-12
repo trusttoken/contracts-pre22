@@ -19,8 +19,6 @@ import { Liquidator } from "@trusttoken/trusttokens/contracts/Liquidator.sol";
  * Deployer of DeployHelper will be final owner of proxy contracts
  *
  * Use UpgradeHelper to upgrade existing contracts
- *
- * __WARNING__ TrueUSD and Registry contract are expected to be initialized manually
  */
 contract DeployHelper {
     address payable public owner;
@@ -30,10 +28,11 @@ contract DeployHelper {
     OwnedUpgradeabilityProxy public tokenControllerProxy;
     OwnedUpgradeabilityProxy public assuredFinancialOpportunityProxy;
     OwnedUpgradeabilityProxy public aaveFinancialOpportunityProxy;
+    OwnedUpgradeabilityProxy public stakedTokenProxy; // assurance pool
     OwnedUpgradeabilityProxy public liquidatorProxy;
 
     IExponentContract exponentContract;
-    StakedToken assurancePool;
+    StakedToken stakedToken;
 
     TrueUSD trueUSD;
     TokenController tokenController;
@@ -42,24 +41,27 @@ contract DeployHelper {
     Liquidator liquidator;
     ProvisionalRegistryImplementation registry;
 
+    /**
+     * @dev Set proxy & exponent contract addresses in storage
+     */
     constructor(
         address payable trueUSDProxyAddress,
         address payable registryProxyAddress,
         address payable tokenControllerProxyAddress,
         address payable assuredFinancialOpportunityProxyAddress,
         address payable aaveFinancialOpportunityProxyAddress,
+        address payable stakedTokenProxyAddress, // assurance pool
         address payable liquidatorProxyAddress,
-        address exponentContractAddress,
-        address assurancePoolAddress
+        address exponentContractAddress
     ) public {
         require(trueUSDProxyAddress != address(0), "trueUSDProxyAddress cannot be address(0)");
         require(tokenControllerProxyAddress != address(0), "tokenControllerProxyAddress cannot be address(0)");
         require(assuredFinancialOpportunityProxyAddress != address(0), "assuredFinancialOpportunityProxyAddress cannot be address(0)");
         require(aaveFinancialOpportunityProxyAddress != address(0), "aaveFinancialOpportunityProxyAddress cannot be address(0)");
+        require(stakedTokenProxyAddress != address(0), "stakedTokenAddress cannot be address(0)");
         require(liquidatorProxyAddress != address(0), "liquidatorProxyAddress cannot be address(0)");
         require(registryProxyAddress != address(0), "registryProxyAddress cannot be address(0)");
         require(exponentContractAddress != address(0), "exponentContractAddress cannot be address(0)");
-        require(assurancePoolAddress != address(0), "assurancePoolAddress cannot be address(0)");
 
         owner = msg.sender;
 
@@ -71,7 +73,7 @@ contract DeployHelper {
         liquidatorProxy = OwnedUpgradeabilityProxy(liquidatorProxyAddress);
         registryProxy = OwnedUpgradeabilityProxy(registryProxyAddress);
         exponentContract = IExponentContract(exponentContractAddress);
-        assurancePool = StakedToken(assurancePoolAddress);
+        stakedTokenProxy = OwnedUpgradeabilityProxy(stakedTokenProxyAddress);
     }
 
     modifier onlyOwner() {
@@ -84,7 +86,7 @@ contract DeployHelper {
      * msg.sender needs to own all the deployed contracts
      * msg.sender needs to transfer ownership to this contract for:
      * trueUSD, trueUSDProxy, tokenController, tokenControllerProxy,
-     * liquidator, assurancePool
+     * liquidator
      */
     function setup(
         address trueUSDImplAddress,
@@ -92,6 +94,7 @@ contract DeployHelper {
         address payable tokenControllerImplAddress,
         address payable assuredFinancialOpportunityImplAddress,
         address payable aaveFinancialOpportunityImplAddress,
+        address payable stakedTokenImplAddress, // assurance pool
         address payable liquidatorImplAddress,
         address aTokenAddress,
         address lendingPoolAddress,
@@ -103,6 +106,7 @@ contract DeployHelper {
         require(tokenControllerImplAddress != address(0), "tokenControllerImplAddress cannot be address(0)");
         require(assuredFinancialOpportunityImplAddress != address(0), "assuredFinancialOpportunityImplAddress cannot be address(0)");
         require(aaveFinancialOpportunityImplAddress != address(0), "aaveFinancialOpportunityImplAddress cannot be address(0)");
+        require(aaveFinancialOpportunityImplAddress != address(0), "stakedTokenImplAddress cannot be address(0)");
         require(liquidatorImplAddress != address(0), "liquidatorImplAddress cannot be address(0)");
         require(registryImplAddress != address(0), "registryImplAddress cannot be address(0)");
 
@@ -115,6 +119,7 @@ contract DeployHelper {
         initAssurance(
             assuredFinancialOpportunityImplAddress,
             aaveFinancialOpportunityImplAddress,
+            stakedTokenImplAddress,
             liquidatorImplAddress,
             aTokenAddress,
             lendingPoolAddress,
@@ -124,7 +129,9 @@ contract DeployHelper {
         );
     }
 
-    // @dev Init TrueUSD & TokenController
+    /**
+     * @dev Init TrueUSD & TokenController
+     */
     function initTrueUSD(
         address trueUSDImplAddress,
         address tokenControllerImplAddress,
@@ -137,6 +144,7 @@ contract DeployHelper {
         trueUSDProxy.claimProxyOwnership();
         trueUSDProxy.upgradeTo(trueUSDImplAddress);
         trueUSD = TrueUSD(address(trueUSDProxy));
+
         // Either initialize or claim ownership
         address(trueUSD).call(abi.encodeWithSignature("initialize()"));
         address(trueUSD).call(abi.encodeWithSignature("claimOwnership()"));
@@ -174,6 +182,7 @@ contract DeployHelper {
     function initAssurance(
         address assuredFinancialOpportunityImplAddress,
         address aaveFinancialOpportunityImplAddress,
+        address stakedTokenImplAddress, // assurance pool
         address liquidatorImplAddress,
         address aTokenAddress,
         address lendingPoolAddress,
@@ -189,6 +198,7 @@ contract DeployHelper {
         aaveFinancialOpportunityProxy.upgradeTo(aaveFinancialOpportunityImplAddress);
         aaveFinancialOpportunity = AaveFinancialOpportunity(address(aaveFinancialOpportunityProxy));
 
+        stakedTokenProxy.claimProxyOwnership();
         liquidatorProxy.claimProxyOwnership();
         liquidatorProxy.upgradeTo(liquidatorImplAddress);
         liquidator = Liquidator(address(liquidatorProxy));
@@ -200,7 +210,8 @@ contract DeployHelper {
             outputUniswapAddress,
             stakeUniswapAddress
         );
-        liquidator.setPool(address(assurancePool));
+
+        liquidator.setPool(address(stakedToken));
 
         aaveFinancialOpportunity.configure(
             IAToken(aTokenAddress),
@@ -211,7 +222,7 @@ contract DeployHelper {
 
         assuredFinancialOpportunity.configure(
             address(aaveFinancialOpportunity),
-            address(assurancePool),
+            address(stakedToken),
             address(liquidator),
             address(exponentContract),
             address(trueUSD),

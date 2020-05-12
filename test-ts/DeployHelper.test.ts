@@ -100,9 +100,9 @@ describe('DeployHelper', () => {
       tokenControllerProxy.address,
       assuredFinancialOpportunityProxy.address,
       aaveFinancialOpportunityProxy.address,
+      stakedToken.address
       liquidatorProxy.address,
       fractionalExponents.address,
-      stakedToken.address,
     ])
 
     await liquidatorProxy.transferProxyOwnership(deployHelper.address)
