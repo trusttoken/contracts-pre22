@@ -49,7 +49,7 @@ export const upgrade = async (deployHelperAddress: string, accountPrivateKey: st
   console.log('Upgrading Liquidator...')
   await (await liquidatorProxy.upgradeTo(liquidatorContract.address)).wait()
 
-  console.log('\n\nSUCCESSFULLY UPGRADED', '\n\n')
+  console.log('\n\nSUCCESSFULLY UPGRADED ON NETWORK: ', provider.connection.url, '\n\n')
 }
 
 if (require.main === module) {

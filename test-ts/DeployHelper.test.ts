@@ -207,8 +207,8 @@ describe('DeployHelper', () => {
       expect(await aaveFinancialOpportunity.owner()).to.equal(assuredFinancialOpportunity.address)
     })
 
-    it('should have stakeToken properly set', async () => {
-      expect(await aaveFinancialOpportunity.stakeToken()).to.equal(mockATokenAddress)
+    it('should have aToken properly set', async () => {
+      expect(await aaveFinancialOpportunity.aToken()).to.equal(mockATokenAddress)
     })
 
     it('should have lendingPool properly set', async () => {
