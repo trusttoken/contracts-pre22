@@ -56,7 +56,6 @@ describe('DeployHelper', () => {
   let assuredFinancialOpportunityImplementation: Contract
   let assuredFinancialOpportunityProxy: Contract
 
-  let stakedToken: Contract
   let stakedTokenImplementation: Contract
   let stakedTokenProxy: Contract
 
@@ -88,7 +87,6 @@ describe('DeployHelper', () => {
     aaveFinancialOpportunity = aaveFinancialOpportunityImplementation.attach(aaveFinancialOpportunityProxy.address)
     assuredFinancialOpportunity = assuredFinancialOpportunityImplementation.attach(assuredFinancialOpportunityProxy.address)
     registry = registryImplementation.attach(registryProxy.address)
-    stakedToken = stakedTokenImplementation.attach(stakedTokenProxy.address)
 
     fractionalExponents = await deployContract(deployer, FractionalExponents)
     mockTrustToken = await deployContract(deployer, MockTrustToken, [registry.address])
