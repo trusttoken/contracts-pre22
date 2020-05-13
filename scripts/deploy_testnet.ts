@@ -9,7 +9,7 @@
  */
 
 import { ethers, providers } from 'ethers'
-import { setupDeployer, validatePrivateKey } from './utils'
+import { deployBehindProxy, deployBehindTimeProxy, setupDeployer, validatePrivateKey } from './utils'
 
 const rpcOptions = {
   rinkeby: 'https://rinkeby.infura.io/v3/81447a33c1cd4eb09efb1e8c388fb28e',
@@ -53,7 +53,6 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   const aTokenMock = await deploy('ATokenMock', trueUSDProxy.address, lendingPoolCoreMock.address)
   const lendingPoolMock = await deploy('LendingPoolMock', lendingPoolCoreMock.address, aTokenMock.address)
   const fractionalExponents = await deploy('FractionalExponents')
-  const trustToken = await deploy('MockTrustToken', registry.address)
 
   const financialOpportunityImplementation = await deploy('AaveFinancialOpportunity')
   const financialOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
@@ -61,14 +60,14 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
 
   const liquidatorImplementation = await deploy('Liquidator')
   const liquidatorProxy = await deploy('OwnedUpgradeabilityProxy')
-  const liquidator = liquidatorImplementation.attach(liquidatorProxy.address)
   console.log('deployed liquidatorProxy at: ', liquidatorProxy.address)
 
   // deploy assurance pool
   const stakedTokenImplementation = await deploy('StakedToken')
-  await stakedTokenImplementation.configure(trustToken.address, trueUSD.address, registry.address, liquidator.address)
   const stakedTokenProxy = await deploy('OwnedUpgradeabilityProxy')
   console.log('deployed stakedToken at: ', stakedTokenProxy.address)
+
+  const [trustTokenImplementation, trustTokenProxy, trustToken] = await deployBehindTimeProxy(wallet, 'MockTrustToken', registryProxy.address)
 
   // Deploy UpgradeHelper
   const deployHelper = await deploy(
@@ -76,6 +75,7 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     trueUSDProxy.address,
     registryProxy.address,
     tokenControllerProxy.address,
+    trustTokenProxy.address,
     assuredFinancialOpportunityProxy.address,
     financialOpportunityProxy.address,
     stakedTokenProxy.address,
@@ -89,6 +89,10 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   tx = await tokenControllerProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
   console.log('controller proxy transfer ownership')
+
+  tx = await trustTokenProxy.transferProxyOwnership(deployHelper.address)
+  await tx.wait()
+  console.log('trust token proxy transfer ownership')
 
   tx = await trueUSDProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
@@ -123,13 +127,13 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     trueUSDImplementation.address,
     registryImplementation.address,
     tokenControllerImplementation.address,
+    trustTokenImplementation.address,
     assuredFinancialOpportunityImplementation.address,
     financialOpportunityImplementation.address,
     stakedTokenImplementation.address,
     liquidatorImplementation.address,
     aTokenMock.address,
     lendingPoolMock.address,
-    trustToken.address,
     ZERO,
     ZERO,
     { gasLimit: 5000000 },
@@ -141,6 +145,10 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   tx = await tokenControllerProxy.claimProxyOwnership({ gasLimit: 5000000 })
   await tx.wait()
   console.log('tokenControllerProxy claim ownership')
+
+  tx = await trustTokenProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await tx.wait()
+  console.log('trust token claim ownership')
 
   tx = await trueUSDProxy.claimProxyOwnership({ gasLimit: 5000000 })
   await tx.wait()

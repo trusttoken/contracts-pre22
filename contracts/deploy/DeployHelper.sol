@@ -124,7 +124,7 @@ contract DeployHelper {
             registryImplAddress
         );
 
-        trustToken = TrustToken(address(trustTokenProxy));
+        initTrustToken(trustTokenImplAddress);
 
         initAssurance(
             assuredFinancialOpportunityImplAddress,
@@ -187,6 +187,18 @@ contract DeployHelper {
         }
     }
 
+    function initTrustToken(address trustTokenImplAddress) internal {
+        require(trustTokenProxy.pendingProxyOwner() == address(this), "not trust token proxy owner");
+
+        trustTokenProxy.claimProxyOwnership();
+        trustTokenProxy.upgradeTo(trustTokenImplAddress);
+        trustToken = TrustToken(address(trustTokenProxy));
+        trustToken.initialize();
+
+        trustToken.transferOwnership(owner);
+        trustTokenProxy.transferProxyOwnership(owner);
+    }
+
     /// @dev Initialize Assurance
     function initAssurance(
         address assuredFinancialOpportunityImplAddress,
@@ -211,7 +223,7 @@ contract DeployHelper {
         stakedToken = StakedToken(address(stakedTokenProxy));
 
         stakedToken.configure(
-            StakingAsset(trustTokenAddress),
+            StakingAsset(address(trustTokenProxy)),
             StakingAsset(address(trueUSDProxy)),
             ProvisionalRegistryImplementation(address(registryProxy)),
             address(liquidatorProxy)
