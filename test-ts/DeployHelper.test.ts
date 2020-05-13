@@ -140,7 +140,6 @@ describe('DeployHelper', () => {
     await assuredFinancialOpportunity.claimOwnership()
     await tokenController.claimOwnership()
     await registry.claimOwnership()
-    await stakedTokenProxy.claimProxyOwnership()
   })
 
   describe('True USD', () => {
