@@ -11,6 +11,7 @@ import { ILendingPool } from "../TrueReward/ILendingPool.sol";
 import { IExponentContract } from "../TrueReward/utilities/IExponentContract.sol";
 import { StakedToken } from "@trusttoken/trusttokens/contracts/StakedToken.sol";
 import { Liquidator } from "@trusttoken/trusttokens/contracts/Liquidator.sol";
+import { StakingAsset } from "@trusttoken/trusttokens/contracts/StakingAsset.sol";
 
 /**
  * @title DeployHelper
@@ -182,7 +183,7 @@ contract DeployHelper {
     function initAssurance(
         address assuredFinancialOpportunityImplAddress,
         address aaveFinancialOpportunityImplAddress,
-        address stakedTokenImplAddress, // assurance pool
+        address stakedTokenImplAddress,
         address liquidatorImplAddress,
         address aTokenAddress,
         address lendingPoolAddress,
@@ -201,6 +202,13 @@ contract DeployHelper {
         stakedTokenProxy.claimProxyOwnership();
         stakedTokenProxy.upgradeTo(stakedTokenImplAddress);
         stakedToken = StakedToken(address(stakedTokenProxy));
+
+        stakedToken.configure(
+            StakingAsset(trustTokenAddress),
+            StakingAsset(address(trueUSDProxy)),
+            ProvisionalRegistryImplementation(address(registryProxy)),
+            address(liquidatorProxy)
+        );
 
         liquidatorProxy.claimProxyOwnership();
         liquidatorProxy.upgradeTo(liquidatorImplAddress);
@@ -240,5 +248,6 @@ contract DeployHelper {
         liquidatorProxy.transferProxyOwnership(owner);
         assuredFinancialOpportunityProxy.transferProxyOwnership(owner);
         aaveFinancialOpportunityProxy.transferProxyOwnership(owner);
+        stakedTokenProxy.transferProxyOwnership(owner);
     }
 }

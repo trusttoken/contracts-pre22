@@ -64,44 +64,11 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   const liquidator = liquidatorImplementation.attach(liquidatorProxy.address)
   console.log('deployed liquidatorProxy at: ', liquidatorProxy.address)
 
-  // setup uniswap
-  // needs to compile using truffle compile
-  /*
-  this.uniswapFactory = await deploy('uniswap_factory')
-  this.uniswapTemplate = await deploy('uniswap_exchange')
-  await this.uniswapFactory.initializeFactory(this.uniswapTemplate.address)
-  this.trueUSDUniswapExchange = await this.uniswapFactory.createExchange(this.trueUSD.address)
-
-  console.log(this.trueUSDUniswapExchange)
-  // this.trueUSDUniswapAddress = (await this.uniswapFactory.createExchange(
-  //   this.trueUSDProxy.address))//.logs[0].args.exchange
-  this.trueUSDUniswap = await contractAt('uniswap_exchange',
-    this.trueUSDUniswap.address)
-
-  this.trustUniswapAddress = (await this.uniswapFactory.createExchange(
-    this.trusttoken.address)).logs[0].args.exchange
-
-  this.trustUniswap = await UniswapExchange.at(this.trustUniswapAddress)
-  // deploy liquidator
-  this.liquidator = await deploy('Liquidator', this.registry.address,
-    this.trueUSD.address, this.trusttoken.address, this.trueUSDUniswap.address,
-    this.trustUniswap.address)
-
   // deploy assurance pool
-  this.assurancePool = await deploy('StakedToken', this.trusttoken.address,
-    this.trueUSD.address, this.registry.address,
-    this.liquidator.address)
-  */
-  // deploy liquidator
-
-  // deploy assurance pool
-  const assurancePool = await deploy(
-    'StakedToken',
-    trustToken.address,
-    trueUSD.address,
-    registry.address,
-    liquidator.address,
-  )
+  const stakedTokenImplementation = await deploy('StakedToken')
+  await stakedTokenImplementation.configure(trustToken.address, trueUSD.address, registry.address, liquidator.address)
+  const stakedTokenProxy = await deploy('OwnedUpgradeabilityProxy')
+  console.log('deployed stakedToken at: ', stakedTokenProxy.address)
 
   // Deploy UpgradeHelper
   const deployHelper = await deploy(
@@ -111,9 +78,9 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     tokenControllerProxy.address,
     assuredFinancialOpportunityProxy.address,
     financialOpportunityProxy.address,
+    stakedTokenProxy.address,
     liquidatorProxy.address,
     fractionalExponents.address,
-    assurancePool.address,
   )
 
   let tx
@@ -148,12 +115,17 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   await tx.wait()
   console.log('liquidator proxy transfer ownership')
 
+  tx = await stakedTokenProxy.transferProxyOwnership(deployHelper.address)
+  await tx.wait()
+  console.log('stakedToken proxy transfer ownership')
+
   tx = await deployHelper.setup(
     trueUSDImplementation.address,
     registryImplementation.address,
     tokenControllerImplementation.address,
     assuredFinancialOpportunityImplementation.address,
     financialOpportunityImplementation.address,
+    stakedTokenImplementation.address,
     liquidatorImplementation.address,
     aTokenMock.address,
     lendingPoolMock.address,
@@ -197,6 +169,10 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   tx = await liquidatorProxy.claimProxyOwnership({ gasLimit: 5000000 })
   await tx.wait()
   console.log('liquidator proxy claim ownership')
+
+  tx = await stakedTokenProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await tx.wait()
+  console.log('stakedToken proxy claim ownership')
 
   tx = await tokenController.setMintThresholds(
     ethers.utils.bigNumberify('1000000000000000000000'),

@@ -15,7 +15,7 @@ import {
   TokenController,
   MockTrustToken,
   TrueUSD,
-  StakedToken
+  StakedToken,
 } from '../build'
 
 use(solidity)
@@ -25,7 +25,6 @@ describe('DeployHelper', () => {
 
   const mockOutputUniswapAddress = Wallet.createRandom().address
   const mockStakeUniswapAddress = Wallet.createRandom().address
-  const mockAssurancePoolAddress = Wallet.createRandom().address
   const mockATokenAddress = Wallet.createRandom().address
   const mockLendingPoolAddress = Wallet.createRandom().address
 
@@ -89,7 +88,7 @@ describe('DeployHelper', () => {
     aaveFinancialOpportunity = aaveFinancialOpportunityImplementation.attach(aaveFinancialOpportunityProxy.address)
     assuredFinancialOpportunity = assuredFinancialOpportunityImplementation.attach(assuredFinancialOpportunityProxy.address)
     registry = registryImplementation.attach(registryProxy.address)
-    stakedToken = stakedToken.attach(stakedTokenProxy.address)
+    stakedToken = stakedTokenImplementation.attach(stakedTokenProxy.address)
 
     fractionalExponents = await deployContract(deployer, FractionalExponents)
     mockTrustToken = await deployContract(deployer, MockTrustToken, [registry.address])
@@ -100,7 +99,7 @@ describe('DeployHelper', () => {
       tokenControllerProxy.address,
       assuredFinancialOpportunityProxy.address,
       aaveFinancialOpportunityProxy.address,
-      stakedToken.address
+      stakedTokenProxy.address,
       liquidatorProxy.address,
       fractionalExponents.address,
     ])
@@ -119,6 +118,7 @@ describe('DeployHelper', () => {
       tokenControllerImplementation.address,
       assuredFinancialOpportunityImplementation.address,
       aaveFinancialOpportunityImplementation.address,
+      stakedTokenImplementation.address,
       liquidatorImplementation.address,
       mockATokenAddress,
       mockLendingPoolAddress,
@@ -136,10 +136,11 @@ describe('DeployHelper', () => {
     await assuredFinancialOpportunity.claimOwnership()
     await tokenController.claimOwnership()
     await registry.claimOwnership()
+    await stakedTokenProxy.claimProxyOwnership()
   })
 
   describe('True USD', () => {
-    it('truystproxy should be owned by deployer', async () => {
+    it('trustproxy should be owned by deployer', async () => {
       expect(await trueUSDProxy.proxyOwner()).to.equal(deployer.address)
     })
 
@@ -242,10 +243,6 @@ describe('DeployHelper', () => {
   describe('StakedToken', () => {
     it('proxy should be owned by deployer', async () => {
       expect(await stakedTokenProxy.proxyOwner()).to.equal(deployer.address)
-    })
-
-    it('implementation should be owned by deployer', async () => {
-      expect(await stakedTokenImplementation.owner()).to.equal(deployer.address)
     })
   })
 
