@@ -12,14 +12,14 @@ import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 /**
  * @title AaveFinancialOpportunity
  * @dev Financial Opportunity to earn TrueUSD with Aave.
- * stakeToken = aTUSD on Aave
+ * aToken = aTUSD on Aave
  * We assume tokenValue always increases
  */
 contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable {
     using SafeMath for uint256;
 
     /** aTUSD token contract from AAVE */
-    IAToken public stakeToken;
+    IAToken public aToken;
 
     /** LendingPool contract from AAVE */
     ILendingPool public lendingPool;
@@ -36,16 +36,16 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
      * @dev Set up Aave Opportunity
      */
     function configure(
-        IAToken _stakeToken,        // aToken
+        IAToken _aToken,        // aToken
         ILendingPool _lendingPool,  // lendingPool interface
         TrueUSD _token,             // TrueUSD
         address _owner              // owner
     ) public onlyProxyOwner {
-        require(address(_stakeToken) != address(0), "stakeToken cannot be address(0)");
+        require(address(_aToken) != address(0), "aToken cannot be address(0)");
         require(address(_lendingPool) != address(0), "lendingPool  cannot be address(0)");
         require(address(_token) != address(0), "TrueUSD cannot be address(0)");
         require(_owner != address(0), "Owner cannot be address(0)");
-        stakeToken = _stakeToken;
+        aToken = _aToken;
         lendingPool = _lendingPool;
         token = _token;
         owner = _owner;
@@ -69,7 +69,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
      * @return TUSD balance of opportunity
     **/
     function totalSupply() public view returns(uint256) {
-        return stakeToken.balanceOf(address(this));
+        return aToken.balanceOf(address(this));
     }
 
     /** @dev Return value of stake in yTUSD */
@@ -98,7 +98,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     function _redeem(address _to, uint256 ytusd) internal returns(uint256) {
         uint tusd = ytusd.mul(tokenValue()).div(10**18);
         uint256 balanceBefore = token.balanceOf(address(this));
-        stakeToken.redeem(tusd);
+        aToken.redeem(tusd);
         uint256 balanceAfter = token.balanceOf(address(this));
         uint256 fundsWithdrawn = balanceAfter.sub(balanceBefore);
 

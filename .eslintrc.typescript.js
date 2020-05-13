@@ -1,8 +1,9 @@
-  
+
 const baseConfig = require('./.eslintrc.json')
 
 module.exports = {
   ...baseConfig,
+  parser:  '@typescript-eslint/parser',
   extends: [
     "plugin:@typescript-eslint/recommended"
   ],
