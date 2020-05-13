@@ -131,10 +131,11 @@ describe('DeployHelper', () => {
     await trueUSDProxy.claimProxyOwnership()
     await registryProxy.claimProxyOwnership()
     await liquidatorProxy.claimProxyOwnership()
+    await stakedTokenProxy.claimProxyOwnership()
+
     await assuredFinancialOpportunity.claimOwnership()
     await tokenController.claimOwnership()
     await registry.claimOwnership()
-    await stakedTokenProxy.claimProxyOwnership()
   })
 
   describe('True USD', () => {
