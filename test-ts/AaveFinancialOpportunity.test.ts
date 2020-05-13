@@ -20,7 +20,7 @@ describe('AaveFinancialOpportunity', () => {
     address4: Wallet
   let financialOpportunity: Contract
   let lendingPool: Contract
-  let stakeToken: Contract
+  let aToken: Contract
   let lendingPoolCore: Contract
   let token: Contract
   let registry: Contract
@@ -32,25 +32,25 @@ describe('AaveFinancialOpportunity', () => {
     await token.setRegistry(registry.address)
 
     lendingPoolCore = await deployContract(proxyOwner, LendingPoolCoreMock)
-    stakeToken = await deployContract(proxyOwner, ATokenMock, [token.address, lendingPoolCore.address])
-    lendingPool = await deployContract(proxyOwner, LendingPoolMock, [lendingPoolCore.address, stakeToken.address])
-    await token.connect(holder).transfer(stakeToken.address, parseEther('100'))
+    aToken = await deployContract(proxyOwner, ATokenMock, [token.address, lendingPoolCore.address])
+    lendingPool = await deployContract(proxyOwner, LendingPoolMock, [lendingPoolCore.address, aToken.address])
+    await token.connect(holder).transfer(aToken.address, parseEther('100'))
 
     const financialOpportunityImpl = await new AaveFinancialOpportunityFactory(proxyOwner).deploy()
     const financialOpportunityProxy = await deployContract(proxyOwner, OwnedUpgradeabilityProxy)
     financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
     await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
-    await financialOpportunity.configure(stakeToken.address, lendingPool.address, token.address, owner.address)
+    await financialOpportunity.configure(aToken.address, lendingPool.address, token.address, owner.address)
   })
 
   describe('configure', function () {
     it('configured to proper addresses', async () => {
-      const stakeTokenAddress = await financialOpportunity.stakeToken()
+      const aTokenAddress = await financialOpportunity.aToken()
       const lendingPoolAddress = await financialOpportunity.lendingPool()
       const tokenAddress = await financialOpportunity.token()
       const ownerAddress = await financialOpportunity.owner()
 
-      expect(stakeTokenAddress).to.equal(stakeToken.address)
+      expect(aTokenAddress).to.equal(aToken.address)
       expect(lendingPoolAddress).to.equal(lendingPool.address)
       expect(tokenAddress).to.equal(token.address)
       expect(ownerAddress).to.equal(owner.address)
@@ -59,12 +59,12 @@ describe('AaveFinancialOpportunity', () => {
     it('can reconfigure', async () => {
       await financialOpportunity.configure(address1.address, address2.address, address3.address, address4.address)
 
-      const stakeTokenAddress = await financialOpportunity.stakeToken()
+      const aTokenAddress = await financialOpportunity.aToken()
       const lendingPoolAddress = await financialOpportunity.lendingPool()
       const tokenAddress = await financialOpportunity.token()
       const ownerAddress = await financialOpportunity.owner()
 
-      expect(stakeTokenAddress).to.equal(address1.address)
+      expect(aTokenAddress).to.equal(address1.address)
       expect(lendingPoolAddress).to.equal(address2.address)
       expect(tokenAddress).to.equal(address3.address)
       expect(ownerAddress).to.equal(address4.address)
