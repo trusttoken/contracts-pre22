@@ -82,7 +82,7 @@ describe('DeployHelper', () => {
     trueUSDImplementation = await deployContract(deployer, TrueUSD, [], { gasLimit: 5000000 })
     registryImplementation = await deployContract(deployer, ProvisionalRegistryImplementation)
     stakedTokenImplementation = await deployContract(deployer, StakedToken)
-    mockTrustTokenImplementation = await deployContract(deployer, MockTrustToken, [registryProxy.address])
+    mockTrustTokenImplementation = await deployContract(deployer, MockTrustToken)
 
     liquidator = liquidatorImplementation.attach(liquidatorProxy.address)
     trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
