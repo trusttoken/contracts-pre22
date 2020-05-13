@@ -15,6 +15,7 @@ import {
   TokenController,
   MockTrustToken,
   TrueUSD,
+  StakedToken,
 } from '../build'
 
 use(solidity)
@@ -24,7 +25,6 @@ describe('DeployHelper', () => {
 
   const mockOutputUniswapAddress = Wallet.createRandom().address
   const mockStakeUniswapAddress = Wallet.createRandom().address
-  const mockAssurancePoolAddress = Wallet.createRandom().address
   const mockATokenAddress = Wallet.createRandom().address
   const mockLendingPoolAddress = Wallet.createRandom().address
 
@@ -56,6 +56,9 @@ describe('DeployHelper', () => {
   let assuredFinancialOpportunityImplementation: Contract
   let assuredFinancialOpportunityProxy: Contract
 
+  let stakedTokenImplementation: Contract
+  let stakedTokenProxy: Contract
+
   let deployHelper: Contract
 
   beforeEachWithFixture(async (provider, wallets) => {
@@ -67,6 +70,7 @@ describe('DeployHelper', () => {
     tokenControllerProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
     trueUSDProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
     registryProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
+    stakedTokenProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)
 
     liquidatorImplementation = await deployContract(deployer, Liquidator)
     aaveFinancialOpportunityImplementation = await deployContract(deployer, AaveFinancialOpportunity)
@@ -74,6 +78,7 @@ describe('DeployHelper', () => {
     tokenControllerImplementation = await deployContract(deployer, TokenController)
     trueUSDImplementation = await deployContract(deployer, TrueUSD, [], { gasLimit: 5000000 })
     registryImplementation = await deployContract(deployer, ProvisionalRegistryImplementation)
+    stakedTokenImplementation = await deployContract(deployer, StakedToken)
 
     liquidator = liquidatorImplementation.attach(liquidatorProxy.address)
     trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
@@ -92,9 +97,9 @@ describe('DeployHelper', () => {
       tokenControllerProxy.address,
       assuredFinancialOpportunityProxy.address,
       aaveFinancialOpportunityProxy.address,
+      stakedTokenProxy.address,
       liquidatorProxy.address,
       fractionalExponents.address,
-      mockAssurancePoolAddress,
     ])
 
     await liquidatorProxy.transferProxyOwnership(deployHelper.address)
@@ -103,6 +108,7 @@ describe('DeployHelper', () => {
     await tokenControllerProxy.transferProxyOwnership(deployHelper.address)
     await trueUSDProxy.transferProxyOwnership(deployHelper.address)
     await registryProxy.transferProxyOwnership(deployHelper.address)
+    await stakedTokenProxy.transferProxyOwnership(deployHelper.address)
 
     await deployHelper.setup(
       trueUSDImplementation.address,
@@ -110,6 +116,7 @@ describe('DeployHelper', () => {
       tokenControllerImplementation.address,
       assuredFinancialOpportunityImplementation.address,
       aaveFinancialOpportunityImplementation.address,
+      stakedTokenImplementation.address,
       liquidatorImplementation.address,
       mockATokenAddress,
       mockLendingPoolAddress,
@@ -124,13 +131,15 @@ describe('DeployHelper', () => {
     await trueUSDProxy.claimProxyOwnership()
     await registryProxy.claimProxyOwnership()
     await liquidatorProxy.claimProxyOwnership()
+    await stakedTokenProxy.claimProxyOwnership()
+
     await assuredFinancialOpportunity.claimOwnership()
     await tokenController.claimOwnership()
     await registry.claimOwnership()
   })
 
   describe('True USD', () => {
-    it('truystproxy should be owned by deployer', async () => {
+    it('trustproxy should be owned by deployer', async () => {
       expect(await trueUSDProxy.proxyOwner()).to.equal(deployer.address)
     })
 
@@ -227,6 +236,12 @@ describe('DeployHelper', () => {
 
     it('implementation should be owned by deplyer', async () => {
       expect(await assuredFinancialOpportunity.owner()).to.equal(deployer.address)
+    })
+  })
+
+  describe('StakedToken', () => {
+    it('proxy should be owned by deployer', async () => {
+      expect(await stakedTokenProxy.proxyOwner()).to.equal(deployer.address)
     })
   })
 
