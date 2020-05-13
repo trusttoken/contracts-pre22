@@ -199,6 +199,9 @@ contract DeployHelper {
         aaveFinancialOpportunity = AaveFinancialOpportunity(address(aaveFinancialOpportunityProxy));
 
         stakedTokenProxy.claimProxyOwnership();
+        stakedTokenProxy.upgradeTo(stakedTokenImplAddress);
+        stakedToken = StakedToken(address(stakedTokenProxy));
+
         liquidatorProxy.claimProxyOwnership();
         liquidatorProxy.upgradeTo(liquidatorImplAddress);
         liquidator = Liquidator(address(liquidatorProxy));
