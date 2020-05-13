@@ -1,41 +1,27 @@
 import { Wallet, ethers } from 'ethers'
+import { deployContract } from 'ethereum-waffle'
 
 export const setupDeployer = (wallet: Wallet) => async (contractName: string, ...args) => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const contractJson = require(`../build/${contractName}.json`)
-  const deployTransaction = new ethers.ContractFactory(
-    contractJson.abi,
-    contractJson.bytecode,
-  ).getDeployTransaction(...args, { gasLimit: 4004588 })
+  const contract = await deployContract(wallet, contractJson, args, { gasLimit: 4004588 })
 
-  let transaction
-  let receipt
-
-  let transactionSuccess = false
-  while (!transactionSuccess) {
-    try {
-      transaction = await wallet.sendTransaction(deployTransaction)
-      transactionSuccess = true
-    } catch (e) {
-      console.log(JSON.stringify(e))
-      console.log('Retrying')
-    }
-  }
-
-  let awaitingSuccess = false
-  while (!awaitingSuccess) {
-    try {
-      receipt = await wallet.provider.waitForTransaction(transaction.hash)
-      awaitingSuccess = true
-    } catch (e) {
-      console.log(JSON.stringify(e))
-      console.log('Retrying')
-    }
-  }
-
-  console.log(`${contractName} address: ${receipt.contractAddress}`)
-  return new ethers.Contract(receipt.contractAddress, contractJson.abi, wallet)
+  console.log(`${contractName} address: ${contract.address}`)
+  return contract
 }
+
+export const deployBehindCustomProxy = (proxyName: string) => async (wallet: Wallet, contractName: string, ...args) => {
+  const deploy = setupDeployer(wallet)
+  const implementation = await deploy(contractName, ...args)
+  const proxy = await deploy(proxyName)
+  const contract = implementation.attach(proxy.address)
+  console.log(`deployed ${contractName}Proxy at: `, contract.address)
+
+  return [implementation, proxy, contract]
+}
+
+export const deployBehindProxy = deployBehindCustomProxy('OwnedUpgradeabilityProxy')
+export const deployBehindTimeProxy = deployBehindCustomProxy('TimeOwnedUpgradeabilityProxy')
 
 export const getContract = (wallet: ethers.Wallet) => (contractName: string, contractAddress: string) => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires

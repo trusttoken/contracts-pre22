@@ -8,9 +8,9 @@
  * Use the config object to set parameters for deployment
  */
 
-import { ethers, providers } from 'ethers'
-import { getContract, setupDeployer, validatePrivateKey } from './utils'
-import { TransactionResponse } from 'ethers/providers'
+import { ethers } from 'ethers'
+import { deployBehindProxy, deployBehindTimeProxy, getContract, setupDeployer, validatePrivateKey } from './utils'
+import { JsonRpcProvider, TransactionResponse } from 'ethers/providers'
 
 interface DeployedAddresses {
   trueUsd: string,
@@ -20,10 +20,8 @@ interface DeployedAddresses {
   uniswapFactory: string,
 }
 
-export const deploy = async (accountPrivateKey: string, provider: providers.JsonRpcProvider, network: string) => {
-  validatePrivateKey(accountPrivateKey)
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const deployedAddresses: DeployedAddresses = require(`./deployedAddresses/${network}.json`)
+export async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, provider: JsonRpcProvider) {
+  let tx: TransactionResponse
 
   for (const [name, address] of Object.entries(deployedAddresses)) {
     const code = await provider.getCode(address)
@@ -32,16 +30,16 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     }
   }
 
-  let tx: TransactionResponse
+  validatePrivateKey(accountPrivateKey)
 
   const wallet = new ethers.Wallet(accountPrivateKey, provider)
 
   const deploy = setupDeployer(wallet)
-  const contractAt = getContract(wallet)
 
   const safeMath = await deploy('SafeMath')
   console.log('deployed SafeMath at: ', safeMath.address)
 
+  const contractAt = getContract(wallet)
   const trueUSDImplementation = await deploy('TrueUSD')
   const trueUSDProxy = contractAt('OwnedUpgradeabilityProxy', deployedAddresses.trueUsd)
   const trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
@@ -59,7 +57,7 @@ Owner is: ${trueUsdOwner}`)
   const registryOwner = await registry.owner()
   if (registryOwner !== wallet.address) {
     throw new Error(`${wallet.address} is not a Registry owner.
-Owner is: ${trueUsdOwner}`)
+Owner is: ${registryOwner}`)
   }
 
   const tokenControllerImplementation = await deploy('TokenController')
@@ -72,15 +70,13 @@ Owner is: ${trueUsdOwner}`)
   const assuredFinancialOpportunity = assuredFinancialOpportunityImplementation.attach(assuredFinancialOpportunityProxy.address)
   console.log('deployed assuredFinancialOpportunityProxy at: ', assuredFinancialOpportunityProxy.address)
 
+  const fractionalExponents = await deploy('FractionalExponents')
+  const [trustTokenImplementation, trustTokenProxy, trustToken] = await deployBehindTimeProxy(wallet, 'MockTrustToken')
+  const [financialOpportunityImplementation, financialOpportunityProxy] = await deployBehindProxy(wallet, 'AaveFinancialOpportunity')
+
   // Deploy the rest of the contracts
   const lendingPool = contractAt('ILendingPool', deployedAddresses.aaveLendingPool)
   const aToken = contractAt('IAToken', deployedAddresses.aTUSD)
-  const fractionalExponents = await deploy('FractionalExponents')
-  const trustToken = await deploy('MockTrustToken', registryProxy.address)
-
-  const financialOpportunityImplementation = await deploy('AaveFinancialOpportunity')
-  const financialOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
-  console.log('deployed aaveFinancialOpportunityProxy at: ', financialOpportunityProxy.address)
 
   // setup uniswap
   const uniswapFactory = contractAt('uniswap_factory', deployedAddresses.uniswapFactory)
@@ -102,42 +98,42 @@ Owner is: ${trueUsdOwner}`)
   // deploy liquidator
   const liquidatorImplementation = await deploy('Liquidator')
   const liquidatorProxy = await deploy('OwnedUpgradeabilityProxy')
-  const liquidator = liquidatorImplementation.attach(liquidatorProxy.address)
+  console.log('deployed liquidatorProxy at: ', liquidatorProxy.address)
 
   // deploy assurance pool
-  const assurancePool = await deploy(
-    'StakedToken',
-    trustToken.address,
-    trueUSDProxy.address,
-    registryProxy.address,
-    liquidator.address,
-  )
+  const [stakedTokenImplementation, stakedTokenProxy] = await deployBehindProxy(wallet, 'StakedToken')
+  console.log('deployed stakedToken at: ', stakedTokenProxy.address)
 
   // Deploy UpgradeHelper
   const deployHelper = await deploy(
     'DeployHelper',
     trueUSDProxy.address,
+    registryProxy.address,
     tokenControllerProxy.address,
+    trustTokenProxy.address,
     assuredFinancialOpportunityProxy.address,
     financialOpportunityProxy.address,
+    stakedTokenProxy.address,
     liquidatorProxy.address,
-    registryProxy.address,
     fractionalExponents.address,
-    assurancePool.address,
   )
+
+  tx = await trueUSD.transferOwnership(deployHelper.address)
+  await tx.wait()
+  console.log('trueUSD transfer ownership')
 
   // transfer proxy ownership to deploy helper
   tx = await tokenControllerProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
   console.log('controller proxy transfer ownership')
 
+  tx = await trustTokenProxy.transferProxyOwnership(deployHelper.address)
+  await tx.wait()
+  console.log('trust token proxy transfer ownership')
+
   tx = await trueUSDProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
   console.log('trueUSDProxy proxy transfer ownership')
-
-  tx = await trueUSD.transferOwnership(deployHelper.address)
-  await tx.wait()
-  console.log('trueUSDP transfer ownership')
 
   tx = await assuredFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
@@ -147,27 +143,32 @@ Owner is: ${trueUsdOwner}`)
   await tx.wait()
   console.log('financialOpportunityProxy proxy transfer ownership')
 
-  tx = await liquidatorProxy.transferProxyOwnership(deployHelper.address)
-  await tx.wait()
-  console.log('liquidator transfer ownership')
-
   tx = await registryProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
-  console.log('registry transfer ownership')
+  console.log('registry proxy transfer ownership')
+
+  tx = await liquidatorProxy.transferProxyOwnership(deployHelper.address)
+  await tx.wait()
+  console.log('liquidator proxy transfer ownership')
+
+  tx = await stakedTokenProxy.transferProxyOwnership(deployHelper.address)
+  await tx.wait()
+  console.log('stakedToken proxy transfer ownership')
 
   // call deployHelper
   tx = await deployHelper.setup(
     trueUSDImplementation.address,
+    registryImplementation.address,
     tokenControllerImplementation.address,
+    trustTokenImplementation.address,
     assuredFinancialOpportunityImplementation.address,
     financialOpportunityImplementation.address,
+    stakedTokenImplementation.address,
     liquidatorImplementation.address,
-    registryImplementation.address,
     aToken.address,
     lendingPool.address,
-    trustToken.address,
     trueUSDUniswapExchange,
-    trueUSDUniswapExchange,
+    trustTokenUniswapExchange,
     { gasLimit: 5000000 },
   )
   await tx.wait()
@@ -177,6 +178,10 @@ Owner is: ${trueUsdOwner}`)
   tx = await tokenControllerProxy.claimProxyOwnership({ gasLimit: 5000000 })
   await tx.wait()
   console.log('tokenControllerProxy claim ownership')
+
+  tx = await trustTokenProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await tx.wait()
+  console.log('trust token claim ownership')
 
   tx = await trueUSDProxy.claimProxyOwnership({ gasLimit: 5000000 })
   await tx.wait()
@@ -206,6 +211,10 @@ Owner is: ${trueUsdOwner}`)
   await tx.wait()
   console.log('liquidator claim proxy ownership')
 
+  tx = await stakedTokenProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await tx.wait()
+  console.log('stakedToken claim proxy ownership')
+
   tx = await tokenController.setMintThresholds(
     ethers.utils.bigNumberify('1000000000000000000000'),
     ethers.utils.bigNumberify('10000000000000000000000'),
@@ -216,6 +225,12 @@ Owner is: ${trueUsdOwner}`)
   console.log('set mint thresholds')
 
   console.log('\n\nSUCCESSFULLY DEPLOYED TO NETWORK: ', provider.connection.url, '\n\n')
+}
+
+export const deploy = async (accountPrivateKey: string, provider: JsonRpcProvider, network: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const deployedAddresses: DeployedAddresses = require(`./deployedAddresses/${network}.json`)
+  await deployWithExisting(accountPrivateKey, deployedAddresses, provider)
 }
 
 if (require.main === module) {

@@ -285,7 +285,7 @@
 
 "@trusttoken/trusttokens@trusttoken/trusttokens#dev":
   version "0.1.6"
-  resolved "https://codeload.github.com/trusttoken/trusttokens/tar.gz/11ffb2386fae13b166ff2a90401aedcfc3051f0e"
+  resolved "https://codeload.github.com/trusttoken/trusttokens/tar.gz/4826ccdefed63ff4d1f1a49c06094c8f153bbe19"
   dependencies:
     "@openzeppelin/contracts" "^3.0.1"
     "@trusttoken/registry" "0.1.2"
@@ -402,7 +402,7 @@
   dependencies:
     "@types/node" "*"
 
-"@typescript-eslint/eslint-plugin@^2.28.0":
+"@typescript-eslint/eslint-plugin@^2.33.0":
   version "2.33.0"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/eslint-plugin/-/eslint-plugin-2.33.0.tgz#d6c8319d5011b4783bb3d2dadf105d8bdd499bd5"
   integrity sha512-QV6P32Btu1sCI/kTqjTNI/8OpCYyvlGjW5vD8MpTIg+HGE5S88HtT1G+880M4bXlvXj/NjsJJG0aGcVh0DdbeQ==
@@ -422,7 +422,7 @@
     eslint-scope "^5.0.0"
     eslint-utils "^2.0.0"
 
-"@typescript-eslint/parser@^2.28.0":
+"@typescript-eslint/parser@^2.33.0":
   version "2.33.0"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/parser/-/parser-2.33.0.tgz#395c0ef229ebef883608f8632a34f0acf02b9bdd"
   integrity sha512-AUtmwUUhJoH6yrtxZMHbRUEMsC2G6z5NSxg9KsROOGqNXasM71I8P2NihtumlWTUCRld70vqIZ6Pm4E5PAziEA==
