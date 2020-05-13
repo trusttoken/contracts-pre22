@@ -193,7 +193,7 @@ contract DeployHelper {
         trustTokenProxy.claimProxyOwnership();
         trustTokenProxy.upgradeTo(trustTokenImplAddress);
         trustToken = TrustToken(address(trustTokenProxy));
-        trustToken.initialize();
+        trustToken.initialize(ProvisionalRegistryImplementation(address(registryProxy)));
 
         trustToken.transferOwnership(owner);
         trustTokenProxy.transferProxyOwnership(owner);
