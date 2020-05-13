@@ -244,8 +244,8 @@ describe('DeployHelper', () => {
       expect(await stakedTokenProxy.proxyOwner()).to.equal(deployer.address)
     })
 
-    it('implementation should be owned by deplyer', async () => {
-      expect(await assuredFinancialOpportunity.owner()).to.equal(deployer.address)
+    it('implementation should be owned by deployer', async () => {
+      expect(await stakedTokenImplementation.owner()).to.equal(deployer.address)
     })
   })
 

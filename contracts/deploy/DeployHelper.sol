@@ -28,7 +28,7 @@ contract DeployHelper {
     OwnedUpgradeabilityProxy public tokenControllerProxy;
     OwnedUpgradeabilityProxy public assuredFinancialOpportunityProxy;
     OwnedUpgradeabilityProxy public aaveFinancialOpportunityProxy;
-    OwnedUpgradeabilityProxy public stakedTokenProxy; // assurance pool
+    OwnedUpgradeabilityProxy public stakedTokenProxy;
     OwnedUpgradeabilityProxy public liquidatorProxy;
 
     IExponentContract exponentContract;
@@ -50,7 +50,7 @@ contract DeployHelper {
         address payable tokenControllerProxyAddress,
         address payable assuredFinancialOpportunityProxyAddress,
         address payable aaveFinancialOpportunityProxyAddress,
-        address payable stakedTokenProxyAddress, // assurance pool
+        address payable stakedTokenProxyAddress,
         address payable liquidatorProxyAddress,
         address exponentContractAddress
     ) public {
@@ -94,7 +94,7 @@ contract DeployHelper {
         address payable tokenControllerImplAddress,
         address payable assuredFinancialOpportunityImplAddress,
         address payable aaveFinancialOpportunityImplAddress,
-        address payable stakedTokenImplAddress, // assurance pool
+        address payable stakedTokenImplAddress,
         address payable liquidatorImplAddress,
         address aTokenAddress,
         address lendingPoolAddress,
@@ -106,7 +106,7 @@ contract DeployHelper {
         require(tokenControllerImplAddress != address(0), "tokenControllerImplAddress cannot be address(0)");
         require(assuredFinancialOpportunityImplAddress != address(0), "assuredFinancialOpportunityImplAddress cannot be address(0)");
         require(aaveFinancialOpportunityImplAddress != address(0), "aaveFinancialOpportunityImplAddress cannot be address(0)");
-        require(aaveFinancialOpportunityImplAddress != address(0), "stakedTokenImplAddress cannot be address(0)");
+        require(stakedTokenImplAddress != address(0), "stakedTokenImplAddress cannot be address(0)");
         require(liquidatorImplAddress != address(0), "liquidatorImplAddress cannot be address(0)");
         require(registryImplAddress != address(0), "registryImplAddress cannot be address(0)");
 
@@ -242,4 +242,3 @@ contract DeployHelper {
         aaveFinancialOpportunityProxy.transferProxyOwnership(owner);
     }
 }
-
