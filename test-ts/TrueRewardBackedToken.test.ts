@@ -20,7 +20,7 @@ import { parseEther } from 'ethers/utils'
 use(solidity)
 
 describe('TrueRewardBackedToken', () => {
-  let owner: Wallet, holder: Wallet, holder2: Wallet, sender: Wallet, recipient: Wallet, notWhitelisted:Wallet
+  let owner: Wallet, holder: Wallet, holder2: Wallet, sender: Wallet, recipient: Wallet, notWhitelisted: Wallet
   let token: Contract
   let registry: Contract
   let financialOpportunity: Contract

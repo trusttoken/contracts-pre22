@@ -16,7 +16,7 @@ import {
   MockTrustToken,
   TrueUSD,
   StakedToken,
-  TimeOwnedUpgradeabilityProxy
+  TimeOwnedUpgradeabilityProxy,
 } from '../build'
 
 use(solidity)

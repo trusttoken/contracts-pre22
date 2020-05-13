@@ -21,7 +21,7 @@ interface DeployedAddresses {
 }
 
 export async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, provider: JsonRpcProvider) {
-  validatePrivateKey(accountPrivateKey)
+  let tx: TransactionResponse
 
   for (const [name, address] of Object.entries(deployedAddresses)) {
     const code = await provider.getCode(address)
@@ -30,16 +30,16 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
     }
   }
 
-  let tx: TransactionResponse
+  validatePrivateKey(accountPrivateKey)
 
   const wallet = new ethers.Wallet(accountPrivateKey, provider)
 
   const deploy = setupDeployer(wallet)
-  const contractAt = getContract(wallet)
 
   const safeMath = await deploy('SafeMath')
   console.log('deployed SafeMath at: ', safeMath.address)
 
+  const contractAt = getContract(wallet)
   const trueUSDImplementation = await deploy('TrueUSD')
   const trueUSDProxy = contractAt('OwnedUpgradeabilityProxy', deployedAddresses.trueUsd)
   const trueUSD = trueUSDImplementation.attach(trueUSDProxy.address)
@@ -57,7 +57,7 @@ Owner is: ${trueUsdOwner}`)
   const registryOwner = await registry.owner()
   if (registryOwner !== wallet.address) {
     throw new Error(`${wallet.address} is not a Registry owner.
-Owner is: ${trueUsdOwner}`)
+Owner is: ${registryOwner}`)
   }
 
   const tokenControllerImplementation = await deploy('TokenController')
@@ -70,16 +70,13 @@ Owner is: ${trueUsdOwner}`)
   const assuredFinancialOpportunity = assuredFinancialOpportunityImplementation.attach(assuredFinancialOpportunityProxy.address)
   console.log('deployed assuredFinancialOpportunityProxy at: ', assuredFinancialOpportunityProxy.address)
 
+  const fractionalExponents = await deploy('FractionalExponents')
+  const [trustTokenImplementation, trustTokenProxy, trustToken] = await deployBehindTimeProxy(wallet, 'MockTrustToken', registryProxy.address)
+  const [financialOpportunityImplementation, financialOpportunityProxy] = await deployBehindProxy(wallet, 'AaveFinancialOpportunity')
+
   // Deploy the rest of the contracts
   const lendingPool = contractAt('ILendingPool', deployedAddresses.aaveLendingPool)
   const aToken = contractAt('IAToken', deployedAddresses.aTUSD)
-  const fractionalExponents = await deploy('FractionalExponents')
-
-  const [trustTokenImplementation, trustTokenProxy, trustToken] = await deployBehindTimeProxy(wallet, 'MockTrustToken', registryProxy.address)
-
-  const financialOpportunityImplementation = await deploy('AaveFinancialOpportunity')
-  const financialOpportunityProxy = await deploy('OwnedUpgradeabilityProxy')
-  console.log('deployed aaveFinancialOpportunityProxy at: ', financialOpportunityProxy.address)
 
   // setup uniswap
   const uniswapFactory = contractAt('uniswap_factory', deployedAddresses.uniswapFactory)
@@ -101,9 +98,11 @@ Owner is: ${trueUsdOwner}`)
   // deploy liquidator
   const liquidatorImplementation = await deploy('Liquidator')
   const liquidatorProxy = await deploy('OwnedUpgradeabilityProxy')
+  console.log('deployed liquidatorProxy at: ', liquidatorProxy.address)
 
   // deploy assurance pool
   const [stakedTokenImplementation, stakedTokenProxy] = await deployBehindProxy(wallet, 'StakedToken')
+  console.log('deployed stakedToken at: ', stakedTokenProxy.address)
 
   // Deploy UpgradeHelper
   const deployHelper = await deploy(
@@ -119,6 +118,10 @@ Owner is: ${trueUsdOwner}`)
     fractionalExponents.address,
   )
 
+  tx = await trueUSD.transferOwnership(deployHelper.address)
+  await tx.wait()
+  console.log('trueUSD transfer ownership')
+
   // transfer proxy ownership to deploy helper
   tx = await tokenControllerProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
@@ -132,10 +135,6 @@ Owner is: ${trueUsdOwner}`)
   await tx.wait()
   console.log('trueUSDProxy proxy transfer ownership')
 
-  tx = await trueUSD.transferOwnership(deployHelper.address)
-  await tx.wait()
-  console.log('trueUSDP transfer ownership')
-
   tx = await assuredFinancialOpportunityProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
   console.log('assuredFinancialOpportunityProxy proxy transfer ownership')
@@ -144,17 +143,17 @@ Owner is: ${trueUsdOwner}`)
   await tx.wait()
   console.log('financialOpportunityProxy proxy transfer ownership')
 
-  tx = await stakedTokenProxy.transferProxyOwnership(deployHelper.address)
+  tx = await registryProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
-  console.log('stakedTokenProxy proxy transfer ownership')
+  console.log('registry proxy transfer ownership')
 
   tx = await liquidatorProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
-  console.log('liquidator transfer proxy ownership')
+  console.log('liquidator proxy transfer ownership')
 
-  tx = await registryProxy.transferProxyOwnership(deployHelper.address)
+  tx = await stakedTokenProxy.transferProxyOwnership(deployHelper.address)
   await tx.wait()
-  console.log('registry transfer proxy ownership')
+  console.log('stakedToken proxy transfer ownership')
 
   // call deployHelper
   tx = await deployHelper.setup(
@@ -169,7 +168,7 @@ Owner is: ${trueUsdOwner}`)
     aToken.address,
     lendingPool.address,
     trueUSDUniswapExchange,
-    trueUSDUniswapExchange,
+    trustTokenUniswapExchange,
     { gasLimit: 5000000 },
   )
   await tx.wait()
@@ -196,10 +195,6 @@ Owner is: ${trueUsdOwner}`)
   await tx.wait()
   console.log('financialOpportunityProxy claim ownership')
 
-  tx = await stakedTokenProxy.claimProxyOwnership({ gasLimit: 5000000 })
-  await tx.wait()
-  console.log('stakedTokenProxy claim ownership')
-
   tx = await assuredFinancialOpportunity.claimOwnership({ gasLimit: 5000000 })
   await tx.wait()
   console.log('assuredFinancialOpportunity claim ownership')
@@ -215,6 +210,10 @@ Owner is: ${trueUsdOwner}`)
   tx = await liquidatorProxy.claimProxyOwnership({ gasLimit: 5000000 })
   await tx.wait()
   console.log('liquidator claim proxy ownership')
+
+  tx = await stakedTokenProxy.claimProxyOwnership({ gasLimit: 5000000 })
+  await tx.wait()
+  console.log('stakedToken claim proxy ownership')
 
   tx = await tokenController.setMintThresholds(
     ethers.utils.bigNumberify('1000000000000000000000'),
