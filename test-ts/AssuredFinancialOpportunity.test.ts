@@ -15,7 +15,6 @@ import { ConfigurableFinancialOpportunityMock } from '../build/types/Configurabl
 import { FractionalExponents } from '../build/types/FractionalExponents'
 import { SimpleLiquidatorMock } from '../build/types/SimpleLiquidatorMock'
 import { AssuredFinancialOpportunity } from '../build/types/AssuredFinancialOpportunity'
-import { AddressZero } from 'ethers/constants'
 
 use(solidity)
 

@@ -1,4 +1,4 @@
-import {Wallet, ethers, ContractFactory} from 'ethers'
+import { Wallet, ethers, ContractFactory } from 'ethers'
 import { deployContract } from 'ethereum-waffle'
 
 export const setupDeployer = (wallet: Wallet) => async (contractName: string, ...args) => {
