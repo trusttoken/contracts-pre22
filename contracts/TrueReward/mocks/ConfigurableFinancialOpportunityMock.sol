@@ -43,6 +43,10 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
         tokenValueField = tokenValueField.add(_by);
     }
 
+    function reduceTokenValue(uint _by) external {
+        tokenValueField = tokenValueField.sub(_by);
+    }
+
     function _getAmountInShares(uint _amount) internal view returns (uint) {
         return _amount.mul(10**18).div(tokenValueField);
     }

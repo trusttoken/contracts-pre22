@@ -8,8 +8,8 @@
  * Use the config object to set parameters for deployment
  */
 
-import { ContractFactory, ethers, providers, Wallet } from 'ethers'
-import { validatePrivateKey } from './utils'
+import { ethers, providers } from 'ethers'
+import { setupDeploy, validatePrivateKey } from './utils'
 import { deployWithExisting } from './deploy'
 import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
@@ -27,13 +27,6 @@ const rpcOptions = {
 const txWait = async (pending: Promise<ethers.ContractTransaction>) => {
   const tx = await pending
   return tx.wait()
-}
-export type Newable<T> = { new (...args: any[]): T };
-
-const setupDeploy = (wallet: Wallet) => async <T extends ContractFactory>(Factory: Newable<T>, ...args: Parameters<T['deploy']>): Promise<ReturnType<T['deploy']>> => {
-  const contract = await new Factory(wallet).deploy(...args)
-  await contract.deployed()
-  return contract
 }
 
 export const deploy = async (accountPrivateKey: string, provider: providers.JsonRpcProvider) => {
