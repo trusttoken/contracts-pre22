@@ -9,7 +9,7 @@
  */
 
 import { ContractFactory, ethers, providers, Wallet } from 'ethers'
-import { validatePrivateKey } from './utils'
+import { saveDeployResult, validatePrivateKey } from './utils'
 import { deployWithExisting } from './deploy'
 import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
@@ -60,7 +60,7 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   const uniswapTemplate = await deployWithWait(UniswapExchangeFactory)
   await txWait(uniswapFactory.initializeFactory(uniswapTemplate.address))
 
-  await deployWithExisting(accountPrivateKey, {
+  return deployWithExisting(accountPrivateKey, {
     trueUsd: trueUSDProxy.address,
     registry: registryProxy.address,
     aaveLendingPool: lendingPoolMock.address,
@@ -70,6 +70,9 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
 }
 
 if (require.main === module) {
-  const provider = new ethers.providers.JsonRpcProvider(process.argv[3] || rpcOptions.development)
-  deploy(process.argv[2], provider).catch(console.error)
+  const rpc = process.argv[3] || rpcOptions.development
+  const provider = new ethers.providers.JsonRpcProvider(rpc)
+  deploy(process.argv[2], provider)
+    .then(saveDeployResult(`testnet-${Date.now()}`))
+    .catch(console.error)
 }
