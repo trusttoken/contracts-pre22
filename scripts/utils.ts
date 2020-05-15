@@ -1,5 +1,6 @@
 import { Wallet, ethers, ContractFactory } from 'ethers'
 import { deployContract } from 'ethereum-waffle'
+import fs from 'fs'
 
 export const setupDeployer = (wallet: Wallet) => async (contractName: string, ...args) => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -40,10 +41,19 @@ export const validateAddress = (subject: string) => {
     throw new Error('Pass proper deploy helper address')
   }
 }
+
 type Newable<T> = { new (...args: any[]): T };
 
 export const setupDeploy = (wallet: Wallet) => async <T extends ContractFactory>(Factory: Newable<T>, ...args: Parameters<T['deploy']>): Promise<ReturnType<T['deploy']>> => {
   const contract = await new Factory(wallet).deploy(...args)
   await contract.deployed()
   return contract
+}
+
+export const saveDeployResult = (fileName: string) => async (result: {}) => {
+  console.log('saving results...')
+  if (!fs.existsSync('./scripts/deploy')) {
+    fs.mkdirSync('./scripts/deploy')
+  }
+  fs.writeFileSync(`./scripts/deploy/${fileName}.json`, JSON.stringify(result, null, 2))
 }
