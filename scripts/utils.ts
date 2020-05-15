@@ -1,9 +1,11 @@
 import { Wallet, ethers } from 'ethers'
 import { deployContract } from 'ethereum-waffle'
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+export const getContractJSON = (contractName: string) => require(`../build/${contractName}.json`)
+
 export const setupDeployer = (wallet: Wallet) => async (contractName: string, ...args) => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const contractJson = require(`../build/${contractName}.json`)
+  const contractJson = getContractJSON(contractName)
   const contract = await deployContract(wallet, contractJson, args, { gasLimit: 4004588 })
 
   console.log(`${contractName} address: ${contract.address}`)
@@ -24,8 +26,7 @@ export const deployBehindProxy = deployBehindCustomProxy('OwnedUpgradeabilityPro
 export const deployBehindTimeProxy = deployBehindCustomProxy('TimeOwnedUpgradeabilityProxy')
 
 export const getContract = (wallet: ethers.Wallet) => (contractName: string, contractAddress: string) => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const contractJson = require(`../build/${contractName}.json`)
+  const contractJson = getContractJSON(contractName)
   return new ethers.Contract(contractAddress, contractJson.abi, wallet)
 }
 
