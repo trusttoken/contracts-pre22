@@ -61,12 +61,15 @@ const upgradeContract = (deployHelper: Contract, wallet: Wallet, force = false) 
   return async (contractName: keyof typeof proxies) => {
     const proxy = contractAt('OwnedUpgradeabilityProxy', await deployHelper[proxies[contractName]]())
 
-    if (!(force || await hasCodeChanged(proxy, contractName))) {
+    if (force) {
+      return performUpgrade(deployHelper, wallet, proxy, contractName)
+    }
+    if (!await hasCodeChanged(proxy, contractName)) {
       console.log(`${contractName} unchanged, skipping`)
       return
     }
-    if (force || await confirmUpgrade(contractName)) {
-      await performUpgrade(deployHelper, wallet, proxy, contractName)
+    if (await confirmUpgrade(contractName)) {
+      return performUpgrade(deployHelper, wallet, proxy, contractName)
     }
   }
 }
