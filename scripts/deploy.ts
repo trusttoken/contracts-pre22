@@ -27,7 +27,20 @@ interface DeployedAddresses {
   uniswapFactory: string,
 }
 
-export async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, provider: JsonRpcProvider) {
+const deployModes = {
+  dev: {
+    TokenController: 'TokenFaucet',
+    TrustToken: 'MockTrustToken',
+    AaveFinancialOpportunity: 'ConfigurableAaveFinancialOpportunity',
+  },
+  prod: {
+    TokenController: 'TokenController',
+    TrustToken: 'TrustToken',
+    AaveFinancialOpportunity: 'AaveFinancialOpportunity'
+  }
+}
+
+export async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, provider: JsonRpcProvider, env: keyof typeof deployModes = 'prod') {
   let tx: TransactionResponse
   const result = {}
 
@@ -75,7 +88,7 @@ Owner is: ${registryOwner}`)
   }
 
   // TODO change to real TokenController
-  const tokenControllerImplementation = await deploy('TokenFaucet')
+  const tokenControllerImplementation = await deploy(deployModes[env].TokenController)
   const tokenControllerProxy = await deploy('OwnedUpgradeabilityProxy')
   const tokenController = tokenControllerImplementation.attach(tokenControllerProxy.address)
   console.log('deployed tokenControllerProxy at: ', tokenControllerProxy.address)
@@ -91,10 +104,10 @@ Owner is: ${registryOwner}`)
   save(fractionalExponents, 'fractionalExponents')
 
   // TODO change to real TrustToken
-  const [trustTokenImplementation, trustTokenProxy, trustToken] = await deployBehindTimeProxy(wallet, 'MockTrustToken')
+  const [trustTokenImplementation, trustTokenProxy, trustToken] = await deployBehindTimeProxy(wallet, deployModes[env].TrustToken)
   save(trustToken, 'trustToken')
   // TODO change to real AaveFinancialOpportunity
-  const [financialOpportunityImplementation, financialOpportunityProxy] = await deployBehindProxy(wallet, 'ConfigurableAaveFinancialOpportunity')
+  const [financialOpportunityImplementation, financialOpportunityProxy] = await deployBehindProxy(wallet, deployModes[env].AaveFinancialOpportunity)
   save(financialOpportunityProxy, 'financialOpportunity')
 
   const lendingPool = contractAt('ILendingPool', deployedAddresses.aaveLendingPool)

@@ -42,7 +42,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
         address _owner              // owner
     ) public onlyProxyOwner {
         require(address(_aToken) != address(0), "aToken cannot be address(0)");
-        require(address(_lendingPool) != address(0), "lendingPool  cannot be address(0)");
+        require(address(_lendingPool) != address(0), "lendingPool cannot be address(0)");
         require(address(_token) != address(0), "TrueUSD cannot be address(0)");
         require(_owner != address(0), "Owner cannot be address(0)");
         aToken = _aToken;
@@ -85,7 +85,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     */
     function deposit(address _from, uint256 _amount) external onlyOwner returns(uint256) {
         require(token.transferFrom(_from, address(this), _amount), "transfer from failed");
-        require(token.approve(address(lendingPool), _amount), "approve failed");
+        require(token.approve(address(lendingPool.core()), _amount), "approve failed");
 
         uint256 balanceBefore = totalSupply();
         lendingPool.deposit(address(token), _amount, 0);

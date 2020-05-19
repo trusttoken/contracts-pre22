@@ -28,7 +28,7 @@ describe('Upgrading', () => {
   beforeEachWithFixture(async (_provider, wallets) => {
     ([deployer, holder] = wallets)
     provider = _provider
-    await deploy(deployer.privateKey, provider)
+    await deploy(deployer.privateKey, provider, 'prod')
   })
 
   it('contracts storage is not corrupted by upgrade', async () => {
@@ -55,18 +55,25 @@ describe('Upgrading', () => {
 
     await upgrade(deployHelperAddress, deployer.privateKey, provider, true)
 
+    console.count()
     expect(await trueUsd.opportunity()).to.equal(assuredOpportunityProxyAddress)
+    console.count()
     expect(await trueUsd.balanceOf(holder.address)).to.equal(parseEther('1'))
+    console.count()
     expect(await trueUsd.trueRewardEnabled(holder.address)).to.be.true
+    console.count()
     expect(await trueUsd.totalSupply()).to.equal(parseEther('2'))
+    console.count()
     expect(await tokenController.ratifiedMintThreshold()).to.equal(parseEther('2'))
+    console.count()
     expect(await assuredFinancialOpportunity.totalSupply()).to.equal(parseEther('1'))
+    console.count()
 
     expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(trueUsdProxyAddress).implementation()).to.equal('0xA49040CAA226AB60d3cD74Adff3Db02Bf85C3D7C')
     expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(tokenControllerProxyAddress).implementation()).to.equal('0x586f99D80602fD78451b7B8d2115469Ae6E6E373')
     expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(aaveOpportunityProxyAddress).implementation()).to.equal('0xfeC0a8D8eeD01ff5E4276f0279bf658d3c545616')
     expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(assuredOpportunityProxyAddress).implementation()).to.equal('0xF6ea1a59eE4c3f874C3f11c8986A205A352e693E')
-    expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(liquidatorProxyAddress).implementation()).to.equal('0xf3ebdB487C135Cd699252b27C6dcEC7a2C98A7a6')
+    expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(liquidatorProxyAddress).implementation()).to.equal('0xF8739d0dDC51aCC421808b6b887f4A34bEB92960')
     expect(await new OwnedUpgradeabilityProxyFactory(deployer).attach(registryProxyAddress).implementation()).to.equal('0x1bF516991437C6133db483d4Bac72dB0ea9f9AA3')
   })
 })
