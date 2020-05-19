@@ -12,7 +12,6 @@ import { Contract, ethers, providers, Wallet } from 'ethers'
 import { getContract, getContractJSON, setupDeployer, validateAddress, validatePrivateKey } from './utils'
 import readline from 'readline'
 import {AaveFinancialOpportunity} from '../build/types/AaveFinancialOpportunity';
-import ropsten from './deployedAddresses/ropsten.json';
 
 const proxies = {
   TrueUSD: 'trueUSDProxy',
@@ -85,14 +84,11 @@ export const upgrade = async (deployHelperAddress: string, accountPrivateKey: st
 
   const deployHelper = getContract(wallet)('DeployHelper', deployHelperAddress)
   const doUpgrade = upgradeContract(deployHelper, wallet, force)
-
-  const trueUsdAddress = await doUpgrade('TrueUSD');
+  await doUpgrade('TrueUSD');
   await doUpgrade('ProvisionalRegistryImplementation')
   await doUpgrade('TokenController')
-  const assuredFinancialOpportunityAddress = await doUpgrade('AssuredFinancialOpportunity');
-  const aaveProxyAddress = await doUpgrade('AaveFinancialOpportunity');
-  const aaveFinancialOpportunity = getContract(wallet)('AaveFinancialOpportunity', aaveProxyAddress) as AaveFinancialOpportunity;
-  await (await aaveFinancialOpportunity.configure(ropsten.aTUSD, ropsten.aaveLendingPool, trueUsdAddress, assuredFinancialOpportunityAddress)).wait();
+  await doUpgrade('AssuredFinancialOpportunity');
+  await doUpgrade('AaveFinancialOpportunity');
   await doUpgrade('Liquidator')
 
   console.log('\n\nSUCCESSFULLY UPGRADED ON NETWORK: ', provider.connection.url, '\n\n')
