@@ -56,8 +56,6 @@ describe('Upgrading', () => {
     await upgrade(deployHelperAddress, deployer.privateKey, provider, true)
 
     expect(await trueUsd.opportunity()).to.equal(assuredOpportunityProxyAddress)
-    expect(await trueUsd.rewardTokenBalance(holder.address, assuredOpportunityProxyAddress)).to.equal(parseEther('1'))
-    expect(await trueUsd.balanceOf(holder.address)).to.equal(parseEther('1'))
     expect(await trueUsd.balanceOf(holder.address)).to.equal(parseEther('1'))
     expect(await trueUsd.trueRewardEnabled(holder.address)).to.be.true
     expect(await trueUsd.totalSupply()).to.equal(parseEther('2'))
