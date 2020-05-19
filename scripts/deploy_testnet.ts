@@ -21,7 +21,7 @@ import { UniswapFactoryFactory } from '../build/types/UniswapFactoryFactory'
 import { UniswapExchangeFactory } from '../build/types/UniswapExchangeFactory'
 
 const rpcOptions = {
-  rinkeby: 'https://ropsten.infura.io/v3/81447a33c1cd4eb09efb1e8c388fb28e',
+  rinkeby: 'https://rinkeby.infura.io/v3/81447a33c1cd4eb09efb1e8c388fb28e',
   development: 'http://localhost:7545',
 }
 const txWait = async (pending: Promise<ethers.ContractTransaction>) => {
