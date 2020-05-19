@@ -36,8 +36,8 @@ const deployModes = {
   prod: {
     TokenController: 'TokenController',
     TrustToken: 'TrustToken',
-    AaveFinancialOpportunity: 'AaveFinancialOpportunity'
-  }
+    AaveFinancialOpportunity: 'AaveFinancialOpportunity',
+  },
 }
 
 export async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, provider: JsonRpcProvider, env: keyof typeof deployModes = 'prod') {

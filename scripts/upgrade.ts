@@ -11,7 +11,6 @@
 import { Contract, ethers, providers, Wallet } from 'ethers'
 import { getContract, getContractJSON, setupDeployer, validateAddress, validatePrivateKey } from './utils'
 import readline from 'readline'
-import {AaveFinancialOpportunity} from '../build/types/AaveFinancialOpportunity';
 
 const proxies = {
   TrueUSD: 'trueUSDProxy',
@@ -84,11 +83,11 @@ export const upgrade = async (deployHelperAddress: string, accountPrivateKey: st
 
   const deployHelper = getContract(wallet)('DeployHelper', deployHelperAddress)
   const doUpgrade = upgradeContract(deployHelper, wallet, force)
-  await doUpgrade('TrueUSD');
+  await doUpgrade('TrueUSD')
   await doUpgrade('ProvisionalRegistryImplementation')
   await doUpgrade('TokenController')
-  await doUpgrade('AssuredFinancialOpportunity');
-  await doUpgrade('AaveFinancialOpportunity');
+  await doUpgrade('AssuredFinancialOpportunity')
+  await doUpgrade('AaveFinancialOpportunity')
   await doUpgrade('Liquidator')
 
   console.log('\n\nSUCCESSFULLY UPGRADED ON NETWORK: ', provider.connection.url, '\n\n')
