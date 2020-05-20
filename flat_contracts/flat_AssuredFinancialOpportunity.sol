@@ -3424,7 +3424,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      */
     function _redeem(address _to, uint256 ztusd) internal returns(uint256) {
 
-        // attmept withdraw to this contract
+        // attempt withdraw to this contract
         // here we redeem ztusd amount which leaves
         // a small amount of yTUSD left in the finOp
         // which can be redeemed by the assurance pool
@@ -3432,20 +3432,19 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
         // calculate reward amount
         // todo feewet: check if expected amount is correct
-        // possible use percision threshold or smart rounding
+        // possible use precision threshold or smart rounding
         // to eliminate micro liquidations
         uint256 expectedAmount = _tokenValue().mul(ztusd).div(10**18);
+        uint256 liquidated = 0;
 
-        if (!success) {
-            // withdrawal failed! liquidate :(
-            // transfers tokens to this contract
-            returnedAmount = _liquidate(address(this), int256(expectedAmount));
-        } else {
-            zTUSDIssued = zTUSDIssued.sub(ztusd);
+        if (!success || (success && returnedAmount < expectedAmount)) {
+            liquidated = _liquidate(address(this), int256(expectedAmount.sub(returnedAmount)));
         }
 
+        zTUSDIssued = zTUSDIssued.sub(ztusd, "not enough supply");
+
         // transfer token to redeemer
-        require(token().transfer(_to, returnedAmount), "transfer failed");
+        require(token().transfer(_to, returnedAmount.add(liquidated)), "transfer failed");
 
         emit Redemption(_to, ztusd, returnedAmount);
         return returnedAmount;
@@ -3460,7 +3459,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     function _attemptRedeem(address _to, uint256 ztusd) internal returns (bool, uint) {
         uint256 returnedAmount;
 
-        // attempt to withdraw from oppurtunity
+        // attempt to withdraw from opportunity
         (bool success, bytes memory returnData) = address(finOp()).call(
             abi.encodePacked(finOp().redeem.selector, abi.encode(_to, ztusd))
         );

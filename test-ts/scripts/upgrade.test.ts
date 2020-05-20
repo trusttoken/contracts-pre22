@@ -28,7 +28,7 @@ describe('Upgrading', () => {
   beforeEachWithFixture(async (_provider, wallets) => {
     ([deployer, holder] = wallets)
     provider = _provider
-    await deploy(deployer.privateKey, provider)
+    await deploy(deployer.privateKey, provider, 'prod')
   })
 
   it('contracts storage is not corrupted by upgrade', async () => {

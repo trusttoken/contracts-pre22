@@ -29,7 +29,7 @@ const txWait = async (pending: Promise<ethers.ContractTransaction>) => {
   return tx.wait()
 }
 
-export const deploy = async (accountPrivateKey: string, provider: providers.JsonRpcProvider) => {
+export const deploy = async (accountPrivateKey: string, provider: providers.JsonRpcProvider, env: 'dev' | 'prod' = 'dev') => {
   validatePrivateKey(accountPrivateKey)
   const wallet = new ethers.Wallet(accountPrivateKey, provider)
   const deployWithWait = setupDeploy(wallet)
@@ -59,7 +59,7 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
     aaveLendingPool: lendingPoolMock.address,
     aTUSD: aTokenMock.address,
     uniswapFactory: uniswapFactory.address,
-  }, provider)
+  }, provider, env)
 }
 
 if (require.main === module) {

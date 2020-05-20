@@ -28,6 +28,7 @@ const performUpgrade = async (deployHelper: Contract, wallet: Wallet, proxy: Con
   const contract = await deploy(contractName)
   console.log(`Upgrading ${contractName}...`)
   await (await proxy.upgradeTo(contract.address)).wait()
+  return proxy.address
 }
 
 const hasCodeChanged = async (proxy: Contract, contractName: string) => {
@@ -66,7 +67,7 @@ const upgradeContract = (deployHelper: Contract, wallet: Wallet, force = false) 
     }
     if (!await hasCodeChanged(proxy, contractName)) {
       console.log(`${contractName} unchanged, skipping`)
-      return
+      return proxy.address
     }
     if (await confirmUpgrade(contractName)) {
       return performUpgrade(deployHelper, wallet, proxy, contractName)
@@ -82,7 +83,6 @@ export const upgrade = async (deployHelperAddress: string, accountPrivateKey: st
 
   const deployHelper = getContract(wallet)('DeployHelper', deployHelperAddress)
   const doUpgrade = upgradeContract(deployHelper, wallet, force)
-
   await doUpgrade('TrueUSD')
   await doUpgrade('ProvisionalRegistryImplementation')
   await doUpgrade('TokenController')
