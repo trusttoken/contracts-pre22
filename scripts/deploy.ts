@@ -8,7 +8,7 @@
  * Use the config object to set parameters for deployment
  */
 
-import { Contract, ethers } from 'ethers'
+import {Contract, ethers, Wallet} from 'ethers'
 import {
   deployBehindProxy,
   deployBehindTimeProxy,
@@ -17,7 +17,7 @@ import {
   setupDeployer,
   validatePrivateKey,
 } from './utils'
-import { JsonRpcProvider, TransactionResponse } from 'ethers/providers'
+import {JsonRpcProvider, Provider, TransactionResponse} from 'ethers/providers'
 
 interface DeployedAddresses {
   trueUsd: string,
@@ -38,6 +38,15 @@ const deployModes = {
     TrustToken: 'TrustToken',
     AaveFinancialOpportunity: 'AaveFinancialOpportunity',
   },
+}
+
+async function isSubscriber (provider: Provider, registry: Contract, attribute: string, subscriber: Contract) {
+  const topics = registry.filters.StartSubscription(attribute, subscriber.address).topics
+  const logs = await provider.getLogs({
+    topics,
+    address: registry.address,
+  })
+  return !!logs[0]
 }
 
 export async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, provider: JsonRpcProvider, env: keyof typeof deployModes = 'prod') {
@@ -222,7 +231,11 @@ Owner is: ${registryOwner}`)
 
   tx = await trustTokenProxy.claimProxyOwnership({ gasLimit: 5000000 })
   await tx.wait()
-  console.log('trust token claim ownership')
+  console.log('trustTokenProxy claim proxy ownership')
+
+  tx = await trustToken.claimOwnership({ gasLimit: 5000000 })
+  await tx.wait()
+  console.log('trustToken claim ownership')
 
   tx = await trueUSDProxy.claimProxyOwnership({ gasLimit: 5000000 })
   await tx.wait()
@@ -265,9 +278,29 @@ Owner is: ${registryOwner}`)
   await tx.wait()
   console.log('set mint thresholds')
 
+  const isRegisteredContractAttribute = '0x697352656769737465726564436f6e7472616374000000000000000000000000'
+  await (await registry.subscribe(isRegisteredContractAttribute, trustToken.address)).wait()
+  await (await registry.setAttribute(stakedTokenProxy.address, isRegisteredContractAttribute, 1)).wait()
+
   console.log('\n\nSUCCESSFULLY DEPLOYED TO NETWORK: ', provider.connection.url, '\n\n')
 
   return result
+}
+
+const checkOwnership = (expected: string) => async (contract: Contract) => {
+  const owner = await contract.owner();
+  if (owner.toLowerCase() !== expected.toLowerCase()) {
+    throw new Error(`Expected owner to be ${expected}`)
+  }
+}
+
+const postDeployCheck = async (deployResult, wallet: Wallet) => {
+  const deployerIsOwner = checkOwnership(wallet.address)
+  await deployerIsOwner(deployResult.registry)
+  await deployerIsOwner(deployResult.assuredFinancialOpportunity)
+  await deployerIsOwner(deployResult.financialOpportunity)
+  await deployerIsOwner(deployResult.trustToken)
+  await deployerIsOwner(deployResult.registry)
 }
 
 export const deploy = async (accountPrivateKey: string, provider: JsonRpcProvider, network: string) => {
