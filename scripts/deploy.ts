@@ -251,6 +251,7 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
   await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isRegisteredContract);
   await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isDepositAddress);
   await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isBlacklisted);
+  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isTrueRewardsWhitelisted);
   await (await registry.subscribe(RegistryAttributes.approvedBeneficiary.hex, liquidatorProxy.address)).wait()
   console.log('Liquidator subscribed to approvedBeneficiary')
 

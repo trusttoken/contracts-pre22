@@ -12,6 +12,7 @@ export const RegistryAttributes = {
   isTUSDMintRatifier: attribute('isTUSDMintRatifier'),
   isTUSDRedemptionAdmin: attribute('isTUSDRedemptionAdmin'),
   isRegisteredContract: attribute('isRegisteredContract'),
+  isTrueRewardsWhitelisted: attribute('isTrueRewardsWhitelisted'),
   canBurn: attribute('canBurn'),
   hasPassedKYC: attribute('hasPassedKYC'),
   canSetFutureRefundMinGasPrice: attribute('canSetFutureRefundMinGasPrice'),
