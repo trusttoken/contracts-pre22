@@ -8,8 +8,8 @@
  * Use the config object to set parameters for deployment
  */
 
-import { ContractFactory, ethers, providers, Wallet } from 'ethers'
-import { validatePrivateKey } from './utils'
+import { ethers, providers } from 'ethers'
+import { saveDeployResult, setupDeploy, validatePrivateKey } from './utils'
 import { deployWithExisting } from './deploy'
 import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
@@ -28,15 +28,8 @@ const txWait = async (pending: Promise<ethers.ContractTransaction>) => {
   const tx = await pending
   return tx.wait()
 }
-export type Newable<T> = { new (...args: any[]): T };
 
-const setupDeploy = (wallet: Wallet) => async <T extends ContractFactory>(Factory: Newable<T>, ...args: Parameters<T['deploy']>): Promise<ReturnType<T['deploy']>> => {
-  const contract = await new Factory(wallet).deploy(...args)
-  await contract.deployed()
-  return contract
-}
-
-export const deploy = async (accountPrivateKey: string, provider: providers.JsonRpcProvider) => {
+export const deploy = async (accountPrivateKey: string, provider: providers.JsonRpcProvider, env: 'dev' | 'prod' = 'dev') => {
   validatePrivateKey(accountPrivateKey)
   const wallet = new ethers.Wallet(accountPrivateKey, provider)
   const deployWithWait = setupDeploy(wallet)
@@ -60,16 +53,19 @@ export const deploy = async (accountPrivateKey: string, provider: providers.Json
   const uniswapTemplate = await deployWithWait(UniswapExchangeFactory)
   await txWait(uniswapFactory.initializeFactory(uniswapTemplate.address))
 
-  await deployWithExisting(accountPrivateKey, {
+  return deployWithExisting(accountPrivateKey, {
     trueUsd: trueUSDProxy.address,
     registry: registryProxy.address,
     aaveLendingPool: lendingPoolMock.address,
     aTUSD: aTokenMock.address,
     uniswapFactory: uniswapFactory.address,
-  }, provider)
+  }, provider, env)
 }
 
 if (require.main === module) {
-  const provider = new ethers.providers.JsonRpcProvider(process.argv[3] || rpcOptions.development)
-  deploy(process.argv[2], provider).catch(console.error)
+  const rpc = process.argv[3] || rpcOptions.development
+  const provider = new ethers.providers.JsonRpcProvider(rpc)
+  deploy(process.argv[2], provider)
+    .then(saveDeployResult(`testnet-${Date.now()}`))
+    .catch(console.error)
 }

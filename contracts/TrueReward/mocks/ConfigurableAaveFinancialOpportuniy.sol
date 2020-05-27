@@ -1,20 +1,23 @@
 pragma solidity ^0.5.13;
 
-import "../FinancialOpportunity.sol";
-import "../../TrueCurrencies/modularERC20/InstantiatableOwnable.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../AaveFinancialOpportunity.sol";
 
-contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, InstantiatableOwnable {
+contract ConfigurableAaveFinancialOpportunity is AaveFinancialOpportunity {
     using SafeMath for uint;
 
-    IERC20 token;
     uint supply;
-    uint tokenValueField = 1*10**18;
+    uint tokenValueField;
 
-    constructor(IERC20 _token) public {
-        token = _token;
+    function configure(
+        IAToken _aToken,
+        ILendingPool _lendingPool,
+        TrueUSD _token,
+        address _owner
+    ) public onlyProxyOwner {
+        super.configure(_aToken, _lendingPool, _token, _owner);
+        tokenValueField = 1*10**18;
     }
+
 
     function deposit(address _from, uint _amount) external returns(uint) {
         uint shares = _getAmountInShares(_amount);
@@ -31,20 +34,16 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
         return tusd;
     }
 
-    function tokenValue() external view returns(uint) {
+    function tokenValue() public view returns(uint) {
         return tokenValueField;
     }
 
-    function totalSupply() external view returns(uint) {
+    function totalSupply() public view returns(uint) {
         return supply;
     }
 
     function increaseTokenValue(uint _by) external {
         tokenValueField = tokenValueField.add(_by);
-    }
-
-    function reduceTokenValue(uint _by) external {
-        tokenValueField = tokenValueField.sub(_by);
     }
 
     function _getAmountInShares(uint _amount) internal view returns (uint) {

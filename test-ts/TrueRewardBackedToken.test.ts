@@ -461,7 +461,7 @@ describe('TrueRewardBackedToken', () => {
         await token.connect(sender).transfer(recipient.address, parseEther('50'))
 
         expect(await token.balanceOf(sender.address), 'sender').to.equal('49999999999999999999')
-        expect(await token.balanceOf(recipient.address), 'recipient').to.equal('49999999999999999998')
+        expect(await token.balanceOf(recipient.address), 'recipient').to.equal('49999999999999999999')
         expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('33333333333333333333') // 50 / 1.5
         expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('33333333333333333333')
         expect(await token.totalSupply()).to.equal('1349999999999999999999')

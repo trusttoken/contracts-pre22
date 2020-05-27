@@ -21,8 +21,13 @@ truffle-flattener contracts/TrueCurrencies/Admin/MultisigOwner.sol > flat_contra
 
 truffle-flattener contracts/mocks/RegistryImplementation.sol > flat_contracts/flat_RegistryImplementation.sol
 truffle-flattener contracts/TrueReward/AssuredFinancialOpportunity.sol > flat_contracts/flat_AssuredFinancialOpportunity.sol
+truffle-flattener contracts/TrueReward/AaveFinancialOpportunity.sol > flat_contracts/flat_AaveFinancialOpportunity.sol
 truffle-flattener contracts/TrueReward/mocks/LendingPoolCoreMock.sol > flat_contracts/flat_LendingPoolCoreMock.sol
 truffle-flattener contracts/TrueReward/FinancialOpportunity.sol > flat_contracts/flat_thkd.sol
 truffle-flattener contracts/TrueReward/mocks/ATokenMock.sol > flat_contracts/flat_ATokenMock.sol
 truffle-flattener contracts/TrueReward/mocks/ConfigurableFinancialOpportunityMock.sol > flat_contracts/flat_ConfigurableFinancialOpportunityMock.sol
 truffle-flattener contracts/TrueCurrencies/utilities/TokenFaucet.sol > flat_contracts/flat_TokenFaucet.sol
+truffle-flattener contracts/TrueReward/mocks/ConfigurableAaveFinancialOpportuniy.sol > flat_contracts/flat_ConfigurableAaveFinancialOpportuniy.sol
+truffle-flattener contracts/deploy/DeployHelper.sol > flat_contracts/flat_DeployHelper.sol
+truffle-flattener node_modules/@trusttoken/trusttokens/contracts/Liquidator.sol > flat_contracts/flat_Liquidator.sol
+truffle-flattener node_modules/@trusttoken/trusttokens/contracts/Proxy/TimeOwnedUpgradeabilityProxy.sol > flat_contracts/flat_TimeOwnedUpgradeabilityProxy.sol
