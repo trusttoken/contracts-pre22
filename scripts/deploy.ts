@@ -8,7 +8,7 @@
  * Use the config object to set parameters for deployment
  */
 
-import {Contract, ethers, Wallet} from 'ethers'
+import { Contract, ethers, Wallet } from 'ethers'
 import {
   deployBehindProxy,
   deployBehindTimeProxy,
@@ -17,13 +17,13 @@ import {
   setupDeployer,
   validatePrivateKey,
 } from './utils'
-import {JsonRpcProvider, Provider, TransactionResponse} from 'ethers/providers'
-import {Attribute, RegistryAttributes} from "./attributes";
-import {AddressZero} from "ethers/constants";
-import {TokenControllerFactory} from "../build/types/TokenControllerFactory";
-import {TrueUsdFactory} from "../build/types/TrueUsdFactory";
-import {AssuredFinancialOpportunityFactory} from "../build/types/AssuredFinancialOpportunityFactory";
-import {AaveFinancialOpportunityFactory} from "../build/types/AaveFinancialOpportunityFactory";
+import { JsonRpcProvider, Provider, TransactionResponse } from 'ethers/providers'
+import { Attribute, RegistryAttributes } from './attributes'
+import { AddressZero } from 'ethers/constants'
+import { TokenControllerFactory } from '../build/types/TokenControllerFactory'
+import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
+import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
+import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
 
 interface DeployedAddresses {
   trueUsd: string,
@@ -56,7 +56,7 @@ async function isSubscriber (provider: Provider, registry: Contract, attribute: 
   return !!logs[0]
 }
 
-async function subscribeTrueUsd(provider: JsonRpcProvider, registry: Contract, trueUSD: Contract, attribute: Attribute) {
+async function subscribeTrueUsd (provider: JsonRpcProvider, registry: Contract, trueUSD: Contract, attribute: Attribute) {
   if (!await isSubscriber(provider, registry, attribute.hex, trueUSD)) {
     await (await registry.subscribe(attribute.hex, trueUSD.address)).wait()
     console.log(`TrueUSD subscribed to ${attribute.name}`)
@@ -248,10 +248,10 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
 
   await (await registry.subscribe(RegistryAttributes.isRegisteredContract.hex, trustToken.address)).wait()
   console.log('TrustToken subscribed to isRegisteredContract')
-  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isRegisteredContract);
-  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isDepositAddress);
-  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isBlacklisted);
-  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isTrueRewardsWhitelisted);
+  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isRegisteredContract)
+  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isDepositAddress)
+  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isBlacklisted)
+  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isTrueRewardsWhitelisted)
   await (await registry.subscribe(RegistryAttributes.approvedBeneficiary.hex, liquidatorProxy.address)).wait()
   console.log('Liquidator subscribed to approvedBeneficiary')
 
@@ -270,7 +270,7 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
   return result
 }
 
-const validateWirering = (actual: string, expected: string) => {
+const validateWireing = (actual: string, expected: string) => {
   if (actual.toLowerCase() !== expected.toLowerCase()) {
     throw new Error(`Expected ${actual} to equal ${expected}`)
   }
@@ -278,25 +278,25 @@ const validateWirering = (actual: string, expected: string) => {
 
 const postDeployCheck = async (deployResult: Record<string, string>, wallet: Wallet) => {
   const tokenController = TokenControllerFactory.connect(deployResult.tokenController, wallet)
-  validateWirering(await tokenController.token(), deployResult.trueUSD)
-  validateWirering(await tokenController.registry(), deployResult.registry)
-  validateWirering(await tokenController.owner(), wallet.address)
+  validateWireing(await tokenController.token(), deployResult.trueUSD)
+  validateWireing(await tokenController.registry(), deployResult.registry)
+  validateWireing(await tokenController.owner(), wallet.address)
   const trueUsd = TrueUsdFactory.connect(deployResult.trueUSD, wallet)
-  validateWirering(await trueUsd.opportunity(), deployResult.assuredFinancialOpportunity)
-  validateWirering(await trueUsd.registry(), deployResult.registry)
-  validateWirering(await trueUsd.owner(), deployResult.tokenController)
+  validateWireing(await trueUsd.opportunity(), deployResult.assuredFinancialOpportunity)
+  validateWireing(await trueUsd.registry(), deployResult.registry)
+  validateWireing(await trueUsd.owner(), deployResult.tokenController)
   const assuredFinancialOpportunity = AssuredFinancialOpportunityFactory.connect(deployResult.assuredFinancialOpportunity, wallet)
-  validateWirering(await assuredFinancialOpportunity.finOp(), deployResult.financialOpportunity)
-  validateWirering(await assuredFinancialOpportunity.pool(), deployResult.stakedToken)
-  validateWirering(await assuredFinancialOpportunity.liquidator(), deployResult.liquidator)
-  validateWirering(await assuredFinancialOpportunity.exponents(), deployResult.fractionalExponents)
-  validateWirering(await assuredFinancialOpportunity.token(), deployResult.trueUSD)
-  validateWirering(await assuredFinancialOpportunity.owner(), wallet.address)
+  validateWireing(await assuredFinancialOpportunity.finOp(), deployResult.financialOpportunity)
+  validateWireing(await assuredFinancialOpportunity.pool(), deployResult.stakedToken)
+  validateWireing(await assuredFinancialOpportunity.liquidator(), deployResult.liquidator)
+  validateWireing(await assuredFinancialOpportunity.exponents(), deployResult.fractionalExponents)
+  validateWireing(await assuredFinancialOpportunity.token(), deployResult.trueUSD)
+  validateWireing(await assuredFinancialOpportunity.owner(), wallet.address)
   const aaveFinOp = AaveFinancialOpportunityFactory.connect(deployResult.financialOpportunity, wallet)
-  validateWirering(await aaveFinOp.lendingPool(), deployResult.lendingPool)
-  validateWirering(await aaveFinOp.aToken(), deployResult.aToken)
-  validateWirering(await aaveFinOp.token(), deployResult.trueUSD)
-  validateWirering(await aaveFinOp.owner(), deployResult.assuredFinancialOpportunity)
+  validateWireing(await aaveFinOp.lendingPool(), deployResult.lendingPool)
+  validateWireing(await aaveFinOp.aToken(), deployResult.aToken)
+  validateWireing(await aaveFinOp.token(), deployResult.trueUSD)
+  validateWireing(await aaveFinOp.owner(), deployResult.assuredFinancialOpportunity)
 }
 
 export const deploy = async (accountPrivateKey: string, provider: JsonRpcProvider, network: string) => {
