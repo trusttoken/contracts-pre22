@@ -161,18 +161,26 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         super.mint(_to, _value);
         bool toEnabled = trueRewardEnabled(_to);
         if (toEnabled) {
-            // Temporally disable true rewards to make deposit possible
-            RewardAllocation[] memory savedDistribution = new RewardAllocation[](_rewardDistribution[_to].length);
-            for (uint i = 0; i < _rewardDistribution[_to].length; i++) {
-                savedDistribution[i] = _rewardDistribution[_to][i];
-            }
+            // Internally disable true rewards to make deposit possible
+            RewardAllocation[] memory savedDistribution = saveDistribution(_to);
             delete _rewardDistribution[_to];
 
             mintRewardToken(_to, _value, opportunity());
 
-            for (uint i = 0; i < savedDistribution.length; i++) {
-                _rewardDistribution[_to].push(savedDistribution[i]);
-            }
+            restoreDistribution(_to, savedDistribution);
+        }
+    }
+
+    function saveDistribution(address _to) internal returns (RewardAllocation[] memory savedDistribution) {
+        savedDistribution = new RewardAllocation[](_rewardDistribution[_to].length);
+        for (uint i = 0; i < _rewardDistribution[_to].length; i++) {
+            savedDistribution[i] = _rewardDistribution[_to][i];
+        }
+    }
+
+    function restoreDistribution(address _to, RewardAllocation[] memory savedDistribution) internal {
+        for (uint i = 0; i < savedDistribution.length; i++) {
+            _rewardDistribution[_to].push(savedDistribution[i]);
         }
     }
 
