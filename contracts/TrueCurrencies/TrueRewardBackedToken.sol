@@ -62,15 +62,6 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         return _rewardDistribution[_address].length != 0;
     }
 
-    /*
-     * @dev calculate rewards earned since last deposit
-     * todo feewet fix this function, can we actually calc this??
-     */
-    function rewardsAccrued(address account, address finOp) public view returns (uint) {
-        uint rewardBalance = rewardTokenBalance(account, opportunity());
-        return _toToken(rewardBalance, finOp) - _toToken(rewardBalance, finOp);
-    }
-
     /**
      * @dev Get total supply of all TUSD backed by debt.
      * This amount includes accrued rewards.
@@ -81,12 +72,9 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     function totalSupply() public view returns (uint256) {
         // if supply in opportunity finOp, return value including finOp value
         // otherwise call super to return normal totalSupply
-        if (opportunitySupply() != 0) {
-            // calculate depositToken value of finOp total supply
-            uint depositValue = _toToken(opportunitySupply(), opportunity());
-
+        if (opportunityRewardSupply() != 0) {
             // return token total supply plus deposit token value
-            return totalSupply_.add(depositValue);
+            return totalSupply_.add(opportunityTotalSupply());
         }
         return super.totalSupply();
     }
@@ -204,8 +192,17 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @dev Get total supply of opportunity rewardTokens
      * @return total supply of opportunity rewardTokens
      */
-    function opportunitySupply() internal view returns (uint256) {
+    function opportunityRewardSupply() internal view returns (uint256) {
         return rewardTokenSupply(opportunity());
+    }
+
+    /**
+     * @dev Get total supply of opportunity in TrueCurrency
+     * @return total supply of opportunity in TrueCurrency
+     *
+     */
+    function opportunityTotalSupply() internal view returns (uint256) {
+        return _toToken(opportunityRewardSupply(), opportunity());
     }
 
     /**
