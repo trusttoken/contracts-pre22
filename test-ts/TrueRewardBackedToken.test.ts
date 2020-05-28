@@ -367,6 +367,11 @@ describe('TrueRewardBackedToken', () => {
       await registry.setAttributeValue(recipient.address, WHITELIST_TRUEREWARD, 1)
     })
 
+    it('account with 0 balance enables and disables trueReward', async () => {
+      await token.connect(recipient).enableTrueReward()
+      await token.connect(recipient).disableTrueReward()
+    })
+
     it('holder enables truereward', async () => {
       expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(0)
       await token.connect(holder).enableTrueReward()
