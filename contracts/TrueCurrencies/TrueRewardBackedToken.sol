@@ -144,8 +144,10 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // remove reward distribution
         _removeDistribution(opportunity());
 
-        // redeem for token
-        redeemRewardToken(msg.sender, rewardBalance, opportunity());
+        if (rewardBalance > 0) {
+            // redeem for token
+            redeemRewardToken(msg.sender, rewardBalance, opportunity());
+        }
 
         // emit disable event
         emit TrueRewardDisabled(msg.sender);
