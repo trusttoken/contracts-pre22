@@ -198,7 +198,6 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.debtBackedSupply()).to.equal('106666666666666666665')
     })
 
-
     it('holders with trudereward disabled transfer funds between each other', async () => {
       const asHolder = token.connect(holder)
       await asHolder.transfer(recipient.address, parseEther('42'))
