@@ -96,9 +96,8 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
 
     /** @dev Helper to withdraw TUSD from Aave */
     function _redeem(address _to, uint256 ytusd) internal returns(uint256) {
-        uint tusd = ytusd.mul(tokenValue()).div(10**18);
         uint256 balanceBefore = token.balanceOf(address(this));
-        aToken.redeem(tusd);
+        aToken.redeem(ytusd);
         uint256 balanceAfter = token.balanceOf(address(this));
         uint256 fundsWithdrawn = balanceAfter.sub(balanceBefore);
 
