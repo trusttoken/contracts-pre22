@@ -6,20 +6,20 @@ import { RewardTokenWithReserve } from "./RewardTokenWithReserve.sol";
 
 /**
  * @title TrueRewardBackedToken
- * @dev TrueRewardBackedToken is TrueUSD backed by debt
+ * @dev TrueRewardBackedToken is TrueCurrency backed by debt
  *
  * -- Overview --
- * Enabling TrueRewards deposits TUSD into a financial opportunity
+ * Enabling TrueRewards deposits TrueCurrency into a financial opportunity
  * Financial opportunities provide awards over time
  * Awards are reflected in the wallet balance updated block-by-block
  *
  * -- rewardToken vs yToken --
- * rewardToken represents an amount of ASSURED TUSD owed to the rewardToken holder
- * yToken represents an amount of NON-ASSURED TUSD owed to a yToken holder
+ * rewardToken represents an amount of ASSURED TrueCurrency owed to the rewardToken holder
+ * yToken represents an amount of NON-ASSURED TrueCurrency owed to a yToken holder
  * For this contract, we only handle rewardToken (Assured Opportunities)
  *
  * -- Calculating rewardToken --
- * TUSD Value = rewardToken * financial opportunity tokenValue()
+ * TrueCurrency Value = rewardToken * financial opportunity tokenValue()
  *
  * -- rewardToken Assumptions --
  * We assume tokenValue never decreases for assured financial opportunities
@@ -27,7 +27,7 @@ import { RewardTokenWithReserve } from "./RewardTokenWithReserve.sol";
  * Rather, we override our transfer functions to account for user balances
  *
  * -- Reserve --
- * This contract uses a reserve holding of TUSD and rewardToken to save on gas costs
+ * This contract uses a reserve holding of TrueCurrency and rewardToken to save on gas costs
  * because calling the financial opportunity deposit() and redeem() everytime
  * can be expensive
  * See RewardTokenWithReserve.sol
@@ -63,20 +63,17 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     }
 
     /**
-     * @dev Get total supply of all TUSD backed by debt.
-     * This amount includes accrued rewards.
-     * Currently works for a single finOp
-     *
+     * @dev Get total supply of all TrueCurrency
+     * Equal to deposit backed TrueCurrency plus debt backed TrueCurrency
      * @return total supply in trueCurrency
      */
     function totalSupply() public view returns (uint256) {
-        // if supply in opportunity finOp, return value including finOp value
+        // if supply in opportunity finOp, return supply of deposits + debt
         // otherwise call super to return normal totalSupply
         if (opportunityRewardSupply() != 0) {
-            // return token total supply plus deposit token value
             return totalSupply_.add(opportunityTotalSupply());
         }
-        return super.totalSupply();
+        return totalSupply_;
     }
 
     /**
@@ -84,7 +81,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @return supply of fiat backed TrueCurrency
      */
     function depositBackedSupply() public view returns (uint256) {
-        return super.totalSupply();
+        return totalSupply_;
     }
 
     /**
@@ -92,11 +89,11 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @return supply of debt backed TrueCurrency
      */
     function debtBackedSupply() public view returns (uint256) {
-        return totalSupply() - depositBackedSupply();
+        return totalSupply() - totalSupply_;
     }
 
     /**
-     * @dev Get balance of TUSD including rewards for an address
+     * @dev Get balance of TrueCurrency including rewards for an address
      *
      * @param _who address of account to get balanceOf for
      * @return balance total balance of address including rewards
@@ -155,12 +152,12 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
 
         // emit disable event
         emit TrueRewardDisabled(msg.sender);
-        // emit Transfer(msg.sender, address(0), ztusd);
+        // emit Transfer(msg.sender, address(0), zTrueCurrency);
     }
 
     /**
      * @dev mint function for TrueRewardBackedToken
-     * Mints TrueUSD backed by debt
+     * Mints TrueCurrency backed by debt
      * When we add multiple opportunities, this needs to work for mutliple interfaces
      */
     function mint(address _to, uint256 _value) public onlyOwner {
@@ -237,11 +234,11 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      *
      * There are 6 transfer cases
      *  1. Both sender and receiver are disabled (see _transferAllArgs)
-     *  2. Sender enabled, receiver disabled, value < reserve TUSD balance
-     *  3. Sender disabled, receiver enabled, value < reserve rewardToken balance (in TUSD)
+     *  2. Sender enabled, receiver disabled, value < reserve TrueCurrency balance
+     *  3. Sender disabled, receiver enabled, value < reserve rewardToken balance (in TrueCurrency)
      *  4. Both sender and receiver are enabled
-     *  5. Sender enabled, receiver disabled, value > reserve TUSD balance
-     *  6. Sender disabled, receiver enabled, value > reserve rewardToken balance (in TUSD)
+     *  5. Sender enabled, receiver disabled, value > reserve TrueCurrency balance
+     *  6. Sender disabled, receiver enabled, value > reserve rewardToken balance (in TrueCurrency)
      *
      * @param _from account to transfer from
      * @param _to account to transfer to
@@ -263,7 +260,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // calculate rewardToken balance
         uint rewardAmount = _toRewardToken(_value, finOp);
 
-        // 2. Sender enabled, receiver disabled, value < reserve TUSD balance
+        // 2. Sender enabled, receiver disabled, value < reserve TrueCurrency balance
         // Swap rewardToken for Token through reserve
         if (fromEnabled && !toEnabled && _value <= reserveBalance()) {
             swapRewardForToken(_from, _to, _value, finOp);
@@ -279,7 +276,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
             _subRewardBalance(_from, rewardAmount, finOp);
             _addRewardBalance(_to, rewardAmount, finOp);
         }
-        // 5. Sender enabled, receiver disabled, value > reserve TUSD balance
+        // 5. Sender enabled, receiver disabled, value > reserve TrueCurrency balance
         // Recalculate value based on redeem value returned and give value to receiver
         else if (fromEnabled && !toEnabled) {
             _getFinOp(finOp).redeem(_to, rewardAmount);
@@ -311,7 +308,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      */
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         // 1. Both sender and receiver are disabled
-        // Exchange is in TUSD -> call the normal transfer function
+        // Exchange is in TrueCurrency -> call the normal transfer function
         if (!trueRewardEnabled(_from) && !trueRewardEnabled(_to)) {
             // sender not enabled receiver not enabled
             super._transferAllArgs(_from, _to, _value);
