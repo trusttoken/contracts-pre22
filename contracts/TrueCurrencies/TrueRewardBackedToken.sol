@@ -132,8 +132,10 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // remove reward distribution
         _removeDistribution(opportunity());
 
-        // redeem for token
-        redeemRewardToken(msg.sender, rewardBalance, opportunity());
+        if (rewardBalance > 0) {
+            // redeem for token
+            redeemRewardToken(msg.sender, rewardBalance, opportunity());
+        }
 
         // emit disable event
         emit TrueRewardDisabled(msg.sender);
@@ -146,11 +148,19 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * When we add multiple opportunities, this needs to work for mutliple interfaces
      */
     function mint(address _to, uint256 _value) public onlyOwner {
-        super.mint(_to, _value);
+        // check if to address is enabled
         bool toEnabled = trueRewardEnabled(_to);
+
+        // if to enabled, mint to this contract and deposit into finOp
         if (toEnabled) {
-            mintRewardToken(_to, _value, opportunity());
-            emit Transfer(address(0), _to, _value);
+            // mint to this contract
+            super.mint(address(this), _value);
+            // transfer minted amount to target receiver
+            _transferAllArgs(address(this), _to, _value);
+        }
+        // otherwise call normal mint process
+        else {
+            super.mint(_to, _value);
         }
     }
 
@@ -269,7 +279,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // Transfer Token value between accounts and mint reward token for receiver
         else if (!fromEnabled && toEnabled) {
             // deposit into finOp
-            approve(finOp, _value);
+            _approveAllArgs(finOp, _value, _from);
             uint256 depositedAmount = _getFinOp(finOp).deposit(_from, _value);
 
             // increase finOp rewardToken supply
