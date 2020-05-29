@@ -17,9 +17,14 @@ pragma solidity ^0.5.13;
  * This value should never decrease
  *
  * -- TUSD vs yTUSD --
- * yTUSD represents a value which is redeemable for some amount of TUSD
- * Think of yTUSD like cTUSD, where cTokens are minted and increase
- * in value as interest is accrued
+ * yTUSD represents a fixed value which is redeemable for some amount of TUSD
+ * Think of yTUSD like cTUSD, where cTokens are minted and increase in value versus
+ * the underlying asset as interest is accrued
+ *
+ * -- totalSupply() --
+ * This function returns the total supply of yTUSD issued by this contract
+ * It is important to track this value accuratley and add/deduct the correct
+ * amount on deposit/redemptions
  *
  * -- Assumptions --
  * - tokenValue can never decrease

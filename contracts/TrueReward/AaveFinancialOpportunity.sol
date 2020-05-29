@@ -19,8 +19,8 @@ import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * This contract is deployed behind a proxy and is owned by TrueUSD
  * 
  * -- yTUSD and aTokens
- * yTUSD represents a share in the financial opportunity pool
- * aTokens are Aave tokens and increase in value as interest is earned
+ * yTUSD represents a fixed share in the financial opportunity pool
+ * aTokens are Aave tokens and increase in quantity as interest is earned
  *
  * -- tokenValue --
  * tokenValue is the value of 1 yTUSD
