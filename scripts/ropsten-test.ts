@@ -32,10 +32,6 @@ describe('ropsten test', function () {
   // const aaveFinOp = AaveFinancialOpportunityFactory.connect(addresses.financialOpportunity, owner)
   // const assuredFinOp = AssuredFinancialOpportunityFactory.connect(addresses.assuredFinancialOpportunity, owner)
 
-  beforeEach(async () => {
-    expect(await tusd.balanceOf(brokePerson.address)).to.equal(0)
-  })
-
   it('trueRewards enable-disable with 0 balance', async () => {
     expect(await tusd.balanceOf(brokePerson.address)).to.equal(0)
     expect(await tusd.trueRewardEnabled(brokePerson.address)).to.be.false
@@ -45,12 +41,12 @@ describe('ropsten test', function () {
   })
 
   it('trueRewards enable-disable with some balance', async () => {
-    await wait(faucet.connect(staker).faucet(parseEther('1000')))
+    await wait(faucet.connect(staker).faucet(parseEther('1000'), { gasLimit: 1000000 }))
     expect(await tusd.balanceOf(staker.address)).to.be.gte(parseEther('1000'))
     expect(await tusd.trueRewardEnabled(staker.address)).to.be.false
-    await wait(registry.setAttributeValue(staker.address, RegistryAttributes.isTrueRewardsWhitelisted.hex, 1))
+    await wait(registry.setAttributeValue(staker.address, RegistryAttributes.isTrueRewardsWhitelisted.hex, 1, { gasLimit: 1000000 }))
     await wait(tusd.connect(staker).enableTrueReward({ gasLimit: 1000000 }))
-    await wait(tusd.connect(staker).disableTrueReward({ gasLimit: 5000000 }))
+    await wait(tusd.connect(staker).disableTrueReward({ gasLimit: 1000000 }))
   })
 
   it('disabled -> enabled', async () => {
@@ -70,22 +66,26 @@ describe('ropsten test', function () {
     await wait(tusd.connect(brokePerson).enableTrueReward({ gasLimit: 1000000 }))
     const receiverBalanceBefore = await tusd.balanceOf(staker.address)
     await wait(tusd.connect(brokePerson).transfer(staker.address, await tusd.balanceOf(brokePerson.address), { gasLimit: 1000000 }))
-    expect(await tusd.balanceOf(brokePerson.address)).to.equal(0)
-    expect(await tusd.balanceOf(staker.address)).to.be.gte(receiverBalanceBefore.add(10))
+    // 1 wei error here
+    expect(await tusd.balanceOf(brokePerson.address)).to.be.lte(1)
+    expect(await tusd.balanceOf(staker.address)).to.be.gte(receiverBalanceBefore.add(9))
     await wait(tusd.connect(brokePerson).disableTrueReward({ gasLimit: 1000000 }))
     await wait(tusd.connect(staker).disableTrueReward({ gasLimit: 5000000 }))
   })
 
   it('enabled -> disabled', async () => {
-    // await wait(tusd.connect(staker).enableTrueReward({ gasLimit: 1000000 }))
+    await wait(tusd.connect(staker).enableTrueReward({ gasLimit: 1000000 }))
     expect(await tusd.trueRewardEnabled(brokePerson.address)).to.be.false
     expect(await tusd.trueRewardEnabled(staker.address)).to.be.true
+    await wait(tusd.connect(brokePerson).transfer(staker.address, await tusd.balanceOf(brokePerson.address), { gasLimit: 1000000 }))
     const receiverBalanceBefore = await tusd.balanceOf(staker.address)
-    await wait(tusd.connect(staker).transfer(brokePerson.address, 10, { gasLimit: 1000000 }))
-    expect(await tusd.balanceOf(brokePerson.address)).to.equal(10)
-    expect(await tusd.balanceOf(staker.address)).to.be.lte(receiverBalanceBefore.sub(10))
-    await wait(tusd.connect(brokePerson).transfer(staker.address, 10, { gasLimit: 1000000 }))
-    // await wait(tusd.connect(staker).disableTrueReward({ gasLimit: 5000000 }))
+    await wait(tusd.connect(staker).transfer(brokePerson.address, parseEther('1'), { gasLimit: 1000000 }))
+    console.log(formatEther(receiverBalanceBefore))
+    console.log(formatEther(await tusd.balanceOf(staker.address)))
+    expect(await tusd.balanceOf(brokePerson.address)).to.equal(parseEther('1').sub(1))
+    expect(await tusd.balanceOf(staker.address)).to.be.lte(receiverBalanceBefore.sub(parseEther('0.99')))
+    await wait(tusd.connect(brokePerson).transfer(staker.address, await tusd.balanceOf(brokePerson.address), { gasLimit: 1000000 }))
+    await wait(tusd.connect(staker).disableTrueReward({ gasLimit: 5000000 }))
   })
 
   it('disabled -> disabled', async () => {
