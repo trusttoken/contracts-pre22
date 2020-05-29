@@ -7,7 +7,7 @@ export const getContractJSON = (contractName: string) => require(`../build/${con
 
 export const setupDeployer = (wallet: Wallet) => async (contractName: string, ...args) => {
   const contractJson = getContractJSON(contractName)
-  const contract = await deployContract(wallet, contractJson, args, { gasLimit: 4004588 })
+  const contract = await deployContract(wallet, contractJson, args, { gasLimit: 5004588 })
 
   console.log(`${contractName} address: ${contract.address}`)
   return contract
