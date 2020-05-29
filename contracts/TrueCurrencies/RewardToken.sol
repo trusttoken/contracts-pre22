@@ -88,7 +88,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
         address account,
         uint256 amount,
         address finOp
-    ) internal validFinOp(finOp) {
+    ) internal validFinOp(finOp) returns (uint256) {
         // require sufficient balance
         require(super.balanceOf(account) >= amount, "insufficient token balance");
 
@@ -106,6 +106,8 @@ contract RewardToken is CompliantDepositTokenWithHook {
 
         // emit mint event
         emit MintRewardToken(account, amount, finOp);
+
+        return rewardAmount;
     }
 
     /**

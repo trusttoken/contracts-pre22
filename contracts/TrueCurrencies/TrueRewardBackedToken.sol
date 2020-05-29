@@ -158,29 +158,25 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * When we add multiple opportunities, this needs to work for mutliple interfaces
      */
     function mint(address _to, uint256 _value) public onlyOwner {
-        super.mint(_to, _value);
+        // check if to address is enabled
         bool toEnabled = trueRewardEnabled(_to);
+
+        // if to enabled, mint to this contract and deposit into finOp
         if (toEnabled) {
-            // Internally disable true rewards to make deposit possible
-            RewardAllocation[] memory savedDistribution = saveDistribution(_to);
-            delete _rewardDistribution[_to];
-
-            mintRewardToken(_to, _value, opportunity());
-
-            restoreDistribution(_to, savedDistribution);
+            // mint to this contract
+            super.mint(address(this), _value);
+            // deposit into opportunity and mint reward token for this contract
+            uint256 rewardAmount = mintRewardToken(address(this), _value, opportunity());
+            // sub reward balance for this contract
+            _subRewardBalance(address(this), rewardAmount, opportunity());
+            // add reward balance for to address
+            _addRewardBalance(_to, rewardAmount, opportunity());
+            // emit transfer event
+            emit Transfer(address(this), _to, _value);
         }
-    }
-
-    function saveDistribution(address _to) internal returns (RewardAllocation[] memory savedDistribution) {
-        savedDistribution = new RewardAllocation[](_rewardDistribution[_to].length);
-        for (uint i = 0; i < _rewardDistribution[_to].length; i++) {
-            savedDistribution[i] = _rewardDistribution[_to][i];
-        }
-    }
-
-    function restoreDistribution(address _to, RewardAllocation[] memory savedDistribution) internal {
-        for (uint i = 0; i < savedDistribution.length; i++) {
-            _rewardDistribution[_to].push(savedDistribution[i]);
+        // otherwise call normal mint process
+        else {
+            super.mint(_to, _value);
         }
     }
 
