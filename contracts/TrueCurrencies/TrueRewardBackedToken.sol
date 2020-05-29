@@ -62,15 +62,6 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         return _rewardDistribution[_address].length != 0;
     }
 
-    /*
-     * @dev calculate rewards earned since last deposit
-     * todo feewet fix this function, can we actually calc this??
-     */
-    function rewardsAccrued(address account, address finOp) public view returns (uint) {
-        uint rewardBalance = rewardTokenBalance(account, opportunity());
-        return _toToken(rewardBalance, finOp) - _toToken(rewardBalance, finOp);
-    }
-
     /**
      * @dev Get total supply of all TUSD backed by debt.
      * This amount includes accrued rewards.
