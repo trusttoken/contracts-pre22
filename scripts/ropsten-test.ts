@@ -1,22 +1,18 @@
-import { Contract, ethers, providers } from 'ethers'
-import { MockTrustTokenFactory } from '../build/types/MockTrustTokenFactory'
-import { BigNumber, formatEther, parseEther } from 'ethers/utils'
+import { ethers, providers } from 'ethers'
+// import { MockTrustTokenFactory } from '../build/types/MockTrustTokenFactory'
+import { parseEther } from 'ethers/utils'
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
-import { StakedTokenFactory } from '../build/types/StakedTokenFactory'
+// import { StakedTokenFactory } from '../build/types/StakedTokenFactory'
 import { RegistryImplementationFactory } from '../build/types/RegistryImplementationFactory'
-import { RegistryImplementation } from '../build/types/RegistryImplementation'
-import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
-import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
+// import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
+// import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
 import addresses from './deploy/ropsten.json'
 import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
 import { RegistryAttributes } from './attributes'
-import { TokenControllerFactory } from '../build/types/TokenControllerFactory'
-import { TokenFaucet } from '../build/types/TokenFaucet'
 import { TokenFaucetFactory } from '../build/types/TokenFaucetFactory'
 
 use(solidity)
-const REGISTRY_DEPLOYMENT_BLOCK = 7901430
 
 const wait = async <T>(tx: Promise<{wait: () => Promise<T>}>): Promise<T> => (await tx).wait()
 
@@ -30,13 +26,11 @@ describe('ropsten test', function () {
   const owner = new ethers.Wallet('0x2F4E984196CCE414D059C91230917F10F3067F3F8E7DAF6C0B0933C13F9AF8FA', provider)
   const tusd = TrueUsdFactory.connect(addresses.trueUSD, owner)
   const faucet = TokenFaucetFactory.connect(addresses.tokenController, owner)
-  const trustToken = MockTrustTokenFactory.connect(addresses.trustToken, owner)
-  const stakeToken = StakedTokenFactory.connect(addresses.stakedToken, owner)
+  // const trustToken = MockTrustTokenFactory.connect(addresses.trustToken, owner)
+  // const stakeToken = StakedTokenFactory.connect(addresses.stakedToken, owner)
   const registry = RegistryImplementationFactory.connect(addresses.registry, owner)
-  const aaveFinOp = AaveFinancialOpportunityFactory.connect(addresses.financialOpportunity, owner)
-  const assuredFinOp = AssuredFinancialOpportunityFactory.connect(addresses.assuredFinancialOpportunity, owner)
-
-  const BTC1000 = parseEther('1000').div(1e10)
+  // const aaveFinOp = AaveFinancialOpportunityFactory.connect(addresses.financialOpportunity, owner)
+  // const assuredFinOp = AssuredFinancialOpportunityFactory.connect(addresses.assuredFinancialOpportunity, owner)
 
   beforeEach(async () => {
     expect(await tusd.balanceOf(brokePerson.address)).to.equal(0)
