@@ -167,14 +167,8 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         if (toEnabled) {
             // mint to this contract
             super.mint(address(this), _value);
-            // deposit into opportunity and mint reward token for this contract
-            uint256 rewardAmount = mintRewardToken(address(this), _value, opportunity());
-            // sub reward balance for this contract
-            _subRewardBalance(address(this), rewardAmount, opportunity());
-            // add reward balance for to address
-            _addRewardBalance(_to, rewardAmount, opportunity());
-            // emit transfer event
-            emit Transfer(address(this), _to, _value);
+            // transfer minted amount to target receiver
+            _transferAllArgs(address(this), _to, _value);
         }
         // otherwise call normal mint process
         else {
@@ -288,7 +282,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // Transfer Token value between accounts and mint reward token for receiver
         else if (!fromEnabled && toEnabled) {
             // deposit into finOp
-            approve(finOp, _value);
+            _approveAllArgs(finOp, _value, _from);
             uint256 depositedAmount = _getFinOp(finOp).deposit(_from, _value);
 
             // increase finOp rewardToken supply

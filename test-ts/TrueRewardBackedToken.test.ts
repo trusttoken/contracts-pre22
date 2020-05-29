@@ -419,7 +419,7 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.trueRewardEnabled(sender.address)).to.equal(true)
     })
 
-    it('minting for account with trueReward enabled and had some mints before', async () => {
+    it('minting for account with trueReward enabled that had some mints before', async () => {
       await token.connect(holder).enableTrueReward()
       await token.mint(holder.address, parseEther('1.5'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('101.5'))
