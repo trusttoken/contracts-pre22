@@ -131,7 +131,7 @@ contract TestnetDeployHelper {
         tokenController.setToken(trueUSD);
         tokenController.setTokenRegistry(registry);
         tokenController.setRegistry(registry);
-        tokenController.setAaveInterfaceAddress(address(assuredOpportunityProxy));
+        tokenController.setOpportunityAddress(address(assuredOpportunityProxy));
 
         // transfer ownership to owner
         tokenController.transferOwnership(owner);
@@ -158,6 +158,7 @@ contract TestnetDeployHelper {
             address(assurancePool),
             address(liquidator),
             address(exponentContract),
+            address(trueUSD),
             address(trueUSD)
         );
 

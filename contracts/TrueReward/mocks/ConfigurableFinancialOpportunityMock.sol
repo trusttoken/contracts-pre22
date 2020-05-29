@@ -9,8 +9,8 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
     using SafeMath for uint;
 
     IERC20 token;
-    uint balance;
-    uint perTokenValueField = 1*10**18;
+    uint supply;
+    uint tokenValueField = 1*10**18;
 
     constructor(IERC20 _token) public {
         token = _token;
@@ -19,43 +19,35 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
     function deposit(address _from, uint _amount) external returns(uint) {
         uint shares = _getAmountInShares(_amount);
         require(token.transferFrom(_from, address(this), _amount), "FinOpMock/deposit/transferFrom");
-        balance = balance.add(shares);
+        supply = supply.add(shares);
         return shares;
     }
 
-    function withdrawTo(address _to, uint _amount) external returns(uint) {
-        uint shares = _getAmountInShares(_amount);
-        require(shares <= balance, "FinOpMock/withdrawTo/balanceCheck");
-        require(token.transfer(_to, _amount), "FinOpMock/withdrawTo/trasfer");
-        balance = balance.sub(shares);
-        return shares;
+    function redeem(address _to, uint ztusd) external returns(uint) {
+        uint tusd = _getSharesAmount(ztusd);
+        require(ztusd <= supply, "FinOpMock/withdrawTo/balanceCheck");
+        require(token.transfer(_to, tusd), "FinOpMock/withdrawTo/transfer");
+        supply = supply.sub(ztusd);
+        return tusd;
     }
 
-    function withdrawAll(address _to) external returns(uint) {
-        uint shares = balance;
-        uint tokens = _getSharesAmount(shares);
-        require(token.transfer(_to, tokens), "FinOpMock/withdrawAll/trasfer");
-        balance = 0;
-        return shares;
+    function tokenValue() external view returns(uint) {
+        return tokenValueField;
     }
 
-    function perTokenValue() external view returns(uint) {
-        return perTokenValueField;
+    function totalSupply() external view returns(uint) {
+        return supply;
     }
 
-    function getBalance() external view returns(uint) {
-        return balance;
+    function increaseTokenValue(uint _by) external {
+        tokenValueField = tokenValueField.add(_by);
     }
 
-    function increasePerTokenValue(uint _by) external {
-        perTokenValueField = perTokenValueField.add(_by);
+    function _getAmountInShares(uint _amount) internal view returns (uint) {
+        return _amount.mul(10**18).div(tokenValueField);
     }
 
-    function _getAmountInShares(uint _amount) internal returns (uint) {
-        return _amount.mul(10**18).div(perTokenValueField);
-    }
-
-    function _getSharesAmount(uint _shares) internal returns (uint) {
-        return _shares.mul(perTokenValueField).div(10**18);
+    function _getSharesAmount(uint _shares) internal view returns (uint) {
+        return _shares.mul(tokenValueField).div(10**18);
     }
 }

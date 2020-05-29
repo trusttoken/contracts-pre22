@@ -4,17 +4,25 @@
 set -x
 
 mkdir -p flat_contracts
-truffle-flattener contracts/TrueUSD.sol > flat_contracts/flat_tusd.sol
-truffle-flattener contracts/TrueAUD.sol > flat_contracts/flat_taud.sol
-truffle-flattener contracts/TrueCAD.sol > flat_contracts/flat_tcad.sol
-truffle-flattener contracts/mocks/TrueCADMock.sol > flat_contracts/flat_tcad_mock.sol
-truffle-flattener contracts/mocks/TrueUSDMock.sol > flat_contracts/flat_tusd_mock.sol
-truffle-flattener contracts/TrueGBP.sol > flat_contracts/flat_tgbp.sol
-truffle-flattener contracts/TrueHKD.sol > flat_contracts/flat_thkd.sol
-truffle-flattener registry/contracts/Registry.sol > flat_contracts/flat_Registry.sol
-truffle-flattener registry/contracts/mocks/RegistryMock.sol > flat_contracts/flat_RegistryMock.sol
-truffle-flattener contracts/Proxy/OwnedUpgradeabilityProxy.sol > flat_contracts/flat_OwnedUpgradeableProxy.sol
-truffle-flattener contracts/Admin/TokenController.sol > flat_contracts/flat_TokenController.sol
-truffle-flattener contracts/utilities/DepositAddressRegistrar.sol > flat_contracts/flat_depositAddressRegistrar.sol
-truffle-flattener contracts/utilities/PausedCurrencies.sol > flat_contracts/flat_pausedTrueCurrencies.sol
-truffle-flattener contracts/Admin/MultisigOwner.sol > flat_contracts/flat_MultisigOwner.sol
+truffle-flattener contracts/TrueCurrencies/TrueUSD.sol > flat_contracts/flat_tusd.sol
+truffle-flattener contracts/TrueCurrencies/TrueAUD.sol > flat_contracts/flat_taud.sol
+truffle-flattener contracts/TrueCurrencies/TrueCAD.sol > flat_contracts/flat_tcad.sol
+truffle-flattener contracts/TrueCurrencies/mocks/TrueCADMock.sol > flat_contracts/flat_tcad_mock.sol
+truffle-flattener contracts/TrueCurrencies/mocks/TrueUSDMock.sol > flat_contracts/flat_tusd_mock.sol
+truffle-flattener contracts/TrueCurrencies/TrueGBP.sol > flat_contracts/flat_tgbp.sol
+truffle-flattener contracts/TrueCurrencies/TrueHKD.sol > flat_contracts/flat_thkd.sol
+#truffle-flattener node_modules/@trusttoken/registry/contracts/Registry.sol > flat_contracts/flat_Registry.sol
+#truffle-flattener node_modules/@trusttoken/registry/contracts/mocks/RegistryMock.sol > flat_contracts/flat_RegistryMock.sol
+truffle-flattener contracts/TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol > flat_contracts/flat_OwnedUpgradeableProxy.sol
+truffle-flattener contracts/TrueCurrencies/Admin/TokenController.sol > flat_contracts/flat_TokenController.sol
+truffle-flattener contracts/TrueCurrencies/utilities/DepositAddressRegistrar.sol > flat_contracts/flat_depositAddressRegistrar.sol
+truffle-flattener contracts/TrueCurrencies/utilities/PausedCurrencies.sol > flat_contracts/flat_pausedTrueCurrencies.sol
+truffle-flattener contracts/TrueCurrencies/Admin/MultisigOwner.sol > flat_contracts/flat_MultisigOwner.sol
+
+truffle-flattener contracts/mocks/RegistryImplementation.sol > flat_contracts/flat_RegistryImplementation.sol
+truffle-flattener contracts/TrueReward/AssuredFinancialOpportunity.sol > flat_contracts/flat_AssuredFinancialOpportunity.sol
+truffle-flattener contracts/TrueReward/mocks/LendingPoolCoreMock.sol > flat_contracts/flat_LendingPoolCoreMock.sol
+truffle-flattener contracts/TrueReward/FinancialOpportunity.sol > flat_contracts/flat_thkd.sol
+truffle-flattener contracts/TrueReward/mocks/ATokenMock.sol > flat_contracts/flat_ATokenMock.sol
+truffle-flattener contracts/TrueReward/mocks/ConfigurableFinancialOpportunityMock.sol > flat_contracts/flat_ConfigurableFinancialOpportunityMock.sol
+truffle-flattener contracts/TrueCurrencies/utilities/TokenFaucet.sol > flat_contracts/flat_TokenFaucet.sol

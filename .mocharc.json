@@ -1,0 +1,9 @@
+{
+  "require": ["ts-node/register/transpile-only"],
+  "extension": ["ts"],
+  "target": "esnext",
+  "recursive": true,
+  "timeout": 20000,
+  "spec": "test-ts/**/*.test.ts",
+  "watch-files": ["test-ts"]
+}

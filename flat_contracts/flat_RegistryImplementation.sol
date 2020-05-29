@@ -1,33 +1,87 @@
-pragma solidity ^0.4.23;
 
-// File: openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol
+// File: openzeppelin-solidity/contracts/token/ERC20/IERC20.sol
 
-/**
- * @title ERC20Basic
- * @dev Simpler version of ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/179
- */
-contract ERC20Basic {
-  function totalSupply() public view returns (uint256);
-  function balanceOf(address who) public view returns (uint256);
-  function transfer(address to, uint256 value) public returns (bool);
-  event Transfer(address indexed from, address indexed to, uint256 value);
-}
-
-// File: openzeppelin-solidity/contracts/token/ERC20/ERC20.sol
+pragma solidity ^0.5.0;
 
 /**
- * @title ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/20
+ * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
+ * the optional functions; to access them see {ERC20Detailed}.
  */
-contract ERC20 is ERC20Basic {
-  function allowance(address owner, address spender) public view returns (uint256);
-  function transferFrom(address from, address to, uint256 value) public returns (bool);
-  function approve(address spender, uint256 value) public returns (bool);
-  event Approval(address indexed owner, address indexed spender, uint256 value);
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-// File: registry/contracts/Registry.sol
+// File: @trusttoken/registry/contracts/Registry.sol
+
+pragma solidity ^0.5.13;
+
 
 interface RegistryClone {
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
@@ -46,7 +100,7 @@ contract Registry {
     address public pendingOwner;
     bool initialized;
 
-    // Stores arbitrary attributes for users. An example use case is an ERC20
+    // Stores arbitrary attributes for users. An example use case is an IERC20
     // token that requires its users to go through a KYC/AML check - in this case
     // a validator can set an account's "hasPassedKYC/AML" attribute to 1 to indicate
     // that account can use the token. This mapping stores that value (1, in the
@@ -71,7 +125,7 @@ contract Registry {
     // b) the writer is writing to attribute foo and that writer already has
     // the canWriteTo-foo attribute set (in that same Registry)
     function confirmWrite(bytes32 _attribute, address _admin) internal view returns (bool) {
-        return (_admin == owner || hasAttribute(_admin, keccak256(WRITE_PERMISSION ^ _attribute)));
+        return (_admin == owner || hasAttribute(_admin, keccak256(abi.encodePacked(WRITE_PERMISSION ^ _attribute))));
     }
 
     // Writes are allowed only if the accessManager approves
@@ -139,7 +193,7 @@ contract Registry {
         return attributes[_who][_attribute].timestamp;
     }
 
-    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] _addresses) external {
+    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] calldata _addresses) external {
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
         while (index --> _startIndex) {
@@ -151,12 +205,12 @@ contract Registry {
         }
     }
 
-    function reclaimEther(address _to) external onlyOwner {
+    function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
-    function reclaimToken(ERC20 token, address _to) external onlyOwner {
-        uint256 balance = token.balanceOf(this);
+    function reclaimToken(IERC20 token, address _to) external onlyOwner {
+        uint256 balance = token.balanceOf(address(this));
         token.transfer(_to, balance);
     }
 
@@ -194,7 +248,10 @@ contract Registry {
     }
 }
 
-// File: registry/contracts/ProvisionalRegistry.sol
+// File: @trusttoken/registry/contracts/ProvisionalRegistry.sol
+
+pragma solidity ^0.5.13;
+
 
 contract ProvisionalRegistry is Registry {
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
@@ -230,4 +287,44 @@ contract ProvisionalRegistry is Registry {
         require (attributes[_from][CAN_BURN].value != 0);
         require (attributes[_from][IS_BLACKLISTED].value == 0);
     }
+}
+
+// File: contracts/mocks/RegistryImplementation.sol
+
+pragma solidity ^0.5.13;
+
+
+
+/**
+ * @title RegistryImplementation
+ * Used as implementation for registry in truecurrencies
+ */
+contract RegistryImplementation is Registry {
+    /**
+    * @dev sets the original `owner` of the contract to the sender
+    * at construction. Must then be reinitialized
+    */
+    constructor() public {
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
+    }
+
+    function registryOwner() public view returns (address) {
+        return owner;
+    }
+
+    function initialize() public {
+        require(!initialized, "already initialized");
+        owner = msg.sender;
+        initialized = true;
+    }
+}
+
+/**
+ * @title RegistryImplementation
+ * Used as implementation for registry in truecurrencies
+ */
+contract ProvisionalRegistryImplementation is
+    RegistryImplementation,
+    ProvisionalRegistry {
 }

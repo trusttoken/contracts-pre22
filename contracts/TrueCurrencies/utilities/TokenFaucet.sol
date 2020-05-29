@@ -56,10 +56,17 @@ contract TokenFaucet {
     }
 
     function faucet(uint256 _amount) external {
+        // set KYC
         registry.setAttributeValue(msg.sender, 0x6861735061737365644b59432f414d4c00000000000000000000000000000000, 1);
+        // whitelist trueRewards
+        registry.setAttributeValue(msg.sender, 0x6973547275655265776172647357686974656c69737465640000000000000000, 1);
         require(_amount <= instantMintThreshold);
         token.mint(msg.sender, _amount);
         emit InstantMint(msg.sender, _amount, msg.sender);
+    }
+
+    function whitelistTrueRewards() external {
+        registry.setAttributeValue(msg.sender, 0x6973547275655265776172647357686974656c69737465640000000000000000, 1);
     }
 
     function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
@@ -69,7 +76,6 @@ contract TokenFaucet {
         multiSigMintThreshold = _multiSig;
         emit MintThresholdChanged(_instant, _ratified, _multiSig);
     }
-
 
     /**
     * @dev Throws if called by any account other than the owner.
@@ -153,8 +159,8 @@ contract TokenFaucet {
      * @dev Sets the contract which has permissions to manage truerewards reserve
      * Controls access to reserve functions to allow providing liquidity
      */
-    function setAaveInterfaceAddress(address _aaveInterfaceAddress) external onlyOwner {
-        token.setAaveInterfaceAddress(_aaveInterfaceAddress);
+    function setOpportunityAddress(address _aaveAddress) external onlyOwner {
+        token.setOpportunityAddress(_aaveAddress);
     }
 
 

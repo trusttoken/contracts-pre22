@@ -2,10 +2,11 @@ pragma solidity ^0.5.13;
 import "@trusttoken/registry/contracts/Registry.sol";
 import "./modularERC20/BalanceSheet.sol";
 import "./modularERC20/AllowanceSheet.sol";
+import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
 
 /*
-Defines the storage layout of the token implementaiton contract. Any newly declared
-state variables in future upgrades should be appened to the bottom. Never remove state variables
+Defines the storage layout of the token implementation contract. Any newly declared
+state variables in future upgrades should be appended to the bottom. Never remove state variables
 from this list
  */
 contract ProxyStorage {
@@ -38,9 +39,16 @@ contract ProxyStorage {
     mapping (address => mapping (address => uint256)) _allowance;
     mapping (bytes32 => mapping (address => uint256)) attributes;
 
-    struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
-    mapping(address => FinancialOpportunityAllocation[]) _trueRewardDistribution;
-    mapping (address => mapping (address => uint256)) _financialOpportunityBalances;
+    // reward token storage
+    mapping(address => FinancialOpportunity) finOps;
+    mapping(address => mapping(address => uint256)) finOpBalances;
+    mapping(address => uint256) finOpSupply;
+
+    // true reward allocation
+    // proportion: 1000 = 100%
+    struct RewardAllocation { uint proportion; address finOp; }
+    mapping(address => RewardAllocation[]) _rewardDistribution;
+    uint256 maxRewardProportion = 1000;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.

@@ -5,15 +5,15 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract FinancialOpportunityMock {
     using SafeMath for uint256;
 
-    function deposit(address _from, uint _amount) external returns(uint) {
-        return _amount.mul(101).div(103);
+    function deposit(address from, uint256 amount) external pure returns(uint256) {
+        return amount.mul(101).div(103);
     }
 
-    function withdrawTo(address _to, uint _amount) external returns(uint) {
-        return _amount.mul(10**18).div(perTokenValue());
+    function redeem(address from, uint256 amount) external pure returns(uint256) {
+        return amount.mul(10**18).div(tokenValue());
     }
 
-    function perTokenValue() public returns(uint) {
+    function tokenValue() public pure returns(uint256) {
         return 1004165248827609279;
     }
 }

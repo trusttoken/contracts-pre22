@@ -1,12 +1,15 @@
-pragma solidity ^0.5.13;
 
-// File: contracts/TrueCoinReceiver.sol
+// File: contracts/TrueCurrencies/TrueCoinReceiver.sol
+
+pragma solidity ^0.5.13;
 
 contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
 }
 
 // File: openzeppelin-solidity/contracts/token/ERC20/IERC20.sol
+
+pragma solidity ^0.5.0;
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
@@ -83,7 +86,10 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-// File: registry/contracts/Registry.sol
+// File: @trusttoken/registry/contracts/Registry.sol
+
+pragma solidity ^0.5.13;
+
 
 interface RegistryClone {
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
@@ -250,85 +256,94 @@ contract Registry {
     }
 }
 
-// File: contracts/modularERC20/Ownable.sol
+// File: contracts/TrueCurrencies/modularERC20/InstantiatableOwnable.sol
+
+pragma solidity ^0.5.13;
+
 
 /**
- * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * @title InstantiatableOwnable
+ * @dev The InstantiatableOwnable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
-contract Ownable {
-  address public owner;
+contract InstantiatableOwnable {
+    address public owner;
 
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
-  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    /**
+     * @dev The InstantiatableOwnable constructor sets the original `owner` of the contract to the sender
+     * account.
+     */
+    constructor() public {
+        owner = msg.sender;
+    }
 
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
 
-  /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
-   * account.
-   */
-  constructor() public {
-    owner = msg.sender;
-  }
-
-  /**
-   * @dev Throws if called by any account other than the owner.
-   */
-  modifier onlyOwner() {
-    require(msg.sender == owner);
-    _;
-  }
-
-  /**
-   * @dev Allows the current owner to transfer control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
-   */
-  function transferOwnership(address newOwner) public onlyOwner {
-    require(newOwner != address(0));
-    emit OwnershipTransferred(owner, newOwner);
-    owner = newOwner;
-  }
-
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0));
+        emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
+    }
 }
 
-// File: contracts/modularERC20/Claimable.sol
+// File: contracts/TrueCurrencies/modularERC20/Claimable.sol
+
+pragma solidity ^0.5.13;
+
+
 
 /**
  * @title Claimable
- * @dev Extension for the Ownable contract, where the ownership needs to be claimed.
+ * @dev Extension for the InstantiatableOwnable contract, where the ownership needs to be claimed.
  * This allows the new owner to accept the transfer.
  */
-contract Claimable is Ownable {
-  address public pendingOwner;
+contract Claimable is InstantiatableOwnable {
+    address public pendingOwner;
 
-  /**
-   * @dev Modifier throws if called by any account other than the pendingOwner.
-   */
-  modifier onlyPendingOwner() {
-    require(msg.sender == pendingOwner);
-    _;
-  }
+    /**
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
+    modifier onlyPendingOwner() {
+        require(msg.sender == pendingOwner);
+        _;
+    }
 
-  /**
-   * @dev Allows the current owner to set the pendingOwner address.
-   * @param newOwner The address to transfer ownership to.
-   */
-  function transferOwnership(address newOwner) onlyOwner public {
-    pendingOwner = newOwner;
-  }
+    /**
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        pendingOwner = newOwner;
+    }
 
-  /**
-   * @dev Allows the pendingOwner address to finalize the transfer.
-   */
-  function claimOwnership() onlyPendingOwner public {
-    emit OwnershipTransferred(owner, pendingOwner);
-    owner = pendingOwner;
-    pendingOwner = address(0);
-  }
+    /**
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
+    function claimOwnership() public onlyPendingOwner {
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
+    }
 }
 
 // File: openzeppelin-solidity/contracts/math/SafeMath.sol
+
+pragma solidity ^0.5.0;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -485,7 +500,11 @@ library SafeMath {
     }
 }
 
-// File: contracts/modularERC20/BalanceSheet.sol
+// File: contracts/TrueCurrencies/modularERC20/BalanceSheet.sol
+
+pragma solidity ^0.5.13;
+
+
 
 // A wrapper around the balanceOf mapping.
 contract BalanceSheet is Claimable {
@@ -506,7 +525,11 @@ contract BalanceSheet is Claimable {
     }
 }
 
-// File: contracts/modularERC20/AllowanceSheet.sol
+// File: contracts/TrueCurrencies/modularERC20/AllowanceSheet.sol
+
+pragma solidity ^0.5.13;
+
+
 
 // A wrapper around the allowanceOf mapping.
 contract AllowanceSheet is Claimable {
@@ -527,7 +550,12 @@ contract AllowanceSheet is Claimable {
     }
 }
 
-// File: contracts/ProxyStorage.sol
+// File: contracts/TrueCurrencies/ProxyStorage.sol
+
+pragma solidity ^0.5.13;
+
+
+
 
 /*
 Defines the storage layout of the token implementaiton contract. Any newly declared
@@ -539,12 +567,12 @@ contract ProxyStorage {
     address public pendingOwner;
 
     bool initialized;
-    
+
     BalanceSheet balances_Deprecated;
     AllowanceSheet allowances_Deprecated;
 
     uint256 totalSupply_;
-    
+
     bool private paused_Deprecated = false;
     address private globalPause_Deprecated;
 
@@ -564,6 +592,9 @@ contract ProxyStorage {
     mapping (address => mapping (address => uint256)) _allowance;
     mapping (bytes32 => mapping (address => uint256)) attributes;
 
+    struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
+    mapping(address => FinancialOpportunityAllocation[]) _trueRewardDistribution;
+    mapping (address => mapping (address => uint256)) _financialOpportunityBalances;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
@@ -584,12 +615,15 @@ contract ProxyStorage {
     **/
 }
 
-// File: contracts/HasOwner.sol
+// File: contracts/TrueCurrencies/HasOwner.sol
+
+pragma solidity ^0.5.13;
+
 
 /**
  * @title HasOwner
- * @dev The HasOwner contract is a copy of Claimable Contract by Zeppelin. 
- and provides basic authorization control functions. Inherits storage layout of 
+ * @dev The HasOwner contract is a copy of Claimable Contract by Zeppelin.
+ and provides basic authorization control functions. Inherits storage layout of
  ProxyStorage.
  */
 contract HasOwner is ProxyStorage {
@@ -601,7 +635,7 @@ contract HasOwner is ProxyStorage {
 
     /**
     * @dev sets the original `owner` of the contract to the sender
-    * at construction. Must then be reinitialized 
+    * at construction. Must then be reinitialized
     */
     constructor() public {
         owner = msg.sender;
@@ -642,17 +676,20 @@ contract HasOwner is ProxyStorage {
     }
 }
 
-// File: contracts/ReclaimerToken.sol
+// File: contracts/TrueCurrencies/ReclaimerToken.sol
+
+pragma solidity ^0.5.13;
+
 
 contract ReclaimerToken is HasOwner {
-    /**  
+    /**
     *@dev send all eth balance in the contract to another address
     */
     function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
-    /**  
+    /**
     *@dev send all token balance of an arbitary erc20 token
     in the contract to another address
     */
@@ -661,16 +698,109 @@ contract ReclaimerToken is HasOwner {
         token.transfer(_to, balance);
     }
 
-    /**  
+    /**
     *@dev allows owner of the contract to gain ownership of any contract that the contract currently owns
     */
-    function reclaimContract(Ownable _ownable) external onlyOwner {
+    function reclaimContract(InstantiatableOwnable _ownable) external onlyOwner {
         _ownable.transferOwnership(owner);
     }
-
 }
 
-// File: contracts/modularERC20/ModularBasicToken.sol
+// File: contracts/TrueCurrencies/modularERC20/InitializableOwnable.sol
+
+pragma solidity ^0.5.13;
+
+
+/**
+ * @title InitializableOwnable
+ * @dev The InitializableOwnable contract has an owner address, and provides basic authorization control
+ * functions, this simplifies the implementation of "user permissions".
+ */
+contract InitializableOwnable {
+    address public owner;
+    bool configured = false;
+
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
+
+    /**
+     * @dev The InitializableOwnable constructor sets the original `owner` of the contract to the sender
+     * account.
+     */
+    function _configure() internal {
+        require(!configured);
+        owner = msg.sender;
+        configured = true;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
+
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0));
+        emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
+    }
+}
+
+// File: contracts/TrueCurrencies/modularERC20/InitializableClaimable.sol
+
+pragma solidity ^0.5.13;
+
+
+
+/**
+ * @title InitializableOwnable
+ * @dev Extension for the InstantiatableOwnable contract, where the ownership needs to be claimed.
+ * This allows the new owner to accept the transfer.
+ */
+contract InitializableClaimable is InitializableOwnable {
+    address public pendingOwner;
+
+    /**
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
+    modifier onlyPendingOwner() {
+        require(msg.sender == pendingOwner);
+        _;
+    }
+
+    /**
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        pendingOwner = newOwner;
+    }
+
+    /**
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
+    function claimOwnership() public onlyPendingOwner {
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
+    }
+}
+
+// File: contracts/TrueCurrencies/modularERC20/ModularBasicToken.sol
+
+pragma solidity ^0.5.13;
+
+
+
+
 
 // Fork of OpenZeppelin's BasicToken
 /**
@@ -712,7 +842,12 @@ contract ModularBasicToken is HasOwner {
     }
 }
 
-// File: contracts/modularERC20/ModularStandardToken.sol
+// File: contracts/TrueCurrencies/modularERC20/ModularStandardToken.sol
+
+pragma solidity ^0.5.13;
+
+
+
 
 /**
  * @title Standard ERC20 token
@@ -723,12 +858,15 @@ contract ModularBasicToken is HasOwner {
  */
 contract ModularStandardToken is ModularBasicToken {
     using SafeMath for uint256;
-    
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 
     uint256 constant INFINITE_ALLOWANCE = 0xfe00000000000000000000000000000000000000000000000000000000000000;
 
-    
     /**
      * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
      *
@@ -744,7 +882,11 @@ contract ModularStandardToken is ModularBasicToken {
         return true;
     }
 
-    function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
+    function _approveAllArgs(
+        address _spender,
+        uint256 _value,
+        address _tokenHolder
+    ) internal {
         _setAllowance(_tokenHolder, _spender, _value);
         emit Approval(_tokenHolder, _spender, _value);
     }
@@ -759,14 +901,25 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _addedValue The amount of tokens to increase the allowance by.
      */
-    function increaseAllowance(address _spender, uint _addedValue) public returns (bool) {
+    function increaseAllowance(address _spender, uint256 _addedValue)
+        public
+        returns (bool)
+    {
         _increaseAllowanceAllArgs(_spender, _addedValue, msg.sender);
         return true;
     }
 
-    function _increaseAllowanceAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
+    function _increaseAllowanceAllArgs(
+        address _spender,
+        uint256 _addedValue,
+        address _tokenHolder
+    ) internal {
         _addAllowance(_tokenHolder, _spender, _addedValue);
-        emit Approval(_tokenHolder, _spender, _getAllowance(_tokenHolder, _spender));
+        emit Approval(
+            _tokenHolder,
+            _spender,
+            _getAllowance(_tokenHolder, _spender)
+        );
     }
 
     /**
@@ -779,12 +932,19 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _subtractedValue The amount of tokens to decrease the allowance by.
      */
-    function decreaseAllowance(address _spender, uint _subtractedValue) public returns (bool) {
+    function decreaseAllowance(address _spender, uint256 _subtractedValue)
+        public
+        returns (bool)
+    {
         _decreaseAllowanceAllArgs(_spender, _subtractedValue, msg.sender);
         return true;
     }
 
-    function _decreaseAllowanceAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
+    function _decreaseAllowanceAllArgs(
+        address _spender,
+        uint256 _subtractedValue,
+        address _tokenHolder
+    ) internal {
         uint256 oldValue = _getAllowance(_tokenHolder, _spender);
         uint256 newValue;
         if (_subtractedValue > oldValue) {
@@ -793,34 +953,52 @@ contract ModularStandardToken is ModularBasicToken {
             newValue = oldValue - _subtractedValue;
         }
         _setAllowance(_tokenHolder, _spender, newValue);
-        emit Approval(_tokenHolder,_spender, newValue);
+        emit Approval(_tokenHolder, _spender, newValue);
     }
 
-    function allowance(address _who, address _spender) public view returns (uint256) {
+    function allowance(address _who, address _spender)
+        public
+        view
+        returns (uint256)
+    {
         return _getAllowance(_who, _spender);
     }
 
-    function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
+    function _getAllowance(address _who, address _spender)
+        internal
+        view
+        returns (uint256 value)
+    {
         return _allowance[_who][_spender];
     }
 
-    function _addAllowance(address _who, address _spender, uint256 _value) internal {
+    function _addAllowance(address _who, address _spender, uint256 _value)
+        internal
+    {
         _allowance[_who][_spender] = _allowance[_who][_spender].add(_value);
     }
 
-    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (uint256 newAllowance){
+    function _subAllowance(address _who, address _spender, uint256 _value)
+        internal
+        returns (uint256 newAllowance)
+    {
         newAllowance = _allowance[_who][_spender].sub(_value);
         if (newAllowance < INFINITE_ALLOWANCE) {
             _allowance[_who][_spender] = newAllowance;
         }
     }
 
-    function _setAllowance(address _who, address _spender, uint256 _value) internal {
+    function _setAllowance(address _who, address _spender, uint256 _value)
+        internal
+    {
         _allowance[_who][_spender] = _value;
     }
 }
 
-// File: contracts/modularERC20/ModularBurnableToken.sol
+// File: contracts/TrueCurrencies/modularERC20/ModularBurnableToken.sol
+
+pragma solidity ^0.5.13;
+
 
 /**
  * @title Burnable Token
@@ -845,7 +1023,10 @@ contract ModularBurnableToken is ModularStandardToken {
     }
 }
 
-// File: contracts/BurnableTokenWithBounds.sol
+// File: contracts/TrueCurrencies/BurnableTokenWithBounds.sol
+
+pragma solidity ^0.5.13;
+
 
 /**
  * @title Burnable Token WithBounds
@@ -876,9 +1057,12 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
     }
 }
 
-// File: contracts/GasRefundToken.sol
+// File: contracts/TrueCurrencies/GasRefundToken.sol
 
-/**  
+pragma solidity ^0.5.13;
+
+
+/**
 @title Gas Refund Token
 Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas refund mechanism in EVM
 Each time an non-empty storage slot is set to 0, evm refund 15,000 to the sender
@@ -979,7 +1163,7 @@ contract GasRefundToken is ProxyStorage {
         }
     }
 
-    /**  
+    /**
     @dev refund 30,000 gas
     @dev costs slightly more than 15,400 gas
     */
@@ -998,7 +1182,7 @@ contract GasRefundToken is ProxyStorage {
         }
     }
 
-    /**  
+    /**
     @dev refund 15,000 gas
     @dev costs slightly more than 10,200 gas
     */
@@ -1015,7 +1199,7 @@ contract GasRefundToken is ProxyStorage {
         }
     }
 
-    /**  
+    /**
     *@dev Return the remaining sponsored gas slots
     */
     function remainingGasRefundPool() public view returns (uint length) {
@@ -1038,7 +1222,15 @@ contract GasRefundToken is ProxyStorage {
     }
 }
 
-// File: contracts/CompliantDepositTokenWithHook.sol
+// File: contracts/TrueCurrencies/CompliantDepositTokenWithHook.sol
+
+pragma solidity ^0.5.13;
+
+
+
+
+
+
 
 contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
 
@@ -1076,11 +1268,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
         if (0 == _subBalance(_from, _value)) {
-            if (0 == _subAllowance(_from, _spender, _value)) {
-                // no refund
-            } else {
+            if (0 != _subAllowance(_from, _spender, _value)) {
                 gasRefund15();
             }
+            // else no refund
         } else {
             if (0 == _subAllowance(_from, _spender, _value)) {
                 gasRefund15();
@@ -1120,11 +1311,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             (_to, hasHook) = _requireCanTransferFrom(_spender, _from, _to);
             if (0 == _addBalance(_to, _value)) {
                 if (0 == _subAllowance(_from, _spender, _value)) {
-                    if (0 == _subBalance(_from, _value)) {
-                        // do not refund
-                    } else {
+                    if (0 != _subBalance(_from, _value)) {
                         gasRefund30();
                     }
+                    // else do not refund
                 } else {
                     if (0 == _subBalance(_from, _value)) {
                         gasRefund30();
@@ -1134,11 +1324,10 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
                 }
             } else {
                 if (0 == _subAllowance(_from, _spender, _value)) {
-                    if (0 == _subBalance(_from, _value)) {
-                        // do not refund
-                    } else {
+                    if (0 != _subBalance(_from, _value)) {
                         gasRefund15();
                     }
+                    // else do not refund
                 } else {
                     if (0 == _subBalance(_from, _value)) {
                         gasRefund15();
@@ -1173,9 +1362,8 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             if (0 == _subBalance(_from, _value)) {
                 if (0 == _addBalance(finalTo, _value)) {
                     gasRefund30();
-                } else {
-                    // do not refund
                 }
+                // else do not refund
             } else {
                 if (0 == _addBalance(finalTo, _value)) {
                     gasRefund39();
@@ -1231,8 +1419,8 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     modifier onlyRegistry {
-      require(msg.sender == address(registry));
-      _;
+        require(msg.sender == address(registry));
+        _;
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
@@ -1302,16 +1490,529 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 }
 
-// File: contracts/DelegateERC20.sol
+// File: contracts/TrueReward/FinancialOpportunity.sol
+
+pragma solidity ^0.5.13;
+
+/**
+ * @title FinancialOpportunity
+ * @dev Interface for third parties to implement financial opportunities
+ * for TrueReward with Assurance.
+ */
+interface FinancialOpportunity {
+    /**
+     * @dev deposits TrueUSD into finOP using transferFrom
+     * @param _from account to transferFrom
+     * @param _amount amount in TUSD to deposit to finOp
+     * @return yTUSD minted from this deposit
+     */
+    function deposit(address _from, uint _amount) external returns(uint);
+     /**
+     * @dev Withdraw from finOp to _to account
+     * @param _to account withdarw TUSD to
+     * @param _amount amount in TUSD to withdraw from finOp
+     * @return yTUSD amount deducted
+     */
+    function withdrawTo(address _to, uint _amount) external returns(uint);
+    /**
+     * @dev Withdraws all TUSD from finOp
+     * @param _to account withdarw TUSD to
+     * @return yTUSD amount deducted
+     */
+    function withdrawAll(address _to) external returns(uint);
+
+    /**
+     * Exchange rate between TUSD and yTUSD
+     * @return TUSD / yTUSD price ratio
+     */
+    function perTokenValue() external view returns(uint);
+
+    /**
+     * Returns full balance of opportunity
+     * @return yTUSD balance of opportunity
+    **/
+    function getBalance() external view returns (uint);
+}
+
+// File: contracts/TrueCurrencies/TrueRewardBackedToken.sol
+
+pragma solidity ^0.5.13;
+
+
+
+/**
+ * @title TrueRewardBackedToken
+ * @dev TrueRewardBackedToken is TrueUSD backed by debt.
+ *
+ * zTUSD represents an amount of TUSD owed to the zTUSD holder
+ * zTUSD is calculated by calling perTokenValue on a financial opportunity
+ * zTUSD is not transferrable in that the token itself is never tranferred
+ * Rather, we override our transfer functions to account for user balances
+ * We assume zTUSD always increases in value
+ *
+ * This contract uses a reserve holding of TUSD and zTUSD to save on gas costs
+ * because calling the financial opportunity deposit() and withdraw() everytime
+ * can be expensive.
+ *
+ * Currently, we only have a single financial opportunity.
+ * We plan on upgrading this contract to support a multiple financial opportunity,
+ * so some of the code is built to support this
+ */
+contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
+
+    /* Variables in Proxy Storage:
+     * struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
+     * mapping(address => FinancialOpportunityAllocation[]) _trueRewardDistribution;
+     * mapping (address => mapping (address => uint256)) _financialOpportunityBalances;
+    */
+
+    // Reserve is an address which nobody has the private key to
+    // Reserves of TUSD and TrueRewardBackedToken are held at this addess
+    address public constant RESERVE = 0xf000000000000000000000000000000000000000;
+    uint public _totalAaveSupply;
+    address public aaveInterfaceAddress_;
+
+    event TrueRewardEnabled(address _account);
+    event TrueRewardDisabled(address _account);
+
+    /** @dev return true if TrueReward is enabled for a given address */
+    function trueRewardEnabled(address _address) public view returns (bool) {
+        return _trueRewardDistribution[_address].length != 0;
+    }
+
+    /** @dev set new Aave Interface address */
+    function setAaveInterfaceAddress(address _aaveInterfaceAddress) external onlyOwner {
+        aaveInterfaceAddress_ = _aaveInterfaceAddress;
+    }
+
+    /** @dev return aave financial opportunity address */
+    function aaveInterfaceAddress() public view returns (address) {
+        return aaveInterfaceAddress_;
+    }
+
+    /** @dev get total aave supply in yTUSD */
+    function totalAaveSupply() public view returns(uint) {
+        return _totalAaveSupply;
+    }
+
+    /** @dev get zTUSD reserve balance */
+    function zTUSDReserveBalance() public view returns (uint) {
+        return _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()];
+    }
+
+    /**
+     * @dev get total zTUSD balance of a given account
+     * this only works for a single opportunity
+     */
+    function accountTotalLoanBackedBalance(address _account) public view returns (uint) {
+        return _financialOpportunityBalances[_account][aaveInterfaceAddress()];
+    }
+
+    /*
+     * @dev calculate rewards earned since last deposit
+     */
+    function rewardBalanceOf(address _account) public view returns (uint) {
+        uint loanBackedBalance = accountTotalLoanBackedBalance(_account);
+        return _zTUSDToTUSD(loanBackedBalance) - loanBackedBalance;
+    }
+
+    /**
+     * @dev Get total supply of all TUSD backed by debt.
+     * This amount includes accrued rewards.
+     */
+    function totalSupply() public view returns (uint256) {
+        if (totalAaveSupply() != 0) {
+            uint aaveSupply = _zTUSDToTUSD(totalAaveSupply());
+            return totalSupply_.add(aaveSupply);
+        }
+        return super.totalSupply();
+    }
+
+    /**
+     * @dev Get balance of TUSD including rewards for an address
+     */
+    function balanceOf(address _who) public view returns (uint256) {
+        if (trueRewardEnabled(_who)) {
+            return _zTUSDToTUSD(accountTotalLoanBackedBalance(_who));
+        }
+        return super.balanceOf(_who);
+    }
+
+    /**
+     * @dev Utility to convert TUSD value to zTUSD value
+     * zTUSD is TUSD backed by TrueRewards debt
+     */
+    function _TUSDToZTUSD(uint _amount) internal view returns (uint) {
+        uint ratio = FinancialOpportunity(aaveInterfaceAddress()).perTokenValue();
+        return _amount.mul(10 ** 18).div(ratio);
+    }
+
+    /**
+     * @dev Utility to convert zTUSD value to TUSD value
+     * zTUSD is TUSD backed by TrueRewards debt
+     */
+    function _zTUSDToTUSD(uint _amount) internal view returns (uint) {
+        uint ratio = FinancialOpportunity(aaveInterfaceAddress()).perTokenValue();
+        return ratio.mul(_amount).div(10 ** 18);
+    }
+
+    /**
+     * @dev Withdraw all TrueCurrencies from reserve
+     */
+    function drainTrueCurrencyReserve(address _to, uint _value) external onlyOwner {
+        _transferAllArgs(RESERVE, _to, _value);
+    }
+
+    /**
+     * @dev Allow this contract to rebalance currency reserves
+     * This is called when there is too much money in an opportunity and we want
+     * to get more TrueCurrency.
+     * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
+     */
+    function convertToTrueCurrencyReserve(uint _value) external onlyOwner {
+        uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(RESERVE, _value);
+        _totalAaveSupply = _totalAaveSupply.sub(zTUSDAmount);
+        // reentrancy
+
+        _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()]
+            .sub(zTUSDAmount);
+
+        emit Transfer(RESERVE, address(0), _value);
+    }
+
+    /**
+     * @dev Allow this contract to rebalance currency reserves
+     * This is called when there is not enough money in an opportunity and we want
+     * to get more Opportunity tokens
+     * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
+     */
+    function convertToZTUSDReserve(uint _value) external onlyOwner {
+        uint balance = _getBalance(RESERVE);
+        if (balance < _value) {
+            return;
+        }
+        _setAllowance(RESERVE, aaveInterfaceAddress(), _value);
+        uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(RESERVE, _value);
+        _totalAaveSupply = _totalAaveSupply.add(zTUSDAmount);
+
+        _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()]
+            .add(zTUSDAmount);
+
+        emit Transfer(address(0), RESERVE, _value);
+    }
+
+    /**
+     * @dev enable Aave financial opportunity
+     * Set allocation to 100% since we only have a single opportunity
+     */
+    function _enableAave() internal {
+        require(_trueRewardDistribution[msg.sender].length == 0, "already enabled");
+        _trueRewardDistribution[msg.sender].push(FinancialOpportunityAllocation(aaveInterfaceAddress(), 100));
+    }
+
+    /**
+     * @dev disable Aave financial opportunity
+     * Set allocation to 0% since we only have a single opportunity
+     */
+    function _disableAave() internal {
+        delete _trueRewardDistribution[msg.sender][0];
+        _trueRewardDistribution[msg.sender].length--;
+    }
+
+    /**
+     * @dev Enable TrueReward and deposit user balance into opportunity.
+     */
+    function enableTrueReward() external {
+        require(!trueRewardEnabled(msg.sender), "not turned on");
+        uint balance = _getBalance(msg.sender);
+        if (balance == 0) {
+            _enableAave();
+            return;
+        }
+        approve(aaveInterfaceAddress(), balance);
+        uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(msg.sender, balance);
+        _enableAave();
+        _totalAaveSupply = _totalAaveSupply.add(zTUSDAmount);
+        _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = _financialOpportunityBalances
+            [msg.sender][aaveInterfaceAddress()].add(zTUSDAmount);
+        emit TrueRewardEnabled(msg.sender);
+        emit Transfer(address(0), msg.sender, balance); //confirm that this amount is right
+    }
+
+    /**
+     * @dev Disable TrueReward and withdraw user balance from opportunity.
+     */
+    function disableTrueReward() external {
+        require(trueRewardEnabled(msg.sender), "already disabled");
+        _disableAave();
+        uint availableTUSDBalance = balanceOf(msg.sender);
+        uint zTUSDWithdrawn = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(msg.sender, availableTUSDBalance);
+        _totalAaveSupply = _totalAaveSupply.sub(_financialOpportunityBalances[msg.sender][aaveInterfaceAddress()]);
+        _financialOpportunityBalances[msg.sender][aaveInterfaceAddress()] = 0;
+        emit TrueRewardDisabled(msg.sender);
+        emit Transfer(msg.sender, address(0), zTUSDWithdrawn); // This is the last part that might not work
+    }
+
+    /**
+     * @dev Transfer helper function for TrueRewardBackedToken
+     * Uses reserve float to save gas costs for transactions with value < reserve balance.
+     * Case #2 and #3 use reserve balances.
+     *
+     * There are 6 transfer cases
+     *  1. Both sender and reciever are disabled
+     *  2. Sender enabled, reciever disabled, value < reserve TUSD balance
+     *  3. Sender disabled, reciever enabled, value < reserve zTUSD balance (in TUSD)
+     *  4. Both sender and reciever are enabled
+     *  5. Sender enabled, reciever disabled, value > reserve TUSD balance
+     *  6. Sender disabled, reciever enabled, value > reserve zTUSD balance (in TUSD)
+     *
+     * When we upgrade to support multiple opportunities, here we also want to check
+     * If the transfer is between the same opportunities.
+     */
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
+        bool senderTrueRewardEnabled = trueRewardEnabled(_from);
+        bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
+        // 1. Both sender and reciever are disabled
+        // Exchange is in TUSD -> call the normal transfer function
+        if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
+            // sender not enabled receiver not enabled
+            super._transferAllArgs(_from, _to, _value);
+            return;
+        }
+        require(balanceOf(_from) >= _value, "not enough balance");
+
+        // calculate zTUSD balance
+        uint valueInZTUSD = _TUSDToZTUSD(_value);
+
+        // 2. Sender enabled, reciever disabled, value < reserve TUSD balance
+        // Use reserve balance to transfer so we can save gas
+        if (senderTrueRewardEnabled && !receiverTrueRewardEnabled && _value < _getBalance(RESERVE)) {
+            bool hasHook;
+            address finalTo;
+            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+            // use reserve to withdraw from financial opportunity reserve and transfer TUSD to reciever
+            _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()].add(valueInZTUSD);
+            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(valueInZTUSD);
+            _subBalance(RESERVE, _value);
+            _addBalance(finalTo, _value);
+            emit Transfer(_from, _to, _value);
+            if (finalTo != _to) {
+                emit Transfer(_to, finalTo, _value);
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+                }
+            } else {
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                }
+            }
+        }
+        // 3. Sender disabled, reciever enabled, value < reserve zTUSD balance (in TUSD)
+        // Use reserve balance to transfer so we can save gas
+        else if (!senderTrueRewardEnabled && receiverTrueRewardEnabled && _value < _zTUSDToTUSD(zTUSDReserveBalance())) {
+            bool hasHook;
+            address finalTo;
+            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+            _subBalance(_from, _value);
+            _addBalance(RESERVE, _value);
+            _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()].sub(valueInZTUSD);
+            _financialOpportunityBalances[finalTo][aaveInterfaceAddress()] = _financialOpportunityBalances[finalTo][aaveInterfaceAddress()].add(valueInZTUSD);
+            emit Transfer(_from, _to, _value);
+            if (finalTo != _to) {
+                emit Transfer(_to, finalTo, _value);
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+                }
+            } else {
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                }
+            }
+        }
+        // 4. Sender and reciever are enabled
+        // Here we simply transfer zTUSD from the sender to the reciever
+        else if (senderTrueRewardEnabled && receiverTrueRewardEnabled) {
+            bool hasHook;
+            address finalTo;
+            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(valueInZTUSD);
+            _financialOpportunityBalances[finalTo][aaveInterfaceAddress()] = _financialOpportunityBalances[finalTo][aaveInterfaceAddress()].add(valueInZTUSD);
+            emit Transfer(_from, _to, _value);
+            if (finalTo != _to) {
+                emit Transfer(_to, finalTo, _value);
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+                }
+            } else {
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                }
+            }
+        }
+        // 5. Sender enabled, reciever disabled, value > reserve TUSD balance
+        // Withdraw TUSD from opportunity, send to reciever, and burn zTUSD
+        else if (senderTrueRewardEnabled) {
+            emit Transfer(_from, address(this), _value); // transfer value to this contract
+            emit Transfer(address(this), address(0), _value); // burn value
+            uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress())
+                .withdrawTo(_to, _value);
+            _totalAaveSupply = _totalAaveSupply.sub(zTUSDAmount);
+            // watchout for reentrancy
+            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(zTUSDAmount);
+        }
+        // 6. Sender disabled, reciever enabled, value > reserve zTUSD balance (in TUSD)
+        // Deposit TUSD into opportunity, mint zTUSD, and increase reciever zTUSD balance
+        else if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
+            _setAllowance(_from, aaveInterfaceAddress(), _value);
+            uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress())
+                .deposit(_from, _value);
+            _totalAaveSupply = _totalAaveSupply.add(zTUSDAmount);
+            _financialOpportunityBalances[_to][aaveInterfaceAddress()] = _financialOpportunityBalances[_to][aaveInterfaceAddress()].add(zTUSDAmount);
+            emit Transfer(address(0), address(this), _value); // mint value
+            emit Transfer(address(this), _to, _value); // send value to reciever
+        }
+    }
+
+    /**
+     * @dev TransferFromAll helper function for TrueRewardBackedToken
+     * Uses reserve float to save gas costs for transactions with value < reserve balance.
+     * Case #2 and #3 use reserve balances.
+     *
+     * There are 6 transfer cases
+     *  1. Both sender and reciever are disabled
+     *  2. Sender enabled, reciever disabled, value < reserve TUSD balance
+     *  3. Sender disabled, reciever enabled, value < reserve zTUSD balance (in TUSD)
+     *  4. Both sender and reciever are enabled
+     *  5. Sender enabled, reciever disabled, value > reserve TUSD balance
+     *  6. Sender disabled, reciever enabled, value > reserve zTUSD balance (in TUSD)
+     *
+     * When we upgrade to support multiple opportunities, here we also want to check
+     * If the transfer is between the same opportunities.
+     */
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+        bool senderTrueRewardEnabled = trueRewardEnabled(_from);
+        bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
+        // 1. Both sender and reciever are disabled -> normal transfer
+        if (!senderTrueRewardEnabled && !receiverTrueRewardEnabled) {
+            super._transferFromAllArgs(_from, _to, _value, _spender);
+            return;
+        }
+        require(balanceOf(_from) >= _value, "not enough balance");
+        // calculate zTUSD value
+        uint valueInZTUSD = _TUSDToZTUSD(_value);
+
+        // 2. Sender enabled, reciever disabled, value < reserve TUSD balance
+        if (senderTrueRewardEnabled && !receiverTrueRewardEnabled && _value < _getBalance(RESERVE)) {
+            bool hasHook;
+            address finalTo;
+            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+            _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()].add(valueInZTUSD);
+            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(valueInZTUSD);
+            _subBalance(RESERVE, _value);
+            _addBalance(finalTo, _value);
+            emit Transfer(_from, _to, _value);
+            if (finalTo != _to) {
+                emit Transfer(_to, finalTo, _value);
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+                }
+            } else {
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                }
+            }
+        }
+        // 3. Sender disabled, reciever enabled, value < reserve zTUSD balance (in TUSD)
+        else if (!senderTrueRewardEnabled && receiverTrueRewardEnabled && _value < _zTUSDToTUSD(zTUSDReserveBalance())) {
+            bool hasHook;
+            address finalTo;
+            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+            _subBalance(_from, _value);
+            _addBalance(RESERVE, _value);
+            _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()] = _financialOpportunityBalances[RESERVE][aaveInterfaceAddress()].sub(valueInZTUSD);
+            _financialOpportunityBalances[finalTo][aaveInterfaceAddress()] = _financialOpportunityBalances[finalTo][aaveInterfaceAddress()].add(valueInZTUSD);
+            emit Transfer(_from, _to, _value);
+            if (finalTo != _to) {
+                emit Transfer(_to, finalTo, _value);
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+                }
+            } else {
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                }
+            }
+        }
+        // 4. Both sender and reciever are enabled
+        else if (senderTrueRewardEnabled && receiverTrueRewardEnabled) {
+            bool hasHook;
+            address finalTo;
+            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
+            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(valueInZTUSD);
+            _financialOpportunityBalances[finalTo][aaveInterfaceAddress()] = _financialOpportunityBalances[finalTo][aaveInterfaceAddress()].add(valueInZTUSD);
+            emit Transfer(_from, _to, _value);
+            if (finalTo != _to) {
+                emit Transfer(_to, finalTo, _value);
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+                }
+            } else {
+                if (hasHook) {
+                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                }
+            }
+        }
+        // 5. Sender enabled, reciever disabled, value > reserve TUSD balance
+        else if (senderTrueRewardEnabled) {
+            emit Transfer(_from, address(this), _value);
+            emit Transfer(address(this), address(0), _value);
+            uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).withdrawTo(_to, _value);
+            _totalAaveSupply = _totalAaveSupply.sub(zTUSDAmount);
+            // watchout for reentrancy
+            _financialOpportunityBalances[_from][aaveInterfaceAddress()] = _financialOpportunityBalances[_from][aaveInterfaceAddress()].sub(zTUSDAmount);
+        }
+        // 6. Sender disabled, reciever enabled, value > reserve zTUSD balance (in TUSD)
+        else if (receiverTrueRewardEnabled && !senderTrueRewardEnabled) {
+            _setAllowance(_from, aaveInterfaceAddress(), _value);
+            uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(_from, _value);
+            _totalAaveSupply = _totalAaveSupply.add(zTUSDAmount);
+            _financialOpportunityBalances[_to][aaveInterfaceAddress()] = _financialOpportunityBalances[_to][aaveInterfaceAddress()].add(zTUSDAmount);
+            emit Transfer(address(0), _to, _value); // // mint value
+            emit Transfer(address(this), _to, _value); // send value to reciever
+        }
+    }
+
+    /**
+     * @dev mint function for TrueRewardBackedToken
+     * Mints TrueUSD backed by debt
+     * When we add multiple opportunities, this needs to work for mutliple interfaces
+     */
+    function mint(address _to, uint256 _value) public onlyOwner {
+        super.mint(_to, _value);
+        bool receiverTrueRewardEnabled = trueRewardEnabled(_to);
+        if (receiverTrueRewardEnabled) {
+            approve(aaveInterfaceAddress(), _value);
+            uint zTUSDAmount = FinancialOpportunity(aaveInterfaceAddress()).deposit(_to, _value);
+            _totalAaveSupply = _totalAaveSupply.add(zTUSDAmount);
+            _financialOpportunityBalances[_to][aaveInterfaceAddress()] = _financialOpportunityBalances[_to][aaveInterfaceAddress()].add(zTUSDAmount);
+            emit Transfer(address(0), _to, _value);
+        }
+    }
+}
+
+// File: contracts/TrueCurrencies/DelegateERC20.sol
+
+pragma solidity ^0.5.13;
+
 
 /** @title DelegateERC20
 Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
-functions in the old contract still works (except Burn). 
+functions in the old contract still works (except Burn).
 */
 contract DelegateERC20 is CompliantDepositTokenWithHook {
 
     address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
-    
+
     modifier onlyDelegateFrom() {
         require(msg.sender == DELEGATE_FROM);
         _;
@@ -1355,15 +2056,19 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
     }
 }
 
-// File: contracts/TrueUSD.sol
+// File: contracts/TrueCurrencies/TrueUSD.sol
+
+pragma solidity ^0.5.13;
+
+
+
+
 
 /** @title TrueUSD
-* @dev This is the top-level ERC20 contract, but most of the interesting functionality is
-* inherited - see the documentation on the corresponding contracts.
-*/
-contract TrueUSD is 
-CompliantDepositTokenWithHook,
-DelegateERC20 {
+ * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
+ * inherited - see the documentation on the corresponding contracts.
+ */
+contract TrueUSD is TrueRewardBackedToken, DelegateERC20 {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
@@ -1385,5 +2090,16 @@ DelegateERC20 {
 
     function canBurn() internal pure returns (bytes32) {
         return "canBurn";
+    }
+
+    // used by proxy to initalize
+    // must create proxy and initalize in same transaction
+    // this sets the owner to msg.sender
+    // may be a security risk for deployment
+    function initialize() external {
+        require(!initialized, "already initialized");
+        initialized = true;
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
     }
 }

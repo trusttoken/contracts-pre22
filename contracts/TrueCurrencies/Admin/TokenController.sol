@@ -616,34 +616,38 @@ contract TokenController {
      * @dev Sets the contract which has permissions to manage truerewards reserve
      * Controls access to reserve functions to allow providing liquidity
      */
-    function setAaveInterfaceAddress(address _aaveInterfaceAddress) external onlyOwner {
-        token.setAaveInterfaceAddress(_aaveInterfaceAddress);
+    function setOpportunityAddress(address _opportunityAddress) external onlyOwner {
+        token.setOpportunityAddress(_opportunityAddress);
     }
 
     /**
      * @dev Withdraw all TrueCurrencies from reserve
+     * @param _to address to withdraw to
+     * @param _value amount to withdraw
      */
-    function drainTrueCurrencyReserve(address _to, uint _value) external onlyTrueRewardManager {
-        token.drainTrueCurrencyReserve(_to, _value);
+    function reserveWithdraw(address _to, uint256 _value) external onlyTrueRewardManager {
+        token.reserveWithdraw(_to, _value);
     }
 
     /**
      * @dev Allow this contract to rebalance currency reserves
-     * This is called when there is too much money in an opportunity and we want
+     * This is called when there is not enough money in opportunity reserve and we want
+     * to get more opportunity tokens
+     *
+     * @param _value amount to exchange for opportunity rewardTokens
+     */
+    function opportunityReserveMint(uint256 _value) external onlyTrueRewardManager {
+        token.opportunityReserveMint(_value);
+    }
+
+    /**
+     * @dev Allow this contract to rebalance currency reserves
+     * This is called when there is too much money in opportunity and we want
      * to get more TrueCurrency.
-     * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
+     *
+     * @param _value amount of opportunity rewardTokens to redeem for TrueCurrency
      */
-    function convertToTrueCurrencyReserve(uint _value) external onlyTrueRewardManager {
-        token.convertToTrueCurrencyReserve(_value);
-    }
-
-    /**
-     * @dev Allow this contract to rebalance currency reserves
-     * This is called when there is not enough money in an opportunity and we want
-     * to get more Opportunity tokens
-     * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
-     */
-    function convertToZTUSDReserve(uint _value) external onlyTrueRewardManager {
-        token.convertToTrueCurrencyReserve(_value);
+    function opportunityReserveRedeem(uint256 _value) external onlyTrueRewardManager {
+        token.opportunityReserveRedeem(_value);
     }
 }
