@@ -80,6 +80,22 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     }
 
     /**
+     * @dev get total supply of TrueCurrency backed by fiat deposits
+     * @return supply of fiat backed TrueCurrency
+     */
+    function depositBackedSupply() public view returns (uint256) {
+        return super.totalSupply();
+    }
+
+    /**
+     * @dev get total supply of TrueCurrency backed by debt
+     * @return supply of debt backed TrueCurrency
+     */
+    function debtBackedSupply() public view returns (uint256) {
+        return totalSupply() - depositBackedSupply();
+    }
+
+    /**
      * @dev Get balance of TUSD including rewards for an address
      *
      * @param _who address of account to get balanceOf for
@@ -191,25 +207,24 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     }
 
     /**
-     * @dev Get opportunity financial opportunity address
-     * @return address opportunity financial opportunity address
+     * @dev Get (assured) financial opportunity address
+     * @return address financial opportunity address
      */
     function opportunity() public view returns (address) {
         return opportunity_;
     }
 
     /**
-     * @dev Get total supply of opportunity rewardTokens
-     * @return total supply of opportunity rewardTokens
+     * @dev Get total supply of opportunity rewardToken
+     * @return total supply of opportunity rewardToken
      */
     function opportunityRewardSupply() internal view returns (uint256) {
         return rewardTokenSupply(opportunity());
     }
 
     /**
-     * @dev Get total supply of opportunity in TrueCurrency
-     * @return total supply of opportunity in TrueCurrency
-     *
+     * @dev Get total supply of TrueCurrency in opportunity
+     * @return total supply of TrueCurrency in opportunity
      */
     function opportunityTotalSupply() internal view returns (uint256) {
         return _toToken(opportunityRewardSupply(), opportunity());

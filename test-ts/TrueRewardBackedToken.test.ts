@@ -71,6 +71,12 @@ describe('TrueRewardBackedToken', () => {
       await registry.setAttributeValue(recipient.address, WHITELIST_TRUEREWARD, 1)
     })
 
+    it('total supply', async () => {
+      expect(await token.totalSupply()).to.equal(parseEther('1200'))
+      expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
+      expect(await token.debtBackedSupply()).to.equal(parseEther('0'))
+    })
+
     it('holder enables trueReward with 0 balance', async () => {
       expect(await token.trueRewardEnabled(holder2.address)).to.be.false
 
@@ -84,6 +90,8 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(parseEther('100'))
       expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('100'))
       expect(await token.totalSupply()).to.equal(parseEther('1300'))
+      expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
+      expect(await token.debtBackedSupply()).to.equal(parseEther('100'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
     })
 
@@ -96,6 +104,8 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(0)
       expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(0)
       expect(await token.totalSupply()).to.equal(parseEther('1200'))
+      expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
+      expect(await token.debtBackedSupply()).to.equal(parseEther('0'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
     })
 
@@ -171,6 +181,23 @@ describe('TrueRewardBackedToken', () => {
       await lendingPoolCore.setReserveNormalizedIncome(parseEther('1600000000'))
       expect(await token.balanceOf(holder.address)).to.equal('106666666666666666665')
     })
+
+    it('total supply calculated correctly after tokenValue increases', async () => {
+      expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+      await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+      await token.connect(holder).enableTrueReward()
+      // test supply before increasing
+      expect(await token.totalSupply()).to.equal('399999999999999999999')
+      expect(await token.depositBackedSupply()).to.equal(parseEther('300'))
+      expect(await token.debtBackedSupply()).to.equal('99999999999999999999')
+      // increase token value
+      await lendingPoolCore.setReserveNormalizedIncome(parseEther('1600000000'))
+      // test supply after increasing
+      expect(await token.totalSupply()).to.equal('406666666666666666665')
+      expect(await token.depositBackedSupply()).to.equal(parseEther('300'))
+      expect(await token.debtBackedSupply()).to.equal('106666666666666666665')
+    })
+
 
     it('holders with trudereward disabled transfer funds between each other', async () => {
       const asHolder = token.connect(holder)
