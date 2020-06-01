@@ -43,7 +43,7 @@ export const validateAddress = (subject: string) => {
   }
 }
 
-type Newable<T> = { new (...args: any[]): T };
+export type Newable<T> = { new (...args: any[]): T };
 
 export const setupDeploy = (wallet: Wallet) => async <T extends ContractFactory>(Factory: Newable<T>, ...args: Parameters<T['deploy']>): Promise<ReturnType<T['deploy']>> => {
   const contract = await new Factory(wallet).deploy(...args)

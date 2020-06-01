@@ -21,7 +21,6 @@ export const RegistryAttributes = {
   canBurnCAD: attribute('canBurnCAD'),
   canBurnEUR: attribute('canBurnEUR'),
   canBurnHKD: attribute('canBurnHKD'),
-  whitelistTrueRewards: attribute('whitelistTrueRewards'),
   approvedBeneficiary: attribute('approvedBeneficiary'),
 }
 
