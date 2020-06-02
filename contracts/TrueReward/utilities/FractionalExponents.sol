@@ -8,7 +8,7 @@
  *  https://ethereum.stackexchange.com/questions/50527/is-there-any-efficient-way-to-compute-the-exponentiation-of-an-fractional-base-a
  */
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 contract FractionalExponents  {
 

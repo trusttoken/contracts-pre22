@@ -1,4 +1,4 @@
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 // CanDelegateV1: the subset of V1 required for CanDelegate
