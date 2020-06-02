@@ -501,7 +501,7 @@ contract ERC20 is Context, IERC20 {
 
 // File: contracts/TrueReward/IAToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 contract IAToken is IERC20 {
@@ -510,7 +510,7 @@ contract IAToken is IERC20 {
 
 // File: contracts/TrueReward/ILendingPoolCore.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 interface ILendingPoolCore {
   function getReserveNormalizedIncome(address _reserve) external view returns (uint256);
@@ -519,7 +519,7 @@ interface ILendingPoolCore {
 
 // File: contracts/TrueReward/mocks/LendingPoolCoreMock.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -541,7 +541,7 @@ contract LendingPoolCoreMock is ILendingPoolCore {
 
 // File: contracts/TrueReward/mocks/ATokenMock.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 

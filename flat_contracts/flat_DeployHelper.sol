@@ -1,7 +1,7 @@
 
 // File: contracts/TrueCurrencies/TrueCoinReceiver.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
@@ -9,7 +9,7 @@ contract TrueCoinReceiver {
 
 // File: contracts/TrueReward/FinancialOpportunity.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /**
  * @title FinancialOpportunity
@@ -338,7 +338,7 @@ contract Registry {
 
 // File: contracts/TrueCurrencies/modularERC20/InstantiatableOwnable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -383,7 +383,7 @@ contract InstantiatableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/Claimable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -582,7 +582,7 @@ library SafeMath {
 
 // File: contracts/TrueCurrencies/modularERC20/BalanceSheet.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -607,7 +607,7 @@ contract BalanceSheet is Claimable {
 
 // File: contracts/TrueCurrencies/modularERC20/AllowanceSheet.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -632,7 +632,7 @@ contract AllowanceSheet is Claimable {
 
 // File: contracts/TrueCurrencies/ProxyStorage.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -705,7 +705,7 @@ contract ProxyStorage {
 
 // File: contracts/TrueCurrencies/HasOwner.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -766,7 +766,7 @@ contract HasOwner is ProxyStorage {
 
 // File: contracts/TrueCurrencies/ReclaimerToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 contract ReclaimerToken is HasOwner {
@@ -796,7 +796,7 @@ contract ReclaimerToken is HasOwner {
 
 // File: contracts/TrueCurrencies/modularERC20/InitializableOwnable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -844,7 +844,7 @@ contract InitializableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/InitializableClaimable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -884,7 +884,7 @@ contract InitializableClaimable is InitializableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/ModularBasicToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -932,7 +932,7 @@ contract ModularBasicToken is HasOwner {
 
 // File: contracts/TrueCurrencies/modularERC20/ModularStandardToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -1085,7 +1085,7 @@ contract ModularStandardToken is ModularBasicToken {
 
 // File: contracts/TrueCurrencies/modularERC20/ModularBurnableToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -1113,7 +1113,7 @@ contract ModularBurnableToken is ModularStandardToken {
 
 // File: contracts/TrueCurrencies/BurnableTokenWithBounds.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -1147,7 +1147,7 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
 
 // File: contracts/TrueCurrencies/GasRefundToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -1312,7 +1312,7 @@ contract GasRefundToken is ProxyStorage {
 
 // File: contracts/TrueCurrencies/CompliantDepositTokenWithHook.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -1580,7 +1580,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
 // File: contracts/TrueCurrencies/RewardToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -1814,7 +1814,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
 
 // File: contracts/TrueCurrencies/RewardTokenWithReserve.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -1963,7 +1963,7 @@ contract RewardTokenWithReserve is RewardToken {
 
 // File: contracts/TrueCurrencies/TrueRewardBackedToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -2365,7 +2365,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
 
 // File: contracts/TrueCurrencies/DelegateERC20.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /** @title DelegateERC20
@@ -2421,7 +2421,7 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
 
 // File: contracts/TrueCurrencies/TrueUSD.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -2509,7 +2509,7 @@ contract ProvisionalRegistry is Registry {
 
 // File: contracts/mocks/RegistryImplementation.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -2549,7 +2549,7 @@ contract ProvisionalRegistryImplementation is
 
 // File: contracts/TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /**
  * @title OwnedUpgradeabilityProxy
@@ -2718,7 +2718,7 @@ contract OwnedUpgradeabilityProxy {
 
 // File: contracts/TrueCurrencies/Admin/TokenController.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -4485,7 +4485,7 @@ contract StakedToken is AStakedToken {
 
 // File: contracts/TrueCurrencies/AssuredFinancialOpportunityStorage.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /*
 Defines the storage layout of the token implementaiton contract. Any newly declared
@@ -4540,7 +4540,7 @@ contract AssuredFinancialOpportunityStorage {
  *  https://ethereum.stackexchange.com/questions/50527/is-there-any-efficient-way-to-compute-the-exponentiation-of-an-fractional-base-a
  */
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 contract FractionalExponents  {
 
@@ -5076,7 +5076,7 @@ contract FractionalExponents  {
 
 // File: contracts/TrueReward/AssuredFinancialOpportunity.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -5470,7 +5470,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
 // File: contracts/TrueReward/IAToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 contract IAToken is IERC20 {
@@ -5479,7 +5479,7 @@ contract IAToken is IERC20 {
 
 // File: contracts/TrueReward/ILendingPool.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 interface ILendingPool {
   function deposit(address _reserve, uint256 _amount, uint16 _referralCode) external;
@@ -5488,7 +5488,7 @@ interface ILendingPool {
 
 // File: contracts/TrueReward/ILendingPoolCore.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 interface ILendingPoolCore {
   function getReserveNormalizedIncome(address _reserve) external view returns (uint256);
@@ -5497,7 +5497,7 @@ interface ILendingPoolCore {
 
 // File: contracts/TrueReward/AaveFinancialOpportunity.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -5688,7 +5688,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
 
 // File: contracts/TrueReward/utilities/IExponentContract.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /**
  * Calculate an integer approximation of (_baseN / _baseD) ^ (_expN / _expD) * 2 ^ precision.
@@ -5833,7 +5833,7 @@ contract TrustToken is ValTokenWithHook, ClaimableContract {
 
 // File: contracts/deploy/DeployHelper.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 

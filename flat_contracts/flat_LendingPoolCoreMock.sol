@@ -1,7 +1,7 @@
 
 // File: contracts/TrueReward/ILendingPoolCore.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 interface ILendingPoolCore {
   function getReserveNormalizedIncome(address _reserve) external view returns (uint256);
@@ -510,7 +510,7 @@ contract ERC20 is Context, IERC20 {
 
 // File: contracts/TrueReward/mocks/LendingPoolCoreMock.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 

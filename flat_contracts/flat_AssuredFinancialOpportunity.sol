@@ -1521,7 +1521,7 @@ contract StakedToken is AStakedToken {
 
 // File: contracts/TrueCurrencies/AssuredFinancialOpportunityStorage.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /*
 Defines the storage layout of the token implementaiton contract. Any newly declared
@@ -1566,7 +1566,7 @@ contract AssuredFinancialOpportunityStorage {
 
 // File: contracts/TrueCurrencies/modularERC20/InitializableOwnable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -1614,7 +1614,7 @@ contract InitializableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/InitializableClaimable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -1664,7 +1664,7 @@ contract InitializableClaimable is InitializableOwnable {
  *  https://ethereum.stackexchange.com/questions/50527/is-there-any-efficient-way-to-compute-the-exponentiation-of-an-fractional-base-a
  */
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 contract FractionalExponents  {
 
@@ -2200,7 +2200,7 @@ contract FractionalExponents  {
 
 // File: contracts/TrueReward/FinancialOpportunity.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /**
  * @title FinancialOpportunity
@@ -2280,7 +2280,7 @@ interface FinancialOpportunity {
 
 // File: contracts/TrueReward/AssuredFinancialOpportunity.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
