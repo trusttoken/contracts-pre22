@@ -74,14 +74,19 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
   const deploy = setupDeployer(wallet)
 
   const contractAt = getContract(wallet)
-  let trueUsdImpl = undefined
-  let tokenControllerImpl = undefined
+
+  let trueUsdImpl = contractAt('TrueUSD', '0xB13246Ff3365102e07093C452401E077424979e4')
+  let tokenControllerImpl = contractAt('TokenController', '0x8A30155a2b3fcdbAaCfBa5A3bf4D82a27e210B3E')
+
+  /*
   if (await confirmDeploy('TrueUSD')) {
     trueUsdImpl = await deploy('TrueUSD')
   }
   if (await confirmDeploy('TokenController')) {
     tokenControllerImpl = await deploy('TokenController')
   }
+  */
+  
   result['trueUSD'] = deployedAddresses.trueUsd
   result['tokenController'] = deployedAddresses.tokenController
   result['registry'] = deployedAddresses.registry
