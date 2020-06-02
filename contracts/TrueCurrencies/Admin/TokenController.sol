@@ -1,4 +1,4 @@
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "@trusttoken/registry/contracts/Registry.sol";
