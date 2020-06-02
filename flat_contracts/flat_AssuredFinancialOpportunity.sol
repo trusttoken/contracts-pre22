@@ -239,7 +239,7 @@ library SafeMath {
 
 // File: @trusttoken/trusttokens/contracts/ValSafeMath.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /**
  * Forked subset of Openzeppelin SafeMath allowing custom underflow/overflow messages
@@ -269,7 +269,7 @@ library ValSafeMath {
 
 // File: @trusttoken/trusttokens/contracts/ILiquidator.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -477,7 +477,7 @@ contract Registry {
 
 // File: @trusttoken/trusttokens/contracts/ALiquidatorUniswap.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 //pragma experimental ABIEncoderV2;
 
@@ -730,7 +730,7 @@ contract ALiquidatorUniswap is ILiquidator {
 
 // File: @trusttoken/trusttokens/contracts/Liquidator.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 //pragma experimental ABIEncoderV2;
 
@@ -791,7 +791,7 @@ contract Liquidator is ALiquidatorUniswap {
 
 // File: @trusttoken/trusttokens/contracts/StakingAsset.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 contract StakingAsset is IERC20 {
@@ -802,7 +802,7 @@ contract StakingAsset is IERC20 {
 
 // File: @trusttoken/trusttokens/contracts/ProxyStorage.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -841,7 +841,7 @@ contract ProxyStorage {
 
 // File: @trusttoken/trusttokens/contracts/ERC20.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -969,7 +969,7 @@ contract ModularStandardToken is ModularBasicToken {
 
 // File: @trusttoken/trusttokens/contracts/RegistrySubscriber.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 contract RegistrySubscriber is ProxyStorage {
@@ -1040,7 +1040,7 @@ contract RegistrySubscriber is ProxyStorage {
 
 // File: @trusttoken/trusttokens/contracts/TrueCoinReceiver.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
@@ -1048,7 +1048,7 @@ contract TrueCoinReceiver {
 
 // File: @trusttoken/trusttokens/contracts/ValTokenWithHook.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -1131,7 +1131,7 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
 
 // File: @trusttoken/trusttokens/contracts/AStakedToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -1468,7 +1468,7 @@ contract AStakedToken is ValTokenWithHook {
 
 // File: @trusttoken/trusttokens/contracts/StakedToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
