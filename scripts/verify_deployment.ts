@@ -109,7 +109,7 @@ interface DeployResult {
     console.log(`Attribute: ${RegistryAttributes.isRegisteredContract.hex}`)
   }
 
-  if ((await registry.getAttributeValue(assuredFinancialOpportunity.address, RegistryAttributes.approvedBeneficiary.hex)).eq(1)){
+  if ((await registry.getAttributeValue(assuredFinancialOpportunity.address, RegistryAttributes.approvedBeneficiary.hex)).eq(1)) {
     console.log('AssuredFinancialOpportunity is approved beneficiary: OK')
   } else {
     console.log('AssuredFinancialOpportunity is approved beneficiary: FAIL')
