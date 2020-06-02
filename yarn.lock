@@ -283,10 +283,10 @@
   dependencies:
     openzeppelin-solidity "2.4.0"
 
-"@trusttoken/trusttokens@0.1.8":
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/@trusttoken/trusttokens/-/trusttokens-0.1.8.tgz#518faab914c074e07a9d9a463b3b85ea63aff817"
-  integrity sha512-WpCS12V/qLCHzQVtZkWGfSgpmtz9Phk7jvTraAwsRQsuCt4EbaUFSN58sTr6syBH4Ebk92f8D2+au86wmhalzw==
+"@trusttoken/trusttokens@0.1.9":
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/@trusttoken/trusttokens/-/trusttokens-0.1.9.tgz#7ebb441ef96341f9a616e9c068968e2a9f92a327"
+  integrity sha512-REohWsRPmJXgIkc+6V/DtQMX1jNXPZipoHbzGgSZVM04mdkwW3NR9W5e+CC0qiM3xQ1q0n9OdjxO65aiBvM63A==
   dependencies:
     "@openzeppelin/contracts" "^3.0.1"
     "@trusttoken/registry" "0.1.2"
