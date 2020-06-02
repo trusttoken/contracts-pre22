@@ -1,4 +1,4 @@
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 import { Registry } from "@trusttoken/registry/contracts/Registry.sol";
 import { TrueUSD } from "../TrueCurrencies/TrueUSD.sol";

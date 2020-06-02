@@ -1,4 +1,4 @@
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 import { TrueCoinReceiver } from "./TrueCoinReceiver.sol";
 import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
