@@ -9,7 +9,6 @@
  */
 
 import { Contract, ethers, Wallet } from 'ethers'
-import readline from 'readline'
 import {
   deployBehindProxy,
   deployBehindTimeProxy,
@@ -32,24 +31,6 @@ interface DeployedAddresses {
   aaveLendingPool: string,
   aTUSD: string,
   uniswapFactory: string,
-}
-
-const confirmDeploy = async (contractName: string) => {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  })
-
-  return new Promise<boolean>(resolve => {
-    rl.question(`Deploy ${contractName}? (Y/n)`, (answer) => {
-      rl.close()
-      if (['n', 'no'].includes(answer.toLowerCase())) {
-        resolve(false)
-      } else {
-        resolve(true)
-      }
-    })
-  })
 }
 
 export async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, ownerAddress: string, provider: JsonRpcProvider) {
@@ -77,7 +58,7 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
 
   const trueUsdImpl = await deploy('TrueUSD')
   const tokenControllerImpl = await deploy('TokenController')
-  
+
   result['trueUSD'] = deployedAddresses.trueUsd
   result['tokenController'] = deployedAddresses.tokenController
   result['registry'] = deployedAddresses.registry
