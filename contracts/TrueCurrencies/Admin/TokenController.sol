@@ -650,4 +650,22 @@ contract TokenController {
     function opportunityReserveRedeem(uint256 _value) external onlyTrueRewardManager {
         token.opportunityReserveRedeem(_value);
     }
+
+    /**
+     * @dev Allow manager to whitelist account for trueReward
+     *
+     * @param _account account to whitelist
+     */
+    function addTrueRewardWhitelist(address _account) external onlyTrueRewardManager {
+        registry.setAttributeValue(msg.sender, 0x6973547275655265776172647357686974656c69737465640000000000000000, 1);
+    }
+
+    /**
+     * @dev Allow manager to remove account for trueReward
+     *
+     * @param _account account to whitelist
+     */
+    function removeTrueRewardWhitelist(address _account) external onlyTrueRewardManager {
+        registry.setAttributeValue(msg.sender, 0x6973547275655265776172647357686974656c69737465640000000000000000, 0);
+    }
 }
