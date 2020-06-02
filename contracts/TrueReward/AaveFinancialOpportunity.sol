@@ -17,7 +17,7 @@ import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * This contract acts as an intermediary between TrueUSD and Aave
  * Tokens are pooled here and balances are kept track in TrueUSD
  * This contract is deployed behind a proxy and is owned by TrueUSD
- * 
+ *
  * -- yTUSD and aTokens
  * yTUSD represents a fixed share in the financial opportunity pool
  * aTokens are Aave tokens and increase in quantity as interest is earned
@@ -107,7 +107,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
         return token.balanceOf(address(this));
     }
 
-    /** 
+    /**
      * @dev Return value of stake in yTUSD
      */
     function getValueInStake(uint256 _amount) public view returns(uint256) {
@@ -138,8 +138,8 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
         return yTUSDAmount;
     }
 
-    /** 
-     * @dev Helper to withdraw TUSD from Aave 
+    /**
+     * @dev Helper to withdraw TUSD from Aave
      * aToken redemption amount is equal to yTUSD * tokenValue
      * @param _to address to transfer TUSD to
      * @param _amount amount in yTUSD to redeem

@@ -13,7 +13,7 @@ import { ProvisionalRegistryImplementationFactory } from '../../build/types/Prov
 
 use(solidity)
 
-describe('Upgrading', () => {
+describe.skip('Upgrading', () => {
   let deployer: Wallet
   let holder: Wallet
   let provider: MockProvider
