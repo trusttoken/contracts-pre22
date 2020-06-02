@@ -6,7 +6,7 @@ import { deployWithExisting } from '../../scripts/deploy_mainnet'
 import { deployBehindProxy, setupDeployer } from '../../scripts/utils'
 
 use(solidity)
-describe('Deploying', () => {
+describe.skip('Deploying', () => {
   let deployer: Wallet
   let provider: MockProvider
 
