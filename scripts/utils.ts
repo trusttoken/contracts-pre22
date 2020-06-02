@@ -2,7 +2,7 @@ import { Wallet, ethers, ContractFactory } from 'ethers'
 import { deployContract } from 'ethereum-waffle'
 import fs from 'fs'
 
-export const txnArgs = { gasLimit: 5_000_000, gasPrice: 69_000_000_000 }
+export const txnArgs = { gasLimit: 5_000_000, gasPrice: 45_000_000_000 }
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export const getContractJSON = (contractName: string) => require(`../build/${contractName}.json`)
