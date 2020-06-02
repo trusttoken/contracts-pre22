@@ -20,29 +20,29 @@ Actual: ${actual}`,
 }
 
 interface DeployResult {
-  trueUSD: string;
-  tokenController: string;
-  registry: string;
-  assuredFinancialOpportunity: string;
-  fractionalExponents: string;
-  trustToken: string;
-  financialOpportunity: string;
-  lendingPool: string;
-  aToken: string;
-  trueUSDUniswapExchange: string;
-  trustTokenUniswapExchange: string;
-  liquidator: string;
-  stakedToken: string;
+  trueUSD: string,
+  tokenController: string,
+  registry: string,
+  assuredFinancialOpportunity: string,
+  fractionalExponents: string,
+  trustToken: string,
+  financialOpportunity: string,
+  lendingPool: string,
+  aToken: string,
+  trueUSDUniswapExchange: string,
+  trustTokenUniswapExchange: string,
+  liquidator: string,
+  stakedToken: string,
   implementations: {
-    trueUsd: string;
-    tokenController: string;
-    assuredFinancialOpportunity: string;
-    trustToken: string;
-    financialOpportunity: string;
-    liquidator: string;
-    stakedToken: string;
-  };
-  deployHelper: string;
+    trueUsd: string,
+    tokenController: string,
+    assuredFinancialOpportunity: string,
+    trustToken: string,
+    financialOpportunity: string,
+    liquidator: string,
+    stakedToken: string,
+  },
+  deployHelper: string,
 }
 
 (async () => {
