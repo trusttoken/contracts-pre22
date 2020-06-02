@@ -77,6 +77,7 @@ contract TokenController {
     bytes32 constant public IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 constant public IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
+    bytes32 constant public IS_TRUE_REWARD_MANAGER = "isTrueRewardManager";
 
     address constant public PAUSED_IMPLEMENTATION = address(1); // ***To be changed the paused version of TrueUSD in Production
 
@@ -106,7 +107,7 @@ contract TokenController {
     }
 
     modifier onlyTrueRewardManager() {
-        require(msg.sender == trueRewardManager, "must be trueRewardManager");
+        require(registry.hasAttribute(msg.sender, IS_TRUE_REWARD_MANAGER) || msg.sender == owner, "must be reward manager or owner");
         _;
     }
 
