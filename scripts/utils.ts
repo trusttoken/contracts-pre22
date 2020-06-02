@@ -2,12 +2,14 @@ import { Wallet, ethers, ContractFactory } from 'ethers'
 import { deployContract } from 'ethereum-waffle'
 import fs from 'fs'
 
+export const txnArgs = { gasLimit: 5_000_000, gasPrice: 69_000_000_000 }
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export const getContractJSON = (contractName: string) => require(`../build/${contractName}.json`)
 
 export const setupDeployer = (wallet: Wallet) => async (contractName: string, ...args) => {
   const contractJson = getContractJSON(contractName)
-  const contract = await deployContract(wallet, contractJson, args, { gasLimit: 5004588 })
+  const contract = await deployContract(wallet, contractJson, args, txnArgs)
 
   console.log(`${contractName} address: ${contract.address}`)
   return contract
@@ -15,8 +17,8 @@ export const setupDeployer = (wallet: Wallet) => async (contractName: string, ..
 
 export const deployBehindCustomProxy = (proxyName: string) => async (wallet: Wallet, contractName: string, ...args) => {
   const deploy = setupDeployer(wallet)
-  const implementation = await deploy(contractName, ...args)
-  const proxy = await deploy(proxyName)
+  const implementation = await deploy(contractName, ...args, txnArgs)
+  const proxy = await deploy(proxyName, txnArgs)
   const contract = implementation.attach(proxy.address)
   console.log(`deployed ${contractName}Proxy at: `, contract.address)
 

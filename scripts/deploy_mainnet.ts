@@ -16,6 +16,7 @@ import {
   saveDeployResult,
   setupDeployer,
   validatePrivateKey,
+  txnArgs
 } from './utils'
 import { JsonRpcProvider, TransactionResponse } from 'ethers/providers'
 import { AddressZero } from 'ethers/constants'
@@ -80,20 +81,20 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
 
   // setup uniswap
   const uniswapFactory = contractAt('uniswap_factory', deployedAddresses.uniswapFactory)
-  let trueUSDUniswapExchange = await uniswapFactory.getExchange(deployedAddresses.trueUsd)
+  let trueUSDUniswapExchange = await uniswapFactory.getExchange(deployedAddresses.trueUsd, txnArgs)
   if (trueUSDUniswapExchange === AddressZero) {
-    tx = await uniswapFactory.createExchange(deployedAddresses.trueUsd, { gasLimit: 5_000_000 })
+    tx = await uniswapFactory.createExchange(deployedAddresses.trueUsd, txnArgs)
     await tx.wait()
-    trueUSDUniswapExchange = await uniswapFactory.getExchange(deployedAddresses.trueUsd)
+    trueUSDUniswapExchange = await uniswapFactory.getExchange(deployedAddresses.trueUsd, txnArgs)
     console.log('created trueUSDUniswapExchange at: ', trueUSDUniswapExchange)
   } else {
     console.log('trueUSDUniswapExchange found at: ', trueUSDUniswapExchange)
   }
   result['trueUSDUniswapExchange'] = trueUSDUniswapExchange
 
-  tx = await uniswapFactory.createExchange(trustToken.address, { gasLimit: 5_000_000 })
+  tx = await uniswapFactory.createExchange(trustToken.address, txnArgs)
   await tx.wait()
-  const trustTokenUniswapExchange = await uniswapFactory.getExchange(trustToken.address)
+  const trustTokenUniswapExchange = await uniswapFactory.getExchange(trustToken.address, txnArgs)
   console.log('created trustTokenUniswapExchange at: ', trustTokenUniswapExchange)
   result['trustTokenUniswapExchange'] = trustTokenUniswapExchange
 
@@ -131,7 +132,7 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
 
   const transferProxyOwnership = async (contractName: string) => {
     const proxy = contractAt('OwnedUpgradeabilityProxy', result[contractName])
-    await (await proxy.transferProxyOwnership(deployHelper.address)).wait()
+    await (await proxy.transferProxyOwnership(deployHelper.address, txnArgs)).wait()
     console.log(`${contractName} proxy ownership transferred`)
   }
 
@@ -152,7 +153,7 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
     lendingPool.address,
     trueUSDUniswapExchange,
     trustTokenUniswapExchange,
-    { gasLimit: 5000000 },
+    txnArgs
   )
   await tx.wait()
   console.log('deployHelper: setup')
