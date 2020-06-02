@@ -16,7 +16,7 @@ import {
   saveDeployResult,
   setupDeployer,
   validatePrivateKey,
-  txnArgs
+  txnArgs,
 } from './utils'
 import { JsonRpcProvider, TransactionResponse } from 'ethers/providers'
 import { AddressZero } from 'ethers/constants'
@@ -81,11 +81,11 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
 
   // setup uniswap
   const uniswapFactory = contractAt('uniswap_factory', deployedAddresses.uniswapFactory)
-  let trueUSDUniswapExchange = await uniswapFactory.getExchange(deployedAddresses.trueUsd, txnArgs)
+  let trueUSDUniswapExchange = await uniswapFactory.getExchange(deployedAddresses.trueUsd)
   if (trueUSDUniswapExchange === AddressZero) {
     tx = await uniswapFactory.createExchange(deployedAddresses.trueUsd, txnArgs)
     await tx.wait()
-    trueUSDUniswapExchange = await uniswapFactory.getExchange(deployedAddresses.trueUsd, txnArgs)
+    trueUSDUniswapExchange = await uniswapFactory.getExchange(deployedAddresses.trueUsd)
     console.log('created trueUSDUniswapExchange at: ', trueUSDUniswapExchange)
   } else {
     console.log('trueUSDUniswapExchange found at: ', trueUSDUniswapExchange)
@@ -94,7 +94,7 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
 
   tx = await uniswapFactory.createExchange(trustToken.address, txnArgs)
   await tx.wait()
-  const trustTokenUniswapExchange = await uniswapFactory.getExchange(trustToken.address, txnArgs)
+  const trustTokenUniswapExchange = await uniswapFactory.getExchange(trustToken.address)
   console.log('created trustTokenUniswapExchange at: ', trustTokenUniswapExchange)
   result['trustTokenUniswapExchange'] = trustTokenUniswapExchange
 
@@ -153,7 +153,7 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
     lendingPool.address,
     trueUSDUniswapExchange,
     trustTokenUniswapExchange,
-    txnArgs
+    txnArgs,
   )
   await tx.wait()
   console.log('deployHelper: setup')

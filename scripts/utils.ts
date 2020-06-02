@@ -17,8 +17,8 @@ export const setupDeployer = (wallet: Wallet) => async (contractName: string, ..
 
 export const deployBehindCustomProxy = (proxyName: string) => async (wallet: Wallet, contractName: string, ...args) => {
   const deploy = setupDeployer(wallet)
-  const implementation = await deploy(contractName, ...args, txnArgs)
-  const proxy = await deploy(proxyName, txnArgs)
+  const implementation = await deploy(contractName, ...args)
+  const proxy = await deploy(proxyName)
   const contract = implementation.attach(proxy.address)
   console.log(`deployed ${contractName}Proxy at: `, contract.address)
 
