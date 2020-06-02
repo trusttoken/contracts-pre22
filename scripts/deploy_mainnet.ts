@@ -1,7 +1,7 @@
 /**
  * Ethers Deploy Script
  *
- * ts-node scripts/deploy.ts "{private_key}" "{network}" "{owner_address}"
+ * ts-node scripts/deploy_mainnet.ts "{private_key}" "{network}" "{owner_address}"
  *
  * We use ethers to deploy our contracts from scratch.
  * For upgrades, use deploy/upgrade.ts
@@ -14,14 +14,14 @@ import {
   deployBehindTimeProxy,
   getContract,
   saveDeployResult,
-  setupDeployer, validateAddress,
+  setupDeployer,
   validatePrivateKey,
 } from './utils'
 import { JsonRpcProvider, TransactionResponse } from 'ethers/providers'
 import { AddressZero } from 'ethers/constants'
 import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
 import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
-import {OwnedUpgradeabilityProxyFactory} from "../build/types/OwnedUpgradeabilityProxyFactory";
+import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
 
 interface DeployedAddresses {
   trueUsd: string,
@@ -57,7 +57,7 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
   const trueUsdImpl = await deploy('TrueUSD')
   const tokenControllerImpl = await deploy('TokenController')
   result['trueUSD'] = deployedAddresses.trueUsd
-  result['TokenController'] = deployedAddresses.tokenController
+  result['tokenController'] = deployedAddresses.tokenController
   result['registry'] = deployedAddresses.registry
 
   const [assuredFinancialOpportunityImplementation, assuredFinancialOpportunityProxy, assuredFinancialOpportunity] = await deployBehindProxy(wallet, 'AssuredFinancialOpportunity')
@@ -103,6 +103,16 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
   // deploy assurance pool
   const [stakedTokenImplementation, stakedTokenProxy] = await deployBehindProxy(wallet, 'StakedToken')
   save(stakedTokenProxy, 'stakedToken')
+
+  result['implementations'] = {
+    trueUsd: trueUsdImpl.address,
+    tokenController: tokenControllerImpl.address,
+    assuredFinancialOpportunity: assuredFinancialOpportunityImplementation.address,
+    trustToken: trustTokenImplementation.address,
+    financialOpportunity: financialOpportunityImplementation.address,
+    liquidator: liquidatorImplementation.address,
+    stakedToken: stakedTokenImplementation.address,
+  }
 
   const deployHelper = await deploy(
     'DeployHelper',
@@ -159,7 +169,6 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
   * claim Proxy ownerships in:
     * trustToken
     * assuredFinancialOpportunity
-    * financialOpportunity
     * liquidator
     * stakedToken
   * claim ownerships in:
@@ -193,6 +202,7 @@ const postDeployCheck = async (deployResult: Record<string, string>, wallet: Wal
   validateWireing(await aaveFinOp.lendingPool(), deployResult.lendingPool)
   validateWireing(await aaveFinOp.aToken(), deployResult.aToken)
   validateWireing(await aaveFinOp.token(), deployResult.trueUSD)
+  validateWireing(await aaveFinOp.owner(), deployResult.assuredFinancialOpportunity)
   validateWireing(await aaveFinOpProxy.pendingProxyOwner(), ownerAddress)
   const ttProxy = OwnedUpgradeabilityProxyFactory.connect(deployResult.trustToken, wallet)
   validateWireing(await ttProxy.pendingProxyOwner(), ownerAddress)
