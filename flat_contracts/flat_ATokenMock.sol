@@ -514,11 +514,13 @@ pragma solidity ^0.5.13;
 
 interface ILendingPoolCore {
   function getReserveNormalizedIncome(address _reserve) external view returns (uint256);
+  function transferToReserve(address _reserve, address payable _user, uint256 _amount) external;
 }
 
 // File: contracts/TrueReward/mocks/LendingPoolCoreMock.sol
 
 pragma solidity ^0.5.13;
+
 
 
 contract LendingPoolCoreMock is ILendingPoolCore {
@@ -530,6 +532,10 @@ contract LendingPoolCoreMock is ILendingPoolCore {
 
     function setReserveNormalizedIncome(uint256 value) external returns (uint256) {
         reserveNormalizedIncome = value;
+    }
+
+    function transferToReserve(address _reserve, address payable _user, uint256 _amount) external {
+        require(ERC20(_reserve).transferFrom(_user, address(this), _amount), "LendingPoolCoreMock/transferToReserve");
     }
 }
 

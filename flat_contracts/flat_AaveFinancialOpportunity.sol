@@ -19,18 +19,23 @@ pragma solidity ^0.5.13;
  * The goal of this contract is to allow anyone to create an opportunity
  * to earn interest on TUSD. deposit() "mints" yTUSD whcih is redeemable
  * for some amount of TUSD. TrueUSD wraps this contractwith TrustToken
- * Assurance, which provides protection from bugs and system design flaws.
+ * Assurance, which provides protection from bugs and system design flaws
  * TUSD is a compliant stablecoin, therefore we do not allow transfers of
- * yTUSD, thus there are no transfer functions.
+ * yTUSD, thus there are no transfer functions
  *
  * -- tokenValue() --
  * This function returns the value in TUSD of 1 yTUSD
- * This value should never decrease.
+ * This value should never decrease
  *
  * -- TUSD vs yTUSD --
- * yTUSD represents a value which is redeemable for some amount of TUSD.
- * Think of yTUSD like cTUSD or aTUSD, where cTokens are minted and increase
- * in value as interest is accrued.
+ * yTUSD represents a fixed value which is redeemable for some amount of TUSD
+ * Think of yTUSD like cTUSD, where cTokens are minted and increase in value versus
+ * the underlying asset as interest is accrued
+ *
+ * -- totalSupply() --
+ * This function returns the total supply of yTUSD issued by this contract
+ * It is important to track this value accuratley and add/deduct the correct
+ * amount on deposit/redemptions
  *
  * -- Assumptions --
  * - tokenValue can never decrease
@@ -1664,7 +1669,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
         address account,
         uint256 amount,
         address finOp
-    ) internal validFinOp(finOp) {
+    ) internal validFinOp(finOp) returns (uint256) {
         // require sufficient balance
         require(super.balanceOf(account) >= amount, "insufficient token balance");
 
@@ -1682,6 +1687,8 @@ contract RewardToken is CompliantDepositTokenWithHook {
 
         // emit mint event
         emit MintRewardToken(account, amount, finOp);
+
+        return rewardAmount;
     }
 
     /**
@@ -1963,20 +1970,20 @@ pragma solidity ^0.5.13;
 
 /**
  * @title TrueRewardBackedToken
- * @dev TrueRewardBackedToken is TrueUSD backed by debt
+ * @dev TrueRewardBackedToken is TrueCurrency backed by debt
  *
  * -- Overview --
- * Enabling TrueRewards deposits TUSD into a financial opportunity
+ * Enabling TrueRewards deposits TrueCurrency into a financial opportunity
  * Financial opportunities provide awards over time
  * Awards are reflected in the wallet balance updated block-by-block
  *
  * -- rewardToken vs yToken --
- * rewardToken represents an amount of ASSURED TUSD owed to the rewardToken holder
- * yToken represents an amount of NON-ASSURED TUSD owed to a yToken holder
+ * rewardToken represents an amount of ASSURED TrueCurrency owed to the rewardToken holder
+ * yToken represents an amount of NON-ASSURED TrueCurrency owed to a yToken holder
  * For this contract, we only handle rewardToken (Assured Opportunities)
  *
  * -- Calculating rewardToken --
- * TUSD Value = rewardToken * financial opportunity tokenValue()
+ * TrueCurrency Value = rewardToken * financial opportunity tokenValue()
  *
  * -- rewardToken Assumptions --
  * We assume tokenValue never decreases for assured financial opportunities
@@ -1984,7 +1991,7 @@ pragma solidity ^0.5.13;
  * Rather, we override our transfer functions to account for user balances
  *
  * -- Reserve --
- * This contract uses a reserve holding of TUSD and rewardToken to save on gas costs
+ * This contract uses a reserve holding of TrueCurrency and rewardToken to save on gas costs
  * because calling the financial opportunity deposit() and redeem() everytime
  * can be expensive
  * See RewardTokenWithReserve.sol
@@ -2019,37 +2026,38 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         return _rewardDistribution[_address].length != 0;
     }
 
-    /*
-     * @dev calculate rewards earned since last deposit
-     * todo feewet fix this function, can we actually calc this??
-     */
-    function rewardsAccrued(address account, address finOp) public view returns (uint) {
-        uint rewardBalance = rewardTokenBalance(account, opportunity());
-        return _toToken(rewardBalance, finOp) - _toToken(rewardBalance, finOp);
-    }
-
     /**
-     * @dev Get total supply of all TUSD backed by debt.
-     * This amount includes accrued rewards.
-     * Currently works for a single finOp
-     *
+     * @dev Get total supply of all TrueCurrency
+     * Equal to deposit backed TrueCurrency plus debt backed TrueCurrency
      * @return total supply in trueCurrency
      */
     function totalSupply() public view returns (uint256) {
-        // if supply in opportunity finOp, return value including finOp value
+        // if supply in opportunity finOp, return supply of deposits + debt
         // otherwise call super to return normal totalSupply
-        if (opportunitySupply() != 0) {
-            // calculate depositToken value of finOp total supply
-            uint depositValue = _toToken(opportunitySupply(), opportunity());
-
-            // return token total supply plus deposit token value
-            return totalSupply_.add(depositValue);
+        if (opportunityRewardSupply() != 0) {
+            return totalSupply_.add(opportunityTotalSupply());
         }
-        return super.totalSupply();
+        return totalSupply_;
     }
 
     /**
-     * @dev Get balance of TUSD including rewards for an address
+     * @dev get total supply of TrueCurrency backed by fiat deposits
+     * @return supply of fiat backed TrueCurrency
+     */
+    function depositBackedSupply() public view returns (uint256) {
+        return totalSupply_;
+    }
+
+    /**
+     * @dev get total supply of TrueCurrency backed by debt
+     * @return supply of debt backed TrueCurrency
+     */
+    function debtBackedSupply() public view returns (uint256) {
+        return totalSupply() - totalSupply_;
+    }
+
+    /**
+     * @dev Get balance of TrueCurrency including rewards for an address
      *
      * @param _who address of account to get balanceOf for
      * @return balance total balance of address including rewards
@@ -2101,25 +2109,35 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // remove reward distribution
         _removeDistribution(opportunity());
 
-        // redeem for token
-        redeemRewardToken(msg.sender, rewardBalance, opportunity());
+        if (rewardBalance > 0) {
+            // redeem for token
+            redeemRewardToken(msg.sender, rewardBalance, opportunity());
+        }
 
         // emit disable event
         emit TrueRewardDisabled(msg.sender);
-        // emit Transfer(msg.sender, address(0), ztusd);
+        // emit Transfer(msg.sender, address(0), zTrueCurrency);
     }
 
     /**
      * @dev mint function for TrueRewardBackedToken
-     * Mints TrueUSD backed by debt
+     * Mints TrueCurrency backed by debt
      * When we add multiple opportunities, this needs to work for mutliple interfaces
      */
     function mint(address _to, uint256 _value) public onlyOwner {
-        super.mint(_to, _value);
+        // check if to address is enabled
         bool toEnabled = trueRewardEnabled(_to);
+
+        // if to enabled, mint to this contract and deposit into finOp
         if (toEnabled) {
-            mintRewardToken(_to, _value, opportunity());
-            emit Transfer(address(0), _to, _value);
+            // mint to this contract
+            super.mint(address(this), _value);
+            // transfer minted amount to target receiver
+            _transferAllArgs(address(this), _to, _value);
+        }
+        // otherwise call normal mint process
+        else {
+            super.mint(_to, _value);
         }
     }
 
@@ -2150,19 +2168,27 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     }
 
     /**
-     * @dev Get opportunity financial opportunity address
-     * @return address opportunity financial opportunity address
+     * @dev Get (assured) financial opportunity address
+     * @return address financial opportunity address
      */
     function opportunity() public view returns (address) {
         return opportunity_;
     }
 
     /**
-     * @dev Get total supply of opportunity rewardTokens
-     * @return total supply of opportunity rewardTokens
+     * @dev Get total supply of opportunity rewardToken
+     * @return total supply of opportunity rewardToken
      */
-    function opportunitySupply() internal view returns (uint256) {
+    function opportunityRewardSupply() internal view returns (uint256) {
         return rewardTokenSupply(opportunity());
+    }
+
+    /**
+     * @dev Get total supply of TrueCurrency in opportunity
+     * @return total supply of TrueCurrency in opportunity
+     */
+    function opportunityTotalSupply() internal view returns (uint256) {
+        return _toToken(opportunityRewardSupply(), opportunity());
     }
 
     /**
@@ -2172,11 +2198,11 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      *
      * There are 6 transfer cases
      *  1. Both sender and receiver are disabled (see _transferAllArgs)
-     *  2. Sender enabled, receiver disabled, value < reserve TUSD balance
-     *  3. Sender disabled, receiver enabled, value < reserve rewardToken balance (in TUSD)
+     *  2. Sender enabled, receiver disabled, value < reserve TrueCurrency balance
+     *  3. Sender disabled, receiver enabled, value < reserve rewardToken balance (in TrueCurrency)
      *  4. Both sender and receiver are enabled
-     *  5. Sender enabled, receiver disabled, value > reserve TUSD balance
-     *  6. Sender disabled, receiver enabled, value > reserve rewardToken balance (in TUSD)
+     *  5. Sender enabled, receiver disabled, value > reserve TrueCurrency balance
+     *  6. Sender disabled, receiver enabled, value > reserve rewardToken balance (in TrueCurrency)
      *
      * @param _from account to transfer from
      * @param _to account to transfer to
@@ -2198,7 +2224,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // calculate rewardToken balance
         uint rewardAmount = _toRewardToken(_value, finOp);
 
-        // 2. Sender enabled, receiver disabled, value < reserve TUSD balance
+        // 2. Sender enabled, receiver disabled, value < reserve TrueCurrency balance
         // Swap rewardToken for Token through reserve
         if (fromEnabled && !toEnabled && _value <= reserveBalance()) {
             swapRewardForToken(_from, _to, _value, finOp);
@@ -2214,7 +2240,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
             _subRewardBalance(_from, rewardAmount, finOp);
             _addRewardBalance(_to, rewardAmount, finOp);
         }
-        // 5. Sender enabled, receiver disabled, value > reserve TUSD balance
+        // 5. Sender enabled, receiver disabled, value > reserve TrueCurrency balance
         // Recalculate value based on redeem value returned and give value to receiver
         else if (fromEnabled && !toEnabled) {
             _getFinOp(finOp).redeem(_to, rewardAmount);
@@ -2229,7 +2255,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // Transfer Token value between accounts and mint reward token for receiver
         else if (!fromEnabled && toEnabled) {
             // deposit into finOp
-            approve(finOp, _value);
+            _approveAllArgs(finOp, _value, _from);
             uint256 depositedAmount = _getFinOp(finOp).deposit(_from, _value);
 
             // increase finOp rewardToken supply
@@ -2246,7 +2272,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      */
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         // 1. Both sender and receiver are disabled
-        // Exchange is in TUSD -> call the normal transfer function
+        // Exchange is in TrueCurrency -> call the normal transfer function
         if (!trueRewardEnabled(_from) && !trueRewardEnabled(_to)) {
             // sender not enabled receiver not enabled
             super._transferAllArgs(_from, _to, _value);
@@ -2633,6 +2659,7 @@ pragma solidity ^0.5.13;
 
 interface ILendingPoolCore {
   function getReserveNormalizedIncome(address _reserve) external view returns (uint256);
+  function transferToReserve(address _reserve, address payable _user, uint256 _amount) external;
 }
 
 // File: contracts/TrueReward/AaveFinancialOpportunity.sol
@@ -2649,9 +2676,21 @@ pragma solidity ^0.5.13;
 
 /**
  * @title AaveFinancialOpportunity
- * @dev Financial Opportunity to earn TrueUSD with Aave.
- * aToken = aTUSD on Aave
- * We assume tokenValue always increases
+ * @dev Financial Opportunity to earn TrueUSD with Aave
+ *
+ * -- Overview --
+ * This contract acts as an intermediary between TrueUSD and Aave
+ * Tokens are pooled here and balances are kept track in TrueUSD
+ * This contract is deployed behind a proxy and is owned by TrueUSD
+ *
+ * -- yTUSD and aTokens
+ * yTUSD represents a fixed share in the financial opportunity pool
+ * aTokens are Aave tokens and increase in quantity as interest is earned
+ *
+ * -- tokenValue --
+ * tokenValue is the value of 1 yTUSD
+ * tokenValue is caluclated using reverseNormalizedIncome
+ * We assume tokenValue never decreases
  */
 contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable {
     using SafeMath for uint256;
@@ -2665,6 +2704,9 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     /** TrueUSD */
     TrueUSD public token;
 
+    /** total number of yTokens issed **/
+    uint256 _totalSupply;
+
     modifier onlyProxyOwner() {
         require(msg.sender == proxyOwner(), "only proxy owner");
         _;
@@ -2672,9 +2714,10 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
 
     /**
      * @dev Set up Aave Opportunity
+     * Called by TrueUSD
      */
     function configure(
-        IAToken _aToken,        // aToken
+        IAToken _aToken,            // aToken
         ILendingPool _lendingPool,  // lendingPool interface
         TrueUSD _token,             // TrueUSD
         address _owner              // owner
@@ -2689,13 +2732,16 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
         owner = _owner;
     }
 
+    /**
+     * @dev get proxy owner
+     */
     function proxyOwner() public view returns(address) {
         return OwnedUpgradeabilityProxy(address(this)).proxyOwner();
     }
 
     /**
-     * Exchange rate between TUSD and zTUSD
-     * @return TUSD / zTUSD price ratio (18 decimals of percision)
+     * Exchange rate between TUSD and yTUSD
+     * @return TUSD / yTUSD price ratio (18 decimals of percision)
      */
     function tokenValue() public view returns(uint256) {
         ILendingPoolCore core = ILendingPoolCore(lendingPool.core());
@@ -2703,43 +2749,82 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     }
 
     /**
-     * Returns full balance of opportunity
-     * @return TUSD balance of opportunity
+     * @dev get yTUSD issued by this opportunity
+     * @return total yTUSD supply
     **/
     function totalSupply() public view returns(uint256) {
+        return _totalSupply;
+    }
+
+    /**
+     * @dev get aToken balance of this contract
+     * @return aToken balance of this contract
+     */
+    function aTokenBalance() public view returns(uint256) {
         return aToken.balanceOf(address(this));
     }
 
-    /** @dev Return value of stake in yTUSD */
+    /**
+     * @dev get TUSD balance of this contract
+     * @return TUSD balance of this contract
+     */
+    function tusdBalance() public view returns(uint256) {
+        return token.balanceOf(address(this));
+    }
+
+    /**
+     * @dev Return value of stake in yTUSD
+     */
     function getValueInStake(uint256 _amount) public view returns(uint256) {
         return _amount.mul(10**18).div(tokenValue());
     }
 
     /**
     * @dev deposits TrueUSD into AAVE using transferFrom
-    * @param _from account to transferFrom
-    * @param _amount amount in TUSD to deposit to AAVE
+    * @param from account to transferFrom TUSD
+    * @param amount amount in TUSD to deposit to AAVE
     * @return yTUSD minted from this deposit
     */
-    function deposit(address _from, uint256 _amount) external onlyOwner returns(uint256) {
-        require(token.transferFrom(_from, address(this), _amount), "transfer from failed");
-        require(token.approve(address(lendingPool.core()), _amount), "approve failed");
+    function deposit(address from, uint256 amount) external onlyOwner returns(uint256) {
+        require(token.transferFrom(from, address(this), amount), "transfer from failed");
+        require(token.approve(address(lendingPool.core()), amount), "approve failed");
 
-        uint256 balanceBefore = totalSupply();
-        lendingPool.deposit(address(token), _amount, 0);
-        uint256 balanceAfter = totalSupply();
+        // calculate balance before, deposit, calculate balance after
+        uint256 balanceBefore = aTokenBalance();
+        lendingPool.deposit(address(token), amount, 0);
+        uint256 balanceAfter = aTokenBalance();
 
-        return getValueInStake(balanceAfter.sub(balanceBefore));
+        uint256 yTUSDAmount = getValueInStake(balanceAfter.sub(balanceBefore));
+
+        // increase yTUSD supply
+        _totalSupply = _totalSupply.add(yTUSDAmount);
+
+        // return value in yTUSD created from this deposit
+        return yTUSDAmount;
     }
 
-    /** @dev Helper to withdraw TUSD from Aave */
-    function _redeem(address _to, uint256 ytusd) internal returns(uint256) {
-        uint tusd = ytusd.mul(tokenValue()).div(10**18);
-        uint256 balanceBefore = token.balanceOf(address(this));
-        aToken.redeem(tusd);
-        uint256 balanceAfter = token.balanceOf(address(this));
+    /**
+     * @dev Helper to withdraw TUSD from Aave
+     * aToken redemption amount is equal to yTUSD * tokenValue
+     * @param _to address to transfer TUSD to
+     * @param _amount amount in yTUSD to redeem
+     */
+    function _redeem(address _to, uint256 _amount) internal returns(uint256) {
+        // calculate amount in TUSD
+        uint tusdAmount = _amount.mul(tokenValue()).div(10**18);
+
+        // get balance before, redeem, get balance after
+        uint256 balanceBefore = tusdBalance();
+        aToken.redeem(tusdAmount);
+        uint256 balanceAfter = tusdBalance();
+
+        // calculate TUSD withdrawn
         uint256 fundsWithdrawn = balanceAfter.sub(balanceBefore);
 
+        // sub yTUSD supply
+        _totalSupply = _totalSupply.sub(_amount);
+
+        // transfer to recipient and return amount withdrawn
         require(token.transfer(_to, fundsWithdrawn), "transfer failed");
 
         return fundsWithdrawn;
@@ -2747,21 +2832,21 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
 
     /**
      * @dev Withdraw from Aave to _to account
-     * @param _to account withdarw TUSD to
-     * @param _amount amount in TUSD to withdraw from AAVE
-     * @return TUSD amount redeemed
+     * @param to account withdarw TUSD to
+     * @param amount amount of yTUSD to redeem
+     * @return TUSD amount returned from redeem
      */
-    function redeem(address _to, uint256 _amount) external onlyOwner returns(uint256) {
-        return _redeem(_to, _amount);
+    function redeem(address to, uint256 amount) external onlyOwner returns(uint256) {
+        return _redeem(to, amount);
     }
 
     /**
-     * @dev Withdraws all TUSD from AAVE
-     * @param _to account withdarw TUSD to
-     * @return zTUSD amount deducted
+     * @dev Redeem all yTUSD Withdraws all TUSD from AAVE
+     * @param to account withdarw TUSD to
+     * @return TUSD amount returned from redeem
      */
-    function redeemAll(address _to) external onlyOwner returns(uint256) {
-        return _redeem(_to, totalSupply());
+    function redeemAll(address to) external onlyOwner returns(uint256) {
+        return _redeem(to, totalSupply());
     }
 
     function() external payable {
