@@ -250,7 +250,7 @@ contract Registry {
 
 // File: contracts/TrueCurrencies/modularERC20/InstantiatableOwnable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -295,7 +295,7 @@ contract InstantiatableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/Claimable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -494,7 +494,7 @@ library SafeMath {
 
 // File: contracts/TrueCurrencies/modularERC20/BalanceSheet.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -519,7 +519,7 @@ contract BalanceSheet is Claimable {
 
 // File: contracts/TrueCurrencies/modularERC20/AllowanceSheet.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -544,7 +544,7 @@ contract AllowanceSheet is Claimable {
 
 // File: contracts/TrueReward/FinancialOpportunity.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /**
  * @title FinancialOpportunity
@@ -624,7 +624,7 @@ interface FinancialOpportunity {
 
 // File: contracts/TrueCurrencies/ProxyStorage.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -697,7 +697,7 @@ contract ProxyStorage {
 
 // File: contracts/TrueCurrencies/HasOwner.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -758,7 +758,7 @@ contract HasOwner is ProxyStorage {
 
 // File: contracts/TrueCurrencies/utilities/PausedToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -1050,7 +1050,7 @@ contract PausedDelegateERC20 is PausedToken {
 
 // File: contracts/TrueCurrencies/utilities/PausedCurrencies.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 contract PausedTrueUSD is PausedDelegateERC20 {

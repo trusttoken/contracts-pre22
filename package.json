@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@trusttoken/registry": "0.1.2",
-    "@trusttoken/trusttokens": "0.1.8",
+    "@trusttoken/trusttokens": "0.1.10",
     "ethers": "^4.0.46",
     "ganache-cli": "6.8.1",
     "ganache-time-traveler": "^1.0.14",

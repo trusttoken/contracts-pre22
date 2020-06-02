@@ -1,16 +1,40 @@
 import { Wallet, ethers, ContractFactory } from 'ethers'
 import { deployContract } from 'ethereum-waffle'
 import fs from 'fs'
+import readline from 'readline'
+
+export const txnArgs = { gasLimit: 5_000_000, gasPrice: 21_000_000_000 }
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export const getContractJSON = (contractName: string) => require(`../build/${contractName}.json`)
 
+const confirmDeploy = async (contractName: string) => {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
+
+  return new Promise<boolean>(resolve => {
+    rl.question(`Deploy ${contractName}? (Y/n) `, (answer) => {
+      rl.close()
+      if (['n', 'no'].includes(answer.toLowerCase())) {
+        resolve(false)
+      } else {
+        resolve(true)
+      }
+    })
+  })
+}
+
 export const setupDeployer = (wallet: Wallet) => async (contractName: string, ...args) => {
   const contractJson = getContractJSON(contractName)
-  const contract = await deployContract(wallet, contractJson, args, { gasLimit: 5004588 })
-
-  console.log(`${contractName} address: ${contract.address}`)
-  return contract
+  if (await confirmDeploy(contractName)) {
+    const contract = await deployContract(wallet, contractJson, args, txnArgs)
+    console.log(`${contractName} address: ${contract.address}`)
+    return contract
+  } else {
+    process.exit(0)
+  }
 }
 
 export const deployBehindCustomProxy = (proxyName: string) => async (wallet: Wallet, contractName: string, ...args) => {
