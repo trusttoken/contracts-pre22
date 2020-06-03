@@ -587,7 +587,7 @@ contract('TokenController', function (accounts) {
 
     describe('requestReclaimEther', function () {
       it('reclaims ether', async function () {
-        const forceEther = await ForceEther.new({ from: oneHundred, value: '10000000000000000000' })
+        const forceEther = await ForceEther.new({ from: oneHundred, value: '1000000000000000000' })
         await forceEther.destroyAndSend(this.token.address)
         const balance1 = BN(await web3.eth.getBalance(owner))
         await this.controller.requestReclaimEther({ from: owner })
@@ -596,13 +596,13 @@ contract('TokenController', function (accounts) {
       })
 
       it('cannot be called by non-owner', async function () {
-        const forceEther = await ForceEther.new({ from: oneHundred, value: '10000000000000000000' })
+        const forceEther = await ForceEther.new({ from: oneHundred, value: '1000000000000000000' })
         await forceEther.destroyAndSend(this.token.address)
         await assertRevert(this.controller.requestReclaimEther({ from: otherAddress }))
       })
 
       it('can reclaim ether in the controller contract address', async function () {
-        const forceEther = await ForceEther.new({ from: oneHundred, value: '10000000000000000000' })
+        const forceEther = await ForceEther.new({ from: oneHundred, value: '1000000000000000000' })
         await forceEther.destroyAndSend(this.controller.address)
         const balance1 = BN(await web3.eth.getBalance(owner))
         await this.controller.reclaimEther(owner, { from: owner })
