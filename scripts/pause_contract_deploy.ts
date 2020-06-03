@@ -10,7 +10,7 @@ async function deployPause () {
   const wallet = new ethers.Wallet(process.argv[2], provider)
 
   const pausedTokenContract = await (await new PausedTrueUsdFactory(wallet).deploy(txnArgs)).deployed()
-  console.log("PausedToken at: ", pausedTokenContract.address)
+  console.log('PausedToken at: ', pausedTokenContract.address)
 }
 
 deployPause().catch(console.error)
