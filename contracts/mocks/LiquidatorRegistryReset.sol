@@ -4,8 +4,7 @@ import "@trusttoken/trusttokens/contracts/Liquidator.sol";
 
 contract LiquidatorRegistryReset is Liquidator {
 
-    function setRegistry(address registryAddress) external onlyOwner {
-        require(registryAddress != address(0), "registry cannot be address(0)");
-        registry_ = Registry(registryAddress);
+    function setRegistry() external {
+        registry_ = Registry(0x0000000000013949F288172bD7E36837bDdC7211);
     }
 }
