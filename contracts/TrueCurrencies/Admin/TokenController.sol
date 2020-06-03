@@ -69,7 +69,7 @@ contract TokenController {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    TrueRewardBackedToken public token;
+    TrueUSD public token;
     Registry public registry;
     address public fastPause;
     address public trueRewardManager;
