@@ -18,4 +18,10 @@ contract TokenControllerMock is TokenController {
             pausedImplementation
         );
     }
+
+    function initialize() external {
+        require(!initialized, "already initialized");
+        owner = msg.sender;
+        initialized = true;
+    }
 }

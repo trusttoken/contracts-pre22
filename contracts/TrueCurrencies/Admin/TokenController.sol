@@ -149,12 +149,6 @@ contract TokenController {
     ========================================
     */
 
-    function initialize() external {
-        require(!initialized, "already initialized");
-        owner = msg.sender;
-        initialized = true;
-    }
-
     /**
     * @dev Throws if called by any account other than the owner.
     */
