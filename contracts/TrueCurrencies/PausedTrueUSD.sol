@@ -1,6 +1,6 @@
 pragma solidity 0.5.13;
 
-import "./PausedToken.sol";
+import "./utilities/PausedToken.sol";
 
 contract PausedTrueUSD is PausedDelegateERC20 {
     function name() public pure returns (string memory) {
