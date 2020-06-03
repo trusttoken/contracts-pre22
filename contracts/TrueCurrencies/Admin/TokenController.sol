@@ -80,7 +80,7 @@ contract TokenController {
 
     // paused version of TrueUSD in Production
     // pausing the contract upgrades the proxy to this implementation
-    address constant public PAUSED_IMPLEMENTATION = address(0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291);
+    address constant public PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
 
     modifier onlyFastPauseOrOwner() {
         require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
