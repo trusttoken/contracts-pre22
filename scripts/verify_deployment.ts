@@ -3,12 +3,13 @@
  *
  * ts-node scripts/verify_deployment.ts "{network}" "{owner_address}"
  */
-import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
-import { Contract, providers } from 'ethers'
-import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
-import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
+import { providers } from 'ethers'
 import { Provider } from 'ethers/providers'
+import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
+import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
+import { ProvisionalRegistryImplementation } from '../build/types/ProvisionalRegistryImplementation';
 import { ProvisionalRegistryImplementationFactory } from '../build/types/ProvisionalRegistryImplementationFactory'
+import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
 import { RegistryAttributes } from './attributes'
 
 const comp = (expected: string, actual: string, topic: string) => {
@@ -22,14 +23,28 @@ Actual: ${actual}`,
   }
 }
 
-async function isSubscriber (provider: Provider, registry: Contract, attribute: string, subscriber: string) {
-  const topics = registry.filters.StartSubscription(attribute, subscriber).topics
-  const logs = await provider.getLogs({
-    fromBlock: 1,
-    topics,
-    address: registry.address,
-  })
-  return !!logs[0]
+async function isSubscriber (provider: Provider, registry: ProvisionalRegistryImplementation, attribute: string, subscriber: string) {
+  const startTopics = registry.filters.StartSubscription(attribute, subscriber).topics
+  const stopTopics = registry.filters.StopSubscription(attribute, subscriber).topics
+  async function startLogs() {
+    return provider.getLogs({
+      fromBlock: 1,
+      topics: startTopics,
+      address: registry.address
+    })
+  }
+  async function stopLogs() {
+    return provider.getLogs({
+      fromBlock: 1,
+      topics: stopTopics,
+      address: registry.address
+    })
+  }
+  const starts = await startLogs()
+  const stops = await stopLogs()
+  const all = [...starts, ...stops]
+  const allSorted = all.sort((lhs, rhs) => lhs.blockNumber - rhs.blockNumber)
+  return allSorted[allSorted.length - 1].topics[0] === startTopics[0]
 }
 
 interface DeployResult {
@@ -99,6 +114,7 @@ interface DeployResult {
       console.log(`${contract} subscription to ${attribute.name}: ✅`)
     } else {
       console.log(`${contract} subscription to ${attribute.name}: ❌`)
+      console.log(`Attribute: ${attribute.hex}`)
     }
   }
 
