@@ -1,7 +1,7 @@
 pragma solidity 0.5.13;
 
 import { Registry } from "@trusttoken/registry/contracts/Registry.sol";
-import { TrueUSD } from "../TrueCurrencies/TrueUSD.sol";
+import { TrueUSDMock as TrueUSD } from "../TrueCurrencies/mocks/TrueUSDMock.sol";
 import { ProvisionalRegistryImplementation } from "../mocks/RegistryImplementation.sol";
 import { OwnedUpgradeabilityProxy } from "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
 import { TokenFaucet } from "../TrueCurrencies/utilities/TokenFaucet.sol";
