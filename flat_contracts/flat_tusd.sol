@@ -2053,7 +2053,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @return supply of debt backed TrueCurrency
      */
     function debtBackedSupply() public view returns (uint256) {
-        return totalSupply() - totalSupply_;
+        return totalSupply().sub(totalSupply_);
     }
 
     /**
@@ -2180,6 +2180,9 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @return total supply of opportunity rewardToken
      */
     function opportunityRewardSupply() internal view returns (uint256) {
+        if (opportunity() == address(0)) {
+            return 0;
+        }
         return rewardTokenSupply(opportunity());
     }
 

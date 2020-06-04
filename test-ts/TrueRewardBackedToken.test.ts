@@ -62,59 +62,91 @@ describe('TrueRewardBackedToken', () => {
         token.address,
         token.address,
       )
-      await token.setOpportunityAddress(financialOpportunity.address)
-
-      await registry.setAttributeValue(owner.address, WHITELIST_TRUEREWARD, 1)
-      await registry.setAttributeValue(holder.address, WHITELIST_TRUEREWARD, 1)
-      await registry.setAttributeValue(holder2.address, WHITELIST_TRUEREWARD, 1)
-      await registry.setAttributeValue(sender.address, WHITELIST_TRUEREWARD, 1)
-      await registry.setAttributeValue(recipient.address, WHITELIST_TRUEREWARD, 1)
     })
 
-    it('total supply', async () => {
-      expect(await token.totalSupply()).to.equal(parseEther('1200'))
-      expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
-      expect(await token.debtBackedSupply()).to.equal(parseEther('0'))
+    describe('Before opportunity address set & no whitelisted', () => {
+      it('total supply', async () => {
+        expect(await token.totalSupply()).to.equal(parseEther('1200'))
+        expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
+        expect(await token.debtBackedSupply()).to.equal(parseEther('0'))
+      })
+      it('balanceOf', async () => {
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+        expect(await token.balanceOf(holder2.address)).to.equal(parseEther('0'))
+      })
+      it('trueRewardEnabled false for accounts with balance', async () => {
+        expect(await token.trueRewardEnabled(holder2.address)).to.be.false
+        await expect(token.connect(holder2).enableTrueReward()).to.be.revertedWith(
+          'must be whitelisted to enable TrueRewards')
+        expect(await token.trueRewardEnabled(holder2.address)).to.be.false
+      })
+      it('transfers working', async () => {
+        await token.connect(holder).transfer(holder2.address, parseEther('100'))
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('0'))
+        expect(await token.balanceOf(holder2.address)).to.equal(parseEther('100'))
+
+        await token.connect(holder2).transfer(holder.address, parseEther('100'))
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+        expect(await token.balanceOf(holder2.address)).to.equal(parseEther('0'))
+      })
     })
 
-    it('holder enables trueReward with 0 balance', async () => {
-      expect(await token.trueRewardEnabled(holder2.address)).to.be.false
+    describe('After opportunity address set', () => {
+      beforeEach(async () => {
+        // set opportuniy
+        await token.setOpportunityAddress(financialOpportunity.address)
+        await registry.setAttributeValue(owner.address, WHITELIST_TRUEREWARD, 1)
+        await registry.setAttributeValue(holder.address, WHITELIST_TRUEREWARD, 1)
+        await registry.setAttributeValue(holder2.address, WHITELIST_TRUEREWARD, 1)
+        await registry.setAttributeValue(sender.address, WHITELIST_TRUEREWARD, 1)
+        await registry.setAttributeValue(recipient.address, WHITELIST_TRUEREWARD, 1)
+      })
 
-      await token.connect(holder2).enableTrueReward()
-      expect(await token.trueRewardEnabled(holder2.address)).to.be.true
-    })
+      it('total supply', async () => {
+        expect(await token.totalSupply()).to.equal(parseEther('1200'))
+        expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
+        expect(await token.debtBackedSupply()).to.equal(parseEther('0'))
+      })
 
-    it('holder enables trueReward with 100 balance', async () => {
-      await token.connect(holder).enableTrueReward()
-      expect(await token.trueRewardEnabled(holder.address)).to.be.true
-      expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(parseEther('100'))
-      expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('100'))
-      expect(await token.totalSupply()).to.equal(parseEther('1300'))
-      expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
-      expect(await token.debtBackedSupply()).to.equal(parseEther('100'))
-      expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
-    })
+      it('holder enables trueReward with 0 balance', async () => {
+        expect(await token.trueRewardEnabled(holder2.address)).to.be.false
 
-    it('holder disables trueReward', async () => {
-      expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
-      await expect(token.connect(holder).enableTrueReward()).to.emit(financialOpportunity, 'Deposit').withArgs(holder.address, parseEther('100'), parseEther('100'))
-      expect(await token.trueRewardEnabled(holder.address)).to.be.true
-      await expect(token.connect(holder).disableTrueReward()).to.emit(financialOpportunity, 'Redemption').withArgs(holder.address, parseEther('100'), parseEther('100'))
-      expect(await token.trueRewardEnabled(holder.address)).to.be.false
-      expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(0)
-      expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(0)
-      expect(await token.totalSupply()).to.equal(parseEther('1200'))
-      expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
-      expect(await token.debtBackedSupply()).to.equal(parseEther('0'))
-      expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
-    })
+        await token.connect(holder2).enableTrueReward()
+        expect(await token.trueRewardEnabled(holder2.address)).to.be.true
+      })
 
-    it('holder fails to enable trueReward when not whitelisted', async () => {
-      expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
+      it('holder enables trueReward with 100 balance', async () => {
+        await token.connect(holder).enableTrueReward()
+        expect(await token.trueRewardEnabled(holder.address)).to.be.true
+        expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(parseEther('100'))
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('100'))
+        expect(await token.totalSupply()).to.equal(parseEther('1300'))
+        expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
+        expect(await token.debtBackedSupply()).to.equal(parseEther('100'))
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+      })
 
-      await expect(token.connect(notWhitelisted).enableTrueReward()).to.be.revertedWith(
-        'must be whitelisted to enable TrueRewards')
-      expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
+      it('holder disables trueReward', async () => {
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+        await expect(token.connect(holder).enableTrueReward()).to.emit(financialOpportunity, 'Deposit').withArgs(holder.address, parseEther('100'), parseEther('100'))
+        expect(await token.trueRewardEnabled(holder.address)).to.be.true
+        await expect(token.connect(holder).disableTrueReward()).to.emit(financialOpportunity, 'Redemption').withArgs(holder.address, parseEther('100'), parseEther('100'))
+        expect(await token.trueRewardEnabled(holder.address)).to.be.false
+        expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(0)
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(0)
+        expect(await token.totalSupply()).to.equal(parseEther('1200'))
+        expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
+        expect(await token.debtBackedSupply()).to.equal(parseEther('0'))
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+      })
+
+      it('holder fails to enable trueReward when not whitelisted', async () => {
+        expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
+
+        await expect(token.connect(notWhitelisted).enableTrueReward()).to.be.revertedWith(
+          'must be whitelisted to enable TrueRewards')
+        expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
+      })
     })
   })
 
