@@ -64,20 +64,31 @@ describe('TrueRewardBackedToken', () => {
       )
       
     })
+
     describe('Before opportunity address set & no whitelisted', () => {
-      it('Total supply', async () => {
+      it('total supply', async () => {
         expect(await token.totalSupply()).to.equal(parseEther('1200'))
         expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
         expect(await token.debtBackedSupply()).to.equal(parseEther('0'))
       })
-      it('Balanceof correct', async () => {
-
+      it('balanceOf', async () => {
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+        expect(await token.balanceOf(holder2.address)).to.equal(parseEther('0'))
       })
-      it('TrueRewardEnabled false for accounts with balance', async () => {
-
+      it('trueRewardEnabled false for accounts with balance', async () => {
+        expect(await token.trueRewardEnabled(holder2.address)).to.be.false
+        await expect(token.connect(holder2).enableTrueReward()).to.be.revertedWith(
+          'must be whitelisted to enable TrueRewards')
+        expect(await token.trueRewardEnabled(holder2.address)).to.be.false
       })
-      it('Transfers working', async () => {
-        
+      it('transfers working', async () => {
+        await token.connect(holder).transfer(holder2.address, parseEther('100'))
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('0'))
+        expect(await token.balanceOf(holder2.address)).to.equal(parseEther('100'))
+
+        await token.connect(holder2).transfer(holder.address, parseEther('100'))
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+        expect(await token.balanceOf(holder2.address)).to.equal(parseEther('0'))
       })
     })
     
