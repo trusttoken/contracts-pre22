@@ -62,7 +62,6 @@ describe('TrueRewardBackedToken', () => {
         token.address,
         token.address,
       )
-      
     })
 
     describe('Before opportunity address set & no whitelisted', () => {
@@ -91,12 +90,11 @@ describe('TrueRewardBackedToken', () => {
         expect(await token.balanceOf(holder2.address)).to.equal(parseEther('0'))
       })
     })
-    
 
     describe('After opportunity address set', () => {
-        beforeEach(async() => {
+      beforeEach(async () => {
+        // set opportuniy
         await token.setOpportunityAddress(financialOpportunity.address)
-
         await registry.setAttributeValue(owner.address, WHITELIST_TRUEREWARD, 1)
         await registry.setAttributeValue(holder.address, WHITELIST_TRUEREWARD, 1)
         await registry.setAttributeValue(holder2.address, WHITELIST_TRUEREWARD, 1)
