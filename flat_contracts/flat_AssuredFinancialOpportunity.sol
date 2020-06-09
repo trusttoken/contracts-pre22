@@ -239,7 +239,7 @@ library SafeMath {
 
 // File: @trusttoken/trusttokens/contracts/ValSafeMath.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /**
  * Forked subset of Openzeppelin SafeMath allowing custom underflow/overflow messages
@@ -267,6 +267,44 @@ library ValSafeMath {
     }
 }
 
+// File: @trusttoken/trusttokens/contracts/ILiquidator.sol
+
+pragma solidity 0.5.13;
+
+
+/**
+ * @title Liquidator Interface
+ * @dev Liquidate stake token for reward token
+ */
+contract ILiquidator {
+
+    /** @dev Get output token (token to get from liquidation exchange). */
+    function outputToken() internal view returns (IERC20);
+
+    /** @dev Get stake token (token to be liquidated). */
+    function stakeToken() internal view returns (IERC20);
+
+    /** @dev Address of staking pool. */
+    function pool() internal view returns (address);
+
+    /**
+     * @dev Transfer stake without liquidation
+     */
+    function reclaimStake(address _destination, uint256 _stake) external;
+
+    /**
+     * @dev Award stake tokens to stakers
+     * Transfer to the pool without creating a staking position
+     * Allows us to reward as staking or reward token
+     */
+    function returnStake(address _from, uint256 balance) external;
+
+    /**
+     * @dev Sells stake for underlying asset and pays to destination.
+     */
+    function reclaim(address _destination, int256 _debt) external;
+}
+
 // File: @trusttoken/registry/contracts/Registry.sol
 
 pragma solidity ^0.5.13;
@@ -283,7 +321,7 @@ contract Registry {
         address adminAddr;
         uint256 timestamp;
     }
-
+    
     // never remove any storage variables
     address public owner;
     address public pendingOwner;
@@ -437,902 +475,16 @@ contract Registry {
     }
 }
 
-// File: wjm-airswap-transfers/contracts/interfaces/ITransferHandler.sol
-
-/*
-  Copyright 2020 Swap Holdings Ltd.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-*/
+// File: @trusttoken/trusttokens/contracts/ALiquidatorUniswap.sol
 
 pragma solidity 0.5.13;
 
-/**
-  * @title ITransferHandler: interface for token transfers
-  */
-interface ITransferHandler {
+//pragma experimental ABIEncoderV2;
 
- /**
-  * @notice Function to wrap token transfer for different token types
-  * @param from address Wallet address to transfer from
-  * @param to address Wallet address to transfer to
-  * @param amount uint256 Amount for ERC-20
-  * @param id token ID for ERC-721
-  * @param token address Contract address of token
-  * @return bool on success of the token transfer
-  */
-  function transferTokens(
-    address from,
-    address to,
-    uint256 amount,
-    uint256 id,
-    address token
-  ) external returns (bool);
-}
 
-// File: openzeppelin-solidity/contracts/GSN/Context.sol
 
-pragma solidity ^0.5.0;
 
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-contract Context {
-    // Empty internal constructor, to prevent people from mistakenly deploying
-    // an instance of this contract, which should be used via inheritance.
-    constructor () internal { }
-    // solhint-disable-previous-line no-empty-blocks
 
-    function _msgSender() internal view returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-}
-
-// File: openzeppelin-solidity/contracts/ownership/Ownable.sol
-
-pragma solidity ^0.5.0;
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-contract Ownable is Context {
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor () internal {
-        _owner = _msgSender();
-        emit OwnershipTransferred(address(0), _owner);
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(isOwner(), "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Returns true if the caller is the current owner.
-     */
-    function isOwner() public view returns (bool) {
-        return _msgSender() == _owner;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public onlyOwner {
-        _transferOwnership(newOwner);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     */
-    function _transferOwnership(address newOwner) internal {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
-    }
-}
-
-// File: wjm-airswap-transfers/contracts/TransferHandlerRegistry.sol
-
-/*
-  Copyright 2020 Swap Holdings Ltd.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-*/
-
-pragma solidity 0.5.13;
-
-
-
-
-/**
-  * @title TransferHandlerRegistry: holds registry of contract to
-  * facilitate token transfers
-  */
-contract TransferHandlerRegistry is Ownable {
-
-  event AddTransferHandler(
-    bytes4 kind,
-    address contractAddress
-  );
-
-  // Mapping of bytes4 to contract interface type
-  mapping (bytes4 => ITransferHandler) public transferHandlers;
-
-  /**
-  * @notice Adds handler to mapping
-  * @param kind bytes4 Key value that defines a token type
-  * @param transferHandler ITransferHandler
-  */
-  function addTransferHandler(bytes4 kind, ITransferHandler transferHandler)
-    external onlyOwner {
-      require(address(transferHandlers[kind]) == address(0), "HANDLER_EXISTS_FOR_KIND");
-      transferHandlers[kind] = transferHandler;
-      emit AddTransferHandler(kind, address(transferHandler));
-    }
-}
-
-// File: wjm-airswap-types/contracts/Types.sol
-
-/*
-  Copyright 2020 Swap Holdings Ltd.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-*/
-
-pragma solidity 0.5.13;
-pragma experimental ABIEncoderV2;
-
-/**
-  * @title Types: Library of Swap Protocol Types and Hashes
-  */
-library Types {
-
-  bytes constant internal EIP191_HEADER = "\x19\x01";
-
-  struct Order {
-    uint256 nonce;                // Unique per order and should be sequential
-    uint256 expiry;               // Expiry in seconds since 1 January 1970
-    Party signer;                 // Party to the trade that sets terms
-    Party sender;                 // Party to the trade that accepts terms
-    Party affiliate;              // Party compensated for facilitating (optional)
-    Signature signature;          // Signature of the order
-  }
-
-  struct Party {
-    bytes4 kind;                  // Interface ID of the token
-    address wallet;               // Wallet address of the party
-    address token;                // Contract address of the token
-    uint256 amount;               // Amount for ERC-20 or ERC-1155
-    uint256 id;                   // ID for ERC-721 or ERC-1155
-  }
-
-  struct Signature {
-    address signatory;            // Address of the wallet used to sign
-    address validator;            // Address of the intended swap contract
-    bytes1 version;               // EIP-191 signature version
-    uint8 v;                      // `v` value of an ECDSA signature
-    bytes32 r;                    // `r` value of an ECDSA signature
-    bytes32 s;                    // `s` value of an ECDSA signature
-  }
-
-  bytes32 constant internal DOMAIN_TYPEHASH = keccak256(abi.encodePacked(
-    "EIP712Domain(",
-    "string name,",
-    "string version,",
-    "address verifyingContract",
-    ")"
-  ));
-
-  bytes32 constant internal ORDER_TYPEHASH = keccak256(abi.encodePacked(
-    "Order(",
-    "uint256 nonce,",
-    "uint256 expiry,",
-    "Party signer,",
-    "Party sender,",
-    "Party affiliate",
-    ")",
-    "Party(",
-    "bytes4 kind,",
-    "address wallet,",
-    "address token,",
-    "uint256 amount,",
-    "uint256 id",
-    ")"
-  ));
-
-  bytes32 constant internal PARTY_TYPEHASH = keccak256(abi.encodePacked(
-    "Party(",
-    "bytes4 kind,",
-    "address wallet,",
-    "address token,",
-    "uint256 amount,",
-    "uint256 id",
-    ")"
-  ));
-
-  /**
-    * @notice Hash an order into bytes32
-    * @dev EIP-191 header and domain separator included
-    * @param order Order The order to be hashed
-    * @param domainSeparator bytes32
-    * @return bytes32 A keccak256 abi.encodePacked value
-    */
-  function hashOrder(
-    Order calldata order,
-    bytes32 domainSeparator
-  ) external pure returns (bytes32) {
-    return keccak256(abi.encodePacked(
-      EIP191_HEADER,
-      domainSeparator,
-      keccak256(abi.encode(
-        ORDER_TYPEHASH,
-        order.nonce,
-        order.expiry,
-        keccak256(abi.encode(
-          PARTY_TYPEHASH,
-          order.signer.kind,
-          order.signer.wallet,
-          order.signer.token,
-          order.signer.amount,
-          order.signer.id
-        )),
-        keccak256(abi.encode(
-          PARTY_TYPEHASH,
-          order.sender.kind,
-          order.sender.wallet,
-          order.sender.token,
-          order.sender.amount,
-          order.sender.id
-        )),
-        keccak256(abi.encode(
-          PARTY_TYPEHASH,
-          order.affiliate.kind,
-          order.affiliate.wallet,
-          order.affiliate.token,
-          order.affiliate.amount,
-          order.affiliate.id
-        ))
-      ))
-    ));
-  }
-
-  /**
-    * @notice Hash domain parameters into bytes32
-    * @dev Used for signature validation (EIP-712)
-    * @param name bytes
-    * @param version bytes
-    * @param verifyingContract address
-    * @return bytes32 returns a keccak256 abi.encodePacked value
-    */
-  function hashDomain(
-    bytes calldata name,
-    bytes calldata version,
-    address verifyingContract
-  ) external pure returns (bytes32) {
-    return keccak256(abi.encode(
-      DOMAIN_TYPEHASH,
-      keccak256(name),
-      keccak256(version),
-      verifyingContract
-    ));
-  }
-}
-
-// File: wjm-airswap-swap/contracts/interfaces/ISwap.sol
-
-/*
-  Copyright 2020 Swap Holdings Ltd.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-*/
-
-pragma solidity 0.5.13;
-pragma experimental ABIEncoderV2;
-
-
-interface ISwap {
-
-  event Swap(
-    uint256 indexed nonce,
-    uint256 timestamp,
-    address indexed signerWallet,
-    uint256 signerAmount,
-    uint256 signerId,
-    address signerToken,
-    address indexed senderWallet,
-    uint256 senderAmount,
-    uint256 senderId,
-    address senderToken,
-    address affiliateWallet,
-    uint256 affiliateAmount,
-    uint256 affiliateId,
-    address affiliateToken
-  );
-
-  event Cancel(
-    uint256 indexed nonce,
-    address indexed signerWallet
-  );
-
-  event CancelUpTo(
-    uint256 indexed nonce,
-    address indexed signerWallet
-  );
-
-  event AuthorizeSender(
-    address indexed authorizerAddress,
-    address indexed authorizedSender
-  );
-
-  event AuthorizeSigner(
-    address indexed authorizerAddress,
-    address indexed authorizedSigner
-  );
-
-  event RevokeSender(
-    address indexed authorizerAddress,
-    address indexed revokedSender
-  );
-
-  event RevokeSigner(
-    address indexed authorizerAddress,
-    address indexed revokedSigner
-  );
-
-  /**
-    * @notice Atomic Token Swap
-    * @param order Types.Order
-    */
-  function swap(
-    Types.Order calldata order
-  ) external;
-
-  /**
-    * @notice Cancel one or more open orders by nonce
-    * @param nonces uint256[]
-    */
-  function cancel(
-    uint256[] calldata nonces
-  ) external;
-
-  /**
-    * @notice Cancels all orders below a nonce value
-    * @dev These orders can be made active by reducing the minimum nonce
-    * @param minimumNonce uint256
-    */
-  function cancelUpTo(
-    uint256 minimumNonce
-  ) external;
-
-  /**
-    * @notice Authorize a delegated sender
-    * @param authorizedSender address
-    */
-  function authorizeSender(
-    address authorizedSender
-  ) external;
-
-  /**
-    * @notice Authorize a delegated signer
-    * @param authorizedSigner address
-    */
-  function authorizeSigner(
-    address authorizedSigner
-  ) external;
-
-
-  /**
-    * @notice Revoke an authorization
-    * @param authorizedSender address
-    */
-  function revokeSender(
-    address authorizedSender
-  ) external;
-
-  /**
-    * @notice Revoke an authorization
-    * @param authorizedSigner address
-    */
-  function revokeSigner(
-    address authorizedSigner
-  ) external;
-
-  function senderAuthorizations(address, address) external view returns (bool);
-  function signerAuthorizations(address, address) external view returns (bool);
-
-  function signerNonceStatus(address, uint256) external view returns (byte);
-  function signerMinimumNonce(address) external view returns (uint256);
-
-}
-
-// File: wjm-airswap-swap/contracts/Swap.sol
-
-/*
-  Copyright 2020 Swap Holdings Ltd.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-*/
-
-pragma solidity 0.5.13;
-pragma experimental ABIEncoderV2;
-
-
-
-
-/**
-  * @title Swap: The Atomic Swap used on the AirSwap Network
-  */
-contract Swap is ISwap {
-
-  // Domain and version for use in signatures (EIP-712)
-  bytes constant internal DOMAIN_NAME = "SWAP";
-  bytes constant internal DOMAIN_VERSION = "2";
-
-  // Unique domain identifier for use in signatures (EIP-712)
-  bytes32 private _domainSeparator;
-
-  // Possible nonce statuses
-  byte constant internal AVAILABLE = 0x00;
-  byte constant internal UNAVAILABLE = 0x01;
-
-  // ERC-721 (non-fungible token) interface identifier (EIP-165)
-  bytes4 constant internal ERC721_INTERFACE_ID = 0x80ac58cd;
-
-  // Mapping of sender address to a delegated sender address and bool
-  mapping (address => mapping (address => bool)) public senderAuthorizations;
-
-  // Mapping of signer address to a delegated signer and bool
-  mapping (address => mapping (address => bool)) public signerAuthorizations;
-
-  // Mapping of signers to nonces with value AVAILABLE (0x00) or UNAVAILABLE (0x01)
-  mapping (address => mapping (uint256 => byte)) public signerNonceStatus;
-
-  // Mapping of signer addresses to an optionally set minimum valid nonce
-  mapping (address => uint256) public signerMinimumNonce;
-
-  // A registry storing a transfer handler for different token kinds
-  TransferHandlerRegistry public registry;
-
-  /**
-    * @notice Contract Constructor
-    * @dev Sets domain for signature validation (EIP-712)
-    * @param swapRegistry TransferHandlerRegistry
-    */
-  constructor(TransferHandlerRegistry swapRegistry) public {
-    _domainSeparator = Types.hashDomain(
-      DOMAIN_NAME,
-      DOMAIN_VERSION,
-      address(this)
-    );
-    registry = swapRegistry;
-  }
-
-  /**
-    * @notice Atomic Token Swap
-    * @param order Types.Order Order to settle
-    */
-  function swap(
-    Types.Order calldata order
-  ) external {
-    // Ensure the order is not expired.
-    require(order.expiry > block.timestamp,
-      "ORDER_EXPIRED");
-
-    // Ensure the nonce is AVAILABLE (0x00).
-    require(signerNonceStatus[order.signer.wallet][order.nonce] == AVAILABLE,
-      "ORDER_TAKEN_OR_CANCELLED");
-
-    // Ensure the order nonce is above the minimum.
-    require(order.nonce >= signerMinimumNonce[order.signer.wallet],
-      "NONCE_TOO_LOW");
-
-    // Mark the nonce UNAVAILABLE (0x01).
-    signerNonceStatus[order.signer.wallet][order.nonce] = UNAVAILABLE;
-
-    // Validate the sender side of the trade.
-    address finalSenderWallet;
-
-    if (order.sender.wallet == address(0)) {
-      /**
-        * Sender is not specified. The msg.sender of the transaction becomes
-        * the sender of the order.
-        */
-      finalSenderWallet = msg.sender;
-
-    } else {
-      /**
-        * Sender is specified. If the msg.sender is not the specified sender,
-        * this determines whether the msg.sender is an authorized sender.
-        */
-      require(isSenderAuthorized(order.sender.wallet, msg.sender),
-          "SENDER_UNAUTHORIZED");
-      // The msg.sender is authorized.
-      finalSenderWallet = order.sender.wallet;
-
-    }
-
-    // Validate the signer side of the trade.
-    if (order.signature.v == 0) {
-      /**
-        * Signature is not provided. The signer may have authorized the
-        * msg.sender to swap on its behalf, which does not require a signature.
-        */
-      require(isSignerAuthorized(order.signer.wallet, msg.sender),
-        "SIGNER_UNAUTHORIZED");
-
-    } else {
-      /**
-        * The signature is provided. Determine whether the signer is
-        * authorized and if so validate the signature itself.
-        */
-      require(isSignerAuthorized(order.signer.wallet, order.signature.signatory),
-        "SIGNER_UNAUTHORIZED");
-
-      // Ensure the signature is valid.
-      require(isValid(order, _domainSeparator),
-        "SIGNATURE_INVALID");
-
-    }
-    // Transfer token from sender to signer.
-    transferToken(
-      finalSenderWallet,
-      order.signer.wallet,
-      order.sender.amount,
-      order.sender.id,
-      order.sender.token,
-      order.sender.kind
-    );
-
-    // Transfer token from signer to sender.
-    transferToken(
-      order.signer.wallet,
-      finalSenderWallet,
-      order.signer.amount,
-      order.signer.id,
-      order.signer.token,
-      order.signer.kind
-    );
-
-    // Transfer token from signer to affiliate if specified.
-    if (order.affiliate.token != address(0)) {
-      transferToken(
-        order.signer.wallet,
-        order.affiliate.wallet,
-        order.affiliate.amount,
-        order.affiliate.id,
-        order.affiliate.token,
-        order.affiliate.kind
-      );
-    }
-
-    emit Swap(
-      order.nonce,
-      block.timestamp,
-      order.signer.wallet,
-      order.signer.amount,
-      order.signer.id,
-      order.signer.token,
-      finalSenderWallet,
-      order.sender.amount,
-      order.sender.id,
-      order.sender.token,
-      order.affiliate.wallet,
-      order.affiliate.amount,
-      order.affiliate.id,
-      order.affiliate.token
-    );
-  }
-
-  /**
-    * @notice Cancel one or more open orders by nonce
-    * @dev Cancelled nonces are marked UNAVAILABLE (0x01)
-    * @dev Emits a Cancel event
-    * @dev Out of gas may occur in arrays of length > 400
-    * @param nonces uint256[] List of nonces to cancel
-    */
-  function cancel(
-    uint256[] calldata nonces
-  ) external {
-    for (uint256 i = 0; i < nonces.length; i++) {
-      if (signerNonceStatus[msg.sender][nonces[i]] == AVAILABLE) {
-        signerNonceStatus[msg.sender][nonces[i]] = UNAVAILABLE;
-        emit Cancel(nonces[i], msg.sender);
-      }
-    }
-  }
-
-  /**
-    * @notice Cancels all orders below a nonce value
-    * @dev Emits a CancelUpTo event
-    * @param minimumNonce uint256 Minimum valid nonce
-    */
-  function cancelUpTo(
-    uint256 minimumNonce
-  ) external {
-    signerMinimumNonce[msg.sender] = minimumNonce;
-    emit CancelUpTo(minimumNonce, msg.sender);
-  }
-
-  /**
-    * @notice Authorize a delegated sender
-    * @dev Emits an AuthorizeSender event
-    * @param authorizedSender address Address to authorize
-    */
-  function authorizeSender(
-    address authorizedSender
-  ) external {
-    require(msg.sender != authorizedSender, "SELF_AUTH_INVALID");
-    if (!senderAuthorizations[msg.sender][authorizedSender]) {
-      senderAuthorizations[msg.sender][authorizedSender] = true;
-      emit AuthorizeSender(msg.sender, authorizedSender);
-    }
-
-  }
-
-  /**
-    * @notice Authorize a delegated signer
-    * @dev Emits an AuthorizeSigner event
-    * @param authorizedSigner address Address to authorize
-    */
-  function authorizeSigner(
-    address authorizedSigner
-  ) external {
-    require(msg.sender != authorizedSigner, "SELF_AUTH_INVALID");
-    if (!signerAuthorizations[msg.sender][authorizedSigner]) {
-      signerAuthorizations[msg.sender][authorizedSigner] = true;
-      emit AuthorizeSigner(msg.sender, authorizedSigner);
-    }
-  }
-
-  /**
-    * @notice Revoke an authorized sender
-    * @dev Emits a RevokeSender event
-    * @param authorizedSender address Address to revoke
-    */
-  function revokeSender(
-    address authorizedSender
-  ) external {
-    if (senderAuthorizations[msg.sender][authorizedSender]) {
-      delete senderAuthorizations[msg.sender][authorizedSender];
-      emit RevokeSender(msg.sender, authorizedSender);
-    }
-  }
-
-  /**
-    * @notice Revoke an authorized signer
-    * @dev Emits a RevokeSigner event
-    * @param authorizedSigner address Address to revoke
-    */
-  function revokeSigner(
-    address authorizedSigner
-  ) external {
-    if (signerAuthorizations[msg.sender][authorizedSigner]) {
-      delete signerAuthorizations[msg.sender][authorizedSigner];
-      emit RevokeSigner(msg.sender, authorizedSigner);
-    }
-  }
-
-  /**
-    * @notice Determine whether a sender delegate is authorized
-    * @param authorizer address Address doing the authorization
-    * @param delegate address Address being authorized
-    * @return bool True if a delegate is authorized to send
-    */
-  function isSenderAuthorized(
-    address authorizer,
-    address delegate
-  ) internal view returns (bool) {
-    return ((authorizer == delegate) ||
-      senderAuthorizations[authorizer][delegate]);
-  }
-
-  /**
-    * @notice Determine whether a signer delegate is authorized
-    * @param authorizer address Address doing the authorization
-    * @param delegate address Address being authorized
-    * @return bool True if a delegate is authorized to sign
-    */
-  function isSignerAuthorized(
-    address authorizer,
-    address delegate
-  ) internal view returns (bool) {
-    return ((authorizer == delegate) ||
-      signerAuthorizations[authorizer][delegate]);
-  }
-
-  /**
-    * @notice Validate signature using an EIP-712 typed data hash
-    * @param order Types.Order Order to validate
-    * @param domainSeparator bytes32 Domain identifier used in signatures (EIP-712)
-    * @return bool True if order has a valid signature
-    */
-  function isValid(
-    Types.Order memory order,
-    bytes32 domainSeparator
-  ) internal pure returns (bool) {
-    if (order.signature.version == byte(0x01)) {
-      return order.signature.signatory == ecrecover(
-        Types.hashOrder(
-          order,
-          domainSeparator
-        ),
-        order.signature.v,
-        order.signature.r,
-        order.signature.s
-      );
-    }
-    if (order.signature.version == byte(0x45)) {
-      return order.signature.signatory == ecrecover(
-        keccak256(
-          abi.encodePacked(
-            "\x19Ethereum Signed Message:\n32",
-            Types.hashOrder(order, domainSeparator)
-          )
-        ),
-        order.signature.v,
-        order.signature.r,
-        order.signature.s
-      );
-    }
-    return false;
-  }
-
-  /**
-    * @notice Perform token transfer for tokens in registry
-    * @dev Transfer type specified by the bytes4 kind param
-    * @dev ERC721: uses transferFrom for transfer
-    * @dev ERC20: Takes into account non-standard ERC-20 tokens.
-    * @param from address Wallet address to transfer from
-    * @param to address Wallet address to transfer to
-    * @param amount uint256 Amount for ERC-20
-    * @param id token ID for ERC-721
-    * @param token address Contract address of token
-    * @param kind bytes4 EIP-165 interface ID of the token
-    */
-  function transferToken(
-      address from,
-      address to,
-      uint256 amount,
-      uint256 id,
-      address token,
-      bytes4 kind
-  ) internal {
-
-    // Ensure the transfer is not to self.
-    require(from != to, "SELF_TRANSFER_INVALID");
-    ITransferHandler transferHandler = registry.transferHandlers(kind);
-    require(address(transferHandler) != address(0), "TOKEN_KIND_UNKNOWN");
-    // delegatecall required to pass msg.sender as Swap contract to handle the
-    // token transfer in the calling contract
-    (bool success, bytes memory data) = address(transferHandler).
-      delegatecall(abi.encodeWithSelector(
-        transferHandler.transferTokens.selector,
-        from,
-        to,
-        amount,
-        id,
-        token
-    ));
-    require(success && abi.decode(data, (bool)), "TRANSFER_FAILED");
-  }
-}
-
-// File: @trusttoken/trusttokens/contracts/ALiquidator.sol
-
-pragma solidity ^0.5.13;
-
-pragma experimental ABIEncoderV2;
-
-
-
-
-
-/**
- * @dev Program that executes a trade
- * TradeExecutor is a contract that executes a trade
- * It's much cheaper to deploy and run a contract than to
- * execute in the liquidator
- * TradeExecutor is called via delegatecall
- */
-interface TradeExecutor {
-}
 
 /**
  * @dev Uniswap
@@ -1353,50 +505,29 @@ interface UniswapV1Factory {
     function getExchange(IERC20 token) external returns (UniswapV1);
 }
 
-
 /**
- * @title Abstract Liquidator
+ * @title Abstract Uniswap Liquidator
  * @dev Liquidate staked tokenns on uniswap.
- * Airswap uses domainSeparators to validate transactions and prevent replay protection
- * When signing an airswap order we require specification of which validator we are using.
  * This is because there are multiple instances of AirswapV2.
  * StakingOpportunityFactory does not create a Liquidator, rather this must be created
  * Outside of the factory.
- * prune() removes all orders that would fail from
  */
-contract ALiquidator {
+contract ALiquidatorUniswap is ILiquidator {
     using ValSafeMath for uint256;
 
-    // owner, attributes, and domain separators
+    // owner, registry attributes
     address public owner;
     address public pendingOwner;
     mapping (address => uint256) attributes;
 
-    // domain separators is a paramater of airswap synced as an attribute
-    // when you register an airswap validator you need to register domain separators
-    // 32 bytes in data that you sign which corresponds to contract signed for
-    // used for replay protection, examples of this in test files
-    // mappings updated in syncAttributeValue
-    // signedTypedData standard
-    mapping (address => bytes32) domainSeparators;
-
-    // Orders are contracts that execute airswaps
-    // We DELEGATECALL into orders to invoke them
-    // Orders are stored in this mapping as a sorted singly linkedlist
-    // Invariant: orders are sorted by greatest price
-    // Linked list head and tail are mapped to zero
-    // It's much much cheaper to deploy a contract to execute the trade
-    mapping (/* TradeExecutor */ address => TradeExecutor) public next;
 
     // constants
     bytes32 constant APPROVED_BENEFICIARY = "approvedBeneficiary";
     uint256 constant LIQUIDATOR_CAN_RECEIVE     = 0xff00000000000000000000000000000000000000000000000000000000000000;
     uint256 constant LIQUIDATOR_CAN_RECEIVE_INV = 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     // part of signature so that signing for airswap doesn't sign for all airswap instances
-    bytes32 constant AIRSWAP_VALIDATOR = "AirswapValidatorDomain";
     uint256 constant MAX_UINT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     uint256 constant MAX_UINT128 = 0xffffffffffffffffffffffffffffffff;
-    bytes1 constant AIRSWAP_AVAILABLE = bytes1(0x0);
     bytes2 EIP191_HEADER = 0x1901;
 
     // internal variables implemented as storage by Liquidator
@@ -1426,22 +557,18 @@ contract ALiquidator {
     }
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-    event LimitOrder(TradeExecutor indexed order);
-    event Fill(TradeExecutor indexed order);
-    event Cancel(TradeExecutor indexed order);
     event Liquidated(uint256 indexed stakeAmount, uint256 indexed debtAmount);
-
-    // used to track why a liquidation failed
-    event LiquidationError(TradeExecutor indexed order, bytes error);
 
     modifier onlyRegistry {
         require(msg.sender == address(registry()), "only registry");
         _;
     }
+
     modifier onlyPendingOwner() {
         require(msg.sender == pendingOwner, "only pending owner");
         _;
     }
+
     modifier onlyOwner() {
         require(msg.sender == owner, "only owner");
         _;
@@ -1459,22 +586,12 @@ contract ALiquidator {
 
     /**
      * @dev Two flags are supported by this function:
-     * AIRSWAP_VALIDATOR and APPROVED_BENEFICIARY
+     * Supports APPROVED_BENEFICIARY
      * Can sync by saying this contract is the registry or sync from registry directly.
-     * Registry decides what is a valid airswap.
      */
     function syncAttributeValue(address _account, bytes32 _attribute, uint256 _value) external onlyRegistry {
-        if (_attribute == AIRSWAP_VALIDATOR) {
-            if (_value > 0) {
-                // register domain separator and approve validator to spend
-                stakeToken().approve(_account, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-                domainSeparators[_account] = bytes32(_value);
-            } else {
-                stakeToken().approve(_account, 0);
-                domainSeparators[_account] = bytes32(0);
-            }
-        } else if (_attribute == APPROVED_BENEFICIARY) {
-            // approved beneficiary flag defines whether someone can recieve
+        if (_attribute == APPROVED_BENEFICIARY) {
+            // approved beneficiary flag defines whether someone can receive
             if (_value > 0) {
                 attributes[_account] |= LIQUIDATOR_CAN_RECEIVE;
             } else {
@@ -1518,10 +635,6 @@ contract ALiquidator {
         inputAmount = (stakeUniswapV1State.tokenBalance * ethNeeded * 1000) / (997 * (stakeUniswapV1State.etherBalance - ethNeeded)) + 1;
     }
 
-    function head() public view returns (TradeExecutor) {
-        return next[address(0)];
-    }
-
     /**
      * @dev Transfer stake without liquidation
      * requires LIQUIDATOR_CAN_RECEIVE flag (recipient must be registered)
@@ -1557,7 +670,8 @@ contract ALiquidator {
         uint256 remainingStake = stakeToken().balanceOf(stakePool);
 
         // withdraw to liquidator
-        require(stakeToken().transferFrom(stakePool, address(this), remainingStake), "unapproved");
+        require(stakeToken().transferFrom(stakePool, address(this), remainingStake),
+            "liquidator not approved to transferFrom stakeToken");
 
         // load uniswap state for output and staked token
         UniswapState memory outputUniswapV1State;
@@ -1572,64 +686,8 @@ contract ALiquidator {
         // calculate remaining debt
         int256 remainingDebt = _debt;
 
-        // set order linkedlist to head
-        TradeExecutor curr = head();
-
-        // walk through iterator while we still have orders and gas
-        while (curr != TradeExecutor(0) && gasleft() > SWAP_GAS_COST) {
-            // load order using airswapOrderInfo which copies end of order contract into memory
-            // now we have the order in memory. This is very cheap (<1000 gas)
-            // ~23x more efficient than using storage
-            FlatOrder memory order = airswapOrderInfo(curr);
-
-            // if order tries to buy more stake than we have we cancel order
-            // othwerwise continue to walk through orders
-            if (order.senderAmount <= remainingStake) {
-
-                // check price using cross product
-                // checks if we get a better deal in uniswap
-                if (inputForUniswapV1Output(uint256(remainingDebt), outputUniswapV1State, stakeUniswapV1State) * order.signerAmount < order.senderAmount * uint256(remainingDebt)) {
-                    // remaining orders are not as good as uniswap
-                    break;
-                }
-
-                // use delegatecall to process order from our address
-                // we are the only people who can execute this order
-                (bool success, bytes memory returnValue) = address(curr).delegatecall("");
-
-                // on success, emit fill event and update state
-                // otherwise cancel and emit liqudiation error
-                // an order either cancels or fills
-                if (success) {
-                    emit Fill(curr);
-
-                    // calculate remaining debt
-                    remainingDebt -= int256(order.signerAmount);
-                    remainingStake -= order.senderAmount; // underflow not possible because airswap transfer succeeded
-
-                    // emit liquidation and break if no more debt
-                    emit Liquidated(order.senderAmount, order.signerAmount);
-                    if (remainingDebt <= 0) {
-                        break;
-                    }
-                } else {
-                    emit Cancel(curr);
-                    emit LiquidationError(curr, returnValue);
-                }
-            } else {
-                emit Cancel(curr);
-            }
-
-            // advance through linkedlist by setting head to next item
-            address prev = address(curr);
-            curr = next[prev];
-            next[prev] = TradeExecutor(0);
-        }
-        next[address(0)] = curr;
-
         // if we have remaining debt and stake, we use Uniswap
         // we can use uniswap by specifying desired output or input
-        // we
         if (remainingDebt > 0) {
             if (remainingStake > 0) {
                 if (outputForUniswapV1Input(remainingStake, outputUniswapV1State, stakeUniswapV1State) < uint256(remainingDebt)) {
@@ -1668,319 +726,36 @@ contract ALiquidator {
             stakeToken().transfer(stakePool, remainingStake);
         }
     }
-
-    /**
-     * Airswap v2 logic
-     * See 0x3E0c31C3D4067Ed5d7d294F08B79B6003B7bf9c8
-     * Important to prune orders which have expired
-     * or where someone has withdrawn their capital
-    **/
-    struct Order {
-        uint256 nonce;                // Unique per order and should be sequential
-        uint256 expiry;               // Expiry in seconds since 1 January 1970
-        Party signer;                 // Party to the trade that sets terms
-        Party sender;                 // Party to the trade that accepts terms
-        Party affiliate;              // Party compensated for facilitating (optional)
-        Signature signature;          // Signature of the order
-    }
-    struct Party {
-        bytes4 kind;                  // Interface ID of the token
-        address wallet;               // Wallet address of the party
-        IERC20 token;                // Contract address of the token
-        uint256 amount;               // Amount for ERC-20 or ERC-1155
-        uint256 id;                   // ID for ERC-721 or ERC-1155
-    }
-    struct Signature {
-        address signatory;            // Address of the wallet used to sign
-        address validator;            // Address of the intended swap contract
-        bytes1 version;               // EIP-191 signature version
-        uint8 v;                      // `v` value of an ECDSA signature
-        bytes32 r;                    // `r` value of an ECDSA signature
-        bytes32 s;                    // `s` value of an ECDSA signature
-    }
-
-    // if there is a hard fork, must update these gas costs
-    bytes4 constant ERC20_KIND = 0x36372b07;
-    uint256 constant SWAP_GAS_COST = 150000;
-    uint256 constant PRUNE_GAS_COST = 30000;
-
-    struct FlatOrder {
-        uint256 nonce;                // Unique per order and should be sequential
-        uint256 expiry;               // Expiry in seconds since 1 January 1970
-        bytes4 signerKind;                  // Interface ID of the token
-        address signerWallet;               // Wallet address of the party
-        IERC20 signerToken;                 // Contract address of the token
-        uint256 signerAmount;               // Amount for ERC-20 or ERC-1155
-        uint256 signerId;                   // ID for ERC-721 or ERC-1155
-        bytes4 senderKind;                  // Interface ID of the token
-        address senderWallet;               // Wallet address of the party
-        IERC20 senderToken;                 // Contract address of the token
-        uint256 senderAmount;               // Amount for ERC-20 or ERC-1155
-        uint256 senderId;                   // ID for ERC-721 or ERC-1155
-        bytes4 affiliateKind;                  // Interface ID of the token
-        address affiliateWallet;               // Wallet address of the party
-        address affiliateToken;                // Contract address of the token
-        uint256 affiliateAmount;               // Amount for ERC-20 or ERC-1155
-        uint256 affiliateId;                   // ID for ERC-721 or ERC-1155
-        address signatory;            // Address of the wallet used to sign
-        address validator;            // Address of the intended swap contract
-        bytes1 version;               // EIP-191 signature version
-        uint8 v;                      // `v` value of an ECDSA signature
-        bytes32 r;                    // `r` value of an ECDSA signature
-        bytes32 s;                    // `s` value of an ECDSA signature
-    }
-
-    /**
-     * @dev Copies airswap info into memory and returns it
-     * Uses extcodecopy
-     * Needs to return a FlatOrder instead of an Order to save space in memory
-     */
-    function airswapOrderInfo(TradeExecutor _airswapOrderContract) public view returns (FlatOrder memory order) {
-        assembly {
-            extcodecopy(_airswapOrderContract, order, 51, 736)
-        }
-    }
-
-    bytes32 constant ORDER_TYPEHASH = 0x1b7987701aec5d914b7e2663640474d587fdf71bf8cf50a672b29ff7ddc7b557;
-    bytes32 constant PARTY_TYPEHASH = 0xf7dd27dc10c7dbaecb34f7bf8396d9ce2f7972a5556959ec094912041b15e285;
-    //bytes32 constant DOMAIN_TYPEHASH = 0x91ab3d17e3a50a9d89e63fd30b92be7f5336b03b287bb946787a83a9d62a2766;
-    bytes32 constant ZERO_PARTY_HASH = 0xb3df6f92b1402b8652ec14dde0ab8816789b2da8a6b0962109a31f4c72c625d2;
-
-    /**
-     * @dev Calculate signature for airswap
-     */
-    function hashERC20Party(Party memory _party) internal pure returns (bytes32) {
-        return keccak256(abi.encode(PARTY_TYPEHASH, ERC20_KIND, _party.wallet, _party.token, _party.amount, _party.id));
-    }
-
-    /**
-     * @dev Return true if valid airswap signatory
-     * Can sign on someone else's behalf if authorized
-     */
-    function validAirswapSignatory(Swap validator, address signer, address signatory) internal view returns (bool) {
-        if (signatory == signer) {
-            return true;
-        }
-        return validator.signerAuthorizations(signer, signatory);
-    }
-
-    /**
-     * @dev Return true if valid airswap signature
-     */
-    function validAirswapSignature(Order memory _order) internal view returns (bool) {
-        bytes32 hash = keccak256(abi.encodePacked(EIP191_HEADER, domainSeparators[_order.signature.validator], keccak256(abi.encode(ORDER_TYPEHASH, _order.nonce, _order.expiry, hashERC20Party(_order.signer), hashERC20Party(_order.sender), ZERO_PARTY_HASH))));
-        if (_order.signature.version == 0x45) {
-            return ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)), _order.signature.v, _order.signature.r, _order.signature.s) == _order.signature.signatory;
-        } else if (_order.signature.version == 0x01) {
-            return ecrecover(hash, _order.signature.v, _order.signature.r, _order.signature.s) == _order.signature.signatory;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * @dev Register Valid Airswap
-     * Ensures a bunch of logic to regsiter a valid airswap order
-     * Prevent really large orders that would cause overflow
-     * Ensures correct exchange of token types
-     * Ensures no affiliate in airswap order
-     * Checks signer has the balance they are offering to exchange
-     * Checks order registrant has approval
-     *
-     * Downsides:
-     * Can register orders that fail, but this will be pruned very cheaply
-     * Can register order and transfer in the same transaction
-     */
-    function registerAirswap(Order calldata _order) external returns (TradeExecutor orderContract) {
-        require(domainSeparators[_order.signature.validator] != bytes32(0), "unregistered validator");
-        require(_order.expiry > now + 1 hours, "expiry too soon");
-        require(_order.sender.kind == ERC20_KIND, "send erc20");
-        require(_order.sender.wallet == address(this), "counterparty must be liquidator");
-        require(_order.sender.amount < MAX_UINT128, "ask too large");
-        require(_order.sender.token == stakeToken(), "must buy stake");
-        require(_order.signer.kind == ERC20_KIND, "sign erc20");
-        require(_order.signer.token == outputToken(), "incorrect token offerred");
-        require(_order.signer.amount < MAX_UINT128, "bid too large");
-        require(_order.affiliate.amount == 0, "affiliate amount must be zero");
-        require(_order.affiliate.wallet == address(0), "affiliate wallet must be zero");
-        require(_order.affiliate.kind == ERC20_KIND, "affiliate erc20");
-        require(outputToken().balanceOf(_order.signer.wallet) >= _order.signer.amount, "insufficient signer balance");
-        require(outputToken().allowance(_order.signer.wallet, _order.signature.validator) >= _order.signer.amount, "insufficient signer allowance");
-        uint256 poolBalance = stakeToken().balanceOf(pool());
-        require(poolBalance >= _order.sender.amount, "insufficient pool balance");
-        // verify senderAmount / poolBalance > swapGasCost / blockGasLimit
-        require(_order.sender.amount.mul(block.gaslimit, "senderAmount overflow") > poolBalance.mul(SWAP_GAS_COST, "poolBalance overflow"), "order too small");
-        Swap validator = Swap(_order.signature.validator);
-        // check nonce data
-        require(validator.signerMinimumNonce(_order.signer.wallet) <= _order.nonce, "signer minimum nonce is higher");
-        require(validator.signerNonceStatus(_order.signer.wallet, _order.nonce) == AIRSWAP_AVAILABLE, "signer nonce unavailable");
-        // validate signature and signatory
-        require(validAirswapSignature(_order), "signature invalid");
-        require(validAirswapSignatory(Swap(_order.signature.validator), _order.signer.wallet, _order.signature.signatory), "signatory invalid");
-        /*
-            Create an order contract with the bytecode to call the validator with the supplied args
-            During execution this liquidator will delegatecall into the order contract
-            The order contract copies its code to memory to load the calldata and then executes call
-            The order contract returns the data from the validator
-            Though the return data is expected to be empty, we will still report whether the contract reverted, by reverting if it reverts
-            We do not need to worry about other contexts executing this contract because we check that the liquidator is the counterparty and the liquidator will authorize no spenders
-            Deploy (10 bytes)
-        PC  Opcodes                                       Assembly         Stack
-        00  610313                                        PUSH2 0313       787
-        03  80                                            DUP1             787 787
-        04  600A                                          PUSH1 0A         787 787 10
-        06  3D                                            RETURNDATASIZE   787 787 10 0
-        07  39                                            CODECOPY         787
-        08  3D                                            RETURNDATASIZE   787 0
-        09  F3                                            RETURN
-            Order Contract (787 bytes)
-        PC  Opcodes                                       Assembly         Stack                                         Notes
-        00  38                                            CODESIZE         cs
-        01  3D                                            RETURNDATASIZE   cs 0
-        02  3D                                            RETURNDATASIZE   cs 0 0
-        03  39                                            CODECOPY
-        04  38                                            CODESIZE   0                                             (outSize)
-        05  3D                                            RETURNDATASIZE   0 0                                           (outStart)
-        06  6102E4                                        PUSH2 2E4        0 0 740                                       (inSize)
-        09  602F                                          PUSH1 2F         0 0 740 2F                                    (inStart)
-        0b  3D                                            RETURNDATASIZE   0 0 740 2F 0                                  wei
-        0c  73xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    PUSH20 validator 0 0 740 2F 0 validator                        address   (maybe use mload?)
-        21  5A                                            GAS              0 0 740 2F 0 validator gas
-        22  F1                                            CALL             success
-        23  602A                                          PUSH1 2A         success goto
-        25  57                                            JUMPI
-        26  3D                                            RETURNDATASIZE   rds
-        27  6000                                          PUSH1 0          rds 0
-        29  FD                                            REVERT
-        2a  5B                                            JUMPDEST
-        2b  3D                                            RETURNDATASIZE   rds
-        2c  6000                                          PUSH1 0          rds 0
-        2e  F3                                            RETURN
-        2f  67641C2F<>                                    <Order Calldata>                                               size of Order calldata is 740 bytes
-        */
-
-        // above codes refer to the assembly below
-        assembly {
-            let start := mload(0x40)
-            mstore(start,             0x00000000000000000000000000000000000000000061031380600A3D393DF338)
-            mstore(add(start, 32), or(0x3D3D39383D6102E4602F3D730000000000000000000000000000000000000000, validator))
-            mstore(add(start, 64),    0x5AF1602A573D6000FD5B3D6000F367641C2F0000000000000000000000000000)
-            calldatacopy(add(start, 82), 4, 736)
-            orderContract := create(0, add(start, 21), 797)
-        }
-
-        // walk through list and insert order
-        // if we run out of gas we revert
-        // e.g. if someone's order isn't good enough to be
-        address prev = address(0);
-        TradeExecutor curr = next[address(0)];
-        while (curr != TradeExecutor(0)) {
-            FlatOrder memory currInfo = airswapOrderInfo(curr);
-            // no need to check overflow because multiplying unsigned values under 16 bytes results in an unsigned value under 32 bytes
-            if (currInfo.signerAmount * _order.sender.amount < currInfo.senderAmount * _order.signer.amount) {
-                next[address(orderContract)] = curr;
-                break;
-            }
-            poolBalance -= currInfo.senderAmount;
-            prev = address(curr);
-            curr = next[prev];
-        }
-        require(poolBalance >= _order.sender.amount, "insufficent remaining pool balance");
-        next[prev] = orderContract;
-        emit LimitOrder(orderContract);
-        return orderContract;
-    }
-
-    /**
-     * @dev return True if an order is prunable
-     * If the order cannot be executed at this moment, it is prunable
-     * No need to check things immutably true that were checked during registration
-     */
-    function prunableOrder(FlatOrder memory _order) internal view returns (bool) {
-        if (_order.expiry < now) {
-            return true;
-        }
-        // can assume rewardToken == outputToken()
-        IERC20 rewardToken = _order.signerToken;
-        if (rewardToken.balanceOf(_order.signerWallet) < _order.signerAmount) {
-            return true;
-        }
-        // check allowance, nonce status, and minimum nonce correspond to cancellation
-        if (rewardToken.allowance(_order.signerWallet, _order.validator) < _order.signerAmount) {
-            return true;
-        }
-        if (Swap(_order.validator).signerNonceStatus(_order.signerWallet, _order.nonce) != AIRSWAP_AVAILABLE) {
-            return true;
-        }
-        if (Swap(_order.validator).signerMinimumNonce(_order.signerWallet) > _order.nonce) {
-            return true;
-        }
-        // check signatory has not been revoked
-        if (!validAirswapSignatory(Swap(_order.validator), _order.signerWallet, _order.signatory)) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * @dev Remove all orders that would fail
-     * Remove all orders worse than what is available in uniswap
-     * Much cheaper to prune than to run an order that would fail
-     */
-    function prune() external {
-        address prevValid = address(0);
-        TradeExecutor curr = next[address(0)];
-
-        // walk through list and prune
-        while (curr != TradeExecutor(0) && gasleft() > PRUNE_GAS_COST) {
-            // get order from memory
-            FlatOrder memory currInfo = airswapOrderInfo(curr);
-
-            // if order is prunable, remove from linkedlist
-            // otherwise continue to walk through list
-            // gas refud from pruning makes it very cheap
-            if (prunableOrder(currInfo)) {
-                emit Cancel(curr);
-                address prev = address(curr);
-                curr = next[prev];
-                next[prev] = TradeExecutor(0);
-            } else {
-                if (next[prevValid] != curr) {
-                    next[prevValid] = curr;
-                }
-                prevValid = address(curr);
-                curr = next[prevValid];
-            }
-        }
-        next[prevValid] = curr;
-    }
 }
 
 // File: @trusttoken/trusttokens/contracts/Liquidator.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
-pragma experimental ABIEncoderV2;
+//pragma experimental ABIEncoderV2;
 
 
 /**
  * @title Liquidator
  * @dev Implementation of ALiquidator
 **/
-contract Liquidator is ALiquidator {
+contract Liquidator is ALiquidatorUniswap {
     address pool_;
     Registry registry_;
     IERC20 outputToken_;
     IERC20 stakeToken_;
     UniswapV1 outputUniswap_;
     UniswapV1 stakeUniswap_;
-    constructor(
+    bool initialized;
+
+    function configure(
         address registryAddress,
         address outputTokenAddress,
         address stakeTokenAddress,
         address outputUniswapAddress,
         address stakeUniswapAddress
-    ) public {
+    ) external {
+        require(!initialized, "already initialized");
         registry_ = Registry(registryAddress);
         outputToken_ = IERC20(outputTokenAddress);
         stakeToken_ = IERC20(stakeTokenAddress);
@@ -1988,6 +763,7 @@ contract Liquidator is ALiquidator {
         stakeUniswap_ = UniswapV1(stakeUniswapAddress);
         owner = msg.sender;
         emit OwnershipTransferred(address(0), owner);
+        initialized = true;
         initialize();
     }
     function setPool(address _pool) external onlyOwner {
@@ -2013,9 +789,20 @@ contract Liquidator is ALiquidator {
     }
 }
 
+// File: @trusttoken/trusttokens/contracts/StakingAsset.sol
+
+pragma solidity 0.5.13;
+
+
+contract StakingAsset is IERC20 {
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+    function decimals() external view returns (uint8);
+}
+
 // File: @trusttoken/trusttokens/contracts/ProxyStorage.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -2024,6 +811,7 @@ pragma solidity ^0.5.13;
  * Never remove items from this list
  */
 contract ProxyStorage {
+    bool initalized;
     uint256 public totalSupply;
 
     mapping (address => uint256) public balanceOf;
@@ -2053,7 +841,7 @@ contract ProxyStorage {
 
 // File: @trusttoken/trusttokens/contracts/ERC20.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -2093,9 +881,9 @@ contract ModularBasicToken is ProxyStorage {
 contract ModularStandardToken is ModularBasicToken {
     using ValSafeMath for uint256;
     uint256 constant INFINITE_ALLOWANCE = 0xfe00000000000000000000000000000000000000000000000000000000000000;
-
+    
     event Approval(address indexed owner, address indexed spender, uint256 value);
-
+    
     /**
      * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
      *
@@ -2181,7 +969,7 @@ contract ModularStandardToken is ModularBasicToken {
 
 // File: @trusttoken/trusttokens/contracts/RegistrySubscriber.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 contract RegistrySubscriber is ProxyStorage {
@@ -2252,7 +1040,7 @@ contract RegistrySubscriber is ProxyStorage {
 
 // File: @trusttoken/trusttokens/contracts/TrueCoinReceiver.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
@@ -2260,7 +1048,7 @@ contract TrueCoinReceiver {
 
 // File: @trusttoken/trusttokens/contracts/ValTokenWithHook.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -2277,7 +1065,6 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
             // attributes[uint144(uint160(to) >> 20)] = uint256(to);
             hook = false;
         } else {
-            require((flags & ACCOUNT_BLACKLISTED) == 0, "blacklisted recipient");
             to = address(flags);
             hook = (flags & ACCOUNT_HOOK) != 0;
         }
@@ -2285,7 +1072,6 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
 
     modifier resolveSender(address _from) {
         uint256 flags = (attributes[uint144(uint160(_from) >> 20)]);
-        require((flags & ACCOUNT_BLACKLISTED) == 0, "blacklisted sender");
         address from = address(flags);
         if (from != address(0)) {
             require(from == _from, "account collision");
@@ -2343,18 +1129,12 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/StakingAsset.sol
+// File: @trusttoken/trusttokens/contracts/AStakedToken.sol
 
-pragma solidity ^0.5.13;
-
-
+pragma solidity 0.5.13;
 
 
-contract StakingAsset is IERC20 {
-    function name() external view returns (string memory);
-    function symbol() external view returns (string memory);
-    function decimals() external view returns (uint8);
-}
+
 
 /**
  * @title Abstract StakedToken
@@ -2391,7 +1171,7 @@ contract AStakedToken is ValTokenWithHook {
     mapping (address => mapping (uint256 => uint256)) pendingWithdrawals;
 
     // unstake period in days
-    uint256 constant UNSTAKE_PERIOD = 28 days;
+    uint256 constant UNSTAKE_PERIOD = 14 days;
 
     // PendingWithdrawal event is initiated when finalizing stake
     // used to help user interfaces
@@ -2430,7 +1210,7 @@ contract AStakedToken is ValTokenWithHook {
      * @dev Initialize function called by constructor
      * Approves liqudiator for maximum amount
     */
-    function initialize() external {
+    function initialize() internal {
         stakeAsset().approve(liquidator(), MAX_UINT256);
     }
 
@@ -2595,7 +1375,7 @@ contract AStakedToken is ValTokenWithHook {
     }
 
     /**
-     * @dev Finalize unstake after 4 weeks.
+     * @dev Finalize unstake after 2 weeks.
      * Loop over timestamps
      * Checks if unstake perioud has passed, if yes, calculate how much stake account get
      * @param recipient recipient of
@@ -2606,7 +1386,7 @@ contract AStakedToken is ValTokenWithHook {
         // loop through timestamps and calculate total unstake
         for (uint256 i = _timestamps.length; i --> 0;) {
             uint256 timestamp = _timestamps[i];
-            require(timestamp + UNSTAKE_PERIOD <= now, "must wait 4 weeks to unstake");
+            require(timestamp + UNSTAKE_PERIOD <= now, "must wait 2 weeks to unstake");
             // add to total unstake amount
             totalUnstake = totalUnstake.add(pendingWithdrawals[msg.sender][timestamp], "stake overflow");
 
@@ -2688,7 +1468,10 @@ contract AStakedToken is ValTokenWithHook {
 
 // File: @trusttoken/trusttokens/contracts/StakedToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
+
+
+
 
 
 /**
@@ -2701,22 +1484,36 @@ contract StakedToken is AStakedToken {
     Registry registry_;
     address liquidator_;
 
-    constructor(StakingAsset _stakeAsset, StakingAsset _rewardAsset, Registry _registry, address _liquidator) public {
+    /**
+     * @dev configure this contract
+     */
+    function configure(
+        StakingAsset _stakeAsset,
+        StakingAsset _rewardAsset,
+        Registry _registry,
+        address _liquidator
+    ) external {
+        require(!initalized, "already initalized StakedToken");
         stakeAsset_ = _stakeAsset;
         rewardAsset_ = _rewardAsset;
         registry_ = _registry;
         liquidator_ = _liquidator;
         initialize();
+        initalized = true;
     }
+
     function stakeAsset() internal view returns (StakingAsset) {
         return stakeAsset_;
     }
+
     function rewardAsset() internal view returns (StakingAsset) {
         return rewardAsset_;
     }
+
     function registry() internal view returns (Registry) {
         return registry_;
     }
+
     function liquidator() internal view returns (address) {
         return liquidator_;
     }
@@ -2724,7 +1521,7 @@ contract StakedToken is AStakedToken {
 
 // File: contracts/TrueCurrencies/AssuredFinancialOpportunityStorage.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /*
 Defines the storage layout of the token implementaiton contract. Any newly declared
@@ -2732,6 +1529,22 @@ state variables in future upgrades should be appened to the bottom. Never remove
 from this list
  */
 contract AssuredFinancialOpportunityStorage {
+
+    // how much zTUSD we've issued (total supply)
+    uint zTUSDIssued;
+
+    // percentage of interest for staking pool
+    // 1% = 10
+    uint32 rewardBasis;
+
+    // adjustment factor used when changing reward basis
+    // we change the adjustment factor
+    uint adjustmentFactor;
+
+    // mintokenValue can never decrease
+    uint minTokenValue;
+
+
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
      * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.
@@ -2753,7 +1566,7 @@ contract AssuredFinancialOpportunityStorage {
 
 // File: contracts/TrueCurrencies/modularERC20/InitializableOwnable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -2801,7 +1614,7 @@ contract InitializableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/InitializableClaimable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -2851,7 +1664,7 @@ contract InitializableClaimable is InitializableOwnable {
  *  https://ethereum.stackexchange.com/questions/50527/is-there-any-efficient-way-to-compute-the-exponentiation-of-an-fractional-base-a
  */
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 contract FractionalExponents  {
 
@@ -3387,51 +2200,87 @@ contract FractionalExponents  {
 
 // File: contracts/TrueReward/FinancialOpportunity.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /**
  * @title FinancialOpportunity
  * @dev Interface for third parties to implement financial opportunities
- * for TrueReward with Assurance.
+ *
+ * -- Overview --
+ * The goal of this contract is to allow anyone to create an opportunity
+ * to earn interest on TUSD. deposit() "mints" yTUSD whcih is redeemable
+ * for some amount of TUSD. TrueUSD wraps this contractwith TrustToken
+ * Assurance, which provides protection from bugs and system design flaws
+ * TUSD is a compliant stablecoin, therefore we do not allow transfers of
+ * yTUSD, thus there are no transfer functions
+ *
+ * -- tokenValue() --
+ * This function returns the value in TUSD of 1 yTUSD
+ * This value should never decrease
+ *
+ * -- TUSD vs yTUSD --
+ * yTUSD represents a fixed value which is redeemable for some amount of TUSD
+ * Think of yTUSD like cTUSD, where cTokens are minted and increase in value versus
+ * the underlying asset as interest is accrued
+ *
+ * -- totalSupply() --
+ * This function returns the total supply of yTUSD issued by this contract
+ * It is important to track this value accuratley and add/deduct the correct
+ * amount on deposit/redemptions
+ *
+ * -- Assumptions --
+ * - tokenValue can never decrease
+ * - total TUSD owed to depositors = tokenValue() * totalSupply()
  */
 interface FinancialOpportunity {
-    /**
-     * @dev deposits TrueUSD into finOP using transferFrom
-     * @param _from account to transferFrom
-     * @param _amount amount in TUSD to deposit to finOp
-     * @return yTUSD minted from this deposit
-     */
-    function deposit(address _from, uint _amount) external returns(uint);
-     /**
-     * @dev Withdraw from finOp to _to account
-     * @param _to account withdarw TUSD to
-     * @param _amount amount in TUSD to withdraw from finOp
-     * @return yTUSD amount deducted
-     */
-    function withdrawTo(address _to, uint _amount) external returns(uint);
-    /**
-     * @dev Withdraws all TUSD from finOp
-     * @param _to account withdarw TUSD to
-     * @return yTUSD amount deducted
-     */
-    function withdrawAll(address _to) external returns(uint);
 
     /**
-     * Exchange rate between TUSD and yTUSD
+     * @dev Returns total supply of yTUSD in this contract
+     *
+     * @return total supply of yTUSD in this contract
+    **/
+    function totalSupply() external view returns (uint);
+
+    /**
+     * @dev Exchange rate between TUSD and yTUSD
+     *
+     * tokenValue should never decrease
+     *
      * @return TUSD / yTUSD price ratio
      */
-    function perTokenValue() external view returns(uint);
+    function tokenValue() external view returns(uint);
 
     /**
-     * Returns full balance of opportunity
-     * @return yTUSD balance of opportunity
-    **/
-    function getBalance() external view returns (uint);
+     * @dev deposits TrueUSD and returns yTUSD minted
+     *
+     * We can think of deposit as a minting function which
+     * will increase totalSupply of yTUSD based on the deposit
+     *
+     * @param from account to transferFrom
+     * @param amount amount in TUSD to deposit
+     * @return yTUSD minted from this deposit
+     */
+    function deposit(address from, uint amount) external returns(uint);
+
+    /**
+     * @dev Redeem yTUSD for TUSD and withdraw to account
+     *
+     * This function should use tokenValue to calculate
+     * how much TUSD is owed. This function should burn yTUSD
+     * after redemption
+     *
+     * This function must return value in TUSD
+     *
+     * @param to account to transfer TUSD for
+     * @param amount amount in TUSD to withdraw from finOp
+     * @return TUSD amount returned from this transaction
+     */
+    function redeem(address to, uint amount) external returns(uint);
 }
 
 // File: contracts/TrueReward/AssuredFinancialOpportunity.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -3444,261 +2293,381 @@ pragma solidity ^0.5.13;
 
 
 /**
- * AssuredFinancialOpportunity
+ * @title AssuredFinancialOpportunity
+ * @dev Wrap financial opportunity with Assurance
  *
- * Wrap financial opportunity with Assurance.
- * TUSD is never held in this contract, only zTUSD which represents value we owe.
- * When zTUSD is exchanged, the resulting TUSD is always sent to a recipient.
- * If a transfer fails, stake is sold from the staking pool for TUSD.
- * When stake is liquidated, the TUSD is sent out in the same transaction (Flash Assurance).
- * Can attempt to sell bad debt at a later date and return value to the pool.
- * Keeps track of rewards stream for assurance pool.
+ * -- Overview --
+ * Rewards are earned as tokenValue() increases in the underlying opportunity
+ * TUSD is never held in this contract - zTUSD represents value we owe to depositors
+ *
+ * -- zTUSD vs yTUSD --
+ * zTUSD represents an amount of ASSURED TUSD owed to the zTUSD holder (depositors)
+ * 1 zTUSD = (yTUSD ^ assurance ratio)
+ * yTUSD represents an amount of NON-ASSURED TUSD owed to this contract
+ * TUSD value = yTUSD * finOp.tokenValue()
+ *
+ * -- Awarding the Assurance Pool
+ * The difference increases when depositors withdraw
+ * Pool award is calculated as follows
+ * (finOpValue * finOpBalance) - (assuredOpportunityBalance * assuredOpportunityTokenValue)
+ *
+ * -- Flash Assurance --
+ * If a transfer fails, stake is sold from the assurance pool for TUSD
+ * When stake is liquidated, the TUSD is sent out in the same transaction
+ * Can attempt to sell bad debt at a later date and return value to the pool
+ *
+ * -- Assumptions --
+ * tokenValue can never decrease for this contract. We want to guarantee
+ * the awards earned on deposited TUSD and liquidate trusttokens for this amount
+ * We allow the rewardBasis to be adjusted, but since we still need to maintain
+ * the tokenValue, we calculate an adjustment factor and set minTokenValue
  *
 **/
 contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOpportunityStorage, InitializableClaimable {
-    event depositSuccess(address _account, uint amount);
-    event withdrawToSuccess(address _to, uint _amount);
-    event stakeLiquidated(address _reciever, int256 _debt);
-    event awardPoolSuccess(uint256 _amount);
-    event awardPoolFailure(uint256 _amount);
+    using SafeMath for uint256;
+    using SafeMath for uint256;
 
-    uint32 constant TOTAL_BASIS = 1000; // total basis points for pool rewards
-    uint zTUSDIssued = 0; // how much zTUSD we've issued
-    address opportunityAddress;
+    // total basis points for pool awards
+    uint32 constant TOTAL_BASIS = 1000;
+
+    // external contracts
+    address finOpAddress;
     address assuranceAddress;
     address liquidatorAddress;
     address exponentContractAddress;
     address trueRewardBackedTokenAddress;
 
-    // percentage of interest for staking pool
-    uint32 rewardBasis; // 1% = 10
-    // adjustment factor used when changing reward basis
-    uint rewardBasisAjustmentFactor;
-    uint minPerTokenValue;
-
     // address allowed to withdraw/deposit, usually set to address of TUSD smart contract
     address fundsManager;
 
-    using SafeMath for uint;
-    using SafeMath for uint32;
-    using SafeMath for uint256;
+    event Deposit(address account, uint256 tusd, uint256 ztusd);
+    event Redemption(address to, uint256 ztusd, uint256 tusd);
+    event Liquidation(address receiver, int256 debt);
+    event AwardPool(uint256 amount);
+    event AwardFailure(uint256 amount);
 
-    function perTokenValue() external view returns(uint256) {
-        return _perTokenValue();
+    /// funds manager can deposit/withdraw from this opportunity
+    modifier onlyFundsManager() {
+        require(msg.sender == fundsManager, "only funds manager");
+        _;
     }
-
-    function getBalance() external view returns (uint) {
-        return _getBalance();
-    }
-
-    function opportunity() internal view returns(FinancialOpportunity) {
-        return FinancialOpportunity(opportunityAddress);
-    }
-
-    function assurance() internal view returns(StakedToken) {
-        return StakedToken(assuranceAddress); // StakedToken is assurance staking pool
-    }
-
-    function liquidator() internal view returns (Liquidator) {
-        return Liquidator(liquidatorAddress);
-    }
-
-    function exponents() internal view returns (FractionalExponents){
-        return FractionalExponents(exponentContractAddress);
-    }
-
-    function token() internal view returns (IERC20){
-        return IERC20(trueRewardBackedTokenAddress);
-    }
-
-    // todo feewet document
-    function _calculatePerTokenValue(uint32 _rewardBasis) internal view returns(uint256) {
-        (uint256 result, uint8 precision) = exponents().power(
-            opportunity().perTokenValue(), 10**18,
-            _rewardBasis, TOTAL_BASIS);
-        return result.mul(10**18).div(2 ** uint256(precision));
+    /**
+     * @dev configure assured opportunity
+     */
+    function configure(
+        address _finOpAddress,                  // finOp to assure
+        address _assuranceAddress,              // assurance pool
+        address _liquidatorAddress,             // trusttoken liqudiator
+        address _exponentContractAddress,       // exponent contract
+        address _trueRewardBackedTokenAddress,  // token
+        address _fundsManager                   // funds manager
+    ) external {
+        require(_finOpAddress != address(0), "finOp cannot be address(0)");
+        require(_assuranceAddress != address(0), "assurance pool cannot be address(0)");
+        require(_liquidatorAddress != address(0), "liquidator cannot be address(0)");
+        require(_exponentContractAddress != address(0), "exponent cannot be address(0)");
+        require(_trueRewardBackedTokenAddress != address(0), "token cannot be address(0)");
+        require(_fundsManager != address(0), "findsManager cannot be address(0)");
+        super._configure(); // sender claims ownership here
+        finOpAddress = _finOpAddress;
+        assuranceAddress = _assuranceAddress;
+        liquidatorAddress = _liquidatorAddress;
+        exponentContractAddress = _exponentContractAddress;
+        trueRewardBackedTokenAddress = _trueRewardBackedTokenAddress;
+        fundsManager = _fundsManager;
+        // only update factors if they are zero (default)
+        if (adjustmentFactor == 0) {
+            adjustmentFactor = 1*10**18;
+        }
+        if (rewardBasis == 0) {
+            rewardBasis = TOTAL_BASIS; // set to 100% by default
+        }
     }
 
     /**
-     * Calculate TUSD / zTUSD (opportunity value minus pool award)
-     * We assume opportunity perTokenValue always goes up
-     * todo feewet: this might be really expensive, how can we optimize? (cache by perTokenValue)
+     * @dev total supply of zTUSD
+     * inherited from FinancialOpportunity.sol
      */
-    function _perTokenValue() internal view returns(uint256) {
-        // if no assurance, use  opportunity perTokenValue
-        if (rewardBasis == TOTAL_BASIS) {
-            return opportunity().perTokenValue();
-        }
+    function totalSupply() external view returns (uint256) {
+        return zTUSDIssued;
+    }
 
-        uint calculatedValue = _calculatePerTokenValue(rewardBasis).mul(rewardBasisAjustmentFactor).div(10**18);
-        if(calculatedValue < minPerTokenValue) {
-            return minPerTokenValue;
+    /**
+     * @dev value of TUSD per zTUSD
+     * inherited from FinancialOpportunity.sol
+     *
+     * @return TUSD value of zTUSD
+     */
+    function tokenValue() external view returns(uint256) {
+        return _tokenValue();
+    }
+
+    /**
+     * @dev deposit TUSD for zTUSD
+     * inherited from FinancialOpportunity.sol
+     *
+     * @param from address to deposit from
+     * @param amount TUSD amount to deposit
+     * @return zTUSD amount
+     */
+    function deposit(address from, uint256 amount) external onlyFundsManager returns(uint256) {
+        return _deposit(from, amount);
+    }
+
+    /**
+     * @dev redeem zTUSD for TUSD
+     * inherited from FinancialOpportunity.sol
+     *
+     * @param to address to send tusd to
+     * @param amount amount of zTUSD to redeem
+     * @return amount of TUSD returned by finOp
+     */
+    function redeem(address to, uint256 amount) external onlyFundsManager returns(uint256) {
+        return _redeem(to, amount);
+    }
+
+    /**
+     * @dev Get TUSD to be awarded to staking pool
+     * Calculated as the difference in value of total zTUSD and yTUSD
+     * (finOpTotalSupply * finOpTokenValue) - (zTUSDIssued * zTUSDTokenValue)
+     *
+     * @return pool balance in TUSD
+     */
+    function poolAwardBalance() public view returns (uint256) {
+        uint256 zTUSDValue = finOp().tokenValue().mul(finOp().totalSupply()).div(10**18);
+        uint256 yTUSDValue = _totalSupply().mul(_tokenValue()).div(10**18);
+        return zTUSDValue.sub(yTUSDValue);
+    }
+
+    /**
+     * @dev Sell yTUSD for TUSD and deposit into staking pool.
+     * Award amount is the difference between zTUSD issued an
+     * yTUSD in the underlying financial opportunity
+     */
+    function awardPool() external {
+        uint256 amount = poolAwardBalance();
+        uint256 ytusd = _yTUSD(amount);
+
+        // sell pool debt and award TUSD to pool
+        (bool success, uint256 returnedAmount) = _attemptRedeem(address(this), ytusd);
+
+        if (success) {
+            token().transfer(address(pool()), returnedAmount);
+            emit AwardPool(returnedAmount);
+        }
+        else {
+            emit AwardFailure(returnedAmount);
+        }
+    }
+
+    /**
+     * @dev set new reward basis for opportunity
+     * recalculate tokenValue and ensure tokenValue never decreases
+     *
+     * @param newBasis new reward basis
+     */
+    function setRewardBasis(uint32 newBasis) external onlyOwner {
+        minTokenValue = _tokenValue();
+
+        adjustmentFactor = adjustmentFactor
+            .mul(_calculateTokenValue(rewardBasis))
+            .div(_calculateTokenValue(newBasis));
+        rewardBasis = newBasis;
+    }
+
+    /**
+     * @dev Get supply amount of zTUSD issued
+     * @return zTUSD issued
+    **/
+    function _totalSupply() internal view returns (uint256) {
+        return zTUSDIssued;
+    }
+
+    /**
+     * Calculate yTUSD / zTUSD (opportunity value minus pool award)
+     * We assume opportunity tokenValue always goes up
+     *
+     * @return value of zTUSD
+     */
+    function _tokenValue() internal view returns(uint256) {
+        // if no assurance, use  opportunity tokenValue
+        if (rewardBasis == TOTAL_BASIS) {
+            return finOp().tokenValue();
+        }
+        uint256 calculatedValue = _calculateTokenValue(rewardBasis).mul(adjustmentFactor).div(10**18);
+        if(calculatedValue < minTokenValue) {
+            return minTokenValue;
         } else {
             return calculatedValue;
         }
     }
 
     /**
-     * Get total amount of zTUSD issued
-    **/
-    function _getBalance() internal view returns (uint) {
-        return zTUSDIssued;
+     * @dev calculate TUSD value of zTUSD
+     * zTUSD = yTUSD ^ (rewardBasis / totalBasis)
+     * reward ratio = _rewardBasis / TOTAL_BASIS
+     *
+     * @param _rewardBasis reward basis (max TOTAL_BASIS)
+     * @return zTUSD token value
+     */
+    function _calculateTokenValue(uint32 _rewardBasis) internal view returns(uint256) {
+        (uint256 result, uint8 precision) = exponents().power(
+            finOp().tokenValue(), 10**18,
+            _rewardBasis, TOTAL_BASIS);
+        return result.mul(10**18).div(2 ** uint256(precision));
     }
 
     /**
-     * @dev configure assured opportunity
+     * @dev Deposit TUSD into wrapped opportunity.
+     * Calculate zTUSD value and add to issuance value.
+     *
+     * @param _account account to deposit tusd from
+     * @param _amount amount of tusd to deposit
      */
-    function configure(
-        address _opportunityAddress,
-        address _assuranceAddress,
-        address _liquidatorAddress,
-        address _exponentContractAddress,
-        address _trueRewardBackedTokenAddress,
-        address _fundsManager
-    ) external {
-        super._configure(); // sender claims ownership here
-        opportunityAddress = _opportunityAddress;
-        assuranceAddress = _assuranceAddress;
-        liquidatorAddress = _liquidatorAddress;
-        exponentContractAddress = _exponentContractAddress;
-        trueRewardBackedTokenAddress = _trueRewardBackedTokenAddress;
-        fundsManager = _fundsManager;
-        rewardBasis = TOTAL_BASIS;
-        rewardBasisAjustmentFactor = 1*10**18;
-    }
-
-    modifier onlyFundsManager() {
-        require(msg.sender == fundsManager, "only funds manager");
-        _;
-    }
-
-    function claimLiquidatorOwnership() external onlyOwner {
-        liquidator().claimOwnership();
-    }
-
-    function transferLiquidatorOwnership(address newOwner) external onlyOwner {
-        liquidator().transferOwnership(newOwner);
-    }
-
-    /**
-     * Deposit TUSD into wrapped opportunity. Calculate zTUSD value and add to issuance value.
-     */
-    function _deposit(address _account, uint _amount) internal returns(uint) {
+    function _deposit(address _account, uint256 _amount) internal returns(uint256) {
         token().transferFrom(_account, address(this), _amount);
 
         // deposit TUSD into opportunity
-        token().approve(opportunityAddress, _amount);
-        opportunity().deposit(address(this), _amount);
+        token().approve(finOpAddress, _amount);
+        finOp().deposit(address(this), _amount);
 
         // calculate zTUSD value of deposit
-        uint zTUSDValue = _amount.mul(10 ** 18).div(_perTokenValue());
+        uint256 ztusd = _amount.mul(10 ** 18).div(_tokenValue());
 
         // update zTUSDIssued
-        zTUSDIssued = zTUSDIssued.add(zTUSDValue);
-        emit depositSuccess(_account, _amount);
-        return zTUSDValue;
+        zTUSDIssued = zTUSDIssued.add(ztusd);
+        emit Deposit(_account, _amount, ztusd);
+        return ztusd;
     }
 
     /**
-     * Withdraw amount of TUSD to an address. Liquidate if opportunity fails to return TUSD.
-     * todo feewet we might need to check that user has the right balance here
-     * does this mean we need account? Or do we have whatever calls this check
+     * @dev Redeem zTUSD for TUSD
+     * Liquidate if opportunity fails to return TUSD.
+     *
+     * @param _to address to withdraw to
+     * @param ztusd amount in ytusd to redeem
+     * @return TUSD amount redeemed for zTUSD
      */
-    function _withdraw(address _to, uint _amount) internal returns(uint) {
+    function _redeem(address _to, uint256 ztusd) internal returns(uint256) {
 
-        // attmept withdraw
-        (bool success, uint returnedAmount) = _attemptWithdrawTo(_to, _amount);
+        // attempt withdraw to this contract
+        // here we redeem ztusd amount which leaves
+        // a small amount of yTUSD left in the finOp
+        // which can be redeemed by the assurance pool
+        (bool success, uint256 returnedAmount) = _attemptRedeem(address(this), ztusd);
 
-        // todo feewet do we want best effort
-        if (success) {
-            emit withdrawToSuccess(_to, _amount);
+        // calculate reward amount
+        // todo feewet: check if expected amount is correct
+        // possible use precision threshold or smart rounding
+        // to eliminate micro liquidations
+        uint256 expectedAmount = _tokenValue().mul(ztusd).div(10**18);
+        uint256 liquidated = 0;
+
+        if (!success || (success && returnedAmount < expectedAmount)) {
+            liquidated = _liquidate(address(this), int256(expectedAmount.sub(returnedAmount)));
         }
-        else {
-            // withdrawal failed! liquidate :(
-            _liquidate(_to, int256(_amount));
-        }
 
-        // calculate new amount issued
-        zTUSDIssued = zTUSDIssued.sub(returnedAmount);
+        zTUSDIssued = zTUSDIssued.sub(ztusd, "not enough supply");
 
+        // transfer token to redeemer
+        require(token().transfer(_to, returnedAmount.add(liquidated)), "transfer failed");
+
+        emit Redemption(_to, ztusd, returnedAmount);
         return returnedAmount;
     }
 
     /**
-     * Try to withdrawTo and return success and amount
+     * @dev Try to redeem and return success and amount
+     *
+     * @param _to redeemer address
+     * @param ztusd amount in ztusd
     **/
-    function _attemptWithdrawTo(address _to, uint _amount) internal returns (bool, uint) {
-        uint returnedAmount;
+    function _attemptRedeem(address _to, uint256 ztusd) internal returns (bool, uint) {
+        uint256 returnedAmount;
 
-        // attempt to withdraw from oppurtunity
-        (bool success, bytes memory returnData) = address(opportunity()).call(
-            abi.encodePacked(opportunity().withdrawTo.selector, abi.encode(_to, _amount))
+        // attempt to withdraw from opportunity
+        (bool success, bytes memory returnData) = address(finOp()).call(
+            abi.encodePacked(finOp().redeem.selector, abi.encode(_to, ztusd))
         );
 
         if (success) { // successfully got TUSD :)
-            returnedAmount = abi.decode(returnData, (uint));
-            success = true;
+            returnedAmount = abi.decode(returnData, (uint256));
         }
         else { // failed get TUSD :(
-            success = false;
             returnedAmount = 0;
         }
         return (success, returnedAmount);
     }
 
     /**
-     * Liquidate staked tokens to pay for debt.
+     * @dev Liquidate tokens in staking pool to cover debt
+     * Sends tusd to receiver
+     *
+     * @param _receiver address to recieve tusd
+     * @param _debt tusd debt to be liquidated
+     * @return amount liquidated
     **/
-    function _liquidate(address _reciever, int256 _debt) internal returns (uint) {
-        liquidator().reclaim(_reciever, _debt);
-        emit stakeLiquidated(_reciever, _debt);
+    function _liquidate(address _receiver, int256 _debt) internal returns (uint256) {
+        liquidator().reclaim(_receiver, _debt);
+        emit Liquidation(_receiver, _debt);
         return uint(_debt);
     }
 
     /**
-     * Sell yTUSD for TUSD and deposit into staking pool.
-    **/
-    function awardPool() external {
-        // compute what is owed in TUSD
-        // (opportunityValue * opportunityBalance)
-        // - (assuredOpportunityBalance * assuredOpportunityTokenValue)
-        uint awardAmount = opportunity().perTokenValue().mul(opportunity().getBalance()).sub(_getBalance().mul(_perTokenValue()));
-
-        // sell pool debt and award TUSD to pool
-        (bool success, uint returnedAmount) = _attemptWithdrawTo(assuranceAddress, awardAmount);
-        if (success) {
-            emit awardPoolSuccess(returnedAmount);
-        }
-        else {
-            emit awardPoolFailure(returnedAmount);
-        }
-    }
-
-    function deposit(address _account, uint _amount) external onlyFundsManager returns(uint) {
-        return _deposit(_account, _amount);
-    }
-
-    function withdrawTo(address _to, uint _amount) external onlyFundsManager returns(uint) {
-        return _withdraw(_to, _amount);
-    }
-
-    function withdrawAll(address _to) external onlyOwner returns(uint) {
-        return _withdraw(_to, _getBalance().mul(_perTokenValue()).div(10**18));
+     * @dev convert tusd value into yTUSD value
+     * @param _tusd TUSD to convert
+     * @return yTUSD value of TUSD
+     */
+    function _yTUSD(uint256 _tusd) internal view returns (uint256) {
+        return _tusd.mul(10**18).div(finOp().tokenValue());
     }
 
     /**
-     * @dev set new reward basis for opportunity
-     * recalculate perTokenValue
-     * ensure perTokenValue never decreases
+     * @dev convert tusd value into zTUSD value
+     * @param _tusd TUSD to convert
+     * @return zTUSD value of TUSD
      */
-    function setRewardBasis(uint32 _value) external onlyOwner {
-        minPerTokenValue = _perTokenValue();
-
-        rewardBasisAjustmentFactor = rewardBasisAjustmentFactor
-            .mul(_calculatePerTokenValue(rewardBasis))
-            .div(_calculatePerTokenValue(_value));
-        rewardBasis = _value;
+    function _zTUSD(uint256 _tusd) internal view returns (uint256) {
+        return _tusd.mul(10**18).div(_tokenValue());
     }
 
+    /// @dev claim ownership of liquidator
+    function claimLiquidatorOwnership() external onlyOwner {
+        liquidator().claimOwnership();
+    }
+
+    /// @dev transfer ownership of liquidator
+    function transferLiquidatorOwnership(address newOwner) external onlyOwner {
+        liquidator().transferOwnership(newOwner);
+    }
+
+    /// @dev getter for financial opportuniry
+    /// @return financial opportunity
+    function finOp() public view returns(FinancialOpportunity) {
+        return FinancialOpportunity(finOpAddress);
+    }
+
+    /// @dev getter for staking pool
+    /// @return staking pool
+    function pool() public view returns(StakedToken) {
+        return StakedToken(assuranceAddress); // StakedToken is assurance staking pool
+    }
+
+    /// @dev getter for liquidator
+    function liquidator() public view returns (Liquidator) {
+        return Liquidator(liquidatorAddress);
+    }
+
+    /// @dev getter for exponents contract
+    function exponents() public view returns (FractionalExponents){
+        return FractionalExponents(exponentContractAddress);
+    }
+
+    /// @dev deposit token (TrueUSD)
+    function token() public view returns (IERC20){
+        return IERC20(trueRewardBackedTokenAddress);
+    }
+
+    /// @dev default payable
     function() external payable {}
 }

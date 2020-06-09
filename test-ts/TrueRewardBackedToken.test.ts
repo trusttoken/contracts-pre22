@@ -1,29 +1,34 @@
 import { expect, use } from 'chai'
+import { solidity } from 'ethereum-waffle'
 import { Contract, Wallet } from 'ethers'
-import { deployContract, solidity } from 'ethereum-waffle'
-import { beforeEachWithFixture } from './utils'
-import {
-  AaveFinancialOpportunity,
-  AssuredFinancialOpportunity,
-  ATokenMock,
-  ConfigurableFinancialOpportunityMock,
-  FractionalExponents,
-  LendingPoolCoreMock,
-  LendingPoolMock,
-  OwnedUpgradeabilityProxy,
-  RegistryMock,
-  SimpleLiquidatorMock,
-  TrueUSD,
-} from '../build'
 import { parseEther } from 'ethers/utils'
+import { AaveFinancialOpportunity } from '../build/types/AaveFinancialOpportunity'
+import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
+import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
+import { ATokenMock } from '../build/types/ATokenMock'
+import { ATokenMockFactory } from '../build/types/ATokenMockFactory'
+import { ConfigurableFinancialOpportunityMockFactory } from '../build/types/ConfigurableFinancialOpportunityMockFactory'
+import { FinancialOpportunity } from '../build/types/FinancialOpportunity'
+import { FractionalExponentsFactory } from '../build/types/FractionalExponentsFactory'
+import { LendingPoolCoreMock } from '../build/types/LendingPoolCoreMock'
+import { LendingPoolCoreMockFactory } from '../build/types/LendingPoolCoreMockFactory'
+import { LendingPoolMockFactory } from '../build/types/LendingPoolMockFactory'
+import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
+import { RegistryMock } from '../build/types/RegistryMock'
+import { RegistryMockFactory } from '../build/types/RegistryMockFactory'
+import { SimpleLiquidatorMockFactory } from '../build/types/SimpleLiquidatorMockFactory'
+import { TrueRewardBackedToken } from '../build/types/TrueRewardBackedToken'
+import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
+import { setupDeploy } from '../scripts/utils'
+import { beforeEachWithFixture } from './utils'
 
 use(solidity)
 
 describe('TrueRewardBackedToken', () => {
   let owner: Wallet, holder: Wallet, holder2: Wallet, sender: Wallet, recipient: Wallet, notWhitelisted: Wallet
-  let token: Contract
-  let registry: Contract
-  let financialOpportunity: Contract
+  let token: TrueRewardBackedToken
+  let registry: RegistryMock
+  let financialOpportunity: FinancialOpportunity
   const mockPoolAddress = Wallet.createRandom().address
   const WHITELIST_TRUEREWARD = '0x6973547275655265776172647357686974656c69737465640000000000000000'
 
@@ -32,21 +37,21 @@ describe('TrueRewardBackedToken', () => {
 
     beforeEachWithFixture(async (provider, wallets) => {
       ([owner, holder, holder2, sender, recipient, notWhitelisted] = wallets)
-
-      token = await deployContract(owner, TrueUSD, [], { gasLimit: 5_000_000 })
+      const deployContract = setupDeploy(owner)
+      token = await deployContract(TrueUsdFactory, { gasLimit: 5_000_000 })
       await token.mint(holder.address, parseEther('100'))
-      registry = await deployContract(owner, RegistryMock)
+      registry = await deployContract(RegistryMockFactory)
       await token.setRegistry(registry.address)
 
-      const fractionalExponents = await deployContract(owner, FractionalExponents)
-      const liquidator = await deployContract(owner, SimpleLiquidatorMock, [token.address])
+      const fractionalExponents = await deployContract(FractionalExponentsFactory)
+      const liquidator = await deployContract(SimpleLiquidatorMockFactory, token.address)
       await token.mint(liquidator.address, parseEther('1000'))
 
-      configurableFinancialOpportunity = await deployContract(owner, ConfigurableFinancialOpportunityMock, [token.address])
+      configurableFinancialOpportunity = await deployContract(ConfigurableFinancialOpportunityMockFactory, token.address)
       await token.mint(configurableFinancialOpportunity.address, parseEther('100'))
 
-      const financialOpportunityImpl = await deployContract(owner, AssuredFinancialOpportunity)
-      const financialOpportunityProxy = await deployContract(owner, OwnedUpgradeabilityProxy)
+      const financialOpportunityImpl = await deployContract(AssuredFinancialOpportunityFactory)
+      const financialOpportunityProxy = await deployContract(OwnedUpgradeabilityProxyFactory)
       financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
       await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
       await financialOpportunity.configure(
@@ -57,49 +62,91 @@ describe('TrueRewardBackedToken', () => {
         token.address,
         token.address,
       )
-      await token.setOpportunityAddress(financialOpportunity.address)
-
-      await registry.setAttributeValue(owner.address, WHITELIST_TRUEREWARD, 1)
-      await registry.setAttributeValue(holder.address, WHITELIST_TRUEREWARD, 1)
-      await registry.setAttributeValue(holder2.address, WHITELIST_TRUEREWARD, 1)
-      await registry.setAttributeValue(sender.address, WHITELIST_TRUEREWARD, 1)
-      await registry.setAttributeValue(recipient.address, WHITELIST_TRUEREWARD, 1)
     })
 
-    it('holder enables trueReward with 0 balance', async () => {
-      expect(await token.trueRewardEnabled(holder2.address)).to.be.false
+    describe('Before opportunity address set & no whitelisted', () => {
+      it('total supply', async () => {
+        expect(await token.totalSupply()).to.equal(parseEther('1200'))
+        expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
+        expect(await token.debtBackedSupply()).to.equal(parseEther('0'))
+      })
+      it('balanceOf', async () => {
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+        expect(await token.balanceOf(holder2.address)).to.equal(parseEther('0'))
+      })
+      it('trueRewardEnabled false for accounts with balance', async () => {
+        expect(await token.trueRewardEnabled(holder2.address)).to.be.false
+        await expect(token.connect(holder2).enableTrueReward()).to.be.revertedWith(
+          'must be whitelisted to enable TrueRewards')
+        expect(await token.trueRewardEnabled(holder2.address)).to.be.false
+      })
+      it('transfers working', async () => {
+        await token.connect(holder).transfer(holder2.address, parseEther('100'))
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('0'))
+        expect(await token.balanceOf(holder2.address)).to.equal(parseEther('100'))
 
-      await token.connect(holder2).enableTrueReward()
-      expect(await token.trueRewardEnabled(holder2.address)).to.be.true
+        await token.connect(holder2).transfer(holder.address, parseEther('100'))
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+        expect(await token.balanceOf(holder2.address)).to.equal(parseEther('0'))
+      })
     })
 
-    it('holder enables trueReward with 100 balance', async () => {
-      await token.connect(holder).enableTrueReward()
-      expect(await token.trueRewardEnabled(holder.address)).to.be.true
-      expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(parseEther('100'))
-      expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('100'))
-      expect(await token.totalSupply()).to.equal(parseEther('1300'))
-      expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
-    })
+    describe('After opportunity address set', () => {
+      beforeEach(async () => {
+        // set opportuniy
+        await token.setOpportunityAddress(financialOpportunity.address)
+        await registry.setAttributeValue(owner.address, WHITELIST_TRUEREWARD, 1)
+        await registry.setAttributeValue(holder.address, WHITELIST_TRUEREWARD, 1)
+        await registry.setAttributeValue(holder2.address, WHITELIST_TRUEREWARD, 1)
+        await registry.setAttributeValue(sender.address, WHITELIST_TRUEREWARD, 1)
+        await registry.setAttributeValue(recipient.address, WHITELIST_TRUEREWARD, 1)
+      })
 
-    it('holder disables trueReward', async () => {
-      expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
-      await expect(token.connect(holder).enableTrueReward()).to.emit(financialOpportunity, 'Deposit').withArgs(holder.address, parseEther('100'), parseEther('100'))
-      expect(await token.trueRewardEnabled(holder.address)).to.be.true
-      await expect(token.connect(holder).disableTrueReward()).to.emit(financialOpportunity, 'Redemption').withArgs(holder.address, parseEther('100'), parseEther('100'))
-      expect(await token.trueRewardEnabled(holder.address)).to.be.false
-      expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(0)
-      expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(0)
-      expect(await token.totalSupply()).to.equal(parseEther('1200'))
-      expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
-    })
+      it('total supply', async () => {
+        expect(await token.totalSupply()).to.equal(parseEther('1200'))
+        expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
+        expect(await token.debtBackedSupply()).to.equal(parseEther('0'))
+      })
 
-    it('holder fails to enable trueReward when not whitelisted', async () => {
-      expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
+      it('holder enables trueReward with 0 balance', async () => {
+        expect(await token.trueRewardEnabled(holder2.address)).to.be.false
 
-      await expect(token.connect(notWhitelisted).enableTrueReward()).to.be.revertedWith(
-        'must be whitelisted to enable TrueRewards')
-      expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
+        await token.connect(holder2).enableTrueReward()
+        expect(await token.trueRewardEnabled(holder2.address)).to.be.true
+      })
+
+      it('holder enables trueReward with 100 balance', async () => {
+        await token.connect(holder).enableTrueReward()
+        expect(await token.trueRewardEnabled(holder.address)).to.be.true
+        expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(parseEther('100'))
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('100'))
+        expect(await token.totalSupply()).to.equal(parseEther('1300'))
+        expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
+        expect(await token.debtBackedSupply()).to.equal(parseEther('100'))
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+      })
+
+      it('holder disables trueReward', async () => {
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+        await expect(token.connect(holder).enableTrueReward()).to.emit(financialOpportunity, 'Deposit').withArgs(holder.address, parseEther('100'), parseEther('100'))
+        expect(await token.trueRewardEnabled(holder.address)).to.be.true
+        await expect(token.connect(holder).disableTrueReward()).to.emit(financialOpportunity, 'Redemption').withArgs(holder.address, parseEther('100'), parseEther('100'))
+        expect(await token.trueRewardEnabled(holder.address)).to.be.false
+        expect(await token.rewardTokenBalance(holder.address, financialOpportunity.address)).to.equal(0)
+        expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(0)
+        expect(await token.totalSupply()).to.equal(parseEther('1200'))
+        expect(await token.depositBackedSupply()).to.equal(parseEther('1200'))
+        expect(await token.debtBackedSupply()).to.equal(parseEther('0'))
+        expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+      })
+
+      it('holder fails to enable trueReward when not whitelisted', async () => {
+        expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
+
+        await expect(token.connect(notWhitelisted).enableTrueReward()).to.be.revertedWith(
+          'must be whitelisted to enable TrueRewards')
+        expect(await token.trueRewardEnabled(notWhitelisted.address)).to.be.false
+      })
     })
   })
 
@@ -110,21 +157,22 @@ describe('TrueRewardBackedToken', () => {
 
     beforeEachWithFixture(async (provider, wallets) => {
       ([owner, holder, holder2, sender, recipient] = wallets)
-      token = await deployContract(owner, TrueUSD, [], { gasLimit: 5_000_000 })
+      const deployContract = setupDeploy(owner)
+      token = await deployContract(TrueUsdFactory, { gasLimit: 5_000_000 })
       await token.mint(holder.address, parseEther('300'))
 
-      registry = await deployContract(owner, RegistryMock)
+      registry = await deployContract(RegistryMockFactory)
       await token.setRegistry(registry.address)
 
-      lendingPoolCore = await deployContract(owner, LendingPoolCoreMock)
-      sharesToken = await deployContract(owner, ATokenMock, [token.address, lendingPoolCore.address])
-      lendingPool = await deployContract(owner, LendingPoolMock, [lendingPoolCore.address, sharesToken.address])
+      lendingPoolCore = await deployContract(LendingPoolCoreMockFactory)
+      sharesToken = await deployContract(ATokenMockFactory, token.address, lendingPoolCore.address)
+      lendingPool = await deployContract(LendingPoolMockFactory, lendingPoolCore.address, sharesToken.address)
 
       await token.connect(holder).transfer(sharesToken.address, parseEther('100'))
       await token.connect(holder).transfer(holder2.address, parseEther('100'))
 
-      const financialOpportunityImpl = await deployContract(owner, AaveFinancialOpportunity)
-      const financialOpportunityProxy = await deployContract(owner, OwnedUpgradeabilityProxy)
+      const financialOpportunityImpl = await deployContract(AaveFinancialOpportunityFactory)
+      const financialOpportunityProxy = await deployContract(OwnedUpgradeabilityProxyFactory)
       financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
       await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
       await financialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, token.address)
@@ -164,6 +212,22 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.balanceOf(holder.address)).to.equal('99999999999999999999')
       await lendingPoolCore.setReserveNormalizedIncome(parseEther('1600000000'))
       expect(await token.balanceOf(holder.address)).to.equal('106666666666666666665')
+    })
+
+    it('total supply calculated correctly after tokenValue increases', async () => {
+      expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+      await lendingPoolCore.setReserveNormalizedIncome(parseEther('1500000000'))
+      await token.connect(holder).enableTrueReward()
+      // test supply before increasing
+      expect(await token.totalSupply()).to.equal('399999999999999999999')
+      expect(await token.depositBackedSupply()).to.equal(parseEther('300'))
+      expect(await token.debtBackedSupply()).to.equal('99999999999999999999')
+      // increase token value
+      await lendingPoolCore.setReserveNormalizedIncome(parseEther('1600000000'))
+      // test supply after increasing
+      expect(await token.totalSupply()).to.equal('406666666666666666665')
+      expect(await token.depositBackedSupply()).to.equal(parseEther('300'))
+      expect(await token.debtBackedSupply()).to.equal('106666666666666666665')
     })
 
     it('holders with trudereward disabled transfer funds between each other', async () => {
@@ -316,21 +380,22 @@ describe('TrueRewardBackedToken', () => {
   })
 
   describe('with Aave and AssuredFinancialOpportunity', () => {
-    let lendingPoolCore: Contract
-    let sharesToken: Contract
-    let aaveFinancialOpportunity: Contract
+    let lendingPoolCore: LendingPoolCoreMock
+    let sharesToken: ATokenMock
+    let aaveFinancialOpportunity: AaveFinancialOpportunity
 
     beforeEachWithFixture(async (provider, wallets) => {
       ([owner, holder, holder2, sender, recipient] = wallets)
+      const deployContract = setupDeploy(owner)
 
-      token = await deployContract(owner, TrueUSD, [], { gasLimit: 5_000_000 })
+      token = await deployContract(TrueUsdFactory, { gasLimit: 5_000_000 })
 
-      const registry = await deployContract(owner, RegistryMock)
-      const fractionalExponents = await deployContract(owner, FractionalExponents)
-      const liquidator = await deployContract(owner, SimpleLiquidatorMock, [token.address])
-      lendingPoolCore = await deployContract(owner, LendingPoolCoreMock)
-      sharesToken = await deployContract(owner, ATokenMock, [token.address, lendingPoolCore.address])
-      const lendingPool = await deployContract(owner, LendingPoolMock, [lendingPoolCore.address, sharesToken.address])
+      const registry = await deployContract(RegistryMockFactory)
+      const fractionalExponents = await deployContract(FractionalExponentsFactory)
+      const liquidator = await deployContract(SimpleLiquidatorMockFactory, token.address)
+      lendingPoolCore = await deployContract(LendingPoolCoreMockFactory)
+      sharesToken = await deployContract(ATokenMockFactory, token.address, lendingPoolCore.address)
+      const lendingPool = await deployContract(LendingPoolMockFactory, lendingPoolCore.address, sharesToken.address)
 
       await token.mint(liquidator.address, parseEther('1000'))
       await token.mint(holder.address, parseEther('300'))
@@ -338,13 +403,13 @@ describe('TrueRewardBackedToken', () => {
       await token.connect(holder).transfer(sharesToken.address, parseEther('100'))
       await token.connect(holder).transfer(holder2.address, parseEther('100'))
 
-      const aaveFinancialOpportunityImpl = await deployContract(owner, AaveFinancialOpportunity)
-      const aaveFinancialOpportunityProxy = await deployContract(owner, OwnedUpgradeabilityProxy)
+      const aaveFinancialOpportunityImpl = await deployContract(AaveFinancialOpportunityFactory)
+      const aaveFinancialOpportunityProxy = await deployContract(OwnedUpgradeabilityProxyFactory)
       aaveFinancialOpportunity = aaveFinancialOpportunityImpl.attach(aaveFinancialOpportunityProxy.address)
       await aaveFinancialOpportunityProxy.upgradeTo(aaveFinancialOpportunityImpl.address)
 
-      const financialOpportunityImpl = await deployContract(owner, AssuredFinancialOpportunity)
-      const financialOpportunityProxy = await deployContract(owner, OwnedUpgradeabilityProxy)
+      const financialOpportunityImpl = await deployContract(AssuredFinancialOpportunityFactory)
+      const financialOpportunityProxy = await deployContract(OwnedUpgradeabilityProxyFactory)
       financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
       await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
 
@@ -367,6 +432,11 @@ describe('TrueRewardBackedToken', () => {
       await registry.setAttributeValue(recipient.address, WHITELIST_TRUEREWARD, 1)
     })
 
+    it('account with 0 balance enables and disables trueReward', async () => {
+      await token.connect(recipient).enableTrueReward()
+      await token.connect(recipient).disableTrueReward()
+    })
+
     it('holder enables truereward', async () => {
       expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(0)
       await token.connect(holder).enableTrueReward()
@@ -380,7 +450,7 @@ describe('TrueRewardBackedToken', () => {
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
     })
 
-    it('two holderss enable truereward', async () => {
+    it('two holders enable truereward', async () => {
       await token.connect(holder).enableTrueReward()
       await token.connect(holder2).enableTrueReward()
 
@@ -403,6 +473,26 @@ describe('TrueRewardBackedToken', () => {
       await asHolder.transfer(recipient.address, parseEther('42'))
       expect(await token.balanceOf(recipient.address)).to.equal(parseEther('42'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('58'))
+    })
+
+    it('minting for account with trueReward enabled', async () => {
+      await token.connect(sender).enableTrueReward()
+      await token.mint(sender.address, parseEther('1.5'))
+      expect(await token.balanceOf(sender.address)).to.equal(parseEther('1.5'))
+      expect(await token.trueRewardEnabled(sender.address)).to.equal(true)
+    })
+
+    it('minting for account with trueReward enabled that had some mints before', async () => {
+      await token.connect(holder).enableTrueReward()
+      await token.mint(holder.address, parseEther('1.5'))
+      expect(await token.balanceOf(holder.address)).to.equal(parseEther('101.5'))
+      expect(await token.trueRewardEnabled(holder.address)).to.equal(true)
+    })
+
+    it('transfer to financial opportunity with trueReward enabled', async () => {
+      await token.connect(holder).enableTrueReward()
+      await token.connect(holder).transfer(financialOpportunity.address, 1)
+      expect(await token.balanceOf(holder.address)).to.equal(parseEther('100').sub(1))
     })
 
     describe('tokenValue == 1', () => {
@@ -461,7 +551,7 @@ describe('TrueRewardBackedToken', () => {
         await token.connect(sender).transfer(recipient.address, parseEther('50'))
 
         expect(await token.balanceOf(sender.address), 'sender').to.equal('49999999999999999999')
-        expect(await token.balanceOf(recipient.address), 'recipient').to.equal('49999999999999999998')
+        expect(await token.balanceOf(recipient.address), 'recipient').to.equal('49999999999999999999')
         expect(await token.rewardTokenBalance(sender.address, financialOpportunity.address)).to.equal('33333333333333333333') // 50 / 1.5
         expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('33333333333333333333')
         expect(await token.totalSupply()).to.equal('1349999999999999999999')

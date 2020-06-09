@@ -2,7 +2,8 @@
     "compilerVersion": "v0.5.13+commit.5b0b510c",
     "compilerOptions": {
         "optimizer": {
-          "enabled": true
+          "enabled": true,
+          "runs": 20000
         }
       },
     "sourceDirectory": "./contracts",

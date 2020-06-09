@@ -1,11 +1,11 @@
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
-import "../Admin/TokenController.sol";
+import "./TokenControllerMock.sol";
 
 import "./PreMigrationTrueUSDMock.sol";
 
 
-contract PreMigrationTokenController is TokenController {
+contract PreMigrationTokenController is TokenControllerMock {
     /**
     *@dev calls setBalanceSheet(address) and setAllowanceSheet(address) on the _proxy contract
     @param _proxy the contract that inplments setBalanceSheet and setAllowanceSheet

@@ -1,0 +1,25 @@
+{
+  "trueUSD": "0xa2EA00Df6d8594DBc76b79beFe22db9043b8896F",
+  "tokenController": "0x47106c72DE9144d43Bb026d848806Ab29e2A0227",
+  "registry": "0xe24c8f14295da7f308B73B94C72197e8Ee73A484",
+  "assuredFinancialOpportunity": "0xb911bBBa167A27A6A4C2817B70C80a30a6498F83",
+  "fractionalExponents": "0x538E569d40dA2360554739042b9d3133Bbd83d01",
+  "trustToken": "0xC2A3cA255B12769242201db4B91774Cae4caEf69",
+  "financialOpportunity": "0xAd1Cbc904E0117770B3b5fbD5fb44f2C08bDC7DB",
+  "lendingPool": "0x9E5C7835E4b13368fd628196C4f1c6cEc89673Fa",
+  "aToken": "0x3DE3F55AFDB0Cf2753fAe759F36d892126a06C81",
+  "trueUSDUniswapExchange": "0xC0A60A0a3BC76E6Dfa9e552DA2AD119a55370413",
+  "trustTokenUniswapExchange": "0xFD3399cdCB8E35bBf3adb2d0Ec8169597321f9dB",
+  "liquidator": "0x2472f43564837CCb87E969a81B41e2F775606Bb1",
+  "stakedToken": "0x981c10eC6c8cB69bFd38b965AA5F5761e1Cdf751",
+  "implementations": {
+    "trueUsd": "0x2445c557Efe8d22095E80Af4a77d297bE1951380",
+    "tokenController": "0x15aE6AaC222BaF2E230451E05006CF1114b6bDBB",
+    "assuredFinancialOpportunity": "0x652Df29F9B9966Dbd6C802aaB8052661a709Ce20",
+    "trustToken": "0xe6e2986145A28F7510D9ccd78bB43FF2e186c81B",
+    "financialOpportunity": "0xdeCec0700c9D9c607aB19d987369d6a97c117BbF",
+    "liquidator": "0xaedA9bA0Ad69412168b156eB922f19dc82c92d57",
+    "stakedToken": "0xEE3F42Eb39349d7fb0d40239e86b054217EE271c"
+  },
+  "deployHelper": "0xC3C28d17fE6F06e24c4C9e1eD795834286F01EB8"
+}
