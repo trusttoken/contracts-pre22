@@ -606,7 +606,7 @@ describe('TrueRewardBackedToken', () => {
         expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal('56666666666666666666')
       })
 
-      it('holders with trudereward enabled transfer funds between each other', async () => {
+      it('holders with truereward enabled transfer funds between each other', async () => {
         await token.connect(sender).enableTrueReward()
         await token.connect(recipient).enableTrueReward()
         await lendingPoolCore.setReserveNormalizedIncome(parseEther('1600000000'))
@@ -889,6 +889,35 @@ describe('TrueRewardBackedToken', () => {
             await token.connect(sender).transfer(recipient.address, parseEther('20'))
             expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
           })
+        })
+      })
+
+      describe('sender with truereward enabled sends to recipient with truereward enabled', async () => {
+        beforeEach(async () => {
+          await token.connect(holder).transfer(sender.address, parseEther('40'))
+          await token.connect(holder).transfer(reserveAddress, parseEther('60'))
+          await token.connect(sender).enableTrueReward()
+          await token.connect(recipient).enableTrueReward()
+        })
+
+        it('emits transfer events with reserve', async () => {
+          const amount = parseEther('40')
+          const tx = await token.connect(sender).transfer(recipient.address, amount)
+          console.count()
+          await expect(Promise.resolve(tx), 'sender to reserve')
+            .to.emit(token, 'Transfer').withArgs(sender.address, reserveAddress, amount)
+          console.count()
+          await expect(Promise.resolve(tx), 'reserve to sender')
+            .to.emit(token, 'Transfer').withArgs(reserveAddress, sender.address, amount)
+          console.count()
+          await expect(Promise.resolve(tx), 'sender to recipient')
+            .to.emit(token, 'Transfer').withArgs(sender.address, recipient.address, amount)
+          console.count()
+          await expect(Promise.resolve(tx), 'recipient to reserve')
+            .to.emit(token, 'Transfer').withArgs(recipient.address, reserveAddress, amount)
+          console.count()
+          await expect(Promise.resolve(tx), 'reserve to recipient')
+            .to.emit(token, 'Transfer').withArgs(reserveAddress, recipient.address, amount)
         })
       })
     })

@@ -90,25 +90,39 @@ contract RewardTokenWithReserve is RewardToken {
         uint256 amount,
         address finOp
     ) internal validFinOp(finOp) {
-        // require sender has sufficient balance
-        require(balanceOf(sender) >= amount, "insufficient balance");
+        addTokenToReserve(sender, amount);
+        withdrawRewardTokenFromReserve(receiver, amount, finOp);
+        emit SwapTokenForReward(sender, receiver, amount, finOp);
+    }
 
+    function addTokenToReserve(
+        address account,
+        uint256 amount
+    ) internal {
+        require(balanceOf(account) >= amount, "insufficient balance");
+
+        // sub from sender and add to reserve for depositToken
+        _subBalance(account, amount);
+        _addBalance(RESERVE, amount);
+
+        emit Transfer(account, RESERVE, amount);
+    }
+
+    function withdrawRewardTokenFromReserve(
+        address account,
+        uint256 amount,
+        address finOp
+    ) internal validFinOp(finOp) {
         // calculate rewardToken value for depositToken amount
         uint256 rewardAmount = _toRewardToken(amount, finOp);
 
-        // require reserve
         require(rewardTokenBalance(RESERVE, finOp) >= rewardAmount, "not enough rewardToken in reserve");
-
-        // sub from sender and add to reserve for depositToken
-        _subBalance(sender, amount);
-        _addBalance(RESERVE, amount);
 
         // sub from reserve and add to sender for rewardToken
         _subRewardBalance(RESERVE, rewardAmount, finOp);
-        _addRewardBalance(receiver, rewardAmount, finOp);
+        _addRewardBalance(account, rewardAmount, finOp);
 
-        // emit event
-        emit SwapTokenForReward(sender, receiver, amount, finOp);
+        emit Transfer(RESERVE, account, amount);
     }
 
     /**

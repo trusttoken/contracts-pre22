@@ -8,4 +8,5 @@ coverage
 coverage.json
 coverageEnv
 /.coverage_artifacts
-.DS_Store
+.DS_Store.
+.idea
