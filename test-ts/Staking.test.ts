@@ -256,7 +256,7 @@ describe('Staking', () => {
         expect(await stakedToken.unclaimedRewards(staker.address)).to.equal(0)
         expect(await trueUsd.balanceOf(staker.address)).to.equal(parseEther('30.0396'))
 
-        expect(await stakedToken.unclaimedRewards(secondStaker.address)).to.equal(parseEther('7.5099')) // 100 * (2 - 2 ^ 0.7) * 4/5
+        expect(await stakedToken.unclaimedRewards(secondStaker.address)).to.equal(parseEther('7.5099')) // 100 * (2 - 2 ^ 0.7) * 1/5
         await stakedToken.connect(secondStaker).claimRewards(secondStaker.address)
         expect(await stakedToken.unclaimedRewards(secondStaker.address)).to.equal(0)
         expect(await trueUsd.balanceOf(secondStaker.address)).to.equal(parseEther('7.5099'))
