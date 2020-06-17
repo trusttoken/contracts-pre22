@@ -11,7 +11,7 @@ import {
   RegistryMock,
 } from '../build'
 import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
-import { beforeEachWithFixture } from './utils'
+import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 
 use(solidity)
 

@@ -20,7 +20,7 @@ import { SimpleLiquidatorMockFactory } from '../build/types/SimpleLiquidatorMock
 import { TrueRewardBackedToken } from '../build/types/TrueRewardBackedToken'
 import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
 import { setupDeploy } from '../scripts/utils'
-import { beforeEachWithFixture } from './utils'
+import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 
 use(solidity)
 

@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { Contract, ContractFactory, Wallet } from 'ethers'
 import { solidity } from 'ethereum-waffle'
-import { beforeEachWithFixture } from './utils'
+import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 import { parseEther } from 'ethers/utils'
 import { Newable, setupDeploy } from '../scripts/utils'
 import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
