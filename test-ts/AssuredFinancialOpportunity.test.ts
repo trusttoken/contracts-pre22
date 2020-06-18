@@ -1,7 +1,7 @@
 import { utils, Wallet } from 'ethers'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
-import { beforeEachWithFixture } from './utils'
+import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 
 import { setupDeploy } from '../scripts/utils'
 import { FractionalExponentsFactory } from '../build/types/FractionalExponentsFactory'
