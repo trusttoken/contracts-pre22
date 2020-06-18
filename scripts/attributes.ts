@@ -15,6 +15,7 @@ export const RegistryAttributes = {
   isTrueRewardsWhitelisted: attribute('isTrueRewardsWhitelisted'),
   canBurn: attribute('canBurn'),
   hasPassedKYC: attribute('hasPassedKYC'),
+  hasPassedKYCAML: attribute('hasPassedKYC/AML'),
   canSetFutureRefundMinGasPrice: attribute('canSetFutureRefundMinGasPrice'),
   canBurnGBP: attribute('canBurnGBP'),
   canBurnAUD: attribute('canBurnAUD'),
