@@ -22,8 +22,25 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     * @param _value The amount to be transferred.
     */
     function transfer(address _to, uint256 _value) public returns (bool) {
-        _transferAllArgs(msg.sender, _to, _value);
+        _transferWithHook(msg.sender, _to, _value);
         return true;
+    }
+
+    function _transferWithHook(address _from, address _to, uint256 _value) internal {
+        (address finalTo, bool hasHook) = _requireCanTransfer(_from, _to);
+
+        _transferAllArgs(_from, finalTo, _value);
+
+        if (finalTo != _to) {
+            emit Transfer(_to, finalTo, _value);
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+            }
+        }
     }
 
     /**
@@ -33,8 +50,25 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
      * @param _value uint256 the amount of tokens to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        _transferFromAllArgs(_from, _to, _value, msg.sender);
+        _transferFromWithHook(_from, _to, _value, msg.sender);
         return true;
+    }
+
+    function _transferFromWithHook(address _from, address _to, uint256 _value, address _spender) public {
+        (address finalTo, bool hasHook) = _requireCanTransferFrom(_spender, _from, _to);
+
+        _transferFromAllArgs(_from, finalTo, _value, _spender);
+
+        if (finalTo != _to) {
+            emit Transfer(_to, finalTo, _value);
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+            }
+        }
     }
 
     function _burnFromAllowanceAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
@@ -81,9 +115,6 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             _value -= _value % CENT;
             _burnFromAllowanceAllArgs(_from, _to, _value, _spender);
         } else {
-            bool hasHook;
-            address originalTo = _to;
-            (_to, hasHook) = _requireCanTransferFrom(_spender, _from, _to);
             if (0 == _addBalance(_to, _value)) {
                 if (0 == _subAllowance(_from, _spender, _value)) {
                     if (0 != _subBalance(_from, _value)) {
@@ -112,17 +143,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
                 }
 
             }
-            emit Transfer(_from, originalTo, _value);
-            if (originalTo != _to) {
-                emit Transfer(originalTo, _to, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
-                }
-            } else {
-                if (hasHook) {
-                    TrueCoinReceiver(_to).tokenFallback(_from, _value);
-                }
-            }
+            emit Transfer(_from, _to, _value);
         }
     }
 
@@ -131,32 +152,19 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             _value -= _value % CENT;
             _burnFromAllArgs(_from, _to, _value);
         } else {
-            bool hasHook;
-            address finalTo;
-            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
             if (0 == _subBalance(_from, _value)) {
-                if (0 == _addBalance(finalTo, _value)) {
+                if (0 == _addBalance(_to, _value)) {
                     gasRefund30();
                 }
                 // else do not refund
             } else {
-                if (0 == _addBalance(finalTo, _value)) {
+                if (0 == _addBalance(_to, _value)) {
                     gasRefund39();
                 } else {
                     gasRefund30();
                 }
             }
             emit Transfer(_from, _to, _value);
-            if (finalTo != _to) {
-                emit Transfer(_to, finalTo, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-                }
-            } else {
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-                }
-            }
         }
     }
 

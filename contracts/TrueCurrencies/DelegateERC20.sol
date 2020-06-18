@@ -24,7 +24,7 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
     }
 
     function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferAllArgs(origSender, to, value);
+        _transferWithHook(origSender, to, value);
         return true;
     }
 
@@ -33,7 +33,7 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
     }
 
     function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
-        _transferFromAllArgs(from, to, value, origSender);
+        _transferFromWithHook(from, to, value, origSender);
         return true;
     }
 

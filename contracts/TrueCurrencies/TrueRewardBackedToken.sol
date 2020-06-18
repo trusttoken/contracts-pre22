@@ -169,7 +169,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
             // mint to this contract
             super.mint(address(this), _value);
             // transfer minted amount to target receiver
-            _transferAllArgs(address(this), _to, _value);
+            _transferWithHook(address(this), _to, _value);
         }
         // otherwise call normal mint process
         else {
@@ -286,20 +286,9 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      */
     function _transferAllArgs(address _from, address _to, uint256 _value) internal {
         // require account is not blacklisted and check if hook is registered
-        (address finalTo, bool hasHook) = _requireCanTransfer(_from, _to);
+        (address finalTo,) = _requireCanTransfer(_from, _to);
 
-        _value = _transferWithRewards(_from, finalTo, _value);
-
-        if (finalTo != _to) {
-            emit Transfer(_to, finalTo, _value);
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-            }
-        } else {
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-            }
-        }
+        _transferWithRewards(_from, finalTo, _value);
     }
 
     /**
@@ -311,24 +300,13 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         uint256 _value,
         address _spender
     ) internal {
-        (address finalTo, bool hasHook) = _requireCanTransferFrom(_spender, _from, _to);
+        (address finalTo,) = _requireCanTransferFrom(_spender, _from, _to);
 
         // call transfer helper
         _value = _transferWithRewards(_from, finalTo, _value);
 
         // sub allowance of spender
         _subAllowance(_from, _spender, _value);
-
-        if (finalTo != _to) {
-            emit Transfer(_to, finalTo, _value);
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-            }
-        } else {
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-            }
-        }
     }
 
     /**

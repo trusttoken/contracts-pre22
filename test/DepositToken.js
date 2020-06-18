@@ -34,15 +34,6 @@ function depositTokenTests ([owner, oneHundred, anotherAccount, thirdAddress]) {
       await assertBalance(this.token, anotherAccount, BN(40 * 10 ** 18))
     })
 
-    it('emits the right events', async function () {
-      const depositAddressOne = web3.utils.toChecksumAddress(anotherAccount.slice(0, 37) + '00000')
-      const { logs } = await this.token.transfer(depositAddressOne, BN(10 * 10 ** 18), { from: oneHundred })
-      assert.equal(logs[0].args.from, oneHundred)
-      assert.equal(logs[0].args.to, depositAddressOne)
-      assert.equal(logs[1].args.from, depositAddressOne)
-      assert.equal(logs[1].args.to, anotherAccount)
-    })
-
     it('emits the right events for mint', async function () {
       const ZERO = '0x0000000000000000000000000000000000000000'
       const depositAddressOne = web3.utils.toChecksumAddress(anotherAccount.slice(0, 37) + '00000')
