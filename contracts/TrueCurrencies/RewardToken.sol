@@ -118,8 +118,8 @@ contract RewardToken is CompliantDepositTokenWithHook {
      * Emit mintRewardToken event on success
      *
      * @param account account to redeem rewardToken for
-     * @param amount depositToken amount to redeem
-     * @param finOp financial opportunitu address
+     * @param amount rewardTokens amount to redeem
+     * @param finOp financial opportunity address
      */
     function redeemRewardToken(
         address account,
@@ -138,8 +138,8 @@ contract RewardToken is CompliantDepositTokenWithHook {
         // decrease account rewardToken balance
         _subRewardBalance(account, amount, finOp);
 
-        // emit mint event
-        emit RedeemRewardToken(account, tokenAmount, amount, finOp);
+        emit RedeemRewardToken(account, tokenAmount, finOp);
+        emit BurnRewardToken(account, amount, amount, finOp);
 
         return tokenAmount;
     }
@@ -150,7 +150,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
      * Burn rewardToken for finOp
      *
      * @param account account to burn rewardToken for
-     * @param amount depositToken amount to burn
+     * @param amount rewardToken amount to burn
      * @param finOp financial opportunity address
      */
     function burnRewardToken(

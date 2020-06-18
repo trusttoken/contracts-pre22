@@ -19,8 +19,8 @@ contract RewardTokenWithReserve is RewardToken {
     // Reserves of TUSD and TrueRewardBackedToken are held at this addess
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
 
-    event SwapRewardForToken(address account, address receiver, uint256 amount, address finOp);
-    event SwapTokenForReward(address account, address receiver, uint256 amount, address finOp);
+    event SwapRewardForToken(address account, uint256 amount, address finOp);
+    event SwapTokenForReward(address account, uint256 amount, address finOp);
 
     /**
      * @dev get reserve token balance
@@ -79,28 +79,45 @@ contract RewardTokenWithReserve is RewardToken {
     /**
      * @dev Use reserve to swap Token for rewardToken between accounts
      *
-     * @param sender account to deduct token from
-     * @param receiver account to add rewardToken to
-     * @param amount Token amount to exchange for rewardToken
+     * @param account account to swap token for
+     * @param depositAmount deposit token amount to put into reserve
+     * @param rewardAmount reward token amount to take from reserve
+     * @param finOp financial opportunity to swap tokens for
+     */
+    function swapRewardForToken(
+        address account,
+        uint256 depositAmount,
+        uint256 rewardAmount,
+        address finOp
+    ) internal validFinOp(finOp) {
+        addRewardTokenToReserve(account, rewardAmount, finOp);
+        withdrawTokenFromReserve(account, depositAmount);
+        emit SwapTokenForReward(account, depositAmount, finOp);
+    }
+
+    /**
+     * @dev Use reserve to swap Token for rewardToken between accounts
+     *
+     * @param account account to swap token for
+     * @param depositAmount deposit token amount to take from reserve
+     * @param rewardAmount reward token amount to put into reserve
      * @param finOp financial opportunity to swap tokens for
      */
     function swapTokenForReward(
-        address sender,
-        address receiver,
-        uint256 amount,
+        address account,
+        uint256 depositAmount,
+        uint256 rewardAmount,
         address finOp
     ) internal validFinOp(finOp) {
-        addTokenToReserve(sender, amount);
-        withdrawRewardTokenFromReserve(receiver, amount, finOp);
-        emit SwapTokenForReward(sender, receiver, amount, finOp);
+        addTokenToReserve(account, depositAmount);
+        withdrawRewardTokenFromReserve(account, rewardAmount, finOp);
+        emit SwapRewardForToken(account, depositAmount, finOp);
     }
 
     function addTokenToReserve(
         address account,
         uint256 amount
     ) internal {
-        require(balanceOf(account) >= amount, "insufficient balance");
-
         // sub from sender and add to reserve for depositToken
         _subBalance(account, amount);
         _addBalance(RESERVE, amount);
@@ -108,54 +125,38 @@ contract RewardTokenWithReserve is RewardToken {
         emit Transfer(account, RESERVE, amount);
     }
 
-    function withdrawRewardTokenFromReserve(
+    function withdrawTokenFromReserve(
         address account,
-        uint256 amount,
-        address finOp
-    ) internal validFinOp(finOp) {
-        // calculate rewardToken value for depositToken amount
-        uint256 rewardAmount = _toRewardToken(amount, finOp);
-
-        require(rewardTokenBalance(RESERVE, finOp) >= rewardAmount, "not enough rewardToken in reserve");
-
-        // sub from reserve and add to sender for rewardToken
-        _subRewardBalance(RESERVE, rewardAmount, finOp);
-        _addRewardBalance(account, rewardAmount, finOp);
+        uint256 amount
+    ) internal {
+        // sub from sender and add to reserve for depositToken
+        _subBalance(RESERVE, amount, "7");
+        _addBalance(account, amount);
 
         emit Transfer(RESERVE, account, amount);
     }
 
-    /**
-     * @dev Use reserve to swap rewardToken for Token between accounts
-     *
-     * @param sender account to swap rewardToken from
-     * @param receiver account to add Token to
-     * @param tokenAmount token amount to receive for Token
-     * @param finOp financial opportunity
-     */
-    function swapRewardForToken(
-        address sender,
-        address receiver,
-        uint256 tokenAmount,
+    function addRewardTokenToReserve(
+        address account,
+        uint256 rewardAmount,
         address finOp
     ) internal validFinOp(finOp) {
-        // ensure reserve has enough balance
-        require(balanceOf(RESERVE) >= tokenAmount, "not enough depositToken in reserve");
-
-        uint256 rewardAmount = _toRewardToken(tokenAmount, finOp);
-
-        // require sufficient balance
-        require (rewardTokenBalance(sender, finOp) >= rewardAmount, "insufficient rewardToken balance");
-
-        // sub account and add reserve for rewardToken
-        _subRewardBalance(sender, rewardAmount, finOp);
+        // sub from reserve and add to sender for rewardToken
+        _subRewardBalance(account, rewardAmount, finOp);
         _addRewardBalance(RESERVE, rewardAmount, finOp);
 
-        // sub account and add reserve for Token
-        _subBalance(RESERVE, tokenAmount);
-        _addBalance(receiver, tokenAmount);
+        emit Transfer(account, RESERVE, rewardAmount);
+    }
 
-        // emit event
-        emit SwapRewardForToken(sender, receiver, rewardAmount, finOp);
+    function withdrawRewardTokenFromReserve(
+        address account,
+        uint256 rewardAmount,
+        address finOp
+    ) internal validFinOp(finOp) {
+        // sub from reserve and add to sender for rewardToken
+        _subRewardBalance(RESERVE, rewardAmount, finOp);
+        _addRewardBalance(account, rewardAmount, finOp);
+
+        emit Transfer(RESERVE, account, rewardAmount);
     }
 }
