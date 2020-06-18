@@ -46,6 +46,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     using SafeMath for uint256;
     using SafeMath for uint256;
 
+    // tolerance of rounding errors
+    uint8 constant TOLERANCE = 100;
     // total basis points for pool awards
     uint32 constant TOTAL_BASIS = 1000;
 
@@ -282,7 +284,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         uint256 expectedAmount = _tokenValue().mul(ztusd).div(10**18);
         uint256 liquidated = 0;
 
-        if (!success || (success && returnedAmount < expectedAmount)) {
+        if (!success || (returnedAmount.add(TOLERANCE) < expectedAmount)) {
             liquidated = _liquidate(address(this), int256(expectedAmount.sub(returnedAmount)));
         }
 

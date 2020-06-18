@@ -106,6 +106,8 @@ contract RewardToken is CompliantDepositTokenWithHook {
 
         // emit mint event
         emit MintRewardToken(account, amount, rewardAmount, finOp);
+        emit Mint(account, amount);
+        emit Transfer(address(0), account, amount);
 
         return rewardAmount;
     }
@@ -139,7 +141,8 @@ contract RewardToken is CompliantDepositTokenWithHook {
         _subRewardBalance(account, amount, finOp);
 
         emit RedeemRewardToken(account, tokenAmount, finOp);
-        emit BurnRewardToken(account, amount, amount, finOp);
+        emit Burn(account, tokenAmount);
+        emit Transfer(account, address(0), tokenAmount);
 
         return tokenAmount;
     }

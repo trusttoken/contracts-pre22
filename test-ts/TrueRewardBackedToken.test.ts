@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
-import { Wallet } from 'ethers'
-import { parseEther } from 'ethers/utils'
+import { ContractTransaction, Wallet } from 'ethers'
+import { BigNumberish, parseEther, Transaction } from 'ethers/utils'
 import { AaveFinancialOpportunity } from '../build/types/AaveFinancialOpportunity'
 import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
 import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
@@ -21,6 +21,7 @@ import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
 import { setupDeploy } from '../scripts/utils'
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 import { RegistryAttributes } from '../scripts/attributes'
+import { AddressZero } from 'ethers/constants'
 
 use(solidity)
 
@@ -31,6 +32,22 @@ describe('TrueRewardBackedToken', () => {
   let financialOpportunity: FinancialOpportunity
   const mockPoolAddress = Wallet.createRandom().address
   const WHITELIST_TRUEREWARD = RegistryAttributes.isTrueRewardsWhitelisted.hex
+
+  async function expectTransferEventWith (tx: Transaction, from: string, to: string, amount: BigNumberish) {
+    await expect(Promise.resolve(tx)).to.emit(token, 'Transfer').withArgs(from, to, amount)
+  }
+
+  async function expectBurnEventWith (tx: Transaction, from: string, amount: BigNumberish) {
+    await expect(Promise.resolve(tx)).to.emit(token, 'Burn').withArgs(from, amount)
+  }
+
+  async function expectMintEventWith (tx: Transaction, to: string, amount: BigNumberish) {
+    await expect(Promise.resolve(tx)).to.emit(token, 'Mint').withArgs(to, amount)
+  }
+
+  async function expectEventsCount (eventName: string, tx: ContractTransaction, count: number) {
+    expect((await tx.wait()).events.filter(({ address, event }) => address === token.address && event === eventName).length).to.equal(count)
+  }
 
   context('with Aave and AssuredFinancialOpportunity', () => {
     let lendingPoolCore: LendingPoolCoreMock
@@ -249,6 +266,23 @@ describe('TrueRewardBackedToken', () => {
           expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(parseEther('50'))
         })
 
+        it('emits correct events when sender with truereward enabled sends to recipient with truereward disabled', async () => {
+          const amount = parseEther('50')
+          await token.connect(sender).enableTrueReward()
+          const tx = await token.connect(sender).transfer(recipient.address, amount)
+
+          await expectTransferEventWith(tx, sharesToken.address, aaveFinancialOpportunity.address, amount)
+          await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, amount)
+          await expectTransferEventWith(tx, financialOpportunity.address, sender.address, amount)
+          await expectTransferEventWith(tx, sender.address, AddressZero, amount)
+          await expectBurnEventWith(tx, sender.address, amount)
+          await expectTransferEventWith(tx, sender.address, recipient.address, amount)
+
+          await expectEventsCount('Transfer', tx, 5)
+          await expectEventsCount('Burn', tx, 1)
+          await expectEventsCount('Mint', tx, 0)
+        })
+
         it('holders with truereward enabled transfer funds between each other', async () => {
           await token.connect(sender).enableTrueReward()
           await token.connect(recipient).enableTrueReward()
@@ -262,6 +296,29 @@ describe('TrueRewardBackedToken', () => {
           expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(parseEther('100'))
         })
 
+        it('emits correct events when truereward enabled transfer funds between each other', async () => {
+          const amount = parseEther('50')
+          await token.connect(sender).enableTrueReward()
+          await token.connect(recipient).enableTrueReward()
+          const tx = await token.connect(sender).transfer(recipient.address, amount)
+
+          await expectTransferEventWith(tx, sharesToken.address, aaveFinancialOpportunity.address, amount)
+          await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, amount)
+          await expectTransferEventWith(tx, financialOpportunity.address, sender.address, amount)
+          await expectTransferEventWith(tx, sender.address, AddressZero, amount)
+          await expectBurnEventWith(tx, sender.address, amount)
+          await expectTransferEventWith(tx, sender.address, recipient.address, amount)
+          await expectTransferEventWith(tx, recipient.address, financialOpportunity.address, amount)
+          await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, amount)
+          await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, amount)
+          await expectTransferEventWith(tx, AddressZero, recipient.address, amount)
+          await expectMintEventWith(tx, recipient.address, amount)
+
+          await expectEventsCount('Transfer', tx, 9)
+          await expectEventsCount('Burn', tx, 1)
+          await expectEventsCount('Mint', tx, 1)
+        })
+
         it('sender with truereward disabled sends to recipient with truereward enabled', async () => {
           await token.connect(recipient).enableTrueReward()
           await token.connect(sender).transfer(recipient.address, parseEther('50'))
@@ -272,6 +329,23 @@ describe('TrueRewardBackedToken', () => {
           expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal(parseEther('50'))
           expect(await token.totalSupply()).to.equal(parseEther('1350'))
           expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(parseEther('50'))
+        })
+
+        it('emits correct events when truereward disabled sends to recipient with truereward enabled', async () => {
+          const amount = parseEther('50')
+          await token.connect(recipient).enableTrueReward()
+          const tx = await token.connect(sender).transfer(recipient.address, amount)
+
+          await expectTransferEventWith(tx, sender.address, recipient.address, amount)
+          await expectTransferEventWith(tx, recipient.address, financialOpportunity.address, amount)
+          await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, amount)
+          await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, amount)
+          await expectTransferEventWith(tx, AddressZero, recipient.address, amount)
+          await expectMintEventWith(tx, recipient.address, amount)
+
+          await expectEventsCount('Transfer', tx, 5)
+          await expectEventsCount('Burn', tx, 0)
+          await expectEventsCount('Mint', tx, 1)
         })
       })
 
@@ -293,6 +367,23 @@ describe('TrueRewardBackedToken', () => {
           expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address), 'shares').to.equal('50000000000000000001')
         })
 
+        it('emits correct events when sender with truereward enabled sends to recipient with truereward disabled', async () => {
+          const amount = parseEther('50')
+          await token.connect(sender).enableTrueReward()
+          const tx = await token.connect(sender).transfer(recipient.address, amount)
+
+          await expectTransferEventWith(tx, sharesToken.address, aaveFinancialOpportunity.address, '49999999999999999998')
+          await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, '49999999999999999998')
+          await expectTransferEventWith(tx, financialOpportunity.address, sender.address, '49999999999999999998')
+          await expectTransferEventWith(tx, sender.address, AddressZero, '49999999999999999998')
+          await expectBurnEventWith(tx, sender.address, '49999999999999999998')
+          await expectTransferEventWith(tx, sender.address, recipient.address, '49999999999999999998')
+
+          await expectEventsCount('Transfer', tx, 5)
+          await expectEventsCount('Burn', tx, 1)
+          await expectEventsCount('Mint', tx, 0)
+        })
+
         it('holders with trudereward enabled transfer funds between each other', async () => {
           await token.connect(sender).enableTrueReward()
           await token.connect(recipient).enableTrueReward()
@@ -307,6 +398,29 @@ describe('TrueRewardBackedToken', () => {
           expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal('99999999999999999999')
         })
 
+        it('emits correct events when holders with truereward enabled transfer funds between each other', async () => {
+          const amount = parseEther('50')
+          await token.connect(sender).enableTrueReward()
+          await token.connect(recipient).enableTrueReward()
+          const tx = await token.connect(sender).transfer(recipient.address, amount)
+
+          await expectTransferEventWith(tx, sharesToken.address, aaveFinancialOpportunity.address, '49999999999999999998')
+          await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, '49999999999999999998')
+          await expectTransferEventWith(tx, financialOpportunity.address, sender.address, '49999999999999999998')
+          await expectTransferEventWith(tx, sender.address, AddressZero, '49999999999999999998')
+          await expectBurnEventWith(tx, sender.address, '49999999999999999998')
+          await expectTransferEventWith(tx, sender.address, recipient.address, '49999999999999999998')
+          await expectTransferEventWith(tx, recipient.address, financialOpportunity.address, '49999999999999999998')
+          await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, '49999999999999999998')
+          await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, '49999999999999999998')
+          await expectTransferEventWith(tx, AddressZero, recipient.address, '49999999999999999998')
+          await expectMintEventWith(tx, recipient.address, '49999999999999999998')
+
+          await expectEventsCount('Transfer', tx, 9)
+          await expectEventsCount('Burn', tx, 1)
+          await expectEventsCount('Mint', tx, 1)
+        })
+
         it('sender with truereward disabled sends to recipient with truereward enabled', async () => {
           await token.connect(recipient).enableTrueReward()
           await token.connect(sender).transfer(recipient.address, parseEther('50'))
@@ -318,6 +432,23 @@ describe('TrueRewardBackedToken', () => {
           expect(await token.rewardTokenSupply(financialOpportunity.address)).to.equal('33333333333333333333')
           expect(await token.totalSupply()).to.equal('1349999999999999999999')
           expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal('49999999999999999999')
+        })
+
+        it('emits correct events when sender with truereward disabled sends to recipient with truereward enabled', async () => {
+          const amount = parseEther('50')
+          await token.connect(recipient).enableTrueReward()
+          const tx = await token.connect(sender).transfer(recipient.address, amount)
+
+          await expectTransferEventWith(tx, sender.address, recipient.address, amount)
+          await expectTransferEventWith(tx, recipient.address, financialOpportunity.address, amount)
+          await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, amount)
+          await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, amount)
+          await expectTransferEventWith(tx, AddressZero, recipient.address, amount)
+          await expectMintEventWith(tx, recipient.address, amount)
+
+          await expectEventsCount('Transfer', tx, 5)
+          await expectEventsCount('Burn', tx, 0)
+          await expectEventsCount('Mint', tx, 1)
         })
       })
 
@@ -439,6 +570,15 @@ describe('TrueRewardBackedToken', () => {
               await token.connect(sender).transfer(recipient.address, parseEther('40'))
               expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
             })
+
+            it('emits transfer events with reserve', async () => {
+              const amount = parseEther('40')
+              const tx = await token.connect(sender).transfer(recipient.address, amount)
+              await expectTransferEventWith(tx, sender.address, reserveAddress, amount)
+              await expectTransferEventWith(tx, reserveAddress, sender.address, amount)
+              await expectTransferEventWith(tx, sender.address, recipient.address, amount)
+              await expectEventsCount('Transfer', tx, 3)
+            })
           })
 
           describe('tokenValue != 1', () => {
@@ -498,6 +638,15 @@ describe('TrueRewardBackedToken', () => {
               expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
               await token.connect(sender).transfer(recipient.address, parseEther('40'))
               expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
+            })
+
+            it('emits transfer events with reserve', async () => {
+              const amount = parseEther('40')
+              const tx = await token.connect(sender).transfer(recipient.address, amount)
+              await expectTransferEventWith(tx, sender.address, reserveAddress, amount)
+              await expectTransferEventWith(tx, reserveAddress, sender.address, amount)
+              await expectTransferEventWith(tx, sender.address, recipient.address, amount)
+              await expectEventsCount('Transfer', tx, 3)
             })
           })
         })
@@ -564,6 +713,15 @@ describe('TrueRewardBackedToken', () => {
               await token.connect(sender).transfer(recipient.address, parseEther('20'))
               expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
             })
+
+            it('emits transfer events with reserve', async () => {
+              const amount = parseEther('40')
+              const tx = await token.connect(sender).transfer(recipient.address, amount)
+              await expectTransferEventWith(tx, sender.address, recipient.address, amount)
+              await expectTransferEventWith(tx, recipient.address, reserveAddress, amount)
+              await expectTransferEventWith(tx, reserveAddress, recipient.address, amount)
+              await expectEventsCount('Transfer', tx, 3)
+            })
           })
 
           describe('tokenValue != 1', () => {
@@ -624,6 +782,15 @@ describe('TrueRewardBackedToken', () => {
               await token.connect(sender).transfer(recipient.address, parseEther('20'))
               expect(await sharesToken.balanceOf(financialOpportunity.address)).to.equal('0')
             })
+
+            it('emits transfer events with reserve', async () => {
+              const amount = parseEther('40')
+              const tx = await token.connect(sender).transfer(recipient.address, amount)
+              await expectTransferEventWith(tx, sender.address, recipient.address, amount)
+              await expectTransferEventWith(tx, recipient.address, reserveAddress, amount)
+              await expectTransferEventWith(tx, reserveAddress, recipient.address, amount)
+              await expectEventsCount('Transfer', tx, 3)
+            })
           })
         })
 
@@ -638,16 +805,12 @@ describe('TrueRewardBackedToken', () => {
           it('emits transfer events with reserve', async () => {
             const amount = parseEther('40')
             const tx = await token.connect(sender).transfer(recipient.address, amount)
-            await expect(Promise.resolve(tx), 'sender to reserve')
-              .to.emit(token, 'Transfer').withArgs(sender.address, reserveAddress, amount)
-            await expect(Promise.resolve(tx), 'reserve to sender')
-              .to.emit(token, 'Transfer').withArgs(reserveAddress, sender.address, amount)
-            await expect(Promise.resolve(tx), 'sender to recipient')
-              .to.emit(token, 'Transfer').withArgs(sender.address, recipient.address, amount)
-            await expect(Promise.resolve(tx), 'recipient to reserve')
-              .to.emit(token, 'Transfer').withArgs(recipient.address, reserveAddress, amount)
-            await expect(Promise.resolve(tx), 'reserve to recipient')
-              .to.emit(token, 'Transfer').withArgs(reserveAddress, recipient.address, amount)
+            await expectTransferEventWith(tx, sender.address, reserveAddress, amount)
+            await expectTransferEventWith(tx, reserveAddress, sender.address, amount)
+            await expectTransferEventWith(tx, sender.address, recipient.address, amount)
+            await expectTransferEventWith(tx, recipient.address, reserveAddress, amount)
+            await expectTransferEventWith(tx, reserveAddress, recipient.address, amount)
+            await expectEventsCount('Transfer', tx, 5)
           })
         })
       })

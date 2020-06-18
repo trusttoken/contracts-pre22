@@ -90,7 +90,7 @@ contract RewardTokenWithReserve is RewardToken {
         uint256 rewardAmount,
         address finOp
     ) internal validFinOp(finOp) {
-        addRewardTokenToReserve(account, rewardAmount, finOp);
+        addRewardTokenToReserve(account, depositAmount, rewardAmount, finOp);
         withdrawTokenFromReserve(account, depositAmount);
         emit SwapTokenForReward(account, depositAmount, finOp);
     }
@@ -110,7 +110,7 @@ contract RewardTokenWithReserve is RewardToken {
         address finOp
     ) internal validFinOp(finOp) {
         addTokenToReserve(account, depositAmount);
-        withdrawRewardTokenFromReserve(account, rewardAmount, finOp);
+        withdrawRewardTokenFromReserve(account, depositAmount, rewardAmount, finOp);
         emit SwapRewardForToken(account, depositAmount, finOp);
     }
 
@@ -130,7 +130,7 @@ contract RewardTokenWithReserve is RewardToken {
         uint256 amount
     ) internal {
         // sub from sender and add to reserve for depositToken
-        _subBalance(RESERVE, amount, "7");
+        _subBalance(RESERVE, amount);
         _addBalance(account, amount);
 
         emit Transfer(RESERVE, account, amount);
@@ -138,6 +138,7 @@ contract RewardTokenWithReserve is RewardToken {
 
     function addRewardTokenToReserve(
         address account,
+        uint256 depositAmount,
         uint256 rewardAmount,
         address finOp
     ) internal validFinOp(finOp) {
@@ -145,11 +146,12 @@ contract RewardTokenWithReserve is RewardToken {
         _subRewardBalance(account, rewardAmount, finOp);
         _addRewardBalance(RESERVE, rewardAmount, finOp);
 
-        emit Transfer(account, RESERVE, rewardAmount);
+        emit Transfer(account, RESERVE, depositAmount);
     }
 
     function withdrawRewardTokenFromReserve(
         address account,
+        uint256 depositAmount,
         uint256 rewardAmount,
         address finOp
     ) internal validFinOp(finOp) {
@@ -157,6 +159,6 @@ contract RewardTokenWithReserve is RewardToken {
         _subRewardBalance(RESERVE, rewardAmount, finOp);
         _addRewardBalance(account, rewardAmount, finOp);
 
-        emit Transfer(RESERVE, account, rewardAmount);
+        emit Transfer(RESERVE, account, depositAmount);
     }
 }
