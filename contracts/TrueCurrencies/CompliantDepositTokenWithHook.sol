@@ -29,7 +29,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     function _transferWithHook(address _from, address _to, uint256 _value) internal {
         (address finalTo, bool hasHook) = _requireCanTransfer(_from, _to);
 
-        _transferAllArgs(_from, finalTo, _value);
+        _transferAllArgs(_from, _to, _value);
 
         if (finalTo != _to) {
             emit Transfer(_to, finalTo, _value);

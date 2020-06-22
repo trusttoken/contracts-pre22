@@ -1,27 +1,19 @@
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { ContractTransaction, Wallet } from 'ethers'
+import { AddressZero } from 'ethers/constants'
 import { BigNumberish, parseEther, Transaction } from 'ethers/utils'
 import { AaveFinancialOpportunity } from '../build/types/AaveFinancialOpportunity'
-import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
-import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
 import { ATokenMock } from '../build/types/ATokenMock'
-import { ATokenMockFactory } from '../build/types/ATokenMockFactory'
 import { FinancialOpportunity } from '../build/types/FinancialOpportunity'
-import { FractionalExponentsFactory } from '../build/types/FractionalExponentsFactory'
 import { LendingPoolCoreMock } from '../build/types/LendingPoolCoreMock'
-import { LendingPoolCoreMockFactory } from '../build/types/LendingPoolCoreMockFactory'
-import { LendingPoolMockFactory } from '../build/types/LendingPoolMockFactory'
-import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
 import { RegistryMock } from '../build/types/RegistryMock'
-import { RegistryMockFactory } from '../build/types/RegistryMockFactory'
-import { SimpleLiquidatorMockFactory } from '../build/types/SimpleLiquidatorMockFactory'
+import { SimpleLiquidatorMock } from '../build/types/SimpleLiquidatorMock'
 import { TrueRewardBackedToken } from '../build/types/TrueRewardBackedToken'
-import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
-import { setupDeploy } from '../scripts/utils'
-import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 import { RegistryAttributes } from '../scripts/attributes'
-import { AddressZero } from 'ethers/constants'
+import { fixtureWithAave } from './fixtures/fixtureWithAave'
+import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
+import { expectBurnEventOn, expectEventsCountOn, expectMintEventOn, expectTransferEventOn } from './utils/eventHelpers'
 
 use(solidity)
 
@@ -30,24 +22,12 @@ describe('TrueRewardBackedToken', () => {
   let token: TrueRewardBackedToken
   let registry: RegistryMock
   let financialOpportunity: FinancialOpportunity
-  const mockPoolAddress = Wallet.createRandom().address
   const WHITELIST_TRUEREWARD = RegistryAttributes.isTrueRewardsWhitelisted.hex
 
-  async function expectTransferEventWith (tx: Transaction, from: string, to: string, amount: BigNumberish) {
-    await expect(Promise.resolve(tx)).to.emit(token, 'Transfer').withArgs(from, to, amount)
-  }
-
-  async function expectBurnEventWith (tx: Transaction, from: string, amount: BigNumberish) {
-    await expect(Promise.resolve(tx)).to.emit(token, 'Burn').withArgs(from, amount)
-  }
-
-  async function expectMintEventWith (tx: Transaction, to: string, amount: BigNumberish) {
-    await expect(Promise.resolve(tx)).to.emit(token, 'Mint').withArgs(to, amount)
-  }
-
-  async function expectEventsCount (eventName: string, tx: ContractTransaction, count: number) {
-    expect((await tx.wait()).events.filter(({ address, event }) => address === token.address && event === eventName).length).to.equal(count)
-  }
+  const expectTransferEventWith = async (tx: Transaction, from: string, to: string, amount: BigNumberish) => expectTransferEventOn(token)(tx, from, to, amount)
+  const expectBurnEventWith = async (tx: Transaction, from: string, amount: BigNumberish) => expectBurnEventOn(token)(tx, from, amount)
+  const expectMintEventWith = async (tx: Transaction, to: string, amount: BigNumberish) => expectMintEventOn(token)(tx, to, amount)
+  const expectEventsCount = async (eventName: string, tx: ContractTransaction, count: number) => expectEventsCountOn(token)(eventName, tx, count)
 
   context('with Aave and AssuredFinancialOpportunity', () => {
     let lendingPoolCore: LendingPoolCoreMock
@@ -56,42 +36,12 @@ describe('TrueRewardBackedToken', () => {
 
     beforeEachWithFixture(async (provider, wallets) => {
       ([owner, holder, holder2, sender, recipient, empty, notWhitelisted] = wallets)
-      const deployContract = setupDeploy(owner)
-
-      token = await deployContract(TrueUsdFactory, { gasLimit: 5_000_000 })
-
-      registry = await deployContract(RegistryMockFactory)
-      const fractionalExponents = await deployContract(FractionalExponentsFactory)
-      const liquidator = await deployContract(SimpleLiquidatorMockFactory, token.address)
-      lendingPoolCore = await deployContract(LendingPoolCoreMockFactory)
-      sharesToken = await deployContract(ATokenMockFactory, token.address, lendingPoolCore.address)
-      const lendingPool = await deployContract(LendingPoolMockFactory, lendingPoolCore.address, sharesToken.address)
-
+      let liquidator: SimpleLiquidatorMock
+      ;({ token, registry, lendingPoolCore, sharesToken, aaveFinancialOpportunity, financialOpportunity, liquidator } = await fixtureWithAave(owner))
       await token.mint(liquidator.address, parseEther('1000'))
       await token.mint(holder.address, parseEther('300'))
-      await token.setRegistry(registry.address)
       await token.connect(holder).transfer(sharesToken.address, parseEther('100'))
       await token.connect(holder).transfer(holder2.address, parseEther('100'))
-
-      const aaveFinancialOpportunityImpl = await deployContract(AaveFinancialOpportunityFactory)
-      const aaveFinancialOpportunityProxy = await deployContract(OwnedUpgradeabilityProxyFactory)
-      aaveFinancialOpportunity = aaveFinancialOpportunityImpl.attach(aaveFinancialOpportunityProxy.address)
-      await aaveFinancialOpportunityProxy.upgradeTo(aaveFinancialOpportunityImpl.address)
-
-      const financialOpportunityImpl = await deployContract(AssuredFinancialOpportunityFactory)
-      const financialOpportunityProxy = await deployContract(OwnedUpgradeabilityProxyFactory)
-      financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
-      await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
-
-      await aaveFinancialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, financialOpportunity.address)
-      await financialOpportunity.configure(
-        aaveFinancialOpportunity.address,
-        mockPoolAddress,
-        liquidator.address,
-        fractionalExponents.address,
-        token.address,
-        token.address,
-      )
     })
 
     context('before opportunity address set & no whitelisted', () => {
@@ -226,6 +176,15 @@ describe('TrueRewardBackedToken', () => {
         await asHolder.transfer(recipient.address, parseEther('42'))
         expect(await token.balanceOf(recipient.address)).to.equal(parseEther('42'))
         expect(await token.balanceOf(holder.address)).to.equal(parseEther('58'))
+      })
+
+      it('emits single transfer event when holders with truereward disabled transfer funds between each other', async () => {
+        const asHolder = token.connect(holder)
+        const tx = await asHolder.transfer(recipient.address, parseEther('42'))
+        await expectTransferEventWith(tx, holder.address, recipient.address, parseEther('42'))
+        await expectEventsCount('Transfer', tx, 1)
+        await expectEventsCount('Burn', tx, 0)
+        await expectEventsCount('Mint', tx, 0)
       })
 
       it('minting for account with trueReward enabled', async () => {
@@ -384,7 +343,7 @@ describe('TrueRewardBackedToken', () => {
           await expectEventsCount('Mint', tx, 0)
         })
 
-        it('holders with trudereward enabled transfer funds between each other', async () => {
+        it('holders with truereward enabled transfer funds between each other', async () => {
           await token.connect(sender).enableTrueReward()
           await token.connect(recipient).enableTrueReward()
           await token.connect(sender).transfer(recipient.address, parseEther('50'))

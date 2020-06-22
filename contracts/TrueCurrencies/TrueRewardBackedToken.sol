@@ -264,19 +264,20 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     function _transferWithRewards(
         address _from,
         address _to,
+        address _finalTo,
         uint256 _value
     ) internal returns (uint256) {
         if (_to == opportunity() || _from == opportunity()) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
-            super._transferAllArgs(_from, _to, _value);
+            super._transferAllArgs(_from, _to, _finalTo, _value);
             return _value;
         }
 
         require(balanceOf(_from) >= _value, "not enough balance");
 
         uint redeemedAmount = redeemFromSender(_from, _value);
-        super._transferAllArgs(_from, _to, redeemedAmount);
-        depositForReceiver(_to, redeemedAmount);
+        super._transferAllArgs(_from, _to, _finalTo, redeemedAmount);
+        depositForReceiver(_finalTo, redeemedAmount);
 
         return redeemedAmount;
     }
@@ -288,7 +289,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // require account is not blacklisted and check if hook is registered
         (address finalTo,) = _requireCanTransfer(_from, _to);
 
-        _transferWithRewards(_from, finalTo, _value);
+        _transferWithRewards(_from, _to, finalTo, _value);
     }
 
     /**
