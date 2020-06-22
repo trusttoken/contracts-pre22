@@ -169,7 +169,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
             // mint to this contract
             super.mint(address(this), _value);
             // transfer minted amount to target receiver
-            _transferWithHook(address(this), _to, _value);
+            _transferAllArgs(address(this), _to, _value);
         }
         // otherwise call normal mint process
         else {
@@ -264,32 +264,47 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     function _transferWithRewards(
         address _from,
         address _to,
-        address _finalTo,
         uint256 _value
-    ) internal returns (uint256) {
+    ) internal returns (address) {
         if (_to == opportunity() || _from == opportunity()) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
-            super._transferAllArgs(_from, _to, _finalTo, _value);
-            return _value;
+            return super._transferAllArgs(_from, _to, _value);
         }
 
         require(balanceOf(_from) >= _value, "not enough balance");
 
         uint redeemedAmount = redeemFromSender(_from, _value);
-        super._transferAllArgs(_from, _to, _finalTo, redeemedAmount);
-        depositForReceiver(_finalTo, redeemedAmount);
+        address finalTo = super._transferAllArgs(_from, _to, redeemedAmount);
+        depositForReceiver(finalTo, redeemedAmount);
 
-        return redeemedAmount;
+        return finalTo;
+    }
+
+    function _transferFromWithRewards(
+        address _from,
+        address _to,
+        uint256 _value,
+        address _spender
+    ) internal returns (address) {
+        if (_to == opportunity() || _from == opportunity()) {
+            require(super.balanceOf(_from) >= _value, "not enough balance");
+            return super._transferFromAllArgs(_from, _to, _value, _spender);
+        }
+
+        require(balanceOf(_from) >= _value, "not enough balance");
+
+        uint redeemedAmount = redeemFromSender(_from, _value);
+        address finalTo = super._transferFromAllArgs(_from, _to, redeemedAmount, _spender);
+        depositForReceiver(finalTo, redeemedAmount);
+
+        return finalTo;
     }
 
     /**
      * @dev Transfer helper function for TrueRewardBackedToken
      */
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        // require account is not blacklisted and check if hook is registered
-        (address finalTo,) = _requireCanTransfer(_from, _to);
-
-        _transferWithRewards(_from, _to, finalTo, _value);
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal returns (address) {
+        return _transferWithRewards(_from, _to, _value);
     }
 
     /**
@@ -300,14 +315,8 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         address _to,
         uint256 _value,
         address _spender
-    ) internal {
-        (address finalTo,) = _requireCanTransferFrom(_spender, _from, _to);
-
-        // call transfer helper
-        _value = _transferWithRewards(_from, finalTo, _value);
-
-        // sub allowance of spender
-        _subAllowance(_from, _spender, _value);
+    ) internal returns (address) {
+        return _transferFromWithRewards(_from, _to, _value, _spender);
     }
 
     /**

@@ -85,7 +85,6 @@ describe('AAveIntegrationTest: TrueRewardBackedToken with real Aave contracts', 
     await registry.setAttributeValue(owner.address, WHITELIST_TRUEREWARD, 1)
     await registry.setAttributeValue(holder.address, WHITELIST_TRUEREWARD, 1)
     await registry.setAttributeValue(holder2.address, WHITELIST_TRUEREWARD, 1)
-
   })
 
   it('disableTrueReward does not trigger liquidation', async () => {

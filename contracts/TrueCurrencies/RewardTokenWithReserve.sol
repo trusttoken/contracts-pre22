@@ -48,7 +48,7 @@ contract RewardTokenWithReserve is RewardToken {
      * @param value amount to withdraw
      */
     function reserveWithdraw(address to, uint256 value) external onlyOwner {
-        _transferWithHook(RESERVE, to, value);
+        _transferAllArgs(RESERVE, to, value);
     }
 
     /**

@@ -1,24 +1,21 @@
 import { ContractTransaction, ethers, Wallet } from 'ethers'
 import { BigNumberish, parseEther, Transaction } from 'ethers/utils'
-import { Registry } from '../build/types/Registry'
 import { TrueUsd } from '../build/types/TrueUsd'
 import { RegistryAttributes } from '../scripts/attributes'
 import { fixtureWithAave } from './fixtures/fixtureWithAave'
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 import { expect } from 'chai'
-import { ProvisionalRegistryMock } from '../build/types/ProvisionalRegistryMock'
 import { RegistryMock } from '../build/types/RegistryMock'
-import { AddressZero } from 'ethers/constants'
-import { expectBurnEventOn, expectEventsCountOn, expectMintEventOn, expectTransferEventOn } from './utils/eventHelpers'
+import { expectEventsCountOn, expectTransferEventOn } from './utils/eventHelpers'
 
 function toChecksumAddress (address: string) {
   return ethers.utils.getAddress(address.toLowerCase())
 }
 
 describe('Autosweep feature', () => {
-  let owner:Wallet
-  let holder:Wallet
-  let autosweepTarget:Wallet
+  let owner: Wallet
+  let holder: Wallet
+  let autosweepTarget: Wallet
   let token: TrueUsd
   let registry: RegistryMock
 
@@ -46,8 +43,8 @@ describe('Autosweep feature', () => {
       const recipient = toChecksumAddress(autosweepTarget.address.slice(2, 37) + '00100')
       const tx = await token.connect(holder).transfer(recipient, parseEther('42'))
 
+      await expectTransferEventWith(tx, holder.address, recipient, parseEther('42'))
       await expectTransferEventWith(tx, recipient, autosweepTarget.address, parseEther('42'))
-      await expectTransferEventWith(tx, holder.address, autosweepTarget.address, parseEther('42'))
       await expectEventsCount('Transfer', tx, 2)
       await expectEventsCount('Burn', tx, 0)
       await expectEventsCount('Mint', tx, 0)
