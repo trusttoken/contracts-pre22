@@ -35,9 +35,9 @@ contract RewardToken is CompliantDepositTokenWithHook {
     mapping(address => uint256) finOpSupply;
     */
 
-    event MintRewardToken(address account, uint256 amount, address finOp);
-    event RedeemRewardToken(address account, uint256 amount, address finOp);
-    event BurnRewardToken(address account, uint256 amount, address finOp);
+    event MintRewardToken(address account, uint256 depositTokenAmount, uint256 rewardTokenAmount, address finOp);
+    event RedeemRewardToken(address account, uint256 depositTokenAmount, uint256 rewardTokenAmount, address finOp);
+    event BurnRewardToken(address account, uint256 rewardTokenAmount, address finOp);
 
     /**
      * @dev Only addresses registered in this contract's mapping are valid
@@ -105,7 +105,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
         _addRewardBalance(account, rewardAmount, finOp);
 
         // emit mint event
-        emit MintRewardToken(account, amount, finOp);
+        emit MintRewardToken(account, amount, rewardAmount, finOp);
 
         return rewardAmount;
     }
@@ -139,7 +139,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
         _subRewardBalance(account, amount, finOp);
 
         // emit mint event
-        emit RedeemRewardToken(account, tokenAmount, finOp);
+        emit RedeemRewardToken(account, tokenAmount, amount, finOp);
 
         return tokenAmount;
     }
