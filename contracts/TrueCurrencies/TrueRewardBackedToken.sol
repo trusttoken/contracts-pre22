@@ -54,8 +54,8 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     // financial opportunity address
     address public opportunity_;
 
-    event TrueRewardEnabled(address _account);
-    event TrueRewardDisabled(address _account);
+    event TrueRewardEnabled(address indexed _account);
+    event TrueRewardDisabled(address indexed _account);
 
     /** @dev return true if TrueReward is enabled for a given address */
     function trueRewardEnabled(address _address) public view returns (bool) {

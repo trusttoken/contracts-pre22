@@ -35,9 +35,9 @@ contract RewardToken is CompliantDepositTokenWithHook {
     mapping(address => uint256) finOpSupply;
     */
 
-    event MintRewardToken(address account, uint256 amount, address finOp);
-    event RedeemRewardToken(address account, uint256 amount, address finOp);
-    event BurnRewardToken(address account, uint256 amount, address finOp);
+    event MintRewardToken(address indexed account, uint256 amount, address indexed finOp);
+    event RedeemRewardToken(address indexed account, uint256 amount, address indexed finOp);
+    event BurnRewardToken(address indexed account, uint256 amount, address indexed finOp);
 
     /**
      * @dev Only addresses registered in this contract's mapping are valid
