@@ -88,7 +88,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @dev get total supply of TrueCurrency backed by debt
      * @return supply of debt backed TrueCurrency
      */
-    function debtBackedSupply() public view returns (uint256) {
+    function rewardBackedSupply() public view returns (uint256) {
         return totalSupply().sub(totalSupply_);
     }
 
