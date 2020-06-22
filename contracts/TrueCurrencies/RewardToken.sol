@@ -140,7 +140,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
         // decrease account rewardToken balance
         _subRewardBalance(account, amount, finOp);
 
-        emit RedeemRewardToken(account, tokenAmount, finOp);
+        emit RedeemRewardToken(account, tokenAmount, amount, finOp);
         emit Burn(account, tokenAmount);
         emit Transfer(account, address(0), tokenAmount);
 
