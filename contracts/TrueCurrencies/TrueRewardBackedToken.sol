@@ -120,8 +120,13 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         uint balance = _getBalance(msg.sender);
 
         if (balance != 0) {
-            // mint reward token
-            mintRewardToken(msg.sender, balance, opportunity());
+            if (reserveRewardBalance(opportunity()) >= balance) {
+                // swap with reserve
+                swapTokenForReward(msg.sender, balance, _toRewardToken(balance, opportunity()), opportunity());
+            } else {
+                // mint reward token
+                mintRewardToken(msg.sender, balance, opportunity());
+            }
         }
 
         // set reward distribution
@@ -141,13 +146,20 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         require(trueRewardEnabled(msg.sender), "TrueReward already disabled");
         // get balance
         uint rewardBalance = rewardTokenBalance(msg.sender, opportunity());
+        uint depositBalance = _toToken(rewardBalance, opportunity());
 
         // remove reward distribution
         _removeDistribution(opportunity());
 
         if (rewardBalance > 0) {
-            // redeem for token
-            redeemRewardToken(msg.sender, rewardBalance, opportunity());
+            if (reserveBalance() >= depositBalance) {
+                // swap with reserve
+                swapRewardForToken(msg.sender, depositBalance, rewardBalance, opportunity());
+            } else {
+                // redeem for token
+                redeemRewardToken(msg.sender, rewardBalance, opportunity());
+            }
+
         }
 
         // emit disable event
