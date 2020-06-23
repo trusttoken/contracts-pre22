@@ -2,7 +2,7 @@ import { Contract, ContractTransaction } from 'ethers'
 import { BigNumberish, Transaction } from 'ethers/utils'
 import { expect } from 'chai'
 
-const expectEvent = (contract: Contract, eventName: string) => async (tx: Transaction, ...args: any[]) => {
+export const expectEvent = (contract: Contract, eventName: string) => async (tx: Transaction, ...args: any[]) => {
   await expect(Promise.resolve(tx)).to.emit(contract, eventName).withArgs(...args)
 }
 export const expectTransferEventOn = (contract: Contract) => async (tx: Transaction, from: string, to: string, amount: BigNumberish) => {

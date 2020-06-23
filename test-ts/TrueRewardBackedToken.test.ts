@@ -13,7 +13,13 @@ import { TrueRewardBackedToken } from '../build/types/TrueRewardBackedToken'
 import { RegistryAttributes } from '../scripts/attributes'
 import { fixtureWithAave } from './fixtures/fixtureWithAave'
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
-import { expectBurnEventOn, expectEventsCountOn, expectMintEventOn, expectTransferEventOn } from './utils/eventHelpers'
+import {
+  expectBurnEventOn,
+  expectEvent,
+  expectEventsCountOn,
+  expectMintEventOn,
+  expectTransferEventOn,
+} from './utils/eventHelpers'
 
 use(solidity)
 
@@ -97,6 +103,11 @@ describe('TrueRewardBackedToken', () => {
         expect(await token.trueRewardEnabled(empty.address)).to.be.false
       })
 
+      it('no Transfer events are emitted when holder enables and disables trueReward with 0 balance', async () => {
+        await expect(token.connect(empty).enableTrueReward()).to.not.emit(token, 'Transfer')
+        await expect(token.connect(empty).disableTrueReward()).to.not.emit(token, 'Transfer')
+      })
+
       it('holder enables trueReward with 100 balance', async () => {
         expect(await sharesToken.balanceOf(aaveFinancialOpportunity.address)).to.equal(0)
         await token.connect(holder).enableTrueReward()
@@ -113,6 +124,18 @@ describe('TrueRewardBackedToken', () => {
         expect(await token.balanceOf(financialOpportunity.address)).to.equal(0)
       })
 
+      it('emits correct events when true rewards are enabled', async () => {
+        const tx = await token.connect(holder).enableTrueReward()
+        await expectEvent(token, 'TrueRewardEnabled')(tx, holder.address, parseEther('100'), financialOpportunity.address)
+        await expectTransferEventWith(tx, holder.address, financialOpportunity.address, parseEther('100'))
+        await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, parseEther('100'))
+        await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, parseEther('100'))
+        await expectTransferEventWith(tx, AddressZero, holder.address, parseEther('100'))
+        await expectMintEventWith(tx, holder.address, parseEther('100'))
+        await expectEventsCount('Transfer', tx, 4)
+        await expectEventsCount('Mint', tx, 1)
+      })
+
       it('holder disables trueReward', async () => {
         expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
         await expect(token.connect(holder).enableTrueReward()).to.emit(financialOpportunity, 'Deposit').withArgs(holder.address, parseEther('100'), parseEther('100'))
@@ -125,6 +148,23 @@ describe('TrueRewardBackedToken', () => {
         expect(await token.depositBackedSupply()).to.equal(parseEther('1300'))
         expect(await token.rewardBackedSupply()).to.equal(parseEther('0'))
         expect(await token.balanceOf(holder.address)).to.equal(parseEther('100'))
+      })
+
+      it('emits correct events when true rewards are disabled', async () => {
+        await token.connect(holder).enableTrueReward()
+        const tx = await token.connect(holder).disableTrueReward()
+
+        await expectEvent(token, 'TrueRewardDisabled')(tx, holder.address, parseEther('100'), financialOpportunity.address)
+
+        // Should be lendingPool instead of sharesToken with full AAVE integration
+        await expectTransferEventWith(tx, sharesToken.address, aaveFinancialOpportunity.address, parseEther('100'))
+        await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, parseEther('100'))
+        await expectTransferEventWith(tx, financialOpportunity.address, holder.address, parseEther('100'))
+        await expectTransferEventWith(tx, holder.address, AddressZero, parseEther('100'))
+        await expectBurnEventWith(tx, holder.address, parseEther('100'))
+
+        await expectEventsCount('Transfer', tx, 4)
+        await expectEventsCount('Burn', tx, 1)
       })
 
       it('holder fails to enable trueReward when not whitelisted', async () => {

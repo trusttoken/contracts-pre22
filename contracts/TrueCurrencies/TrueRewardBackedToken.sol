@@ -54,8 +54,8 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     // financial opportunity address
     address public opportunity_;
 
-    event TrueRewardEnabled(address _account);
-    event TrueRewardDisabled(address _account);
+    event TrueRewardEnabled(address indexed _account, uint256 _amount, address indexed _finOp);
+    event TrueRewardDisabled(address indexed _account, uint256 _amount, address indexed _finOp);
 
     /** @dev return true if TrueReward is enabled for a given address */
     function trueRewardEnabled(address _address) public view returns (bool) {
@@ -129,7 +129,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         _setDistribution(maxRewardProportion, opportunity());
 
         // emit enable event
-        emit TrueRewardEnabled(msg.sender);
+        emit TrueRewardEnabled(msg.sender, balance, opportunity());
         //emit Transfer(address(0), msg.sender, balance);
     }
 
@@ -151,7 +151,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         }
 
         // emit disable event
-        emit TrueRewardDisabled(msg.sender);
+        emit TrueRewardDisabled(msg.sender, rewardBalance, opportunity());
         // emit Transfer(msg.sender, address(0), zTrueCurrency);
     }
 
