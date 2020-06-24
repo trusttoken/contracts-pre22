@@ -20,10 +20,10 @@ describe('ropsten test', function () {
   this.timeout(10000000)
   const provider = new providers.InfuraProvider('ropsten', '81447a33c1cd4eb09efb1e8c388fb28e')
   // expected to have some tUSD
-  const staker = new ethers.Wallet('0x285BDA73F1FB694325F227B80EC7E7758C5360ED1BE71EEECFE50BA9D902C856', provider)
+  const staker = new ethers.Wallet(process.env.STAKER_KEY, provider)
   // expected to have no tUSD
-  const brokePerson = new ethers.Wallet('01AD2BF11C43641B22DB8CEACF26FBF4B509581CDCD5D747669B6EE8A1E2C6C7', provider)
-  const owner = new ethers.Wallet('0x2F4E984196CCE414D059C91230917F10F3067F3F8E7DAF6C0B0933C13F9AF8FA', provider)
+  const brokePerson = new ethers.Wallet(process.env.EMPTY_WALLET_KEY, provider)
+  const owner = new ethers.Wallet(process.env.OWNER_KEY, provider)
   const tusd = TrueUsdFactory.connect(addresses.trueUSD, owner)
   const faucet = TokenFaucetFactory.connect(addresses.tokenController, owner)
   // const trustToken = MockTrustTokenFactory.connect(addresses.trustToken, owner)
