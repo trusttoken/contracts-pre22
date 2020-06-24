@@ -42,9 +42,7 @@ async function isSubscriber (provider: Provider, registry: ProvisionalRegistryIm
   }
   const starts = await startLogs()
   const stops = await stopLogs()
-  const all = [...starts, ...stops]
-  const allSorted = all.sort((lhs, rhs) => lhs.blockNumber - rhs.blockNumber)
-  return allSorted[allSorted.length - 1].topics[0] === startTopics[0]
+  return starts.length > stops.length
 }
 
 interface DeployResult {
