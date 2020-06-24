@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 import { MockProvider, solidity } from 'ethereum-waffle'
-import { beforeEachWithFixture } from '../utils'
+import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { deployWithExisting } from '../../scripts/deploy_mainnet'
 import { deployBehindProxy, setupDeployer } from '../../scripts/utils'
 

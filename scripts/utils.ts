@@ -1,9 +1,9 @@
 import { Wallet, ethers, ContractFactory } from 'ethers'
 import { deployContract } from 'ethereum-waffle'
 import fs from 'fs'
-import readline from "readline";
+import readline from 'readline'
 
-export const txnArgs = { gasLimit: 5_000_000, gasPrice: 39_000_000_000 }
+export const txnArgs = { gasLimit: 2_000_000, gasPrice: 16_000_000_000 }
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export const getContractJSON = (contractName: string) => require(`../build/${contractName}.json`)
@@ -15,7 +15,7 @@ const confirmDeploy = async (contractName: string) => {
   })
 
   return new Promise<boolean>(resolve => {
-    rl.question(`Deploy ${contractName}? (Y/n)`, (answer) => {
+    rl.question(`Deploy ${contractName}? (Y/n) `, (answer) => {
       rl.close()
       if (['n', 'no'].includes(answer.toLowerCase())) {
         resolve(false)

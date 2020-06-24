@@ -13,9 +13,9 @@ import { RegistryAttributes } from './attributes'
 
 const comp = (expected: string, actual: string, topic: string) => {
   if (expected.toLowerCase() === actual.toLowerCase()) {
-    console.log(`${topic}: OK`)
+    console.log(`${topic}: ✅`)
   } else {
-    console.log(`${topic}: FAIL
+    console.log(`${topic}: ❌
 Expected: ${expected}
 Actual: ${actual}`,
     )
@@ -96,15 +96,23 @@ interface DeployResult {
     [RegistryAttributes.approvedBeneficiary, 'liquidator'],
   ] as [{name: string, hex: string}, string][]) {
     if (await isSubscriber(provider, registry, attribute.hex, deployResult[contract])) {
-      console.log(`${contract} subscription to ${attribute.name}: OK`)
+      console.log(`${contract} subscription to ${attribute.name}: ✅`)
     } else {
-      console.log(`${contract} subscription to ${attribute.name}: FAIL`)
+      console.log(`${contract} subscription to ${attribute.name}: ❌`)
     }
   }
 
   if ((await registry.getAttributeValue(stakedTokenProxy.address, RegistryAttributes.isRegisteredContract.hex)).eq(1)) {
-    console.log('StakedToken is registered contract: OK')
+    console.log('StakedToken is registered contract: ✅')
   } else {
-    console.log('StakedToken is registered contract: FAIL')
+    console.log('StakedToken is registered contract: ❌')
+    console.log(`Attribute: ${RegistryAttributes.isRegisteredContract.hex}`)
+  }
+
+  if ((await registry.getAttributeValue(assuredFinancialOpportunity.address, RegistryAttributes.approvedBeneficiary.hex)).eq(1)) {
+    console.log('AssuredFinancialOpportunity is approved beneficiary: ✅')
+  } else {
+    console.log('AssuredFinancialOpportunity is approved beneficiary: ❌')
+    console.log(`Attribute: ${RegistryAttributes.approvedBeneficiary.hex}`)
   }
 })()

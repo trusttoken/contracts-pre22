@@ -1,4 +1,4 @@
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 import "../TrueCurrencies/TrueUSD.sol";
 import "./IAToken.sol";
@@ -147,7 +147,9 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     function _redeem(address _to, uint256 _amount) internal returns(uint256) {
         // calculate amount in TUSD
         uint tusdAmount = _amount.mul(tokenValue()).div(10**18);
-
+        if (aToken.balanceOf(address(this)) < tusdAmount) {
+            tusdAmount = aToken.balanceOf(address(this));
+        }
         // get balance before, redeem, get balance after
         uint256 balanceBefore = tusdBalance();
         aToken.redeem(tusdAmount);
@@ -157,7 +159,11 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
         uint256 fundsWithdrawn = balanceAfter.sub(balanceBefore);
 
         // sub yTUSD supply
-        _totalSupply = _totalSupply.sub(_amount);
+        if (getValueInStake(fundsWithdrawn) > _totalSupply) {
+            _totalSupply = 0;
+        } else {
+            _totalSupply = _totalSupply.sub(getValueInStake(fundsWithdrawn));
+        }
 
         // transfer to recipient and return amount withdrawn
         require(token.transfer(_to, fundsWithdrawn), "transfer failed");

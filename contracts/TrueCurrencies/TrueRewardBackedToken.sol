@@ -1,4 +1,4 @@
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 import { TrueCoinReceiver } from "./TrueCoinReceiver.sol";
 import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
@@ -88,8 +88,8 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @dev get total supply of TrueCurrency backed by debt
      * @return supply of debt backed TrueCurrency
      */
-    function debtBackedSupply() public view returns (uint256) {
-        return totalSupply() - totalSupply_;
+    function rewardBackedSupply() public view returns (uint256) {
+        return totalSupply().sub(totalSupply_);
     }
 
     /**
@@ -216,6 +216,9 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @return total supply of opportunity rewardToken
      */
     function opportunityRewardSupply() internal view returns (uint256) {
+        if (opportunity() == address(0)) {
+            return 0;
+        }
         return rewardTokenSupply(opportunity());
     }
 

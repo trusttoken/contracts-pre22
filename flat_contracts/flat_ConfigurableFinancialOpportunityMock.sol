@@ -1,7 +1,7 @@
 
 // File: contracts/TrueReward/FinancialOpportunity.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /**
  * @title FinancialOpportunity
@@ -81,7 +81,7 @@ interface FinancialOpportunity {
 
 // File: contracts/TrueCurrencies/modularERC20/InstantiatableOwnable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -364,7 +364,7 @@ library SafeMath {
 
 // File: contracts/TrueReward/mocks/ConfigurableFinancialOpportunityMock.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 

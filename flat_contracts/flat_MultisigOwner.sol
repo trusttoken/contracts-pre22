@@ -409,7 +409,7 @@ contract Registry {
 
 // File: contracts/TrueCurrencies/modularERC20/InstantiatableOwnable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -454,7 +454,7 @@ contract InstantiatableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/Claimable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -494,7 +494,7 @@ contract Claimable is InstantiatableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/BalanceSheet.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -519,7 +519,7 @@ contract BalanceSheet is Claimable {
 
 // File: contracts/TrueCurrencies/modularERC20/AllowanceSheet.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -544,7 +544,7 @@ contract AllowanceSheet is Claimable {
 
 // File: contracts/TrueReward/FinancialOpportunity.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /**
  * @title FinancialOpportunity
@@ -624,7 +624,7 @@ interface FinancialOpportunity {
 
 // File: contracts/TrueCurrencies/ProxyStorage.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -697,7 +697,7 @@ contract ProxyStorage {
 
 // File: contracts/TrueCurrencies/HasOwner.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -758,7 +758,7 @@ contract HasOwner is ProxyStorage {
 
 // File: contracts/TrueCurrencies/TrueCoinReceiver.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
@@ -766,7 +766,7 @@ contract TrueCoinReceiver {
 
 // File: contracts/TrueCurrencies/ReclaimerToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 contract ReclaimerToken is HasOwner {
@@ -796,7 +796,7 @@ contract ReclaimerToken is HasOwner {
 
 // File: contracts/TrueCurrencies/modularERC20/InitializableOwnable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -844,7 +844,7 @@ contract InitializableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/InitializableClaimable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -884,7 +884,7 @@ contract InitializableClaimable is InitializableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/ModularBasicToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -932,7 +932,7 @@ contract ModularBasicToken is HasOwner {
 
 // File: contracts/TrueCurrencies/modularERC20/ModularStandardToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -1085,7 +1085,7 @@ contract ModularStandardToken is ModularBasicToken {
 
 // File: contracts/TrueCurrencies/modularERC20/ModularBurnableToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -1113,7 +1113,7 @@ contract ModularBurnableToken is ModularStandardToken {
 
 // File: contracts/TrueCurrencies/BurnableTokenWithBounds.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -1147,7 +1147,7 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
 
 // File: contracts/TrueCurrencies/GasRefundToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -1312,7 +1312,7 @@ contract GasRefundToken is ProxyStorage {
 
 // File: contracts/TrueCurrencies/CompliantDepositTokenWithHook.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -1580,7 +1580,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
 // File: contracts/TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /**
  * @title OwnedUpgradeabilityProxy
@@ -1749,7 +1749,7 @@ contract OwnedUpgradeabilityProxy {
 
 // File: contracts/TrueCurrencies/RewardToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -1983,7 +1983,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
 
 // File: contracts/TrueCurrencies/RewardTokenWithReserve.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -2132,7 +2132,7 @@ contract RewardTokenWithReserve is RewardToken {
 
 // File: contracts/TrueCurrencies/TrueRewardBackedToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -2534,7 +2534,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
 
 // File: contracts/TrueCurrencies/DelegateERC20.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /** @title DelegateERC20
@@ -2590,7 +2590,7 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
 
 // File: contracts/TrueCurrencies/TrueUSD.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -2637,7 +2637,7 @@ contract TrueUSD is TrueRewardBackedToken, DelegateERC20 {
 
 // File: contracts/TrueCurrencies/Admin/TokenController.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -3292,7 +3292,7 @@ contract TokenController {
 
 // File: contracts/TrueCurrencies/Admin/MultisigOwner.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 

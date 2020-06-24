@@ -1,10 +1,10 @@
-pragma solidity^0.5.13;
+pragma solidity 0.5.13;
 
 import "../HasOwner.sol";
 import "../TrueUSD.sol";
-import "../Admin/TokenController.sol";
+import "../mocks/TokenControllerMock.sol";
 
-contract TokenFaucet is TokenController {
+contract TokenFaucet is TokenControllerMock {
     function faucet(uint256 _amount) external {
         // set KYC
         registry.setAttributeValue(msg.sender, 0x6861735061737365644b59432f414d4c00000000000000000000000000000000, 1);
