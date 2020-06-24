@@ -7,7 +7,7 @@ import { providers } from 'ethers'
 import { Provider } from 'ethers/providers'
 import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
-import { ProvisionalRegistryImplementation } from '../build/types/ProvisionalRegistryImplementation';
+import { ProvisionalRegistryImplementation } from '../build/types/ProvisionalRegistryImplementation'
 import { ProvisionalRegistryImplementationFactory } from '../build/types/ProvisionalRegistryImplementationFactory'
 import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
 import { RegistryAttributes } from './attributes'
@@ -26,18 +26,18 @@ Actual: ${actual}`,
 async function isSubscriber (provider: Provider, registry: ProvisionalRegistryImplementation, attribute: string, subscriber: string) {
   const startTopics = registry.filters.StartSubscription(attribute, subscriber).topics
   const stopTopics = registry.filters.StopSubscription(attribute, subscriber).topics
-  async function startLogs() {
+  async function startLogs () {
     return provider.getLogs({
       fromBlock: 1,
       topics: startTopics,
-      address: registry.address
+      address: registry.address,
     })
   }
-  async function stopLogs() {
+  async function stopLogs () {
     return provider.getLogs({
       fromBlock: 1,
       topics: stopTopics,
-      address: registry.address
+      address: registry.address,
     })
   }
   const starts = await startLogs()
