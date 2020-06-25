@@ -90,8 +90,16 @@ contract RewardTokenWithReserve is RewardToken {
         uint256 rewardAmount,
         address finOp
     ) internal validFinOp(finOp) {
-        addRewardTokenToReserve(account, depositAmount, rewardAmount, finOp);
-        withdrawTokenFromReserve(account, depositAmount);
+        // put reward tokens into reserve
+        _subRewardBalance(account, rewardAmount, finOp);
+        _addRewardBalance(RESERVE, rewardAmount, finOp);
+
+        // take deposit tokens from reserve
+        _subBalance(RESERVE, depositAmount);
+        _addBalance(account, depositAmount);
+
+        emit Transfer(account, RESERVE, depositAmount);
+        emit Transfer(RESERVE, account, depositAmount);
         emit SwapTokenForReward(account, depositAmount, finOp);
     }
 
@@ -109,56 +117,16 @@ contract RewardTokenWithReserve is RewardToken {
         uint256 rewardAmount,
         address finOp
     ) internal validFinOp(finOp) {
-        addTokenToReserve(account, depositAmount);
-        withdrawRewardTokenFromReserve(account, depositAmount, rewardAmount, finOp);
-        emit SwapRewardForToken(account, depositAmount, finOp);
-    }
+        // put deposit tokens into reserve
+        _subBalance(account, depositAmount);
+        _addBalance(RESERVE, depositAmount);
 
-    function addTokenToReserve(
-        address account,
-        uint256 amount
-    ) internal {
-        // sub from sender and add to reserve for depositToken
-        _subBalance(account, amount);
-        _addBalance(RESERVE, amount);
-
-        emit Transfer(account, RESERVE, amount);
-    }
-
-    function withdrawTokenFromReserve(
-        address account,
-        uint256 amount
-    ) internal {
-        // sub from sender and add to reserve for depositToken
-        _subBalance(RESERVE, amount);
-        _addBalance(account, amount);
-
-        emit Transfer(RESERVE, account, amount);
-    }
-
-    function addRewardTokenToReserve(
-        address account,
-        uint256 depositAmount,
-        uint256 rewardAmount,
-        address finOp
-    ) internal validFinOp(finOp) {
-        // sub from reserve and add to sender for rewardToken
-        _subRewardBalance(account, rewardAmount, finOp);
-        _addRewardBalance(RESERVE, rewardAmount, finOp);
-
-        emit Transfer(account, RESERVE, depositAmount);
-    }
-
-    function withdrawRewardTokenFromReserve(
-        address account,
-        uint256 depositAmount,
-        uint256 rewardAmount,
-        address finOp
-    ) internal validFinOp(finOp) {
-        // sub from reserve and add to sender for rewardToken
+        // take reward tokens from reserve
         _subRewardBalance(RESERVE, rewardAmount, finOp);
         _addRewardBalance(account, rewardAmount, finOp);
 
+        emit Transfer(account, RESERVE, depositAmount);
         emit Transfer(RESERVE, account, depositAmount);
+        emit SwapRewardForToken(account, depositAmount, finOp);
     }
 }

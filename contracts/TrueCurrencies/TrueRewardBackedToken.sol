@@ -120,13 +120,8 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         uint balance = _getBalance(msg.sender);
 
         if (balance != 0) {
-            if (reserveRewardBalance(opportunity()) >= balance) {
-                // swap with reserve
-                swapTokenForReward(msg.sender, balance, _toRewardToken(balance, opportunity()), opportunity());
-            } else {
-                // mint reward token
-                mintRewardToken(msg.sender, balance, opportunity());
-            }
+            // deposit user balance into opportunity on swap with reserve
+            depositWithReserve(msg.sender, balance, _toRewardToken(balance, opportunity()), opportunity());
         }
 
         // set reward distribution
@@ -135,7 +130,6 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
 
         // emit enable event
         emit TrueRewardEnabled(msg.sender, balance, opportunity());
-        //emit Transfer(address(0), msg.sender, balance);
     }
 
     /**
@@ -152,19 +146,12 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         _removeDistribution(opportunity());
 
         if (rewardBalance > 0) {
-            if (reserveBalance() >= depositBalance) {
-                // swap with reserve
-                swapRewardForToken(msg.sender, depositBalance, rewardBalance, opportunity());
-            } else {
-                // redeem for token
-                redeemRewardToken(msg.sender, rewardBalance, opportunity());
-            }
-
+            // redeem all user balance from opportunity on swap with reserve
+            redeemWithReserve(msg.sender, depositBalance, rewardBalance, opportunity());
         }
 
         // emit disable event
         emit TrueRewardDisabled(msg.sender, rewardBalance, opportunity());
-        // emit Transfer(msg.sender, address(0), zTrueCurrency);
     }
 
     /**
@@ -242,14 +229,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         return _toToken(opportunityRewardSupply(), opportunity());
     }
 
-    function redeemFromSender(address sender, uint256 depositAmount) internal returns (uint256) {
-        if (!trueRewardEnabled(sender)) {
-            return depositAmount;
-        }
-
-        address finOp = opportunity();
-        uint rewardAmount = _toRewardToken(depositAmount, finOp);
-
+    function redeemWithReserve(address sender, uint256 depositAmount, uint256 rewardAmount, address finOp) internal returns (uint256) {
         if (reserveBalance() >= depositAmount) {
             swapRewardForToken(sender, depositAmount, rewardAmount, finOp);
             return depositAmount;
@@ -258,14 +238,15 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         }
     }
 
-    function depositForReceiver(address receiver, uint256 depositAmount) internal {
-        if (!trueRewardEnabled(receiver)) {
-            return;
+    function redeemFromSender(address sender, uint256 depositAmount) internal returns (uint256) {
+        if (!trueRewardEnabled(sender)) {
+            return depositAmount;
         }
 
-        address finOp = opportunity();
-        uint rewardAmount = _toRewardToken(depositAmount, finOp);
+        return redeemWithReserve(sender, depositAmount, _toRewardToken(depositAmount, opportunity()), opportunity());
+    }
 
+    function depositWithReserve(address receiver, uint256 depositAmount, uint256 rewardAmount, address finOp) internal {
         if (rewardTokenBalance(RESERVE, finOp) >= rewardAmount) {
             swapTokenForReward(receiver, depositAmount, rewardAmount, finOp);
         } else {
@@ -273,12 +254,20 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         }
     }
 
+    function depositForReceiver(address receiver, uint256 depositAmount) internal {
+        if (!trueRewardEnabled(receiver)) {
+            return;
+        }
+
+        depositWithReserve(receiver, depositAmount, _toRewardToken(depositAmount, opportunity()), opportunity());
+    }
+
     function _transferWithRewards(
         address _from,
         address _to,
         uint256 _value
     ) internal returns (address) {
-        if (_to == opportunity() || _from == opportunity()) {
+        if (neitherSideHasTrueRewards(_from, _to) || isOpportunity(_from) || isOpportunity(_to)) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
             return super._transferAllArgs(_from, _to, _value);
         }
@@ -298,7 +287,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         uint256 _value,
         address _spender
     ) internal returns (address) {
-        if (_to == opportunity() || _from == opportunity()) {
+        if (neitherSideHasTrueRewards(_from, _to) || _to == opportunity() || _from == opportunity()) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
             return super._transferFromAllArgs(_from, _to, _value, _spender);
         }
@@ -351,5 +340,13 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     function _removeDistribution(address finOp) internal {
         delete _rewardDistribution[msg.sender][0];
         _rewardDistribution[msg.sender].length--;
+    }
+
+    function neitherSideHasTrueRewards(address from, address to) internal view returns (bool) {
+        return !trueRewardEnabled(from) && !trueRewardEnabled(to);
+    }
+
+    function isOpportunity(address account) internal view returns (bool) {
+        return account == opportunity();
     }
 }
