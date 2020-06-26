@@ -121,7 +121,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
 
         if (balance != 0) {
             // deposit entire user token balance
-            depositWithReserve(msg.sender, balance, _toRewardToken(balance, opportunity()), opportunity());
+            depositWithReserve(msg.sender, balance, opportunity());
         }
 
         // set reward distribution
@@ -147,7 +147,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
 
         if (rewardBalance > 0) {
             // redeem entire user reward token balance
-            redeemWithReserve(msg.sender, depositBalance, rewardBalance, opportunity());
+            redeemWithReserve(msg.sender, rewardBalance, opportunity());
         }
 
         // emit disable event
@@ -231,33 +231,53 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
 
     /**
      * @dev Transfer helper function for TrueRewardBackedToken
+     *
+     * Uses trueRewardEnabled flag to check whether accounts have opted in
+     * If are have opted out, call parent transferFrom, otherwise:
+     * 1. If sender opted in, redeem reward tokens for true currency
+     * 2. Call transferFrom, using deposit balance for transfer
+     * 3. If reciever enabled, deposit true currency into
      */
     function _transferAllArgs(address _from, address _to, uint256 _value) internal returns (address) {
-        if ((!trueRewardEnabled(_from) && !trueRewardEnabled(_to)) || _from == opportunity() || _to == opportunity()) {
+        // get enabled flags and opportunity address
+        bool fromEnabled = trueRewardEnabled(_from);
+        bool toEnabled = trueRewardEnabled(_to);
+        address finOp = opportunity();
+
+        // if both disabled or either is opportunity, tranfer normally
+        if (!fromEnabled && !toEnabled || _from == finOp || _to == finOp) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
             return super._transferAllArgs(_from, _to, _value);
         }
 
+        // check balance for from address
         require(balanceOf(_from) >= _value, "not enough balance");
 
-        // redeem from sender
-        if (trueRewardEnabled(_from)) {
-            _value = redeemWithReserve(_from, _value, _toRewardToken(_value, opportunity()), opportunity());
+        // if from enabled, check balance, calculate reward amount, and redeem
+        if (fromEnabled) {
+            uint256 rewardAmount = _toRewardToken(_value, finOp);
+            _value = redeemWithReserve(_from, rewardAmount, finOp);
         }
 
-        // transfer depositTokens
+        // transfer tokens
         address finalTo = super._transferAllArgs(_from, _to, _value);
 
-        // deposit for receiver
+        // if receiever enabled, deposit tokens into opportunity
         if (trueRewardEnabled(finalTo)) {
-            depositWithReserve(finalTo, _value, _toRewardToken(_value, opportunity()), opportunity());
+            depositWithReserve(finalTo, _value, finOp);
         }
 
         return finalTo;
     }
 
     /**
-     * @dev TransferFromAll helper function for TrueRewardBackedToken
+     * @dev TransferFrom helper function for TrueRewardBackedToken
+     *
+     * Uses trueRewardEnabled flag to check whether accounts have opted in
+     * If are have opted out, call parent transferFrom, otherwise:
+     * 1. If sender opted in, redeem reward tokens for true currency
+     * 2. Call transferFrom, using deposit balance for transfer
+     * 3. If reciever enabled, deposit true currency into
      */
     function _transferFromAllArgs(
         address _from,
@@ -265,24 +285,32 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         uint256 _value,
         address _spender
     ) internal returns (address) {
-        if ((!trueRewardEnabled(_from) && !trueRewardEnabled(_to)) || _from == opportunity() || _to == opportunity()) {
+        // get enabled flags and opportunity address
+        bool fromEnabled = trueRewardEnabled(_from);
+        bool toEnabled = trueRewardEnabled(_to);
+        address finOp = opportunity();
+
+        // if both disabled or either is opportunity, tranfer normally
+        if (!fromEnabled && !toEnabled || _from == finOp || _to == finOp) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
-            return super._transferFromAllArgs(_from, _to, _value, _spender);
+            return super._transferAllArgs(_from, _to, _value);
         }
 
+        // check balance for from address
         require(balanceOf(_from) >= _value, "not enough balance");
 
-        // redeem from sender
-        if (trueRewardEnabled(_from)) {
-            _value = redeemWithReserve(_from, _value, _toRewardToken(_value, opportunity()), opportunity());
+        // if from enabled, check balance, calculate reward amount, and redeem
+        if (fromEnabled) {
+            uint256 rewardAmount = _toRewardToken(_value, finOp);
+            _value = redeemWithReserve(_from, rewardAmount, finOp);
         }
 
-        // transfer depositTokens
+        // transfer tokens
         address finalTo = super._transferFromAllArgs(_from, _to, _value, _spender);
 
-        // deposit for receiver
+        // if receiever enabled, deposit tokens into opportunity
         if (trueRewardEnabled(finalTo)) {
-            depositWithReserve(finalTo, _value, _toRewardToken(_value, opportunity()), opportunity());
+            depositWithReserve(finalTo, _value, finOp);
         }
 
         return finalTo;
