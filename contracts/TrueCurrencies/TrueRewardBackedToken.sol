@@ -120,7 +120,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         uint balance = _getBalance(msg.sender);
 
         if (balance != 0) {
-            // deposit user balance into opportunity on swap with reserve
+            // deposit entire user token balance
             depositWithReserve(msg.sender, balance, _toRewardToken(balance, opportunity()), opportunity());
         }
 
@@ -146,7 +146,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         _removeDistribution(opportunity());
 
         if (rewardBalance > 0) {
-            // redeem all user balance from opportunity on swap with reserve
+            // redeem entire user reward token balance
             redeemWithReserve(msg.sender, depositBalance, rewardBalance, opportunity());
         }
 
@@ -229,83 +229,31 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         return _toToken(opportunityRewardSupply(), opportunity());
     }
 
-    function redeemWithReserve(address sender, uint256 depositAmount, uint256 rewardAmount, address finOp) internal returns (uint256) {
-        if (reserveBalance() >= depositAmount) {
-            swapRewardForToken(sender, depositAmount, rewardAmount, finOp);
-            return depositAmount;
-        } else {
-            return redeemRewardToken(sender, rewardAmount, finOp);
-        }
-    }
-
-    function redeemFromSender(address sender, uint256 depositAmount) internal returns (uint256) {
-        if (!trueRewardEnabled(sender)) {
-            return depositAmount;
-        }
-
-        return redeemWithReserve(sender, depositAmount, _toRewardToken(depositAmount, opportunity()), opportunity());
-    }
-
-    function depositWithReserve(address receiver, uint256 depositAmount, uint256 rewardAmount, address finOp) internal {
-        if (rewardTokenBalance(RESERVE, finOp) >= rewardAmount) {
-            swapTokenForReward(receiver, depositAmount, rewardAmount, finOp);
-        } else {
-            mintRewardToken(receiver, depositAmount, finOp);
-        }
-    }
-
-    function depositForReceiver(address receiver, uint256 depositAmount) internal {
-        if (!trueRewardEnabled(receiver)) {
-            return;
-        }
-
-        depositWithReserve(receiver, depositAmount, _toRewardToken(depositAmount, opportunity()), opportunity());
-    }
-
-    function _transferWithRewards(
-        address _from,
-        address _to,
-        uint256 _value
-    ) internal returns (address) {
-        if (neitherSideHasTrueRewards(_from, _to) || isOpportunity(_from) || isOpportunity(_to)) {
+    /**
+     * @dev Transfer helper function for TrueRewardBackedToken
+     */
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal returns (address) {
+        if ((!trueRewardEnabled(_from) && !trueRewardEnabled(_to)) || _from == opportunity() || _to == opportunity()) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
             return super._transferAllArgs(_from, _to, _value);
         }
 
         require(balanceOf(_from) >= _value, "not enough balance");
 
-        uint redeemedAmount = redeemFromSender(_from, _value);
-        address finalTo = super._transferAllArgs(_from, _to, redeemedAmount);
-        depositForReceiver(finalTo, redeemedAmount);
-
-        return finalTo;
-    }
-
-    function _transferFromWithRewards(
-        address _from,
-        address _to,
-        uint256 _value,
-        address _spender
-    ) internal returns (address) {
-        if (neitherSideHasTrueRewards(_from, _to) || _to == opportunity() || _from == opportunity()) {
-            require(super.balanceOf(_from) >= _value, "not enough balance");
-            return super._transferFromAllArgs(_from, _to, _value, _spender);
+        // redeem from sender
+        if (trueRewardEnabled(_from)) {
+            _value = redeemWithReserve(_from, _value, _toRewardToken(_value, opportunity()), opportunity());
         }
 
-        require(balanceOf(_from) >= _value, "not enough balance");
+        // transfer depositTokens
+        address finalTo = super._transferAllArgs(_from, _to, _value);
 
-        uint redeemedAmount = redeemFromSender(_from, _value);
-        address finalTo = super._transferFromAllArgs(_from, _to, redeemedAmount, _spender);
-        depositForReceiver(finalTo, redeemedAmount);
+        // deposit for receiver
+        if (trueRewardEnabled(finalTo)) {
+            depositWithReserve(finalTo, _value, _toRewardToken(_value, opportunity()), opportunity());
+        }
 
         return finalTo;
-    }
-
-    /**
-     * @dev Transfer helper function for TrueRewardBackedToken
-     */
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal returns (address) {
-        return _transferWithRewards(_from, _to, _value);
     }
 
     /**
@@ -317,7 +265,27 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         uint256 _value,
         address _spender
     ) internal returns (address) {
-        return _transferFromWithRewards(_from, _to, _value, _spender);
+        if ((!trueRewardEnabled(_from) && !trueRewardEnabled(_to)) || _from == opportunity() || _to == opportunity()) {
+            require(super.balanceOf(_from) >= _value, "not enough balance");
+            return super._transferFromAllArgs(_from, _to, _value, _spender);
+        }
+
+        require(balanceOf(_from) >= _value, "not enough balance");
+
+        // redeem from sender
+        if (trueRewardEnabled(_from)) {
+            _value = redeemWithReserve(_from, _value, _toRewardToken(_value, opportunity()), opportunity());
+        }
+
+        // transfer depositTokens
+        address finalTo = super._transferFromAllArgs(_from, _to, _value, _spender);
+
+        // deposit for receiver
+        if (trueRewardEnabled(finalTo)) {
+            depositWithReserve(finalTo, _value, _toRewardToken(_value, opportunity()), opportunity());
+        }
+
+        return finalTo;
     }
 
     /**
@@ -340,13 +308,5 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     function _removeDistribution(address finOp) internal {
         delete _rewardDistribution[msg.sender][0];
         _rewardDistribution[msg.sender].length--;
-    }
-
-    function neitherSideHasTrueRewards(address from, address to) internal view returns (bool) {
-        return !trueRewardEnabled(from) && !trueRewardEnabled(to);
-    }
-
-    function isOpportunity(address account) internal view returns (bool) {
-        return account == opportunity();
     }
 }
