@@ -61,9 +61,9 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     // address allowed to withdraw/deposit, usually set to address of TUSD smart contract
     address fundsManager;
 
-    event Deposit(address account, uint256 tusd, uint256 ztusd);
-    event Redemption(address to, uint256 ztusd, uint256 tusd);
-    event Liquidation(address receiver, int256 debt);
+    event Deposit(address indexed account, uint256 tusd, uint256 ztusd);
+    event Redemption(address indexed to, uint256 ztusd, uint256 tusd);
+    event Liquidation(address indexed receiver, int256 debt);
     event AwardPool(uint256 amount);
     event AwardFailure(uint256 amount);
 

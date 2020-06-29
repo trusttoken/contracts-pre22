@@ -19,8 +19,8 @@ contract RewardTokenWithReserve is RewardToken {
     // Reserves of TUSD and TrueRewardBackedToken are held at this addess
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
 
-    event ReserveDeposit(address account, uint256 depositAmount, uint256 rewardTokenReturned, address finOp);
-    event ReserveRedeem(address account, uint256 rewardTokenRedeemed, uint256 tokenAmountReturned, address finOp);
+    event ReserveDeposit(address indexed account, uint256 depositAmount, uint256 rewardTokenReturned, address indexed finOp);
+    event ReserveRedeem(address indexed account, uint256 rewardTokenRedeemed, uint256 tokenAmountReturned, address indexed finOp);
 
     /**
      * @dev get reserve token balance
