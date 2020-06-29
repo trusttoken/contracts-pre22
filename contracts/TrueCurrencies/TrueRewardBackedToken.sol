@@ -244,7 +244,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         address finOp = opportunity();
 
         // if both disabled or either is opportunity, tranfer normally
-        if (!fromEnabled && !toEnabled || _from == finOp || _to == finOp) {
+        if ((!fromEnabled && !toEnabled) || _from == finOp || _to == finOp) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
             return super._transferAllArgs(_from, _to, _value);
         }
@@ -255,7 +255,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // if from enabled, check balance, calculate reward amount, and redeem
         if (fromEnabled) {
             uint256 rewardAmount = _toRewardToken(_value, finOp);
-            _value = redeemWithReserve(_from, rewardAmount, finOp);
+            _value = redeemWithReserve(_from, _value, rewardAmount, finOp);
         }
 
         // transfer tokens
@@ -290,7 +290,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         address finOp = opportunity();
 
         // if both disabled or either is opportunity, tranfer normally
-        if (!fromEnabled && !toEnabled || _from == finOp || _to == finOp) {
+        if ((!fromEnabled && !toEnabled) || _from == finOp || _to == finOp) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
             return super._transferAllArgs(_from, _to, _value);
         }

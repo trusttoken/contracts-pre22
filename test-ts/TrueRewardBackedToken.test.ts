@@ -952,7 +952,7 @@ describe('TrueRewardBackedToken', () => {
             describe('tokenValue = 1', () => {
               it('total token supply should remain the same', async () => {
                 expect(await token.totalSupply()).to.equal(parseEther('1340'))
-                await expect(token.connect(sender).transfer(recipient.address, parseEther('20'))).to.emit(token, 'SwapRewardForToken')
+                await expect(token.connect(sender).transfer(recipient.address, parseEther('20'))).to.emit(token, 'ReserveDeposit')
                 expect(await token.totalSupply()).to.equal(parseEther('1340'))
               })
 
@@ -1021,7 +1021,7 @@ describe('TrueRewardBackedToken', () => {
 
               it('total token supply should remain the same', async () => {
                 expect(await token.totalSupply()).to.equal(parseEther('1360'))
-                await expect(token.connect(sender).transfer(recipient.address, parseEther('20'))).to.emit(token, 'SwapRewardForToken')
+                await expect(token.connect(sender).transfer(recipient.address, parseEther('20'))).to.emit(token, 'ReserveDeposit')
                 expect(await token.totalSupply()).to.equal(parseEther('1360'))
               })
 

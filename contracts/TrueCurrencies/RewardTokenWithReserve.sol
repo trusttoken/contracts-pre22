@@ -142,12 +142,16 @@ contract RewardTokenWithReserve is RewardToken {
         // calculate deposit amount
         uint256 tokenAmount = _toToken(rewardAmount, finOp);
 
+        return redeemWithReserve(account, tokenAmount, rewardAmount, finOp);
+    }
+
+    function redeemWithReserve(address account, uint256 tokenAmount, uint256 rewardAmount, address finOp) internal returns (uint256) {
         // if sufficient reserve balance, make swap and emit event
         if (reserveBalance() >= tokenAmount) {
             swapRewardForToken(account, tokenAmount, rewardAmount, finOp);
             emit ReserveRedeem(account, rewardAmount, tokenAmount, finOp);
             return tokenAmount;
-        } 
+        }
         // otherwise redeem through opportunity
         else {
             return redeemRewardToken(account, rewardAmount, finOp);
@@ -173,7 +177,7 @@ contract RewardTokenWithReserve is RewardToken {
             swapTokenForReward(account, depositAmount, rewardAmount, finOp);
             emit ReserveDeposit(account, depositAmount, rewardAmount, finOp);
             return rewardAmount;
-        } 
+        }
         // otherwise mint new rewardTokens by depositing into opportunity
         else {
             return mintRewardToken(account, depositAmount, finOp);
