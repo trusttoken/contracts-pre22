@@ -292,7 +292,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         // if both disabled or either is opportunity, tranfer normally
         if ((!fromEnabled && !toEnabled) || _from == finOp || _to == finOp) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
-            return super._transferAllArgs(_from, _to, _value);
+            return super._transferFromAllArgs(_from, _to, _value, _spender);
         }
 
         // check balance for from address
