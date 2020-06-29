@@ -9,3 +9,4 @@ coverage.json
 coverageEnv
 /.coverage_artifacts
 .DS_Store
+/scripts/.ropsten-test.env
