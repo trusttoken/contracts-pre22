@@ -140,7 +140,6 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         require(trueRewardEnabled(msg.sender), "TrueReward already disabled");
         // get balance
         uint rewardBalance = rewardTokenBalance(msg.sender, opportunity());
-        uint depositBalance = _toToken(rewardBalance, opportunity());
 
         // remove reward distribution
         _removeDistribution(opportunity());
