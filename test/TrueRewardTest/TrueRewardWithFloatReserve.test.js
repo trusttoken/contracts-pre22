@@ -130,8 +130,8 @@ contract('TrueRewardWithFloatReserve', function (accounts) {
       )
       assert.equal(senderBalance.toString(), to18Decimals(50).toString())
       assert.equal(receipientBalance.toString(), to18Decimals(50).toString())
-      assert.equal(TUSDReserveBalance.toString(), to18Decimals(50).toString())
-      assert.equal(zTUSDReserveBalance.toString(), to18Decimals(150).toString())
+      assert.equal(TUSDReserveBalance.toString(), to18Decimals(150).toString())
+      assert.equal(zTUSDReserveBalance.toString(), to18Decimals(50).toString())
     })
 
     it('sender truereward not enabled recipient enabled', async function () {
@@ -165,8 +165,8 @@ contract('TrueRewardWithFloatReserve', function (accounts) {
       )
       assert.equal(senderBalance.toString(), to18Decimals(50).toString())
       assert.equal(receipientBalance.toString(), to18Decimals(50).toString())
-      assert.equal(TUSDReserveBalance.toString(), to18Decimals(100).toString())
-      assert.equal(zTUSDReserveBalance.toString(), to18Decimals(100).toString())
+      assert.equal(TUSDReserveBalance.toString(), to18Decimals(200).toString())
+      assert.equal(zTUSDReserveBalance.toString(), to18Decimals(0).toString())
     })
   })
 })

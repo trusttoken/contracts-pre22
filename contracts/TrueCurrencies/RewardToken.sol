@@ -26,6 +26,9 @@ import { CompliantDepositTokenWithHook } from "./CompliantDepositTokenWithHook.s
  * time we would want to burn rewardTokens is if the underlying opportunity
  * is no longer redeemable, and we want to wipe the debt.
  *
+ * -- Mint/Burn RewardBackedToken
+ * RewardBackedToken represents TrueCurrencies supply backed by Rewards
+ *
  */
 contract RewardToken is CompliantDepositTokenWithHook {
 
@@ -35,9 +38,14 @@ contract RewardToken is CompliantDepositTokenWithHook {
     mapping(address => uint256) finOpSupply;
     */
 
-    event MintRewardToken(address indexed account, uint256 depositTokenAmount, uint256 rewardTokenAmount, address indexed finOp);
-    event RedeemRewardToken(address indexed account, uint256 depositTokenAmount, uint256 rewardTokenAmount, address indexed finOp);
+    // events for reward token
+    event MintRewardToken(address indexed account, uint256 tokensDeposited, uint256 rewardTokensMinted, address indexed finOp);
+    event RedeemRewardToken(address indexed account, uint256 tokensWithdrawn, uint256 rewardTokensRedeemed, address indexed finOp);
     event BurnRewardToken(address indexed account, uint256 rewardTokenAmount, address indexed finOp);
+
+    // events for reward backed token
+    event MintRewardBackedToken(address indexed account, uint256 indexed amount);
+    event BurnRewardBackedToken(address indexed account, uint256 indexed amount);
 
     /**
      * @dev Only addresses registered in this contract's mapping are valid
@@ -81,22 +89,19 @@ contract RewardToken is CompliantDepositTokenWithHook {
      * Emit mintRewardToken event on success
      *
      * @param account account to mint rewardToken for
-     * @param amount amount of depositToken to mint
+     * @param depositAmount amount of depositToken to deposit
      * @param finOp financial opportunity address
      */
     function mintRewardToken(
         address account,
-        uint256 amount,
+        uint256 depositAmount,
         address finOp
     ) internal validFinOp(finOp) returns (uint256) {
-        // require sufficient balance
-        require(super.balanceOf(account) >= amount, "insufficient token balance");
-
         // approve finOp can spend Token
-        _setAllowance(account, finOp, amount);
+        _setAllowance(account, finOp, depositAmount);
 
         // deposit into finOp
-        uint256 rewardAmount = _getFinOp(finOp).deposit(account, amount);
+        uint256 rewardAmount = _getFinOp(finOp).deposit(account, depositAmount);
 
         // increase finOp rewardToken supply
         finOpSupply[finOp] = finOpSupply[finOp].add(rewardAmount);
@@ -105,7 +110,9 @@ contract RewardToken is CompliantDepositTokenWithHook {
         _addRewardBalance(account, rewardAmount, finOp);
 
         // emit mint event
-        emit MintRewardToken(account, amount, rewardAmount, finOp);
+        emit MintRewardToken(account, depositAmount, rewardAmount, finOp);
+        emit MintRewardBackedToken(account, depositAmount);
+        emit Transfer(address(0), account, depositAmount);
 
         return rewardAmount;
     }
@@ -118,28 +125,29 @@ contract RewardToken is CompliantDepositTokenWithHook {
      * Emit mintRewardToken event on success
      *
      * @param account account to redeem rewardToken for
-     * @param amount depositToken amount to redeem
-     * @param finOp financial opportunitu address
+     * @param rewardAmount rewardTokens amount to redeem
+     * @param finOp financial opportunity address
      */
     function redeemRewardToken(
         address account,
-        uint256 amount,
+        uint256 rewardAmount,
         address finOp
     ) internal validFinOp(finOp) returns (uint256) {
         // require sufficient balance
-        require(rewardTokenBalance(account, finOp) >= amount, "insufficient reward balance");
+        require(rewardTokenBalance(account, finOp) >= rewardAmount, "insufficient reward balance");
 
         // withdraw from finOp, giving TUSD to account
-        uint256 tokenAmount = _getFinOp(finOp).redeem(account, amount);
+        uint256 tokenAmount = _getFinOp(finOp).redeem(account, rewardAmount);
 
         // decrease finOp rewardToken supply
-        finOpSupply[finOp] = finOpSupply[finOp].sub(amount);
+        finOpSupply[finOp] = finOpSupply[finOp].sub(rewardAmount);
 
         // decrease account rewardToken balance
-        _subRewardBalance(account, amount, finOp);
+        _subRewardBalance(account, rewardAmount, finOp);
 
-        // emit mint event
-        emit RedeemRewardToken(account, tokenAmount, amount, finOp);
+        emit RedeemRewardToken(account, tokenAmount, rewardAmount, finOp);
+        emit BurnRewardBackedToken(account, tokenAmount);
+        emit Transfer(account, address(0), tokenAmount);
 
         return tokenAmount;
     }
@@ -150,12 +158,12 @@ contract RewardToken is CompliantDepositTokenWithHook {
      * Burn rewardToken for finOp
      *
      * @param account account to burn rewardToken for
-     * @param amount depositToken amount to burn
+     * @param rewardAmount rewardToken amount to burn
      * @param finOp financial opportunity address
      */
     function burnRewardToken(
         address account,
-        uint256 amount,
+        uint256 rewardAmount,
         address finOp
     )
         internal
@@ -165,16 +173,21 @@ contract RewardToken is CompliantDepositTokenWithHook {
         require(msg.sender == account);
 
         // sender must have rewardToken amount to burn
-        require(rewardTokenBalance(account, finOp) >= amount);
+        require(rewardTokenBalance(account, finOp) >= rewardAmount);
 
         // subtract reward balance from
-        _subRewardBalance(account, amount, finOp);
+        _subRewardBalance(account, rewardAmount, finOp);
 
         // reduce total supply
-        finOpSupply[finOp].sub(amount);
+        finOpSupply[finOp].sub(rewardAmount);
+
+        // calculate depositToken value
+        uint256 tokenAmount = _toToken(rewardAmount, finOp);
 
         // burn event
-        emit BurnRewardToken(account, amount, finOp);
+        emit BurnRewardToken(account, rewardAmount, finOp);
+        emit BurnRewardBackedToken(account, tokenAmount);
+        emit Transfer(account, address(0), tokenAmount);
     }
 
     /**
