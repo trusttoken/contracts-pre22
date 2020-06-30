@@ -2327,6 +2327,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     using SafeMath for uint256;
     using SafeMath for uint256;
 
+    // tolerance of rounding errors
+    uint8 constant TOLERANCE = 100;
     // total basis points for pool awards
     uint32 constant TOTAL_BASIS = 1000;
 
@@ -2340,9 +2342,9 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     // address allowed to withdraw/deposit, usually set to address of TUSD smart contract
     address fundsManager;
 
-    event Deposit(address account, uint256 tusd, uint256 ztusd);
-    event Redemption(address to, uint256 ztusd, uint256 tusd);
-    event Liquidation(address receiver, int256 debt);
+    event Deposit(address indexed account, uint256 tusd, uint256 ztusd);
+    event Redemption(address indexed to, uint256 ztusd, uint256 tusd);
+    event Liquidation(address indexed receiver, int256 debt);
     event AwardPool(uint256 amount);
     event AwardFailure(uint256 amount);
 
@@ -2563,7 +2565,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         uint256 expectedAmount = _tokenValue().mul(ztusd).div(10**18);
         uint256 liquidated = 0;
 
-        if (!success || (success && returnedAmount < expectedAmount)) {
+        if (!success || (returnedAmount.add(TOLERANCE) < expectedAmount)) {
             liquidated = _liquidate(address(this), int256(expectedAmount.sub(returnedAmount)));
         }
 

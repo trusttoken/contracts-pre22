@@ -1389,88 +1389,94 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         emit Transfer(_to, address(0), _value);
     }
 
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal returns (address) {
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
             _value -= _value % CENT;
             _burnFromAllowanceAllArgs(_from, _to, _value, _spender);
-        } else {
-            bool hasHook;
-            address originalTo = _to;
-            (_to, hasHook) = _requireCanTransferFrom(_spender, _from, _to);
-            if (0 == _addBalance(_to, _value)) {
-                if (0 == _subAllowance(_from, _spender, _value)) {
-                    if (0 != _subBalance(_from, _value)) {
-                        gasRefund30();
-                    }
-                    // else do not refund
-                } else {
-                    if (0 == _subBalance(_from, _value)) {
-                        gasRefund30();
-                    } else {
-                        gasRefund39();
-                    }
-                }
-            } else {
-                if (0 == _subAllowance(_from, _spender, _value)) {
-                    if (0 != _subBalance(_from, _value)) {
-                        gasRefund15();
-                    }
-                    // else do not refund
-                } else {
-                    if (0 == _subBalance(_from, _value)) {
-                        gasRefund15();
-                    } else {
-                        gasRefund39();
-                    }
-                }
-
-            }
-            emit Transfer(_from, originalTo, _value);
-            if (originalTo != _to) {
-                emit Transfer(originalTo, _to, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
-                }
-            } else {
-                if (hasHook) {
-                    TrueCoinReceiver(_to).tokenFallback(_from, _value);
-                }
-            }
+            return _to;
         }
-    }
 
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
-            _value -= _value % CENT;
-            _burnFromAllArgs(_from, _to, _value);
-        } else {
-            bool hasHook;
-            address finalTo;
-            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-            if (0 == _subBalance(_from, _value)) {
-                if (0 == _addBalance(finalTo, _value)) {
+        (address finalTo, bool hasHook) = _requireCanTransferFrom(_spender, _from, _to);
+
+        if (0 == _addBalance(finalTo, _value)) {
+            if (0 == _subAllowance(_from, _spender, _value)) {
+                if (0 != _subBalance(_from, _value)) {
                     gasRefund30();
                 }
                 // else do not refund
             } else {
-                if (0 == _addBalance(finalTo, _value)) {
-                    gasRefund39();
-                } else {
+                if (0 == _subBalance(_from, _value)) {
                     gasRefund30();
+                } else {
+                    gasRefund39();
                 }
             }
-            emit Transfer(_from, _to, _value);
-            if (finalTo != _to) {
-                emit Transfer(_to, finalTo, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+        } else {
+            if (0 == _subAllowance(_from, _spender, _value)) {
+                if (0 != _subBalance(_from, _value)) {
+                    gasRefund15();
                 }
+                // else do not refund
             } else {
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                if (0 == _subBalance(_from, _value)) {
+                    gasRefund15();
+                } else {
+                    gasRefund39();
                 }
+            }
+
+        }
+        emit Transfer(_from, _to, _value);
+
+        if (finalTo != _to) {
+            emit Transfer(_to, finalTo, _value);
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
             }
         }
+
+        return finalTo;
+    }
+
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal returns (address) {
+        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
+            _value -= _value % CENT;
+            _burnFromAllArgs(_from, _to, _value);
+            return _to;
+        }
+
+        (address finalTo, bool hasHook) = _requireCanTransfer(_from, _to);
+
+        if (0 == _subBalance(_from, _value)) {
+            if (0 == _addBalance(finalTo, _value)) {
+                gasRefund30();
+            }
+            // else do not refund
+        } else {
+            if (0 == _addBalance(finalTo, _value)) {
+                gasRefund39();
+            } else {
+                gasRefund30();
+            }
+        }
+        emit Transfer(_from, _to, _value);
+
+        if (finalTo != _to) {
+            emit Transfer(_to, finalTo, _value);
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+            }
+        }
+
+        return finalTo;
     }
 
     function mint(address _to, uint256 _value) public onlyOwner {
@@ -1776,6 +1782,9 @@ pragma solidity 0.5.13;
  * time we would want to burn rewardTokens is if the underlying opportunity
  * is no longer redeemable, and we want to wipe the debt.
  *
+ * -- Mint/Burn RewardBackedToken
+ * RewardBackedToken represents TrueCurrencies supply backed by Rewards
+ *
  */
 contract RewardToken is CompliantDepositTokenWithHook {
 
@@ -1785,9 +1794,14 @@ contract RewardToken is CompliantDepositTokenWithHook {
     mapping(address => uint256) finOpSupply;
     */
 
-    event MintRewardToken(address account, uint256 amount, address finOp);
-    event RedeemRewardToken(address account, uint256 amount, address finOp);
-    event BurnRewardToken(address account, uint256 amount, address finOp);
+    // events for reward token
+    event MintRewardToken(address indexed account, uint256 tokensDeposited, uint256 rewardTokensMinted, address indexed finOp);
+    event RedeemRewardToken(address indexed account, uint256 tokensWithdrawn, uint256 rewardTokensRedeemed, address indexed finOp);
+    event BurnRewardToken(address indexed account, uint256 rewardTokenAmount, address indexed finOp);
+
+    // events for reward backed token
+    event MintRewardBackedToken(address indexed account, uint256 indexed amount);
+    event BurnRewardBackedToken(address indexed account, uint256 indexed amount);
 
     /**
      * @dev Only addresses registered in this contract's mapping are valid
@@ -1831,22 +1845,19 @@ contract RewardToken is CompliantDepositTokenWithHook {
      * Emit mintRewardToken event on success
      *
      * @param account account to mint rewardToken for
-     * @param amount amount of depositToken to mint
+     * @param depositAmount amount of depositToken to deposit
      * @param finOp financial opportunity address
      */
     function mintRewardToken(
         address account,
-        uint256 amount,
+        uint256 depositAmount,
         address finOp
     ) internal validFinOp(finOp) returns (uint256) {
-        // require sufficient balance
-        require(super.balanceOf(account) >= amount, "insufficient token balance");
-
         // approve finOp can spend Token
-        _setAllowance(account, finOp, amount);
+        _setAllowance(account, finOp, depositAmount);
 
         // deposit into finOp
-        uint256 rewardAmount = _getFinOp(finOp).deposit(account, amount);
+        uint256 rewardAmount = _getFinOp(finOp).deposit(account, depositAmount);
 
         // increase finOp rewardToken supply
         finOpSupply[finOp] = finOpSupply[finOp].add(rewardAmount);
@@ -1855,7 +1866,9 @@ contract RewardToken is CompliantDepositTokenWithHook {
         _addRewardBalance(account, rewardAmount, finOp);
 
         // emit mint event
-        emit MintRewardToken(account, amount, finOp);
+        emit MintRewardToken(account, depositAmount, rewardAmount, finOp);
+        emit MintRewardBackedToken(account, depositAmount);
+        emit Transfer(address(0), account, depositAmount);
 
         return rewardAmount;
     }
@@ -1868,28 +1881,29 @@ contract RewardToken is CompliantDepositTokenWithHook {
      * Emit mintRewardToken event on success
      *
      * @param account account to redeem rewardToken for
-     * @param amount depositToken amount to redeem
-     * @param finOp financial opportunitu address
+     * @param rewardAmount rewardTokens amount to redeem
+     * @param finOp financial opportunity address
      */
     function redeemRewardToken(
         address account,
-        uint256 amount,
+        uint256 rewardAmount,
         address finOp
     ) internal validFinOp(finOp) returns (uint256) {
         // require sufficient balance
-        require(rewardTokenBalance(account, finOp) >= amount, "insufficient reward balance");
+        require(rewardTokenBalance(account, finOp) >= rewardAmount, "insufficient reward balance");
 
         // withdraw from finOp, giving TUSD to account
-        uint256 tokenAmount = _getFinOp(finOp).redeem(account, amount);
+        uint256 tokenAmount = _getFinOp(finOp).redeem(account, rewardAmount);
 
         // decrease finOp rewardToken supply
-        finOpSupply[finOp] = finOpSupply[finOp].sub(amount);
+        finOpSupply[finOp] = finOpSupply[finOp].sub(rewardAmount);
 
         // decrease account rewardToken balance
-        _subRewardBalance(account, amount, finOp);
+        _subRewardBalance(account, rewardAmount, finOp);
 
-        // emit mint event
-        emit RedeemRewardToken(account, tokenAmount, finOp);
+        emit RedeemRewardToken(account, tokenAmount, rewardAmount, finOp);
+        emit BurnRewardBackedToken(account, tokenAmount);
+        emit Transfer(account, address(0), tokenAmount);
 
         return tokenAmount;
     }
@@ -1900,12 +1914,12 @@ contract RewardToken is CompliantDepositTokenWithHook {
      * Burn rewardToken for finOp
      *
      * @param account account to burn rewardToken for
-     * @param amount depositToken amount to burn
+     * @param rewardAmount rewardToken amount to burn
      * @param finOp financial opportunity address
      */
     function burnRewardToken(
         address account,
-        uint256 amount,
+        uint256 rewardAmount,
         address finOp
     )
         internal
@@ -1915,16 +1929,21 @@ contract RewardToken is CompliantDepositTokenWithHook {
         require(msg.sender == account);
 
         // sender must have rewardToken amount to burn
-        require(rewardTokenBalance(account, finOp) >= amount);
+        require(rewardTokenBalance(account, finOp) >= rewardAmount);
 
         // subtract reward balance from
-        _subRewardBalance(account, amount, finOp);
+        _subRewardBalance(account, rewardAmount, finOp);
 
         // reduce total supply
-        finOpSupply[finOp].sub(amount);
+        finOpSupply[finOp].sub(rewardAmount);
+
+        // calculate depositToken value
+        uint256 tokenAmount = _toToken(rewardAmount, finOp);
 
         // burn event
-        emit BurnRewardToken(account, amount, finOp);
+        emit BurnRewardToken(account, rewardAmount, finOp);
+        emit BurnRewardBackedToken(account, tokenAmount);
+        emit Transfer(account, address(0), tokenAmount);
     }
 
     /**
@@ -2003,8 +2022,8 @@ contract RewardTokenWithReserve is RewardToken {
     // Reserves of TUSD and TrueRewardBackedToken are held at this addess
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
 
-    event SwapRewardForToken(address account, address receiver, uint256 amount, address finOp);
-    event SwapTokenForReward(address account, address receiver, uint256 amount, address finOp);
+    event ReserveDeposit(address indexed account, uint256 depositAmount, uint256 rewardTokenReturned, address indexed finOp);
+    event ReserveRedeem(address indexed account, uint256 rewardTokenRedeemed, uint256 tokenAmountReturned, address indexed finOp);
 
     /**
      * @dev get reserve token balance
@@ -2041,11 +2060,11 @@ contract RewardTokenWithReserve is RewardToken {
      * to get more TrueCurrency.
      * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
      *
-     * @param amount amount of rewardTokens to redeem
+     * @param tokenAmount amount of rewardTokens to redeem
      * @param finOp financial opportunity to redeem from
      */
-    function reserveRedeem(uint256 amount, address finOp) internal {
-        redeemRewardToken(RESERVE, amount, finOp);
+    function reserveRedeem(uint256 tokenAmount, address finOp) internal {
+        redeemRewardToken(RESERVE, tokenAmount, finOp);
     }
 
     /**
@@ -2053,80 +2072,119 @@ contract RewardTokenWithReserve is RewardToken {
      * This is called when there is not enough rewardToken for an
      * opportunity and we want to add rewardTokens to the reserve
      *
-     * @param amount amount of Token to redeem for rewardToken
+     * @param rewardAmount amount of Token to redeem for rewardToken
      * @param finOp financial opportunity to redeem for
      */
-    function reserveMint(uint256 amount, address finOp) internal {
-        mintRewardToken(RESERVE, amount, finOp);
+    function reserveMint(uint256 rewardAmount, address finOp) internal {
+        mintRewardToken(RESERVE, rewardAmount, finOp);
     }
 
     /**
      * @dev Use reserve to swap Token for rewardToken between accounts
      *
-     * @param sender account to deduct token from
-     * @param receiver account to add rewardToken to
-     * @param amount Token amount to exchange for rewardToken
+     * @param account account to swap token for
+     * @param tokenAmount deposit token amount to withdraw from reserve
+     * @param rewardAmount reward token amount to deposit into reserve
      * @param finOp financial opportunity to swap tokens for
      */
-    function swapTokenForReward(
-        address sender,
-        address receiver,
-        uint256 amount,
+    function swapRewardForToken(
+        address account,
+        uint256 tokenAmount,
+        uint256 rewardAmount,
         address finOp
     ) internal validFinOp(finOp) {
-        // require sender has sufficient balance
-        require(balanceOf(sender) >= amount, "insufficient balance");
+        // put reward tokens into reserve
+        _subRewardBalance(account, rewardAmount, finOp);
+        _addRewardBalance(RESERVE, rewardAmount, finOp);
 
-        // calculate rewardToken value for depositToken amount
-        uint256 rewardAmount = _toRewardToken(amount, finOp);
+        // take deposit tokens from reserve
+        _subBalance(RESERVE, tokenAmount);
+        _addBalance(account, tokenAmount);
 
-        // require reserve
-        require(rewardTokenBalance(RESERVE, finOp) >= rewardAmount, "not enough rewardToken in reserve");
-
-        // sub from sender and add to reserve for depositToken
-        _subBalance(sender, amount);
-        _addBalance(RESERVE, amount);
-
-        // sub from reserve and add to sender for rewardToken
-        _subRewardBalance(RESERVE, rewardAmount, finOp);
-        _addRewardBalance(receiver, rewardAmount, finOp);
-
-        // emit event
-        emit SwapTokenForReward(sender, receiver, amount, finOp);
+        emit Transfer(account, RESERVE, tokenAmount);
+        emit Transfer(RESERVE, account, tokenAmount);
     }
 
     /**
-     * @dev Use reserve to swap rewardToken for Token between accounts
+     * @dev Use reserve to swap Token for rewardToken between accounts
      *
-     * @param sender account to swap rewardToken from
-     * @param receiver account to add Token to
-     * @param tokenAmount token amount to receive for Token
-     * @param finOp financial opportunity
+     * @param account account to swap token for
+     * @param tokenAmount deposit token amount to deposit into reserve
+     * @param rewardAmount reward token amount to withdraw from reserve
+     * @param finOp financial opportunity to swap tokens for
      */
-    function swapRewardForToken(
-        address sender,
-        address receiver,
+    function swapTokenForReward(
+        address account,
         uint256 tokenAmount,
+        uint256 rewardAmount,
         address finOp
     ) internal validFinOp(finOp) {
-        // ensure reserve has enough balance
-        require(balanceOf(RESERVE) >= tokenAmount, "not enough depositToken in reserve");
+        // deposit tokens into reserve
+        _subBalance(account, tokenAmount);
+        _addBalance(RESERVE, tokenAmount);
 
-        uint256 rewardAmount = _toRewardToken(tokenAmount, finOp);
+        // withdraw reward tokens from reserve
+        _subRewardBalance(RESERVE, rewardAmount, finOp);
+        _addRewardBalance(account, rewardAmount, finOp);
 
-        // require sufficient balance
-        require (rewardTokenBalance(sender, finOp) >= rewardAmount, "insufficient rewardToken balance");
+        // emit transfer events
+        emit Transfer(account, RESERVE, tokenAmount);
+        emit Transfer(RESERVE, account, tokenAmount);
+    }
 
-        // sub account and add reserve for rewardToken
-        _subRewardBalance(sender, rewardAmount, finOp);
-        _addRewardBalance(RESERVE, rewardAmount, finOp);
+    /**
+     * @dev Redeem tokens from financial opportunity if reserve balance cannot cover it
+     * swap with reserve otherwise
+     *
+     * @param account account which wants to redeem
+     * @param rewardAmount reward token amount to redeem
+     * @param finOp financial opportunity we interact with
+     * @return amount of depositTokens returned to account
+     */
+    function redeemWithReserve(address account, uint256 rewardAmount, address finOp) internal returns (uint256) {
+        // calculate deposit amount
+        uint256 tokenAmount = _toToken(rewardAmount, finOp);
 
-        // sub account and add reserve for Token
-        _subBalance(RESERVE, tokenAmount);
-        _addBalance(receiver, tokenAmount);
+        return redeemWithReserve(account, tokenAmount, rewardAmount, finOp);
+    }
 
-        // emit event
-        emit SwapRewardForToken(sender, receiver, rewardAmount, finOp);
+    function redeemWithReserve(address account, uint256 tokenAmount, uint256 rewardAmount, address finOp) internal returns (uint256) {
+        // if sufficient reserve balance, make swap and emit event
+        if (reserveBalance() >= tokenAmount) {
+            swapRewardForToken(account, tokenAmount, rewardAmount, finOp);
+            emit ReserveRedeem(account, rewardAmount, tokenAmount, finOp);
+            return tokenAmount;
+        }
+        // otherwise redeem through opportunity
+        else {
+            return redeemRewardToken(account, rewardAmount, finOp);
+        }
+    }
+
+    /**
+     * @dev Deposit tokens into financial opportunity and mint new debt backed tokens
+     * if reserve reward token balance is lower than deposited amount
+     * swap with reserve otherwise
+     *
+     * @param account account which wants to redeem
+     * @param depositAmount token amount to exchange for reward tokens
+     * @param finOp financial opportunity we interact with
+     * @return amount of rewardTokens exchanged to account
+     */
+    function depositWithReserve(address account, uint256 depositAmount, address finOp) internal returns (uint256) {
+        // calculate reward token amount for deposit
+        uint256 rewardAmount = _toRewardToken(depositAmount, finOp);
+
+        // if sufficient reserve reward token balance, make swap and emit event
+        if (rewardTokenBalance(RESERVE, finOp) >= rewardAmount) {
+            swapTokenForReward(account, depositAmount, rewardAmount, finOp);
+            emit ReserveDeposit(account, depositAmount, rewardAmount, finOp);
+            return rewardAmount;
+        }
+        // otherwise mint new rewardTokens by depositing into opportunity
+        else {
+            return mintRewardToken(account, depositAmount, finOp);
+        }
     }
 }
 
@@ -2187,8 +2245,8 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     // financial opportunity address
     address public opportunity_;
 
-    event TrueRewardEnabled(address _account);
-    event TrueRewardDisabled(address _account);
+    event TrueRewardEnabled(address indexed _account, uint256 _amount, address indexed _finOp);
+    event TrueRewardDisabled(address indexed _account, uint256 _amount, address indexed _finOp);
 
     /** @dev return true if TrueReward is enabled for a given address */
     function trueRewardEnabled(address _address) public view returns (bool) {
@@ -2221,8 +2279,8 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @dev get total supply of TrueCurrency backed by debt
      * @return supply of debt backed TrueCurrency
      */
-    function debtBackedSupply() public view returns (uint256) {
-        return totalSupply() - totalSupply_;
+    function rewardBackedSupply() public view returns (uint256) {
+        return totalSupply().sub(totalSupply_);
     }
 
     /**
@@ -2253,8 +2311,8 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         uint balance = _getBalance(msg.sender);
 
         if (balance != 0) {
-            // mint reward token
-            mintRewardToken(msg.sender, balance, opportunity());
+            // deposit entire user token balance
+            depositWithReserve(msg.sender, balance, opportunity());
         }
 
         // set reward distribution
@@ -2262,8 +2320,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         _setDistribution(maxRewardProportion, opportunity());
 
         // emit enable event
-        emit TrueRewardEnabled(msg.sender);
-        //emit Transfer(address(0), msg.sender, balance);
+        emit TrueRewardEnabled(msg.sender, balance, opportunity());
     }
 
     /**
@@ -2279,13 +2336,12 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         _removeDistribution(opportunity());
 
         if (rewardBalance > 0) {
-            // redeem for token
-            redeemRewardToken(msg.sender, rewardBalance, opportunity());
+            // redeem entire user reward token balance
+            redeemWithReserve(msg.sender, rewardBalance, opportunity());
         }
 
         // emit disable event
-        emit TrueRewardDisabled(msg.sender);
-        // emit Transfer(msg.sender, address(0), zTrueCurrency);
+        emit TrueRewardDisabled(msg.sender, rewardBalance, opportunity());
     }
 
     /**
@@ -2349,6 +2405,9 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @return total supply of opportunity rewardToken
      */
     function opportunityRewardSupply() internal view returns (uint256) {
+        if (opportunity() == address(0)) {
+            return 0;
+        }
         return rewardTokenSupply(opportunity());
     }
 
@@ -2361,152 +2420,90 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
     }
 
     /**
-     * @dev Transfer helper for accounts with rewardToken balances
-     * Uses reserve float to save gas costs for transactions with value < reserve balance
-     * Case #2 and #3 use reserve balances
+     * @dev Transfer helper function for TrueRewardBackedToken
      *
-     * There are 6 transfer cases
-     *  1. Both sender and receiver are disabled (see _transferAllArgs)
-     *  2. Sender enabled, receiver disabled, value < reserve TrueCurrency balance
-     *  3. Sender disabled, receiver enabled, value < reserve rewardToken balance (in TrueCurrency)
-     *  4. Both sender and receiver are enabled
-     *  5. Sender enabled, receiver disabled, value > reserve TrueCurrency balance
-     *  6. Sender disabled, receiver enabled, value > reserve rewardToken balance (in TrueCurrency)
-     *
-     * @param _from account to transfer from
-     * @param _to account to transfer to
-     * @param _value value in Token to transfer
-     * @return actual value transferred
+     * Uses trueRewardEnabled flag to check whether accounts have opted in
+     * If are have opted out, call parent transferFrom, otherwise:
+     * 1. If sender opted in, redeem reward tokens for true currency
+     * 2. Call transferFrom, using deposit balance for transfer
+     * 3. If reciever enabled, deposit true currency into
      */
-    function _transferWithRewards(
-        address _from,
-        address _to,
-        uint256 _value
-    ) internal returns (uint256) {
-        // get enable stat
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal returns (address) {
+        // get enabled flags and opportunity address
         bool fromEnabled = trueRewardEnabled(_from);
         bool toEnabled = trueRewardEnabled(_to);
-
-        // get opportunity address
         address finOp = opportunity();
 
-        // calculate rewardToken balance
-        uint rewardAmount = _toRewardToken(_value, finOp);
-
-        // 2. Sender enabled, receiver disabled, value < reserve TrueCurrency balance
-        // Swap rewardToken for Token through reserve
-        if (fromEnabled && !toEnabled && _value <= reserveBalance()) {
-            swapRewardForToken(_from, _to, _value, finOp);
+        // if both disabled or either is opportunity, tranfer normally
+        if ((!fromEnabled && !toEnabled) || _from == finOp || _to == finOp) {
+            require(super.balanceOf(_from) >= _value, "not enough balance");
+            return super._transferAllArgs(_from, _to, _value);
         }
-        // 3. Sender disabled, receiver enabled, value < reserve rewardToken balance
-        // Swap Token for rewardToken through reserve
-        else if (!fromEnabled && toEnabled && rewardAmount <= rewardTokenBalance(RESERVE, finOp)) {
-            swapTokenForReward(_from, _to, _value, finOp);
-        }
-        // 4. Sender and receiver are enabled
-        // Here we simply transfer rewardToken from the sender to the receiver
-        else if (fromEnabled && toEnabled) {
-            _subRewardBalance(_from, rewardAmount, finOp);
-            _addRewardBalance(_to, rewardAmount, finOp);
-        }
-        // 5. Sender enabled, receiver disabled, value > reserve TrueCurrency balance
-        // Recalculate value based on redeem value returned and give value to receiver
-        else if (fromEnabled && !toEnabled) {
-            _getFinOp(finOp).redeem(_to, rewardAmount);
 
-            // decrease finOp rewardToken supply
-            finOpSupply[finOp] = finOpSupply[finOp].sub(rewardAmount);
-
-            // decrease account rewardToken balance
-            _subRewardBalance(_from, rewardAmount, finOp);
-        }
-        // 6. Sender disabled, receiver enabled, value > reserve rewardToken balance
-        // Transfer Token value between accounts and mint reward token for receiver
-        else if (!fromEnabled && toEnabled) {
-            // deposit into finOp
-            _approveAllArgs(finOp, _value, _from);
-            uint256 depositedAmount = _getFinOp(finOp).deposit(_from, _value);
-
-            // increase finOp rewardToken supply
-            finOpSupply[finOp] = finOpSupply[finOp].add(depositedAmount);
-
-            // increase account rewardToken balance
-            _addRewardBalance(_to, depositedAmount, finOp);
-        }
-        return _value;
-    }
-
-    /**
-     * @dev Transfer helper function for TrueRewardBackedToken
-     */
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        // 1. Both sender and receiver are disabled
-        // Exchange is in TrueCurrency -> call the normal transfer function
-        if (!trueRewardEnabled(_from) && !trueRewardEnabled(_to)) {
-            // sender not enabled receiver not enabled
-            super._transferAllArgs(_from, _to, _value);
-            return;
-        }
+        // check balance for from address
         require(balanceOf(_from) >= _value, "not enough balance");
 
-        // require account is not blacklisted and check if hook is registered
-        (address finalTo, bool hasHook) = _requireCanTransfer(_from, _to);
-
-        _value = _transferWithRewards(_from, finalTo, _value);
-
-        // emit transfer event for from
-        emit Transfer(_from, _to, _value);
-        if (finalTo != _to) {
-            emit Transfer(_to, finalTo, _value);
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-            }
-        } else {
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-            }
+        // if from enabled, check balance, calculate reward amount, and redeem
+        if (fromEnabled) {
+            uint256 rewardAmount = _toRewardToken(_value, finOp);
+            _value = redeemWithReserve(_from, _value, rewardAmount, finOp);
         }
+
+        // transfer tokens
+        address finalTo = super._transferAllArgs(_from, _to, _value);
+
+        // if receiever enabled, deposit tokens into opportunity
+        if (trueRewardEnabled(finalTo)) {
+            depositWithReserve(finalTo, _value, finOp);
+        }
+
+        return finalTo;
     }
 
     /**
-     * @dev TransferFromAll helper function for TrueRewardBackedToken
+     * @dev TransferFrom helper function for TrueRewardBackedToken
+     *
+     * Uses trueRewardEnabled flag to check whether accounts have opted in
+     * If are have opted out, call parent transferFrom, otherwise:
+     * 1. If sender opted in, redeem reward tokens for true currency
+     * 2. Call transferFrom, using deposit balance for transfer
+     * 3. If reciever enabled, deposit true currency into
      */
     function _transferFromAllArgs(
         address _from,
         address _to,
         uint256 _value,
         address _spender
-    ) internal {
-        // 1. Both sender and receiver are disabled -> normal transfer
-        if (!trueRewardEnabled(_from) && !trueRewardEnabled(_to)) {
-            super._transferFromAllArgs(_from, _to, _value, _spender);
-            return;
+    ) internal returns (address) {
+        // get enabled flags and opportunity address
+        bool fromEnabled = trueRewardEnabled(_from);
+        bool toEnabled = trueRewardEnabled(_to);
+        address finOp = opportunity();
+
+        // if both disabled or either is opportunity, tranfer normally
+        if ((!fromEnabled && !toEnabled) || _from == finOp || _to == finOp) {
+            require(super.balanceOf(_from) >= _value, "not enough balance");
+            return super._transferFromAllArgs(_from, _to, _value, _spender);
         }
 
-        // check balance
+        // check balance for from address
         require(balanceOf(_from) >= _value, "not enough balance");
 
-        (address finalTo, bool hasHook) = _requireCanTransferFrom(_spender, _from, _to);
-
-        // call transfer helper
-        _value = _transferWithRewards(_from, finalTo, _value);
-
-        // sub allowance of spender
-        _subAllowance(_from, _spender, _value);
-
-        // emit transfer event. For hook emit second transfer event
-        // call fallback function for valid hook
-        emit Transfer(_from, _to, _value);
-        if (finalTo != _to) {
-            emit Transfer(_to, finalTo, _value);
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-            }
-        } else {
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-            }
+        // if from enabled, check balance, calculate reward amount, and redeem
+        if (fromEnabled) {
+            uint256 rewardAmount = _toRewardToken(_value, finOp);
+            _value = redeemWithReserve(_from, rewardAmount, finOp);
         }
+
+        // transfer tokens
+        address finalTo = super._transferFromAllArgs(_from, _to, _value, _spender);
+
+        // if receiever enabled, deposit tokens into opportunity
+        if (trueRewardEnabled(finalTo)) {
+            depositWithReserve(finalTo, _value, finOp);
+        }
+
+        return finalTo;
     }
 
     /**
@@ -2623,16 +2620,6 @@ contract TrueUSD is TrueRewardBackedToken, DelegateERC20 {
     function canBurn() internal pure returns (bytes32) {
         return "canBurn";
     }
-
-    // used by proxy to initialize
-    // this sets the owner to msg.sender
-    // may be a security risk for deployment
-    function initialize() external {
-        require(!initialized, "already initialized");
-        initialized = true;
-        owner = msg.sender;
-        emit OwnershipTransferred(address(0), owner);
-    }
 }
 
 // File: contracts/TrueCurrencies/Admin/TokenController.sol
@@ -2707,7 +2694,7 @@ contract TokenController {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    TrueRewardBackedToken public token;
+    TrueUSD public token;
     Registry public registry;
     address public fastPause;
     address public trueRewardManager;
@@ -2716,7 +2703,9 @@ contract TokenController {
     bytes32 constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 constant public IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
 
-    address constant public PAUSED_IMPLEMENTATION = address(1); // ***To be changed the paused version of TrueUSD in Production
+    // paused version of TrueUSD in Production
+    // pausing the contract upgrades the proxy to this implementation
+    address constant public PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
 
     modifier onlyFastPauseOrOwner() {
         require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
@@ -2786,12 +2775,6 @@ contract TokenController {
     Ownership functions
     ========================================
     */
-
-    function initialize() external {
-        require(!initialized, "already initialized");
-        owner = msg.sender;
-        initialized = true;
-    }
 
     /**
     * @dev Throws if called by any account other than the owner.
