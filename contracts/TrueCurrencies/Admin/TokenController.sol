@@ -3,9 +3,7 @@ pragma solidity 0.5.13;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "@trusttoken/registry/contracts/Registry.sol";
 import "../HasOwner.sol";
-import "../CompliantDepositTokenWithHook.sol";
 import "../Proxy/OwnedUpgradeabilityProxy.sol";
-import "../TrueRewardBackedToken.sol";
 import "../TrueUSD.sol";
 
 /** @title TokenController

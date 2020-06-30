@@ -1,7 +1,7 @@
 pragma solidity 0.5.13;
 import "@trusttoken/registry/contracts/Registry.sol";
-import "./modularERC20/BalanceSheet.sol";
-import "./modularERC20/AllowanceSheet.sol";
+import "./deprecated/BalanceSheet.sol";
+import "./deprecated/AllowanceSheet.sol";
 import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
 
 /*

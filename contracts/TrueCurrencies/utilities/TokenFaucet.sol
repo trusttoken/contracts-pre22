@@ -1,7 +1,5 @@
 pragma solidity 0.5.13;
 
-import "../HasOwner.sol";
-import "../TrueUSD.sol";
 import "../mocks/TokenControllerMock.sol";
 
 contract TokenFaucet is TokenControllerMock {
