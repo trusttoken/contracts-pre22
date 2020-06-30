@@ -26,6 +26,9 @@ import { CompliantDepositTokenWithHook } from "./CompliantDepositTokenWithHook.s
  * time we would want to burn rewardTokens is if the underlying opportunity
  * is no longer redeemable, and we want to wipe the debt.
  *
+ * -- Mint/Burn RewardBackedToken
+ * RewardBackedToken represents TrueCurrencies supply backed by Rewards
+ *
  */
 contract RewardToken is CompliantDepositTokenWithHook {
 
@@ -35,9 +38,14 @@ contract RewardToken is CompliantDepositTokenWithHook {
     mapping(address => uint256) finOpSupply;
     */
 
-    event MintRewardToken(address indexed account, uint256 depositAmount, uint256 rewardTokenAmount, address indexed finOp);
-    event RedeemRewardToken(address indexed account, uint256 depositAmount, uint256 rewardTokenAmount, address indexed finOp);
+    // events for reward token
+    event MintRewardToken(address indexed account, uint256 tokensDeposited, uint256 rewardTokensMinted, address indexed finOp);
+    event RedeemRewardToken(address indexed account, uint256 tokensWithdrawn, uint256 rewardTokensRedeemed, address indexed finOp);
     event BurnRewardToken(address indexed account, uint256 rewardTokenAmount, address indexed finOp);
+
+    // events for reward backed token
+    event MintRewardBackedToken(address indexed account, uint256 indexed amount);
+    event BurnRewardBackedToken(address indexed account, uint256 indexed amount);
 
     /**
      * @dev Only addresses registered in this contract's mapping are valid
@@ -103,7 +111,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
 
         // emit mint event
         emit MintRewardToken(account, depositAmount, rewardAmount, finOp);
-        emit Mint(account, depositAmount);
+        emit MintRewardBackedToken(account, depositAmount);
         emit Transfer(address(0), account, depositAmount);
 
         return rewardAmount;
@@ -138,7 +146,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
         _subRewardBalance(account, rewardAmount, finOp);
 
         emit RedeemRewardToken(account, tokenAmount, rewardAmount, finOp);
-        emit Burn(account, tokenAmount);
+        emit BurnRewardBackedToken(account, tokenAmount);
         emit Transfer(account, address(0), tokenAmount);
 
         return tokenAmount;
@@ -178,7 +186,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
 
         // burn event
         emit BurnRewardToken(account, rewardAmount, finOp);
-        emit Burn(account, tokenAmount);
+        emit BurnRewardBackedToken(account, tokenAmount);
         emit Transfer(account, address(0), tokenAmount);
     }
 

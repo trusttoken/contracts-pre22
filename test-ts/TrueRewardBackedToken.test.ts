@@ -14,10 +14,10 @@ import { RegistryAttributes } from '../scripts/attributes'
 import { fixtureWithAave } from './fixtures/fixtureWithAave'
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 import {
-  expectBurnEventOn,
+  expectRewardBackedBurnEventOn,
   expectEvent,
   expectEventsCountOn,
-  expectMintEventOn,
+  expectRewardBackedMintEventOn,
   expectTransferEventOn,
 } from './utils/eventHelpers'
 
@@ -31,8 +31,8 @@ describe('TrueRewardBackedToken', () => {
   const WHITELIST_TRUEREWARD = RegistryAttributes.isTrueRewardsWhitelisted.hex
 
   const expectTransferEventWith = async (tx: Transaction, from: string, to: string, amount: BigNumberish) => expectTransferEventOn(token)(tx, from, to, amount)
-  const expectBurnEventWith = async (tx: Transaction, from: string, amount: BigNumberish) => expectBurnEventOn(token)(tx, from, amount)
-  const expectMintEventWith = async (tx: Transaction, to: string, amount: BigNumberish) => expectMintEventOn(token)(tx, to, amount)
+  const expectRewardBackedBurnEventWith = async (tx: Transaction, from: string, amount: BigNumberish) => expectRewardBackedBurnEventOn(token)(tx, from, amount)
+  const expectRewardBackedMintEventWith = async (tx: Transaction, to: string, amount: BigNumberish) => expectRewardBackedMintEventOn(token)(tx, to, amount)
   const expectEventsCount = async (eventName: string, tx: ContractTransaction, count: number) => expectEventsCountOn(token)(eventName, tx, count)
 
   context('with Aave and AssuredFinancialOpportunity', () => {
@@ -131,9 +131,9 @@ describe('TrueRewardBackedToken', () => {
         await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, parseEther('100'))
         await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, parseEther('100'))
         await expectTransferEventWith(tx, AddressZero, holder.address, parseEther('100'))
-        await expectMintEventWith(tx, holder.address, parseEther('100'))
+        await expectRewardBackedMintEventWith(tx, holder.address, parseEther('100'))
         await expectEventsCount('Transfer', tx, 4)
-        await expectEventsCount('Mint', tx, 1)
+        await expectEventsCount('MintRewardBackedToken', tx, 1)
       })
 
       it('holder disables trueReward', async () => {
@@ -161,10 +161,10 @@ describe('TrueRewardBackedToken', () => {
         await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, parseEther('100'))
         await expectTransferEventWith(tx, financialOpportunity.address, holder.address, parseEther('100'))
         await expectTransferEventWith(tx, holder.address, AddressZero, parseEther('100'))
-        await expectBurnEventWith(tx, holder.address, parseEther('100'))
+        await expectRewardBackedBurnEventWith(tx, holder.address, parseEther('100'))
 
         await expectEventsCount('Transfer', tx, 4)
-        await expectEventsCount('Burn', tx, 1)
+        await expectEventsCount('BurnRewardBackedToken', tx, 1)
       })
 
       it('holder fails to enable trueReward when not whitelisted', async () => {
@@ -223,8 +223,8 @@ describe('TrueRewardBackedToken', () => {
         const tx = await asHolder.transfer(recipient.address, parseEther('42'))
         await expectTransferEventWith(tx, holder.address, recipient.address, parseEther('42'))
         await expectEventsCount('Transfer', tx, 1)
-        await expectEventsCount('Burn', tx, 0)
-        await expectEventsCount('Mint', tx, 0)
+        await expectEventsCount('BurnRewardBackedToken', tx, 0)
+        await expectEventsCount('MintRewardBackedToken', tx, 0)
       })
 
       it('minting for account with trueReward enabled', async () => {
@@ -274,12 +274,12 @@ describe('TrueRewardBackedToken', () => {
           await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, amount)
           await expectTransferEventWith(tx, financialOpportunity.address, sender.address, amount)
           await expectTransferEventWith(tx, sender.address, AddressZero, amount)
-          await expectBurnEventWith(tx, sender.address, amount)
+          await expectRewardBackedBurnEventWith(tx, sender.address, amount)
           await expectTransferEventWith(tx, sender.address, recipient.address, amount)
 
           await expectEventsCount('Transfer', tx, 5)
-          await expectEventsCount('Burn', tx, 1)
-          await expectEventsCount('Mint', tx, 0)
+          await expectEventsCount('BurnRewardBackedToken', tx, 1)
+          await expectEventsCount('MintRewardBackedToken', tx, 0)
         })
 
         it('holders with truereward enabled transfer funds between each other', async () => {
@@ -305,17 +305,17 @@ describe('TrueRewardBackedToken', () => {
           await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, amount)
           await expectTransferEventWith(tx, financialOpportunity.address, sender.address, amount)
           await expectTransferEventWith(tx, sender.address, AddressZero, amount)
-          await expectBurnEventWith(tx, sender.address, amount)
+          await expectRewardBackedBurnEventWith(tx, sender.address, amount)
           await expectTransferEventWith(tx, sender.address, recipient.address, amount)
           await expectTransferEventWith(tx, recipient.address, financialOpportunity.address, amount)
           await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, amount)
           await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, amount)
           await expectTransferEventWith(tx, AddressZero, recipient.address, amount)
-          await expectMintEventWith(tx, recipient.address, amount)
+          await expectRewardBackedMintEventWith(tx, recipient.address, amount)
 
           await expectEventsCount('Transfer', tx, 9)
-          await expectEventsCount('Burn', tx, 1)
-          await expectEventsCount('Mint', tx, 1)
+          await expectEventsCount('BurnRewardBackedToken', tx, 1)
+          await expectEventsCount('MintRewardBackedToken', tx, 1)
         })
 
         it('sender with truereward disabled sends to recipient with truereward enabled', async () => {
@@ -340,11 +340,11 @@ describe('TrueRewardBackedToken', () => {
           await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, amount)
           await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, amount)
           await expectTransferEventWith(tx, AddressZero, recipient.address, amount)
-          await expectMintEventWith(tx, recipient.address, amount)
+          await expectRewardBackedMintEventWith(tx, recipient.address, amount)
 
           await expectEventsCount('Transfer', tx, 5)
-          await expectEventsCount('Burn', tx, 0)
-          await expectEventsCount('Mint', tx, 1)
+          await expectEventsCount('BurnRewardBackedToken', tx, 0)
+          await expectEventsCount('MintRewardBackedToken', tx, 1)
         })
 
         describe('transferFrom', () => {
@@ -375,12 +375,12 @@ describe('TrueRewardBackedToken', () => {
             await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, amount)
             await expectTransferEventWith(tx, financialOpportunity.address, sender.address, amount)
             await expectTransferEventWith(tx, sender.address, AddressZero, amount)
-            await expectBurnEventWith(tx, sender.address, amount)
+            await expectRewardBackedBurnEventWith(tx, sender.address, amount)
             await expectTransferEventWith(tx, sender.address, recipient.address, amount)
 
             await expectEventsCount('Transfer', tx, 5)
-            await expectEventsCount('Burn', tx, 1)
-            await expectEventsCount('Mint', tx, 0)
+            await expectEventsCount('BurnRewardBackedToken', tx, 1)
+            await expectEventsCount('MintRewardBackedToken', tx, 0)
           })
 
           it('fails to transfer above approved amount', async () => {
@@ -411,17 +411,17 @@ describe('TrueRewardBackedToken', () => {
             await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, amount)
             await expectTransferEventWith(tx, financialOpportunity.address, sender.address, amount)
             await expectTransferEventWith(tx, sender.address, AddressZero, amount)
-            await expectBurnEventWith(tx, sender.address, amount)
+            await expectRewardBackedBurnEventWith(tx, sender.address, amount)
             await expectTransferEventWith(tx, sender.address, recipient.address, amount)
             await expectTransferEventWith(tx, recipient.address, financialOpportunity.address, amount)
             await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, amount)
             await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, amount)
             await expectTransferEventWith(tx, AddressZero, recipient.address, amount)
-            await expectMintEventWith(tx, recipient.address, amount)
+            await expectRewardBackedMintEventWith(tx, recipient.address, amount)
 
             await expectEventsCount('Transfer', tx, 9)
-            await expectEventsCount('Burn', tx, 1)
-            await expectEventsCount('Mint', tx, 1)
+            await expectEventsCount('BurnRewardBackedToken', tx, 1)
+            await expectEventsCount('MintRewardBackedToken', tx, 1)
           })
 
           it('sender with truereward disabled sends to recipient with truereward enabled', async () => {
@@ -446,11 +446,11 @@ describe('TrueRewardBackedToken', () => {
             await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, amount)
             await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, amount)
             await expectTransferEventWith(tx, AddressZero, recipient.address, amount)
-            await expectMintEventWith(tx, recipient.address, amount)
+            await expectRewardBackedMintEventWith(tx, recipient.address, amount)
 
             await expectEventsCount('Transfer', tx, 5)
-            await expectEventsCount('Burn', tx, 0)
-            await expectEventsCount('Mint', tx, 1)
+            await expectEventsCount('BurnRewardBackedToken', tx, 0)
+            await expectEventsCount('MintRewardBackedToken', tx, 1)
           })
         })
       })
@@ -482,12 +482,12 @@ describe('TrueRewardBackedToken', () => {
           await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, '49999999999999999998')
           await expectTransferEventWith(tx, financialOpportunity.address, sender.address, '49999999999999999998')
           await expectTransferEventWith(tx, sender.address, AddressZero, '49999999999999999998')
-          await expectBurnEventWith(tx, sender.address, '49999999999999999998')
+          await expectRewardBackedBurnEventWith(tx, sender.address, '49999999999999999998')
           await expectTransferEventWith(tx, sender.address, recipient.address, '49999999999999999998')
 
           await expectEventsCount('Transfer', tx, 5)
-          await expectEventsCount('Burn', tx, 1)
-          await expectEventsCount('Mint', tx, 0)
+          await expectEventsCount('BurnRewardBackedToken', tx, 1)
+          await expectEventsCount('MintRewardBackedToken', tx, 0)
         })
 
         it('holders with truereward enabled transfer funds between each other', async () => {
@@ -514,17 +514,17 @@ describe('TrueRewardBackedToken', () => {
           await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, '49999999999999999998')
           await expectTransferEventWith(tx, financialOpportunity.address, sender.address, '49999999999999999998')
           await expectTransferEventWith(tx, sender.address, AddressZero, '49999999999999999998')
-          await expectBurnEventWith(tx, sender.address, '49999999999999999998')
+          await expectRewardBackedBurnEventWith(tx, sender.address, '49999999999999999998')
           await expectTransferEventWith(tx, sender.address, recipient.address, '49999999999999999998')
           await expectTransferEventWith(tx, recipient.address, financialOpportunity.address, '49999999999999999998')
           await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, '49999999999999999998')
           await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, '49999999999999999998')
           await expectTransferEventWith(tx, AddressZero, recipient.address, '49999999999999999998')
-          await expectMintEventWith(tx, recipient.address, '49999999999999999998')
+          await expectRewardBackedMintEventWith(tx, recipient.address, '49999999999999999998')
 
           await expectEventsCount('Transfer', tx, 9)
-          await expectEventsCount('Burn', tx, 1)
-          await expectEventsCount('Mint', tx, 1)
+          await expectEventsCount('BurnRewardBackedToken', tx, 1)
+          await expectEventsCount('MintRewardBackedToken', tx, 1)
         })
 
         it('sender with truereward disabled sends to recipient with truereward enabled', async () => {
@@ -550,11 +550,11 @@ describe('TrueRewardBackedToken', () => {
           await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, amount)
           await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, amount)
           await expectTransferEventWith(tx, AddressZero, recipient.address, amount)
-          await expectMintEventWith(tx, recipient.address, amount)
+          await expectRewardBackedMintEventWith(tx, recipient.address, amount)
 
           await expectEventsCount('Transfer', tx, 5)
-          await expectEventsCount('Burn', tx, 0)
-          await expectEventsCount('Mint', tx, 1)
+          await expectEventsCount('BurnRewardBackedToken', tx, 0)
+          await expectEventsCount('MintRewardBackedToken', tx, 1)
         })
 
         describe('transferFrom', () => {
@@ -583,12 +583,12 @@ describe('TrueRewardBackedToken', () => {
             await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, '49999999999999999998')
             await expectTransferEventWith(tx, financialOpportunity.address, sender.address, '49999999999999999998')
             await expectTransferEventWith(tx, sender.address, AddressZero, '49999999999999999998')
-            await expectBurnEventWith(tx, sender.address, '49999999999999999998')
+            await expectRewardBackedBurnEventWith(tx, sender.address, '49999999999999999998')
             await expectTransferEventWith(tx, sender.address, recipient.address, '49999999999999999998')
 
             await expectEventsCount('Transfer', tx, 5)
-            await expectEventsCount('Burn', tx, 1)
-            await expectEventsCount('Mint', tx, 0)
+            await expectEventsCount('BurnRewardBackedToken', tx, 1)
+            await expectEventsCount('MintRewardBackedToken', tx, 0)
           })
 
           it('fails to transfer above approved amount', async () => {
@@ -620,17 +620,17 @@ describe('TrueRewardBackedToken', () => {
             await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, '49999999999999999998')
             await expectTransferEventWith(tx, financialOpportunity.address, sender.address, '49999999999999999998')
             await expectTransferEventWith(tx, sender.address, AddressZero, '49999999999999999998')
-            await expectBurnEventWith(tx, sender.address, '49999999999999999998')
+            await expectRewardBackedBurnEventWith(tx, sender.address, '49999999999999999998')
             await expectTransferEventWith(tx, sender.address, recipient.address, '49999999999999999998')
             await expectTransferEventWith(tx, recipient.address, financialOpportunity.address, '49999999999999999998')
             await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, '49999999999999999998')
             await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, '49999999999999999998')
             await expectTransferEventWith(tx, AddressZero, recipient.address, '49999999999999999998')
-            await expectMintEventWith(tx, recipient.address, '49999999999999999998')
+            await expectRewardBackedMintEventWith(tx, recipient.address, '49999999999999999998')
 
             await expectEventsCount('Transfer', tx, 9)
-            await expectEventsCount('Burn', tx, 1)
-            await expectEventsCount('Mint', tx, 1)
+            await expectEventsCount('BurnRewardBackedToken', tx, 1)
+            await expectEventsCount('MintRewardBackedToken', tx, 1)
           })
 
           it('sender with truereward disabled sends to recipient with truereward enabled', async () => {
@@ -656,11 +656,11 @@ describe('TrueRewardBackedToken', () => {
             await expectTransferEventWith(tx, financialOpportunity.address, aaveFinancialOpportunity.address, amount)
             await expectTransferEventWith(tx, aaveFinancialOpportunity.address, lendingPoolCore.address, amount)
             await expectTransferEventWith(tx, AddressZero, recipient.address, amount)
-            await expectMintEventWith(tx, recipient.address, amount)
+            await expectRewardBackedMintEventWith(tx, recipient.address, amount)
 
             await expectEventsCount('Transfer', tx, 5)
-            await expectEventsCount('Burn', tx, 0)
-            await expectEventsCount('Mint', tx, 1)
+            await expectEventsCount('BurnRewardBackedToken', tx, 0)
+            await expectEventsCount('MintRewardBackedToken', tx, 1)
           })
         })
       })
@@ -757,7 +757,7 @@ describe('TrueRewardBackedToken', () => {
             await expectTransferEventWith(tx, reserveAddress, holder.address, parseEther('100'))
 
             await expectEventsCount('Transfer', tx, 2)
-            await expectEventsCount('Mint', tx, 0)
+            await expectEventsCount('MintRewardBackedToken', tx, 0)
           })
         })
 
@@ -794,7 +794,7 @@ describe('TrueRewardBackedToken', () => {
             await expectTransferEventWith(tx, holder.address, reserveAddress, parseEther('100'))
 
             await expectEventsCount('Transfer', tx, 2)
-            await expectEventsCount('Burn', tx, 0)
+            await expectEventsCount('BurnRewardBackedToken', tx, 0)
           })
         })
 

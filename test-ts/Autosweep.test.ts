@@ -6,7 +6,7 @@ import { fixtureWithAave } from './fixtures/fixtureWithAave'
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 import { expect } from 'chai'
 import { RegistryMock } from '../build/types/RegistryMock'
-import { expectBurnEventOn, expectEventsCountOn, expectTransferEventOn } from './utils/eventHelpers'
+import { expectRewardBackedBurnEventOn, expectEventsCountOn, expectTransferEventOn } from './utils/eventHelpers'
 import { AddressZero } from 'ethers/constants'
 import { ATokenMock } from '../build/types/ATokenMock'
 import { AaveFinancialOpportunity } from '../build/types/AaveFinancialOpportunity'
@@ -27,7 +27,7 @@ describe('Autosweep feature', () => {
   let financialOpportunity: AssuredFinancialOpportunity
 
   const expectTransferEventWith = async (tx: Transaction, from: string, to: string, amount: BigNumberish) => expectTransferEventOn(token)(tx, from, to, amount)
-  const expectBurnEventWith = async (tx: Transaction, from: string, amount: BigNumberish) => expectBurnEventOn(token)(tx, from, amount)
+  const expectRewardBackedBurnEventWith = async (tx: Transaction, from: string, amount: BigNumberish) => expectRewardBackedBurnEventOn(token)(tx, from, amount)
   const expectEventsCount = async (eventName: string, tx: ContractTransaction, count: number) => expectEventsCountOn(token)(eventName, tx, count)
 
   beforeEachWithFixture(async (provider, wallets) => {
@@ -64,8 +64,8 @@ describe('Autosweep feature', () => {
       await expectTransferEventWith(tx, holder.address, recipient, parseEther('42'))
       await expectTransferEventWith(tx, recipient, autosweepTarget.address, parseEther('42'))
       await expectEventsCount('Transfer', tx, 2)
-      await expectEventsCount('Burn', tx, 0)
-      await expectEventsCount('Mint', tx, 0)
+      await expectEventsCount('BurnRewardBackedToken', tx, 0)
+      await expectEventsCount('MintRewardBackedToken', tx, 0)
     })
   })
 
@@ -88,13 +88,13 @@ describe('Autosweep feature', () => {
       await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, amount)
       await expectTransferEventWith(tx, financialOpportunity.address, holder.address, amount)
       await expectTransferEventWith(tx, holder.address, AddressZero, amount)
-      await expectBurnEventWith(tx, holder.address, amount)
+      await expectRewardBackedBurnEventWith(tx, holder.address, amount)
       await expectTransferEventWith(tx, holder.address, recipient, amount)
       await expectTransferEventWith(tx, recipient, autosweepTarget.address, amount)
 
       await expectEventsCount('Transfer', tx, 6)
-      await expectEventsCount('Burn', tx, 1)
-      await expectEventsCount('Mint', tx, 0)
+      await expectEventsCount('BurnRewardBackedToken', tx, 1)
+      await expectEventsCount('MintRewardBackedToken', tx, 0)
     })
   })
 })
