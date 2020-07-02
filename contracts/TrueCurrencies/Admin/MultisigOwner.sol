@@ -1,4 +1,4 @@
-pragma solidity 0.5.13;
+pragma solidity ^0.5.13;
 
 import "./TokenController.sol";
 import "../Proxy/OwnedUpgradeabilityProxy.sol";
@@ -415,13 +415,5 @@ contract MultiSigOwner {
 
     function reclaimToken(IERC20 /*_token*/, address /*_to*/) external onlyOwner {
         _signOrExecute("reclaimToken");
-    }
-
-    function setOpportunityAddress(address /*_opportunityAddress*/) external onlyOwner {
-        _signOrExecute("setOpportunityAddress");
-    }
-
-    function setTrueRewardManager(address /*_newTrueRewardManager*/) external onlyOwner {
-        _signOrExecute("setTrueRewardManager");
     }
 }

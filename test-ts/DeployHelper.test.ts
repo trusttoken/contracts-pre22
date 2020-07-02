@@ -21,7 +21,7 @@ import {
 
 use(solidity)
 
-describe.skip('DeployHelper', () => {
+describe('DeployHelper', () => {
   let deployer: Wallet
 
   const mockOutputUniswapAddress = Wallet.createRandom().address

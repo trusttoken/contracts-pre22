@@ -1,4 +1,4 @@
-pragma solidity 0.5.13;
+pragma solidity ^0.5.13;
 
 import "../FinancialOpportunity.sol";
 import "../../TrueCurrencies/modularERC20/InstantiatableOwnable.sol";
@@ -41,10 +41,6 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
 
     function increaseTokenValue(uint _by) external {
         tokenValueField = tokenValueField.add(_by);
-    }
-
-    function reduceTokenValue(uint _by) external {
-        tokenValueField = tokenValueField.sub(_by);
     }
 
     function _getAmountInShares(uint _amount) internal view returns (uint) {

@@ -1,4 +1,4 @@
-pragma solidity 0.5.13;
+pragma solidity ^0.5.13;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "@trusttoken/registry/contracts/Registry.sol";
@@ -69,7 +69,7 @@ contract TokenController {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    TrueUSD public token;
+    TrueRewardBackedToken public token;
     Registry public registry;
     address public fastPause;
     address public trueRewardManager;
@@ -78,9 +78,7 @@ contract TokenController {
     bytes32 constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 constant public IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
 
-    // paused version of TrueUSD in Production
-    // pausing the contract upgrades the proxy to this implementation
-    address constant public PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
+    address constant public PAUSED_IMPLEMENTATION = address(1); // ***To be changed the paused version of TrueUSD in Production
 
     modifier onlyFastPauseOrOwner() {
         require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
@@ -150,6 +148,12 @@ contract TokenController {
     Ownership functions
     ========================================
     */
+
+    function initialize() external {
+        require(!initialized, "already initialized");
+        owner = msg.sender;
+        initialized = true;
+    }
 
     /**
     * @dev Throws if called by any account other than the owner.

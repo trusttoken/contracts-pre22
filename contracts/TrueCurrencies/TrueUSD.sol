@@ -1,4 +1,4 @@
-pragma solidity 0.5.13;
+pragma solidity ^0.5.13;
 
 import "./TrueRewardBackedToken.sol";
 import "./DelegateERC20.sol";
@@ -31,5 +31,15 @@ contract TrueUSD is TrueRewardBackedToken, DelegateERC20 {
 
     function canBurn() internal pure returns (bytes32) {
         return "canBurn";
+    }
+
+    // used by proxy to initialize
+    // this sets the owner to msg.sender
+    // may be a security risk for deployment
+    function initialize() external {
+        require(!initialized, "already initialized");
+        initialized = true;
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
     }
 }

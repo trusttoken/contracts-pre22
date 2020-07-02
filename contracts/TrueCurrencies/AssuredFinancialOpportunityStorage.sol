@@ -1,4 +1,4 @@
-pragma solidity 0.5.13;
+pragma solidity ^0.5.13;
 
 /*
 Defines the storage layout of the token implementaiton contract. Any newly declared
