@@ -13,8 +13,8 @@
   "liquidator": "0x1dfB7700E67e6046898c2FEfe160FB53fEC3A27c",
   "stakedToken": "0x9499e8D5a56bB9ECf1B7C6A95e1c4f5331805A2e",
   "implementations": {
-    "trueUsd": "0xe1E02907B0fb65722e08d75E5EA66a9b7432aE77",
-    "tokenController": "0xE08A5692520BA423c139677c18a1902720e28cF8",
+    "trueUsd": "0x20594f0b1f549d19b5dd81590d93bd131c657e01",
+    "tokenController": "0xd2240204502bf72d68194519531d02844c4cd642",
     "assuredFinancialOpportunity": "0xE87C74a31522D8f2cA54BE9f17870FA124fc351d",
     "trustToken": "0x6927f668FECA20B6e8e1a235f5CB683716cE66bb",
     "financialOpportunity": "0x423632872d34244502a3798e91b6AB3c7E94E2Db",
