@@ -1,4 +1,4 @@
-pragma solidity 0.5.13;
+pragma solidity ^0.5.13;
 contract OldTrueUSDInterface {
     function delegateToNewContract(address _newContract) public;
     function claimOwnership() public;

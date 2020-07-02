@@ -1,4 +1,4 @@
-pragma solidity 0.5.13;
+pragma solidity ^0.5.13;
 
 import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
 import { CompliantDepositTokenWithHook } from "./CompliantDepositTokenWithHook.sol";
@@ -88,7 +88,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
         address account,
         uint256 amount,
         address finOp
-    ) internal validFinOp(finOp) returns (uint256) {
+    ) internal validFinOp(finOp) {
         // require sufficient balance
         require(super.balanceOf(account) >= amount, "insufficient token balance");
 
@@ -106,8 +106,6 @@ contract RewardToken is CompliantDepositTokenWithHook {
 
         // emit mint event
         emit MintRewardToken(account, amount, finOp);
-
-        return rewardAmount;
     }
 
     /**

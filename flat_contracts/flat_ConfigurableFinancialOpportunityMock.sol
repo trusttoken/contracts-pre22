@@ -1,87 +1,51 @@
 
 // File: contracts/TrueReward/FinancialOpportunity.sol
 
-pragma solidity 0.5.13;
+pragma solidity ^0.5.13;
 
 /**
  * @title FinancialOpportunity
  * @dev Interface for third parties to implement financial opportunities
- *
- * -- Overview --
- * The goal of this contract is to allow anyone to create an opportunity
- * to earn interest on TUSD. deposit() "mints" yTUSD whcih is redeemable
- * for some amount of TUSD. TrueUSD wraps this contractwith TrustToken
- * Assurance, which provides protection from bugs and system design flaws
- * TUSD is a compliant stablecoin, therefore we do not allow transfers of
- * yTUSD, thus there are no transfer functions
- *
- * -- tokenValue() --
- * This function returns the value in TUSD of 1 yTUSD
- * This value should never decrease
- *
- * -- TUSD vs yTUSD --
- * yTUSD represents a fixed value which is redeemable for some amount of TUSD
- * Think of yTUSD like cTUSD, where cTokens are minted and increase in value versus
- * the underlying asset as interest is accrued
- *
- * -- totalSupply() --
- * This function returns the total supply of yTUSD issued by this contract
- * It is important to track this value accuratley and add/deduct the correct
- * amount on deposit/redemptions
- *
- * -- Assumptions --
- * - tokenValue can never decrease
- * - total TUSD owed to depositors = tokenValue() * totalSupply()
+ * for TrueReward with Assurance.
  */
 interface FinancialOpportunity {
-
     /**
-     * @dev Returns total supply of yTUSD in this contract
-     *
-     * @return total supply of yTUSD in this contract
-    **/
-    function totalSupply() external view returns (uint);
-
-    /**
-     * @dev Exchange rate between TUSD and yTUSD
-     *
-     * tokenValue should never decrease
-     *
-     * @return TUSD / yTUSD price ratio
-     */
-    function tokenValue() external view returns(uint);
-
-    /**
-     * @dev deposits TrueUSD and returns yTUSD minted
-     *
-     * We can think of deposit as a minting function which
-     * will increase totalSupply of yTUSD based on the deposit
-     *
-     * @param from account to transferFrom
-     * @param amount amount in TUSD to deposit
+     * @dev deposits TrueUSD into finOP using transferFrom
+     * @param _from account to transferFrom
+     * @param _amount amount in TUSD to deposit to finOp
      * @return yTUSD minted from this deposit
      */
-    function deposit(address from, uint amount) external returns(uint);
+    function deposit(address _from, uint _amount) external returns(uint);
+     /**
+     * @dev Withdraw from finOp to _to account
+     * @param _to account withdarw TUSD to
+     * @param _amount amount in TUSD to withdraw from finOp
+     * @return yTUSD amount deducted
+     */
+    function withdrawTo(address _to, uint _amount) external returns(uint);
+    /**
+     * @dev Withdraws all TUSD from finOp
+     * @param _to account withdarw TUSD to
+     * @return yTUSD amount deducted
+     */
+    function withdrawAll(address _to) external returns(uint);
 
     /**
-     * @dev Redeem yTUSD for TUSD and withdraw to account
-     *
-     * This function should use tokenValue to calculate
-     * how much TUSD is owed. This function should burn yTUSD
-     * after redemption
-     *
-     * This function must return value in TUSD
-     *
-     * @param to account to transfer TUSD for
-     * @param amount amount in TUSD to withdraw from finOp
-     * @return TUSD amount returned from this transaction
+     * Exchange rate between TUSD and yTUSD
+     * @return TUSD / yTUSD price ratio
      */
-    function redeem(address to, uint amount) external returns(uint);
+    function perTokenValue() external view returns(uint);
+
+    /**
+     * Returns full balance of opportunity
+     * @return yTUSD balance of opportunity
+    **/
+    function getBalance() external view returns (uint);
 }
 
 // File: contracts/TrueCurrencies/modularERC20/InstantiatableOwnable.sol
 
-pragma solidity 0.5.13;
+pragma solidity ^0.5.13;
 
 
 /**
@@ -364,7 +328,7 @@ library SafeMath {
 
 // File: contracts/TrueReward/mocks/ConfigurableFinancialOpportunityMock.sol
 
-pragma solidity 0.5.13;
+pragma solidity ^0.5.13;
 
 
 
@@ -374,8 +338,8 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
     using SafeMath for uint;
 
     IERC20 token;
-    uint supply;
-    uint tokenValueField = 1*10**18;
+    uint balance;
+    uint perTokenValueField = 1*10**18;
 
     constructor(IERC20 _token) public {
         token = _token;
@@ -384,39 +348,43 @@ contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, Instantia
     function deposit(address _from, uint _amount) external returns(uint) {
         uint shares = _getAmountInShares(_amount);
         require(token.transferFrom(_from, address(this), _amount), "FinOpMock/deposit/transferFrom");
-        supply = supply.add(shares);
+        balance = balance.add(shares);
         return shares;
     }
 
-    function redeem(address _to, uint ztusd) external returns(uint) {
-        uint tusd = _getSharesAmount(ztusd);
-        require(ztusd <= supply, "FinOpMock/withdrawTo/balanceCheck");
-        require(token.transfer(_to, tusd), "FinOpMock/withdrawTo/transfer");
-        supply = supply.sub(ztusd);
-        return tusd;
+    function withdrawTo(address _to, uint _amount) external returns(uint) {
+        uint shares = _getAmountInShares(_amount);
+        require(shares <= balance, "FinOpMock/withdrawTo/balanceCheck");
+        require(token.transfer(_to, _amount), "FinOpMock/withdrawTo/trasfer");
+        balance = balance.sub(shares);
+        return shares;
     }
 
-    function tokenValue() external view returns(uint) {
-        return tokenValueField;
+    function withdrawAll(address _to) external returns(uint) {
+        uint shares = balance;
+        uint tokens = _getSharesAmount(shares);
+        require(token.transfer(_to, tokens), "FinOpMock/withdrawAll/trasfer");
+        balance = 0;
+        return shares;
     }
 
-    function totalSupply() external view returns(uint) {
-        return supply;
+    function perTokenValue() external view returns(uint) {
+        return perTokenValueField;
     }
 
-    function increaseTokenValue(uint _by) external {
-        tokenValueField = tokenValueField.add(_by);
+    function getBalance() external view returns(uint) {
+        return balance;
     }
 
-    function reduceTokenValue(uint _by) external {
-        tokenValueField = tokenValueField.sub(_by);
+    function increasePerTokenValue(uint _by) external {
+        perTokenValueField = perTokenValueField.add(_by);
     }
 
     function _getAmountInShares(uint _amount) internal view returns (uint) {
-        return _amount.mul(10**18).div(tokenValueField);
+        return _amount.mul(10**18).div(perTokenValueField);
     }
 
     function _getSharesAmount(uint _shares) internal view returns (uint) {
-        return _shares.mul(tokenValueField).div(10**18);
+        return _shares.mul(perTokenValueField).div(10**18);
     }
 }

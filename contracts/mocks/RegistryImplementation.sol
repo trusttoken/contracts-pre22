@@ -1,4 +1,4 @@
-pragma solidity 0.5.13;
+pragma solidity ^0.5.13;
 
 import { Registry } from "@trusttoken/registry/contracts/Registry.sol";
 import { ProvisionalRegistry } from "@trusttoken/registry/contracts/ProvisionalRegistry.sol";
