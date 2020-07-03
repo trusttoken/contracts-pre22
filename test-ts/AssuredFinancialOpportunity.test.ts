@@ -1,16 +1,20 @@
-import { Wallet, Contract, utils } from 'ethers'
-import { MockProvider, deployContract, solidity } from 'ethereum-waffle'
-import { use, expect } from 'chai'
-import { beforeEachWithFixture } from './utils'
+import { utils, Wallet } from 'ethers'
+import { MockProvider, solidity } from 'ethereum-waffle'
+import { expect, use } from 'chai'
+import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 
-import {
-  AssuredFinancialOpportunity,
-  ConfigurableFinancialOpportunityMock,
-  FractionalExponents,
-  SimpleLiquidatorMock,
-  MockERC20,
-  OwnedUpgradeabilityProxy,
-} from '../build'
+import { setupDeploy } from '../scripts/utils'
+import { FractionalExponentsFactory } from '../build/types/FractionalExponentsFactory'
+import { SimpleLiquidatorMockFactory } from '../build/types/SimpleLiquidatorMockFactory'
+import { ConfigurableFinancialOpportunityMockFactory } from '../build/types/ConfigurableFinancialOpportunityMockFactory'
+import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
+import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
+import { MockErc20Factory } from '../build/types/MockErc20Factory'
+import { MockErc20 } from '../build/types/MockErc20'
+import { ConfigurableFinancialOpportunityMock } from '../build/types/ConfigurableFinancialOpportunityMock'
+import { FractionalExponents } from '../build/types/FractionalExponents'
+import { SimpleLiquidatorMock } from '../build/types/SimpleLiquidatorMock'
+import { AssuredFinancialOpportunity } from '../build/types/AssuredFinancialOpportunity'
 
 use(solidity)
 
@@ -19,11 +23,11 @@ const { parseEther } = utils
 describe('AssuredFinancialOpportunity', () => {
   let provider: MockProvider
 
-  let token: Contract
-  let financialOpportunity: Contract
-  let fractionalExponents: Contract
-  let liquidator: Contract
-  let assuredFinancialOpportunity: Contract
+  let token: MockErc20
+  let financialOpportunity: ConfigurableFinancialOpportunityMock
+  let fractionalExponents: FractionalExponents
+  let liquidator: SimpleLiquidatorMock
+  let assuredFinancialOpportunity: AssuredFinancialOpportunity
 
   let wallet: Wallet
   let holder: Wallet
@@ -39,20 +43,22 @@ describe('AssuredFinancialOpportunity', () => {
   beforeEachWithFixture(async (p: MockProvider) => {
     (provider = p)
 
-    ; [wallet, holder, beneficiary] = provider.getWallets()
+    ;[wallet, holder, beneficiary] = provider.getWallets()
 
-    token = await deployContract(wallet, MockERC20)
+    const deployContract = setupDeploy(wallet)
+
+    token = await deployContract(MockErc20Factory)
     await token.mint(holder.address, parseEther('100'))
 
-    fractionalExponents = await deployContract(wallet, FractionalExponents)
-    liquidator = await deployContract(wallet, SimpleLiquidatorMock, [token.address])
+    fractionalExponents = await deployContract(FractionalExponentsFactory)
+    liquidator = await deployContract(SimpleLiquidatorMockFactory, token.address)
     await token.mint(liquidator.address, parseEther('1000'))
 
-    financialOpportunity = await deployContract(wallet, ConfigurableFinancialOpportunityMock, [token.address])
+    financialOpportunity = await deployContract(ConfigurableFinancialOpportunityMockFactory, token.address)
     await token.mint(financialOpportunity.address, parseEther('100'))
 
-    const assuredFinancialOpportunityImpl = await deployContract(wallet, AssuredFinancialOpportunity)
-    const assuredFinancialOpportunityProxy = await deployContract(wallet, OwnedUpgradeabilityProxy)
+    const assuredFinancialOpportunityImpl = await deployContract(AssuredFinancialOpportunityFactory)
+    const assuredFinancialOpportunityProxy = await deployContract(OwnedUpgradeabilityProxyFactory)
     assuredFinancialOpportunity = assuredFinancialOpportunityImpl.attach(assuredFinancialOpportunityProxy.address)
     await assuredFinancialOpportunityProxy.upgradeTo(assuredFinancialOpportunityImpl.address)
     await assuredFinancialOpportunity.configure(
@@ -130,79 +136,121 @@ describe('AssuredFinancialOpportunity', () => {
     })
   })
 
-  describe('withdraw', async function () {
-    beforeEach(async function () {
-      await deposit(holder, parseEther('10'))
-    })
-
-    it('redeem', async function () {
-      await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('5'))
-      const remaingHoldersTokenBalance = await token.balanceOf(holder.address)
-      const newBeneficiarysTokenBalance = await token.balanceOf(beneficiary.address)
-      const finOpBalance = await assuredFinancialOpportunity.totalSupply()
-
-      expect(remaingHoldersTokenBalance).to.equal(parseEther('90'))
-      expect(newBeneficiarysTokenBalance).to.equal(parseEther('5'))
-      expect(finOpBalance).to.equal(parseEther('5'))
-    })
-
-    it('only funds manager can call redeem', async function () {
-      expect(
-        assuredFinancialOpportunity.connect(holder).redeem(beneficiary.address, parseEther('5')),
-      ).to.be.reverted
-      expect(
-        assuredFinancialOpportunity.connect(beneficiary).redeem(beneficiary.address, parseEther('5')),
-      ).to.be.reverted
-    })
-
-    describe('with exchange rate = 1.5', async function () {
-      const checkBalances = async () => ({
-        newBeneficiarysTokenBalance: await token.balanceOf(beneficiary.address),
-        financialOpportunityBalance: await assuredFinancialOpportunity.totalSupply(),
-      })
-
+  describe('redeem', async function () {
+    describe('with deposit of 10 TUSD', () => {
       beforeEach(async function () {
-        await financialOpportunity.increaseTokenValue(parseEther('0.5'))
-
-        expect(await assuredFinancialOpportunity.tokenValue()).to.equal(parseEther('1.5'))
-        expect(await assuredFinancialOpportunity.totalSupply()).to.equal(parseEther('10'))
+        await deposit(holder, parseEther('10'))
       })
 
-      it('can redeem 100%', async function () {
-        await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('10'))
-        const { newBeneficiarysTokenBalance, financialOpportunityBalance } = await checkBalances()
-
-        expect(newBeneficiarysTokenBalance).to.equal(parseEther('15'))
-        expect(financialOpportunityBalance).to.equal('0')
-      })
-
-      it('can redeem 50%', async function () {
+      it('redeem some at exchange rate = 1.0', async function () {
         await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('5'))
 
-        const { newBeneficiarysTokenBalance, financialOpportunityBalance } = await checkBalances()
-        expect(newBeneficiarysTokenBalance).to.equal(parseEther('7.5'))
-        expect(financialOpportunityBalance).to.equal(parseEther('5'))
+        const remainingHoldersTokenBalance = await token.balanceOf(holder.address)
+        const newBeneficiarysTokenBalance = await token.balanceOf(beneficiary.address)
+        const finOpBalance = await assuredFinancialOpportunity.totalSupply()
+
+        expect(remainingHoldersTokenBalance).to.equal(parseEther('90'))
+        expect(newBeneficiarysTokenBalance).to.equal(parseEther('5'))
+        expect(finOpBalance).to.equal(parseEther('5'))
       })
 
-      it('can withdraw twice in a row', async () => {
-        await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('1'))
-        await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('2'))
+      it('only funds manager can call redeem', async function () {
+        expect(
+          assuredFinancialOpportunity.connect(holder).redeem(beneficiary.address, parseEther('5')),
+        ).to.be.reverted
+        expect(
+          assuredFinancialOpportunity.connect(beneficiary).redeem(beneficiary.address, parseEther('5')),
+        ).to.be.reverted
+      })
 
-        const { newBeneficiarysTokenBalance, financialOpportunityBalance } = await checkBalances()
-        expect(newBeneficiarysTokenBalance).to.equal(parseEther('4.5'))
-        expect(financialOpportunityBalance).to.equal(parseEther('7'))
+      describe('with exchange rate = 1.5', async function () {
+        const checkBalances = async () => ({
+          newBeneficiarysTokenBalance: await token.balanceOf(beneficiary.address),
+          financialOpportunityBalance: await assuredFinancialOpportunity.totalSupply(),
+        })
+
+        beforeEach(async function () {
+          await financialOpportunity.increaseTokenValue(parseEther('0.5'))
+
+          expect(await assuredFinancialOpportunity.tokenValue()).to.equal(parseEther('1.5'))
+          expect(await assuredFinancialOpportunity.totalSupply()).to.equal(parseEther('10'))
+        })
+
+        it('can redeem 100%', async function () {
+          await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('10'))
+          const { newBeneficiarysTokenBalance, financialOpportunityBalance } = await checkBalances()
+
+          expect(newBeneficiarysTokenBalance).to.equal(parseEther('15'))
+          expect(financialOpportunityBalance).to.equal('0')
+        })
+
+        it('can redeem 50%', async function () {
+          await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('5'))
+
+          const { newBeneficiarysTokenBalance, financialOpportunityBalance } = await checkBalances()
+          expect(newBeneficiarysTokenBalance).to.equal(parseEther('7.5'))
+          expect(financialOpportunityBalance).to.equal(parseEther('5'))
+        })
+
+        it('can withdraw twice in a row', async () => {
+          await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('1'))
+          await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('2'))
+
+          const { newBeneficiarysTokenBalance, financialOpportunityBalance } = await checkBalances()
+          expect(newBeneficiarysTokenBalance).to.equal(parseEther('4.5'))
+          expect(financialOpportunityBalance).to.equal(parseEther('7'))
+        })
+      })
+
+      it('cannot redeem more than deposited', async () => {
+        await expect(assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('20'))).to.be.revertedWith('not enough supply')
+      })
+
+      it('when finop reverts get funds from liquidator', async () => {
+        await makeFinOpInsolvent()
+
+        await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('10'))
+
+        expect(await token.balanceOf(beneficiary.address)).to.equal(parseEther('200'))
+        expect(await token.balanceOf(liquidator.address)).to.equal(parseEther('800'))
+        expect(await assuredFinancialOpportunity.totalSupply()).to.equal(parseEther('0'))
+      })
+
+      it('revert when liquidator does not have enough trusttokens to cover difference', async () => {
+        await makeFinOpInsolvent()
+        await drainLiquidator()
+
+        await expect(assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('10'))).to.be.reverted
       })
     })
-  })
 
-  it('liquidation', async () => {
-    await deposit(holder, parseEther('10'))
-    await financialOpportunity.increaseTokenValue(parseEther('19'))
+    it('when finop returns less than expected get difference from liquidator', async () => {
+      await financialOpportunity.increaseTokenValue(parseEther('1'))
+      await assuredFinancialOpportunity.setRewardBasis('700')
+      await deposit(holder, parseEther('10')) // 5 zTUSD
+      await financialOpportunity.reduceTokenValue(parseEther('1'))
 
-    await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('12'))
+      await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('4'))
 
-    expect(await token.balanceOf(beneficiary.address)).to.equal(parseEther('240'))
-    expect(await assuredFinancialOpportunity.totalSupply()).to.equal(parseEther('10'))
+      expect(await token.balanceOf(beneficiary.address)).to.equal(parseEther('8'))
+      expect(await token.balanceOf(liquidator.address)).to.equal(parseEther('996'))
+      expect(await token.balanceOf(financialOpportunity.address)).to.equal(parseEther('106')) // 100 + 10 - 4
+      expect(await assuredFinancialOpportunity.totalSupply()).to.equal(parseEther('1'))
+    })
+
+    it('when finop returns less than expected get difference from liquidator (full supply)', async () => {
+      await financialOpportunity.increaseTokenValue(parseEther('1'))
+      await assuredFinancialOpportunity.setRewardBasis('700')
+      await deposit(holder, parseEther('10')) // 5 zTUSD
+      await financialOpportunity.reduceTokenValue(parseEther('1'))
+
+      await assuredFinancialOpportunity.redeem(beneficiary.address, parseEther('5'))
+
+      expect(await token.balanceOf(beneficiary.address)).to.equal(parseEther('10'))
+      expect(await token.balanceOf(liquidator.address)).to.equal(parseEther('995'))
+      expect(await token.balanceOf(financialOpportunity.address)).to.equal(parseEther('105')) // 100 + 10 - 5
+      expect(await assuredFinancialOpportunity.totalSupply()).to.equal(parseEther('0'))
+    })
   })
 
   describe('poolAwardBalance', () => {
@@ -315,4 +363,12 @@ describe('AssuredFinancialOpportunity', () => {
       expect(await financialOpportunity.totalSupply()).to.equal(parseEther('10').sub('1145325067044438846'))
     })
   })
+
+  async function makeFinOpInsolvent () {
+    await financialOpportunity.increaseTokenValue(parseEther('19'))
+  }
+
+  async function drainLiquidator () {
+    await liquidator.reclaim(beneficiary.address, parseEther('1000'))
+  }
 })

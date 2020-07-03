@@ -11,7 +11,7 @@ import {
   RegistryMock,
 } from '../build'
 import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
-import { beforeEachWithFixture } from './utils'
+import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 
 use(solidity)
 
@@ -86,6 +86,7 @@ describe('AaveFinancialOpportunity', () => {
       await token.connect(holder).approve(financialOpportunity.address, parseEther('10'))
       await financialOpportunity.connect(owner).deposit(holder.address, parseEther('10'))
 
+      expect(await financialOpportunity.aTokenBalance()).to.equal(parseEther('10'))
       expect(await financialOpportunity.totalSupply()).to.equal(parseEther('10'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('90'))
     })
@@ -96,7 +97,8 @@ describe('AaveFinancialOpportunity', () => {
       await token.connect(holder).approve(financialOpportunity.address, parseEther('15'))
       await financialOpportunity.connect(owner).deposit(holder.address, parseEther('15'))
 
-      expect(await financialOpportunity.totalSupply()).to.equal(parseEther('15'))
+      expect(await financialOpportunity.totalSupply()).to.equal(parseEther('10'))
+      expect(await financialOpportunity.aTokenBalance()).to.equal(parseEther('15'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('85'))
     })
 
@@ -115,6 +117,7 @@ describe('AaveFinancialOpportunity', () => {
     it('redeem', async () => {
       await financialOpportunity.connect(owner).redeem(address1.address, parseEther('5'))
 
+      expect(await financialOpportunity.aTokenBalance()).to.equal(parseEther('5'))
       expect(await financialOpportunity.totalSupply()).to.equal(parseEther('5'))
       expect(await token.balanceOf(address1.address)).to.equal(parseEther('5'))
       expect(await token.balanceOf(holder.address)).to.equal(parseEther('90'))
@@ -133,13 +136,15 @@ describe('AaveFinancialOpportunity', () => {
       it('can withdraw 50%', async () => {
         await financialOpportunity.connect(owner).redeem(address1.address, parseEther('5'))
 
-        expect(await financialOpportunity.totalSupply()).to.equal(parseEther('7.5'))
+        expect(await financialOpportunity.totalSupply()).to.equal(parseEther('5'))
+        expect(await financialOpportunity.aTokenBalance()).to.equal(parseEther('7.5'))
         expect(await token.balanceOf(address1.address)).to.equal(parseEther('7.5'))
       })
 
       it('can withdraw 100%', async () => {
         await financialOpportunity.connect(owner).redeem(address1.address, parseEther('10'))
 
+        expect(await financialOpportunity.aTokenBalance()).to.equal(parseEther('0'))
         expect(await financialOpportunity.totalSupply()).to.equal(parseEther('0'))
         expect(await token.balanceOf(address1.address)).to.equal(parseEther('15'))
       })

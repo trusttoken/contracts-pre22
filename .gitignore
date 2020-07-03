@@ -8,4 +8,6 @@ coverage
 coverage.json
 coverageEnv
 /.coverage_artifacts
+.idea
 .DS_Store
+/scripts/.ropsten-test.env

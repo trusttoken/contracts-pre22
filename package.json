@@ -44,7 +44,7 @@
     "babel-register": "^6.26.0",
     "chai": "^4.2.0",
     "eslint": "^6.8.0",
-    "ethereum-waffle": "^2.4.1",
+    "ethereum-waffle": "^2.5.1",
     "mocha": "^7.1.1",
     "solidity-coverage": "^0.7.0",
     "solium": "^1.2.5",
@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@trusttoken/registry": "0.1.2",
-    "@trusttoken/trusttokens": "trusttoken/trusttokens#dev",
+    "@trusttoken/trusttokens": "0.1.10",
     "ethers": "^4.0.46",
     "ganache-cli": "6.8.1",
     "ganache-time-traveler": "^1.0.14",

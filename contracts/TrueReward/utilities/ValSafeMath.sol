@@ -1,4 +1,4 @@
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 /**
  * Forked subset of Openzeppelin SafeMath allowing custom underflow/overflow messages

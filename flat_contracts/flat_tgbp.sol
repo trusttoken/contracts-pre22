@@ -1,7 +1,7 @@
 
 // File: contracts/TrueCurrencies/TrueCoinReceiver.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
@@ -258,7 +258,7 @@ contract Registry {
 
 // File: contracts/TrueCurrencies/modularERC20/InstantiatableOwnable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -303,7 +303,7 @@ contract InstantiatableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/Claimable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -502,7 +502,7 @@ library SafeMath {
 
 // File: contracts/TrueCurrencies/modularERC20/BalanceSheet.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -527,7 +527,7 @@ contract BalanceSheet is Claimable {
 
 // File: contracts/TrueCurrencies/modularERC20/AllowanceSheet.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -550,16 +550,97 @@ contract AllowanceSheet is Claimable {
     }
 }
 
+// File: contracts/TrueReward/FinancialOpportunity.sol
+
+pragma solidity 0.5.13;
+
+/**
+ * @title FinancialOpportunity
+ * @dev Interface for third parties to implement financial opportunities
+ *
+ * -- Overview --
+ * The goal of this contract is to allow anyone to create an opportunity
+ * to earn interest on TUSD. deposit() "mints" yTUSD whcih is redeemable
+ * for some amount of TUSD. TrueUSD wraps this contractwith TrustToken
+ * Assurance, which provides protection from bugs and system design flaws
+ * TUSD is a compliant stablecoin, therefore we do not allow transfers of
+ * yTUSD, thus there are no transfer functions
+ *
+ * -- tokenValue() --
+ * This function returns the value in TUSD of 1 yTUSD
+ * This value should never decrease
+ *
+ * -- TUSD vs yTUSD --
+ * yTUSD represents a fixed value which is redeemable for some amount of TUSD
+ * Think of yTUSD like cTUSD, where cTokens are minted and increase in value versus
+ * the underlying asset as interest is accrued
+ *
+ * -- totalSupply() --
+ * This function returns the total supply of yTUSD issued by this contract
+ * It is important to track this value accuratley and add/deduct the correct
+ * amount on deposit/redemptions
+ *
+ * -- Assumptions --
+ * - tokenValue can never decrease
+ * - total TUSD owed to depositors = tokenValue() * totalSupply()
+ */
+interface FinancialOpportunity {
+
+    /**
+     * @dev Returns total supply of yTUSD in this contract
+     *
+     * @return total supply of yTUSD in this contract
+    **/
+    function totalSupply() external view returns (uint);
+
+    /**
+     * @dev Exchange rate between TUSD and yTUSD
+     *
+     * tokenValue should never decrease
+     *
+     * @return TUSD / yTUSD price ratio
+     */
+    function tokenValue() external view returns(uint);
+
+    /**
+     * @dev deposits TrueUSD and returns yTUSD minted
+     *
+     * We can think of deposit as a minting function which
+     * will increase totalSupply of yTUSD based on the deposit
+     *
+     * @param from account to transferFrom
+     * @param amount amount in TUSD to deposit
+     * @return yTUSD minted from this deposit
+     */
+    function deposit(address from, uint amount) external returns(uint);
+
+    /**
+     * @dev Redeem yTUSD for TUSD and withdraw to account
+     *
+     * This function should use tokenValue to calculate
+     * how much TUSD is owed. This function should burn yTUSD
+     * after redemption
+     *
+     * This function must return value in TUSD
+     *
+     * @param to account to transfer TUSD for
+     * @param amount amount in TUSD to withdraw from finOp
+     * @return TUSD amount returned from this transaction
+     */
+    function redeem(address to, uint amount) external returns(uint);
+}
+
 // File: contracts/TrueCurrencies/ProxyStorage.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
+
 
 
 
 
 /*
-Defines the storage layout of the token implementaiton contract. Any newly declared
-state variables in future upgrades should be appened to the bottom. Never remove state variables
+Defines the storage layout of the token implementation contract. Any newly declared
+state variables in future upgrades should be appended to the bottom. Never remove state variables
 from this list
  */
 contract ProxyStorage {
@@ -592,9 +673,16 @@ contract ProxyStorage {
     mapping (address => mapping (address => uint256)) _allowance;
     mapping (bytes32 => mapping (address => uint256)) attributes;
 
-    struct FinancialOpportunityAllocation { address financialOpportunity; uint proportion; }
-    mapping(address => FinancialOpportunityAllocation[]) _trueRewardDistribution;
-    mapping (address => mapping (address => uint256)) _financialOpportunityBalances;
+    // reward token storage
+    mapping(address => FinancialOpportunity) finOps;
+    mapping(address => mapping(address => uint256)) finOpBalances;
+    mapping(address => uint256) finOpSupply;
+
+    // true reward allocation
+    // proportion: 1000 = 100%
+    struct RewardAllocation { uint proportion; address finOp; }
+    mapping(address => RewardAllocation[]) _rewardDistribution;
+    uint256 maxRewardProportion = 1000;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
@@ -617,7 +705,7 @@ contract ProxyStorage {
 
 // File: contracts/TrueCurrencies/HasOwner.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -678,7 +766,7 @@ contract HasOwner is ProxyStorage {
 
 // File: contracts/TrueCurrencies/ReclaimerToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 contract ReclaimerToken is HasOwner {
@@ -708,7 +796,7 @@ contract ReclaimerToken is HasOwner {
 
 // File: contracts/TrueCurrencies/modularERC20/InitializableOwnable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -756,7 +844,7 @@ contract InitializableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/InitializableClaimable.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -796,7 +884,7 @@ contract InitializableClaimable is InitializableOwnable {
 
 // File: contracts/TrueCurrencies/modularERC20/ModularBasicToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -844,7 +932,7 @@ contract ModularBasicToken is HasOwner {
 
 // File: contracts/TrueCurrencies/modularERC20/ModularStandardToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -997,7 +1085,7 @@ contract ModularStandardToken is ModularBasicToken {
 
 // File: contracts/TrueCurrencies/modularERC20/ModularBurnableToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -1025,7 +1113,7 @@ contract ModularBurnableToken is ModularStandardToken {
 
 // File: contracts/TrueCurrencies/BurnableTokenWithBounds.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -1059,7 +1147,7 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
 
 // File: contracts/TrueCurrencies/GasRefundToken.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 /**
@@ -1224,7 +1312,7 @@ contract GasRefundToken is ProxyStorage {
 
 // File: contracts/TrueCurrencies/CompliantDepositTokenWithHook.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
@@ -1301,88 +1389,94 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         emit Transfer(_to, address(0), _value);
     }
 
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal returns (address) {
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
             _value -= _value % CENT;
             _burnFromAllowanceAllArgs(_from, _to, _value, _spender);
-        } else {
-            bool hasHook;
-            address originalTo = _to;
-            (_to, hasHook) = _requireCanTransferFrom(_spender, _from, _to);
-            if (0 == _addBalance(_to, _value)) {
-                if (0 == _subAllowance(_from, _spender, _value)) {
-                    if (0 != _subBalance(_from, _value)) {
-                        gasRefund30();
-                    }
-                    // else do not refund
-                } else {
-                    if (0 == _subBalance(_from, _value)) {
-                        gasRefund30();
-                    } else {
-                        gasRefund39();
-                    }
-                }
-            } else {
-                if (0 == _subAllowance(_from, _spender, _value)) {
-                    if (0 != _subBalance(_from, _value)) {
-                        gasRefund15();
-                    }
-                    // else do not refund
-                } else {
-                    if (0 == _subBalance(_from, _value)) {
-                        gasRefund15();
-                    } else {
-                        gasRefund39();
-                    }
-                }
-
-            }
-            emit Transfer(_from, originalTo, _value);
-            if (originalTo != _to) {
-                emit Transfer(originalTo, _to, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
-                }
-            } else {
-                if (hasHook) {
-                    TrueCoinReceiver(_to).tokenFallback(_from, _value);
-                }
-            }
+            return _to;
         }
-    }
 
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
-            _value -= _value % CENT;
-            _burnFromAllArgs(_from, _to, _value);
-        } else {
-            bool hasHook;
-            address finalTo;
-            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-            if (0 == _subBalance(_from, _value)) {
-                if (0 == _addBalance(finalTo, _value)) {
+        (address finalTo, bool hasHook) = _requireCanTransferFrom(_spender, _from, _to);
+
+        if (0 == _addBalance(finalTo, _value)) {
+            if (0 == _subAllowance(_from, _spender, _value)) {
+                if (0 != _subBalance(_from, _value)) {
                     gasRefund30();
                 }
                 // else do not refund
             } else {
-                if (0 == _addBalance(finalTo, _value)) {
-                    gasRefund39();
-                } else {
+                if (0 == _subBalance(_from, _value)) {
                     gasRefund30();
+                } else {
+                    gasRefund39();
                 }
             }
-            emit Transfer(_from, _to, _value);
-            if (finalTo != _to) {
-                emit Transfer(_to, finalTo, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+        } else {
+            if (0 == _subAllowance(_from, _spender, _value)) {
+                if (0 != _subBalance(_from, _value)) {
+                    gasRefund15();
                 }
+                // else do not refund
             } else {
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                if (0 == _subBalance(_from, _value)) {
+                    gasRefund15();
+                } else {
+                    gasRefund39();
                 }
+            }
+
+        }
+        emit Transfer(_from, _to, _value);
+
+        if (finalTo != _to) {
+            emit Transfer(_to, finalTo, _value);
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
             }
         }
+
+        return finalTo;
+    }
+
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal returns (address) {
+        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
+            _value -= _value % CENT;
+            _burnFromAllArgs(_from, _to, _value);
+            return _to;
+        }
+
+        (address finalTo, bool hasHook) = _requireCanTransfer(_from, _to);
+
+        if (0 == _subBalance(_from, _value)) {
+            if (0 == _addBalance(finalTo, _value)) {
+                gasRefund30();
+            }
+            // else do not refund
+        } else {
+            if (0 == _addBalance(finalTo, _value)) {
+                gasRefund39();
+            } else {
+                gasRefund30();
+            }
+        }
+        emit Transfer(_from, _to, _value);
+
+        if (finalTo != _to) {
+            emit Transfer(_to, finalTo, _value);
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+            }
+        }
+
+        return finalTo;
     }
 
     function mint(address _to, uint256 _value) public onlyOwner {
@@ -1492,7 +1586,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
 // File: contracts/TrueCurrencies/TrueGBP.sol
 
-pragma solidity ^0.5.13;
+pragma solidity 0.5.13;
 
 
 
