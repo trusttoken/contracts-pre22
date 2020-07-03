@@ -1,6 +1,6 @@
 import { ethers, providers } from 'ethers'
 // import { MockTrustTokenFactory } from '../build/types/MockTrustTokenFactory'
-import { formatEther, parseEther } from 'ethers/utils'
+import { parseEther } from 'ethers/utils'
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 // import { StakedTokenFactory } from '../build/types/StakedTokenFactory'
@@ -65,7 +65,7 @@ describe('ropsten test', function () {
     await wait(faucet.connect(brokePerson).faucet(10, { gasLimit: 1000000 }))
     await wait(tusd.connect(brokePerson).enableTrueReward({ gasLimit: 1000000 }))
     const receiverBalanceBefore = await tusd.balanceOf(staker.address)
-    await wait(tusd.connect(brokePerson).transfer(staker.address, await tusd.balanceOf(brokePerson.address), { gasLimit: 1000000 }))
+    await wait(tusd.connect(brokePerson).transfer(staker.address, await tusd.balanceOf(brokePerson.address), { gasLimit: 2000000 }))
     // 1 wei error here
     expect(await tusd.balanceOf(brokePerson.address)).to.be.lte(1)
     expect(await tusd.balanceOf(staker.address)).to.be.gte(receiverBalanceBefore.add(9))
@@ -77,14 +77,12 @@ describe('ropsten test', function () {
     await wait(tusd.connect(staker).enableTrueReward({ gasLimit: 1000000 }))
     expect(await tusd.trueRewardEnabled(brokePerson.address)).to.be.false
     expect(await tusd.trueRewardEnabled(staker.address)).to.be.true
-    await wait(tusd.connect(brokePerson).transfer(staker.address, await tusd.balanceOf(brokePerson.address), { gasLimit: 1000000 }))
+    await wait(tusd.connect(brokePerson).transfer(staker.address, await tusd.balanceOf(brokePerson.address), { gasLimit: 2000000 }))
     const receiverBalanceBefore = await tusd.balanceOf(staker.address)
-    await wait(tusd.connect(staker).transfer(brokePerson.address, parseEther('1'), { gasLimit: 1000000 }))
-    console.log(formatEther(receiverBalanceBefore))
-    console.log(formatEther(await tusd.balanceOf(staker.address)))
+    await wait(tusd.connect(staker).transfer(brokePerson.address, parseEther('1'), { gasLimit: 2000000 }))
     expect(await tusd.balanceOf(brokePerson.address)).to.equal(parseEther('1').sub(1))
     expect(await tusd.balanceOf(staker.address)).to.be.lte(receiverBalanceBefore.sub(parseEther('0.99')))
-    await wait(tusd.connect(brokePerson).transfer(staker.address, await tusd.balanceOf(brokePerson.address), { gasLimit: 1000000 }))
+    await wait(tusd.connect(brokePerson).transfer(staker.address, await tusd.balanceOf(brokePerson.address), { gasLimit: 2000000 }))
     await wait(tusd.connect(staker).disableTrueReward({ gasLimit: 5000000 }))
   })
 

@@ -13,12 +13,12 @@
   "liquidator": "0x2472f43564837CCb87E969a81B41e2F775606Bb1",
   "stakedToken": "0x981c10eC6c8cB69bFd38b965AA5F5761e1Cdf751",
   "implementations": {
-    "trueUsd": "0x2445c557Efe8d22095E80Af4a77d297bE1951380",
-    "tokenController": "0x15aE6AaC222BaF2E230451E05006CF1114b6bDBB",
-    "assuredFinancialOpportunity": "0x652Df29F9B9966Dbd6C802aaB8052661a709Ce20",
+    "trueUsd": "0x102717DAa2c4966FE2283b4e25C3205B05595883",
+    "tokenController": "0x05eee8b0d72e573edd765d7ed72DC5C74Ab9F966",
+    "assuredFinancialOpportunity": "0x771B70D98a4e0C1c2894300c3c5C0b5EcBf3f9AE",
     "trustToken": "0xe6e2986145A28F7510D9ccd78bB43FF2e186c81B",
-    "financialOpportunity": "0xdeCec0700c9D9c607aB19d987369d6a97c117BbF",
-    "liquidator": "0xaedA9bA0Ad69412168b156eB922f19dc82c92d57",
+    "financialOpportunity": "0xD1dEB2c93a40479a89b83F30fabE6C2258b9aFe8",
+    "liquidator": "0xDF14204532C054eCfa7B32f1Cd94D60942e1c48c",
     "stakedToken": "0xEE3F42Eb39349d7fb0d40239e86b054217EE271c"
   },
   "deployHelper": "0xC3C28d17fE6F06e24c4C9e1eD795834286F01EB8"
