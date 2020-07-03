@@ -1389,88 +1389,94 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         emit Transfer(_to, address(0), _value);
     }
 
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal returns (address) {
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
             _value -= _value % CENT;
             _burnFromAllowanceAllArgs(_from, _to, _value, _spender);
-        } else {
-            bool hasHook;
-            address originalTo = _to;
-            (_to, hasHook) = _requireCanTransferFrom(_spender, _from, _to);
-            if (0 == _addBalance(_to, _value)) {
-                if (0 == _subAllowance(_from, _spender, _value)) {
-                    if (0 != _subBalance(_from, _value)) {
-                        gasRefund30();
-                    }
-                    // else do not refund
-                } else {
-                    if (0 == _subBalance(_from, _value)) {
-                        gasRefund30();
-                    } else {
-                        gasRefund39();
-                    }
-                }
-            } else {
-                if (0 == _subAllowance(_from, _spender, _value)) {
-                    if (0 != _subBalance(_from, _value)) {
-                        gasRefund15();
-                    }
-                    // else do not refund
-                } else {
-                    if (0 == _subBalance(_from, _value)) {
-                        gasRefund15();
-                    } else {
-                        gasRefund39();
-                    }
-                }
-
-            }
-            emit Transfer(_from, originalTo, _value);
-            if (originalTo != _to) {
-                emit Transfer(originalTo, _to, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
-                }
-            } else {
-                if (hasHook) {
-                    TrueCoinReceiver(_to).tokenFallback(_from, _value);
-                }
-            }
+            return _to;
         }
-    }
 
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal {
-        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
-            _value -= _value % CENT;
-            _burnFromAllArgs(_from, _to, _value);
-        } else {
-            bool hasHook;
-            address finalTo;
-            (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-            if (0 == _subBalance(_from, _value)) {
-                if (0 == _addBalance(finalTo, _value)) {
+        (address finalTo, bool hasHook) = _requireCanTransferFrom(_spender, _from, _to);
+
+        if (0 == _addBalance(finalTo, _value)) {
+            if (0 == _subAllowance(_from, _spender, _value)) {
+                if (0 != _subBalance(_from, _value)) {
                     gasRefund30();
                 }
                 // else do not refund
             } else {
-                if (0 == _addBalance(finalTo, _value)) {
-                    gasRefund39();
-                } else {
+                if (0 == _subBalance(_from, _value)) {
                     gasRefund30();
+                } else {
+                    gasRefund39();
                 }
             }
-            emit Transfer(_from, _to, _value);
-            if (finalTo != _to) {
-                emit Transfer(_to, finalTo, _value);
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+        } else {
+            if (0 == _subAllowance(_from, _spender, _value)) {
+                if (0 != _subBalance(_from, _value)) {
+                    gasRefund15();
                 }
+                // else do not refund
             } else {
-                if (hasHook) {
-                    TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+                if (0 == _subBalance(_from, _value)) {
+                    gasRefund15();
+                } else {
+                    gasRefund39();
                 }
+            }
+
+        }
+        emit Transfer(_from, _to, _value);
+
+        if (finalTo != _to) {
+            emit Transfer(_to, finalTo, _value);
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
             }
         }
+
+        return finalTo;
+    }
+
+    function _transferAllArgs(address _from, address _to, uint256 _value) internal returns (address) {
+        if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
+            _value -= _value % CENT;
+            _burnFromAllArgs(_from, _to, _value);
+            return _to;
+        }
+
+        (address finalTo, bool hasHook) = _requireCanTransfer(_from, _to);
+
+        if (0 == _subBalance(_from, _value)) {
+            if (0 == _addBalance(finalTo, _value)) {
+                gasRefund30();
+            }
+            // else do not refund
+        } else {
+            if (0 == _addBalance(finalTo, _value)) {
+                gasRefund39();
+            } else {
+                gasRefund30();
+            }
+        }
+        emit Transfer(_from, _to, _value);
+
+        if (finalTo != _to) {
+            emit Transfer(_to, finalTo, _value);
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
+            }
+        } else {
+            if (hasHook) {
+                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
+            }
+        }
+
+        return finalTo;
     }
 
     function mint(address _to, uint256 _value) public onlyOwner {
