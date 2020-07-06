@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import { RewardToken } from "./RewardToken.sol";
 
@@ -13,7 +14,7 @@ import { RewardToken } from "./RewardToken.sol";
  * to provide swap opportunities
  *
  */
-contract RewardTokenWithReserve is RewardToken {
+abstract contract RewardTokenWithReserve is RewardToken {
 
     // Reserve is an address which nobody has the private key to
     // Reserves of TUSD and TrueRewardBackedToken are held at this addess
@@ -152,8 +153,8 @@ contract RewardTokenWithReserve is RewardToken {
             emit ReserveRedeem(account, rewardAmount, tokenAmount, finOp);
             return tokenAmount;
         }
-        // otherwise redeem through opportunity
         else {
+            // otherwise redeem through opportunity
             return redeemRewardToken(account, rewardAmount, finOp);
         }
     }
@@ -178,8 +179,8 @@ contract RewardTokenWithReserve is RewardToken {
             emit ReserveDeposit(account, depositAmount, rewardAmount, finOp);
             return rewardAmount;
         }
-        // otherwise mint new rewardTokens by depositing into opportunity
         else {
+            // otherwise mint new rewardTokens by depositing into opportunity
             return mintRewardToken(account, depositAmount, finOp);
         }
     }

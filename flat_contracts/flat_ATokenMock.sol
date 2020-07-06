@@ -1,5 +1,5 @@
 
-// File: openzeppelin-solidity/contracts/GSN/Context.sol
+// File: @openzeppelin/contracts/GSN/Context.sol
 
 pragma solidity ^0.5.0;
 
@@ -29,7 +29,7 @@ contract Context {
     }
 }
 
-// File: openzeppelin-solidity/contracts/token/ERC20/IERC20.sol
+// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
 pragma solidity ^0.5.0;
 
@@ -108,7 +108,7 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-// File: openzeppelin-solidity/contracts/math/SafeMath.sol
+// File: @openzeppelin/contracts/math/SafeMath.sol
 
 pragma solidity ^0.5.0;
 
@@ -267,7 +267,7 @@ library SafeMath {
     }
 }
 
-// File: openzeppelin-solidity/contracts/token/ERC20/ERC20.sol
+// File: @openzeppelin/contracts/token/ERC20/ERC20.sol
 
 pragma solidity ^0.5.0;
 

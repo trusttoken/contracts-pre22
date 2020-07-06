@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import "../RewardToken.sol";
 
@@ -11,7 +12,7 @@ contract RewardTokenMock is RewardToken {
         burnMax = 1000000000 * 10 ** 18;
     }
 
-    function canBurn() internal pure returns (bytes32) {
+    function canBurn() override internal pure returns (bytes32) {
         return "canBurn";
     }
 
@@ -41,9 +42,5 @@ contract RewardTokenMock is RewardToken {
 
     function _toTokenMock(uint amount, address finOp) public view returns (uint256) {
         return _toToken(amount, finOp);
-    }
-
-    function _getFinOpMock(address finOp) external view returns (FinancialOpportunity) {
-        return _getFinOp(finOp);
     }
 }

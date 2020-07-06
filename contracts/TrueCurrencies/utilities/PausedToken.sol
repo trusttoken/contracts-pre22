@@ -1,7 +1,8 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import "../HasOwner.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 
 contract PausedToken is HasOwner, RegistryClone {
@@ -199,7 +200,7 @@ contract PausedToken is HasOwner, RegistryClone {
         address _who,
         bytes32 _attribute,
         uint256 _value
-    ) public onlyRegistry {
+    ) override public onlyRegistry {
         attributes[_attribute][_who] = _value;
     }
 
@@ -226,7 +227,7 @@ functions in the old contract still works (except Burn).
 contract PausedDelegateERC20 is PausedToken {
     address public constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
 
-    modifier onlyDelegateFrom() {
+    modifier onlyDelegateFrom() virtual {
         require(msg.sender == DELEGATE_FROM);
         _;
     }

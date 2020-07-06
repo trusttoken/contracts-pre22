@@ -1,7 +1,8 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import "./ModularBasicToken.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 
 /**
@@ -120,6 +121,7 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _getAllowance(address _who, address _spender)
+        virtual
         internal
         view
         returns (uint256 value)
@@ -127,13 +129,13 @@ contract ModularStandardToken is ModularBasicToken {
         return _allowance[_who][_spender];
     }
 
-    function _addAllowance(address _who, address _spender, uint256 _value)
-        internal
+    function _addAllowance(address _who, address _spender, uint256 _value) virtual internal
     {
         _allowance[_who][_spender] = _allowance[_who][_spender].add(_value);
     }
 
     function _subAllowance(address _who, address _spender, uint256 _value)
+        virtual
         internal
         returns (uint256 newAllowance)
     {
@@ -144,6 +146,7 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _setAllowance(address _who, address _spender, uint256 _value)
+        virtual
         internal
     {
         _allowance[_who][_spender] = _value;

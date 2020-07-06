@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import "./CompliantDepositTokenWithHook.sol";
 
@@ -27,7 +28,7 @@ contract TrueHKD is CompliantDepositTokenWithHook {
         return "THKD";
     }
 
-    function canBurn() internal pure returns (bytes32) {
+    function canBurn() override internal pure returns (bytes32) {
         return "canBurnHKD";
     }
 }

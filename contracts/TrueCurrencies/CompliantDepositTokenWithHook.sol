@@ -1,19 +1,20 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import "./TrueCoinReceiver.sol";
-import "@trusttoken/registry/contracts/Registry.sol";
+import "../trusttokens/Registry/Registry.sol";
 import "./ReclaimerToken.sol";
 import "./BurnableTokenWithBounds.sol";
 import "./GasRefundToken.sol";
 
-contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
+abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
 
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
 
-    function canBurn() internal pure returns (bytes32);
+    function canBurn() virtual internal pure returns (bytes32);
 
     /**
     * @dev transfer token for a specified address
@@ -75,7 +76,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         emit Transfer(_to, address(0), _value);
     }
 
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal returns (address) {
+    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) virtual internal returns (address) {
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
             _value -= _value % CENT;
             _burnFromAllowanceAllArgs(_from, _to, _value, _spender);
@@ -128,7 +129,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         return finalTo;
     }
 
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal returns (address) {
+    function _transferAllArgs(address _from, address _to, uint256 _value) virtual internal returns (address) {
         if (uint256(_to) < REDEMPTION_ADDRESS_COUNT) {
             _value -= _value % CENT;
             _burnFromAllArgs(_from, _to, _value);
@@ -165,7 +166,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         return finalTo;
     }
 
-    function mint(address _to, uint256 _value) public onlyOwner {
+    function mint(address _to, uint256 _value) virtual public onlyOwner {
         require(_to != address(0), "to address cannot be zero");
         bool hasHook;
         address originalTo = _to;
@@ -203,11 +204,11 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         _;
     }
 
-    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
+    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) override public onlyRegistry {
         attributes[_attribute][_who] = _value;
     }
 
-    function _burnAllArgs(address _from, uint256 _value) internal {
+    function _burnAllArgs(address _from, uint256 _value) override internal {
         _requireCanBurn(_from);
         super._burnAllArgs(_from, _value);
     }
@@ -222,11 +223,11 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         emit Transfer(_account, address(0), oldValue);
     }
 
-    function _isBlacklisted(address _account) internal view returns (bool blacklisted) {
+    function _isBlacklisted(address _account) virtual internal view returns (bool blacklisted) {
         return attributes[IS_BLACKLISTED][_account] != 0;
     }
 
-    function _requireCanTransfer(address _from, address _to) internal view returns (address, bool) {
+    function _requireCanTransfer(address _from, address _to) virtual internal view returns (address, bool) {
         uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
@@ -236,7 +237,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         return (_to, attributes[IS_REGISTERED_CONTRACT][_to] != 0);
     }
 
-    function _requireCanTransferFrom(address _spender, address _from, address _to) internal view returns (address, bool) {
+    function _requireCanTransferFrom(address _spender, address _from, address _to) virtual internal view returns (address, bool) {
         require (attributes[IS_BLACKLISTED][_spender] == 0, "blacklisted");
         uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
         if (depositAddressValue != 0) {
@@ -247,7 +248,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         return (_to, attributes[IS_REGISTERED_CONTRACT][_to] != 0);
     }
 
-    function _requireCanMint(address _to) internal view returns (address, bool) {
+    function _requireCanMint(address _to) virtual internal view returns (address, bool) {
         uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
@@ -256,11 +257,11 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         return (_to, attributes[IS_REGISTERED_CONTRACT][_to] != 0);
     }
 
-    function _requireOnlyCanBurn(address _from) internal view {
+    function _requireOnlyCanBurn(address _from) virtual internal view {
         require (attributes[canBurn()][_from] != 0, "cannot burn from this address");
     }
 
-    function _requireCanBurn(address _from) internal view {
+    function _requireCanBurn(address _from) virtual internal view {
         require (attributes[IS_BLACKLISTED][_from] == 0, "blacklisted");
         require (attributes[canBurn()][_from] != 0, "cannot burn from this address");
     }

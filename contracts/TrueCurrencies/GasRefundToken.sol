@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import "./ProxyStorage.sol";
 
@@ -37,7 +38,7 @@ contract GasRefundToken is ProxyStorage {
           1a SELFDESTRUCT   ff
         */
         assembly {
-            mstore(0, or(0x601b8060093d393df33d33730000000000000000000000000000000000000000, address))
+            mstore(0, or(0x601b8060093d393df33d33730000000000000000000000000000000000000000, address()))
             mstore(32,   0x185857ff00000000000000000000000000000000000000000000000000000000)
             let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
             let location := sub(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe, offset)
@@ -61,7 +62,7 @@ contract GasRefundToken is ProxyStorage {
               let location := sub(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,offset)
               sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, sub(offset, 1))
               let sheep := sload(location)
-              pop(call(gas, sheep, 0, 0, 0, 0, 0))
+              pop(call(gas(), sheep, 0, 0, 0, 0, 0))
               sstore(location, 0)
             }
         }
@@ -112,7 +113,7 @@ contract GasRefundToken is ProxyStorage {
             let offset := sload(0xfffff)
             if gt(offset, 1) {
                 let location := add(offset, 0xfffff)
-                if gt(gasprice,sload(location)) {
+                if gt(gasprice(), sload(location)) {
                     sstore(location, 0)
                     location := sub(location, 1)
                     sstore(location, 0)
@@ -131,7 +132,7 @@ contract GasRefundToken is ProxyStorage {
             let offset := sload(0xfffff)
             if gt(offset, 1) {
                 let location := add(offset, 0xfffff)
-                if gt(gasprice,sload(location)) {
+                if gt(gasprice(), sload(location)) {
                     sstore(location, 0)
                     sstore(0xfffff, sub(offset, 1))
                 }

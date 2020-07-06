@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
 import { CompliantDepositTokenWithHook } from "./CompliantDepositTokenWithHook.sol";
@@ -30,7 +31,7 @@ import { CompliantDepositTokenWithHook } from "./CompliantDepositTokenWithHook.s
  * RewardBackedToken represents TrueCurrencies supply backed by Rewards
  *
  */
-contract RewardToken is CompliantDepositTokenWithHook {
+abstract contract RewardToken is CompliantDepositTokenWithHook {
 
     /* variables in proxy storage
     mapping(address => FinancialOpportunity) finOps;
@@ -239,7 +240,7 @@ contract RewardToken is CompliantDepositTokenWithHook {
      *
      * @param finOp financial opportunity to get
      */
-    function _getFinOp(address finOp) internal view returns (FinancialOpportunity) {
+    function _getFinOp(address finOp) internal pure returns (FinancialOpportunity) {
         return FinancialOpportunity(finOp);
     }
 }

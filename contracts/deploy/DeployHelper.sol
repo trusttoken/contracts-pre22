@@ -1,4 +1,6 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
+// solhint-disable max-states-count
 
 import { TrueUSD } from "../TrueCurrencies/TrueUSD.sol";
 import { ProvisionalRegistryImplementation } from "../mocks/RegistryImplementation.sol";
@@ -8,11 +10,11 @@ import { AssuredFinancialOpportunity } from "../TrueReward/AssuredFinancialOppor
 import { AaveFinancialOpportunity } from "../TrueReward/AaveFinancialOpportunity.sol";
 import { IAToken } from "../TrueReward/IAToken.sol";
 import { ILendingPool } from "../TrueReward/ILendingPool.sol";
-import { IExponentContract } from "../TrueReward/utilities/IExponentContract.sol";
-import { StakedToken } from "@trusttoken/trusttokens/contracts/StakedToken.sol";
-import { Liquidator } from "@trusttoken/trusttokens/contracts/Liquidator.sol";
-import { TrustToken } from "@trusttoken/trusttokens/contracts/TrustToken.sol";
-import { StakingAsset } from "@trusttoken/trusttokens/contracts/StakingAsset.sol";
+import { FractionalExponents } from "../TrueReward/utilities/FractionalExponents.sol";
+import { StakedToken } from "../trusttokens/StakedToken.sol";
+import { Liquidator } from "../trusttokens/Liquidator.sol";
+import { TrustToken } from "../trusttokens/TrustToken.sol";
+import { StakingAsset } from "../trusttokens/StakingAsset.sol";
 
 /**
  * @title DeployHelper
@@ -35,7 +37,7 @@ contract DeployHelper {
     OwnedUpgradeabilityProxy public stakedTokenProxy;
     OwnedUpgradeabilityProxy public liquidatorProxy;
 
-    IExponentContract exponentContract;
+    FractionalExponents exponentContract;
     StakedToken stakedToken;
 
     TrueUSD trueUSD;
@@ -85,7 +87,7 @@ contract DeployHelper {
         aaveFinancialOpportunityProxy = OwnedUpgradeabilityProxy(aaveFinancialOpportunityProxyAddress);
         liquidatorProxy = OwnedUpgradeabilityProxy(liquidatorProxyAddress);
         registryProxy = OwnedUpgradeabilityProxy(registryProxyAddress);
-        exponentContract = IExponentContract(exponentContractAddress);
+        exponentContract = FractionalExponents(exponentContractAddress);
         stakedTokenProxy = OwnedUpgradeabilityProxy(stakedTokenProxyAddress);
     }
 

@@ -87,7 +87,7 @@ interface FinancialOpportunity {
     function redeem(address to, uint amount) external returns(uint);
 }
 
-// File: openzeppelin-solidity/contracts/token/ERC20/IERC20.sol
+// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
 pragma solidity ^0.5.0;
 
@@ -182,7 +182,7 @@ contract Registry {
         address adminAddr;
         uint256 timestamp;
     }
-    
+
     // never remove any storage variables
     address public owner;
     address public pendingOwner;
@@ -421,7 +421,7 @@ contract Claimable is InstantiatableOwnable {
     }
 }
 
-// File: openzeppelin-solidity/contracts/math/SafeMath.sol
+// File: @openzeppelin/contracts/math/SafeMath.sol
 
 pragma solidity ^0.5.0;
 
@@ -3828,9 +3828,9 @@ contract ModularBasicToken is ProxyStorage {
 contract ModularStandardToken is ModularBasicToken {
     using ValSafeMath for uint256;
     uint256 constant INFINITE_ALLOWANCE = 0xfe00000000000000000000000000000000000000000000000000000000000000;
-    
+
     event Approval(address indexed owner, address indexed spender, uint256 value);
-    
+
     /**
      * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
      *
@@ -5696,8 +5696,8 @@ pragma solidity 0.5.13;
 
 /**
  * @title ClaimableContract
- * @dev The ClaimableContract contract is a copy of Claimable Contract by Zeppelin. 
- and provides basic authorization control functions. Inherits storage layout of 
+ * @dev The ClaimableContract contract is a copy of Claimable Contract by Zeppelin.
+ and provides basic authorization control functions. Inherits storage layout of
  ProxyStorage.
  */
 contract ClaimableContract is ProxyStorage {
@@ -5717,7 +5717,7 @@ contract ClaimableContract is ProxyStorage {
 
     /**
     * @dev sets the original `owner` of the contract to the sender
-    * at construction. Must then be reinitialized 
+    * at construction. Must then be reinitialized
     */
     constructor() public {
         owner_ = msg.sender;

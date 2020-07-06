@@ -1,10 +1,11 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import { ERC20Mock } from "./ERC20Mock.sol";
 import "../IAToken.sol";
 import "./LendingPoolCoreMock.sol";
 
-contract ATokenMock is IAToken, ERC20 {
+contract ATokenMock is IAToken, ERC20Mock {
     IERC20 public token;
     LendingPoolCoreMock core;
     mapping (address => uint256) public balance;
@@ -13,7 +14,7 @@ contract ATokenMock is IAToken, ERC20 {
     constructor(
         IERC20 _token,
         LendingPoolCoreMock _core
-    ) public {
+    ) public ERC20Mock("ATokenMock", "ATM") {
         token = _token;
         core = _core;
     }
@@ -22,7 +23,7 @@ contract ATokenMock is IAToken, ERC20 {
         balance[to] += shareCountOf(mintAmount);
     }
 
-    function redeem(uint amount) external {
+    function redeem(uint amount) override external {
         uint shares = shareCountOf(amount);
         require(balance[msg.sender] >= shares, "not enough shares");
 
@@ -38,7 +39,7 @@ contract ATokenMock is IAToken, ERC20 {
         return value * (10**28) / core.getReserveNormalizedIncome(address(token));
     }
 
-    function balanceOf(address owner) public view returns (uint256) {
+    function balanceOf(address owner) override(IERC20, ERC20Mock) public view returns (uint256) {
         return underlyingValueOf(balance[owner]);
     }
 }

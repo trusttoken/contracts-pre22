@@ -27,6 +27,7 @@ contract FeeProvider is IFeeProvider, VersionedInitializable {
     * @param _addressesProvider the address of the LendingPoolAddressesProvider
     */
     function initialize(address _addressesProvider) public initializer {
+        _addressesProvider;
         /// @notice origination fee is set as default as 25 basis points of the loan amount (0.0025%)
         originationFeePercentage = 0.0025 * 1e18;
     }
@@ -38,6 +39,7 @@ contract FeeProvider is IFeeProvider, VersionedInitializable {
     * @param _amount the amount of the loan
     **/
     function calculateLoanOriginationFee(address _user, uint256 _amount) external view returns (uint256) {
+        _user;
         return _amount.wadMul(originationFeePercentage);
     }
 

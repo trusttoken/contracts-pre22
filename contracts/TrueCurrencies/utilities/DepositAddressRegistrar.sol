@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 interface Registry {
     function setAttributeValue(address who, bytes32 what, uint val) external;
@@ -22,7 +23,7 @@ contract DepositAddressRegistrar {
         emit DepositAddressRegistered(msg.sender);
     }
 
-    function() external payable {
+    receive() external payable {
         registerDepositAddress();
         msg.sender.transfer(msg.value);
     }

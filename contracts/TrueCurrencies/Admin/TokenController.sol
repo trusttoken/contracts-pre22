@@ -1,7 +1,8 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "@trusttoken/registry/contracts/Registry.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "../../trusttokens/Registry/Registry.sol";
 import "../HasOwner.sol";
 import "../Proxy/OwnedUpgradeabilityProxy.sol";
 import "../TrueUSD.sol";
@@ -388,7 +389,7 @@ contract TokenController {
 
     /**
     *@dev revoke a mint request, Delete the mintOperation
-    *@param index of the request (visible in the RequestMint event accompanying the original request)
+    *@param _index of the request (visible in the RequestMint event accompanying the original request)
     */
     function revokeMint(uint256 _index) external onlyMintKeyOrOwner {
         delete mintOperations[_index];
@@ -552,7 +553,7 @@ contract TokenController {
     /**
     *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
     */
-    function pauseToken() external onlyFastPauseOrOwner {
+    function pauseToken() virtual external onlyFastPauseOrOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 

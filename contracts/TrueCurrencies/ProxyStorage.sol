@@ -1,5 +1,8 @@
-pragma solidity 0.5.13;
-import "@trusttoken/registry/contracts/Registry.sol";
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
+// solhint-disable max-states-count, var-name-mixedcase
+
+import "../trusttokens/Registry/Registry.sol";
 import "./deprecated/BalanceSheet.sol";
 import "./deprecated/AllowanceSheet.sol";
 import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";

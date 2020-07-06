@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import "./CompliantDepositTokenWithHook.sol";
 
@@ -6,11 +7,11 @@ import "./CompliantDepositTokenWithHook.sol";
 Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
 functions in the old contract still works (except Burn).
 */
-contract DelegateERC20 is CompliantDepositTokenWithHook {
+abstract contract DelegateERC20 is CompliantDepositTokenWithHook {
 
     address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
 
-    modifier onlyDelegateFrom() {
+    modifier onlyDelegateFrom() virtual {
         require(msg.sender == DELEGATE_FROM);
         _;
     }

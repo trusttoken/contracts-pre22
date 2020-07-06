@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import { TrueCoinReceiver } from "./TrueCoinReceiver.sol";
 import { RewardTokenWithReserve } from "./RewardTokenWithReserve.sol";
@@ -37,7 +38,7 @@ import { RewardTokenWithReserve } from "./RewardTokenWithReserve.sol";
  * so some of the code is built to support this
  *
  */
-contract TrueRewardBackedToken is RewardTokenWithReserve {
+abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
 
     /* variables in Proxy Storage:
     mapping(address => FinancialOpportunity) finOps;
@@ -66,7 +67,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * Equal to deposit backed TrueCurrency plus debt backed TrueCurrency
      * @return total supply in trueCurrency
      */
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() virtual override public view returns (uint256) {
         // if supply in opportunity finOp, return supply of deposits + debt
         // otherwise call super to return normal totalSupply
         if (opportunityRewardSupply() != 0) {
@@ -97,7 +98,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @param _who address of account to get balanceOf for
      * @return balance total balance of address including rewards
      */
-    function balanceOf(address _who) public view returns (uint256) {
+    function balanceOf(address _who) virtual override public view returns (uint256) {
         // if trueReward enabled, return token value of reward balance
         // otherwise call token balanceOf
         if (trueRewardEnabled(_who)) {
@@ -141,7 +142,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         uint rewardBalance = rewardTokenBalance(msg.sender, opportunity());
 
         // remove reward distribution
-        _removeDistribution(opportunity());
+        _removeDistribution();
 
         if (rewardBalance > 0) {
             // redeem entire user reward token balance
@@ -157,7 +158,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * Mints TrueCurrency backed by debt
      * When we add multiple opportunities, this needs to work for mutliple interfaces
      */
-    function mint(address _to, uint256 _value) public onlyOwner {
+    function mint(address _to, uint256 _value) virtual override public onlyOwner {
         // check if to address is enabled
         bool toEnabled = trueRewardEnabled(_to);
 
@@ -168,8 +169,8 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
             // transfer minted amount to target receiver
             _transferAllArgs(address(this), _to, _value);
         }
-        // otherwise call normal mint process
         else {
+            // otherwise call normal mint process
             super.mint(_to, _value);
         }
     }
@@ -236,7 +237,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * 2. Call transferFrom, using deposit balance for transfer
      * 3. If reciever enabled, deposit true currency into
      */
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal returns (address) {
+    function _transferAllArgs(address _from, address _to, uint256 _value) virtual override internal returns (address) {
         // get enabled flags and opportunity address
         bool fromEnabled = trueRewardEnabled(_from);
         bool toEnabled = trueRewardEnabled(_to);
@@ -282,7 +283,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
         address _to,
         uint256 _value,
         address _spender
-    ) internal returns (address) {
+    ) virtual override internal returns (address) {
         // get enabled flags and opportunity address
         bool fromEnabled = trueRewardEnabled(_from);
         bool toEnabled = trueRewardEnabled(_to);
@@ -331,8 +332,7 @@ contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @dev Remove reward distribution for a financial opportunity
      * Remove
      */
-    function _removeDistribution(address finOp) internal {
-        delete _rewardDistribution[msg.sender][0];
-        _rewardDistribution[msg.sender].length--;
+    function _removeDistribution() internal {
+        _rewardDistribution[msg.sender].pop();
     }
 }

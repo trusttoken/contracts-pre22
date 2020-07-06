@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import "../Admin/TokenController.sol";
 
@@ -32,7 +33,7 @@ contract FastPauseMints {
     }
 
     //fallback function used to pause mints when it recieves eth
-    function() external payable onlyPauseKey {
+    receive() external payable onlyPauseKey {
         emit FastTrueUSDMintsPause(msg.sender);
         msg.sender.transfer(msg.value);
         controllerContract.pauseMints();

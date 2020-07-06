@@ -1,7 +1,8 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
-import { Registry } from "@trusttoken/registry/contracts/Registry.sol";
-import { ProvisionalRegistry } from "@trusttoken/registry/contracts/ProvisionalRegistry.sol";
+import { Registry } from "../trusttokens/Registry/Registry.sol";
+import { ProvisionalRegistry } from "../trusttokens/Registry/ProvisionalRegistry.sol";
 
 /**
  * @title RegistryImplementation
@@ -32,6 +33,7 @@ contract RegistryImplementation is Registry {
  * @title RegistryImplementation
  * Used as implementation for registry in truecurrencies
  */
+// solhint-disable-next-line no-empty-blocks
 contract ProvisionalRegistryImplementation is
     RegistryImplementation,
     ProvisionalRegistry {

@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import "./ModularStandardToken.sol";
 
@@ -15,7 +16,7 @@ contract ModularBurnableToken is ModularStandardToken {
         _burnAllArgs(msg.sender, _value - _value % CENT);
     }
 
-    function _burnAllArgs(address _from, uint256 _value) internal {
+    function _burnAllArgs(address _from, uint256 _value) virtual internal {
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
         _subBalance(_from, _value);

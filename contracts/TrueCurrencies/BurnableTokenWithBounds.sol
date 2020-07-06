@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import "./modularERC20/ModularBurnableToken.sol";
 
@@ -11,7 +12,7 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
 
     event SetBurnBounds(uint256 newMin, uint256 newMax);
 
-    function _burnAllArgs(address _burner, uint256 _value) internal {
+    function _burnAllArgs(address _burner, uint256 _value) virtual override internal {
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
         super._burnAllArgs(_burner, _value);

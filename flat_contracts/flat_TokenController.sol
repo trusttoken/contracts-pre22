@@ -1,5 +1,5 @@
 
-// File: openzeppelin-solidity/contracts/math/SafeMath.sol
+// File: @openzeppelin/contracts/math/SafeMath.sol
 
 pragma solidity ^0.5.0;
 
@@ -158,7 +158,7 @@ library SafeMath {
     }
 }
 
-// File: openzeppelin-solidity/contracts/token/ERC20/IERC20.sol
+// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
 pragma solidity ^0.5.0;
 
@@ -253,7 +253,7 @@ contract Registry {
         address adminAddr;
         uint256 timestamp;
     }
-    
+
     // never remove any storage variables
     address public owner;
     address public pendingOwner;

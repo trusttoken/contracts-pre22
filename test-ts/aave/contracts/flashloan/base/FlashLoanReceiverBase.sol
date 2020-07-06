@@ -31,7 +31,8 @@ contract FlashLoanReceiverBase is IFlashLoanReceiver {
     function transferInternal(address payable _destination, address _reserve, uint256  _amount) internal {
         if(_reserve == EthAddressLib.ethAddress()) {
             //solium-disable-next-line
-            _destination.call.value(_amount)("");
+            (bool ignore,) = _destination.call.value(_amount)("");
+            ignore;
             return;
         }
 

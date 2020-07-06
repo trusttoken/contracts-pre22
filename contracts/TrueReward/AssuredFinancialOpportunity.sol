@@ -1,9 +1,10 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
-import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "@trusttoken/trusttokens/contracts/Liquidator.sol";
-import "@trusttoken/trusttokens/contracts/StakedToken.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "../trusttokens/Liquidator.sol";
+import "../trusttokens/StakedToken.sol";
 import "../TrueCurrencies/AssuredFinancialOpportunityStorage.sol";
 import "../TrueCurrencies/modularERC20/InitializableClaimable.sol";
 import "./utilities/FractionalExponents.sol";
@@ -106,7 +107,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @dev total supply of zTUSD
      * inherited from FinancialOpportunity.sol
      */
-    function totalSupply() external view returns (uint256) {
+    function totalSupply() override external view returns (uint256) {
         return zTUSDIssued;
     }
 
@@ -116,7 +117,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      *
      * @return TUSD value of zTUSD
      */
-    function tokenValue() external view returns(uint256) {
+    function tokenValue() override external view returns(uint256) {
         return _tokenValue();
     }
 
@@ -128,7 +129,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param amount TUSD amount to deposit
      * @return zTUSD amount
      */
-    function deposit(address from, uint256 amount) external onlyFundsManager returns(uint256) {
+    function deposit(address from, uint256 amount) override external onlyFundsManager returns(uint256) {
         return _deposit(from, amount);
     }
 
@@ -140,7 +141,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param amount amount of zTUSD to redeem
      * @return amount of TUSD returned by finOp
      */
-    function redeem(address to, uint256 amount) external onlyFundsManager returns(uint256) {
+    function redeem(address to, uint256 amount) override external onlyFundsManager returns(uint256) {
         return _redeem(to, amount);
     }
 
@@ -304,7 +305,9 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         uint256 returnedAmount;
 
         // attempt to withdraw from opportunity
-        (bool success, bytes memory returnData) = address(finOp()).call(
+        // TODO use try-catch
+        // solhint-disable-next-line avoid-low-level-calls
+    (bool success, bytes memory returnData) = address(finOp()).call(
             abi.encodePacked(finOp().redeem.selector, abi.encode(_to, ztusd))
         );
 
@@ -387,5 +390,6 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /// @dev default payable
-    function() external payable {}
+    // solhint-disable-next-line no-empty-blocks
+    receive() external payable {}
 }

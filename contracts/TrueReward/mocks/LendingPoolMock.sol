@@ -1,28 +1,36 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../ILendingPool.sol";
 import "../ILendingPoolCore.sol";
 import "./ATokenMock.sol";
 
 contract LendingPoolMock is ILendingPool {
-    ILendingPoolCore public core;
+    ILendingPoolCore _core;
     ATokenMock aToken;
 
     constructor(
-        ILendingPoolCore _core,
+        ILendingPoolCore _lendingPoolCore,
         ATokenMock _aToken
     ) public {
-        core = _core;
+        _core = _lendingPoolCore;
         aToken = _aToken;
     }
 
-    function deposit(address _reserve, uint256 _amount, uint16 _referralCode) external {
+    function deposit(address _reserve, uint256 _amount, uint16 _referralCode) override external {
+        // silence compiler warning
+        _referralCode;
+
         IERC20 token = aToken.token();
         require(_reserve == address(token), "incorrect reserve");
-        require(token.allowance(msg.sender, address(core)) >= _amount, "not enough allowance");
+        require(token.allowance(msg.sender, address(_core)) >= _amount, "not enough allowance");
         require(token.balanceOf(msg.sender) >= _amount, "not enough balance");
-        core.transferToReserve(address(token), msg.sender, _amount);
+        _core.transferToReserve(address(token), msg.sender, _amount);
         aToken.mint(msg.sender, _amount);
+    }
+
+    function core() override external view returns(address) {
+        return address(_core);
     }
 }

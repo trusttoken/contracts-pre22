@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import "../modularERC20/InstantiatableOwnable.sol";
 
@@ -23,7 +24,7 @@ contract Claimable is InstantiatableOwnable {
      * @dev Allows the current owner to set the pendingOwner address.
      * @param newOwner The address to transfer ownership to.
      */
-    function transferOwnership(address newOwner) public onlyOwner {
+    function transferOwnership(address newOwner) override public onlyOwner {
         pendingOwner = newOwner;
     }
 

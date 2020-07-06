@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 
 // CanDelegateV1: the subset of V1 required for CanDelegate
@@ -73,7 +74,7 @@ contract OwnableV1 {
      * @dev Allows the current owner to transfer control of the contract to a newOwner.
      * @param newOwner The address to transfer ownership to.
      */
-    function transferOwnership(address newOwner) public onlyOwner {
+    function transferOwnership(address newOwner) virtual public onlyOwner {
         require(newOwner != address(0));
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
@@ -81,28 +82,30 @@ contract OwnableV1 {
 }
 
 
-contract ERC20BasicV1 {
-    function totalSupply() public view returns (uint256);
+abstract contract ERC20BasicV1 {
+    function totalSupply() virtual public view returns (uint256);
 
-    function balanceOf(address who) public view returns (uint256);
+    function balanceOf(address who) virtual public view returns (uint256);
 
-    function transfer(address to, uint256 value) public returns (bool);
+    function transfer(address to, uint256 value) virtual public returns (bool);
 
     event Transfer(address indexed from, address indexed to, uint256 value);
 }
 
 
-contract ERC20V1 is ERC20BasicV1 {
+abstract contract ERC20V1 is ERC20BasicV1 {
     function allowance(address owner, address spender)
+        virtual
         public
         view
         returns (uint256);
 
     function transferFrom(address from, address to, uint256 value)
+        virtual
         public
         returns (bool);
 
-    function approve(address spender, uint256 value) public returns (bool);
+    function approve(address spender, uint256 value) virtual public returns (bool);
 
     event Approval(
         address indexed owner,
@@ -127,7 +130,7 @@ contract ClaimableV1 is OwnableV1 {
      * @dev Allows the current owner to set the pendingOwner address.
      * @param newOwner The address to transfer ownership to.
      */
-    function transferOwnership(address newOwner) public onlyOwner {
+    function transferOwnership(address newOwner) override public onlyOwner {
         pendingOwner = newOwner;
     }
 
@@ -206,7 +209,7 @@ contract BasicTokenV1 is ERC20BasicV1, ClaimableV1 {
     /**
      * @dev total number of tokens in existence
      */
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() virtual override public view returns (uint256) {
         return totalSupply_;
     }
 
@@ -215,7 +218,7 @@ contract BasicTokenV1 is ERC20BasicV1, ClaimableV1 {
      * @param _to The address to transfer to.
      * @param _value The amount to be transferred.
      */
-    function transfer(address _to, uint256 _value) public returns (bool) {
+    function transfer(address _to, uint256 _value) virtual override public returns (bool) {
         transferAllArgsNoAllowance(msg.sender, _to, _value);
         return true;
     }
@@ -238,9 +241,9 @@ contract BasicTokenV1 is ERC20BasicV1, ClaimableV1 {
     /**
      * @dev Gets the balance of the specified address.
      * @param _owner The address to query the the balance of.
-     * @return An uint256 representing the amount owned by the passed address.
+     * @return balance An uint256 representing the amount owned by the passed address.
      */
-    function balanceOf(address _owner) public view returns (uint256 balance) {
+    function balanceOf(address _owner) virtual override public view returns (uint256 balance) {
         return balances.balanceOf(_owner);
     }
 }
@@ -261,6 +264,8 @@ contract StandardTokenV1 is ERC20V1, BasicTokenV1 {
      * @param _value uint256 the amount of tokens to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _value)
+        virtual
+        override
         public
         returns (bool)
     {
@@ -290,7 +295,7 @@ contract StandardTokenV1 is ERC20V1, BasicTokenV1 {
      * @param _spender The address which will spend the funds.
      * @param _value The amount of tokens to be spent.
      */
-    function approve(address _spender, uint256 _value) public returns (bool) {
+    function approve(address _spender, uint256 _value) virtual override public returns (bool) {
         approveAllArgs(_spender, _value, msg.sender);
         return true;
     }
@@ -311,6 +316,8 @@ contract StandardTokenV1 is ERC20V1, BasicTokenV1 {
      * @return A uint256 specifying the amount of tokens still available for the spender.
      */
     function allowance(address _owner, address _spender)
+        virtual
+        override
         public
         view
         returns (uint256)
@@ -329,6 +336,7 @@ contract StandardTokenV1 is ERC20V1, BasicTokenV1 {
      * @param _addedValue The amount of tokens to increase the allowance by.
      */
     function increaseAllowance(address _spender, uint256 _addedValue)
+        virtual
         public
         returns (bool)
     {
@@ -360,6 +368,7 @@ contract StandardTokenV1 is ERC20V1, BasicTokenV1 {
      * @param _subtractedValue The amount of tokens to decrease the allowance by.
      */
     function decreaseAllowance(address _spender, uint256 _subtractedValue)
+        virtual
         public
         returns (bool)
     {
@@ -447,7 +456,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     }
 
     // If a delegate has been designated, all ERC20 calls are forwarded to it
-    function transfer(address to, uint256 value) public returns (bool) {
+    function transfer(address to, uint256 value) override public returns (bool) {
         if (address(delegate) == address(0)) {
             return super.transfer(to, value);
         } else {
@@ -456,6 +465,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     }
 
     function transferFrom(address from, address to, uint256 value)
+        override
         public
         returns (bool)
     {
@@ -466,7 +476,7 @@ contract CanDelegateV1 is StandardTokenV1 {
         }
     }
 
-    function balanceOf(address who) public view returns (uint256) {
+    function balanceOf(address who) override public view returns (uint256) {
         if (address(delegate) == address(0)) {
             return super.balanceOf(who);
         } else {
@@ -474,7 +484,7 @@ contract CanDelegateV1 is StandardTokenV1 {
         }
     }
 
-    function approve(address spender, uint256 value) public returns (bool) {
+    function approve(address spender, uint256 value) override public returns (bool) {
         if (address(delegate) == address(0)) {
             return super.approve(spender, value);
         } else {
@@ -483,6 +493,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     }
 
     function allowance(address _owner, address spender)
+        override
         public
         view
         returns (uint256)
@@ -494,7 +505,7 @@ contract CanDelegateV1 is StandardTokenV1 {
         }
     }
 
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() override public view returns (uint256) {
         if (address(delegate) == address(0)) {
             return super.totalSupply();
         } else {
@@ -503,6 +514,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     }
 
     function increaseAllowance(address spender, uint256 addedValue)
+        override
         public
         returns (bool)
     {
@@ -519,6 +531,7 @@ contract CanDelegateV1 is StandardTokenV1 {
     }
 
     function decreaseAllowance(address spender, uint256 subtractedValue)
+        override
         public
         returns (bool)
     {

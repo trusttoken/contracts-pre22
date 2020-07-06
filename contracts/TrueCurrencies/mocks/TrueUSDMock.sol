@@ -1,4 +1,5 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 import "../TrueUSD.sol";
 
@@ -28,7 +29,7 @@ contract TrueUSDMock is TrueUSD {
         delegateFrom = _delegateFrom;
     }
 
-    modifier onlyDelegateFrom() {
+    modifier onlyDelegateFrom() override {
         require(msg.sender == delegateFrom);
         _;
     }
