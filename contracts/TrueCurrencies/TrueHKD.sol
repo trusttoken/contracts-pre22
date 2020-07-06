@@ -3,7 +3,6 @@ pragma solidity 0.6.10;
 
 import "./CompliantDepositTokenWithHook.sol";
 
-
 /** @title TrueHKD
  * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
  * inherited - see the documentation on the corresponding contracts.
@@ -28,7 +27,7 @@ contract TrueHKD is CompliantDepositTokenWithHook {
         return "THKD";
     }
 
-    function canBurn() override internal pure returns (bytes32) {
+    function canBurn() internal override pure returns (bytes32) {
         return "canBurnHKD";
     }
 }

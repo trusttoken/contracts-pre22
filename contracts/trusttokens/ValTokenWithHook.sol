@@ -6,7 +6,6 @@ import "./RegistrySubscriber.sol";
 import "./TrueCoinReceiver.sol";
 
 abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
-
     event Burn(address indexed from, uint256 indexed amount);
     event Mint(address indexed to, uint256 indexed amount);
 
@@ -31,12 +30,21 @@ abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
         _;
     }
 
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+    function _transferFromAllArgs(
+        address _from,
+        address _to,
+        uint256 _value,
+        address _spender
+    ) internal {
         _subAllowance(_from, _spender, _value);
         _transferAllArgs(_from, _to, _value);
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) external returns (bool) {
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _value
+    ) external returns (bool) {
         _transferFromAllArgs(_from, _to, _value, msg.sender);
         return true;
     }
@@ -46,7 +54,11 @@ abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
         return true;
     }
 
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal virtual resolveSender(_from) {
+    function _transferAllArgs(
+        address _from,
+        address _to,
+        uint256 _value
+    ) internal virtual resolveSender(_from) {
         _subBalance(_from, _value);
         emit Transfer(_from, _to, _value);
         bool hasHook;

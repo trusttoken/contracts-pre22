@@ -16,6 +16,7 @@ contract TrustToken is ValTokenWithHook, ClaimableContract {
     using SafeMath for uint256;
     Registry registry_;
     uint256 constant MAX_SUPPLY = 145000000000000000;
+
     /**
      * @dev initialize trusttoken and give ownership to sender
      * This is necessary to set ownership for proxy
@@ -27,7 +28,7 @@ contract TrustToken is ValTokenWithHook, ClaimableContract {
         initalized = true;
     }
 
-    function registry() public view override returns (Registry) {
+    function registry() public override view returns (Registry) {
         return registry_;
     }
 
@@ -38,8 +39,7 @@ contract TrustToken is ValTokenWithHook, ClaimableContract {
     function mint(address _to, uint256 _amount) external onlyOwner {
         if (totalSupply.add(_amount) <= MAX_SUPPLY) {
             _mint(_to, _amount);
-        }
-        else {
+        } else {
             revert("Max supply exceeded");
         }
     }

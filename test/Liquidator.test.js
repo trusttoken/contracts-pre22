@@ -1,16 +1,19 @@
+import assertRevert from './helpers/assertRevert.js'
+import bytes32 from './helpers/bytes32.js'
+
 const LiquidatorUniswap = artifacts.require('Liquidator')
-const BN = web3.utils.toBN
-const ONE_ETHER = BN(1e18)
-const ONE_BITCOIN = BN(1e8)
-const ONE_HUNDRED_ETHER = BN(100).mul(ONE_ETHER)
-const ONE_HUNDRED_BITCOIN = BN(100).mul(ONE_BITCOIN)
-const assertRevert = require('./helpers/assertRevert.js')
 const MockTrustToken = artifacts.require('MockTrustToken')
 const TrueUSD = artifacts.require('MockERC20Token')
 const UniswapFactory = artifacts.require('uniswap_factory')
 const UniswapExchange = artifacts.require('uniswap_exchange')
 const Registry = artifacts.require('RegistryMock')
-const bytes32 = require('./helpers/bytes32.js')
+
+const BN = web3.utils.toBN
+const ONE_ETHER = BN(1e18)
+const ONE_BITCOIN = BN(1e8)
+const ONE_HUNDRED_ETHER = BN(100).mul(ONE_ETHER)
+const ONE_HUNDRED_BITCOIN = BN(100).mul(ONE_BITCOIN)
+
 const APPROVED_BENEFICIARY = bytes32('approvedBeneficiary')
 
 contract('Liquidator', function (accounts) {

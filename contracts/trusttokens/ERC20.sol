@@ -4,7 +4,6 @@ pragma solidity 0.6.10;
 import "./ProxyStorage.sol";
 import "./ValSafeMath.sol";
 
-
 // Fork of OpenZeppelin's BasicToken
 /**
  * @title Basic token
@@ -58,7 +57,11 @@ contract ModularStandardToken is ModularBasicToken {
         return true;
     }
 
-    function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
+    function _approveAllArgs(
+        address _spender,
+        uint256 _value,
+        address _tokenHolder
+    ) internal {
         _setAllowance(_tokenHolder, _spender, _value);
         emit Approval(_tokenHolder, _spender, _value);
     }
@@ -73,12 +76,16 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _addedValue The amount of tokens to increase the allowance by.
      */
-    function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
+    function increaseApproval(address _spender, uint256 _addedValue) public returns (bool) {
         _increaseApprovalAllArgs(_spender, _addedValue, msg.sender);
         return true;
     }
 
-    function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
+    function _increaseApprovalAllArgs(
+        address _spender,
+        uint256 _addedValue,
+        address _tokenHolder
+    ) internal {
         _addAllowance(_tokenHolder, _spender, _addedValue);
         emit Approval(_tokenHolder, _spender, allowance[_tokenHolder][_spender]);
     }
@@ -93,12 +100,16 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _subtractedValue The amount of tokens to decrease the allowance by.
      */
-    function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
+    function decreaseApproval(address _spender, uint256 _subtractedValue) public returns (bool) {
         _decreaseApprovalAllArgs(_spender, _subtractedValue, msg.sender);
         return true;
     }
 
-    function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
+    function _decreaseApprovalAllArgs(
+        address _spender,
+        uint256 _subtractedValue,
+        address _tokenHolder
+    ) internal {
         uint256 oldValue = allowance[_tokenHolder][_spender];
         uint256 newValue;
         if (_subtractedValue > oldValue) {
@@ -107,21 +118,33 @@ contract ModularStandardToken is ModularBasicToken {
             newValue = oldValue - _subtractedValue;
         }
         _setAllowance(_tokenHolder, _spender, newValue);
-        emit Approval(_tokenHolder,_spender, newValue);
+        emit Approval(_tokenHolder, _spender, newValue);
     }
 
-    function _addAllowance(address _who, address _spender, uint256 _value) internal {
+    function _addAllowance(
+        address _who,
+        address _spender,
+        uint256 _value
+    ) internal {
         allowance[_who][_spender] = allowance[_who][_spender].add(_value, "allowance overflow");
     }
 
-    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (uint256 newAllowance){
+    function _subAllowance(
+        address _who,
+        address _spender,
+        uint256 _value
+    ) internal returns (uint256 newAllowance) {
         newAllowance = allowance[_who][_spender].sub(_value, "insufficient allowance");
         if (newAllowance < INFINITE_ALLOWANCE) {
             allowance[_who][_spender] = newAllowance;
         }
     }
 
-    function _setAllowance(address _who, address _spender, uint256 _value) internal {
+    function _setAllowance(
+        address _who,
+        address _spender,
+        uint256 _value
+    ) internal {
         allowance[_who][_spender] = _value;
     }
 }

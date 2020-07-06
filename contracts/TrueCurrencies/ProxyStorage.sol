@@ -5,7 +5,7 @@ pragma solidity 0.6.10;
 import "../trusttokens/Registry/Registry.sol";
 import "./deprecated/BalanceSheet.sol";
 import "./deprecated/AllowanceSheet.sol";
-import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
+import {FinancialOpportunity} from "../TrueReward/FinancialOpportunity.sol";
 
 /*
 Defines the storage layout of the token implementation contract. Any newly declared
@@ -34,13 +34,13 @@ contract ProxyStorage {
     string name_Deprecated;
     string symbol_Deprecated;
 
-    uint[] gasRefundPool_Deprecated;
+    uint256[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
 
-    mapping (address => uint256) _balanceOf;
-    mapping (address => mapping (address => uint256)) _allowance;
-    mapping (bytes32 => mapping (address => uint256)) attributes;
+    mapping(address => uint256) _balanceOf;
+    mapping(address => mapping(address => uint256)) _allowance;
+    mapping(bytes32 => mapping(address => uint256)) attributes;
 
     // reward token storage
     mapping(address => FinancialOpportunity) finOps;
@@ -49,7 +49,10 @@ contract ProxyStorage {
 
     // true reward allocation
     // proportion: 1000 = 100%
-    struct RewardAllocation { uint proportion; address finOp; }
+    struct RewardAllocation {
+        uint256 proportion;
+        address finOp;
+    }
     mapping(address => RewardAllocation[]) _rewardDistribution;
     uint256 maxRewardProportion = 1000;
 
@@ -69,5 +72,5 @@ contract ProxyStorage {
      ** 64         uint256(address),uint256(14)                                  balanceOf
      ** 64         uint256(address),keccak256(uint256(address),uint256(15))      allowance
      ** 64         uint256(address),keccak256(bytes32,uint256(16))               attributes
-    **/
+     **/
 }

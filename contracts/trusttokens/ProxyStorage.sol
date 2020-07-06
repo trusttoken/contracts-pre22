@@ -12,9 +12,9 @@ contract ProxyStorage {
     bool initalized;
     uint256 public totalSupply;
 
-    mapping (address => uint256) public balanceOf;
-    mapping (address => mapping (address => uint256)) public allowance;
-    mapping (uint144 => uint256) attributes; // see RegistrySubscriber
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+    mapping(uint144 => uint256) attributes; // see RegistrySubscriber
 
     address owner_;
     address pendingOwner_;
@@ -34,5 +34,5 @@ contract ProxyStorage {
      ** 64         uint256(address),uint256(1)                                   balanceOf
      ** 64         uint256(address),keccak256(uint256(address),uint256(2))       allowance
      ** 64         uint256(address),keccak256(bytes32,uint256(3))                attributes
-    **/
+     **/
 }

@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @dev Liquidate stake token for reward token
  */
 abstract contract ILiquidator {
-
     /** @dev Get output token (token to get from liquidation exchange). */
     function outputToken() public virtual view returns (IERC20);
 

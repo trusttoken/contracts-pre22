@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
-import { CompliantDepositTokenWithHook } from "./CompliantDepositTokenWithHook.sol";
+import {FinancialOpportunity} from "../TrueReward/FinancialOpportunity.sol";
+import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol";
 
 /**
  * @title RewardToken
@@ -32,7 +32,6 @@ import { CompliantDepositTokenWithHook } from "./CompliantDepositTokenWithHook.s
  *
  */
 abstract contract RewardToken is CompliantDepositTokenWithHook {
-
     /* variables in proxy storage
     mapping(address => FinancialOpportunity) finOps;
     mapping(address => mapping(address => uint256)) finOpBalances;
@@ -63,9 +62,7 @@ abstract contract RewardToken is CompliantDepositTokenWithHook {
      *
      * @param finOp financial opportunity
      */
-    function rewardTokenSupply(
-        address finOp
-    ) public view validFinOp(finOp) returns (uint256) {
+    function rewardTokenSupply(address finOp) public view validFinOp(finOp) returns (uint256) {
         return finOpSupply[finOp];
     }
 
@@ -75,10 +72,7 @@ abstract contract RewardToken is CompliantDepositTokenWithHook {
      * @param account account to get rewardToken balance of
      * @param finOp financial opportunity
      */
-    function rewardTokenBalance(
-        address account,
-        address finOp
-    ) public view validFinOp(finOp) returns (uint256) {
+    function rewardTokenBalance(address account, address finOp) public view validFinOp(finOp) returns (uint256) {
         return finOpBalances[finOp][account];
     }
 
@@ -166,10 +160,7 @@ abstract contract RewardToken is CompliantDepositTokenWithHook {
         address account,
         uint256 rewardAmount,
         address finOp
-    )
-        internal
-        validFinOp(finOp)
-    {
+    ) internal validFinOp(finOp) {
         // burn call must come from sender
         require(msg.sender == account);
 
@@ -198,7 +189,11 @@ abstract contract RewardToken is CompliantDepositTokenWithHook {
      * @param amount rewardToken amount to add
      * @param finOp financial opportunity to add reward tokens to
      */
-    function _addRewardBalance(address account, uint256 amount, address finOp) internal {
+    function _addRewardBalance(
+        address account,
+        uint256 amount,
+        address finOp
+    ) internal {
         finOpBalances[finOp][account] = finOpBalances[finOp][account].add(amount);
     }
 
@@ -209,7 +204,11 @@ abstract contract RewardToken is CompliantDepositTokenWithHook {
      * @param amount rewardToken ammount to subtract
      * @param finOp financial opportunity
      */
-    function _subRewardBalance(address account, uint256 amount, address finOp) internal {
+    function _subRewardBalance(
+        address account,
+        uint256 amount,
+        address finOp
+    ) internal {
         finOpBalances[finOp][account] = finOpBalances[finOp][account].sub(amount);
     }
 
@@ -221,7 +220,7 @@ abstract contract RewardToken is CompliantDepositTokenWithHook {
      */
     function _toRewardToken(uint256 amount, address finOp) internal view returns (uint256) {
         uint256 ratio = _getFinOp(finOp).tokenValue();
-        return amount.mul(10 ** 18).div(ratio);
+        return amount.mul(10**18).div(ratio);
     }
 
     /**
@@ -230,9 +229,9 @@ abstract contract RewardToken is CompliantDepositTokenWithHook {
      * @param amount rewardToken amount to convert to depositToken
      * @param finOp financial opportunity address
      */
-    function _toToken(uint amount, address finOp) internal view returns (uint256) {
+    function _toToken(uint256 amount, address finOp) internal view returns (uint256) {
         uint256 ratio = _getFinOp(finOp).tokenValue();
-        return ratio.mul(amount).div(10 ** 18);
+        return ratio.mul(amount).div(10**18);
     }
 
     /**

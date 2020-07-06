@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.6.10;
 // solhint-disable max-states-count
+pragma solidity 0.6.10;
 
-import { TrueUSD } from "../TrueCurrencies/TrueUSD.sol";
-import { ProvisionalRegistryImplementation } from "../mocks/RegistryImplementation.sol";
-import { OwnedUpgradeabilityProxy } from "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
-import { TokenController } from "../TrueCurrencies/Admin/TokenController.sol";
-import { AssuredFinancialOpportunity } from "../TrueReward/AssuredFinancialOpportunity.sol";
-import { AaveFinancialOpportunity } from "../TrueReward/AaveFinancialOpportunity.sol";
-import { IAToken } from "../TrueReward/IAToken.sol";
-import { ILendingPool } from "../TrueReward/ILendingPool.sol";
-import { FractionalExponents } from "../TrueReward/utilities/FractionalExponents.sol";
-import { StakedToken } from "../trusttokens/StakedToken.sol";
-import { Liquidator } from "../trusttokens/Liquidator.sol";
-import { TrustToken } from "../trusttokens/TrustToken.sol";
-import { StakingAsset } from "../trusttokens/StakingAsset.sol";
+import {TrueUSD} from "../TrueCurrencies/TrueUSD.sol";
+import {ProvisionalRegistryImplementation} from "../mocks/RegistryImplementation.sol";
+import {OwnedUpgradeabilityProxy} from "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
+import {TokenController} from "../TrueCurrencies/Admin/TokenController.sol";
+import {AssuredFinancialOpportunity} from "../TrueReward/AssuredFinancialOpportunity.sol";
+import {AaveFinancialOpportunity} from "../TrueReward/AaveFinancialOpportunity.sol";
+import {IAToken} from "../TrueReward/IAToken.sol";
+import {ILendingPool} from "../TrueReward/ILendingPool.sol";
+import {FractionalExponents} from "../TrueReward/utilities/FractionalExponents.sol";
+import {StakedToken} from "../trusttokens/StakedToken.sol";
+import {Liquidator} from "../trusttokens/Liquidator.sol";
+import {TrustToken} from "../trusttokens/TrustToken.sol";
+import {StakingAsset} from "../trusttokens/StakingAsset.sol";
 
 /**
  * @title DeployHelper
@@ -122,16 +122,7 @@ contract DeployHelper {
 
         initTrustToken(trustTokenImplAddress);
 
-        initAssurance(
-            assuredFinancialOpportunityImplAddress,
-            aaveFinancialOpportunityImplAddress,
-            stakedTokenImplAddress,
-            liquidatorImplAddress,
-            aTokenAddress,
-            lendingPoolAddress,
-            outputUniswapAddress,
-            stakeUniswapAddress
-        );
+        initAssurance(assuredFinancialOpportunityImplAddress, aaveFinancialOpportunityImplAddress, stakedTokenImplAddress, liquidatorImplAddress, aTokenAddress, lendingPoolAddress, outputUniswapAddress, stakeUniswapAddress);
     }
 
     function initTrustToken(address trustTokenImplAddress) internal {
@@ -169,42 +160,19 @@ contract DeployHelper {
         stakedTokenProxy.upgradeTo(stakedTokenImplAddress);
         stakedToken = StakedToken(address(stakedTokenProxy));
 
-        stakedToken.configure(
-            StakingAsset(address(trustTokenProxy)),
-            StakingAsset(address(trueUSDProxy)),
-            ProvisionalRegistryImplementation(address(registryProxy)),
-            address(liquidatorProxy)
-        );
+        stakedToken.configure(StakingAsset(address(trustTokenProxy)), StakingAsset(address(trueUSDProxy)), ProvisionalRegistryImplementation(address(registryProxy)), address(liquidatorProxy));
 
         liquidatorProxy.claimProxyOwnership();
         liquidatorProxy.upgradeTo(liquidatorImplAddress);
         liquidator = Liquidator(address(liquidatorProxy));
 
-        liquidator.configure(
-            address(registry),
-            address(trueUSDProxy),
-            address(trustTokenProxy),
-            outputUniswapAddress,
-            stakeUniswapAddress
-        );
+        liquidator.configure(address(registry), address(trueUSDProxy), address(trustTokenProxy), outputUniswapAddress, stakeUniswapAddress);
 
         liquidator.setPool(address(stakedToken));
 
-        aaveFinancialOpportunity.configure(
-            IAToken(aTokenAddress),
-            ILendingPool(lendingPoolAddress),
-            TrueUSD(trueUSD),
-            address(assuredFinancialOpportunity)
-        );
+        aaveFinancialOpportunity.configure(IAToken(aTokenAddress), ILendingPool(lendingPoolAddress), TrueUSD(trueUSD), address(assuredFinancialOpportunity));
 
-        assuredFinancialOpportunity.configure(
-            address(aaveFinancialOpportunity),
-            address(stakedToken),
-            address(liquidator),
-            address(exponentContract),
-            address(trueUSD),
-            address(trueUSD)
-        );
+        assuredFinancialOpportunity.configure(address(aaveFinancialOpportunity), address(stakedToken), address(liquidator), address(exponentContract), address(trueUSD), address(trueUSD));
 
         liquidator.transferOwnership(address(assuredFinancialOpportunity));
 

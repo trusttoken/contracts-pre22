@@ -8,7 +8,6 @@ Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way 
 functions in the old contract still works (except Burn).
 */
 abstract contract DelegateERC20 is CompliantDepositTokenWithHook {
-
     address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
 
     modifier onlyDelegateFrom() virtual {
@@ -24,7 +23,11 @@ abstract contract DelegateERC20 is CompliantDepositTokenWithHook {
         return _getBalance(who);
     }
 
-    function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
+    function delegateTransfer(
+        address to,
+        uint256 value,
+        address origSender
+    ) public onlyDelegateFrom returns (bool) {
         _transferAllArgs(origSender, to, value);
         return true;
     }
@@ -33,22 +36,39 @@ abstract contract DelegateERC20 is CompliantDepositTokenWithHook {
         return _getAllowance(owner, spender);
     }
 
-    function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
+    function delegateTransferFrom(
+        address from,
+        address to,
+        uint256 value,
+        address origSender
+    ) public onlyDelegateFrom returns (bool) {
         _transferFromAllArgs(from, to, value, origSender);
         return true;
     }
 
-    function delegateApprove(address spender, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
+    function delegateApprove(
+        address spender,
+        uint256 value,
+        address origSender
+    ) public onlyDelegateFrom returns (bool) {
         _approveAllArgs(spender, value, origSender);
         return true;
     }
 
-    function delegateIncreaseApproval(address spender, uint addedValue, address origSender) public onlyDelegateFrom returns (bool) {
+    function delegateIncreaseApproval(
+        address spender,
+        uint256 addedValue,
+        address origSender
+    ) public onlyDelegateFrom returns (bool) {
         _increaseAllowanceAllArgs(spender, addedValue, origSender);
         return true;
     }
 
-    function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) public onlyDelegateFrom returns (bool) {
+    function delegateDecreaseApproval(
+        address spender,
+        uint256 subtractedValue,
+        address origSender
+    ) public onlyDelegateFrom returns (bool) {
         _decreaseAllowanceAllArgs(spender, subtractedValue, origSender);
         return true;
     }

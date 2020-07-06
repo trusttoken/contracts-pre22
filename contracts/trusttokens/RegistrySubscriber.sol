@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import { ProxyStorage, Registry } from "./ProxyStorage.sol";
+import {ProxyStorage, Registry} from "./ProxyStorage.sol";
 
 abstract contract RegistrySubscriber is ProxyStorage {
     // Registry Attributes
@@ -11,16 +11,16 @@ abstract contract RegistrySubscriber is ProxyStorage {
     bytes32 constant REGISTERED_CONTRACT = 0x697352656769737465726564436f6e7472616374000000000000000000000000;
 
     // attributes Bitmasks
-    uint256 constant ACCOUNT_BLACKLISTED     = 0xff00000000000000000000000000000000000000000000000000000000000000;
+    uint256 constant ACCOUNT_BLACKLISTED = 0xff00000000000000000000000000000000000000000000000000000000000000;
     uint256 constant ACCOUNT_BLACKLISTED_INV = 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    uint256 constant ACCOUNT_KYC             = 0x00ff000000000000000000000000000000000000000000000000000000000000;
-    uint256 constant ACCOUNT_KYC_INV         = 0xff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    uint256 constant ACCOUNT_ADDRESS         = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
-    uint256 constant ACCOUNT_ADDRESS_INV     = 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
-    uint256 constant ACCOUNT_HOOK            = 0x0000ff0000000000000000000000000000000000000000000000000000000000;
-    uint256 constant ACCOUNT_HOOK_INV        = 0xffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    uint256 constant ACCOUNT_KYC = 0x00ff000000000000000000000000000000000000000000000000000000000000;
+    uint256 constant ACCOUNT_KYC_INV = 0xff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    uint256 constant ACCOUNT_ADDRESS = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
+    uint256 constant ACCOUNT_ADDRESS_INV = 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
+    uint256 constant ACCOUNT_HOOK = 0x0000ff0000000000000000000000000000000000000000000000000000000000;
+    uint256 constant ACCOUNT_HOOK_INV = 0xffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
-    function registry() public view virtual returns (Registry);
+    function registry() public virtual view returns (Registry);
 
     modifier onlyRegistry {
         require(msg.sender == address(registry()));
@@ -36,7 +36,11 @@ abstract contract RegistrySubscriber is ProxyStorage {
         [30, 31) PASSED_KYCAML
         [31, 32) BLACKLISTED
     */
-    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
+    function syncAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) public onlyRegistry {
         uint144 who = uint144(uint160(_who) >> 20);
         uint256 prior = attributes[who];
         if (prior == 0) {
@@ -47,7 +51,7 @@ abstract contract RegistrySubscriber is ProxyStorage {
         } else if (_attribute == BLACKLISTED) {
             if (_value != 0) {
                 attributes[who] = prior | ACCOUNT_BLACKLISTED;
-            } else  {
+            } else {
                 attributes[who] = prior & ACCOUNT_BLACKLISTED_INV;
             }
         } else if (_attribute == PASSED_KYCAML) {

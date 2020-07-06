@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import { StakingAsset } from "./StakingAsset.sol";
-import { AStakedToken } from "./AStakedToken.sol";
-import { Registry } from "./Registry/Registry.sol";
-import { RegistrySubscriber } from "./RegistrySubscriber.sol";
+import {StakingAsset} from "./StakingAsset.sol";
+import {AStakedToken} from "./AStakedToken.sol";
+import {Registry} from "./Registry/Registry.sol";
+import {RegistrySubscriber} from "./RegistrySubscriber.sol";
 
 /**
  * @title StakedToken
  * @dev Implementation of AStakedToken
-**/
+ **/
 contract StakedToken is AStakedToken {
     StakingAsset stakeAsset_;
     StakingAsset rewardAsset_;

@@ -7,9 +7,8 @@ state variables in future upgrades should be appened to the bottom. Never remove
 from this list
  */
 contract AssuredFinancialOpportunityStorage {
-
     // how much zTUSD we've issued (total supply)
-    uint zTUSDIssued;
+    uint256 zTUSDIssued;
 
     // percentage of interest for staking pool
     // 1% = 10
@@ -17,11 +16,10 @@ contract AssuredFinancialOpportunityStorage {
 
     // adjustment factor used when changing reward basis
     // we change the adjustment factor
-    uint adjustmentFactor;
+    uint256 adjustmentFactor;
 
     // mintokenValue can never decrease
-    uint minTokenValue;
-
+    uint256 minTokenValue;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
@@ -39,5 +37,5 @@ contract AssuredFinancialOpportunityStorage {
      ** 64         uint256(address),uint256(14)                                  balanceOf
      ** 64         uint256(address),keccak256(uint256(address),uint256(15))      allowance
      ** 64         uint256(address),keccak256(bytes32,uint256(16))               attributes
-    **/
+     **/
 }

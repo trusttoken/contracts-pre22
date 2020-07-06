@@ -32,13 +32,12 @@ pragma solidity 0.6.10;
  * - total TUSD owed to depositors = tokenValue() * totalSupply()
  */
 interface FinancialOpportunity {
-
     /**
      * @dev Returns total supply of yTUSD in this contract
      *
      * @return total supply of yTUSD in this contract
-    **/
-    function totalSupply() external view returns (uint);
+     **/
+    function totalSupply() external view returns (uint256);
 
     /**
      * @dev Exchange rate between TUSD and yTUSD
@@ -47,7 +46,7 @@ interface FinancialOpportunity {
      *
      * @return TUSD / yTUSD price ratio
      */
-    function tokenValue() external view returns(uint);
+    function tokenValue() external view returns (uint256);
 
     /**
      * @dev deposits TrueUSD and returns yTUSD minted
@@ -59,7 +58,7 @@ interface FinancialOpportunity {
      * @param amount amount in TUSD to deposit
      * @return yTUSD minted from this deposit
      */
-    function deposit(address from, uint amount) external returns(uint);
+    function deposit(address from, uint256 amount) external returns (uint256);
 
     /**
      * @dev Redeem yTUSD for TUSD and withdraw to account
@@ -74,5 +73,5 @@ interface FinancialOpportunity {
      * @param amount amount in TUSD to withdraw from finOp
      * @return TUSD amount returned from this transaction
      */
-    function redeem(address to, uint amount) external returns(uint);
+    function redeem(address to, uint256 amount) external returns (uint256);
 }

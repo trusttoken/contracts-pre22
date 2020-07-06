@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import { RewardToken } from "./RewardToken.sol";
+import {RewardToken} from "./RewardToken.sol";
 
 /**
  * @title RewardTokenWithReserve
@@ -15,7 +15,6 @@ import { RewardToken } from "./RewardToken.sol";
  *
  */
 abstract contract RewardTokenWithReserve is RewardToken {
-
     // Reserve is an address which nobody has the private key to
     // Reserves of TUSD and TrueRewardBackedToken are held at this addess
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
@@ -38,7 +37,7 @@ abstract contract RewardTokenWithReserve is RewardToken {
      * @param finOp address of financial opportunity
      * @return rewardToken balance of reserve for finOp
      */
-    function reserveRewardBalance(address finOp) public view returns (uint) {
+    function reserveRewardBalance(address finOp) public view returns (uint256) {
         return rewardTokenBalance(RESERVE, finOp);
     }
 
@@ -139,21 +138,29 @@ abstract contract RewardTokenWithReserve is RewardToken {
      * @param finOp financial opportunity we interact with
      * @return amount of depositTokens returned to account
      */
-    function redeemWithReserve(address account, uint256 rewardAmount, address finOp) internal returns (uint256) {
+    function redeemWithReserve(
+        address account,
+        uint256 rewardAmount,
+        address finOp
+    ) internal returns (uint256) {
         // calculate deposit amount
         uint256 tokenAmount = _toToken(rewardAmount, finOp);
 
         return redeemWithReserve(account, tokenAmount, rewardAmount, finOp);
     }
 
-    function redeemWithReserve(address account, uint256 tokenAmount, uint256 rewardAmount, address finOp) internal returns (uint256) {
+    function redeemWithReserve(
+        address account,
+        uint256 tokenAmount,
+        uint256 rewardAmount,
+        address finOp
+    ) internal returns (uint256) {
         // if sufficient reserve balance, make swap and emit event
         if (reserveBalance() >= tokenAmount) {
             swapRewardForToken(account, tokenAmount, rewardAmount, finOp);
             emit ReserveRedeem(account, rewardAmount, tokenAmount, finOp);
             return tokenAmount;
-        }
-        else {
+        } else {
             // otherwise redeem through opportunity
             return redeemRewardToken(account, rewardAmount, finOp);
         }
@@ -169,7 +176,11 @@ abstract contract RewardTokenWithReserve is RewardToken {
      * @param finOp financial opportunity we interact with
      * @return amount of rewardTokens exchanged to account
      */
-    function depositWithReserve(address account, uint256 depositAmount, address finOp) internal returns (uint256) {
+    function depositWithReserve(
+        address account,
+        uint256 depositAmount,
+        address finOp
+    ) internal returns (uint256) {
         // calculate reward token amount for deposit
         uint256 rewardAmount = _toRewardToken(depositAmount, finOp);
 
@@ -178,8 +189,7 @@ abstract contract RewardTokenWithReserve is RewardToken {
             swapTokenForReward(account, depositAmount, rewardAmount, finOp);
             emit ReserveDeposit(account, depositAmount, rewardAmount, finOp);
             return rewardAmount;
-        }
-        else {
+        } else {
             // otherwise mint new rewardTokens by depositing into opportunity
             return mintRewardToken(account, depositAmount, finOp);
         }

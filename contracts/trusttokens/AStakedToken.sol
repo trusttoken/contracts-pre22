@@ -3,7 +3,7 @@ pragma solidity 0.6.10;
 
 import "./ValTokenWithHook.sol";
 import "./ValSafeMath.sol";
-import { StakingAsset } from "./StakingAsset.sol";
+import {StakingAsset} from "./StakingAsset.sol";
 
 /**
  * @title Abstract StakedToken
@@ -21,7 +21,7 @@ abstract contract AStakedToken is ValTokenWithHook {
 
     // amount each account has claimed up to cumulativeRewardsPerStake
     // claiming rewards sets claimedRewardsPerStake to cumulativeRewardsPerStake
-    mapping (address => uint256) claimedRewardsPerStake;
+    mapping(address => uint256) claimedRewardsPerStake;
 
     // amount that has been awarded to the pool but not pool holders
     // tracks leftovers for when stake gets very large
@@ -37,7 +37,7 @@ abstract contract AStakedToken is ValTokenWithHook {
     // have to reference timestamp to access previous withdrawal
     // multiple withdrawals in the same block increase amount for that timestamp
     // same acconut that initiates withdrawal needs to complete withdrawal
-    mapping (address => mapping (uint256 => uint256)) pendingWithdrawals;
+    mapping(address => mapping(uint256 => uint256)) pendingWithdrawals;
 
     // unstake period in days
     uint256 constant UNSTAKE_PERIOD = 14 days;
@@ -50,7 +50,7 @@ abstract contract AStakedToken is ValTokenWithHook {
      * @dev Get unclaimed reward balance for staker
      * @param _staker address of staker
      * @return unclaimedRewards_ withdrawable amount of rewards belonging to this staker
-    **/
+     **/
     function unclaimedRewards(address _staker) public view returns (uint256 unclaimedRewards_) {
         uint256 stake = balanceOf[_staker];
         if (stake == 0) {
@@ -60,13 +60,13 @@ abstract contract AStakedToken is ValTokenWithHook {
     }
 
     /// @return ERC-20 stake asset
-    function stakeAsset() public view virtual returns (StakingAsset);
+    function stakeAsset() public virtual view returns (StakingAsset);
 
     /// @return ERC-20 reward asset
-    function rewardAsset() public view virtual returns (StakingAsset);
+    function rewardAsset() public virtual view returns (StakingAsset);
 
     /// @return liquidator address
-    function liquidator() public view virtual returns (address);
+    function liquidator() public virtual view returns (address);
 
     // max int size to prevent overflow
     uint256 constant MAX_UINT256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
@@ -78,7 +78,7 @@ abstract contract AStakedToken is ValTokenWithHook {
     /**
      * @dev Initialize function called by constructor
      * Approves liqudiator for maximum amount
-    */
+     */
     function initialize() internal {
         stakeAsset().approve(liquidator(), MAX_UINT256);
     }
@@ -90,7 +90,11 @@ abstract contract AStakedToken is ValTokenWithHook {
      * Contracts that have this staking token don't know they have rewards
      * This way we an exchange on uniswap or other exchanges
      */
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal override resolveSender(_from) {
+    function _transferAllArgs(
+        address _from,
+        address _to,
+        uint256 _value
+    ) internal override resolveSender(_from) {
         uint256 fromRewards = claimedRewardsPerStake[_from];
         if (_subBalance(_from, _value) == 0) {
             claimedRewardsPerStake[_from] = 0;
@@ -184,7 +188,7 @@ abstract contract AStakedToken is ValTokenWithHook {
      * Called when this contract recieves stake. Called by token fallback.
      * Issue stake to _staker according to _amount
      * Invoked after _amount is deposited in this contract
-    */
+     */
     function _deposit(address _staker, uint256 _amount) internal {
         uint256 balance = stakeAsset().balanceOf(address(this));
         uint256 stakeAmount;
@@ -229,7 +233,7 @@ abstract contract AStakedToken is ValTokenWithHook {
      * @dev Initialize unstake. Can specify a portion of your balance to unstake.
      * @param _maxAmount max amount caller wishes to unstake (in this.balanceOf units)
      * @return unstake_
-    */
+     */
     function initUnstake(uint256 _maxAmount) external returns (uint256 unstake_) {
         unstake_ = balanceOf[msg.sender];
         if (unstake_ > _maxAmount) {
@@ -253,7 +257,7 @@ abstract contract AStakedToken is ValTokenWithHook {
     function finalizeUnstake(address recipient, uint256[] calldata _timestamps) external {
         uint256 totalUnstake = 0;
         // loop through timestamps and calculate total unstake
-        for (uint256 i = _timestamps.length; i --> 0;) {
+        for (uint256 i = _timestamps.length; i-- > 0; ) {
             uint256 timestamp = _timestamps[i];
             require(timestamp + UNSTAKE_PERIOD <= now, "must wait 2 weeks to unstake");
             // add to total unstake amount

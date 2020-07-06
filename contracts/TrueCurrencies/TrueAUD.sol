@@ -4,9 +4,9 @@ pragma solidity 0.6.10;
 import "./CompliantDepositTokenWithHook.sol";
 
 /** @title TrueAUD
-* @dev This is the top-level ERC20 contract, but most of the interesting functionality is
-* inherited - see the documentation on the corresponding contracts.
-*/
+ * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
+ * inherited - see the documentation on the corresponding contracts.
+ */
 contract TrueAUD is CompliantDepositTokenWithHook {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
@@ -27,8 +27,7 @@ contract TrueAUD is CompliantDepositTokenWithHook {
         return "TAUD";
     }
 
-    function canBurn() override internal pure returns (bytes32) {
+    function canBurn() internal override pure returns (bytes32) {
         return "canBurnAUD";
     }
 }
-

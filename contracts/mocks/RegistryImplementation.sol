@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import { Registry } from "../trusttokens/Registry/Registry.sol";
-import { ProvisionalRegistry } from "../trusttokens/Registry/ProvisionalRegistry.sol";
+import {Registry} from "../trusttokens/Registry/Registry.sol";
+import {ProvisionalRegistry} from "../trusttokens/Registry/ProvisionalRegistry.sol";
 
 /**
  * @title RegistryImplementation
@@ -10,9 +10,9 @@ import { ProvisionalRegistry } from "../trusttokens/Registry/ProvisionalRegistry
  */
 contract RegistryImplementation is Registry {
     /**
-    * @dev sets the original `owner` of the contract to the sender
-    * at construction. Must then be reinitialized
-    */
+     * @dev sets the original `owner` of the contract to the sender
+     * at construction. Must then be reinitialized
+     */
     constructor() public {
         owner = msg.sender;
         emit OwnershipTransferred(address(0), owner);
@@ -34,7 +34,6 @@ contract RegistryImplementation is Registry {
  * Used as implementation for registry in truecurrencies
  */
 // solhint-disable-next-line no-empty-blocks
-contract ProvisionalRegistryImplementation is
-    RegistryImplementation,
-    ProvisionalRegistry {
+contract ProvisionalRegistryImplementation is RegistryImplementation, ProvisionalRegistry {
+
 }

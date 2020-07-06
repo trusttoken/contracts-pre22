@@ -1,6 +1,6 @@
+import assertRevert from './helpers/assertRevert.js'
+import timeMachine from 'ganache-time-traveler'
 const TimeOwnedUpgradeabilityProxy = artifacts.require('TimeOwnedUpgradeabilityProxy')
-const assertRevert = require('./helpers/assertRevert.js')
-const timeMachine = require('ganache-time-traveler')
 
 contract('TimeOwnedUpgradeabilityProxy', function () {
   let address

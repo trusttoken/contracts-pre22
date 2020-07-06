@@ -40,7 +40,7 @@ import "./FinancialOpportunity.sol";
  * We allow the rewardBasis to be adjusted, but since we still need to maintain
  * the tokenValue, we calculate an adjustment factor and set minTokenValue
  *
-**/
+ **/
 contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOpportunityStorage, InitializableClaimable {
     using SafeMath for uint256;
 
@@ -70,16 +70,17 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         require(msg.sender == fundsManager, "only funds manager");
         _;
     }
+
     /**
      * @dev configure assured opportunity
      */
     function configure(
-        address _finOpAddress,                  // finOp to assure
-        address _assuranceAddress,              // assurance pool
-        address _liquidatorAddress,             // trusttoken liqudiator
-        address _exponentContractAddress,       // exponent contract
-        address _trueRewardBackedTokenAddress,  // token
-        address _fundsManager                   // funds manager
+        address _finOpAddress, // finOp to assure
+        address _assuranceAddress, // assurance pool
+        address _liquidatorAddress, // trusttoken liqudiator
+        address _exponentContractAddress, // exponent contract
+        address _trueRewardBackedTokenAddress, // token
+        address _fundsManager // funds manager
     ) external {
         require(_finOpAddress != address(0), "finOp cannot be address(0)");
         require(_assuranceAddress != address(0), "assurance pool cannot be address(0)");
@@ -96,7 +97,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         fundsManager = _fundsManager;
         // only update factors if they are zero (default)
         if (adjustmentFactor == 0) {
-            adjustmentFactor = 1*10**18;
+            adjustmentFactor = 1 * 10**18;
         }
         if (rewardBasis == 0) {
             rewardBasis = TOTAL_BASIS; // set to 100% by default
@@ -107,7 +108,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @dev total supply of zTUSD
      * inherited from FinancialOpportunity.sol
      */
-    function totalSupply() override external view returns (uint256) {
+    function totalSupply() external override view returns (uint256) {
         return zTUSDIssued;
     }
 
@@ -117,7 +118,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      *
      * @return TUSD value of zTUSD
      */
-    function tokenValue() override external view returns(uint256) {
+    function tokenValue() external override view returns (uint256) {
         return _tokenValue();
     }
 
@@ -129,7 +130,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param amount TUSD amount to deposit
      * @return zTUSD amount
      */
-    function deposit(address from, uint256 amount) override external onlyFundsManager returns(uint256) {
+    function deposit(address from, uint256 amount) external override onlyFundsManager returns (uint256) {
         return _deposit(from, amount);
     }
 
@@ -141,7 +142,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param amount amount of zTUSD to redeem
      * @return amount of TUSD returned by finOp
      */
-    function redeem(address to, uint256 amount) override external onlyFundsManager returns(uint256) {
+    function redeem(address to, uint256 amount) external override onlyFundsManager returns (uint256) {
         return _redeem(to, amount);
     }
 
@@ -173,8 +174,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         if (success) {
             token().transfer(address(pool()), returnedAmount);
             emit AwardPool(returnedAmount);
-        }
-        else {
+        } else {
             emit AwardFailure(returnedAmount);
         }
     }
@@ -188,16 +188,14 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     function setRewardBasis(uint32 newBasis) external onlyOwner {
         minTokenValue = _tokenValue();
 
-        adjustmentFactor = adjustmentFactor
-            .mul(_calculateTokenValue(rewardBasis))
-            .div(_calculateTokenValue(newBasis));
+        adjustmentFactor = adjustmentFactor.mul(_calculateTokenValue(rewardBasis)).div(_calculateTokenValue(newBasis));
         rewardBasis = newBasis;
     }
 
     /**
      * @dev Get supply amount of zTUSD issued
      * @return zTUSD issued
-    **/
+     **/
     function _totalSupply() internal view returns (uint256) {
         return zTUSDIssued;
     }
@@ -208,13 +206,13 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      *
      * @return value of zTUSD
      */
-    function _tokenValue() internal view returns(uint256) {
+    function _tokenValue() internal view returns (uint256) {
         // if no assurance, use  opportunity tokenValue
         if (rewardBasis == TOTAL_BASIS) {
             return finOp().tokenValue();
         }
         uint256 calculatedValue = _calculateTokenValue(rewardBasis).mul(adjustmentFactor).div(10**18);
-        if(calculatedValue < minTokenValue) {
+        if (calculatedValue < minTokenValue) {
             return minTokenValue;
         } else {
             return calculatedValue;
@@ -229,11 +227,9 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param _rewardBasis reward basis (max TOTAL_BASIS)
      * @return zTUSD token value
      */
-    function _calculateTokenValue(uint32 _rewardBasis) internal view returns(uint256) {
-        (uint256 result, uint8 precision) = exponents().power(
-            finOp().tokenValue(), 10**18,
-            _rewardBasis, TOTAL_BASIS);
-        return result.mul(10**18).div(2 ** uint256(precision));
+    function _calculateTokenValue(uint32 _rewardBasis) internal view returns (uint256) {
+        (uint256 result, uint8 precision) = exponents().power(finOp().tokenValue(), 10**18, _rewardBasis, TOTAL_BASIS);
+        return result.mul(10**18).div(2**uint256(precision));
     }
 
     /**
@@ -243,7 +239,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param _account account to deposit tusd from
      * @param _amount amount of tusd to deposit
      */
-    function _deposit(address _account, uint256 _amount) internal returns(uint256) {
+    function _deposit(address _account, uint256 _amount) internal returns (uint256) {
         token().transferFrom(_account, address(this), _amount);
 
         // deposit TUSD into opportunity
@@ -251,7 +247,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         finOp().deposit(address(this), _amount);
 
         // calculate zTUSD value of deposit
-        uint256 ztusd = _amount.mul(10 ** 18).div(_tokenValue());
+        uint256 ztusd = _amount.mul(10**18).div(_tokenValue());
 
         // update zTUSDIssued
         zTUSDIssued = zTUSDIssued.add(ztusd);
@@ -267,8 +263,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param ztusd amount in ytusd to redeem
      * @return TUSD amount redeemed for zTUSD
      */
-    function _redeem(address _to, uint256 ztusd) internal returns(uint256) {
-
+    function _redeem(address _to, uint256 ztusd) internal returns (uint256) {
         // attempt withdraw to this contract
         // here we redeem ztusd amount which leaves
         // a small amount of yTUSD left in the finOp
@@ -300,21 +295,20 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      *
      * @param _to redeemer address
      * @param ztusd amount in ztusd
-    **/
-    function _attemptRedeem(address _to, uint256 ztusd) internal returns (bool, uint) {
+     **/
+    function _attemptRedeem(address _to, uint256 ztusd) internal returns (bool, uint256) {
         uint256 returnedAmount;
 
         // attempt to withdraw from opportunity
         // TODO use try-catch
         // solhint-disable-next-line avoid-low-level-calls
-    (bool success, bytes memory returnData) = address(finOp()).call(
-            abi.encodePacked(finOp().redeem.selector, abi.encode(_to, ztusd))
-        );
+        (bool success, bytes memory returnData) = address(finOp()).call(abi.encodePacked(finOp().redeem.selector, abi.encode(_to, ztusd)));
 
-        if (success) { // successfully got TUSD :)
+        if (success) {
+            // successfully got TUSD :)
             returnedAmount = abi.decode(returnData, (uint256));
-        }
-        else { // failed get TUSD :(
+        } else {
+            // failed get TUSD :(
             returnedAmount = 0;
         }
         return (success, returnedAmount);
@@ -327,11 +321,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param _receiver address to recieve tusd
      * @param _debt tusd debt to be liquidated
      * @return amount liquidated
-    **/
+     **/
     function _liquidate(address _receiver, int256 _debt) internal returns (uint256) {
         liquidator().reclaim(_receiver, _debt);
         emit Liquidation(_receiver, _debt);
-        return uint(_debt);
+        return uint256(_debt);
     }
 
     /**
@@ -364,13 +358,13 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
     /// @dev getter for financial opportuniry
     /// @return financial opportunity
-    function finOp() public view returns(FinancialOpportunity) {
+    function finOp() public view returns (FinancialOpportunity) {
         return FinancialOpportunity(finOpAddress);
     }
 
     /// @dev getter for staking pool
     /// @return staking pool
-    function pool() public view returns(StakedToken) {
+    function pool() public view returns (StakedToken) {
         return StakedToken(assuranceAddress); // StakedToken is assurance staking pool
     }
 
@@ -380,12 +374,12 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /// @dev getter for exponents contract
-    function exponents() public view returns (FractionalExponents){
+    function exponents() public view returns (FractionalExponents) {
         return FractionalExponents(exponentContractAddress);
     }
 
     /// @dev deposit token (TrueUSD)
-    function token() public view returns (IERC20){
+    function token() public view returns (IERC20) {
         return IERC20(trueRewardBackedTokenAddress);
     }
 

@@ -6,16 +6,44 @@ import "./ValSafeMath.sol";
 import "./ILiquidator.sol";
 import "./Registry/Registry.sol";
 
-
 /**
  * @dev Uniswap
  * This is nessesary since Uniswap is written in vyper.
  */
 interface UniswapV1 {
-    function tokenToExchangeSwapInput(uint256 tokensSold, uint256 minTokensBought, uint256 minEthBought, uint256 deadline, UniswapV1 exchangeAddress) external returns (uint256 tokensBought);
-    function tokenToExchangeTransferInput(uint256 tokensSold, uint256 minTokensBought, uint256 minEthBought, uint256 deadline, address recipient, UniswapV1 exchangeAddress) external returns (uint256 tokensBought);
-    function tokenToExchangeSwapOutput(uint256 tokensBought, uint256 maxTokensSold, uint256 maxEthSold, uint256 deadline, UniswapV1 exchangeAddress) external returns (uint256 tokensSold);
-    function tokenToExchangeTransferOutput(uint256 tokensBought, uint256 maxTokensSold, uint256 maxEthSold, uint256 deadline, address recipient, UniswapV1 exchangeAddress) external returns (uint256 tokensSold);
+    function tokenToExchangeSwapInput(
+        uint256 tokensSold,
+        uint256 minTokensBought,
+        uint256 minEthBought,
+        uint256 deadline,
+        UniswapV1 exchangeAddress
+    ) external returns (uint256 tokensBought);
+
+    function tokenToExchangeTransferInput(
+        uint256 tokensSold,
+        uint256 minTokensBought,
+        uint256 minEthBought,
+        uint256 deadline,
+        address recipient,
+        UniswapV1 exchangeAddress
+    ) external returns (uint256 tokensBought);
+
+    function tokenToExchangeSwapOutput(
+        uint256 tokensBought,
+        uint256 maxTokensSold,
+        uint256 maxEthSold,
+        uint256 deadline,
+        UniswapV1 exchangeAddress
+    ) external returns (uint256 tokensSold);
+
+    function tokenToExchangeTransferOutput(
+        uint256 tokensBought,
+        uint256 maxTokensSold,
+        uint256 maxEthSold,
+        uint256 deadline,
+        address recipient,
+        UniswapV1 exchangeAddress
+    ) external returns (uint256 tokensSold);
 }
 
 /**
@@ -38,12 +66,11 @@ abstract contract ALiquidatorUniswap is ILiquidator {
     // owner, registry attributes
     address public owner;
     address public pendingOwner;
-    mapping (address => uint256) attributes;
-
+    mapping(address => uint256) attributes;
 
     // constants
     bytes32 constant APPROVED_BENEFICIARY = "approvedBeneficiary";
-    uint256 constant LIQUIDATOR_CAN_RECEIVE     = 0xff00000000000000000000000000000000000000000000000000000000000000;
+    uint256 constant LIQUIDATOR_CAN_RECEIVE = 0xff00000000000000000000000000000000000000000000000000000000000000;
     uint256 constant LIQUIDATOR_CAN_RECEIVE_INV = 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
     uint256 constant MAX_UINT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
@@ -55,11 +82,13 @@ abstract contract ALiquidatorUniswap is ILiquidator {
     // Liquidator is the actual implementation of ALiquidator
 
     /** @dev Output token on uniswap. */
-    function outputUniswapV1() public view virtual returns (UniswapV1);
+    function outputUniswapV1() public virtual view returns (UniswapV1);
+
     /** @dev Stake token on uniswap. */
-    function stakeUniswapV1() public view virtual returns (UniswapV1);
+    function stakeUniswapV1() public virtual view returns (UniswapV1);
+
     /** @dev Contract registry. */
-    function registry() public view virtual returns (Registry);
+    function registry() public virtual view returns (Registry);
 
     /**
      * @dev implementation constructor needs to call initialize
@@ -103,7 +132,11 @@ abstract contract ALiquidatorUniswap is ILiquidator {
      * Supports APPROVED_BENEFICIARY
      * Can sync by saying this contract is the registry or sync from registry directly.
      */
-    function syncAttributeValue(address _account, bytes32 _attribute, uint256 _value) external onlyRegistry {
+    function syncAttributeValue(
+        address _account,
+        bytes32 _attribute,
+        uint256 _value
+    ) external onlyRegistry {
         if (_attribute == APPROVED_BENEFICIARY) {
             // approved beneficiary flag defines whether someone can receive
             if (_value > 0) {
@@ -126,9 +159,13 @@ abstract contract ALiquidatorUniswap is ILiquidator {
      * Allows us to do this multiple times in one transaction
      * See ./uniswap/uniswap_exchange.vy
      */
-    function outputForUniswapV1Input(uint256 stakeInputAmount, UniswapState memory outputUniswapV1State, UniswapState memory stakeUniswapV1State) internal pure returns (uint256 outputAmount) {
+    function outputForUniswapV1Input(
+        uint256 stakeInputAmount,
+        UniswapState memory outputUniswapV1State,
+        UniswapState memory stakeUniswapV1State
+    ) internal pure returns (uint256 outputAmount) {
         uint256 inputAmountWithFee = 997 * stakeInputAmount;
-        inputAmountWithFee = 997 * (inputAmountWithFee * stakeUniswapV1State.etherBalance) / (stakeUniswapV1State.tokenBalance * 1000 + inputAmountWithFee);
+        inputAmountWithFee = (997 * (inputAmountWithFee * stakeUniswapV1State.etherBalance)) / (stakeUniswapV1State.tokenBalance * 1000 + inputAmountWithFee);
         outputAmount = (inputAmountWithFee * outputUniswapV1State.tokenBalance) / (outputUniswapV1State.etherBalance * 1000 + inputAmountWithFee);
     }
 
@@ -137,7 +174,11 @@ abstract contract ALiquidatorUniswap is ILiquidator {
      * Is able to let us know if there is slippage in uniswap exchange rate
      * See./uniswap/uniswap_exchange.vy
      */
-    function inputForUniswapV1Output(uint256 outputAmount, UniswapState memory outputUniswapV1State, UniswapState memory stakeUniswapV1State) internal pure returns (uint256 inputAmount) {
+    function inputForUniswapV1Output(
+        uint256 outputAmount,
+        UniswapState memory outputUniswapV1State,
+        UniswapState memory stakeUniswapV1State
+    ) internal pure returns (uint256 inputAmount) {
         if (outputAmount >= outputUniswapV1State.tokenBalance) {
             return MAX_UINT128;
         }
@@ -182,8 +223,7 @@ abstract contract ALiquidatorUniswap is ILiquidator {
         uint256 remainingStake = stakeToken().balanceOf(stakePool);
 
         // withdraw to liquidator
-        require(stakeToken().transferFrom(stakePool, address(this), remainingStake),
-            "liquidator not approved to transferFrom stakeToken");
+        require(stakeToken().transferFrom(stakePool, address(this), remainingStake), "liquidator not approved to transferFrom stakeToken");
 
         // load uniswap state for output and staked token
         UniswapState memory outputUniswapV1State;
