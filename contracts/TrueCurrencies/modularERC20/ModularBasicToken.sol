@@ -1,8 +1,6 @@
 pragma solidity 0.5.13;
 
 import "../HasOwner.sol";
-import "../ProxyStorage.sol";
-import "./InitializableClaimable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 // Fork of OpenZeppelin's BasicToken

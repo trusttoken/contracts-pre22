@@ -7,8 +7,6 @@ import "@trusttoken/trusttokens/contracts/StakedToken.sol";
 import "../TrueCurrencies/AssuredFinancialOpportunityStorage.sol";
 import "../TrueCurrencies/modularERC20/InitializableClaimable.sol";
 import "./utilities/FractionalExponents.sol";
-import "../TrueCurrencies/AssuredFinancialOpportunityStorage.sol";
-import "../TrueCurrencies/modularERC20/InitializableClaimable.sol";
 import "./FinancialOpportunity.sol";
 
 /**
@@ -43,7 +41,6 @@ import "./FinancialOpportunity.sol";
  *
 **/
 contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOpportunityStorage, InitializableClaimable {
-    using SafeMath for uint256;
     using SafeMath for uint256;
 
     // tolerance of rounding errors

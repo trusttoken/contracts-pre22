@@ -2,7 +2,6 @@ pragma solidity 0.5.13;
 
 import "./TrueRewardBackedToken.sol";
 import "./DelegateERC20.sol";
-import "./GasRefundToken.sol";
 
 
 /** @title TrueUSD
