@@ -1,7 +1,6 @@
 pragma solidity 0.5.13;
 
 import "./CompliantDepositTokenWithHook.sol";
-import "./GasRefundToken.sol";
 
 /** @title TrueCAD
 * @dev This is the top-level ERC20 contract, but most of the interesting functionality is

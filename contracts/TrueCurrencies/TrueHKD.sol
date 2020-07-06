@@ -1,7 +1,6 @@
 pragma solidity 0.5.13;
 
 import "./CompliantDepositTokenWithHook.sol";
-import "./GasRefundToken.sol";
 
 
 /** @title TrueHKD

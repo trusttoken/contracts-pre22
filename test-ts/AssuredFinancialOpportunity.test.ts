@@ -9,8 +9,8 @@ import { SimpleLiquidatorMockFactory } from '../build/types/SimpleLiquidatorMock
 import { ConfigurableFinancialOpportunityMockFactory } from '../build/types/ConfigurableFinancialOpportunityMockFactory'
 import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
-import { MockErc20Factory } from '../build/types/MockErc20Factory'
-import { MockErc20 } from '../build/types/MockErc20'
+import { TrueUsdMockFactory } from '../build/types/TrueUsdMockFactory'
+import { TrueUsdMock } from '../build/types/TrueUsdMock'
 import { ConfigurableFinancialOpportunityMock } from '../build/types/ConfigurableFinancialOpportunityMock'
 import { FractionalExponents } from '../build/types/FractionalExponents'
 import { SimpleLiquidatorMock } from '../build/types/SimpleLiquidatorMock'
@@ -23,7 +23,7 @@ const { parseEther } = utils
 describe('AssuredFinancialOpportunity', () => {
   let provider: MockProvider
 
-  let token: MockErc20
+  let token: TrueUsdMock
   let financialOpportunity: ConfigurableFinancialOpportunityMock
   let fractionalExponents: FractionalExponents
   let liquidator: SimpleLiquidatorMock
@@ -47,15 +47,14 @@ describe('AssuredFinancialOpportunity', () => {
 
     const deployContract = setupDeploy(wallet)
 
-    token = await deployContract(MockErc20Factory)
-    await token.mint(holder.address, parseEther('100'))
+    token = await deployContract(TrueUsdMockFactory, holder.address, parseEther('1200'))
 
     fractionalExponents = await deployContract(FractionalExponentsFactory)
     liquidator = await deployContract(SimpleLiquidatorMockFactory, token.address)
-    await token.mint(liquidator.address, parseEther('1000'))
+    await token.connect(holder).transfer(liquidator.address, parseEther('1000'))
 
     financialOpportunity = await deployContract(ConfigurableFinancialOpportunityMockFactory, token.address)
-    await token.mint(financialOpportunity.address, parseEther('100'))
+    await token.connect(holder).transfer(financialOpportunity.address, parseEther('100'))
 
     const assuredFinancialOpportunityImpl = await deployContract(AssuredFinancialOpportunityFactory)
     const assuredFinancialOpportunityProxy = await deployContract(OwnedUpgradeabilityProxyFactory)

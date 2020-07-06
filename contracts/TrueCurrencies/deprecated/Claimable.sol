@@ -1,6 +1,6 @@
 pragma solidity 0.5.13;
 
-import "./InstantiatableOwnable.sol";
+import "../modularERC20/InstantiatableOwnable.sol";
 
 
 /**

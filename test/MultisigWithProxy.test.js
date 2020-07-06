@@ -1,6 +1,6 @@
 const Registry = artifacts.require('RegistryMock')
 const TrueUSD = artifacts.require('TrueUSDMock')
-const PreMigrationTokenController = artifacts.require('PreMigrationTokenController')
+const TokenController = artifacts.require('TokenControllerMock')
 const MultisigOwner = artifacts.require('MultiSigOwner')
 const Proxy = artifacts.require('OwnedUpgradeabilityProxy')
 
@@ -27,10 +27,10 @@ contract('MultisigOwner With Proxy', function (accounts) {
 
     this.registry = await Registry.new({ from: owner1 })
 
-    this.controllerImplementation = await PreMigrationTokenController.new({ from: owner1 })
+    this.controllerImplementation = await TokenController.new({ from: owner1 })
     this.controllerProxy = await Proxy.new({ from: owner1 })
 
-    this.controller = await PreMigrationTokenController.at(this.controllerProxy.address)
+    this.controller = await TokenController.at(this.controllerProxy.address)
     await this.multisigOwner.msSetTokenController(this.controllerProxy.address, { from: owner1 })
     await this.multisigOwner.msSetTokenController(this.controllerProxy.address, { from: owner2 })
 

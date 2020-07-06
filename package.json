@@ -63,7 +63,6 @@
     "truffle": "5.1.11",
     "truffle-flattener": "^1.4.3",
     "truffle-hdwallet-provider": "0.0.3",
-    "web3": "1.2.4",
-    "wjm-airswap-swap": "^5.0.1"
+    "web3": "1.2.4"
   }
 }

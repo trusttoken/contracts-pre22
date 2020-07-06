@@ -1,7 +1,6 @@
 pragma solidity 0.5.13;
 
 import { TrueCoinReceiver } from "./TrueCoinReceiver.sol";
-import { FinancialOpportunity } from "../TrueReward/FinancialOpportunity.sol";
 import { RewardTokenWithReserve } from "./RewardTokenWithReserve.sol";
 
 /**
