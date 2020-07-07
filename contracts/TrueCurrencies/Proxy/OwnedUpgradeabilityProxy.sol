@@ -142,10 +142,18 @@ contract OwnedUpgradeabilityProxy {
     }
 
     /**
-    * @dev Fallback function allowing to perform a delegatecall to the given implementation.
+    * @dev Fallback functions allowing to perform a delegatecall to the given implementation.
     * This function will return whatever the implementation call returns
     */
     fallback() external payable {
+        proxyCall();
+    }
+
+    receive() external payable {
+        proxyCall();
+    }
+
+    function proxyCall() internal {
         bytes32 position = implementationPosition;
 
         assembly {
@@ -158,9 +166,5 @@ contract OwnedUpgradeabilityProxy {
             case 0 { revert(ptr, returndatasize()) }
             default { return(ptr, returndatasize()) }
         }
-    }
-
-    receive() external payable {
-        revert("Ether transfer to proxy");
     }
 }

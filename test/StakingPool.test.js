@@ -1,11 +1,12 @@
+import bytes32 from './helpers/bytes32.js'
+import assertRevert from './helpers/assertRevert.js'
+import timeMachine from 'ganache-time-traveler'
+
 const Registry = artifacts.require('RegistryMock')
 const StakedToken = artifacts.require('StakedToken')
 const TrustToken = artifacts.require('MockTrustToken')
 const TrueUSD = artifacts.require('MockERC20Token')
 const OwnedUpgradeabilityProxy = artifacts.require('OwnedUpgradeabilityProxy')
-
-const bytes32 = require('./helpers/bytes32.js')
-const assertRevert = require('./helpers/assertRevert.js')
 
 const IS_REGISTERED_CONTRACT = bytes32('isRegisteredContract')
 const PASSED_KYCAML = bytes32('hasPassedKYC/AML')
@@ -15,8 +16,6 @@ const ONE_HUNDRED_ETHER = BN(100).mul(ONE_ETHER)
 const ONE_BITCOIN = BN(1e8)
 const ONE_HUNDRED_BITCOIN = BN(100).mul(ONE_BITCOIN)
 const DEFAULT_RATIO = BN(1000)
-
-const timeMachine = require('ganache-time-traveler')
 
 contract('StakedAsset', function (accounts) {
   const [, owner, issuer, oneHundred, account1, account2, account3, kycAccount, fakeLiquidator] = accounts
@@ -79,31 +78,37 @@ contract('StakedAsset', function (accounts) {
       const oneHundredStake = BN(45).mul(ONE_BITCOIN).mul(DEFAULT_RATIO)
       assert(oneHundredStake.eq(await this.pool.balanceOf.call(oneHundred)))
 
+      await this.rewardToken.transfer(this.pool.address, BN(10).mul(ONE_ETHER), { from: oneHundred })
       assert(BN(9).mul(ONE_ETHER).div(BN(2)).eq(await this.pool.unclaimedRewards.call(oneHundred)))
       assert(BN(5).mul(ONE_ETHER).div(BN(2)).eq(await this.pool.unclaimedRewards.call(account1)))
       assert(BN(2).mul(ONE_ETHER).eq(await this.pool.unclaimedRewards.call(account2)))
       assert(ONE_ETHER.eq(await this.pool.unclaimedRewards.call(kycAccount)))
 
       // no immediate reward
+      await this.rewardToken.transfer(this.pool.address, BN(10).mul(ONE_BITCOIN), { from: oneHundred })
       assert(BN(9).mul(ONE_ETHER).div(BN(2)).eq(await this.pool.unclaimedRewards.call(oneHundred)))
       assert(BN(5).mul(ONE_ETHER).div(BN(2)).eq(await this.pool.unclaimedRewards.call(account1)))
       assert(BN(2).mul(ONE_ETHER).eq(await this.pool.unclaimedRewards.call(account2)))
       assert(ONE_ETHER.eq(await this.pool.unclaimedRewards.call(kycAccount)))
 
       // remainder accrues
+      await this.rewardToken.transfer(this.pool.address, BN(10).mul(ONE_ETHER).sub(BN(10).mul(ONE_BITCOIN)), { from: oneHundred })
       assert(BN(9).mul(ONE_ETHER).eq(await this.pool.unclaimedRewards.call(oneHundred)))
       assert(BN(5).mul(ONE_ETHER).eq(await this.pool.unclaimedRewards.call(account1)))
       assert(BN(4).mul(ONE_ETHER).eq(await this.pool.unclaimedRewards.call(account2)))
       assert(BN(2).mul(ONE_ETHER).eq(await this.pool.unclaimedRewards.call(kycAccount)))
 
       // claim reward
+      await this.pool.claimRewards(kycAccount, { from: kycAccount })
       assert.equal(0, await this.pool.unclaimedRewards.call(kycAccount))
       assert(BN(2).mul(ONE_ETHER).eq(await this.rewardToken.balanceOf.call(kycAccount)))
 
       // transfer unclaimed rewards
+      await this.pool.transfer(kycAccount, oneHundredStake, { from: oneHundred })
       assert.equal(0, await this.pool.unclaimedRewards.call(oneHundred))
       assert(BN(9).mul(ONE_ETHER).sub(await this.pool.unclaimedRewards.call(kycAccount)).lt(await this.pool.totalSupply.call()))
 
+      await this.pool.claimRewards(kycAccount, { from: kycAccount })
       assert.equal(0, await this.pool.unclaimedRewards.call(kycAccount))
       assert(BN(11).mul(ONE_ETHER).sub(await this.rewardToken.balanceOf.call(kycAccount)).lt(await this.pool.totalSupply.call()))
     })
@@ -120,6 +125,7 @@ contract('StakedAsset', function (accounts) {
       assert(ONE_ETHER.eq(await this.rewardToken.balanceOf.call(this.pool.address)))
 
       // stake other half
+      await this.stakeToken.transfer(this.pool.address, BN(50).mul(ONE_BITCOIN), { from: oneHundred })
       assert(DEFAULT_RATIO.mul(ONE_HUNDRED_BITCOIN).eq(await this.pool.balanceOf.call(oneHundred)), 'pool balance')
       assert(ONE_ETHER.eq(await this.pool.unclaimedRewards.call(oneHundred)))
       assert(ONE_ETHER.eq(await this.rewardToken.balanceOf.call(this.pool.address)))
@@ -127,6 +133,7 @@ contract('StakedAsset', function (accounts) {
 
       // transferFrom to kycAccount
       await this.pool.approve(account2, DEFAULT_RATIO.mul(ONE_HUNDRED_BITCOIN), { from: oneHundred })
+      await this.pool.transferFrom(oneHundred, kycAccount, DEFAULT_RATIO.mul(ONE_HUNDRED_BITCOIN), { from: account2 })
       assert(DEFAULT_RATIO.mul(ONE_HUNDRED_BITCOIN).eq(await this.pool.balanceOf.call(kycAccount)), 'pool balance')
       assert(ONE_ETHER.eq(await this.pool.unclaimedRewards.call(kycAccount)), 'unclaimed rewards transfer')
       assert.equal(0, await this.pool.unclaimedRewards.call(oneHundred))
