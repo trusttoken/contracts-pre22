@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import "./TrueCoinReceiver.sol";
-import "../trusttokens/Registry/Registry.sol";
+import "../registry/Registry.sol";
 import "./ReclaimerToken.sol";
 import "./BurnableTokenWithBounds.sol";
 import "./GasRefundToken.sol";

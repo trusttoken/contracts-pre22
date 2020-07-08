@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "../Registry/Registry.sol";
+import "../Registry.sol";
 
 contract MockRegistrySubscriber {
     mapping(address => mapping(bytes32 => uint256)) attributes;

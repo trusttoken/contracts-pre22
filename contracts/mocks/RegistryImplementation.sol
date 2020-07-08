@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import {Registry} from "../trusttokens/Registry/Registry.sol";
-import {ProvisionalRegistry} from "../trusttokens/Registry/ProvisionalRegistry.sol";
+import {Registry} from "../registry/Registry.sol";
+import {ProvisionalRegistry} from "../registry/ProvisionalRegistry.sol";
 
 /**
  * @title RegistryImplementation

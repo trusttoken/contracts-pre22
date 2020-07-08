@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import "../FinancialOpportunity.sol";
-import "../../TrueCurrencies/modularERC20/InstantiatableOwnable.sol";
+import "../../trueCurrencies/modularERC20/InstantiatableOwnable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 

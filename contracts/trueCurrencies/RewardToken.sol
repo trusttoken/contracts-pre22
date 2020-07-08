@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import {FinancialOpportunity} from "../TrueReward/FinancialOpportunity.sol";
+import {FinancialOpportunity} from "../trueReward/FinancialOpportunity.sol";
 import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol";
 
 /**
  * @title RewardToken
  * @dev Non-transferrable token meant to represent
- * RewardTokens are TrueCurrencies owed by a financial opportunity
+ * RewardTokens are trueCurrencies owed by a financial opportunity
  *
  * -- Overview --
  * RewardTokens are redeemable for an underlying Token.
@@ -28,7 +28,7 @@ import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol
  * is no longer redeemable, and we want to wipe the debt.
  *
  * -- Mint/Burn RewardBackedToken
- * RewardBackedToken represents TrueCurrencies supply backed by Rewards
+ * RewardBackedToken represents trueCurrencies supply backed by Rewards
  *
  */
 abstract contract RewardToken is CompliantDepositTokenWithHook {

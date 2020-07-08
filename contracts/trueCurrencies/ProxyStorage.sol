@@ -2,10 +2,10 @@
 pragma solidity 0.6.10;
 // solhint-disable max-states-count, var-name-mixedcase
 
-import "../trusttokens/Registry/Registry.sol";
+import "../registry/Registry.sol";
 import "./deprecated/BalanceSheet.sol";
 import "./deprecated/AllowanceSheet.sol";
-import {FinancialOpportunity} from "../TrueReward/FinancialOpportunity.sol";
+import {FinancialOpportunity} from "../trueReward/FinancialOpportunity.sol";
 
 /*
 Defines the storage layout of the token implementation contract. Any newly declared

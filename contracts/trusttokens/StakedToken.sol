@@ -3,7 +3,7 @@ pragma solidity 0.6.10;
 
 import {StakingAsset} from "./StakingAsset.sol";
 import {AStakedToken} from "./AStakedToken.sol";
-import {Registry} from "./Registry/Registry.sol";
+import {Registry} from "../registry/Registry.sol";
 import {RegistrySubscriber} from "./RegistrySubscriber.sol";
 
 /**

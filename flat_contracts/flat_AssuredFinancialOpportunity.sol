@@ -1519,7 +1519,7 @@ contract StakedToken is AStakedToken {
     }
 }
 
-// File: contracts/TrueCurrencies/AssuredFinancialOpportunityStorage.sol
+// File: contracts/trueCurrencies/AssuredFinancialOpportunityStorage.sol
 
 pragma solidity 0.5.13;
 
@@ -1564,7 +1564,7 @@ contract AssuredFinancialOpportunityStorage {
     **/
 }
 
-// File: contracts/TrueCurrencies/modularERC20/InitializableOwnable.sol
+// File: contracts/trueCurrencies/modularERC20/InitializableOwnable.sol
 
 pragma solidity 0.5.13;
 
@@ -1612,7 +1612,7 @@ contract InitializableOwnable {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/InitializableClaimable.sol
+// File: contracts/trueCurrencies/modularERC20/InitializableClaimable.sol
 
 pragma solidity 0.5.13;
 

@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import "./TokenController.sol";
-import "../Proxy/OwnedUpgradeabilityProxy.sol";
+import "../proxy/OwnedUpgradeabilityProxy.sol";
 
 /*
 This contract is the owner of TokenController.

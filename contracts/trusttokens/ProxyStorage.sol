@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "./Registry/Registry.sol";
+import "../registry/Registry.sol";
 
 /**
  * All storage must be declared here

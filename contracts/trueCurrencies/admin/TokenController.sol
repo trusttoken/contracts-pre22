@@ -2,9 +2,9 @@
 pragma solidity 0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../../trusttokens/Registry/Registry.sol";
+import "../../registry/Registry.sol";
 import "../HasOwner.sol";
-import "../Proxy/OwnedUpgradeabilityProxy.sol";
+import "../proxy/OwnedUpgradeabilityProxy.sol";
 import "../TrueUSD.sol";
 
 /** @title TokenController
@@ -622,7 +622,7 @@ contract TokenController {
     }
 
     /**
-     * @dev Withdraw all TrueCurrencies from reserve
+     * @dev Withdraw all trueCurrencies from reserve
      * @param _to address to withdraw to
      * @param _value amount to withdraw
      */

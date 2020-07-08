@@ -1,5 +1,5 @@
 
-// File: contracts/TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol
+// File: contracts/trueCurrencies/proxy/OwnedUpgradeabilityProxy.sol
 
 pragma solidity 0.5.13;
 
