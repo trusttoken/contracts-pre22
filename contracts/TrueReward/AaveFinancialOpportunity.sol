@@ -5,7 +5,6 @@ import "../trueCurrencies/TrueUSD.sol";
 import "./IAToken.sol";
 import "./ILendingPool.sol";
 import "../trueCurrencies/proxy/OwnedUpgradeabilityProxy.sol";
-import "./FinancialOpportunity.sol";
 import "./ILendingPoolCore.sol";
 import "../trueCurrencies/modularERC20/InstantiatableOwnable.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";

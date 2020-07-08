@@ -1,15 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-interface Registry {
-    function setAttributeValue(
-        address who,
-        bytes32 what,
-        uint256 val
-    ) external;
-
-    function hasAttribute(address _who, bytes32 _attribute) external view returns (bool);
-}
+import "../../registry/Registry.sol";
 
 contract DepositAddressRegistrar {
     Registry public registry;
