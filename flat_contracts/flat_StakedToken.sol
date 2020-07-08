@@ -1,5 +1,5 @@
 
-// File: openzeppelin-solidity/contracts/token/ERC20/IERC20.sol
+// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
 pragma solidity ^0.5.0;
 
@@ -105,7 +105,7 @@ contract Registry {
         address adminAddr;
         uint256 timestamp;
     }
-    
+
     // never remove any storage variables
     address public owner;
     address public pendingOwner;
@@ -370,9 +370,9 @@ contract ModularBasicToken is ProxyStorage {
 contract ModularStandardToken is ModularBasicToken {
     using ValSafeMath for uint256;
     uint256 constant INFINITE_ALLOWANCE = 0xfe00000000000000000000000000000000000000000000000000000000000000;
-    
+
     event Approval(address indexed owner, address indexed spender, uint256 value);
-    
+
     /**
      * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
      *

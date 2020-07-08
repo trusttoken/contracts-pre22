@@ -1,18 +1,20 @@
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+// solhint-disable max-states-count
+pragma solidity 0.6.10;
 
-import { TrueUSD } from "../TrueCurrencies/TrueUSD.sol";
-import { ProvisionalRegistryImplementation } from "../mocks/RegistryImplementation.sol";
-import { OwnedUpgradeabilityProxy } from "../TrueCurrencies/Proxy/OwnedUpgradeabilityProxy.sol";
-import { TokenController } from "../TrueCurrencies/Admin/TokenController.sol";
-import { AssuredFinancialOpportunity } from "../TrueReward/AssuredFinancialOpportunity.sol";
-import { AaveFinancialOpportunity } from "../TrueReward/AaveFinancialOpportunity.sol";
-import { IAToken } from "../TrueReward/IAToken.sol";
-import { ILendingPool } from "../TrueReward/ILendingPool.sol";
-import { IExponentContract } from "../TrueReward/utilities/IExponentContract.sol";
-import { StakedToken } from "@trusttoken/trusttokens/contracts/StakedToken.sol";
-import { Liquidator } from "@trusttoken/trusttokens/contracts/Liquidator.sol";
-import { TrustToken } from "@trusttoken/trusttokens/contracts/TrustToken.sol";
-import { StakingAsset } from "@trusttoken/trusttokens/contracts/StakingAsset.sol";
+import {TrueUSD} from "../trueCurrencies/TrueUSD.sol";
+import {ProvisionalRegistryImplementation} from "../mocks/RegistryImplementation.sol";
+import {OwnedUpgradeabilityProxy} from "../trueCurrencies/proxy/OwnedUpgradeabilityProxy.sol";
+import {TokenController} from "../trueCurrencies/admin/TokenController.sol";
+import {AssuredFinancialOpportunity} from "../trueReward/AssuredFinancialOpportunity.sol";
+import {AaveFinancialOpportunity} from "../trueReward/AaveFinancialOpportunity.sol";
+import {IAToken} from "../trueReward/IAToken.sol";
+import {ILendingPool} from "../trueReward/ILendingPool.sol";
+import {FractionalExponents} from "../trueReward/utilities/FractionalExponents.sol";
+import {StakedToken} from "../trusttokens/StakedToken.sol";
+import {Liquidator} from "../trusttokens/Liquidator.sol";
+import {TrustToken} from "../trusttokens/TrustToken.sol";
+import {StakingAsset} from "../trusttokens/StakingAsset.sol";
 
 /**
  * @title DeployHelper
@@ -35,7 +37,7 @@ contract DeployHelper {
     OwnedUpgradeabilityProxy public stakedTokenProxy;
     OwnedUpgradeabilityProxy public liquidatorProxy;
 
-    IExponentContract exponentContract;
+    FractionalExponents exponentContract;
     StakedToken stakedToken;
 
     TrueUSD trueUSD;
@@ -80,12 +82,12 @@ contract DeployHelper {
         tokenController = TokenController(address(tokenControllerProxy));
         trustTokenProxy = OwnedUpgradeabilityProxy(trustTokenProxyAddress);
         registryProxy = OwnedUpgradeabilityProxy(registryProxyAddress);
-        registry = ProvisionalRegistryImplementation(address(registry));
+        registry = ProvisionalRegistryImplementation(registryProxyAddress);
         assuredFinancialOpportunityProxy = OwnedUpgradeabilityProxy(assuredFinancialOpportunityProxyAddress);
         aaveFinancialOpportunityProxy = OwnedUpgradeabilityProxy(aaveFinancialOpportunityProxyAddress);
         liquidatorProxy = OwnedUpgradeabilityProxy(liquidatorProxyAddress);
         registryProxy = OwnedUpgradeabilityProxy(registryProxyAddress);
-        exponentContract = IExponentContract(exponentContractAddress);
+        exponentContract = FractionalExponents(exponentContractAddress);
         stakedTokenProxy = OwnedUpgradeabilityProxy(stakedTokenProxyAddress);
     }
 

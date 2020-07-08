@@ -1,0 +1,11 @@
+{
+  "extends": "solhint:recommended",
+  "rules": {
+    "avoid-suicide": "error",
+    "compiler-version": ["error","0.6.10"],
+    "state-visibility": "off",
+    "no-inline-assembly": "off",
+    "not-rely-on-time": "off",
+    "max-states-count": "off"
+  }
+}
