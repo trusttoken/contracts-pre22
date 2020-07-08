@@ -1,5 +1,5 @@
 
-// File: openzeppelin-solidity/contracts/token/ERC20/IERC20.sol
+// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
 pragma solidity ^0.5.0;
 
@@ -94,7 +94,7 @@ contract Registry {
         address adminAddr;
         uint256 timestamp;
     }
-    
+
     // never remove any storage variables
     address public owner;
     address public pendingOwner;
@@ -248,7 +248,7 @@ contract Registry {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/InstantiatableOwnable.sol
+// File: contracts/trueCurrencies/modularERC20/InstantiatableOwnable.sol
 
 pragma solidity 0.5.13;
 
@@ -293,7 +293,7 @@ contract InstantiatableOwnable {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/Claimable.sol
+// File: contracts/trueCurrencies/modularERC20/Claimable.sol
 
 pragma solidity 0.5.13;
 
@@ -333,7 +333,7 @@ contract Claimable is InstantiatableOwnable {
     }
 }
 
-// File: openzeppelin-solidity/contracts/math/SafeMath.sol
+// File: @openzeppelin/contracts/math/SafeMath.sol
 
 pragma solidity ^0.5.0;
 
@@ -492,7 +492,7 @@ library SafeMath {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/BalanceSheet.sol
+// File: contracts/trueCurrencies/modularERC20/BalanceSheet.sol
 
 pragma solidity 0.5.13;
 
@@ -517,7 +517,7 @@ contract BalanceSheet is Claimable {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/AllowanceSheet.sol
+// File: contracts/trueCurrencies/modularERC20/AllowanceSheet.sol
 
 pragma solidity 0.5.13;
 
@@ -622,7 +622,7 @@ interface FinancialOpportunity {
     function redeem(address to, uint amount) external returns(uint);
 }
 
-// File: contracts/TrueCurrencies/ProxyStorage.sol
+// File: contracts/trueCurrencies/ProxyStorage.sol
 
 pragma solidity 0.5.13;
 
@@ -695,7 +695,7 @@ contract ProxyStorage {
     **/
 }
 
-// File: contracts/TrueCurrencies/HasOwner.sol
+// File: contracts/trueCurrencies/HasOwner.sol
 
 pragma solidity 0.5.13;
 
@@ -756,7 +756,7 @@ contract HasOwner is ProxyStorage {
     }
 }
 
-// File: contracts/TrueCurrencies/utilities/PausedToken.sol
+// File: contracts/trueCurrencies/utilities/PausedToken.sol
 
 pragma solidity 0.5.13;
 
@@ -1048,7 +1048,7 @@ contract PausedDelegateERC20 is PausedToken {
     }
 }
 
-// File: contracts/TrueCurrencies/utilities/PausedCurrencies.sol
+// File: contracts/trueCurrencies/utilities/PausedCurrencies.sol
 
 pragma solidity 0.5.13;
 

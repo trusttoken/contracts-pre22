@@ -17,7 +17,7 @@ export const deployAave = async (deployer: Wallet, tusd: string) => {
   const lendingPoolImpl = await new LendingPoolFactory(deployer).deploy()
   const lib = await deployContract(deployer, CoreLibrary)
   const lendingPoolCoreImpl = await new LendingPoolCoreFactory({
-    'contracts/lib/aave/libraries/CoreLibrary.sol:CoreLibrary': lib.address,
+    'test-ts/aave/contracts/libraries/CoreLibrary.sol:CoreLibrary': lib.address,
   }, deployer).deploy()
   const lendingPoolConfiguratorImpl = await new LendingPoolConfiguratorFactory(deployer).deploy()
   const lendingPoolDataProviderImpl = await new LendingPoolDataProviderFactory(deployer).deploy()

@@ -1,5 +1,5 @@
 
-// File: contracts/TrueCurrencies/TrueCoinReceiver.sol
+// File: contracts/trueCurrencies/TrueCoinReceiver.sol
 
 pragma solidity 0.5.13;
 
@@ -7,7 +7,7 @@ contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
 }
 
-// File: openzeppelin-solidity/contracts/token/ERC20/IERC20.sol
+// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
 pragma solidity ^0.5.0;
 
@@ -102,7 +102,7 @@ contract Registry {
         address adminAddr;
         uint256 timestamp;
     }
-    
+
     // never remove any storage variables
     address public owner;
     address public pendingOwner;
@@ -256,7 +256,7 @@ contract Registry {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/InstantiatableOwnable.sol
+// File: contracts/trueCurrencies/modularERC20/InstantiatableOwnable.sol
 
 pragma solidity 0.5.13;
 
@@ -301,7 +301,7 @@ contract InstantiatableOwnable {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/Claimable.sol
+// File: contracts/trueCurrencies/modularERC20/Claimable.sol
 
 pragma solidity 0.5.13;
 
@@ -341,7 +341,7 @@ contract Claimable is InstantiatableOwnable {
     }
 }
 
-// File: openzeppelin-solidity/contracts/math/SafeMath.sol
+// File: @openzeppelin/contracts/math/SafeMath.sol
 
 pragma solidity ^0.5.0;
 
@@ -500,7 +500,7 @@ library SafeMath {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/BalanceSheet.sol
+// File: contracts/trueCurrencies/modularERC20/BalanceSheet.sol
 
 pragma solidity 0.5.13;
 
@@ -525,7 +525,7 @@ contract BalanceSheet is Claimable {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/AllowanceSheet.sol
+// File: contracts/trueCurrencies/modularERC20/AllowanceSheet.sol
 
 pragma solidity 0.5.13;
 
@@ -630,7 +630,7 @@ interface FinancialOpportunity {
     function redeem(address to, uint amount) external returns(uint);
 }
 
-// File: contracts/TrueCurrencies/ProxyStorage.sol
+// File: contracts/trueCurrencies/ProxyStorage.sol
 
 pragma solidity 0.5.13;
 
@@ -703,7 +703,7 @@ contract ProxyStorage {
     **/
 }
 
-// File: contracts/TrueCurrencies/HasOwner.sol
+// File: contracts/trueCurrencies/HasOwner.sol
 
 pragma solidity 0.5.13;
 
@@ -764,7 +764,7 @@ contract HasOwner is ProxyStorage {
     }
 }
 
-// File: contracts/TrueCurrencies/ReclaimerToken.sol
+// File: contracts/trueCurrencies/ReclaimerToken.sol
 
 pragma solidity 0.5.13;
 
@@ -794,7 +794,7 @@ contract ReclaimerToken is HasOwner {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/InitializableOwnable.sol
+// File: contracts/trueCurrencies/modularERC20/InitializableOwnable.sol
 
 pragma solidity 0.5.13;
 
@@ -842,7 +842,7 @@ contract InitializableOwnable {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/InitializableClaimable.sol
+// File: contracts/trueCurrencies/modularERC20/InitializableClaimable.sol
 
 pragma solidity 0.5.13;
 
@@ -882,7 +882,7 @@ contract InitializableClaimable is InitializableOwnable {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/ModularBasicToken.sol
+// File: contracts/trueCurrencies/modularERC20/ModularBasicToken.sol
 
 pragma solidity 0.5.13;
 
@@ -930,7 +930,7 @@ contract ModularBasicToken is HasOwner {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/ModularStandardToken.sol
+// File: contracts/trueCurrencies/modularERC20/ModularStandardToken.sol
 
 pragma solidity 0.5.13;
 
@@ -1083,7 +1083,7 @@ contract ModularStandardToken is ModularBasicToken {
     }
 }
 
-// File: contracts/TrueCurrencies/modularERC20/ModularBurnableToken.sol
+// File: contracts/trueCurrencies/modularERC20/ModularBurnableToken.sol
 
 pragma solidity 0.5.13;
 
@@ -1111,7 +1111,7 @@ contract ModularBurnableToken is ModularStandardToken {
     }
 }
 
-// File: contracts/TrueCurrencies/BurnableTokenWithBounds.sol
+// File: contracts/trueCurrencies/BurnableTokenWithBounds.sol
 
 pragma solidity 0.5.13;
 
@@ -1145,7 +1145,7 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
     }
 }
 
-// File: contracts/TrueCurrencies/GasRefundToken.sol
+// File: contracts/trueCurrencies/GasRefundToken.sol
 
 pragma solidity 0.5.13;
 
@@ -1310,7 +1310,7 @@ contract GasRefundToken is ProxyStorage {
     }
 }
 
-// File: contracts/TrueCurrencies/CompliantDepositTokenWithHook.sol
+// File: contracts/trueCurrencies/CompliantDepositTokenWithHook.sol
 
 pragma solidity 0.5.13;
 
@@ -1584,7 +1584,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 }
 
-// File: contracts/TrueCurrencies/TrueCAD.sol
+// File: contracts/trueCurrencies/TrueCAD.sol
 
 pragma solidity 0.5.13;
 
@@ -1619,7 +1619,7 @@ contract TrueCAD is CompliantDepositTokenWithHook {
     }
 }
 
-// File: contracts/TrueCurrencies/mocks/TrueCADMock.sol
+// File: contracts/trueCurrencies/mocks/TrueCADMock.sol
 
 pragma solidity 0.5.13;
 
