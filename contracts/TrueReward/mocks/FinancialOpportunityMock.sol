@@ -6,17 +6,11 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 contract FinancialOpportunityMock {
     using SafeMath for uint256;
 
-    function deposit(address from, uint256 amount) external pure returns (uint256) {
-        // silence compiler warning
-        from;
-
+    function deposit(address, uint256 amount) external pure returns (uint256) {
         return amount.mul(101).div(103);
     }
 
-    function redeem(address from, uint256 amount) external pure returns (uint256) {
-        // silence compiler warning
-        from;
-
+    function redeem(address, uint256 amount) external pure returns (uint256) {
         return amount.mul(10**18).div(tokenValue());
     }
 

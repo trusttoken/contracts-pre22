@@ -141,7 +141,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
         uint256 rewardBalance = rewardTokenBalance(msg.sender, opportunity());
 
         // remove reward distribution
-        _removeDistribution();
+        _removeDistribution(opportunity());
 
         if (rewardBalance > 0) {
             // redeem entire user reward token balance
@@ -333,7 +333,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @dev Remove reward distribution for a financial opportunity
      * Remove
      */
-    function _removeDistribution() internal {
+    function _removeDistribution(address) internal {
         _rewardDistribution[msg.sender].pop();
     }
 }

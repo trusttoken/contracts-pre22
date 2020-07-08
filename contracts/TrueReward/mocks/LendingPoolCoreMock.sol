@@ -7,10 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract LendingPoolCoreMock is ILendingPoolCore {
     uint256 reserveNormalizedIncome = 1 * 10**27;
 
-    function getReserveNormalizedIncome(address _reserve) external override view returns (uint256) {
-        // silence compiler warning
-        _reserve;
-
+    function getReserveNormalizedIncome(address) external override view returns (uint256) {
         return reserveNormalizedIncome;
     }
 

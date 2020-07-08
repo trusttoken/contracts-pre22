@@ -18,11 +18,8 @@ contract LendingPoolMock is ILendingPool {
     function deposit(
         address _reserve,
         uint256 _amount,
-        uint16 _referralCode
+        uint16
     ) external override {
-        // silence compiler warning
-        _referralCode;
-
         IERC20 token = aToken.token();
         require(_reserve == address(token), "incorrect reserve");
         require(token.allowance(msg.sender, address(_core)) >= _amount, "not enough allowance");
