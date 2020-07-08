@@ -2,8 +2,13 @@
 pragma solidity 0.6.10;
 
 interface Registry {
-    function setAttributeValue(address who, bytes32 what, uint val) external;
-    function hasAttribute(address _who, bytes32 _attribute) external view returns(bool);
+    function setAttributeValue(
+        address who,
+        bytes32 what,
+        uint256 val
+    ) external;
+
+    function hasAttribute(address _who, bytes32 _attribute) external view returns (bool);
 }
 
 contract DepositAddressRegistrar {
@@ -17,9 +22,9 @@ contract DepositAddressRegistrar {
     }
 
     function registerDepositAddress() public {
-        address shiftedAddress = address(uint(msg.sender) >> 20);
+        address shiftedAddress = address(uint256(msg.sender) >> 20);
         require(!registry.hasAttribute(shiftedAddress, IS_DEPOSIT_ADDRESS), "deposit address already registered");
-        registry.setAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS, uint(msg.sender));
+        registry.setAttributeValue(shiftedAddress, IS_DEPOSIT_ADDRESS, uint256(msg.sender));
         emit DepositAddressRegistered(msg.sender);
     }
 
@@ -28,4 +33,3 @@ contract DepositAddressRegistrar {
         msg.sender.transfer(msg.value);
     }
 }
-

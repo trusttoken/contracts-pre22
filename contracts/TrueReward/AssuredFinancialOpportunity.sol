@@ -302,7 +302,9 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         // attempt to withdraw from opportunity
         // TODO use try-catch
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returnData) = address(finOp()).call(abi.encodePacked(finOp().redeem.selector, abi.encode(_to, ztusd)));
+        (bool success, bytes memory returnData) = address(finOp()).call(
+            abi.encodePacked(finOp().redeem.selector, abi.encode(_to, ztusd))
+        );
 
         if (success) {
             // successfully got TUSD :)

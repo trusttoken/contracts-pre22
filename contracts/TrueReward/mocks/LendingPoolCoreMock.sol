@@ -5,9 +5,9 @@ import "../ILendingPoolCore.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract LendingPoolCoreMock is ILendingPoolCore {
-    uint256 reserveNormalizedIncome = 1*10**27;
+    uint256 reserveNormalizedIncome = 1 * 10**27;
 
-    function getReserveNormalizedIncome(address _reserve) override external view returns (uint256) {
+    function getReserveNormalizedIncome(address _reserve) external override view returns (uint256) {
         // silence compiler warning
         _reserve;
 
@@ -18,7 +18,11 @@ contract LendingPoolCoreMock is ILendingPoolCore {
         reserveNormalizedIncome = value;
     }
 
-    function transferToReserve(address _reserve, address payable _user, uint256 _amount) override external {
+    function transferToReserve(
+        address _reserve,
+        address payable _user,
+        uint256 _amount
+    ) external override {
         require(ERC20(_reserve).transferFrom(_user, address(this), _amount), "LendingPoolCoreMock/transferToReserve");
     }
 }

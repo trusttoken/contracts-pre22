@@ -4,7 +4,6 @@ pragma solidity 0.6.10;
 import "../HasOwner.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-
 contract PausedToken is HasOwner, RegistryClone {
     using SafeMath for uint256;
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -43,10 +42,7 @@ contract PausedToken is HasOwner, RegistryClone {
     /**
      *@dev allows owner of TrueUSD to gain ownership of any contract that TrueUSD currently owns
      */
-    function reclaimContract(InstantiatableOwnable _ownable)
-        external
-        onlyOwner
-    {
+    function reclaimContract(InstantiatableOwnable _ownable) external onlyOwner {
         _ownable.transferOwnership(owner);
     }
 
@@ -93,15 +89,8 @@ contract PausedToken is HasOwner, RegistryClone {
 
     bytes32 constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";
 
-    function setMinimumGasPriceForFutureRefunds(
-        uint256 _minimumGasPriceForFutureRefunds
-    ) public {
-        require(
-            registry.hasAttribute(
-                msg.sender,
-                CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE
-            )
-        );
+    function setMinimumGasPriceForFutureRefunds(uint256 _minimumGasPriceForFutureRefunds) public {
+        require(registry.hasAttribute(msg.sender, CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE));
         minimumGasPriceForFutureRefunds = _minimumGasPriceForFutureRefunds;
     }
 
@@ -117,19 +106,11 @@ contract PausedToken is HasOwner, RegistryClone {
         _balanceOf[_who] = _value;
     }
 
-    function allowance(address _who, address _spender)
-        public
-        view
-        returns (uint256)
-    {
+    function allowance(address _who, address _spender) public view returns (uint256) {
         return _getAllowance(_who, _spender);
     }
 
-    function _getAllowance(address _who, address _spender)
-        internal
-        view
-        returns (uint256 value)
-    {
+    function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
         return _allowance[_who][_spender];
     }
 
@@ -200,17 +181,14 @@ contract PausedToken is HasOwner, RegistryClone {
         address _who,
         bytes32 _attribute,
         uint256 _value
-    ) override public onlyRegistry {
+    ) public override onlyRegistry {
         attributes[_attribute][_who] = _value;
     }
 
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
 
     function wipeBlacklistedAccount(address _account) public onlyOwner {
-        require(
-            attributes[IS_BLACKLISTED][_account] != 0,
-            "_account is not blacklisted"
-        );
+        require(attributes[IS_BLACKLISTED][_account] != 0, "_account is not blacklisted");
         uint256 oldValue = _getBalance(_account);
         _setBalance(_account, 0);
         totalSupply_ = totalSupply_.sub(oldValue);
@@ -218,7 +196,6 @@ contract PausedToken is HasOwner, RegistryClone {
         emit Transfer(_account, address(0), oldValue);
     }
 }
-
 
 /** @title PausedDelegateERC20
 Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
@@ -248,11 +225,7 @@ contract PausedDelegateERC20 is PausedToken {
         revert("Token Paused");
     }
 
-    function delegateAllowance(address owner, address spender)
-        public
-        view
-        returns (uint256)
-    {
+    function delegateAllowance(address owner, address spender) public view returns (uint256) {
         return _getAllowance(owner, spender);
     }
 

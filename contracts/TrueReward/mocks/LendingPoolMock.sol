@@ -10,15 +10,16 @@ contract LendingPoolMock is ILendingPool {
     ILendingPoolCore _core;
     ATokenMock aToken;
 
-    constructor(
-        ILendingPoolCore _lendingPoolCore,
-        ATokenMock _aToken
-    ) public {
+    constructor(ILendingPoolCore _lendingPoolCore, ATokenMock _aToken) public {
         _core = _lendingPoolCore;
         aToken = _aToken;
     }
 
-    function deposit(address _reserve, uint256 _amount, uint16 _referralCode) override external {
+    function deposit(
+        address _reserve,
+        uint256 _amount,
+        uint16 _referralCode
+    ) external override {
         // silence compiler warning
         _referralCode;
 
@@ -30,7 +31,7 @@ contract LendingPoolMock is ILendingPool {
         aToken.mint(msg.sender, _amount);
     }
 
-    function core() override external view returns(address) {
+    function core() external override view returns (address) {
         return address(_core);
     }
 }

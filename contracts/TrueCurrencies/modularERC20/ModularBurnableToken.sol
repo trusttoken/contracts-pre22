@@ -10,13 +10,13 @@ import "./ModularStandardToken.sol";
 contract ModularBurnableToken is ModularStandardToken {
     event Burn(address indexed burner, uint256 value);
     event Mint(address indexed to, uint256 value);
-    uint256 constant CENT = 10 ** 16;
+    uint256 constant CENT = 10**16;
 
     function burn(uint256 _value) external {
-        _burnAllArgs(msg.sender, _value - _value % CENT);
+        _burnAllArgs(msg.sender, _value - (_value % CENT));
     }
 
-    function _burnAllArgs(address _from, uint256 _value) virtual internal {
+    function _burnAllArgs(address _from, uint256 _value) internal virtual {
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
         _subBalance(_from, _value);

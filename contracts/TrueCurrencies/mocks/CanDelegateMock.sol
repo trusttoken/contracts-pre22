@@ -5,6 +5,7 @@ import "./CanDelegateV1.sol";
 
 contract CanDelegateMock is CanDelegateV1 {
     event Burn(address indexed burner, uint256 value);
+
     constructor(address initialAccount, uint256 initialBalance) public {
         balances = new BalanceSheetV1();
         allowances = new AllowanceSheetV1();

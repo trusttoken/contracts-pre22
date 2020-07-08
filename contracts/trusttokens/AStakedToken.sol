@@ -56,7 +56,10 @@ abstract contract AStakedToken is ValTokenWithHook {
         if (stake == 0) {
             return 0;
         }
-        unclaimedRewards_ = stake.mul(cumulativeRewardsPerStake.sub(claimedRewardsPerStake[_staker], "underflow"), "unclaimed rewards overflow");
+        unclaimedRewards_ = stake.mul(
+            cumulativeRewardsPerStake.sub(claimedRewardsPerStake[_staker], "underflow"),
+            "unclaimed rewards overflow"
+        );
     }
 
     /// @return ERC-20 stake asset
@@ -149,7 +152,12 @@ abstract contract AStakedToken is ValTokenWithHook {
             uint256 award_ = pendingRewards % resultBalance_;
             if (pendingRewardsPerStake > userClaimedRewardsPerStake) {
                 claimedRewardsPerStake[_from] = 0;
-                _award(award_.add((pendingRewardsPerStake - userClaimedRewardsPerStake).mul(resultBalance_, "award overflow"), "award overflow?"));
+                _award(
+                    award_.add(
+                        (pendingRewardsPerStake - userClaimedRewardsPerStake).mul(resultBalance_, "award overflow"),
+                        "award overflow?"
+                    )
+                );
             } else {
                 claimedRewardsPerStake[_from] = userClaimedRewardsPerStake - pendingRewardsPerStake;
                 _award(award_);
@@ -193,7 +201,10 @@ abstract contract AStakedToken is ValTokenWithHook {
         uint256 balance = stakeAsset().balanceOf(address(this));
         uint256 stakeAmount;
         if (_amount < balance) {
-            stakeAmount = _amount.mul(totalSupply.add(stakePendingWithdrawal, "stakePendingWithdrawal > totalSupply"), "overflow").div(balance - _amount, "insufficient deposit");
+            stakeAmount = _amount.mul(totalSupply.add(stakePendingWithdrawal, "stakePendingWithdrawal > totalSupply"), "overflow").div(
+                balance - _amount,
+                "insufficient deposit"
+            );
         } else {
             // first staker
             require(totalSupply == 0, "pool drained");
@@ -272,7 +283,10 @@ abstract contract AStakedToken is ValTokenWithHook {
         // consider stake pending withdrawal and total supply of stake token
         // totalUnstake / totalSupply = correspondingStake / totalStake
         // totalUnstake * totalStake / totalSupply = correspondingStake
-        uint256 correspondingStake = totalStake.mul(totalUnstake, "totalStake*totalUnstake overflow").div(totalSupply.add(stakePendingWithdrawal, "overflow totalSupply+stakePendingWithdrawal"), "zero totals");
+        uint256 correspondingStake = totalStake.mul(totalUnstake, "totalStake*totalUnstake overflow").div(
+            totalSupply.add(stakePendingWithdrawal, "overflow totalSupply+stakePendingWithdrawal"),
+            "zero totals"
+        );
         stakePendingWithdrawal = stakePendingWithdrawal.sub(totalUnstake, "stakePendingWithdrawal underflow");
         stake.transfer(recipient, correspondingStake);
     }
@@ -311,7 +325,10 @@ abstract contract AStakedToken is ValTokenWithHook {
         if (stake == 0) {
             return;
         }
-        uint256 dueRewards = stake.mul(cumulativeRewardsPerStake.sub(claimedRewardsPerStake[msg.sender], "underflow"), "dueRewards overflow");
+        uint256 dueRewards = stake.mul(
+            cumulativeRewardsPerStake.sub(claimedRewardsPerStake[msg.sender], "underflow"),
+            "dueRewards overflow"
+        );
         if (dueRewards == 0) {
             return;
         }

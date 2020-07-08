@@ -3,7 +3,6 @@ pragma solidity 0.6.10;
 
 import "../Admin/TokenController.sol";
 
-
 /*
 Allows for admins to quickly respond to critical emergencies
 After deploying FastPauseTrueUSD and configuring it with TokenController, admins
@@ -17,9 +16,7 @@ contract FastPauseTrueUSD {
     event FastTrueUSDPause(address indexed sender);
 
     constructor(address _trueUsdPauser, address _controllerContract) public {
-        require(
-            _trueUsdPauser != address(0) && _controllerContract != address(0)
-        );
+        require(_trueUsdPauser != address(0) && _controllerContract != address(0));
         controllerContract = TokenController(_controllerContract);
         trueUsdPauser = _trueUsdPauser;
     }

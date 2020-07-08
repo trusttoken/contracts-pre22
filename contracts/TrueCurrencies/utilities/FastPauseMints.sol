@@ -3,7 +3,6 @@ pragma solidity 0.6.10;
 
 import "../Admin/TokenController.sol";
 
-
 /*
 Allows for admins to quickly respond to fraudulent mints
 After deploying FastPauseMints and configuring it with TokenController, admins can
@@ -21,13 +20,8 @@ contract FastPauseMints {
         _;
     }
 
-    constructor(address _trueUsdMintPauser, address _controllerContract)
-        public
-    {
-        require(
-            _trueUsdMintPauser != address(0) &&
-                _controllerContract != address(0)
-        );
+    constructor(address _trueUsdMintPauser, address _controllerContract) public {
+        require(_trueUsdMintPauser != address(0) && _controllerContract != address(0));
         controllerContract = TokenController(_controllerContract);
         trueUsdMintPauser = _trueUsdMintPauser;
     }

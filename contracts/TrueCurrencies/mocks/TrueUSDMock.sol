@@ -18,7 +18,7 @@ contract TrueUSDMock is TrueUSD {
         burnMax = 20000000 * 10**uint256(DECIMALS);
     }
 
-    function setTotalSupply(uint _totalSupply) public onlyOwner {
+    function setTotalSupply(uint256 _totalSupply) public onlyOwner {
         require(totalSupply_ == 0);
         totalSupply_ = _totalSupply;
     }

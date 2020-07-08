@@ -3,7 +3,7 @@ pragma solidity 0.6.10;
 
 import "../utilities/PausedCurrencies.sol";
 
-contract PausedTrueUSDMock is PausedTrueUSD{
+contract PausedTrueUSDMock is PausedTrueUSD {
     address public delegateFrom;
 
     function setDelegateFrom(address _delegateFrom) external {
@@ -14,5 +14,4 @@ contract PausedTrueUSDMock is PausedTrueUSD{
         require(msg.sender == delegateFrom);
         _;
     }
-
 }

@@ -82,7 +82,7 @@ contract DeployHelper {
         tokenController = TokenController(address(tokenControllerProxy));
         trustTokenProxy = OwnedUpgradeabilityProxy(trustTokenProxyAddress);
         registryProxy = OwnedUpgradeabilityProxy(registryProxyAddress);
-        registry = ProvisionalRegistryImplementation(address(registry));
+        registry = ProvisionalRegistryImplementation(registryProxyAddress);
         assuredFinancialOpportunityProxy = OwnedUpgradeabilityProxy(assuredFinancialOpportunityProxyAddress);
         aaveFinancialOpportunityProxy = OwnedUpgradeabilityProxy(aaveFinancialOpportunityProxyAddress);
         liquidatorProxy = OwnedUpgradeabilityProxy(liquidatorProxyAddress);
@@ -122,7 +122,16 @@ contract DeployHelper {
 
         initTrustToken(trustTokenImplAddress);
 
-        initAssurance(assuredFinancialOpportunityImplAddress, aaveFinancialOpportunityImplAddress, stakedTokenImplAddress, liquidatorImplAddress, aTokenAddress, lendingPoolAddress, outputUniswapAddress, stakeUniswapAddress);
+        initAssurance(
+            assuredFinancialOpportunityImplAddress,
+            aaveFinancialOpportunityImplAddress,
+            stakedTokenImplAddress,
+            liquidatorImplAddress,
+            aTokenAddress,
+            lendingPoolAddress,
+            outputUniswapAddress,
+            stakeUniswapAddress
+        );
     }
 
     function initTrustToken(address trustTokenImplAddress) internal {
@@ -160,19 +169,42 @@ contract DeployHelper {
         stakedTokenProxy.upgradeTo(stakedTokenImplAddress);
         stakedToken = StakedToken(address(stakedTokenProxy));
 
-        stakedToken.configure(StakingAsset(address(trustTokenProxy)), StakingAsset(address(trueUSDProxy)), ProvisionalRegistryImplementation(address(registryProxy)), address(liquidatorProxy));
+        stakedToken.configure(
+            StakingAsset(address(trustTokenProxy)),
+            StakingAsset(address(trueUSDProxy)),
+            ProvisionalRegistryImplementation(address(registryProxy)),
+            address(liquidatorProxy)
+        );
 
         liquidatorProxy.claimProxyOwnership();
         liquidatorProxy.upgradeTo(liquidatorImplAddress);
         liquidator = Liquidator(address(liquidatorProxy));
 
-        liquidator.configure(address(registry), address(trueUSDProxy), address(trustTokenProxy), outputUniswapAddress, stakeUniswapAddress);
+        liquidator.configure(
+            address(registry),
+            address(trueUSDProxy),
+            address(trustTokenProxy),
+            outputUniswapAddress,
+            stakeUniswapAddress
+        );
 
         liquidator.setPool(address(stakedToken));
 
-        aaveFinancialOpportunity.configure(IAToken(aTokenAddress), ILendingPool(lendingPoolAddress), TrueUSD(trueUSD), address(assuredFinancialOpportunity));
+        aaveFinancialOpportunity.configure(
+            IAToken(aTokenAddress),
+            ILendingPool(lendingPoolAddress),
+            TrueUSD(trueUSD),
+            address(assuredFinancialOpportunity)
+        );
 
-        assuredFinancialOpportunity.configure(address(aaveFinancialOpportunity), address(stakedToken), address(liquidator), address(exponentContract), address(trueUSD), address(trueUSD));
+        assuredFinancialOpportunity.configure(
+            address(aaveFinancialOpportunity),
+            address(stakedToken),
+            address(liquidator),
+            address(exponentContract),
+            address(trueUSD),
+            address(trueUSD)
+        );
 
         liquidator.transferOwnership(address(assuredFinancialOpportunity));
 

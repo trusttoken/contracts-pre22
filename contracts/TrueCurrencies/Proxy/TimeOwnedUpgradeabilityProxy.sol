@@ -12,12 +12,12 @@ import {OwnedUpgradeabilityProxy} from "./OwnedUpgradeabilityProxy.sol";
  * be upgraded
  */
 contract TimeOwnedUpgradeabilityProxy is OwnedUpgradeabilityProxy {
-
-    bytes32 private constant expirationPosition = bytes32(uint256(keccak256('trusttoken.expiration')) - 1);
+    // solhint-disable-next-line const-name-snakecase
+    bytes32 private constant expirationPosition = bytes32(uint256(keccak256("trusttoken.expiration")) - 1);
 
     /**
-    * @dev the constructor sets the original owner of the contract to the sender account.
-    */
+     * @dev the constructor sets the original owner of the contract to the sender account.
+     */
     constructor() public {
         _setUpgradeabilityOwner(msg.sender);
         // set expiration to ~4 months from now
@@ -26,7 +26,7 @@ contract TimeOwnedUpgradeabilityProxy is OwnedUpgradeabilityProxy {
 
     /**
      * @dev sets new expiration time
-    */
+     */
     function setExpiration(uint256 newExpirationTime) external onlyProxyOwner {
         require(block.timestamp < expiration(), "after expiration time");
         require(block.timestamp < newExpirationTime, "new expiration time must be in the future");
@@ -48,9 +48,9 @@ contract TimeOwnedUpgradeabilityProxy is OwnedUpgradeabilityProxy {
     }
 
     /**
-    * @dev Allows the proxy owner to upgrade the current version of the proxy.
-    * @param implementation representing the address of the new implementation to be set.
-    */
+     * @dev Allows the proxy owner to upgrade the current version of the proxy.
+     * @param implementation representing the address of the new implementation to be set.
+     */
     function upgradeTo(address implementation) public override onlyProxyOwner {
         require(block.timestamp < expiration(), "after expiration date");
         super.upgradeTo(implementation);

@@ -4,7 +4,6 @@ pragma solidity 0.6.10;
 import "./ModularBasicToken.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-
 /**
  * @title Standard ERC20 token
  *
@@ -15,11 +14,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 contract ModularStandardToken is ModularBasicToken {
     using SafeMath for uint256;
 
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
     uint256 constant INFINITE_ALLOWANCE = 0xfe00000000000000000000000000000000000000000000000000000000000000;
 
@@ -57,10 +52,7 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _addedValue The amount of tokens to increase the allowance by.
      */
-    function increaseAllowance(address _spender, uint256 _addedValue)
-        public
-        returns (bool)
-    {
+    function increaseAllowance(address _spender, uint256 _addedValue) public returns (bool) {
         _increaseAllowanceAllArgs(_spender, _addedValue, msg.sender);
         return true;
     }
@@ -71,11 +63,7 @@ contract ModularStandardToken is ModularBasicToken {
         address _tokenHolder
     ) internal {
         _addAllowance(_tokenHolder, _spender, _addedValue);
-        emit Approval(
-            _tokenHolder,
-            _spender,
-            _getAllowance(_tokenHolder, _spender)
-        );
+        emit Approval(_tokenHolder, _spender, _getAllowance(_tokenHolder, _spender));
     }
 
     /**
@@ -88,10 +76,7 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _subtractedValue The amount of tokens to decrease the allowance by.
      */
-    function decreaseAllowance(address _spender, uint256 _subtractedValue)
-        public
-        returns (bool)
-    {
+    function decreaseAllowance(address _spender, uint256 _subtractedValue) public returns (bool) {
         _decreaseAllowanceAllArgs(_spender, _subtractedValue, msg.sender);
         return true;
     }
@@ -112,43 +97,38 @@ contract ModularStandardToken is ModularBasicToken {
         emit Approval(_tokenHolder, _spender, newValue);
     }
 
-    function allowance(address _who, address _spender)
-        public
-        view
-        returns (uint256)
-    {
+    function allowance(address _who, address _spender) public view returns (uint256) {
         return _getAllowance(_who, _spender);
     }
 
-    function _getAllowance(address _who, address _spender)
-        virtual
-        internal
-        view
-        returns (uint256 value)
-    {
+    function _getAllowance(address _who, address _spender) internal virtual view returns (uint256 value) {
         return _allowance[_who][_spender];
     }
 
-    function _addAllowance(address _who, address _spender, uint256 _value) virtual internal
-    {
+    function _addAllowance(
+        address _who,
+        address _spender,
+        uint256 _value
+    ) internal virtual {
         _allowance[_who][_spender] = _allowance[_who][_spender].add(_value);
     }
 
-    function _subAllowance(address _who, address _spender, uint256 _value)
-        virtual
-        internal
-        returns (uint256 newAllowance)
-    {
+    function _subAllowance(
+        address _who,
+        address _spender,
+        uint256 _value
+    ) internal virtual returns (uint256 newAllowance) {
         newAllowance = _allowance[_who][_spender].sub(_value);
         if (newAllowance < INFINITE_ALLOWANCE) {
             _allowance[_who][_spender] = newAllowance;
         }
     }
 
-    function _setAllowance(address _who, address _spender, uint256 _value)
-        virtual
-        internal
-    {
+    function _setAllowance(
+        address _who,
+        address _spender,
+        uint256 _value
+    ) internal virtual {
         _allowance[_who][_spender] = _value;
     }
 }

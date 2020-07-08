@@ -15,31 +15,31 @@ contract ModularBasicToken is HasOwner {
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     /**
-    * @dev total number of tokens in existence
-    */
-    function totalSupply() virtual public view returns (uint256) {
+     * @dev total number of tokens in existence
+     */
+    function totalSupply() public virtual view returns (uint256) {
         return totalSupply_;
     }
 
-    function balanceOf(address _who) virtual public view returns (uint256) {
+    function balanceOf(address _who) public virtual view returns (uint256) {
         return _getBalance(_who);
     }
 
-    function _getBalance(address _who) virtual internal view returns (uint256) {
+    function _getBalance(address _who) internal virtual view returns (uint256) {
         return _balanceOf[_who];
     }
 
-    function _addBalance(address _who, uint256 _value) virtual internal returns (uint256 priorBalance) {
+    function _addBalance(address _who, uint256 _value) internal virtual returns (uint256 priorBalance) {
         priorBalance = _balanceOf[_who];
         _balanceOf[_who] = priorBalance.add(_value);
     }
 
-    function _subBalance(address _who, uint256 _value) virtual internal returns (uint256 result) {
+    function _subBalance(address _who, uint256 _value) internal virtual returns (uint256 result) {
         result = _balanceOf[_who].sub(_value);
         _balanceOf[_who] = result;
     }
 
-    function _setBalance(address _who, uint256 _value) virtual internal {
+    function _setBalance(address _who, uint256 _value) internal virtual {
         _balanceOf[_who] = _value;
     }
 }

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
+
 /**
  * FractionalExponents
  * Copied and modified from:
@@ -8,11 +11,9 @@
  *  https://ethereum.stackexchange.com/questions/50527/is-there-any-efficient-way-to-compute-the-exponentiation-of-an-fractional-base-a
  */
 
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.6.10;
+import {IExponentContract} from "../../TrueCurrencies/utilities/IExponentContract.sol";
 
-contract FractionalExponents  {
-
+contract FractionalExponents is IExponentContract {
     uint256 private constant ONE = 1;
     uint32 private constant MAX_WEIGHT = 1000000;
     uint8 private constant MIN_PRECISION = 32;
@@ -22,14 +23,15 @@ contract FractionalExponents  {
     uint256 private constant FIXED_2 = 0x100000000000000000000000000000000;
     uint256 private constant MAX_NUM = 0x200000000000000000000000000000000;
 
-    uint256 private constant LN2_NUMERATOR   = 0x3f80fe03f80fe03f80fe03f80fe03f8;
+    uint256 private constant LN2_NUMERATOR = 0x3f80fe03f80fe03f80fe03f80fe03f8;
     uint256 private constant LN2_DENOMINATOR = 0x5b9de1d10bf4103d647b0955897ba80;
 
     uint256 private constant OPT_LOG_MAX_VAL = 0x15bf0a8b1457695355fb8ac404e7a79e3;
     uint256 private constant OPT_EXP_MAX_VAL = 0x800000000000000000000000000000000;
 
     uint256[128] private maxExpArray;
-    function BancorFormula() public {
+
+    function bancorFormula() public {
         maxExpArray[32] = 0x1c35fedd14ffffffffffffffffffffffff;
         maxExpArray[33] = 0x1b0ce43b323fffffffffffffffffffffff;
         maxExpArray[34] = 0x19f0028ec1ffffffffffffffffffffffff;
@@ -128,8 +130,6 @@ contract FractionalExponents  {
         maxExpArray[127] = 0x00857ddf0117efa215952912839f6473e6;
     }
 
-
-
     /**
         General Description:
             Determine a value of precision.
@@ -147,23 +147,26 @@ contract FractionalExponents  {
             This allows us to compute "base ^ exp" with maximum accuracy and without exceeding 256 bits in any of the intermediate computations.
             This functions assumes that "_expN < 2 ^ 256 / log(MAX_NUM - 1)", otherwise the multiplication should be replaced with a "safeMul".
     */
-    function power(uint256 _baseN, uint256 _baseD, uint32 _expN, uint32 _expD) public view returns (uint256, uint8) {
+    function power(
+        uint256 _baseN,
+        uint256 _baseD,
+        uint32 _expN,
+        uint32 _expD
+    ) external override view returns (uint256, uint8) {
         assert(_baseN < MAX_NUM);
 
         uint256 baseLog;
-        uint256 base = _baseN * FIXED_1 / _baseD;
+        uint256 base = (_baseN * FIXED_1) / _baseD;
         if (base < OPT_LOG_MAX_VAL) {
             baseLog = optimalLog(base);
-        }
-        else {
+        } else {
             baseLog = generalLog(base);
         }
 
-        uint256 baseLogTimesExp = baseLog * _expN / _expD;
+        uint256 baseLogTimesExp = (baseLog * _expN) / _expD;
         if (baseLogTimesExp < OPT_EXP_MAX_VAL) {
             return (optimalExp(baseLogTimesExp), MAX_PRECISION);
-        }
-        else {
+        } else {
             uint8 precision = findPositionInMaxExpArray(baseLogTimesExp);
             return (generalExp(baseLogTimesExp >> (MAX_PRECISION - precision), precision), precision);
         }
@@ -194,7 +197,7 @@ contract FractionalExponents  {
             }
         }
 
-        return res * LN2_NUMERATOR / LN2_DENOMINATOR;
+        return (res * LN2_NUMERATOR) / LN2_DENOMINATOR;
     }
 
     /**
@@ -209,8 +212,7 @@ contract FractionalExponents  {
                 _n >>= 1;
                 res += 1;
             }
-        }
-        else {
+        } else {
             // Exactly 8 iterations
             for (uint8 s = 128; s > 0; s >>= 1) {
                 if (_n >= (ONE << s)) {
@@ -234,16 +236,12 @@ contract FractionalExponents  {
 
         while (lo + 1 < hi) {
             uint8 mid = (lo + hi) / 2;
-            if (maxExpArray[mid] >= _x)
-                lo = mid;
-            else
-                hi = mid;
+            if (maxExpArray[mid] >= _x) lo = mid;
+            else hi = mid;
         }
 
-        if (maxExpArray[hi] >= _x)
-            return hi;
-        if (maxExpArray[lo] >= _x)
-            return lo;
+        if (maxExpArray[hi] >= _x) return hi;
+        if (maxExpArray[lo] >= _x) return lo;
 
         assert(false);
         return 0;
@@ -356,7 +354,6 @@ contract FractionalExponents  {
         xi = (xi * _x) >> _precision;
         res += xi * 0x0000000000000000000000000000001; // add x^33 * (33! / 33!)
 
-
         return res / 0x688589cc0e9505e2f2fee5580000000 + _x + (ONE << _precision); // divide by 33! and then add x^1 / 1! + x^0 / 0!
     }
 
@@ -373,69 +370,69 @@ contract FractionalExponents  {
 
         if (x >= 0xd3094c70f034de4b96ff7d5b6f99fcd8) {
             res += 0x40000000000000000000000000000000;
-            x = x * FIXED_1 / 0xd3094c70f034de4b96ff7d5b6f99fcd8;
+            x = (x * FIXED_1) / 0xd3094c70f034de4b96ff7d5b6f99fcd8;
         }
 
         if (x >= 0xa45af1e1f40c333b3de1db4dd55f29a7) {
             res += 0x20000000000000000000000000000000;
-            x = x * FIXED_1 / 0xa45af1e1f40c333b3de1db4dd55f29a7;
+            x = (x * FIXED_1) / 0xa45af1e1f40c333b3de1db4dd55f29a7;
         }
 
         if (x >= 0x910b022db7ae67ce76b441c27035c6a1) {
             res += 0x10000000000000000000000000000000;
-            x = x * FIXED_1 / 0x910b022db7ae67ce76b441c27035c6a1;
+            x = (x * FIXED_1) / 0x910b022db7ae67ce76b441c27035c6a1;
         }
 
         if (x >= 0x88415abbe9a76bead8d00cf112e4d4a8) {
             res += 0x08000000000000000000000000000000;
-            x = x * FIXED_1 / 0x88415abbe9a76bead8d00cf112e4d4a8;
+            x = (x * FIXED_1) / 0x88415abbe9a76bead8d00cf112e4d4a8;
         }
 
         if (x >= 0x84102b00893f64c705e841d5d4064bd3) {
             res += 0x04000000000000000000000000000000;
-            x = x * FIXED_1 / 0x84102b00893f64c705e841d5d4064bd3;
+            x = (x * FIXED_1) / 0x84102b00893f64c705e841d5d4064bd3;
         }
 
         if (x >= 0x8204055aaef1c8bd5c3259f4822735a2) {
             res += 0x02000000000000000000000000000000;
-            x = x * FIXED_1 / 0x8204055aaef1c8bd5c3259f4822735a2;
+            x = (x * FIXED_1) / 0x8204055aaef1c8bd5c3259f4822735a2;
         }
 
         if (x >= 0x810100ab00222d861931c15e39b44e99) {
             res += 0x01000000000000000000000000000000;
-            x = x * FIXED_1 / 0x810100ab00222d861931c15e39b44e99;
+            x = (x * FIXED_1) / 0x810100ab00222d861931c15e39b44e99;
         }
 
         if (x >= 0x808040155aabbbe9451521693554f733) {
             res += 0x00800000000000000000000000000000;
-            x = x * FIXED_1 / 0x808040155aabbbe9451521693554f733;
+            x = (x * FIXED_1) / 0x808040155aabbbe9451521693554f733;
         }
 
         z = y = x - FIXED_1;
-        w = y * y / FIXED_1;
+        w = (y * y) / FIXED_1;
 
-        res += z * (0x100000000000000000000000000000000 - y) / 0x100000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x100000000000000000000000000000000 - y)) / 0x100000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x0aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa - y) / 0x200000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x0aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa - y)) / 0x200000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x099999999999999999999999999999999 - y) / 0x300000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x099999999999999999999999999999999 - y)) / 0x300000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x092492492492492492492492492492492 - y) / 0x400000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x092492492492492492492492492492492 - y)) / 0x400000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x08e38e38e38e38e38e38e38e38e38e38e - y) / 0x500000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x08e38e38e38e38e38e38e38e38e38e38e - y)) / 0x500000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x08ba2e8ba2e8ba2e8ba2e8ba2e8ba2e8b - y) / 0x600000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x08ba2e8ba2e8ba2e8ba2e8ba2e8ba2e8b - y)) / 0x600000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x089d89d89d89d89d89d89d89d89d89d89 - y) / 0x700000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x089d89d89d89d89d89d89d89d89d89d89 - y)) / 0x700000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x088888888888888888888888888888888 - y) / 0x800000000000000000000000000000000;
+        res += (z * (0x088888888888888888888888888888888 - y)) / 0x800000000000000000000000000000000;
 
         return res;
     }
@@ -452,91 +449,91 @@ contract FractionalExponents  {
 
         z = y = x % 0x10000000000000000000000000000000;
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x10e1b3be415a0000; // add y^02 * (20! / 02!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x05a0913f6b1e0000; // add y^03 * (20! / 03!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0168244fdac78000; // add y^04 * (20! / 04!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x004807432bc18000; // add y^05 * (20! / 05!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x000c0135dca04000; // add y^06 * (20! / 06!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0001b707b1cdc000; // add y^07 * (20! / 07!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x000036e0f639b800; // add y^08 * (20! / 08!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x00000618fee9f800; // add y^09 * (20! / 09!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000009c197dcc00; // add y^10 * (20! / 10!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000000e30dce400; // add y^11 * (20! / 11!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x000000012ebd1300; // add y^12 * (20! / 12!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000000017499f00; // add y^13 * (20! / 13!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000000001a9d480; // add y^14 * (20! / 14!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x00000000001c6380; // add y^15 * (20! / 15!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x000000000001c638; // add y^16 * (20! / 16!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000000000001ab8; // add y^17 * (20! / 17!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x000000000000017c; // add y^18 * (20! / 18!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000000000000014; // add y^19 * (20! / 19!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000000000000001; // add y^20 * (20! / 20!)
 
         res = res / 0x21c3677c82b40000 + y + FIXED_1; // divide by 20! and then add y^1 / 1! + y^0 / 0!
 
         if ((x & 0x010000000000000000000000000000000) != 0) {
-            res = res * 0x1c3d6a24ed82218787d624d3e5eba95f9 / 0x18ebef9eac820ae8682b9793ac6d1e776;
+            res = (res * 0x1c3d6a24ed82218787d624d3e5eba95f9) / 0x18ebef9eac820ae8682b9793ac6d1e776;
         }
 
         if ((x & 0x020000000000000000000000000000000) != 0) {
-            res = res * 0x18ebef9eac820ae8682b9793ac6d1e778 / 0x1368b2fc6f9609fe7aceb46aa619baed4;
+            res = (res * 0x18ebef9eac820ae8682b9793ac6d1e778) / 0x1368b2fc6f9609fe7aceb46aa619baed4;
         }
 
         if ((x & 0x040000000000000000000000000000000) != 0) {
-            res = res * 0x1368b2fc6f9609fe7aceb46aa619baed5 / 0x0bc5ab1b16779be3575bd8f0520a9f21f;
+            res = (res * 0x1368b2fc6f9609fe7aceb46aa619baed5) / 0x0bc5ab1b16779be3575bd8f0520a9f21f;
         }
 
         if ((x & 0x080000000000000000000000000000000) != 0) {
-            res = res * 0x0bc5ab1b16779be3575bd8f0520a9f21e / 0x0454aaa8efe072e7f6ddbab84b40a55c9;
+            res = (res * 0x0bc5ab1b16779be3575bd8f0520a9f21e) / 0x0454aaa8efe072e7f6ddbab84b40a55c9;
         }
 
         if ((x & 0x100000000000000000000000000000000) != 0) {
-            res = res * 0x0454aaa8efe072e7f6ddbab84b40a55c5 / 0x00960aadc109e7a3bf4578099615711ea;
+            res = (res * 0x0454aaa8efe072e7f6ddbab84b40a55c5) / 0x00960aadc109e7a3bf4578099615711ea;
         }
 
         if ((x & 0x200000000000000000000000000000000) != 0) {
-            res = res * 0x00960aadc109e7a3bf4578099615711d7 / 0x0002bf84208204f5977f9a8cf01fdce3d;
+            res = (res * 0x00960aadc109e7a3bf4578099615711d7) / 0x0002bf84208204f5977f9a8cf01fdce3d;
         }
 
         if ((x & 0x400000000000000000000000000000000) != 0) {
-            res = res * 0x0002bf84208204f5977f9a8cf01fdc307 / 0x0000003c6ab775dd0b95b4cbee7e65d11;
+            res = (res * 0x0002bf84208204f5977f9a8cf01fdc307) / 0x0000003c6ab775dd0b95b4cbee7e65d11;
         }
 
         return res;

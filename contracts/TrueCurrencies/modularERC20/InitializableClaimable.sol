@@ -3,7 +3,6 @@ pragma solidity 0.6.10;
 
 import "./InitializableOwnable.sol";
 
-
 /**
  * @title InitializableOwnable
  * @dev Extension for the InstantiatableOwnable contract, where the ownership needs to be claimed.
@@ -24,7 +23,7 @@ contract InitializableClaimable is InitializableOwnable {
      * @dev Allows the current owner to set the pendingOwner address.
      * @param newOwner The address to transfer ownership to.
      */
-    function transferOwnership(address newOwner) override public onlyOwner {
+    function transferOwnership(address newOwner) public override onlyOwner {
         pendingOwner = newOwner;
     }
 

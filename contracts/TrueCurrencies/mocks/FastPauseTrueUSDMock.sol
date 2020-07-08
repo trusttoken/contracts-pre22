@@ -16,9 +16,7 @@ contract FastPauseTrueUSDMock {
     event FastTrueUSDPause(address indexed sender);
 
     constructor(address _trueUsdPauser, address _controllerContract) public {
-        require(
-            _trueUsdPauser != address(0) && _controllerContract != address(0)
-        );
+        require(_trueUsdPauser != address(0) && _controllerContract != address(0));
         controllerContract = TokenController(_controllerContract);
         trueUsdPauser = _trueUsdPauser;
     }

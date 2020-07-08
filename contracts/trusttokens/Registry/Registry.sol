@@ -4,7 +4,11 @@ pragma solidity 0.6.10;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface RegistryClone {
-    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
+    function syncAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) external;
 }
 
 contract Registry {
@@ -32,10 +36,7 @@ contract Registry {
     bytes32 constant WRITE_PERMISSION = keccak256("canWriteTo-");
     mapping(bytes32 => RegistryClone[]) subscribers;
 
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event SetAttribute(address indexed who, bytes32 attribute, uint256 value, bytes32 notes, address indexed adminAddr);
     event SetManager(address indexed oldManager, address indexed newManager);
     event StartSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
@@ -49,14 +50,19 @@ contract Registry {
     }
 
     // Writes are allowed only if the accessManager approves
-    function setAttribute(address _who, bytes32 _attribute, uint256 _value, bytes32 _notes) public {
+    function setAttribute(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value,
+        bytes32 _notes
+    ) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
 
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> 0) {
+        while (index-- > 0) {
             targets[index].syncAttributeValue(_who, _attribute, _value);
         }
     }
@@ -78,13 +84,17 @@ contract Registry {
         return subscribers[_attribute].length;
     }
 
-    function setAttributeValue(address _who, bytes32 _attribute, uint256 _value) public {
+    function setAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, "", msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, "", msg.sender);
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> 0) {
+        while (index-- > 0) {
             targets[index].syncAttributeValue(_who, _attribute, _value);
         }
     }
@@ -94,9 +104,17 @@ contract Registry {
         return attributes[_who][_attribute].value != 0;
     }
 
-
     // Returns the exact value of the attribute, as well as its metadata
-    function getAttribute(address _who, bytes32 _attribute) public view returns (uint256, bytes32, address, uint256) {
+    function getAttribute(address _who, bytes32 _attribute)
+        public
+        view
+        returns (
+            uint256,
+            bytes32,
+            address,
+            uint256
+        )
+    {
         AttributeData memory data = attributes[_who][_attribute];
         return (data.value, data.notes, data.adminAddr, data.timestamp);
     }
@@ -113,12 +131,16 @@ contract Registry {
         return attributes[_who][_attribute].timestamp;
     }
 
-    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] calldata _addresses) external {
+    function syncAttribute(
+        bytes32 _attribute,
+        uint256 _startIndex,
+        address[] calldata _addresses
+    ) external {
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> _startIndex) {
+        while (index-- > _startIndex) {
             RegistryClone target = targets[index];
-            for (uint256 i = _addresses.length; i --> 0; ) {
+            for (uint256 i = _addresses.length; i-- > 0; ) {
                 address who = _addresses[i];
                 target.syncAttributeValue(who, _attribute, attributes[who][_attribute].value);
             }
@@ -134,33 +156,33 @@ contract Registry {
         token.transfer(_to, balance);
     }
 
-   /**
-    * @dev Throws if called by any account other than the owner.
-    */
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
     modifier onlyOwner() {
         require(msg.sender == owner, "only Owner");
         _;
     }
 
     /**
-    * @dev Modifier throws if called by any account other than the pendingOwner.
-    */
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
     modifier onlyPendingOwner() {
         require(msg.sender == pendingOwner);
         _;
     }
 
     /**
-    * @dev Allows the current owner to set the pendingOwner address.
-    * @param newOwner The address to transfer ownership to.
-    */
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
     function transferOwnership(address newOwner) public onlyOwner {
         pendingOwner = newOwner;
     }
 
     /**
-    * @dev Allows the pendingOwner address to finalize the transfer.
-    */
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
     function claimOwnership() public onlyPendingOwner {
         emit OwnershipTransferred(owner, pendingOwner);
         owner = pendingOwner;

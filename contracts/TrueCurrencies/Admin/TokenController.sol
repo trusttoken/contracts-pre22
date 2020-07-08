@@ -50,7 +50,6 @@ contract TokenController {
     uint256 public ratifiedMintThreshold;
     uint256 public multiSigMintThreshold;
 
-
     uint256 public instantMintLimit;
     uint256 public ratifiedMintLimit;
     uint256 public multiSigMintLimit;
@@ -60,8 +59,8 @@ contract TokenController {
     uint256 public multiSigMintPool;
     address[2] public ratifiedPoolRefillApprovals;
 
-    uint8 constant public RATIFY_MINT_SIGS = 1; //number of approvals needed to finalize a Ratified Mint
-    uint8 constant public MULTISIG_MINT_SIGS = 3; //number of approvals needed to finalize a MultiSig Mint
+    uint8 public constant RATIFY_MINT_SIGS = 1; //number of approvals needed to finalize a Ratified Mint
+    uint8 public constant MULTISIG_MINT_SIGS = 3; //number of approvals needed to finalize a MultiSig Mint
 
     bool public mintPaused;
     uint256 public mintReqInvalidBeforeThisBlock; //all mint request before this block are invalid
@@ -73,13 +72,13 @@ contract TokenController {
     address public fastPause;
     address public trueRewardManager;
 
-    bytes32 constant public IS_MINT_PAUSER = "isTUSDMintPausers";
-    bytes32 constant public IS_MINT_RATIFIER = "isTUSDMintRatifier";
-    bytes32 constant public IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
+    bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
+    bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
+    bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
 
     // paused version of TrueUSD in Production
     // pausing the contract upgrades the proxy to this implementation
-    address constant public PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
+    address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
 
     modifier onlyFastPauseOrOwner() {
         require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
@@ -111,7 +110,6 @@ contract TokenController {
         _;
     }
 
-
     //mint operations by the mintkey cannot be processed on when mints are paused
     modifier mintNotPaused() {
         if (msg.sender != owner) {
@@ -134,12 +132,12 @@ contract TokenController {
     event MintRatified(uint256 indexed opIndex, address indexed ratifier);
     event RevokeMint(uint256 opIndex);
     event AllMintsPaused(bool status);
-    event MintPaused(uint opIndex, bool status);
-    event MintApproved(address approver, uint opIndex);
+    event MintPaused(uint256 opIndex, bool status);
+    event MintApproved(address approver, uint256 opIndex);
     event FastPauseSet(address _newFastPause);
 
-    event MintThresholdChanged(uint instant, uint ratified, uint multiSig);
-    event MintLimitsChanged(uint instant, uint ratified, uint multiSig);
+    event MintThresholdChanged(uint256 instant, uint256 ratified, uint256 multiSig);
+    event MintLimitsChanged(uint256 instant, uint256 ratified, uint256 multiSig);
     event InstantPoolRefilled();
     event RatifyPoolRefilled();
     event MultiSigPoolRefilled();
@@ -151,33 +149,33 @@ contract TokenController {
     */
 
     /**
-    * @dev Throws if called by any account other than the owner.
-    */
+     * @dev Throws if called by any account other than the owner.
+     */
     modifier onlyOwner() {
         require(msg.sender == owner, "only Owner");
         _;
     }
 
     /**
-    * @dev Modifier throws if called by any account other than the pendingOwner.
-    */
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
     modifier onlyPendingOwner() {
         require(msg.sender == pendingOwner);
         _;
     }
 
     /**
-    * @dev Allows the current owner to set the pendingOwner address.
-    * @param newOwner The address to transfer ownership to.
-    */
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
     function transferOwnership(address payable newOwner) external onlyOwner {
         pendingOwner = newOwner;
         emit NewOwnerPending(address(owner), address(pendingOwner));
     }
 
     /**
-    * @dev Allows the pendingOwner address to finalize the transfer.
-    */
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
     function claimOwnership() external onlyPendingOwner {
         emit OwnershipTransferred(address(owner), address(pendingOwner));
         owner = pendingOwner;
@@ -212,7 +210,11 @@ contract TokenController {
      * @dev set the threshold for a mint to be considered an instant mint, ratify mint and multiSig mint
      Instant mint requires no approval, ratify mint requires 1 approval and multiSig mint requires 3 approvals
      */
-    function setMintThresholds(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
+    function setMintThresholds(
+        uint256 _instant,
+        uint256 _ratified,
+        uint256 _multiSig
+    ) external onlyOwner {
         require(_instant <= _ratified && _ratified <= _multiSig);
         instantMintThreshold = _instant;
         ratifiedMintThreshold = _ratified;
@@ -220,12 +222,15 @@ contract TokenController {
         emit MintThresholdChanged(_instant, _ratified, _multiSig);
     }
 
-
     /**
      * @dev set the limit of each mint pool. For example can only instant mint up to the instant mint pool limit
      before needing to refill
      */
-    function setMintLimits(uint256 _instant, uint256 _ratified, uint256 _multiSig) external onlyOwner {
+    function setMintLimits(
+        uint256 _instant,
+        uint256 _ratified,
+        uint256 _multiSig
+    ) external onlyOwner {
         require(_instant <= _ratified && _ratified <= _multiSig);
         instantMintLimit = _instant;
         if (instantMintPool > instantMintLimit) {
@@ -292,7 +297,6 @@ contract TokenController {
         mintOperations.push(op);
     }
 
-
     /**
      * @dev Instant mint without ratification if the amount is less than instantMintThreshold and instantMintPool
      * @param _to the address to mint to
@@ -306,7 +310,6 @@ contract TokenController {
         token.mint(_to, _value);
     }
 
-
     /**
      * @dev ratifier ratifies a request mint. If the number of ratifiers that signed off is greater than
      the number of approvals required, the request is finalized
@@ -314,7 +317,11 @@ contract TokenController {
      * @param _to the address to mint to
      * @param _value the amount requested
      */
-    function ratifyMint(uint256 _index, address _to, uint256 _value) external mintNotPaused onlyMintRatifierOrOwner {
+    function ratifyMint(
+        uint256 _index,
+        address _to,
+        uint256 _value
+    ) external mintNotPaused onlyMintRatifierOrOwner {
         MintOperation memory op = mintOperations[_index];
         require(op.to == _to, "to address does not match");
         require(op.value == _value, "amount does not match");
@@ -322,7 +329,7 @@ contract TokenController {
         mintOperations[_index].approved[msg.sender] = true;
         mintOperations[_index].numberOfApproval = mintOperations[_index].numberOfApproval.add(1);
         emit MintRatified(_index, msg.sender);
-        if (hasEnoughApproval(mintOperations[_index].numberOfApproval, _value)){
+        if (hasEnoughApproval(mintOperations[_index].numberOfApproval, _value)) {
             finalizeMint(_index);
         }
     }
@@ -360,12 +367,12 @@ contract TokenController {
      */
     function hasEnoughApproval(uint256 _numberOfApproval, uint256 _value) public view returns (bool) {
         if (_value <= ratifiedMintPool && _value <= ratifiedMintThreshold) {
-            if (_numberOfApproval >= RATIFY_MINT_SIGS){
+            if (_numberOfApproval >= RATIFY_MINT_SIGS) {
                 return true;
             }
         }
         if (_value <= multiSigMintPool && _value <= multiSigMintThreshold) {
-            if (_numberOfApproval >= MULTISIG_MINT_SIGS){
+            if (_numberOfApproval >= MULTISIG_MINT_SIGS) {
                 return true;
             }
         }
@@ -379,7 +386,7 @@ contract TokenController {
      * @dev compute if a mint request meets all the requirements to be finalized
      utility function for a front end
      */
-    function canFinalize(uint256 _index) public view returns(bool) {
+    function canFinalize(uint256 _index) public view returns (bool) {
         MintOperation memory op = mintOperations[_index];
         require(op.requestedBlock > mintReqInvalidBeforeThisBlock, "this mint is invalid"); //also checks if request still exists
         require(!op.paused, "this mint is paused");
@@ -388,9 +395,9 @@ contract TokenController {
     }
 
     /**
-    *@dev revoke a mint request, Delete the mintOperation
-    *@param _index of the request (visible in the RequestMint event accompanying the original request)
-    */
+     *@dev revoke a mint request, Delete the mintOperation
+     *@param _index of the request (visible in the RequestMint event accompanying the original request)
+     */
     function revokeMint(uint256 _index) external onlyMintKeyOrOwner {
         delete mintOperations[_index];
         emit RevokeMint(_index);
@@ -407,9 +414,9 @@ contract TokenController {
     */
 
     /**
-    *@dev Replace the current mintkey with new mintkey
-    *@param _newMintKey address of the new mintKey
-    */
+     *@dev Replace the current mintkey with new mintkey
+     *@param _newMintKey address of the new mintKey
+     */
     function transferMintKey(address _newMintKey) external onlyOwner {
         require(_newMintKey != address(0), "new mint key cannot be 0x0");
         emit TransferMintKey(mintKey, _newMintKey);
@@ -423,42 +430,42 @@ contract TokenController {
     */
 
     /**
-    *@dev invalidates all mint request initiated before the current block
-    */
+     *@dev invalidates all mint request initiated before the current block
+     */
     function invalidateAllPendingMints() external onlyOwner {
         mintReqInvalidBeforeThisBlock = block.number;
     }
 
     /**
-    *@dev pause any further mint request and mint finalizations
-    */
+     *@dev pause any further mint request and mint finalizations
+     */
     function pauseMints() external onlyMintPauserOrOwner {
         mintPaused = true;
         emit AllMintsPaused(true);
     }
 
     /**
-    *@dev unpause any further mint request and mint finalizations
-    */
+     *@dev unpause any further mint request and mint finalizations
+     */
     function unpauseMints() external onlyOwner {
         mintPaused = false;
         emit AllMintsPaused(false);
     }
 
     /**
-    *@dev pause a specific mint request
-    *@param  _opIndex the index of the mint request the caller wants to pause
-    */
-    function pauseMint(uint _opIndex) external onlyMintPauserOrOwner {
+     *@dev pause a specific mint request
+     *@param  _opIndex the index of the mint request the caller wants to pause
+     */
+    function pauseMint(uint256 _opIndex) external onlyMintPauserOrOwner {
         mintOperations[_opIndex].paused = true;
         emit MintPaused(_opIndex, true);
     }
 
     /**
-    *@dev unpause a specific mint request
-    *@param  _opIndex the index of the mint request the caller wants to unpause
-    */
-    function unpauseMint(uint _opIndex) external onlyOwner {
+     *@dev unpause a specific mint request
+     *@param  _opIndex the index of the mint request the caller wants to unpause
+     */
+    function unpauseMint(uint256 _opIndex) external onlyOwner {
         mintOperations[_opIndex].paused = false;
         emit MintPaused(_opIndex, false);
     }
@@ -468,7 +475,6 @@ contract TokenController {
     set and claim contracts, administrative
     ========================================
     */
-
 
     /**
     *@dev Update this contract's token pointer to newContract (e.g. if the
@@ -480,24 +486,24 @@ contract TokenController {
     }
 
     /**
-    *@dev Update this contract's registry pointer to _registry
-    */
+     *@dev Update this contract's registry pointer to _registry
+     */
     function setRegistry(Registry _registry) external onlyOwner {
         registry = _registry;
         emit SetRegistry(address(registry));
     }
 
     /**
-    *@dev Swap out token's permissions registry
-    *@param _registry new registry for token
-    */
+     *@dev Swap out token's permissions registry
+     *@param _registry new registry for token
+     */
     function setTokenRegistry(Registry _registry) external onlyOwner {
         token.setRegistry(_registry);
     }
 
     /**
-    *@dev Claim ownership of an arbitrary HasOwner contract
-    */
+     *@dev Claim ownership of an arbitrary HasOwner contract
+     */
     function issueClaimOwnership(address _other) public onlyOwner {
         HasOwner other = HasOwner(_other);
         other.claimOwnership();
@@ -526,8 +532,8 @@ contract TokenController {
     }
 
     /**
-    *@dev send all ether in token address to the owner of tokenController
-    */
+     *@dev send all ether in token address to the owner of tokenController
+     */
     function requestReclaimEther() external onlyOwner {
         token.reclaimEther(owner);
     }
@@ -542,25 +548,25 @@ contract TokenController {
     }
 
     /**
-    *@dev set new contract to which specified address can send eth to to quickly pause token
-    *@param _newFastPause address of the new contract
-    */
+     *@dev set new contract to which specified address can send eth to to quickly pause token
+     *@param _newFastPause address of the new contract
+     */
     function setFastPause(address _newFastPause) external onlyOwner {
         fastPause = _newFastPause;
         emit FastPauseSet(address(_newFastPause));
     }
 
     /**
-    *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
-    */
-    function pauseToken() virtual external onlyFastPauseOrOwner {
+     *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
+     */
+    function pauseToken() external virtual onlyFastPauseOrOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 
     /**
-    *@dev wipe balance of a blacklisted address
-    *@param _blacklistedAddress address whose balance will be wiped
-    */
+     *@dev wipe balance of a blacklisted address
+     *@param _blacklistedAddress address whose balance will be wiped
+     */
     function wipeBlackListedTrueUSD(address _blacklistedAddress) external onlyOwner {
         token.wipeBlacklistedAccount(_blacklistedAddress);
     }
@@ -576,18 +582,18 @@ contract TokenController {
     }
 
     /**
-    *@dev Owner can send ether balance in contract address
-    *@param _to address to which the funds will be send to
-    */
+     *@dev Owner can send ether balance in contract address
+     *@param _to address to which the funds will be send to
+     */
     function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
     /**
-    *@dev Owner can send erc20 token balance in contract address
-    *@param _token address of the token to send
-    *@param _to address to which the funds will be send to
-    */
+     *@dev Owner can send erc20 token balance in contract address
+     *@param _token address of the token to send
+     *@param _to address to which the funds will be send to
+     */
     function reclaimToken(IERC20 _token, address _to) external onlyOwner {
         uint256 balance = _token.balanceOf(address(this));
         _token.transfer(_to, balance);
