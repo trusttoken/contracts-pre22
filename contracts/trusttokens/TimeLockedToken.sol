@@ -13,7 +13,7 @@ import "./ClaimableContract.sol";
  *
  * The registerLockup() function allows an account to transfer
  * its tokens to another account, locking them according to the
- * distribution epoch periods.
+ * distribution epoch periods
  *
  * By overriding the balanceOf(), transfer(), and transferFrom()
  * functions in ERC20, an account can show its full, post-distribution
@@ -26,7 +26,7 @@ import "./ClaimableContract.sol";
  *
  * Every time an epoch passes, a portion of previously non-spendable tokens
  * are allowed to be transferred, and after all epochs have passed, the full
- * account balance is unlocked.
+ * account balance is unlocked
  */
 contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     // represents total distribution for locked balances
