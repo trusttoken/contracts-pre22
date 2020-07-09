@@ -35,7 +35,7 @@ abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
         address _to,
         uint256 _value,
         address _spender
-    ) internal {
+    ) internal virtual {
         _subAllowance(_from, _spender, _value);
         _transferAllArgs(_from, _to, _value);
     }

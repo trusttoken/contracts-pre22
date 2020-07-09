@@ -17,50 +17,41 @@ import "./ClaimableContract.sol";
  *
  * By overriding the balanceOf(), transfer(), and transferFrom()
  * functions in ERC20, an account can show its full, post-distribution
- * balance but only trasnfer or spend up to an allowed amount
- * 
- * initalizeLockup() sets a lockStart, epochSize, and totalEpochs which
+ * balance but only transfer or spend up to an allowed amount
+ *
+ * initializeLockup() sets a lockStart, epochSize, and totalEpochs which
  * are used to calculate when an account can spend locked tokens. Only the
- * contract owner can call the initalize function, and the initalize function
+ * contract owner can call the initialize function, and the initialize function
  * can only be called once
  *
  * Every time an epoch passes, a portion of previously non-spendable tokens
  * are allowed to be transferred, and after all epochs have passed, the full
  * account balance is unlocked
  */
-contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
+abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
+    using SafeMath for uint256;
+
     // represents total distribution for locked balances
-    mapping(address => uint256) public distribution;
+    mapping(address => uint256) distribution;
 
     // variables relating to lockup epochs
     uint256 public lockStart;
-    uint256 public epochSize;
-    uint256 public totalEpochs;
+    // 4 epochs per year
+    uint256 constant EPOCH_SIZE = 365 days / 4;
+    // total lockup of 2 years with 8 epochs
+    uint256 constant TOTAL_EPOCHS = 8;
 
-    bool public lockupInitalized;
-
-    using SafeMath for uint256;
+    bool public lockupInitialized;
 
     /**
-     * @dev initalize lockup variables
+     * @dev initialize lockup variables
      */
-    function initalizeLockup() public onlyOwner {
-        require(!lockupInitalized, "lockup already initalized");
-        // start lockup at initalize time
+    function initializeLockup() external onlyOwner {
+        require(!lockupInitialized, "lockup already initalized");
+        // start lockup at initialize time
         lockStart = block.timestamp;
-        // 4 epochs per year
-        epochSize = (365 days).div(4);
-        // total lockup of 2 years with 8 epochs
-        totalEpochs = 8;
-        // set initalized variable
-        lockupInitalized = false;
-    }
-
-    /**
-     * @dev get balance for an account including locked tokens
-     */
-    function balanceOf(address _who) public virtual view returns (uint256) {
-        return super.balanceOf(_who).add(distribution[_who]);
+        // set initialized variable
+        lockupInitialized = true;
     }
 
     /**
@@ -70,15 +61,11 @@ contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
         address _from,
         address _to,
         uint256 _value
-    ) internal virtual resolveSender(_from) {
-        // for accounts with no lockup, call super
-        if (distribution[msg.sender] == 0) {
-            super._transferAllArgs(_from, _to, _value);
-        }
-        else {
-            // TODO: custom transfer logic for lockup
-            // emit Transfer(msg.sender, recipient, amount);
-        }
+    ) internal override resolveSender(_from) {
+        require(balanceOf[_from] >= _value, "insufficient balance");
+        require(unlockedBalance(_from) >= _value, "attempting to transfer locked funds");
+
+        super._transferAllArgs(_from, _to, _value);
     }
 
     /**
@@ -89,74 +76,72 @@ contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
         address _to,
         uint256 _value,
         address _spender
-    ) internal {
-        // for accounts with no lockup, call super
-        if (distribution[msg.sender] == 0) {
-            super._transferFromAllArgs(_from, _to, _value, _spender);
-        }
-        else {
-            // TODO: custom transfer logic for lockup
-            // emit Transfer(msg.sender, recipient, amount);
-        }
+    ) internal override {
+        require(balanceOf[_from] >= _value, "insufficient balance");
+        require(unlockedBalance(_from) >= _value, "attempting to transfer locked funds");
+
+        super._transferFromAllArgs(_from, _to, _value, _spender);
     }
 
     /**
      * @dev Transfer tokens to another account under the lockup schedule
      * Emits a transfer event showing a transfer to the recipient
      */
-    function registerLockup(address recipient, uint256 amount) public {
-        require(balanceOf[msg.sender].sub(amount) > 0, "insufficient balance");
-
-        // subtract balance from sender
-        balanceOf[msg.sender] = balanceOf[msg.sender].sub(amount);
+    function registerLockup(address recipient, uint256 amount) external {
+        require(balanceOf[msg.sender] > amount, "insufficient balance");
+        require(distribution[recipient] == 0, "distribution already set");
 
         // set distribution to lockup amount
         distribution[recipient] = amount;
 
+        // transfer to recipient
+        _transferAllArgs(msg.sender, recipient, amount);
+
         // show transfer from sender to recipient
-        emit Transfer(msg.sender, amount);
+        emit Transfer(msg.sender, recipient, amount);
     }
 
     /**
      * @dev Get locked balance for an account
      */
     function lockedBalance(address account) public view returns (uint256) {
-        // distribution - unlockedBalance
-        return distribution[account].sub(unlockedBalance(account));
+        // distribution * (epochsLeft / totalEpochs)
+        uint256 epochsLeft = TOTAL_EPOCHS.sub(epochsPassed());
+        return distribution[account].mul(epochsLeft).div(TOTAL_EPOCHS);
     }
 
     /**
      * @dev Get unlocked balance for an account
      */
-    function unlockedBalance(address account) public returns (uint256) {
-        // distribution / totalEpochs * epochsPassed
-        return distribution[account].div(totalEpochs).mul(epochsPassed());
+    function unlockedBalance(address account) public view returns (uint256) {
+        // totalBalance - lockedBalance
+        return balanceOf[account].sub(lockedBalance(account));
     }
 
     /*
      * @dev get number of epochs passed
      */
-    function epochsPassed() public returns (uint256) {
-        if (lastEpoch() <= finalEpoch()) {
-            return totalEpochs;
+    function epochsPassed() public view returns (uint256) {
+        uint256 totalEpochsPassed = block.timestamp.sub(lockStart).div(EPOCH_SIZE);
+        if (totalEpochsPassed > TOTAL_EPOCHS) {
+            return TOTAL_EPOCHS;
         }
-        // calculate using integer division to round down
-        return block.timestamp.sub(lockStart) / epochSize;
+        return totalEpochsPassed;
     }
 
     /**
-    * @dev Get timestamp of next epoch
-    */
+     * @dev Get timestamp of next epoch
+     */
     function nextEpoch() public view returns (uint256) {
-        return lastEpoch().add(epochSize).sub(block.timestamp);
+        return lastEpoch().add(EPOCH_SIZE);
     }
 
     /**
-    * @dev Get timestamp of last epoch
-    */
+     * @dev Get timestamp of last epoch
+     */
     function lastEpoch() public view returns (uint256) {
         // lockStart + epochsPassed * epochSize
-        return lockStart.add(epochsPassed().mul(epochSize));
+        return lockStart.add(epochsPassed().mul(EPOCH_SIZE));
     }
 
     /**
@@ -164,6 +149,6 @@ contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      */
     function finalEpoch() public view returns (uint256) {
         // lockStart + epochSize * totalEpochs
-        return lockStart.add(epochSize.mul(totalEpochs));
+        return lockStart.add(EPOCH_SIZE * TOTAL_EPOCHS);
     }
 }
