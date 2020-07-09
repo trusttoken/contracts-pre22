@@ -2,8 +2,8 @@
 pragma solidity 0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./ValTokenWithHook.sol";
-import "./ClaimableContract.sol";
+import { TimeLockedToken } from "./TimeLockedToken.sol";
+import {Registry} from "./ProxyStorage.sol";
 
 /**
  * @title TrustToken
@@ -12,7 +12,7 @@ import "./ClaimableContract.sol";
  * in order to prevent rewards from getting stuck in the remainder on division.
  * Tolerates dilution to slash stake and accept rewards.
  */
-contract TrustToken is ValTokenWithHook, ClaimableContract {
+contract TrustToken is TimeLockedToken {
     using SafeMath for uint256;
     Registry registry_;
     uint256 constant MAX_SUPPLY = 145000000000000000;
