@@ -84,6 +84,10 @@ describe('TrustToken', () => {
       expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(100))
     })
 
+    it('is impossible to give lock funds twice to a person', async () => {
+      await expect(trustToken.connect(holder).registerLockup(saftHolder.address, parseTT(100))).to.be.revertedWith('distribution already set')
+    })
+
     context('Transfers', () => {
       it('cannot transfer locked funds', async () => {
         await expect(trustToken.connect(saftHolder).transfer(owner.address, 1)).to.be.revertedWith('attempting to transfer locked funds')
