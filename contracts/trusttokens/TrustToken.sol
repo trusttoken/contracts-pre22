@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import { TimeLockedToken } from "./TimeLockedToken.sol";
+import {TimeLockedToken} from "./TimeLockedToken.sol";
 import {Registry} from "./ProxyStorage.sol";
 
 /**
