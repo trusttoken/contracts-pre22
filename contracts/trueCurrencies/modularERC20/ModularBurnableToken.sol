@@ -12,10 +12,16 @@ contract ModularBurnableToken is ModularStandardToken {
     event Mint(address indexed to, uint256 value);
     uint256 constant CENT = 10**16;
 
+    /**
+     * @dev Burn my tokens rounded to cents
+     */
     function burn(uint256 _value) external {
         _burnAllArgs(msg.sender, _value - (_value % CENT));
     }
 
+    /**
+     * @dev See burn
+     */
     function _burnAllArgs(address _from, uint256 _value) internal virtual {
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure

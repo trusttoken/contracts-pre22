@@ -18,6 +18,11 @@ contract Liquidator is ALiquidatorUniswap {
     UniswapV1 stakeUniswap_;
     bool initialized;
 
+    /**
+     * @dev Configure internal fields of contract
+     * Can only be called once
+     * Caller becomes the contract owner
+     */
     function configure(
         address registryAddress,
         address outputTokenAddress,
@@ -41,26 +46,35 @@ contract Liquidator is ALiquidatorUniswap {
         pool_ = _pool;
     }
 
+    /**
+     * @dev Liquidator pool
+     * Should have large amount of TrustTokens and an infinite allowance to Liquidator
+     */
     function pool() public override view returns (address) {
         return pool_;
     }
 
+    // @dev TRU address
     function outputToken() public override view returns (IERC20) {
         return outputToken_;
     }
 
+    // @dev TrueReward token address
     function stakeToken() public override view returns (IERC20) {
         return stakeToken_;
     }
 
+    // @dev registry address
     function registry() public override view returns (Registry) {
         return registry_;
     }
 
+    // @dev Uniswap exchange for TRU
     function outputUniswapV1() public override view returns (UniswapV1) {
         return outputUniswap_;
     }
 
+    // @dev Uniswap exchange for TrueReward token
     function stakeUniswapV1() public override view returns (UniswapV1) {
         return stakeUniswap_;
     }

@@ -7,6 +7,7 @@ contract DepositAddressRegistrar {
     Registry public registry;
 
     bytes32 public constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
+    /// @dev Emitted when new deposit address `registeredAddress` is registered
     event DepositAddressRegistered(address registeredAddress);
 
     constructor(address _registry) public {

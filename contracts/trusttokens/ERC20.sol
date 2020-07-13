@@ -38,6 +38,7 @@ contract ModularBasicToken is ProxyStorage {
  */
 contract ModularStandardToken is ModularBasicToken {
     using ValSafeMath for uint256;
+    // Once allowance between accounts exceeds this amount, it can never get below that
     uint256 constant INFINITE_ALLOWANCE = 0xfe00000000000000000000000000000000000000000000000000000000000000;
 
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -57,6 +58,7 @@ contract ModularStandardToken is ModularBasicToken {
         return true;
     }
 
+    /// @dev Helper for approve
     function _approveAllArgs(
         address _spender,
         uint256 _value,
@@ -81,6 +83,7 @@ contract ModularStandardToken is ModularBasicToken {
         return true;
     }
 
+    /// @dev Helper for increaseApproval
     function _increaseApprovalAllArgs(
         address _spender,
         uint256 _addedValue,
@@ -105,6 +108,7 @@ contract ModularStandardToken is ModularBasicToken {
         return true;
     }
 
+    /// @dev Helper for decreaseApproval
     function _decreaseApprovalAllArgs(
         address _spender,
         uint256 _subtractedValue,
@@ -121,6 +125,7 @@ contract ModularStandardToken is ModularBasicToken {
         emit Approval(_tokenHolder, _spender, newValue);
     }
 
+    /// @dev Increase allowance from _who to _spender by _value
     function _addAllowance(
         address _who,
         address _spender,
@@ -129,6 +134,7 @@ contract ModularStandardToken is ModularBasicToken {
         allowance[_who][_spender] = allowance[_who][_spender].add(_value, "allowance overflow");
     }
 
+    /// @dev Decrease allowance from _who to _spender by _value
     function _subAllowance(
         address _who,
         address _spender,
@@ -140,6 +146,7 @@ contract ModularStandardToken is ModularBasicToken {
         }
     }
 
+    /// @dev Set allowance from _who to _spender to _value
     function _setAllowance(
         address _who,
         address _spender,

@@ -59,10 +59,15 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     // address allowed to withdraw/deposit, usually set to address of TUSD smart contract
     address fundsManager;
 
+    /// @dev Emitted on new deposit by account. tusd amount was depositted, ztusd was given in exchange
     event Deposit(address indexed account, uint256 tusd, uint256 ztusd);
+    /// @dev Emitted on new redemption by account. ztusd amount was redempted, tusd was given in exchange
     event Redemption(address indexed to, uint256 ztusd, uint256 tusd);
+    /// @dev Emitted when liquidation is triggered for debt amount
     event Liquidation(address indexed receiver, int256 debt);
+    /// @dev Emitted when award was successfully transferred to staking pool
     event AwardPool(uint256 amount);
+    /// @dev Emitted when award transfer to staking pool failed
     event AwardFailure(uint256 amount);
 
     /// funds manager can deposit/withdraw from this opportunity
