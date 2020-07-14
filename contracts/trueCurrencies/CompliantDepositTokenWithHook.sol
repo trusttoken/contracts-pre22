@@ -84,7 +84,6 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
      * @param _from address The address whose tokens should be burnt
      * @param _to address The address which should be able to burn this token
      * @param _value uint256 Amount to burn
-     * @param _spender address Transaction sender
      */
     function _burnFromAllArgs(
         address _from,
@@ -211,7 +210,7 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
     }
 
     /**
-     * @Dev Mint new tokens
+     * @dev Mint new tokens
      * @param _to address Who should receive the tokens
      * @param _value uint256 Amount of minted tokens
      */
@@ -351,7 +350,7 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
      * @dev Check if tokens can be burnt at address
-     * @param _to address Burner
+     * @param _from address Burner
      */
     function _requireOnlyCanBurn(address _from) internal virtual view {
         require(attributes[canBurn()][_from] != 0, "cannot burn from this address");
@@ -359,7 +358,7 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
      * @dev Check if tokens can be burnt from account and that the account is not blacklisted
-     * @param _to address Owner of tokens
+     * @param _from address Owner of tokens
      */
     function _requireCanBurn(address _from) internal virtual view {
         require(attributes[IS_BLACKLISTED][_from] == 0, "blacklisted");
