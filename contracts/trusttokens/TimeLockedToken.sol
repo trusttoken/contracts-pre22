@@ -19,11 +19,6 @@ import "./ClaimableContract.sol";
  * functions in ERC20, an account can show its full, post-distribution
  * balance but only transfer or spend up to an allowed amount
  *
- * initializeLockup() sets a lockStart, epochSize, and totalEpochs which
- * are used to calculate when an account can spend locked tokens. Only the
- * contract owner can call the initialize function, and the initialize function
- * can only be called once
- *
  * Every time an epoch passes, a portion of previously non-spendable tokens
  * are allowed to be transferred, and after all epochs have passed, the full
  * account balance is unlocked
@@ -35,24 +30,11 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     mapping(address => uint256) distribution;
 
     // variables relating to lockup epochs
-    uint256 public lockStart;
+    uint256 constant LOCK_START = 1594716039;
     // 4 epochs per year
     uint256 constant EPOCH_SIZE = 365 days / 4;
     // total lockup of 2 years with 8 epochs
     uint256 constant TOTAL_EPOCHS = 8;
-
-    bool public lockupInitialized;
-
-    /**
-     * @dev initialize lockup variables
-     */
-    function initializeLockup() external onlyOwner {
-        require(!lockupInitialized, "lockup already initalized");
-        // start lockup at initialize time
-        lockStart = block.timestamp;
-        // set initialized variable
-        lockupInitialized = true;
-    }
 
     /**
      * @dev transfer function which includes unlocked tokens
@@ -122,7 +104,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      * @dev get number of epochs passed
      */
     function epochsPassed() public view returns (uint256) {
-        uint256 totalEpochsPassed = block.timestamp.sub(lockStart).div(EPOCH_SIZE);
+        uint256 totalEpochsPassed = block.timestamp.sub(LOCK_START).div(EPOCH_SIZE);
         if (totalEpochsPassed > TOTAL_EPOCHS) {
             return TOTAL_EPOCHS;
         }
@@ -133,22 +115,29 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      * @dev Get timestamp of next epoch
      */
     function nextEpoch() public view returns (uint256) {
-        return lastEpoch().add(EPOCH_SIZE);
+        return latestEpoch().add(EPOCH_SIZE);
     }
 
     /**
      * @dev Get timestamp of last epoch
      */
-    function lastEpoch() public view returns (uint256) {
+    function latestEpoch() public view returns (uint256) {
         // lockStart + epochsPassed * epochSize
-        return lockStart.add(epochsPassed().mul(EPOCH_SIZE));
+        return LOCK_START.add(epochsPassed().mul(EPOCH_SIZE));
     }
 
     /**
      * @dev Get timestamp of final epoch
      */
-    function finalEpoch() public view returns (uint256) {
+    function finalEpoch() public pure returns (uint256) {
         // lockStart + epochSize * totalEpochs
-        return lockStart.add(EPOCH_SIZE * TOTAL_EPOCHS);
+        return LOCK_START.add(EPOCH_SIZE * TOTAL_EPOCHS);
+    }
+
+    /**
+     * @dev Get timestamp of locking period start
+     */
+    function lockStart() public pure returns (uint256) {
+        return LOCK_START;
     }
 }

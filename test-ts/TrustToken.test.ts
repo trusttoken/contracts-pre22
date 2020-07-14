@@ -6,7 +6,7 @@ import { setupDeploy } from '../scripts/utils'
 import { TrustTokenFactory } from '../build/types/TrustTokenFactory'
 import { TrustToken } from '../build/types/TrustToken'
 import { RegistryFactory } from '../build/types/RegistryFactory'
-import { timeTravel } from './utils/timeTravel'
+import {timeTravel, timeTravelTo} from './utils/timeTravel'
 
 const parseTT = (amount: number) => utils.bigNumberify(amount).mul(10 ** 8)
 
@@ -29,25 +29,22 @@ describe('TrustToken', () => {
 
   describe('TimeLock', () => {
     const YEAR = 365 * 24 * 3600
-    let initializationTimestamp: number
+    const initializationTimestamp = 1594716039
 
     beforeEach(async () => {
-      const tx = await trustToken.initializeLockup()
-      initializationTimestamp = (await provider.getBlock(tx.blockNumber)).timestamp
+      await timeTravelTo(provider, initializationTimestamp)
       await trustToken.connect(holder).registerLockup(saftHolder.address, parseTT(100))
     })
 
     it('correctly setups epoch start', async () => {
       expect(await trustToken.lockStart()).to.equal(initializationTimestamp)
       expect(await trustToken.epochsPassed()).to.equal(0)
-      expect(await trustToken.lastEpoch()).to.equal(initializationTimestamp)
+      expect(await trustToken.latestEpoch()).to.equal(initializationTimestamp)
       expect(await trustToken.nextEpoch()).to.equal(initializationTimestamp + YEAR / 4)
       expect(await trustToken.finalEpoch()).to.equal(initializationTimestamp + YEAR * 2)
     })
 
     it('does not unlock funds until epoch passes', async () => {
-      await timeTravel(provider, YEAR / 4 - 10)
-
       expect(await trustToken.epochsPassed()).to.equal(0)
       expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(100))
       expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(parseTT(100))
