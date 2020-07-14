@@ -37,6 +37,20 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     uint256 constant EPOCH_DURATION = 90 days;
     // number of epochs
     uint256 constant TOTAL_EPOCHS = 8;
+    // registry of locked addresses
+    address public timeLockRegistry;
+
+    modifier onlyTimeLockRegistry() {
+        require(msg.sender == timeLockRegistry, "only TimeLockRegistry");
+        _;
+    }
+
+    /**
+     * @dev set TimeLockRegistry address
+     */
+    function setTimeLockRegistry(address newTimeLockRegistry) external onlyOwner {
+        timeLockRegistry = newTimeLockRegistry;
+    }
 
     /**
      * @dev transfer function which includes unlocked tokens
@@ -71,8 +85,8 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      * @dev Transfer tokens to another account under the lockup schedule
      * Emits a transfer event showing a transfer to the recipient
      */
-    function registerLockup(address recipient, uint256 amount) external {
-        require(balanceOf[msg.sender] > amount, "insufficient balance");
+    function registerLockup(address recipient, uint256 amount) external onlyTimeLockRegistry {
+        require(balanceOf[msg.sender] >= amount, "insufficient balance");
         require(distribution[recipient] == 0, "distribution already set");
 
         // set distribution to lockup amount
