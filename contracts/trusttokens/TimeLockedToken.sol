@@ -29,11 +29,13 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     // represents total distribution for locked balances
     mapping(address => uint256) distribution;
 
-    // variables relating to lockup epochs
+    // start of the lockup period
     uint256 constant LOCK_START = 1594716039;
-    // 4 epochs per year
-    uint256 constant EPOCH_SIZE = 365 days / 4;
-    // total lockup of 2 years with 8 epochs
+    // how much longer is the first epoch
+    uint256 constant FIRST_EPOCH_DELAY = 30 days;
+    // how long does an epoch last
+    uint256 constant EPOCH_DURATION = 90 days;
+    // number of epochs
     uint256 constant TOTAL_EPOCHS = 8;
 
     /**
@@ -104,7 +106,11 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      * @dev get number of epochs passed
      */
     function epochsPassed() public view returns (uint256) {
-        uint256 totalEpochsPassed = block.timestamp.sub(LOCK_START).div(EPOCH_SIZE);
+        uint256 timePassed = block.timestamp.sub(LOCK_START);
+        if (timePassed < FIRST_EPOCH_DELAY) {
+            return 0;
+        }
+        uint256 totalEpochsPassed = timePassed.sub(FIRST_EPOCH_DELAY).div(EPOCH_DURATION);
         if (totalEpochsPassed > TOTAL_EPOCHS) {
             return TOTAL_EPOCHS;
         }
@@ -115,7 +121,10 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      * @dev Get timestamp of next epoch
      */
     function nextEpoch() public view returns (uint256) {
-        return latestEpoch().add(EPOCH_SIZE);
+        if (epochsPassed() == 0) {
+            return latestEpoch().add(FIRST_EPOCH_DELAY).add(EPOCH_DURATION);
+        }
+        return latestEpoch().add(EPOCH_DURATION);
     }
 
     /**
@@ -123,7 +132,10 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      */
     function latestEpoch() public view returns (uint256) {
         // lockStart + epochsPassed * epochSize
-        return LOCK_START.add(epochsPassed().mul(EPOCH_SIZE));
+        if (epochsPassed() == 0) {
+            return LOCK_START;
+        }
+        return LOCK_START.add(FIRST_EPOCH_DELAY).add(epochsPassed().mul(EPOCH_DURATION));
     }
 
     /**
@@ -131,7 +143,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      */
     function finalEpoch() public pure returns (uint256) {
         // lockStart + epochSize * totalEpochs
-        return LOCK_START.add(EPOCH_SIZE * TOTAL_EPOCHS);
+        return LOCK_START + FIRST_EPOCH_DELAY + (EPOCH_DURATION * TOTAL_EPOCHS);
     }
 
     /**
