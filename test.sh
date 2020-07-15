@@ -4,6 +4,8 @@ set -e
 
 cd $(dirname $0)
 
+source ./setup-vyper.sh
+
 npx ganache-cli -l 0x8954400 --allowUnlimitedContractSize -k istanbul >/dev/null &
 GPID=$!
 sleep 1
