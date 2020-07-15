@@ -16,6 +16,8 @@ else
  path="./contracts"
 fi
 
+source ./setup-vyper.sh
+
 UFabi=$(vyper $path/lib/uniswap/contracts/uniswap_factory.vy -f abi)
 UFbytecode=$(vyper $path/lib/uniswap/contracts/uniswap_factory.vy -f bytecode)
 touch $outputDir/uniswap_factory.json

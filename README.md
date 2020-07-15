@@ -2,15 +2,20 @@
 Our development environment uses Truffle and Solidity. We require vyper as a dependency for uniswap.
 
 ## Develop
-```
+```bash
 git submodule update --init --recursive
 yarn install
+
+## The following lines are required to run vyper compiler natively.
+## They can be skipped, in which case vyper will be compiled using docker (running docker daemon will be required) 
 brew install python3
 brew install gmp leveldb
 pip3 install virtualenv
 python3 -m venv ~/vyper-env
 source ~/vyper-env/bin/activate
 pip install vyper
+## Vyper setup end
+
 ./test.sh
 ```
 
