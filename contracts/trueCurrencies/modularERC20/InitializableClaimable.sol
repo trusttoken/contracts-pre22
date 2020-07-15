@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./InitializableOwnable.sol";
+import {InitializableOwnable} from "./InitializableOwnable.sol";
 
 /**
  * @title InitializableOwnable

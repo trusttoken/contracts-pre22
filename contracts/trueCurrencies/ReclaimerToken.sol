@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./HasOwner.sol";
+import {HasOwner} from "./HasOwner.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {InstantiatableOwnable} from "./modularERC20/InstantiatableOwnable.sol";
 
 contract ReclaimerToken is HasOwner {
     /**

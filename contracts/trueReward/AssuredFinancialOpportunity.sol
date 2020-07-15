@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../trusttokens/Liquidator.sol";
-import "../trusttokens/StakedToken.sol";
-import "../trueCurrencies/AssuredFinancialOpportunityStorage.sol";
-import "../trueCurrencies/modularERC20/InitializableClaimable.sol";
-import "./utilities/FractionalExponents.sol";
-import "./FinancialOpportunity.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {Liquidator} from "../trusttokens/Liquidator.sol";
+import {StakedToken} from "../trusttokens/StakedToken.sol";
+import {AssuredFinancialOpportunityStorage} from "../trueCurrencies/AssuredFinancialOpportunityStorage.sol";
+import {InitializableClaimable} from "../trueCurrencies/modularERC20/InitializableClaimable.sol";
+import {FractionalExponents} from "./utilities/FractionalExponents.sol";
+import {FinancialOpportunity} from "./FinancialOpportunity.sol";
 
 /**
  * @title AssuredFinancialOpportunity

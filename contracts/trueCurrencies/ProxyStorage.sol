@@ -2,9 +2,9 @@
 pragma solidity 0.6.10;
 // solhint-disable max-states-count, var-name-mixedcase
 
-import "../registry/Registry.sol";
-import "./deprecated/BalanceSheet.sol";
-import "./deprecated/AllowanceSheet.sol";
+import {Registry} from "../registry/Registry.sol";
+import {BalanceSheet} from "./deprecated/BalanceSheet.sol";
+import {AllowanceSheet} from "./deprecated/AllowanceSheet.sol";
 import {FinancialOpportunity} from "../trueReward/FinancialOpportunity.sol";
 
 /*

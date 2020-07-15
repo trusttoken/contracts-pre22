@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./ValSafeMath.sol";
-import "./ILiquidator.sol";
-import "../registry/Registry.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ValSafeMath} from "./ValSafeMath.sol";
+import {ILiquidator} from "./ILiquidator.sol";
+import {Registry} from "../registry/Registry.sol";
 
 /**
  * @dev Uniswap

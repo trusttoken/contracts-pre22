@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./CanDelegateV1.sol";
+import {CanDelegateV1, OwnableV1, BalanceSheetV1, AllowanceSheetV1} from "./CanDelegateV1.sol";
 
 contract CanDelegateMock is CanDelegateV1 {
     event Burn(address indexed burner, uint256 value);

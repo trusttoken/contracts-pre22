@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../mocks/TokenControllerMock.sol";
+import {TokenControllerMock} from "../mocks/TokenControllerMock.sol";
 
 contract TokenFaucet is TokenControllerMock {
     function faucet(uint256 _amount) external {

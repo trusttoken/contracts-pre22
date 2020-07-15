@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./TokenController.sol";
-import "../proxy/OwnedUpgradeabilityProxy.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {TokenController, Registry, InstantiatableOwnable} from "./TokenController.sol";
+import {CompliantDepositTokenWithHook} from "../CompliantDepositTokenWithHook.sol";
+import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
+import {Claimable} from "../deprecated/Claimable.sol";
 
 /*
 This contract is the owner of TokenController.
