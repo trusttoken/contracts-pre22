@@ -13,7 +13,7 @@ contract ModularBurnableToken is ModularStandardToken {
     uint256 constant CENT = 10**16;
 
     /**
-     * @dev Burn my tokens rounded to cents
+     * @dev Burn caller's tokens rounded to cents
      */
     function burn(uint256 _value) external {
         _burnAllArgs(msg.sender, _value - (_value % CENT));

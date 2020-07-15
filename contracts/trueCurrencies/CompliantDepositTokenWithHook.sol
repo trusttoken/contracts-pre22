@@ -20,7 +20,7 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
     function canBurn() internal virtual pure returns (bytes32);
 
     /**
-     * @dev transfer token for a specified address
+     * @dev transfer tokens to a specified address
      * @param _to The address to transfer to.
      * @param _value The amount to be transferred.
      */
@@ -31,9 +31,9 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
      * @dev Transfer tokens from one address to another
-     * @param _from address The address which you want to send tokens from
-     * @param _to address The address which you want to transfer to
-     * @param _value uint256 the amount of tokens to be transferred
+     * @param _from The address to send tokens from
+     * @param _to The address that will receive the tokens
+     * @param _value The amount of tokens to be transferred
      */
     function transferFrom(
         address _from,
@@ -46,10 +46,10 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
      * @dev Helper function for burning tokens by allowed account
-     * @param _from address The address whose tokens should be burnt
-     * @param _to address The address which should be able to burn this token
-     * @param _value uint256 Amount to burn
-     * @param _spender address Transaction sender
+     * @param _from The address whose tokens should be burnt
+     * @param _to The address which should be able to burn this token
+     * @param _value Amount to burn
+     * @param _spender Transaction sender
      */
     function _burnFromAllowanceAllArgs(
         address _from,
@@ -81,9 +81,9 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
      * @dev Helper function for burning tokens
-     * @param _from address The address whose tokens should be burnt
-     * @param _to address The address which should be able to burn this token
-     * @param _value uint256 Amount to burn
+     * @param _from The address whose tokens should be burnt
+     * @param _to The address which should be able to burn this token
+     * @param _value Amount to burn
      */
     function _burnFromAllArgs(
         address _from,
@@ -211,8 +211,8 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
      * @dev Mint new tokens
-     * @param _to address Who should receive the tokens
-     * @param _value uint256 Amount of minted tokens
+     * @param _to Address which should receive the tokens
+     * @param _value Amount of minted tokens
      */
     function mint(address _to, uint256 _value) public virtual onlyOwner {
         require(_to != address(0), "to address cannot be zero");
@@ -237,8 +237,8 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
      * @dev Emitted when the tokens owned by blacklisted account were destroyed
-     * @param account address Blacklisted account
-     * @param balance uint256 Balance before wipe
+     * @param account Blacklisted account
+     * @param balance Balance before wipe
      */
     event WipeBlacklistedAccount(address indexed account, uint256 balance);
 
@@ -247,7 +247,7 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
     * @dev Point to the registry that contains all compliance related data
-    @param _registry The address of the registry instance
+    * @param _registry The address of the registry instance
     */
     function setRegistry(Registry _registry) public onlyOwner {
         registry = _registry;
@@ -301,8 +301,8 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
      * @dev Check if funds can be transferred between accounts
-     * @param _from address Sender
-     * @param _to address Receiver
+     * @param _from Sender
+     * @param _to Receiver
      */
     function _requireCanTransfer(address _from, address _to) internal virtual view returns (address, bool) {
         uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
@@ -316,9 +316,9 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
      * @dev Check if funds can be transferred between accounts with allowance
-     * @param _spender address Transaction submitter
-     * @param _from address Sender
-     * @param _to address Receiver
+     * @param _spender Transaction sender
+     * @param _from Sender
+     * @param _to Receiver
      */
     function _requireCanTransferFrom(
         address _spender,
@@ -337,7 +337,7 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
      * @dev Check if tokens can be minted for account and it is not blacklisted
-     * @param _to address Receiver
+     * @param _to Receiver
      */
     function _requireCanMint(address _to) internal virtual view returns (address, bool) {
         uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
@@ -350,7 +350,7 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
      * @dev Check if tokens can be burnt at address
-     * @param _from address Burner
+     * @param _from Burner
      */
     function _requireOnlyCanBurn(address _from) internal virtual view {
         require(attributes[canBurn()][_from] != 0, "cannot burn from this address");
@@ -358,7 +358,7 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
     /**
      * @dev Check if tokens can be burnt from account and that the account is not blacklisted
-     * @param _from address Owner of tokens
+     * @param _from Owner of tokens
      */
     function _requireCanBurn(address _from) internal virtual view {
         require(attributes[IS_BLACKLISTED][_from] == 0, "blacklisted");

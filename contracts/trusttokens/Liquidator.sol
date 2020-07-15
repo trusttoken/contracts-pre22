@@ -48,23 +48,23 @@ contract Liquidator is ALiquidatorUniswap {
 
     /**
      * @dev Liquidator pool
-     * Should have large amount of TrustTokens and an infinite allowance to Liquidator
+     * Should have large amount of TrustTokens and give infinite allowance to Liquidator
      */
     function pool() public override view returns (address) {
         return pool_;
     }
 
-    // @dev TRU address
+    // @dev TUSD address
     function outputToken() public override view returns (IERC20) {
         return outputToken_;
     }
 
-    // @dev TrueReward token address
+    // @dev TRU token address
     function stakeToken() public override view returns (IERC20) {
         return stakeToken_;
     }
 
-    // @dev registry address
+    // @dev Registry address
     function registry() public override view returns (Registry) {
         return registry_;
     }

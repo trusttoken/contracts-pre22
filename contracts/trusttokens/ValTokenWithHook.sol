@@ -11,10 +11,10 @@ abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
 
     /**
      * @dev Check if address supports token transfer fallback and resolve autosweep
-     * @param _to address Receiver account
+     * @param _to Receiver account
      *
-     * @return to address If _to is not an autosweep address, they are same. Otherwise equals autosweep root
-     * @return hook bool True if _to supports transfer fallback
+     * @return to If _to is not an autosweep address, they are same. Otherwise equals autosweep root
+     * @return hook True if _to supports transfer fallback
      */
     function _resolveRecipient(address _to) internal view returns (address to, bool hook) {
         uint256 flags = (attributes[uint144(uint160(_to) >> 20)]);
@@ -89,11 +89,11 @@ abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
 
     /**
      * @dev Burn
-     * @param _from address Account whose tokens will burn
-     * @param _value uint256 Amount of tokens to be burnt
+     * @param _from Account whose tokens will burn
+     * @param _value Amount of tokens to be burnt
      *
-     * @return resultBalance_ uint256 New balance of _from
-     * @return resultSupply_ uint256 New total supply
+     * @return resultBalance_ New balance of _from
+     * @return resultSupply_ New total supply
      */
     function _burn(address _from, uint256 _value) internal virtual returns (uint256 resultBalance_, uint256 resultSupply_) {
         emit Transfer(_from, address(0), _value);
@@ -105,8 +105,8 @@ abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
 
     /**
      * @dev Mint new tokens
-     * @param _to address Tokens receiver
-     * @param _value uint256 Amount of tokens to be minted
+     * @param _to Tokens receiver
+     * @param _value Amount of tokens to be minted
      */
     function _mint(address _to, uint256 _value) internal virtual {
         emit Transfer(address(0), _to, _value);

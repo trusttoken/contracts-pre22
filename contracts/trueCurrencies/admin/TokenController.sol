@@ -147,7 +147,7 @@ contract TokenController {
     event AllMintsPaused(bool status);
     /// @dev Emitted when opIndex mint is paused (status=true) or unpaused (status=false)
     event MintPaused(uint256 opIndex, bool status);
-    /// @dev Emitted when mint approved
+    /// @dev Emitted when mint is approved
     event MintApproved(address approver, uint256 opIndex);
     /// @dev Emitted when fast pause contract is changed
     event FastPauseSet(address _newFastPause);

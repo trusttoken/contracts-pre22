@@ -20,25 +20,25 @@ abstract contract RewardTokenWithReserve is RewardToken {
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
 
     /**
-     * @dev Emitted when tokens were deposited into Financial Opportunity
-     * @param account address Who made a deposit
-     * @param depositAmount uint256 How much tokens were deposited
-     * @param rewardTokenReturned uint256 How much reward tokens was given in exchange
-     * @param finOp address Financial Opportunity address
+     * @dev Emitted when tokens were deposited into Financial Opportunity using the Reserve
+     * @param account Who made the deposit
+     * @param depositAmount How many tokens were deposited
+     * @param rewardTokenReturned How many reward tokens were given in exchange
+     * @param finOp Financial Opportunity address
      */
     event ReserveDeposit(address indexed account, uint256 depositAmount, uint256 rewardTokenReturned, address indexed finOp);
 
     /**
-     * @dev Emitted when tokens were redeemed into Financial Opportunity
-     * @param account address Who made a deposit
-     * @param rewardTokenRedeemed uint256 How much reward tokens were redeemed
-     * @param tokenAmountReturned uint256 How much tokens was given in exchange
-     * @param finOp address Financial Opportunity address
+     * @dev Emitted when tokens were redeemed from Financial Opportunity using the Reserve
+     * @param account Who made the redemption
+     * @param rewardTokenRedeemed How many reward tokens were redeemed
+     * @param tokenAmountReturned How many tokens was given in exchange
+     * @param finOp Financial Opportunity address
      */
     event ReserveRedeem(address indexed account, uint256 rewardTokenRedeemed, uint256 tokenAmountReturned, address indexed finOp);
 
     /**
-     * @dev get reserve token balance
+     * @dev Get reserve token balance
      *
      * @return token balance of reserve
      */
