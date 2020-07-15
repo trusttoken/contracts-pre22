@@ -246,9 +246,9 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
     event SetRegistry(address indexed registry);
 
     /**
-    * @dev Point to the registry that contains all compliance related data
-    * @param _registry The address of the registry instance
-    */
+     * @dev Point to the registry that contains all compliance related data
+     * @param _registry The address of the registry instance
+     */
     function setRegistry(Registry _registry) public onlyOwner {
         registry = _registry;
         emit SetRegistry(address(registry));
