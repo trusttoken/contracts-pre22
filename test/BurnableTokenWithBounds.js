@@ -3,14 +3,14 @@ import burnableTokenTests from './BurnableToken'
 
 const BN = web3.utils.toBN
 
-function burnableTokenWithBoundsTests ([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns = false) {
+function burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount]) {
   describe('--BurnableTokenWithBounds Tests--', function () {
     describe('non-restrictive burn bounds', function () {
       beforeEach(async function () {
         await this.token.setBurnBounds(0, '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', { from: owner })
       })
 
-      burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
+      burnableTokenTests([owner, oneHundred, anotherAccount])
     })
 
     describe('setBurnBounds', function () {
@@ -51,22 +51,6 @@ function burnableTokenWithBoundsTests ([owner, oneHundred, anotherAccount], tran
         await this.token.burn(BN(20 * 10 ** 18), { from: oneHundred })
       })
     })
-
-    if (transfersToZeroBecomeBurns) {
-      const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
-      describe('transfers to 0x0 become burns', function () {
-        describe('restrictive burn bounds', function () {
-          it('allows burns within bounds and reverts others', async function () {
-            await this.token.setBurnBounds(BN(10 * 10 ** 18), BN(20 * 10 ** 18), { from: owner })
-            await assertRevert(this.token.transfer(ZERO_ADDRESS, BN(9 * 10 ** 18), { from: oneHundred }))
-            await assertRevert(this.token.transfer(ZERO_ADDRESS, BN(21 * 10 ** 18), { from: oneHundred }))
-            await this.token.transfer(ZERO_ADDRESS, BN(10 * 10 ** 18), { from: oneHundred })
-            await this.token.transfer(ZERO_ADDRESS, BN(15 * 10 ** 18), { from: oneHundred })
-            await this.token.transfer(ZERO_ADDRESS, BN(20 * 10 ** 18), { from: oneHundred })
-          })
-        })
-      })
-    }
   })
 }
 
