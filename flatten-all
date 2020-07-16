@@ -19,14 +19,14 @@ truffle-flattener contracts/truecurrencies/Admin/MultisigOwner.sol > flat_contra
 truffle-flattener contracts/truecurrencies/Proxy/TimeOwnedUpgradeabilityProxy.sol > flat_contracts/flat_TimeOwnedUpgradeabilityProxy.sol
 truffle-flattener contracts/truecurrencies/utilities/TokenFaucet.sol > flat_contracts/flat_TokenFaucet.sol
 
-truffle-flattener contracts/TrueReward/utilities/FractionalExponents.sol > flat_contracts/flat_FractionalExponents.sol
-truffle-flattener contracts/TrueReward/AssuredFinancialOpportunity.sol > flat_contracts/flat_AssuredFinancialOpportunity.sol
-truffle-flattener contracts/TrueReward/AaveFinancialOpportunity.sol > flat_contracts/flat_AaveFinancialOpportunity.sol
-truffle-flattener contracts/TrueReward/mocks/LendingPoolCoreMock.sol > flat_contracts/flat_LendingPoolCoreMock.sol
-truffle-flattener contracts/TrueReward/FinancialOpportunity.sol > flat_contracts/flat_thkd.sol
-truffle-flattener contracts/TrueReward/mocks/ATokenMock.sol > flat_contracts/flat_ATokenMock.sol
-truffle-flattener contracts/TrueReward/mocks/ConfigurableFinancialOpportunityMock.sol > flat_contracts/flat_ConfigurableFinancialOpportunityMock.sol
-truffle-flattener contracts/TrueReward/mocks/ConfigurableAaveFinancialOpportuniy.sol > flat_contracts/flat_ConfigurableAaveFinancialOpportuniy.sol
+truffle-flattener contracts/truereward/utilities/FractionalExponents.sol > flat_contracts/flat_FractionalExponents.sol
+truffle-flattener contracts/truereward/AssuredFinancialOpportunity.sol > flat_contracts/flat_AssuredFinancialOpportunity.sol
+truffle-flattener contracts/truereward/AaveFinancialOpportunity.sol > flat_contracts/flat_AaveFinancialOpportunity.sol
+truffle-flattener contracts/truereward/mocks/LendingPoolCoreMock.sol > flat_contracts/flat_LendingPoolCoreMock.sol
+truffle-flattener contracts/truereward/FinancialOpportunity.sol > flat_contracts/flat_thkd.sol
+truffle-flattener contracts/truereward/mocks/ATokenMock.sol > flat_contracts/flat_ATokenMock.sol
+truffle-flattener contracts/truereward/mocks/ConfigurableFinancialOpportunityMock.sol > flat_contracts/flat_ConfigurableFinancialOpportunityMock.sol
+truffle-flattener contracts/truereward/mocks/ConfigurableAaveFinancialOpportuniy.sol > flat_contracts/flat_ConfigurableAaveFinancialOpportuniy.sol
 
 truffle-flattener contracts/deploy/DeployHelper.sol > flat_contracts/flat_DeployHelper.sol
 

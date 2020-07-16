@@ -1,5 +1,5 @@
 
-// File: contracts/TrueReward/FinancialOpportunity.sol
+// File: contracts/truereward/FinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 
@@ -362,7 +362,7 @@ library SafeMath {
     }
 }
 
-// File: contracts/TrueReward/mocks/ConfigurableFinancialOpportunityMock.sol
+// File: contracts/truereward/mocks/ConfigurableFinancialOpportunityMock.sol
 
 pragma solidity 0.5.13;
 

@@ -7,7 +7,7 @@ contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
 }
 
-// File: contracts/TrueReward/FinancialOpportunity.sol
+// File: contracts/truereward/FinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 
@@ -2453,7 +2453,7 @@ contract TrueUSD is TrueRewardBackedToken, DelegateERC20 {
     }
 }
 
-// File: contracts/TrueReward/IAToken.sol
+// File: contracts/truereward/IAToken.sol
 
 pragma solidity 0.5.13;
 
@@ -2462,7 +2462,7 @@ contract IAToken is IERC20 {
     function redeem(uint256 _shares) external;
 }
 
-// File: contracts/TrueReward/ILendingPool.sol
+// File: contracts/truereward/ILendingPool.sol
 
 pragma solidity 0.5.13;
 
@@ -2640,7 +2640,7 @@ contract OwnedUpgradeabilityProxy {
     }
 }
 
-// File: contracts/TrueReward/ILendingPoolCore.sol
+// File: contracts/truereward/ILendingPoolCore.sol
 
 pragma solidity 0.5.13;
 
@@ -2649,7 +2649,7 @@ interface ILendingPoolCore {
   function transferToReserve(address _reserve, address payable _user, uint256 _amount) external;
 }
 
-// File: contracts/TrueReward/AaveFinancialOpportunity.sol
+// File: contracts/truereward/AaveFinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 
@@ -2846,7 +2846,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     }
 }
 
-// File: contracts/TrueReward/mocks/ConfigurableAaveFinancialOpportuniy.sol
+// File: contracts/truereward/mocks/ConfigurableAaveFinancialOpportuniy.sol
 
 pragma solidity 0.5.13;
 

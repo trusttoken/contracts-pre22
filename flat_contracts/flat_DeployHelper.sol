@@ -7,7 +7,7 @@ contract TrueCoinReceiver {
     function tokenFallback( address from, uint256 value ) external;
 }
 
-// File: contracts/TrueReward/FinancialOpportunity.sol
+// File: contracts/truereward/FinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 
@@ -4511,7 +4511,7 @@ contract AssuredFinancialOpportunityStorage {
     **/
 }
 
-// File: contracts/TrueReward/utilities/FractionalExponents.sol
+// File: contracts/truereward/utilities/FractionalExponents.sol
 
 /**
  * FractionalExponents
@@ -5057,7 +5057,7 @@ contract FractionalExponents  {
     }
 }
 
-// File: contracts/TrueReward/AssuredFinancialOpportunity.sol
+// File: contracts/truereward/AssuredFinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 
@@ -5453,7 +5453,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     function() external payable {}
 }
 
-// File: contracts/TrueReward/IAToken.sol
+// File: contracts/truereward/IAToken.sol
 
 pragma solidity 0.5.13;
 
@@ -5462,7 +5462,7 @@ contract IAToken is IERC20 {
     function redeem(uint256 _shares) external;
 }
 
-// File: contracts/TrueReward/ILendingPool.sol
+// File: contracts/truereward/ILendingPool.sol
 
 pragma solidity 0.5.13;
 
@@ -5471,7 +5471,7 @@ interface ILendingPool {
   function core() external view returns(address);
 }
 
-// File: contracts/TrueReward/ILendingPoolCore.sol
+// File: contracts/truereward/ILendingPoolCore.sol
 
 pragma solidity 0.5.13;
 
@@ -5480,7 +5480,7 @@ interface ILendingPoolCore {
   function transferToReserve(address _reserve, address payable _user, uint256 _amount) external;
 }
 
-// File: contracts/TrueReward/AaveFinancialOpportunity.sol
+// File: contracts/truereward/AaveFinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 
@@ -5677,7 +5677,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     }
 }
 
-// File: contracts/TrueReward/utilities/IExponentContract.sol
+// File: contracts/truereward/utilities/IExponentContract.sol
 
 pragma solidity 0.5.13;
 

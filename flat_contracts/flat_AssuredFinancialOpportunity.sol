@@ -1652,7 +1652,7 @@ contract InitializableClaimable is InitializableOwnable {
     }
 }
 
-// File: contracts/TrueReward/utilities/FractionalExponents.sol
+// File: contracts/truereward/utilities/FractionalExponents.sol
 
 /**
  * FractionalExponents
@@ -2198,7 +2198,7 @@ contract FractionalExponents  {
     }
 }
 
-// File: contracts/TrueReward/FinancialOpportunity.sol
+// File: contracts/truereward/FinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 
@@ -2278,7 +2278,7 @@ interface FinancialOpportunity {
     function redeem(address to, uint amount) external returns(uint);
 }
 
-// File: contracts/TrueReward/AssuredFinancialOpportunity.sol
+// File: contracts/truereward/AssuredFinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 
