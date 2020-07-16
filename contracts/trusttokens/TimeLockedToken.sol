@@ -112,7 +112,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     /**
      * @dev Get locked balance for an account
      * @param account Account to check
-     * @returns Amount locked
+     * @return Amount locked
      */
     function lockedBalance(address account) public view returns (uint256) {
         // distribution * (epochsLeft / totalEpochs)
@@ -123,7 +123,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     /**
      * @dev Get unlocked balance for an account
      * @param account Account to check
-     * @returns Amount that is unlocked and available eg. to transfer
+     * @return Amount that is unlocked and available eg. to transfer
      */
     function unlockedBalance(address account) public view returns (uint256) {
         // totalBalance - lockedBalance
@@ -132,7 +132,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
     /*
      * @dev Get number of epochs passed
-     * @returns Value between 0 and 8 of lockup epochs already passed
+     * @return Value between 0 and 8 of lockup epochs already passed
      */
     function epochsPassed() public view returns (uint256) {
         // how long it is since the beginning of lockup period
@@ -152,7 +152,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
     /**
      * @dev Get timestamp of next epoch
-     * @returns Timestamp of when the next epoch starts
+     * @return Timestamp of when the next epoch starts
      */
     function nextEpoch() public view returns (uint256) {
         if (epochsPassed() == 0) {
@@ -163,7 +163,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
     /**
      * @dev Get timestamp of latest epoch
-     * @returns Timestamp of when the current epoch has started
+     * @return Timestamp of when the current epoch has started
      */
     function latestEpoch() public view returns (uint256) {
         // lockStart + epochsPassed * epochDuration, and account for 1st epoch being longer
@@ -175,7 +175,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
     /**
      * @dev Get timestamp of final epoch
-     * @returns Timestamp of when the last epoch ends and all funds are released
+     * @return Timestamp of when the last epoch ends and all funds are released
      */
     function finalEpoch() public pure returns (uint256) {
         return LOCK_START + FIRST_EPOCH_DELAY + (EPOCH_DURATION * TOTAL_EPOCHS);
@@ -183,7 +183,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
     /**
      * @dev Get timestamp of locking period start
-     * @returns Timestamp of locking period start
+     * @return Timestamp of locking period start
      */
     function lockStart() public pure returns (uint256) {
         return LOCK_START;
