@@ -3,7 +3,7 @@ import burnableTokenTests from './BurnableToken'
 
 const BN = web3.utils.toBN
 
-function burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount]) {
+function burnableTokenWithBoundsTests ([owner, oneHundred, anotherAccount]) {
   describe('--BurnableTokenWithBounds Tests--', function () {
     describe('non-restrictive burn bounds', function () {
       beforeEach(async function () {
