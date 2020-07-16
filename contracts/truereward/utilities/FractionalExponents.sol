@@ -11,7 +11,7 @@ pragma solidity 0.6.10;
  *  https://ethereum.stackexchange.com/questions/50527/is-there-any-efficient-way-to-compute-the-exponentiation-of-an-fractional-base-a
  */
 
-import {IExponentContract} from "../../trueCurrencies/utilities/IExponentContract.sol";
+import {IExponentContract} from "../../truecurrencies/utilities/IExponentContract.sol";
 
 contract FractionalExponents is IExponentContract {
     uint256 private constant ONE = 1;

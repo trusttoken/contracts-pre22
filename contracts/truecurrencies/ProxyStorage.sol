@@ -5,7 +5,7 @@ pragma solidity 0.6.10;
 import "../registry/Registry.sol";
 import "./deprecated/BalanceSheet.sol";
 import "./deprecated/AllowanceSheet.sol";
-import {FinancialOpportunity} from "../trueReward/FinancialOpportunity.sol";
+import {FinancialOpportunity} from "../truereward/FinancialOpportunity.sol";
 
 /*
 Defines the storage layout of the token implementation contract. Any newly declared

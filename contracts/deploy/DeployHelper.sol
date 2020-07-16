@@ -2,10 +2,10 @@
 // solhint-disable max-states-count
 pragma solidity 0.6.10;
 
-import {TrueUSD} from "../trueCurrencies/TrueUSD.sol";
+import {TrueUSD} from "../truecurrencies/TrueUSD.sol";
 import {ProvisionalRegistryImplementation} from "../mocks/RegistryImplementation.sol";
-import {OwnedUpgradeabilityProxy} from "../trueCurrencies/proxy/OwnedUpgradeabilityProxy.sol";
-import {TokenController} from "../trueCurrencies/admin/TokenController.sol";
+import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
+import {TokenController} from "../truecurrencies/admin/TokenController.sol";
 import {AssuredFinancialOpportunity} from "../trueReward/AssuredFinancialOpportunity.sol";
 import {AaveFinancialOpportunity} from "../trueReward/AaveFinancialOpportunity.sol";
 import {IAToken} from "../trueReward/IAToken.sol";

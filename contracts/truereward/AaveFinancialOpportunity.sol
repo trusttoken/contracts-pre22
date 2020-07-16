@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../trueCurrencies/TrueUSD.sol";
+import "../truecurrencies/TrueUSD.sol";
 import "./IAToken.sol";
 import "./ILendingPool.sol";
-import "../trueCurrencies/proxy/OwnedUpgradeabilityProxy.sol";
+import "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
 import "./ILendingPoolCore.sol";
-import "../trueCurrencies/modularERC20/InstantiatableOwnable.sol";
+import "../truecurrencies/modularERC20/InstantiatableOwnable.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import {FinancialOpportunity} from "../trueReward/FinancialOpportunity.sol";
+import {FinancialOpportunity} from "../truereward/FinancialOpportunity.sol";
 import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol";
 
 /**
