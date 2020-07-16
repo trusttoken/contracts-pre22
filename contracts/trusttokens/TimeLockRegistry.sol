@@ -20,7 +20,11 @@ contract TimeLockRegistry is ClaimableContract {
         token = _token;
     }
 
-    /// @dev Register new SAFT account
+    /**
+     * @dev Register new SAFT account
+     * @param receiver Address belonging to SAFT purchaser
+     * @param distribution Tokens amount that receiver is due to get
+     */
     function register(address receiver, uint256 distribution) external onlyOwner {
         require(receiver != address(0), "Zero address");
         require(distribution != 0, "Distribution = 0");
@@ -31,7 +35,10 @@ contract TimeLockRegistry is ClaimableContract {
         require(token.transferFrom(msg.sender, address(this), distribution), "Transfer failed");
     }
 
-    /// @dev Cancel distribution registration
+    /**
+     * @dev Cancel distribution registration
+     * @param receiver Address that should have it's distribution removed
+     */
     function cancel(address receiver) external onlyOwner {
         require(registeredDistributions[receiver] != 0, "Not registered");
 
@@ -39,7 +46,7 @@ contract TimeLockRegistry is ClaimableContract {
         delete registeredDistributions[receiver];
     }
 
-    /// @dev Claim TRU due amount
+    /// @dev Claim tokens due amount
     function claim() external {
         require(registeredDistributions[msg.sender] != 0, "Not registered");
 

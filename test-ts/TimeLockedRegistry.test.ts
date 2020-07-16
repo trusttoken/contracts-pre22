@@ -14,12 +14,12 @@ import { AddressZero } from 'ethers/constants'
 use(solidity)
 
 describe('TimeLockedRegistry', () => {
-  let owner: Wallet, holder: Wallet
+  let owner: Wallet, holder: Wallet, another: Wallet
   let registry: TimeLockRegistry
   let trustToken: TrustToken
 
   beforeEachWithFixture(async (provider, wallets) => {
-    ([owner, holder] = wallets)
+    ([owner, holder, another] = wallets)
     const deployContract = setupDeploy(owner)
     trustToken = await deployContract(TrustTokenFactory)
     await trustToken.mint(owner.address, parseTT(1000))
@@ -70,6 +70,18 @@ describe('TimeLockedRegistry', () => {
       expect(await registry.registeredDistributions(holder.address)).to.equal(0)
       expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(1000))
       expect(await trustToken.balanceOf(registry.address)).to.equal(0)
+    })
+
+    it('cancel one of 2 registrations', async () => {
+      await trustToken.approve(registry.address, parseTT(10))
+      await registry.register(holder.address, parseTT(5))
+      await registry.register(another.address, parseTT(5))
+      await registry.cancel(holder.address)
+
+      expect(await registry.registeredDistributions(holder.address)).to.equal(0)
+      expect(await registry.registeredDistributions(another.address)).to.equal(parseTT(5))
+      expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(995))
+      expect(await trustToken.balanceOf(registry.address)).to.equal(parseTT(5))
     })
 
     it('cannot cancel by non-owner', async () => {

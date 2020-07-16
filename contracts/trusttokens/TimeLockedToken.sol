@@ -46,14 +46,18 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     }
 
     /**
-     * @dev set TimeLockRegistry address
+     * @dev Set TimeLockRegistry address
+     * @param newTimeLockRegistry Address of TimeLockRegistry contract
      */
     function setTimeLockRegistry(address newTimeLockRegistry) external onlyOwner {
         timeLockRegistry = newTimeLockRegistry;
     }
 
     /**
-     * @dev transfer function which includes unlocked tokens
+     * @dev Transfer function which includes unlocked tokens
+     * @param _from The address to send tokens from
+     * @param _to The address that will receive the tokens
+     * @param _value The amount of tokens to be transferred
      */
     function _transferAllArgs(
         address _from,
@@ -68,6 +72,10 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
     /**
      * @dev transferFrom function which includes unlocked tokens
+     * @param _from The address to send tokens from
+     * @param _to The address that will receive the tokens
+     * @param _value The amount of tokens to be transferred
+     * @param _spender The address allowed to make the transfer
      */
     function _transferFromAllArgs(
         address _from,
@@ -84,23 +92,27 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     /**
      * @dev Transfer tokens to another account under the lockup schedule
      * Emits a transfer event showing a transfer to the recipient
+     * @param receiver Address to receive the tokens
+     * @param amount Tokens to be transferred
      */
-    function registerLockup(address recipient, uint256 amount) external onlyTimeLockRegistry {
+    function registerLockup(address receiver, uint256 amount) external onlyTimeLockRegistry {
         require(balanceOf[msg.sender] >= amount, "insufficient balance");
-        require(distribution[recipient] == 0, "distribution already set");
+        require(distribution[receiver] == 0, "distribution already set");
 
         // set distribution to lockup amount
-        distribution[recipient] = amount;
+        distribution[receiver] = amount;
 
         // transfer to recipient
-        _transferAllArgs(msg.sender, recipient, amount);
+        _transferAllArgs(msg.sender, receiver, amount);
 
         // show transfer from sender to recipient
-        emit Transfer(msg.sender, recipient, amount);
+        emit Transfer(msg.sender, receiver, amount);
     }
 
     /**
      * @dev Get locked balance for an account
+     * @param account Account to check
+     * @returns Amount locked
      */
     function lockedBalance(address account) public view returns (uint256) {
         // distribution * (epochsLeft / totalEpochs)
@@ -110,6 +122,8 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
     /**
      * @dev Get unlocked balance for an account
+     * @param account Account to check
+     * @returns Amount that is unlocked and available eg. to transfer
      */
     function unlockedBalance(address account) public view returns (uint256) {
         // totalBalance - lockedBalance
@@ -117,14 +131,19 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     }
 
     /*
-     * @dev get number of epochs passed
+     * @dev Get number of epochs passed
+     * @returns Value between 0 and 8 of lockup epochs already passed
      */
     function epochsPassed() public view returns (uint256) {
+        // how long it is since the beginning of lockup period
         uint256 timePassed = block.timestamp.sub(LOCK_START);
+        // 1st epoch is FIRST_EPOCH_DELAY longer; we check to prevent subtraction underflow
         if (timePassed < FIRST_EPOCH_DELAY) {
             return 0;
         }
+        // subtract the FIRST_EPOCH_DELAY, so that we can count all epochs as lasting EPOCH_DURATION
         uint256 totalEpochsPassed = timePassed.sub(FIRST_EPOCH_DELAY).div(EPOCH_DURATION);
+        // epochs don't count over TOTAL_EPOCHS
         if (totalEpochsPassed > TOTAL_EPOCHS) {
             return TOTAL_EPOCHS;
         }
@@ -133,6 +152,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
     /**
      * @dev Get timestamp of next epoch
+     * @returns Timestamp of when the next epoch starts
      */
     function nextEpoch() public view returns (uint256) {
         if (epochsPassed() == 0) {
@@ -142,10 +162,11 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     }
 
     /**
-     * @dev Get timestamp of last epoch
+     * @dev Get timestamp of latest epoch
+     * @returns Timestamp of when the current epoch has started
      */
     function latestEpoch() public view returns (uint256) {
-        // lockStart + epochsPassed * epochSize
+        // lockStart + epochsPassed * epochDuration, and account for 1st epoch being longer
         if (epochsPassed() == 0) {
             return LOCK_START;
         }
@@ -154,14 +175,15 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
     /**
      * @dev Get timestamp of final epoch
+     * @returns Timestamp of when the last epoch ends and all funds are released
      */
     function finalEpoch() public pure returns (uint256) {
-        // lockStart + epochSize * totalEpochs
         return LOCK_START + FIRST_EPOCH_DELAY + (EPOCH_DURATION * TOTAL_EPOCHS);
     }
 
     /**
      * @dev Get timestamp of locking period start
+     * @returns Timestamp of locking period start
      */
     function lockStart() public pure returns (uint256) {
         return LOCK_START;
