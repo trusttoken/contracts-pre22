@@ -11,6 +11,8 @@ import { solidity } from 'ethereum-waffle'
 import { parseTT } from './utils/parseTT'
 import { AddressZero } from 'ethers/constants'
 
+import { expectEvent } from './utils/eventHelpers'
+
 use(solidity)
 
 describe('TimeLockedRegistry', () => {
@@ -39,7 +41,10 @@ describe('TimeLockedRegistry', () => {
 
     it('adds recipient to distributions list', async () => {
       await trustToken.approve(registry.address, parseTT(10))
-      await registry.register(holder.address, parseTT(10))
+      // event emitted correctly
+      const tx = await registry.register(holder.address, parseTT(10))
+
+      await expectEvent(registry, 'Register')(tx, holder.address, parseTT(10))
 
       expect(await registry.registeredDistributions(holder.address)).to.equal(parseTT(10))
       expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(990))
@@ -65,7 +70,9 @@ describe('TimeLockedRegistry', () => {
     it('cancels registration', async () => {
       await trustToken.approve(registry.address, parseTT(10))
       await registry.register(holder.address, parseTT(10))
-      await registry.cancel(holder.address)
+      const tx = await registry.cancel(holder.address)
+
+      await expectEvent(registry, 'Cancel')(tx, holder.address, parseTT(10))
 
       expect(await registry.registeredDistributions(holder.address)).to.equal(0)
       expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(1000))
@@ -101,7 +108,9 @@ describe('TimeLockedRegistry', () => {
     it('transfers funds to registered address', async () => {
       await trustToken.approve(registry.address, parseTT(10))
       await registry.register(holder.address, parseTT(10))
-      await registry.connect(holder).claim()
+      const tx = await registry.connect(holder).claim()
+
+      await expectEvent(registry, 'Claim')(tx, holder.address, parseTT(10))
 
       expect(await registry.registeredDistributions(holder.address)).to.equal(0)
       expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(990))
