@@ -13,8 +13,13 @@ import {ClaimableContract} from "./ClaimableContract.sol";
 contract TimeLockRegistry is ClaimableContract {
     // time locked token
     TimeLockedToken private token;
+
     // mapping from SAFT address to TRU due amount
     mapping(address => uint256) public registeredDistributions;
+
+    event Register(address receiver, uint256 distribution);
+    event Cancel(address receiver, uint256 distribution);
+    event Claim(address account, uint256 distribution);
 
     constructor(TimeLockedToken _token) public {
         token = _token;
@@ -31,8 +36,13 @@ contract TimeLockRegistry is ClaimableContract {
         require(registeredDistributions[receiver] == 0, "Distribution for this address is already registered");
         require(token.allowance(msg.sender, address(this)) >= distribution, "Insufficient allowance");
 
+        // register distribution in mapping
         registeredDistributions[receiver] = distribution;
+
+        // transfer tokens from owner
         require(token.transferFrom(msg.sender, address(this), distribution), "Transfer failed");
+        
+        emit Register(receiver, distribution);
     }
 
     /**
@@ -42,7 +52,12 @@ contract TimeLockRegistry is ClaimableContract {
     function cancel(address receiver) external onlyOwner {
         require(registeredDistributions[receiver] != 0, "Not registered");
 
+        // transfer tokens back to owner
         require(token.transfer(msg.sender, registeredDistributions[receiver]), "Transfer failed");
+        
+        emit Cancel(receiver, registeredDistributions[receiver]);
+
+        // set distribution mappig to 0
         delete registeredDistributions[receiver];
     }
 
@@ -50,7 +65,13 @@ contract TimeLockRegistry is ClaimableContract {
     function claim() external {
         require(registeredDistributions[msg.sender] != 0, "Not registered");
 
+        // register lockup in TimeLockedToken
+        // this will transfer funds from this contract and lock them for sender
         token.registerLockup(msg.sender, registeredDistributions[msg.sender]);
+
+        emit Claim(msg.sender, registeredDistributions[msg.sender]);
+
+        // delete distribution mapping
         delete registeredDistributions[msg.sender];
     }
 }
