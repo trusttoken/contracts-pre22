@@ -41,7 +41,7 @@ contract TimeLockRegistry is ClaimableContract {
 
         // transfer tokens from owner
         require(token.transferFrom(msg.sender, address(this), distribution), "Transfer failed");
-        
+
         emit Register(receiver, distribution);
     }
 
@@ -54,7 +54,7 @@ contract TimeLockRegistry is ClaimableContract {
 
         // transfer tokens back to owner
         require(token.transfer(msg.sender, registeredDistributions[receiver]), "Transfer failed");
-        
+
         emit Cancel(receiver, registeredDistributions[receiver]);
 
         // set distribution mappig to 0
