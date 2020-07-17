@@ -1117,66 +1117,81 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     }
 }
 
-// File: contracts/trusttokens/TrustToken.sol
+// File: contracts/trusttokens/TimeLockRegistry.sol
 
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
 
-
 /**
- * @title TrustToken
- * @dev The TrustToken contract is a claimable contract where the
- * owner can only mint or transfer ownership. TrustTokens use 8 decimals
- * in order to prevent rewards from getting stuck in the remainder on division.
- * Tolerates dilution to slash stake and accept rewards.
+ * @dev This contract allows owner to register new SAFT distributions
+ * To register a distribution, register method should be called by the owner.
+ * claim() should then be called by SAFT account
+ * If case of an error, owner can cancel registration
  */
-contract TrustToken is TimeLockedToken {
-    using SafeMath for uint256;
-    Registry registry_;
-    uint256 constant MAX_SUPPLY = 145000000000000000;
+contract TimeLockRegistry is ClaimableContract {
+    // time locked token
+    TimeLockedToken private token;
 
-    /**
-     * @dev initialize trusttoken and give ownership to sender
-     * This is necessary to set ownership for proxy
-     */
-    function initialize(Registry _registry) public {
-        require(!initalized, "already initalized");
-        registry_ = _registry;
-        owner_ = msg.sender;
-        initalized = true;
-    }
+    // mapping from SAFT address to TRU due amount
+    mapping(address => uint256) public registeredDistributions;
 
-    function registry() public override view returns (Registry) {
-        return registry_;
+    event Register(address receiver, uint256 distribution);
+    event Cancel(address receiver, uint256 distribution);
+    event Claim(address account, uint256 distribution);
+
+    constructor(TimeLockedToken _token) public {
+        token = _token;
     }
 
     /**
-     * @dev mint TRU
-     * Can never mint more than MAX_SUPPLY = 1.45 billion
+     * @dev Register new SAFT account
+     * @param receiver Address belonging to SAFT purchaser
+     * @param distribution Tokens amount that receiver is due to get
      */
-    function mint(address _to, uint256 _amount) external onlyOwner {
-        if (totalSupply.add(_amount) <= MAX_SUPPLY) {
-            _mint(_to, _amount);
-        } else {
-            revert("Max supply exceeded");
-        }
+    function register(address receiver, uint256 distribution) external onlyOwner {
+        require(receiver != address(0), "Zero address");
+        require(distribution != 0, "Distribution = 0");
+        require(registeredDistributions[receiver] == 0, "Distribution for this address is already registered");
+        require(token.allowance(msg.sender, address(this)) >= distribution, "Insufficient allowance");
+
+        // register distribution in mapping
+        registeredDistributions[receiver] = distribution;
+
+        // transfer tokens from owner
+        require(token.transferFrom(msg.sender, address(this), distribution), "Transfer failed");
+
+        emit Register(receiver, distribution);
     }
 
-    function decimals() public pure returns (uint8) {
-        return 8;
+    /**
+     * @dev Cancel distribution registration
+     * @param receiver Address that should have it's distribution removed
+     */
+    function cancel(address receiver) external onlyOwner {
+        require(registeredDistributions[receiver] != 0, "Not registered");
+
+        // transfer tokens back to owner
+        require(token.transfer(msg.sender, registeredDistributions[receiver]), "Transfer failed");
+
+        emit Cancel(receiver, registeredDistributions[receiver]);
+
+        // set distribution mappig to 0
+        delete registeredDistributions[receiver];
     }
 
-    function rounding() public pure returns (uint8) {
-        return 8;
-    }
+    /// @dev Claim tokens due amount
+    function claim() external {
+        require(registeredDistributions[msg.sender] != 0, "Not registered");
 
-    function name() public pure returns (string memory) {
-        return "TrustToken";
-    }
+        // register lockup in TimeLockedToken
+        // this will transfer funds from this contract and lock them for sender
+        token.registerLockup(msg.sender, registeredDistributions[msg.sender]);
 
-    function symbol() public pure returns (string memory) {
-        return "TRU";
+        emit Claim(msg.sender, registeredDistributions[msg.sender]);
+
+        // delete distribution mapping
+        delete registeredDistributions[msg.sender];
     }
 }
