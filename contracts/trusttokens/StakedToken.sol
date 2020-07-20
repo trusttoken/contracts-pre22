@@ -25,7 +25,7 @@ contract StakedToken is AStakedToken {
         Registry _registry,
         address _liquidator
     ) external {
-        require(!initalized, "already initalized StakedToken");
+        require(!initalized, "already initialized StakedToken");
         stakeAsset_ = _stakeAsset;
         rewardAsset_ = _rewardAsset;
         registry_ = _registry;

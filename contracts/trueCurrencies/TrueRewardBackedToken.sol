@@ -23,12 +23,12 @@ import {RewardTokenWithReserve} from "./RewardTokenWithReserve.sol";
  *
  * -- rewardToken Assumptions --
  * We assume tokenValue never decreases for assured financial opportunities
- * rewardToken is not transferrable in that the token itself is never tranferred
+ * rewardToken is not transferable in that the token itself is never transferred
  * Rather, we override our transfer functions to account for user balances
  *
  * -- Reserve --
  * This contract uses a reserve holding of TrueCurrency and rewardToken to save on gas costs
- * because calling the financial opportunity deposit() and redeem() everytime
+ * because calling the financial opportunity deposit() and redeem() every time
  * can be expensive
  * See RewardTokenWithReserve.sol
  *
@@ -155,7 +155,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
     /**
      * @dev mint function for TrueRewardBackedToken
      * Mints TrueCurrency backed by debt
-     * When we add multiple opportunities, this needs to work for mutliple interfaces
+     * When we add multiple opportunities, this needs to work for multiple interfaces
      */
     function mint(address _to, uint256 _value) public virtual override onlyOwner {
         // check if to address is enabled
@@ -233,7 +233,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
      * If are have opted out, call parent transferFrom, otherwise:
      * 1. If sender opted in, redeem reward tokens for true currency
      * 2. Call transferFrom, using deposit balance for transfer
-     * 3. If reciever enabled, deposit true currency into
+     * 3. If receiver enabled, deposit true currency into
      */
     function _transferAllArgs(
         address _from,
@@ -245,7 +245,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
         bool toEnabled = trueRewardEnabled(_to);
         address finOp = opportunity();
 
-        // if both disabled or either is opportunity, tranfer normally
+        // if both disabled or either is opportunity, transfer normally
         if ((!fromEnabled && !toEnabled) || _from == finOp || _to == finOp) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
             return super._transferAllArgs(_from, _to, _value);
@@ -263,7 +263,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
         // transfer tokens
         address finalTo = super._transferAllArgs(_from, _to, _value);
 
-        // if receiever enabled, deposit tokens into opportunity
+        // if receiver enabled, deposit tokens into opportunity
         if (trueRewardEnabled(finalTo)) {
             depositWithReserve(finalTo, _value, finOp);
         }
@@ -278,7 +278,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
      * If are have opted out, call parent transferFrom, otherwise:
      * 1. If sender opted in, redeem reward tokens for true currency
      * 2. Call transferFrom, using deposit balance for transfer
-     * 3. If reciever enabled, deposit true currency into
+     * 3. If receiver enabled, deposit true currency into
      */
     function _transferFromAllArgs(
         address _from,
@@ -291,7 +291,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
         bool toEnabled = trueRewardEnabled(_to);
         address finOp = opportunity();
 
-        // if both disabled or either is opportunity, tranfer normally
+        // if both disabled or either is opportunity, transfer normally
         if ((!fromEnabled && !toEnabled) || _from == finOp || _to == finOp) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
             return super._transferFromAllArgs(_from, _to, _value, _spender);
@@ -309,7 +309,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
         // transfer tokens
         address finalTo = super._transferFromAllArgs(_from, _to, _value, _spender);
 
-        // if receiever enabled, deposit tokens into opportunity
+        // if receiver enabled, deposit tokens into opportunity
         if (trueRewardEnabled(finalTo)) {
             depositWithReserve(finalTo, _value, finOp);
         }

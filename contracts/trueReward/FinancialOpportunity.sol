@@ -7,10 +7,10 @@ pragma solidity 0.6.10;
  *
  * -- Overview --
  * The goal of this contract is to allow anyone to create an opportunity
- * to earn interest on TUSD. deposit() "mints" yTUSD whcih is redeemable
- * for some amount of TUSD. TrueUSD wraps this contractwith TrustToken
+ * to earn interest on TUSD. deposit() "mints" yTUSD which is redeemable
+ * for some amount of TUSD. TrueUSD wraps this contract with TrustToken
  * Assurance, which provides protection from bugs and system design flaws
- * TUSD is a compliant stablecoin, therefore we do not allow transfers of
+ * TUSD is a compliant stable coin, therefore we do not allow transfers of
  * yTUSD, thus there are no transfer functions
  *
  * -- tokenValue() --
@@ -24,8 +24,8 @@ pragma solidity 0.6.10;
  *
  * -- totalSupply() --
  * This function returns the total supply of yTUSD issued by this contract
- * It is important to track this value accuratley and add/deduct the correct
- * amount on deposit/redemptions
+ * It is important to track this value accurately and add/deduct the correct
+ * amount on deposit/redemption
  *
  * -- Assumptions --
  * - tokenValue can never decrease

@@ -14,7 +14,7 @@ contract ReclaimerToken is HasOwner {
     }
 
     /**
-    *@dev send all token balance of an arbitary erc20 token
+    *@dev send all token balance of an arbitrary erc20 token
     in the contract to another address
     */
     function reclaimToken(IERC20 token, address _to) external onlyOwner {
