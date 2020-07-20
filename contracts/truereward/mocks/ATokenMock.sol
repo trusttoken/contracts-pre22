@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20Mock} from "./ERC20Mock.sol";
-import "../IAToken.sol";
-import "./LendingPoolCoreMock.sol";
+import {IAToken} from "../IAToken.sol";
+import {LendingPoolCoreMock} from "./LendingPoolCoreMock.sol";
 
 contract ATokenMock is IAToken, ERC20Mock {
     IERC20 public token;

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../FinancialOpportunity.sol";
-import "../../truecurrencies/modularERC20/InstantiatableOwnable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import {FinancialOpportunity} from "../FinancialOpportunity.sol";
+import {InstantiatableOwnable} from "../../truecurrencies/modularERC20/InstantiatableOwnable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, InstantiatableOwnable {
     using SafeMath for uint256;

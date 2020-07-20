@@ -6,12 +6,12 @@ import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol
 
 /**
  * @title RewardToken
- * @dev Non-transferrable token meant to represent
+ * @dev Non-transferable token meant to represent
  * RewardTokens are trueCurrencies owed by a financial opportunity
  *
  * -- Overview --
  * RewardTokens are redeemable for an underlying Token.
- * RewardTokens are non-transferrable for compliance reasons
+ * RewardTokens are non-transferable for compliance reasons
  * The caller of depositor is responsible for exchanging their
  * tokens, rather just keep accounting of user rewardToken balances
  *
@@ -22,7 +22,7 @@ import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol
  *
  * -- Mint/Redeem/Burn --
  * To create rewardTokens, we call mintRewardToken with some amount of TUSD
- * To redeem rewardTokens we call redeemRewardToken and recieve TUSD
+ * To redeem rewardTokens we call redeemRewardToken and receive TUSD
  * Only the account that has rewardTokens can burn reward tokens. The only
  * time we would want to burn rewardTokens is if the underlying opportunity
  * is no longer redeemable, and we want to wipe the debt.
@@ -201,7 +201,7 @@ abstract contract RewardToken is CompliantDepositTokenWithHook {
      * @dev subtract rewardToken balance from account
      *
      * @param account account to subtract from
-     * @param amount rewardToken ammount to subtract
+     * @param amount rewardToken amount to subtract
      * @param finOp financial opportunity
      */
     function _subRewardBalance(

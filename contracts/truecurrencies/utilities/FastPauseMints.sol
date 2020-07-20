@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../admin/TokenController.sol";
+import {TokenController} from "../admin/TokenController.sol";
 
 /*
 Allows for admins to quickly respond to fraudulent mints
@@ -26,7 +26,7 @@ contract FastPauseMints {
         trueUsdMintPauser = _trueUsdMintPauser;
     }
 
-    //fallback function used to pause mints when it recieves eth
+    //fallback function used to pause mints when it receives eth
     receive() external payable onlyPauseKey {
         emit FastTrueUSDMintsPause(msg.sender);
         msg.sender.transfer(msg.value);

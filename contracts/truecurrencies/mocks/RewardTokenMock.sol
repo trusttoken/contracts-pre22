@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../RewardToken.sol";
+import {RewardToken} from "../RewardToken.sol";
 
 contract RewardTokenMock is RewardToken {
     constructor(address initialAccount, uint256 initialBalance) public {

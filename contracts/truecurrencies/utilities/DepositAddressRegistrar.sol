@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../../registry/Registry.sol";
+import {Registry} from "../../registry/Registry.sol";
 
 contract DepositAddressRegistrar {
     Registry public registry;

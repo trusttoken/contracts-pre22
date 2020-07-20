@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../CompliantDepositTokenWithHook.sol";
+import {CompliantDepositTokenWithHook} from "../CompliantDepositTokenWithHook.sol";
 
 contract CompliantTokenMock is CompliantDepositTokenWithHook {
     constructor(address initialAccount, uint256 initialBalance) public {

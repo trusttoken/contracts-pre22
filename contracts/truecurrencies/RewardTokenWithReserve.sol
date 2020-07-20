@@ -16,7 +16,7 @@ import {RewardToken} from "./RewardToken.sol";
  */
 abstract contract RewardTokenWithReserve is RewardToken {
     // Reserve is an address which nobody has the private key to
-    // Reserves of TUSD and TrueRewardBackedToken are held at this addess
+    // Reserves of TUSD and TrueRewardBackedToken are held at this address
     address public constant RESERVE = 0xf000000000000000000000000000000000000000;
 
     event ReserveDeposit(address indexed account, uint256 depositAmount, uint256 rewardTokenReturned, address indexed finOp);
@@ -55,7 +55,7 @@ abstract contract RewardTokenWithReserve is RewardToken {
      * @dev Allow this contract to rebalance currency reserves
      * This is called when there is too much money in an opportunity and we want
      * to get more TrueCurrency.
-     * This allows us to reduct the cost of transfers 5-10x in/out of opportunities
+     * This allows us to reduce the cost of transfers 5-10x in/out of opportunities
      *
      * @param tokenAmount amount of rewardTokens to redeem
      * @param finOp financial opportunity to redeem from

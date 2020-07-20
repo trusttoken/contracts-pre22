@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../modularERC20/InstantiatableOwnable.sol";
+import {InstantiatableOwnable} from "../modularERC20/InstantiatableOwnable.sol";
 
 /**
  * @title Claimable

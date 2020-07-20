@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./HasOwner.sol";
+import {HasOwner} from "./HasOwner.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {InstantiatableOwnable} from "./modularERC20/InstantiatableOwnable.sol";
 
 contract ReclaimerToken is HasOwner {
     /**
@@ -12,7 +14,7 @@ contract ReclaimerToken is HasOwner {
     }
 
     /**
-    *@dev send all token balance of an arbitary erc20 token
+    *@dev send all token balance of an arbitrary erc20 token
     in the contract to another address
     */
     function reclaimToken(IERC20 token, address _to) external onlyOwner {

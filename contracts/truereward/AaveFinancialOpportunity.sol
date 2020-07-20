@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../truecurrencies/TrueUSD.sol";
-import "./IAToken.sol";
-import "./ILendingPool.sol";
-import "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
-import "./ILendingPoolCore.sol";
-import "../truecurrencies/modularERC20/InstantiatableOwnable.sol";
+import {FinancialOpportunity} from "./FinancialOpportunity.sol";
+import {TrueUSD} from "../truecurrencies/TrueUSD.sol";
+import {IAToken} from "./IAToken.sol";
+import {ILendingPool} from "./ILendingPool.sol";
+import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
+import {ILendingPoolCore} from "./ILendingPoolCore.sol";
+import {InstantiatableOwnable} from "../truecurrencies/modularERC20/InstantiatableOwnable.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
@@ -24,7 +25,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
  *
  * -- tokenValue --
  * tokenValue is the value of 1 yTUSD
- * tokenValue is caluclated using reverseNormalizedIncome
+ * tokenValue is calculated using reverseNormalizedIncome
  * We assume tokenValue never decreases
  */
 contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable {
@@ -39,7 +40,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     /** TrueUSD */
     TrueUSD public token;
 
-    /** @dev total number of yTokens issed **/
+    /** @dev total number of yTokens issued **/
     uint256 _totalSupply;
 
     modifier onlyProxyOwner() {
@@ -76,7 +77,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
 
     /**
      * Exchange rate between TUSD and yTUSD
-     * @return TUSD / yTUSD price ratio (18 decimals of percision)
+     * @return TUSD / yTUSD price ratio (18 decimals of precision)
      */
     function tokenValue() public override view returns (uint256) {
         ILendingPoolCore core = ILendingPoolCore(lendingPool.core());
@@ -173,7 +174,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
 
     /**
      * @dev Withdraw from Aave to _to account
-     * @param to account withdarw TUSD to
+     * @param to account withdraw TUSD to
      * @param amount amount of yTUSD to redeem
      * @return TUSD amount returned from redeem
      */
@@ -183,7 +184,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
 
     /**
      * @dev Redeem all yTUSD Withdraws all TUSD from AAVE
-     * @param to account withdarw TUSD to
+     * @param to account withdraw TUSD to
      * @return TUSD amount returned from redeem
      */
     function redeemAll(address to) external onlyOwner returns (uint256) {

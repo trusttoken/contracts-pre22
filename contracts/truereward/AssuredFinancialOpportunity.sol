@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../trusttokens/Liquidator.sol";
-import "../trusttokens/StakedToken.sol";
-import "../truecurrencies/AssuredFinancialOpportunityStorage.sol";
-import "../truecurrencies/modularERC20/InitializableClaimable.sol";
-import "./utilities/FractionalExponents.sol";
-import "./FinancialOpportunity.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {Liquidator} from "../trusttokens/Liquidator.sol";
+import {StakedToken} from "../trusttokens/StakedToken.sol";
+import {AssuredFinancialOpportunityStorage} from "../truecurrencies/AssuredFinancialOpportunityStorage.sol";
+import {InitializableClaimable} from "../truecurrencies/modularERC20/InitializableClaimable.sol";
+import {FractionalExponents} from "./utilities/FractionalExponents.sol";
+import {FinancialOpportunity} from "./FinancialOpportunity.sol";
 
 /**
  * @title AssuredFinancialOpportunity
@@ -77,7 +77,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     function configure(
         address _finOpAddress, // finOp to assure
         address _assuranceAddress, // assurance pool
-        address _liquidatorAddress, // trusttoken liqudiator
+        address _liquidatorAddress, // trusttoken liquidator
         address _exponentContractAddress, // exponent contract
         address _trueRewardBackedTokenAddress, // token
         address _fundsManager // funds manager
@@ -320,7 +320,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @dev Liquidate tokens in staking pool to cover debt
      * Sends tusd to receiver
      *
-     * @param _receiver address to recieve tusd
+     * @param _receiver address to receive tusd
      * @param _debt tusd debt to be liquidated
      * @return amount liquidated
      **/
@@ -358,7 +358,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         liquidator().transferOwnership(newOwner);
     }
 
-    /// @dev getter for financial opportuniry
+    /// @dev getter for financial opportunity
     /// @return financial opportunity
     function finOp() public view returns (FinancialOpportunity) {
         return FinancialOpportunity(finOpAddress);

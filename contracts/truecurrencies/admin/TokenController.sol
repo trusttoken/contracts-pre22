@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../../registry/Registry.sol";
-import "../HasOwner.sol";
-import "../proxy/OwnedUpgradeabilityProxy.sol";
-import "../TrueUSD.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Registry} from "../../registry/Registry.sol";
+import {HasOwner} from "../HasOwner.sol";
+import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
+import {TrueUSD} from "../TrueUSD.sol";
+import {InstantiatableOwnable} from "../modularERC20/InstantiatableOwnable.sol";
 
 /** @title TokenController
 @dev This contract allows us to split ownership of the TrueUSD contract

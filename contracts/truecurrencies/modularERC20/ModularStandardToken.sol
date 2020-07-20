@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./ModularBasicToken.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import {ModularBasicToken} from "./ModularBasicToken.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * @title Standard ERC20 token

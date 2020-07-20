@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./ProxyStorage.sol";
+import {ProxyStorage} from "./ProxyStorage.sol";
 
 /**
 @title Gas Refund Token
-Allow any user to sponsor gas refunds for transfer and mints. Utilitzes the gas refund mechanism in EVM
+Allow any user to sponsor gas refunds for transfer and mints. Utilizes the gas refund mechanism in EVM
 Each time an non-empty storage slot is set to 0, evm refund 15,000 to the sender
 of the transaction.
 */
