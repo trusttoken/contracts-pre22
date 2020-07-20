@@ -441,12 +441,6 @@ contract MultiSigOwner {
         _signOrExecute("requestReclaimToken");
     }
 
-    function setFastPause(
-        address /*_newFastPause*/
-    ) external onlyOwner {
-        _signOrExecute("setFastPause");
-    }
-
     function pauseToken() external onlyOwner {
         _signOrExecute("pauseToken");
     }

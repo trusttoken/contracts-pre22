@@ -71,7 +71,6 @@ contract TokenController {
 
     TrueUSD public token;
     Registry public registry;
-    address public fastPause;
     address public trueRewardManager;
 
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
@@ -81,11 +80,6 @@ contract TokenController {
     // paused version of TrueUSD in Production
     // pausing the contract upgrades the proxy to this implementation
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
-
-    modifier onlyFastPauseOrOwner() {
-        require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
-        _;
-    }
 
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
@@ -136,7 +130,6 @@ contract TokenController {
     event AllMintsPaused(bool status);
     event MintPaused(uint256 opIndex, bool status);
     event MintApproved(address approver, uint256 opIndex);
-    event FastPauseSet(address _newFastPause);
 
     event MintThresholdChanged(uint256 instant, uint256 ratified, uint256 multiSig);
     event MintLimitsChanged(uint256 instant, uint256 ratified, uint256 multiSig);
@@ -550,18 +543,9 @@ contract TokenController {
     }
 
     /**
-     *@dev set new contract to which specified address can send eth to to quickly pause token
-     *@param _newFastPause address of the new contract
-     */
-    function setFastPause(address _newFastPause) external onlyOwner {
-        fastPause = _newFastPause;
-        emit FastPauseSet(address(_newFastPause));
-    }
-
-    /**
      *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
      */
-    function pauseToken() external virtual onlyFastPauseOrOwner {
+    function pauseToken() external virtual onlyOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 

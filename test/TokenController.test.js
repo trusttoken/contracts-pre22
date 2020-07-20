@@ -509,7 +509,6 @@ contract('TokenController', function (accounts) {
     describe('pause trueUSD and wipe accounts', function () {
       beforeEach(async function () {
         this.fastPauseTrueUSD = await FastPauseTrueUSD.new(pauseKey, this.controller.address, { from: owner })
-        await this.controller.setFastPause(this.fastPauseTrueUSD.address, { from: owner })
       })
 
       it('fastpauseTusd cannot be created with 0x0', async function () {
