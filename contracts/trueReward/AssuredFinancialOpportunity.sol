@@ -77,7 +77,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     function configure(
         address _finOpAddress, // finOp to assure
         address _assuranceAddress, // assurance pool
-        address _liquidatorAddress, // trusttoken liqudiator
+        address _liquidatorAddress, // trusttoken liquidator
         address _exponentContractAddress, // exponent contract
         address _trueRewardBackedTokenAddress, // token
         address _fundsManager // funds manager
@@ -320,7 +320,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @dev Liquidate tokens in staking pool to cover debt
      * Sends tusd to receiver
      *
-     * @param _receiver address to recieve tusd
+     * @param _receiver address to receive tusd
      * @param _debt tusd debt to be liquidated
      * @return amount liquidated
      **/
@@ -358,7 +358,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         liquidator().transferOwnership(newOwner);
     }
 
-    /// @dev getter for financial opportuniry
+    /// @dev getter for financial opportunity
     /// @return financial opportunity
     function finOp() public view returns (FinancialOpportunity) {
         return FinancialOpportunity(finOpAddress);

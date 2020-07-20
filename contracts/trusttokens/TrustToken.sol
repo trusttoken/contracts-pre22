@@ -23,7 +23,7 @@ contract TrustToken is ValTokenWithHook, ClaimableContract {
      * This is necessary to set ownership for proxy
      */
     function initialize(Registry _registry) public {
-        require(!initalized, "already initalized");
+        require(!initalized, "already initialized");
         registry_ = _registry;
         owner_ = msg.sender;
         initalized = true;
