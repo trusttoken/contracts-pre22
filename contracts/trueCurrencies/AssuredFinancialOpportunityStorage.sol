@@ -2,8 +2,8 @@
 pragma solidity 0.6.10;
 
 /*
-Defines the storage layout of the token implementaiton contract. Any newly declared
-state variables in future upgrades should be appened to the bottom. Never remove state variables
+Defines the storage layout of the token implementation contract. Any newly declared
+state variables in future upgrades should be appended to the bottom. Never remove state variables
 from this list
  */
 contract AssuredFinancialOpportunityStorage {
@@ -18,7 +18,7 @@ contract AssuredFinancialOpportunityStorage {
     // we change the adjustment factor
     uint256 adjustmentFactor;
 
-    // mintokenValue can never decrease
+    // minTokenValue can never decrease
     uint256 minTokenValue;
 
     /* Additionally, we have several keccak-based storage locations.
