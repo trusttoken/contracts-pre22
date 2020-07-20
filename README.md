@@ -128,6 +128,20 @@ We reduce the amount of gas you pay by refunding gas during your transfer.
 These are the top-level ERC20 contracts.
 They inherit the aforementioned functionality.
 
+
+## True Rewards contracts
+| Contract | Mainnet Address | Ropsten Address 
+| ---------|:-------------:|:------------------:|
+| TrueUSD | `0x0000000000085d4780B73119b644AE5ecd22b376` | `0xa2EA00Df6d8594DBc76b79beFe22db9043b8896F` |
+| Token Controller | `0x0000000000075EfBeE23fe2de1bd0b7690883cc9` | `0x47106c72DE9144d43Bb026d848806Ab29e2A0227` |
+| Assured Financial Opportunity | `0xffe7361B401AF1954641732AFc28811ac701e7e1` | `0xb911bBBa167A27A6A4C2817B70C80a30a6498F83` |
+| Aave Financial Opportunity | `0x3146fA2f055d18Ea39188a7863f095A2a3DAdB1C` | `0xAd1Cbc904E0117770B3b5fbD5fb44f2C08bDC7DB` |
+| TrustToken | `0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784` | `0xC2A3cA255B12769242201db4B91774Cae4caEf69` |
+| Staked Token | `0x9499e8D5a56bB9ECf1B7C6A95e1c4f5331805A2e` | `0x981c10eC6c8cB69bFd38b965AA5F5761e1Cdf751` |
+| Liquidator | `0x1dfB7700E67e6046898c2FEfe160FB53fEC3A27c` | `0x2472f43564837CCb87E969a81B41e2F775606Bb1` |
+| Registry | `0x0000000000013949F288172bD7E36837bDdC7211` | `0xe24c8f14295da7f308B73B94C72197e8Ee73A484` |
+
+
 # Contributing
 Before creating a pull request, please run the tests, the profiler, and the flattener.
 
