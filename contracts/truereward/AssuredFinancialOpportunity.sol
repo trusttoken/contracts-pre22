@@ -302,23 +302,12 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param ztusd amount in ztusd
      **/
     function _attemptRedeem(address _to, uint256 ztusd) internal returns (bool, uint256) {
-        uint256 returnedAmount;
-
         // attempt to withdraw from opportunity
-        // TODO use try-catch
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returnData) = address(finOp()).call(
-            abi.encodePacked(finOp().redeem.selector, abi.encode(_to, ztusd))
-        );
-
-        if (success) {
-            // successfully got TUSD :)
-            returnedAmount = abi.decode(returnData, (uint256));
-        } else {
-            // failed get TUSD :(
-            returnedAmount = 0;
+        try finOp().redeem(_to, ztusd) returns (uint256 fundsWithdrawn) {
+            return (true, fundsWithdrawn);
+        } catch (bytes memory) {
+            return (false, 0);
         }
-        return (success, returnedAmount);
     }
 
     /**
