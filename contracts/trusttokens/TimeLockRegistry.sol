@@ -12,7 +12,7 @@ import {ClaimableContract} from "./ClaimableContract.sol";
  */
 contract TimeLockRegistry is ClaimableContract {
     // time locked token
-    TimeLockedToken private token;
+    TimeLockedToken public token;
 
     // mapping from SAFT address to TRU due amount
     mapping(address => uint256) public registeredDistributions;
@@ -21,8 +21,11 @@ contract TimeLockRegistry is ClaimableContract {
     event Cancel(address receiver, uint256 distribution);
     event Claim(address account, uint256 distribution);
 
-    constructor(TimeLockedToken _token) public {
+    function initialize(TimeLockedToken _token) external {
+        require(!initalized, "Already initialized");
         token = _token;
+        owner_ = msg.sender;
+        initalized = true;
     }
 
     /**

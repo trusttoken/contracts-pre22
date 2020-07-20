@@ -5,12 +5,13 @@ import { TrustTokenFactory } from '../build/types/TrustTokenFactory'
 import { TrustToken } from '../build/types/TrustToken'
 import { TimeLockRegistryFactory } from '../build/types/TimeLockRegistryFactory'
 import { TimeLockRegistry } from '../build/types/TimeLockRegistry'
+import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
 
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { parseTT } from './utils/parseTT'
-import { AddressZero } from 'ethers/constants'
 
+import { AddressZero } from 'ethers/constants'
 import { expectEvent } from './utils/eventHelpers'
 
 use(solidity)
@@ -25,8 +26,16 @@ describe('TimeLockedRegistry', () => {
     const deployContract = setupDeploy(owner)
     trustToken = await deployContract(TrustTokenFactory)
     await trustToken.mint(owner.address, parseTT(1000))
-    registry = await deployContract(TimeLockRegistryFactory, trustToken.address)
+    const proxy = await deployContract(OwnedUpgradeabilityProxyFactory)
+    const registryImpl = await deployContract(TimeLockRegistryFactory)
+    await proxy.upgradeTo(registryImpl.address)
+    registry = TimeLockRegistryFactory.connect(proxy.address, owner)
+    await registry.initialize(trustToken.address)
     await trustToken.setTimeLockRegistry(registry.address)
+  })
+
+  it('cannot be initialized twice', async () => {
+    await expect(registry.initialize(trustToken.address)).to.be.revertedWith('Already initialized')
   })
 
   describe('Register', () => {
