@@ -524,12 +524,6 @@ contract('TokenController', function (accounts) {
         // await assertRevert(this.token.transfer(mintKey, BN(10 * 10 ** 18), { from: oneHundred }))
       })
 
-      it('trueUsdPauser can pause TrueUSD by sending ether to fastPause contract', async function () {
-        await this.fastPauseTrueUSD.sendTransaction({ from: pauseKey, gas: 800000, value: 10 })
-        const pausedImpl = await this.tokenProxy.implementation.call()
-        assert.equal(pausedImpl, '0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291')
-      })
-
       it('non pauser cannot pause TrueUSD ', async function () {
         await assertRevert(this.controller.pauseToken({ from: mintKey }))
       })
