@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "./ValTokenWithHook.sol";
-import "./ValSafeMath.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ValTokenWithHook, TrueCoinReceiver} from "./ValTokenWithHook.sol";
+import {ValSafeMath} from "./ValSafeMath.sol";
 import {StakingAsset} from "./StakingAsset.sol";
 
 /**

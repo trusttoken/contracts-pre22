@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../HasOwner.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import {HasOwner} from "../HasOwner.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 // Fork of OpenZeppelin's BasicToken
 /**

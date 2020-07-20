@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../utilities/PausedCurrencies.sol";
+import {PausedTrueUSD} from "../utilities/PausedCurrencies.sol";
 
 contract PausedTrueUSDMock is PausedTrueUSD {
     address public delegateFrom;

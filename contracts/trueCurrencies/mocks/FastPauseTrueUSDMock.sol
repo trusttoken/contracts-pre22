@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./TokenControllerMock.sol";
+import {TokenControllerMock, TokenController} from "./TokenControllerMock.sol";
 
 /*
 Allows for admins to quickly respond to critical emergencies

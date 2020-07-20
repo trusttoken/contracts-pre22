@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./PausedToken.sol";
+import {PausedToken, PausedDelegateERC20} from "./PausedToken.sol";
 
 contract PausedTrueUSD is PausedDelegateERC20 {
     function name() public pure returns (string memory) {
