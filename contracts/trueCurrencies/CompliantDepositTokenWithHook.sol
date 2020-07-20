@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./TrueCoinReceiver.sol";
-import "../registry/Registry.sol";
-import "./ReclaimerToken.sol";
-import "./BurnableTokenWithBounds.sol";
-import "./GasRefundToken.sol";
+import {TrueCoinReceiver} from "./TrueCoinReceiver.sol";
+import {Registry, RegistryClone} from "../registry/Registry.sol";
+import {ReclaimerToken} from "./ReclaimerToken.sol";
+import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
+import {GasRefundToken} from "./GasRefundToken.sol";
 
 abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";

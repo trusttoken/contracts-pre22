@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-//pragma experimental ABIEncoderV2;
-
-import "./ALiquidatorUniswap.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ALiquidatorUniswap, UniswapV1, Registry} from "./ALiquidatorUniswap.sol";
 
 /**
  * @title Liquidator

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../ILendingPoolCore.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ILendingPoolCore} from "../ILendingPoolCore.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract LendingPoolCoreMock is ILendingPoolCore {
     uint256 reserveNormalizedIncome = 1 * 10**27;

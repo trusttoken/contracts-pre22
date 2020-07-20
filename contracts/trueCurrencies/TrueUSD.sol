@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./TrueRewardBackedToken.sol";
-import "./DelegateERC20.sol";
+import {ModularBurnableToken} from "./modularERC20/ModularBurnableToken.sol";
+import {ModularBasicToken} from "./modularERC20/ModularBasicToken.sol";
+import {TrueRewardBackedToken} from "./TrueRewardBackedToken.sol";
+import {DelegateERC20, CompliantDepositTokenWithHook} from "./DelegateERC20.sol";
 
 /** @title TrueUSD
  * @dev This is the top-level ERC20 contract, but most of the interesting functionality is

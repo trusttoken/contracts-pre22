@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./CompliantDepositTokenWithHook.sol";
+import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol";
 
 /** @title DelegateERC20
 Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20

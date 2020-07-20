@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./ModularStandardToken.sol";
+import {ModularStandardToken} from "./ModularStandardToken.sol";
 
 /**
  * @title Burnable Token

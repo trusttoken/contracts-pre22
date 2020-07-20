@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../HasOwner.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {HasOwner} from "../HasOwner.sol";
+import {Registry, RegistryClone} from "../../registry/Registry.sol";
+import {InstantiatableOwnable} from "../modularERC20/InstantiatableOwnable.sol";
 
 contract PausedToken is HasOwner, RegistryClone {
     using SafeMath for uint256;

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./Claimable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import {Claimable} from "./Claimable.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 // A wrapper around the balanceOf mapping.
 contract BalanceSheet is Claimable {
