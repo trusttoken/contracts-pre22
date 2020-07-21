@@ -36,7 +36,7 @@ function compliantTokenTests ([owner, oneHundred, anotherAccount], transfersToZe
           await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
         })
 
-        burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
+        burnableTokenTests([owner, oneHundred, anotherAccount])
 
         it('rejects burn when user is on blacklist', async function () {
           await this.registry.setAttribute(oneHundred, BLACKLISTED, 1, notes, { from: owner })
@@ -58,7 +58,7 @@ function compliantTokenTests ([owner, oneHundred, anotherAccount], transfersToZe
               await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
             })
 
-            burnableTokenTests([owner, oneHundred, anotherAccount], transfersToZeroBecomeBurns)
+            burnableTokenTests([owner, oneHundred, anotherAccount])
 
             it('rejects burn when user is on blacklist', async function () {
               await this.registry.setAttribute(oneHundred, BLACKLISTED, 1, notes, { from: owner })

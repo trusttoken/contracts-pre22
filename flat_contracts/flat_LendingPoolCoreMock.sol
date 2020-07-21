@@ -1,5 +1,5 @@
 
-// File: contracts/TrueReward/ILendingPoolCore.sol
+// File: contracts/truereward/ILendingPoolCore.sol
 
 pragma solidity 0.5.13;
 
@@ -508,7 +508,7 @@ contract ERC20 is Context, IERC20 {
     }
 }
 
-// File: contracts/TrueReward/mocks/LendingPoolCoreMock.sol
+// File: contracts/truereward/mocks/LendingPoolCoreMock.sol
 
 pragma solidity 0.5.13;
 

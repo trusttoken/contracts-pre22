@@ -2,12 +2,12 @@
 pragma solidity 0.6.10;
 
 import {FinancialOpportunity} from "./FinancialOpportunity.sol";
-import {TrueUSD} from "../trueCurrencies/TrueUSD.sol";
+import {TrueUSD} from "../truecurrencies/TrueUSD.sol";
 import {IAToken} from "./IAToken.sol";
 import {ILendingPool} from "./ILendingPool.sol";
-import {OwnedUpgradeabilityProxy} from "../trueCurrencies/proxy/OwnedUpgradeabilityProxy.sol";
+import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
 import {ILendingPoolCore} from "./ILendingPoolCore.sol";
-import {InstantiatableOwnable} from "../trueCurrencies/modularERC20/InstantiatableOwnable.sol";
+import {InstantiatableOwnable} from "../truecurrencies/modularERC20/InstantiatableOwnable.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
