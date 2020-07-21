@@ -5,8 +5,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Liquidator} from "../trusttokens/Liquidator.sol";
 import {StakedToken} from "../trusttokens/StakedToken.sol";
-import {AssuredFinancialOpportunityStorage} from "../trueCurrencies/AssuredFinancialOpportunityStorage.sol";
-import {InitializableClaimable} from "../trueCurrencies/modularERC20/InitializableClaimable.sol";
+import {AssuredFinancialOpportunityStorage} from "../truecurrencies/AssuredFinancialOpportunityStorage.sol";
+import {InitializableClaimable} from "../truecurrencies/modularERC20/InitializableClaimable.sol";
 import {FractionalExponents} from "./utilities/FractionalExponents.sol";
 import {FinancialOpportunity} from "./FinancialOpportunity.sol";
 

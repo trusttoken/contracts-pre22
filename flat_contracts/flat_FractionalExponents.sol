@@ -1,5 +1,5 @@
 
-// File: contracts/TrueReward/utilities/FractionalExponents.sol
+// File: contracts/truereward/utilities/FractionalExponents.sol
 
 /**
  * FractionalExponents

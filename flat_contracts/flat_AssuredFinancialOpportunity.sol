@@ -1519,7 +1519,7 @@ contract StakedToken is AStakedToken {
     }
 }
 
-// File: contracts/trueCurrencies/AssuredFinancialOpportunityStorage.sol
+// File: contracts/truecurrencies/AssuredFinancialOpportunityStorage.sol
 
 pragma solidity 0.5.13;
 
@@ -1564,7 +1564,7 @@ contract AssuredFinancialOpportunityStorage {
     **/
 }
 
-// File: contracts/trueCurrencies/modularERC20/InitializableOwnable.sol
+// File: contracts/truecurrencies/modularERC20/InitializableOwnable.sol
 
 pragma solidity 0.5.13;
 
@@ -1612,7 +1612,7 @@ contract InitializableOwnable {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/InitializableClaimable.sol
+// File: contracts/truecurrencies/modularERC20/InitializableClaimable.sol
 
 pragma solidity 0.5.13;
 
@@ -1652,7 +1652,7 @@ contract InitializableClaimable is InitializableOwnable {
     }
 }
 
-// File: contracts/TrueReward/utilities/FractionalExponents.sol
+// File: contracts/truereward/utilities/FractionalExponents.sol
 
 /**
  * FractionalExponents
@@ -2198,7 +2198,7 @@ contract FractionalExponents  {
     }
 }
 
-// File: contracts/TrueReward/FinancialOpportunity.sol
+// File: contracts/truereward/FinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 
@@ -2278,7 +2278,7 @@ interface FinancialOpportunity {
     function redeem(address to, uint amount) external returns(uint);
 }
 
-// File: contracts/TrueReward/AssuredFinancialOpportunity.sol
+// File: contracts/truereward/AssuredFinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 
