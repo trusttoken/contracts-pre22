@@ -180,6 +180,7 @@ yarn flatten # runs ./flatten-all
 | Etherscan: TGBP | https://etherscan.io/token/0x00000000441378008EA67F4284A57932B1c000a5 |
 | Etherscan: TAUD | https://etherscan.io/token/0x00006100F7090010005F1bd7aE6122c3C2CF0090 |
 | Etherscan: TCAD | https://etherscan.io/token/0x00000100F2A2bd000715001920eB70D229700085 |
+| Etherscan: THKD | https://etherscan.io/token/0x0000852600CEB001E08e00bC008be620d60031F2 |
 | CoinMarketCap: TUSD  | https://coinmarketcap.com/currencies/trueusd/  |
 
 ## Social
