@@ -1,7 +1,8 @@
 
+// SPDX-License-Identifier: MIT
+
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -163,7 +164,6 @@ library SafeMath {
 
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -243,7 +243,6 @@ interface IERC20 {
 
 // File: contracts/registry/Registry.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -436,7 +435,6 @@ contract Registry {
 
 // File: contracts/trusttokens/ProxyStorage.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -476,7 +474,6 @@ contract ProxyStorage {
 
 // File: contracts/trusttokens/ValSafeMath.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 /**
@@ -526,7 +523,6 @@ library ValSafeMath {
 
 // File: contracts/trusttokens/ERC20.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -678,7 +674,6 @@ contract ModularStandardToken is ModularBasicToken {
 
 // File: contracts/trusttokens/RegistrySubscriber.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -751,7 +746,6 @@ abstract contract RegistrySubscriber is ProxyStorage {
 
 // File: contracts/trusttokens/TrueCoinReceiver.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 interface TrueCoinReceiver {
@@ -760,7 +754,6 @@ interface TrueCoinReceiver {
 
 // File: contracts/trusttokens/ValTokenWithHook.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -859,7 +852,6 @@ abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
 
 // File: contracts/trusttokens/ClaimableContract.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -926,7 +918,6 @@ contract ClaimableContract is ProxyStorage {
 
 // File: contracts/trusttokens/TimeLockedToken.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -1161,7 +1152,6 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
 // File: contracts/trusttokens/TrustToken.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
