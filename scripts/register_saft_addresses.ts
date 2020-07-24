@@ -22,7 +22,6 @@ const toTrustToken = (amount: string) => utils.parseUnits(amount, 8)
 const sum = (numbers: utils.BigNumber[]) => numbers.reduce((cumSum, value) => cumSum.add(value), constants.Zero)
 
 export const registerSaftAccounts = async (registry: TimeLockRegistry, trustToken: TrustToken, accounts: SaftAccount[]) => {
-  await trustToken.mint(registry.signer.ad)
   const totalAllowance = sum(accounts.map(({ amount }) => toTrustToken(amount)))
   const tx = await trustToken.approve(registry.address, totalAllowance, txnArgs)
   await tx.wait()
@@ -30,7 +29,10 @@ export const registerSaftAccounts = async (registry: TimeLockRegistry, trustToke
   let { nonce } = tx
   const pendingTransactions = []
   for (const { address, amount } of accounts) {
-    pendingTransactions.push((await registry.register(address, toTrustToken(amount), { ...txnArgs, nonce: nonce + 1 })).wait())
+    pendingTransactions.push((await registry.register(address, toTrustToken(amount), { ...txnArgs, nonce: nonce + 1 })).wait()
+      .then(() => console.log(`Done: ${address} for ${amount} TRU`))
+      .catch((err) => console.error(`Failed for ${address}`, err))
+    )
     nonce++
   }
   await Promise.all(pendingTransactions)
