@@ -1,4 +1,4 @@
-import { Wallet } from 'ethers'
+import { Wallet, utils } from 'ethers'
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 import { setupDeploy } from '../scripts/utils'
 import { TrustTokenFactory } from '../build/types/TrustTokenFactory'
@@ -13,6 +13,7 @@ import { parseTT } from './utils/parseTT'
 
 import { AddressZero } from 'ethers/constants'
 import { expectEvent } from './utils/eventHelpers'
+import { parseAccountList, registerSaftAccounts } from '../scripts/register_saft_addresses'
 
 use(solidity)
 
@@ -140,6 +141,38 @@ describe('TimeLockedRegistry', () => {
       await registry.register(holder.address, parseTT(10))
       await registry.cancel(holder.address)
       await expect(registry.connect(holder).claim()).to.be.revertedWith('Not registered')
+    })
+  })
+
+  describe('Register SAFT accounts script', () => {
+    const [address1, address2, address3] = [
+      Wallet.createRandom().address,
+      Wallet.createRandom().address,
+      Wallet.createRandom().address,
+    ]
+    const csvList = `
+      ${address1},500
+      ${address2}, 123.32
+      ${address3},3.14
+      
+    `
+
+    it('correctly parses CSV file', async () => {
+      expect(parseAccountList(csvList)).to.deep.equal([{
+        address: address1, amount: '500',
+      }, {
+        address: address2, amount: '123.32',
+      }, {
+        address: address3, amount: '3.14',
+      }])
+    })
+
+    it('registers all accounts', async () => {
+      await registerSaftAccounts(registry, trustToken, parseAccountList(csvList))
+      expect(await registry.registeredDistributions(address1)).to.equal(parseTT(500))
+      expect(await registry.registeredDistributions(address2)).to.equal(parseTT(123.32))
+      expect(await registry.registeredDistributions(address3)).to.equal(parseTT(3.14))
+      expect(await trustToken.allowance(owner.address, registry.address)).to.equal(0)
     })
   })
 })
