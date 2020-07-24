@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import { TimeLockedToken } from "./TimeLockedToken.sol";
-import { ClaimableContract } from "./ClaimableContract.sol";
+import {TimeLockedToken} from "./TimeLockedToken.sol";
+import {ClaimableContract} from "./ClaimableContract.sol";
 
 /**
  * @title TimeLockRegistry
@@ -48,7 +48,7 @@ contract TimeLockRegistry is ClaimableContract {
         require(distribution != 0, "Distribution = 0");
         require(registeredDistributions[receiver] == 0, "Distribution for this address is already registered");
 
-         // transfer tokens from owner
+        // transfer tokens from owner
         require(token.transferFrom(msg.sender, address(this), distribution), "Transfer failed");
 
         // register distribution in mapping

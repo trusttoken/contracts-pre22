@@ -117,7 +117,7 @@ describe('TrustToken', () => {
       expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(parseTT(100))
       expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(0)
       expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(100))
-       expect(await trustToken.nextEpoch()).to.be.revertedWith("No remaining epochs. Distribution period completed.")
+      expect(await trustToken.nextEpoch()).to.be.revertedWith('No remaining epochs. Distribution period completed.')
     })
 
     it('is impossible to give lock funds twice to a person', async () => {
