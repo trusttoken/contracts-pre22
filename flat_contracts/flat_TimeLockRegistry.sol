@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: MIT
 
 // File: @openzeppelin/contracts/math/SafeMath.sol
@@ -948,8 +947,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     mapping(address => uint256) distribution;
 
     // start of the lockup period
-    // Friday, July 24, 2020 4:58:31 PM GMT
-    uint256 constant LOCK_START = 1595609911;
+    uint256 constant LOCK_START = 1594716039;
     // length of time to delay first epoch
     uint256 constant FIRST_EPOCH_DELAY = 30 days;
     // how long does an epoch last
@@ -1150,65 +1148,101 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     }
 }
 
-// File: contracts/trusttokens/TrustToken.sol
+// File: contracts/trusttokens/TimeLockRegistry.sol
 
 pragma solidity 0.6.10;
 
 
 
-
 /**
- * @title TrustToken
- * @dev The TrustToken contract is a claimable contract where the
- * owner can only mint or transfer ownership. TrustTokens use 8 decimals
- * in order to prevent rewards from getting stuck in the remainder on division.
- * Tolerates dilution to slash stake and accept rewards.
+ * @title TimeLockRegistry
+ * @notice Register Lockups for TimeLocked ERC20 Token
+ * @author Harold Hyatt
+ * @dev This contract allows owner to register distributions for a TimeLockedToken
+ *
+ * To register a distribution, register method should be called by the owner.
+ * claim() should then be called by account registered to recieve tokens under lockup period
+ * If case of a mistake, owner can cancel registration
+ *
+ * Note this contract must be setup in TimeLockedToken's setTimeLockRegistry() function
  */
-contract TrustToken is TimeLockedToken {
-    using SafeMath for uint256;
-    Registry registry_;
-    uint256 constant MAX_SUPPLY = 145000000000000000;
+contract TimeLockRegistry is ClaimableContract {
+    // time locked token
+    TimeLockedToken public token;
+
+    // mapping from SAFT address to TRU due amount
+    mapping(address => uint256) public registeredDistributions;
+
+    event Register(address receiver, uint256 distribution);
+    event Cancel(address receiver, uint256 distribution);
+    event Claim(address account, uint256 distribution);
 
     /**
-     * @dev initialize trusttoken and give ownership to sender
-     * This is necessary to set ownership for proxy
+     * @dev Initalize function so this contract can be behind a proxy
+     * @param _token TimeLockedToken contract to use in this registry
      */
-    function initialize(Registry _registry) public {
-        require(!initalized, "already initalized");
-        registry_ = _registry;
+    function initialize(TimeLockedToken _token) external {
+        require(!initalized, "Already initialized");
+        token = _token;
         owner_ = msg.sender;
         initalized = true;
     }
 
-    function registry() public override view returns (Registry) {
-        return registry_;
+    /**
+     * @dev Register new SAFT account
+     * @param receiver Address belonging to SAFT purchaser
+     * @param distribution Tokens amount that receiver is due to get
+     */
+    function register(address receiver, uint256 distribution) external onlyOwner {
+        require(receiver != address(0), "Zero address");
+        require(distribution != 0, "Distribution = 0");
+        require(registeredDistributions[receiver] == 0, "Distribution for this address is already registered");
+
+        // register distribution in mapping
+        registeredDistributions[receiver] = distribution;
+
+        // transfer tokens from owner
+        require(token.transferFrom(msg.sender, address(this), distribution), "Transfer failed");
+
+        // emit register event
+        emit Register(receiver, distribution);
     }
 
     /**
-     * @dev mint TRU
-     * Can never mint more than MAX_SUPPLY = 1.45 billion
+     * @dev Cancel distribution registration
+     * @param receiver Address that should have it's distribution removed
      */
-    function mint(address _to, uint256 _amount) external onlyOwner {
-        if (totalSupply.add(_amount) <= MAX_SUPPLY) {
-            _mint(_to, _amount);
-        } else {
-            revert("Max supply exceeded");
-        }
+    function cancel(address receiver) external onlyOwner {
+        require(registeredDistributions[receiver] != 0, "Not registered");
+
+        // get amount from distributions
+        uint256 amount = registeredDistributions[receiver];
+
+        // set distribution mapping to 0
+        delete registeredDistributions[receiver];
+
+        // transfer tokens back to owner
+        require(token.transfer(msg.sender, amount), "Transfer failed");
+
+        // emit cancel event
+        emit Cancel(receiver, amount);
     }
 
-    function decimals() public pure returns (uint8) {
-        return 8;
-    }
+    /// @dev Claim tokens due amount
+    function claim() external {
+        require(registeredDistributions[msg.sender] != 0, "Not registered");
 
-    function rounding() public pure returns (uint8) {
-        return 8;
-    }
+        // get amount from distributions
+        uint256 amount = registeredDistributions[msg.sender];
 
-    function name() public pure returns (string memory) {
-        return "TrustToken";
-    }
+        // set distribution mapping to 0
+        delete registeredDistributions[msg.sender];
 
-    function symbol() public pure returns (string memory) {
-        return "TRU";
+        // register lockup in TimeLockedToken
+        // this will transfer funds from this contract and lock them for sender
+        token.registerLockup(msg.sender, amount);
+
+        // emit claim event
+        emit Claim(msg.sender, amount);
     }
 }
