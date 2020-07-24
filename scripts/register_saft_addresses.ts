@@ -31,7 +31,7 @@ export const registerSaftAccounts = async (registry: TimeLockRegistry, trustToke
   for (const { address, amount } of accounts) {
     pendingTransactions.push((await registry.register(address, toTrustToken(amount), { ...txnArgs, nonce: nonce + 1 })).wait()
       .then(() => console.log(`Done: ${address} for ${amount} TRU`))
-      .catch((err) => console.error(`Failed for ${address}`, err))
+      .catch((err) => console.error(`Failed for ${address}`, err)),
     )
     nonce++
   }
