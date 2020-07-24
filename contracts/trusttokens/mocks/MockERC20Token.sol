@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "../ValTokenWithHook.sol";
+import {Registry} from "../../registry/Registry.sol";
+import {ValTokenWithHook} from "../ValTokenWithHook.sol";
 
 contract MockERC20Token is ValTokenWithHook {
     Registry registryAddress;

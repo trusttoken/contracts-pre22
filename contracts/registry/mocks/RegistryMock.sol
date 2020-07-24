@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "../Registry.sol";
-import "../ProvisionalRegistry.sol";
+import {Registry} from "../Registry.sol";
+import {ProvisionalRegistry} from "../ProvisionalRegistry.sol";
 
 contract RegistryMock is Registry {
     /**

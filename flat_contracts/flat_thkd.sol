@@ -1,5 +1,5 @@
 
-// File: contracts/TrueReward/FinancialOpportunity.sol
+// File: contracts/truereward/FinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "./ProxyStorage.sol";
-import "./ValSafeMath.sol";
+import {ProxyStorage} from "./ProxyStorage.sol";
+import {ValSafeMath} from "./ValSafeMath.sol";
 
 // Fork of OpenZeppelin's BasicToken
 /**

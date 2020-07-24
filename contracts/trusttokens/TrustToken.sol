@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./ValTokenWithHook.sol";
-import "./ClaimableContract.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {ValTokenWithHook} from "./ValTokenWithHook.sol";
+import {ClaimableContract} from "./ClaimableContract.sol";
+import {Registry} from "../registry/Registry.sol";
 
 /**
  * @title TrustToken
@@ -22,7 +23,7 @@ contract TrustToken is ValTokenWithHook, ClaimableContract {
      * This is necessary to set ownership for proxy
      */
     function initialize(Registry _registry) public {
-        require(!initalized, "already initalized");
+        require(!initalized, "already initialized");
         registry_ = _registry;
         owner_ = msg.sender;
         initalized = true;
