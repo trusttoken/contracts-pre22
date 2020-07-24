@@ -34,7 +34,7 @@ describe('TrustToken', () => {
   describe('TimeLock', () => {
     const DAY = 24 * 3600
     const TOTAL_LOCK_TIME = DAY * (120 + 7 * 90)
-    const initializationTimestamp = 1594716039
+    const initializationTimestamp = 1595609911
 
     beforeEach(async () => {
       await timeTravelTo(provider, initializationTimestamp)
