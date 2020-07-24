@@ -1,7 +1,7 @@
+// SPDX-License-Identifier: MIT
 
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -163,7 +163,6 @@ library SafeMath {
 
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -243,7 +242,6 @@ interface IERC20 {
 
 // File: contracts/registry/Registry.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -436,7 +434,6 @@ contract Registry {
 
 // File: contracts/trusttokens/ProxyStorage.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -476,7 +473,6 @@ contract ProxyStorage {
 
 // File: contracts/trusttokens/ValSafeMath.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 /**
@@ -526,7 +522,6 @@ library ValSafeMath {
 
 // File: contracts/trusttokens/ERC20.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -678,7 +673,6 @@ contract ModularStandardToken is ModularBasicToken {
 
 // File: contracts/trusttokens/RegistrySubscriber.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -751,7 +745,6 @@ abstract contract RegistrySubscriber is ProxyStorage {
 
 // File: contracts/trusttokens/TrueCoinReceiver.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 interface TrueCoinReceiver {
@@ -760,7 +753,6 @@ interface TrueCoinReceiver {
 
 // File: contracts/trusttokens/ValTokenWithHook.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -859,7 +851,6 @@ abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
 
 // File: contracts/trusttokens/ClaimableContract.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -926,7 +917,6 @@ contract ClaimableContract is ProxyStorage {
 
 // File: contracts/trusttokens/TimeLockedToken.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -1019,6 +1009,17 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     }
 
     /**
+     * @dev Check if amount we want to burn is unlocked before burning
+     * @param _from The address whose tokens will burn
+     * @param _value The amount of tokens to be burnt
+     */
+    function _burn(address _from, uint256 _value) internal override returns (uint256 resultBalance_, uint256 resultSupply_) {
+        require(unlockedBalance(_from) >= _value, "attempting to burn locked funds");
+
+        (resultBalance_, resultSupply_) = super._burn(_from, _value);
+    }
+
+    /**
      * @dev Transfer tokens to another account under the lockup schedule
      * Emits a transfer event showing a transfer to the recipient
      * Only the registry can call this function
@@ -1096,9 +1097,10 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
         // get number of epochs passed
         uint256 passed = epochsPassed();
 
-        // if all epochs passed, return 
+        // if all epochs passed, return
         if (passed == TOTAL_EPOCHS) {
-            revert("No remaining epochs. Distribution period completed.");
+            // return INT_MAX
+            return uint256(-1);
         }
 
         // if no epochs passed, return latest epoch + delay + standard duration
@@ -1148,7 +1150,6 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
 // File: contracts/trusttokens/TimeLockRegistry.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -1197,11 +1198,11 @@ contract TimeLockRegistry is ClaimableContract {
         require(distribution != 0, "Distribution = 0");
         require(registeredDistributions[receiver] == 0, "Distribution for this address is already registered");
 
-         // transfer tokens from owner
-        require(token.transferFrom(msg.sender, address(this), distribution), "Transfer failed");
-
         // register distribution in mapping
         registeredDistributions[receiver] = distribution;
+
+        // transfer tokens from owner
+        require(token.transferFrom(msg.sender, address(this), distribution), "Transfer failed");
 
         // emit register event
         emit Register(receiver, distribution);
