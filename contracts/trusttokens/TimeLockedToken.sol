@@ -30,7 +30,8 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     mapping(address => uint256) distribution;
 
     // start of the lockup period
-    uint256 constant LOCK_START = 1594716039;
+    // Friday, July 24, 2020 4:58:31 PM GMT
+    uint256 constant LOCK_START = 1595609911;
     // length of time to delay first epoch
     uint256 constant FIRST_EPOCH_DELAY = 30 days;
     // how long does an epoch last
