@@ -171,7 +171,8 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
         // if all epochs passed, return
         if (passed == TOTAL_EPOCHS) {
-            revert("No remaining epochs. Distribution period completed.");
+            // return INT_MAX
+            return uint256(-1);
         }
 
         // if no epochs passed, return latest epoch + delay + standard duration
