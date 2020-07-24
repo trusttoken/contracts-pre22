@@ -1,7 +1,7 @@
+// SPDX-License-Identifier: MIT
 
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -163,7 +163,6 @@ library SafeMath {
 
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -243,7 +242,6 @@ interface IERC20 {
 
 // File: contracts/registry/Registry.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -436,7 +434,6 @@ contract Registry {
 
 // File: contracts/trusttokens/ProxyStorage.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -476,7 +473,6 @@ contract ProxyStorage {
 
 // File: contracts/trusttokens/ValSafeMath.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 /**
@@ -526,7 +522,6 @@ library ValSafeMath {
 
 // File: contracts/trusttokens/ERC20.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -678,7 +673,6 @@ contract ModularStandardToken is ModularBasicToken {
 
 // File: contracts/trusttokens/RegistrySubscriber.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -751,7 +745,6 @@ abstract contract RegistrySubscriber is ProxyStorage {
 
 // File: contracts/trusttokens/TrueCoinReceiver.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 interface TrueCoinReceiver {
@@ -760,7 +753,6 @@ interface TrueCoinReceiver {
 
 // File: contracts/trusttokens/ValTokenWithHook.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -859,7 +851,6 @@ abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
 
 // File: contracts/trusttokens/ClaimableContract.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -926,7 +917,6 @@ contract ClaimableContract is ProxyStorage {
 
 // File: contracts/trusttokens/TimeLockedToken.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -958,7 +948,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
     // start of the lockup period
     uint256 constant LOCK_START = 1594716039;
-    // how much longer is the first epoch
+    // length of time to delay first epoch
     uint256 constant FIRST_EPOCH_DELAY = 30 days;
     // how long does an epoch last
     uint256 constant EPOCH_DURATION = 90 days;
@@ -977,6 +967,8 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      * @param newTimeLockRegistry Address of TimeLockRegistry contract
      */
     function setTimeLockRegistry(address newTimeLockRegistry) external onlyOwner {
+        require(newTimeLockRegistry != address(0), "cannot be zero address");
+        require(newTimeLockRegistry != timeLockRegistry, "must be new TimeLockRegistry");
         timeLockRegistry = newTimeLockRegistry;
     }
 
@@ -1017,8 +1009,21 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     }
 
     /**
+     * @dev Check if amount we want to burn is unlocked before burning
+     * @param _from The address whose tokens will burn
+     * @param _value The amount of tokens to be burnt
+     */
+    function _burn(address _from, uint256 _value) internal override returns (uint256 resultBalance_, uint256 resultSupply_) {
+        require(unlockedBalance(_from) >= _value, "attempting to burn locked funds");
+
+        (resultBalance_, resultSupply_) = super._burn(_from, _value);
+    }
+
+    /**
      * @dev Transfer tokens to another account under the lockup schedule
      * Emits a transfer event showing a transfer to the recipient
+     * Only the registry can call this function
+     * Once registered, the distribution cannot be registered again
      * @param receiver Address to receive the tokens
      * @param amount Tokens to be transferred
      */
@@ -1031,9 +1036,6 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
         // transfer to recipient
         _transferAllArgs(msg.sender, receiver, amount);
-
-        // show transfer from sender to recipient
-        emit Transfer(msg.sender, receiver, amount);
     }
 
     /**
@@ -1062,29 +1064,51 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      * @return Value between 0 and 8 of lockup epochs already passed
      */
     function epochsPassed() public view returns (uint256) {
-        // how long it is since the beginning of lockup period
+        // return 0 if timestamp is lower than start time
+        if (block.timestamp < LOCK_START) {
+            return 0;
+        }
+
+        // how long it has been since the beginning of lockup period
         uint256 timePassed = block.timestamp.sub(LOCK_START);
+
         // 1st epoch is FIRST_EPOCH_DELAY longer; we check to prevent subtraction underflow
         if (timePassed < FIRST_EPOCH_DELAY) {
             return 0;
         }
+
         // subtract the FIRST_EPOCH_DELAY, so that we can count all epochs as lasting EPOCH_DURATION
         uint256 totalEpochsPassed = timePassed.sub(FIRST_EPOCH_DELAY).div(EPOCH_DURATION);
+
         // epochs don't count over TOTAL_EPOCHS
         if (totalEpochsPassed > TOTAL_EPOCHS) {
             return TOTAL_EPOCHS;
         }
+
         return totalEpochsPassed;
     }
 
     /**
      * @dev Get timestamp of next epoch
+     * Will revert if all epochs have passed
      * @return Timestamp of when the next epoch starts
      */
     function nextEpoch() public view returns (uint256) {
-        if (epochsPassed() == 0) {
+        // get number of epochs passed
+        uint256 passed = epochsPassed();
+
+        // if all epochs passed, return
+        if (passed == TOTAL_EPOCHS) {
+            // return INT_MAX
+            return uint256(-1);
+        }
+
+        // if no epochs passed, return latest epoch + delay + standard duration
+        if (passed == 0) {
             return latestEpoch().add(FIRST_EPOCH_DELAY).add(EPOCH_DURATION);
         }
+
+        // otherwise return latest epoch + epoch duration
         return latestEpoch().add(EPOCH_DURATION);
     }
 
@@ -1093,11 +1117,17 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      * @return Timestamp of when the current epoch has started
      */
     function latestEpoch() public view returns (uint256) {
-        // lockStart + epochsPassed * epochDuration, and account for 1st epoch being longer
-        if (epochsPassed() == 0) {
+        // get number of epochs passed
+        uint256 passed = epochsPassed();
+
+        // if no epochs passed, return lock start time
+        if (passed == 0) {
             return LOCK_START;
         }
-        return LOCK_START.add(FIRST_EPOCH_DELAY).add(epochsPassed().mul(EPOCH_DURATION));
+
+        // accounts for first epoch being longer
+        // lockStart + firstEpochDelay + (epochsPassed * epochDuration)
+        return LOCK_START.add(FIRST_EPOCH_DELAY).add(passed.mul(EPOCH_DURATION));
     }
 
     /**
@@ -1105,7 +1135,8 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      * @return Timestamp of when the last epoch ends and all funds are released
      */
     function finalEpoch() public pure returns (uint256) {
-        return LOCK_START + FIRST_EPOCH_DELAY + (EPOCH_DURATION * TOTAL_EPOCHS);
+        // lockStart + firstEpochDelay + (epochDuration * totalEpochs)
+        return LOCK_START.add(FIRST_EPOCH_DELAY).add(EPOCH_DURATION.mul(TOTAL_EPOCHS));
     }
 
     /**
@@ -1119,20 +1150,25 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
 
 // File: contracts/trusttokens/TimeLockRegistry.sol
 
-// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
 
 /**
- * @dev This contract allows owner to register new SAFT distributions
+ * @title TimeLockRegistry
+ * @notice Register Lockups for TimeLocked ERC20 Token
+ * @author Harold Hyatt
+ * @dev This contract allows owner to register distributions for a TimeLockedToken
+ *
  * To register a distribution, register method should be called by the owner.
- * claim() should then be called by SAFT account
- * If case of an error, owner can cancel registration
+ * claim() should then be called by account registered to recieve tokens under lockup period
+ * If case of a mistake, owner can cancel registration
+ *
+ * Note this contract must be setup in TimeLockedToken's setTimeLockRegistry() function
  */
 contract TimeLockRegistry is ClaimableContract {
     // time locked token
-    TimeLockedToken private token;
+    TimeLockedToken public token;
 
     // mapping from SAFT address to TRU due amount
     mapping(address => uint256) public registeredDistributions;
@@ -1141,8 +1177,15 @@ contract TimeLockRegistry is ClaimableContract {
     event Cancel(address receiver, uint256 distribution);
     event Claim(address account, uint256 distribution);
 
-    constructor(TimeLockedToken _token) public {
+    /**
+     * @dev Initalize function so this contract can be behind a proxy
+     * @param _token TimeLockedToken contract to use in this registry
+     */
+    function initialize(TimeLockedToken _token) external {
+        require(!initalized, "Already initialized");
         token = _token;
+        owner_ = msg.sender;
+        initalized = true;
     }
 
     /**
@@ -1154,7 +1197,6 @@ contract TimeLockRegistry is ClaimableContract {
         require(receiver != address(0), "Zero address");
         require(distribution != 0, "Distribution = 0");
         require(registeredDistributions[receiver] == 0, "Distribution for this address is already registered");
-        require(token.allowance(msg.sender, address(this)) >= distribution, "Insufficient allowance");
 
         // register distribution in mapping
         registeredDistributions[receiver] = distribution;
@@ -1162,6 +1204,7 @@ contract TimeLockRegistry is ClaimableContract {
         // transfer tokens from owner
         require(token.transferFrom(msg.sender, address(this), distribution), "Transfer failed");
 
+        // emit register event
         emit Register(receiver, distribution);
     }
 
@@ -1172,26 +1215,34 @@ contract TimeLockRegistry is ClaimableContract {
     function cancel(address receiver) external onlyOwner {
         require(registeredDistributions[receiver] != 0, "Not registered");
 
-        // transfer tokens back to owner
-        require(token.transfer(msg.sender, registeredDistributions[receiver]), "Transfer failed");
+        // get amount from distributions
+        uint256 amount = registeredDistributions[receiver];
 
-        emit Cancel(receiver, registeredDistributions[receiver]);
-
-        // set distribution mappig to 0
+        // set distribution mapping to 0
         delete registeredDistributions[receiver];
+
+        // transfer tokens back to owner
+        require(token.transfer(msg.sender, amount), "Transfer failed");
+
+        // emit cancel event
+        emit Cancel(receiver, amount);
     }
 
     /// @dev Claim tokens due amount
     function claim() external {
         require(registeredDistributions[msg.sender] != 0, "Not registered");
 
+        // get amount from distributions
+        uint256 amount = registeredDistributions[msg.sender];
+
+        // set distribution mapping to 0
+        delete registeredDistributions[msg.sender];
+
         // register lockup in TimeLockedToken
         // this will transfer funds from this contract and lock them for sender
-        token.registerLockup(msg.sender, registeredDistributions[msg.sender]);
+        token.registerLockup(msg.sender, amount);
 
-        emit Claim(msg.sender, registeredDistributions[msg.sender]);
-
-        // delete distribution mapping
-        delete registeredDistributions[msg.sender];
+        // emit claim event
+        emit Claim(msg.sender, amount);
     }
 }

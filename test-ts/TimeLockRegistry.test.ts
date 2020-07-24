@@ -16,7 +16,7 @@ import { expectEvent } from './utils/eventHelpers'
 
 use(solidity)
 
-describe('TimeLockedRegistry', () => {
+describe('TimeLockRegistry', () => {
   let owner: Wallet, holder: Wallet, another: Wallet
   let registry: TimeLockRegistry
   let trustToken: TrustToken
@@ -45,7 +45,7 @@ describe('TimeLockedRegistry', () => {
 
     it('cannot register if allowance is too small', async () => {
       await trustToken.approve(registry.address, 9)
-      await expect(registry.register(holder.address, 10)).to.be.revertedWith('Insufficient allowance')
+      await expect(registry.register(holder.address, 10)).to.be.revertedWith('insufficient allowance')
     })
 
     it('adds recipient to distributions list', async () => {
