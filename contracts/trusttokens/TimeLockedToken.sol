@@ -97,7 +97,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      * @param _value The amount of tokens to be burnt
      */
     function _burn(address _from, uint256 _value) internal override returns (uint256 resultBalance_, uint256 resultSupply_) {
-        require(unlockedBalance(_from) >= _value, "attempting to transfer locked funds");
+        require(unlockedBalance(_from) >= _value, "attempting to burn locked funds");
 
         (resultBalance_, resultSupply_) = super._burn(_from, _value);
     }
