@@ -5,7 +5,7 @@
  */
 
 import fs from 'fs'
-import { utils, constants, providers } from 'ethers'
+import { utils, constants, providers, Wallet } from 'ethers'
 import { TimeLockRegistry } from '../build/types/TimeLockRegistry'
 import { TimeLockRegistryFactory } from '../build/types/TimeLockRegistryFactory'
 import { TrustToken } from '../build/types/TrustToken'
@@ -22,6 +22,7 @@ const toTrustToken = (amount: string) => utils.parseUnits(amount, 8)
 const sum = (numbers: utils.BigNumber[]) => numbers.reduce((cumSum, value) => cumSum.add(value), constants.Zero)
 
 export const registerSaftAccounts = async (registry: TimeLockRegistry, trustToken: TrustToken, accounts: SaftAccount[]) => {
+  await trustToken.mint(registry.signer.ad)
   const totalAllowance = sum(accounts.map(({ amount }) => toTrustToken(amount)))
   const tx = await trustToken.approve(registry.address, totalAllowance, txnArgs)
   await tx.wait()
@@ -49,7 +50,8 @@ const readAccountList = (filePath: string) => parseAccountList(fs.readFileSync(f
 if (require.main === module) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const deployedAddresses = require(`./deploy/${process.argv[2]}.json`)
-  const wallet = new providers.InfuraProvider(process.argv[2], '81447a33c1cd4eb09efb1e8c388fb28e')
+  const provider = new providers.InfuraProvider(process.argv[2], '81447a33c1cd4eb09efb1e8c388fb28e')
+  const wallet = new Wallet(process.env.PRIVATE_KEY, provider)
   const registry = TimeLockRegistryFactory.connect(deployedAddresses.timeLockRegistry, wallet)
   const trustToken = TrustTokenFactory.connect(deployedAddresses.trustToken, wallet)
   registerSaftAccounts(registry, trustToken, readAccountList(process.argv[3])).then(() => console.log('Done.'))
