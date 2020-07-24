@@ -1019,6 +1019,17 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
     }
 
     /**
+     * @dev Check if amount we want to burn is unlocked before burning
+     * @param _from The address whose tokens will burn
+     * @param _value The amount of tokens to be burnt
+     */
+    function _burn(address _from, uint256 _value) internal override returns (uint256 resultBalance_, uint256 resultSupply_) {
+        require(unlockedBalance(_from) >= _value, "attempting to burn locked funds");
+
+        (resultBalance_, resultSupply_) = super._burn(_from, _value);
+    }
+
+    /**
      * @dev Transfer tokens to another account under the lockup schedule
      * Emits a transfer event showing a transfer to the recipient
      * Only the registry can call this function
@@ -1096,9 +1107,10 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
         // get number of epochs passed
         uint256 passed = epochsPassed();
 
-        // if all epochs passed, return 
+        // if all epochs passed, return
         if (passed == TOTAL_EPOCHS) {
-            revert("No remaining epochs. Distribution period completed.");
+            // return INT_MAX
+            return uint256(-1);
         }
 
         // if no epochs passed, return latest epoch + delay + standard duration
