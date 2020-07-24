@@ -14,8 +14,8 @@ import { TrustTokenFactory } from '../build/types/TrustTokenFactory'
 export const txnArgs = { gasLimit: 2_000_000, gasPrice: 20_000_000_000 }
 
 export interface SaftAccount {
-  address: string;
-  amount: string;
+  address: string,
+  amount: string,
 }
 
 const toTrustToken = (amount: string) => utils.parseUnits(amount, 8)
@@ -47,6 +47,7 @@ export const parseAccountList = (text: string): SaftAccount[] =>
 const readAccountList = (filePath: string) => parseAccountList(fs.readFileSync(filePath).toString())
 
 if (require.main === module) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const deployedAddresses = require(`./deploy/${process.argv[2]}.json`)
   const wallet = new providers.InfuraProvider(process.argv[2], '81447a33c1cd4eb09efb1e8c388fb28e')
   const registry = TimeLockRegistryFactory.connect(deployedAddresses.timeLockRegistry, wallet)

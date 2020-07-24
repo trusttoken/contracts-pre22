@@ -1,4 +1,4 @@
-import { Wallet, utils } from 'ethers'
+import { Wallet } from 'ethers'
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 import { setupDeploy } from '../scripts/utils'
 import { TrustTokenFactory } from '../build/types/TrustTokenFactory'
