@@ -26,6 +26,7 @@ import { RegistryAttributes } from '../scripts/attributes'
 import { TimeOwnedUpgradeabilityProxyFactory } from '../build/types/TimeOwnedUpgradeabilityProxyFactory'
 import { LendingPoolCoreMock } from '../build/types/LendingPoolCoreMock'
 import { ATokenMock } from '../build/types/ATokenMock'
+import { timeTravel } from './utils/timeTravel'
 
 use(solidity)
 const BTC1000 = parseEther('1000').div(1e10)
@@ -160,10 +161,6 @@ describe('Staking', () => {
           .to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, 0)
       })
 
-      const timeTravel = async (time: number) => {
-        await provider.send('evm_increaseTime', [time])
-      }
-
       const TWO_WEEKS = 60 * 60 * 24 * 14
 
       it('cannot finalize unstake for 14 days', async () => {
@@ -173,7 +170,7 @@ describe('Staking', () => {
         const { timestamp } = await provider.getBlock(blockNumber)
         await expect(stakedToken.connect(staker).finalizeUnstake(staker.address, [timestamp]))
           .to.be.revertedWith('must wait 2 weeks to unstake')
-        await timeTravel(TWO_WEEKS - 10)
+        await timeTravel(provider, TWO_WEEKS - 10)
         await expect(stakedToken.connect(staker).finalizeUnstake(staker.address, [timestamp]))
           .to.be.revertedWith('must wait 2 weeks to unstake')
       })
@@ -184,7 +181,7 @@ describe('Staking', () => {
         const { blockNumber } = await stakedToken.connect(staker).initUnstake(balance)
         const { timestamp } = await staker.provider.getBlock(blockNumber)
         const truBalanceBefore = await trustToken.balanceOf(staker.address)
-        await timeTravel(TWO_WEEKS)
+        await timeTravel(provider, TWO_WEEKS)
         await stakedToken.connect(staker).finalizeUnstake(staker.address, [timestamp])
         const truBalanceAfter = await trustToken.balanceOf(staker.address)
         expect(truBalanceAfter).to.equal(truBalanceBefore.add(balance.div(1000)))
@@ -198,7 +195,7 @@ describe('Staking', () => {
         const { blockNumber: bn2 } = await stakedToken.connect(staker).initUnstake(balance.div(2))
         const { timestamp: t2 } = await staker.provider.getBlock(bn2)
         const truBalanceBefore = await trustToken.balanceOf(staker.address)
-        await timeTravel(TWO_WEEKS)
+        await timeTravel(provider, TWO_WEEKS)
         await stakedToken.connect(staker).finalizeUnstake(staker.address, [t1, t2])
         const truBalanceAfter = await trustToken.balanceOf(staker.address)
         expect(truBalanceAfter).to.equal(truBalanceBefore.add(balance.div(1000)))
