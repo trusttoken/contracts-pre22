@@ -1,5 +1,5 @@
 
-// File: contracts/trueCurrencies/utilities/DepositAddressRegistrar.sol
+// File: contracts/truecurrencies/utilities/DepositAddressRegistrar.sol
 
 pragma solidity 0.5.13;
 

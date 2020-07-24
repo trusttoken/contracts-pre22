@@ -1,5 +1,5 @@
 
-// File: contracts/trueCurrencies/TrueCoinReceiver.sol
+// File: contracts/truecurrencies/TrueCoinReceiver.sol
 
 pragma solidity 0.5.13;
 
@@ -256,7 +256,7 @@ contract Registry {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/InstantiatableOwnable.sol
+// File: contracts/truecurrencies/modularERC20/InstantiatableOwnable.sol
 
 pragma solidity 0.5.13;
 
@@ -301,7 +301,7 @@ contract InstantiatableOwnable {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/Claimable.sol
+// File: contracts/truecurrencies/modularERC20/Claimable.sol
 
 pragma solidity 0.5.13;
 
@@ -500,7 +500,7 @@ library SafeMath {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/BalanceSheet.sol
+// File: contracts/truecurrencies/modularERC20/BalanceSheet.sol
 
 pragma solidity 0.5.13;
 
@@ -525,7 +525,7 @@ contract BalanceSheet is Claimable {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/AllowanceSheet.sol
+// File: contracts/truecurrencies/modularERC20/AllowanceSheet.sol
 
 pragma solidity 0.5.13;
 
@@ -550,7 +550,7 @@ contract AllowanceSheet is Claimable {
     }
 }
 
-// File: contracts/TrueReward/FinancialOpportunity.sol
+// File: contracts/truereward/FinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 
@@ -630,7 +630,7 @@ interface FinancialOpportunity {
     function redeem(address to, uint amount) external returns(uint);
 }
 
-// File: contracts/trueCurrencies/ProxyStorage.sol
+// File: contracts/truecurrencies/ProxyStorage.sol
 
 pragma solidity 0.5.13;
 
@@ -703,7 +703,7 @@ contract ProxyStorage {
     **/
 }
 
-// File: contracts/trueCurrencies/HasOwner.sol
+// File: contracts/truecurrencies/HasOwner.sol
 
 pragma solidity 0.5.13;
 
@@ -764,7 +764,7 @@ contract HasOwner is ProxyStorage {
     }
 }
 
-// File: contracts/trueCurrencies/ReclaimerToken.sol
+// File: contracts/truecurrencies/ReclaimerToken.sol
 
 pragma solidity 0.5.13;
 
@@ -794,7 +794,7 @@ contract ReclaimerToken is HasOwner {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/InitializableOwnable.sol
+// File: contracts/truecurrencies/modularERC20/InitializableOwnable.sol
 
 pragma solidity 0.5.13;
 
@@ -842,7 +842,7 @@ contract InitializableOwnable {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/InitializableClaimable.sol
+// File: contracts/truecurrencies/modularERC20/InitializableClaimable.sol
 
 pragma solidity 0.5.13;
 
@@ -882,7 +882,7 @@ contract InitializableClaimable is InitializableOwnable {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/ModularBasicToken.sol
+// File: contracts/truecurrencies/modularERC20/ModularBasicToken.sol
 
 pragma solidity 0.5.13;
 
@@ -930,7 +930,7 @@ contract ModularBasicToken is HasOwner {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/ModularStandardToken.sol
+// File: contracts/truecurrencies/modularERC20/ModularStandardToken.sol
 
 pragma solidity 0.5.13;
 
@@ -1083,7 +1083,7 @@ contract ModularStandardToken is ModularBasicToken {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/ModularBurnableToken.sol
+// File: contracts/truecurrencies/modularERC20/ModularBurnableToken.sol
 
 pragma solidity 0.5.13;
 
@@ -1111,7 +1111,7 @@ contract ModularBurnableToken is ModularStandardToken {
     }
 }
 
-// File: contracts/trueCurrencies/BurnableTokenWithBounds.sol
+// File: contracts/truecurrencies/BurnableTokenWithBounds.sol
 
 pragma solidity 0.5.13;
 
@@ -1145,7 +1145,7 @@ contract BurnableTokenWithBounds is ModularBurnableToken {
     }
 }
 
-// File: contracts/trueCurrencies/GasRefundToken.sol
+// File: contracts/truecurrencies/GasRefundToken.sol
 
 pragma solidity 0.5.13;
 
@@ -1310,7 +1310,7 @@ contract GasRefundToken is ProxyStorage {
     }
 }
 
-// File: contracts/trueCurrencies/CompliantDepositTokenWithHook.sol
+// File: contracts/truecurrencies/CompliantDepositTokenWithHook.sol
 
 pragma solidity 0.5.13;
 
@@ -1584,7 +1584,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 }
 
-// File: contracts/trueCurrencies/TrueGBP.sol
+// File: contracts/truecurrencies/TrueGBP.sol
 
 pragma solidity 0.5.13;
 

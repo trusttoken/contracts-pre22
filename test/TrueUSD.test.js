@@ -68,7 +68,7 @@ contract('TrueUSD', function (accounts) {
           await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
         })
 
-        burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount], false)
+        burnableTokenWithBoundsTests([owner, oneHundred, anotherAccount])
       })
 
       describe('user is not on burn whitelist', function () {

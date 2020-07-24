@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "./ERC20.sol";
-import "./RegistrySubscriber.sol";
-import "./TrueCoinReceiver.sol";
+import {ModularStandardToken} from "./ERC20.sol";
+import {RegistrySubscriber} from "./RegistrySubscriber.sol";
+import {TrueCoinReceiver} from "./TrueCoinReceiver.sol";
 
 abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
     event Burn(address indexed from, uint256 indexed amount);

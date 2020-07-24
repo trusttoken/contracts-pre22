@@ -499,7 +499,7 @@ contract ERC20 is Context, IERC20 {
     }
 }
 
-// File: contracts/TrueReward/IAToken.sol
+// File: contracts/truereward/IAToken.sol
 
 pragma solidity 0.5.13;
 
@@ -508,7 +508,7 @@ contract IAToken is IERC20 {
     function redeem(uint256 _shares) external;
 }
 
-// File: contracts/TrueReward/ILendingPoolCore.sol
+// File: contracts/truereward/ILendingPoolCore.sol
 
 pragma solidity 0.5.13;
 
@@ -517,7 +517,7 @@ interface ILendingPoolCore {
   function transferToReserve(address _reserve, address payable _user, uint256 _amount) external;
 }
 
-// File: contracts/TrueReward/mocks/LendingPoolCoreMock.sol
+// File: contracts/truereward/mocks/LendingPoolCoreMock.sol
 
 pragma solidity 0.5.13;
 
@@ -539,7 +539,7 @@ contract LendingPoolCoreMock is ILendingPoolCore {
     }
 }
 
-// File: contracts/TrueReward/mocks/ATokenMock.sol
+// File: contracts/truereward/mocks/ATokenMock.sol
 
 pragma solidity 0.5.13;
 
