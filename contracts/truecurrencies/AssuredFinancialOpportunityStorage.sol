@@ -7,8 +7,8 @@ state variables in future upgrades should be appended to the bottom. Never remov
 from this list
  */
 contract AssuredFinancialOpportunityStorage {
-    // how much zTUSD we've issued (total supply)
-    uint256 zTUSDIssued;
+    // how much zTrueCurrency we've issued (total supply)
+    uint256 zTrueCurrencyIssued;
 
     // percentage of interest for staking pool
     // 1% = 10

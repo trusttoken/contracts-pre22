@@ -16,13 +16,13 @@ import {FinancialOpportunity} from "./FinancialOpportunity.sol";
  *
  * -- Overview --
  * Rewards are earned as tokenValue() increases in the underlying opportunity
- * TUSD is never held in this contract - zTUSD represents value we owe to depositors
+ * TrueCurrency is never held in this contract - zTrueCurrency represents value we owe to depositors
  *
- * -- zTUSD vs yTUSD --
- * zTUSD represents an amount of ASSURED TUSD owed to the zTUSD holder (depositors)
- * 1 zTUSD = (yTUSD ^ assurance ratio)
- * yTUSD represents an amount of NON-ASSURED TUSD owed to this contract
- * TUSD value = yTUSD * finOp.tokenValue()
+ * -- zTrueCurrency vs yTrueCurrency --
+ * zTrueCurrency represents an amount of ASSURED TrueCurrency owed to the zTrueCurrency holder (depositors)
+ * 1 zTrueCurrency = (yTrueCurrency ^ assurance ratio)
+ * yTrueCurrency represents an amount of NON-ASSURED TrueCurrency owed to this contract
+ * TrueCurrency value = yTrueCurrency * finOp.tokenValue()
  *
  * -- Awarding the Assurance Pool
  * The difference increases when depositors withdraw
@@ -30,13 +30,13 @@ import {FinancialOpportunity} from "./FinancialOpportunity.sol";
  * (finOpValue * finOpBalance) - (assuredOpportunityBalance * assuredOpportunityTokenValue)
  *
  * -- Flash Assurance --
- * If a transfer fails, stake is sold from the assurance pool for TUSD
- * When stake is liquidated, the TUSD is sent out in the same transaction
+ * If a transfer fails, stake is sold from the assurance pool for TrueCurrency
+ * When stake is liquidated, the TrueCurrency is sent out in the same transaction
  * Can attempt to sell bad debt at a later date and return value to the pool
  *
  * -- Assumptions --
  * tokenValue can never decrease for this contract. We want to guarantee
- * the awards earned on deposited TUSD and liquidate trusttokens for this amount
+ * the awards earned on deposited TrueCurrency and liquidate trusttokens for this amount
  * We allow the rewardBasis to be adjusted, but since we still need to maintain
  * the tokenValue, we calculate an adjustment factor and set minTokenValue
  *
@@ -56,13 +56,13 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     address exponentContractAddress;
     address trueRewardBackedTokenAddress;
 
-    // address allowed to withdraw/deposit, usually set to address of TUSD smart contract
+    // address allowed to withdraw/deposit, usually set to address of TrueCurrency smart contract
     address fundsManager;
 
-    /// @dev Emitted on new deposit by account. tusd amount was depositted, ztusd was given in exchange
-    event Deposit(address indexed account, uint256 tusd, uint256 ztusd);
-    /// @dev Emitted on new redemption by account. ztusd amount was redempted, tusd was given in exchange
-    event Redemption(address indexed to, uint256 ztusd, uint256 tusd);
+    /// @dev Emitted on new deposit by account. trueCurrency amount was deposited, zTrueCurrency was given in exchange
+    event Deposit(address indexed account, uint256 trueCurrency, uint256 zTrueCurrency);
+    /// @dev Emitted on new redemption by account. zTrueCurrency amount was redempted, trueCurrency was given in exchange
+    event Redemption(address indexed to, uint256 zTrueCurrency, uint256 trueCurrency);
     /// @dev Emitted when liquidation is triggered for debt amount
     event Liquidation(address indexed receiver, int256 debt);
     /// @dev Emitted when award was successfully transferred to staking pool
@@ -110,71 +110,71 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * @dev total supply of zTUSD
+     * @dev total supply of zTrueCurrency
      * inherited from FinancialOpportunity.sol
      */
     function totalSupply() external override view returns (uint256) {
-        return zTUSDIssued;
+        return zTrueCurrencyIssued;
     }
 
     /**
-     * @dev value of TUSD per zTUSD
+     * @dev value of TrueCurrency per zTrueCurrency
      * inherited from FinancialOpportunity.sol
      *
-     * @return TUSD value of zTUSD
+     * @return TrueCurrency value of zTrueCurrency
      */
     function tokenValue() external override view returns (uint256) {
         return _tokenValue();
     }
 
     /**
-     * @dev deposit TUSD for zTUSD
+     * @dev deposit TrueCurrency for zTrueCurrency
      * inherited from FinancialOpportunity.sol
      *
      * @param from address to deposit from
-     * @param amount TUSD amount to deposit
-     * @return zTUSD amount
+     * @param amount TrueCurrency amount to deposit
+     * @return zTrueCurrency amount
      */
     function deposit(address from, uint256 amount) external override onlyFundsManager returns (uint256) {
         return _deposit(from, amount);
     }
 
     /**
-     * @dev redeem zTUSD for TUSD
+     * @dev redeem zTrueCurrency for TrueCurrency
      * inherited from FinancialOpportunity.sol
      *
-     * @param to address to send tusd to
-     * @param amount amount of zTUSD to redeem
-     * @return amount of TUSD returned by finOp
+     * @param to address to send trueCurrency to
+     * @param amount amount of zTrueCurrency to redeem
+     * @return amount of TrueCurrency returned by finOp
      */
     function redeem(address to, uint256 amount) external override onlyFundsManager returns (uint256) {
         return _redeem(to, amount);
     }
 
     /**
-     * @dev Get TUSD to be awarded to staking pool
-     * Calculated as the difference in value of total zTUSD and yTUSD
-     * (finOpTotalSupply * finOpTokenValue) - (zTUSDIssued * zTUSDTokenValue)
+     * @dev Get TrueCurrency to be awarded to staking pool
+     * Calculated as the difference in value of total zTrueCurrency and yTrueCurrency
+     * (finOpTotalSupply * finOpTokenValue) - (zTrueCurrencyIssued * zTrueCurrencyTokenValue)
      *
-     * @return pool balance in TUSD
+     * @return pool balance in TrueCurrency
      */
     function poolAwardBalance() public view returns (uint256) {
-        uint256 zTUSDValue = finOp().tokenValue().mul(finOp().totalSupply()).div(10**18);
-        uint256 yTUSDValue = _totalSupply().mul(_tokenValue()).div(10**18);
-        return zTUSDValue.sub(yTUSDValue);
+        uint256 zTrueCurrencyValue = finOp().tokenValue().mul(finOp().totalSupply()).div(10**18);
+        uint256 yTrueCurrencyValue = _totalSupply().mul(_tokenValue()).div(10**18);
+        return zTrueCurrencyValue.sub(yTrueCurrencyValue);
     }
 
     /**
-     * @dev Sell yTUSD for TUSD and deposit into staking pool.
-     * Award amount is the difference between zTUSD issued an
-     * yTUSD in the underlying financial opportunity
+     * @dev Sell yTrueCurrency for TrueCurrency and deposit into staking pool.
+     * Award amount is the difference between zTrueCurrency issued an
+     * yTrueCurrency in the underlying financial opportunity
      */
     function awardPool() external {
         uint256 amount = poolAwardBalance();
-        uint256 ytusd = _yTUSD(amount);
+        uint256 ytrueCurrency = _yTrueCurrency(amount);
 
-        // sell pool debt and award TUSD to pool
-        (bool success, uint256 returnedAmount) = _attemptRedeem(address(this), ytusd);
+        // sell pool debt and award TrueCurrency to pool
+        (bool success, uint256 returnedAmount) = _attemptRedeem(address(this), ytrueCurrency);
 
         if (success) {
             token().transfer(address(pool()), returnedAmount);
@@ -198,18 +198,18 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * @dev Get supply amount of zTUSD issued
-     * @return zTUSD issued
+     * @dev Get supply amount of zTrueCurrency issued
+     * @return zTrueCurrency issued
      **/
     function _totalSupply() internal view returns (uint256) {
-        return zTUSDIssued;
+        return zTrueCurrencyIssued;
     }
 
     /**
-     * Calculate yTUSD / zTUSD (opportunity value minus pool award)
+     * Calculate yTrueCurrency / zTrueCurrency (opportunity value minus pool award)
      * We assume opportunity tokenValue always goes up
      *
-     * @return value of zTUSD
+     * @return value of zTrueCurrency
      */
     function _tokenValue() internal view returns (uint256) {
         // if no assurance, use  opportunity tokenValue
@@ -225,12 +225,12 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * @dev calculate TUSD value of zTUSD
-     * zTUSD = yTUSD ^ (rewardBasis / totalBasis)
+     * @dev calculate TrueCurrency value of zTrueCurrency
+     * zTrueCurrency = yTrueCurrency ^ (rewardBasis / totalBasis)
      * reward ratio = _rewardBasis / TOTAL_BASIS
      *
      * @param _rewardBasis reward basis (max TOTAL_BASIS)
-     * @return zTUSD token value
+     * @return zTrueCurrency token value
      */
     function _calculateTokenValue(uint32 _rewardBasis) internal view returns (uint256) {
         (uint256 result, uint8 precision) = exponents().power(finOp().tokenValue(), 10**18, _rewardBasis, TOTAL_BASIS);
@@ -238,60 +238,60 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * @dev Deposit TUSD into wrapped opportunity.
-     * Calculate zTUSD value and add to issuance value.
+     * @dev Deposit TrueCurrency into wrapped opportunity.
+     * Calculate zTrueCurrency value and add to issuance value.
      *
-     * @param _account account to deposit tusd from
-     * @param _amount amount of tusd to deposit
+     * @param _account account to deposit trueCurrency from
+     * @param _amount amount of trueCurrency to deposit
      */
     function _deposit(address _account, uint256 _amount) internal returns (uint256) {
         token().transferFrom(_account, address(this), _amount);
 
-        // deposit TUSD into opportunity
+        // deposit TrueCurrency into opportunity
         token().approve(finOpAddress, _amount);
         finOp().deposit(address(this), _amount);
 
-        // calculate zTUSD value of deposit
-        uint256 ztusd = _amount.mul(10**18).div(_tokenValue());
+        // calculate zTrueCurrency value of deposit
+        uint256 zTrueCurrency = _amount.mul(10**18).div(_tokenValue());
 
-        // update zTUSDIssued
-        zTUSDIssued = zTUSDIssued.add(ztusd);
-        emit Deposit(_account, _amount, ztusd);
-        return ztusd;
+        // update zTrueCurrencyIssued
+        zTrueCurrencyIssued = zTrueCurrencyIssued.add(zTrueCurrency);
+        emit Deposit(_account, _amount, zTrueCurrency);
+        return zTrueCurrency;
     }
 
     /**
-     * @dev Redeem zTUSD for TUSD
-     * Liquidate if opportunity fails to return TUSD.
+     * @dev Redeem zTrueCurrency for TrueCurrency
+     * Liquidate if opportunity fails to return TrueCurrency.
      *
      * @param _to address to withdraw to
-     * @param ztusd amount in ytusd to redeem
-     * @return TUSD amount redeemed for zTUSD
+     * @param zTrueCurrency amount in ytrueCurrency to redeem
+     * @return TrueCurrency amount redeemed for zTrueCurrency
      */
-    function _redeem(address _to, uint256 ztusd) internal returns (uint256) {
+    function _redeem(address _to, uint256 zTrueCurrency) internal returns (uint256) {
         // attempt withdraw to this contract
-        // here we redeem ztusd amount which leaves
-        // a small amount of yTUSD left in the finOp
+        // here we redeem zTrueCurrency amount which leaves
+        // a small amount of yTrueCurrency left in the finOp
         // which can be redeemed by the assurance pool
-        (bool success, uint256 returnedAmount) = _attemptRedeem(address(this), ztusd);
+        (bool success, uint256 returnedAmount) = _attemptRedeem(address(this), zTrueCurrency);
 
         // calculate reward amount
         // todo feewet: check if expected amount is correct
         // possible use precision threshold or smart rounding
         // to eliminate micro liquidations
-        uint256 expectedAmount = _tokenValue().mul(ztusd).div(10**18);
+        uint256 expectedAmount = _tokenValue().mul(zTrueCurrency).div(10**18);
         uint256 liquidated = 0;
 
         if (!success || (returnedAmount.add(TOLERANCE) < expectedAmount)) {
             liquidated = _liquidate(address(this), int256(expectedAmount.sub(returnedAmount)));
         }
 
-        zTUSDIssued = zTUSDIssued.sub(ztusd, "not enough supply");
+        zTrueCurrencyIssued = zTrueCurrencyIssued.sub(zTrueCurrency, "not enough supply");
 
         // transfer token to redeemer
         require(token().transfer(_to, returnedAmount.add(liquidated)), "transfer failed");
 
-        emit Redemption(_to, ztusd, returnedAmount);
+        emit Redemption(_to, zTrueCurrency, returnedAmount);
         return returnedAmount;
     }
 
@@ -299,11 +299,11 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @dev Try to redeem and return success and amount
      *
      * @param _to redeemer address
-     * @param ztusd amount in ztusd
+     * @param zTrueCurrency amount in zTrueCurrency
      **/
-    function _attemptRedeem(address _to, uint256 ztusd) internal returns (bool, uint256) {
+    function _attemptRedeem(address _to, uint256 zTrueCurrency) internal returns (bool, uint256) {
         // attempt to withdraw from opportunity
-        try finOp().redeem(_to, ztusd) returns (uint256 fundsWithdrawn) {
+        try finOp().redeem(_to, zTrueCurrency) returns (uint256 fundsWithdrawn) {
             return (true, fundsWithdrawn);
         } catch (bytes memory) {
             return (false, 0);
@@ -312,10 +312,10 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
 
     /**
      * @dev Liquidate tokens in staking pool to cover debt
-     * Sends tusd to receiver
+     * Sends trueCurrency to receiver
      *
-     * @param _receiver address to receive tusd
-     * @param _debt tusd debt to be liquidated
+     * @param _receiver address to receive trueCurrency
+     * @param _debt trueCurrency debt to be liquidated
      * @return amount liquidated
      **/
     function _liquidate(address _receiver, int256 _debt) internal returns (uint256) {
@@ -325,21 +325,21 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /**
-     * @dev convert tusd value into yTUSD value
-     * @param _tusd TUSD to convert
-     * @return yTUSD value of TUSD
+     * @dev convert trueCurrency value into yTrueCurrency value
+     * @param _trueCurrency TrueCurrency to convert
+     * @return yTrueCurrency value of TrueCurrency
      */
-    function _yTUSD(uint256 _tusd) internal view returns (uint256) {
-        return _tusd.mul(10**18).div(finOp().tokenValue());
+    function _yTrueCurrency(uint256 _trueCurrency) internal view returns (uint256) {
+        return _trueCurrency.mul(10**18).div(finOp().tokenValue());
     }
 
     /**
-     * @dev convert tusd value into zTUSD value
-     * @param _tusd TUSD to convert
-     * @return zTUSD value of TUSD
+     * @dev convert trueCurrency value into zTrueCurrency value
+     * @param _trueCurrency TrueCurrency to convert
+     * @return zTrueCurrency value of TrueCurrency
      */
-    function _zTUSD(uint256 _tusd) internal view returns (uint256) {
-        return _tusd.mul(10**18).div(_tokenValue());
+    function _zTrueCurrency(uint256 _trueCurrency) internal view returns (uint256) {
+        return _trueCurrency.mul(10**18).div(_tokenValue());
     }
 
     /// @dev claim ownership of liquidator

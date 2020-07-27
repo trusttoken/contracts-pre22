@@ -7,71 +7,71 @@ pragma solidity 0.6.10;
  *
  * -- Overview --
  * The goal of this contract is to allow anyone to create an opportunity
- * to earn interest on TUSD. deposit() "mints" yTUSD which is redeemable
- * for some amount of TUSD. TrueUSD wraps this contract with TrustToken
+ * to earn interest on TrueCurrency. deposit() "mints" yTrueCurrency which is redeemable
+ * for some amount of TrueCurrency. TrueUSD wraps this contract with TrustToken
  * Assurance, which provides protection from bugs and system design flaws
- * TUSD is a compliant stable coin, therefore we do not allow transfers of
- * yTUSD, thus there are no transfer functions
+ * TrueCurrency is a compliant stable coin, therefore we do not allow transfers of
+ * yTrueCurrency, thus there are no transfer functions
  *
  * -- tokenValue() --
- * This function returns the value in TUSD of 1 yTUSD
+ * This function returns the value in TrueCurrency of 1 yTrueCurrency
  * This value should never decrease
  *
- * -- TUSD vs yTUSD --
- * yTUSD represents a fixed value which is redeemable for some amount of TUSD
- * Think of yTUSD like cTUSD, where cTokens are minted and increase in value versus
+ * -- TrueCurrency vs yTrueCurrency --
+ * yTrueCurrency represents a fixed value which is redeemable for some amount of TrueCurrency
+ * Think of yTrueCurrency like cTrueCurrency, where cTokens are minted and increase in value versus
  * the underlying asset as interest is accrued
  *
  * -- totalSupply() --
- * This function returns the total supply of yTUSD issued by this contract
+ * This function returns the total supply of yTrueCurrency issued by this contract
  * It is important to track this value accurately and add/deduct the correct
  * amount on deposit/redemption
  *
  * -- Assumptions --
  * - tokenValue can never decrease
- * - total TUSD owed to depositors = tokenValue() * totalSupply()
+ * - total TrueCurrency owed to depositors = tokenValue() * totalSupply()
  */
 interface FinancialOpportunity {
     /**
-     * @dev Returns total supply of yTUSD in this contract
+     * @dev Returns total supply of yTrueCurrency in this contract
      *
-     * @return total supply of yTUSD in this contract
+     * @return total supply of yTrueCurrency in this contract
      **/
     function totalSupply() external view returns (uint256);
 
     /**
-     * @dev Exchange rate between TUSD and yTUSD
+     * @dev Exchange rate between TrueCurrency and yTrueCurrency
      *
      * tokenValue should never decrease
      *
-     * @return TUSD / yTUSD price ratio
+     * @return TrueCurrency / yTrueCurrency price ratio
      */
     function tokenValue() external view returns (uint256);
 
     /**
-     * @dev deposits TrueUSD and returns yTUSD minted
+     * @dev deposits TrueUSD and returns yTrueCurrency minted
      *
      * We can think of deposit as a minting function which
-     * will increase totalSupply of yTUSD based on the deposit
+     * will increase totalSupply of yTrueCurrency based on the deposit
      *
      * @param from account to transferFrom
-     * @param amount amount in TUSD to deposit
-     * @return yTUSD minted from this deposit
+     * @param amount amount in TrueCurrency to deposit
+     * @return yTrueCurrency minted from this deposit
      */
     function deposit(address from, uint256 amount) external returns (uint256);
 
     /**
-     * @dev Redeem yTUSD for TUSD and withdraw to account
+     * @dev Redeem yTrueCurrency for TrueCurrency and withdraw to account
      *
      * This function should use tokenValue to calculate
-     * how much TUSD is owed. This function should burn yTUSD
+     * how much TrueCurrency is owed. This function should burn yTrueCurrency
      * after redemption
      *
-     * This function must return value in TUSD
+     * This function must return value in TrueCurrency
      *
-     * @param to account to transfer TUSD for
-     * @param amount amount in TUSD to withdraw from finOp
-     * @return TUSD amount returned from this transaction
+     * @param to account to transfer TrueCurrency for
+     * @param amount amount in TrueCurrency to withdraw from finOp
+     * @return TrueCurrency amount returned from this transaction
      */
     function redeem(address to, uint256 amount) external returns (uint256);
 }

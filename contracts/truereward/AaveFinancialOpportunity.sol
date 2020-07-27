@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {FinancialOpportunity} from "./FinancialOpportunity.sol";
-import {TrueUSD} from "../truecurrencies/TrueUSD.sol";
+import {TrueRewardBackedToken} from "../truecurrencies/TrueRewardBackedToken.sol";
 import {IAToken} from "./IAToken.sol";
 import {ILendingPool} from "./ILendingPool.sol";
 import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
@@ -12,33 +12,33 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * @title AaveFinancialOpportunity
- * @dev Financial Opportunity to earn TrueUSD with Aave
+ * @dev Financial Opportunity to earn TrueCurrency with Aave
  *
  * -- Overview --
- * This contract acts as an intermediary between TrueUSD and Aave
- * Tokens are pooled here and balances are kept track in TrueUSD
- * This contract is deployed behind a proxy and is owned by TrueUSD
+ * This contract acts as an intermediary between TrueCurrency and Aave
+ * Tokens are pooled here and balances are kept track in TrueCurrency
+ * This contract is deployed behind a proxy and is owned by TrueCurrency
  *
- * -- yTUSD and aTokens
- * yTUSD represents a fixed share in the financial opportunity pool
+ * -- yTrueCurrency and aTokens
+ * yTrueCurrency represents a fixed share in the financial opportunity pool
  * aTokens are Aave tokens and increase in quantity as interest is earned
  *
  * -- tokenValue --
- * tokenValue is the value of 1 yTUSD
+ * tokenValue is the value of 1 yTrueCurrency
  * tokenValue is calculated using reverseNormalizedIncome
  * We assume tokenValue never decreases
  */
 contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable {
     using SafeMath for uint256;
 
-    /** aTUSD token contract from AAVE */
+    /** aToken token contract from AAVE */
     IAToken public aToken;
 
     /** LendingPool contract from AAVE */
     ILendingPool public lendingPool;
 
-    /** TrueUSD */
-    TrueUSD public token;
+    /** TrueCurrency */
+    TrueRewardBackedToken public token;
 
     /** @dev total number of yTokens issued **/
     uint256 _totalSupply;
@@ -50,17 +50,17 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
 
     /**
      * @dev Set up Aave Opportunity
-     * Called by TrueUSD
+     * Called by TrueCurrency
      */
     function configure(
         IAToken _aToken, // aToken
         ILendingPool _lendingPool, // lendingPool interface
-        TrueUSD _token, // TrueUSD
+        TrueRewardBackedToken _token, // TrueCurrency
         address _owner // owner
     ) public onlyProxyOwner {
         require(address(_aToken) != address(0), "aToken cannot be address(0)");
         require(address(_lendingPool) != address(0), "lendingPool cannot be address(0)");
-        require(address(_token) != address(0), "TrueUSD cannot be address(0)");
+        require(address(_token) != address(0), "TrueCurrency cannot be address(0)");
         require(_owner != address(0), "Owner cannot be address(0)");
         aToken = _aToken;
         lendingPool = _lendingPool;
@@ -76,8 +76,8 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     }
 
     /**
-     * Exchange rate between TUSD and yTUSD
-     * @return TUSD / yTUSD price ratio (18 decimals of precision)
+     * Exchange rate between TrueCurrency and yTrueCurrency
+     * @return TrueCurrency / yTrueCurrency price ratio (18 decimals of precision)
      */
     function tokenValue() public override view returns (uint256) {
         ILendingPoolCore core = ILendingPoolCore(lendingPool.core());
@@ -85,8 +85,8 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     }
 
     /**
-     * @dev get yTUSD issued by this opportunity
-     * @return total yTUSD supply
+     * @dev get yTrueCurrency issued by this opportunity
+     * @return total yTrueCurrency supply
      **/
     function totalSupply() public override view returns (uint256) {
         return _totalSupply;
@@ -101,25 +101,25 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     }
 
     /**
-     * @dev get TUSD balance of this contract
-     * @return TUSD balance of this contract
+     * @dev get TrueCurrency balance of this contract
+     * @return TrueCurrency balance of this contract
      */
-    function tusdBalance() public view returns (uint256) {
+    function trueCurrencyBalance() public view returns (uint256) {
         return token.balanceOf(address(this));
     }
 
     /**
-     * @dev Return value of stake in yTUSD
+     * @dev Return value of stake in yTrueCurrency
      */
     function getValueInStake(uint256 _amount) public view returns (uint256) {
         return _amount.mul(10**18).div(tokenValue());
     }
 
     /**
-     * @dev deposits TrueUSD into AAVE using transferFrom
-     * @param from account to transferFrom TUSD
-     * @param amount amount in TUSD to deposit to AAVE
-     * @return yTUSD minted from this deposit
+     * @dev deposits TrueCurrency into AAVE using transferFrom
+     * @param from account to transferFrom TrueCurrency
+     * @param amount amount in TrueCurrency to deposit to AAVE
+     * @return yTrueCurrency minted from this deposit
      */
     function deposit(address from, uint256 amount) external override onlyOwner returns (uint256) {
         require(token.transferFrom(from, address(this), amount), "transfer from failed");
@@ -130,36 +130,36 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
         lendingPool.deposit(address(token), amount, 0);
         uint256 balanceAfter = aTokenBalance();
 
-        uint256 yTUSDAmount = getValueInStake(balanceAfter.sub(balanceBefore));
+        uint256 yTrueCurrencyAmount = getValueInStake(balanceAfter.sub(balanceBefore));
 
-        // increase yTUSD supply
-        _totalSupply = _totalSupply.add(yTUSDAmount);
+        // increase yTrueCurrency supply
+        _totalSupply = _totalSupply.add(yTrueCurrencyAmount);
 
-        // return value in yTUSD created from this deposit
-        return yTUSDAmount;
+        // return value in yTrueCurrency created from this deposit
+        return yTrueCurrencyAmount;
     }
 
     /**
-     * @dev Helper to withdraw TUSD from Aave
-     * aToken redemption amount is equal to yTUSD * tokenValue
-     * @param _to address to transfer TUSD to
-     * @param _amount amount in yTUSD to redeem
+     * @dev Helper to withdraw TrueCurrency from Aave
+     * aToken redemption amount is equal to yTrueCurrency * tokenValue
+     * @param _to address to transfer TrueCurrency to
+     * @param _amount amount in yTrueCurrency to redeem
      */
     function _redeem(address _to, uint256 _amount) internal returns (uint256) {
-        // calculate amount in TUSD
-        uint256 tusdAmount = _amount.mul(tokenValue()).div(10**18);
-        if (aToken.balanceOf(address(this)) < tusdAmount) {
-            tusdAmount = aToken.balanceOf(address(this));
+        // calculate amount in TrueCurrency
+        uint256 trueCurrencyAmount = _amount.mul(tokenValue()).div(10**18);
+        if (aToken.balanceOf(address(this)) < trueCurrencyAmount) {
+            trueCurrencyAmount = aToken.balanceOf(address(this));
         }
         // get balance before, redeem, get balance after
-        uint256 balanceBefore = tusdBalance();
-        aToken.redeem(tusdAmount);
-        uint256 balanceAfter = tusdBalance();
+        uint256 balanceBefore = trueCurrencyBalance();
+        aToken.redeem(trueCurrencyAmount);
+        uint256 balanceAfter = trueCurrencyBalance();
 
-        // calculate TUSD withdrawn
+        // calculate TrueCurrency withdrawn
         uint256 fundsWithdrawn = balanceAfter.sub(balanceBefore);
 
-        // sub yTUSD supply
+        // sub yTrueCurrency supply
         if (getValueInStake(fundsWithdrawn) > _totalSupply) {
             _totalSupply = 0;
         } else {
@@ -174,18 +174,18 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
 
     /**
      * @dev Withdraw from Aave to _to account
-     * @param to account withdraw TUSD to
-     * @param amount amount of yTUSD to redeem
-     * @return TUSD amount returned from redeem
+     * @param to account withdraw TrueCurrency to
+     * @param amount amount of yTrueCurrency to redeem
+     * @return TrueCurrency amount returned from redeem
      */
     function redeem(address to, uint256 amount) external override onlyOwner returns (uint256) {
         return _redeem(to, amount);
     }
 
     /**
-     * @dev Redeem all yTUSD Withdraws all TUSD from AAVE
-     * @param to account withdraw TUSD to
-     * @return TUSD amount returned from redeem
+     * @dev Redeem all yTrueCurrency Withdraws all TrueCurrency from AAVE
+     * @param to account withdraw TrueCurrency to
+     * @return TrueCurrency amount returned from redeem
      */
     function redeemAll(address to) external onlyOwner returns (uint256) {
         return _redeem(to, totalSupply());
