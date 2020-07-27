@@ -148,8 +148,10 @@ describe('Staking', () => {
         await expect(stakeAll(staker)).to.emit(stakedToken, 'Mint')
         await trueUsd.connect(holder).enableTrueReward()
         const balance = await stakedToken.balanceOf(staker.address)
-        const { timestamp } = await provider.getBlock('latest')
-        await expect(stakedToken.connect(staker).initUnstake(balance.add(1))).to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, balance)
+        const unstakeInitialization = await stakedToken.connect(staker).initUnstake(balance.add(1))
+        const { timestamp } = await provider.getBlock(unstakeInitialization.blockNumber)
+
+        await expect(Promise.resolve(unstakeInitialization)).to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, balance)
       })
 
       it('cannot unstake twice', async () => {
