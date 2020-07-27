@@ -10,6 +10,7 @@ import {ProxyStorage} from "./ProxyStorage.sol";
  ProxyStorage.
  */
 contract HasOwner is ProxyStorage {
+    /// @dev emitted when ownership is transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**

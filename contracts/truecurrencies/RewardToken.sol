@@ -38,13 +38,44 @@ abstract contract RewardToken is CompliantDepositTokenWithHook {
     mapping(address => uint256) finOpSupply;
     */
 
-    // events for reward token
+    /**
+     * @dev Emitted when tokens were exchanged for reward tokens
+     * @param account Token holder
+     * @param tokensDeposited How many tokens were deposited
+     * @param rewardTokensMinted How many reward tokens were minted
+     * @param finOp The financial opportunity that backs reward tokens
+     */
     event MintRewardToken(address indexed account, uint256 tokensDeposited, uint256 rewardTokensMinted, address indexed finOp);
+
+    /**
+     * @dev Emitted when reward tokens were exchanged for tokens
+     * @param account Token holder
+     * @param tokensWithdrawn How many tokens were withdrawn
+     * @param rewardTokensRedeemed How many reward tokens were redeemed
+     * @param finOp The financial opportunity that backs reward tokens
+     */
     event RedeemRewardToken(address indexed account, uint256 tokensWithdrawn, uint256 rewardTokensRedeemed, address indexed finOp);
+
+    /**
+     * @dev Emitted when reward tokens are burnt
+     * @param account Token holder
+     * @param rewardTokenAmount How many reward tokens were burnt
+     * @param finOp The financial opportunity that backs reward tokens
+     */
     event BurnRewardToken(address indexed account, uint256 rewardTokenAmount, address indexed finOp);
 
-    // events for reward backed token
+    /**
+     * @dev Emitted when new reward tokens were minted
+     * @param account Token holder
+     * @param amount How many tokens were minted
+     */
     event MintRewardBackedToken(address indexed account, uint256 indexed amount);
+
+    /**
+     * @dev Emitted when reward tokens were burnt
+     * @param account Token holder
+     * @param amount How many tokens were burnt
+     */
     event BurnRewardBackedToken(address indexed account, uint256 indexed amount);
 
     /**

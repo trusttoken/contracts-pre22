@@ -53,7 +53,9 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
     // financial opportunity address
     address public opportunity_;
 
+    /// @dev Emitted when true reward was enabled for _account with balance _amount for Financial Opportunity _finOp
     event TrueRewardEnabled(address indexed _account, uint256 _amount, address indexed _finOp);
+    /// @dev Emitted when true reward was disabled for _account with balance _amount for Financial Opportunity _finOp
     event TrueRewardDisabled(address indexed _account, uint256 _amount, address indexed _finOp);
 
     /** @dev return true if TrueReward is enabled for a given address */
@@ -331,7 +333,6 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
 
     /**
      * @dev Remove reward distribution for a financial opportunity
-     * Remove
      */
     function _removeDistribution(address) internal {
         _rewardDistribution[msg.sender].pop();
