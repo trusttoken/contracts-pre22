@@ -158,9 +158,10 @@ describe('Staking', () => {
         await stakeAll(staker)
         const balance = await stakedToken.balanceOf(staker.address)
         await stakedToken.connect(staker).initUnstake(balance)
-        const { timestamp } = await provider.getBlock('latest')
-        await expect(stakedToken.connect(staker).initUnstake(1))
-          .to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, 0)
+        const unstakeInitialization = await stakedToken.connect(staker).initUnstake(1)
+        const { timestamp } = await provider.getBlock(unstakeInitialization.blockNumber)
+
+        await expect(Promise.resolve(unstakeInitialization)).to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, 0)
       })
 
       const TWO_WEEKS = 60 * 60 * 24 * 14
