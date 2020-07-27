@@ -28,6 +28,7 @@ contract TrustToken is TimeLockedToken {
         initalized = true;
     }
 
+    /// @dev Registry contract address
     function registry() public override view returns (Registry) {
         return registry_;
     }

@@ -119,29 +119,50 @@ contract TokenController {
         }
         _;
     }
+    /// @dev Emitted when ownership of controller was transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    /// @dev Emitted when ownership of controller transfer procedure was started
     event NewOwnerPending(address indexed currentOwner, address indexed pendingOwner);
+    /// @dev Emitted when new registry was set
     event SetRegistry(address indexed registry);
+    /// @dev Emitted when owner was transferred for child contract
     event TransferChild(address indexed child, address indexed newOwner);
+    /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
+    /// @dev Emitted when child token was changed
     event SetToken(TrueUSD newContract);
 
+    /// @dev Emitted when mint was requested
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
+    /// @dev Emitted when mint was finalized
     event FinalizeMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
+    /// @dev Emitted on instant mint
     event InstantMint(address indexed to, uint256 indexed value, address indexed mintKey);
 
+    /// @dev Emitted when mint key was replaced
     event TransferMintKey(address indexed previousMintKey, address indexed newMintKey);
+    /// @dev Emitted when mint was ratified
     event MintRatified(uint256 indexed opIndex, address indexed ratifier);
+    /// @dev Emitted when mint is revoked
     event RevokeMint(uint256 opIndex);
+    /// @dev Emitted when all mining is paused (status=true) or unpaused (status=false)
     event AllMintsPaused(bool status);
+    /// @dev Emitted when opIndex mint is paused (status=true) or unpaused (status=false)
     event MintPaused(uint256 opIndex, bool status);
+    /// @dev Emitted when mint is approved
     event MintApproved(address approver, uint256 opIndex);
+    /// @dev Emitted when fast pause contract is changed
     event FastPauseSet(address _newFastPause);
 
+    /// @dev Emitted when mint threshold changes
     event MintThresholdChanged(uint256 instant, uint256 ratified, uint256 multiSig);
+    /// @dev Emitted when mint limits change
     event MintLimitsChanged(uint256 instant, uint256 ratified, uint256 multiSig);
+    /// @dev Emitted when instant mint pool is refilled
     event InstantPoolRefilled();
+    /// @dev Emitted when instant mint pool is ratified
     event RatifyPoolRefilled();
+    /// @dev Emitted when multisig mint pool is ratified
     event MultiSigPoolRefilled();
 
     /*

@@ -9,8 +9,12 @@ import {ModularBurnableToken} from "./modularERC20/ModularBurnableToken.sol";
  * and will send them back the equivalent amount of money (rounded down to the nearest cent).
  */
 contract BurnableTokenWithBounds is ModularBurnableToken {
+    /// @dev Emitted when new burn bounds were set
     event SetBurnBounds(uint256 newMin, uint256 newMax);
 
+    /**
+     * @dev Check if value is inside burn bounds before burning
+     */
     function _burnAllArgs(address _burner, uint256 _value) internal virtual override {
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
