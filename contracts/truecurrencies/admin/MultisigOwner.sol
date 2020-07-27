@@ -261,7 +261,6 @@ contract MultiSigOwner {
     function _signOrExecute(string memory _actionName) internal {
         _initOrSignOwnerAction(_actionName);
         if (ownerAction.approveSigs > 1) {
-            // TODO rewrite with try-catch
             // solhint-disable-next-line avoid-low-level-calls
             (bool success, ) = address(tokenController).call(msg.data);
             require(success, "tokenController call failed");
