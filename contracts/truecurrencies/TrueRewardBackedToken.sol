@@ -2,7 +2,8 @@
 pragma solidity 0.6.10;
 
 import {TrueCoinReceiver} from "./TrueCoinReceiver.sol";
-import {RewardTokenWithReserve} from "./RewardTokenWithReserve.sol";
+import {TrueRewards} from "../truereward/TrueRewards.sol";
+import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol";
 
 /**
  * @title TrueRewardBackedToken
@@ -38,7 +39,7 @@ import {RewardTokenWithReserve} from "./RewardTokenWithReserve.sol";
  * so some of the code is built to support this
  *
  */
-abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
+abstract contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     /* variables in Proxy Storage:
     mapping(address => FinancialOpportunity) finOps;
     mapping(address => mapping(address => uint256)) finOpBalances;
@@ -50,17 +51,19 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
     // 0x6973547275655265776172647357686974656c69737465640000000000000000
     bytes32 constant IS_TRUEREWARDS_WHITELISTED = "isTrueRewardsWhitelisted";
 
-    // financial opportunity address
-    address public opportunity_;
+    // trueRewards token address
+    address public trueRewards;
+
+    mapping(address => bool) isTrueRewardsEnabled;
 
     /// @dev Emitted when true reward was enabled for _account with balance _amount for Financial Opportunity _finOp
-    event TrueRewardEnabled(address indexed _account, uint256 _amount, address indexed _finOp);
+    event TrueRewardEnabled(address indexed _account, uint256 _amount);
     /// @dev Emitted when true reward was disabled for _account with balance _amount for Financial Opportunity _finOp
-    event TrueRewardDisabled(address indexed _account, uint256 _amount, address indexed _finOp);
+    event TrueRewardDisabled(address indexed _account, uint256 _amount);
 
     /** @dev return true if TrueReward is enabled for a given address */
     function trueRewardEnabled(address _address) public view returns (bool) {
-        return _rewardDistribution[_address].length != 0;
+        return isTrueRewardsEnabled[_address];
     }
 
     /**
@@ -69,28 +72,8 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
      * @return total supply in trueCurrency
      */
     function totalSupply() public virtual override view returns (uint256) {
-        // if supply in opportunity finOp, return supply of deposits + debt
-        // otherwise call super to return normal totalSupply
-        if (opportunityRewardSupply() != 0) {
-            return totalSupply_.add(opportunityTotalSupply());
-        }
-        return totalSupply_;
-    }
-
-    /**
-     * @dev get total supply of TrueCurrency backed by fiat deposits
-     * @return supply of fiat backed TrueCurrency
-     */
-    function depositBackedSupply() public view returns (uint256) {
-        return totalSupply_;
-    }
-
-    /**
-     * @dev get total supply of TrueCurrency backed by debt
-     * @return supply of debt backed TrueCurrency
-     */
-    function rewardBackedSupply() public view returns (uint256) {
-        return totalSupply().sub(totalSupply_);
+        // supply of deposits + debt
+        return totalSupply_.add(TrueRewards(trueRewards).totalSupply());
     }
 
     /**
@@ -103,7 +86,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
         // if trueReward enabled, return token value of reward balance
         // otherwise call token balanceOf
         if (trueRewardEnabled(_who)) {
-            return _toToken(rewardTokenBalance(_who, opportunity()), opportunity());
+            return TrueRewards(trueRewards).getBalance(_who);
         }
         return super.balanceOf(_who);
     }
@@ -122,15 +105,13 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
 
         if (balance != 0) {
             // deposit entire user token balance
-            depositWithReserve(msg.sender, balance, opportunity());
+            makeDeposit(msg.sender, balance);
         }
 
-        // set reward distribution
-        // we set max distribution since we only have one opportunity
-        _setDistribution(maxRewardProportion, opportunity());
+        isTrueRewardsEnabled[msg.sender] = true;
 
         // emit enable event
-        emit TrueRewardEnabled(msg.sender, balance, opportunity());
+        emit TrueRewardEnabled(msg.sender, balance);
     }
 
     /**
@@ -139,19 +120,18 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
     function disableTrueReward() external {
         // require TrueReward is enabled
         require(trueRewardEnabled(msg.sender), "TrueReward already disabled");
-        // get balance
-        uint256 rewardBalance = rewardTokenBalance(msg.sender, opportunity());
 
-        // remove reward distribution
-        _removeDistribution(opportunity());
+        uint256 balance = balanceOf(msg.sender);
 
-        if (rewardBalance > 0) {
+        if (balance > 0) {
             // redeem entire user reward token balance
-            redeemWithReserve(msg.sender, rewardBalance, opportunity());
+            TrueRewards(trueRewards).redeemAll(msg.sender);
         }
 
+        isTrueRewardsEnabled[msg.sender] = false;
+
         // emit disable event
-        emit TrueRewardDisabled(msg.sender, rewardBalance, opportunity());
+        emit TrueRewardDisabled(msg.sender, balance);
     }
 
     /**
@@ -165,10 +145,10 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
 
         // if to enabled, mint to this contract and deposit into finOp
         if (toEnabled) {
-            // mint to this contract
-            super.mint(address(this), _value);
-            // transfer minted amount to target receiver
-            _transferAllArgs(address(this), _to, _value);
+            // mint to trueRewards contract
+            super.mint(trueRewards, _value);
+            // deposit minted amount to opportunities
+            TrueRewards(trueRewards).deposit(msg.sender, _value);
         } else {
             // otherwise call normal mint process
             super.mint(_to, _value);
@@ -176,56 +156,13 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
     }
 
     /**
-     * @dev redeem reserve rewardTokens for Token given a rewardToken amount
-     * This is called by the TokenController to balance the reserve
-     * @param _value amount of Token to deposit for rewardTokens
+     * @dev set a new trueRewards address
+     * @param _trueRewards new address to set
      */
-    function opportunityReserveRedeem(uint256 _value) external onlyOwner {
-        reserveRedeem(_value, opportunity());
-    }
-
-    /**
-     * @dev mint reserve rewardTokens for opportunity given a Token deposit
-     * This is called by the TokenController to balance the reserve
-     * @param _value amount of Token to deposit for rewardTokens
-     */
-    function opportunityReserveMint(uint256 _value) external onlyOwner {
-        reserveMint(_value, opportunity());
-    }
-
-    /**
-     * @dev set a new opportunity financial opportunity address
-     * @param _opportunity new opportunity to set
-     */
-    function setOpportunityAddress(address _opportunity) external onlyOwner {
-        opportunity_ = _opportunity;
-    }
-
-    /**
-     * @dev Get (assured) financial opportunity address
-     * @return address financial opportunity address
-     */
-    function opportunity() public view returns (address) {
-        return opportunity_;
-    }
-
-    /**
-     * @dev Get total supply of opportunity rewardToken
-     * @return total supply of opportunity rewardToken
-     */
-    function opportunityRewardSupply() internal view returns (uint256) {
-        if (opportunity() == address(0)) {
-            return 0;
-        }
-        return rewardTokenSupply(opportunity());
-    }
-
-    /**
-     * @dev Get total supply of TrueCurrency in opportunity
-     * @return total supply of TrueCurrency in opportunity
-     */
-    function opportunityTotalSupply() internal view returns (uint256) {
-        return _toToken(opportunityRewardSupply(), opportunity());
+    function setTrueRewardsAddress(address _trueRewards) external onlyOwner {
+        require(_trueRewards != address(0), "attempt to set address to 0");
+        require(_trueRewards != trueRewards, "attempt to change address to the same one");
+        trueRewards = _trueRewards;
     }
 
     /**
@@ -245,10 +182,9 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
         // get enabled flags and opportunity address
         bool fromEnabled = trueRewardEnabled(_from);
         bool toEnabled = trueRewardEnabled(_to);
-        address finOp = opportunity();
 
         // if both disabled or either is opportunity, transfer normally
-        if ((!fromEnabled && !toEnabled) || _from == finOp || _to == finOp) {
+        if ((!fromEnabled && !toEnabled) || _from == trueRewards || _to == trueRewards) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
             return super._transferAllArgs(_from, _to, _value);
         }
@@ -258,8 +194,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
 
         // if from enabled, check balance, calculate reward amount, and redeem
         if (fromEnabled) {
-            uint256 rewardAmount = _toRewardToken(_value, finOp);
-            _value = redeemWithReserve(_from, _value, rewardAmount, finOp);
+            TrueRewards(trueRewards).redeem(_from, _value);
         }
 
         // transfer tokens
@@ -267,7 +202,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
 
         // if receiver enabled, deposit tokens into opportunity
         if (trueRewardEnabled(finalTo)) {
-            depositWithReserve(finalTo, _value, finOp);
+            makeDeposit(finalTo, _value);
         }
 
         return finalTo;
@@ -291,10 +226,9 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
         // get enabled flags and opportunity address
         bool fromEnabled = trueRewardEnabled(_from);
         bool toEnabled = trueRewardEnabled(_to);
-        address finOp = opportunity();
 
-        // if both disabled or either is opportunity, transfer normally
-        if ((!fromEnabled && !toEnabled) || _from == finOp || _to == finOp) {
+        // if both disabled or either is trueRewards, transfer normally
+        if ((!fromEnabled && !toEnabled) || _from == trueRewards || _to == trueRewards) {
             require(super.balanceOf(_from) >= _value, "not enough balance");
             return super._transferFromAllArgs(_from, _to, _value, _spender);
         }
@@ -304,8 +238,7 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
 
         // if from enabled, check balance, calculate reward amount, and redeem
         if (fromEnabled) {
-            uint256 rewardAmount = _toRewardToken(_value, finOp);
-            _value = redeemWithReserve(_from, rewardAmount, finOp);
+            TrueRewards(trueRewards).redeem(_from, _value);
         }
 
         // transfer tokens
@@ -313,28 +246,14 @@ abstract contract TrueRewardBackedToken is RewardTokenWithReserve {
 
         // if receiver enabled, deposit tokens into opportunity
         if (trueRewardEnabled(finalTo)) {
-            depositWithReserve(finalTo, _value, finOp);
+            makeDeposit(finalTo, _value);
         }
 
         return finalTo;
     }
 
-    /**
-     * @dev Set reward distribution for an opportunity
-     *
-     * @param proportion to set
-     * @param finOp financial opportunity to set proportion for
-     */
-    function _setDistribution(uint256 proportion, address finOp) internal {
-        require(proportion <= maxRewardProportion, "exceeds maximum proportion");
-        require(_rewardDistribution[msg.sender].length == 0, "already enabled");
-        _rewardDistribution[msg.sender].push(RewardAllocation(proportion, finOp));
-    }
-
-    /**
-     * @dev Remove reward distribution for a financial opportunity
-     */
-    function _removeDistribution(address) internal {
-        _rewardDistribution[msg.sender].pop();
+    function makeDeposit(address account, uint256 amount) internal {
+        super._transferAllArgs(account, trueRewards, amount);
+        TrueRewards(trueRewards).deposit(account, amount);
     }
 }
