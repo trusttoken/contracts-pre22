@@ -5,10 +5,16 @@ import {TimeLockedToken} from "./TimeLockedToken.sol";
 import {ClaimableContract} from "./ClaimableContract.sol";
 
 /**
- * @dev This contract allows owner to register new SAFT distributions
+ * @title TimeLockRegistry
+ * @notice Register Lockups for TimeLocked ERC20 Token
+ * @author Harold Hyatt
+ * @dev This contract allows owner to register distributions for a TimeLockedToken
+ *
  * To register a distribution, register method should be called by the owner.
- * claim() should then be called by SAFT account
- * If case of an error, owner can cancel registration
+ * claim() should then be called by account registered to recieve tokens under lockup period
+ * If case of a mistake, owner can cancel registration
+ *
+ * Note this contract must be setup in TimeLockedToken's setTimeLockRegistry() function
  */
 contract TimeLockRegistry is ClaimableContract {
     // time locked token
@@ -21,6 +27,10 @@ contract TimeLockRegistry is ClaimableContract {
     event Cancel(address receiver, uint256 distribution);
     event Claim(address account, uint256 distribution);
 
+    /**
+     * @dev Initalize function so this contract can be behind a proxy
+     * @param _token TimeLockedToken contract to use in this registry
+     */
     function initialize(TimeLockedToken _token) external {
         require(!initalized, "Already initialized");
         token = _token;
@@ -37,7 +47,6 @@ contract TimeLockRegistry is ClaimableContract {
         require(receiver != address(0), "Zero address");
         require(distribution != 0, "Distribution = 0");
         require(registeredDistributions[receiver] == 0, "Distribution for this address is already registered");
-        require(token.allowance(msg.sender, address(this)) >= distribution, "Insufficient allowance");
 
         // register distribution in mapping
         registeredDistributions[receiver] = distribution;
@@ -45,6 +54,7 @@ contract TimeLockRegistry is ClaimableContract {
         // transfer tokens from owner
         require(token.transferFrom(msg.sender, address(this), distribution), "Transfer failed");
 
+        // emit register event
         emit Register(receiver, distribution);
     }
 
@@ -55,26 +65,34 @@ contract TimeLockRegistry is ClaimableContract {
     function cancel(address receiver) external onlyOwner {
         require(registeredDistributions[receiver] != 0, "Not registered");
 
-        // transfer tokens back to owner
-        require(token.transfer(msg.sender, registeredDistributions[receiver]), "Transfer failed");
+        // get amount from distributions
+        uint256 amount = registeredDistributions[receiver];
 
-        emit Cancel(receiver, registeredDistributions[receiver]);
-
-        // set distribution mappig to 0
+        // set distribution mapping to 0
         delete registeredDistributions[receiver];
+
+        // transfer tokens back to owner
+        require(token.transfer(msg.sender, amount), "Transfer failed");
+
+        // emit cancel event
+        emit Cancel(receiver, amount);
     }
 
     /// @dev Claim tokens due amount
     function claim() external {
         require(registeredDistributions[msg.sender] != 0, "Not registered");
 
+        // get amount from distributions
+        uint256 amount = registeredDistributions[msg.sender];
+
+        // set distribution mapping to 0
+        delete registeredDistributions[msg.sender];
+
         // register lockup in TimeLockedToken
         // this will transfer funds from this contract and lock them for sender
-        token.registerLockup(msg.sender, registeredDistributions[msg.sender]);
+        token.registerLockup(msg.sender, amount);
 
-        emit Claim(msg.sender, registeredDistributions[msg.sender]);
-
-        // delete distribution mapping
-        delete registeredDistributions[msg.sender];
+        // emit claim event
+        emit Claim(msg.sender, amount);
     }
 }

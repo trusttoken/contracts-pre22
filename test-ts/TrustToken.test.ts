@@ -1,4 +1,4 @@
-import { providers, Wallet } from 'ethers'
+import { constants, providers, Wallet } from 'ethers'
 import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
@@ -34,7 +34,7 @@ describe('TrustToken', () => {
   describe('TimeLock', () => {
     const DAY = 24 * 3600
     const TOTAL_LOCK_TIME = DAY * (120 + 7 * 90)
-    const initializationTimestamp = 1594716039
+    const initializationTimestamp = 1595609911
 
     beforeEach(async () => {
       await timeTravelTo(provider, initializationTimestamp)
@@ -65,8 +65,6 @@ describe('TrustToken', () => {
       [659, 6],
       [660, 7],
       [749, 7],
-      [750, 8],
-      [7501, 8],
     ].forEach(([days, expectedEpochsPassed]) => {
       it(`counts ${expectedEpochsPassed} epochs as passed after ${days} days`, async () => {
         await timeTravel(provider, DAY * days)
@@ -76,6 +74,24 @@ describe('TrustToken', () => {
         expect(await trustToken.latestEpoch()).to.equal(expectedLatestEpoch)
         expect(await trustToken.nextEpoch()).to.equal(expectedLatestEpoch + 90 * DAY)
       })
+    })
+
+    it('counts 8 epochs as passed after 750 days', async () => {
+      await timeTravel(provider, DAY * 750)
+      const expectedLatestEpoch = initializationTimestamp + (120 + (8 - 1) * 90) * DAY
+
+      expect(await trustToken.epochsPassed()).to.equal(8)
+      expect(await trustToken.latestEpoch()).to.equal(expectedLatestEpoch)
+      expect(await trustToken.nextEpoch()).to.equal(constants.MaxUint256)
+    })
+
+    it('counts 8 epochs as passed after 7501 days', async () => {
+      await timeTravel(provider, DAY * 7501)
+      const expectedLatestEpoch = initializationTimestamp + (120 + (8 - 1) * 90) * DAY
+
+      expect(await trustToken.epochsPassed()).to.equal(8)
+      expect(await trustToken.latestEpoch()).to.equal(expectedLatestEpoch)
+      expect(await trustToken.nextEpoch()).to.equal(constants.MaxUint256)
     })
 
     it('does not unlock funds until epoch passes', async () => {
@@ -117,6 +133,7 @@ describe('TrustToken', () => {
       expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(parseTT(100))
       expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(0)
       expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(100))
+      expect(await trustToken.nextEpoch()).to.equal(constants.MaxUint256)
     })
 
     it('is impossible to give lock funds twice to a person', async () => {

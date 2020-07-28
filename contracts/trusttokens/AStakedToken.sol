@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "./ValTokenWithHook.sol";
-import "./ValSafeMath.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ValTokenWithHook, TrueCoinReceiver} from "./ValTokenWithHook.sol";
+import {ValSafeMath} from "./ValSafeMath.sol";
 import {StakingAsset} from "./StakingAsset.sol";
 
 /**
  * @title Abstract StakedToken
  * @dev Single token staking model for ERC-20
- * StakedToken represents a share in an Assurace Pool.
- * Accounts stake ERC-20 staking asset and recieve ERC-20 reward asset.
+ * StakedToken represents a share in an Assurance Pool.
+ * Accounts stake ERC-20 staking asset and receive ERC-20 reward asset.
  * StakingOpportunityFactory creates instances of StakedToken
  */
 abstract contract AStakedToken is ValTokenWithHook {
@@ -29,14 +30,14 @@ abstract contract AStakedToken is ValTokenWithHook {
     // rolls over the next time we award
     uint256 rewardsRemainder;
 
-    // total value of stake not currently in supply and not currrently withdrawn
-    // need this to calculate how many new staked tokens to awarn when depositing
+    // total value of stake not currently in supply and not currently withdrawn
+    // need this to calculate how many new staked tokens to award when depositing
     uint256 public stakePendingWithdrawal;
 
     // map accounts => timestamp => money
     // have to reference timestamp to access previous withdrawal
     // multiple withdrawals in the same block increase amount for that timestamp
-    // same acconut that initiates withdrawal needs to complete withdrawal
+    // same account that initiates withdrawal needs to complete withdrawal
     mapping(address => mapping(uint256 => uint256)) pendingWithdrawals;
 
     // unstake period in days
@@ -80,7 +81,7 @@ abstract contract AStakedToken is ValTokenWithHook {
 
     /**
      * @dev Initialize function called by constructor
-     * Approves liqudiator for maximum amount
+     * Approves liquidator for maximum amount
      */
     function initialize() internal {
         stakeAsset().approve(liquidator(), MAX_UINT256);
@@ -109,7 +110,7 @@ abstract contract AStakedToken is ValTokenWithHook {
         }
         // here we track rewards remainder and claimed rewards per stake
         // claimed rewards per stake of _to is the weighted average of the
-        // prior value and added value according to their unclaimedrewards
+        // prior value and added value according to their unclaimed rewards
         uint256 priorBalance = _addBalance(to, _value);
         uint256 numerator = (_value * fromRewards + priorBalance * claimedRewardsPerStake[to]);
         uint256 denominator = (_value + priorBalance);
@@ -193,7 +194,7 @@ abstract contract AStakedToken is ValTokenWithHook {
     }
 
     /**
-     * Called when this contract recieves stake. Called by token fallback.
+     * Called when this contract receives stake. Called by token fallback.
      * Issue stake to _staker according to _amount
      * Invoked after _amount is deposited in this contract
      */
@@ -261,7 +262,7 @@ abstract contract AStakedToken is ValTokenWithHook {
     /**
      * @dev Finalize unstake after 2 weeks.
      * Loop over timestamps
-     * Checks if unstake perioud has passed, if yes, calculate how much stake account get
+     * Checks if unstake period has passed, if yes, calculate how much stake account get
      * @param recipient recipient of
      * @param _timestamps timestamps to
      */
@@ -279,7 +280,7 @@ abstract contract AStakedToken is ValTokenWithHook {
         IERC20 stake = stakeAsset(); // get stake asset
         uint256 totalStake = stake.balanceOf(address(this)); // get total stake
 
-        // calulate correstponding stake
+        // calculate corresponding stake
         // consider stake pending withdrawal and total supply of stake token
         // totalUnstake / totalSupply = correspondingStake / totalStake
         // totalUnstake * totalStake / totalSupply = correspondingStake
@@ -300,7 +301,7 @@ abstract contract AStakedToken is ValTokenWithHook {
     }
 
     /**
-     * @dev Award stakig pool.
+     * @dev Award staking pool.
      * @param _amount amount of rewardAsset to reward
      */
     function _award(uint256 _amount) internal {

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./ValSafeMath.sol";
-import "./ILiquidator.sol";
-import "../registry/Registry.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ValSafeMath} from "./ValSafeMath.sol";
+import {ILiquidator} from "./ILiquidator.sol";
+import {Registry} from "../registry/Registry.sol";
 
 /**
  * @dev Uniswap
- * This is nessesary since Uniswap is written in vyper.
+ * This is necessary since Uniswap is written in vyper.
  */
 interface UniswapV1 {
     function tokenToExchangeSwapInput(
@@ -48,7 +48,7 @@ interface UniswapV1 {
 
 /**
  * @dev Uniswap Factory
- * This is nessesary since Uniswap is written in vyper.
+ * This is necessary since Uniswap is written in vyper.
  */
 interface UniswapV1Factory {
     function getExchange(IERC20 token) external returns (UniswapV1);
@@ -56,7 +56,7 @@ interface UniswapV1Factory {
 
 /**
  * @title Abstract Uniswap Liquidator
- * @dev Liquidate staked tokenns on uniswap.
+ * @dev Liquidate staked tokens on uniswap.
  * StakingOpportunityFactory does not create a Liquidator, rather this must be created
  * Outside of the factory.
  */
@@ -174,7 +174,7 @@ abstract contract ALiquidatorUniswap is ILiquidator {
     }
 
     /**
-     * @dev Calcualte how much input we need to get a desired output
+     * @dev Calculate how much input we need to get a desired output
      * Is able to let us know if there is slippage in uniswap exchange rate
      * See./uniswap/uniswap_exchange.vy
      */

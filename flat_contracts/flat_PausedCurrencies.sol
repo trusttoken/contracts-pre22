@@ -248,7 +248,7 @@ contract Registry {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/InstantiatableOwnable.sol
+// File: contracts/truecurrencies/modularERC20/InstantiatableOwnable.sol
 
 pragma solidity 0.5.13;
 
@@ -293,7 +293,7 @@ contract InstantiatableOwnable {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/Claimable.sol
+// File: contracts/truecurrencies/modularERC20/Claimable.sol
 
 pragma solidity 0.5.13;
 
@@ -492,7 +492,7 @@ library SafeMath {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/BalanceSheet.sol
+// File: contracts/truecurrencies/modularERC20/BalanceSheet.sol
 
 pragma solidity 0.5.13;
 
@@ -517,7 +517,7 @@ contract BalanceSheet is Claimable {
     }
 }
 
-// File: contracts/trueCurrencies/modularERC20/AllowanceSheet.sol
+// File: contracts/truecurrencies/modularERC20/AllowanceSheet.sol
 
 pragma solidity 0.5.13;
 
@@ -542,7 +542,7 @@ contract AllowanceSheet is Claimable {
     }
 }
 
-// File: contracts/TrueReward/FinancialOpportunity.sol
+// File: contracts/truereward/FinancialOpportunity.sol
 
 pragma solidity 0.5.13;
 
@@ -622,7 +622,7 @@ interface FinancialOpportunity {
     function redeem(address to, uint amount) external returns(uint);
 }
 
-// File: contracts/trueCurrencies/ProxyStorage.sol
+// File: contracts/truecurrencies/ProxyStorage.sol
 
 pragma solidity 0.5.13;
 
@@ -695,7 +695,7 @@ contract ProxyStorage {
     **/
 }
 
-// File: contracts/trueCurrencies/HasOwner.sol
+// File: contracts/truecurrencies/HasOwner.sol
 
 pragma solidity 0.5.13;
 
@@ -756,7 +756,7 @@ contract HasOwner is ProxyStorage {
     }
 }
 
-// File: contracts/trueCurrencies/utilities/PausedToken.sol
+// File: contracts/truecurrencies/utilities/PausedToken.sol
 
 pragma solidity 0.5.13;
 
@@ -1048,7 +1048,7 @@ contract PausedDelegateERC20 is PausedToken {
     }
 }
 
-// File: contracts/trueCurrencies/utilities/PausedCurrencies.sol
+// File: contracts/truecurrencies/utilities/PausedCurrencies.sol
 
 pragma solidity 0.5.13;
 
