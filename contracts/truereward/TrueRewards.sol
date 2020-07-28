@@ -61,7 +61,7 @@ contract TrueRewards is TrueRewardsStorage, InitializableClaimable {
         trueRewardToken.approve(finOp, depositAmount);
 
         // deposit into finOp
-        uint256 rewardAmount = FinancialOpportunity(finOp).deposit(account, depositAmount);
+        uint256 rewardAmount = FinancialOpportunity(finOp).deposit(address(this), depositAmount);
 
         // increase finOp rewardToken supply
         finOpSupply[finOp] = finOpSupply[finOp].add(rewardAmount);
@@ -90,7 +90,7 @@ contract TrueRewards is TrueRewardsStorage, InitializableClaimable {
         finOpBalances[finOp][account] = finOpBalances[finOp][account].sub(rewardAmount);
 
         // withdraw from finOp, giving TrueRewardBackedToken to account
-        return FinancialOpportunity(finOp).redeem(account, rewardAmount);
+        return FinancialOpportunity(finOp).redeem(address(this), rewardAmount);
     }
 
     /**

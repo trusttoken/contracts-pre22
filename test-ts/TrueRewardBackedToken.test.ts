@@ -10,6 +10,7 @@ import { LendingPoolCoreMock } from '../build/types/LendingPoolCoreMock'
 import { RegistryMock } from '../build/types/RegistryMock'
 import { SimpleLiquidatorMock } from '../build/types/SimpleLiquidatorMock'
 import { TrueRewardBackedToken } from '../build/types/TrueRewardBackedToken'
+import { TrueRewards } from '../build/types/TrueRewards'
 import { RegistryAttributes } from '../scripts/attributes'
 import { fixtureWithAave } from './fixtures/fixtureWithAave'
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
@@ -28,6 +29,7 @@ describe('TrueRewardBackedToken', () => {
   let token: TrueRewardBackedToken
   let registry: RegistryMock
   let financialOpportunity: FinancialOpportunity
+  let trueRewards: TrueRewards
   const WHITELIST_TRUEREWARD = RegistryAttributes.isTrueRewardsWhitelisted.hex
 
   const expectTransferEventWith = async (tx: Transaction, from: string, to: string, amount: BigNumberish) => expectTransferEventOn(token)(tx, from, to, amount)
@@ -43,7 +45,9 @@ describe('TrueRewardBackedToken', () => {
     beforeEachWithFixture(async (provider, wallets) => {
       ([owner, holder, holder2, sender, recipient, empty, notWhitelisted] = wallets)
       let liquidator: SimpleLiquidatorMock
-      ;({ token, registry, lendingPoolCore, sharesToken, aaveFinancialOpportunity, financialOpportunity, liquidator } = await fixtureWithAave(owner))
+      ;({ token, trueRewards, registry, lendingPoolCore, sharesToken, aaveFinancialOpportunity, financialOpportunity, liquidator } = await fixtureWithAave(owner))
+
+      await token.setTrueRewardsAddress(trueRewards.address)
       await token.mint(liquidator.address, parseEther('1000'))
       await token.mint(holder.address, parseEther('300'))
       await token.connect(holder).transfer(sharesToken.address, parseEther('100'))
@@ -79,8 +83,7 @@ describe('TrueRewardBackedToken', () => {
 
     context('after opportunity address set', () => {
       beforeEach(async () => {
-        // set opportuniy
-        await token.setOpportunityAddress(financialOpportunity.address)
+        // await token.setTrueRewardsAddress(trueRewards.address)
         await registry.setAttributeValue(owner.address, WHITELIST_TRUEREWARD, 1)
         await registry.setAttributeValue(holder.address, WHITELIST_TRUEREWARD, 1)
         await registry.setAttributeValue(holder2.address, WHITELIST_TRUEREWARD, 1)

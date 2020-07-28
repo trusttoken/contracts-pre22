@@ -10,6 +10,7 @@ import { RegistryMockFactory } from '../../build/types/RegistryMockFactory'
 import { SimpleLiquidatorMockFactory } from '../../build/types/SimpleLiquidatorMockFactory'
 import { TrueUsdFactory } from '../../build/types/TrueUsdFactory'
 import { setupDeploy } from '../../scripts/utils'
+import { TrueRewardsFactory } from '../../build/types/TrueRewardsFactory'
 
 export const fixtureWithAave = async (owner: Wallet) => {
   const deployContract = setupDeploy(owner)
@@ -34,6 +35,9 @@ export const fixtureWithAave = async (owner: Wallet) => {
   const financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
   await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
 
+  const trueRewards = await new TrueRewardsFactory(owner).deploy()
+  await trueRewards.initialize(token.address, financialOpportunity.address)
+
   await aaveFinancialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, financialOpportunity.address)
   await financialOpportunity.configure(
     aaveFinancialOpportunity.address,
@@ -41,9 +45,9 @@ export const fixtureWithAave = async (owner: Wallet) => {
     liquidator.address,
     fractionalExponents.address,
     token.address,
-    token.address,
+    trueRewards.address,
   )
   await token.setRegistry(registry.address)
 
-  return { token, registry, lendingPoolCore, sharesToken, aaveFinancialOpportunity, financialOpportunity, liquidator }
+  return { token, trueRewards, registry, lendingPoolCore, sharesToken, aaveFinancialOpportunity, financialOpportunity, liquidator }
 }
