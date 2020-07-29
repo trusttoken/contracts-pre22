@@ -5,6 +5,7 @@ const Registry = artifacts.require('RegistryMock')
 const TrueUSD = artifacts.require('TrueUSDMock')
 const TusdProxy = artifacts.require('OwnedUpgradeabilityProxy')
 const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
+const TrueRewards = artifacts.require('TrueRewards')
 
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN
@@ -50,7 +51,9 @@ contract('ProxyWithTUSD', function (accounts) {
       beforeEach(async function () {
         await this.token.initialize({ from: owner })
         this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
-        await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
+        this.trueRewards = await TrueRewards.new({ from: owner })
+        await this.trueRewards.initialize(this.token.address, this.financialOpportunity.address, { from: owner })
+        await this.token.setTrueRewardsAddress(this.trueRewards.address, { from: owner })
         await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
         await this.token.setRegistry(this.registry.address, { from: owner })
         await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })

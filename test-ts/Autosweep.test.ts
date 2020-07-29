@@ -11,6 +11,7 @@ import { AddressZero } from 'ethers/constants'
 import { ATokenMock } from '../build/types/ATokenMock'
 import { AaveFinancialOpportunity } from '../build/types/AaveFinancialOpportunity'
 import { AssuredFinancialOpportunity } from '../build/types/AssuredFinancialOpportunity'
+import { TrueRewards } from '../build/types/TrueRewards'
 
 function toChecksumAddress (address: string) {
   return ethers.utils.getAddress(address.toLowerCase())
@@ -25,6 +26,7 @@ describe('Autosweep feature', () => {
   let sharesToken: ATokenMock
   let aaveFinancialOpportunity: AaveFinancialOpportunity
   let financialOpportunity: AssuredFinancialOpportunity
+  let trueRewards: TrueRewards
 
   const expectTransferEventWith = async (tx: Transaction, from: string, to: string, amount: BigNumberish) => expectTransferEventOn(token)(tx, from, to, amount)
   const expectRewardBackedBurnEventWith = async (tx: Transaction, from: string, amount: BigNumberish) => expectRewardBackedBurnEventOn(token)(tx, from, amount)
@@ -32,12 +34,12 @@ describe('Autosweep feature', () => {
 
   beforeEachWithFixture(async (provider, wallets) => {
     ([owner, holder, autosweepTarget] = wallets)
-    ;({ token, registry, sharesToken, aaveFinancialOpportunity, financialOpportunity } = await fixtureWithAave(owner))
+    ;({ token, registry, sharesToken, aaveFinancialOpportunity, financialOpportunity, trueRewards } = await fixtureWithAave(owner))
     await registry.subscribe(RegistryAttributes.isDepositAddress.hex, token.address)
     await token.mint(holder.address, parseEther('200'))
     await token.connect(holder).transfer(sharesToken.address, parseEther('100'))
 
-    await token.setOpportunityAddress(financialOpportunity.address)
+    await token.setTrueRewardsAddress(trueRewards.address)
     const depositAccount = toChecksumAddress('00000' + autosweepTarget.address.slice(2, 37))
     await registry.setAttributeValue(depositAccount, RegistryAttributes.isDepositAddress.hex, autosweepTarget.address)
   })
@@ -86,13 +88,14 @@ describe('Autosweep feature', () => {
 
       await expectTransferEventWith(tx, sharesToken.address, aaveFinancialOpportunity.address, amount)
       await expectTransferEventWith(tx, aaveFinancialOpportunity.address, financialOpportunity.address, amount)
-      await expectTransferEventWith(tx, financialOpportunity.address, holder.address, amount)
+      await expectTransferEventWith(tx, financialOpportunity.address, trueRewards.address, amount)
+      await expectTransferEventWith(tx, trueRewards.address, holder.address, amount)
       await expectTransferEventWith(tx, holder.address, AddressZero, amount)
       await expectRewardBackedBurnEventWith(tx, holder.address, amount)
       await expectTransferEventWith(tx, holder.address, recipient, amount)
       await expectTransferEventWith(tx, recipient, autosweepTarget.address, amount)
 
-      await expectEventsCount('Transfer', tx, 6)
+      await expectEventsCount('Transfer', tx, 7)
       await expectEventsCount('BurnRewardBackedToken', tx, 1)
       await expectEventsCount('MintRewardBackedToken', tx, 0)
     })

@@ -7,6 +7,7 @@ import depositTokenTests from './DepositToken'
 import redeemTokenTests from './RedeemToken'
 const Registry = artifacts.require('RegistryMock')
 const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
+const TrueRewards = artifacts.require('TrueRewards')
 
 const BN = web3.utils.toBN
 const bytes32 = require('./helpers/bytes32.js')
@@ -20,13 +21,17 @@ contract('DelegateERC20', function ([, owner, oneHundred, anotherAccount, thirdA
     this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
     this.mintableToken = this.delegate
     this.registry = await Registry.new({ from: owner })
+    this.trueRewards = await TrueRewards.new({ from: owner })
+    await this.trueRewards.initialize(this.delegate.address, this.financialOpportunity.address, { from: owner })
+    await this.token.setTrueRewardsAddress(this.trueRewards.address, { from: owner })
+
     await this.delegate.setRegistry(this.registry.address, { from: owner })
     await this.registry.subscribe(bytes32('isBlacklisted'), this.delegate.address, { from: owner })
     await this.registry.subscribe(bytes32('canBurn'), this.delegate.address, { from: owner })
     await this.registry.subscribe(IS_DEPOSIT_ADDRESS, this.delegate.address, { from: owner })
     await this.original.delegateToNewContract(this.delegate.address, { from: owner })
     await this.delegate.setDelegateFrom(this.original.address)
-    await this.delegate.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
+    await this.delegate.setTrueRewardsAddress(this.trueRewards.address, { from: owner })
     await this.delegate.setBurnBounds(BN(5 * 10 ** 18), BN(1000).mul(BN(10 ** 18)), { from: owner })
   })
 

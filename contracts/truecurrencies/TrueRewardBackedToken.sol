@@ -61,6 +61,20 @@ abstract contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
     /// @dev Emitted when true reward was disabled for _account with balance _amount for Financial Opportunity _finOp
     event TrueRewardDisabled(address indexed _account, uint256 _amount);
 
+    /**
+     * @dev Emitted when new reward tokens were minted
+     * @param account Token holder
+     * @param amount How many tokens were minted
+     */
+    event MintRewardBackedToken(address indexed account, uint256 indexed amount);
+
+    /**
+     * @dev Emitted when reward tokens were burnt
+     * @param account Token holder
+     * @param amount How many tokens were burnt
+     */
+    event BurnRewardBackedToken(address indexed account, uint256 indexed amount);
+
     /** @dev return true if TrueReward is enabled for a given address */
     function trueRewardEnabled(address _address) public view returns (bool) {
         return isTrueRewardsEnabled[_address];
@@ -73,7 +87,26 @@ abstract contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      */
     function totalSupply() public virtual override view returns (uint256) {
         // supply of deposits + debt
+        if (trueRewards == address(0)) {
+            return totalSupply_;
+        }
         return totalSupply_.add(TrueRewards(trueRewards).totalSupply());
+    }
+
+    /**
+     * @dev get total supply of TrueCurrency backed by fiat deposits
+     * @return supply of fiat backed TrueCurrency
+     */
+    function depositBackedSupply() public view returns (uint256) {
+        return totalSupply_;
+    }
+
+    /**
+     * @dev get total supply of TrueCurrency backed by debt
+     * @return supply of debt backed TrueCurrency
+     */
+    function rewardBackedSupply() public view returns (uint256) {
+        return totalSupply().sub(totalSupply_);
     }
 
     /**
@@ -105,7 +138,7 @@ abstract contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
         if (balance != 0) {
             // deposit entire user token balance
-            makeDeposit(msg.sender, balance);
+            depositToTrueRewards(msg.sender, balance);
         }
 
         isTrueRewardsEnabled[msg.sender] = true;
@@ -126,6 +159,8 @@ abstract contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         if (balance > 0) {
             // redeem entire user reward token balance
             TrueRewards(trueRewards).redeemAll(msg.sender);
+            emit Transfer(msg.sender, address(0), balance);
+            emit BurnRewardBackedToken(msg.sender, balance);
         }
 
         isTrueRewardsEnabled[msg.sender] = false;
@@ -140,18 +175,14 @@ abstract contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
      * When we add multiple opportunities, this needs to work for multiple interfaces
      */
     function mint(address _to, uint256 _value) public virtual override onlyOwner {
+        super.mint(_to, _value);
+
         // check if to address is enabled
         bool toEnabled = trueRewardEnabled(_to);
 
-        // if to enabled, mint to this contract and deposit into finOp
+        // if to enabled, deposit into trueRewards
         if (toEnabled) {
-            // mint to trueRewards contract
-            super.mint(trueRewards, _value);
-            // deposit minted amount to opportunities
-            TrueRewards(trueRewards).deposit(msg.sender, _value);
-        } else {
-            // otherwise call normal mint process
-            super.mint(_to, _value);
+            depositToTrueRewards(_to, _value);
         }
     }
 
@@ -163,6 +194,23 @@ abstract contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
         require(_trueRewards != address(0), "attempt to set address to 0");
         require(_trueRewards != trueRewards, "attempt to change address to the same one");
         trueRewards = _trueRewards;
+    }
+
+    function toString(uint256 _base) internal pure returns (string memory) {
+        if (_base == 0) {
+            return "0";
+        }
+        bytes memory _tmp = new bytes(32);
+        uint256 i;
+        for (i = 0; _base > 0; i++) {
+            _tmp[i] = bytes1(uint8((_base % 10) + 48));
+            _base /= 10;
+        }
+        bytes memory _real = new bytes(i--);
+        for (uint256 j = 0; j < _real.length; j++) {
+            _real[j] = _tmp[i--];
+        }
+        return string(_real);
     }
 
     /**
@@ -194,7 +242,7 @@ abstract contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
         // if from enabled, check balance, calculate reward amount, and redeem
         if (fromEnabled) {
-            TrueRewards(trueRewards).redeem(_from, _value);
+            _value = redeemTrueRewards(_from, _value);
         }
 
         // transfer tokens
@@ -202,7 +250,7 @@ abstract contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
         // if receiver enabled, deposit tokens into opportunity
         if (trueRewardEnabled(finalTo)) {
-            makeDeposit(finalTo, _value);
+            depositToTrueRewards(finalTo, _value);
         }
 
         return finalTo;
@@ -238,7 +286,7 @@ abstract contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
         // if from enabled, check balance, calculate reward amount, and redeem
         if (fromEnabled) {
-            TrueRewards(trueRewards).redeem(_from, _value);
+            _value = redeemTrueRewards(_from, _value);
         }
 
         // transfer tokens
@@ -246,14 +294,23 @@ abstract contract TrueRewardBackedToken is CompliantDepositTokenWithHook {
 
         // if receiver enabled, deposit tokens into opportunity
         if (trueRewardEnabled(finalTo)) {
-            makeDeposit(finalTo, _value);
+            depositToTrueRewards(finalTo, _value);
         }
 
         return finalTo;
     }
 
-    function makeDeposit(address account, uint256 amount) internal {
-        super._transferAllArgs(account, trueRewards, amount);
+    function depositToTrueRewards(address account, uint256 amount) internal {
+        _setAllowance(account, trueRewards, amount);
         TrueRewards(trueRewards).deposit(account, amount);
+        emit Transfer(address(0), account, amount);
+        emit MintRewardBackedToken(account, amount);
+    }
+
+    function redeemTrueRewards(address account, uint256 amount) internal returns (uint256) {
+        uint256 amountRedeemed = TrueRewards(trueRewards).redeem(account, amount);
+        emit Transfer(account, address(0), amountRedeemed);
+        emit BurnRewardBackedToken(account, amountRedeemed);
+        return amountRedeemed;
     }
 }

@@ -6,6 +6,7 @@ const LendingPoolMock = artifacts.require('LendingPoolMock')
 const LendingPoolCoreMock = artifacts.require('LendingPoolCoreMock')
 const AaveFinancialOpportunity = artifacts.require('AaveFinancialOpportunity')
 const OwnedUpgradeabilityProxy = artifacts.require('OwnedUpgradeabilityProxy')
+const TrueRewards = artifacts.require('TrueRewards')
 
 const to18Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 8))
 
@@ -29,7 +30,11 @@ contract('TrueRewardWithFloatReserve', function (accounts) {
       this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
       await this.financialOpportunityProxy.upgradeTo(this.financialOpportunityImpl.address, { from: owner })
       await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, this.token.address, { from: owner })
-      await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
+
+      this.trueRewards = await TrueRewards.new({ from: owner })
+      await this.trueRewards.initialize(this.token.address, this.financialOpportunity.address, { from: owner })
+      await this.token.setTrueRewardsAddress(this.trueRewards.address, { from: owner })
+
       this.reserve = await this.token.RESERVE.call()
 
       await this.registry.setAttributeValue(this.reserve, WHITELIST_TRUEREWARD, 1, { from: owner })
@@ -88,7 +93,11 @@ contract('TrueRewardWithFloatReserve', function (accounts) {
       this.financialOpportunity = await AaveFinancialOpportunity.at(this.financialOpportunityProxy.address)
       await this.financialOpportunityProxy.upgradeTo(this.financialOpportunityImpl.address, { from: owner })
       await this.financialOpportunity.configure(this.sharesToken.address, this.lendingPool.address, this.token.address, this.token.address, { from: owner })
-      await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
+
+      this.trueRewards = await TrueRewards.new({ from: owner })
+      await this.trueRewards.initialize(this.token.address, this.financialOpportunity.address, { from: owner })
+      await this.token.setTrueRewardsAddress(this.trueRewards.address, { from: owner })
+
       this.reserve = await this.token.RESERVE.call()
 
       await this.registry.setAttributeValue(this.reserve, WHITELIST_TRUEREWARD, 1, { from: owner })

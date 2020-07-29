@@ -27,6 +27,7 @@ import { TimeOwnedUpgradeabilityProxyFactory } from '../build/types/TimeOwnedUpg
 import { LendingPoolCoreMock } from '../build/types/LendingPoolCoreMock'
 import { ATokenMock } from '../build/types/ATokenMock'
 import { timeTravel } from './utils/timeTravel'
+import { TrueRewardsFactory } from '../build/types/TrueRewardsFactory'
 
 use(solidity)
 const BTC1000 = parseEther('1000').div(1e10)
@@ -84,7 +85,9 @@ describe('Staking', () => {
       aaveFinancialOpportunity = await deployBehindProxy(AaveFinancialOpportunityFactory)
       assuredFinancialOpportunity = await deployBehindProxy(AssuredFinancialOpportunityFactory)
 
-      await trueUsd.setOpportunityAddress(assuredFinancialOpportunity.address)
+      const trueRewards = await deployContract(TrueRewardsFactory)
+      await trueRewards.initialize(trueUsd.address, assuredFinancialOpportunity.address)
+      await trueUsd.setTrueRewardsAddress(trueRewards.address)
 
       trustToken = await deployBehindTimeProxy(MockTrustTokenFactory)
       await trustToken.initialize(registry.address)
@@ -98,7 +101,7 @@ describe('Staking', () => {
         liquidator.address,
         fractionalExponents.address,
         trueUsd.address,
-        trueUsd.address,
+        trueRewards.address,
       )
 
       await registry.setAttributeValue(holder.address, RegistryAttributes.isTrueRewardsWhitelisted.hex, 1)

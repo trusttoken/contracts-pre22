@@ -22,22 +22,24 @@ contract TrueRewards is TrueRewardsStorage, InitializableClaimable {
     }
 
     function deposit(address account, uint256 amount) external onlyToken {
-        require(trueRewardToken.balanceOf(address(this)) >= amount);
+        require(trueRewardToken.transferFrom(account, address(this), amount), "transfer failed");
         depositToFinOp(account, amount, address(financialOpportunities[0]));
     }
 
-    function redeem(address account, uint256 amount) external onlyToken {
+    function redeem(address account, uint256 amount) external onlyToken returns (uint256) {
         uint256 totalAmountRedeemed = redeemFromFinOp(
             account,
             toReward(amount, financialOpportunities[0]),
             address(financialOpportunities[0])
         );
         require(trueRewardToken.transfer(account, totalAmountRedeemed), "transfer failed");
+        return totalAmountRedeemed;
     }
 
-    function redeemAll(address account) external onlyToken {
+    function redeemAll(address account) external onlyToken returns (uint256) {
         uint256 totalAmountRedeemed = redeemAllFromFinOp(account, address(financialOpportunities[0]));
         require(trueRewardToken.transfer(account, totalAmountRedeemed), "transfer failed");
+        return totalAmountRedeemed;
     }
 
     function getBalance(address account) external view returns (uint256 balance) {

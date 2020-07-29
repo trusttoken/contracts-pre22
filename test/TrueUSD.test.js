@@ -4,6 +4,7 @@ import compliantTokenTests from './CompliantToken'
 const Registry = artifacts.require('RegistryMock')
 const TrueUSDMock = artifacts.require('TrueUSDMock')
 const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
+const TrueRewards = artifacts.require('TrueRewards')
 
 const BN = web3.utils.toBN
 const bytes32 = require('./helpers/bytes32.js')
@@ -18,7 +19,9 @@ contract('TrueUSD', function (accounts) {
     beforeEach(async function () {
       this.token = await TrueUSDMock.new(owner, 0, { from: owner })
       this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
-      await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
+      this.trueRewards = await TrueRewards.new({ from: owner })
+      await this.trueRewards.initialize(this.token.address, this.financialOpportunity.address, { from: owner })
+      await this.token.setTrueRewardsAddress(this.trueRewards.address, { from: owner })
     })
 
     it('owner can set totalsupply', async function () {
@@ -45,7 +48,9 @@ contract('TrueUSD', function (accounts) {
       this.mintableToken = this.token
       await this.token.setRegistry(this.registry.address, { from: owner })
       this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
-      await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
+      this.trueRewards = await TrueRewards.new({ from: owner })
+      await this.trueRewards.initialize(this.token.address, this.financialOpportunity.address, { from: owner })
+      await this.token.setTrueRewardsAddress(this.trueRewards.address, { from: owner })
       await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
       await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
       await this.token.mint(oneHundred, HUNDRED, { from: owner })

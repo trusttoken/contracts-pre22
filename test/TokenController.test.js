@@ -10,6 +10,7 @@ const Proxy = artifacts.require('OwnedUpgradeabilityProxy')
 const Claimable = artifacts.require('Claimable')
 const InstantiatableOwnable = artifacts.require('InstantiatableOwnable')
 const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
+const TrueRewards = artifacts.require('TrueRewards')
 
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN
@@ -32,7 +33,10 @@ contract('TokenController', function (accounts) {
       await this.token.initialize({ from: owner })
 
       this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
-      await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
+
+      this.trueRewards = await TrueRewards.new({ from: owner })
+      await this.trueRewards.initialize(this.token.address, this.financialOpportunity.address, { from: owner })
+      await this.token.setTrueRewardsAddress(this.trueRewards.address, { from: owner })
 
       this.controller = await TokenController.new({ from: owner })
       await this.token.transferOwnership(this.controller.address, { from: owner })

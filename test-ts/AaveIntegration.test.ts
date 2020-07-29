@@ -18,6 +18,7 @@ import { deployAave } from './utils/deployAave'
 import { LendingPoolCore } from '../build/types/LendingPoolCore'
 import { LendingPool } from '../build/types/LendingPool'
 import { AToken } from '../build/types/AToken'
+import { TrueRewardsFactory } from '../build/types/TrueRewardsFactory'
 
 use(solidity)
 
@@ -55,6 +56,7 @@ describe('AAveIntegrationTest: TrueRewardBackedToken with real Aave contracts', 
     const financialOpportunityProxy = await deployContract(OwnedUpgradeabilityProxyFactory)
     financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
     await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
+    const trueRewards = await deployContract(TrueRewardsFactory)
 
     await aaveFinancialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, financialOpportunity.address)
     await financialOpportunity.configure(
@@ -63,10 +65,10 @@ describe('AAveIntegrationTest: TrueRewardBackedToken with real Aave contracts', 
       liquidator.address,
       fractionalExponents.address,
       token.address,
-      token.address,
+      trueRewards.address,
     )
-
-    await token.setOpportunityAddress(financialOpportunity.address)
+    await trueRewards.initialize(token.address, financialOpportunity.address)
+    await token.setTrueRewardsAddress(trueRewards.address)
 
     await token.mint(liquidator.address, parseEther('1000'))
     await token.mint(holder.address, parseEther('200'))
