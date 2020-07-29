@@ -23,7 +23,6 @@ contract('DelegateERC20', function ([, owner, oneHundred, anotherAccount, thirdA
     this.registry = await Registry.new({ from: owner })
     this.trueRewards = await TrueRewards.new({ from: owner })
     await this.trueRewards.initialize(this.delegate.address, this.financialOpportunity.address, { from: owner })
-    await this.token.setTrueRewardsAddress(this.trueRewards.address, { from: owner })
 
     await this.delegate.setRegistry(this.registry.address, { from: owner })
     await this.registry.subscribe(bytes32('isBlacklisted'), this.delegate.address, { from: owner })

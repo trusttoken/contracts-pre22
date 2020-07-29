@@ -10,7 +10,7 @@ const TrueRewards = artifacts.require('TrueRewards')
 
 const to18Decimals = value => BN(Math.floor(value * 10 ** 10)).mul(BN(10 ** 8))
 
-contract('TrueRewardWithFloatReserve', function (accounts) {
+contract.skip('TrueRewardWithFloatReserve', function (accounts) {
   const [, owner, holder, holder2, sender, recipient] = accounts
   const WHITELIST_TRUEREWARD = '0x6973547275655265776172647357686974656c69737465640000000000000000'
   describe('TrueReward with float admin', function () {
