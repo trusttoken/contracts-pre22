@@ -1,25 +1,23 @@
 /**
- * @note This is a copy of openzeppelin ERC20 contract with removed state variables.
+ * @notice This is a copy of openzeppelin ERC20 contract with removed state variables.
  * Removing state variables has been necessary due to proxy pattern usage.
  * Changes to Openzeppelin ERC20 https://github.com/OpenZeppelin/openzeppelin-contracts/blob/de99bccbfd4ecd19d7369d01b070aa72c64423c9/contracts/token/ERC20/ERC20.sol:
- * - Rename mapping(address => uint256) _balances to _balanceOf
- * - Rename mapping(address => mapping(address => uint256)) _allowances to _allowance
- * - Rename uint256 private _totalSupply to totalSupply_
  * - Remove state variables _name, _symbol, _decimals
+ * - Use state variables _balances, _allowances, _totalSupply from ProxyStorage
  * - Remove constructor
  * - Solidity version changed from ^0.6.0 to 0.6.10
+ * - Contract made abstract
  */
 
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.6.10;
 
-import {ProxyStorage} from "../truecurrencies/ProxyStorage.sol";
+import {ClamableOwnable} from "./ClamableOwnable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import "../../flat_contracts/flat_AaveFinancialOpportunity.sol";
 
 // prettier-ignore
 /**
@@ -46,20 +44,20 @@ import "../../flat_contracts/flat_AaveFinancialOpportunity.sol";
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-contract ERC20 is ProxyStorage, Context, IERC20 {
+abstract contract ERC20 is ClamableOwnable, Context, IERC20 {
     using SafeMath for uint256;
     using Address for address;
 
     /**
      * @dev Returns the name of the token.
      */
-    function name() public virtual view returns (string memory);
+    function name() public virtual pure returns (string memory);
 
     /**
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public virtual view returns (string memory);
+    function symbol() public virtual pure returns (string memory);
 
     /**
      * @dev Returns the number of decimals used to get its user representation.
@@ -74,7 +72,7 @@ contract ERC20 is ProxyStorage, Context, IERC20 {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public virtual view returns (uint8) {
+    function decimals() public virtual pure returns (uint8) {
         return 18;
     }
 
@@ -82,14 +80,14 @@ contract ERC20 is ProxyStorage, Context, IERC20 {
      * @dev See {IERC20-totalSupply}.
      */
     function totalSupply() public view override returns (uint256) {
-        return totalSupply_;
+        return _totalSupply;
     }
 
     /**
      * @dev See {IERC20-balanceOf}.
      */
     function balanceOf(address account) public view override returns (uint256) {
-        return _balanceOf[account];
+        return _balances[account];
     }
 
     /**
@@ -109,7 +107,7 @@ contract ERC20 is ProxyStorage, Context, IERC20 {
      * @dev See {IERC20-allowance}.
      */
     function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowance[owner][spender];
+        return _allowances[owner][spender];
     }
 
     /**
@@ -138,7 +136,7 @@ contract ERC20 is ProxyStorage, Context, IERC20 {
      */
     function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), _allowance[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
     }
 
@@ -155,7 +153,7 @@ contract ERC20 is ProxyStorage, Context, IERC20 {
      * - `spender` cannot be the zero address.
      */
     function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowance[_msgSender()][spender].add(addedValue));
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
         return true;
     }
 
@@ -174,7 +172,7 @@ contract ERC20 is ProxyStorage, Context, IERC20 {
      * `subtractedValue`.
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowance[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
         return true;
     }
 
@@ -198,8 +196,8 @@ contract ERC20 is ProxyStorage, Context, IERC20 {
 
         _beforeTokenTransfer(sender, recipient, amount);
 
-        _balanceOf[sender] = _balanceOf[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        _balanceOf[recipient] = _balanceOf[recipient].add(amount);
+        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        _balances[recipient] = _balances[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
     }
 
@@ -217,8 +215,8 @@ contract ERC20 is ProxyStorage, Context, IERC20 {
 
         _beforeTokenTransfer(address(0), account, amount);
 
-        totalSupply_ = totalSupply_.add(amount);
-        _balanceOf[account] = _balanceOf[account].add(amount);
+        _totalSupply = _totalSupply.add(amount);
+        _balances[account] = _balances[account].add(amount);
         emit Transfer(address(0), account, amount);
     }
 
@@ -238,8 +236,8 @@ contract ERC20 is ProxyStorage, Context, IERC20 {
 
         _beforeTokenTransfer(account, address(0), amount);
 
-        _balanceOf[account] = _balanceOf[account].sub(amount, "ERC20: burn amount exceeds balance");
-        totalSupply_ = totalSupply_.sub(amount);
+        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
+        _totalSupply = _totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
 
@@ -260,19 +258,8 @@ contract ERC20 is ProxyStorage, Context, IERC20 {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
-        _allowance[owner][spender] = amount;
+        _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
-    }
-
-    /**
-     * @dev Sets {decimals} to a value other than the default one of 18.
-     *
-     * WARNING: This function should only be called from the constructor. Most
-     * applications that interact with token contracts will not expect
-     * {decimals} to ever change, and may work incorrectly if it does.
-     */
-    function _setupDecimals(uint8 decimals_) internal {
-        _decimals = decimals_;
     }
 
     /**
@@ -289,5 +276,6 @@ contract ERC20 is ProxyStorage, Context, IERC20 {
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
+    // solhint-disable-next-line no-empty-blocks
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
 }
