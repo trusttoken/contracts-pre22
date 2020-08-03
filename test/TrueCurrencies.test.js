@@ -51,8 +51,5 @@ contract('TrueCurrencies', function ([owner, oneHundred]) {
   }
   describe('unique burn attributes', function () {
     hasBurnAttribute('TUSD', 'canBurn')
-    hasBurnAttribute('TAUD', 'canBurnAUD')
-    hasBurnAttribute('TCAD', 'canBurnCAD')
-    hasBurnAttribute('TGBP', 'canBurnGBP')
   })
 })

@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol";
+import {TrueCurrency} from "./TrueCurrency.sol";
 
 /** @title TrueHKD
  * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
  * inherited - see the documentation on the corresponding contracts.
  */
-contract TrueHKD is CompliantDepositTokenWithHook {
+contract TrueHKD is TrueCurrency {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
-    function decimals() public pure returns (uint8) {
+    function decimals() public override pure returns (uint8) {
         return DECIMALS;
     }
 
@@ -19,15 +19,11 @@ contract TrueHKD is CompliantDepositTokenWithHook {
         return ROUNDING;
     }
 
-    function name() public pure returns (string memory) {
+    function name() public override pure returns (string memory) {
         return "TrueHKD";
     }
 
-    function symbol() public pure returns (string memory) {
+    function symbol() public override pure returns (string memory) {
         return "THKD";
-    }
-
-    function canBurn() internal override pure returns (bytes32) {
-        return "canBurnHKD";
     }
 }
