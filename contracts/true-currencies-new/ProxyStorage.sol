@@ -3,10 +3,11 @@ pragma solidity 0.6.10;
 
 // solhint-disable max-states-count, var-name-mixedcase
 
-/*
-Defines the storage layout of the token implementation contract. Any newly declared
-state variables in future upgrades should be appended to the bottom. Never remove state variables
-from this list
+/**
+ * Defines the storage layout of the token implementation contract. Any 
+ * newly declared state variables in future upgrades should be appended 
+ * to the bottom. Never remove state variables from this list, however variables
+ * can be renamed. Please add _Deprecated to deprecated variables.
  */
 contract ProxyStorage {
     address public owner;

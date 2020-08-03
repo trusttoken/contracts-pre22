@@ -3,6 +3,22 @@ pragma solidity 0.6.10;
 
 import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
 
+/**
+ * @title TrueCurrency
+ * @dev TrueCurrency is an ERC20 with blacklist & redemption addresses
+ *
+ * TrueCurrency is a compliant stablecoin with blacklist and redemption
+ * addresses. Only the owner can blacklist accounts. Redemption addresses
+ * are assigned automatically to the first 0x100000 addresses. Sending
+ * tokens to the redemption address will trigger a burn operation. Only
+ * the owner can mint or blacklist accounts.
+ *
+ * This contract is owned by the TokenController, which manages token
+ * minting & admin functionality. See TokenController.sol
+ *
+ * See also BurnableTokenWithBounds.sol
+ *
+ */
 abstract contract TrueCurrency is BurnableTokenWithBounds {
     uint256 constant CENT = 10**16;
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
