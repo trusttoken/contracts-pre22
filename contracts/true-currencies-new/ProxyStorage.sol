@@ -25,14 +25,14 @@ contract ProxyStorage {
     uint256 public burnMin = 0;
     uint256 public burnMax = 0;
 
-    address public registry_Deprecated;
+    address registry_Deprecated;
 
     string name_Deprecated;
     string symbol_Deprecated;
 
     uint256[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
-    uint256 public minimumGasPriceForFutureRefunds_Deprecated;
+    uint256 minimumGasPriceForFutureRefunds_Deprecated;
 
     mapping(address => uint256) _balances;
     mapping(address => mapping(address => uint256)) _allowances;

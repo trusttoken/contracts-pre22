@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import {TrueCurrency} from "../TrueCurrency.sol";
+import {CompliantDepositTokenWithHook} from "../CompliantDepositTokenWithHook.sol";
 
 /** @title TrueCAD
  * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
  * inherited - see the documentation on the corresponding contracts.
  */
-contract MockTrueCurrency is TrueCurrency {
+contract MockDeprecatedTrueCurrency is CompliantDepositTokenWithHook {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
@@ -17,7 +17,7 @@ contract MockTrueCurrency is TrueCurrency {
         initialized = true;
     }
 
-    function decimals() public override pure returns (uint8) {
+    function decimals() public pure returns (uint8) {
         return DECIMALS;
     }
 
@@ -25,11 +25,15 @@ contract MockTrueCurrency is TrueCurrency {
         return ROUNDING;
     }
 
-    function name() public override pure returns (string memory) {
-        return "TrueCurrency";
+    function name() public pure returns (string memory) {
+        return "OldTrueCurrency";
     }
 
-    function symbol() public override pure returns (string memory) {
-        return "TCUR";
+    function symbol() public pure returns (string memory) {
+        return "TCUR-OLD";
+    }
+
+    function canBurn() internal override pure returns (bytes32) {
+        return "canBurn";
     }
 }
