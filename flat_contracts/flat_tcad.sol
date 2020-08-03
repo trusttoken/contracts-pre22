@@ -6,10 +6,11 @@ pragma solidity 0.6.10;
 
 // solhint-disable max-states-count, var-name-mixedcase
 
-/*
-Defines the storage layout of the token implementation contract. Any newly declared
-state variables in future upgrades should be appended to the bottom. Never remove state variables
-from this list
+/**
+ * Defines the storage layout of the token implementation contract. Any
+ * newly declared state variables in future upgrades should be appended
+ * to the bottom. Never remove state variables from this list, however variables
+ * can be renamed. Please add _Deprecated to deprecated variables.
  */
 contract ProxyStorage {
     address public owner;
@@ -86,11 +87,15 @@ pragma solidity 0.6.10;
 /**
  * @title ClamableOwnable
  * @dev The ClamableOwnable contract is a copy of Claimable Contract by Zeppelin.
- and provides basic authorization control functions. Inherits storage layout of
- ProxyStorage.
+ * and provides basic authorization control functions. Inherits storage layout of
+ * ProxyStorage.
  */
 contract ClamableOwnable is ProxyStorage {
-    /// @dev emitted when ownership is transferred
+    /**
+     * @dev emitted when ownership is transferred
+     * @param previousOwner previous owner of this contract
+     * @param newOwner new owner of this contract
+     */
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
@@ -560,6 +565,8 @@ library Address {
  * - Remove constructor
  * - Solidity version changed from ^0.6.0 to 0.6.10
  * - Contract made abstract
+ *
+ * See also: ClaimableOwnable.sol and ProxyStorage.sol
  */
 
 // SPDX-License-Identifier: MIT
@@ -838,18 +845,26 @@ abstract contract ERC20 is ClamableOwnable, Context, IERC20 {
 pragma solidity 0.6.10;
 
 
+/**
+ * @title ReclaimerToken
+ * @dev ERC20 token which allows owner to reclaim ERC20 tokens
+ * or ether sent to this contract
+ */
 abstract contract ReclaimerToken is ERC20 {
     /**
      * @dev send all eth balance in the contract to another address
+     * @param _to address to send eth balance to
      */
     function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
     /**
-    * @dev send all token balance of an arbitrary erc20 token
-    in the contract to another address
-    */
+     * @dev send all token balance of an arbitrary erc20 token
+     * in the contract to another address
+     * @param token token to reclaim
+     * @param _to address to send eth balance to
+     */
     function reclaimToken(IERC20 token, address _to) external onlyOwner {
         uint256 balance = token.balanceOf(address(this));
         token.transfer(_to, balance);
@@ -863,19 +878,23 @@ pragma solidity 0.6.10;
 
 
 /**
- * @title Burnable Token WithBounds
- * @dev Burning functions as redeeming money from the system. The platform will keep track of who burns coins,
+ * @title BurnableTokenWithBounds
+ * @dev Burning functions as redeeming money from the system.
+ * The platform will keep track of who burns coins,
  * and will send them back the equivalent amount of money (rounded down to the nearest cent).
  */
 abstract contract BurnableTokenWithBounds is ReclaimerToken {
     /**
      * @dev Emitted when `value` tokens are burnt from one account (`burner`)
+     * @param burner address which burned tokens
+     * @param value amount of tokens burned
      */
     event Burn(address indexed burner, uint256 value);
 
     /**
      * @dev Emitted when new burn bounds were set
-     *
+     * @param newMin new minimum burn amount
+     * @param newMax new maximum burn amount
      * @notice `newMin` should never be greater than `newMax`
      */
     event SetBurnBounds(uint256 newMin, uint256 newMax);
@@ -883,6 +902,7 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
     /**
      * @dev Destroys `amount` tokens from `msg.sender`, reducing the
      * total supply.
+     * @param amount amount of tokens to burn
      *
      * Emits a {Transfer} event with `to` set to the zero address.
      * Emits a {Burn} event with `burner` set to `msg.sender`
@@ -890,18 +910,21 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
      * Requirements
      *
      * - `msg.sender` must have at least `amount` tokens.
+     *
      */
     function burn(uint256 amount) external {
         _burn(msg.sender, amount);
     }
 
     /**
-     * @dev Change the minimum and maximum amount that can be burned at once. Burning
-     * may be disabled by setting both to 0 (this will not be done under normal
-     * operation, but we can't add checks to disallow it without losing a lot of
-     * flexibility since burning could also be as good as disabled
+     * @dev Change the minimum and maximum amount that can be burned at once.
+     * Burning may be disabled by setting both to 0 (this will not be done
+     * under normal operation, but we can't add checks to disallow it without
+     * losing a lot of flexibility since burning could also be as good as disabled
      * by setting the minimum extremely high, and we don't want to lock
      * in any particular cap for the minimum)
+     * @param _min minimum amount that can be burned at once
+     * @param _max maximum amount that can be burned at once
      */
     function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
         require(_min <= _max, "BurnableTokenWithBounds: min > max");
@@ -914,6 +937,8 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
      * @dev Checks if amount is within allowed burn bounds and
      * destroys `amount` tokens from `account`, reducing the
      * total supply.
+     * @param account account to burn tokens for
+     * @param amount amount of tokens to burn
      *
      * Emits a {Burn} event
      */
@@ -932,6 +957,22 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
 pragma solidity 0.6.10;
 
 
+/**
+ * @title TrueCurrency
+ * @dev TrueCurrency is an ERC20 with blacklist & redemption addresses
+ *
+ * TrueCurrency is a compliant stablecoin with blacklist and redemption
+ * addresses. Only the owner can blacklist accounts. Redemption addresses
+ * are assigned automatically to the first 0x100000 addresses. Sending
+ * tokens to the redemption address will trigger a burn operation. Only
+ * the owner can mint or blacklist accounts.
+ *
+ * This contract is owned by the TokenController, which manages token
+ * minting & admin functionality. See TokenController.sol
+ *
+ * See also BurnableTokenWithBounds.sol
+ *
+ */
 abstract contract TrueCurrency is BurnableTokenWithBounds {
     uint256 constant CENT = 10**16;
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
@@ -1044,7 +1085,8 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
 pragma solidity 0.6.10;
 
 
-/** @title TrueCAD
+/**
+ * @title TrueCAD
  * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
  * inherited - see the documentation on the corresponding contracts.
  */
