@@ -6,11 +6,15 @@ import {ProxyStorage} from "./ProxyStorage.sol";
 /**
  * @title ClamableOwnable
  * @dev The ClamableOwnable contract is a copy of Claimable Contract by Zeppelin.
- and provides basic authorization control functions. Inherits storage layout of
- ProxyStorage.
+ * and provides basic authorization control functions. Inherits storage layout of
+ * ProxyStorage.
  */
 contract ClamableOwnable is ProxyStorage {
-    /// @dev emitted when ownership is transferred
+    /**
+     * @dev emitted when ownership is transferred
+     * @param previousOwner previous owner of this contract
+     * @param newOwner new owner of this contract
+     */
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**

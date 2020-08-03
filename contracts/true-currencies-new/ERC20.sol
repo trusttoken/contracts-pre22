@@ -7,6 +7,8 @@
  * - Remove constructor
  * - Solidity version changed from ^0.6.0 to 0.6.10
  * - Contract made abstract
+ *
+ * See also: ClaimableOwnable.sol and ProxyStorage.sol
  */
 
 // SPDX-License-Identifier: MIT
