@@ -5,7 +5,7 @@ import {ERC20, IERC20} from "./ERC20.sol";
 
 /**
  * @title ReclaimerToken
- * @dev ERC20 token which allows owner to reclaim ERC20 tokens 
+ * @dev ERC20 token which allows owner to reclaim ERC20 tokens
  * or ether sent to this contract
  */
 abstract contract ReclaimerToken is ERC20 {
