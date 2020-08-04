@@ -1,29 +1,22 @@
 import { utils, Wallet } from 'ethers'
-import { MockProvider, solidity } from 'ethereum-waffle'
+import { loadFixture, solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
-import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 
 import { setupDeploy } from '../scripts/utils'
-import { FractionalExponentsFactory } from '../build/types/FractionalExponentsFactory'
-import { SimpleLiquidatorMockFactory } from '../build/types/SimpleLiquidatorMockFactory'
 import { ConfigurableFinancialOpportunityMockFactory } from '../build/types/ConfigurableFinancialOpportunityMockFactory'
-import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
-import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
-import { TrueUsdMockFactory } from '../build/types/TrueUsdMockFactory'
-import { TrueUsdMock } from '../build/types/TrueUsdMock'
+import { TrueUsd } from '../build/types/TrueUsd'
 import { ConfigurableFinancialOpportunityMock } from '../build/types/ConfigurableFinancialOpportunityMock'
 import { FractionalExponents } from '../build/types/FractionalExponents'
 import { SimpleLiquidatorMock } from '../build/types/SimpleLiquidatorMock'
 import { AssuredFinancialOpportunity } from '../build/types/AssuredFinancialOpportunity'
+import { deployAll } from './fixtures/deployAll'
 
 use(solidity)
 
 const { parseEther } = utils
 
 describe('AssuredFinancialOpportunity', () => {
-  let provider: MockProvider
-
-  let token: TrueUsdMock
+  let token: TrueUsd
   let financialOpportunity: ConfigurableFinancialOpportunityMock
   let fractionalExponents: FractionalExponents
   let liquidator: SimpleLiquidatorMock
@@ -40,26 +33,21 @@ describe('AssuredFinancialOpportunity', () => {
     await assuredFinancialOpportunity.deposit(from.address, value)
   }
 
-  beforeEachWithFixture(async (p: MockProvider) => {
-    (provider = p)
+  beforeEach(async () => {
+    ({
+      wallets: [wallet, holder, beneficiary],
+      token,
+      fractionalExponents,
+      liquidator,
+      assuredFinancialOpportunity,
+    } = await loadFixture(deployAll))
 
-    ;[wallet, holder, beneficiary] = provider.getWallets()
+    financialOpportunity = await setupDeploy(wallet)(ConfigurableFinancialOpportunityMockFactory, token.address)
 
-    const deployContract = setupDeploy(wallet)
-
-    token = await deployContract(TrueUsdMockFactory, holder.address, parseEther('1200'))
-
-    fractionalExponents = await deployContract(FractionalExponentsFactory)
-    liquidator = await deployContract(SimpleLiquidatorMockFactory, token.address)
+    await token.mint(holder.address, parseEther('1200'))
     await token.connect(holder).transfer(liquidator.address, parseEther('1000'))
-
-    financialOpportunity = await deployContract(ConfigurableFinancialOpportunityMockFactory, token.address)
     await token.connect(holder).transfer(financialOpportunity.address, parseEther('100'))
 
-    const assuredFinancialOpportunityImpl = await deployContract(AssuredFinancialOpportunityFactory)
-    const assuredFinancialOpportunityProxy = await deployContract(OwnedUpgradeabilityProxyFactory)
-    assuredFinancialOpportunity = assuredFinancialOpportunityImpl.attach(assuredFinancialOpportunityProxy.address)
-    await assuredFinancialOpportunityProxy.upgradeTo(assuredFinancialOpportunityImpl.address)
     await assuredFinancialOpportunity.configure(
       financialOpportunity.address,
       mockPoolAddress,
