@@ -9,7 +9,7 @@ import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabil
 
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
-import { parseTT } from './utils/parseTT'
+import { toTrustToken } from '../scripts/utils/toTrustToken'
 
 import { AddressZero } from 'ethers/constants'
 import { expectEvent } from './utils/eventHelpers'
@@ -26,7 +26,7 @@ describe('TimeLockRegistry', () => {
     ([owner, holder, another] = wallets)
     const deployContract = setupDeploy(owner)
     trustToken = await deployContract(TrustTokenFactory)
-    await trustToken.mint(owner.address, parseTT(1000))
+    await trustToken.mint(owner.address, toTrustToken(1000))
     const proxy = await deployContract(OwnedUpgradeabilityProxyFactory)
     const registryImpl = await deployContract(TimeLockRegistryFactory)
     await proxy.upgradeTo(registryImpl.address)
@@ -50,25 +50,25 @@ describe('TimeLockRegistry', () => {
     })
 
     it('adds recipient to distributions list', async () => {
-      await trustToken.approve(registry.address, parseTT(10))
+      await trustToken.approve(registry.address, toTrustToken(10))
       // event emitted correctly
-      const tx = await registry.register(holder.address, parseTT(10))
+      const tx = await registry.register(holder.address, toTrustToken(10))
 
-      await expectEvent(registry, 'Register')(tx, holder.address, parseTT(10))
+      await expectEvent(registry, 'Register')(tx, holder.address, toTrustToken(10))
 
-      expect(await registry.registeredDistributions(holder.address)).to.equal(parseTT(10))
-      expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(990))
-      expect(await trustToken.balanceOf(registry.address)).to.equal(parseTT(10))
+      expect(await registry.registeredDistributions(holder.address)).to.equal(toTrustToken(10))
+      expect(await trustToken.balanceOf(owner.address)).to.equal(toTrustToken(990))
+      expect(await trustToken.balanceOf(registry.address)).to.equal(toTrustToken(10))
     })
 
     it('cannot register same address twice', async () => {
-      await trustToken.approve(registry.address, parseTT(10))
-      await registry.register(holder.address, parseTT(5))
-      await expect(registry.register(holder.address, parseTT(5))).to.be.revertedWith('Distribution for this address is already registered')
+      await trustToken.approve(registry.address, toTrustToken(10))
+      await registry.register(holder.address, toTrustToken(5))
+      await expect(registry.register(holder.address, toTrustToken(5))).to.be.revertedWith('Distribution for this address is already registered')
     })
 
     it('cannot register distribution for zero address', async () => {
-      await expect(registry.register(AddressZero, parseTT(5))).to.be.revertedWith('Zero address')
+      await expect(registry.register(AddressZero, toTrustToken(5))).to.be.revertedWith('Zero address')
     })
 
     it('cannot register zero distribution', async () => {
@@ -78,27 +78,27 @@ describe('TimeLockRegistry', () => {
 
   describe('Cancel', () => {
     it('cancels registration', async () => {
-      await trustToken.approve(registry.address, parseTT(10))
-      await registry.register(holder.address, parseTT(10))
+      await trustToken.approve(registry.address, toTrustToken(10))
+      await registry.register(holder.address, toTrustToken(10))
       const tx = await registry.cancel(holder.address)
 
-      await expectEvent(registry, 'Cancel')(tx, holder.address, parseTT(10))
+      await expectEvent(registry, 'Cancel')(tx, holder.address, toTrustToken(10))
 
       expect(await registry.registeredDistributions(holder.address)).to.equal(0)
-      expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(1000))
+      expect(await trustToken.balanceOf(owner.address)).to.equal(toTrustToken(1000))
       expect(await trustToken.balanceOf(registry.address)).to.equal(0)
     })
 
     it('cancel one of 2 registrations', async () => {
-      await trustToken.approve(registry.address, parseTT(10))
-      await registry.register(holder.address, parseTT(5))
-      await registry.register(another.address, parseTT(5))
+      await trustToken.approve(registry.address, toTrustToken(10))
+      await registry.register(holder.address, toTrustToken(5))
+      await registry.register(another.address, toTrustToken(5))
       await registry.cancel(holder.address)
 
       expect(await registry.registeredDistributions(holder.address)).to.equal(0)
-      expect(await registry.registeredDistributions(another.address)).to.equal(parseTT(5))
-      expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(995))
-      expect(await trustToken.balanceOf(registry.address)).to.equal(parseTT(5))
+      expect(await registry.registeredDistributions(another.address)).to.equal(toTrustToken(5))
+      expect(await trustToken.balanceOf(owner.address)).to.equal(toTrustToken(995))
+      expect(await trustToken.balanceOf(registry.address)).to.equal(toTrustToken(5))
     })
 
     it('cannot cancel by non-owner', async () => {
@@ -116,29 +116,29 @@ describe('TimeLockRegistry', () => {
     })
 
     it('transfers funds to registered address', async () => {
-      await trustToken.approve(registry.address, parseTT(10))
-      await registry.register(holder.address, parseTT(10))
+      await trustToken.approve(registry.address, toTrustToken(10))
+      await registry.register(holder.address, toTrustToken(10))
       const tx = await registry.connect(holder).claim()
 
-      await expectEvent(registry, 'Claim')(tx, holder.address, parseTT(10))
+      await expectEvent(registry, 'Claim')(tx, holder.address, toTrustToken(10))
 
       expect(await registry.registeredDistributions(holder.address)).to.equal(0)
-      expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(990))
+      expect(await trustToken.balanceOf(owner.address)).to.equal(toTrustToken(990))
       expect(await trustToken.balanceOf(registry.address)).to.equal(0)
-      expect(await trustToken.balanceOf(holder.address)).to.equal(parseTT(10))
-      expect(await trustToken.lockedBalance(holder.address)).to.equal(parseTT(10))
+      expect(await trustToken.balanceOf(holder.address)).to.equal(toTrustToken(10))
+      expect(await trustToken.lockedBalance(holder.address)).to.equal(toTrustToken(10))
     })
 
     it('cannot claim twice', async () => {
-      await trustToken.approve(registry.address, parseTT(10))
-      await registry.register(holder.address, parseTT(10))
+      await trustToken.approve(registry.address, toTrustToken(10))
+      await registry.register(holder.address, toTrustToken(10))
       await registry.connect(holder).claim()
       await expect(registry.connect(holder).claim()).to.be.revertedWith('Not registered')
     })
 
     it('cannot claim after cancel', async () => {
-      await trustToken.approve(registry.address, parseTT(10))
-      await registry.register(holder.address, parseTT(10))
+      await trustToken.approve(registry.address, toTrustToken(10))
+      await registry.register(holder.address, toTrustToken(10))
       await registry.cancel(holder.address)
       await expect(registry.connect(holder).claim()).to.be.revertedWith('Not registered')
     })
@@ -169,9 +169,9 @@ describe('TimeLockRegistry', () => {
 
     it('registers all accounts', async () => {
       await registerSaftAccounts(registry, trustToken, parseAccountList(csvList))
-      expect(await registry.registeredDistributions(address1)).to.equal(parseTT(500))
-      expect(await registry.registeredDistributions(address2)).to.equal(parseTT(123.32))
-      expect(await registry.registeredDistributions(address3)).to.equal(parseTT(3.14))
+      expect(await registry.registeredDistributions(address1)).to.equal(toTrustToken(500))
+      expect(await registry.registeredDistributions(address2)).to.equal(toTrustToken(123.32))
+      expect(await registry.registeredDistributions(address3)).to.equal(toTrustToken(3.14))
       expect(await trustToken.allowance(owner.address, registry.address)).to.equal(0)
     })
   })

@@ -11,6 +11,8 @@ import { TimeLockRegistryFactory } from '../build/types/TimeLockRegistryFactory'
 import { TrustToken } from '../build/types/TrustToken'
 import { TrustTokenFactory } from '../build/types/TrustTokenFactory'
 
+import { toTrustToken } from './utils/toTrustToken'
+
 export const txnArgs = { gasLimit: 2_000_000, gasPrice: 20_000_000_000 }
 
 export interface SaftAccount {
@@ -18,7 +20,6 @@ export interface SaftAccount {
   amount: string,
 }
 
-const toTrustToken = (amount: string) => utils.parseUnits(amount, 8)
 const sum = (numbers: utils.BigNumber[]) => numbers.reduce((a, b) => a.add(b), constants.Zero)
 
 export const registerSaftAccounts = async (registry: TimeLockRegistry, trustToken: TrustToken, accounts: SaftAccount[]) => {
