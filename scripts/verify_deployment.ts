@@ -4,10 +4,8 @@
  * ts-node scripts/verify_deployment.ts "{network}" "{owner_address}"
  */
 import { providers } from 'ethers'
-import { Provider } from 'ethers/providers'
 import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
-import { ProvisionalRegistryImplementation } from '../build/types/ProvisionalRegistryImplementation'
 import { ProvisionalRegistryImplementationFactory } from '../build/types/ProvisionalRegistryImplementationFactory'
 import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
 import { RegistryAttributes } from './attributes'
@@ -21,28 +19,6 @@ Expected: ${expected}
 Actual: ${actual}`,
     )
   }
-}
-
-async function isSubscriber (provider: Provider, registry: ProvisionalRegistryImplementation, attribute: string, subscriber: string) {
-  const startTopics = registry.filters.StartSubscription(attribute, subscriber).topics
-  const stopTopics = registry.filters.StopSubscription(attribute, subscriber).topics
-  async function startLogs () {
-    return provider.getLogs({
-      fromBlock: 1,
-      topics: startTopics,
-      address: registry.address,
-    })
-  }
-  async function stopLogs () {
-    return provider.getLogs({
-      fromBlock: 1,
-      topics: stopTopics,
-      address: registry.address,
-    })
-  }
-  const starts = await startLogs()
-  const stops = await stopLogs()
-  return starts.length > stops.length
 }
 
 interface DeployResult {
@@ -100,21 +76,6 @@ interface DeployResult {
   comp(owner, await assuredFinancialOpportunity.owner(), 'AssuredFinancialOpportunity owner')
 
   const registry = ProvisionalRegistryImplementationFactory.connect(deployResult.registry, provider)
-  for (const [attribute, contract] of [
-    [RegistryAttributes.isRegisteredContract, 'trustToken'],
-    [RegistryAttributes.isRegisteredContract, 'trueUSD'],
-    [RegistryAttributes.isDepositAddress, 'trueUSD'],
-    [RegistryAttributes.isBlacklisted, 'trueUSD'],
-    [RegistryAttributes.isTrueRewardsWhitelisted, 'trueUSD'],
-    [RegistryAttributes.approvedBeneficiary, 'liquidator'],
-  ] as [{name: string, hex: string}, string][]) {
-    if (await isSubscriber(provider, registry, attribute.hex, deployResult[contract])) {
-      console.log(`${contract} subscription to ${attribute.name}: ✅`)
-    } else {
-      console.log(`${contract} subscription to ${attribute.name}: ❌`)
-      console.log(`Attribute: ${attribute.hex}`)
-    }
-  }
 
   if ((await registry.getAttributeValue(stakedTokenProxy.address, RegistryAttributes.isRegisteredContract.hex)).eq(1)) {
     console.log('StakedToken is registered contract: ✅')

@@ -46,25 +46,6 @@ const deployModes = {
   },
 }
 
-async function isSubscriber (provider: Provider, registry: Contract, attribute: string, subscriber: Contract) {
-  const topics = registry.filters.StartSubscription(attribute, subscriber.address).topics
-  const logs = await provider.getLogs({
-    fromBlock: 1,
-    topics,
-    address: registry.address,
-  })
-  return !!logs[0]
-}
-
-async function subscribeTrueUsd (provider: JsonRpcProvider, registry: Contract, trueUSD: Contract, attribute: Attribute) {
-  if (!await isSubscriber(provider, registry, attribute.hex, trueUSD)) {
-    await (await registry.subscribe(attribute.hex, trueUSD.address)).wait()
-    console.log(`TrueUSD subscribed to ${attribute.name}`)
-  } else {
-    console.log(`TrueUSD already subscribed ${attribute.name}, skipping`)
-  }
-}
-
 const checkDeployedContractOwner = async (wallet: Wallet, contract: Contract, proxy: Contract) => {
   const owner = await contract.owner()
   const proxyOwner = await proxy.proxyOwner()
@@ -245,15 +226,6 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
   )
   await tx.wait()
   console.log('set mint thresholds')
-
-  await (await registry.subscribe(RegistryAttributes.isRegisteredContract.hex, trustToken.address)).wait()
-  console.log('TrustToken subscribed to isRegisteredContract')
-  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isRegisteredContract)
-  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isDepositAddress)
-  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isBlacklisted)
-  await subscribeTrueUsd(provider, registry, trueUSD, RegistryAttributes.isTrueRewardsWhitelisted)
-  await (await registry.subscribe(RegistryAttributes.approvedBeneficiary.hex, liquidatorProxy.address)).wait()
-  console.log('Liquidator subscribed to approvedBeneficiary')
 
   await (await registry.setAttributeValue(stakedTokenProxy.address, RegistryAttributes.isRegisteredContract.hex, 1)).wait()
 

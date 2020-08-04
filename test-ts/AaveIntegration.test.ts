@@ -43,6 +43,7 @@ describe('AAveIntegrationTest: TrueRewardBackedToken with real Aave contracts', 
     const deployContract = setupDeploy(owner)
     token = await deployContract(TrueUsdFactory, { gasLimit: 5_000_000 })
     const registry = await deployContract(RegistryMockFactory)
+    await token.setRegistry(registry.address)
     const fractionalExponents = await deployContract(FractionalExponentsFactory)
     liquidator = await deployContract(SimpleLiquidatorMockFactory, token.address)
     ;({ lendingPool, lendingPoolCore, aTUSD: sharesToken } = await deployAave(owner, token.address))
@@ -81,7 +82,6 @@ describe('AAveIntegrationTest: TrueRewardBackedToken with real Aave contracts', 
     await token.connect(holder2).approve(lendingPoolCore.address, parseEther('100'))
     await lendingPool.connect(holder2).deposit(token.address, parseEther('50'), 0, { gasLimit: 5000000 })
     await lendingPool.connect(holder2).borrow(token.address, parseEther('45'), 2, 0, { gasLimit: 5000000 })
-
     await registry.setAttributeValue(owner.address, WHITELIST_TRUEREWARD, 1)
     await registry.setAttributeValue(holder.address, WHITELIST_TRUEREWARD, 1)
     await registry.setAttributeValue(holder2.address, WHITELIST_TRUEREWARD, 1)

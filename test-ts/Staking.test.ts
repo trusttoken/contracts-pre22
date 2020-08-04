@@ -65,16 +65,12 @@ describe('Staking', () => {
       await trueUsd.mint(sharesToken.address, parseEther('1000'))
       await registry.setAttributeValue(holder.address, RegistryAttributes.isTrueRewardsWhitelisted.hex, 1)
 
-      await registry.subscribe(RegistryAttributes.isRegisteredContract.hex, trustToken.address)
-      await registry.subscribe(RegistryAttributes.isRegisteredContract.hex, trueUsd.address)
-
       await registry.setAttributeValue(staker.address, RegistryAttributes.hasPassedKYCAML.hex, 1)
       await registry.setAttributeValue(secondStaker.address, RegistryAttributes.hasPassedKYCAML.hex, 1)
       await registry.setAttributeValue(stakedToken.address, RegistryAttributes.isRegisteredContract.hex, 1)
 
       provider = holder.provider as providers.JsonRpcProvider
 
-      expect(await registry.subscriberCount(RegistryAttributes.isRegisteredContract.hex)).to.eq(2)
       expect(await registry.getAttributeValue(stakedToken.address, RegistryAttributes.isRegisteredContract.hex)).to.eq(1)
       expect(await registry.hasAttribute(stakedToken.address, RegistryAttributes.isRegisteredContract.hex)).to.be.true
     })

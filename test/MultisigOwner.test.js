@@ -29,7 +29,6 @@ contract('MultisigOwner', function (accounts) {
     await this.controller.setToken(this.token.address, { from: owner1 })
     await this.controller.setTokenRegistry(this.registry.address, { from: owner1 })
     this.claimableContract = await Claimable.new({ from: owner1 })
-    await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner1 })
     await this.registry.setAttribute(approver, bytes32('isTUSDMintApprover'), 1, notes, { from: owner1 })
     await this.registry.setAttribute(pauseKey, PAUSER, 1, notes, { from: owner1 })
     this.multisigOwner = await MultisigOwner.new({ from: owner1 })

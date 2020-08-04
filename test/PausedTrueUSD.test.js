@@ -27,8 +27,6 @@ contract('PausedTrueUSD', function (accounts) {
       this.tusdImplementation = await TrueUSD.new(owner, 0, { from: owner })
       this.token = await TrueUSD.at(this.tokenProxy.address)
       await this.tokenProxy.upgradeTo(this.tusdImplementation.address, { from: owner })
-      await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
-      await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
       await this.token.initialize({ from: owner })
       await this.token.setTotalSupply(TEN_THOUSAND, { from: owner })
       this.controller = await TokenController.new({ from: owner })

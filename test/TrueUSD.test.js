@@ -46,8 +46,6 @@ contract('TrueUSD', function (accounts) {
       await this.token.setRegistry(this.registry.address, { from: owner })
       this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
       await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
-      await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
-      await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
       await this.token.mint(oneHundred, HUNDRED, { from: owner })
     })
 

@@ -67,8 +67,6 @@ contract('MultisigOwner With Proxy', function (accounts) {
     await this.multisigOwner.setTokenRegistry(this.registry.address, { from: owner1 })
     await this.multisigOwner.setTokenRegistry(this.registry.address, { from: owner2 })
 
-    await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner1 })
-    await this.registry.subscribe(KYCAML, this.token.address, { from: owner1 })
     await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner1 })
     await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner1 })
     await this.registry.setAttribute(oneHundred, KYCAML, 1, notes, { from: owner1 })

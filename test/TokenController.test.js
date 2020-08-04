@@ -45,8 +45,6 @@ contract('TokenController', function (accounts) {
       await this.controller.transferMintKey(mintKey, { from: owner })
       await this.tokenProxy.transferProxyOwnership(this.controller.address, { from: owner })
       await this.controller.claimTusdProxyOwnership({ from: owner })
-      await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
-      await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
       await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
       await this.registry.setAttribute(ratifier1, bytes32('isTUSDMintRatifier'), 1, notes, { from: owner })
       await this.registry.setAttribute(ratifier2, bytes32('isTUSDMintRatifier'), 1, notes, { from: owner })

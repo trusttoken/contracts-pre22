@@ -40,7 +40,7 @@ contract ProxyStorage {
 
     mapping(address => uint256) _balanceOf;
     mapping(address => mapping(address => uint256)) _allowance;
-    mapping(bytes32 => mapping(address => uint256)) attributes;
+    mapping(bytes32 => mapping(address => uint256)) attributes_deprecated;
 
     // reward token storage
     mapping(address => FinancialOpportunity) finOps;

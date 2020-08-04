@@ -2,12 +2,18 @@
 pragma solidity 0.6.10;
 
 import {ModularStandardToken} from "./ERC20.sol";
-import {RegistrySubscriber} from "./RegistrySubscriber.sol";
 import {TrueCoinReceiver} from "./TrueCoinReceiver.sol";
+import {Registry} from "../registry/Registry.sol";
 
-abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
+abstract contract ValTokenWithHook is ModularStandardToken {
+    // Registry attributes
+    bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
+    bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
+
     event Burn(address indexed from, uint256 indexed amount);
     event Mint(address indexed to, uint256 indexed amount);
+
+    function registry() public virtual view returns (Registry);
 
     /**
      * @dev Check if address supports token transfer fallback and resolve autosweep
@@ -17,23 +23,18 @@ abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
      * @return hook True if _to supports transfer fallback
      */
     function _resolveRecipient(address _to) internal view returns (address to, bool hook) {
-        uint256 flags = (attributes[uint144(uint160(_to) >> 20)]);
-        if (flags == 0) {
+        to = address(registry().getAttributeValue(address(uint256(_to) >> 20), IS_DEPOSIT_ADDRESS));
+        if (to == address(0)) {
             to = _to;
-            // attributes[uint144(uint160(to) >> 20)] = uint256(to);
-            hook = false;
-        } else {
-            to = address(flags);
-            hook = (flags & ACCOUNT_HOOK) != 0;
         }
+        hook = registry().getAttributeValue(_to, IS_REGISTERED_CONTRACT) != 0;
     }
 
     /**
      * @dev Reverts if _from is an autosweep address (and is not an autosweep root)
      */
     modifier resolveSender(address _from) {
-        uint256 flags = (attributes[uint144(uint160(_from) >> 20)]);
-        address from = address(flags);
+        address from = address(registry().getAttributeValue(address(uint256(_from) >> 20), IS_DEPOSIT_ADDRESS));
         if (from != address(0)) {
             require(from == _from, "account collision");
         }

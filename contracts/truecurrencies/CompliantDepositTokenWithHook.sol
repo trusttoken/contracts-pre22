@@ -2,12 +2,12 @@
 pragma solidity 0.6.10;
 
 import {TrueCoinReceiver} from "./TrueCoinReceiver.sol";
-import {Registry, RegistryClone} from "../registry/Registry.sol";
+import {Registry} from "../registry/Registry.sol";
 import {ReclaimerToken} from "./ReclaimerToken.sol";
 import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
 import {GasRefundToken} from "./GasRefundToken.sol";
 
-abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
+abstract contract CompliantDepositTokenWithHook is ReclaimerToken, BurnableTokenWithBounds, GasRefundToken {
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
@@ -260,18 +260,6 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
     }
 
     /**
-     * @dev Function called by Registry when attribute is updated
-     * Contract must be subscribed in registry for the attribute in order for this function to be called
-     */
-    function syncAttributeValue(
-        address _who,
-        bytes32 _attribute,
-        uint256 _value
-    ) public override onlyRegistry {
-        attributes[_attribute][_who] = _value;
-    }
-
-    /**
      * @dev Check if tokens can be burnt from account and call BurnableTokenWithBounds._burnAllArgs
      */
     function _burnAllArgs(address _from, uint256 _value) internal override {
@@ -296,7 +284,7 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
      * __Note__ Contract should be subscribed to IS_BLACKLISTED attribute
      */
     function _isBlacklisted(address _account) internal virtual view returns (bool blacklisted) {
-        return attributes[IS_BLACKLISTED][_account] != 0;
+        return registry.getAttributeValue(_account, IS_BLACKLISTED) != 0;
     }
 
     /**
@@ -305,13 +293,13 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
      * @param _to Receiver
      */
     function _requireCanTransfer(address _from, address _to) internal virtual view returns (address, bool) {
-        uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
+        uint256 depositAddressValue = registry.getAttributeValue(address(uint256(_to) >> 20), IS_DEPOSIT_ADDRESS);
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
         }
-        require(attributes[IS_BLACKLISTED][_to] == 0, "blacklisted");
-        require(attributes[IS_BLACKLISTED][_from] == 0, "blacklisted");
-        return (_to, attributes[IS_REGISTERED_CONTRACT][_to] != 0);
+        require(registry.getAttributeValue(_to, IS_BLACKLISTED) == 0, "blacklisted");
+        require(registry.getAttributeValue(_from, IS_BLACKLISTED) == 0, "blacklisted");
+        return (_to, registry.getAttributeValue(_to, IS_REGISTERED_CONTRACT) != 0);
     }
 
     /**
@@ -325,14 +313,14 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
         address _from,
         address _to
     ) internal virtual view returns (address, bool) {
-        require(attributes[IS_BLACKLISTED][_spender] == 0, "blacklisted");
-        uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
+        require(registry.getAttributeValue(_spender, IS_BLACKLISTED) == 0, "blacklisted");
+        uint256 depositAddressValue = registry.getAttributeValue(address(uint256(_to) >> 20), IS_DEPOSIT_ADDRESS);
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
         }
-        require(attributes[IS_BLACKLISTED][_to] == 0, "blacklisted");
-        require(attributes[IS_BLACKLISTED][_from] == 0, "blacklisted");
-        return (_to, attributes[IS_REGISTERED_CONTRACT][_to] != 0);
+        require(registry.getAttributeValue(_to, IS_BLACKLISTED) == 0, "blacklisted");
+        require(registry.getAttributeValue(_from, IS_BLACKLISTED) == 0, "blacklisted");
+        return (_to, registry.getAttributeValue(_to, IS_REGISTERED_CONTRACT) != 0);
     }
 
     /**
@@ -340,12 +328,12 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
      * @param _to Receiver
      */
     function _requireCanMint(address _to) internal virtual view returns (address, bool) {
-        uint256 depositAddressValue = attributes[IS_DEPOSIT_ADDRESS][address(uint256(_to) >> 20)];
+        uint256 depositAddressValue = registry.getAttributeValue(address(uint256(_to) >> 20), IS_DEPOSIT_ADDRESS);
         if (depositAddressValue != 0) {
             _to = address(depositAddressValue);
         }
-        require(attributes[IS_BLACKLISTED][_to] == 0, "blacklisted");
-        return (_to, attributes[IS_REGISTERED_CONTRACT][_to] != 0);
+        require(registry.getAttributeValue(_to, IS_BLACKLISTED) == 0, "blacklisted");
+        return (_to, registry.getAttributeValue(_to, IS_REGISTERED_CONTRACT) != 0);
     }
 
     /**
@@ -353,7 +341,7 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
      * @param _from Burner
      */
     function _requireOnlyCanBurn(address _from) internal virtual view {
-        require(attributes[canBurn()][_from] != 0, "cannot burn from this address");
+        require(registry.getAttributeValue(_from, canBurn()) != 0, "cannot burn from this address");
     }
 
     /**
@@ -361,8 +349,8 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
      * @param _from Owner of tokens
      */
     function _requireCanBurn(address _from) internal virtual view {
-        require(attributes[IS_BLACKLISTED][_from] == 0, "blacklisted");
-        require(attributes[canBurn()][_from] != 0, "cannot burn from this address");
+        require(registry.getAttributeValue(_from, IS_BLACKLISTED) == 0, "blacklisted");
+        require(registry.getAttributeValue(_from, canBurn()) != 0, "cannot burn from this address");
     }
 
     /**

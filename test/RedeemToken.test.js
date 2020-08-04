@@ -18,7 +18,6 @@ contract('RedeemToken', function (accounts) {
     this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
     await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
 
-    await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
     await this.token.mint(oneHundred, BN(100).mul(BN(10 ** 18)), { from: owner })
   })
   redeemTokenTests([owner, oneHundred, anotherAccount])

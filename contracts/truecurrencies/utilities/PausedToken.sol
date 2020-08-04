@@ -4,10 +4,10 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {HasOwner} from "../HasOwner.sol";
-import {Registry, RegistryClone} from "../../registry/Registry.sol";
+import {Registry} from "../../registry/Registry.sol";
 import {InstantiatableOwnable} from "../modularERC20/InstantiatableOwnable.sol";
 
-contract PausedToken is HasOwner, RegistryClone {
+contract PausedToken is HasOwner {
     using SafeMath for uint256;
     event Transfer(address indexed from, address indexed to, uint256 value);
     event AllowanceSheetSet(address indexed sheet);
@@ -180,18 +180,10 @@ contract PausedToken is HasOwner, RegistryClone {
         _;
     }
 
-    function syncAttributeValue(
-        address _who,
-        bytes32 _attribute,
-        uint256 _value
-    ) public override onlyRegistry {
-        attributes[_attribute][_who] = _value;
-    }
-
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
 
     function wipeBlacklistedAccount(address _account) public onlyOwner {
-        require(attributes[IS_BLACKLISTED][_account] != 0, "_account is not blacklisted");
+        require(registry.getAttributeValue(_account, IS_BLACKLISTED) != 0, "_account is not blacklisted");
         uint256 oldValue = _getBalance(_account);
         _setBalance(_account, 0);
         totalSupply_ = totalSupply_.sub(oldValue);

@@ -66,7 +66,7 @@ abstract contract ALiquidatorUniswap is ILiquidator {
     // owner, registry attributes
     address public owner;
     address public pendingOwner;
-    mapping(address => uint256) attributes;
+    mapping(address => uint256) attributes_deprecated;
 
     // constants
     bytes32 constant APPROVED_BENEFICIARY = "approvedBeneficiary";
@@ -127,26 +127,6 @@ abstract contract ALiquidatorUniswap is ILiquidator {
         pendingOwner = address(0);
     }
 
-    /**
-     * @dev Two flags are supported by this function:
-     * Supports APPROVED_BENEFICIARY
-     * Can sync by saying this contract is the registry or sync from registry directly.
-     */
-    function syncAttributeValue(
-        address _account,
-        bytes32 _attribute,
-        uint256 _value
-    ) external onlyRegistry {
-        if (_attribute == APPROVED_BENEFICIARY) {
-            // approved beneficiary flag defines whether someone can receive
-            if (_value > 0) {
-                attributes[_account] |= LIQUIDATOR_CAN_RECEIVE;
-            } else {
-                attributes[_account] &= LIQUIDATOR_CAN_RECEIVE_INV;
-            }
-        }
-    }
-
     struct UniswapState {
         UniswapV1 uniswap;
         uint256 etherBalance;
@@ -203,7 +183,7 @@ abstract contract ALiquidatorUniswap is ILiquidator {
      * requires LIQUIDATOR_CAN_RECEIVE flag (recipient must be registered)
      */
     function reclaimStake(address _destination, uint256 _stake) external override onlyOwner {
-        require(attributes[_destination] & LIQUIDATOR_CAN_RECEIVE != 0, "unregistered recipient");
+        require(registry().getAttributeValue(_destination, APPROVED_BENEFICIARY) != 0, "unregistered recipient");
         stakeToken().transferFrom(pool(), _destination, _stake);
     }
 
@@ -225,7 +205,7 @@ abstract contract ALiquidatorUniswap is ILiquidator {
     function reclaim(address _destination, int256 _debt) external override onlyOwner {
         require(_debt > 0, "Must reclaim positive amount");
         require(_debt < int256(MAX_UINT128), "reclaim amount too large");
-        require(attributes[_destination] & LIQUIDATOR_CAN_RECEIVE != 0, "unregistered recipient");
+        require(registry().getAttributeValue(_destination, APPROVED_BENEFICIARY) != 0, "unregistered recipient");
 
         // get balance of stake pool
         address stakePool = pool();

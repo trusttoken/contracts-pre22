@@ -45,7 +45,6 @@ contract('Liquidator', function (accounts) {
     this.liquidatorUniswap = await LiquidatorUniswap.new({ from: owner })
     await this.liquidatorUniswap.configure(this.registry.address, this.rewardToken.address, this.stakeToken.address, this.outputUniswap.address, this.stakeUniswap.address, { from: owner })
     await this.liquidatorUniswap.setPool(fakePool, { from: owner })
-    await this.registry.subscribe(APPROVED_BENEFICIARY, this.liquidatorUniswap.address, { from: owner })
     await this.registry.setAttributeValue(approvedBeneficiary, APPROVED_BENEFICIARY, 1, { from: owner })
     await this.stakeToken.approve(this.liquidatorUniswap.address, ONE_HUNDRED_BITCOIN, { from: fakePool })
   })

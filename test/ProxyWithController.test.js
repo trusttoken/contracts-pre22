@@ -74,7 +74,6 @@ contract('Proxy With Controller', function (accounts) {
     describe('--TokenController functions--', async function () {
       beforeEach(async function () {
         await this.token.setRegistry(this.registry.address, { from: owner })
-        await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
         await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
         await this.registry.setAttribute(approver1, bytes32('isTUSDMintApprover'), 1, notes, { from: owner })
         await this.registry.setAttribute(approver2, bytes32('isTUSDMintApprover'), 1, notes, { from: owner })

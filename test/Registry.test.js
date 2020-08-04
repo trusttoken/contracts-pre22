@@ -4,7 +4,6 @@ import writeAttributeFor from './helpers/writeAttributeFor'
 const RegistryMock = artifacts.require('RegistryMock')
 const MockToken = artifacts.require('MockERC20Token')
 const ForceEther = artifacts.require('ForceEther')
-const MockRegistrySubscriber = artifacts.require('MockRegistrySubscriber')
 const BN = web3.utils.toBN
 
 contract('Registry', function ([, owner, oneHundred, anotherAccount]) {
@@ -132,68 +131,6 @@ contract('Registry', function ([, owner, oneHundred, anotherAccount]) {
         assert.equal(registryInitialWithForcedEther, 10)
         assert.equal(registryFinalBalance, 0)
         assert.equal(emptyAddressFinalBalance, 10)
-      })
-    })
-
-    describe('sync', function () {
-      beforeEach(async function () {
-        this.registryToken = await MockRegistrySubscriber.new({ from: owner })
-        await this.registry.subscribe(prop1, this.registryToken.address, { from: owner })
-        await this.registry.setAttributeValue(oneHundred, prop1, 3, { from: owner })
-      })
-      it('writes sync', async function () {
-        assert.equal(3, await this.registryToken.getAttributeValue(oneHundred, prop1))
-      })
-      it('subscription emits event', async function () {
-        const { logs } = await this.registry.subscribe(prop2, this.registryToken.address, { from: owner })
-        assert.equal(logs.length, 1)
-        assert.equal(logs[0].args.attribute, prop2)
-        assert.equal(logs[0].args.subscriber, this.registryToken.address)
-        assert(BN(1).eq(await this.registry.subscriberCount(prop2)), 'should have 1 subscriber')
-      })
-      it('unsubscription emits event', async function () {
-        const { logs } = await this.registry.unsubscribe(prop1, 0, { from: owner })
-        assert.equal(logs.length, 1)
-        assert.equal(logs[0].args.attribute, prop1)
-        assert.equal(logs[0].args.subscriber, this.registryToken.address)
-      })
-      it('can unsubscribe', async function () {
-        assert(BN(1).eq(await this.registry.subscriberCount(prop1)), 'should have 1 subscriber')
-        await this.registry.unsubscribe(prop1, 0, { from: owner })
-        assert(BN(0).eq(await this.registry.subscriberCount(prop1)), 'should have 0 subscribers')
-      })
-      it('syncs prior writes', async function () {
-        const token2 = await MockRegistrySubscriber.new({ from: owner })
-        await this.registry.subscribe(prop1, token2.address, { from: owner })
-        assert.equal(3, await this.registryToken.getAttributeValue(oneHundred, prop1))
-        assert.equal(0, await token2.getAttributeValue(oneHundred, prop1))
-
-        await this.registry.syncAttribute(prop1, 0, [oneHundred])
-        assert.equal(3, await token2.getAttributeValue(oneHundred, prop1))
-      })
-      it('syncs prior attribute', async function () {
-        const token2 = await MockRegistrySubscriber.new({ from: owner })
-        await this.registry.subscribe(prop1, token2.address, { from: owner })
-        assert.equal(3, await this.registryToken.getAttributeValue(oneHundred, prop1))
-        assert.equal(0, await token2.getAttributeValue(oneHundred, prop1))
-        await this.registry.syncAttribute(prop1, 0, [oneHundred])
-        assert.equal(3, await token2.getAttributeValue(oneHundred, prop1))
-      })
-      it('syncs multiple prior writes', async function () {
-        await this.registry.setAttributeValue(oneHundred, prop1, 3, { from: owner })
-        await this.registry.setAttributeValue(anotherAccount, prop1, 5, { from: owner })
-        await this.registry.setAttributeValue(owner, prop1, 6, { from: owner })
-
-        const token2 = await MockRegistrySubscriber.new({ from: owner })
-        await this.registry.subscribe(prop1, token2.address, { from: owner })
-        await this.registry.syncAttribute(prop1, 2, [oneHundred, anotherAccount, owner])
-        assert.equal(3, await this.registryToken.getAttributeValue(oneHundred, prop1), { from: owner })
-        assert.equal(0, await token2.getAttributeValue(oneHundred, prop1))
-
-        await this.registry.syncAttribute(prop1, 1, [oneHundred, anotherAccount, owner])
-        assert.equal(3, await token2.getAttributeValue(oneHundred, prop1))
-        assert.equal(5, await token2.getAttributeValue(anotherAccount, prop1))
-        assert.equal(6, await token2.getAttributeValue(owner, prop1))
       })
     })
   })

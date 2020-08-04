@@ -70,7 +70,6 @@ contract('GasProfile', function (accounts) {
       await this.registryMock.initialize({ from: owner })
       await this.registryProxy.upgradeTo(this.registryImpl.address, { from: owner })
       this.registry = await Registry.at(this.registryProxy.address)
-      await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
 
       await this.token.setRegistry(this.registry.address, { from: owner })
 

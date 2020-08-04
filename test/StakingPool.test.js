@@ -34,10 +34,7 @@ contract('StakedAsset', function (accounts) {
     await this.rewardToken.setRegistry(this.registry.address, { from: issuer })
     await this.rewardToken.mint(oneHundred, ONE_HUNDRED_ETHER, { from: issuer })
     await this.stakeToken.mint(oneHundred, ONE_HUNDRED_BITCOIN, { from: issuer })
-    await this.registry.subscribe(PASSED_KYCAML, this.pool.address, { from: owner })
     await this.registry.setAttributeValue(kycAccount, PASSED_KYCAML, 1, { from: owner })
-    await this.registry.subscribe(IS_REGISTERED_CONTRACT, this.stakeToken.address, { from: owner })
-    await this.registry.subscribe(IS_REGISTERED_CONTRACT, this.rewardToken.address, { from: owner })
     await this.registry.setAttributeValue(this.pool.address, IS_REGISTERED_CONTRACT, 1, { from: owner })
   })
   describe('Staked Asset', function () {

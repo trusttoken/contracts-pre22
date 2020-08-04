@@ -39,7 +39,6 @@ describe('Autosweep feature', () => {
       aaveFinancialOpportunity,
     } = await loadFixture(deployAllWithSetup))
 
-    await registry.subscribe(RegistryAttributes.isDepositAddress.hex, token.address)
     await token.mint(holder.address, parseEther('200'))
     await token.connect(holder).transfer(sharesToken.address, parseEther('100'))
 

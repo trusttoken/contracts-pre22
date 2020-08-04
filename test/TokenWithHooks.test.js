@@ -22,8 +22,6 @@ contract('TokenWithHooks', function (accounts) {
       this.registry = await Registry.new({ from: owner })
       this.token = await TrueUSD.new(owner, 0, { from: owner })
       await this.token.setRegistry(this.registry.address, { from: owner })
-      await this.registry.subscribe(REGISTERED_CONTRACT, this.token.address, { from: owner })
-      await this.registry.subscribe(DEPOSIT_ADDRESS, this.token.address, { from: owner })
       await this.token.mint(oneHundred, BN(100 * 10 ** 18), { from: owner })
       await this.registry.setAttribute(this.registeredReceiver.address, REGISTERED_CONTRACT, 1, notes, { from: owner })
     })

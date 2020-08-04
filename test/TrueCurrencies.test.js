@@ -40,7 +40,6 @@ contract('TrueCurrencies', function ([owner, oneHundred]) {
         this.token = this[token]
         await this.token.setRegistry(this.registry.address, { from: owner })
         await this.token.setBurnBounds(BN(10 ** 16), BN(100).mul(DOLLAR), { from: owner })
-        await this.registry.subscribe(burnAttribute, this.token.address, { from: owner })
         await this.registry.setAttributeValue(oneHundred, burnAttribute, BN(1), { from: owner })
         await this.token.mint(oneHundred, DOLLAR, { from: owner })
       })

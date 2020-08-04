@@ -159,10 +159,6 @@ describe('DeployHelper', () => {
       const approver = Wallet.createRandom().address
       const pauser = Wallet.createRandom().address
 
-      it('subscribe', async () => {
-        await registry.subscribe(bytes32('canBurn'), trueUSD.address)
-      })
-
       it('setAttribute (isTUSDMintApprover)', async () => {
         await registry.setAttribute(approver, bytes32('isTUSDMintApprover'), 1, bytes32('notes'))
       })

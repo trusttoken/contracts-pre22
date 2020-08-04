@@ -21,9 +21,6 @@ contract('DelegateERC20', function ([, owner, oneHundred, anotherAccount, thirdA
     this.mintableToken = this.delegate
     this.registry = await Registry.new({ from: owner })
     await this.delegate.setRegistry(this.registry.address, { from: owner })
-    await this.registry.subscribe(bytes32('isBlacklisted'), this.delegate.address, { from: owner })
-    await this.registry.subscribe(bytes32('canBurn'), this.delegate.address, { from: owner })
-    await this.registry.subscribe(IS_DEPOSIT_ADDRESS, this.delegate.address, { from: owner })
     await this.original.delegateToNewContract(this.delegate.address, { from: owner })
     await this.delegate.setDelegateFrom(this.original.address)
     await this.delegate.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
