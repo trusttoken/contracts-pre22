@@ -16,8 +16,27 @@ import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
  * This contract is owned by the TokenController, which manages token
  * minting & admin functionality. See TokenController.sol
  *
- * See also BurnableTokenWithBounds.sol
+ * See also: BurnableTokenWithBounds.sol
  *
+ * ~~~~ Features ~~~~
+ *
+ * Redemption Addresses
+ * - The first 0x100000 addresses are redemption addresses
+ * - Tokens sent to redemption addresses are burned
+ * - Redemptions are tracked off-chain
+ * - Cannot mint tokens to redemption addresses
+ *
+ * Blacklist
+ * - Owner can blacklist accounts in accordance with local regulatory bodies
+ * - Only a court order will merit a blacklist; blacklisting is extremely rare
+ *
+ * Burn Bounds & CanBurn
+ * - Owner can set min & max burn amounts
+ * - Only accounts flagged in canBurn are allowed to burn tokens
+ * - canBurn prevents tokens from being sent to the incorrect address
+ *
+ * Reclaimer Token
+ * - ERC20 Tokens and Ether sent to this contract can be reclaimed by the owner
  */
 abstract contract TrueCurrency is BurnableTokenWithBounds {
     uint256 constant CENT = 10**16;
@@ -25,12 +44,16 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
 
     /**
      * @dev Emitted when `value` tokens are minted for `to`
+     * @param to address to mint tokens for
+     * @param value amount of tokens to be minted
      */
     event Mint(address indexed to, uint256 value);
 
     /**
      * @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
+     * @param account address to mint tokens for
+     * @param amount amount of tokens to be minted
      *
      * Emits a {Mint} event
      *
@@ -49,6 +72,8 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
 
     /**
      * @dev Set blacklisted status for the account.
+     * @param account address to set blacklist flag for
+     * @param _isBlacklisted blacklist flag value
      *
      * Requirements:
      *
@@ -60,6 +85,8 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
 
     /**
      * @dev Set canBurn status for the account.
+     * @param account address to set canBurn flag for
+     * @param _canBurn canBurn flag value
      *
      * Requirements:
      *
@@ -72,6 +99,9 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
     /**
      * @dev Check if neither account is blacklisted before performing transfer
      * If transfer recipient is a redemption address, burns tokens
+     * @param sender address of sender
+     * @param recipient address of recipient
+     * @param amount amount of tokens to transfer
      */
     function _transfer(
         address sender,
@@ -90,6 +120,9 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
 
     /**
      * @dev Requere neither accounts to be blacklisted before approval
+     * @param owner address of owner giving approval
+     * @param spender address of spender to approve for
+     * @param amount amount of tokens to approve
      */
     function _approve(
         address owner,
@@ -103,7 +136,9 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
     }
 
     /**
-     * @dev Check if tokens can be burnt at address before burning
+     * @dev Check if tokens can be burned at address before burning
+     * @param account account to burn tokens from
+     * @param amount amount of tokens to burn
      */
     function _burn(address account, uint256 amount) internal override {
         require(canBurn[account], "TrueCurrency: cannot burn from this address");
@@ -113,6 +148,7 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
     /**
      * @dev First 0x100000 addresses (0x0000000000000000000000000000000000000000 to 0x00000000000000000000000000000000000fffff)
      * are the redemption addresses.
+     * @param account address to check is a redemption address
      *
      * All transfers to redemption address will trigger token burn.
      *
