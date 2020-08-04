@@ -2,15 +2,15 @@
 // solhint-disable max-states-count
 pragma solidity 0.6.10;
 
-import {TrueUSD} from "../trueCurrencies/TrueUSD.sol";
+import {TrueUSD} from "../truecurrencies/TrueUSD.sol";
 import {ProvisionalRegistryImplementation} from "../mocks/RegistryImplementation.sol";
-import {OwnedUpgradeabilityProxy} from "../trueCurrencies/proxy/OwnedUpgradeabilityProxy.sol";
-import {TokenController} from "../trueCurrencies/admin/TokenController.sol";
-import {AssuredFinancialOpportunity} from "../trueReward/AssuredFinancialOpportunity.sol";
-import {AaveFinancialOpportunity} from "../trueReward/AaveFinancialOpportunity.sol";
-import {IAToken} from "../trueReward/IAToken.sol";
-import {ILendingPool} from "../trueReward/ILendingPool.sol";
-import {FractionalExponents} from "../trueReward/utilities/FractionalExponents.sol";
+import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
+import {TokenController} from "../truecurrencies/admin/TokenController.sol";
+import {AssuredFinancialOpportunity} from "../truereward/AssuredFinancialOpportunity.sol";
+import {AaveFinancialOpportunity} from "../truereward/AaveFinancialOpportunity.sol";
+import {IAToken} from "../truereward/IAToken.sol";
+import {ILendingPool} from "../truereward/ILendingPool.sol";
+import {FractionalExponents} from "../truereward/utilities/FractionalExponents.sol";
 import {StakedToken} from "../trusttokens/StakedToken.sol";
 import {Liquidator} from "../trusttokens/Liquidator.sol";
 import {TrustToken} from "../trusttokens/TrustToken.sol";

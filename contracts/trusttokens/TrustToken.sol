@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {ValTokenWithHook} from "./ValTokenWithHook.sol";
-import {ClaimableContract} from "./ClaimableContract.sol";
-import {Registry} from "../registry/Registry.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import {TimeLockedToken} from "./TimeLockedToken.sol";
+import {Registry} from "./ProxyStorage.sol";
 
 /**
  * @title TrustToken
@@ -13,7 +12,7 @@ import {Registry} from "../registry/Registry.sol";
  * in order to prevent rewards from getting stuck in the remainder on division.
  * Tolerates dilution to slash stake and accept rewards.
  */
-contract TrustToken is ValTokenWithHook, ClaimableContract {
+contract TrustToken is TimeLockedToken {
     using SafeMath for uint256;
     Registry registry_;
     uint256 constant MAX_SUPPLY = 145000000000000000;
@@ -23,12 +22,13 @@ contract TrustToken is ValTokenWithHook, ClaimableContract {
      * This is necessary to set ownership for proxy
      */
     function initialize(Registry _registry) public {
-        require(!initalized, "already initalized");
+        require(!initalized, "already initialized");
         registry_ = _registry;
         owner_ = msg.sender;
         initalized = true;
     }
 
+    /// @dev Registry contract address
     function registry() public override view returns (Registry) {
         return registry_;
     }

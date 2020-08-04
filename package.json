@@ -30,7 +30,7 @@
     "hooks": {}
   },
   "author": "",
-  "license": "ISC",
+  "license": "SEE LICENSE IN LICENSE.md",
   "devDependencies": {
     "@typechain/ethers-v4": "^1.0.0",
     "@types/chai": "^4.2.11",
