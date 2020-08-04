@@ -337,13 +337,6 @@ contract('MultisigOwner', function (accounts) {
       assert.equal(userBalance, 100)
     })
 
-    it('call setFastPause of tokenController', async function () {
-      await this.multisigOwner.setFastPause(oneHundred, { from: owner1 })
-      await this.multisigOwner.setFastPause(oneHundred, { from: owner2 })
-      const trueUsdFastPause = await this.controller.fastPause.call()
-      assert.equal(trueUsdFastPause, oneHundred)
-    })
-
     it('call wipeBlackListedTrueUSD of tokenController', async function () {
       await this.registry.setAttribute(blackListed, BLACKLISTED, 1, notes, { from: owner1 })
       await this.multisigOwner.wipeBlackListedTrueUSD(blackListed, { from: owner1 })

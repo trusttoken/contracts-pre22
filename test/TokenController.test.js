@@ -5,7 +5,6 @@ const TokenController = artifacts.require('TokenControllerMock')
 const TrueUSD = artifacts.require('TrueUSDMock')
 const ForceEther = artifacts.require('ForceEther')
 const FastPauseMints = artifacts.require('FastPauseMints')
-const FastPauseTrueUSD = artifacts.require('FastPauseTrueUSDMock')
 const Proxy = artifacts.require('OwnedUpgradeabilityProxy')
 const Claimable = artifacts.require('Claimable')
 const InstantiatableOwnable = artifacts.require('InstantiatableOwnable')
@@ -507,16 +506,6 @@ contract('TokenController', function (accounts) {
     })
 
     describe('pause trueUSD and wipe accounts', function () {
-      beforeEach(async function () {
-        this.fastPauseTrueUSD = await FastPauseTrueUSD.new(pauseKey, this.controller.address, { from: owner })
-        await this.controller.setFastPause(this.fastPauseTrueUSD.address, { from: owner })
-      })
-
-      it('fastpauseTusd cannot be created with 0x0', async function () {
-        await assertRevert(FastPauseTrueUSD.new(ZERO_ADDRESS, this.controller.address, { from: owner }))
-        await assertRevert(FastPauseTrueUSD.new(oneHundred, ZERO_ADDRESS, { from: owner }))
-      })
-
       it('TokenController can pause TrueUSD transfers', async function () {
         await this.token.transfer(mintKey, BN(10 * 10 ** 18), { from: oneHundred })
         await this.controller.pauseToken({ from: owner })
@@ -525,18 +514,8 @@ contract('TokenController', function (accounts) {
         // await assertRevert(this.token.transfer(mintKey, BN(10 * 10 ** 18), { from: oneHundred }))
       })
 
-      it('trueUsdPauser can pause TrueUSD by sending ether to fastPause contract', async function () {
-        await this.fastPauseTrueUSD.sendTransaction({ from: pauseKey, gas: 800000, value: 10 })
-        const pausedImpl = await this.tokenProxy.implementation.call()
-        assert.equal(pausedImpl, '0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291')
-      })
-
       it('non pauser cannot pause TrueUSD ', async function () {
         await assertRevert(this.controller.pauseToken({ from: mintKey }))
-      })
-
-      it('non pauser cannot pause TrueUSD by sending ether to fastPause contract', async function () {
-        await assertRevert(this.fastPauseTrueUSD.sendTransaction({ from: pauseKey2, gas: 800000, value: 10 }))
       })
 
       it('TokenController can wipe blacklisted account', async function () {
