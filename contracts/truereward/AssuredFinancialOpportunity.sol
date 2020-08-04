@@ -59,10 +59,15 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     // address allowed to withdraw/deposit, usually set to address of TUSD smart contract
     address fundsManager;
 
+    /// @dev Emitted on new deposit by account. tusd amount was depositted, ztusd was given in exchange
     event Deposit(address indexed account, uint256 tusd, uint256 ztusd);
+    /// @dev Emitted on new redemption by account. ztusd amount was redempted, tusd was given in exchange
     event Redemption(address indexed to, uint256 ztusd, uint256 tusd);
+    /// @dev Emitted when liquidation is triggered for debt amount
     event Liquidation(address indexed receiver, int256 debt);
+    /// @dev Emitted when award was successfully transferred to staking pool
     event AwardPool(uint256 amount);
+    /// @dev Emitted when award transfer to staking pool failed
     event AwardFailure(uint256 amount);
 
     /// funds manager can deposit/withdraw from this opportunity
@@ -297,23 +302,12 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param ztusd amount in ztusd
      **/
     function _attemptRedeem(address _to, uint256 ztusd) internal returns (bool, uint256) {
-        uint256 returnedAmount;
-
         // attempt to withdraw from opportunity
-        // TODO use try-catch
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returnData) = address(finOp()).call(
-            abi.encodePacked(finOp().redeem.selector, abi.encode(_to, ztusd))
-        );
-
-        if (success) {
-            // successfully got TUSD :)
-            returnedAmount = abi.decode(returnData, (uint256));
-        } else {
-            // failed get TUSD :(
-            returnedAmount = 0;
+        try finOp().redeem(_to, ztusd) returns (uint256 fundsWithdrawn) {
+            return (true, fundsWithdrawn);
+        } catch (bytes memory) {
+            return (false, 0);
         }
-        return (success, returnedAmount);
     }
 
     /**

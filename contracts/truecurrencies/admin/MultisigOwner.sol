@@ -261,7 +261,6 @@ contract MultiSigOwner {
     function _signOrExecute(string memory _actionName) internal {
         _initOrSignOwnerAction(_actionName);
         if (ownerAction.approveSigs > 1) {
-            // TODO rewrite with try-catch
             // solhint-disable-next-line avoid-low-level-calls
             (bool success, ) = address(tokenController).call(msg.data);
             require(success, "tokenController call failed");
@@ -439,12 +438,6 @@ contract MultiSigOwner {
         IERC20 /*_token*/
     ) external onlyOwner {
         _signOrExecute("requestReclaimToken");
-    }
-
-    function setFastPause(
-        address /*_newFastPause*/
-    ) external onlyOwner {
-        _signOrExecute("setFastPause");
     }
 
     function pauseToken() external onlyOwner {
