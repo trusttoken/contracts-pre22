@@ -4,7 +4,6 @@ import writeAttributeFor from './helpers/writeAttributeFor'
 const RegistryMock = artifacts.require('RegistryMock')
 const MockToken = artifacts.require('MockERC20Token')
 const ForceEther = artifacts.require('ForceEther')
-const BN = web3.utils.toBN
 
 contract('Registry', function ([, owner, oneHundred, anotherAccount]) {
   beforeEach(async function () {

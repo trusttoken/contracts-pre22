@@ -66,7 +66,7 @@ abstract contract ALiquidatorUniswap is ILiquidator {
     // owner, registry attributes
     address public owner;
     address public pendingOwner;
-    mapping(address => uint256) attributes_deprecated;
+    mapping(address => uint256) attributesDeprecated;
 
     // constants
     bytes32 constant APPROVED_BENEFICIARY = "approvedBeneficiary";

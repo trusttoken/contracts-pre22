@@ -26,7 +26,7 @@ contract Registry {
     // The logic governing who is allowed to set what attributes is abstracted as
     // this accessManager, so that it may be replaced by the owner as needed
     bytes32 constant WRITE_PERMISSION = keccak256("canWriteTo-");
-    mapping(bytes32 => address[]) subscribers_deprecated;
+    mapping(bytes32 => address[]) subscribersDeprecated;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event SetAttribute(address indexed who, bytes32 attribute, uint256 value, bytes32 notes, address indexed adminAddr);

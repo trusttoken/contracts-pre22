@@ -17,8 +17,8 @@ import {
   setupDeployer,
   validatePrivateKey,
 } from './utils'
-import { JsonRpcProvider, Provider, TransactionResponse } from 'ethers/providers'
-import { Attribute, RegistryAttributes } from './attributes'
+import { JsonRpcProvider, TransactionResponse } from 'ethers/providers'
+import { RegistryAttributes } from './attributes'
 import { AddressZero } from 'ethers/constants'
 import { TokenControllerFactory } from '../build/types/TokenControllerFactory'
 import { TrueUsdFactory } from '../build/types/TrueUsdFactory'

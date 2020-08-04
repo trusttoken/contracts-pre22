@@ -3,9 +3,7 @@ import depositTokenTests from './DepositToken'
 const Registry = artifacts.require('RegistryMock')
 const TrueUSD = artifacts.require('TrueUSDMock')
 
-const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN
-const IS_DEPOSIT_ADDRESS = bytes32('isDepositAddress')
 
 contract('DepositToken', function (accounts) {
   const [, owner, oneHundred, anotherAccount, thirdAddress] = accounts

@@ -2,11 +2,8 @@ import redeemTokenTests from './RedeemToken'
 
 const Registry = artifacts.require('RegistryMock')
 const TrueUSD = artifacts.require('TrueUSDMock')
-const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
 
 const BN = web3.utils.toBN
-const bytes32 = require('./helpers/bytes32')
-const CAN_BURN = bytes32('canBurn')
 
 contract('RedeemToken', function (accounts) {
   const [, owner, oneHundred, anotherAccount] = accounts

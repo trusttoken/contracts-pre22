@@ -14,7 +14,7 @@ contract ProxyStorage {
 
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
-    mapping(uint144 => uint256) attributes_deprecated; // see RegistrySubscriber
+    mapping(uint144 => uint256) attributesDeprecated; // see RegistrySubscriber
 
     address owner_;
     address pendingOwner_;
