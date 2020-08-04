@@ -19,7 +19,7 @@ export interface SaftAccount {
 }
 
 const toTrustToken = (amount: string) => utils.parseUnits(amount, 8)
-const sum = (numbers: utils.BigNumber[]) => numbers.reduce((cumSum, value) => cumSum.add(value), constants.Zero)
+const sum = (numbers: utils.BigNumber[]) => numbers.reduce((a, b) => a.add(b), constants.Zero)
 
 export const registerSaftAccounts = async (registry: TimeLockRegistry, trustToken: TrustToken, accounts: SaftAccount[]) => {
   const totalAllowance = sum(accounts.map(({ amount }) => toTrustToken(amount)))
