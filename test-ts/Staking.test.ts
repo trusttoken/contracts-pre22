@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { Contract, ContractTransaction, providers, Wallet } from 'ethers'
+import { Contract, ContractTransaction, providers, Wallet, utils } from 'ethers'
 import { loadFixture, solidity } from 'ethereum-waffle'
 import { parseEther } from 'ethers/utils'
 import { TrueUsd } from '../build/types/TrueUsd'
@@ -109,24 +109,26 @@ describe('Staking', () => {
       })
 
       const getTimestamp = async (provider: providers.Provider, tx: ContractTransaction) => (await provider.getBlock((await tx.wait()).blockNumber)).timestamp
+      const initUnstake = async (token: StakedToken, amount: utils.BigNumberish): Promise<[Promise<ContractTransaction>, number]> => {
+        const unstakeInitialization = await token.initUnstake(amount)
+        return [Promise.resolve(unstakeInitialization), await getTimestamp(token.provider, unstakeInitialization)]
+      }
 
       it('cannot unstake more than own balance', async () => {
         await expect(stakeAll(staker)).to.emit(stakedToken, 'Mint')
         await trueUsd.connect(holder).enableTrueReward()
         const balance = await stakedToken.balanceOf(staker.address)
-        const unstakeInitialization = await stakedToken.connect(staker).initUnstake(balance.add(1))
-        const timestamp = await getTimestamp(provider, unstakeInitialization)
+        const [tx, timestamp] = await initUnstake(stakedToken.connect(staker), balance.add(1))
 
-        await expect(Promise.resolve(unstakeInitialization)).to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, balance)
+        await expect(tx).to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, balance)
       })
 
       it('cannot unstake twice', async () => {
         await stakeAll(staker)
         const balance = await stakedToken.balanceOf(staker.address)
-        await stakedToken.connect(staker).initUnstake(balance)
-        const { timestamp } = await provider.getBlock('latest')
-        await expect(stakedToken.connect(staker).initUnstake(1))
-          .to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, 0)
+        await initUnstake(stakedToken.connect(staker), balance)
+        const [tx, timestamp] = await initUnstake(stakedToken.connect(staker), 1)
+        await expect(tx).to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, 0)
       })
 
       const TWO_WEEKS = 60 * 60 * 24 * 14
@@ -134,8 +136,7 @@ describe('Staking', () => {
       it('cannot finalize unstake for 14 days', async () => {
         await stakeAll(staker)
         const balance = await stakedToken.balanceOf(staker.address)
-        const { blockNumber } = await stakedToken.connect(staker).initUnstake(balance)
-        const { timestamp } = await provider.getBlock(blockNumber)
+        const [, timestamp] = await initUnstake(stakedToken.connect(staker), balance)
         await expect(stakedToken.connect(staker).finalizeUnstake(staker.address, [timestamp]))
           .to.be.revertedWith('must wait 2 weeks to unstake')
         await timeTravel(provider, TWO_WEEKS - 10)
@@ -146,8 +147,7 @@ describe('Staking', () => {
       it('can finalize unstake after 14 days', async () => {
         await stakeAll(staker)
         const balance = await stakedToken.balanceOf(staker.address)
-        const { blockNumber } = await stakedToken.connect(staker).initUnstake(balance)
-        const { timestamp } = await staker.provider.getBlock(blockNumber)
+        const [, timestamp] = await initUnstake(stakedToken.connect(staker), balance)
         const truBalanceBefore = await trustToken.balanceOf(staker.address)
         await timeTravel(provider, TWO_WEEKS)
         await stakedToken.connect(staker).finalizeUnstake(staker.address, [timestamp])
@@ -158,10 +158,8 @@ describe('Staking', () => {
       it('can stake multiple times', async () => {
         await stakeAll(staker)
         const balance = await stakedToken.balanceOf(staker.address)
-        const { blockNumber: bn1 } = await stakedToken.connect(staker).initUnstake(balance.div(2))
-        const { timestamp: t1 } = await staker.provider.getBlock(bn1)
-        const { blockNumber: bn2 } = await stakedToken.connect(staker).initUnstake(balance.div(2))
-        const { timestamp: t2 } = await staker.provider.getBlock(bn2)
+        const [, t1] = await initUnstake(stakedToken.connect(staker), balance.div(2))
+        const [, t2] = await initUnstake(stakedToken.connect(staker), balance.div(2))
         const truBalanceBefore = await trustToken.balanceOf(staker.address)
         await timeTravel(provider, TWO_WEEKS)
         await stakedToken.connect(staker).finalizeUnstake(staker.address, [t1, t2])
