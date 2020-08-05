@@ -177,7 +177,8 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         (bool success, uint256 returnedAmount) = _attemptRedeem(address(this), ytusd);
 
         if (success) {
-            token().transfer(address(pool()), returnedAmount);
+            token().approve(address(pool()), returnedAmount);
+            pool().award(returnedAmount);
             emit AwardPool(returnedAmount);
         } else {
             emit AwardFailure(returnedAmount);

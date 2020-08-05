@@ -10,6 +10,7 @@ import { FractionalExponents } from '../build/types/FractionalExponents'
 import { SimpleLiquidatorMock } from '../build/types/SimpleLiquidatorMock'
 import { AssuredFinancialOpportunity } from '../build/types/AssuredFinancialOpportunity'
 import { deployAll } from './fixtures/deployAll'
+import { StakedToken } from '../build/types/StakedToken'
 
 use(solidity)
 
@@ -21,12 +22,11 @@ describe('AssuredFinancialOpportunity', () => {
   let fractionalExponents: FractionalExponents
   let liquidator: SimpleLiquidatorMock
   let assuredFinancialOpportunity: AssuredFinancialOpportunity
+  let stakedToken: StakedToken
 
   let wallet: Wallet
   let holder: Wallet
   let beneficiary: Wallet
-
-  const mockPoolAddress = Wallet.createRandom().address
 
   async function deposit (from: Wallet, value: utils.BigNumberish) {
     await token.connect(from).approve(assuredFinancialOpportunity.address, value)
@@ -40,17 +40,17 @@ describe('AssuredFinancialOpportunity', () => {
       fractionalExponents,
       liquidator,
       assuredFinancialOpportunity,
+      stakedToken,
     } = await loadFixture(deployAll))
 
     financialOpportunity = await setupDeploy(wallet)(ConfigurableFinancialOpportunityMockFactory, token.address)
-
     await token.mint(holder.address, parseEther('1200'))
     await token.connect(holder).transfer(liquidator.address, parseEther('1000'))
     await token.connect(holder).transfer(financialOpportunity.address, parseEther('100'))
 
     await assuredFinancialOpportunity.configure(
       financialOpportunity.address,
-      mockPoolAddress,
+      stakedToken.address,
       liquidator.address,
       fractionalExponents.address,
       token.address,
@@ -264,7 +264,7 @@ describe('AssuredFinancialOpportunity', () => {
 
       await assuredFinancialOpportunity.awardPool()
 
-      expect(await token.balanceOf(mockPoolAddress)).to.equal(0)
+      expect(await token.balanceOf(stakedToken.address)).to.equal(0)
       expect(await financialOpportunity.totalSupply()).to.equal(parseEther('10'))
     })
 
@@ -276,7 +276,7 @@ describe('AssuredFinancialOpportunity', () => {
       const expectedAward = '1717987600566658269' // 10 * (1.5 - 1.5 ^ 0.7)
       await expect(assuredFinancialOpportunity.awardPool()).to.emit(assuredFinancialOpportunity, 'AwardPool').withArgs(expectedAward)
 
-      expect(await token.balanceOf(mockPoolAddress)).to.equal(expectedAward)
+      expect(await token.balanceOf(stakedToken.address)).to.equal(expectedAward)
       expect(await financialOpportunity.totalSupply()).to.equal(parseEther('10').sub('1145325067044438846')) // 10 * (1.5 - 1.5 ^ 0.7) / 1.5
     })
 
@@ -290,7 +290,7 @@ describe('AssuredFinancialOpportunity', () => {
       // 1 wei left due to rounding errors
       expect(await assuredFinancialOpportunity.poolAwardBalance()).to.equal(1)
       await assuredFinancialOpportunity.awardPool()
-      expect(await token.balanceOf(mockPoolAddress)).to.equal('1717987600566658269')
+      expect(await token.balanceOf(stakedToken.address)).to.equal('1717987600566658269')
       expect(await financialOpportunity.totalSupply()).to.equal(parseEther('10').sub('1145325067044438846'))
     })
 
@@ -307,7 +307,7 @@ describe('AssuredFinancialOpportunity', () => {
       await expect(assuredFinancialOpportunity.awardPool()).to.emit(assuredFinancialOpportunity, 'AwardPool').withArgs(secondTUsdAmount)
 
       // 1 wei error
-      expect(await token.balanceOf(mockPoolAddress)).to.equal('4863230109646214294') // firstTUsdAmount + secondTUsdAmount
+      expect(await token.balanceOf(stakedToken.address)).to.equal('4863230109646214294') // firstTUsdAmount + secondTUsdAmount
       expect(await financialOpportunity.totalSupply()).to.equal('7596577929323738744') // 10 - firstTUsdAmount - secondTUsdAmount
     })
 
@@ -324,7 +324,7 @@ describe('AssuredFinancialOpportunity', () => {
       await assuredFinancialOpportunity.awardPool()
 
       // 1 wei error
-      expect(await token.balanceOf(mockPoolAddress)).to.equal('1717987600566658269')
+      expect(await token.balanceOf(stakedToken.address)).to.equal('1717987600566658269')
       expect(await financialOpportunity.totalSupply()).to.equal(parseEther('10').sub('1145325067044438846'))
     })
 
@@ -335,7 +335,7 @@ describe('AssuredFinancialOpportunity', () => {
 
       await assuredFinancialOpportunity.awardPool()
 
-      expect(await token.balanceOf(mockPoolAddress)).to.equal(0)
+      expect(await token.balanceOf(stakedToken.address)).to.equal(0)
       expect(await financialOpportunity.totalSupply()).to.equal(parseEther('10'))
     })
 
@@ -346,7 +346,7 @@ describe('AssuredFinancialOpportunity', () => {
 
       await assuredFinancialOpportunity.connect(holder).awardPool()
 
-      expect(await token.balanceOf(mockPoolAddress)).to.equal('1717987600566658269')
+      expect(await token.balanceOf(stakedToken.address)).to.equal('1717987600566658269')
       expect(await financialOpportunity.totalSupply()).to.equal(parseEther('10').sub('1145325067044438846'))
     })
   })

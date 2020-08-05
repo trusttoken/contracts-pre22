@@ -7,7 +7,7 @@ import {ReclaimerToken} from "./ReclaimerToken.sol";
 import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
 import {GasRefundToken} from "./GasRefundToken.sol";
 
-abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
+abstract contract CompliantDepositToken is ReclaimerToken, RegistryClone, BurnableTokenWithBounds, GasRefundToken {
     bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
@@ -153,13 +153,6 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
         if (finalTo != _to) {
             emit Transfer(_to, finalTo, _value);
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-            }
-        } else {
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-            }
         }
 
         return finalTo;
@@ -197,13 +190,6 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
 
         if (finalTo != _to) {
             emit Transfer(_to, finalTo, _value);
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_to, _value);
-            }
-        } else {
-            if (hasHook) {
-                TrueCoinReceiver(finalTo).tokenFallback(_from, _value);
-            }
         }
 
         return finalTo;
@@ -226,13 +212,6 @@ abstract contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone
             emit Transfer(originalTo, _to, _value);
         }
         _addBalance(_to, _value);
-        if (hasHook) {
-            if (_to != originalTo) {
-                TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
-            } else {
-                TrueCoinReceiver(_to).tokenFallback(address(0), _value);
-            }
-        }
     }
 
     /**

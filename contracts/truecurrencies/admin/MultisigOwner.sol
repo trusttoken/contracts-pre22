@@ -3,7 +3,7 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {TokenController, Registry, InstantiatableOwnable} from "./TokenController.sol";
-import {CompliantDepositTokenWithHook} from "../CompliantDepositTokenWithHook.sol";
+import {CompliantDepositToken} from "../CompliantDepositToken.sol";
 import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
 import {Claimable} from "../deprecated/Claimable.sol";
 
@@ -394,7 +394,7 @@ contract MultiSigOwner {
     }
 
     function setToken(
-        CompliantDepositTokenWithHook /*_newContract*/
+        CompliantDepositToken /*_newContract*/
     ) external onlyOwner {
         _signOrExecute("setToken");
     }

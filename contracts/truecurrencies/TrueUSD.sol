@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {ModularBurnableToken} from "./modularERC20/ModularBurnableToken.sol";
 import {ModularBasicToken} from "./modularERC20/ModularBasicToken.sol";
 import {TrueRewardBackedToken} from "./TrueRewardBackedToken.sol";
-import {DelegateERC20, CompliantDepositTokenWithHook} from "./DelegateERC20.sol";
+import {DelegateERC20, CompliantDepositToken} from "./DelegateERC20.sol";
 
 /** @title TrueUSD
  * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
@@ -38,7 +38,7 @@ contract TrueUSD is TrueRewardBackedToken, DelegateERC20 {
         address _from,
         address _to,
         uint256 _value
-    ) internal override(TrueRewardBackedToken, CompliantDepositTokenWithHook) returns (address) {
+    ) internal override(TrueRewardBackedToken, CompliantDepositToken) returns (address) {
         return TrueRewardBackedToken._transferAllArgs(_from, _to, _value);
     }
 
@@ -47,7 +47,7 @@ contract TrueUSD is TrueRewardBackedToken, DelegateERC20 {
         address _to,
         uint256 _value,
         address _spender
-    ) internal override(TrueRewardBackedToken, CompliantDepositTokenWithHook) returns (address) {
+    ) internal override(TrueRewardBackedToken, CompliantDepositToken) returns (address) {
         return TrueRewardBackedToken._transferFromAllArgs(_from, _to, _value, _spender);
     }
 
@@ -55,7 +55,7 @@ contract TrueUSD is TrueRewardBackedToken, DelegateERC20 {
         return TrueRewardBackedToken.balanceOf(_who);
     }
 
-    function mint(address _to, uint256 _value) public override(TrueRewardBackedToken, CompliantDepositTokenWithHook) onlyOwner {
+    function mint(address _to, uint256 _value) public override(TrueRewardBackedToken, CompliantDepositToken) onlyOwner {
         return TrueRewardBackedToken.mint(_to, _value);
     }
 

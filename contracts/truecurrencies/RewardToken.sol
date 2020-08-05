@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {FinancialOpportunity} from "../truereward/FinancialOpportunity.sol";
-import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol";
+import {CompliantDepositToken} from "./CompliantDepositToken.sol";
 
 /**
  * @title RewardToken
@@ -31,7 +31,7 @@ import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol
  * RewardBackedToken represents trueCurrencies supply backed by Rewards
  *
  */
-abstract contract RewardToken is CompliantDepositTokenWithHook {
+abstract contract RewardToken is CompliantDepositToken {
     /* variables in proxy storage
     mapping(address => FinancialOpportunity) finOps;
     mapping(address => mapping(address => uint256)) finOpBalances;

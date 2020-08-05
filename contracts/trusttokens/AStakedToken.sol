@@ -226,8 +226,6 @@ abstract contract AStakedToken is ValTokenWithHook {
                 return;
             }
             _deposit(_originalSender, _amount);
-        } else if (msg.sender == address(rewardAsset())) {
-            _award(_amount);
         } else {
             revert("Wrong token");
         }
@@ -298,6 +296,7 @@ abstract contract AStakedToken is ValTokenWithHook {
      */
     function award(uint256 _amount) external {
         require(rewardAsset().transferFrom(msg.sender, address(this), _amount));
+        _award(_amount);
     }
 
     /**
