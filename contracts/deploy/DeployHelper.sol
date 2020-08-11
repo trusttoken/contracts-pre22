@@ -13,7 +13,7 @@ import {ILendingPool} from "../truereward/ILendingPool.sol";
 import {FractionalExponents} from "../truereward/utilities/FractionalExponents.sol";
 import {StakedToken} from "../trusttokens/StakedToken.sol";
 import {Liquidator} from "../trusttokens/Liquidator.sol";
-import {TrustToken} from "../trusttokens/TrustToken.sol";
+import {TrustToken} from "../trusttokens/trusttoken/TrustToken.sol";
 import {StakingAsset} from "../trusttokens/StakingAsset.sol";
 
 /**
@@ -140,7 +140,7 @@ contract DeployHelper {
         trustTokenProxy.claimProxyOwnership();
         trustTokenProxy.upgradeTo(trustTokenImplAddress);
         trustToken = TrustToken(address(trustTokenProxy));
-        trustToken.initialize(ProvisionalRegistryImplementation(address(registryProxy)));
+        trustToken.initialize();
 
         trustToken.transferOwnership(owner);
         trustTokenProxy.transferProxyOwnership(owner);
