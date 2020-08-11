@@ -450,6 +450,33 @@ describe('TrustToken', () => {
         })
       })
     })
+
+    describe('burn', () => {
+      describe('when trying to burn not more than own balance', () => {
+        beforeEach(async () => {
+          await trustToken.mint(secondAccount.address, parseTT(10))
+          expect(await trustToken.balanceOf(secondAccount.address)).to.equal(parseTT(10))
+          await trustToken.connect(secondAccount).burn(parseTT(10))
+          await trustToken.connect(initialHolder).burn(parseTT(10))
+        })
+
+        it('reduces balance', async () => {
+          expect(await trustToken.balanceOf(secondAccount.address)).to.equal(0)
+          expect(await trustToken.balanceOf(initialHolder.address)).to.equal(parseTT(990))
+        })
+
+        it('reduces total supply', async () => {
+          expect(await trustToken.totalSupply()).to.equal(parseTT(1990))
+        })
+      })
+
+      describe('when trying to burn more than own balance', () => {
+        it('reverts', async () => {
+          await expect(trustToken.connect(initialHolder).burn(parseTT(1001)))
+            .to.be.revertedWith('insufficient balance')
+        })
+      })
+    })
   })
 
   it('only owner can set timeLockRegistry address', async () => {
@@ -567,6 +594,13 @@ describe('TrustToken', () => {
 
     it('only timeLockRegistry can register lockups', async () => {
       await expect(trustToken.connect(owner).registerLockup(saftHolder.address, parseTT(100))).to.be.revertedWith('only TimeLockRegistry')
+    })
+
+    it('cannot burn locked tokens', async () => {
+      await expect(trustToken.connect(saftHolder).burn(10)).to.be.revertedWith('attempting to burn locked funds')
+      await timeTravel(provider, DAY * 120)
+      await expect(trustToken.connect(saftHolder).burn(parseTT(100).div(8).add(1))).to.be.revertedWith('attempting to burn locked funds')
+      await expect(trustToken.connect(saftHolder).burn(parseTT(100).div(8))).to.be.not.reverted
     })
 
     context('Transfers', () => {

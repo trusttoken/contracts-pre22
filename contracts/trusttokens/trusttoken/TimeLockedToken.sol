@@ -79,6 +79,7 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
      * @param _value The amount of tokens to be burnt
      */
     function _burn(address _from, uint256 _value) internal override {
+        require(balanceOf[_from] >= _value, "insufficient balance");
         require(unlockedBalance(_from) >= _value, "attempting to burn locked funds");
 
         super._burn(_from, _value);

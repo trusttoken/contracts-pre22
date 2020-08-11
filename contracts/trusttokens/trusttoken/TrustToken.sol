@@ -38,6 +38,10 @@ contract TrustToken is TimeLockedToken {
         }
     }
 
+    function burn(uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
+
     function decimals() public override pure returns (uint8) {
         return 8;
     }
