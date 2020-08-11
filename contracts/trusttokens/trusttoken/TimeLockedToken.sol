@@ -2,8 +2,8 @@
 pragma solidity 0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./ValTokenWithHook.sol";
-import "./ClaimableContract.sol";
+import {ERC20} from "./ERC20.sol";
+import "../ClaimableContract.sol";
 
 /**
  * @title TimeLockedToken
@@ -23,7 +23,7 @@ import "./ClaimableContract.sol";
  * are allowed to be transferred, and after all epochs have passed, the full
  * account balance is unlocked
  */
-abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
+abstract contract TimeLockedToken is ERC20, ClaimableContract {
     using SafeMath for uint256;
 
     // represents total distribution for locked balances
@@ -62,34 +62,15 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      * @param _to The address that will receive the tokens
      * @param _value The amount of tokens to be transferred
      */
-    function _transferAllArgs(
+    function _transfer(
         address _from,
         address _to,
         uint256 _value
-    ) internal override resolveSender(_from) {
-        require(balanceOf[_from] >= _value, "insufficient balance");
-        require(unlockedBalance(_from) >= _value, "attempting to transfer locked funds");
-
-        super._transferAllArgs(_from, _to, _value);
-    }
-
-    /**
-     * @dev transferFrom function which includes unlocked tokens
-     * @param _from The address to send tokens from
-     * @param _to The address that will receive the tokens
-     * @param _value The amount of tokens to be transferred
-     * @param _spender The address allowed to make the transfer
-     */
-    function _transferFromAllArgs(
-        address _from,
-        address _to,
-        uint256 _value,
-        address _spender
     ) internal override {
         require(balanceOf[_from] >= _value, "insufficient balance");
         require(unlockedBalance(_from) >= _value, "attempting to transfer locked funds");
 
-        super._transferFromAllArgs(_from, _to, _value, _spender);
+        super._transfer(_from, _to, _value);
     }
 
     /**
@@ -97,10 +78,10 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
      * @param _from The address whose tokens will burn
      * @param _value The amount of tokens to be burnt
      */
-    function _burn(address _from, uint256 _value) internal override returns (uint256 resultBalance_, uint256 resultSupply_) {
+    function _burn(address _from, uint256 _value) internal override {
         require(unlockedBalance(_from) >= _value, "attempting to burn locked funds");
 
-        (resultBalance_, resultSupply_) = super._burn(_from, _value);
+        super._burn(_from, _value);
     }
 
     /**
@@ -119,7 +100,7 @@ abstract contract TimeLockedToken is ValTokenWithHook, ClaimableContract {
         distribution[receiver] = amount;
 
         // transfer to recipient
-        _transferAllArgs(msg.sender, receiver, amount);
+        _transfer(msg.sender, receiver, amount);
     }
 
     /**

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TrustToken} from "../TrustToken.sol";
+import {TrustToken} from "../trusttoken/TrustToken.sol";
 
 contract MockTrustToken is TrustToken {
     // @dev faucet for testing TrustToken
