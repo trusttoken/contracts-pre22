@@ -7,16 +7,15 @@ import {ITrueFiPool} from "./ITrueFiPool.sol";
 
 /**
  * TrueFiPool is an ERC20 which represents a share of a pool.
- * 
+ *
  * This contract can be used to wrap opportunities to be compatible
  * with TrueFi and allow users to directly opt-in through the TUSD contract
  *
  * Each TrueFiPool is also a staking opportunity for TRU
  */
 contract TrueFiPool is ITrueFiPool, ERC20 {
+    constructor() public ERC20("Loan Token", "LOAN") {}
 
-    constructor () public ERC20("Loan Token", "LOAN") {}
-    
     /// @dev only TrueFi smart contract
     modifier onlyTrueFi() {
         _;
@@ -24,7 +23,7 @@ contract TrueFiPool is ITrueFiPool, ERC20 {
 
     /// @dev update paramaters
     function update(bytes32 params) external onlyTrueFi {
-        // TODO 
+        // TODO
         // do we need this function, or do updates happen via proxy upgrades?
     }
 

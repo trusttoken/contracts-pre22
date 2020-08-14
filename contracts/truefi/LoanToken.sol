@@ -25,7 +25,7 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
     bool public approved;
     IERC20 public token;
 
-    constructor (
+    constructor(
         address _borrower,
         uint256 _principal,
         uint256 _length,
@@ -38,7 +38,7 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
     }
 
     /// get balance of deposit tokens
-    function balance() public view override returns (uint256) {
+    function balance() public override view returns (uint256) {
         return token.balanceOf(address(this));
     }
 
@@ -48,7 +48,7 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
     }
 
     /// get value of principal plus interest
-    function value() public view override returns (uint256) {
+    function value() public override view returns (uint256) {
         return interest(principal);
     }
 
