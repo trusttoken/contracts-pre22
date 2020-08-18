@@ -1,17 +1,18 @@
 import { utils, constants, Wallet } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
 import { expect } from 'chai'
-import { TrueCurrency } from '../../build/types/TrueCurrency'
+import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { toAddress, WalletOrAddress } from '../utils/toAddress'
 import { initialSupply, trueCurrency } from '../fixtures/trueCurrency'
 import { parseEther } from 'ethers/utils'
+import { AddressZero, Zero } from 'ethers/constants'
 
 describe('TrueCurrency - Mint/Burn behaviour', () => {
   const redemptionAddress = '0x0000000000000000000000000000000000074D72'
 
   let initialHolder: Wallet
   let secondAccount: Wallet
-  let token: TrueCurrency
+  let token: MockTrueCurrency
 
   function approve (tokenOwner: Wallet, spender: WalletOrAddress, amount: utils.BigNumberish) {
     const asTokenOwner = token.connect(tokenOwner)
@@ -50,7 +51,7 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
     describe('transfer', () => {
       describe('when the given amount is not greater than balance of the sender', () => {
         describe('for a zero amount', () => {
-          shouldBurn(utils.bigNumberify(0))
+          shouldBurn(Zero)
         })
 
         describe('for a non-zero amount', () => {
@@ -72,18 +73,20 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
           })
 
           it('drops digits below cents', async () => {
+            const balanceBefore = await token.balanceOf(tokenOwner.address)
             await expect(transfer(tokenOwner, redemptionAddress, amount.add(12_000)))
-              .to.emit(token, 'Transfer').withArgs(tokenOwner.address, redemptionAddress, amount.add(12_000)).and
+              .to.emit(token, 'Transfer').withArgs(tokenOwner.address, redemptionAddress, amount).and
               .to.emit(token, 'Transfer').withArgs(redemptionAddress, constants.AddressZero, amount).and
               .to.emit(token, 'Burn').withArgs(redemptionAddress, amount)
-            expect(await token.balanceOf(redemptionAddress)).to.equal(12_000)
+            expect(await token.balanceOf(tokenOwner.address)).to.equal(balanceBefore.sub(amount))
+            expect(await token.balanceOf(redemptionAddress)).to.equal(0)
           })
         }
       })
 
       describe('when the given amount is greater than the balance of the sender', () => {
         it('reverts', async () => {
-          await expect(transfer(tokenOwner, redemptionAddress, initialBalance.add(12_000_000)))
+          await expect(transfer(tokenOwner, redemptionAddress, initialBalance.add(parseEther('0.01'))))
             .to.be.revertedWith('ERC20: transfer amount exceeds balance')
         })
       })
@@ -94,6 +97,11 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
           await expect(transfer(tokenOwner, redemptionAddress, 1))
             .to.be.revertedWith('TrueCurrency: cannot burn from this address')
         })
+      })
+
+      it('address(0) is not a redemption address', async () => {
+        await expect(transfer(tokenOwner, AddressZero, 1))
+          .to.be.revertedWith('ERC20: transfer to the zero address')
       })
     })
 
@@ -133,18 +141,20 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
           })
 
           it('drops digits below cents', async () => {
+            const balanceBefore = await token.balanceOf(tokenOwner.address)
             await approve(tokenOwner, burner, originalAllowance.add(12_000))
             await expect(transferFrom(burner, tokenOwner, redemptionAddress, amount.add(12_000)))
-              .to.emit(token, 'Transfer').withArgs(tokenOwner.address, redemptionAddress, amount.add(12_000)).and
+              .to.emit(token, 'Transfer').withArgs(tokenOwner.address, redemptionAddress, amount).and
               .to.emit(token, 'Transfer').withArgs(redemptionAddress, constants.AddressZero, amount).and
               .to.emit(token, 'Burn').withArgs(redemptionAddress, amount)
-            expect(await token.balanceOf(redemptionAddress)).to.equal(12_000)
+            expect(await token.balanceOf(redemptionAddress)).to.equal(0)
+            expect(await token.balanceOf(tokenOwner.address)).to.equal(balanceBefore.sub(amount))
           })
         }
       })
 
       describe('when the given amount is greater than the balance of the sender', () => {
-        const amount = initialBalance.add(12_000_000)
+        const amount = initialBalance.add(parseEther('0.01'))
 
         it('reverts', async () => {
           await approve(tokenOwner, burner, amount)
@@ -260,7 +270,7 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
       describe('when the target account is the zero address', () => {
         it('reverts', async () => {
           await expect(mint(owner, constants.AddressZero, 100))
-            .to.be.revertedWith('TrueCurrency: account is a redemption address')
+            .to.be.revertedWith('ERC20: mint to the zero address')
         })
       })
 
@@ -282,6 +292,7 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
 
   describe('blacklist', () => {
     let blacklistedAccount: Wallet
+
     beforeEach(async () => {
       blacklistedAccount = secondAccount
       await token.mint(blacklistedAccount.address, parseEther('1'))
@@ -289,6 +300,14 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
       await approve(initialHolder, blacklistedAccount, parseEther('1'))
       await approve(initialHolder, initialHolder, parseEther('1'))
       await token.setBlacklisted(blacklistedAccount.address, true)
+    })
+
+    it('emits event when blacklist status changes', async () => {
+      await expect(token.setBlacklisted(blacklistedAccount.address, false))
+        .to.emit(token, 'Blacklisted').withArgs(blacklistedAccount.address, false)
+
+      await expect(token.setBlacklisted(blacklistedAccount.address, true))
+        .to.emit(token, 'Blacklisted').withArgs(blacklistedAccount.address, true)
     })
 
     describe('transfer', () => {
@@ -334,12 +353,26 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
         await expect(approve(initialHolder, blacklistedAccount, 1))
           .to.be.revertedWith('TrueCurrency: tokens spender is blacklisted')
       })
+
+      it('can remove approval for blacklisted account', async () => {
+        await expect(approve(initialHolder, blacklistedAccount, 0)).to.be.not.reverted
+      })
+
+      it('blacklisted account cannot remove approval', async () => {
+        await expect(approve(blacklistedAccount, initialHolder, 0)).to.be.revertedWith('TrueCurrency: tokens owner is blacklisted')
+      })
     })
 
     describe('when non owner tries to change blacklist', () => {
       it('reverts', async () => {
         await expect(token.connect(blacklistedAccount).setBlacklisted(blacklistedAccount.address, false))
           .to.be.revertedWith('only Owner')
+      })
+    })
+
+    describe('when blacklisting redemption address', () => {
+      it('reverts', async () => {
+        await expect(token.setBlacklisted(AddressZero, true)).to.be.revertedWith('TrueCurrency: blacklisting of redemption address is not allowed')
       })
     })
   })
