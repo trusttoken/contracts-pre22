@@ -13,8 +13,16 @@ import {ITrueFiPool} from "./ITrueFiPool.sol";
  *
  * Each TrueFiPool is also a staking opportunity for TRU
  */
-contract TrueFiPool is ITrueFiPool, ERC20 {
-    constructor() public ERC20("Loan Token", "LOAN") {}
+abstract contract TrueFiPool is ITrueFiPool, ERC20 {
+    IERC20 public token;
+
+    constructor(
+        IERC20 _token,
+        string memory name,
+        string memory symbol
+    ) public ERC20(name, symbol) {
+        token = _token;
+    }
 
     /// @dev only TrueFi smart contract
     modifier onlyTrueFi() {
@@ -32,7 +40,7 @@ contract TrueFiPool is ITrueFiPool, ERC20 {
      * 1. Transfer TUSD from sender
      * 2. Exchange TUSD for pool tokens
      */
-    function join(uint256 amount) external override {
+    function join(uint256 amount) external virtual override {
         // TODO
     }
 
@@ -42,18 +50,12 @@ contract TrueFiPool is ITrueFiPool, ERC20 {
      * 2. Exchange pool tokens for TUSD
      * 3. Burn pool tokens
      */
-    function exit(uint256 amount) external override {
+    function exit(uint256 amount) external virtual override {
         // TODO
-    }
-
-    /// @dev calculate and update token value internally
-    function drip() external override returns (uint256) {
-        // TODO
-        return 0;
     }
 
     /// @dev get token value for pool token
-    function value() external override pure returns (uint256) {
+    function value() external virtual override view returns (uint256) {
         // TODO
         return 0;
     }
