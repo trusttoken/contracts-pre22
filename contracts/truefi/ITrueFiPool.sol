@@ -27,12 +27,8 @@ interface ITrueFiPool is IERC20 {
      */
     function exit(uint256 amount) external;
 
-    /// @dev calculate and update pool token value internally
-    /// Do we need this?
-    function drip() external returns (uint256);
-
     /// @dev get token value for pool token
-    function value() external pure returns (uint256);
+    function value() external view returns (uint256);
 
     /// @dev stake TRU
     function stake(uint256 amount) external;
