@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import {ProxyStorage} from "./ProxyStorage.sol";
+import {GasRefundLegacy} from "./GasRefundLegacy.sol";
 
 /**
  * @title ClamableOwnable
@@ -9,7 +9,7 @@ import {ProxyStorage} from "./ProxyStorage.sol";
  * and provides basic authorization control functions. Inherits storage layout of
  * ProxyStorage.
  */
-contract ClaimableOwnable is ProxyStorage {
+contract ClaimableOwnable is GasRefundLegacy {
     /**
      * @dev emitted when ownership is transferred
      * @param previousOwner previous owner of this contract
