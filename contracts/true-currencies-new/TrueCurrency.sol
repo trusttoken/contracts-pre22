@@ -43,6 +43,11 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
 
     /**
+     * @dev Emitted when account blacklist status changes
+     */
+    event Blacklisted(address indexed account, bool isBlacklisted);
+
+    /**
      * @dev Emitted when `value` tokens are minted for `to`
      * @param to address to mint tokens for
      * @param value amount of tokens to be minted
@@ -80,7 +85,9 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      * - `msg.sender` should be owner.
      */
     function setBlacklisted(address account, bool _isBlacklisted) external onlyOwner {
+        require(uint256(account) >= REDEMPTION_ADDRESS_COUNT, "TrueCurrency: blacklisting of redemption address is not allowed");
         isBlacklisted[account] = _isBlacklisted;
+        emit Blacklisted(account, _isBlacklisted);
     }
 
     /**
@@ -99,6 +106,7 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
     /**
      * @dev Check if neither account is blacklisted before performing transfer
      * If transfer recipient is a redemption address, burns tokens
+     * @notice Transfer to redemption address will burn tokens with a 1 cent precision
      * @param sender address of sender
      * @param recipient address of recipient
      * @param amount amount of tokens to transfer
@@ -111,10 +119,11 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
         require(!isBlacklisted[sender], "TrueCurrency: sender is blacklisted");
         require(!isBlacklisted[recipient], "TrueCurrency: recipient is blacklisted");
 
-        super._transfer(sender, recipient, amount);
-
         if (isRedemptionAddress(recipient)) {
-            _burn(recipient, amount - (amount % CENT));
+            super._transfer(sender, recipient, amount.sub(amount.mod(CENT)));
+            _burn(recipient, amount.sub(amount.mod(CENT)));
+        } else {
+            super._transfer(sender, recipient, amount);
         }
     }
 
@@ -130,7 +139,7 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
         uint256 amount
     ) internal override {
         require(!isBlacklisted[owner], "TrueCurrency: tokens owner is blacklisted");
-        require(!isBlacklisted[spender], "TrueCurrency: tokens spender is blacklisted");
+        require(!isBlacklisted[spender] || amount == 0, "TrueCurrency: tokens spender is blacklisted");
 
         super._approve(owner, spender, amount);
     }
@@ -146,7 +155,7 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
     }
 
     /**
-     * @dev First 0x100000 addresses (0x0000000000000000000000000000000000000000 to 0x00000000000000000000000000000000000fffff)
+     * @dev First 0x100000-1 addresses (0x0000000000000000000000000000000000000001 to 0x00000000000000000000000000000000000fffff)
      * are the redemption addresses.
      * @param account address to check is a redemption address
      *
@@ -157,6 +166,6 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      * @return is `account` a redemption address
      */
     function isRedemptionAddress(address account) internal pure returns (bool) {
-        return uint256(account) < REDEMPTION_ADDRESS_COUNT;
+        return uint256(account) < REDEMPTION_ADDRESS_COUNT && uint256(account) != 0;
     }
 }

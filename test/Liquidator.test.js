@@ -25,7 +25,7 @@ contract('Liquidator', function (accounts) {
     this.registry = await Registry.new({ from: owner })
     this.rewardToken = await TrueUSD.new({ from: issuer })
     this.stakeToken = await MockTrustToken.new({ from: issuer })
-    await this.stakeToken.initialize(this.registry.address, { from: issuer })
+    await this.stakeToken.initialize({ from: issuer })
     this.outputUniswapAddress = (await this.uniswapFactory.createExchange(this.rewardToken.address)).logs[0].args.exchange
     this.outputUniswap = await UniswapExchange.at(this.outputUniswapAddress)
     this.stakeUniswap = await UniswapExchange.at((await this.uniswapFactory.createExchange(this.stakeToken.address)).logs[0].args.exchange)
