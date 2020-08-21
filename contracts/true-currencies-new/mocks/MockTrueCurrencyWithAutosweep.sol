@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import {TrueCurrency} from "../TrueCurrency.sol";
+import {TrueCurrencyWithLegacyAutosweep} from "../TrueCurrencyWithLegacyAutosweep.sol";
 
-contract MockTrueCurrency is TrueCurrency {
+contract MockTrueCurrencyWithAutosweep is TrueCurrencyWithLegacyAutosweep {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
