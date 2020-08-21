@@ -15,7 +15,7 @@
 
 pragma solidity 0.6.10;
 
-import {ClamableOwnable} from "./ClamableOwnable.sol";
+import {ClaimableOwnable} from "./ClaimableOwnable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
@@ -46,7 +46,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-abstract contract ERC20 is ClamableOwnable, Context, IERC20 {
+abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
     using SafeMath for uint256;
     using Address for address;
 

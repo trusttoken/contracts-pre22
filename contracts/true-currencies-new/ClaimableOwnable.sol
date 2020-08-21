@@ -9,7 +9,7 @@ import {ProxyStorage} from "./ProxyStorage.sol";
  * and provides basic authorization control functions. Inherits storage layout of
  * ProxyStorage.
  */
-contract ClamableOwnable is ProxyStorage {
+contract ClaimableOwnable is ProxyStorage {
     /**
      * @dev emitted when ownership is transferred
      * @param previousOwner previous owner of this contract
