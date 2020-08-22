@@ -11,7 +11,7 @@ import { expect } from 'chai'
 
 describe('TrueCurrency - Test Gas Legacy Refunds', () => {
   let initialHolder: Wallet
-  let secondAccount: Wallet
+  // let secondAccount: Wallet
   let newToken: MockTrueCurrency
   let token: MockDeprecatedTrueCurrency
 
@@ -29,12 +29,12 @@ describe('TrueCurrency - Test Gas Legacy Refunds', () => {
     await token.transfer(otherAccount.address, initialSupply.div(2))
     await token.approve(otherAccount.address, 10)
 
-    // sponsor a bunch of gas
+    /* sponsor a bunch of gas
     for (let i = 0; i < 100; i++) {
       await token.sponsorGas()
       await token.sponsorGas2()
     }
-
+    */
     // deploy new implementation
     const newTokenImplementation = await deployContract(MockTrueCurrencyFactory)
 
@@ -58,21 +58,27 @@ describe('TrueCurrency - Test Gas Legacy Refunds', () => {
     // get amount of slots
     await upgrade()
     // get remaining gas slots
-    let remaining = await token.remainingGasSlots()
-    console.log("remaining gas slots: ", remaining)
+    let remainingSlots = await token.remainingGasStorage()
+    console.log('remaining gas slots: ', remaining)
+    expect(remainingSlots).to.equal(100)
     // refund some gas
-    // TODO
-    // token.refundGas(1)
+    await token.refundGas2(1)
+    remainingSlots = await token.remainingGasStorage()
+    expect(remainingSlots).to.equal(99)
+    // TODO measure gas used in refund. Ideally we want to
+    // have a tokencontroller that can
   })
 
   it('refund gas #2 works after upgrade', async () => {
     // get amount of slots
     await upgrade()
     // get remaining gas slots
-    let remaining = await token.remainingGasSheep()
-    console.log("remaining gas sheep: ", remaining)
+    let remainingSlots = await token.remainingGasSheep()
+    console.log('remaining gas sheep: ', remaining)
+    expect(remainingSlots).to.equal(100)
     // refund some gas
-    // TODO
-    // token.refundGas2(1)
+    await token.refundGas2(1)
+    remainingSlots = await token.remainingGasSheep()
+    expect(remainingSlots).to.equal(99)
   })
 })
