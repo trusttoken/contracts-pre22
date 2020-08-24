@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import {TokenController, OwnedUpgradeabilityProxy} from "../admin/TokenController.sol";
+import {TokenController, OwnedUpgradeabilityProxy} from "../../admin/TokenController.sol";
 
 contract TokenControllerMock is TokenController {
     function initialize() external {
