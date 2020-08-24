@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import {TokenController} from "../admin/TokenController.sol";
+import {TokenController} from "../../admin/TokenController.sol";
 
 /*
 Allows for admins to quickly respond to fraudulent mints
