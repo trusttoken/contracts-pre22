@@ -10,7 +10,7 @@ truffle-flattener contracts/true-currencies-new/TrueCAD.sol > flat_contracts/fla
 truffle-flattener contracts/true-currencies-new/TrueGBP.sol > flat_contracts/flat_tgbp.sol
 truffle-flattener contracts/true-currencies-new/TrueHKD.sol > flat_contracts/flat_thkd.sol
 truffle-flattener contracts/truecurrencies/Proxy/OwnedUpgradeabilityProxy.sol > flat_contracts/flat_OwnedUpgradeableProxy.sol
-truffle-flattener contracts/truecurrencies/Admin/TokenController.sol > flat_contracts/flat_TokenController.sol
+truffle-flattener contracts/admin/TokenController.sol > flat_contracts/flat_TokenController.sol
 truffle-flattener contracts/truecurrencies/utilities/DepositAddressRegistrar.sol > flat_contracts/flat_depositAddressRegistrar.sol
 truffle-flattener contracts/truecurrencies/utilities/PausedCurrencies.sol > flat_contracts/flat_PausedCurrencies.sol
 truffle-flattener contracts/truecurrencies/Admin/MultisigOwner.sol > flat_contracts/flat_MultisigOwner.sol

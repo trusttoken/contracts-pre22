@@ -3,17 +3,24 @@ pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Registry} from "../../registry/Registry.sol";
-import {HasOwner} from "../HasOwner.sol";
-import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
-import {TrueUSD} from "../TrueUSD.sol";
-import {InstantiatableOwnable} from "../modularERC20/InstantiatableOwnable.sol";
+import {Registry} from "../registry/Registry.sol";
+import {HasOwner} from "../truecurrencies/HasOwner.sol";
+import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
+import {TrueCurrency} from "../true-currencies-new/TrueCurrency.sol";
+import {InstantiatableOwnable} from "../truecurrencies/modularERC20/InstantiatableOwnable.sol";
+
+/**
+ * @dev Contract that can be called with a gas refund
+ */
+interface IHook {
+    function hook() external;
+}
 
 /** @title TokenController
-@dev This contract allows us to split ownership of the TrueUSD contract
-into two addresses. One, called the "owner" address, has unfettered control of the TrueUSD contract -
+@dev This contract allows us to split ownership of the TrueCurrency contract
+into two addresses. One, called the "owner" address, has unfettered control of the TrueCurrency contract -
 it can mint new tokens, transfer ownership of the contract, etc. However to make
-extra sure that TrueUSD is never compromised, this owner key will not be used in
+extra sure that TrueCurrency is never compromised, this owner key will not be used in
 day-to-day operations, allowing it to be stored at a heightened level of security.
 Instead, the owner appoints an various "admin" address.
 There are 3 different types of admin addresses;  MintKey, MintRatifier, and MintPauser.
@@ -69,7 +76,7 @@ contract TokenController {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    TrueUSD public token;
+    TrueCurrency public token;
     Registry public registry;
     address public trueRewardManager;
 
@@ -124,7 +131,7 @@ contract TokenController {
     /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
-    event SetToken(TrueUSD newContract);
+    event SetToken(TrueCurrency newContract);
 
     /// @dev Emitted when mint was requested
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -495,7 +502,7 @@ contract TokenController {
     *@dev Update this contract's token pointer to newContract (e.g. if the
     contract is upgraded)
     */
-    function setToken(TrueUSD _newContract) external onlyOwner {
+    function setToken(TrueCurrency _newContract) external onlyOwner {
         token = _newContract;
         emit SetToken(_newContract);
     }
@@ -506,14 +513,6 @@ contract TokenController {
     function setRegistry(Registry _registry) external onlyOwner {
         registry = _registry;
         emit SetRegistry(address(registry));
-    }
-
-    /**
-     *@dev Swap out token's permissions registry
-     *@param _registry new registry for token
-     */
-    function setTokenRegistry(Registry _registry) external onlyOwner {
-        token.setRegistry(_registry);
     }
 
     /**
@@ -536,17 +535,6 @@ contract TokenController {
     }
 
     /**
-    *@dev Transfer ownership of a contract from token to this TokenController.
-    Can be used e.g. to reclaim balance sheet
-    in order to transfer it to an upgraded TrueUSD contract.
-    *@param _other address of the contract to claim ownership of
-    */
-    function requestReclaimContract(InstantiatableOwnable _other) public onlyOwner {
-        token.reclaimContract(_other);
-        emit RequestReclaimContract(address(_other));
-    }
-
-    /**
      *@dev send all ether in token address to the owner of tokenController
      */
     function requestReclaimEther() external onlyOwner {
@@ -563,18 +551,10 @@ contract TokenController {
     }
 
     /**
-     *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
+     *@dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
     function pauseToken() external virtual onlyOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
-    }
-
-    /**
-     *@dev wipe balance of a blacklisted address
-     *@param _blacklistedAddress address whose balance will be wiped
-     */
-    function wipeBlackListedTrueUSD(address _blacklistedAddress) external onlyOwner {
-        token.wipeBlacklistedAccount(_blacklistedAddress);
     }
 
     /**
@@ -605,56 +585,19 @@ contract TokenController {
         _token.transfer(_to, balance);
     }
 
-    /*
-    ========================================
-    Truereward
-    ========================================
-    */
-
     /**
-     * @dev Sets the contract which has permissions to manage truerewards reserve
-     * Controls access to reserve functions to allow providing liquidity
+     * Call hook in `hookContract` with gas refund
      */
-    function setTrueRewardManager(address _newTrueRewardManager) external onlyOwner {
-        trueRewardManager = _newTrueRewardManager;
-    }
-
-    /**
-     * @dev Sets the contract which has permissions to manage truerewards reserve
-     * Controls access to reserve functions to allow providing liquidity
-     */
-    function setOpportunityAddress(address _opportunityAddress) external onlyOwner {
-        token.setOpportunityAddress(_opportunityAddress);
-    }
-
-    /**
-     * @dev Withdraw all trueCurrencies from reserve
-     * @param _to address to withdraw to
-     * @param _value amount to withdraw
-     */
-    function reserveWithdraw(address _to, uint256 _value) external onlyTrueRewardManager {
-        token.reserveWithdraw(_to, _value);
-    }
-
-    /**
-     * @dev Allow this contract to rebalance currency reserves
-     * This is called when there is not enough money in opportunity reserve and we want
-     * to get more opportunity tokens
-     *
-     * @param _value amount to exchange for opportunity rewardTokens
-     */
-    function opportunityReserveMint(uint256 _value) external onlyTrueRewardManager {
-        token.opportunityReserveMint(_value);
-    }
-
-    /**
-     * @dev Allow this contract to rebalance currency reserves
-     * This is called when there is too much money in opportunity and we want
-     * to get more TrueCurrency.
-     *
-     * @param _value amount of opportunity rewardTokens to redeem for TrueCurrency
-     */
-    function opportunityReserveRedeem(uint256 _value) external onlyTrueRewardManager {
-        token.opportunityReserveRedeem(_value);
+    function refundGasWithHook(IHook hookContract) external onlyOwner {
+        // calculate start gas amount
+        uint256 startGas = gasleft();
+        // call hook
+        hookContract.hook();
+        // calculate gas used
+        uint256 gasUsed = startGas.sub(gasleft());
+        // 1 refund = 15,000 gas. EVM refunds maximum half of used gas, so divide by 2.
+        // Add 20% to compensate inter contract communication
+        // (x + 20%) / 2 / 15000 = x / 25000
+        token.refundGas(gasUsed.div(25000));
     }
 }
