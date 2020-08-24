@@ -87,7 +87,7 @@ contract GasRefundLegacy is ProxyStorage {
      *
      * @return length number of remaining sheep contracts to self destruct
      */
-    function remainingGasSheep() public view returns (uint256 length) {
+    function remainingGasRefundPool2() external view returns (uint256 length) {
         assembly {
             // get number of sheep available to self destruct
             // stored at 0xffff...ffff (the last storage slot)
@@ -99,7 +99,7 @@ contract GasRefundLegacy is ProxyStorage {
      * @dev Return  the remaining sponsored gas slots
      * @return length number of remaining storage slots for refunds
      */
-    function remainingGasStorage() public view returns (uint256 length) {
+    function remainingGasRefundPool() external view returns (uint256 length) {
         assembly {
             length := sload(0xfffff)
         }
