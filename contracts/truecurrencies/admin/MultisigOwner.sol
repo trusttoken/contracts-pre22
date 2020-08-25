@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {TokenController, Registry, InstantiatableOwnable} from "./TokenController.sol";
+import {TokenController, Registry, InstantiatableOwnable} from "../../admin/TokenController.sol";
 import {CompliantDepositTokenWithHook} from "../CompliantDepositTokenWithHook.sol";
 import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
 import {Claimable} from "../deprecated/Claimable.sol";

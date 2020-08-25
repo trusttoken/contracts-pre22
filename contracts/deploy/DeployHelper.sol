@@ -5,7 +5,7 @@ pragma solidity 0.6.10;
 import {TrueUSD} from "../truecurrencies/TrueUSD.sol";
 import {ProvisionalRegistryImplementation} from "../mocks/RegistryImplementation.sol";
 import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
-import {TokenController} from "../truecurrencies/admin/TokenController.sol";
+import {TokenController} from "../admin/TokenController.sol";
 import {AssuredFinancialOpportunity} from "../truereward/AssuredFinancialOpportunity.sol";
 import {AaveFinancialOpportunity} from "../truereward/AaveFinancialOpportunity.sol";
 import {IAToken} from "../truereward/IAToken.sol";
