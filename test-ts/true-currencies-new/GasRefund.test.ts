@@ -27,25 +27,44 @@ describe('TrueCurrency - ERC20 behaviour', () => {
     await controller.setToken(token.address)
     await token.transferOwnership(controller.address)
     await controller.issueClaimOwnership(token.address)
-  })
-
-  it('gas cost with gas refund is smaller than calling without it', async () => {
     // first call may skew gas usage a little
     await hookContract.hook()
-    const noRefundGasUse = (await (await hookContract.hook()).wait()).gasUsed
-    await token.sponsorGas(200, {
-      gasLimit: 5000000,
-    })
-    const freeGasBefore = await token.remainingGasRefundPool()
-    const refundGasUse = (await (await controller.refundGasWithHook(hookContract.address)).wait()).gasUsed
-    const freeGasAfter = await token.remainingGasRefundPool()
-    expect(refundGasUse).to.be.lt(noRefundGasUse.mul(7).div(10))
-    expect(freeGasAfter).to.be.lt(freeGasBefore)
   })
 
-  it('does not consume more gas slots than available', async () => {
-    await token.sponsorGas(10)
-    await expect(controller.refundGasWithHook(hookContract.address)).to.be.not.reverted
-    expect(await token.remainingGasRefundPool()).to.equal(0)
+  describe('refund from preallocated slots', () => {
+    it('gas cost with gas refund is smaller than calling without it', async () => {
+      const noRefundGasUse = (await (await hookContract.hook()).wait()).gasUsed
+      await token.sponsorGas(200, {
+        gasLimit: 5000000,
+      })
+      const freeGasBefore = await token.remainingGasRefundPool()
+      const refundGasUse = (await (await controller.refundGasWithHook(hookContract.address)).wait()).gasUsed
+      const freeGasAfter = await token.remainingGasRefundPool()
+      expect(refundGasUse).to.be.lt(noRefundGasUse.mul(7).div(10))
+      expect(freeGasAfter).to.be.lt(freeGasBefore)
+    })
+
+    it('does not consume more gas slots than available', async () => {
+      await token.sponsorGas(10)
+      await expect(controller.refundGasWithHook(hookContract.address)).to.be.not.reverted
+      expect(await token.remainingGasRefundPool()).to.equal(0)
+    })
+  })
+
+  describe('refund by killing sheep', () => {
+    it('refunds gas by calling selfdestruct', async () => {
+      await token.sponsorGas2(100, {
+        gasLimit: 6000000,
+      })
+      expect(await token.remainingSheepRefundPool()).to.equal(100)
+      const noRefundGasUse = (await (await hookContract.hook()).wait()).gasUsed
+      const refundGasUse = (await (await controller.refundGasWithHook(hookContract.address)).wait()).gasUsed
+      expect(refundGasUse).to.be.lt(noRefundGasUse.mul(7).div(10))
+      expect(await token.remainingSheepRefundPool()).to.be.lt(100)
+    })
+
+    it('works with empty pool', async () => {
+      await expect(controller.refundGasWithHook(hookContract.address)).to.be.not.reverted
+    })
   })
 })

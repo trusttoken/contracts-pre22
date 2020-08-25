@@ -33,6 +33,9 @@ abstract contract GasRefund {
             if lt(offset, amount) {
                 amount := offset
             }
+            if eq(amount, 0) {
+                stop()
+            }
             let location := add(offset, 0xfffff)
             let end := sub(location, amount)
             // loop until amount is reached
@@ -52,11 +55,57 @@ abstract contract GasRefund {
     }
 
     /**
+     * @dev refund 39,000 gas
+     *  costs slightly more than 16,100 gas
+     */
+    function gasRefund39(uint256 amount) internal {
+        assembly {
+            // get amount of gas slots
+            let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+            // make sure there are enough slots
+            if lt(offset, amount) {
+                amount := offset
+            }
+            if eq(amount, 0) {
+                stop()
+            }
+            // first sheep pointer
+            let location := sub(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, offset)
+            // last sheep pointer
+            let end := add(location, amount)
+
+            for {
+
+            } lt(location, end) {
+                location := add(location, 1)
+            } {
+                // load sheep address
+                let sheep := sload(location)
+                // call selfdestruct on sheep
+                pop(call(gas(), sheep, 0, 0, 0, 0, 0))
+                // clear sheep address
+                sstore(location, 0)
+            }
+
+            sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, sub(offset, amount))
+        }
+    }
+
+    /**
      * @dev Return the remaining sponsored gas slots
      */
     function remainingGasRefundPool() public view returns (uint256 length) {
         assembly {
             length := sload(0xfffff)
+        }
+    }
+
+    /**
+     * @dev Return the remaining sheep slots
+     */
+    function remainingSheepRefundPool() public view returns (uint256 length) {
+        assembly {
+            length := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         }
     }
 }
