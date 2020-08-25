@@ -237,8 +237,9 @@ contract TokenController {
     */
 
     /**
-     * @dev set the threshold for a mint to be considered an instant mint, ratify mint and multiSig mint
-     Instant mint requires no approval, ratify mint requires 1 approval and multiSig mint requires 3 approvals
+     * @dev set the threshold for a mint to be considered an instant mint, 
+     * ratify mint and multiSig mint. Instant mint requires no approval, 
+     * ratify mint requires 1 approval and multiSig mint requires 3 approvals
      */
     function setMintThresholds(
         uint256 _instant,
@@ -254,7 +255,7 @@ contract TokenController {
 
     /**
      * @dev set the limit of each mint pool. For example can only instant mint up to the instant mint pool limit
-     before needing to refill
+     * before needing to refill
      */
     function setMintLimits(
         uint256 _instant,
@@ -328,7 +329,8 @@ contract TokenController {
     }
 
     /**
-     * @dev Instant mint without ratification if the amount is less than instantMintThreshold and instantMintPool
+     * @dev Instant mint without ratification if the amount is less 
+     * than instantMintThreshold and instantMintPool
      * @param _to the address to mint to
      * @param _value the amount minted
      */
@@ -341,8 +343,9 @@ contract TokenController {
     }
 
     /**
-     * @dev ratifier ratifies a request mint. If the number of ratifiers that signed off is greater than
-     the number of approvals required, the request is finalized
+     * @dev ratifier ratifies a request mint. If the number of 
+     * ratifiers that signed off is greater than the number of 
+     * approvals required, the request is finalized
      * @param _index the index of the requestMint to ratify
      * @param _to the address to mint to
      * @param _value the amount requested
@@ -366,7 +369,7 @@ contract TokenController {
 
     /**
      * @dev finalize a mint request, mint the amount requested to the specified address
-     @param _index of the request (visible in the RequestMint event accompanying the original request)
+     * @param _index of the request (visible in the RequestMint event accompanying the original request)
      */
     function finalizeMint(uint256 _index) public mintNotPaused {
         MintOperation memory op = mintOperations[_index];
@@ -414,7 +417,7 @@ contract TokenController {
 
     /**
      * @dev compute if a mint request meets all the requirements to be finalized
-     utility function for a front end
+     * utility function for a front end
      */
     function canFinalize(uint256 _index) public view returns (bool) {
         MintOperation memory op = mintOperations[_index];
@@ -425,8 +428,8 @@ contract TokenController {
     }
 
     /**
-     *@dev revoke a mint request, Delete the mintOperation
-     *@param _index of the request (visible in the RequestMint event accompanying the original request)
+     * @dev revoke a mint request, Delete the mintOperation
+     * @param _index of the request (visible in the RequestMint event accompanying the original request)
      */
     function revokeMint(uint256 _index) external onlyMintKeyOrOwner {
         delete mintOperations[_index];
@@ -444,8 +447,8 @@ contract TokenController {
     */
 
     /**
-     *@dev Replace the current mintkey with new mintkey
-     *@param _newMintKey address of the new mintKey
+     * @dev Replace the current mintkey with new mintkey
+     * @param _newMintKey address of the new mintKey
      */
     function transferMintKey(address _newMintKey) external onlyOwner {
         require(_newMintKey != address(0), "new mint key cannot be 0x0");
@@ -460,14 +463,14 @@ contract TokenController {
     */
 
     /**
-     *@dev invalidates all mint request initiated before the current block
+     * @dev invalidates all mint request initiated before the current block
      */
     function invalidateAllPendingMints() external onlyOwner {
         mintReqInvalidBeforeThisBlock = block.number;
     }
 
     /**
-     *@dev pause any further mint request and mint finalizations
+     * @dev pause any further mint request and mint finalizations
      */
     function pauseMints() external onlyMintPauserOrOwner {
         mintPaused = true;
@@ -475,7 +478,7 @@ contract TokenController {
     }
 
     /**
-     *@dev unpause any further mint request and mint finalizations
+     * @dev unpause any further mint request and mint finalizations
      */
     function unpauseMints() external onlyOwner {
         mintPaused = false;
@@ -483,8 +486,8 @@ contract TokenController {
     }
 
     /**
-     *@dev pause a specific mint request
-     *@param  _opIndex the index of the mint request the caller wants to pause
+     * @dev pause a specific mint request
+     * @param  _opIndex the index of the mint request the caller wants to pause
      */
     function pauseMint(uint256 _opIndex) external onlyMintPauserOrOwner {
         mintOperations[_opIndex].paused = true;
@@ -492,8 +495,8 @@ contract TokenController {
     }
 
     /**
-     *@dev unpause a specific mint request
-     *@param  _opIndex the index of the mint request the caller wants to unpause
+     * @dev unpause a specific mint request
+     * @param  _opIndex the index of the mint request the caller wants to unpause
      */
     function unpauseMint(uint256 _opIndex) external onlyOwner {
         mintOperations[_opIndex].paused = false;
@@ -507,16 +510,16 @@ contract TokenController {
     */
 
     /**
-    *@dev Update this contract's token pointer to newContract (e.g. if the
-    contract is upgraded)
-    */
+     * @dev Update this contract's token pointer to newContract (e.g. if the
+     * contract is upgraded)
+     */
     function setToken(TrueCurrency _newContract) external onlyOwner {
         token = _newContract;
         emit SetToken(_newContract);
     }
 
     /**
-     *@dev Update this contract's registry pointer to _registry
+     * @dev Update this contract's registry pointer to _registry
      */
     function setRegistry(Registry _registry) external onlyOwner {
         registry = _registry;
@@ -524,7 +527,7 @@ contract TokenController {
     }
 
     /**
-     *@dev Claim ownership of an arbitrary HasOwner contract
+     * @dev Claim ownership of an arbitrary HasOwner contract
      */
     function issueClaimOwnership(address _other) public onlyOwner {
         HasOwner other = HasOwner(_other);
@@ -532,26 +535,26 @@ contract TokenController {
     }
 
     /**
-    *@dev Transfer ownership of _child to _newOwner.
-    Can be used e.g. to upgrade this TokenController contract.
-    *@param _child contract that tokenController currently Owns
-    *@param _newOwner new owner/pending owner of _child
-    */
+     * @dev Transfer ownership of _child to _newOwner.
+     * Can be used e.g. to upgrade this TokenController contract.
+     * @param _child contract that tokenController currently Owns
+     * @param _newOwner new owner/pending owner of _child
+     */
     function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
         _child.transferOwnership(_newOwner);
         emit TransferChild(address(_child), _newOwner);
     }
 
     /**
-     *@dev send all ether in token address to the owner of tokenController
+     * @dev send all ether in token address to the owner of tokenController
      */
     function requestReclaimEther() external onlyOwner {
         token.reclaimEther(owner);
     }
 
     /**
-    *@dev transfer all tokens of a particular type in token address to the
-    owner of tokenController
+    * @dev transfer all tokens of a particular type in token address to the
+     * owner of tokenController
     *@param _token token address of the token to transfer
     */
     function requestReclaimToken(IERC20 _token) external onlyOwner {
@@ -559,8 +562,8 @@ contract TokenController {
     }
 
     /**
-     *@dev set new contract to which specified address can send eth to to quickly pause token
-     *@param _newFastPause address of the new contract
+     * @dev set new contract to which specified address can send eth to to quickly pause token
+     * @param _newFastPause address of the new contract
      */
     function setFastPause(address _newFastPause) external onlyOwner {
         fastPause = _newFastPause;
@@ -568,34 +571,34 @@ contract TokenController {
     }
 
     /**
-     *@dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
+     * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
     function pauseToken() external virtual onlyFastPauseOrOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 
     /**
-    *@dev Change the minimum and maximum amounts that TrueUSD users can
-    burn to newMin and newMax
-    *@param _min minimum amount user can burn at a time
-    *@param _max maximum amount user can burn at a time
+     * @dev Change the minimum and maximum amounts that TrueUSD users can
+     * burn to newMin and newMax
+     * @param _min minimum amount user can burn at a time
+     * @param _max maximum amount user can burn at a time
     */
     function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
         token.setBurnBounds(_min, _max);
     }
 
     /**
-     *@dev Owner can send ether balance in contract address
-     *@param _to address to which the funds will be send to
+     * @dev Owner can send ether balance in contract address
+     * @param _to address to which the funds will be send to
      */
     function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
     /**
-     *@dev Owner can send erc20 token balance in contract address
-     *@param _token address of the token to send
-     *@param _to address to which the funds will be send to
+     * @dev Owner can send erc20 token balance in contract address
+     * @param _token address of the token to send
+     * @param _to address to which the funds will be send to
      */
     function reclaimToken(IERC20 _token, address _to) external onlyOwner {
         uint256 balance = _token.balanceOf(address(this));
