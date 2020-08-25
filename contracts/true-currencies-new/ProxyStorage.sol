@@ -54,7 +54,7 @@ contract ProxyStorage {
     uint256 maxRewardProportion_Deprecated = 1000;
 
     mapping(address => bool) isBlacklisted;
-    mapping(address => bool) canBurn;
+    mapping(address => bool) public canBurn;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.

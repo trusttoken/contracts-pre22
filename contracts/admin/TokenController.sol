@@ -603,6 +603,15 @@ contract TokenController {
     }
 
     /**
+     * @dev Owner can allow address to burn tokens
+     * @param burner address of the token that can burn
+     * @param canBurn true if account is allowed to burn, false otherwise
+     */
+    function setCanBurn(address burner, bool canBurn) external onlyOwner {
+        token.setCanBurn(burner, canBurn);
+    }
+
+    /**
      * Call hook in `hookContract` with gas refund
      */
     function refundGasWithHook(IHook hookContract) external onlyOwner {
