@@ -6,10 +6,11 @@ pragma solidity 0.6.10;
 
 // solhint-disable max-states-count, var-name-mixedcase
 
-/*
-Defines the storage layout of the token implementation contract. Any newly declared
-state variables in future upgrades should be appended to the bottom. Never remove state variables
-from this list
+/**
+ * Defines the storage layout of the token implementation contract. Any
+ * newly declared state variables in future upgrades should be appended
+ * to the bottom. Never remove state variables from this list, however variables
+ * can be renamed. Please add _Deprecated to deprecated variables.
  */
 contract ProxyStorage {
     address public owner;
@@ -56,7 +57,7 @@ contract ProxyStorage {
     uint256 maxRewardProportion_Deprecated = 1000;
 
     mapping(address => bool) isBlacklisted;
-    mapping(address => bool) canBurn;
+    mapping(address => bool) public canBurn;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
@@ -77,7 +78,7 @@ contract ProxyStorage {
      **/
 }
 
-// File: contracts/true-currencies-new/ClamableOwnable.sol
+// File: contracts/true-currencies-new/ClaimableOwnable.sol
 
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
@@ -86,11 +87,15 @@ pragma solidity 0.6.10;
 /**
  * @title ClamableOwnable
  * @dev The ClamableOwnable contract is a copy of Claimable Contract by Zeppelin.
- and provides basic authorization control functions. Inherits storage layout of
- ProxyStorage.
+ * and provides basic authorization control functions. Inherits storage layout of
+ * ProxyStorage.
  */
-contract ClamableOwnable is ProxyStorage {
-    /// @dev emitted when ownership is transferred
+contract ClaimableOwnable is ProxyStorage {
+    /**
+     * @dev emitted when ownership is transferred
+     * @param previousOwner previous owner of this contract
+     * @param newOwner new owner of this contract
+     */
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
@@ -560,6 +565,8 @@ library Address {
  * - Remove constructor
  * - Solidity version changed from ^0.6.0 to 0.6.10
  * - Contract made abstract
+ *
+ * See also: ClaimableOwnable.sol and ProxyStorage.sol
  */
 
 // SPDX-License-Identifier: MIT
@@ -596,7 +603,7 @@ pragma solidity 0.6.10;
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-abstract contract ERC20 is ClamableOwnable, Context, IERC20 {
+abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
     using SafeMath for uint256;
     using Address for address;
 
@@ -838,18 +845,26 @@ abstract contract ERC20 is ClamableOwnable, Context, IERC20 {
 pragma solidity 0.6.10;
 
 
+/**
+ * @title ReclaimerToken
+ * @dev ERC20 token which allows owner to reclaim ERC20 tokens
+ * or ether sent to this contract
+ */
 abstract contract ReclaimerToken is ERC20 {
     /**
      * @dev send all eth balance in the contract to another address
+     * @param _to address to send eth balance to
      */
     function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
     /**
-    * @dev send all token balance of an arbitrary erc20 token
-    in the contract to another address
-    */
+     * @dev send all token balance of an arbitrary erc20 token
+     * in the contract to another address
+     * @param token token to reclaim
+     * @param _to address to send eth balance to
+     */
     function reclaimToken(IERC20 token, address _to) external onlyOwner {
         uint256 balance = token.balanceOf(address(this));
         token.transfer(_to, balance);
@@ -863,19 +878,23 @@ pragma solidity 0.6.10;
 
 
 /**
- * @title Burnable Token WithBounds
- * @dev Burning functions as redeeming money from the system. The platform will keep track of who burns coins,
+ * @title BurnableTokenWithBounds
+ * @dev Burning functions as redeeming money from the system.
+ * The platform will keep track of who burns coins,
  * and will send them back the equivalent amount of money (rounded down to the nearest cent).
  */
 abstract contract BurnableTokenWithBounds is ReclaimerToken {
     /**
      * @dev Emitted when `value` tokens are burnt from one account (`burner`)
+     * @param burner address which burned tokens
+     * @param value amount of tokens burned
      */
     event Burn(address indexed burner, uint256 value);
 
     /**
      * @dev Emitted when new burn bounds were set
-     *
+     * @param newMin new minimum burn amount
+     * @param newMax new maximum burn amount
      * @notice `newMin` should never be greater than `newMax`
      */
     event SetBurnBounds(uint256 newMin, uint256 newMax);
@@ -883,6 +902,7 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
     /**
      * @dev Destroys `amount` tokens from `msg.sender`, reducing the
      * total supply.
+     * @param amount amount of tokens to burn
      *
      * Emits a {Transfer} event with `to` set to the zero address.
      * Emits a {Burn} event with `burner` set to `msg.sender`
@@ -890,18 +910,21 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
      * Requirements
      *
      * - `msg.sender` must have at least `amount` tokens.
+     *
      */
     function burn(uint256 amount) external {
         _burn(msg.sender, amount);
     }
 
     /**
-     * @dev Change the minimum and maximum amount that can be burned at once. Burning
-     * may be disabled by setting both to 0 (this will not be done under normal
-     * operation, but we can't add checks to disallow it without losing a lot of
-     * flexibility since burning could also be as good as disabled
+     * @dev Change the minimum and maximum amount that can be burned at once.
+     * Burning may be disabled by setting both to 0 (this will not be done
+     * under normal operation, but we can't add checks to disallow it without
+     * losing a lot of flexibility since burning could also be as good as disabled
      * by setting the minimum extremely high, and we don't want to lock
      * in any particular cap for the minimum)
+     * @param _min minimum amount that can be burned at once
+     * @param _max maximum amount that can be burned at once
      */
     function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
         require(_min <= _max, "BurnableTokenWithBounds: min > max");
@@ -914,6 +937,8 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
      * @dev Checks if amount is within allowed burn bounds and
      * destroys `amount` tokens from `account`, reducing the
      * total supply.
+     * @param account account to burn tokens for
+     * @param amount amount of tokens to burn
      *
      * Emits a {Burn} event
      */
@@ -926,24 +951,184 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
     }
 }
 
+// File: contracts/true-currencies-new/GasRefund.sol
+
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
+
+/**
+ * @title Gas Reclaim Legacy
+ *
+ * Note: this contract does not affect any of the token logic. It merely
+ * exists so the TokenController (owner) can reclaim the sponsored gas
+ *
+ * Previously TrueCurrency has a feature called "gas boost" which allowed
+ * us to sponsor gas by setting non-empty storage slots to 1.
+ * We are depricating this feature, but there is a bunch of gas saved
+ * from years of sponsoring gas. This contract is meant to allow the owner
+ * to take advantage of this leftover gas. Once all the slots are used,
+ * this contract can be removed from TrueCurrency.
+ *
+ * Utilitzes the gas refund mechanism in EVM. Each time an non-empty
+ * storage slot is set to 0, evm will refund 15,000 to the sender.
+ * Also utilized the refund for selfdestruct, see gasRefund39
+ *
+ */
+abstract contract GasRefund {
+    /**
+     * @dev Refund 15,000 gas per slot.
+     * @param amount number of slots to free
+     */
+    function gasRefund15(uint256 amount) internal {
+        // refund gas
+        assembly {
+            // get number of free slots
+            let offset := sload(0xfffff)
+
+            // make sure there are enough slots
+            if lt(offset, amount) {
+                amount := offset
+            }
+            if eq(amount, 0) {
+                stop()
+            }
+            let location := add(offset, 0xfffff)
+            let end := sub(location, amount)
+            // loop until amount is reached
+            // i = storage location
+            for {
+
+            } gt(location, end) {
+                location := sub(location, 1)
+            } {
+                // set storage location to zero
+                // this refunds 15,000 gas
+                sstore(location, 0)
+            }
+            // store new number of free slots
+            sstore(0xfffff, sub(offset, amount))
+        }
+    }
+
+    /**
+     * @dev use smart contract self-destruct to refund gas
+     * will refund 39,000 * amount gas
+     */
+    function gasRefund39(uint256 amount) internal {
+        assembly {
+            // get amount of gas slots
+            let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+            // make sure there are enough slots
+            if lt(offset, amount) {
+                amount := offset
+            }
+            if eq(amount, 0) {
+                stop()
+            }
+            // first sheep pointer
+            let location := sub(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, offset)
+            // last sheep pointer
+            let end := add(location, amount)
+
+            for {
+
+            } lt(location, end) {
+                location := add(location, 1)
+            } {
+                // load sheep address
+                let sheep := sload(location)
+                // call selfdestruct on sheep
+                pop(call(gas(), sheep, 0, 0, 0, 0, 0))
+                // clear sheep address
+                sstore(location, 0)
+            }
+
+            sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, sub(offset, amount))
+        }
+    }
+
+    /**
+     * @dev Return the remaining sponsored gas slots
+     */
+    function remainingGasRefundPool() public view returns (uint256 length) {
+        assembly {
+            length := sload(0xfffff)
+        }
+    }
+
+    /**
+     * @dev Return the remaining sheep slots
+     */
+    function remainingSheepRefundPool() public view returns (uint256 length) {
+        assembly {
+            length := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        }
+    }
+}
+
 // File: contracts/true-currencies-new/TrueCurrency.sol
 
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
 
-abstract contract TrueCurrency is BurnableTokenWithBounds {
+
+/**
+ * @title TrueCurrency
+ * @dev TrueCurrency is an ERC20 with blacklist & redemption addresses
+ *
+ * TrueCurrency is a compliant stablecoin with blacklist and redemption
+ * addresses. Only the owner can blacklist accounts. Redemption addresses
+ * are assigned automatically to the first 0x100000 addresses. Sending
+ * tokens to the redemption address will trigger a burn operation. Only
+ * the owner can mint or blacklist accounts.
+ *
+ * This contract is owned by the TokenController, which manages token
+ * minting & admin functionality. See TokenController.sol
+ *
+ * See also: BurnableTokenWithBounds.sol
+ *
+ * ~~~~ Features ~~~~
+ *
+ * Redemption Addresses
+ * - The first 0x100000 addresses are redemption addresses
+ * - Tokens sent to redemption addresses are burned
+ * - Redemptions are tracked off-chain
+ * - Cannot mint tokens to redemption addresses
+ *
+ * Blacklist
+ * - Owner can blacklist accounts in accordance with local regulatory bodies
+ * - Only a court order will merit a blacklist; blacklisting is extremely rare
+ *
+ * Burn Bounds & CanBurn
+ * - Owner can set min & max burn amounts
+ * - Only accounts flagged in canBurn are allowed to burn tokens
+ * - canBurn prevents tokens from being sent to the incorrect address
+ *
+ * Reclaimer Token
+ * - ERC20 Tokens and Ether sent to this contract can be reclaimed by the owner
+ */
+abstract contract TrueCurrency is BurnableTokenWithBounds, GasRefund {
     uint256 constant CENT = 10**16;
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
 
     /**
+     * @dev Emitted when account blacklist status changes
+     */
+    event Blacklisted(address indexed account, bool isBlacklisted);
+
+    /**
      * @dev Emitted when `value` tokens are minted for `to`
+     * @param to address to mint tokens for
+     * @param value amount of tokens to be minted
      */
     event Mint(address indexed to, uint256 value);
 
     /**
      * @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
+     * @param account address to mint tokens for
+     * @param amount amount of tokens to be minted
      *
      * Emits a {Mint} event
      *
@@ -962,17 +1147,23 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
 
     /**
      * @dev Set blacklisted status for the account.
+     * @param account address to set blacklist flag for
+     * @param _isBlacklisted blacklist flag value
      *
      * Requirements:
      *
      * - `msg.sender` should be owner.
      */
     function setBlacklisted(address account, bool _isBlacklisted) external onlyOwner {
+        require(uint256(account) >= REDEMPTION_ADDRESS_COUNT, "TrueCurrency: blacklisting of redemption address is not allowed");
         isBlacklisted[account] = _isBlacklisted;
+        emit Blacklisted(account, _isBlacklisted);
     }
 
     /**
      * @dev Set canBurn status for the account.
+     * @param account address to set canBurn flag for
+     * @param _canBurn canBurn flag value
      *
      * Requirements:
      *
@@ -985,24 +1176,32 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
     /**
      * @dev Check if neither account is blacklisted before performing transfer
      * If transfer recipient is a redemption address, burns tokens
+     * @notice Transfer to redemption address will burn tokens with a 1 cent precision
+     * @param sender address of sender
+     * @param recipient address of recipient
+     * @param amount amount of tokens to transfer
      */
     function _transfer(
         address sender,
         address recipient,
         uint256 amount
-    ) internal override {
+    ) internal virtual override {
         require(!isBlacklisted[sender], "TrueCurrency: sender is blacklisted");
         require(!isBlacklisted[recipient], "TrueCurrency: recipient is blacklisted");
 
-        super._transfer(sender, recipient, amount);
-
         if (isRedemptionAddress(recipient)) {
-            _burn(recipient, amount - (amount % CENT));
+            super._transfer(sender, recipient, amount.sub(amount.mod(CENT)));
+            _burn(recipient, amount.sub(amount.mod(CENT)));
+        } else {
+            super._transfer(sender, recipient, amount);
         }
     }
 
     /**
      * @dev Requere neither accounts to be blacklisted before approval
+     * @param owner address of owner giving approval
+     * @param spender address of spender to approve for
+     * @param amount amount of tokens to approve
      */
     function _approve(
         address owner,
@@ -1010,13 +1209,15 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
         uint256 amount
     ) internal override {
         require(!isBlacklisted[owner], "TrueCurrency: tokens owner is blacklisted");
-        require(!isBlacklisted[spender], "TrueCurrency: tokens spender is blacklisted");
+        require(!isBlacklisted[spender] || amount == 0, "TrueCurrency: tokens spender is blacklisted");
 
         super._approve(owner, spender, amount);
     }
 
     /**
-     * @dev Check if tokens can be burnt at address before burning
+     * @dev Check if tokens can be burned at address before burning
+     * @param account account to burn tokens from
+     * @param amount amount of tokens to burn
      */
     function _burn(address account, uint256 amount) internal override {
         require(canBurn[account], "TrueCurrency: cannot burn from this address");
@@ -1024,8 +1225,9 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
     }
 
     /**
-     * @dev First 0x100000 addresses (0x0000000000000000000000000000000000000000 to 0x00000000000000000000000000000000000fffff)
+     * @dev First 0x100000-1 addresses (0x0000000000000000000000000000000000000001 to 0x00000000000000000000000000000000000fffff)
      * are the redemption addresses.
+     * @param account address to check is a redemption address
      *
      * All transfers to redemption address will trigger token burn.
      *
@@ -1034,7 +1236,20 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      * @return is `account` a redemption address
      */
     function isRedemptionAddress(address account) internal pure returns (bool) {
-        return uint256(account) < REDEMPTION_ADDRESS_COUNT;
+        return uint256(account) < REDEMPTION_ADDRESS_COUNT && uint256(account) != 0;
+    }
+
+    /**
+     * @dev reclaim gas from legacy gas refund #1
+     * will refund 15,000 * amount gas to sender (minus exection cost)
+     * If gas pool is empty, refund 39,000 * amount gas by calling selfdestruct
+     */
+    function refundGas(uint256 amount) external onlyOwner {
+        if (remainingGasRefundPool() > 0) {
+            gasRefund15(amount);
+        } else {
+            gasRefund39(amount.div(3));
+        }
     }
 }
 
@@ -1044,7 +1259,8 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
 pragma solidity 0.6.10;
 
 
-/** @title TrueAUD
+/**
+ * title TrueAUD
  * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
  * inherited - see the documentation on the corresponding contracts.
  */

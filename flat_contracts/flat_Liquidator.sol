@@ -1,11 +1,12 @@
 
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.6.0;
 
 /**
- * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
- * the optional functions; to access them see {ERC20Detailed}.
+ * @dev Interface of the ERC20 standard as defined in the EIP.
  */
 interface IERC20 {
     /**
@@ -78,81 +79,106 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-// File: @trusttoken/trusttokens/contracts/ValSafeMath.sol
+// File: contracts/trusttokens/ValSafeMath.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 /**
  * Forked subset of Openzeppelin SafeMath allowing custom underflow/overflow messages
  * Useful for debugging, replaceable with standard SafeMath
  */
 library ValSafeMath {
-    function add(uint256 a, uint256 b, string memory overflowMessage) internal pure returns (uint256 result) {
+    function add(
+        uint256 a,
+        uint256 b,
+        string memory overflowMessage
+    ) internal pure returns (uint256 result) {
         result = a + b;
         require(result >= a, overflowMessage);
     }
-    function sub(uint256 a, uint256 b, string memory underflowMessage) internal pure returns (uint256 result) {
+
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory underflowMessage
+    ) internal pure returns (uint256 result) {
         require(b <= a, underflowMessage);
         result = a - b;
     }
-    function mul(uint256 a, uint256 b, string memory overflowMessage) internal pure returns (uint256 result) {
+
+    function mul(
+        uint256 a,
+        uint256 b,
+        string memory overflowMessage
+    ) internal pure returns (uint256 result) {
         if (a == 0) {
             return 0;
         }
         result = a * b;
         require(result / a == b, overflowMessage);
     }
-    function div(uint256 a, uint256 b, string memory divideByZeroMessage) internal pure returns (uint256 result) {
+
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory divideByZeroMessage
+    ) internal pure returns (uint256 result) {
         require(b > 0, divideByZeroMessage);
         result = a / b;
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/ILiquidator.sol
+// File: contracts/trusttokens/ILiquidator.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 /**
  * @title Liquidator Interface
  * @dev Liquidate stake token for reward token
  */
-contract ILiquidator {
-
+abstract contract ILiquidator {
     /** @dev Get output token (token to get from liquidation exchange). */
-    function outputToken() internal view returns (IERC20);
+    function outputToken() public virtual view returns (IERC20);
 
     /** @dev Get stake token (token to be liquidated). */
-    function stakeToken() internal view returns (IERC20);
+    function stakeToken() public virtual view returns (IERC20);
 
     /** @dev Address of staking pool. */
-    function pool() internal view returns (address);
+    function pool() public virtual view returns (address);
 
     /**
      * @dev Transfer stake without liquidation
      */
-    function reclaimStake(address _destination, uint256 _stake) external;
+    function reclaimStake(address _destination, uint256 _stake) external virtual;
 
     /**
      * @dev Award stake tokens to stakers
      * Transfer to the pool without creating a staking position
      * Allows us to reward as staking or reward token
      */
-    function returnStake(address _from, uint256 balance) external;
+    function returnStake(address _from, uint256 balance) external virtual;
 
     /**
      * @dev Sells stake for underlying asset and pays to destination.
      */
-    function reclaim(address _destination, int256 _debt) external;
+    function reclaim(address _destination, int256 _debt) external virtual;
 }
 
-// File: @trusttoken/registry/contracts/Registry.sol
+// File: contracts/registry/Registry.sol
 
-pragma solidity ^0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 interface RegistryClone {
-    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
+    function syncAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) external;
 }
 
 contract Registry {
@@ -180,10 +206,7 @@ contract Registry {
     bytes32 constant WRITE_PERMISSION = keccak256("canWriteTo-");
     mapping(bytes32 => RegistryClone[]) subscribers;
 
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event SetAttribute(address indexed who, bytes32 attribute, uint256 value, bytes32 notes, address indexed adminAddr);
     event SetManager(address indexed oldManager, address indexed newManager);
     event StartSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
@@ -197,14 +220,19 @@ contract Registry {
     }
 
     // Writes are allowed only if the accessManager approves
-    function setAttribute(address _who, bytes32 _attribute, uint256 _value, bytes32 _notes) public {
+    function setAttribute(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value,
+        bytes32 _notes
+    ) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
 
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> 0) {
+        while (index-- > 0) {
             targets[index].syncAttributeValue(_who, _attribute, _value);
         }
     }
@@ -219,20 +247,24 @@ contract Registry {
         require(_index < length);
         emit StopSubscription(_attribute, subscribers[_attribute][_index]);
         subscribers[_attribute][_index] = subscribers[_attribute][length - 1];
-        subscribers[_attribute].length = length - 1;
+        subscribers[_attribute].pop();
     }
 
     function subscriberCount(bytes32 _attribute) public view returns (uint256) {
         return subscribers[_attribute].length;
     }
 
-    function setAttributeValue(address _who, bytes32 _attribute, uint256 _value) public {
+    function setAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, "", msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, "", msg.sender);
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> 0) {
+        while (index-- > 0) {
             targets[index].syncAttributeValue(_who, _attribute, _value);
         }
     }
@@ -242,9 +274,17 @@ contract Registry {
         return attributes[_who][_attribute].value != 0;
     }
 
-
     // Returns the exact value of the attribute, as well as its metadata
-    function getAttribute(address _who, bytes32 _attribute) public view returns (uint256, bytes32, address, uint256) {
+    function getAttribute(address _who, bytes32 _attribute)
+        public
+        view
+        returns (
+            uint256,
+            bytes32,
+            address,
+            uint256
+        )
+    {
         AttributeData memory data = attributes[_who][_attribute];
         return (data.value, data.notes, data.adminAddr, data.timestamp);
     }
@@ -261,12 +301,16 @@ contract Registry {
         return attributes[_who][_attribute].timestamp;
     }
 
-    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] calldata _addresses) external {
+    function syncAttribute(
+        bytes32 _attribute,
+        uint256 _startIndex,
+        address[] calldata _addresses
+    ) external {
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> _startIndex) {
+        while (index-- > _startIndex) {
             RegistryClone target = targets[index];
-            for (uint256 i = _addresses.length; i --> 0; ) {
+            for (uint256 i = _addresses.length; i-- > 0; ) {
                 address who = _addresses[i];
                 target.syncAttributeValue(who, _attribute, attributes[who][_attribute].value);
             }
@@ -282,33 +326,33 @@ contract Registry {
         token.transfer(_to, balance);
     }
 
-   /**
-    * @dev Throws if called by any account other than the owner.
-    */
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
     modifier onlyOwner() {
         require(msg.sender == owner, "only Owner");
         _;
     }
 
     /**
-    * @dev Modifier throws if called by any account other than the pendingOwner.
-    */
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
     modifier onlyPendingOwner() {
         require(msg.sender == pendingOwner);
         _;
     }
 
     /**
-    * @dev Allows the current owner to set the pendingOwner address.
-    * @param newOwner The address to transfer ownership to.
-    */
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
     function transferOwnership(address newOwner) public onlyOwner {
         pendingOwner = newOwner;
     }
 
     /**
-    * @dev Allows the pendingOwner address to finalize the transfer.
-    */
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
     function claimOwnership() public onlyPendingOwner {
         emit OwnershipTransferred(owner, pendingOwner);
         owner = pendingOwner;
@@ -316,12 +360,10 @@ contract Registry {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/ALiquidatorUniswap.sol
+// File: contracts/trusttokens/ALiquidatorUniswap.sol
 
-pragma solidity 0.5.13;
-
-//pragma experimental ABIEncoderV2;
-
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 
@@ -329,18 +371,47 @@ pragma solidity 0.5.13;
 
 /**
  * @dev Uniswap
- * This is nessesary since Uniswap is written in vyper.
+ * This is necessary since Uniswap is written in vyper.
  */
 interface UniswapV1 {
-    function tokenToExchangeSwapInput(uint256 tokensSold, uint256 minTokensBought, uint256 minEthBought, uint256 deadline, UniswapV1 exchangeAddress) external returns (uint256 tokensBought);
-    function tokenToExchangeTransferInput(uint256 tokensSold, uint256 minTokensBought, uint256 minEthBought, uint256 deadline, address recipient, UniswapV1 exchangeAddress) external returns (uint256 tokensBought);
-    function tokenToExchangeSwapOutput(uint256 tokensBought, uint256 maxTokensSold, uint256 maxEthSold, uint256 deadline, UniswapV1 exchangeAddress) external returns (uint256 tokensSold);
-    function tokenToExchangeTransferOutput(uint256 tokensBought, uint256 maxTokensSold, uint256 maxEthSold, uint256 deadline, address recipient, UniswapV1 exchangeAddress) external returns (uint256 tokensSold);
+    function tokenToExchangeSwapInput(
+        uint256 tokensSold,
+        uint256 minTokensBought,
+        uint256 minEthBought,
+        uint256 deadline,
+        UniswapV1 exchangeAddress
+    ) external returns (uint256 tokensBought);
+
+    function tokenToExchangeTransferInput(
+        uint256 tokensSold,
+        uint256 minTokensBought,
+        uint256 minEthBought,
+        uint256 deadline,
+        address recipient,
+        UniswapV1 exchangeAddress
+    ) external returns (uint256 tokensBought);
+
+    function tokenToExchangeSwapOutput(
+        uint256 tokensBought,
+        uint256 maxTokensSold,
+        uint256 maxEthSold,
+        uint256 deadline,
+        UniswapV1 exchangeAddress
+    ) external returns (uint256 tokensSold);
+
+    function tokenToExchangeTransferOutput(
+        uint256 tokensBought,
+        uint256 maxTokensSold,
+        uint256 maxEthSold,
+        uint256 deadline,
+        address recipient,
+        UniswapV1 exchangeAddress
+    ) external returns (uint256 tokensSold);
 }
 
 /**
  * @dev Uniswap Factory
- * This is nessesary since Uniswap is written in vyper.
+ * This is necessary since Uniswap is written in vyper.
  */
 interface UniswapV1Factory {
     function getExchange(IERC20 token) external returns (UniswapV1);
@@ -348,45 +419,39 @@ interface UniswapV1Factory {
 
 /**
  * @title Abstract Uniswap Liquidator
- * @dev Liquidate staked tokenns on uniswap.
- * This is because there are multiple instances of AirswapV2.
+ * @dev Liquidate staked tokens on uniswap.
  * StakingOpportunityFactory does not create a Liquidator, rather this must be created
  * Outside of the factory.
  */
-contract ALiquidatorUniswap is ILiquidator {
+abstract contract ALiquidatorUniswap is ILiquidator {
     using ValSafeMath for uint256;
 
     // owner, registry attributes
     address public owner;
     address public pendingOwner;
-    mapping (address => uint256) attributes;
-
+    mapping(address => uint256) attributes;
 
     // constants
     bytes32 constant APPROVED_BENEFICIARY = "approvedBeneficiary";
-    uint256 constant LIQUIDATOR_CAN_RECEIVE     = 0xff00000000000000000000000000000000000000000000000000000000000000;
+    uint256 constant LIQUIDATOR_CAN_RECEIVE = 0xff00000000000000000000000000000000000000000000000000000000000000;
     uint256 constant LIQUIDATOR_CAN_RECEIVE_INV = 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    // part of signature so that signing for airswap doesn't sign for all airswap instances
+
     uint256 constant MAX_UINT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     uint256 constant MAX_UINT128 = 0xffffffffffffffffffffffffffffffff;
-    bytes2 EIP191_HEADER = 0x1901;
+    bytes2 constant EIP191_HEADER = 0x1901;
 
     // internal variables implemented as storage by Liquidator
     // these variables must be known at construction time
     // Liquidator is the actual implementation of ALiquidator
 
-    /** @dev Get output token (token to get from liqudiation exchange). */
-    function outputToken() internal view returns (IERC20);
-    /** @dev Get stake token (token to be liquidated). */
-    function stakeToken() internal view returns (IERC20);
     /** @dev Output token on uniswap. */
-    function outputUniswapV1() internal view returns (UniswapV1);
+    function outputUniswapV1() public virtual view returns (UniswapV1);
+
     /** @dev Stake token on uniswap. */
-    function stakeUniswapV1() internal view returns (UniswapV1);
+    function stakeUniswapV1() public virtual view returns (UniswapV1);
+
     /** @dev Contract registry. */
-    function registry() internal view returns (Registry);
-    /** @dev Address of staking pool. */
-    function pool() internal view returns (address);
+    function registry() public virtual view returns (Registry);
 
     /**
      * @dev implementation constructor needs to call initialize
@@ -430,7 +495,11 @@ contract ALiquidatorUniswap is ILiquidator {
      * Supports APPROVED_BENEFICIARY
      * Can sync by saying this contract is the registry or sync from registry directly.
      */
-    function syncAttributeValue(address _account, bytes32 _attribute, uint256 _value) external onlyRegistry {
+    function syncAttributeValue(
+        address _account,
+        bytes32 _attribute,
+        uint256 _value
+    ) external onlyRegistry {
         if (_attribute == APPROVED_BENEFICIARY) {
             // approved beneficiary flag defines whether someone can receive
             if (_value > 0) {
@@ -453,34 +522,50 @@ contract ALiquidatorUniswap is ILiquidator {
      * Allows us to do this multiple times in one transaction
      * See ./uniswap/uniswap_exchange.vy
      */
-    function outputForUniswapV1Input(uint256 stakeInputAmount, UniswapState memory outputUniswapV1State, UniswapState memory stakeUniswapV1State) internal pure returns (uint256 outputAmount) {
+    function outputForUniswapV1Input(
+        uint256 stakeInputAmount,
+        UniswapState memory outputUniswapV1State,
+        UniswapState memory stakeUniswapV1State
+    ) internal pure returns (uint256 outputAmount) {
         uint256 inputAmountWithFee = 997 * stakeInputAmount;
-        inputAmountWithFee = 997 * (inputAmountWithFee * stakeUniswapV1State.etherBalance) / (stakeUniswapV1State.tokenBalance * 1000 + inputAmountWithFee);
-        outputAmount = (inputAmountWithFee * outputUniswapV1State.tokenBalance) / (outputUniswapV1State.etherBalance * 1000 + inputAmountWithFee);
+        inputAmountWithFee =
+            (997 * (inputAmountWithFee * stakeUniswapV1State.etherBalance)) /
+            (stakeUniswapV1State.tokenBalance * 1000 + inputAmountWithFee);
+        outputAmount =
+            (inputAmountWithFee * outputUniswapV1State.tokenBalance) /
+            (outputUniswapV1State.etherBalance * 1000 + inputAmountWithFee);
     }
 
     /**
-     * @dev Calcualte how much input we need to get a desired output
+     * @dev Calculate how much input we need to get a desired output
      * Is able to let us know if there is slippage in uniswap exchange rate
-     * and continue with Airswap
      * See./uniswap/uniswap_exchange.vy
      */
-    function inputForUniswapV1Output(uint256 outputAmount, UniswapState memory outputUniswapV1State, UniswapState memory stakeUniswapV1State) internal pure returns (uint256 inputAmount) {
+    function inputForUniswapV1Output(
+        uint256 outputAmount,
+        UniswapState memory outputUniswapV1State,
+        UniswapState memory stakeUniswapV1State
+    ) internal pure returns (uint256 inputAmount) {
         if (outputAmount >= outputUniswapV1State.tokenBalance) {
             return MAX_UINT128;
         }
-        uint256 ethNeeded = (outputUniswapV1State.etherBalance * outputAmount * 1000) / (997 * (outputUniswapV1State.tokenBalance - outputAmount)) + 1;
+        uint256 ethNeeded = (outputUniswapV1State.etherBalance * outputAmount * 1000) /
+            (997 * (outputUniswapV1State.tokenBalance - outputAmount)) +
+            1;
         if (ethNeeded >= stakeUniswapV1State.etherBalance) {
             return MAX_UINT128;
         }
-        inputAmount = (stakeUniswapV1State.tokenBalance * ethNeeded * 1000) / (997 * (stakeUniswapV1State.etherBalance - ethNeeded)) + 1;
+        inputAmount =
+            (stakeUniswapV1State.tokenBalance * ethNeeded * 1000) /
+            (997 * (stakeUniswapV1State.etherBalance - ethNeeded)) +
+            1;
     }
 
     /**
      * @dev Transfer stake without liquidation
      * requires LIQUIDATOR_CAN_RECEIVE flag (recipient must be registered)
      */
-    function reclaimStake(address _destination, uint256 _stake) external onlyOwner {
+    function reclaimStake(address _destination, uint256 _stake) external override onlyOwner {
         require(attributes[_destination] & LIQUIDATOR_CAN_RECEIVE != 0, "unregistered recipient");
         stakeToken().transferFrom(pool(), _destination, _stake);
     }
@@ -490,18 +575,17 @@ contract ALiquidatorUniswap is ILiquidator {
      * Transfer to the pool without creating a staking position.
      * Allows us to reward as staking or reward token.
      */
-    function returnStake(address _from, uint256 balance) external {
+    function returnStake(address _from, uint256 balance) external override {
         stakeToken().transferFrom(_from, pool(), balance);
     }
 
     /**
      * @dev Sells stake for underlying asset and pays to destination.
-     * Use airswap trades as long as they're better than uniswap.
      * Contract won't slip Uniswap this way.
      * If we reclaim more than we actually owe we award to stakers.
      * Not possible to convert back into TrustTokens here.
      */
-    function reclaim(address _destination, int256 _debt) external onlyOwner {
+    function reclaim(address _destination, int256 _debt) external override onlyOwner {
         require(_debt > 0, "Must reclaim positive amount");
         require(_debt < int256(MAX_UINT128), "reclaim amount too large");
         require(attributes[_destination] & LIQUIDATOR_CAN_RECEIVE != 0, "unregistered recipient");
@@ -511,8 +595,10 @@ contract ALiquidatorUniswap is ILiquidator {
         uint256 remainingStake = stakeToken().balanceOf(stakePool);
 
         // withdraw to liquidator
-        require(stakeToken().transferFrom(stakePool, address(this), remainingStake),
-            "liquidator not approved to transferFrom stakeToken");
+        require(
+            stakeToken().transferFrom(stakePool, address(this), remainingStake),
+            "liquidator not approved to transferFrom stakeToken"
+        );
 
         // load uniswap state for output and staked token
         UniswapState memory outputUniswapV1State;
@@ -533,7 +619,13 @@ contract ALiquidatorUniswap is ILiquidator {
             if (remainingStake > 0) {
                 if (outputForUniswapV1Input(remainingStake, outputUniswapV1State, stakeUniswapV1State) < uint256(remainingDebt)) {
                     // liquidate all remaining stake :(
-                    uint256 outputAmount = stakeUniswapV1State.uniswap.tokenToExchangeSwapInput(remainingStake, 1, 1, block.timestamp, outputUniswapV1State.uniswap);
+                    uint256 outputAmount = stakeUniswapV1State.uniswap.tokenToExchangeSwapInput(
+                        remainingStake,
+                        1,
+                        1,
+                        block.timestamp,
+                        outputUniswapV1State.uniswap
+                    );
                     emit Liquidated(remainingStake, outputAmount);
 
                     // update remaining stake and debt
@@ -544,7 +636,13 @@ contract ALiquidatorUniswap is ILiquidator {
                     outputToken().transfer(_destination, uint256(_debt - remainingDebt));
                 } else {
                     // finish liquidation via uniswap
-                    uint256 stakeSold = stakeUniswapV1State.uniswap.tokenToExchangeSwapOutput(uint256(remainingDebt), remainingStake, MAX_UINT, block.timestamp, outputUniswapV1State.uniswap);
+                    uint256 stakeSold = stakeUniswapV1State.uniswap.tokenToExchangeSwapOutput(
+                        uint256(remainingDebt),
+                        remainingStake,
+                        MAX_UINT,
+                        block.timestamp,
+                        outputUniswapV1State.uniswap
+                    );
                     emit Liquidated(stakeSold, uint256(remainingDebt));
                     remainingDebt = 0;
                     remainingStake -= stakeSold;
@@ -569,17 +667,17 @@ contract ALiquidatorUniswap is ILiquidator {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/Liquidator.sol
+// File: contracts/trusttokens/Liquidator.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
-//pragma experimental ABIEncoderV2;
 
 
 /**
  * @title Liquidator
  * @dev Implementation of ALiquidator
-**/
+ **/
 contract Liquidator is ALiquidatorUniswap {
     address pool_;
     Registry registry_;
@@ -589,6 +687,11 @@ contract Liquidator is ALiquidatorUniswap {
     UniswapV1 stakeUniswap_;
     bool initialized;
 
+    /**
+     * @dev Configure internal fields of contract
+     * Can only be called once
+     * Caller becomes the contract owner
+     */
     function configure(
         address registryAddress,
         address outputTokenAddress,
@@ -607,25 +710,41 @@ contract Liquidator is ALiquidatorUniswap {
         initialized = true;
         initialize();
     }
+
     function setPool(address _pool) external onlyOwner {
         pool_ = _pool;
     }
-    function pool() internal view returns (address) {
+
+    /**
+     * @dev Liquidator pool
+     * Should have large amount of TrustTokens and give infinite allowance to Liquidator
+     */
+    function pool() public override view returns (address) {
         return pool_;
     }
-    function outputToken() internal view returns (IERC20) {
+
+    // @dev TUSD address
+    function outputToken() public override view returns (IERC20) {
         return outputToken_;
     }
-    function stakeToken() internal view returns (IERC20) {
+
+    // @dev TRU token address
+    function stakeToken() public override view returns (IERC20) {
         return stakeToken_;
     }
-    function registry() internal view returns (Registry) {
+
+    // @dev Registry address
+    function registry() public override view returns (Registry) {
         return registry_;
     }
-    function outputUniswapV1() internal view returns (UniswapV1) {
+
+    // @dev Uniswap exchange for TRU
+    function outputUniswapV1() public override view returns (UniswapV1) {
         return outputUniswap_;
     }
-    function stakeUniswapV1() internal view returns (UniswapV1) {
+
+    // @dev Uniswap exchange for TrueReward token
+    function stakeUniswapV1() public override view returns (UniswapV1) {
         return stakeUniswap_;
     }
 }
