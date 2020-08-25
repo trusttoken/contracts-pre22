@@ -15,7 +15,8 @@ pragma solidity 0.6.10;
  * this contract can be removed from TrueCurrency.
  *
  * Utilitzes the gas refund mechanism in EVM. Each time an non-empty
- * storage slot is set to 0, evm will refund 15,000 to the sender
+ * storage slot is set to 0, evm will refund 15,000 to the sender.
+ * Also utilized the refund for selfdestruct, see gasRefund39
  *
  */
 abstract contract GasRefund {
@@ -55,8 +56,8 @@ abstract contract GasRefund {
     }
 
     /**
-     * @dev refund 39,000 gas
-     *  costs slightly more than 16,100 gas
+     * @dev use smart contract self-destruct to refund gas
+     * will refund 39,000 * amount gas
      */
     function gasRefund39(uint256 amount) internal {
         assembly {
