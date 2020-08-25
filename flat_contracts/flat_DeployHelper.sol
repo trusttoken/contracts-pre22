@@ -2882,7 +2882,7 @@ contract OwnedUpgradeabilityProxy {
 
 // File: contracts/true-currencies-new/ProxyStorage.sol
 
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 // solhint-disable max-states-count, var-name-mixedcase
@@ -2961,7 +2961,7 @@ contract ProxyStorage {
 
 // File: contracts/true-currencies-new/ClaimableOwnable.sol
 
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -3480,7 +3480,7 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
 
 // File: contracts/true-currencies-new/ReclaimerToken.sol
 
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -3512,7 +3512,7 @@ abstract contract ReclaimerToken is ERC20 {
 
 // File: contracts/true-currencies-new/BurnableTokenWithBounds.sol
 
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
@@ -3592,7 +3592,7 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
 
 // File: contracts/true-currencies-new/GasRefund.sol
 
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 /**
@@ -3707,7 +3707,7 @@ abstract contract GasRefund {
 
 // File: contracts/true-currencies-new/TrueCurrency.sol
 
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 
