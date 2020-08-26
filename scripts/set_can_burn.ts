@@ -21,7 +21,7 @@ export const setCanBurn = async (wallet: Wallet, controller: TokenController, ac
       console.log(`${address} canBurn is set to true, skipping`)
       continue
     }
-    pendingTransactions.push((await controller.setCanBurn(address, true, { ...txnArgs, nonce: nonce + 1 })).wait()
+    pendingTransactions.push((await controller.setCanBurn(address, true, { ...txnArgs, nonce })).wait()
       .then(() => console.log(`Done: ${address} can burn`))
       .catch((err) => console.error(`Failed for ${address}`, err)),
     )
