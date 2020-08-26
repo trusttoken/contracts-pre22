@@ -36,7 +36,6 @@ interface IHook {
  * MultiSig mint has the highest threshold and finalizes with three ratifier approvals. Deduct from multiSig mint pool,
  * which can only be refilled by the owner.
 */
-
 contract TokenControllerV2 {
     using SafeMath for uint256;
 
@@ -244,8 +243,8 @@ contract TokenControllerV2 {
     */
 
     /**
-     * @dev set the threshold for a mint to be considered an instant mint, 
-     * ratify mint and multiSig mint. Instant mint requires no approval, 
+     * @dev set the threshold for a mint to be considered an instant mint,
+     * ratify mint and multiSig mint. Instant mint requires no approval,
      * ratify mint requires 1 approval and multiSig mint requires 3 approvals
      */
     function setMintThresholds(
@@ -336,7 +335,7 @@ contract TokenControllerV2 {
     }
 
     /**
-     * @dev Instant mint without ratification if the amount is less 
+     * @dev Instant mint without ratification if the amount is less
      * than instantMintThreshold and instantMintPool
      * @param _to the address to mint to
      * @param _value the amount minted
@@ -350,8 +349,8 @@ contract TokenControllerV2 {
     }
 
     /**
-     * @dev ratifier ratifies a request mint. If the number of 
-     * ratifiers that signed off is greater than the number of 
+     * @dev ratifier ratifies a request mint. If the number of
+     * ratifiers that signed off is greater than the number of
      * approvals required, the request is finalized
      * @param _index the index of the requestMint to ratify
      * @param _to the address to mint to
@@ -557,7 +556,6 @@ contract TokenControllerV2 {
     }
     */
 
-
     /**
      * @dev send all ether in token address to the owner of tokenController
      */
@@ -586,7 +584,7 @@ contract TokenControllerV2 {
      * burn to newMin and newMax
      * @param _min minimum amount user can burn at a time
      * @param _max maximum amount user can burn at a time
-    */
+     */
     function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
         token.setBurnBounds(_min, _max);
     }

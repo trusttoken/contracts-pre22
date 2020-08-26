@@ -17,25 +17,25 @@ interface IHook {
 }
 
 /** @title TokenController
-@dev This contract allows us to split ownership of the TrueCurrency contract
-into two addresses. One, called the "owner" address, has unfettered control of the TrueCurrency contract -
-it can mint new tokens, transfer ownership of the contract, etc. However to make
-extra sure that TrueCurrency is never compromised, this owner key will not be used in
-day-to-day operations, allowing it to be stored at a heightened level of security.
-Instead, the owner appoints an various "admin" address.
-There are 3 different types of admin addresses;  MintKey, MintRatifier, and MintPauser.
-MintKey can request and revoke mints one at a time.
-MintPausers can pause individual mints or pause all mints.
-MintRatifiers can approve and finalize mints with enough approval.
+ * @dev This contract allows us to split ownership of the TrueCurrency contract
+ * into two addresses. One, called the "owner" address, has unfettered control of the TrueCurrency contract -
+ * it can mint new tokens, transfer ownership of the contract, etc. However to make
+ * extra sure that TrueCurrency is never compromised, this owner key will not be used in
+ * day-to-day operations, allowing it to be stored at a heightened level of security.
+ * Instead, the owner appoints an various "admin" address.
+ * There are 3 different types of admin addresses;  MintKey, MintRatifier, and MintPauser.
+ * MintKey can request and revoke mints one at a time.
+ * MintPausers can pause individual mints or pause all mints.
+ * MintRatifiers can approve and finalize mints with enough approval.
 
-There are three levels of mints: instant mint, ratified mint, and multiSig mint. Each have a different threshold
-and deduct from a different pool.
-Instant mint has the lowest threshold and finalizes instantly without any ratifiers. Deduct from instant mint pool,
-which can be refilled by one ratifier.
-Ratify mint has the second lowest threshold and finalizes with one ratifier approval. Deduct from ratify mint pool,
-which can be refilled by three ratifiers.
-MultiSig mint has the highest threshold and finalizes with three ratifier approvals. Deduct from multiSig mint pool,
-which can only be refilled by the owner.
+ * There are three levels of mints: instant mint, ratified mint, and multiSig mint. Each have a different threshold
+ * and deduct from a different pool.
+ * Instant mint has the lowest threshold and finalizes instantly without any ratifiers. Deduct from instant mint pool,
+ * which can be refilled by one ratifier.
+ * Ratify mint has the second lowest threshold and finalizes with one ratifier approval. Deduct from ratify mint pool,
+ * which can be refilled by three ratifiers.
+ * MultiSig mint has the highest threshold and finalizes with three ratifier approvals. Deduct from multiSig mint pool,
+ * which can only be refilled by the owner.
 */
 
 contract TokenController {
@@ -78,14 +78,17 @@ contract TokenController {
 
     TrueCurrency public token;
     Registry public registry;
-    address public fastPause;
-    address public trueRewardManager;
+    address public fastPause; // deprecated
+    address public trueRewardManager; // deprecated
 
+    // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
+    bytes32 public constant IS_GAS_REFUNDER = "isGasRefunder";
+    bytes32 public constant IS_REGISTRY_ADMIN = "isRegistryAdmin";
 
-    // paused version of TrueUSD in Production
+    // paused version of TrueCurrency in Production
     // pausing the contract upgrades the proxy to this implementation
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
 
@@ -114,8 +117,13 @@ contract TokenController {
         _;
     }
 
-    modifier onlyTrueRewardManager() {
-        require(msg.sender == trueRewardManager, "must be trueRewardManager");
+    modifier onlyGasRefunder() {
+        require(registry.hasAttribute(msg.sender, IS_GAS_REFUNDER) || msg.sender == owner, "must be gas refunder or owner");
+        _;
+    }
+
+    modifier onlyRegistryAdmin() {
+        require(registry.hasAttribute(msg.sender, IS_REGISTRY_ADMIN) || msg.sender == owner, "must be registry admin or owner");
         _;
     }
 
@@ -218,15 +226,15 @@ contract TokenController {
     ========================================
     */
 
-    function transferTusdProxyOwnership(address _newOwner) external onlyOwner {
+    function transferTrueCurrencyProxyOwnership(address _newOwner) external onlyOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).transferProxyOwnership(_newOwner);
     }
 
-    function claimTusdProxyOwnership() external onlyOwner {
+    function claimTrueCurrencyProxyOwnership() external onlyOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).claimProxyOwnership();
     }
 
-    function upgradeTusdProxyImplTo(address _implementation) external onlyOwner {
+    function upgradeTrueCurrencyProxyImplTo(address _implementation) external onlyOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(_implementation);
     }
 
@@ -237,8 +245,8 @@ contract TokenController {
     */
 
     /**
-     * @dev set the threshold for a mint to be considered an instant mint, 
-     * ratify mint and multiSig mint. Instant mint requires no approval, 
+     * @dev set the threshold for a mint to be considered an instant mint,
+     * ratify mint and multiSig mint. Instant mint requires no approval,
      * ratify mint requires 1 approval and multiSig mint requires 3 approvals
      */
     function setMintThresholds(
@@ -329,7 +337,7 @@ contract TokenController {
     }
 
     /**
-     * @dev Instant mint without ratification if the amount is less 
+     * @dev Instant mint without ratification if the amount is less
      * than instantMintThreshold and instantMintPool
      * @param _to the address to mint to
      * @param _value the amount minted
@@ -343,8 +351,8 @@ contract TokenController {
     }
 
     /**
-     * @dev ratifier ratifies a request mint. If the number of 
-     * ratifiers that signed off is greater than the number of 
+     * @dev ratifier ratifies a request mint. If the number of
+     * ratifiers that signed off is greater than the number of
      * approvals required, the request is finalized
      * @param _index the index of the requestMint to ratify
      * @param _to the address to mint to
@@ -436,6 +444,10 @@ contract TokenController {
         emit RevokeMint(_index);
     }
 
+    /**
+     * @dev get mint operatino count
+     * @return mint operation count
+     */
     function mintOperationCount() public view returns (uint256) {
         return mintOperations.length;
     }
@@ -553,21 +565,12 @@ contract TokenController {
     }
 
     /**
-    * @dev transfer all tokens of a particular type in token address to the
+     * @dev transfer all tokens of a particular type in token address to the
      * owner of tokenController
-    *@param _token token address of the token to transfer
-    */
+     * @param _token token address of the token to transfer
+     */
     function requestReclaimToken(IERC20 _token) external onlyOwner {
         token.reclaimToken(_token, owner);
-    }
-
-    /**
-     * @dev set new contract to which specified address can send eth to to quickly pause token
-     * @param _newFastPause address of the new contract
-     */
-    function setFastPause(address _newFastPause) external onlyOwner {
-        fastPause = _newFastPause;
-        emit FastPauseSet(address(_newFastPause));
     }
 
     /**
@@ -578,11 +581,11 @@ contract TokenController {
     }
 
     /**
-     * @dev Change the minimum and maximum amounts that TrueUSD users can
+     * @dev Change the minimum and maximum amounts that TrueCurrency users can
      * burn to newMin and newMax
      * @param _min minimum amount user can burn at a time
      * @param _max maximum amount user can burn at a time
-    */
+     */
     function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
         token.setBurnBounds(_min, _max);
     }
@@ -610,14 +613,14 @@ contract TokenController {
      * @param burner address of the token that can burn
      * @param canBurn true if account is allowed to burn, false otherwise
      */
-    function setCanBurn(address burner, bool canBurn) external onlyOwner {
+    function setCanBurn(address burner, bool canBurn) external onlyRegistryAdmin {
         token.setCanBurn(burner, canBurn);
     }
 
     /**
      * Call hook in `hookContract` with gas refund
      */
-    function refundGasWithHook(IHook hookContract) external onlyOwner {
+    function refundGasWithHook(IHook hookContract) external onlyGasRefunder {
         // calculate start gas amount
         uint256 startGas = gasleft();
         // call hook
