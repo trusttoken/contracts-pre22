@@ -12,12 +12,14 @@ import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 
 describe('TrueCurrency - ERC20 behaviour', () => {
   let deployer: Wallet
+  let refunder: Wallet
+  let otherAccount: Wallet
   let token: MockGasRefundToken
   let hookContract: MockHook
   let controller: TokenControllerMock
 
   beforeEachWithFixture(async (provider: MockProvider, wallets: Wallet[]) => {
-    [deployer] = wallets
+    [deployer, refunder, otherAccount] = wallets
     const deployContract = setupDeploy(deployer)
     token = await deployContract(MockGasRefundTokenFactory)
     await token.initialize()
@@ -27,6 +29,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
     await controller.setToken(token.address)
     await token.transferOwnership(controller.address)
     await controller.issueClaimOwnership(token.address)
+    await controller.setGasRefunder(refunder.address)
     // first call may skew gas usage a little
     await hookContract.hook()
   })
@@ -38,7 +41,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
         gasLimit: 5000000,
       })
       const freeGasBefore = await token.remainingGasRefundPool()
-      const refundGasUse = (await (await controller.refundGasWithHook(hookContract.address)).wait()).gasUsed
+      const refundGasUse = (await (await controller.connect(refunder).refundGasWithHook(hookContract.address)).wait()).gasUsed
       const freeGasAfter = await token.remainingGasRefundPool()
       expect(refundGasUse).to.be.lt(noRefundGasUse.mul(7).div(10))
       expect(freeGasAfter).to.be.lt(freeGasBefore)
@@ -46,8 +49,12 @@ describe('TrueCurrency - ERC20 behaviour', () => {
 
     it('does not consume more gas slots than available', async () => {
       await token.sponsorGas(10)
-      await expect(controller.refundGasWithHook(hookContract.address)).to.be.not.reverted
+      await expect(controller.connect(refunder).refundGasWithHook(hookContract.address)).to.be.not.reverted
       expect(await token.remainingGasRefundPool()).to.equal(0)
+    })
+
+    it('cannot be called by non owner or gasRefund account', async () => {
+      await expect(controller.connect(otherAccount).refundGasWithHook(hookContract.address)).to.be.revertedWith('must be gas refunder or owner')
     })
   })
 
@@ -64,7 +71,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
     })
 
     it('works with empty pool', async () => {
-      await expect(controller.refundGasWithHook(hookContract.address)).to.be.not.reverted
+      await expect(controller.connect(refunder).refundGasWithHook(hookContract.address)).to.be.not.reverted
     })
   })
 })

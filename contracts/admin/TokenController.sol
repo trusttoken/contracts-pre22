@@ -78,24 +78,17 @@ contract TokenController {
 
     TrueCurrency public token;
     Registry public registry;
-    address public fastPause; // deprecated
-    address public trueRewardManager; // deprecated
+    address public registryAdmin;
+    address public gasRefunder;
 
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
-    bytes32 public constant IS_GAS_REFUNDER = "isGasRefunder";
-    bytes32 public constant IS_REGISTRY_ADMIN = "isRegistryAdmin";
 
     // paused version of TrueCurrency in Production
     // pausing the contract upgrades the proxy to this implementation
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
-
-    modifier onlyFastPauseOrOwner() {
-        require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
-        _;
-    }
 
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
@@ -118,12 +111,12 @@ contract TokenController {
     }
 
     modifier onlyGasRefunder() {
-        require(registry.hasAttribute(msg.sender, IS_GAS_REFUNDER) || msg.sender == owner, "must be gas refunder or owner");
+        require(msg.sender == gasRefunder || msg.sender == owner, "must be gas refunder or owner");
         _;
     }
 
     modifier onlyRegistryAdmin() {
-        require(registry.hasAttribute(msg.sender, IS_REGISTRY_ADMIN) || msg.sender == owner, "must be registry admin or owner");
+        require(msg.sender == registryAdmin || msg.sender == owner, "must be registry admin or owner");
         _;
     }
 
@@ -468,6 +461,14 @@ contract TokenController {
         mintKey = _newMintKey;
     }
 
+    function setGasRefunder(address refunder) external onlyOwner {
+        gasRefunder = refunder;
+    }
+
+    function setRegistryAdmin(address admin) external onlyOwner {
+        registryAdmin = admin;
+    }
+
     /*
     ========================================
     Mint Pausing
@@ -576,7 +577,7 @@ contract TokenController {
     /**
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
-    function pauseToken() external virtual onlyFastPauseOrOwner {
+    function pauseToken() external virtual onlyOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 

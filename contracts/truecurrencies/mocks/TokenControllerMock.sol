@@ -21,7 +21,7 @@ contract TokenControllerPauseMock is TokenControllerMock {
     /**
      *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
      */
-    function pauseToken() external override onlyFastPauseOrOwner {
+    function pauseToken() external override onlyOwner {
         OwnedUpgradeabilityProxy(uint160(address(token))).upgradeTo(pausedImplementation);
     }
 }
