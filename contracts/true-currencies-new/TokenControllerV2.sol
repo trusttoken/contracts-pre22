@@ -4,10 +4,9 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Registry} from "../registry/Registry.sol";
-import {HasOwner} from "../truecurrencies/HasOwner.sol";
+// import {HasOwner} from "../truecurrencies/HasOwner.sol";
 import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
 import {TrueCurrency} from "../true-currencies-new/TrueCurrency.sol";
-import {InstantiatableOwnable} from "../truecurrencies/modularERC20/InstantiatableOwnable.sol";
 
 /**
  * @dev Contract that can be called with a gas refund
@@ -37,8 +36,7 @@ interface IHook {
  * MultiSig mint has the highest threshold and finalizes with three ratifier approvals. Deduct from multiSig mint pool,
  * which can only be refilled by the owner.
 */
-
-contract TokenController {
+contract TokenControllerV2 {
     using SafeMath for uint256;
 
     struct MintOperation {
@@ -78,17 +76,24 @@ contract TokenController {
 
     TrueCurrency public token;
     Registry public registry;
-    address public registryAdmin;
-    address public gasRefunder;
+    address public fastPause; // deprecated
+    address public trueRewardManager; // deprecated
 
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
+    bytes32 public constant IS_GAS_REFUNDER = "isGasRefunder";
+    bytes32 public constant IS_REGISTRY_ADMIN = "isRegistryAdmin";
 
     // paused version of TrueCurrency in Production
     // pausing the contract upgrades the proxy to this implementation
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
+
+    modifier onlyFastPauseOrOwner() {
+        require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
+        _;
+    }
 
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
@@ -111,12 +116,12 @@ contract TokenController {
     }
 
     modifier onlyGasRefunder() {
-        require(msg.sender == gasRefunder || msg.sender == owner, "must be gas refunder or owner");
+        require(registry.hasAttribute(msg.sender, IS_GAS_REFUNDER) || msg.sender == owner, "must be gas refunder or owner");
         _;
     }
 
     modifier onlyRegistryAdmin() {
-        require(msg.sender == registryAdmin || msg.sender == owner, "must be registry admin or owner");
+        require(registry.hasAttribute(msg.sender, IS_REGISTRY_ADMIN) || msg.sender == owner, "must be registry admin or owner");
         _;
     }
 
@@ -134,7 +139,7 @@ contract TokenController {
     /// @dev Emitted when new registry was set
     event SetRegistry(address indexed registry);
     /// @dev Emitted when owner was transferred for child contract
-    event TransferChild(address indexed child, address indexed newOwner);
+    // event TransferChild(address indexed child, address indexed newOwner);
     /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
@@ -461,14 +466,6 @@ contract TokenController {
         mintKey = _newMintKey;
     }
 
-    function setGasRefunder(address refunder) external onlyOwner {
-        gasRefunder = refunder;
-    }
-
-    function setRegistryAdmin(address admin) external onlyOwner {
-        registryAdmin = admin;
-    }
-
     /*
     ========================================
     Mint Pausing
@@ -541,7 +538,7 @@ contract TokenController {
 
     /**
      * @dev Claim ownership of an arbitrary HasOwner contract
-     */
+     
     function issueClaimOwnership(address _other) public onlyOwner {
         HasOwner other = HasOwner(_other);
         other.claimOwnership();
@@ -552,11 +549,12 @@ contract TokenController {
      * Can be used e.g. to upgrade this TokenController contract.
      * @param _child contract that tokenController currently Owns
      * @param _newOwner new owner/pending owner of _child
-     */
+     
     function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
         _child.transferOwnership(_newOwner);
         emit TransferChild(address(_child), _newOwner);
     }
+    */
 
     /**
      * @dev send all ether in token address to the owner of tokenController
@@ -577,7 +575,7 @@ contract TokenController {
     /**
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
-    function pauseToken() external virtual onlyOwner {
+    function pauseToken() external virtual onlyFastPauseOrOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 
