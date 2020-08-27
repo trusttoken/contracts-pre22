@@ -2,28 +2,9 @@
 pragma solidity 0.6.10;
 
 import {TrueFiPool, IERC20} from "./TrueFiPool.sol";
+import {ICurvePool} from "./ICurvePool.sol";
 
-interface ICurve {
-    function calc_token_amount(uint256[4] memory amounts, bool deposit) external view returns (uint256);
-}
-
-interface ICurvePool {
-    function add_liquidity(uint256[4] memory amounts, uint256 min_mint_amount) external;
-
-    function remove_liquidity_one_coin(
-        uint256 _token_amount,
-        uint128 i,
-        uint256 min_amount
-    ) external;
-
-    function calc_withdraw_one_coin(uint256 _token_amount, int128 i) external view returns (uint256);
-
-    function token() external pure returns (IERC20);
-
-    function curve() external pure returns (ICurve);
-}
-
-contract YEarnPool is TrueFiPool {
+contract CurvePool is TrueFiPool {
     ICurvePool public curvePool;
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
@@ -31,6 +12,7 @@ contract YEarnPool is TrueFiPool {
     constructor(ICurvePool _curve, IERC20 token) public TrueFiPool(token, "CurveTUSDPool", "CurTUSD") {
         curvePool = _curve;
         token.approve(address(curvePool), uint256(-1));
+        curvePool.token().approve(address(curvePool), uint256(-1));
     }
 
     function join(uint256 amount) external override {
@@ -46,7 +28,7 @@ contract YEarnPool is TrueFiPool {
     }
 
     function exit(uint256 amount) external override {
-        require(amount < balanceOf(msg.sender));
+        require(amount <= balanceOf(msg.sender), "Insufficient balance");
 
         uint256 minTokenAmount = curvePool.calc_withdraw_one_coin(amount, TUSD_INDEX).mul(99).div(100);
 
