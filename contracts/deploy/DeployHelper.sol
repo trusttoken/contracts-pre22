@@ -2,7 +2,7 @@
 // solhint-disable max-states-count
 pragma solidity 0.6.10;
 
-import {TrueUSD} from "../truecurrencies/TrueUSD.sol";
+import {TrueUSDLegacy} from "../truecurrencies/TrueUSDLegacy.sol";
 import {ProvisionalRegistryImplementation} from "../mocks/RegistryImplementation.sol";
 import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
 import {TokenController} from "../admin/TokenController.sol";
@@ -40,7 +40,7 @@ contract DeployHelper {
     FractionalExponents exponentContract;
     StakedToken stakedToken;
 
-    TrueUSD trueUSD;
+    TrueUSDLegacy trueUSD;
     TokenController tokenController;
     TrustToken trustToken;
     AssuredFinancialOpportunity assuredFinancialOpportunity;
@@ -77,7 +77,7 @@ contract DeployHelper {
         deployer = msg.sender;
 
         trueUSDProxy = OwnedUpgradeabilityProxy(trueUSDProxyAddress);
-        trueUSD = TrueUSD(address(trueUSDProxy));
+        trueUSD = TrueUSDLegacy(address(trueUSDProxy));
         tokenControllerProxy = OwnedUpgradeabilityProxy(tokenControllerProxyAddress);
         tokenController = TokenController(address(tokenControllerProxy));
         trustTokenProxy = OwnedUpgradeabilityProxy(trustTokenProxyAddress);
@@ -193,7 +193,7 @@ contract DeployHelper {
         aaveFinancialOpportunity.configure(
             IAToken(aTokenAddress),
             ILendingPool(lendingPoolAddress),
-            TrueUSD(trueUSD),
+            TrueUSDLegacy(trueUSD),
             address(assuredFinancialOpportunity)
         );
 
