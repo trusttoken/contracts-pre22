@@ -1,7 +1,7 @@
 const RegistryMock = artifacts.require('RegistryMock')
 const Registry = artifacts.require('Registry')
 const TrueUSDMock = artifacts.require('TrueUSDMock')
-const TrueUSD = artifacts.require('TrueUSD')
+const TrueUSDLegacy = artifacts.require('TrueUSDLegacy')
 const OwnedUpgradeabilityProxy = artifacts.require('OwnedUpgradeabilityProxy')
 
 const bytes32 = require('./helpers/bytes32.js')
@@ -54,7 +54,7 @@ contract('GasProfile', function (accounts) {
     beforeEach(async function () {
       this.tokenProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
       this.tokenMockImpl = await TrueUSDMock.new(owner, 0)
-      this.tokenImpl = await TrueUSD.new()
+      this.tokenImpl = await TrueUSDLegacy.new()
       this.registryProxy = await OwnedUpgradeabilityProxy.new({ from: owner })
       this.registryImpl = await Registry.new({ from: owner })
       this.registryMockImpl = await RegistryMock.new({ from: owner })
@@ -62,7 +62,7 @@ contract('GasProfile', function (accounts) {
       await this.tokenProxy.upgradeTo(this.tokenMockImpl.address, { from: owner })
       this.tokenMock = await TrueUSDMock.at(this.tokenProxy.address)
       await this.tokenMock.initialize({ from: owner })
-      this.token = await TrueUSD.at(this.tokenProxy.address)
+      this.token = await TrueUSDLegacy.at(this.tokenProxy.address)
 
       await this.tokenProxy.upgradeTo(this.tokenImpl.address, { from: owner })
       await this.registryProxy.upgradeTo(this.registryMockImpl.address, { from: owner })

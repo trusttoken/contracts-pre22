@@ -10,7 +10,7 @@ const bytes32 = require('./helpers/bytes32.js')
 contract('TrueCurrencies', function ([owner, oneHundred]) {
   const DOLLAR = BN(10 ** 18)
   beforeEach(async function () {
-    this.TUSD = await TrueUSD.new({ from: owner })
+    this.TUSDLegacy = await TrueUSDLegacy.new({ from: owner })
     this.TAUD = await TrueAUD.new({ from: owner })
     this.TGBP = await TrueGBP.new({ from: owner })
     this.TCAD = await TrueCAD.new({ from: owner })
