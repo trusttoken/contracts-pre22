@@ -1,7 +1,7 @@
 const TrueAUD = artifacts.require('TrueAUD')
 const TrueCAD = artifacts.require('TrueCAD')
 const TrueGBP = artifacts.require('TrueGBP')
-const TrueUSD = artifacts.require('TrueUSD')
+const TrueUSDLegacy = artifacts.require('TrueUSDLegacy')
 const Registry = artifacts.require('RegistryMock')
 
 const BN = web3.utils.toBN
@@ -10,7 +10,7 @@ const bytes32 = require('./helpers/bytes32.js')
 contract('TrueCurrencies', function ([owner, oneHundred]) {
   const DOLLAR = BN(10 ** 18)
   beforeEach(async function () {
-    this.TUSDLegacy = await TrueUSDLegacy.new({ from: owner })
+    this.TUSD = await TrueUSDLegacy.new({ from: owner })
     this.TAUD = await TrueAUD.new({ from: owner })
     this.TGBP = await TrueGBP.new({ from: owner })
     this.TCAD = await TrueCAD.new({ from: owner })
