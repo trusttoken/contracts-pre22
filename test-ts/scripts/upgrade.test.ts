@@ -5,7 +5,7 @@ import { MockProvider, solidity } from 'ethereum-waffle'
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { deploy } from '../../scripts/deploy_testnet'
 import { upgrade } from '../../scripts/upgrade'
-import { TrueUsdFactory } from '../../build/types/TrueUsdFactory'
+import { TrueUsdLegacyFactory } from '../../build/types/TrueUsdLegacyFactory'
 import { TokenControllerFactory } from '../../build/types/TokenControllerFactory'
 import { AssuredFinancialOpportunityFactory } from '../../build/types/AssuredFinancialOpportunityFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../../build/types/OwnedUpgradeabilityProxyFactory'
@@ -33,7 +33,7 @@ describe.skip('Upgrading', () => {
 
   it('contracts storage is not corrupted by upgrade', async () => {
     const tokenController = new TokenControllerFactory(deployer).attach(tokenControllerProxyAddress)
-    const trueUsd = new TrueUsdFactory(deployer).attach(trueUsdProxyAddress)
+    const trueUsd = new TrueUsdLegacyFactory(deployer).attach(trueUsdProxyAddress)
     const assuredFinancialOpportunity = new AssuredFinancialOpportunityFactory(deployer).attach(assuredOpportunityProxyAddress)
     const registry = new ProvisionalRegistryImplementationFactory(deployer).attach(registryProxyAddress)
     await registry.setAttributeValue(holder.address, '0x6973547275655265776172647357686974656c69737465640000000000000000', 1)

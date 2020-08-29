@@ -9,7 +9,7 @@ import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinanc
 import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
 import { ProvisionalRegistryImplementation } from '../build/types/ProvisionalRegistryImplementation'
 import { ProvisionalRegistryImplementationFactory } from '../build/types/ProvisionalRegistryImplementationFactory'
-import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
+import { TrueUsdLegacyFactory } from '../build/types/TrueUsdLegacyFactory'
 import { RegistryAttributes } from './attributes'
 
 const comp = (expected: string, actual: string, topic: string) => {
@@ -82,7 +82,7 @@ interface DeployResult {
   const controllerProxy = OwnedUpgradeabilityProxyFactory.connect(deployResult.tokenController, provider)
   comp(deployResult.implementations.tokenController, await controllerProxy.implementation(),
     'TokenController implementation')
-  const tusd = TrueUsdFactory.connect(deployResult.trueUSD, provider)
+  const tusd = TrueUsdLegacyFactory.connect(deployResult.trueUSD, provider)
   comp(deployResult.assuredFinancialOpportunity, await tusd.opportunity(), 'TrueUSD Financial Opportunity')
 
   const ttProxy = OwnedUpgradeabilityProxyFactory.connect(deployResult.trustToken, provider)
@@ -94,7 +94,7 @@ interface DeployResult {
   const stakedTokenProxy = OwnedUpgradeabilityProxyFactory.connect(deployResult.stakedToken, provider)
   comp(owner, await stakedTokenProxy.proxyOwner(), 'StakedToken proxy owner')
 
-  const trustToken = TrueUsdFactory.connect(deployResult.trustToken, provider)
+  const trustToken = TrueUsdLegacyFactory.connect(deployResult.trustToken, provider)
   comp(owner, await trustToken.owner(), 'TrustToken owner')
   const assuredFinancialOpportunity = AssuredFinancialOpportunityFactory.connect(deployResult.assuredFinancialOpportunity, provider)
   comp(owner, await assuredFinancialOpportunity.owner(), 'AssuredFinancialOpportunity owner')
