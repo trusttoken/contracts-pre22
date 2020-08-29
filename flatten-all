@@ -4,7 +4,7 @@
 set -x
 
 mkdir -p flat_contracts
-truffle-flattener contracts/truecurrencies/TrueUSD.sol > flat_contracts/flat_tusd.sol
+truffle-flattener contracts/true-currencies-new/TrueUSD.sol > flat_contracts/flat_tusd.sol
 truffle-flattener contracts/true-currencies-new/TrueAUD.sol > flat_contracts/flat_taud.sol
 truffle-flattener contracts/true-currencies-new/TrueCAD.sol > flat_contracts/flat_tcad.sol
 truffle-flattener contracts/true-currencies-new/TrueGBP.sol > flat_contracts/flat_tgbp.sol
