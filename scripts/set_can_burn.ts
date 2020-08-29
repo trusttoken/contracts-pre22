@@ -1,6 +1,5 @@
 /**
  * Set canBurn addresses script
- *
  * PRIVATE_KEY="private key" ts-node scripts/set_can_burn.ts "network" "path to file with separated by ','" "token controller address"
  */
 
@@ -10,7 +9,7 @@ import { TokenController } from '../build/types/TokenController'
 import { TokenControllerFactory } from '../build/types/TokenControllerFactory'
 import { TrueCurrencyFactory } from '../build/types/TrueCurrencyFactory'
 
-export const txnArgs = { gasLimit: 2_000_000, gasPrice: 20_000_000_000 }
+export const txnArgs = { gasLimit: 60_000, gasPrice: 90_000_000_000 }
 
 export const setCanBurn = async (wallet: Wallet, controller: TokenController, accounts: string[]) => {
   let nonce = await wallet.getTransactionCount()

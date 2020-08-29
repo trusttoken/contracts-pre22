@@ -24,7 +24,6 @@ abstract contract GasRefund {
      * @param amount number of slots to free
      */
     function gasRefund15(uint256 amount) internal {
-        // refund gas
         assembly {
             // get number of free slots
             let offset := sload(0xfffff)
@@ -37,11 +36,9 @@ abstract contract GasRefund {
             }
             // get location of first slot
             let location := add(offset, 0xfffff)
-            // calculate loop end
-            let end := sub(location, amount)
             // loop until end is reached
             for {
-
+                let end := sub(location, amount)
             } gt(location, end) {
                 location := sub(location, 1)
             } {
@@ -71,11 +68,9 @@ abstract contract GasRefund {
             }
             // first sheep pointer
             let location := sub(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, offset)
-            // last sheep pointer
-            let end := add(location, amount)
             // loop from location to end
             for {
-
+                let end := add(location, amount)
             } lt(location, end) {
                 location := add(location, 1)
             } {
@@ -86,7 +81,7 @@ abstract contract GasRefund {
                 // clear sheep address
                 sstore(location, 0)
             }
-
+            // store new number of sheep
             sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, sub(offset, amount))
         }
     }

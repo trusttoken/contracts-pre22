@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {FinancialOpportunity} from "./FinancialOpportunity.sol";
-import {TrueUSD} from "../truecurrencies/TrueUSD.sol";
+import {TrueUSDLegacy} from "../truecurrencies/TrueUSDLegacy.sol";
 import {IAToken} from "./IAToken.sol";
 import {ILendingPool} from "./ILendingPool.sol";
 import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
@@ -38,7 +38,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     ILendingPool public lendingPool;
 
     /** TrueUSD */
-    TrueUSD public token;
+    TrueUSDLegacy public token;
 
     /** @dev total number of yTokens issued **/
     uint256 _totalSupply;
@@ -55,7 +55,7 @@ contract AaveFinancialOpportunity is FinancialOpportunity, InstantiatableOwnable
     function configure(
         IAToken _aToken, // aToken
         ILendingPool _lendingPool, // lendingPool interface
-        TrueUSD _token, // TrueUSD
+        TrueUSDLegacy _token, // TrueUSD
         address _owner // owner
     ) public onlyProxyOwner {
         require(address(_aToken) != address(0), "aToken cannot be address(0)");
