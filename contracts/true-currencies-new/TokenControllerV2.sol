@@ -76,8 +76,8 @@ contract TokenControllerV2 {
 
     TrueCurrency public token;
     Registry public registry;
-    address public fastPause; // deprecated
-    address public trueRewardManager; // deprecated
+    address public fastPause_Depricated;
+    address public trueRewardManager_Depricated;
 
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
@@ -89,11 +89,6 @@ contract TokenControllerV2 {
     // paused version of TrueCurrency in Production
     // pausing the contract upgrades the proxy to this implementation
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
-
-    modifier onlyFastPauseOrOwner() {
-        require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
-        _;
-    }
 
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
@@ -164,8 +159,6 @@ contract TokenControllerV2 {
     event MintPaused(uint256 opIndex, bool status);
     /// @dev Emitted when mint is approved
     event MintApproved(address approver, uint256 opIndex);
-    /// @dev Emitted when fast pause contract is changed
-    event FastPauseSet(address _newFastPause);
 
     /// @dev Emitted when mint threshold changes
     event MintThresholdChanged(uint256 instant, uint256 ratified, uint256 multiSig);
@@ -575,7 +568,7 @@ contract TokenControllerV2 {
     /**
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
-    function pauseToken() external virtual onlyFastPauseOrOwner {
+    function pauseToken() external virtual onlyOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 

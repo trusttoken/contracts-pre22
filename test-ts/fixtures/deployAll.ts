@@ -1,4 +1,3 @@
-import { Wallet } from 'ethers'
 import { AaveFinancialOpportunityFactory } from '../../build/types/AaveFinancialOpportunityFactory'
 import { AssuredFinancialOpportunityFactory } from '../../build/types/AssuredFinancialOpportunityFactory'
 import { ATokenMockFactory } from '../../build/types/ATokenMockFactory'
@@ -10,40 +9,37 @@ import { RegistryMockFactory } from '../../build/types/RegistryMockFactory'
 import { SimpleLiquidatorMockFactory } from '../../build/types/SimpleLiquidatorMockFactory'
 import { TrueUsdLegacyFactory } from '../../build/types/TrueUsdLegacyFactory'
 import { setupDeploy } from '../../scripts/utils'
+import { MockTrustTokenFactory } from '../../build/types/MockTrustTokenFactory'
+import { StakedTokenFactory } from '../../build/types/StakedTokenFactory'
 
-export const fixtureWithAave = async (owner: Wallet) => {
+export const deployAll = async (provider, wallets) => {
+  const [owner] = wallets
   const deployContract = setupDeploy(owner)
 
   const token = await deployContract(TrueUsdLegacyFactory, { gasLimit: 5_000_000 })
-  const mockPoolAddress = Wallet.createRandom().address
-
   const registry = await deployContract(RegistryMockFactory)
+  await token.setRegistry(registry.address)
+
   const fractionalExponents = await deployContract(FractionalExponentsFactory)
   const liquidator = await deployContract(SimpleLiquidatorMockFactory, token.address)
+
   const lendingPoolCore = await deployContract(LendingPoolCoreMockFactory)
   const sharesToken = await deployContract(ATokenMockFactory, token.address, lendingPoolCore.address)
   const lendingPool = await deployContract(LendingPoolMockFactory, lendingPoolCore.address, sharesToken.address)
 
-  const aaveFinancialOpportunityImpl = await deployContract(AaveFinancialOpportunityFactory)
+  const trustToken = await deployContract(MockTrustTokenFactory)
+  await trustToken.initialize()
+
+  const stakedToken = await deployContract(StakedTokenFactory)
+  await stakedToken.configure(trustToken.address, token.address, registry.address, liquidator.address)
+
+  const assuredFinancialOpportunity = await deployContract(AssuredFinancialOpportunityFactory)
+  await token.setOpportunityAddress(assuredFinancialOpportunity.address)
+
   const aaveFinancialOpportunityProxy = await deployContract(OwnedUpgradeabilityProxyFactory)
-  const aaveFinancialOpportunity = aaveFinancialOpportunityImpl.attach(aaveFinancialOpportunityProxy.address)
+  const aaveFinancialOpportunityImpl = await deployContract(AaveFinancialOpportunityFactory)
   await aaveFinancialOpportunityProxy.upgradeTo(aaveFinancialOpportunityImpl.address)
+  const aaveFinancialOpportunity = AaveFinancialOpportunityFactory.connect(aaveFinancialOpportunityProxy.address, owner)
 
-  const financialOpportunityImpl = await deployContract(AssuredFinancialOpportunityFactory)
-  const financialOpportunityProxy = await deployContract(OwnedUpgradeabilityProxyFactory)
-  const financialOpportunity = financialOpportunityImpl.attach(financialOpportunityProxy.address)
-  await financialOpportunityProxy.upgradeTo(financialOpportunityImpl.address)
-
-  await aaveFinancialOpportunity.configure(sharesToken.address, lendingPool.address, token.address, financialOpportunity.address)
-  await financialOpportunity.configure(
-    aaveFinancialOpportunity.address,
-    mockPoolAddress,
-    liquidator.address,
-    fractionalExponents.address,
-    token.address,
-    token.address,
-  )
-  await token.setRegistry(registry.address)
-
-  return { token, registry, lendingPoolCore, sharesToken, aaveFinancialOpportunity, financialOpportunity, liquidator }
+  return { wallets, token, registry, lendingPoolCore, sharesToken, aaveFinancialOpportunity, assuredFinancialOpportunity, liquidator, lendingPool, stakedToken, trustToken, fractionalExponents }
 }

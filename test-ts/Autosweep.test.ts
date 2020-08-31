@@ -2,8 +2,6 @@ import { ContractTransaction, ethers, Wallet } from 'ethers'
 import { BigNumberish, parseEther, Transaction } from 'ethers/utils'
 import { TrueUsdLegacy } from '../build/types/TrueUsdLegacy'
 import { RegistryAttributes } from '../scripts/attributes'
-import { fixtureWithAave } from './fixtures/fixtureWithAave'
-import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 import { expect } from 'chai'
 import { RegistryMock } from '../build/types/RegistryMock'
 import { expectRewardBackedBurnEventOn, expectEventsCountOn, expectTransferEventOn } from './utils/eventHelpers'
@@ -11,13 +9,14 @@ import { AddressZero } from 'ethers/constants'
 import { ATokenMock } from '../build/types/ATokenMock'
 import { AaveFinancialOpportunity } from '../build/types/AaveFinancialOpportunity'
 import { AssuredFinancialOpportunity } from '../build/types/AssuredFinancialOpportunity'
+import { loadFixture } from 'ethereum-waffle'
+import { deployAllWithSetup } from './fixtures/deployAllWithSetup'
 
 function toChecksumAddress (address: string) {
   return ethers.utils.getAddress(address.toLowerCase())
 }
 
 describe('Autosweep feature', () => {
-  let owner: Wallet
   let holder: Wallet
   let autosweepTarget: Wallet
   let token: TrueUsdLegacy
@@ -30,9 +29,16 @@ describe('Autosweep feature', () => {
   const expectRewardBackedBurnEventWith = async (tx: Transaction, from: string, amount: BigNumberish) => expectRewardBackedBurnEventOn(token)(tx, from, amount)
   const expectEventsCount = async (eventName: string, tx: ContractTransaction, count: number) => expectEventsCountOn(token)(eventName, tx, count)
 
-  beforeEachWithFixture(async (provider, wallets) => {
-    ([owner, holder, autosweepTarget] = wallets)
-    ;({ token, registry, sharesToken, aaveFinancialOpportunity, financialOpportunity } = await fixtureWithAave(owner))
+  beforeEach(async () => {
+    ({
+      wallets: [, holder, autosweepTarget],
+      token,
+      sharesToken,
+      registry,
+      assuredFinancialOpportunity: financialOpportunity,
+      aaveFinancialOpportunity,
+    } = await loadFixture(deployAllWithSetup))
+
     await registry.subscribe(RegistryAttributes.isDepositAddress.hex, token.address)
     await token.mint(holder.address, parseEther('200'))
     await token.connect(holder).transfer(sharesToken.address, parseEther('100'))

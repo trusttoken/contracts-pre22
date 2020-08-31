@@ -1,97 +1,58 @@
 import { expect, use } from 'chai'
-import { ContractFactory, providers, Wallet } from 'ethers'
-import { solidity } from 'ethereum-waffle'
-import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
+import { Contract, ContractTransaction, providers, Wallet, utils } from 'ethers'
+import { loadFixture, solidity } from 'ethereum-waffle'
 import { parseEther } from 'ethers/utils'
-import { Newable, setupDeploy } from '../scripts/utils'
-import { TrueUsdLegacyFactory } from '../build/types/TrueUsdLegacyFactory'
-import { TrueUsdLegacy } from '../build/types/TrueUsdLegacy'
-import { ProvisionalRegistryMock } from '../build/types/ProvisionalRegistryMock'
-import { ProvisionalRegistryMockFactory } from '../build/types/ProvisionalRegistryMockFactory'
-import { FractionalExponentsFactory } from '../build/types/FractionalExponentsFactory'
-import { LendingPoolMockFactory } from '../build/types/LendingPoolMockFactory'
-import { ATokenMockFactory } from '../build/types/ATokenMockFactory'
-import { SimpleLiquidatorMockFactory } from '../build/types/SimpleLiquidatorMockFactory'
-import { LendingPoolCoreMockFactory } from '../build/types/LendingPoolCoreMockFactory'
-import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
-import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
-import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
+import { TrueUsd } from '../build/types/TrueUsd'
+import { RegistryMock } from '../build/types/RegistryMock'
 import { AssuredFinancialOpportunity } from '../build/types/AssuredFinancialOpportunity'
 import { AaveFinancialOpportunity } from '../build/types/AaveFinancialOpportunity'
 import { StakedToken } from '../build/types/StakedToken'
-import { MockTrustTokenFactory } from '../build/types/MockTrustTokenFactory'
 import { MockTrustToken } from '../build/types/MockTrustToken'
-import { StakedTokenFactory } from '../build/types/StakedTokenFactory'
 import { RegistryAttributes } from '../scripts/attributes'
-import { TimeOwnedUpgradeabilityProxyFactory } from '../build/types/TimeOwnedUpgradeabilityProxyFactory'
 import { LendingPoolCoreMock } from '../build/types/LendingPoolCoreMock'
-import { ATokenMock } from '../build/types/ATokenMock'
 import { timeTravel } from './utils/timeTravel'
+import { deployAll } from './fixtures/deployAll'
 
 use(solidity)
 const BTC1000 = parseEther('1000').div(1e10)
 
-describe.skip('Staking', () => {
-  let owner: Wallet, holder: Wallet, staker: Wallet, secondStaker: Wallet
-  let provider: providers.Web3Provider
-  let trueUsd: TrueUsdLegacy
+describe('Staking', () => {
+  let holder: Wallet, staker: Wallet, secondStaker: Wallet
+  let provider: providers.JsonRpcProvider
+  let trueUsd: TrueUsd
   let trustToken: MockTrustToken
   let stakedToken: StakedToken
-  let registry: ProvisionalRegistryMock
+  let registry: RegistryMock
   let assuredFinancialOpportunity: AssuredFinancialOpportunity
 
   describe('with Aave and AssuredFinancialOpportunity', () => {
     let aaveLendingPoolCore: LendingPoolCoreMock
-    let aTusd: ATokenMock
     let aaveFinancialOpportunity: AaveFinancialOpportunity
 
     const stakeAll = async (staker: Wallet) => trustToken.connect(staker).transfer(stakedToken.address, await trustToken.balanceOf(staker.address))
 
-    beforeEachWithFixture(async (_provider, wallets) => {
-      ([owner, holder, staker, secondStaker] = wallets)
-      provider = _provider
+    beforeEach(async () => {
+      let liquidator: Contract
+      let lendingPool: Contract
+      let sharesToken: Contract
+      let fractionalExponents: Contract
 
-      const deployContract = setupDeploy(owner)
+      ({
+        wallets: [, holder, staker, secondStaker],
+        token: trueUsd,
+        stakedToken,
+        sharesToken,
+        registry,
+        fractionalExponents,
+        lendingPoolCore: aaveLendingPoolCore,
+        lendingPool,
+        liquidator,
+        assuredFinancialOpportunity,
+        aaveFinancialOpportunity,
+        trustToken,
+      } = await loadFixture(deployAll))
 
-      async function deployBehindProxy <T extends ContractFactory> (Factory: Newable<T>, ...args: Parameters<T['deploy']>): Promise<ReturnType<T['deploy']>> {
-        const impl = await deployContract(Factory, ...args)
-        const proxy = await deployContract(OwnedUpgradeabilityProxyFactory)
-        const implWithProxyStorage = impl.attach(proxy.address)
-        await proxy.upgradeTo(impl.address)
-        return implWithProxyStorage
-      }
-
-      async function deployBehindTimeProxy <T extends ContractFactory> (Factory: Newable<T>, ...args: Parameters<T['deploy']>): Promise<ReturnType<T['deploy']>> {
-        const impl = await deployContract(Factory, ...args)
-        const proxy = await deployContract(TimeOwnedUpgradeabilityProxyFactory)
-        const implWithProxyStorage = impl.attach(proxy.address)
-        await proxy.upgradeTo(impl.address)
-        return implWithProxyStorage
-      }
-
-      trueUsd = await deployContract(TrueUsdLegacyFactory, { gasLimit: 5_000_000 })
-
-      registry = await deployContract(ProvisionalRegistryMockFactory)
-      const fractionalExponents = await deployContract(FractionalExponentsFactory)
-      const liquidator = await deployContract(SimpleLiquidatorMockFactory, trueUsd.address)
-      aaveLendingPoolCore = await deployContract(LendingPoolCoreMockFactory)
-      aTusd = await deployContract(ATokenMockFactory, trueUsd.address, aaveLendingPoolCore.address)
-      await trueUsd.mint(aTusd.address, parseEther('1000'))
-      const aaveLendingPool = await deployContract(LendingPoolMockFactory, aaveLendingPoolCore.address, aTusd.address)
-
-      await trueUsd.setRegistry(registry.address)
-
-      aaveFinancialOpportunity = await deployBehindProxy(AaveFinancialOpportunityFactory)
-      assuredFinancialOpportunity = await deployBehindProxy(AssuredFinancialOpportunityFactory)
-
-      await trueUsd.setOpportunityAddress(assuredFinancialOpportunity.address)
-
-      trustToken = await deployBehindTimeProxy(MockTrustTokenFactory)
-      await trustToken.initialize()
-      stakedToken = await deployBehindProxy(StakedTokenFactory)
-      await stakedToken.configure(trustToken.address, trueUsd.address, registry.address, liquidator.address)
-
-      await aaveFinancialOpportunity.configure(aTusd.address, aaveLendingPool.address, trueUsd.address, assuredFinancialOpportunity.address)
+      await aaveFinancialOpportunity.configure(sharesToken.address, lendingPool.address, trueUsd.address, assuredFinancialOpportunity.address)
       await assuredFinancialOpportunity.configure(
         aaveFinancialOpportunity.address,
         stakedToken.address,
@@ -101,14 +62,19 @@ describe.skip('Staking', () => {
         trueUsd.address,
       )
 
+      await trueUsd.mint(sharesToken.address, parseEther('1000'))
       await registry.setAttributeValue(holder.address, RegistryAttributes.isTrueRewardsWhitelisted.hex, 1)
 
+      await registry.subscribe(RegistryAttributes.isRegisteredContract.hex, trustToken.address)
       await registry.subscribe(RegistryAttributes.isRegisteredContract.hex, trueUsd.address)
 
       await registry.setAttributeValue(staker.address, RegistryAttributes.hasPassedKYCAML.hex, 1)
       await registry.setAttributeValue(secondStaker.address, RegistryAttributes.hasPassedKYCAML.hex, 1)
       await registry.setAttributeValue(stakedToken.address, RegistryAttributes.isRegisteredContract.hex, 1)
 
+      provider = holder.provider as providers.JsonRpcProvider
+
+      expect(await registry.subscriberCount(RegistryAttributes.isRegisteredContract.hex)).to.eq(2)
       expect(await registry.getAttributeValue(stakedToken.address, RegistryAttributes.isRegisteredContract.hex)).to.eq(1)
       expect(await registry.hasAttribute(stakedToken.address, RegistryAttributes.isRegisteredContract.hex)).to.be.true
     })
@@ -142,23 +108,27 @@ describe.skip('Staking', () => {
         expect(await assuredFinancialOpportunity.poolAwardBalance()).to.eq(parseEther('200').sub(expectedHolderBalance))
       })
 
+      const getTimestamp = async (provider: providers.Provider, tx: ContractTransaction) => (await provider.getBlock((await tx.wait()).blockNumber)).timestamp
+      const initUnstake = async (token: StakedToken, amount: utils.BigNumberish): Promise<[Promise<ContractTransaction>, number]> => {
+        const unstakeInitialization = await token.initUnstake(amount)
+        return [Promise.resolve(unstakeInitialization), await getTimestamp(token.provider, unstakeInitialization)]
+      }
+
       it('cannot unstake more than own balance', async () => {
         await expect(stakeAll(staker)).to.emit(stakedToken, 'Mint')
         await trueUsd.connect(holder).enableTrueReward()
         const balance = await stakedToken.balanceOf(staker.address)
-        const unstakeInitialization = await stakedToken.connect(staker).initUnstake(balance.add(1))
-        const { timestamp } = await provider.getBlock(unstakeInitialization.blockNumber)
+        const [tx, timestamp] = await initUnstake(stakedToken.connect(staker), balance.add(1))
 
-        await expect(Promise.resolve(unstakeInitialization)).to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, balance)
+        await expect(tx).to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, balance)
       })
 
       it('cannot unstake twice', async () => {
         await stakeAll(staker)
         const balance = await stakedToken.balanceOf(staker.address)
-        await stakedToken.connect(staker).initUnstake(balance)
-        const { timestamp } = await provider.getBlock('latest')
-        await expect(stakedToken.connect(staker).initUnstake(1))
-          .to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, 0)
+        await initUnstake(stakedToken.connect(staker), balance)
+        const [tx, timestamp] = await initUnstake(stakedToken.connect(staker), 1)
+        await expect(tx).to.emit(stakedToken, 'PendingWithdrawal').withArgs(staker.address, timestamp, 0)
       })
 
       const TWO_WEEKS = 60 * 60 * 24 * 14
@@ -166,8 +136,7 @@ describe.skip('Staking', () => {
       it('cannot finalize unstake for 14 days', async () => {
         await stakeAll(staker)
         const balance = await stakedToken.balanceOf(staker.address)
-        const { blockNumber } = await stakedToken.connect(staker).initUnstake(balance)
-        const { timestamp } = await provider.getBlock(blockNumber)
+        const [, timestamp] = await initUnstake(stakedToken.connect(staker), balance)
         await expect(stakedToken.connect(staker).finalizeUnstake(staker.address, [timestamp]))
           .to.be.revertedWith('must wait 2 weeks to unstake')
         await timeTravel(provider, TWO_WEEKS - 10)
@@ -178,8 +147,7 @@ describe.skip('Staking', () => {
       it('can finalize unstake after 14 days', async () => {
         await stakeAll(staker)
         const balance = await stakedToken.balanceOf(staker.address)
-        const { blockNumber } = await stakedToken.connect(staker).initUnstake(balance)
-        const { timestamp } = await staker.provider.getBlock(blockNumber)
+        const [, timestamp] = await initUnstake(stakedToken.connect(staker), balance)
         const truBalanceBefore = await trustToken.balanceOf(staker.address)
         await timeTravel(provider, TWO_WEEKS)
         await stakedToken.connect(staker).finalizeUnstake(staker.address, [timestamp])
@@ -190,10 +158,8 @@ describe.skip('Staking', () => {
       it('can stake multiple times', async () => {
         await stakeAll(staker)
         const balance = await stakedToken.balanceOf(staker.address)
-        const { blockNumber: bn1 } = await stakedToken.connect(staker).initUnstake(balance.div(2))
-        const { timestamp: t1 } = await staker.provider.getBlock(bn1)
-        const { blockNumber: bn2 } = await stakedToken.connect(staker).initUnstake(balance.div(2))
-        const { timestamp: t2 } = await staker.provider.getBlock(bn2)
+        const [, t1] = await initUnstake(stakedToken.connect(staker), balance.div(2))
+        const [, t2] = await initUnstake(stakedToken.connect(staker), balance.div(2))
         const truBalanceBefore = await trustToken.balanceOf(staker.address)
         await timeTravel(provider, TWO_WEEKS)
         await stakedToken.connect(staker).finalizeUnstake(staker.address, [t1, t2])

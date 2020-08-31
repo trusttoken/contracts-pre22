@@ -19,6 +19,10 @@ contract MockERC20Token is ValTokenWithHook {
         _mint(_to, _value);
     }
 
+    function burn(uint256 _value) external {
+        _burn(msg.sender, _value);
+    }
+
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
