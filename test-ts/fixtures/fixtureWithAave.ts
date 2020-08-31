@@ -8,13 +8,13 @@ import { LendingPoolMockFactory } from '../../build/types/LendingPoolMockFactory
 import { OwnedUpgradeabilityProxyFactory } from '../../build/types/OwnedUpgradeabilityProxyFactory'
 import { RegistryMockFactory } from '../../build/types/RegistryMockFactory'
 import { SimpleLiquidatorMockFactory } from '../../build/types/SimpleLiquidatorMockFactory'
-import { TrueUsdFactory } from '../../build/types/TrueUsdFactory'
+import { TrueUsdLegacyFactory } from '../../build/types/TrueUsdLegacyFactory'
 import { setupDeploy } from '../../scripts/utils'
 
 export const fixtureWithAave = async (owner: Wallet) => {
   const deployContract = setupDeploy(owner)
 
-  const token = await deployContract(TrueUsdFactory, { gasLimit: 5_000_000 })
+  const token = await deployContract(TrueUsdLegacyFactory, { gasLimit: 5_000_000 })
   const mockPoolAddress = Wallet.createRandom().address
 
   const registry = await deployContract(RegistryMockFactory)

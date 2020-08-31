@@ -4,8 +4,8 @@ import { solidity } from 'ethereum-waffle'
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 import { parseEther } from 'ethers/utils'
 import { Newable, setupDeploy } from '../scripts/utils'
-import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
-import { TrueUsd } from '../build/types/TrueUsd'
+import { TrueUsdLegacyFactory } from '../build/types/TrueUsdLegacyFactory'
+import { TrueUsdLegacy } from '../build/types/TrueUsdLegacy'
 import { ProvisionalRegistryMock } from '../build/types/ProvisionalRegistryMock'
 import { ProvisionalRegistryMockFactory } from '../build/types/ProvisionalRegistryMockFactory'
 import { FractionalExponentsFactory } from '../build/types/FractionalExponentsFactory'
@@ -34,7 +34,7 @@ const BTC1000 = parseEther('1000').div(1e10)
 describe.skip('Staking', () => {
   let owner: Wallet, holder: Wallet, staker: Wallet, secondStaker: Wallet
   let provider: providers.Web3Provider
-  let trueUsd: TrueUsd
+  let trueUsd: TrueUsdLegacy
   let trustToken: MockTrustToken
   let stakedToken: StakedToken
   let registry: ProvisionalRegistryMock
@@ -69,7 +69,7 @@ describe.skip('Staking', () => {
         return implWithProxyStorage
       }
 
-      trueUsd = await deployContract(TrueUsdFactory, { gasLimit: 5_000_000 })
+      trueUsd = await deployContract(TrueUsdLegacyFactory, { gasLimit: 5_000_000 })
 
       registry = await deployContract(ProvisionalRegistryMockFactory)
       const fractionalExponents = await deployContract(FractionalExponentsFactory)
