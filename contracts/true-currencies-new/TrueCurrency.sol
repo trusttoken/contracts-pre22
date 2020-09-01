@@ -2,7 +2,6 @@
 pragma solidity 0.6.10;
 
 import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
-import {GasRefund} from "./GasRefund.sol";
 
 /**
  * @title TrueCurrency
@@ -39,7 +38,7 @@ import {GasRefund} from "./GasRefund.sol";
  * Reclaimer Token
  * - ERC20 Tokens and Ether sent to this contract can be reclaimed by the owner
  */
-abstract contract TrueCurrency is BurnableTokenWithBounds, GasRefund {
+abstract contract TrueCurrency is BurnableTokenWithBounds {
     uint256 constant CENT = 10**16;
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
 
@@ -168,18 +167,5 @@ abstract contract TrueCurrency is BurnableTokenWithBounds, GasRefund {
      */
     function isRedemptionAddress(address account) internal pure returns (bool) {
         return uint256(account) < REDEMPTION_ADDRESS_COUNT && uint256(account) != 0;
-    }
-
-    /**
-     * @dev reclaim gas from legacy gas refund #1
-     * will refund 15,000 * amount gas to sender (minus exection cost)
-     * If gas pool is empty, refund 39,000 * amount gas by calling selfdestruct
-     */
-    function refundGas(uint256 amount) external onlyOwner {
-        if (remainingGasRefundPool() > 0) {
-            gasRefund15(amount);
-        } else {
-            gasRefund39(amount.div(3));
-        }
     }
 }

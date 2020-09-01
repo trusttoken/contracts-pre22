@@ -7,6 +7,7 @@ import {Registry} from "../registry/Registry.sol";
 // import {HasOwner} from "../truecurrencies/HasOwner.sol";
 import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
 import {TrueCurrency} from "../true-currencies-new/TrueCurrency.sol";
+import {TrueCurrencyWithGasRefund} from "../true-currencies-new/TrueCurrencyWithGasRefund.sol";
 
 /**
  * @dev Contract that can be called with a gas refund
@@ -613,6 +614,7 @@ contract TokenControllerV2 {
      * Call hook in `hookContract` with gas refund
      */
     function refundGasWithHook(IHook hookContract) external onlyGasRefunder {
+        TrueCurrencyWithGasRefund refundToken = TrueCurrencyWithGasRefund(address(token));
         // calculate start gas amount
         uint256 startGas = gasleft();
         // call hook
@@ -622,6 +624,6 @@ contract TokenControllerV2 {
         // 1 refund = 15,000 gas. EVM refunds maximum half of used gas, so divide by 2.
         // Add 20% to compensate inter contract communication
         // (x + 20%) / 2 / 15000 = x / 25000
-        token.refundGas(gasUsed.div(25000));
+        refundToken.refundGas(gasUsed.div(25000));
     }
 }

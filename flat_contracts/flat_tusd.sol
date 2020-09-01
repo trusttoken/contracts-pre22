@@ -45,13 +45,10 @@ contract ProxyStorage {
     mapping(address => mapping(address => uint256)) _allowances;
     mapping(bytes32 => mapping(address => uint256)) attributes_Deprecated;
 
-    // reward token storage
     mapping(address => address) finOps_Deprecated;
     mapping(address => mapping(address => uint256)) finOpBalances_Deprecated;
     mapping(address => uint256) finOpSupply_Deprecated;
 
-    // true reward allocation
-    // proportion: 1000 = 100%
     struct RewardAllocation {
         uint256 proportion;
         address finOp;
@@ -536,7 +533,6 @@ library Address {
         }
     }
 }
-
 /**
  * @notice This is a copy of openzeppelin ERC20 contract with removed state variables.
  * Removing state variables has been necessary due to proxy pattern usage.
@@ -919,112 +915,6 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
 pragma solidity 0.6.10;
 
 /**
- * @title Gas Reclaim Legacy
- *
- * Note: this contract does not affect any of the token logic. It merely
- * exists so the TokenController (owner) can reclaim the sponsored gas
- *
- * Previously TrueCurrency has a feature called "gas boost" which allowed
- * us to sponsor gas by setting non-empty storage slots to 1.
- * We are depricating this feature, but there is a bunch of gas saved
- * from years of sponsoring gas. This contract is meant to allow the owner
- * to take advantage of this leftover gas. Once all the slots are used,
- * this contract can be removed from TrueCurrency.
- *
- * Utilitzes the gas refund mechanism in EVM. Each time an non-empty
- * storage slot is set to 0, evm will refund 15,000 to the sender.
- * Also utilized the refund for selfdestruct, see gasRefund39
- */
-abstract contract GasRefund {
-    /**
-     * @dev Refund 15,000 gas per slot.
-     * @param amount number of slots to free
-     */
-    function gasRefund15(uint256 amount) internal {
-        assembly {
-            // get number of free slots
-            let offset := sload(0xfffff)
-            // make sure there are enough slots
-            if lt(offset, amount) {
-                amount := offset
-            }
-            if eq(amount, 0) {
-                stop()
-            }
-            // get location of first slot
-            let location := add(offset, 0xfffff)
-            // loop until end is reached
-            for {
-                let end := sub(location, amount)
-            } gt(location, end) {
-                location := sub(location, 1)
-            } {
-                // set storage location to zero
-                // this refunds 15,000 gas
-                sstore(location, 0)
-            }
-            // store new number of free slots
-            sstore(0xfffff, sub(offset, amount))
-        }
-    }
-
-    /**
-     * @dev use smart contract self-destruct to refund gas
-     * will refund 39,000 * amount gas
-     */
-    function gasRefund39(uint256 amount) internal {
-        assembly {
-            // get amount of gas slots
-            let offset := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
-            // make sure there are enough slots
-            if lt(offset, amount) {
-                amount := offset
-            }
-            if eq(amount, 0) {
-                stop()
-            }
-            // first sheep pointer
-            let location := sub(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, offset)
-            // loop from location to end
-            for {
-                let end := add(location, amount)
-            } lt(location, end) {
-                location := add(location, 1)
-            } {
-                // load sheep address
-                let sheep := sload(location)
-                // call selfdestruct on sheep
-                pop(call(gas(), sheep, 0, 0, 0, 0, 0))
-                // clear sheep address
-                sstore(location, 0)
-            }
-            // store new number of sheep
-            sstore(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, sub(offset, amount))
-        }
-    }
-
-    /**
-     * @dev Return the remaining sponsored gas slots
-     */
-    function remainingGasRefundPool() public view returns (uint256 length) {
-        assembly {
-            length := sload(0xfffff)
-        }
-    }
-
-    /**
-     * @dev Return the remaining sheep slots
-     */
-    function remainingSheepRefundPool() public view returns (uint256 length) {
-        assembly {
-            length := sload(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
-        }
-    }
-}
-
-pragma solidity 0.6.10;
-
-/**
  * @title TrueCurrency
  * @dev TrueCurrency is an ERC20 with blacklist & redemption addresses
  *
@@ -1059,7 +949,7 @@ pragma solidity 0.6.10;
  * Reclaimer Token
  * - ERC20 Tokens and Ether sent to this contract can be reclaimed by the owner
  */
-abstract contract TrueCurrency is BurnableTokenWithBounds, GasRefund {
+abstract contract TrueCurrency is BurnableTokenWithBounds {
     uint256 constant CENT = 10**16;
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
 
@@ -1176,8 +1066,8 @@ abstract contract TrueCurrency is BurnableTokenWithBounds, GasRefund {
     }
 
     /**
-     * @dev First 0x100000-1 addresses (0x0000000000000000000000000000000000000001 to 0x00000000000000000000000000000000000fffff)
-     * are the redemption addresses.
+     * @dev First 0x100000-1 addresses (0x0000000000000000000000000000000000000001 
+     * to 0x00000000000000000000000000000000000fffff) are redemption addresses.
      * @param account address to check is a redemption address
      *
      * All transfers to redemption address will trigger token burn.
@@ -1188,19 +1078,6 @@ abstract contract TrueCurrency is BurnableTokenWithBounds, GasRefund {
      */
     function isRedemptionAddress(address account) internal pure returns (bool) {
         return uint256(account) < REDEMPTION_ADDRESS_COUNT && uint256(account) != 0;
-    }
-
-    /**
-     * @dev reclaim gas from legacy gas refund #1
-     * will refund 15,000 * amount gas to sender (minus exection cost)
-     * If gas pool is empty, refund 39,000 * amount gas by calling selfdestruct
-     */
-    function refundGas(uint256 amount) external onlyOwner {
-        if (remainingGasRefundPool() > 0) {
-            gasRefund15(amount);
-        } else {
-            gasRefund39(amount.div(3));
-        }
     }
 }
 
@@ -1236,6 +1113,12 @@ abstract contract TrueCurrencyWithLegacyAutosweep is TrueCurrency {
         super._transfer(sender, recipient, amount);
     }
 
+    /**
+     * @dev return false if address is autosweep address
+     * @param recipient transfer recipient
+     * @param depositAddress address to deposit to
+     * @return false if address is autosweep address
+     */
     function requireNotAutosweepAddress(address recipient, address depositAddress) internal pure {
         return
             require(uint256(recipient) >> 20 != uint256(depositAddress) >> 20 || recipient == depositAddress, "Autosweep is disabled");

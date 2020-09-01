@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Registry} from "../registry/Registry.sol";
 import {HasOwner} from "../truecurrencies/HasOwner.sol";
 import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
-import {TrueCurrency} from "../true-currencies-new/TrueCurrency.sol";
+import {TrueCurrencyWithGasRefund} from "../true-currencies-new/TrueCurrencyWithGasRefund.sol";
 import {InstantiatableOwnable} from "../truecurrencies/modularERC20/InstantiatableOwnable.sol";
 
 /**
@@ -76,7 +76,7 @@ contract TokenController {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    TrueCurrency public token;
+    TrueCurrencyWithGasRefund public token;
     Registry public registry;
     address public registryAdmin;
     address public gasRefunder;
@@ -138,7 +138,7 @@ contract TokenController {
     /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
-    event SetToken(TrueCurrency newContract);
+    event SetToken(TrueCurrencyWithGasRefund newContract);
 
     /// @dev Emitted when mint was requested
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -526,7 +526,7 @@ contract TokenController {
      * @dev Update this contract's token pointer to newContract (e.g. if the
      * contract is upgraded)
      */
-    function setToken(TrueCurrency _newContract) external onlyOwner {
+    function setToken(TrueCurrencyWithGasRefund _newContract) external onlyOwner {
         token = _newContract;
         emit SetToken(_newContract);
     }
