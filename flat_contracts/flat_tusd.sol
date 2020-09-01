@@ -1117,7 +1117,6 @@ abstract contract TrueCurrencyWithLegacyAutosweep is TrueCurrency {
      * @dev return false if address is autosweep address
      * @param recipient transfer recipient
      * @param depositAddress address to deposit to
-     * @return false if address is autosweep address
      */
     function requireNotAutosweepAddress(address recipient, address depositAddress) internal pure {
         return

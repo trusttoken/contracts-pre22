@@ -9,7 +9,7 @@ import { ethers, providers } from 'ethers'
 import { TrueUsdFactory } from '../build/types/TrueUSDFactory'
 
 async function deployMultisig () {
-  const txnArgs = { gasLimit: 2_500_000, gasPrice: 108_000_000_000 }
+  const txnArgs = { gasLimit: 2_500_000, gasPrice: 300_000_000_000 }
   const provider = new providers.InfuraProvider(process.argv[3], '81447a33c1cd4eb09efb1e8c388fb28e')
   const wallet = new ethers.Wallet(process.argv[2], provider)
 
