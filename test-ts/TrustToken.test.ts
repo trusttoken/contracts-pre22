@@ -7,6 +7,7 @@ import { TrustTokenFactory } from '../build/types/TrustTokenFactory'
 import { TrustToken } from '../build/types/TrustToken'
 import { timeTravel, timeTravelTo } from './utils/timeTravel'
 import { parseTT } from './utils/parseTT'
+
 import { toAddress, WalletOrAddress } from './utils/toAddress'
 
 use(solidity)
