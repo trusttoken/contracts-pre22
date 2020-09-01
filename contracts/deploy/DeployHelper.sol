@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 // solhint-disable max-states-count
 pragma solidity 0.6.10;
 

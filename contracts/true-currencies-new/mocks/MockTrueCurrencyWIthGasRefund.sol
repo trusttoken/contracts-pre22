@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TrueCurrencyWithLegacyAutosweep} from "../TrueCurrencyWithLegacyAutosweep.sol";
+import {TrueCurrencyWithGasRefund} from "../TrueCurrencyWithGasRefund.sol";
 
-contract MockTrueCurrencyWithAutosweep is TrueCurrencyWithLegacyAutosweep {
+contract MockTrueCurrencyWithGasRefund is TrueCurrencyWithGasRefund {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 

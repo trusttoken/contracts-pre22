@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 // CanDelegateV1: the subset of V1 required for CanDelegate
