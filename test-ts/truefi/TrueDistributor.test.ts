@@ -9,15 +9,61 @@ import { TrueDistributorFactory } from '../../build/types/TrueDistributorFactory
 
 describe('TrueDistributor', () => {
     let owner: Wallet
+    let farm: Wallet
     let distributor: TrueDistributor
     let startingBlock: number
     let provider: MockProvider
 
     beforeEachWithFixture(async (_provider, wallets) => {
-        [owner] = wallets
+        [owner, farm] = wallets
         provider = _provider
         startingBlock = await provider.getBlockNumber() + 5
         distributor = await new TrueDistributorFactory(owner).deploy(0)
+    })
+
+    describe('constructor', () => {
+        it('startingBlock is properly set', async () => {
+            const arbitraryBlockNumber = 1234567890
+            const freshDistributorWithCustomStartingBlock = await new TrueDistributorFactory(owner).deploy(arbitraryBlockNumber)
+            expect(await freshDistributorWithCustomStartingBlock.startingBlock()).to.equal(arbitraryBlockNumber)
+        })
+
+        it('all shares belong to deployer', async () => {
+            expect(await distributor.getShares(owner.address))
+                .to.equal(await distributor.TOTAL_SHARES())
+        })
+
+        it('deployer becomes owner', async () => {
+            expect(await distributor.owner())
+                .to.equal(owner.address)
+        })
+    })
+
+    describe('transfer', () => {
+        it('properly transfers', async () => {
+            const totalShares = await distributor.TOTAL_SHARES()
+            const someAmountOfShares = 2500000
+            await distributor.transfer(owner.address, farm.address, someAmountOfShares)
+
+            expect(await distributor.getShares(farm.address)).to.equal(someAmountOfShares)
+            expect(await distributor.getShares(owner.address)).to.equal(totalShares.sub(someAmountOfShares))
+        })
+
+        it('reverts if total shares exceed donors balance', async () => {
+            const someSuperBigAmountOfShares = (await distributor.TOTAL_SHARES()).mul(10)
+
+            await expect(
+                distributor.transfer(owner.address, farm.address, someSuperBigAmountOfShares)
+            ).to.be.reverted
+        })
+
+        it('reverts if not owner tries to transfer', async () => {
+            const someAmountOfShares = 2500000
+            await expect(
+                distributor.connect(farm).transfer(owner.address, farm.address, someAmountOfShares)
+            ).to.be.reverted
+
+        })
     })
 
     describe('reward', () => {
@@ -35,12 +81,12 @@ describe('TrueDistributor', () => {
             expect(await distributor.reward(0, await distributor.TOTAL_BLOCKS())).to.equal('53649999999999999999999999971605309297031160000000')
         })
 
-        it('sums to total TRU distributor (with step 100000)', async () => {
+        it('sums to total TRU distributor (with step 1000000)', async () => {
             let sum = Zero
             const totalBlocks = (await distributor.TOTAL_BLOCKS()).toNumber()
 
-            for (let i = 0; i < totalBlocks; i += 100000) {
-                const newReward = await distributor.reward(i, Math.min(i + 100000, totalBlocks))
+            for (let i = 0; i < totalBlocks; i += 1000000) {
+                const newReward = await distributor.reward(i, Math.min(i + 1000000, totalBlocks))
                 sum = sum.add(newReward)
             }
             expect(sum).to.equal('53649999999999999999999999971605309297031160000000')
@@ -58,7 +104,7 @@ describe('TrueDistributor', () => {
         })
 
         it('reverts on invalid interval', async () => {
-            expect(distributor.reward(10, 1)).to.be.revertedWith('invalid interval')
+            await expect(distributor.reward(10, 1)).to.be.revertedWith('invalid interval')
         })
 
         it('no reward can be claimed before starting block', async () => {
