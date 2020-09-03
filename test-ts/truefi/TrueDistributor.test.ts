@@ -17,7 +17,7 @@ describe('TrueDistributor', () => {
         [owner] = wallets
         provider = _provider
         startingBlock = await provider.getBlockNumber() + 5
-        distributor = await new TrueDistributorFactory(owner).deploy()
+        distributor = await new TrueDistributorFactory(owner).deploy(0)
     })
 
     describe('reward', () => {
@@ -55,6 +55,31 @@ describe('TrueDistributor', () => {
                 expect(newReward).to.be.lt(lastReward)
                 lastReward = newReward
             }
+        })
+
+        it('reverts on invalid interval', async () => {
+            expect(distributor.reward(10, 1)).to.be.revertedWith('invalid interval')
+        })
+
+        it('no reward can be claimed before starting block', async () => {
+            const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(100)
+            expect(await distributorWithPostponedRewards.reward(0, 1)).to.equal('0')
+        })
+
+        it('returns proper value (staring block is > 0)', async () => {
+            const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(2000)
+            const rewardFromPostponedDistributor = await distributorWithPostponedRewards.reward(2000, 2004)
+            const rewardFromDefaultDistributor = await distributor.reward(0, 4)
+
+            expect(rewardFromPostponedDistributor).to.equal(rewardFromDefaultDistributor)
+        })
+
+        it('returns proper value if interval starts before staring block, but ends after', async () => {
+            const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(2)
+            const rewardFromPostponedDistributor = await distributorWithPostponedRewards.reward(0, 4)
+            const rewardFromDefaultDistributor = await distributor.reward(0, 2)
+
+            expect(rewardFromPostponedDistributor).to.equal(rewardFromDefaultDistributor)
         })
     })
 })
