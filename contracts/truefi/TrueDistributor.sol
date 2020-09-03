@@ -7,6 +7,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract TrueDistributor is Ownable {
     using SafeMath for uint256;
 
+    uint256 public constant DISTRIBUTION_FACTOR = 26824995976250469437449703116;
     uint256 public constant TOTAL_BLOCKS = 1e7;
     uint256 public constant PRECISION = 1e33;
 
@@ -22,7 +23,7 @@ contract TrueDistributor is Ownable {
 
     function reward(uint256 fromBlock, uint256 toBlock) public view returns (uint256) {
         require(fromBlock <= toBlock, "invalid interval");
-        if (toBlock < startingBlock) {
+        if (toBlock < startingBlock || fromBlock == toBlock) {
             return 0;
         }
         if (fromBlock < startingBlock) {
@@ -31,6 +32,6 @@ contract TrueDistributor is Ownable {
         return
             squareSumTimes6(TOTAL_BLOCKS.sub(fromBlock.sub(startingBlock)))
                 .sub(squareSumTimes6(TOTAL_BLOCKS.sub(toBlock.sub(startingBlock))))
-                .mul(26824995976250469437449703116);
+                .mul(DISTRIBUTION_FACTOR);
     }
 }
