@@ -10,21 +10,22 @@ import { TrueDistributorFactory } from '../../build/types/TrueDistributorFactory
 describe('TrueDistributor', () => {
     let owner: Wallet
     let farm: Wallet
+    let fakeToken: Wallet
     let distributor: TrueDistributor
     let startingBlock: number
     let provider: MockProvider
 
     beforeEachWithFixture(async (_provider, wallets) => {
-        [owner, farm] = wallets
+        [owner, farm, fakeToken] = wallets
         provider = _provider
         startingBlock = await provider.getBlockNumber() + 5
-        distributor = await new TrueDistributorFactory(owner).deploy(0)
+        distributor = await new TrueDistributorFactory(owner).deploy(0, fakeToken.address)
     })
 
     describe('constructor', () => {
         it('startingBlock is properly set', async () => {
             const arbitraryBlockNumber = 1234567890
-            const freshDistributorWithCustomStartingBlock = await new TrueDistributorFactory(owner).deploy(arbitraryBlockNumber)
+            const freshDistributorWithCustomStartingBlock = await new TrueDistributorFactory(owner).deploy(arbitraryBlockNumber, fakeToken.address)
             expect(await freshDistributorWithCustomStartingBlock.startingBlock()).to.equal(arbitraryBlockNumber)
         })
 
@@ -38,6 +39,14 @@ describe('TrueDistributor', () => {
                 .to.equal(owner.address)
         })
     })
+
+    describe('normaliseToTokenPrecision', () => {
+        it('works when normalising to smaller precision')
+        it('works when normalising to the smae precision')
+        it('works when normalising to bigger precision')
+    })
+
+    describe('distribute')
 
     describe('transfer', () => {
         it('properly transfers', async () => {
@@ -108,12 +117,12 @@ describe('TrueDistributor', () => {
         })
 
         it('no reward can be claimed before starting block', async () => {
-            const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(100)
+            const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(100, fakeToken.address)
             expect(await distributorWithPostponedRewards.reward(0, 1)).to.equal('0')
         })
 
         it('returns proper value (staring block is > 0)', async () => {
-            const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(2000)
+            const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(2000, fakeToken.address)
             const rewardFromPostponedDistributor = await distributorWithPostponedRewards.reward(2000, 2004)
             const rewardFromDefaultDistributor = await distributor.reward(0, 4)
 
@@ -121,7 +130,7 @@ describe('TrueDistributor', () => {
         })
 
         it('returns proper value if interval starts before staring block, but ends after', async () => {
-            const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(2)
+            const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(2, fakeToken.address)
             const rewardFromPostponedDistributor = await distributorWithPostponedRewards.reward(0, 4)
             const rewardFromDefaultDistributor = await distributor.reward(0, 2)
 
