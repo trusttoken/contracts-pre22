@@ -84,11 +84,12 @@ describe('TrueDistributor', () => {
         })
     })
 
-    describe.only('distribute', () => {
+    describe('distribute', () => {
         it('should properly save distribution block', async () => {
             skipBlocks(4)
             await distributor.distribute(owner.address)
-            expect
+
+            expect(await distributor.getLastDistributionBlock(owner.address)).to.equal('7')
         })
 
         it('should transfer tokens to share holder', async () => {
@@ -100,9 +101,45 @@ describe('TrueDistributor', () => {
                 .to.equal(normaliseRewardToTrustTokens(expectedReward))
         })
 
-        it('should properly split tokens between mutiple share holders')
+        it('should properly split tokens between mutiple share holders', async () => {
+            const halfOfShares = (await distributor.TOTAL_SHARES()).div(2)
 
-        it('should distribute tokens for correct interval')
+            await distributor.transfer(owner.address, farm.address, halfOfShares)
+
+            skipBlocks(2)
+            await distributor.distribute(owner.address)
+
+            const expectedOwnersReward = (await distributor.reward(0, 4))
+                .add((await distributor.reward(4, 7)).div(2))
+
+            expect(await trustToken.balanceOf(owner.address))
+                .to.equal(normaliseRewardToTrustTokens(expectedOwnersReward))
+
+            skipBlocks(5)
+            await distributor.distribute(farm.address)
+            const expectedFarmsReward = (await distributor.reward(4, 11)).div(2)
+
+            expect(await trustToken.balanceOf(farm.address))
+                .to.equal(normaliseRewardToTrustTokens(expectedFarmsReward))
+
+        })
+
+        it('should distribute tokens for correct interval', async () => {
+            const expectedReward = await distributor.reward(7, 11)
+
+            skipBlocks(4)
+            await distributor.distribute(owner.address)
+
+            const balanceBeforeSecondDistribution = await trustToken.balanceOf(owner.address)
+
+            skipBlocks(2)
+            await distributor.distribute(owner.address)
+
+            const balanceAfterSecondDistribution = await trustToken.balanceOf(owner.address)
+
+            expect(balanceAfterSecondDistribution.sub(balanceBeforeSecondDistribution))
+                .to.equal(normaliseRewardToTrustTokens(expectedReward))
+        })
     })
 
     describe('transfer', () => {

@@ -63,6 +63,10 @@ contract TrueDistributor is Ownable {
         return farms[farm].shares;
     }
 
+    function getLastDistributionBlock(address farm) public view returns (uint256) {
+        return farms[farm].lastDistributionBlock;
+    }
+
     function reward(uint256 fromBlock, uint256 toBlock) public view returns (uint256) {
         require(fromBlock <= toBlock, "invalid interval");
         if (toBlock < startingBlock || fromBlock == toBlock) {
