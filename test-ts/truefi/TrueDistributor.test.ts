@@ -41,7 +41,7 @@ describe('TrueDistributor', () => {
         })
     })
 
-    describe.only('normalise', () => {
+    describe('normalise', () => {
         const normalisedValue = '1'.concat('0'.repeat(35))
         let rewardPrecision: number
         let normalisationResult: BigNumber
