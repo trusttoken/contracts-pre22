@@ -6,6 +6,7 @@ import { Zero, MaxUint256 } from 'ethers/constants'
 import { toTrustToken } from '../../scripts/utils/toTrustToken'
 import { TrueDistributor } from '../../build/types/TrueDistributor'
 import { TrueDistributorFactory } from '../../build/types/TrueDistributorFactory'
+import { BigNumber, bigNumberify } from 'ethers/utils'
 
 describe('TrueDistributor', () => {
     let owner: Wallet
@@ -40,13 +41,34 @@ describe('TrueDistributor', () => {
         })
     })
 
-    describe('normaliseToTokenPrecision', () => {
-        it('works when normalising to smaller precision')
-        it('works when normalising to the smae precision')
-        it('works when normalising to bigger precision')
+    describe.only('normalise', () => {
+        const normalisedValue = '1'.concat('0'.repeat(35))
+        let rewardPrecision: number
+        let normalisationResult: BigNumber
+
+        beforeEach(async () => {
+            rewardPrecision = (await distributor.PRECISION()).toString().length - 1
+        })
+
+        it('works when normalising to smaller precision', async () => {
+            const smallerPrecision = rewardPrecision - 15
+            normalisationResult = await distributor.normalise(smallerPrecision, normalisedValue)
+            expect(normalisationResult.mul(bigNumberify(10).pow(rewardPrecision - smallerPrecision)))
+        })
+
+        it('works when normalising to the smae precision', async () => {
+            normalisationResult = await distributor.normalise(rewardPrecision, normalisedValue)
+            expect(normalisationResult).to.equal(normalisedValue)
+        })
+
+        it('works when normalising to bigger precision', async () => {
+            const biggerPrecision = rewardPrecision + 5
+            normalisationResult = await distributor.normalise(biggerPrecision, normalisedValue)
+            expect(normalisationResult.div(bigNumberify(10).pow(rewardPrecision - biggerPrecision)))
+        })
     })
 
-    describe('distribute')
+    describe.skip('distribute', () => { })
 
     describe('transfer', () => {
         it('properly transfers', async () => {

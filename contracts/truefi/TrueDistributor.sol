@@ -40,12 +40,12 @@ contract TrueDistributor is Ownable {
             return;
         }
 
-        token.transfer(farm, normaliseToTokenPrecision(farmsReward));
+        uint256 tokenPrecision = token.decimals();
+        token.transfer(farm, normalise(tokenPrecision, farmsReward));
     }
 
-    function normaliseToTokenPrecision(uint256 amount) public view returns (uint256) {
-        uint256 tokenPrecision = token.decimals();
-        return amount.mul(10**tokenPrecision).div(PRECISION);
+    function normalise(uint256 tokenPrecision, uint256 amount) public view returns (uint256) {
+        return (amount.mul(10**tokenPrecision)).div(PRECISION);
     }
 
     function transfer(
