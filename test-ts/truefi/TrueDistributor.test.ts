@@ -1,26 +1,42 @@
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { Wallet } from 'ethers'
 import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
+import { Wallet } from 'ethers'
 import { Zero, MaxUint256 } from 'ethers/constants'
+import { BigNumber, bigNumberify, parseEther } from 'ethers/utils'
+
+import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { toTrustToken } from '../../scripts/utils/toTrustToken'
+
 import { TrueDistributor } from '../../build/types/TrueDistributor'
 import { TrueDistributorFactory } from '../../build/types/TrueDistributorFactory'
-import { BigNumber, bigNumberify } from 'ethers/utils'
+import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
+import { MockErc20Token } from '../../build/types/MockErc20Token'
 
 describe('TrueDistributor', () => {
     let owner: Wallet
     let farm: Wallet
+    let someOtherWallet: Wallet
     let fakeToken: Wallet
     let distributor: TrueDistributor
+    let trustToken: MockErc20Token
     let startingBlock: number
     let provider: MockProvider
+
+    const skipBlocks = async (numberOfBlocks: number) => {
+        for (let i = 0; i < numberOfBlocks; i++) {
+            await provider.send('evm_mine', [])
+        }
+    }
+
+    const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div('1000000000000000')
 
     beforeEachWithFixture(async (_provider, wallets) => {
         [owner, farm, fakeToken] = wallets
         provider = _provider
         startingBlock = await provider.getBlockNumber() + 5
-        distributor = await new TrueDistributorFactory(owner).deploy(0, fakeToken.address)
+        trustToken = await new MockErc20TokenFactory(owner).deploy()
+        distributor = await new TrueDistributorFactory(owner).deploy(0, trustToken.address)
+        await trustToken.mint(distributor.address, parseEther('5365000000000000000'))
     })
 
     describe('constructor', () => {
@@ -68,7 +84,26 @@ describe('TrueDistributor', () => {
         })
     })
 
-    describe.skip('distribute', () => { })
+    describe.only('distribute', () => {
+        it('should properly save distribution block', async () => {
+            skipBlocks(4)
+            await distributor.distribute(owner.address)
+            expect
+        })
+
+        it('should transfer tokens to share holder', async () => {
+            const expectedReward = await distributor.reward(0, 7)
+            skipBlocks(4)
+            await distributor.distribute(owner.address)
+
+            expect(await trustToken.balanceOf(owner.address))
+                .to.equal(normaliseRewardToTrustTokens(expectedReward))
+        })
+
+        it('should properly split tokens between mutiple share holders')
+
+        it('should distribute tokens for correct interval')
+    })
 
     describe('transfer', () => {
         it('properly transfers', async () => {
@@ -93,7 +128,23 @@ describe('TrueDistributor', () => {
             await expect(
                 distributor.connect(farm).transfer(owner.address, farm.address, someAmountOfShares)
             ).to.be.reverted
+        })
 
+        it('should distribute tokens to both transfer participants and then transfer', async () => {
+            const someAmountOfShares = 2500000
+            await distributor.transfer(owner.address, farm.address, someAmountOfShares)
+            await skipBlocks(5)
+
+            const ownerBalanceBeforeTransfer = await trustToken.balanceOf(owner.address)
+            const farmBalanceBeforeTransfer = await trustToken.balanceOf(farm.address)
+
+            await distributor.transfer(farm.address, owner.address, someAmountOfShares)
+
+            const ownerBalanceAfterTransfer = await trustToken.balanceOf(owner.address)
+            const farmBalanceAfterTransfer = await trustToken.balanceOf(farm.address)
+
+            expect(ownerBalanceAfterTransfer.gt(ownerBalanceBeforeTransfer)).to.be.true
+            expect(farmBalanceAfterTransfer.gt(farmBalanceBeforeTransfer)).to.be.true
         })
     })
 

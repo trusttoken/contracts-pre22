@@ -53,6 +53,8 @@ contract TrueDistributor is Ownable {
         address toFarm,
         uint256 sharesAmount
     ) public onlyOwner {
+        distribute(fromFarm);
+        distribute(toFarm);
         farms[fromFarm].shares = farms[fromFarm].shares.sub(sharesAmount);
         farms[toFarm].shares = farms[toFarm].shares.add(sharesAmount);
     }
