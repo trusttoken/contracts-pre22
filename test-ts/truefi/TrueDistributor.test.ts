@@ -28,6 +28,10 @@ describe('TrueDistributor', () => {
 
   const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div('1000000000000000')
 
+  const expectBlock = async (expectedBlockNumber: number) => {
+    expect(await provider.getBlockNumber()).to.equal(expectedBlockNumber)
+  }
+
   beforeEachWithFixture(async (_provider, wallets) => {
     [owner, farm, fakeToken] = wallets
     provider = _provider
@@ -85,17 +89,13 @@ describe('TrueDistributor', () => {
     })
   })
 
-  async function assertAtBlock (expectedBlockNumber: number) {
-    expect(await provider.getBlockNumber()).to.equal(expectedBlockNumber)
-  }
-
   describe('distribute', () => {
     it('should properly save distribution block', async () => {
-      await assertAtBlock(3)
+      await expectBlock(3)
       await skipBlocks(4)
-      await assertAtBlock(7)
+      await expectBlock(7)
       await distributor.distribute(owner.address)
-      await assertAtBlock(8)
+      await expectBlock(8)
 
       expect(await distributor.getLastDistributionBlock(owner.address)).to.equal(8)
     })
@@ -104,7 +104,7 @@ describe('TrueDistributor', () => {
       const expectedReward = await distributor.reward(0, 7)
       await skipBlocks(3)
       await distributor.distribute(owner.address)
-      await assertAtBlock(7)
+      await expectBlock(7)
 
       expect(await trustToken.balanceOf(owner.address))
         .to.equal(normaliseRewardToTrustTokens(expectedReward))
@@ -114,11 +114,11 @@ describe('TrueDistributor', () => {
       const halfOfShares = (await distributor.TOTAL_SHARES()).div(2)
 
       await distributor.transfer(owner.address, farm.address, halfOfShares)
-      await assertAtBlock(4)
+      await expectBlock(4)
 
       await skipBlocks(2)
       await distributor.distribute(owner.address)
-      await assertAtBlock(7)
+      await expectBlock(7)
 
       const expectedOwnersReward = (await distributor.reward(0, 4))
         .add((await distributor.reward(4, 7)).div(2))
@@ -128,7 +128,7 @@ describe('TrueDistributor', () => {
 
       await skipBlocks(3)
       await distributor.distribute(farm.address)
-      await assertAtBlock(11)
+      await expectBlock(11)
       const expectedFarmsReward = (await distributor.reward(4, 11)).div(2)
 
       expect(await trustToken.balanceOf(farm.address))
@@ -140,13 +140,13 @@ describe('TrueDistributor', () => {
 
       await skipBlocks(4)
       await distributor.distribute(owner.address)
-      await assertAtBlock(8)
+      await expectBlock(8)
 
       const balanceBeforeSecondDistribution = await trustToken.balanceOf(owner.address)
 
       await skipBlocks(2)
       await distributor.distribute(owner.address)
-      await assertAtBlock(11)
+      await expectBlock(11)
 
       const balanceAfterSecondDistribution = await trustToken.balanceOf(owner.address)
 
