@@ -55,21 +55,24 @@ describe('TrueDistributor', () => {
   })
 
   describe('normalise', () => {
-    const normalisedValue = '1'.concat('0'.repeat(35))
+    let normalisedValue: string
     let rewardPrecision: number
     let normalisationResult: BigNumber
 
     beforeEach(async () => {
       rewardPrecision = (await distributor.PRECISION()).toString().length - 1
+      expect(rewardPrecision).to.equal(33)
+      normalisedValue = '100'.concat('0'.repeat(rewardPrecision))
     })
 
     it('works when normalising to smaller precision', async () => {
       const smallerPrecision = rewardPrecision - 15
       normalisationResult = await distributor.normalise(smallerPrecision, normalisedValue)
-      expect(normalisationResult.mul(bigNumberify(10).pow(rewardPrecision - smallerPrecision)))
+      expect(normalisationResult.mul(bigNumberify(10).pow(15)))
+        .to.equal(normalisedValue)
     })
 
-    it('works when normalising to the smae precision', async () => {
+    it('works when normalising to the same precision', async () => {
       normalisationResult = await distributor.normalise(rewardPrecision, normalisedValue)
       expect(normalisationResult).to.equal(normalisedValue)
     })
@@ -77,34 +80,45 @@ describe('TrueDistributor', () => {
     it('works when normalising to bigger precision', async () => {
       const biggerPrecision = rewardPrecision + 5
       normalisationResult = await distributor.normalise(biggerPrecision, normalisedValue)
-      expect(normalisationResult.div(bigNumberify(10).pow(rewardPrecision - biggerPrecision)))
+      expect(normalisationResult.div(bigNumberify(10).pow(5)))
+        .to.equal(normalisedValue)
     })
   })
 
+  async function assertAtBlock (expectedBlockNumber: number) {
+    expect(await provider.getBlockNumber()).to.equal(expectedBlockNumber)
+  }
+
   describe('distribute', () => {
     it('should properly save distribution block', async () => {
-      skipBlocks(4)
+      await assertAtBlock(3)
+      await skipBlocks(4)
+      await assertAtBlock(7)
       await distributor.distribute(owner.address)
+      await assertAtBlock(8)
 
-      expect(await distributor.getLastDistributionBlock(owner.address)).to.equal('7')
+      expect(await distributor.getLastDistributionBlock(owner.address)).to.equal(8)
     })
 
     it('should transfer tokens to share holder', async () => {
       const expectedReward = await distributor.reward(0, 7)
-      skipBlocks(4)
+      await skipBlocks(3)
       await distributor.distribute(owner.address)
+      await assertAtBlock(7)
 
       expect(await trustToken.balanceOf(owner.address))
         .to.equal(normaliseRewardToTrustTokens(expectedReward))
     })
 
-    it('should properly split tokens between mutiple share holders', async () => {
+    it('should properly split tokens between multiple share holders', async () => {
       const halfOfShares = (await distributor.TOTAL_SHARES()).div(2)
 
       await distributor.transfer(owner.address, farm.address, halfOfShares)
+      await assertAtBlock(4)
 
-      skipBlocks(2)
+      await skipBlocks(2)
       await distributor.distribute(owner.address)
+      await assertAtBlock(7)
 
       const expectedOwnersReward = (await distributor.reward(0, 4))
         .add((await distributor.reward(4, 7)).div(2))
@@ -112,8 +126,9 @@ describe('TrueDistributor', () => {
       expect(await trustToken.balanceOf(owner.address))
         .to.equal(normaliseRewardToTrustTokens(expectedOwnersReward))
 
-      skipBlocks(5)
+      await skipBlocks(3)
       await distributor.distribute(farm.address)
+      await assertAtBlock(11)
       const expectedFarmsReward = (await distributor.reward(4, 11)).div(2)
 
       expect(await trustToken.balanceOf(farm.address))
@@ -121,15 +136,17 @@ describe('TrueDistributor', () => {
     })
 
     it('should distribute tokens for correct interval', async () => {
-      const expectedReward = await distributor.reward(7, 11)
+      const expectedReward = await distributor.reward(8, 11)
 
-      skipBlocks(4)
+      await skipBlocks(4)
       await distributor.distribute(owner.address)
+      await assertAtBlock(8)
 
       const balanceBeforeSecondDistribution = await trustToken.balanceOf(owner.address)
 
-      skipBlocks(2)
+      await skipBlocks(2)
       await distributor.distribute(owner.address)
+      await assertAtBlock(11)
 
       const balanceAfterSecondDistribution = await trustToken.balanceOf(owner.address)
 
@@ -227,7 +244,7 @@ describe('TrueDistributor', () => {
       expect(await distributorWithPostponedRewards.reward(0, 1)).to.equal('0')
     })
 
-    it('returns proper value (staring block is > 0)', async () => {
+    it('returns proper value (starting block is > 0)', async () => {
       const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(2000, fakeToken.address)
       const rewardFromPostponedDistributor = await distributorWithPostponedRewards.reward(2000, 2004)
       const rewardFromDefaultDistributor = await distributor.reward(0, 4)
@@ -235,7 +252,7 @@ describe('TrueDistributor', () => {
       expect(rewardFromPostponedDistributor).to.equal(rewardFromDefaultDistributor)
     })
 
-    it('returns proper value if interval starts before staring block, but ends after', async () => {
+    it('returns proper value if interval starts before starting block, but ends after', async () => {
       const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(2, fakeToken.address)
       const rewardFromPostponedDistributor = await distributorWithPostponedRewards.reward(0, 4)
       const rewardFromDefaultDistributor = await distributor.reward(0, 2)
