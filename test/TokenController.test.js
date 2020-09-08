@@ -515,45 +515,6 @@ contract('TokenController', function (accounts) {
       it('non pauser cannot pause TrueUSD ', async function () {
         await assertRevert(this.controller.pauseToken({ from: mintKey }))
       })
-
-      it('TokenController can wipe blacklisted account', async function () {
-        await this.token.transfer(this.token.address, BN(40).mul(BN(10 ** 18)), { from: oneHundred })
-        await assertBalance(this.token, this.token.address, 40000000000000000000)
-        await this.registry.setAttribute(this.token.address, BLACKLISTED, 1, notes, { from: owner })
-        await this.controller.wipeBlackListedTrueUSD(this.token.address, { from: owner })
-        await assertBalance(this.token, this.token.address, 0)
-      })
-    })
-
-    describe('requestReclaimContract', function () {
-      it('reclaims the contract', async function () {
-        const ownable = await InstantiatableOwnable.new({ from: owner })
-        await ownable.transferOwnership(this.token.address, { from: owner })
-        let ownableOwner = await ownable.owner.call()
-        assert.equal(ownableOwner, this.token.address)
-
-        const { logs } = await this.controller.requestReclaimContract(ownable.address, { from: owner })
-        ownableOwner = await ownable.owner.call()
-        assert.equal(ownableOwner, this.controller.address)
-
-        assert.equal(logs.length, 2)
-        assert.equal(logs[1].event, 'RequestReclaimContract')
-        assert.equal(logs[1].args.other, ownable.address)
-      })
-
-      it('cannot be called by non-owner', async function () {
-        const ownable = await InstantiatableOwnable.new({ from: owner })
-        await ownable.transferOwnership(this.token.address, { from: owner })
-        await assertRevert(this.controller.requestReclaimContract(ownable.address, { from: mintKey }))
-      })
-
-      it('issues claimOwnership', async function () {
-        const claimable = await Claimable.new({ from: owner })
-        await claimable.transferOwnership(this.controller.address, { from: owner })
-        await this.controller.issueClaimOwnership(claimable.address, { from: owner })
-        const claimableOwner = await claimable.owner.call()
-        assert.equal(claimableOwner, this.controller.address)
-      })
     })
 
     describe('fall back function', function () {
