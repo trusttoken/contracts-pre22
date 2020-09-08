@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {GasRefund} from "./GasRefund.sol";
 import {TrueCurrency} from "./TrueCurrency.sol";
 
-abstract contract TrueCurrencyWithGasRefund is GasRefund, TrueCurrency  {
+abstract contract TrueCurrencyWithGasRefund is GasRefund, TrueCurrency {
     /**
      * @dev reclaim gas from legacy gas refund #1
      * will refund 15,000 * amount gas to sender (minus exection cost)
