@@ -3,10 +3,6 @@ pragma solidity 0.6.10;
 
 import {MockTrueCurrencyWithGasRefund} from "./MockTrueCurrencyWithGasRefund.sol";
 
-/** @title TrueCAD
- * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
- * inherited - see the documentation on the corresponding contracts.
- */
 contract MockGasRefundToken is MockTrueCurrencyWithGasRefund {
     function sponsorGas(uint256 amount) external {
         uint256 refundPrice = uint256(-1);
