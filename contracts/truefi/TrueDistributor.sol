@@ -28,7 +28,7 @@ contract TrueDistributor is Ownable {
         farms[msg.sender].shares = TOTAL_SHARES;
     }
 
-    function distribute(address farm) public {
+    function distribute(address farm) public returns (uint256) {
         uint256 currentBlock = block.number;
         uint256 totalRewardForInterval = reward(farms[farm].lastDistributionBlock, currentBlock);
 
@@ -37,11 +37,13 @@ contract TrueDistributor is Ownable {
         uint256 farmsReward = totalRewardForInterval.mul(farms[farm].shares).div(TOTAL_SHARES);
 
         if (farmsReward == 0) {
-            return;
+            return 0;
         }
 
         uint256 tokenPrecision = token.decimals();
-        require(token.transfer(farm, normalise(tokenPrecision, farmsReward)));
+        uint256 amount = normalise(tokenPrecision, farmsReward);
+        require(token.transfer(farm, amount));
+        return amount;
     }
 
     function normalise(uint256 tokenPrecision, uint256 amount) public pure returns (uint256) {
@@ -75,10 +77,13 @@ contract TrueDistributor is Ownable {
         if (fromBlock < startingBlock) {
             fromBlock = startingBlock;
         }
-        return
-            squareSumTimes6(TOTAL_BLOCKS.sub(fromBlock.sub(startingBlock)))
-                .sub(squareSumTimes6(TOTAL_BLOCKS.sub(toBlock.sub(startingBlock))))
-                .mul(DISTRIBUTION_FACTOR);
+        return rewardFormula(fromBlock.sub(startingBlock), toBlock.sub(startingBlock));
+    }
+
+    function rewardFormula(uint256 fromBlock, uint256 toBlock) internal pure virtual returns (uint) {
+        return squareSumTimes6(TOTAL_BLOCKS.sub(fromBlock))
+            .sub(squareSumTimes6(TOTAL_BLOCKS.sub(toBlock)))
+            .mul(DISTRIBUTION_FACTOR);
     }
 
     function squareSumTimes6(uint256 n) public pure returns (uint256) {

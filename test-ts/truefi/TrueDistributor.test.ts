@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
-import { Zero, MaxUint256 } from 'ethers/constants'
+import { MaxUint256, Zero } from 'ethers/constants'
 import { BigNumber, bigNumberify, parseEther } from 'ethers/utils'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
@@ -11,6 +11,7 @@ import { TrueDistributor } from '../../build/types/TrueDistributor'
 import { TrueDistributorFactory } from '../../build/types/TrueDistributorFactory'
 import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
 import { MockErc20Token } from '../../build/types/MockErc20Token'
+import { skipBlocksWithProvider } from '../utils/timeTravel'
 
 describe('TrueDistributor', () => {
   let owner: Wallet
@@ -20,11 +21,7 @@ describe('TrueDistributor', () => {
   let trustToken: MockErc20Token
   let provider: MockProvider
 
-  const skipBlocks = async (numberOfBlocks: number) => {
-    for (let i = 0; i < numberOfBlocks; i++) {
-      await provider.send('evm_mine', [])
-    }
-  }
+  const skipBlocks = async (numberOfBlocks: number) => skipBlocksWithProvider(provider, numberOfBlocks)
 
   const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div('1000000000000000')
 
