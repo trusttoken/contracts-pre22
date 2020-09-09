@@ -15,3 +15,13 @@ export const skipBlocksWithProvider = async (provider: Web3Provider, numberOfBlo
     await provider.send('evm_mine', [])
   }
 }
+
+export const skipToBlockWithProvider = async (provider: Web3Provider, targetBlock: number) => {
+  const block = await provider.getBlockNumber()
+  if (block > targetBlock) {
+    throw new Error('Already past target block')
+  }
+  while (await provider.getBlockNumber() < targetBlock) {
+    await provider.send('evm_mine', [])
+  }
+}

@@ -12,10 +12,12 @@ contract TrueFarm {
     ERC20 public rewardToken;
     TrueDistributor public trueDistributor;
 
-    uint256 public accumulatedRewardPerToken;
-    mapping (address => uint) public initialAccumulatedRewardPerToken;
-    mapping (address => uint) public rewardEarned;
-    mapping (address => uint) public staked;
+    uint256 public totalStaked;
+    mapping(address => uint256) public staked;
+
+    uint256 public cumulativeRewardPerToken;
+    mapping(address => uint256) public previousCumulatedRewardPerToken;
+    mapping(address => uint256) public claimableReward;
 
     constructor(ERC20 _stakingToken, TrueDistributor _trueDistributor) public {
         stakingToken = _stakingToken;
@@ -25,25 +27,31 @@ contract TrueFarm {
 
     function stake(uint256 amount) public update {
         require(stakingToken.transferFrom(msg.sender, address(this), amount));
-        staked[msg.sender] = amount;
+        staked[msg.sender] += amount;
+        totalStaked += amount;
     }
 
-    function unstake(uint256 amount) public {
+    function unstake(uint256 amount) public update {
+        require(amount <= staked[msg.sender], "insufficient staking balance");
+        require(stakingToken.transfer(msg.sender, amount));
+        staked[msg.sender] -= amount;
+        totalStaked -= amount;
     }
 
-    function claim() update public {
-        rewardToken.transfer(msg.sender, rewardEarned[msg.sender]);
+    function claim() public update {
+        rewardToken.transfer(msg.sender, claimableReward[msg.sender]);
+        claimableReward[msg.sender] = 0;
     }
 
     modifier update() {
         uint256 totalBlockReward = trueDistributor.distribute(address(this));
-        uint256 totalStaked = stakingToken.balanceOf(address(this));
         if (totalStaked > 0) {
-            accumulatedRewardPerToken += totalBlockReward.div(totalStaked);
+            cumulativeRewardPerToken += totalBlockReward.div(totalStaked);
         }
-        rewardEarned[msg.sender] += staked[msg.sender] * (accumulatedRewardPerToken - initialAccumulatedRewardPerToken[msg.sender]);
-        initialAccumulatedRewardPerToken[msg.sender] = accumulatedRewardPerToken;
+        claimableReward[msg.sender] += trueDistributor.normalise(
+            staked[msg.sender] * (cumulativeRewardPerToken - previousCumulatedRewardPerToken[msg.sender])
+        );
+        previousCumulatedRewardPerToken[msg.sender] = cumulativeRewardPerToken;
         _;
     }
-
 }

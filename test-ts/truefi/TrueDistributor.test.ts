@@ -23,7 +23,7 @@ describe('TrueDistributor', () => {
 
   const skipBlocks = async (numberOfBlocks: number) => skipBlocksWithProvider(provider, numberOfBlocks)
 
-  const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div('1000000000000000')
+  const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div(bigNumberify(10).pow(33))
 
   const expectBlock = async (expectedBlockNumber: number) => {
     expect(await provider.getBlockNumber()).to.equal(expectedBlockNumber)
@@ -56,33 +56,10 @@ describe('TrueDistributor', () => {
   })
 
   describe('normalise', () => {
-    let normalisedValue: string
-    let rewardPrecision: number
-    let normalisationResult: BigNumber
-
-    beforeEach(async () => {
-      rewardPrecision = (await distributor.PRECISION()).toString().length - 1
-      expect(rewardPrecision).to.equal(33)
-      normalisedValue = '100'.concat('0'.repeat(rewardPrecision))
-    })
-
-    it('works when normalising to smaller precision', async () => {
-      const smallerPrecision = rewardPrecision - 15
-      normalisationResult = await distributor.normalise(smallerPrecision, normalisedValue)
-      expect(normalisationResult.mul(bigNumberify(10).pow(15)))
-        .to.equal(normalisedValue)
-    })
-
-    it('works when normalising to the same precision', async () => {
-      normalisationResult = await distributor.normalise(rewardPrecision, normalisedValue)
-      expect(normalisationResult).to.equal(normalisedValue)
-    })
-
-    it('works when normalising to bigger precision', async () => {
-      const biggerPrecision = rewardPrecision + 5
-      normalisationResult = await distributor.normalise(biggerPrecision, normalisedValue)
-      expect(normalisationResult.div(bigNumberify(10).pow(5)))
-        .to.equal(normalisedValue)
+    it('removes precision', async () => {
+      const normalisedValue = (await distributor.PRECISION()).mul(123)
+      const normalisationResult = await distributor.normalise(normalisedValue)
+      expect(normalisationResult).to.equal(123)
     })
   })
 
