@@ -239,6 +239,7 @@ abstract contract AStakedToken is ValTokenWithHook {
      */
     function deposit(uint256 _amount) external {
         require(stakeAsset().transferFrom(msg.sender, address(this), _amount));
+        _deposit(msg.sender, _amount);
     }
 
     /**

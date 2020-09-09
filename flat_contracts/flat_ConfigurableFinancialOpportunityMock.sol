@@ -1,7 +1,8 @@
 
 // File: contracts/truereward/FinancialOpportunity.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 /**
  * @title FinancialOpportunity
@@ -9,10 +10,10 @@ pragma solidity 0.5.13;
  *
  * -- Overview --
  * The goal of this contract is to allow anyone to create an opportunity
- * to earn interest on TUSD. deposit() "mints" yTUSD whcih is redeemable
- * for some amount of TUSD. TrueUSD wraps this contractwith TrustToken
+ * to earn interest on TUSD. deposit() "mints" yTUSD which is redeemable
+ * for some amount of TUSD. TrueUSD wraps this contract with TrustToken
  * Assurance, which provides protection from bugs and system design flaws
- * TUSD is a compliant stablecoin, therefore we do not allow transfers of
+ * TUSD is a compliant stable coin, therefore we do not allow transfers of
  * yTUSD, thus there are no transfer functions
  *
  * -- tokenValue() --
@@ -26,21 +27,20 @@ pragma solidity 0.5.13;
  *
  * -- totalSupply() --
  * This function returns the total supply of yTUSD issued by this contract
- * It is important to track this value accuratley and add/deduct the correct
- * amount on deposit/redemptions
+ * It is important to track this value accurately and add/deduct the correct
+ * amount on deposit/redemption
  *
  * -- Assumptions --
  * - tokenValue can never decrease
  * - total TUSD owed to depositors = tokenValue() * totalSupply()
  */
 interface FinancialOpportunity {
-
     /**
      * @dev Returns total supply of yTUSD in this contract
      *
      * @return total supply of yTUSD in this contract
-    **/
-    function totalSupply() external view returns (uint);
+     **/
+    function totalSupply() external view returns (uint256);
 
     /**
      * @dev Exchange rate between TUSD and yTUSD
@@ -49,7 +49,7 @@ interface FinancialOpportunity {
      *
      * @return TUSD / yTUSD price ratio
      */
-    function tokenValue() external view returns(uint);
+    function tokenValue() external view returns (uint256);
 
     /**
      * @dev deposits TrueUSD and returns yTUSD minted
@@ -61,7 +61,7 @@ interface FinancialOpportunity {
      * @param amount amount in TUSD to deposit
      * @return yTUSD minted from this deposit
      */
-    function deposit(address from, uint amount) external returns(uint);
+    function deposit(address from, uint256 amount) external returns (uint256);
 
     /**
      * @dev Redeem yTUSD for TUSD and withdraw to account
@@ -76,13 +76,13 @@ interface FinancialOpportunity {
      * @param amount amount in TUSD to withdraw from finOp
      * @return TUSD amount returned from this transaction
      */
-    function redeem(address to, uint amount) external returns(uint);
+    function redeem(address to, uint256 amount) external returns (uint256);
 }
 
 // File: contracts/truecurrencies/modularERC20/InstantiatableOwnable.sol
 
-pragma solidity 0.5.13;
-
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 /**
  * @title InstantiatableOwnable
@@ -92,10 +92,7 @@ pragma solidity 0.5.13;
 contract InstantiatableOwnable {
     address public owner;
 
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
      * @dev The InstantiatableOwnable constructor sets the original `owner` of the contract to the sender
@@ -117,7 +114,7 @@ contract InstantiatableOwnable {
      * @dev Allows the current owner to transfer control of the contract to a newOwner.
      * @param newOwner The address to transfer ownership to.
      */
-    function transferOwnership(address newOwner) public onlyOwner {
+    function transferOwnership(address newOwner) public virtual onlyOwner {
         require(newOwner != address(0));
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
@@ -126,11 +123,12 @@ contract InstantiatableOwnable {
 
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.6.0;
 
 /**
- * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
- * the optional functions; to access them see {ERC20Detailed}.
+ * @dev Interface of the ERC20 standard as defined in the EIP.
  */
 interface IERC20 {
     /**
@@ -205,7 +203,9 @@ interface IERC20 {
 
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.6.0;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -228,6 +228,7 @@ library SafeMath {
      * Counterpart to Solidity's `+` operator.
      *
      * Requirements:
+     *
      * - Addition cannot overflow.
      */
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -244,6 +245,7 @@ library SafeMath {
      * Counterpart to Solidity's `-` operator.
      *
      * Requirements:
+     *
      * - Subtraction cannot overflow.
      */
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -257,9 +259,8 @@ library SafeMath {
      * Counterpart to Solidity's `-` operator.
      *
      * Requirements:
-     * - Subtraction cannot overflow.
      *
-     * _Available since v2.4.0._
+     * - Subtraction cannot overflow.
      */
     function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b <= a, errorMessage);
@@ -275,6 +276,7 @@ library SafeMath {
      * Counterpart to Solidity's `*` operator.
      *
      * Requirements:
+     *
      * - Multiplication cannot overflow.
      */
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -300,6 +302,7 @@ library SafeMath {
      * uses an invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
+     *
      * - The divisor cannot be zero.
      */
     function div(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -315,12 +318,10 @@ library SafeMath {
      * uses an invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
-     * - The divisor cannot be zero.
      *
-     * _Available since v2.4.0._
+     * - The divisor cannot be zero.
      */
     function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
         require(b > 0, errorMessage);
         uint256 c = a / b;
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
@@ -337,6 +338,7 @@ library SafeMath {
      * invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
+     *
      * - The divisor cannot be zero.
      */
     function mod(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -352,9 +354,8 @@ library SafeMath {
      * invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
-     * - The divisor cannot be zero.
      *
-     * _Available since v2.4.0._
+     * - The divisor cannot be zero.
      */
     function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b != 0, errorMessage);
@@ -364,59 +365,60 @@ library SafeMath {
 
 // File: contracts/truereward/mocks/ConfigurableFinancialOpportunityMock.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 
 
 
 
 contract ConfigurableFinancialOpportunityMock is FinancialOpportunity, InstantiatableOwnable {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     IERC20 token;
-    uint supply;
-    uint tokenValueField = 1*10**18;
+    uint256 supply;
+    uint256 tokenValueField = 1 * 10**18;
 
     constructor(IERC20 _token) public {
         token = _token;
     }
 
-    function deposit(address _from, uint _amount) external returns(uint) {
-        uint shares = _getAmountInShares(_amount);
+    function deposit(address _from, uint256 _amount) external override returns (uint256) {
+        uint256 shares = _getAmountInShares(_amount);
         require(token.transferFrom(_from, address(this), _amount), "FinOpMock/deposit/transferFrom");
         supply = supply.add(shares);
         return shares;
     }
 
-    function redeem(address _to, uint ztusd) external returns(uint) {
-        uint tusd = _getSharesAmount(ztusd);
+    function redeem(address _to, uint256 ztusd) external override returns (uint256) {
+        uint256 tusd = _getSharesAmount(ztusd);
         require(ztusd <= supply, "FinOpMock/withdrawTo/balanceCheck");
-        require(token.transfer(_to, tusd), "FinOpMock/withdrawTo/transfer");
         supply = supply.sub(ztusd);
+        require(token.transfer(_to, tusd), "FinOpMock/withdrawTo/transfer");
         return tusd;
     }
 
-    function tokenValue() external view returns(uint) {
+    function tokenValue() external override view returns (uint256) {
         return tokenValueField;
     }
 
-    function totalSupply() external view returns(uint) {
+    function totalSupply() external override view returns (uint256) {
         return supply;
     }
 
-    function increaseTokenValue(uint _by) external {
+    function increaseTokenValue(uint256 _by) external {
         tokenValueField = tokenValueField.add(_by);
     }
 
-    function reduceTokenValue(uint _by) external {
+    function reduceTokenValue(uint256 _by) external {
         tokenValueField = tokenValueField.sub(_by);
     }
 
-    function _getAmountInShares(uint _amount) internal view returns (uint) {
+    function _getAmountInShares(uint256 _amount) internal view returns (uint256) {
         return _amount.mul(10**18).div(tokenValueField);
     }
 
-    function _getSharesAmount(uint _shares) internal view returns (uint) {
+    function _getSharesAmount(uint256 _shares) internal view returns (uint256) {
         return _shares.mul(tokenValueField).div(10**18);
     }
 }

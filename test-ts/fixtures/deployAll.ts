@@ -7,7 +7,7 @@ import { LendingPoolMockFactory } from '../../build/types/LendingPoolMockFactory
 import { OwnedUpgradeabilityProxyFactory } from '../../build/types/OwnedUpgradeabilityProxyFactory'
 import { RegistryMockFactory } from '../../build/types/RegistryMockFactory'
 import { SimpleLiquidatorMockFactory } from '../../build/types/SimpleLiquidatorMockFactory'
-import { TrueUsdFactory } from '../../build/types/TrueUsdFactory'
+import { TrueUsdLegacyFactory } from '../../build/types/TrueUsdLegacyFactory'
 import { setupDeploy } from '../../scripts/utils'
 import { MockTrustTokenFactory } from '../../build/types/MockTrustTokenFactory'
 import { StakedTokenFactory } from '../../build/types/StakedTokenFactory'
@@ -16,9 +16,8 @@ export const deployAll = async (provider, wallets) => {
   const [owner] = wallets
   const deployContract = setupDeploy(owner)
 
+  const token = await deployContract(TrueUsdLegacyFactory, { gasLimit: 5_000_000 })
   const registry = await deployContract(RegistryMockFactory)
-
-  const token = await deployContract(TrueUsdFactory, { gasLimit: 5_000_000 })
   await token.setRegistry(registry.address)
 
   const fractionalExponents = await deployContract(FractionalExponentsFactory)
@@ -29,7 +28,7 @@ export const deployAll = async (provider, wallets) => {
   const lendingPool = await deployContract(LendingPoolMockFactory, lendingPoolCore.address, sharesToken.address)
 
   const trustToken = await deployContract(MockTrustTokenFactory)
-  await trustToken.initialize(registry.address)
+  await trustToken.initialize()
 
   const stakedToken = await deployContract(StakedTokenFactory)
   await stakedToken.configure(trustToken.address, token.address, registry.address, liquidator.address)

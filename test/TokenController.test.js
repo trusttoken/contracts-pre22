@@ -6,8 +6,6 @@ const TrueUSD = artifacts.require('TrueUSDMock')
 const ForceEther = artifacts.require('ForceEther')
 const FastPauseMints = artifacts.require('FastPauseMints')
 const Proxy = artifacts.require('OwnedUpgradeabilityProxy')
-const Claimable = artifacts.require('Claimable')
-const InstantiatableOwnable = artifacts.require('InstantiatableOwnable')
 const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
 
 const bytes32 = require('./helpers/bytes32.js')
@@ -35,15 +33,15 @@ contract('TokenController', function (accounts) {
 
       this.controller = await TokenController.new({ from: owner })
       await this.token.transferOwnership(this.controller.address, { from: owner })
+      await this.token.setRegistry(this.registry.address, { from: owner })
       await this.controller.initialize({ from: owner })
       await this.controller.issueClaimOwnership(this.token.address, { from: owner })
       this.fastPauseMints = await FastPauseMints.new(pauseKey2, this.controller.address, { from: owner })
       await this.controller.setRegistry(this.registry.address, { from: owner })
       await this.controller.setToken(this.token.address, { from: owner })
-      await this.controller.setTokenRegistry(this.registry.address, { from: owner })
       await this.controller.transferMintKey(mintKey, { from: owner })
       await this.tokenProxy.transferProxyOwnership(this.controller.address, { from: owner })
-      await this.controller.claimTusdProxyOwnership({ from: owner })
+      await this.controller.claimTrueCurrencyProxyOwnership({ from: owner })
       await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
       await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
       await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
@@ -516,45 +514,6 @@ contract('TokenController', function (accounts) {
 
       it('non pauser cannot pause TrueUSD ', async function () {
         await assertRevert(this.controller.pauseToken({ from: mintKey }))
-      })
-
-      it('TokenController can wipe blacklisted account', async function () {
-        await this.token.transfer(this.token.address, BN(40).mul(BN(10 ** 18)), { from: oneHundred })
-        await assertBalance(this.token, this.token.address, 40000000000000000000)
-        await this.registry.setAttribute(this.token.address, BLACKLISTED, 1, notes, { from: owner })
-        await this.controller.wipeBlackListedTrueUSD(this.token.address, { from: owner })
-        await assertBalance(this.token, this.token.address, 0)
-      })
-    })
-
-    describe('requestReclaimContract', function () {
-      it('reclaims the contract', async function () {
-        const ownable = await InstantiatableOwnable.new({ from: owner })
-        await ownable.transferOwnership(this.token.address, { from: owner })
-        let ownableOwner = await ownable.owner.call()
-        assert.equal(ownableOwner, this.token.address)
-
-        const { logs } = await this.controller.requestReclaimContract(ownable.address, { from: owner })
-        ownableOwner = await ownable.owner.call()
-        assert.equal(ownableOwner, this.controller.address)
-
-        assert.equal(logs.length, 2)
-        assert.equal(logs[1].event, 'RequestReclaimContract')
-        assert.equal(logs[1].args.other, ownable.address)
-      })
-
-      it('cannot be called by non-owner', async function () {
-        const ownable = await InstantiatableOwnable.new({ from: owner })
-        await ownable.transferOwnership(this.token.address, { from: owner })
-        await assertRevert(this.controller.requestReclaimContract(ownable.address, { from: mintKey }))
-      })
-
-      it('issues claimOwnership', async function () {
-        const claimable = await Claimable.new({ from: owner })
-        await claimable.transferOwnership(this.controller.address, { from: owner })
-        await this.controller.issueClaimOwnership(claimable.address, { from: owner })
-        const claimableOwner = await claimable.owner.call()
-        assert.equal(claimableOwner, this.controller.address)
       })
     })
 

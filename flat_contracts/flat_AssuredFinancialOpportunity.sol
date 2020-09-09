@@ -1,11 +1,12 @@
 
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.6.0;
 
 /**
- * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
- * the optional functions; to access them see {ERC20Detailed}.
+ * @dev Interface of the ERC20 standard as defined in the EIP.
  */
 interface IERC20 {
     /**
@@ -80,7 +81,9 @@ interface IERC20 {
 
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.6.0;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -103,6 +106,7 @@ library SafeMath {
      * Counterpart to Solidity's `+` operator.
      *
      * Requirements:
+     *
      * - Addition cannot overflow.
      */
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -119,6 +123,7 @@ library SafeMath {
      * Counterpart to Solidity's `-` operator.
      *
      * Requirements:
+     *
      * - Subtraction cannot overflow.
      */
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -132,9 +137,8 @@ library SafeMath {
      * Counterpart to Solidity's `-` operator.
      *
      * Requirements:
-     * - Subtraction cannot overflow.
      *
-     * _Available since v2.4.0._
+     * - Subtraction cannot overflow.
      */
     function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b <= a, errorMessage);
@@ -150,6 +154,7 @@ library SafeMath {
      * Counterpart to Solidity's `*` operator.
      *
      * Requirements:
+     *
      * - Multiplication cannot overflow.
      */
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -175,6 +180,7 @@ library SafeMath {
      * uses an invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
+     *
      * - The divisor cannot be zero.
      */
     function div(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -190,12 +196,10 @@ library SafeMath {
      * uses an invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
-     * - The divisor cannot be zero.
      *
-     * _Available since v2.4.0._
+     * - The divisor cannot be zero.
      */
     function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
         require(b > 0, errorMessage);
         uint256 c = a / b;
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
@@ -212,6 +216,7 @@ library SafeMath {
      * invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
+     *
      * - The divisor cannot be zero.
      */
     function mod(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -227,9 +232,8 @@ library SafeMath {
      * invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
-     * - The divisor cannot be zero.
      *
-     * _Available since v2.4.0._
+     * - The divisor cannot be zero.
      */
     function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b != 0, errorMessage);
@@ -237,81 +241,106 @@ library SafeMath {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/ValSafeMath.sol
+// File: contracts/trusttokens/ValSafeMath.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 /**
  * Forked subset of Openzeppelin SafeMath allowing custom underflow/overflow messages
  * Useful for debugging, replaceable with standard SafeMath
  */
 library ValSafeMath {
-    function add(uint256 a, uint256 b, string memory overflowMessage) internal pure returns (uint256 result) {
+    function add(
+        uint256 a,
+        uint256 b,
+        string memory overflowMessage
+    ) internal pure returns (uint256 result) {
         result = a + b;
         require(result >= a, overflowMessage);
     }
-    function sub(uint256 a, uint256 b, string memory underflowMessage) internal pure returns (uint256 result) {
+
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory underflowMessage
+    ) internal pure returns (uint256 result) {
         require(b <= a, underflowMessage);
         result = a - b;
     }
-    function mul(uint256 a, uint256 b, string memory overflowMessage) internal pure returns (uint256 result) {
+
+    function mul(
+        uint256 a,
+        uint256 b,
+        string memory overflowMessage
+    ) internal pure returns (uint256 result) {
         if (a == 0) {
             return 0;
         }
         result = a * b;
         require(result / a == b, overflowMessage);
     }
-    function div(uint256 a, uint256 b, string memory divideByZeroMessage) internal pure returns (uint256 result) {
+
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory divideByZeroMessage
+    ) internal pure returns (uint256 result) {
         require(b > 0, divideByZeroMessage);
         result = a / b;
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/ILiquidator.sol
+// File: contracts/trusttokens/ILiquidator.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 /**
  * @title Liquidator Interface
  * @dev Liquidate stake token for reward token
  */
-contract ILiquidator {
-
+abstract contract ILiquidator {
     /** @dev Get output token (token to get from liquidation exchange). */
-    function outputToken() internal view returns (IERC20);
+    function outputToken() public virtual view returns (IERC20);
 
     /** @dev Get stake token (token to be liquidated). */
-    function stakeToken() internal view returns (IERC20);
+    function stakeToken() public virtual view returns (IERC20);
 
     /** @dev Address of staking pool. */
-    function pool() internal view returns (address);
+    function pool() public virtual view returns (address);
 
     /**
      * @dev Transfer stake without liquidation
      */
-    function reclaimStake(address _destination, uint256 _stake) external;
+    function reclaimStake(address _destination, uint256 _stake) external virtual;
 
     /**
      * @dev Award stake tokens to stakers
      * Transfer to the pool without creating a staking position
      * Allows us to reward as staking or reward token
      */
-    function returnStake(address _from, uint256 balance) external;
+    function returnStake(address _from, uint256 balance) external virtual;
 
     /**
      * @dev Sells stake for underlying asset and pays to destination.
      */
-    function reclaim(address _destination, int256 _debt) external;
+    function reclaim(address _destination, int256 _debt) external virtual;
 }
 
-// File: @trusttoken/registry/contracts/Registry.sol
+// File: contracts/registry/Registry.sol
 
-pragma solidity ^0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 interface RegistryClone {
-    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
+    function syncAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) external;
 }
 
 contract Registry {
@@ -339,10 +368,7 @@ contract Registry {
     bytes32 constant WRITE_PERMISSION = keccak256("canWriteTo-");
     mapping(bytes32 => RegistryClone[]) subscribers;
 
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event SetAttribute(address indexed who, bytes32 attribute, uint256 value, bytes32 notes, address indexed adminAddr);
     event SetManager(address indexed oldManager, address indexed newManager);
     event StartSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
@@ -356,14 +382,19 @@ contract Registry {
     }
 
     // Writes are allowed only if the accessManager approves
-    function setAttribute(address _who, bytes32 _attribute, uint256 _value, bytes32 _notes) public {
+    function setAttribute(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value,
+        bytes32 _notes
+    ) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
 
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> 0) {
+        while (index-- > 0) {
             targets[index].syncAttributeValue(_who, _attribute, _value);
         }
     }
@@ -378,20 +409,24 @@ contract Registry {
         require(_index < length);
         emit StopSubscription(_attribute, subscribers[_attribute][_index]);
         subscribers[_attribute][_index] = subscribers[_attribute][length - 1];
-        subscribers[_attribute].length = length - 1;
+        subscribers[_attribute].pop();
     }
 
     function subscriberCount(bytes32 _attribute) public view returns (uint256) {
         return subscribers[_attribute].length;
     }
 
-    function setAttributeValue(address _who, bytes32 _attribute, uint256 _value) public {
+    function setAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, "", msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, "", msg.sender);
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> 0) {
+        while (index-- > 0) {
             targets[index].syncAttributeValue(_who, _attribute, _value);
         }
     }
@@ -401,9 +436,17 @@ contract Registry {
         return attributes[_who][_attribute].value != 0;
     }
 
-
     // Returns the exact value of the attribute, as well as its metadata
-    function getAttribute(address _who, bytes32 _attribute) public view returns (uint256, bytes32, address, uint256) {
+    function getAttribute(address _who, bytes32 _attribute)
+        public
+        view
+        returns (
+            uint256,
+            bytes32,
+            address,
+            uint256
+        )
+    {
         AttributeData memory data = attributes[_who][_attribute];
         return (data.value, data.notes, data.adminAddr, data.timestamp);
     }
@@ -420,12 +463,16 @@ contract Registry {
         return attributes[_who][_attribute].timestamp;
     }
 
-    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] calldata _addresses) external {
+    function syncAttribute(
+        bytes32 _attribute,
+        uint256 _startIndex,
+        address[] calldata _addresses
+    ) external {
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> _startIndex) {
+        while (index-- > _startIndex) {
             RegistryClone target = targets[index];
-            for (uint256 i = _addresses.length; i --> 0; ) {
+            for (uint256 i = _addresses.length; i-- > 0; ) {
                 address who = _addresses[i];
                 target.syncAttributeValue(who, _attribute, attributes[who][_attribute].value);
             }
@@ -441,33 +488,33 @@ contract Registry {
         token.transfer(_to, balance);
     }
 
-   /**
-    * @dev Throws if called by any account other than the owner.
-    */
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
     modifier onlyOwner() {
         require(msg.sender == owner, "only Owner");
         _;
     }
 
     /**
-    * @dev Modifier throws if called by any account other than the pendingOwner.
-    */
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
     modifier onlyPendingOwner() {
         require(msg.sender == pendingOwner);
         _;
     }
 
     /**
-    * @dev Allows the current owner to set the pendingOwner address.
-    * @param newOwner The address to transfer ownership to.
-    */
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
     function transferOwnership(address newOwner) public onlyOwner {
         pendingOwner = newOwner;
     }
 
     /**
-    * @dev Allows the pendingOwner address to finalize the transfer.
-    */
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
     function claimOwnership() public onlyPendingOwner {
         emit OwnershipTransferred(owner, pendingOwner);
         owner = pendingOwner;
@@ -475,12 +522,10 @@ contract Registry {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/ALiquidatorUniswap.sol
+// File: contracts/trusttokens/ALiquidatorUniswap.sol
 
-pragma solidity 0.5.13;
-
-//pragma experimental ABIEncoderV2;
-
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 
@@ -488,18 +533,47 @@ pragma solidity 0.5.13;
 
 /**
  * @dev Uniswap
- * This is nessesary since Uniswap is written in vyper.
+ * This is necessary since Uniswap is written in vyper.
  */
 interface UniswapV1 {
-    function tokenToExchangeSwapInput(uint256 tokensSold, uint256 minTokensBought, uint256 minEthBought, uint256 deadline, UniswapV1 exchangeAddress) external returns (uint256 tokensBought);
-    function tokenToExchangeTransferInput(uint256 tokensSold, uint256 minTokensBought, uint256 minEthBought, uint256 deadline, address recipient, UniswapV1 exchangeAddress) external returns (uint256 tokensBought);
-    function tokenToExchangeSwapOutput(uint256 tokensBought, uint256 maxTokensSold, uint256 maxEthSold, uint256 deadline, UniswapV1 exchangeAddress) external returns (uint256 tokensSold);
-    function tokenToExchangeTransferOutput(uint256 tokensBought, uint256 maxTokensSold, uint256 maxEthSold, uint256 deadline, address recipient, UniswapV1 exchangeAddress) external returns (uint256 tokensSold);
+    function tokenToExchangeSwapInput(
+        uint256 tokensSold,
+        uint256 minTokensBought,
+        uint256 minEthBought,
+        uint256 deadline,
+        UniswapV1 exchangeAddress
+    ) external returns (uint256 tokensBought);
+
+    function tokenToExchangeTransferInput(
+        uint256 tokensSold,
+        uint256 minTokensBought,
+        uint256 minEthBought,
+        uint256 deadline,
+        address recipient,
+        UniswapV1 exchangeAddress
+    ) external returns (uint256 tokensBought);
+
+    function tokenToExchangeSwapOutput(
+        uint256 tokensBought,
+        uint256 maxTokensSold,
+        uint256 maxEthSold,
+        uint256 deadline,
+        UniswapV1 exchangeAddress
+    ) external returns (uint256 tokensSold);
+
+    function tokenToExchangeTransferOutput(
+        uint256 tokensBought,
+        uint256 maxTokensSold,
+        uint256 maxEthSold,
+        uint256 deadline,
+        address recipient,
+        UniswapV1 exchangeAddress
+    ) external returns (uint256 tokensSold);
 }
 
 /**
  * @dev Uniswap Factory
- * This is nessesary since Uniswap is written in vyper.
+ * This is necessary since Uniswap is written in vyper.
  */
 interface UniswapV1Factory {
     function getExchange(IERC20 token) external returns (UniswapV1);
@@ -507,45 +581,39 @@ interface UniswapV1Factory {
 
 /**
  * @title Abstract Uniswap Liquidator
- * @dev Liquidate staked tokenns on uniswap.
- * This is because there are multiple instances of AirswapV2.
+ * @dev Liquidate staked tokens on uniswap.
  * StakingOpportunityFactory does not create a Liquidator, rather this must be created
  * Outside of the factory.
  */
-contract ALiquidatorUniswap is ILiquidator {
+abstract contract ALiquidatorUniswap is ILiquidator {
     using ValSafeMath for uint256;
 
     // owner, registry attributes
     address public owner;
     address public pendingOwner;
-    mapping (address => uint256) attributes;
-
+    mapping(address => uint256) attributes;
 
     // constants
     bytes32 constant APPROVED_BENEFICIARY = "approvedBeneficiary";
-    uint256 constant LIQUIDATOR_CAN_RECEIVE     = 0xff00000000000000000000000000000000000000000000000000000000000000;
+    uint256 constant LIQUIDATOR_CAN_RECEIVE = 0xff00000000000000000000000000000000000000000000000000000000000000;
     uint256 constant LIQUIDATOR_CAN_RECEIVE_INV = 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    // part of signature so that signing for airswap doesn't sign for all airswap instances
+
     uint256 constant MAX_UINT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     uint256 constant MAX_UINT128 = 0xffffffffffffffffffffffffffffffff;
-    bytes2 EIP191_HEADER = 0x1901;
+    bytes2 constant EIP191_HEADER = 0x1901;
 
     // internal variables implemented as storage by Liquidator
     // these variables must be known at construction time
     // Liquidator is the actual implementation of ALiquidator
 
-    /** @dev Get output token (token to get from liqudiation exchange). */
-    function outputToken() internal view returns (IERC20);
-    /** @dev Get stake token (token to be liquidated). */
-    function stakeToken() internal view returns (IERC20);
     /** @dev Output token on uniswap. */
-    function outputUniswapV1() internal view returns (UniswapV1);
+    function outputUniswapV1() public virtual view returns (UniswapV1);
+
     /** @dev Stake token on uniswap. */
-    function stakeUniswapV1() internal view returns (UniswapV1);
+    function stakeUniswapV1() public virtual view returns (UniswapV1);
+
     /** @dev Contract registry. */
-    function registry() internal view returns (Registry);
-    /** @dev Address of staking pool. */
-    function pool() internal view returns (address);
+    function registry() public virtual view returns (Registry);
 
     /**
      * @dev implementation constructor needs to call initialize
@@ -589,7 +657,11 @@ contract ALiquidatorUniswap is ILiquidator {
      * Supports APPROVED_BENEFICIARY
      * Can sync by saying this contract is the registry or sync from registry directly.
      */
-    function syncAttributeValue(address _account, bytes32 _attribute, uint256 _value) external onlyRegistry {
+    function syncAttributeValue(
+        address _account,
+        bytes32 _attribute,
+        uint256 _value
+    ) external onlyRegistry {
         if (_attribute == APPROVED_BENEFICIARY) {
             // approved beneficiary flag defines whether someone can receive
             if (_value > 0) {
@@ -612,34 +684,50 @@ contract ALiquidatorUniswap is ILiquidator {
      * Allows us to do this multiple times in one transaction
      * See ./uniswap/uniswap_exchange.vy
      */
-    function outputForUniswapV1Input(uint256 stakeInputAmount, UniswapState memory outputUniswapV1State, UniswapState memory stakeUniswapV1State) internal pure returns (uint256 outputAmount) {
+    function outputForUniswapV1Input(
+        uint256 stakeInputAmount,
+        UniswapState memory outputUniswapV1State,
+        UniswapState memory stakeUniswapV1State
+    ) internal pure returns (uint256 outputAmount) {
         uint256 inputAmountWithFee = 997 * stakeInputAmount;
-        inputAmountWithFee = 997 * (inputAmountWithFee * stakeUniswapV1State.etherBalance) / (stakeUniswapV1State.tokenBalance * 1000 + inputAmountWithFee);
-        outputAmount = (inputAmountWithFee * outputUniswapV1State.tokenBalance) / (outputUniswapV1State.etherBalance * 1000 + inputAmountWithFee);
+        inputAmountWithFee =
+            (997 * (inputAmountWithFee * stakeUniswapV1State.etherBalance)) /
+            (stakeUniswapV1State.tokenBalance * 1000 + inputAmountWithFee);
+        outputAmount =
+            (inputAmountWithFee * outputUniswapV1State.tokenBalance) /
+            (outputUniswapV1State.etherBalance * 1000 + inputAmountWithFee);
     }
 
     /**
-     * @dev Calcualte how much input we need to get a desired output
+     * @dev Calculate how much input we need to get a desired output
      * Is able to let us know if there is slippage in uniswap exchange rate
-     * and continue with Airswap
      * See./uniswap/uniswap_exchange.vy
      */
-    function inputForUniswapV1Output(uint256 outputAmount, UniswapState memory outputUniswapV1State, UniswapState memory stakeUniswapV1State) internal pure returns (uint256 inputAmount) {
+    function inputForUniswapV1Output(
+        uint256 outputAmount,
+        UniswapState memory outputUniswapV1State,
+        UniswapState memory stakeUniswapV1State
+    ) internal pure returns (uint256 inputAmount) {
         if (outputAmount >= outputUniswapV1State.tokenBalance) {
             return MAX_UINT128;
         }
-        uint256 ethNeeded = (outputUniswapV1State.etherBalance * outputAmount * 1000) / (997 * (outputUniswapV1State.tokenBalance - outputAmount)) + 1;
+        uint256 ethNeeded = (outputUniswapV1State.etherBalance * outputAmount * 1000) /
+            (997 * (outputUniswapV1State.tokenBalance - outputAmount)) +
+            1;
         if (ethNeeded >= stakeUniswapV1State.etherBalance) {
             return MAX_UINT128;
         }
-        inputAmount = (stakeUniswapV1State.tokenBalance * ethNeeded * 1000) / (997 * (stakeUniswapV1State.etherBalance - ethNeeded)) + 1;
+        inputAmount =
+            (stakeUniswapV1State.tokenBalance * ethNeeded * 1000) /
+            (997 * (stakeUniswapV1State.etherBalance - ethNeeded)) +
+            1;
     }
 
     /**
      * @dev Transfer stake without liquidation
      * requires LIQUIDATOR_CAN_RECEIVE flag (recipient must be registered)
      */
-    function reclaimStake(address _destination, uint256 _stake) external onlyOwner {
+    function reclaimStake(address _destination, uint256 _stake) external override onlyOwner {
         require(attributes[_destination] & LIQUIDATOR_CAN_RECEIVE != 0, "unregistered recipient");
         stakeToken().transferFrom(pool(), _destination, _stake);
     }
@@ -649,18 +737,17 @@ contract ALiquidatorUniswap is ILiquidator {
      * Transfer to the pool without creating a staking position.
      * Allows us to reward as staking or reward token.
      */
-    function returnStake(address _from, uint256 balance) external {
+    function returnStake(address _from, uint256 balance) external override {
         stakeToken().transferFrom(_from, pool(), balance);
     }
 
     /**
      * @dev Sells stake for underlying asset and pays to destination.
-     * Use airswap trades as long as they're better than uniswap.
      * Contract won't slip Uniswap this way.
      * If we reclaim more than we actually owe we award to stakers.
      * Not possible to convert back into TrustTokens here.
      */
-    function reclaim(address _destination, int256 _debt) external onlyOwner {
+    function reclaim(address _destination, int256 _debt) external override onlyOwner {
         require(_debt > 0, "Must reclaim positive amount");
         require(_debt < int256(MAX_UINT128), "reclaim amount too large");
         require(attributes[_destination] & LIQUIDATOR_CAN_RECEIVE != 0, "unregistered recipient");
@@ -670,8 +757,10 @@ contract ALiquidatorUniswap is ILiquidator {
         uint256 remainingStake = stakeToken().balanceOf(stakePool);
 
         // withdraw to liquidator
-        require(stakeToken().transferFrom(stakePool, address(this), remainingStake),
-            "liquidator not approved to transferFrom stakeToken");
+        require(
+            stakeToken().transferFrom(stakePool, address(this), remainingStake),
+            "liquidator not approved to transferFrom stakeToken"
+        );
 
         // load uniswap state for output and staked token
         UniswapState memory outputUniswapV1State;
@@ -692,7 +781,13 @@ contract ALiquidatorUniswap is ILiquidator {
             if (remainingStake > 0) {
                 if (outputForUniswapV1Input(remainingStake, outputUniswapV1State, stakeUniswapV1State) < uint256(remainingDebt)) {
                     // liquidate all remaining stake :(
-                    uint256 outputAmount = stakeUniswapV1State.uniswap.tokenToExchangeSwapInput(remainingStake, 1, 1, block.timestamp, outputUniswapV1State.uniswap);
+                    uint256 outputAmount = stakeUniswapV1State.uniswap.tokenToExchangeSwapInput(
+                        remainingStake,
+                        1,
+                        1,
+                        block.timestamp,
+                        outputUniswapV1State.uniswap
+                    );
                     emit Liquidated(remainingStake, outputAmount);
 
                     // update remaining stake and debt
@@ -703,7 +798,13 @@ contract ALiquidatorUniswap is ILiquidator {
                     outputToken().transfer(_destination, uint256(_debt - remainingDebt));
                 } else {
                     // finish liquidation via uniswap
-                    uint256 stakeSold = stakeUniswapV1State.uniswap.tokenToExchangeSwapOutput(uint256(remainingDebt), remainingStake, MAX_UINT, block.timestamp, outputUniswapV1State.uniswap);
+                    uint256 stakeSold = stakeUniswapV1State.uniswap.tokenToExchangeSwapOutput(
+                        uint256(remainingDebt),
+                        remainingStake,
+                        MAX_UINT,
+                        block.timestamp,
+                        outputUniswapV1State.uniswap
+                    );
                     emit Liquidated(stakeSold, uint256(remainingDebt));
                     remainingDebt = 0;
                     remainingStake -= stakeSold;
@@ -728,17 +829,17 @@ contract ALiquidatorUniswap is ILiquidator {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/Liquidator.sol
+// File: contracts/trusttokens/Liquidator.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
-//pragma experimental ABIEncoderV2;
 
 
 /**
  * @title Liquidator
  * @dev Implementation of ALiquidator
-**/
+ **/
 contract Liquidator is ALiquidatorUniswap {
     address pool_;
     Registry registry_;
@@ -748,6 +849,11 @@ contract Liquidator is ALiquidatorUniswap {
     UniswapV1 stakeUniswap_;
     bool initialized;
 
+    /**
+     * @dev Configure internal fields of contract
+     * Can only be called once
+     * Caller becomes the contract owner
+     */
     function configure(
         address registryAddress,
         address outputTokenAddress,
@@ -766,43 +872,63 @@ contract Liquidator is ALiquidatorUniswap {
         initialized = true;
         initialize();
     }
+
     function setPool(address _pool) external onlyOwner {
         pool_ = _pool;
     }
-    function pool() internal view returns (address) {
+
+    /**
+     * @dev Liquidator pool
+     * Should have large amount of TrustTokens and give infinite allowance to Liquidator
+     */
+    function pool() public override view returns (address) {
         return pool_;
     }
-    function outputToken() internal view returns (IERC20) {
+
+    // @dev TUSD address
+    function outputToken() public override view returns (IERC20) {
         return outputToken_;
     }
-    function stakeToken() internal view returns (IERC20) {
+
+    // @dev TRU token address
+    function stakeToken() public override view returns (IERC20) {
         return stakeToken_;
     }
-    function registry() internal view returns (Registry) {
+
+    // @dev Registry address
+    function registry() public override view returns (Registry) {
         return registry_;
     }
-    function outputUniswapV1() internal view returns (UniswapV1) {
+
+    // @dev Uniswap exchange for TRU
+    function outputUniswapV1() public override view returns (UniswapV1) {
         return outputUniswap_;
     }
-    function stakeUniswapV1() internal view returns (UniswapV1) {
+
+    // @dev Uniswap exchange for TrueReward token
+    function stakeUniswapV1() public override view returns (UniswapV1) {
         return stakeUniswap_;
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/StakingAsset.sol
+// File: contracts/trusttokens/StakingAsset.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
-contract StakingAsset is IERC20 {
+interface StakingAsset is IERC20 {
     function name() external view returns (string memory);
+
     function symbol() external view returns (string memory);
+
     function decimals() external view returns (uint8);
 }
 
-// File: @trusttoken/trusttokens/contracts/ProxyStorage.sol
+// File: contracts/trusttokens/ProxyStorage.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 /**
@@ -814,9 +940,9 @@ contract ProxyStorage {
     bool initalized;
     uint256 public totalSupply;
 
-    mapping (address => uint256) public balanceOf;
-    mapping (address => mapping (address => uint256)) public allowance;
-    mapping (uint144 => uint256) attributes; // see RegistrySubscriber
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+    mapping(uint144 => uint256) attributes; // see RegistrySubscriber
 
     address owner_;
     address pendingOwner_;
@@ -836,13 +962,13 @@ contract ProxyStorage {
      ** 64         uint256(address),uint256(1)                                   balanceOf
      ** 64         uint256(address),keccak256(uint256(address),uint256(2))       allowance
      ** 64         uint256(address),keccak256(bytes32,uint256(3))                attributes
-    **/
+     **/
 }
 
-// File: @trusttoken/trusttokens/contracts/ERC20.sol
+// File: contracts/trusttokens/ERC20.sol
 
-pragma solidity 0.5.13;
-
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 
@@ -880,6 +1006,7 @@ contract ModularBasicToken is ProxyStorage {
  */
 contract ModularStandardToken is ModularBasicToken {
     using ValSafeMath for uint256;
+    // Once allowance between accounts exceeds this amount, it can never get below that
     uint256 constant INFINITE_ALLOWANCE = 0xfe00000000000000000000000000000000000000000000000000000000000000;
 
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -899,7 +1026,12 @@ contract ModularStandardToken is ModularBasicToken {
         return true;
     }
 
-    function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
+    /// @dev Helper for approve
+    function _approveAllArgs(
+        address _spender,
+        uint256 _value,
+        address _tokenHolder
+    ) internal {
         _setAllowance(_tokenHolder, _spender, _value);
         emit Approval(_tokenHolder, _spender, _value);
     }
@@ -914,12 +1046,17 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _addedValue The amount of tokens to increase the allowance by.
      */
-    function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
+    function increaseApproval(address _spender, uint256 _addedValue) public returns (bool) {
         _increaseApprovalAllArgs(_spender, _addedValue, msg.sender);
         return true;
     }
 
-    function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
+    /// @dev Helper for increaseApproval
+    function _increaseApprovalAllArgs(
+        address _spender,
+        uint256 _addedValue,
+        address _tokenHolder
+    ) internal {
         _addAllowance(_tokenHolder, _spender, _addedValue);
         emit Approval(_tokenHolder, _spender, allowance[_tokenHolder][_spender]);
     }
@@ -934,12 +1071,17 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _subtractedValue The amount of tokens to decrease the allowance by.
      */
-    function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
+    function decreaseApproval(address _spender, uint256 _subtractedValue) public returns (bool) {
         _decreaseApprovalAllArgs(_spender, _subtractedValue, msg.sender);
         return true;
     }
 
-    function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
+    /// @dev Helper for decreaseApproval
+    function _decreaseApprovalAllArgs(
+        address _spender,
+        uint256 _subtractedValue,
+        address _tokenHolder
+    ) internal {
         uint256 oldValue = allowance[_tokenHolder][_spender];
         uint256 newValue;
         if (_subtractedValue > oldValue) {
@@ -948,31 +1090,47 @@ contract ModularStandardToken is ModularBasicToken {
             newValue = oldValue - _subtractedValue;
         }
         _setAllowance(_tokenHolder, _spender, newValue);
-        emit Approval(_tokenHolder,_spender, newValue);
+        emit Approval(_tokenHolder, _spender, newValue);
     }
 
-    function _addAllowance(address _who, address _spender, uint256 _value) internal {
+    /// @dev Increase allowance from _who to _spender by _value
+    function _addAllowance(
+        address _who,
+        address _spender,
+        uint256 _value
+    ) internal {
         allowance[_who][_spender] = allowance[_who][_spender].add(_value, "allowance overflow");
     }
 
-    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (uint256 newAllowance){
+    /// @dev Decrease allowance from _who to _spender by _value
+    function _subAllowance(
+        address _who,
+        address _spender,
+        uint256 _value
+    ) internal returns (uint256 newAllowance) {
         newAllowance = allowance[_who][_spender].sub(_value, "insufficient allowance");
         if (newAllowance < INFINITE_ALLOWANCE) {
             allowance[_who][_spender] = newAllowance;
         }
     }
 
-    function _setAllowance(address _who, address _spender, uint256 _value) internal {
+    /// @dev Set allowance from _who to _spender to _value
+    function _setAllowance(
+        address _who,
+        address _spender,
+        uint256 _value
+    ) internal {
         allowance[_who][_spender] = _value;
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/RegistrySubscriber.sol
+// File: contracts/trusttokens/RegistrySubscriber.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
-contract RegistrySubscriber is ProxyStorage {
+abstract contract RegistrySubscriber is ProxyStorage {
     // Registry Attributes
     bytes32 constant PASSED_KYCAML = "hasPassedKYC/AML";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
@@ -980,16 +1138,16 @@ contract RegistrySubscriber is ProxyStorage {
     bytes32 constant REGISTERED_CONTRACT = 0x697352656769737465726564436f6e7472616374000000000000000000000000;
 
     // attributes Bitmasks
-    uint256 constant ACCOUNT_BLACKLISTED     = 0xff00000000000000000000000000000000000000000000000000000000000000;
+    uint256 constant ACCOUNT_BLACKLISTED = 0xff00000000000000000000000000000000000000000000000000000000000000;
     uint256 constant ACCOUNT_BLACKLISTED_INV = 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    uint256 constant ACCOUNT_KYC             = 0x00ff000000000000000000000000000000000000000000000000000000000000;
-    uint256 constant ACCOUNT_KYC_INV         = 0xff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    uint256 constant ACCOUNT_ADDRESS         = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
-    uint256 constant ACCOUNT_ADDRESS_INV     = 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
-    uint256 constant ACCOUNT_HOOK            = 0x0000ff0000000000000000000000000000000000000000000000000000000000;
-    uint256 constant ACCOUNT_HOOK_INV        = 0xffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    uint256 constant ACCOUNT_KYC = 0x00ff000000000000000000000000000000000000000000000000000000000000;
+    uint256 constant ACCOUNT_KYC_INV = 0xff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    uint256 constant ACCOUNT_ADDRESS = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
+    uint256 constant ACCOUNT_ADDRESS_INV = 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
+    uint256 constant ACCOUNT_HOOK = 0x0000ff0000000000000000000000000000000000000000000000000000000000;
+    uint256 constant ACCOUNT_HOOK_INV = 0xffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
-    function registry() internal view returns (Registry);
+    function registry() public virtual view returns (Registry);
 
     modifier onlyRegistry {
         require(msg.sender == address(registry()));
@@ -1005,21 +1163,22 @@ contract RegistrySubscriber is ProxyStorage {
         [30, 31) PASSED_KYCAML
         [31, 32) BLACKLISTED
     */
-    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
+    function syncAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) public onlyRegistry {
         uint144 who = uint144(uint160(_who) >> 20);
         uint256 prior = attributes[who];
         if (prior == 0) {
             prior = uint256(_who);
         }
         if (_attribute == IS_DEPOSIT_ADDRESS) {
-            if (address(prior) != address(_value)) {
-                // TODO sweep balance from address(prior) to address(_value)
-            }
             attributes[who] = (prior & ACCOUNT_ADDRESS_INV) | uint256(address(_value));
         } else if (_attribute == BLACKLISTED) {
             if (_value != 0) {
                 attributes[who] = prior | ACCOUNT_BLACKLISTED;
-            } else  {
+            } else {
                 attributes[who] = prior & ACCOUNT_BLACKLISTED_INV;
             }
         } else if (_attribute == PASSED_KYCAML) {
@@ -1038,26 +1197,34 @@ contract RegistrySubscriber is ProxyStorage {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/TrueCoinReceiver.sol
+// File: contracts/trusttokens/TrueCoinReceiver.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
-contract TrueCoinReceiver {
-    function tokenFallback( address from, uint256 value ) external;
+interface TrueCoinReceiver {
+    function tokenFallback(address from, uint256 value) external;
 }
 
-// File: @trusttoken/trusttokens/contracts/ValTokenWithHook.sol
+// File: contracts/trusttokens/ValTokenWithHook.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 
 
-contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
-
+abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
     event Burn(address indexed from, uint256 indexed amount);
     event Mint(address indexed to, uint256 indexed amount);
 
+    /**
+     * @dev Check if address supports token transfer fallback and resolve autosweep
+     * @param _to Receiver account
+     *
+     * @return to If _to is not an autosweep address, they are same. Otherwise equals autosweep root
+     * @return hook True if _to supports transfer fallback
+     */
     function _resolveRecipient(address _to) internal view returns (address to, bool hook) {
         uint256 flags = (attributes[uint144(uint160(_to) >> 20)]);
         if (flags == 0) {
@@ -1070,6 +1237,9 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
         }
     }
 
+    /**
+     * @dev Reverts if _from is an autosweep address (and is not an autosweep root)
+     */
     modifier resolveSender(address _from) {
         uint256 flags = (attributes[uint144(uint160(_from) >> 20)]);
         address from = address(flags);
@@ -1079,19 +1249,39 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
         _;
     }
 
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+    /// @dev Check allowance and perform transfer
+    function _transferFromAllArgs(
+        address _from,
+        address _to,
+        uint256 _value,
+        address _spender
+    ) internal virtual {
         _subAllowance(_from, _spender, _value);
         _transferAllArgs(_from, _to, _value);
     }
-    function transferFrom(address _from, address _to, uint256 _value) external returns (bool) {
+
+    /// @dev Transfer using allowance
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _value
+    ) external returns (bool) {
         _transferFromAllArgs(_from, _to, _value, msg.sender);
         return true;
     }
+
+    /// @dev Transfer tokens to recipient
     function transfer(address _to, uint256 _value) external returns (bool) {
         _transferAllArgs(msg.sender, _to, _value);
         return true;
     }
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal resolveSender(_from) {
+
+    // @dev Swap balances and call fallback if needed
+    function _transferAllArgs(
+        address _from,
+        address _to,
+        uint256 _value
+    ) internal virtual resolveSender(_from) {
         _subBalance(_from, _value);
         emit Transfer(_from, _to, _value);
         bool hasHook;
@@ -1106,7 +1296,15 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
         }
     }
 
-    function _burn(address _from, uint256 _value) internal returns (uint256 resultBalance_, uint256 resultSupply_) {
+    /**
+     * @dev Burn
+     * @param _from Account whose tokens will burn
+     * @param _value Amount of tokens to be burnt
+     *
+     * @return resultBalance_ New balance of _from
+     * @return resultSupply_ New total supply
+     */
+    function _burn(address _from, uint256 _value) internal virtual returns (uint256 resultBalance_, uint256 resultSupply_) {
         emit Transfer(_from, address(0), _value);
         emit Burn(_from, _value);
         resultBalance_ = _subBalance(_from, _value);
@@ -1114,7 +1312,12 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
         totalSupply = resultSupply_;
     }
 
-    function _mint(address _to, uint256 _value) internal {
+    /**
+     * @dev Mint new tokens
+     * @param _to Tokens receiver
+     * @param _value Amount of tokens to be minted
+     */
+    function _mint(address _to, uint256 _value) internal virtual {
         emit Transfer(address(0), _to, _value);
         emit Mint(_to, _value);
         (address to, bool hook) = _resolveRecipient(_to);
@@ -1129,9 +1332,11 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/AStakedToken.sol
+// File: contracts/trusttokens/AStakedToken.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
+
 
 
 
@@ -1139,11 +1344,11 @@ pragma solidity 0.5.13;
 /**
  * @title Abstract StakedToken
  * @dev Single token staking model for ERC-20
- * StakedToken represents a share in an Assurace Pool.
- * Accounts stake ERC-20 staking asset and recieve ERC-20 reward asset.
+ * StakedToken represents a share in an Assurance Pool.
+ * Accounts stake ERC-20 staking asset and receive ERC-20 reward asset.
  * StakingOpportunityFactory creates instances of StakedToken
  */
-contract AStakedToken is ValTokenWithHook {
+abstract contract AStakedToken is ValTokenWithHook {
     using ValSafeMath for uint256;
 
     // current representation of rewards per stake
@@ -1152,7 +1357,7 @@ contract AStakedToken is ValTokenWithHook {
 
     // amount each account has claimed up to cumulativeRewardsPerStake
     // claiming rewards sets claimedRewardsPerStake to cumulativeRewardsPerStake
-    mapping (address => uint256) claimedRewardsPerStake;
+    mapping(address => uint256) claimedRewardsPerStake;
 
     // amount that has been awarded to the pool but not pool holders
     // tracks leftovers for when stake gets very large
@@ -1160,15 +1365,15 @@ contract AStakedToken is ValTokenWithHook {
     // rolls over the next time we award
     uint256 rewardsRemainder;
 
-    // total value of stake not currently in supply and not currrently withdrawn
-    // need this to calculate how many new staked tokens to awarn when depositing
+    // total value of stake not currently in supply and not currently withdrawn
+    // need this to calculate how many new staked tokens to award when depositing
     uint256 public stakePendingWithdrawal;
 
     // map accounts => timestamp => money
     // have to reference timestamp to access previous withdrawal
     // multiple withdrawals in the same block increase amount for that timestamp
-    // same acconut that initiates withdrawal needs to complete withdrawal
-    mapping (address => mapping (uint256 => uint256)) pendingWithdrawals;
+    // same account that initiates withdrawal needs to complete withdrawal
+    mapping(address => mapping(uint256 => uint256)) pendingWithdrawals;
 
     // unstake period in days
     uint256 constant UNSTAKE_PERIOD = 14 days;
@@ -1180,24 +1385,27 @@ contract AStakedToken is ValTokenWithHook {
     /**
      * @dev Get unclaimed reward balance for staker
      * @param _staker address of staker
-     * @return claimedRewards_ withdrawable amount of rewards belonging to this staker
-    **/
+     * @return unclaimedRewards_ withdrawable amount of rewards belonging to this staker
+     **/
     function unclaimedRewards(address _staker) public view returns (uint256 unclaimedRewards_) {
         uint256 stake = balanceOf[_staker];
         if (stake == 0) {
             return 0;
         }
-        unclaimedRewards_ = stake.mul(cumulativeRewardsPerStake.sub(claimedRewardsPerStake[_staker], "underflow"), "unclaimed rewards overflow");
+        unclaimedRewards_ = stake.mul(
+            cumulativeRewardsPerStake.sub(claimedRewardsPerStake[_staker], "underflow"),
+            "unclaimed rewards overflow"
+        );
     }
 
     /// @return ERC-20 stake asset
-    function stakeAsset() internal view returns (StakingAsset);
+    function stakeAsset() public virtual view returns (StakingAsset);
 
     /// @return ERC-20 reward asset
-    function rewardAsset() internal view returns (StakingAsset);
+    function rewardAsset() public virtual view returns (StakingAsset);
 
     /// @return liquidator address
-    function liquidator() internal view returns (address);
+    function liquidator() public virtual view returns (address);
 
     // max int size to prevent overflow
     uint256 constant MAX_UINT256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
@@ -1208,8 +1416,8 @@ contract AStakedToken is ValTokenWithHook {
 
     /**
      * @dev Initialize function called by constructor
-     * Approves liqudiator for maximum amount
-    */
+     * Approves liquidator for maximum amount
+     */
     function initialize() internal {
         stakeAsset().approve(liquidator(), MAX_UINT256);
     }
@@ -1221,7 +1429,11 @@ contract AStakedToken is ValTokenWithHook {
      * Contracts that have this staking token don't know they have rewards
      * This way we an exchange on uniswap or other exchanges
      */
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal resolveSender(_from) {
+    function _transferAllArgs(
+        address _from,
+        address _to,
+        uint256 _value
+    ) internal override resolveSender(_from) {
         uint256 fromRewards = claimedRewardsPerStake[_from];
         if (_subBalance(_from, _value) == 0) {
             claimedRewardsPerStake[_from] = 0;
@@ -1233,7 +1445,7 @@ contract AStakedToken is ValTokenWithHook {
         }
         // here we track rewards remainder and claimed rewards per stake
         // claimed rewards per stake of _to is the weighted average of the
-        // prior value and added value according to their unclaimedrewards
+        // prior value and added value according to their unclaimed rewards
         uint256 priorBalance = _addBalance(to, _value);
         uint256 numerator = (_value * fromRewards + priorBalance * claimedRewardsPerStake[to]);
         uint256 denominator = (_value + priorBalance);
@@ -1261,7 +1473,7 @@ contract AStakedToken is ValTokenWithHook {
      * Called by initUnstake to burn and modify total supply
      * We use totalSupply to calculate rewards
      */
-    function _burn(address _from, uint256 _value) internal returns (uint256 resultBalance_, uint256 resultSupply_) {
+    function _burn(address _from, uint256 _value) internal override returns (uint256 resultBalance_, uint256 resultSupply_) {
         (resultBalance_, resultSupply_) = super._burn(_from, _value);
         uint256 userClaimedRewardsPerStake = claimedRewardsPerStake[_from];
         uint256 totalRewardsPerStake = cumulativeRewardsPerStake;
@@ -1276,7 +1488,12 @@ contract AStakedToken is ValTokenWithHook {
             uint256 award_ = pendingRewards % resultBalance_;
             if (pendingRewardsPerStake > userClaimedRewardsPerStake) {
                 claimedRewardsPerStake[_from] = 0;
-                _award(award_.add((pendingRewardsPerStake - userClaimedRewardsPerStake).mul(resultBalance_, "award overflow"), "award overflow?"));
+                _award(
+                    award_.add(
+                        (pendingRewardsPerStake - userClaimedRewardsPerStake).mul(resultBalance_, "award overflow"),
+                        "award overflow?"
+                    )
+                );
             } else {
                 claimedRewardsPerStake[_from] = userClaimedRewardsPerStake - pendingRewardsPerStake;
                 _award(award_);
@@ -1288,7 +1505,7 @@ contract AStakedToken is ValTokenWithHook {
      * @dev Overrides from ValTokenWithHook
      * Checks rewards remainder of recipient of mint
      */
-    function _mint(address _to, uint256 _value) internal {
+    function _mint(address _to, uint256 _value) internal override {
         emit Transfer(address(0), _to, _value);
         emit Mint(_to, _value);
         (address to, bool hook) = _resolveRecipient(_to);
@@ -1312,15 +1529,18 @@ contract AStakedToken is ValTokenWithHook {
     }
 
     /**
-     * Called when this contract recieves stake. Called by token fallback.
+     * Called when this contract receives stake. Called by token fallback.
      * Issue stake to _staker according to _amount
      * Invoked after _amount is deposited in this contract
-    */
+     */
     function _deposit(address _staker, uint256 _amount) internal {
         uint256 balance = stakeAsset().balanceOf(address(this));
         uint256 stakeAmount;
         if (_amount < balance) {
-            stakeAmount = _amount.mul(totalSupply.add(stakePendingWithdrawal, "stakePendingWithdrawal > totalSupply"), "overflow").div(balance - _amount, "insufficient deposit");
+            stakeAmount = _amount.mul(totalSupply.add(stakePendingWithdrawal, "stakePendingWithdrawal > totalSupply"), "overflow").div(
+                balance - _amount,
+                "insufficient deposit"
+            );
         } else {
             // first staker
             require(totalSupply == 0, "pool drained");
@@ -1354,13 +1574,14 @@ contract AStakedToken is ValTokenWithHook {
      */
     function deposit(uint256 _amount) external {
         require(stakeAsset().transferFrom(msg.sender, address(this), _amount));
+        _deposit(msg.sender, _amount);
     }
 
     /**
      * @dev Initialize unstake. Can specify a portion of your balance to unstake.
      * @param _maxAmount max amount caller wishes to unstake (in this.balanceOf units)
      * @return unstake_
-    */
+     */
     function initUnstake(uint256 _maxAmount) external returns (uint256 unstake_) {
         unstake_ = balanceOf[msg.sender];
         if (unstake_ > _maxAmount) {
@@ -1377,14 +1598,14 @@ contract AStakedToken is ValTokenWithHook {
     /**
      * @dev Finalize unstake after 2 weeks.
      * Loop over timestamps
-     * Checks if unstake perioud has passed, if yes, calculate how much stake account get
+     * Checks if unstake period has passed, if yes, calculate how much stake account get
      * @param recipient recipient of
      * @param _timestamps timestamps to
      */
     function finalizeUnstake(address recipient, uint256[] calldata _timestamps) external {
         uint256 totalUnstake = 0;
         // loop through timestamps and calculate total unstake
-        for (uint256 i = _timestamps.length; i --> 0;) {
+        for (uint256 i = _timestamps.length; i-- > 0; ) {
             uint256 timestamp = _timestamps[i];
             require(timestamp + UNSTAKE_PERIOD <= now, "must wait 2 weeks to unstake");
             // add to total unstake amount
@@ -1395,11 +1616,14 @@ contract AStakedToken is ValTokenWithHook {
         IERC20 stake = stakeAsset(); // get stake asset
         uint256 totalStake = stake.balanceOf(address(this)); // get total stake
 
-        // calulate correstponding stake
+        // calculate corresponding stake
         // consider stake pending withdrawal and total supply of stake token
         // totalUnstake / totalSupply = correspondingStake / totalStake
         // totalUnstake * totalStake / totalSupply = correspondingStake
-        uint256 correspondingStake = totalStake.mul(totalUnstake, "totalStake*totalUnstake overflow").div(totalSupply.add(stakePendingWithdrawal, "overflow totalSupply+stakePendingWithdrawal"), "zero totals");
+        uint256 correspondingStake = totalStake.mul(totalUnstake, "totalStake*totalUnstake overflow").div(
+            totalSupply.add(stakePendingWithdrawal, "overflow totalSupply+stakePendingWithdrawal"),
+            "zero totals"
+        );
         stakePendingWithdrawal = stakePendingWithdrawal.sub(totalUnstake, "stakePendingWithdrawal underflow");
         stake.transfer(recipient, correspondingStake);
     }
@@ -1413,7 +1637,7 @@ contract AStakedToken is ValTokenWithHook {
     }
 
     /**
-     * @dev Award stakig pool.
+     * @dev Award staking pool.
      * @param _amount amount of rewardAsset to reward
      */
     function _award(uint256 _amount) internal {
@@ -1430,20 +1654,18 @@ contract AStakedToken is ValTokenWithHook {
 
     /**
      * @dev Claim rewards and send to a destination.
-     * Fails if sender account is not KYC.
-     * KYC flag doesn't have to be synced to the registry.
      * @param _destination withdraw destination
      */
     function claimRewards(address _destination) external {
-        // check KYC attribte
-        require(attributes[uint144(uint160(msg.sender) >> 20)] & ACCOUNT_KYC != 0 || registry().getAttributeValue(msg.sender, PASSED_KYCAML) != 0, "please register at app.trusttoken.com");
-
         // calculate how much stake and rewards account has
         uint256 stake = balanceOf[msg.sender];
         if (stake == 0) {
             return;
         }
-        uint256 dueRewards = stake.mul(cumulativeRewardsPerStake.sub(claimedRewardsPerStake[msg.sender], "underflow"), "dueRewards overflow");
+        uint256 dueRewards = stake.mul(
+            cumulativeRewardsPerStake.sub(claimedRewardsPerStake[msg.sender], "underflow"),
+            "dueRewards overflow"
+        );
         if (dueRewards == 0) {
             return;
         }
@@ -1466,9 +1688,10 @@ contract AStakedToken is ValTokenWithHook {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/StakedToken.sol
+// File: contracts/trusttokens/StakedToken.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 
@@ -1477,7 +1700,7 @@ pragma solidity 0.5.13;
 /**
  * @title StakedToken
  * @dev Implementation of AStakedToken
-**/
+ **/
 contract StakedToken is AStakedToken {
     StakingAsset stakeAsset_;
     StakingAsset rewardAsset_;
@@ -1493,7 +1716,7 @@ contract StakedToken is AStakedToken {
         Registry _registry,
         address _liquidator
     ) external {
-        require(!initalized, "already initalized StakedToken");
+        require(!initalized, "already initialized StakedToken");
         stakeAsset_ = _stakeAsset;
         rewardAsset_ = _rewardAsset;
         registry_ = _registry;
@@ -1502,36 +1725,36 @@ contract StakedToken is AStakedToken {
         initalized = true;
     }
 
-    function stakeAsset() internal view returns (StakingAsset) {
+    function stakeAsset() public override view returns (StakingAsset) {
         return stakeAsset_;
     }
 
-    function rewardAsset() internal view returns (StakingAsset) {
+    function rewardAsset() public override view returns (StakingAsset) {
         return rewardAsset_;
     }
 
-    function registry() internal view returns (Registry) {
+    function registry() public override view returns (Registry) {
         return registry_;
     }
 
-    function liquidator() internal view returns (address) {
+    function liquidator() public override view returns (address) {
         return liquidator_;
     }
 }
 
 // File: contracts/truecurrencies/AssuredFinancialOpportunityStorage.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 /*
-Defines the storage layout of the token implementaiton contract. Any newly declared
-state variables in future upgrades should be appened to the bottom. Never remove state variables
+Defines the storage layout of the token implementation contract. Any newly declared
+state variables in future upgrades should be appended to the bottom. Never remove state variables
 from this list
  */
 contract AssuredFinancialOpportunityStorage {
-
     // how much zTUSD we've issued (total supply)
-    uint zTUSDIssued;
+    uint256 zTUSDIssued;
 
     // percentage of interest for staking pool
     // 1% = 10
@@ -1539,11 +1762,10 @@ contract AssuredFinancialOpportunityStorage {
 
     // adjustment factor used when changing reward basis
     // we change the adjustment factor
-    uint adjustmentFactor;
+    uint256 adjustmentFactor;
 
-    // mintokenValue can never decrease
-    uint minTokenValue;
-
+    // minTokenValue can never decrease
+    uint256 minTokenValue;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
@@ -1561,13 +1783,13 @@ contract AssuredFinancialOpportunityStorage {
      ** 64         uint256(address),uint256(14)                                  balanceOf
      ** 64         uint256(address),keccak256(uint256(address),uint256(15))      allowance
      ** 64         uint256(address),keccak256(bytes32,uint256(16))               attributes
-    **/
+     **/
 }
 
 // File: contracts/truecurrencies/modularERC20/InitializableOwnable.sol
 
-pragma solidity 0.5.13;
-
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 /**
  * @title InitializableOwnable
@@ -1578,10 +1800,7 @@ contract InitializableOwnable {
     address public owner;
     bool configured = false;
 
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
      * @dev The InitializableOwnable constructor sets the original `owner` of the contract to the sender
@@ -1605,7 +1824,7 @@ contract InitializableOwnable {
      * @dev Allows the current owner to transfer control of the contract to a newOwner.
      * @param newOwner The address to transfer ownership to.
      */
-    function transferOwnership(address newOwner) public onlyOwner {
+    function transferOwnership(address newOwner) public virtual onlyOwner {
         require(newOwner != address(0));
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
@@ -1614,8 +1833,8 @@ contract InitializableOwnable {
 
 // File: contracts/truecurrencies/modularERC20/InitializableClaimable.sol
 
-pragma solidity 0.5.13;
-
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 
 /**
@@ -1638,7 +1857,7 @@ contract InitializableClaimable is InitializableOwnable {
      * @dev Allows the current owner to set the pendingOwner address.
      * @param newOwner The address to transfer ownership to.
      */
-    function transferOwnership(address newOwner) public onlyOwner {
+    function transferOwnership(address newOwner) public override onlyOwner {
         pendingOwner = newOwner;
     }
 
@@ -1652,7 +1871,28 @@ contract InitializableClaimable is InitializableOwnable {
     }
 }
 
+// File: contracts/truecurrencies/utilities/IExponentContract.sol
+
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
+
+/**
+ * Calculate an integer approximation of (_baseN / _baseD) ^ (_expN / _expD) * 2 ^ precision.
+ * Return the result along with the precision used.
+ */
+interface IExponentContract {
+    function power(
+        uint256 _baseN,
+        uint256 _baseD,
+        uint32 _expN,
+        uint32 _expD
+    ) external view returns (uint256, uint8);
+}
+
 // File: contracts/truereward/utilities/FractionalExponents.sol
+
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 /**
  * FractionalExponents
@@ -1664,10 +1904,8 @@ contract InitializableClaimable is InitializableOwnable {
  *  https://ethereum.stackexchange.com/questions/50527/is-there-any-efficient-way-to-compute-the-exponentiation-of-an-fractional-base-a
  */
 
-pragma solidity 0.5.13;
 
-contract FractionalExponents  {
-
+contract FractionalExponents is IExponentContract {
     uint256 private constant ONE = 1;
     uint32 private constant MAX_WEIGHT = 1000000;
     uint8 private constant MIN_PRECISION = 32;
@@ -1677,14 +1915,15 @@ contract FractionalExponents  {
     uint256 private constant FIXED_2 = 0x100000000000000000000000000000000;
     uint256 private constant MAX_NUM = 0x200000000000000000000000000000000;
 
-    uint256 private constant LN2_NUMERATOR   = 0x3f80fe03f80fe03f80fe03f80fe03f8;
+    uint256 private constant LN2_NUMERATOR = 0x3f80fe03f80fe03f80fe03f80fe03f8;
     uint256 private constant LN2_DENOMINATOR = 0x5b9de1d10bf4103d647b0955897ba80;
 
     uint256 private constant OPT_LOG_MAX_VAL = 0x15bf0a8b1457695355fb8ac404e7a79e3;
     uint256 private constant OPT_EXP_MAX_VAL = 0x800000000000000000000000000000000;
 
     uint256[128] private maxExpArray;
-    function BancorFormula() public {
+
+    function bancorFormula() public {
         maxExpArray[32] = 0x1c35fedd14ffffffffffffffffffffffff;
         maxExpArray[33] = 0x1b0ce43b323fffffffffffffffffffffff;
         maxExpArray[34] = 0x19f0028ec1ffffffffffffffffffffffff;
@@ -1783,8 +2022,6 @@ contract FractionalExponents  {
         maxExpArray[127] = 0x00857ddf0117efa215952912839f6473e6;
     }
 
-
-
     /**
         General Description:
             Determine a value of precision.
@@ -1802,23 +2039,26 @@ contract FractionalExponents  {
             This allows us to compute "base ^ exp" with maximum accuracy and without exceeding 256 bits in any of the intermediate computations.
             This functions assumes that "_expN < 2 ^ 256 / log(MAX_NUM - 1)", otherwise the multiplication should be replaced with a "safeMul".
     */
-    function power(uint256 _baseN, uint256 _baseD, uint32 _expN, uint32 _expD) public view returns (uint256, uint8) {
+    function power(
+        uint256 _baseN,
+        uint256 _baseD,
+        uint32 _expN,
+        uint32 _expD
+    ) external override view returns (uint256, uint8) {
         assert(_baseN < MAX_NUM);
 
         uint256 baseLog;
-        uint256 base = _baseN * FIXED_1 / _baseD;
+        uint256 base = (_baseN * FIXED_1) / _baseD;
         if (base < OPT_LOG_MAX_VAL) {
             baseLog = optimalLog(base);
-        }
-        else {
+        } else {
             baseLog = generalLog(base);
         }
 
-        uint256 baseLogTimesExp = baseLog * _expN / _expD;
+        uint256 baseLogTimesExp = (baseLog * _expN) / _expD;
         if (baseLogTimesExp < OPT_EXP_MAX_VAL) {
             return (optimalExp(baseLogTimesExp), MAX_PRECISION);
-        }
-        else {
+        } else {
             uint8 precision = findPositionInMaxExpArray(baseLogTimesExp);
             return (generalExp(baseLogTimesExp >> (MAX_PRECISION - precision), precision), precision);
         }
@@ -1849,7 +2089,7 @@ contract FractionalExponents  {
             }
         }
 
-        return res * LN2_NUMERATOR / LN2_DENOMINATOR;
+        return (res * LN2_NUMERATOR) / LN2_DENOMINATOR;
     }
 
     /**
@@ -1864,8 +2104,7 @@ contract FractionalExponents  {
                 _n >>= 1;
                 res += 1;
             }
-        }
-        else {
+        } else {
             // Exactly 8 iterations
             for (uint8 s = 128; s > 0; s >>= 1) {
                 if (_n >= (ONE << s)) {
@@ -1889,16 +2128,12 @@ contract FractionalExponents  {
 
         while (lo + 1 < hi) {
             uint8 mid = (lo + hi) / 2;
-            if (maxExpArray[mid] >= _x)
-                lo = mid;
-            else
-                hi = mid;
+            if (maxExpArray[mid] >= _x) lo = mid;
+            else hi = mid;
         }
 
-        if (maxExpArray[hi] >= _x)
-            return hi;
-        if (maxExpArray[lo] >= _x)
-            return lo;
+        if (maxExpArray[hi] >= _x) return hi;
+        if (maxExpArray[lo] >= _x) return lo;
 
         assert(false);
         return 0;
@@ -1906,7 +2141,7 @@ contract FractionalExponents  {
 
     /**
         This function can be auto-generated by the script 'PrintFunctionGeneralExp.py'.
-        It approximates "e ^ x" via maclaurin summation: "(x^0)/0! + (x^1)/1! + ... + (x^n)/n!".
+        It approximates "e ^ x" via Maclaurin summation: "(x^0)/0! + (x^1)/1! + ... + (x^n)/n!".
         It returns "e ^ (x / 2 ^ precision) * 2 ^ precision", that is, the result is upshifted for accuracy.
         The global "maxExpArray" maps each "precision" to "((maximumExponent + 1) << (MAX_PRECISION - precision)) - 1".
         The maximum permitted value for "x" is therefore given by "maxExpArray[precision] >> (MAX_PRECISION - precision)".
@@ -2011,7 +2246,6 @@ contract FractionalExponents  {
         xi = (xi * _x) >> _precision;
         res += xi * 0x0000000000000000000000000000001; // add x^33 * (33! / 33!)
 
-
         return res / 0x688589cc0e9505e2f2fee5580000000 + _x + (ONE << _precision); // divide by 33! and then add x^1 / 1! + x^0 / 0!
     }
 
@@ -2028,69 +2262,69 @@ contract FractionalExponents  {
 
         if (x >= 0xd3094c70f034de4b96ff7d5b6f99fcd8) {
             res += 0x40000000000000000000000000000000;
-            x = x * FIXED_1 / 0xd3094c70f034de4b96ff7d5b6f99fcd8;
+            x = (x * FIXED_1) / 0xd3094c70f034de4b96ff7d5b6f99fcd8;
         }
 
         if (x >= 0xa45af1e1f40c333b3de1db4dd55f29a7) {
             res += 0x20000000000000000000000000000000;
-            x = x * FIXED_1 / 0xa45af1e1f40c333b3de1db4dd55f29a7;
+            x = (x * FIXED_1) / 0xa45af1e1f40c333b3de1db4dd55f29a7;
         }
 
         if (x >= 0x910b022db7ae67ce76b441c27035c6a1) {
             res += 0x10000000000000000000000000000000;
-            x = x * FIXED_1 / 0x910b022db7ae67ce76b441c27035c6a1;
+            x = (x * FIXED_1) / 0x910b022db7ae67ce76b441c27035c6a1;
         }
 
         if (x >= 0x88415abbe9a76bead8d00cf112e4d4a8) {
             res += 0x08000000000000000000000000000000;
-            x = x * FIXED_1 / 0x88415abbe9a76bead8d00cf112e4d4a8;
+            x = (x * FIXED_1) / 0x88415abbe9a76bead8d00cf112e4d4a8;
         }
 
         if (x >= 0x84102b00893f64c705e841d5d4064bd3) {
             res += 0x04000000000000000000000000000000;
-            x = x * FIXED_1 / 0x84102b00893f64c705e841d5d4064bd3;
+            x = (x * FIXED_1) / 0x84102b00893f64c705e841d5d4064bd3;
         }
 
         if (x >= 0x8204055aaef1c8bd5c3259f4822735a2) {
             res += 0x02000000000000000000000000000000;
-            x = x * FIXED_1 / 0x8204055aaef1c8bd5c3259f4822735a2;
+            x = (x * FIXED_1) / 0x8204055aaef1c8bd5c3259f4822735a2;
         }
 
         if (x >= 0x810100ab00222d861931c15e39b44e99) {
             res += 0x01000000000000000000000000000000;
-            x = x * FIXED_1 / 0x810100ab00222d861931c15e39b44e99;
+            x = (x * FIXED_1) / 0x810100ab00222d861931c15e39b44e99;
         }
 
         if (x >= 0x808040155aabbbe9451521693554f733) {
             res += 0x00800000000000000000000000000000;
-            x = x * FIXED_1 / 0x808040155aabbbe9451521693554f733;
+            x = (x * FIXED_1) / 0x808040155aabbbe9451521693554f733;
         }
 
         z = y = x - FIXED_1;
-        w = y * y / FIXED_1;
+        w = (y * y) / FIXED_1;
 
-        res += z * (0x100000000000000000000000000000000 - y) / 0x100000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x100000000000000000000000000000000 - y)) / 0x100000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x0aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa - y) / 0x200000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x0aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa - y)) / 0x200000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x099999999999999999999999999999999 - y) / 0x300000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x099999999999999999999999999999999 - y)) / 0x300000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x092492492492492492492492492492492 - y) / 0x400000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x092492492492492492492492492492492 - y)) / 0x400000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x08e38e38e38e38e38e38e38e38e38e38e - y) / 0x500000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x08e38e38e38e38e38e38e38e38e38e38e - y)) / 0x500000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x08ba2e8ba2e8ba2e8ba2e8ba2e8ba2e8b - y) / 0x600000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x08ba2e8ba2e8ba2e8ba2e8ba2e8ba2e8b - y)) / 0x600000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x089d89d89d89d89d89d89d89d89d89d89 - y) / 0x700000000000000000000000000000000;
-        z = z * w / FIXED_1;
+        res += (z * (0x089d89d89d89d89d89d89d89d89d89d89 - y)) / 0x700000000000000000000000000000000;
+        z = (z * w) / FIXED_1;
 
-        res += z * (0x088888888888888888888888888888888 - y) / 0x800000000000000000000000000000000;
+        res += (z * (0x088888888888888888888888888888888 - y)) / 0x800000000000000000000000000000000;
 
         return res;
     }
@@ -2107,91 +2341,91 @@ contract FractionalExponents  {
 
         z = y = x % 0x10000000000000000000000000000000;
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x10e1b3be415a0000; // add y^02 * (20! / 02!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x05a0913f6b1e0000; // add y^03 * (20! / 03!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0168244fdac78000; // add y^04 * (20! / 04!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x004807432bc18000; // add y^05 * (20! / 05!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x000c0135dca04000; // add y^06 * (20! / 06!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0001b707b1cdc000; // add y^07 * (20! / 07!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x000036e0f639b800; // add y^08 * (20! / 08!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x00000618fee9f800; // add y^09 * (20! / 09!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000009c197dcc00; // add y^10 * (20! / 10!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000000e30dce400; // add y^11 * (20! / 11!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x000000012ebd1300; // add y^12 * (20! / 12!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000000017499f00; // add y^13 * (20! / 13!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000000001a9d480; // add y^14 * (20! / 14!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x00000000001c6380; // add y^15 * (20! / 15!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x000000000001c638; // add y^16 * (20! / 16!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000000000001ab8; // add y^17 * (20! / 17!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x000000000000017c; // add y^18 * (20! / 18!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000000000000014; // add y^19 * (20! / 19!)
 
-        z = z * y / FIXED_1;
+        z = (z * y) / FIXED_1;
         res += z * 0x0000000000000001; // add y^20 * (20! / 20!)
 
         res = res / 0x21c3677c82b40000 + y + FIXED_1; // divide by 20! and then add y^1 / 1! + y^0 / 0!
 
         if ((x & 0x010000000000000000000000000000000) != 0) {
-            res = res * 0x1c3d6a24ed82218787d624d3e5eba95f9 / 0x18ebef9eac820ae8682b9793ac6d1e776;
+            res = (res * 0x1c3d6a24ed82218787d624d3e5eba95f9) / 0x18ebef9eac820ae8682b9793ac6d1e776;
         }
 
         if ((x & 0x020000000000000000000000000000000) != 0) {
-            res = res * 0x18ebef9eac820ae8682b9793ac6d1e778 / 0x1368b2fc6f9609fe7aceb46aa619baed4;
+            res = (res * 0x18ebef9eac820ae8682b9793ac6d1e778) / 0x1368b2fc6f9609fe7aceb46aa619baed4;
         }
 
         if ((x & 0x040000000000000000000000000000000) != 0) {
-            res = res * 0x1368b2fc6f9609fe7aceb46aa619baed5 / 0x0bc5ab1b16779be3575bd8f0520a9f21f;
+            res = (res * 0x1368b2fc6f9609fe7aceb46aa619baed5) / 0x0bc5ab1b16779be3575bd8f0520a9f21f;
         }
 
         if ((x & 0x080000000000000000000000000000000) != 0) {
-            res = res * 0x0bc5ab1b16779be3575bd8f0520a9f21e / 0x0454aaa8efe072e7f6ddbab84b40a55c9;
+            res = (res * 0x0bc5ab1b16779be3575bd8f0520a9f21e) / 0x0454aaa8efe072e7f6ddbab84b40a55c9;
         }
 
         if ((x & 0x100000000000000000000000000000000) != 0) {
-            res = res * 0x0454aaa8efe072e7f6ddbab84b40a55c5 / 0x00960aadc109e7a3bf4578099615711ea;
+            res = (res * 0x0454aaa8efe072e7f6ddbab84b40a55c5) / 0x00960aadc109e7a3bf4578099615711ea;
         }
 
         if ((x & 0x200000000000000000000000000000000) != 0) {
-            res = res * 0x00960aadc109e7a3bf4578099615711d7 / 0x0002bf84208204f5977f9a8cf01fdce3d;
+            res = (res * 0x00960aadc109e7a3bf4578099615711d7) / 0x0002bf84208204f5977f9a8cf01fdce3d;
         }
 
         if ((x & 0x400000000000000000000000000000000) != 0) {
-            res = res * 0x0002bf84208204f5977f9a8cf01fdc307 / 0x0000003c6ab775dd0b95b4cbee7e65d11;
+            res = (res * 0x0002bf84208204f5977f9a8cf01fdc307) / 0x0000003c6ab775dd0b95b4cbee7e65d11;
         }
 
         return res;
@@ -2200,7 +2434,8 @@ contract FractionalExponents  {
 
 // File: contracts/truereward/FinancialOpportunity.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 /**
  * @title FinancialOpportunity
@@ -2208,10 +2443,10 @@ pragma solidity 0.5.13;
  *
  * -- Overview --
  * The goal of this contract is to allow anyone to create an opportunity
- * to earn interest on TUSD. deposit() "mints" yTUSD whcih is redeemable
- * for some amount of TUSD. TrueUSD wraps this contractwith TrustToken
+ * to earn interest on TUSD. deposit() "mints" yTUSD which is redeemable
+ * for some amount of TUSD. TrueUSD wraps this contract with TrustToken
  * Assurance, which provides protection from bugs and system design flaws
- * TUSD is a compliant stablecoin, therefore we do not allow transfers of
+ * TUSD is a compliant stable coin, therefore we do not allow transfers of
  * yTUSD, thus there are no transfer functions
  *
  * -- tokenValue() --
@@ -2225,21 +2460,20 @@ pragma solidity 0.5.13;
  *
  * -- totalSupply() --
  * This function returns the total supply of yTUSD issued by this contract
- * It is important to track this value accuratley and add/deduct the correct
- * amount on deposit/redemptions
+ * It is important to track this value accurately and add/deduct the correct
+ * amount on deposit/redemption
  *
  * -- Assumptions --
  * - tokenValue can never decrease
  * - total TUSD owed to depositors = tokenValue() * totalSupply()
  */
 interface FinancialOpportunity {
-
     /**
      * @dev Returns total supply of yTUSD in this contract
      *
      * @return total supply of yTUSD in this contract
-    **/
-    function totalSupply() external view returns (uint);
+     **/
+    function totalSupply() external view returns (uint256);
 
     /**
      * @dev Exchange rate between TUSD and yTUSD
@@ -2248,7 +2482,7 @@ interface FinancialOpportunity {
      *
      * @return TUSD / yTUSD price ratio
      */
-    function tokenValue() external view returns(uint);
+    function tokenValue() external view returns (uint256);
 
     /**
      * @dev deposits TrueUSD and returns yTUSD minted
@@ -2260,7 +2494,7 @@ interface FinancialOpportunity {
      * @param amount amount in TUSD to deposit
      * @return yTUSD minted from this deposit
      */
-    function deposit(address from, uint amount) external returns(uint);
+    function deposit(address from, uint256 amount) external returns (uint256);
 
     /**
      * @dev Redeem yTUSD for TUSD and withdraw to account
@@ -2275,14 +2509,13 @@ interface FinancialOpportunity {
      * @param amount amount in TUSD to withdraw from finOp
      * @return TUSD amount returned from this transaction
      */
-    function redeem(address to, uint amount) external returns(uint);
+    function redeem(address to, uint256 amount) external returns (uint256);
 }
 
 // File: contracts/truereward/AssuredFinancialOpportunity.sol
 
-pragma solidity 0.5.13;
-
-
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 
 
@@ -2322,9 +2555,8 @@ pragma solidity 0.5.13;
  * We allow the rewardBasis to be adjusted, but since we still need to maintain
  * the tokenValue, we calculate an adjustment factor and set minTokenValue
  *
-**/
+ **/
 contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOpportunityStorage, InitializableClaimable {
-    using SafeMath for uint256;
     using SafeMath for uint256;
 
     // tolerance of rounding errors
@@ -2342,10 +2574,15 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     // address allowed to withdraw/deposit, usually set to address of TUSD smart contract
     address fundsManager;
 
+    /// @dev Emitted on new deposit by account. tusd amount was depositted, ztusd was given in exchange
     event Deposit(address indexed account, uint256 tusd, uint256 ztusd);
+    /// @dev Emitted on new redemption by account. ztusd amount was redempted, tusd was given in exchange
     event Redemption(address indexed to, uint256 ztusd, uint256 tusd);
+    /// @dev Emitted when liquidation is triggered for debt amount
     event Liquidation(address indexed receiver, int256 debt);
+    /// @dev Emitted when award was successfully transferred to staking pool
     event AwardPool(uint256 amount);
+    /// @dev Emitted when award transfer to staking pool failed
     event AwardFailure(uint256 amount);
 
     /// funds manager can deposit/withdraw from this opportunity
@@ -2353,16 +2590,17 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         require(msg.sender == fundsManager, "only funds manager");
         _;
     }
+
     /**
      * @dev configure assured opportunity
      */
     function configure(
-        address _finOpAddress,                  // finOp to assure
-        address _assuranceAddress,              // assurance pool
-        address _liquidatorAddress,             // trusttoken liqudiator
-        address _exponentContractAddress,       // exponent contract
-        address _trueRewardBackedTokenAddress,  // token
-        address _fundsManager                   // funds manager
+        address _finOpAddress, // finOp to assure
+        address _assuranceAddress, // assurance pool
+        address _liquidatorAddress, // trusttoken liquidator
+        address _exponentContractAddress, // exponent contract
+        address _trueRewardBackedTokenAddress, // token
+        address _fundsManager // funds manager
     ) external {
         require(_finOpAddress != address(0), "finOp cannot be address(0)");
         require(_assuranceAddress != address(0), "assurance pool cannot be address(0)");
@@ -2379,7 +2617,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         fundsManager = _fundsManager;
         // only update factors if they are zero (default)
         if (adjustmentFactor == 0) {
-            adjustmentFactor = 1*10**18;
+            adjustmentFactor = 1 * 10**18;
         }
         if (rewardBasis == 0) {
             rewardBasis = TOTAL_BASIS; // set to 100% by default
@@ -2390,7 +2628,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @dev total supply of zTUSD
      * inherited from FinancialOpportunity.sol
      */
-    function totalSupply() external view returns (uint256) {
+    function totalSupply() external override view returns (uint256) {
         return zTUSDIssued;
     }
 
@@ -2400,7 +2638,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      *
      * @return TUSD value of zTUSD
      */
-    function tokenValue() external view returns(uint256) {
+    function tokenValue() external override view returns (uint256) {
         return _tokenValue();
     }
 
@@ -2412,7 +2650,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param amount TUSD amount to deposit
      * @return zTUSD amount
      */
-    function deposit(address from, uint256 amount) external onlyFundsManager returns(uint256) {
+    function deposit(address from, uint256 amount) external override onlyFundsManager returns (uint256) {
         return _deposit(from, amount);
     }
 
@@ -2424,7 +2662,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param amount amount of zTUSD to redeem
      * @return amount of TUSD returned by finOp
      */
-    function redeem(address to, uint256 amount) external onlyFundsManager returns(uint256) {
+    function redeem(address to, uint256 amount) external override onlyFundsManager returns (uint256) {
         return _redeem(to, amount);
     }
 
@@ -2456,8 +2694,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         if (success) {
             token().transfer(address(pool()), returnedAmount);
             emit AwardPool(returnedAmount);
-        }
-        else {
+        } else {
             emit AwardFailure(returnedAmount);
         }
     }
@@ -2471,16 +2708,14 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     function setRewardBasis(uint32 newBasis) external onlyOwner {
         minTokenValue = _tokenValue();
 
-        adjustmentFactor = adjustmentFactor
-            .mul(_calculateTokenValue(rewardBasis))
-            .div(_calculateTokenValue(newBasis));
+        adjustmentFactor = adjustmentFactor.mul(_calculateTokenValue(rewardBasis)).div(_calculateTokenValue(newBasis));
         rewardBasis = newBasis;
     }
 
     /**
      * @dev Get supply amount of zTUSD issued
      * @return zTUSD issued
-    **/
+     **/
     function _totalSupply() internal view returns (uint256) {
         return zTUSDIssued;
     }
@@ -2491,13 +2726,13 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      *
      * @return value of zTUSD
      */
-    function _tokenValue() internal view returns(uint256) {
+    function _tokenValue() internal view returns (uint256) {
         // if no assurance, use  opportunity tokenValue
         if (rewardBasis == TOTAL_BASIS) {
             return finOp().tokenValue();
         }
         uint256 calculatedValue = _calculateTokenValue(rewardBasis).mul(adjustmentFactor).div(10**18);
-        if(calculatedValue < minTokenValue) {
+        if (calculatedValue < minTokenValue) {
             return minTokenValue;
         } else {
             return calculatedValue;
@@ -2512,11 +2747,9 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param _rewardBasis reward basis (max TOTAL_BASIS)
      * @return zTUSD token value
      */
-    function _calculateTokenValue(uint32 _rewardBasis) internal view returns(uint256) {
-        (uint256 result, uint8 precision) = exponents().power(
-            finOp().tokenValue(), 10**18,
-            _rewardBasis, TOTAL_BASIS);
-        return result.mul(10**18).div(2 ** uint256(precision));
+    function _calculateTokenValue(uint32 _rewardBasis) internal view returns (uint256) {
+        (uint256 result, uint8 precision) = exponents().power(finOp().tokenValue(), 10**18, _rewardBasis, TOTAL_BASIS);
+        return result.mul(10**18).div(2**uint256(precision));
     }
 
     /**
@@ -2526,7 +2759,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param _account account to deposit tusd from
      * @param _amount amount of tusd to deposit
      */
-    function _deposit(address _account, uint256 _amount) internal returns(uint256) {
+    function _deposit(address _account, uint256 _amount) internal returns (uint256) {
         token().transferFrom(_account, address(this), _amount);
 
         // deposit TUSD into opportunity
@@ -2534,7 +2767,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         finOp().deposit(address(this), _amount);
 
         // calculate zTUSD value of deposit
-        uint256 ztusd = _amount.mul(10 ** 18).div(_tokenValue());
+        uint256 ztusd = _amount.mul(10**18).div(_tokenValue());
 
         // update zTUSDIssued
         zTUSDIssued = zTUSDIssued.add(ztusd);
@@ -2550,8 +2783,7 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      * @param ztusd amount in ytusd to redeem
      * @return TUSD amount redeemed for zTUSD
      */
-    function _redeem(address _to, uint256 ztusd) internal returns(uint256) {
-
+    function _redeem(address _to, uint256 ztusd) internal returns (uint256) {
         // attempt withdraw to this contract
         // here we redeem ztusd amount which leaves
         // a small amount of yTUSD left in the finOp
@@ -2583,36 +2815,28 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
      *
      * @param _to redeemer address
      * @param ztusd amount in ztusd
-    **/
-    function _attemptRedeem(address _to, uint256 ztusd) internal returns (bool, uint) {
-        uint256 returnedAmount;
-
+     **/
+    function _attemptRedeem(address _to, uint256 ztusd) internal returns (bool, uint256) {
         // attempt to withdraw from opportunity
-        (bool success, bytes memory returnData) = address(finOp()).call(
-            abi.encodePacked(finOp().redeem.selector, abi.encode(_to, ztusd))
-        );
-
-        if (success) { // successfully got TUSD :)
-            returnedAmount = abi.decode(returnData, (uint256));
+        try finOp().redeem(_to, ztusd) returns (uint256 fundsWithdrawn) {
+            return (true, fundsWithdrawn);
+        } catch (bytes memory) {
+            return (false, 0);
         }
-        else { // failed get TUSD :(
-            returnedAmount = 0;
-        }
-        return (success, returnedAmount);
     }
 
     /**
      * @dev Liquidate tokens in staking pool to cover debt
      * Sends tusd to receiver
      *
-     * @param _receiver address to recieve tusd
+     * @param _receiver address to receive tusd
      * @param _debt tusd debt to be liquidated
      * @return amount liquidated
-    **/
+     **/
     function _liquidate(address _receiver, int256 _debt) internal returns (uint256) {
         liquidator().reclaim(_receiver, _debt);
         emit Liquidation(_receiver, _debt);
-        return uint(_debt);
+        return uint256(_debt);
     }
 
     /**
@@ -2643,15 +2867,15 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
         liquidator().transferOwnership(newOwner);
     }
 
-    /// @dev getter for financial opportuniry
+    /// @dev getter for financial opportunity
     /// @return financial opportunity
-    function finOp() public view returns(FinancialOpportunity) {
+    function finOp() public view returns (FinancialOpportunity) {
         return FinancialOpportunity(finOpAddress);
     }
 
     /// @dev getter for staking pool
     /// @return staking pool
-    function pool() public view returns(StakedToken) {
+    function pool() public view returns (StakedToken) {
         return StakedToken(assuranceAddress); // StakedToken is assurance staking pool
     }
 
@@ -2661,15 +2885,16 @@ contract AssuredFinancialOpportunity is FinancialOpportunity, AssuredFinancialOp
     }
 
     /// @dev getter for exponents contract
-    function exponents() public view returns (FractionalExponents){
+    function exponents() public view returns (FractionalExponents) {
         return FractionalExponents(exponentContractAddress);
     }
 
     /// @dev deposit token (TrueUSD)
-    function token() public view returns (IERC20){
+    function token() public view returns (IERC20) {
         return IERC20(trueRewardBackedTokenAddress);
     }
 
     /// @dev default payable
-    function() external payable {}
+    // solhint-disable-next-line no-empty-blocks
+    receive() external payable {}
 }

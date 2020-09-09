@@ -1,11 +1,174 @@
 
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
+// File: @openzeppelin/contracts/math/SafeMath.sol
 
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.6.0;
 
 /**
- * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
- * the optional functions; to access them see {ERC20Detailed}.
+ * @dev Wrappers over Solidity's arithmetic operations with added overflow
+ * checks.
+ *
+ * Arithmetic operations in Solidity wrap on overflow. This can easily result
+ * in bugs, because programmers usually assume that an overflow raises an
+ * error, which is the standard behavior in high level programming languages.
+ * `SafeMath` restores this intuition by reverting the transaction when an
+ * operation overflows.
+ *
+ * Using this library instead of the unchecked operations eliminates an entire
+ * class of bugs, so it's recommended to use it always.
+ */
+library SafeMath {
+    /**
+     * @dev Returns the addition of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `+` operator.
+     *
+     * Requirements:
+     *
+     * - Addition cannot overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return sub(a, b, "SafeMath: subtraction overflow");
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `*` operator.
+     *
+     * Requirements:
+     *
+     * - Multiplication cannot overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b > 0, errorMessage);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        return mod(a, b, "SafeMath: modulo by zero");
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts with custom message when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b != 0, errorMessage);
+        return a % b;
+    }
+}
+
+// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
+
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.6.0;
+
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP.
  */
 interface IERC20 {
     /**
@@ -78,13 +241,18 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-// File: @trusttoken/registry/contracts/Registry.sol
+// File: contracts/registry/Registry.sol
 
-pragma solidity ^0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 interface RegistryClone {
-    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
+    function syncAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) external;
 }
 
 contract Registry {
@@ -112,10 +280,7 @@ contract Registry {
     bytes32 constant WRITE_PERMISSION = keccak256("canWriteTo-");
     mapping(bytes32 => RegistryClone[]) subscribers;
 
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event SetAttribute(address indexed who, bytes32 attribute, uint256 value, bytes32 notes, address indexed adminAddr);
     event SetManager(address indexed oldManager, address indexed newManager);
     event StartSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
@@ -129,14 +294,19 @@ contract Registry {
     }
 
     // Writes are allowed only if the accessManager approves
-    function setAttribute(address _who, bytes32 _attribute, uint256 _value, bytes32 _notes) public {
+    function setAttribute(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value,
+        bytes32 _notes
+    ) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
 
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> 0) {
+        while (index-- > 0) {
             targets[index].syncAttributeValue(_who, _attribute, _value);
         }
     }
@@ -151,20 +321,24 @@ contract Registry {
         require(_index < length);
         emit StopSubscription(_attribute, subscribers[_attribute][_index]);
         subscribers[_attribute][_index] = subscribers[_attribute][length - 1];
-        subscribers[_attribute].length = length - 1;
+        subscribers[_attribute].pop();
     }
 
     function subscriberCount(bytes32 _attribute) public view returns (uint256) {
         return subscribers[_attribute].length;
     }
 
-    function setAttributeValue(address _who, bytes32 _attribute, uint256 _value) public {
+    function setAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, "", msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, "", msg.sender);
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> 0) {
+        while (index-- > 0) {
             targets[index].syncAttributeValue(_who, _attribute, _value);
         }
     }
@@ -174,9 +348,17 @@ contract Registry {
         return attributes[_who][_attribute].value != 0;
     }
 
-
     // Returns the exact value of the attribute, as well as its metadata
-    function getAttribute(address _who, bytes32 _attribute) public view returns (uint256, bytes32, address, uint256) {
+    function getAttribute(address _who, bytes32 _attribute)
+        public
+        view
+        returns (
+            uint256,
+            bytes32,
+            address,
+            uint256
+        )
+    {
         AttributeData memory data = attributes[_who][_attribute];
         return (data.value, data.notes, data.adminAddr, data.timestamp);
     }
@@ -193,12 +375,16 @@ contract Registry {
         return attributes[_who][_attribute].timestamp;
     }
 
-    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] calldata _addresses) external {
+    function syncAttribute(
+        bytes32 _attribute,
+        uint256 _startIndex,
+        address[] calldata _addresses
+    ) external {
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> _startIndex) {
+        while (index-- > _startIndex) {
             RegistryClone target = targets[index];
-            for (uint256 i = _addresses.length; i --> 0; ) {
+            for (uint256 i = _addresses.length; i-- > 0; ) {
                 address who = _addresses[i];
                 target.syncAttributeValue(who, _attribute, attributes[who][_attribute].value);
             }
@@ -214,98 +400,13 @@ contract Registry {
         token.transfer(_to, balance);
     }
 
-   /**
-    * @dev Throws if called by any account other than the owner.
-    */
-    modifier onlyOwner() {
-        require(msg.sender == owner, "only Owner");
-        _;
-    }
-
-    /**
-    * @dev Modifier throws if called by any account other than the pendingOwner.
-    */
-    modifier onlyPendingOwner() {
-        require(msg.sender == pendingOwner);
-        _;
-    }
-
-    /**
-    * @dev Allows the current owner to set the pendingOwner address.
-    * @param newOwner The address to transfer ownership to.
-    */
-    function transferOwnership(address newOwner) public onlyOwner {
-        pendingOwner = newOwner;
-    }
-
-    /**
-    * @dev Allows the pendingOwner address to finalize the transfer.
-    */
-    function claimOwnership() public onlyPendingOwner {
-        emit OwnershipTransferred(owner, pendingOwner);
-        owner = pendingOwner;
-        pendingOwner = address(0);
-    }
-}
-
-// File: contracts/truecurrencies/modularERC20/InstantiatableOwnable.sol
-
-pragma solidity 0.5.13;
-
-
-/**
- * @title InstantiatableOwnable
- * @dev The InstantiatableOwnable contract has an owner address, and provides basic authorization control
- * functions, this simplifies the implementation of "user permissions".
- */
-contract InstantiatableOwnable {
-    address public owner;
-
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
-
-    /**
-     * @dev The InstantiatableOwnable constructor sets the original `owner` of the contract to the sender
-     * account.
-     */
-    constructor() public {
-        owner = msg.sender;
-    }
-
     /**
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "only Owner");
         _;
     }
-
-    /**
-     * @dev Allows the current owner to transfer control of the contract to a newOwner.
-     * @param newOwner The address to transfer ownership to.
-     */
-    function transferOwnership(address newOwner) public onlyOwner {
-        require(newOwner != address(0));
-        emit OwnershipTransferred(owner, newOwner);
-        owner = newOwner;
-    }
-}
-
-// File: contracts/truecurrencies/modularERC20/Claimable.sol
-
-pragma solidity 0.5.13;
-
-
-
-/**
- * @title Claimable
- * @dev Extension for the InstantiatableOwnable contract, where the ownership needs to be claimed.
- * This allows the new owner to accept the transfer.
- */
-contract Claimable is InstantiatableOwnable {
-    address public pendingOwner;
 
     /**
      * @dev Modifier throws if called by any account other than the pendingOwner.
@@ -333,168 +434,92 @@ contract Claimable is InstantiatableOwnable {
     }
 }
 
-// File: @openzeppelin/contracts/math/SafeMath.sol
+// File: contracts/truecurrencies/modularERC20/InstantiatableOwnable.sol
 
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 /**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
+ * @title InstantiatableOwnable
+ * @dev The InstantiatableOwnable contract has an owner address, and provides basic authorization control
+ * functions, this simplifies the implementation of "user permissions".
  */
-library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     * - Addition cannot overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, "SafeMath: addition overflow");
+contract InstantiatableOwnable {
+    address public owner;
 
-        return c;
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev The InstantiatableOwnable constructor sets the original `owner` of the contract to the sender
+     * account.
+     */
+    constructor() public {
+        owner = msg.sender;
     }
 
     /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     * - Subtraction cannot overflow.
+     * @dev Throws if called by any account other than the owner.
      */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return sub(a, b, "SafeMath: subtraction overflow");
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
     }
 
     /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     * - Subtraction cannot overflow.
-     *
-     * _Available since v2.4.0._
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
      */
-    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b <= a, errorMessage);
-        uint256 c = a - b;
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     * - Multiplication cannot overflow.
-     */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) {
-            return 0;
-        }
-
-        uint256 c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers. Reverts on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        return div(a, b, "SafeMath: division by zero");
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     * - The divisor cannot be zero.
-     *
-     * _Available since v2.4.0._
-     */
-    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
-        require(b > 0, errorMessage);
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        return mod(a, b, "SafeMath: modulo by zero");
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts with custom message when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     * - The divisor cannot be zero.
-     *
-     * _Available since v2.4.0._
-     */
-    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b != 0, errorMessage);
-        return a % b;
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0));
+        emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
     }
 }
 
-// File: contracts/truecurrencies/modularERC20/BalanceSheet.sol
+// File: contracts/truecurrencies/deprecated/Claimable.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
+
+
+/**
+ * @title Claimable
+ * @dev Extension for the InstantiatableOwnable contract, where the ownership needs to be claimed.
+ * This allows the new owner to accept the transfer.
+ */
+contract Claimable is InstantiatableOwnable {
+    address public pendingOwner;
+
+    /**
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
+    modifier onlyPendingOwner() {
+        require(msg.sender == pendingOwner);
+        _;
+    }
+
+    /**
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public override onlyOwner {
+        pendingOwner = newOwner;
+    }
+
+    /**
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
+    function claimOwnership() public onlyPendingOwner {
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
+    }
+}
+
+// File: contracts/truecurrencies/deprecated/BalanceSheet.sol
+
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 
 
@@ -502,7 +527,7 @@ pragma solidity 0.5.13;
 contract BalanceSheet is Claimable {
     using SafeMath for uint256;
 
-    mapping (address => uint256) public balanceOf;
+    mapping(address => uint256) public balanceOf;
 
     function addBalance(address _addr, uint256 _value) public onlyOwner {
         balanceOf[_addr] = balanceOf[_addr].add(_value);
@@ -517,9 +542,10 @@ contract BalanceSheet is Claimable {
     }
 }
 
-// File: contracts/truecurrencies/modularERC20/AllowanceSheet.sol
+// File: contracts/truecurrencies/deprecated/AllowanceSheet.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 
 
@@ -527,24 +553,37 @@ pragma solidity 0.5.13;
 contract AllowanceSheet is Claimable {
     using SafeMath for uint256;
 
-    mapping (address => mapping (address => uint256)) public allowanceOf;
+    mapping(address => mapping(address => uint256)) public allowanceOf;
 
-    function addAllowance(address _tokenHolder, address _spender, uint256 _value) public onlyOwner {
+    function addAllowance(
+        address _tokenHolder,
+        address _spender,
+        uint256 _value
+    ) public onlyOwner {
         allowanceOf[_tokenHolder][_spender] = allowanceOf[_tokenHolder][_spender].add(_value);
     }
 
-    function subAllowance(address _tokenHolder, address _spender, uint256 _value) public onlyOwner {
+    function subAllowance(
+        address _tokenHolder,
+        address _spender,
+        uint256 _value
+    ) public onlyOwner {
         allowanceOf[_tokenHolder][_spender] = allowanceOf[_tokenHolder][_spender].sub(_value);
     }
 
-    function setAllowance(address _tokenHolder, address _spender, uint256 _value) public onlyOwner {
+    function setAllowance(
+        address _tokenHolder,
+        address _spender,
+        uint256 _value
+    ) public onlyOwner {
         allowanceOf[_tokenHolder][_spender] = _value;
     }
 }
 
 // File: contracts/truereward/FinancialOpportunity.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 /**
  * @title FinancialOpportunity
@@ -552,10 +591,10 @@ pragma solidity 0.5.13;
  *
  * -- Overview --
  * The goal of this contract is to allow anyone to create an opportunity
- * to earn interest on TUSD. deposit() "mints" yTUSD whcih is redeemable
- * for some amount of TUSD. TrueUSD wraps this contractwith TrustToken
+ * to earn interest on TUSD. deposit() "mints" yTUSD which is redeemable
+ * for some amount of TUSD. TrueUSD wraps this contract with TrustToken
  * Assurance, which provides protection from bugs and system design flaws
- * TUSD is a compliant stablecoin, therefore we do not allow transfers of
+ * TUSD is a compliant stable coin, therefore we do not allow transfers of
  * yTUSD, thus there are no transfer functions
  *
  * -- tokenValue() --
@@ -569,21 +608,20 @@ pragma solidity 0.5.13;
  *
  * -- totalSupply() --
  * This function returns the total supply of yTUSD issued by this contract
- * It is important to track this value accuratley and add/deduct the correct
- * amount on deposit/redemptions
+ * It is important to track this value accurately and add/deduct the correct
+ * amount on deposit/redemption
  *
  * -- Assumptions --
  * - tokenValue can never decrease
  * - total TUSD owed to depositors = tokenValue() * totalSupply()
  */
 interface FinancialOpportunity {
-
     /**
      * @dev Returns total supply of yTUSD in this contract
      *
      * @return total supply of yTUSD in this contract
-    **/
-    function totalSupply() external view returns (uint);
+     **/
+    function totalSupply() external view returns (uint256);
 
     /**
      * @dev Exchange rate between TUSD and yTUSD
@@ -592,7 +630,7 @@ interface FinancialOpportunity {
      *
      * @return TUSD / yTUSD price ratio
      */
-    function tokenValue() external view returns(uint);
+    function tokenValue() external view returns (uint256);
 
     /**
      * @dev deposits TrueUSD and returns yTUSD minted
@@ -604,7 +642,7 @@ interface FinancialOpportunity {
      * @param amount amount in TUSD to deposit
      * @return yTUSD minted from this deposit
      */
-    function deposit(address from, uint amount) external returns(uint);
+    function deposit(address from, uint256 amount) external returns (uint256);
 
     /**
      * @dev Redeem yTUSD for TUSD and withdraw to account
@@ -619,12 +657,14 @@ interface FinancialOpportunity {
      * @param amount amount in TUSD to withdraw from finOp
      * @return TUSD amount returned from this transaction
      */
-    function redeem(address to, uint amount) external returns(uint);
+    function redeem(address to, uint256 amount) external returns (uint256);
 }
 
 // File: contracts/truecurrencies/ProxyStorage.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
+// solhint-disable max-states-count, var-name-mixedcase
 
 
 
@@ -657,13 +697,13 @@ contract ProxyStorage {
     string name_Deprecated;
     string symbol_Deprecated;
 
-    uint[] gasRefundPool_Deprecated;
+    uint256[] gasRefundPool_Deprecated;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
 
-    mapping (address => uint256) _balanceOf;
-    mapping (address => mapping (address => uint256)) _allowance;
-    mapping (bytes32 => mapping (address => uint256)) attributes;
+    mapping(address => uint256) _balanceOf;
+    mapping(address => mapping(address => uint256)) _allowance;
+    mapping(bytes32 => mapping(address => uint256)) attributes;
 
     // reward token storage
     mapping(address => FinancialOpportunity) finOps;
@@ -672,7 +712,10 @@ contract ProxyStorage {
 
     // true reward allocation
     // proportion: 1000 = 100%
-    struct RewardAllocation { uint proportion; address finOp; }
+    struct RewardAllocation {
+        uint256 proportion;
+        address finOp;
+    }
     mapping(address => RewardAllocation[]) _rewardDistribution;
     uint256 maxRewardProportion = 1000;
 
@@ -692,12 +735,13 @@ contract ProxyStorage {
      ** 64         uint256(address),uint256(14)                                  balanceOf
      ** 64         uint256(address),keccak256(uint256(address),uint256(15))      allowance
      ** 64         uint256(address),keccak256(bytes32,uint256(16))               attributes
-    **/
+     **/
 }
 
 // File: contracts/truecurrencies/HasOwner.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 
 /**
@@ -707,48 +751,45 @@ pragma solidity 0.5.13;
  ProxyStorage.
  */
 contract HasOwner is ProxyStorage {
-
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    /// @dev emitted when ownership is transferred
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
-    * @dev sets the original `owner` of the contract to the sender
-    * at construction. Must then be reinitialized
-    */
+     * @dev sets the original `owner` of the contract to the sender
+     * at construction. Must then be reinitialized
+     */
     constructor() public {
         owner = msg.sender;
         emit OwnershipTransferred(address(0), owner);
     }
 
     /**
-    * @dev Throws if called by any account other than the owner.
-    */
+     * @dev Throws if called by any account other than the owner.
+     */
     modifier onlyOwner() {
         require(msg.sender == owner, "only Owner");
         _;
     }
 
     /**
-    * @dev Modifier throws if called by any account other than the pendingOwner.
-    */
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
     modifier onlyPendingOwner() {
         require(msg.sender == pendingOwner);
         _;
     }
 
     /**
-    * @dev Allows the current owner to set the pendingOwner address.
-    * @param newOwner The address to transfer ownership to.
-    */
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
     function transferOwnership(address newOwner) public onlyOwner {
         pendingOwner = newOwner;
     }
 
     /**
-    * @dev Allows the pendingOwner address to finalize the transfer.
-    */
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
     function claimOwnership() public onlyPendingOwner {
         emit OwnershipTransferred(owner, pendingOwner);
         owner = pendingOwner;
@@ -758,7 +799,10 @@ contract HasOwner is ProxyStorage {
 
 // File: contracts/truecurrencies/utilities/PausedToken.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
+
+
 
 
 
@@ -790,7 +834,7 @@ contract PausedToken is HasOwner, RegistryClone {
     }
 
     /**
-    *@dev send all token balance of an arbitary erc20 token
+    *@dev send all token balance of an arbitrary erc20 token
     in the TrueUSD contract to another address
     */
     function reclaimToken(IERC20 token, address _to) external onlyOwner {
@@ -801,10 +845,7 @@ contract PausedToken is HasOwner, RegistryClone {
     /**
      *@dev allows owner of TrueUSD to gain ownership of any contract that TrueUSD currently owns
      */
-    function reclaimContract(InstantiatableOwnable _ownable)
-        external
-        onlyOwner
-    {
+    function reclaimContract(InstantiatableOwnable _ownable) external onlyOwner {
         _ownable.transferOwnership(owner);
     }
 
@@ -851,15 +892,8 @@ contract PausedToken is HasOwner, RegistryClone {
 
     bytes32 constant CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE = "canSetFutureRefundMinGasPrice";
 
-    function setMinimumGasPriceForFutureRefunds(
-        uint256 _minimumGasPriceForFutureRefunds
-    ) public {
-        require(
-            registry.hasAttribute(
-                msg.sender,
-                CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE
-            )
-        );
+    function setMinimumGasPriceForFutureRefunds(uint256 _minimumGasPriceForFutureRefunds) public {
+        require(registry.hasAttribute(msg.sender, CAN_SET_FUTURE_REFUND_MIN_GAS_PRICE));
         minimumGasPriceForFutureRefunds = _minimumGasPriceForFutureRefunds;
     }
 
@@ -875,19 +909,11 @@ contract PausedToken is HasOwner, RegistryClone {
         _balanceOf[_who] = _value;
     }
 
-    function allowance(address _who, address _spender)
-        public
-        view
-        returns (uint256)
-    {
+    function allowance(address _who, address _spender) public view returns (uint256) {
         return _getAllowance(_who, _spender);
     }
 
-    function _getAllowance(address _who, address _spender)
-        internal
-        view
-        returns (uint256 value)
-    {
+    function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
         return _allowance[_who][_spender];
     }
 
@@ -958,17 +984,14 @@ contract PausedToken is HasOwner, RegistryClone {
         address _who,
         bytes32 _attribute,
         uint256 _value
-    ) public onlyRegistry {
+    ) public override onlyRegistry {
         attributes[_attribute][_who] = _value;
     }
 
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
 
     function wipeBlacklistedAccount(address _account) public onlyOwner {
-        require(
-            attributes[IS_BLACKLISTED][_account] != 0,
-            "_account is not blacklisted"
-        );
+        require(attributes[IS_BLACKLISTED][_account] != 0, "_account is not blacklisted");
         uint256 oldValue = _getBalance(_account);
         _setBalance(_account, 0);
         totalSupply_ = totalSupply_.sub(oldValue);
@@ -977,7 +1000,6 @@ contract PausedToken is HasOwner, RegistryClone {
     }
 }
 
-
 /** @title PausedDelegateERC20
 Accept forwarding delegation calls from the old TrueUSD (V1) contract. This way the all the ERC20
 functions in the old contract still works (except Burn).
@@ -985,7 +1007,7 @@ functions in the old contract still works (except Burn).
 contract PausedDelegateERC20 is PausedToken {
     address public constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
 
-    modifier onlyDelegateFrom() {
+    modifier onlyDelegateFrom() virtual {
         require(msg.sender == DELEGATE_FROM);
         _;
     }
@@ -1006,11 +1028,7 @@ contract PausedDelegateERC20 is PausedToken {
         revert("Token Paused");
     }
 
-    function delegateAllowance(address owner, address spender)
-        public
-        view
-        returns (uint256)
-    {
+    function delegateAllowance(address owner, address spender) public view returns (uint256) {
         return _getAllowance(owner, spender);
     }
 
@@ -1050,7 +1068,8 @@ contract PausedDelegateERC20 is PausedToken {
 
 // File: contracts/truecurrencies/utilities/PausedCurrencies.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.6.10;
 
 
 contract PausedTrueUSD is PausedDelegateERC20 {
