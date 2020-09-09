@@ -1,6 +1,6 @@
 import { ContractTransaction, ethers, Wallet } from 'ethers'
 import { BigNumberish, parseEther, Transaction } from 'ethers/utils'
-import { TrueUsd } from '../build/types/TrueUsd'
+import { TrueUsdLegacy } from '../build/types/TrueUsdLegacy'
 import { RegistryAttributes } from '../scripts/attributes'
 import { expect } from 'chai'
 import { RegistryMock } from '../build/types/RegistryMock'
@@ -19,7 +19,7 @@ function toChecksumAddress (address: string) {
 describe('Autosweep feature', () => {
   let holder: Wallet
   let autosweepTarget: Wallet
-  let token: TrueUsd
+  let token: TrueUsdLegacy
   let registry: RegistryMock
   let sharesToken: ATokenMock
   let aaveFinancialOpportunity: AaveFinancialOpportunity

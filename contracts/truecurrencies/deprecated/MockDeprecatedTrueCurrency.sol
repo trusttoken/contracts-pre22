@@ -1,15 +1,21 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol";
+import {CompliantDepositTokenWithHook} from "../CompliantDepositTokenWithHook.sol";
 
-/** @title TrueGBP
+/** @title TrueCAD
  * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
  * inherited - see the documentation on the corresponding contracts.
  */
-contract TrueGBP is CompliantDepositTokenWithHook {
+contract MockDeprecatedTrueCurrency is CompliantDepositTokenWithHook {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
+
+    function initialize() external {
+        require(!initialized);
+        owner = msg.sender;
+        initialized = true;
+    }
 
     function decimals() public pure returns (uint8) {
         return DECIMALS;
@@ -20,14 +26,14 @@ contract TrueGBP is CompliantDepositTokenWithHook {
     }
 
     function name() public pure returns (string memory) {
-        return "TrueGBP";
+        return "OldTrueCurrency";
     }
 
     function symbol() public pure returns (string memory) {
-        return "TGBP";
+        return "TCUR-OLD";
     }
 
     function canBurn() internal override pure returns (bytes32) {
-        return "canBurnGBP";
+        return "canBurn";
     }
 }
