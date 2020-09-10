@@ -6,9 +6,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /**
- * @name TrueDistributor
- * @dev Allows TrueFi farms to farm TRU
- * This contract distributes tokens starting from `startingBlock` for the next 10 million block (roughly 4.5 years)
+ * @title TrueDistributor
+ * @notice Distributes TRU to TrueFarm farms
+ * @dev This contract distributes tokens starting from `startingBlock` for the next 10 million block (roughly 4.5 years)
  * The tokens will be distributed according to the declining quadratic curve
  * For each block `DISTRIBUTION_FACTOR*(10M-n)^2` TRU is awarded where `n` if a block number since `startingBlock`
  * `DISTRIBUTION_FACTOR` has been selected so that 536,500,000 (39% of total TRU supply) will be awarded in total
@@ -37,8 +37,8 @@ contract TrueDistributor is Ownable {
     }
 
     /**
-     * @dev transfer all rewards since previous `distribute` call to the `farm`
-     * transferred reward is proportional to the stake of the farm
+     * @notice transfer all rewards since previous `distribute` call to the `farm`.
+     * Transferred reward is proportional to the stake of the farm
      */
     function distribute(address farm) public returns (uint256) {
         uint256 currentBlock = block.number;
@@ -81,7 +81,7 @@ contract TrueDistributor is Ownable {
     }
 
     /**
-     * @dev Reward from `fromBlock` to `toBlock`.
+     * @notice Reward from `fromBlock` to `toBlock`.
      */
     function reward(uint256 fromBlock, uint256 toBlock) public view returns (uint256) {
         require(fromBlock <= toBlock, "invalid interval");
