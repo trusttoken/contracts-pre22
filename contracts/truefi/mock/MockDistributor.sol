@@ -3,6 +3,9 @@ pragma solidity 0.6.10;
 
 import {TrueDistributor, ERC20} from "../TrueDistributor.sol";
 
+/**
+ * @dev same as TrueDistributor but reward per block is always 100
+ */
 contract MockDistributor is TrueDistributor {
     constructor(uint256 _startingBlock, ERC20 _token) public TrueDistributor(_startingBlock, _token) {}
 

@@ -110,6 +110,26 @@ describe('TrueFarm', () => {
       await farm.connect(staker1).claim()
       expect(await farm.claimableReward(staker1.address)).to.equal(0)
     })
+
+    it('calling distribute does not break reward calculations', async () => {
+      const stakeBlock = await getBlock(farm.connect(staker1).stake(parseEther('500')))
+      await skipBlocksWithProvider(provider, 5)
+      await distributor.distribute(farm.address)
+      await skipBlocksWithProvider(provider, 5)
+      const claimBlock = await getBlock(farm.connect(staker1).claim())
+
+      expect(await trustToken.balanceOf(staker1.address)).to.equal((claimBlock - stakeBlock) * 100)
+    })
+
+    it('splitting distributor shares does not break reward calculations', async () => {
+      const stakeBlock = await getBlock(farm.connect(staker1).stake(parseEther('500')))
+      await skipBlocksWithProvider(provider, 5)
+      const transferBlock = await getBlock(distributor.transfer(farm.address, owner.address, (await distributor.TOTAL_SHARES()).div(2)))
+      await skipBlocksWithProvider(provider, 5)
+      const claimBlock = await getBlock(farm.connect(staker1).claim())
+
+      expect(await trustToken.balanceOf(staker1.address)).to.equal((transferBlock - stakeBlock + (claimBlock - transferBlock) / 2) * 100)
+    })
   })
 
   describe('with two stakers', function () {

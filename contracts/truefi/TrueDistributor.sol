@@ -4,6 +4,7 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ITrueFarm} from "./ITrueFarm.sol";
 
 /**
  * @title TrueDistributor
@@ -25,7 +26,6 @@ contract TrueDistributor is Ownable {
     uint256 public constant TOTAL_BLOCKS = 1e7;
     uint256 public constant PRECISION = 1e33;
     uint256 public constant TOTAL_SHARES = 1e7;
-
     ERC20 public token;
     uint256 public startingBlock;
     mapping(address => Farm) public farms;
@@ -40,7 +40,7 @@ contract TrueDistributor is Ownable {
      * @notice transfer all rewards since previous `distribute` call to the `farm`.
      * Transferred reward is proportional to the stake of the farm
      */
-    function distribute(address farm) public returns (uint256) {
+    function distribute(address farm) public {
         uint256 currentBlock = block.number;
         uint256 totalRewardForInterval = reward(farms[farm].lastDistributionBlock, currentBlock);
 
@@ -49,12 +49,13 @@ contract TrueDistributor is Ownable {
         uint256 farmsReward = totalRewardForInterval.mul(farms[farm].shares).div(TOTAL_SHARES);
 
         if (farmsReward == 0) {
-            return 0;
+            return;
         }
 
         require(token.transfer(farm, normalise(farmsReward)));
-
-        return farmsReward;
+        if (farm != owner()) {
+            ITrueFarm(farm).onDistribute(farmsReward);
+        }
     }
 
     function normalise(uint256 amount) public pure returns (uint256) {

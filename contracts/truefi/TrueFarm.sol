@@ -4,8 +4,9 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {TrueDistributor} from "./TrueDistributor.sol";
+import {ITrueFarm} from "./ITrueFarm.sol";
 
-contract TrueFarm {
+contract TrueFarm is ITrueFarm {
     using SafeMath for uint256;
 
     ERC20 public stakingToken;
@@ -43,15 +44,19 @@ contract TrueFarm {
         claimableReward[msg.sender] = 0;
     }
 
-    modifier update() {
-        uint256 totalBlockReward = trueDistributor.distribute(address(this));
+    function onDistribute(uint256 amount) external override {
+        require(msg.sender == address(trueDistributor), "not a distributor");
         if (totalStaked > 0) {
-            cumulativeRewardPerToken += totalBlockReward.div(totalStaked);
+            cumulativeRewardPerToken += amount.div(totalStaked);
         }
-        claimableReward[msg.sender] += trueDistributor.normalise(
-            staked[msg.sender] * (cumulativeRewardPerToken - previousCumulatedRewardPerToken[msg.sender])
+        claimableReward[tx.origin] += trueDistributor.normalise(
+            staked[tx.origin] * (cumulativeRewardPerToken - previousCumulatedRewardPerToken[tx.origin])
         );
-        previousCumulatedRewardPerToken[msg.sender] = cumulativeRewardPerToken;
+        previousCumulatedRewardPerToken[tx.origin] = cumulativeRewardPerToken;
+    }
+
+    modifier update() {
+        trueDistributor.distribute(address(this));
         _;
     }
 }
