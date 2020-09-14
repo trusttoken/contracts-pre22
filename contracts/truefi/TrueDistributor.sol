@@ -28,10 +28,12 @@ contract TrueDistributor is Ownable {
 
     ERC20 public token;
     uint256 public startingBlock;
+    uint256 public lastBlock;
     mapping(address => Farm) public farms;
 
     constructor(uint256 _startingBlock, ERC20 _token) public {
         startingBlock = _startingBlock;
+        lastBlock = startingBlock + TOTAL_BLOCKS;
         token = _token;
         farms[msg.sender].shares = TOTAL_SHARES;
     }
@@ -49,7 +51,7 @@ contract TrueDistributor is Ownable {
         uint256 farmsReward = totalRewardForInterval.mul(farms[farm].shares).div(TOTAL_SHARES);
 
         if (farmsReward == 0) {
-            return 0;
+            return;
         }
 
         require(token.transfer(farm, normalise(farmsReward)));
@@ -83,14 +85,14 @@ contract TrueDistributor is Ownable {
      */
     function reward(uint256 fromBlock, uint256 toBlock) public view returns (uint256) {
         require(fromBlock <= toBlock, "invalid interval");
-        if (toBlock < startingBlock || fromBlock > TOTAL_BLOCKS || fromBlock == toBlock) {
+        if (toBlock < startingBlock || fromBlock > lastBlock || fromBlock == toBlock) {
             return 0;
         }
         if (fromBlock < startingBlock) {
             fromBlock = startingBlock;
         }
-        if (toBlock > TOTAL_BLOCKS) {
-            toBlock = TOTAL_BLOCKS;
+        if (toBlock > lastBlock) {
+            toBlock = lastBlock;
         }
         return rewardFormula(fromBlock.sub(startingBlock), toBlock.sub(startingBlock));
     }
