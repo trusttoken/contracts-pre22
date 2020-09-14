@@ -1,6 +1,6 @@
 import { Contract, Wallet } from 'ethers'
 import { solidity, loadFixture } from 'ethereum-waffle'
-import { parseEther } from 'ethers/utils'
+import { parseEther } from '@ethersproject/units'
 import { expect, use } from 'chai'
 import { deployAll } from './fixtures/deployAll'
 import { AaveFinancialOpportunity } from '../build/types/AaveFinancialOpportunity'

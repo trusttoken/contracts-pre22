@@ -6,11 +6,11 @@
  */
 
 import { ethers } from 'ethers'
-import { JsonRpcProvider } from 'ethers/providers'
+import { providers } from 'ethers'
 import { LiquidatorRegistryResetFactory } from '../build/types/LiquidatorRegistryResetFactory'
 import { setupDeploy, txnArgs, validatePrivateKey } from './utils'
 
-async function deployLiquidator (accountPrivateKey: string, provider: JsonRpcProvider) {
+async function deployLiquidator (accountPrivateKey: string, provider: providers.JsonRpcProvider) {
   validatePrivateKey(accountPrivateKey)
   const wallet = new ethers.Wallet(accountPrivateKey, provider)
   const deploy = setupDeploy(wallet)

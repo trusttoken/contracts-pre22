@@ -17,7 +17,7 @@ describe('TrustToken', () => {
   let trustToken: TrustToken
   let provider: providers.JsonRpcProvider
 
-  beforeEachWithFixture(async (_provider, wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, timeLockRegistry, saftHolder, initialHolder, secondAccount, thirdAccount] = wallets)
     provider = _provider
     const deployContract = setupDeploy(owner)

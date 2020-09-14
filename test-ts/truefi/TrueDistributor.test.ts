@@ -1,12 +1,10 @@
 import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
-import { Zero, MaxUint256 } from 'ethers/constants'
-import { BigNumber, bigNumberify, parseEther } from 'ethers/utils'
-
+import { utils, BigNumber } from 'ethers'
+import { Zero, MaxUint256 } from '@ethersproject/constants'
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { toTrustToken } from '../../scripts/utils/toTrustToken'
-
 import { TrueDistributor } from '../../build/types/TrueDistributor'
 import { TrueDistributorFactory } from '../../build/types/TrueDistributorFactory'
 import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
@@ -32,12 +30,12 @@ describe('TrueDistributor', () => {
     expect(await provider.getBlockNumber()).to.equal(expectedBlockNumber)
   }
 
-  beforeEachWithFixture(async (_provider, wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [owner, farm, fakeToken] = wallets
     provider = _provider
     trustToken = await new MockErc20TokenFactory(owner).deploy()
     distributor = await new TrueDistributorFactory(owner).deploy(0, trustToken.address)
-    await trustToken.mint(distributor.address, parseEther('5365000000000000000'))
+    await trustToken.mint(distributor.address, utils.parseEther('5365000000000000000'))
   })
 
   describe('constructor', () => {
@@ -72,7 +70,7 @@ describe('TrueDistributor', () => {
     it('works when normalising to smaller precision', async () => {
       const smallerPrecision = rewardPrecision - 15
       normalisationResult = await distributor.normalise(smallerPrecision, normalisedValue)
-      expect(normalisationResult.mul(bigNumberify(10).pow(15)))
+      expect(normalisationResult.mul(BigNumber.from(10).pow(15)))
         .to.equal(normalisedValue)
     })
 
@@ -84,7 +82,7 @@ describe('TrueDistributor', () => {
     it('works when normalising to bigger precision', async () => {
       const biggerPrecision = rewardPrecision + 5
       normalisationResult = await distributor.normalise(biggerPrecision, normalisedValue)
-      expect(normalisationResult.div(bigNumberify(10).pow(5)))
+      expect(normalisationResult.div(BigNumber.from(10).pow(5)))
         .to.equal(normalisedValue)
     })
   })
@@ -104,7 +102,7 @@ describe('TrueDistributor', () => {
       const expectedReward = await distributor.reward(0, 7)
       await skipBlocks(3)
       await distributor.distribute(owner.address)
-      await expectBlock(7)
+      await expectBlock(8)
 
       expect(await trustToken.balanceOf(owner.address))
         .to.equal(normaliseRewardToTrustTokens(expectedReward))
@@ -114,22 +112,22 @@ describe('TrueDistributor', () => {
       const halfOfShares = (await distributor.TOTAL_SHARES()).div(2)
 
       await distributor.transfer(owner.address, farm.address, halfOfShares)
-      await expectBlock(4)
+      const block1 = await provider.getBlockNumber()
 
-      await skipBlocks(2)
+      await skipBlocks(10)
       await distributor.distribute(owner.address)
-      await expectBlock(7)
+      const block2 = await provider.getBlockNumber()
 
-      const expectedOwnersReward = (await distributor.reward(0, 4))
-        .add((await distributor.reward(4, 7)).div(2))
+      const expectedOwnersReward = (await distributor.reward(0, block1))
+        .add((await distributor.reward(block1, block2)).div(2))
 
       expect(await trustToken.balanceOf(owner.address))
         .to.equal(normaliseRewardToTrustTokens(expectedOwnersReward))
 
       await skipBlocks(3)
       await distributor.distribute(farm.address)
-      await expectBlock(11)
-      const expectedFarmsReward = (await distributor.reward(4, 11)).div(2)
+      const block3 = await provider.getBlockNumber()
+      const expectedFarmsReward = (await distributor.reward(block1, block3)).div(2)
 
       expect(await trustToken.balanceOf(farm.address))
         .to.equal(normaliseRewardToTrustTokens(expectedFarmsReward))

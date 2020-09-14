@@ -1,8 +1,8 @@
 import { Wallet } from 'ethers'
 import { deployAll } from './deployAll'
 
-export const deployAllWithSetup = async (provider, wallets) => {
-  const result = await deployAll(provider, wallets)
+export const deployAllWithSetup = async (wallets) => {
+  const result = await deployAll(wallets)
 
   await result.aaveFinancialOpportunity.configure(result.sharesToken.address, result.lendingPool.address, result.token.address, result.assuredFinancialOpportunity.address)
   await result.assuredFinancialOpportunity.configure(

@@ -4,7 +4,7 @@
  * ts-node scripts/verify_deployment.ts "{network}" "{owner_address}"
  */
 import { providers } from 'ethers'
-import { Provider } from 'ethers/providers'
+import { Provider } from '@ethersproject/abstract-provider'
 import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
 import { ProvisionalRegistryImplementation } from '../build/types/ProvisionalRegistryImplementation'

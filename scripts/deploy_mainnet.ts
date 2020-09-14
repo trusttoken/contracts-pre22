@@ -8,7 +8,7 @@
  * Use the config object to set parameters for deployment
  */
 
-import { Contract, ethers, Wallet } from 'ethers'
+import { Contract, ethers, Wallet, ContractTransaction, providers } from 'ethers'
 import {
   deployBehindProxy,
   deployBehindTimeProxy,
@@ -18,8 +18,7 @@ import {
   validatePrivateKey,
   txnArgs,
 } from './utils'
-import { JsonRpcProvider, TransactionResponse } from 'ethers/providers'
-import { AddressZero } from 'ethers/constants'
+import { AddressZero } from '@ethersproject/constants'
 import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
 import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
@@ -33,8 +32,8 @@ interface DeployedAddresses {
   uniswapFactory: string,
 }
 
-export async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, ownerAddress: string, provider: JsonRpcProvider) {
-  let tx: TransactionResponse
+export async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, ownerAddress: string, provider: providers.JsonRpcProvider) {
+  let tx: ContractTransaction
   const result = {}
 
   const save = (contract: Contract, name: string) => {
@@ -215,7 +214,7 @@ const postDeployCheck = async (deployResult: Record<string, string>, wallet: Wal
   validateWireing(await stakedTokenProxy.pendingProxyOwner(), ownerAddress)
 }
 
-export const deploy = async (accountPrivateKey: string, provider: JsonRpcProvider, network: string, ownerAddress: string) => {
+export const deploy = async (accountPrivateKey: string, provider: providers.JsonRpcProvider, network: string, ownerAddress: string) => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const deployedAddresses: DeployedAddresses = require(`./deployedAddresses/${network}.json`)
   return deployWithExisting(accountPrivateKey, deployedAddresses, ownerAddress, provider)

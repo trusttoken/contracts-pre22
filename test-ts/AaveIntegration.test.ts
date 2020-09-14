@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
-import { solidity, MockProvider } from 'ethereum-waffle'
+import { solidity, MockProvider, defaultAccounts } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
-import { parseEther } from 'ethers/utils'
+import { parseEther } from '@ethersproject/units'
 import { AaveFinancialOpportunity } from '../build/types/AaveFinancialOpportunity'
 import { AaveFinancialOpportunityFactory } from '../build/types/AaveFinancialOpportunityFactory'
 import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
@@ -37,7 +37,10 @@ describe('AAveIntegrationTest: TrueRewardBackedToken with real Aave contracts', 
 
   beforeEach(async () => {
     provider = new MockProvider({
-      allowUnlimitedContractSize: true,
+      ganacheOptions: {
+        accounts: defaultAccounts,
+        allowUnlimitedContractSize: true,
+      },
     });
     ([owner, holder, holder2] = provider.getWallets())
     const deployContract = setupDeploy(owner)

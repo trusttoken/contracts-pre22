@@ -6,7 +6,7 @@ import { MockProvider } from 'ethereum-waffle'
 
 export const initialSupply = utils.parseEther('1000')
 
-export const trueCurrency = async (provider: MockProvider, wallets: Wallet[]) => {
+export const trueCurrency = async (wallets: Wallet[], provider: MockProvider) => {
   const [owner] = wallets
   const deployContract = setupDeploy(owner)
 

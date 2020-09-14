@@ -12,7 +12,7 @@ import { setupDeploy } from '../../scripts/utils'
 import { MockTrustTokenFactory } from '../../build/types/MockTrustTokenFactory'
 import { StakedTokenFactory } from '../../build/types/StakedTokenFactory'
 
-export const deployAll = async (provider, wallets) => {
+export const deployAll = async (wallets) => {
   const [owner] = wallets
   const deployContract = setupDeploy(owner)
 

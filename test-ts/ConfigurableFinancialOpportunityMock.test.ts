@@ -5,12 +5,12 @@ import {
   ConfigurableFinancialOpportunityMock,
 } from '../build'
 import { deployContract, loadFixture, solidity } from 'ethereum-waffle'
-import { parseEther } from 'ethers/utils'
+import { parseEther } from '@ethersproject/units'
 
 use(solidity)
 
 describe('ConfigurableFinancialOpportunityMock', () => {
-  const fixture = async (provider, [owner, address1]) => {
+  const fixture = async ([owner, address1]) => {
     const registry = await deployContract(owner, RegistryMock)
     const token = await deployContract(owner, CompliantTokenMock, [owner.address, parseEther('200')])
     await token.setRegistry(registry.address)
@@ -45,8 +45,8 @@ describe('ConfigurableFinancialOpportunityMock', () => {
   })
 
   describe('redeem', async function () {
-    const fixtureAfterDeposit = async (provider, accounts) => {
-      const result = await fixture(provider, accounts)
+    const fixtureAfterDeposit = async (accounts) => {
+      const result = await fixture(accounts)
       await result.token.approve(result.financialOpportunity.address, parseEther('10'))
       await result.financialOpportunity.deposit(result.owner.address, parseEther('10'))
 

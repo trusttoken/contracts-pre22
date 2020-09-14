@@ -11,7 +11,7 @@ import { LendingRateOracleFactory } from '../../build/types/LendingRateOracleFac
 import { PriceOracleFactory } from '../../build/types/PriceOracleFactory'
 import { LendingPoolDataProviderFactory } from '../../build/types/LendingPoolDataProviderFactory'
 import { FeeProviderFactory } from '../../build/types/FeeProviderFactory'
-import { parseEther } from 'ethers/utils'
+import { parseEther } from '@ethersproject/units'
 
 export const deployAave = async (deployer: Wallet, tusd: string) => {
   const lendingPoolImpl = await new LendingPoolFactory(deployer).deploy()

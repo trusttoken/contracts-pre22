@@ -19,7 +19,7 @@ describe('TimeOwnedUpgradeabilityProxy', () => {
     return (await timeOwnedUpgradeabilityProxy.expiration()).toNumber()
   }
 
-  beforeEachWithFixture(async (_provider, [owner]) => {
+  beforeEachWithFixture(async ([owner], _provider) => {
     timeOwnedUpgradeabilityProxy = await setupDeploy(owner)(TimeOwnedUpgradeabilityProxyFactory)
     getCurrentTimestamp = async () => (await _provider.getBlock('latest')).timestamp
     advanceTime = (time: number) => timeTravel(_provider, time)

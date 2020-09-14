@@ -1,6 +1,6 @@
 import { ethers, providers } from 'ethers'
 // import { MockTrustTokenFactory } from '../build/types/MockTrustTokenFactory'
-import { parseEther } from 'ethers/utils'
+import { parseEther } from '@ethersproject/units'
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 // import { StakedTokenFactory } from '../build/types/StakedTokenFactory'

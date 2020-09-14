@@ -18,7 +18,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
   let hookContract: MockHook
   let controller: TokenControllerMock
 
-  beforeEachWithFixture(async (provider: MockProvider, wallets: Wallet[]) => {
+  beforeEachWithFixture(async (wallets: Wallet[]) => {
     [deployer, refunder, otherAccount] = wallets
     const deployContract = setupDeploy(deployer)
     token = await deployContract(MockGasRefundTokenFactory)

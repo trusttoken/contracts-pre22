@@ -1,5 +1,4 @@
-import { Contract, ContractTransaction } from 'ethers'
-import { BigNumberish, Transaction } from 'ethers/utils'
+import { Contract, ContractTransaction, BigNumberish, Transaction } from 'ethers'
 import { expect } from 'chai'
 
 export const expectEvent = (contract: Contract, eventName: string) => async (tx: Transaction, ...args: any[]) => {

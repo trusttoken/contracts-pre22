@@ -1,6 +1,6 @@
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
-import { parseEther } from 'ethers/utils'
+import { parseEther } from '@ethersproject/units'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { deploy } from '../../scripts/deploy_testnet'
@@ -25,7 +25,7 @@ describe.skip('Upgrading', () => {
   const aaveOpportunityProxyAddress = '0x3754b4a1aC4a17Ee8bEa23c5964071F95AcB9Dc1'
   const liquidatorProxyAddress = '0x33d1D66019695D05B0a92694A5d86Df91cb73e80'
 
-  beforeEachWithFixture(async (_provider, wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     ([deployer, holder] = wallets)
     provider = _provider
     await deploy(deployer.privateKey, provider, 'prod')

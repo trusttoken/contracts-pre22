@@ -1,4 +1,4 @@
-import { formatBytes32String } from 'ethers/utils'
+import { formatBytes32String } from '@ethersproject/strings'
 
 const attribute = (name: string) => ({
   name,

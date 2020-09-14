@@ -1,6 +1,6 @@
 import { expect, use } from 'chai'
 import { Contract, Wallet } from 'ethers'
-import { parseEther } from 'ethers/utils'
+import { parseEther } from '@ethersproject/units'
 import { deployContract, solidity } from 'ethereum-waffle'
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
 import bytes32 from '../test/helpers/bytes32'
@@ -18,7 +18,7 @@ import {
   StakedToken,
   TimeOwnedUpgradeabilityProxy,
 } from '../build'
-import { AddressZero } from 'ethers/constants'
+import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
@@ -64,7 +64,7 @@ describe('DeployHelper', () => {
 
   let deployHelper: Contract
 
-  beforeEachWithFixture(async (provider, wallets) => {
+  beforeEachWithFixture(async (wallets) => {
     ([deployer] = wallets)
 
     liquidatorProxy = await deployContract(deployer, OwnedUpgradeabilityProxy)

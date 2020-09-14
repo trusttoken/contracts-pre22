@@ -1,4 +1,4 @@
-import { Wallet, ethers, ContractFactory } from 'ethers'
+import { Wallet, ethers, ContractFactory, Contract } from 'ethers'
 import { deployContract } from 'ethereum-waffle'
 import fs from 'fs'
 import readline from 'readline'

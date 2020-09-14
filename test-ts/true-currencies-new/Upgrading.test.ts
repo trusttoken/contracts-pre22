@@ -15,7 +15,7 @@ describe('TrueCurrency - Upgrade implementation', () => {
   let newToken: MockTrueCurrency
   let token: MockDeprecatedTrueCurrency
 
-  const deprecatedTrueCurrencyFixture = async (provider: MockProvider, wallets: Wallet[]) => {
+  const deprecatedTrueCurrencyFixture = async (wallets: Wallet[], provider: MockProvider) => {
     const [owner, otherAccount] = wallets
     const deployContract = setupDeploy(owner)
 

@@ -8,7 +8,7 @@
  * Use the config object to set parameters for deployment
  */
 
-import { Contract, ethers, Wallet } from 'ethers'
+import { Contract, ethers, Wallet, ContractTransaction, providers, BigNumber } from 'ethers'
 import {
   deployBehindProxy,
   deployBehindTimeProxy,
@@ -17,9 +17,9 @@ import {
   setupDeployer,
   validatePrivateKey,
 } from './utils'
-import { JsonRpcProvider, Provider, TransactionResponse } from 'ethers/providers'
+import { Provider } from '@ethersproject/abstract-provider'
 import { Attribute, RegistryAttributes } from './attributes'
-import { AddressZero } from 'ethers/constants'
+import { AddressZero } from '@ethersproject/constants'
 import { TokenControllerFactory } from '../build/types/TokenControllerFactory'
 import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
 import { AssuredFinancialOpportunityFactory } from '../build/types/AssuredFinancialOpportunityFactory'
@@ -56,7 +56,7 @@ async function isSubscriber (provider: Provider, registry: Contract, attribute: 
   return !!logs[0]
 }
 
-async function subscribeTrueUsd (provider: JsonRpcProvider, registry: Contract, trueUSD: Contract, attribute: Attribute) {
+async function subscribeTrueUsd (provider: providers.JsonRpcProvider, registry: Contract, trueUSD: Contract, attribute: Attribute) {
   if (!await isSubscriber(provider, registry, attribute.hex, trueUSD)) {
     await (await registry.subscribe(attribute.hex, trueUSD.address)).wait()
     console.log(`TrueUSD subscribed to ${attribute.name}`)
@@ -74,8 +74,8 @@ Owner is: ${owner}`)
   }
 }
 
-export async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, provider: JsonRpcProvider, env: keyof typeof deployModes = 'prod') {
-  let tx: TransactionResponse
+export async function deployWithExisting (accountPrivateKey: string, deployedAddresses: DeployedAddresses, provider: providers.JsonRpcProvider, env: keyof typeof deployModes = 'prod') {
+  let tx: ContractTransaction
   const result = {}
 
   const save = (contract: Contract, name: string) => {
@@ -238,9 +238,9 @@ export async function deployWithExisting (accountPrivateKey: string, deployedAdd
   console.log('tokenController claim ownership')
 
   tx = await tokenController.setMintThresholds(
-    ethers.utils.bigNumberify('1000000000000000000000'),
-    ethers.utils.bigNumberify('10000000000000000000000'),
-    ethers.utils.bigNumberify('100000000000000000000000'),
+    BigNumber.from('1000000000000000000000'),
+    BigNumber.from('10000000000000000000000'),
+    BigNumber.from('100000000000000000000000'),
     { gasLimit: 5000000 },
   )
   await tx.wait()
@@ -299,7 +299,7 @@ const postDeployCheck = async (deployResult: Record<string, string>, wallet: Wal
   validateWireing(await aaveFinOp.owner(), deployResult.assuredFinancialOpportunity)
 }
 
-export const deploy = async (accountPrivateKey: string, provider: JsonRpcProvider, network: string) => {
+export const deploy = async (accountPrivateKey: string, provider: providers.JsonRpcProvider, network: string) => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const deployedAddresses: DeployedAddresses = require(`./deployedAddresses/${network}.json`)
   return deployWithExisting(accountPrivateKey, deployedAddresses, provider)

@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { Contract, ContractTransaction, providers, Wallet, utils } from 'ethers'
 import { loadFixture, solidity } from 'ethereum-waffle'
-import { parseEther } from 'ethers/utils'
+import { parseEther } from '@ethersproject/units'
 import { RegistryMock } from '../build/types/RegistryMock'
 import { AssuredFinancialOpportunity } from '../build/types/AssuredFinancialOpportunity'
 import { AaveFinancialOpportunity } from '../build/types/AaveFinancialOpportunity'
