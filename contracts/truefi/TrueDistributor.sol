@@ -80,6 +80,16 @@ contract TrueDistributor is Ownable {
         return farms[farm].lastDistributionBlock;
     }
 
+    function adjustInterval(uint256 fromBlock, uint256 toBlock) internal view returns (uint256, uint256) {
+        if (fromBlock < startingBlock) {
+            fromBlock = startingBlock;
+        }
+        if (toBlock > lastBlock) {
+            toBlock = lastBlock;
+        }
+        return (fromBlock, toBlock);
+    }
+
     /**
      * @notice Reward from `fromBlock` to `toBlock`.
      */
@@ -88,13 +98,8 @@ contract TrueDistributor is Ownable {
         if (toBlock < startingBlock || fromBlock > lastBlock || fromBlock == toBlock) {
             return 0;
         }
-        if (fromBlock < startingBlock) {
-            fromBlock = startingBlock;
-        }
-        if (toBlock > lastBlock) {
-            toBlock = lastBlock;
-        }
-        return rewardFormula(fromBlock.sub(startingBlock), toBlock.sub(startingBlock));
+        (uint256 adjustedFromBlock, uint256 adjustedToBlock) = adjustInterval(fromBlock, toBlock);
+        return rewardFormula(adjustedFromBlock.sub(startingBlock), adjustedToBlock.sub(startingBlock));
     }
 
     /**
