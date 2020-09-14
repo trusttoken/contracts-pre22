@@ -40,7 +40,7 @@ contract TrueDistributor is Ownable {
      * @notice transfer all rewards since previous `distribute` call to the `farm`.
      * Transferred reward is proportional to the stake of the farm
      */
-    function distribute(address farm) public returns (uint256) {
+    function distribute(address farm) public {
         uint256 currentBlock = block.number;
         uint256 totalRewardForInterval = reward(farms[farm].lastDistributionBlock, currentBlock);
 
@@ -53,8 +53,6 @@ contract TrueDistributor is Ownable {
         }
 
         require(token.transfer(farm, normalise(farmsReward)));
-
-        return farmsReward;
     }
 
     function normalise(uint256 amount) public pure returns (uint256) {

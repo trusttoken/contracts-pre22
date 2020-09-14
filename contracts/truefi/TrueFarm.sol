@@ -49,13 +49,15 @@ contract TrueFarm {
 
     modifier update() {
         trueDistributor.distribute(address(this));
-        uint256 newTotalFarmRewards = rewardToken.balanceOf(address(this)).add(totalClaimedRewards);
+        uint256 newTotalFarmRewards = rewardToken.balanceOf(address(this)).add(totalClaimedRewards).mul(1e30);
         uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards);
         totalFarmRewards = newTotalFarmRewards;
         if (totalStaked > 0) {
             cumulativeRewardPerToken += totalBlockReward.div(totalStaked);
         }
-        claimableReward[msg.sender] += staked[msg.sender] * (cumulativeRewardPerToken - previousCumulatedRewardPerToken[msg.sender]);
+        claimableReward[msg.sender] +=
+            (staked[msg.sender] * (cumulativeRewardPerToken - previousCumulatedRewardPerToken[msg.sender])) /
+            1e30;
         previousCumulatedRewardPerToken[msg.sender] = cumulativeRewardPerToken;
         _;
     }
