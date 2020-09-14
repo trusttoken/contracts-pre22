@@ -243,5 +243,23 @@ describe('TrueDistributor', () => {
 
       expect(rewardFromPostponedDistributor).to.equal(rewardFromDefaultDistributor)
     })
+
+    it('returns proper value if interval starts before ending block, but ends after', async () => {
+      const lastBlock = await distributor.lastBlock()
+      const reward = await distributor.reward(lastBlock.sub(2000), lastBlock.add(2000))
+      const expectedReward = await distributor.reward(lastBlock.sub(2000), lastBlock)
+
+      expect(reward).to.equal(expectedReward)
+    })
+
+    it('returns total reward for interval including total rewarding period', async () => {
+      const delayedDistributor = await new TrueDistributorFactory(owner).deploy(1000, fakeToken.address)
+      const lastBlock = await delayedDistributor.lastBlock()
+
+      const reward = await distributor.reward(0, lastBlock.add(2000))
+      const expectedReward = '53649999999999999999999999971605309297031160000000'
+
+      expect(reward).to.equal(expectedReward)
+    })
   })
 })
