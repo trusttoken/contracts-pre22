@@ -179,6 +179,16 @@ describe('TrueDistributor', () => {
       expect(await distributor.reward(1000, 1000)).to.equal(0)
     })
 
+    it('returns 0 for interval starting after last block', async () => {
+      const lastBlock = await distributor.lastBlock()
+      expect(await distributor.reward(lastBlock, lastBlock.add(100))).to.equal(0)
+    })
+
+    it('returns 0 for interval ending before first block', async () => {
+      const delayedDistributor = await new TrueDistributorFactory(owner).deploy(100, trustToken.address)
+      expect(await delayedDistributor.reward(0, 99)).to.equal(0)
+    })
+
     it('has correct precision', async () => {
       expect((await distributor.reward(0, await distributor.TOTAL_BLOCKS())).div(await distributor.PRECISION())).to.equal(toTrustToken(536500000).sub(1))
     })
