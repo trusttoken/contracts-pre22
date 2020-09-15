@@ -176,6 +176,7 @@ yarn flatten # runs ./flatten-all
 
 | Exchanges | URL                       |
 | --------- | ------------------------- |
+| Uniswap   | https://www.uniswap.org/  |
 | Binance   | https://www.binance.com/  |
 | Huobi     | https://www.huobi.com/    |
 | Okex      | https://www.okex.com/     |
