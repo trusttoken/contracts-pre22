@@ -30,8 +30,8 @@ contract TrueFarm {
 
     function stake(uint256 amount) public update {
         require(stakingToken.transferFrom(msg.sender, address(this), amount));
-        staked[msg.sender] += amount;
-        totalStaked += amount;
+        staked[msg.sender] = staked[msg.sender].add(amount);
+        totalStaked = totalStaked.add(amount);
     }
 
     function unstake(uint256 amount) public update {
@@ -53,7 +53,7 @@ contract TrueFarm {
         uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards);
         totalFarmRewards = newTotalFarmRewards;
         if (totalStaked > 0) {
-            cumulativeRewardPerToken += totalBlockReward.div(totalStaked);
+            cumulativeRewardPerToken = cumulativeRewardPerToken.add(totalBlockReward.div(totalStaked));
         }
         claimableReward[msg.sender] +=
             (staked[msg.sender] * (cumulativeRewardPerToken - previousCumulatedRewardPerToken[msg.sender])) /

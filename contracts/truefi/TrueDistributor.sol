@@ -33,7 +33,7 @@ contract TrueDistributor is Ownable {
 
     constructor(uint256 _startingBlock, ERC20 _token) public {
         startingBlock = _startingBlock;
-        lastBlock = startingBlock + TOTAL_BLOCKS;
+        lastBlock = startingBlock.add(TOTAL_BLOCKS);
         token = _token;
         farms[msg.sender].shares = TOTAL_SHARES;
     }
