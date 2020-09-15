@@ -7,6 +7,7 @@ import {TrueDistributor} from "./TrueDistributor.sol";
 
 contract TrueFarm {
     using SafeMath for uint256;
+    uint256 constant PRECISION = 1e30;
 
     ERC20 public stakingToken;
     ERC20 public rewardToken;
@@ -49,15 +50,15 @@ contract TrueFarm {
 
     modifier update() {
         trueDistributor.distribute(address(this));
-        uint256 newTotalFarmRewards = rewardToken.balanceOf(address(this)).add(totalClaimedRewards).mul(1e30);
+        uint256 newTotalFarmRewards = rewardToken.balanceOf(address(this)).add(totalClaimedRewards).mul(PRECISION);
         uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards);
         totalFarmRewards = newTotalFarmRewards;
         if (totalStaked > 0) {
             cumulativeRewardPerToken = cumulativeRewardPerToken.add(totalBlockReward.div(totalStaked));
         }
-        claimableReward[msg.sender] +=
-            (staked[msg.sender] * (cumulativeRewardPerToken - previousCumulatedRewardPerToken[msg.sender])) /
-            1e30;
+        claimableReward[msg.sender] = claimableReward[msg.sender].add(
+            staked[msg.sender].mul(cumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[msg.sender])).div(PRECISION)
+        );
         previousCumulatedRewardPerToken[msg.sender] = cumulativeRewardPerToken;
         _;
     }
