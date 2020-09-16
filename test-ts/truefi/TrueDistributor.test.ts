@@ -206,16 +206,16 @@ describe('TrueDistributor', () => {
     })
 
     it('has correct precision', async () => {
-      expect((await distributor.reward(0, await distributor.TOTAL_BLOCKS())).div(await distributor.PRECISION())).to.equal(toTrustToken(536500000).sub(1))
+      expect((await distributor.reward(0, await distributor.getTotalBlocks())).div(await distributor.PRECISION())).to.equal(toTrustToken(536500000).sub(1))
     })
 
     it('from block 0 to last', async () => {
-      expect(await distributor.reward(0, await distributor.TOTAL_BLOCKS())).to.equal('53649999999999999999999999971605309297031160000000')
+      expect(await distributor.reward(0, await distributor.getTotalBlocks())).to.equal('53649999999999999999999999971605309297031160000000')
     })
 
     it('sums to total TRU distributor (with step 1000000)', async () => {
       let sum = Zero
-      const totalBlocks = (await distributor.TOTAL_BLOCKS()).toNumber()
+      const totalBlocks = (await distributor.getTotalBlocks()).toNumber()
 
       for (let i = 0; i < totalBlocks; i += 1000000) {
         const newReward = await distributor.reward(i, Math.min(i + 1000000, totalBlocks))
@@ -226,7 +226,7 @@ describe('TrueDistributor', () => {
 
     it('in every following interval reward is smaller (with step 100000)', async () => {
       let lastReward = MaxUint256
-      const totalBlocks = (await distributor.TOTAL_BLOCKS()).toNumber()
+      const totalBlocks = (await distributor.getTotalBlocks()).toNumber()
 
       for (let i = 0; i < totalBlocks; i += 100000) {
         const newReward = await distributor.reward(i, Math.min(i + 100000, totalBlocks))
