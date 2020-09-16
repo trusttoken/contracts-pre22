@@ -2,7 +2,6 @@ import { expect, use } from 'chai'
 import { Contract, ContractTransaction, providers, Wallet, utils } from 'ethers'
 import { loadFixture, solidity } from 'ethereum-waffle'
 import { parseEther } from 'ethers/utils'
-import { TrueUsd } from '../build/types/TrueUsd'
 import { RegistryMock } from '../build/types/RegistryMock'
 import { AssuredFinancialOpportunity } from '../build/types/AssuredFinancialOpportunity'
 import { AaveFinancialOpportunity } from '../build/types/AaveFinancialOpportunity'
@@ -12,14 +11,15 @@ import { RegistryAttributes } from '../scripts/attributes'
 import { LendingPoolCoreMock } from '../build/types/LendingPoolCoreMock'
 import { timeTravel } from './utils/timeTravel'
 import { deployAll } from './fixtures/deployAll'
+import { TrueUsdLegacy } from '../build/types/TrueUsdLegacy'
 
 use(solidity)
 const BTC1000 = parseEther('1000').div(1e10)
 
-describe('Staking', () => {
+describe.skip('Staking', () => {
   let holder: Wallet, staker: Wallet, secondStaker: Wallet
   let provider: providers.JsonRpcProvider
-  let trueUsd: TrueUsd
+  let trueUsd: TrueUsdLegacy
   let trustToken: MockTrustToken
   let stakedToken: StakedToken
   let registry: RegistryMock

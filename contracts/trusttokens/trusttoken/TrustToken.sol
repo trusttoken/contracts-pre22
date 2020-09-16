@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {TimeLockedToken} from "./TimeLockedToken.sol";
-import {Registry} from "./ProxyStorage.sol";
 
 /**
  * @title TrustToken
@@ -14,23 +13,17 @@ import {Registry} from "./ProxyStorage.sol";
  */
 contract TrustToken is TimeLockedToken {
     using SafeMath for uint256;
-    Registry registry_;
+
     uint256 constant MAX_SUPPLY = 145000000000000000;
 
     /**
      * @dev initialize trusttoken and give ownership to sender
      * This is necessary to set ownership for proxy
      */
-    function initialize(Registry _registry) public {
+    function initialize() public {
         require(!initalized, "already initialized");
-        registry_ = _registry;
         owner_ = msg.sender;
         initalized = true;
-    }
-
-    /// @dev Registry contract address
-    function registry() public override view returns (Registry) {
-        return registry_;
     }
 
     /**
@@ -45,7 +38,11 @@ contract TrustToken is TimeLockedToken {
         }
     }
 
-    function decimals() public pure returns (uint8) {
+    function burn(uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
+
+    function decimals() public override pure returns (uint8) {
         return 8;
     }
 
@@ -53,11 +50,11 @@ contract TrustToken is TimeLockedToken {
         return 8;
     }
 
-    function name() public pure returns (string memory) {
+    function name() public override pure returns (string memory) {
         return "TrustToken";
     }
 
-    function symbol() public pure returns (string memory) {
+    function symbol() public override pure returns (string memory) {
         return "TRU";
     }
 }

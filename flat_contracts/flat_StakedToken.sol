@@ -1,11 +1,12 @@
 
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.6.0;
 
 /**
- * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
- * the optional functions; to access them see {ERC20Detailed}.
+ * @dev Interface of the ERC20 standard as defined in the EIP.
  */
 interface IERC20 {
     /**
@@ -78,24 +79,32 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-// File: @trusttoken/trusttokens/contracts/StakingAsset.sol
+// File: contracts/trusttokens/StakingAsset.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
-contract StakingAsset is IERC20 {
+interface StakingAsset is IERC20 {
     function name() external view returns (string memory);
+
     function symbol() external view returns (string memory);
+
     function decimals() external view returns (uint8);
 }
 
-// File: @trusttoken/registry/contracts/Registry.sol
+// File: contracts/registry/Registry.sol
 
-pragma solidity ^0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 interface RegistryClone {
-    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
+    function syncAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) external;
 }
 
 contract Registry {
@@ -123,10 +132,7 @@ contract Registry {
     bytes32 constant WRITE_PERMISSION = keccak256("canWriteTo-");
     mapping(bytes32 => RegistryClone[]) subscribers;
 
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event SetAttribute(address indexed who, bytes32 attribute, uint256 value, bytes32 notes, address indexed adminAddr);
     event SetManager(address indexed oldManager, address indexed newManager);
     event StartSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
@@ -140,14 +146,19 @@ contract Registry {
     }
 
     // Writes are allowed only if the accessManager approves
-    function setAttribute(address _who, bytes32 _attribute, uint256 _value, bytes32 _notes) public {
+    function setAttribute(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value,
+        bytes32 _notes
+    ) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
 
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> 0) {
+        while (index-- > 0) {
             targets[index].syncAttributeValue(_who, _attribute, _value);
         }
     }
@@ -162,20 +173,24 @@ contract Registry {
         require(_index < length);
         emit StopSubscription(_attribute, subscribers[_attribute][_index]);
         subscribers[_attribute][_index] = subscribers[_attribute][length - 1];
-        subscribers[_attribute].length = length - 1;
+        subscribers[_attribute].pop();
     }
 
     function subscriberCount(bytes32 _attribute) public view returns (uint256) {
         return subscribers[_attribute].length;
     }
 
-    function setAttributeValue(address _who, bytes32 _attribute, uint256 _value) public {
+    function setAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) public {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, "", msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, "", msg.sender);
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> 0) {
+        while (index-- > 0) {
             targets[index].syncAttributeValue(_who, _attribute, _value);
         }
     }
@@ -185,9 +200,17 @@ contract Registry {
         return attributes[_who][_attribute].value != 0;
     }
 
-
     // Returns the exact value of the attribute, as well as its metadata
-    function getAttribute(address _who, bytes32 _attribute) public view returns (uint256, bytes32, address, uint256) {
+    function getAttribute(address _who, bytes32 _attribute)
+        public
+        view
+        returns (
+            uint256,
+            bytes32,
+            address,
+            uint256
+        )
+    {
         AttributeData memory data = attributes[_who][_attribute];
         return (data.value, data.notes, data.adminAddr, data.timestamp);
     }
@@ -204,12 +227,16 @@ contract Registry {
         return attributes[_who][_attribute].timestamp;
     }
 
-    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] calldata _addresses) external {
+    function syncAttribute(
+        bytes32 _attribute,
+        uint256 _startIndex,
+        address[] calldata _addresses
+    ) external {
         RegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
-        while (index --> _startIndex) {
+        while (index-- > _startIndex) {
             RegistryClone target = targets[index];
-            for (uint256 i = _addresses.length; i --> 0; ) {
+            for (uint256 i = _addresses.length; i-- > 0; ) {
                 address who = _addresses[i];
                 target.syncAttributeValue(who, _attribute, attributes[who][_attribute].value);
             }
@@ -225,33 +252,33 @@ contract Registry {
         token.transfer(_to, balance);
     }
 
-   /**
-    * @dev Throws if called by any account other than the owner.
-    */
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
     modifier onlyOwner() {
         require(msg.sender == owner, "only Owner");
         _;
     }
 
     /**
-    * @dev Modifier throws if called by any account other than the pendingOwner.
-    */
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
     modifier onlyPendingOwner() {
         require(msg.sender == pendingOwner);
         _;
     }
 
     /**
-    * @dev Allows the current owner to set the pendingOwner address.
-    * @param newOwner The address to transfer ownership to.
-    */
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
     function transferOwnership(address newOwner) public onlyOwner {
         pendingOwner = newOwner;
     }
 
     /**
-    * @dev Allows the pendingOwner address to finalize the transfer.
-    */
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
     function claimOwnership() public onlyPendingOwner {
         emit OwnershipTransferred(owner, pendingOwner);
         owner = pendingOwner;
@@ -259,9 +286,10 @@ contract Registry {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/ProxyStorage.sol
+// File: contracts/trusttokens/ProxyStorage.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 /**
@@ -273,9 +301,9 @@ contract ProxyStorage {
     bool initalized;
     uint256 public totalSupply;
 
-    mapping (address => uint256) public balanceOf;
-    mapping (address => mapping (address => uint256)) public allowance;
-    mapping (uint144 => uint256) attributes; // see RegistrySubscriber
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+    mapping(uint144 => uint256) attributes; // see RegistrySubscriber
 
     address owner_;
     address pendingOwner_;
@@ -295,43 +323,63 @@ contract ProxyStorage {
      ** 64         uint256(address),uint256(1)                                   balanceOf
      ** 64         uint256(address),keccak256(uint256(address),uint256(2))       allowance
      ** 64         uint256(address),keccak256(bytes32,uint256(3))                attributes
-    **/
+     **/
 }
 
-// File: @trusttoken/trusttokens/contracts/ValSafeMath.sol
+// File: contracts/trusttokens/ValSafeMath.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 /**
  * Forked subset of Openzeppelin SafeMath allowing custom underflow/overflow messages
  * Useful for debugging, replaceable with standard SafeMath
  */
 library ValSafeMath {
-    function add(uint256 a, uint256 b, string memory overflowMessage) internal pure returns (uint256 result) {
+    function add(
+        uint256 a,
+        uint256 b,
+        string memory overflowMessage
+    ) internal pure returns (uint256 result) {
         result = a + b;
         require(result >= a, overflowMessage);
     }
-    function sub(uint256 a, uint256 b, string memory underflowMessage) internal pure returns (uint256 result) {
+
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory underflowMessage
+    ) internal pure returns (uint256 result) {
         require(b <= a, underflowMessage);
         result = a - b;
     }
-    function mul(uint256 a, uint256 b, string memory overflowMessage) internal pure returns (uint256 result) {
+
+    function mul(
+        uint256 a,
+        uint256 b,
+        string memory overflowMessage
+    ) internal pure returns (uint256 result) {
         if (a == 0) {
             return 0;
         }
         result = a * b;
         require(result / a == b, overflowMessage);
     }
-    function div(uint256 a, uint256 b, string memory divideByZeroMessage) internal pure returns (uint256 result) {
+
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory divideByZeroMessage
+    ) internal pure returns (uint256 result) {
         require(b > 0, divideByZeroMessage);
         result = a / b;
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/ERC20.sol
+// File: contracts/trusttokens/ERC20.sol
 
-pragma solidity 0.5.13;
-
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 
@@ -369,6 +417,7 @@ contract ModularBasicToken is ProxyStorage {
  */
 contract ModularStandardToken is ModularBasicToken {
     using ValSafeMath for uint256;
+    // Once allowance between accounts exceeds this amount, it can never get below that
     uint256 constant INFINITE_ALLOWANCE = 0xfe00000000000000000000000000000000000000000000000000000000000000;
 
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -388,7 +437,12 @@ contract ModularStandardToken is ModularBasicToken {
         return true;
     }
 
-    function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
+    /// @dev Helper for approve
+    function _approveAllArgs(
+        address _spender,
+        uint256 _value,
+        address _tokenHolder
+    ) internal {
         _setAllowance(_tokenHolder, _spender, _value);
         emit Approval(_tokenHolder, _spender, _value);
     }
@@ -403,12 +457,17 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _addedValue The amount of tokens to increase the allowance by.
      */
-    function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
+    function increaseApproval(address _spender, uint256 _addedValue) public returns (bool) {
         _increaseApprovalAllArgs(_spender, _addedValue, msg.sender);
         return true;
     }
 
-    function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
+    /// @dev Helper for increaseApproval
+    function _increaseApprovalAllArgs(
+        address _spender,
+        uint256 _addedValue,
+        address _tokenHolder
+    ) internal {
         _addAllowance(_tokenHolder, _spender, _addedValue);
         emit Approval(_tokenHolder, _spender, allowance[_tokenHolder][_spender]);
     }
@@ -423,12 +482,17 @@ contract ModularStandardToken is ModularBasicToken {
      * @param _spender The address which will spend the funds.
      * @param _subtractedValue The amount of tokens to decrease the allowance by.
      */
-    function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
+    function decreaseApproval(address _spender, uint256 _subtractedValue) public returns (bool) {
         _decreaseApprovalAllArgs(_spender, _subtractedValue, msg.sender);
         return true;
     }
 
-    function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
+    /// @dev Helper for decreaseApproval
+    function _decreaseApprovalAllArgs(
+        address _spender,
+        uint256 _subtractedValue,
+        address _tokenHolder
+    ) internal {
         uint256 oldValue = allowance[_tokenHolder][_spender];
         uint256 newValue;
         if (_subtractedValue > oldValue) {
@@ -437,31 +501,47 @@ contract ModularStandardToken is ModularBasicToken {
             newValue = oldValue - _subtractedValue;
         }
         _setAllowance(_tokenHolder, _spender, newValue);
-        emit Approval(_tokenHolder,_spender, newValue);
+        emit Approval(_tokenHolder, _spender, newValue);
     }
 
-    function _addAllowance(address _who, address _spender, uint256 _value) internal {
+    /// @dev Increase allowance from _who to _spender by _value
+    function _addAllowance(
+        address _who,
+        address _spender,
+        uint256 _value
+    ) internal {
         allowance[_who][_spender] = allowance[_who][_spender].add(_value, "allowance overflow");
     }
 
-    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (uint256 newAllowance){
+    /// @dev Decrease allowance from _who to _spender by _value
+    function _subAllowance(
+        address _who,
+        address _spender,
+        uint256 _value
+    ) internal returns (uint256 newAllowance) {
         newAllowance = allowance[_who][_spender].sub(_value, "insufficient allowance");
         if (newAllowance < INFINITE_ALLOWANCE) {
             allowance[_who][_spender] = newAllowance;
         }
     }
 
-    function _setAllowance(address _who, address _spender, uint256 _value) internal {
+    /// @dev Set allowance from _who to _spender to _value
+    function _setAllowance(
+        address _who,
+        address _spender,
+        uint256 _value
+    ) internal {
         allowance[_who][_spender] = _value;
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/RegistrySubscriber.sol
+// File: contracts/trusttokens/RegistrySubscriber.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
-contract RegistrySubscriber is ProxyStorage {
+abstract contract RegistrySubscriber is ProxyStorage {
     // Registry Attributes
     bytes32 constant PASSED_KYCAML = "hasPassedKYC/AML";
     bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
@@ -469,16 +549,16 @@ contract RegistrySubscriber is ProxyStorage {
     bytes32 constant REGISTERED_CONTRACT = 0x697352656769737465726564436f6e7472616374000000000000000000000000;
 
     // attributes Bitmasks
-    uint256 constant ACCOUNT_BLACKLISTED     = 0xff00000000000000000000000000000000000000000000000000000000000000;
+    uint256 constant ACCOUNT_BLACKLISTED = 0xff00000000000000000000000000000000000000000000000000000000000000;
     uint256 constant ACCOUNT_BLACKLISTED_INV = 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    uint256 constant ACCOUNT_KYC             = 0x00ff000000000000000000000000000000000000000000000000000000000000;
-    uint256 constant ACCOUNT_KYC_INV         = 0xff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    uint256 constant ACCOUNT_ADDRESS         = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
-    uint256 constant ACCOUNT_ADDRESS_INV     = 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
-    uint256 constant ACCOUNT_HOOK            = 0x0000ff0000000000000000000000000000000000000000000000000000000000;
-    uint256 constant ACCOUNT_HOOK_INV        = 0xffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    uint256 constant ACCOUNT_KYC = 0x00ff000000000000000000000000000000000000000000000000000000000000;
+    uint256 constant ACCOUNT_KYC_INV = 0xff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    uint256 constant ACCOUNT_ADDRESS = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
+    uint256 constant ACCOUNT_ADDRESS_INV = 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
+    uint256 constant ACCOUNT_HOOK = 0x0000ff0000000000000000000000000000000000000000000000000000000000;
+    uint256 constant ACCOUNT_HOOK_INV = 0xffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
-    function registry() internal view returns (Registry);
+    function registry() public virtual view returns (Registry);
 
     modifier onlyRegistry {
         require(msg.sender == address(registry()));
@@ -494,21 +574,22 @@ contract RegistrySubscriber is ProxyStorage {
         [30, 31) PASSED_KYCAML
         [31, 32) BLACKLISTED
     */
-    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
+    function syncAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) public onlyRegistry {
         uint144 who = uint144(uint160(_who) >> 20);
         uint256 prior = attributes[who];
         if (prior == 0) {
             prior = uint256(_who);
         }
         if (_attribute == IS_DEPOSIT_ADDRESS) {
-            if (address(prior) != address(_value)) {
-                // TODO sweep balance from address(prior) to address(_value)
-            }
             attributes[who] = (prior & ACCOUNT_ADDRESS_INV) | uint256(address(_value));
         } else if (_attribute == BLACKLISTED) {
             if (_value != 0) {
                 attributes[who] = prior | ACCOUNT_BLACKLISTED;
-            } else  {
+            } else {
                 attributes[who] = prior & ACCOUNT_BLACKLISTED_INV;
             }
         } else if (_attribute == PASSED_KYCAML) {
@@ -527,26 +608,34 @@ contract RegistrySubscriber is ProxyStorage {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/TrueCoinReceiver.sol
+// File: contracts/trusttokens/TrueCoinReceiver.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
-contract TrueCoinReceiver {
-    function tokenFallback( address from, uint256 value ) external;
+interface TrueCoinReceiver {
+    function tokenFallback(address from, uint256 value) external;
 }
 
-// File: @trusttoken/trusttokens/contracts/ValTokenWithHook.sol
+// File: contracts/trusttokens/ValTokenWithHook.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 
 
-contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
-
+abstract contract ValTokenWithHook is ModularStandardToken, RegistrySubscriber {
     event Burn(address indexed from, uint256 indexed amount);
     event Mint(address indexed to, uint256 indexed amount);
 
+    /**
+     * @dev Check if address supports token transfer fallback and resolve autosweep
+     * @param _to Receiver account
+     *
+     * @return to If _to is not an autosweep address, they are same. Otherwise equals autosweep root
+     * @return hook True if _to supports transfer fallback
+     */
     function _resolveRecipient(address _to) internal view returns (address to, bool hook) {
         uint256 flags = (attributes[uint144(uint160(_to) >> 20)]);
         if (flags == 0) {
@@ -559,6 +648,9 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
         }
     }
 
+    /**
+     * @dev Reverts if _from is an autosweep address (and is not an autosweep root)
+     */
     modifier resolveSender(address _from) {
         uint256 flags = (attributes[uint144(uint160(_from) >> 20)]);
         address from = address(flags);
@@ -568,19 +660,39 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
         _;
     }
 
-    function _transferFromAllArgs(address _from, address _to, uint256 _value, address _spender) internal {
+    /// @dev Check allowance and perform transfer
+    function _transferFromAllArgs(
+        address _from,
+        address _to,
+        uint256 _value,
+        address _spender
+    ) internal virtual {
         _subAllowance(_from, _spender, _value);
         _transferAllArgs(_from, _to, _value);
     }
-    function transferFrom(address _from, address _to, uint256 _value) external returns (bool) {
+
+    /// @dev Transfer using allowance
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _value
+    ) external returns (bool) {
         _transferFromAllArgs(_from, _to, _value, msg.sender);
         return true;
     }
+
+    /// @dev Transfer tokens to recipient
     function transfer(address _to, uint256 _value) external returns (bool) {
         _transferAllArgs(msg.sender, _to, _value);
         return true;
     }
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal resolveSender(_from) {
+
+    // @dev Swap balances and call fallback if needed
+    function _transferAllArgs(
+        address _from,
+        address _to,
+        uint256 _value
+    ) internal virtual resolveSender(_from) {
         _subBalance(_from, _value);
         emit Transfer(_from, _to, _value);
         bool hasHook;
@@ -595,7 +707,15 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
         }
     }
 
-    function _burn(address _from, uint256 _value) internal returns (uint256 resultBalance_, uint256 resultSupply_) {
+    /**
+     * @dev Burn
+     * @param _from Account whose tokens will burn
+     * @param _value Amount of tokens to be burnt
+     *
+     * @return resultBalance_ New balance of _from
+     * @return resultSupply_ New total supply
+     */
+    function _burn(address _from, uint256 _value) internal virtual returns (uint256 resultBalance_, uint256 resultSupply_) {
         emit Transfer(_from, address(0), _value);
         emit Burn(_from, _value);
         resultBalance_ = _subBalance(_from, _value);
@@ -603,7 +723,12 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
         totalSupply = resultSupply_;
     }
 
-    function _mint(address _to, uint256 _value) internal {
+    /**
+     * @dev Mint new tokens
+     * @param _to Tokens receiver
+     * @param _value Amount of tokens to be minted
+     */
+    function _mint(address _to, uint256 _value) internal virtual {
         emit Transfer(address(0), _to, _value);
         emit Mint(_to, _value);
         (address to, bool hook) = _resolveRecipient(_to);
@@ -618,9 +743,11 @@ contract ValTokenWithHook is IERC20, ModularStandardToken, RegistrySubscriber {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/AStakedToken.sol
+// File: contracts/trusttokens/AStakedToken.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
+
 
 
 
@@ -628,11 +755,11 @@ pragma solidity 0.5.13;
 /**
  * @title Abstract StakedToken
  * @dev Single token staking model for ERC-20
- * StakedToken represents a share in an Assurace Pool.
- * Accounts stake ERC-20 staking asset and recieve ERC-20 reward asset.
+ * StakedToken represents a share in an Assurance Pool.
+ * Accounts stake ERC-20 staking asset and receive ERC-20 reward asset.
  * StakingOpportunityFactory creates instances of StakedToken
  */
-contract AStakedToken is ValTokenWithHook {
+abstract contract AStakedToken is ValTokenWithHook {
     using ValSafeMath for uint256;
 
     // current representation of rewards per stake
@@ -641,7 +768,7 @@ contract AStakedToken is ValTokenWithHook {
 
     // amount each account has claimed up to cumulativeRewardsPerStake
     // claiming rewards sets claimedRewardsPerStake to cumulativeRewardsPerStake
-    mapping (address => uint256) claimedRewardsPerStake;
+    mapping(address => uint256) claimedRewardsPerStake;
 
     // amount that has been awarded to the pool but not pool holders
     // tracks leftovers for when stake gets very large
@@ -649,15 +776,15 @@ contract AStakedToken is ValTokenWithHook {
     // rolls over the next time we award
     uint256 rewardsRemainder;
 
-    // total value of stake not currently in supply and not currrently withdrawn
-    // need this to calculate how many new staked tokens to awarn when depositing
+    // total value of stake not currently in supply and not currently withdrawn
+    // need this to calculate how many new staked tokens to award when depositing
     uint256 public stakePendingWithdrawal;
 
     // map accounts => timestamp => money
     // have to reference timestamp to access previous withdrawal
     // multiple withdrawals in the same block increase amount for that timestamp
-    // same acconut that initiates withdrawal needs to complete withdrawal
-    mapping (address => mapping (uint256 => uint256)) pendingWithdrawals;
+    // same account that initiates withdrawal needs to complete withdrawal
+    mapping(address => mapping(uint256 => uint256)) pendingWithdrawals;
 
     // unstake period in days
     uint256 constant UNSTAKE_PERIOD = 14 days;
@@ -669,24 +796,27 @@ contract AStakedToken is ValTokenWithHook {
     /**
      * @dev Get unclaimed reward balance for staker
      * @param _staker address of staker
-     * @return claimedRewards_ withdrawable amount of rewards belonging to this staker
-    **/
+     * @return unclaimedRewards_ withdrawable amount of rewards belonging to this staker
+     **/
     function unclaimedRewards(address _staker) public view returns (uint256 unclaimedRewards_) {
         uint256 stake = balanceOf[_staker];
         if (stake == 0) {
             return 0;
         }
-        unclaimedRewards_ = stake.mul(cumulativeRewardsPerStake.sub(claimedRewardsPerStake[_staker], "underflow"), "unclaimed rewards overflow");
+        unclaimedRewards_ = stake.mul(
+            cumulativeRewardsPerStake.sub(claimedRewardsPerStake[_staker], "underflow"),
+            "unclaimed rewards overflow"
+        );
     }
 
     /// @return ERC-20 stake asset
-    function stakeAsset() internal view returns (StakingAsset);
+    function stakeAsset() public virtual view returns (StakingAsset);
 
     /// @return ERC-20 reward asset
-    function rewardAsset() internal view returns (StakingAsset);
+    function rewardAsset() public virtual view returns (StakingAsset);
 
     /// @return liquidator address
-    function liquidator() internal view returns (address);
+    function liquidator() public virtual view returns (address);
 
     // max int size to prevent overflow
     uint256 constant MAX_UINT256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
@@ -697,8 +827,8 @@ contract AStakedToken is ValTokenWithHook {
 
     /**
      * @dev Initialize function called by constructor
-     * Approves liqudiator for maximum amount
-    */
+     * Approves liquidator for maximum amount
+     */
     function initialize() internal {
         stakeAsset().approve(liquidator(), MAX_UINT256);
     }
@@ -710,7 +840,11 @@ contract AStakedToken is ValTokenWithHook {
      * Contracts that have this staking token don't know they have rewards
      * This way we an exchange on uniswap or other exchanges
      */
-    function _transferAllArgs(address _from, address _to, uint256 _value) internal resolveSender(_from) {
+    function _transferAllArgs(
+        address _from,
+        address _to,
+        uint256 _value
+    ) internal override resolveSender(_from) {
         uint256 fromRewards = claimedRewardsPerStake[_from];
         if (_subBalance(_from, _value) == 0) {
             claimedRewardsPerStake[_from] = 0;
@@ -722,7 +856,7 @@ contract AStakedToken is ValTokenWithHook {
         }
         // here we track rewards remainder and claimed rewards per stake
         // claimed rewards per stake of _to is the weighted average of the
-        // prior value and added value according to their unclaimedrewards
+        // prior value and added value according to their unclaimed rewards
         uint256 priorBalance = _addBalance(to, _value);
         uint256 numerator = (_value * fromRewards + priorBalance * claimedRewardsPerStake[to]);
         uint256 denominator = (_value + priorBalance);
@@ -750,7 +884,7 @@ contract AStakedToken is ValTokenWithHook {
      * Called by initUnstake to burn and modify total supply
      * We use totalSupply to calculate rewards
      */
-    function _burn(address _from, uint256 _value) internal returns (uint256 resultBalance_, uint256 resultSupply_) {
+    function _burn(address _from, uint256 _value) internal override returns (uint256 resultBalance_, uint256 resultSupply_) {
         (resultBalance_, resultSupply_) = super._burn(_from, _value);
         uint256 userClaimedRewardsPerStake = claimedRewardsPerStake[_from];
         uint256 totalRewardsPerStake = cumulativeRewardsPerStake;
@@ -765,7 +899,12 @@ contract AStakedToken is ValTokenWithHook {
             uint256 award_ = pendingRewards % resultBalance_;
             if (pendingRewardsPerStake > userClaimedRewardsPerStake) {
                 claimedRewardsPerStake[_from] = 0;
-                _award(award_.add((pendingRewardsPerStake - userClaimedRewardsPerStake).mul(resultBalance_, "award overflow"), "award overflow?"));
+                _award(
+                    award_.add(
+                        (pendingRewardsPerStake - userClaimedRewardsPerStake).mul(resultBalance_, "award overflow"),
+                        "award overflow?"
+                    )
+                );
             } else {
                 claimedRewardsPerStake[_from] = userClaimedRewardsPerStake - pendingRewardsPerStake;
                 _award(award_);
@@ -777,7 +916,7 @@ contract AStakedToken is ValTokenWithHook {
      * @dev Overrides from ValTokenWithHook
      * Checks rewards remainder of recipient of mint
      */
-    function _mint(address _to, uint256 _value) internal {
+    function _mint(address _to, uint256 _value) internal override {
         emit Transfer(address(0), _to, _value);
         emit Mint(_to, _value);
         (address to, bool hook) = _resolveRecipient(_to);
@@ -801,15 +940,18 @@ contract AStakedToken is ValTokenWithHook {
     }
 
     /**
-     * Called when this contract recieves stake. Called by token fallback.
+     * Called when this contract receives stake. Called by token fallback.
      * Issue stake to _staker according to _amount
      * Invoked after _amount is deposited in this contract
-    */
+     */
     function _deposit(address _staker, uint256 _amount) internal {
         uint256 balance = stakeAsset().balanceOf(address(this));
         uint256 stakeAmount;
         if (_amount < balance) {
-            stakeAmount = _amount.mul(totalSupply.add(stakePendingWithdrawal, "stakePendingWithdrawal > totalSupply"), "overflow").div(balance - _amount, "insufficient deposit");
+            stakeAmount = _amount.mul(totalSupply.add(stakePendingWithdrawal, "stakePendingWithdrawal > totalSupply"), "overflow").div(
+                balance - _amount,
+                "insufficient deposit"
+            );
         } else {
             // first staker
             require(totalSupply == 0, "pool drained");
@@ -843,13 +985,14 @@ contract AStakedToken is ValTokenWithHook {
      */
     function deposit(uint256 _amount) external {
         require(stakeAsset().transferFrom(msg.sender, address(this), _amount));
+        _deposit(msg.sender, _amount);
     }
 
     /**
      * @dev Initialize unstake. Can specify a portion of your balance to unstake.
      * @param _maxAmount max amount caller wishes to unstake (in this.balanceOf units)
      * @return unstake_
-    */
+     */
     function initUnstake(uint256 _maxAmount) external returns (uint256 unstake_) {
         unstake_ = balanceOf[msg.sender];
         if (unstake_ > _maxAmount) {
@@ -866,14 +1009,14 @@ contract AStakedToken is ValTokenWithHook {
     /**
      * @dev Finalize unstake after 2 weeks.
      * Loop over timestamps
-     * Checks if unstake perioud has passed, if yes, calculate how much stake account get
+     * Checks if unstake period has passed, if yes, calculate how much stake account get
      * @param recipient recipient of
      * @param _timestamps timestamps to
      */
     function finalizeUnstake(address recipient, uint256[] calldata _timestamps) external {
         uint256 totalUnstake = 0;
         // loop through timestamps and calculate total unstake
-        for (uint256 i = _timestamps.length; i --> 0;) {
+        for (uint256 i = _timestamps.length; i-- > 0; ) {
             uint256 timestamp = _timestamps[i];
             require(timestamp + UNSTAKE_PERIOD <= now, "must wait 2 weeks to unstake");
             // add to total unstake amount
@@ -884,11 +1027,14 @@ contract AStakedToken is ValTokenWithHook {
         IERC20 stake = stakeAsset(); // get stake asset
         uint256 totalStake = stake.balanceOf(address(this)); // get total stake
 
-        // calulate correstponding stake
+        // calculate corresponding stake
         // consider stake pending withdrawal and total supply of stake token
         // totalUnstake / totalSupply = correspondingStake / totalStake
         // totalUnstake * totalStake / totalSupply = correspondingStake
-        uint256 correspondingStake = totalStake.mul(totalUnstake, "totalStake*totalUnstake overflow").div(totalSupply.add(stakePendingWithdrawal, "overflow totalSupply+stakePendingWithdrawal"), "zero totals");
+        uint256 correspondingStake = totalStake.mul(totalUnstake, "totalStake*totalUnstake overflow").div(
+            totalSupply.add(stakePendingWithdrawal, "overflow totalSupply+stakePendingWithdrawal"),
+            "zero totals"
+        );
         stakePendingWithdrawal = stakePendingWithdrawal.sub(totalUnstake, "stakePendingWithdrawal underflow");
         stake.transfer(recipient, correspondingStake);
     }
@@ -902,7 +1048,7 @@ contract AStakedToken is ValTokenWithHook {
     }
 
     /**
-     * @dev Award stakig pool.
+     * @dev Award staking pool.
      * @param _amount amount of rewardAsset to reward
      */
     function _award(uint256 _amount) internal {
@@ -919,20 +1065,18 @@ contract AStakedToken is ValTokenWithHook {
 
     /**
      * @dev Claim rewards and send to a destination.
-     * Fails if sender account is not KYC.
-     * KYC flag doesn't have to be synced to the registry.
      * @param _destination withdraw destination
      */
     function claimRewards(address _destination) external {
-        // check KYC attribte
-        require(attributes[uint144(uint160(msg.sender) >> 20)] & ACCOUNT_KYC != 0 || registry().getAttributeValue(msg.sender, PASSED_KYCAML) != 0, "please register at app.trusttoken.com");
-
         // calculate how much stake and rewards account has
         uint256 stake = balanceOf[msg.sender];
         if (stake == 0) {
             return;
         }
-        uint256 dueRewards = stake.mul(cumulativeRewardsPerStake.sub(claimedRewardsPerStake[msg.sender], "underflow"), "dueRewards overflow");
+        uint256 dueRewards = stake.mul(
+            cumulativeRewardsPerStake.sub(claimedRewardsPerStake[msg.sender], "underflow"),
+            "dueRewards overflow"
+        );
         if (dueRewards == 0) {
             return;
         }
@@ -955,9 +1099,10 @@ contract AStakedToken is ValTokenWithHook {
     }
 }
 
-// File: @trusttoken/trusttokens/contracts/StakedToken.sol
+// File: contracts/trusttokens/StakedToken.sol
 
-pragma solidity 0.5.13;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
 
 
 
@@ -966,7 +1111,7 @@ pragma solidity 0.5.13;
 /**
  * @title StakedToken
  * @dev Implementation of AStakedToken
-**/
+ **/
 contract StakedToken is AStakedToken {
     StakingAsset stakeAsset_;
     StakingAsset rewardAsset_;
@@ -982,7 +1127,7 @@ contract StakedToken is AStakedToken {
         Registry _registry,
         address _liquidator
     ) external {
-        require(!initalized, "already initalized StakedToken");
+        require(!initalized, "already initialized StakedToken");
         stakeAsset_ = _stakeAsset;
         rewardAsset_ = _rewardAsset;
         registry_ = _registry;
@@ -991,19 +1136,19 @@ contract StakedToken is AStakedToken {
         initalized = true;
     }
 
-    function stakeAsset() internal view returns (StakingAsset) {
+    function stakeAsset() public override view returns (StakingAsset) {
         return stakeAsset_;
     }
 
-    function rewardAsset() internal view returns (StakingAsset) {
+    function rewardAsset() public override view returns (StakingAsset) {
         return rewardAsset_;
     }
 
-    function registry() internal view returns (Registry) {
+    function registry() public override view returns (Registry) {
         return registry_;
     }
 
-    function liquidator() internal view returns (address) {
+    function liquidator() public override view returns (address) {
         return liquidator_;
     }
 }

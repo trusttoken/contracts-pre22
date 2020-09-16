@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TrueUSD} from "../TrueUSD.sol";
+import {TrueUSDLegacy} from "../TrueUSDLegacy.sol";
 
-contract TrueUSDMock is TrueUSD {
+contract TrueUSDMock is TrueUSDLegacy {
     constructor(address initialAccount, uint256 initialBalance) public {
         _setBalance(initialAccount, initialBalance);
         totalSupply_ = initialBalance;

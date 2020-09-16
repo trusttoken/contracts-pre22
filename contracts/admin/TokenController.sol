@@ -1,34 +1,41 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Registry} from "../../registry/Registry.sol";
-import {HasOwner} from "../HasOwner.sol";
-import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
-import {TrueUSD} from "../TrueUSD.sol";
-import {InstantiatableOwnable} from "../modularERC20/InstantiatableOwnable.sol";
+import {Registry} from "../registry/Registry.sol";
+import {HasOwner} from "../truecurrencies/HasOwner.sol";
+import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
+import {TrueCurrencyWithGasRefund} from "../true-currencies-new/TrueCurrencyWithGasRefund.sol";
+import {InstantiatableOwnable} from "../truecurrencies/modularERC20/InstantiatableOwnable.sol";
+
+/**
+ * @dev Contract that can be called with a gas refund
+ */
+interface IHook {
+    function hook() external;
+}
 
 /** @title TokenController
-@dev This contract allows us to split ownership of the TrueUSD contract
-into two addresses. One, called the "owner" address, has unfettered control of the TrueUSD contract -
-it can mint new tokens, transfer ownership of the contract, etc. However to make
-extra sure that TrueUSD is never compromised, this owner key will not be used in
-day-to-day operations, allowing it to be stored at a heightened level of security.
-Instead, the owner appoints an various "admin" address.
-There are 3 different types of admin addresses;  MintKey, MintRatifier, and MintPauser.
-MintKey can request and revoke mints one at a time.
-MintPausers can pause individual mints or pause all mints.
-MintRatifiers can approve and finalize mints with enough approval.
+ * @dev This contract allows us to split ownership of the TrueCurrency contract
+ * into two addresses. One, called the "owner" address, has unfettered control of the TrueCurrency contract -
+ * it can mint new tokens, transfer ownership of the contract, etc. However to make
+ * extra sure that TrueCurrency is never compromised, this owner key will not be used in
+ * day-to-day operations, allowing it to be stored at a heightened level of security.
+ * Instead, the owner appoints an various "admin" address.
+ * There are 3 different types of admin addresses;  MintKey, MintRatifier, and MintPauser.
+ * MintKey can request and revoke mints one at a time.
+ * MintPausers can pause individual mints or pause all mints.
+ * MintRatifiers can approve and finalize mints with enough approval.
 
-There are three levels of mints: instant mint, ratified mint, and multiSig mint. Each have a different threshold
-and deduct from a different pool.
-Instant mint has the lowest threshold and finalizes instantly without any ratifiers. Deduct from instant mint pool,
-which can be refilled by one ratifier.
-Ratify mint has the second lowest threshold and finalizes with one ratifier approval. Deduct from ratify mint pool,
-which can be refilled by three ratifiers.
-MultiSig mint has the highest threshold and finalizes with three ratifier approvals. Deduct from multiSig mint pool,
-which can only be refilled by the owner.
+ * There are three levels of mints: instant mint, ratified mint, and multiSig mint. Each have a different threshold
+ * and deduct from a different pool.
+ * Instant mint has the lowest threshold and finalizes instantly without any ratifiers. Deduct from instant mint pool,
+ * which can be refilled by one ratifier.
+ * Ratify mint has the second lowest threshold and finalizes with one ratifier approval. Deduct from ratify mint pool,
+ * which can be refilled by three ratifiers.
+ * MultiSig mint has the highest threshold and finalizes with three ratifier approvals. Deduct from multiSig mint pool,
+ * which can only be refilled by the owner.
 */
 
 contract TokenController {
@@ -69,15 +76,17 @@ contract TokenController {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    TrueUSD public token;
+    TrueCurrencyWithGasRefund public token;
     Registry public registry;
-    address public trueRewardManager;
+    address public registryAdmin;
+    address public gasRefunder;
 
+    // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
 
-    // paused version of TrueUSD in Production
+    // paused version of TrueCurrency in Production
     // pausing the contract upgrades the proxy to this implementation
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
 
@@ -101,8 +110,13 @@ contract TokenController {
         _;
     }
 
-    modifier onlyTrueRewardManager() {
-        require(msg.sender == trueRewardManager, "must be trueRewardManager");
+    modifier onlyGasRefunder() {
+        require(msg.sender == gasRefunder || msg.sender == owner, "must be gas refunder or owner");
+        _;
+    }
+
+    modifier onlyRegistryAdmin() {
+        require(msg.sender == registryAdmin || msg.sender == owner, "must be registry admin or owner");
         _;
     }
 
@@ -124,7 +138,7 @@ contract TokenController {
     /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
-    event SetToken(TrueUSD newContract);
+    event SetToken(TrueCurrencyWithGasRefund newContract);
 
     /// @dev Emitted when mint was requested
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -145,6 +159,8 @@ contract TokenController {
     event MintPaused(uint256 opIndex, bool status);
     /// @dev Emitted when mint is approved
     event MintApproved(address approver, uint256 opIndex);
+    /// @dev Emitted when fast pause contract is changed
+    event FastPauseSet(address _newFastPause);
 
     /// @dev Emitted when mint threshold changes
     event MintThresholdChanged(uint256 instant, uint256 ratified, uint256 multiSig);
@@ -203,15 +219,15 @@ contract TokenController {
     ========================================
     */
 
-    function transferTusdProxyOwnership(address _newOwner) external onlyOwner {
+    function transferTrueCurrencyProxyOwnership(address _newOwner) external onlyOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).transferProxyOwnership(_newOwner);
     }
 
-    function claimTusdProxyOwnership() external onlyOwner {
+    function claimTrueCurrencyProxyOwnership() external onlyOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).claimProxyOwnership();
     }
 
-    function upgradeTusdProxyImplTo(address _implementation) external onlyOwner {
+    function upgradeTrueCurrencyProxyImplTo(address _implementation) external onlyOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(_implementation);
     }
 
@@ -222,8 +238,9 @@ contract TokenController {
     */
 
     /**
-     * @dev set the threshold for a mint to be considered an instant mint, ratify mint and multiSig mint
-     Instant mint requires no approval, ratify mint requires 1 approval and multiSig mint requires 3 approvals
+     * @dev set the threshold for a mint to be considered an instant mint,
+     * ratify mint and multiSig mint. Instant mint requires no approval,
+     * ratify mint requires 1 approval and multiSig mint requires 3 approvals
      */
     function setMintThresholds(
         uint256 _instant,
@@ -239,7 +256,7 @@ contract TokenController {
 
     /**
      * @dev set the limit of each mint pool. For example can only instant mint up to the instant mint pool limit
-     before needing to refill
+     * before needing to refill
      */
     function setMintLimits(
         uint256 _instant,
@@ -313,7 +330,8 @@ contract TokenController {
     }
 
     /**
-     * @dev Instant mint without ratification if the amount is less than instantMintThreshold and instantMintPool
+     * @dev Instant mint without ratification if the amount is less
+     * than instantMintThreshold and instantMintPool
      * @param _to the address to mint to
      * @param _value the amount minted
      */
@@ -326,8 +344,9 @@ contract TokenController {
     }
 
     /**
-     * @dev ratifier ratifies a request mint. If the number of ratifiers that signed off is greater than
-     the number of approvals required, the request is finalized
+     * @dev ratifier ratifies a request mint. If the number of
+     * ratifiers that signed off is greater than the number of
+     * approvals required, the request is finalized
      * @param _index the index of the requestMint to ratify
      * @param _to the address to mint to
      * @param _value the amount requested
@@ -351,7 +370,7 @@ contract TokenController {
 
     /**
      * @dev finalize a mint request, mint the amount requested to the specified address
-     @param _index of the request (visible in the RequestMint event accompanying the original request)
+     * @param _index of the request (visible in the RequestMint event accompanying the original request)
      */
     function finalizeMint(uint256 _index) public mintNotPaused {
         MintOperation memory op = mintOperations[_index];
@@ -399,7 +418,7 @@ contract TokenController {
 
     /**
      * @dev compute if a mint request meets all the requirements to be finalized
-     utility function for a front end
+     * utility function for a front end
      */
     function canFinalize(uint256 _index) public view returns (bool) {
         MintOperation memory op = mintOperations[_index];
@@ -410,14 +429,18 @@ contract TokenController {
     }
 
     /**
-     *@dev revoke a mint request, Delete the mintOperation
-     *@param _index of the request (visible in the RequestMint event accompanying the original request)
+     * @dev revoke a mint request, Delete the mintOperation
+     * @param _index of the request (visible in the RequestMint event accompanying the original request)
      */
     function revokeMint(uint256 _index) external onlyMintKeyOrOwner {
         delete mintOperations[_index];
         emit RevokeMint(_index);
     }
 
+    /**
+     * @dev get mint operatino count
+     * @return mint operation count
+     */
     function mintOperationCount() public view returns (uint256) {
         return mintOperations.length;
     }
@@ -429,13 +452,21 @@ contract TokenController {
     */
 
     /**
-     *@dev Replace the current mintkey with new mintkey
-     *@param _newMintKey address of the new mintKey
+     * @dev Replace the current mintkey with new mintkey
+     * @param _newMintKey address of the new mintKey
      */
     function transferMintKey(address _newMintKey) external onlyOwner {
         require(_newMintKey != address(0), "new mint key cannot be 0x0");
         emit TransferMintKey(mintKey, _newMintKey);
         mintKey = _newMintKey;
+    }
+
+    function setGasRefunder(address refunder) external onlyOwner {
+        gasRefunder = refunder;
+    }
+
+    function setRegistryAdmin(address admin) external onlyOwner {
+        registryAdmin = admin;
     }
 
     /*
@@ -445,14 +476,14 @@ contract TokenController {
     */
 
     /**
-     *@dev invalidates all mint request initiated before the current block
+     * @dev invalidates all mint request initiated before the current block
      */
     function invalidateAllPendingMints() external onlyOwner {
         mintReqInvalidBeforeThisBlock = block.number;
     }
 
     /**
-     *@dev pause any further mint request and mint finalizations
+     * @dev pause any further mint request and mint finalizations
      */
     function pauseMints() external onlyMintPauserOrOwner {
         mintPaused = true;
@@ -460,7 +491,7 @@ contract TokenController {
     }
 
     /**
-     *@dev unpause any further mint request and mint finalizations
+     * @dev unpause any further mint request and mint finalizations
      */
     function unpauseMints() external onlyOwner {
         mintPaused = false;
@@ -468,8 +499,8 @@ contract TokenController {
     }
 
     /**
-     *@dev pause a specific mint request
-     *@param  _opIndex the index of the mint request the caller wants to pause
+     * @dev pause a specific mint request
+     * @param  _opIndex the index of the mint request the caller wants to pause
      */
     function pauseMint(uint256 _opIndex) external onlyMintPauserOrOwner {
         mintOperations[_opIndex].paused = true;
@@ -477,8 +508,8 @@ contract TokenController {
     }
 
     /**
-     *@dev unpause a specific mint request
-     *@param  _opIndex the index of the mint request the caller wants to unpause
+     * @dev unpause a specific mint request
+     * @param  _opIndex the index of the mint request the caller wants to unpause
      */
     function unpauseMint(uint256 _opIndex) external onlyOwner {
         mintOperations[_opIndex].paused = false;
@@ -492,16 +523,16 @@ contract TokenController {
     */
 
     /**
-    *@dev Update this contract's token pointer to newContract (e.g. if the
-    contract is upgraded)
-    */
-    function setToken(TrueUSD _newContract) external onlyOwner {
+     * @dev Update this contract's token pointer to newContract (e.g. if the
+     * contract is upgraded)
+     */
+    function setToken(TrueCurrencyWithGasRefund _newContract) external onlyOwner {
         token = _newContract;
         emit SetToken(_newContract);
     }
 
     /**
-     *@dev Update this contract's registry pointer to _registry
+     * @dev Update this contract's registry pointer to _registry
      */
     function setRegistry(Registry _registry) external onlyOwner {
         registry = _registry;
@@ -509,15 +540,7 @@ contract TokenController {
     }
 
     /**
-     *@dev Swap out token's permissions registry
-     *@param _registry new registry for token
-     */
-    function setTokenRegistry(Registry _registry) external onlyOwner {
-        token.setRegistry(_registry);
-    }
-
-    /**
-     *@dev Claim ownership of an arbitrary HasOwner contract
+     * @dev Claim ownership of an arbitrary HasOwner contract
      */
     function issueClaimOwnership(address _other) public onlyOwner {
         HasOwner other = HasOwner(_other);
@@ -525,136 +548,89 @@ contract TokenController {
     }
 
     /**
-    *@dev Transfer ownership of _child to _newOwner.
-    Can be used e.g. to upgrade this TokenController contract.
-    *@param _child contract that tokenController currently Owns
-    *@param _newOwner new owner/pending owner of _child
-    */
+     * @dev Transfer ownership of _child to _newOwner.
+     * Can be used e.g. to upgrade this TokenController contract.
+     * @param _child contract that tokenController currently Owns
+     * @param _newOwner new owner/pending owner of _child
+     */
     function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
         _child.transferOwnership(_newOwner);
         emit TransferChild(address(_child), _newOwner);
     }
 
     /**
-    *@dev Transfer ownership of a contract from token to this TokenController.
-    Can be used e.g. to reclaim balance sheet
-    in order to transfer it to an upgraded TrueUSD contract.
-    *@param _other address of the contract to claim ownership of
-    */
-    function requestReclaimContract(InstantiatableOwnable _other) public onlyOwner {
-        token.reclaimContract(_other);
-        emit RequestReclaimContract(address(_other));
-    }
-
-    /**
-     *@dev send all ether in token address to the owner of tokenController
+     * @dev send all ether in token address to the owner of tokenController
      */
     function requestReclaimEther() external onlyOwner {
         token.reclaimEther(owner);
     }
 
     /**
-    *@dev transfer all tokens of a particular type in token address to the
-    owner of tokenController
-    *@param _token token address of the token to transfer
-    */
+     * @dev transfer all tokens of a particular type in token address to the
+     * owner of tokenController
+     * @param _token token address of the token to transfer
+     */
     function requestReclaimToken(IERC20 _token) external onlyOwner {
         token.reclaimToken(_token, owner);
     }
 
     /**
-     *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
+     * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
     function pauseToken() external virtual onlyOwner {
         OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 
     /**
-     *@dev wipe balance of a blacklisted address
-     *@param _blacklistedAddress address whose balance will be wiped
+     * @dev Change the minimum and maximum amounts that TrueCurrency users can
+     * burn to newMin and newMax
+     * @param _min minimum amount user can burn at a time
+     * @param _max maximum amount user can burn at a time
      */
-    function wipeBlackListedTrueUSD(address _blacklistedAddress) external onlyOwner {
-        token.wipeBlacklistedAccount(_blacklistedAddress);
-    }
-
-    /**
-    *@dev Change the minimum and maximum amounts that TrueUSD users can
-    burn to newMin and newMax
-    *@param _min minimum amount user can burn at a time
-    *@param _max maximum amount user can burn at a time
-    */
     function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
         token.setBurnBounds(_min, _max);
     }
 
     /**
-     *@dev Owner can send ether balance in contract address
-     *@param _to address to which the funds will be send to
+     * @dev Owner can send ether balance in contract address
+     * @param _to address to which the funds will be send to
      */
     function reclaimEther(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
     /**
-     *@dev Owner can send erc20 token balance in contract address
-     *@param _token address of the token to send
-     *@param _to address to which the funds will be send to
+     * @dev Owner can send erc20 token balance in contract address
+     * @param _token address of the token to send
+     * @param _to address to which the funds will be send to
      */
     function reclaimToken(IERC20 _token, address _to) external onlyOwner {
         uint256 balance = _token.balanceOf(address(this));
         _token.transfer(_to, balance);
     }
 
-    /*
-    ========================================
-    Truereward
-    ========================================
-    */
-
     /**
-     * @dev Sets the contract which has permissions to manage truerewards reserve
-     * Controls access to reserve functions to allow providing liquidity
+     * @dev Owner can allow address to burn tokens
+     * @param burner address of the token that can burn
+     * @param canBurn true if account is allowed to burn, false otherwise
      */
-    function setTrueRewardManager(address _newTrueRewardManager) external onlyOwner {
-        trueRewardManager = _newTrueRewardManager;
+    function setCanBurn(address burner, bool canBurn) external onlyRegistryAdmin {
+        token.setCanBurn(burner, canBurn);
     }
 
     /**
-     * @dev Sets the contract which has permissions to manage truerewards reserve
-     * Controls access to reserve functions to allow providing liquidity
+     * Call hook in `hookContract` with gas refund
      */
-    function setOpportunityAddress(address _opportunityAddress) external onlyOwner {
-        token.setOpportunityAddress(_opportunityAddress);
-    }
-
-    /**
-     * @dev Withdraw all trueCurrencies from reserve
-     * @param _to address to withdraw to
-     * @param _value amount to withdraw
-     */
-    function reserveWithdraw(address _to, uint256 _value) external onlyTrueRewardManager {
-        token.reserveWithdraw(_to, _value);
-    }
-
-    /**
-     * @dev Allow this contract to rebalance currency reserves
-     * This is called when there is not enough money in opportunity reserve and we want
-     * to get more opportunity tokens
-     *
-     * @param _value amount to exchange for opportunity rewardTokens
-     */
-    function opportunityReserveMint(uint256 _value) external onlyTrueRewardManager {
-        token.opportunityReserveMint(_value);
-    }
-
-    /**
-     * @dev Allow this contract to rebalance currency reserves
-     * This is called when there is too much money in opportunity and we want
-     * to get more TrueCurrency.
-     *
-     * @param _value amount of opportunity rewardTokens to redeem for TrueCurrency
-     */
-    function opportunityReserveRedeem(uint256 _value) external onlyTrueRewardManager {
-        token.opportunityReserveRedeem(_value);
+    function refundGasWithHook(IHook hookContract) external onlyGasRefunder {
+        // calculate start gas amount
+        uint256 startGas = gasleft();
+        // call hook
+        hookContract.hook();
+        // calculate gas used
+        uint256 gasUsed = startGas.sub(gasleft());
+        // 1 refund = 15,000 gas. EVM refunds maximum half of used gas, so divide by 2.
+        // Add 20% to compensate inter contract communication
+        // (x + 20%) / 2 / 15000 = x / 25000
+        token.refundGas(gasUsed.div(25000));
     }
 }

@@ -1,12 +1,13 @@
 {
-  "name": "truecoin",
-  "version": "1.0.0",
+  "name": "truecurrency",
+  "version": "2.0.0",
   "description": "",
   "main": "truffle.js",
   "directories": {
     "test": "./test.sh"
   },
   "scripts": {
+    "postinstall": "patch-package",
     "coverage": "./coverage.sh",
     "flatten": "./flatten-all",
     "profile": "./profile.sh",
@@ -47,8 +48,10 @@
     "eslint": "^6.8.0",
     "ethereum-waffle": "^2.5.1",
     "mocha": "^7.1.1",
-    "prettier": "^2.0.5",
-    "prettier-plugin-solidity": "^1.0.0-alpha.54",
+    "patch-package": "^6.2.2",
+    "postinstall-postinstall": "^2.1.0",
+    "prettier": "2.0.5",
+    "prettier-plugin-solidity": "1.0.0-alpha.54",
     "prettylint": "^1.0.0",
     "solhint": "^3.0.0",
     "solidity-coverage": "^0.7.0",

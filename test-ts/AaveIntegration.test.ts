@@ -10,7 +10,7 @@ import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabil
 import { RegistryMockFactory } from '../build/types/RegistryMockFactory'
 import { SimpleLiquidatorMockFactory } from '../build/types/SimpleLiquidatorMockFactory'
 import { TrueRewardBackedToken } from '../build/types/TrueRewardBackedToken'
-import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
+import { TrueUsdLegacyFactory } from '../build/types/TrueUsdLegacyFactory'
 import { setupDeploy } from '../scripts/utils'
 import { AssuredFinancialOpportunity } from '../build/types/AssuredFinancialOpportunity'
 import { SimpleLiquidatorMock } from '../build/types/SimpleLiquidatorMock'
@@ -41,7 +41,7 @@ describe('AAveIntegrationTest: TrueRewardBackedToken with real Aave contracts', 
     });
     ([owner, holder, holder2] = provider.getWallets())
     const deployContract = setupDeploy(owner)
-    token = await deployContract(TrueUsdFactory, { gasLimit: 5_000_000 })
+    token = await deployContract(TrueUsdLegacyFactory, { gasLimit: 5_000_000 })
     const registry = await deployContract(RegistryMockFactory)
     const fractionalExponents = await deployContract(FractionalExponentsFactory)
     liquidator = await deployContract(SimpleLiquidatorMockFactory, token.address)
