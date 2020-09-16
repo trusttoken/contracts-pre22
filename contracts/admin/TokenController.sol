@@ -139,6 +139,8 @@ contract TokenController {
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
     event SetToken(TrueCurrencyWithGasRefund newContract);
+    /// @dev Emitted when canBurn status of the `burner` was changed to `canBurn`
+    event CanBurn(address burner, bool canBurn);
 
     /// @dev Emitted when mint was requested
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -616,6 +618,16 @@ contract TokenController {
      */
     function setCanBurn(address burner, bool canBurn) external onlyRegistryAdmin {
         token.setCanBurn(burner, canBurn);
+        emit CanBurn(burner, canBurn);
+    }
+
+    /**
+     * @dev Set blacklisted status for the account.
+     * @param account address to set blacklist flag for
+     * @param isBlacklisted blacklist flag value
+     */
+    function setBlacklisted(address account, bool isBlacklisted) external onlyRegistryAdmin {
+        token.setBlacklisted(account, isBlacklisted);
     }
 
     /**
