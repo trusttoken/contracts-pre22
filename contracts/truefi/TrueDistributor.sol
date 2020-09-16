@@ -21,8 +21,6 @@ contract TrueDistributor is Ownable {
         uint256 lastDistributionBlock;
     }
 
-    uint256 public constant DISTRIBUTION_FACTOR = 26824995976250469437449703116;
-    uint256 public constant TOTAL_BLOCKS = 1e7;
     uint256 public constant PRECISION = 1e33;
     uint256 public constant TOTAL_SHARES = 1e7;
 
@@ -31,9 +29,17 @@ contract TrueDistributor is Ownable {
     uint256 public lastBlock;
     mapping(address => Farm) public farms;
 
+    function getDistributionFactor() public virtual pure returns (uint256) {
+        return 26824995976250469437449703116;
+    }
+
+    function getTotalBlocks() public virtual pure returns (uint256) {
+        return 1e7;
+    }
+
     constructor(uint256 _startingBlock, ERC20 _token) public {
         startingBlock = _startingBlock;
-        lastBlock = startingBlock.add(TOTAL_BLOCKS);
+        lastBlock = startingBlock.add(getTotalBlocks());
         token = _token;
         farms[msg.sender].shares = TOTAL_SHARES;
     }
@@ -107,7 +113,10 @@ contract TrueDistributor is Ownable {
      * Uses the fact that sum of n first squares is calculated by n(n+1)(2n+1)/6
      */
     function rewardFormula(uint256 fromBlock, uint256 toBlock) internal virtual pure returns (uint256) {
-        return squareSumTimes6(TOTAL_BLOCKS.sub(fromBlock)).sub(squareSumTimes6(TOTAL_BLOCKS.sub(toBlock))).mul(DISTRIBUTION_FACTOR);
+        return
+            squareSumTimes6(getTotalBlocks().sub(fromBlock)).sub(squareSumTimes6(getTotalBlocks().sub(toBlock))).mul(
+                getDistributionFactor()
+            );
     }
 
     function squareSumTimes6(uint256 n) internal pure returns (uint256) {
