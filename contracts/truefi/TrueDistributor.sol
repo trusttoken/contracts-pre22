@@ -20,11 +20,11 @@ contract TrueDistributor is Ownable {
     uint256 public startingBlock;
     mapping(address => Farm) public farms;
 
-    function getDistributionFactor() public pure returns (uint256) {
+    function getDistributionFactor() public virtual pure returns (uint256) {
         return 26824995976250469437449703116;
     }
 
-    function getTotalBlocks() public pure returns (uint256) {
+    function getTotalBlocks() public virtual pure returns (uint256) {
         return 1e7;
     }
 
