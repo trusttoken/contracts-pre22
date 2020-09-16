@@ -44,6 +44,7 @@ async function deployTrueFi (truAddress: string) {
   await (await distributor.transfer(wallet.address, balancerFarm.address, 3333333, txnArgs)).wait()
   await (await distributor.transfer(wallet.address, uniswapEthFarm.address, 3333333, txnArgs)).wait()
   await (await distributor.transfer(wallet.address, uniswapTusdFarm.address, 3333334, txnArgs)).wait()
+  console.log('TrueFi deployment completed')
 }
 
 deployTrueFi(process.argv[4]).catch(console.error)
