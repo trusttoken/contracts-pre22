@@ -11,7 +11,7 @@ const BN = web3.utils.toBN
 
 contract('TokenController', function (accounts) {
   describe('--TokenController Tests--', function () {
-    const [, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, ratifier1, ratifier2, ratifier3] = accounts
+    const [, owner, oneHundred, otherAddress, mintKey, pauseKey, ratifier1, ratifier2, ratifier3] = accounts
     const notes = bytes32('notes')
     const DOLLAR = BN(10 ** 18)
     const CAN_BURN = bytes32('canBurn')
