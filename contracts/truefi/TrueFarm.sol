@@ -30,22 +30,23 @@ contract TrueFarm {
     }
 
     function stake(uint256 amount) public update {
-        require(stakingToken.transferFrom(msg.sender, address(this), amount));
         staked[msg.sender] = staked[msg.sender].add(amount);
         totalStaked = totalStaked.add(amount);
+        require(stakingToken.transferFrom(msg.sender, address(this), amount));
     }
 
     function unstake(uint256 amount) public update {
         require(amount <= staked[msg.sender], "insufficient staking balance");
-        require(stakingToken.transfer(msg.sender, amount));
         staked[msg.sender] = staked[msg.sender].sub(amount);
         totalStaked = totalStaked.sub(amount);
+        require(stakingToken.transfer(msg.sender, amount));
     }
 
     function claim() public update {
-        rewardToken.transfer(msg.sender, claimableReward[msg.sender]);
         totalClaimedRewards = totalClaimedRewards.add(claimableReward[msg.sender]);
+        uint256 rewardToClaim = claimableReward[msg.sender];
         claimableReward[msg.sender] = 0;
+        require(rewardToken.transfer(msg.sender, rewardToClaim));
     }
 
     modifier update() {
