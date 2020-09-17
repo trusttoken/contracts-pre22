@@ -10,7 +10,6 @@
     "postinstall": "patch-package",
     "coverage": "./coverage.sh",
     "flatten": "./flatten-all",
-    "profile": "./profile.sh",
     "clean": "rm -rf ./build",
     "typecheck": "tsc --noEmit",
     "lint:sol": "solhint 'contracts/**/*.sol' && prettylint 'contracts/**/*.sol'",
