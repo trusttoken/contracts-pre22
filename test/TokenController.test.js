@@ -2,11 +2,9 @@ import assertRevert from './helpers/assertRevert'
 import assertBalance from './helpers/assertBalance'
 const Registry = artifacts.require('RegistryMock')
 const TokenController = artifacts.require('TokenControllerMock')
-const TrueUSD = artifacts.require('TrueUSDMock')
+const TrueUSD = artifacts.require('MockTrueCurrency')
 const ForceEther = artifacts.require('ForceEther')
-const FastPauseMints = artifacts.require('FastPauseMints')
 const Proxy = artifacts.require('OwnedUpgradeabilityProxy')
-const FinancialOpportunityMock = artifacts.require('FinancialOpportunityMock')
 
 const bytes32 = require('./helpers/bytes32.js')
 const BN = web3.utils.toBN
@@ -14,11 +12,9 @@ const BN = web3.utils.toBN
 contract('TokenController', function (accounts) {
   describe('--TokenController Tests--', function () {
     const [, owner, oneHundred, otherAddress, mintKey, pauseKey, pauseKey2, ratifier1, ratifier2, ratifier3] = accounts
-    const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
     const notes = bytes32('notes')
     const DOLLAR = BN(10 ** 18)
     const CAN_BURN = bytes32('canBurn')
-    const BLACKLISTED = bytes32('isBlacklisted')
 
     beforeEach(async function () {
       this.registry = await Registry.new({ from: owner })
@@ -28,28 +24,20 @@ contract('TokenController', function (accounts) {
       await this.tokenProxy.upgradeTo(this.tusdImplementation.address, { from: owner })
       await this.token.initialize({ from: owner })
 
-      this.financialOpportunity = await FinancialOpportunityMock.new({ from: owner })
-      await this.token.setOpportunityAddress(this.financialOpportunity.address, { from: owner })
-
       this.controller = await TokenController.new({ from: owner })
       await this.token.transferOwnership(this.controller.address, { from: owner })
-      await this.token.setRegistry(this.registry.address, { from: owner })
       await this.controller.initialize({ from: owner })
       await this.controller.issueClaimOwnership(this.token.address, { from: owner })
-      this.fastPauseMints = await FastPauseMints.new(pauseKey2, this.controller.address, { from: owner })
       await this.controller.setRegistry(this.registry.address, { from: owner })
       await this.controller.setToken(this.token.address, { from: owner })
       await this.controller.transferMintKey(mintKey, { from: owner })
       await this.tokenProxy.transferProxyOwnership(this.controller.address, { from: owner })
       await this.controller.claimTrueCurrencyProxyOwnership({ from: owner })
-      await this.registry.subscribe(CAN_BURN, this.token.address, { from: owner })
-      await this.registry.subscribe(BLACKLISTED, this.token.address, { from: owner })
       await this.registry.setAttribute(oneHundred, CAN_BURN, 1, notes, { from: owner })
       await this.registry.setAttribute(ratifier1, bytes32('isTUSDMintRatifier'), 1, notes, { from: owner })
       await this.registry.setAttribute(ratifier2, bytes32('isTUSDMintRatifier'), 1, notes, { from: owner })
       await this.registry.setAttribute(ratifier3, bytes32('isTUSDMintRatifier'), 1, notes, { from: owner })
       await this.registry.setAttribute(pauseKey, bytes32('isTUSDMintPausers'), 1, notes, { from: owner })
-      await this.registry.setAttribute(this.fastPauseMints.address, bytes32('isTUSDMintPausers'), 1, notes, { from: owner })
       await this.controller.setMintThresholds(BN(200 * 10 ** 18), BN(1000).mul(DOLLAR), BN(1001).mul(DOLLAR), { from: owner })
       await this.controller.setMintLimits(BN(200 * 10 ** 18), BN(300).mul(DOLLAR), BN(3000).mul(DOLLAR), { from: owner })
       await this.controller.refillMultiSigMintPool({ from: owner })
@@ -230,22 +218,6 @@ contract('TokenController', function (accounts) {
         await this.controller.pauseMints({ from: owner })
         await this.controller.unpauseMints({ from: owner })
         await this.controller.requestMint(oneHundred, BN(10 * 10 ** 18), { from: mintKey })
-      })
-
-      it('fastpause cannot be created with 0x0 in constructor', async function () {
-        await assertRevert(FastPauseMints.new(ZERO_ADDRESS, this.controller.address, { from: owner }))
-        await assertRevert(FastPauseMints.new(oneHundred, ZERO_ADDRESS, { from: owner }))
-      })
-
-      it('pauseKey2 should be able to pause mints by sending in ether', async function () {
-        await this.fastPauseMints.sendTransaction({ from: pauseKey2, gas: 800000, value: 10 })
-        let paused = await this.controller.mintPaused.call()
-        assert.equal(paused, true)
-        await assertRevert(this.controller.requestMint(oneHundred, BN(10 * 10 ** 18), { from: mintKey }))
-        await assertRevert(this.fastPauseMints.sendTransaction({ from: pauseKey, gas: 800000, value: 10 }))
-        await this.controller.unpauseMints({ from: owner })
-        paused = await this.controller.mintPaused.call()
-        assert.equal(paused, false)
       })
 
       it('ratify fails when the amount does not match', async function () {

@@ -1,6 +1,6 @@
 import assertRevert from './helpers/assertRevert'
 const Proxy = artifacts.require('OwnedUpgradeabilityProxy')
-const TrueUSD = artifacts.require('TrueUSDMock')
+const TrueUSD = artifacts.require('MockTrueCurrency')
 
 contract('Proxy', function (accounts) {
   const [, owner, oneHundred, anotherAccount] = accounts
