@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TimeLockedToken} from "./trusttoken/TimeLockedToken.sol";
+import {TimeLockedToken} from "./TimeLockedToken.sol";
 import {ClaimableContract} from "./ClaimableContract.sol";
 
 /**

@@ -2,12 +2,12 @@
 pragma solidity 0.6.10;
 
 import {Registry} from "../../registry/Registry.sol";
-import {ValTokenWithHook} from "../ValTokenWithHook.sol";
+import {ERC20} from "../ERC20.sol";
 
-contract MockERC20Token is ValTokenWithHook {
+contract MockERC20Token is ERC20 {
     Registry registryAddress;
 
-    function registry() public override view returns (Registry) {
+    function registry() public view returns (Registry) {
         return registryAddress;
     }
 
@@ -26,19 +26,19 @@ contract MockERC20Token is ValTokenWithHook {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
-    function decimals() public pure returns (uint8) {
-        return DECIMALS;
-    }
-
     function rounding() public pure returns (uint8) {
         return ROUNDING;
     }
 
-    function name() public pure returns (string memory) {
+    function decimals() public override pure returns (uint8) {
+        return DECIMALS;
+    }
+
+    function name() public override pure returns (string memory) {
         return "TrueUSD";
     }
 
-    function symbol() public pure returns (string memory) {
+    function symbol() public override pure returns (string memory) {
         return "TUSD";
     }
 }
