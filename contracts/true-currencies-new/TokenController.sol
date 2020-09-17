@@ -4,16 +4,20 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Registry} from "../registry/Registry.sol";
-import {HasOwner} from "../truecurrencies/HasOwner.sol";
-import {OwnedUpgradeabilityProxy} from "../truecurrencies/proxy/OwnedUpgradeabilityProxy.sol";
-import {TrueCurrencyWithGasRefund} from "../true-currencies-new/TrueCurrencyWithGasRefund.sol";
-import {InstantiatableOwnable} from "../truecurrencies/modularERC20/InstantiatableOwnable.sol";
+import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
+import {TrueCurrencyWithGasRefund} from "./TrueCurrencyWithGasRefund.sol";
 
 /**
  * @dev Contract that can be called with a gas refund
  */
 interface IHook {
     function hook() external;
+}
+
+interface IHasOwner {
+    function claimOwnership() external;
+
+    function transferOwnership(address newOwner) external;
 }
 
 /** @title TokenController
@@ -542,10 +546,10 @@ contract TokenController {
     }
 
     /**
-     * @dev Claim ownership of an arbitrary HasOwner contract
+     * @dev Claim ownership of an arbitrary IHasOwner contract
      */
     function issueClaimOwnership(address _other) public onlyOwner {
-        HasOwner other = HasOwner(_other);
+        IHasOwner other = IHasOwner(_other);
         other.claimOwnership();
     }
 
@@ -555,7 +559,7 @@ contract TokenController {
      * @param _child contract that tokenController currently Owns
      * @param _newOwner new owner/pending owner of _child
      */
-    function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
+    function transferChild(IHasOwner _child, address _newOwner) external onlyOwner {
         _child.transferOwnership(_newOwner);
         emit TransferChild(address(_child), _newOwner);
     }
