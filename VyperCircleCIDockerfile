@@ -1,7 +1,0 @@
-FROM vyperlang/vyper:0.1.0b17
-
-WORKDIR /
-
-COPY ./contracts ./home/circleci/project/contracts
-
-ENTRYPOINT ["/usr/local/bin/vyper"]

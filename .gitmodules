@@ -1,3 +1,0 @@
-[submodule "contracts/lib/uniswap"]
-	path = contracts/lib/uniswap
-	url = git@github.com:wjmelements/contracts-vyper.git
