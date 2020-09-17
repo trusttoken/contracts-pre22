@@ -6,7 +6,7 @@ import { trueCurrency } from './fixtures/trueCurrency'
 import { TokenControllerMockFactory } from '../build/types/TokenControllerMockFactory'
 import { TokenControllerMock } from '../build/types/TokenControllerMock'
 
-describe('TrueCurrency - ERC20 behaviour', () => {
+describe('TokenController', () => {
   let owner: Wallet
   let otherAccount: Wallet
   let registryAdmin: Wallet
@@ -28,11 +28,30 @@ describe('TrueCurrency - ERC20 behaviour', () => {
       await controller.setCanBurn(otherAccount.address, true)
       expect(await token.canBurn(otherAccount.address)).to.be.true
       await controller.connect(registryAdmin).setCanBurn(otherAccount.address, false)
-      expect(!await token.canBurn(otherAccount.address)).to.be.true
+      expect(await token.canBurn(otherAccount.address)).to.be.false
+    })
+
+    it('emits event', async () => {
+      await expect(controller.setCanBurn(otherAccount.address, true)).to.emit(controller, 'CanBurn')
+        .withArgs(otherAccount.address, true)
     })
 
     it('rejects when called by non owner or registry admin', async () => {
-      await expect(controller.connect(otherAccount).setCanBurn(otherAccount.address, true)).to.be.revertedWith('must be registry admin or owner')
+      await expect(controller.connect(otherAccount).setCanBurn(otherAccount.address, true))
+        .to.be.revertedWith('must be registry admin or owner')
+    })
+  })
+
+  describe('setBlacklisted', function () {
+    it('sets blacklisted status for the account', async function () {
+      await expect(controller.setBlacklisted(otherAccount.address, true)).to.emit(token, 'Blacklisted')
+        .withArgs(otherAccount.address, true)
+      await expect(controller.setBlacklisted(otherAccount.address, false)).to.emit(token, 'Blacklisted')
+        .withArgs(otherAccount.address, false)
+    })
+
+    it('rejects when called by non owner or registry admin', async () => {
+      await expect(controller.connect(otherAccount).setBlacklisted(otherAccount.address, true)).to.be.revertedWith('must be registry admin or owner')
     })
   })
 })
