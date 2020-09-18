@@ -1,14 +1,6 @@
 version: 2.1
 
 commands:
-  setup_vyper:
-    steps:
-      - run:
-          name: Build vyper docker image
-          command: docker build . -f ~/project/VyperCircleCIDockerfile -t vyper
-      - run:
-          name: Setup vyper
-          command: sudo cp ~/project/.circleci/vyper /bin && sudo chmod a+x /bin/vyper
   pull_submodules:
     steps:
       - run:
@@ -38,7 +30,6 @@ jobs:
       - setup_remote_docker
       - pull_submodules
       - install_dependencies
-      - setup_vyper
       - run: yarn lint
       - run: yarn build
       - run: yarn test
