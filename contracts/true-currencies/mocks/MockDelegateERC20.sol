@@ -15,7 +15,7 @@ interface IDelegateERC20 {
 }
 
 /**
- * Mock Legacy TUSD contract. Forwards calls
+ * Mock Legacy TUSD contract. Forwards calls to delegate ERC20 contract
  */
 contract MockDelegateERC20 is ERC20 {
     // If this contract needs to be upgraded, the new contract will be stored
