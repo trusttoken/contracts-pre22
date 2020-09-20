@@ -1,20 +1,17 @@
 import { utils, constants, Wallet } from 'ethers'
-import { loadFixture } from 'ethereum-waffle'
 import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { TrueCurrency } from '../../build/types/TrueCurrency'
 import { MockTrueCurrencyWithAutosweep } from '../../build/types/MockTrueCurrencyWithAutosweep'
 import { MockTrueCurrencyWithAutosweepFactory } from '../../build/types/MockTrueCurrencyWithAutosweepFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../../build/types/OwnedUpgradeabilityProxyFactory'
 import { MockDelegateErc20 } from '../../build/types/MockDelegateErc20'
 import { MockDelegateErc20Factory } from '../../build/types/MockDelegateErc20Factory'
 import { toAddress, WalletOrAddress } from '../utils/toAddress'
-import { initialSupply, trueCurrency } from '../fixtures/trueCurrency'
+import { initialSupply } from '../fixtures/trueCurrency'
 import { setupDeploy } from '../../scripts/utils'
 
 describe('TrueCurrency - Delegate ERC20', () => {
-  let owner: Wallet
   let initialHolder: Wallet
   let secondAccount: Wallet
   let thirdAccount: Wallet
@@ -27,18 +24,17 @@ describe('TrueCurrency - Delegate ERC20', () => {
   }
 
   beforeEachWithFixture(async (provider: MockProvider, wallets: Wallet[]) => {
-    //const provider = new MockProvider()
     [initialHolder, secondAccount, thirdAccount] = wallets
     const deployContract = setupDeploy(initialHolder)
     const implementation = await deployContract(MockTrueCurrencyWithAutosweepFactory)
     const proxy = await deployContract(OwnedUpgradeabilityProxyFactory)
-    const delegateToken = implementation.attach(proxy.address)
+    delegateToken = implementation.attach(proxy.address)
     await proxy.upgradeTo(implementation.address)
     await delegateToken.initialize()
     await delegateToken.mint(initialHolder.address, initialSupply)
     token = await new MockDelegateErc20Factory(initialHolder).deploy()
     await delegateToken.setDelegateAddress(token.address)
-    await token.delegateToNewContract(delegateToken.address);
+    await token.delegateToNewContract(delegateToken.address)
   })
 
   describe('totalSupply', () => {
