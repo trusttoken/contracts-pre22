@@ -56,6 +56,7 @@ abstract contract DelegateERC20 is TrueCurrency {
         address origSender
     ) public onlyDelegateFrom returns (bool) {
         _transfer(origSender, to, value);
+        emit Transfer(origSender, to, value);
         return true;
     }
 
