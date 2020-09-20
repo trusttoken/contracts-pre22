@@ -20,7 +20,7 @@ import {DelegateERC20} from "./DelegateERC20.sol";
  *
  * This contract will reject a transfer to these 4*(16^5-1) addresses to prevent accidental token freeze.
  */
-abstract contract TrueCurrencyWithLegacyAutosweep is TrueCurrency, DelegateERC20 {
+abstract contract TrueCurrencyWithLegacyAutosweep is DelegateERC20 {
     function _transfer(
         address sender,
         address recipient,

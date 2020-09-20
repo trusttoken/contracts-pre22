@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {ERC20} from "./ERC20.sol";
+import {TrueCurrency} from "./TrueCurrency.sol";
 
 /** 
  * @title DelegateERC20
@@ -17,7 +17,7 @@ import {ERC20} from "./ERC20.sol";
  *
  * Our audits for TrueCurrency can be found here: github.com/trusttoken/audits
  */
-abstract contract DelegateERC20 {
+abstract contract DelegateERC20 is TrueCurrency {
     address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
 
     // require msg.sender is the delegate smart contract
@@ -85,7 +85,7 @@ abstract contract DelegateERC20 {
     ) public onlyDelegateFrom returns (bool) {
         // copied from ERC20.sol with _msgSender() replaced by origSender
         _transfer(from, to, value);
-        _approve(sender, origSender, _allowances[sender][origSender].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        _approve(from, origSender, _allowances[from][origSender].sub(value, "ERC20: transfer amount exceeds allowance"));
         return true;
     }
 
