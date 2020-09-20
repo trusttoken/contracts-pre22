@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol";
+import {ERC20} from "./ERC20.sol";
 
 /** 
  * @title DelegateERC20
@@ -17,7 +17,7 @@ import {CompliantDepositTokenWithHook} from "./CompliantDepositTokenWithHook.sol
  *
  * Our audits for TrueCurrency can be found here: github.com/trusttoken/audits
  */
-abstract contract DelegateERC20 is ERC20 {
+abstract contract DelegateERC20 {
     address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
 
     // require msg.sender is the delegate smart contract

@@ -2,6 +2,7 @@
 pragma solidity 0.6.10;
 
 import {TrueCurrency} from "./TrueCurrency.sol";
+import {DelegateERC20} from "./DelegateERC20.sol";
 
 /**
  * @dev Contract that prevents addresses that were previously using autosweep addresses from
@@ -19,7 +20,7 @@ import {TrueCurrency} from "./TrueCurrency.sol";
  *
  * This contract will reject a transfer to these 4*(16^5-1) addresses to prevent accidental token freeze.
  */
-abstract contract TrueCurrencyWithLegacyAutosweep is TrueCurrency {
+abstract contract TrueCurrencyWithLegacyAutosweep is TrueCurrency, DelegateERC20 {
     function _transfer(
         address sender,
         address recipient,
