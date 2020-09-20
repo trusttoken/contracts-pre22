@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TrueCurrencyWithGasRefund} from "./TrueCurrencyWithGasRefund.sol";
+import {TrueCurrencyWithLegacyAutosweep} from "../TrueCurrencyWithLegacyAutosweep.sol";
 
 /**
- * @title TrueHKD
+ * @title TrueUSD
  * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
  * inherited - see the documentation on the corresponding contracts.
  */
-contract TrueHKD is TrueCurrencyWithGasRefund {
+contract TrueUSD is TrueCurrencyWithLegacyAutosweep {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
@@ -21,10 +21,10 @@ contract TrueHKD is TrueCurrencyWithGasRefund {
     }
 
     function name() public override pure returns (string memory) {
-        return "TrueHKD";
+        return "TrueUSD";
     }
 
     function symbol() public override pure returns (string memory) {
-        return "THKD";
+        return "TUSD";
     }
 }
