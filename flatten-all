@@ -17,3 +17,5 @@ truffle-flattener contracts/proxy/OwnedUpgradeabilityProxy.sol > flat_contracts/
 truffle-flattener contracts/registry/Registry.sol > flat_contracts/flat_Registry.sol
 
 truffle-flattener contracts/trusttoken/TrustToken.sol > flat_contracts/flat_TrustToken.sol
+
+truffle-flattener contracts/truefi/CurvePool.sol > flat_contracts/flat_CurvePool.sol
