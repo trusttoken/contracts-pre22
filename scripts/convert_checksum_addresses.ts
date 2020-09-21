@@ -3,8 +3,8 @@
  */
 import { ethers } from 'ethers'
 
-async function convertChecksumAddresses() {
-  let addresses = [
+async function convertChecksumAddresses () {
+  const addresses = [
     '0x52394d5123d74f23e513df6f13810d8c811ec5d3',
     '0x9d25a009dfb6318bbb8fcb91ff197840cb4a4a01',
     '0x222e5ebdf15ded06bdbdbe5944ef9cd10e04c84d',
@@ -215,11 +215,11 @@ async function convertChecksumAddresses() {
     '0xe90de1647632e92487d74066fe3fe0b18a9d8a07',
     '0xdb7df40815aaa920a00f7554a6ede8122fea5140',
     '0x78c38bb8da3c28a9a672e8983f0d5eee3bd28675',
-    '0x795abc18db8364973f08ca71e52ab6c049e12427'
+    '0x795abc18db8364973f08ca71e52ab6c049e12427',
   ]
 
   // loop & log checksum addresses
-  for (let address of addresses) {
+  for (const address of addresses) {
     console.log(ethers.utils.getAddress(address))
   }
 }

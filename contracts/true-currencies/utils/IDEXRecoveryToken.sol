@@ -10,7 +10,7 @@ import {TrueCurrencyWithLegacyAutosweep} from "../TrueCurrencyWithLegacyAutoswee
  * stuck funds after TUSD removed support for the legacy smart contract.
  *
  */
-abstract contract IDEXRecover is TrueCurrencyWithLegacyAutosweep {
+abstract contract IDEXRecoveryToken is TrueCurrencyWithLegacyAutosweep {
     address constant IDEX_CONTRACT = 0x2a0c0DBEcC7E4D658f48E01e3fA353F44050c208;
     // temp address, not correct!!
     address constant RECOVERY_ADDRESS = 0xf6E2Da7D82ee49f76CE652bc0BeB546Cbe0Ea521;
