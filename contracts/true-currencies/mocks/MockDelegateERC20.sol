@@ -4,14 +4,42 @@ pragma solidity 0.6.10;
 import {ERC20} from "../ERC20.sol";
 
 interface IDelegateERC20 {
-  function delegateTotalSupply() external view returns (uint256);
-  function delegateBalanceOf(address who) external view returns (uint256);
-  function delegateTransfer(address to, uint256 value, address origSender) external returns (bool);
-  function delegateAllowance(address owner, address spender) external view returns (uint256);
-  function delegateTransferFrom(address from, address to, uint256 value, address origSender) external returns (bool);
-  function delegateApprove(address spender, uint256 value, address origSender) external returns (bool);
-  function delegateIncreaseApproval(address spender, uint addedValue, address origSender) external returns (bool);
-  function delegateDecreaseApproval(address spender, uint subtractedValue, address origSender) external returns (bool);
+    function delegateTotalSupply() external view returns (uint256);
+
+    function delegateBalanceOf(address who) external view returns (uint256);
+
+    function delegateTransfer(
+        address to,
+        uint256 value,
+        address origSender
+    ) external returns (bool);
+
+    function delegateAllowance(address owner, address spender) external view returns (uint256);
+
+    function delegateTransferFrom(
+        address from,
+        address to,
+        uint256 value,
+        address origSender
+    ) external returns (bool);
+
+    function delegateApprove(
+        address spender,
+        uint256 value,
+        address origSender
+    ) external returns (bool);
+
+    function delegateIncreaseApproval(
+        address spender,
+        uint256 addedValue,
+        address origSender
+    ) external returns (bool);
+
+    function delegateDecreaseApproval(
+        address spender,
+        uint256 subtractedValue,
+        address origSender
+    ) external returns (bool);
 }
 
 /**
@@ -54,7 +82,11 @@ contract MockDelegateERC20 is ERC20 {
         }
     }
 
-    function transferFrom(address from, address to, uint256 value) public virtual override returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 value
+    ) public virtual override returns (bool) {
         if (address(delegate) == address(0)) {
             return super.transferFrom(from, to, value);
         } else {
@@ -62,7 +94,7 @@ contract MockDelegateERC20 is ERC20 {
         }
     }
 
-    function balanceOf(address who) public view override returns (uint256) {
+    function balanceOf(address who) public override view returns (uint256) {
         if (address(delegate) == address(0)) {
             return super.balanceOf(who);
         } else {
@@ -86,7 +118,7 @@ contract MockDelegateERC20 is ERC20 {
         }
     }
 
-    function totalSupply() public view override returns (uint256) {
+    function totalSupply() public override view returns (uint256) {
         if (address(delegate) == address(0)) {
             return super.totalSupply();
         } else {
@@ -94,7 +126,7 @@ contract MockDelegateERC20 is ERC20 {
         }
     }
 
-    function increaseApproval(address spender, uint addedValue) public returns (bool) {
+    function increaseApproval(address spender, uint256 addedValue) public returns (bool) {
         if (address(delegate) == address(0)) {
             return super.increaseAllowance(spender, addedValue);
         } else {
@@ -102,7 +134,7 @@ contract MockDelegateERC20 is ERC20 {
         }
     }
 
-    function decreaseApproval(address spender, uint subtractedValue) public returns (bool) {
+    function decreaseApproval(address spender, uint256 subtractedValue) public returns (bool) {
         if (address(delegate) == address(0)) {
             return super.decreaseAllowance(spender, subtractedValue);
         } else {
