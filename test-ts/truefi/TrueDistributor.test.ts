@@ -5,7 +5,7 @@ import { MaxUint256, Zero } from 'ethers/constants'
 import { BigNumber, bigNumberify, parseEther } from 'ethers/utils'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { toTrustToken } from '../../scripts/utils/toTrustToken'
+import { toTrustToken } from '../../scripts/utils'
 
 import { TrueDistributor } from '../../build/types/TrueDistributor'
 import { TrueDistributorFactory } from '../../build/types/TrueDistributorFactory'

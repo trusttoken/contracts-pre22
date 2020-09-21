@@ -2,23 +2,9 @@
  * ts-node scripts/deploy_truefi.ts "{private_key}" "{network}" "{TRU address}"
  */
 import { ethers, providers } from 'ethers'
-import readline from 'readline'
+import { ask } from './utils'
 import { TrueFarmFactory } from '../build/types/TrueFarmFactory'
 import { TrueDistributorFactory } from '../build/types/TrueDistributorFactory'
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-})
-
-async function ask (message: string) {
-  return new Promise<string>(resolve => {
-    rl.question(message, (answer) => {
-      rl.close()
-      resolve(answer)
-    })
-  })
-}
 
 async function deployTrueFi (truAddress: string) {
   const txnArgs = { gasLimit: 2_500_000, gasPrice: 100_000_000_000 }
