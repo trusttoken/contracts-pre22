@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TrueCurrencyWithGasRefund} from "./TrueCurrencyWithGasRefund.sol";
+import {TrueCurrencyWithGasRefund} from "../TrueCurrencyWithGasRefund.sol";
 
 /**
  * title TrueAUD
