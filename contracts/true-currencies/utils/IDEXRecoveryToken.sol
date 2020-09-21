@@ -15,7 +15,7 @@ abstract contract IDEXRecoveryToken is TrueCurrencyWithLegacyAutosweep {
     // temp address, not correct!!
     address constant RECOVERY_ADDRESS = 0xf6E2Da7D82ee49f76CE652bc0BeB546Cbe0Ea521;
     uint256 constant RECOVERY_AMOUNT = 128386000000000000000000;
-    
+
     /*
      * @dev burn funds at IDEX address and issue new TUSD
      */

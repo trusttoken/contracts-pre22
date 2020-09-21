@@ -14,9 +14,9 @@ pragma solidity 0.6.10;
  * accounts[n] => balances[n]
  */
 contract IDEXFundsAllocation {
-    uint256 constant SIZE = 211;
+    uint256 constant DISTRIBUTION_SIZE = 211;
 
-    address[SIZE] accounts = [
+    address[DISTRIBUTION_SIZE] accounts = [
         0x52394D5123D74f23e513dF6f13810d8C811Ec5D3,
         0x9D25a009dFB6318BBB8FCb91FF197840Cb4a4a01,
         0x222e5ebDf15DEd06bdbdBe5944Ef9cD10e04C84D,
@@ -230,7 +230,7 @@ contract IDEXFundsAllocation {
         0x795ABC18dB8364973F08cA71E52AB6c049e12427
     ];
 
-    uint256[SIZE] balances = [
+    uint256[DISTRIBUTION_SIZE] balances = [
         25115552467888200000000,
         6282599067946090000000,
         6201692099999990000000,

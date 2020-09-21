@@ -13,7 +13,7 @@ contract DistributeIDEXFunds is IDEXFundsAllocation, ClaimableOwnable {
     using SafeMath for uint256;
     IERC20 tusd = IERC20(0x0000000000085d4780B73119b644AE5ecd22b376);
     uint256 round;
-    uint256 constant roundSize = 100;
+    uint256 constant ROUND_SIZE = 100;
 
     /**
      * @dev loop through funds allocation and distribute
@@ -22,15 +22,11 @@ contract DistributeIDEXFunds is IDEXFundsAllocation, ClaimableOwnable {
      * Start of round
      */
     function distribute() public onlyOwner {
-        // (round + 1) * (roundSize)
-        uint256 roundMax = round.add(1).mul(roundSize);
+        // (round + 1) * (ROUND_SIZE)
+        uint256 roundMax = round.add(1).mul(ROUND_SIZE);
 
         // loop & transfer balance
-        for (
-            uint256 index = round.mul(roundSize); 
-            index < SIZE && index < roundMax; 
-            index++
-        ) {
+        for (uint256 index = round.mul(ROUND_SIZE); index < DISTRIBUTION_SIZE && index < roundMax; index++) {
             // ~32213 gas per transfer
             tusd.transfer(accounts[index], balances[index]);
         }
