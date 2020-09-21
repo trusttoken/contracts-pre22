@@ -3,19 +3,24 @@
 # print all commands as they execute
 set -x
 
-mkdir -p flat_contracts
-truffle-flattener contracts/true-currencies/TrueUSD.sol > flat_contracts/flat_TrueUSD.sol
-truffle-flattener contracts/true-currencies/TrueAUD.sol > flat_contracts/flat_TrueAUD.sol
-truffle-flattener contracts/true-currencies/TrueCAD.sol > flat_contracts/flat_TrueCAD.sol
-truffle-flattener contracts/true-currencies/TrueGBP.sol > flat_contracts/flat_TrueGBP.sol
-truffle-flattener contracts/true-currencies/TrueHKD.sol > flat_contracts/flat_TrueHKD.sol
-truffle-flattener contracts/true-currencies/TokenController.sol > flat_contracts/flat_TokenController.sol
+# create folder
+mkdir -p flat-contracts
 
-truffle-flattener contracts/proxy/OwnedUpgradeabilityProxy.sol > flat_contracts/flat_OwnedUpgradeabilityProxy.sol
-truffle-flattener contracts/proxy/OwnedUpgradeabilityProxy.sol > flat_contracts/flat_TimeOwnedUpgradeabilityProxy.sol
+# true currencies
+truffle-flattener contracts/true-currencies/tokens/TrueUSD.sol > flat-contracts/flat_TrueUSD.sol
+truffle-flattener contracts/true-currencies/tokens/TrueAUD.sol > flat-contracts/flat_TrueAUD.sol
+truffle-flattener contracts/true-currencies/tokens/TrueCAD.sol > flat-contracts/flat_TrueCAD.sol
+truffle-flattener contracts/true-currencies/tokens/TrueGBP.sol > flat-contracts/flat_TrueGBP.sol
+truffle-flattener contracts/true-currencies/tokens/TrueHKD.sol > flat-contracts/flat_TrueHKD.sol
 
-truffle-flattener contracts/registry/Registry.sol > flat_contracts/flat_Registry.sol
+# trusttoken & truefi
+truffle-flattener contracts/trusttoken/TrustToken.sol > flat-contracts/flat_TrustToken.sol
+truffle-flattener contracts/truefi/CurvePool.sol > flat-contracts/flat_CurvePool.sol
 
-truffle-flattener contracts/trusttoken/TrustToken.sol > flat_contracts/flat_TrustToken.sol
+# token controller & regsitry
+truffle-flattener contracts/true-currencies/TokenController.sol > flat-contracts/flat_TokenController.sol
+truffle-flattener contracts/registry/Registry.sol > flat-contracts/flat_Registry.sol
 
-truffle-flattener contracts/truefi/CurvePool.sol > flat_contracts/flat_CurvePool.sol
+# proxies
+truffle-flattener contracts/proxy/OwnedUpgradeabilityProxy.sol > flat-contracts/flat_OwnedUpgradeabilityProxy.sol
+truffle-flattener contracts/proxy/TimeOwnedUpgradeabilityProxy.sol > flat-contracts/flat_TimeOwnedUpgradeabilityProxy.sol
