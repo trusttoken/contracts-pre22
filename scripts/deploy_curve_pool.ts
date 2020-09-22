@@ -2,7 +2,7 @@
  * ts-node scripts/deploy_curve_pool.ts "{private_key}" "{network}"
  */
 import { ethers, providers } from 'ethers'
-import { ask } from './utils/ask'
+import { ask } from './utils'
 import { CurvePoolFactory } from '../build/types/CurvePoolFactory'
 
 async function deployCurvePool () {

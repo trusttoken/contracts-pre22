@@ -82,3 +82,6 @@ export const saveDeployResult = (fileName: string) => async (result: {}) => {
   }
   fs.writeFileSync(`./scripts/deploy/${fileName}.json`, JSON.stringify(result, null, 2))
 }
+
+export { ask } from './ask'
+export { toTrustToken } from './toTrustToken'
