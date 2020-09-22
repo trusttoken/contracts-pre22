@@ -2,7 +2,7 @@
  * ts-node scripts/deploy_truefi.ts "{private_key}" "{network}"
  */
 import { ethers, providers } from 'ethers'
-import { ask } from './utils'
+import { ask } from './utils/ask'
 import { TrueFarmFactory } from '../build/types/TrueFarmFactory'
 import { SlowTrueDistributorFactory } from '../build/types/SlowTrueDistributorFactory'
 import { FastTrueDistributorFactory } from '../build/types/FastTrueDistributorFactory'

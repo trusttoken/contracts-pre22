@@ -11,7 +11,7 @@ import { TimeLockRegistryFactory } from '../build/types/TimeLockRegistryFactory'
 import { TrustToken } from '../build/types/TrustToken'
 import { TrustTokenFactory } from '../build/types/TrustTokenFactory'
 
-import { toTrustToken } from './utils'
+import { toTrustToken } from './utils/toTrustToken'
 
 export const txnArgs = { gasLimit: 2_000_000, gasPrice: 20_000_000_000 }
 
