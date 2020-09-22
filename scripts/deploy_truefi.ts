@@ -30,9 +30,9 @@ async function deployTrueFi () {
   const uniswapTusdFarm = await (await new TrueFarmFactory(wallet).deploy(ulpTusdAddress2, slowDistributor.address, txnArgs)).deployed()
   console.log('Uniswap TUSD/TrueFiLP TrueFarm address: ', uniswapTusdFarm.address)
 
-  await (await fastDistributor.transfer(wallet.address, balancerFarm.address, 3333333, txnArgs)).wait()
-  await (await fastDistributor.transfer(wallet.address, uniswapEthFarm.address, 3333333, txnArgs)).wait()
-  await (await slowDistributor.transfer(wallet.address, uniswapTusdFarm.address, 3333334, txnArgs)).wait()
+  await (await fastDistributor.transfer(wallet.address, balancerFarm.address, 5000000, txnArgs)).wait()
+  await (await fastDistributor.transfer(wallet.address, uniswapEthFarm.address, 5000000, txnArgs)).wait()
+  await (await slowDistributor.transfer(wallet.address, uniswapTusdFarm.address, 10000000, txnArgs)).wait()
   console.log('TrueFi deployment completed')
 }
 
