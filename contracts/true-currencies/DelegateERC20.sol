@@ -44,7 +44,7 @@ abstract contract DelegateERC20 is TrueCurrency {
     }
 
     /**
-     * @dev Delegate call to
+     * @dev Delegate call to transfer
      * @param to address to transfer to
      * @param value amount to transfer
      * @param origSender original msg.sender on delegate contract
@@ -83,7 +83,7 @@ abstract contract DelegateERC20 is TrueCurrency {
         uint256 value,
         address origSender
     ) public onlyDelegateFrom returns (bool) {
-        // copied from ERC20.sol with _msgSender() replaced by origSender
+        // ERC20 transferFrom with _msgSender() replaced by origSender
         _transfer(from, to, value);
         _approve(from, origSender, _allowances[from][origSender].sub(value, "ERC20: transfer amount exceeds allowance"));
         return true;
@@ -117,7 +117,7 @@ abstract contract DelegateERC20 is TrueCurrency {
         uint256 addedValue,
         address origSender
     ) public onlyDelegateFrom returns (bool) {
-        // copied from increaseAllowance() with _msgSender() replaced by origSender
+        // ERC20 increaseAllowance() with _msgSender() replaced by origSender
         _approve(origSender, spender, _allowances[origSender][spender].add(addedValue));
         return true;
     }
@@ -134,7 +134,7 @@ abstract contract DelegateERC20 is TrueCurrency {
         uint256 subtractedValue,
         address origSender
     ) public onlyDelegateFrom returns (bool) {
-        // copied from decreaseAllowance with _msgSender() replaced by origSender
+        // ERC20 decreaseAllowance() with _msgSender() replaced by origSender
         _approve(origSender, spender, _allowances[origSender][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
         return true;
     }
