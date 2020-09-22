@@ -4,7 +4,7 @@
 set -x
 
 # create folder
-mkdir -p flat_contracts
+mkdir -p 
 
 # true currencies
 truffle-flattener contracts/true-currencies/tokens/TrueUSD.sol > flat-contracts/flat_TrueUSD.sol
