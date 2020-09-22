@@ -15,7 +15,7 @@
     "lint:sol": "solhint 'contracts/**/*.sol' && prettylint 'contracts/**/*.sol'",
     "lint:js": "eslint '{test,scripts}/**/*.js'",
     "lint:ts": "eslint '{test,test-ts,scripts}/**/*.ts' -c .eslintrc.typescript.js",
-    "lint": "yarn lint:ts && yarn lint:js && yarn lint:sol",
+    "lint": "yarn lint:js && yarn lint:sol && yarn lint:ts",
     "build:sol": "waffle .waffle.json",
     "build:types": "typechain --target ethers-v4 --outDir build/types 'build/*.json'",
     "build": "yarn clean && yarn build:sol && yarn build:types && bash ./indexBuild.sh",
