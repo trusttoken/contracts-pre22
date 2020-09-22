@@ -90,7 +90,7 @@ describe('TrueCurrency - Delegate ERC20', () => {
 
         it('emits a transfer event', async () => {
           await expect(transfer(from, to, amount))
-            .to.emit(token, 'Transfer')
+            .to.emit(delegateToken, 'Transfer')
             .withArgs(from.address, to.address, amount)
         })
       })
@@ -114,7 +114,7 @@ describe('TrueCurrency - Delegate ERC20', () => {
 
         it('emits a transfer event', async () => {
           await expect(transfer(from, to, amount))
-            .to.emit(token, 'Transfer')
+            .to.emit(delegateToken, 'Transfer')
             .withArgs(from.address, to.address, amount)
         })
       })
@@ -186,13 +186,13 @@ describe('TrueCurrency - Delegate ERC20', () => {
 
             it('emits a transfer event', async () => {
               await expect(transferFrom(spender, tokenOwner, recipient, amount))
-                .to.emit(token, 'Transfer')
+                .to.emit(delegateToken, 'Transfer')
                 .withArgs(tokenOwner.address, recipient.address, amount)
             })
 
             it('emits an approval event', async () => {
               await expect(transferFrom(spender, tokenOwner, recipient, amount))
-                .to.emit(token, 'Approval')
+                .to.emit(delegateToken, 'Approval')
                 .withArgs(tokenOwner.address, spender.address, 0)
             })
           })
@@ -275,7 +275,7 @@ describe('TrueCurrency - Delegate ERC20', () => {
         describe(description, () => {
           it('emits an approval event', async () => {
             await expect(approve(tokenOwner, spender, amount))
-              .to.emit(token, 'Approval')
+              .to.emit(delegateToken, 'Approval')
               .withArgs(tokenOwner.address, spender.address, amount)
           })
 
@@ -349,7 +349,7 @@ describe('TrueCurrency - Delegate ERC20', () => {
 
           it('emits an approval event', async () => {
             await expect(decreaseApproval(tokenOwner, spender, approvedAmount))
-              .to.emit(token, 'Approval')
+              .to.emit(delegateToken, 'Approval')
               .withArgs(tokenOwner.address, spender.address, 0)
           })
 
@@ -412,7 +412,7 @@ describe('TrueCurrency - Delegate ERC20', () => {
       function shouldIncreaseApproval (amount: utils.BigNumber) {
         it('emits an approval event', async () => {
           await expect(increaseApproval(tokenOwner, spender, amount))
-            .to.emit(token, 'Approval')
+            .to.emit(delegateToken, 'Approval')
             .withArgs(tokenOwner.address, spender.address, amount)
         })
 
