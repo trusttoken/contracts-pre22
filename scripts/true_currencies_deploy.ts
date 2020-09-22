@@ -14,10 +14,10 @@ async function deployTrueCurrencies () {
   const wallet = new ethers.Wallet(process.argv[2], provider)
 
   await deployTrueUSD(provider, wallet, txnArgs)
-  // await deployTrueAUD(provider, wallet, txnArgs)
-  // await deployTrueCAD(provider, wallet, txnArgs)
-  // await deployTrueGBP(provider, wallet, txnArgs)
-  // await deployTrueHKD(provider, wallet, txnArgs)
+  await deployTrueAUD(provider, wallet, txnArgs)
+  await deployTrueCAD(provider, wallet, txnArgs)
+  await deployTrueGBP(provider, wallet, txnArgs)
+  await deployTrueHKD(provider, wallet, txnArgs)
 }
 
 async function deployTrueUSD (provider, wallet, txnArgs) {
