@@ -3,10 +3,10 @@ pragma solidity 0.6.10;
 
 import {TrueCurrency} from "./TrueCurrency.sol";
 
-/** 
+/**
  * @title DelegateERC20
- * Accept forwarding delegation calls from the old TrueUSD (V1) contract. 
- * This way the all the ERC20 functions in the old contract still works 
+ * Accept forwarding delegation calls from the old TrueUSD (V1) contract.
+ * This way the all the ERC20 functions in the old contract still works
  * (except Burn).
  *
  * The original contract is at 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E.
