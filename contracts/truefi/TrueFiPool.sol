@@ -14,14 +14,14 @@ import {ITrueFiPool} from "./ITrueFiPool.sol";
  * Each TrueFiPool is also a staking opportunity for TRU
  */
 abstract contract TrueFiPool is ITrueFiPool, ERC20 {
-    IERC20 public token;
+    IERC20 _token;
 
     constructor(
-        IERC20 _token,
+        IERC20 __token,
         string memory name,
         string memory symbol
     ) public ERC20(name, symbol) {
-        token = _token;
+        _token = __token;
     }
 
     /// @dev only TrueFi smart contract
@@ -68,5 +68,9 @@ abstract contract TrueFiPool is ITrueFiPool, ERC20 {
     /// @dev unstake TRU
     function unstake(uint256 amount) external override {
         // TODO
+    }
+
+    function token() public override view returns (IERC20) {
+        return _token;
     }
 }
