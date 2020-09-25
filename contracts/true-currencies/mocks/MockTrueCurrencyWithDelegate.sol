@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TrueCurrency} from "./TrueCurrency.sol";
+import {TrueCurrency} from "../TrueCurrency.sol";
 
 /**
  * @title DelegateERC20
@@ -17,12 +17,17 @@ import {TrueCurrency} from "./TrueCurrency.sol";
  *
  * Our audits for TrueCurrency can be found here: github.com/trusttoken/audits
  */
-abstract contract DelegateERC20 is TrueCurrency {
-    address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
+abstract contract MockTrueCurrencyWithDelegate is TrueCurrency {
+    address delegateFrom;
+
+    // set delegate address for forwarding ERC20 calls
+    function setDelegateAddress(address _delegateFrom) external {
+        delegateFrom = _delegateFrom;
+    }
 
     // require msg.sender is the delegate smart contract
     modifier onlyDelegateFrom() {
-        require(msg.sender == DELEGATE_FROM);
+        require(msg.sender == delegateFrom);
         _;
     }
 
@@ -61,7 +66,7 @@ abstract contract DelegateERC20 is TrueCurrency {
 
     /**
      * @dev Delegate call to get allowance
-     * @param owner account owner
+     * @param owner acconut owner
      * @param spender account to check allowance for
      * @return allowance
      */
