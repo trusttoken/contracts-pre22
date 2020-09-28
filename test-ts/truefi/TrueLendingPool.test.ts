@@ -101,6 +101,7 @@ describe('TrueLendingPool', () => {
     shouldChangeParameters('setMinApy', [1000], ['minApy'], 'MinApyChanged')
     shouldChangeParameters('setLoanApprovalConditions', [1000, 2000], ['minLoanApprovalFactor', 'minLoanApprovalVoteRatio'], 'LoanApprovalConditionsChanged')
     shouldChangeParameters('setBurnFactor', [1000], ['burnFactor'], 'BurnFactorChanged')
+    shouldChangeParameters('setVoteDuration', [1234], ['voteDuration'], 'VoteDurationChanged')
 
     describe('setLoanBounds', () => {
       it('cannot set minLoanSize to be bigger than maxLoanSize', async () => {
