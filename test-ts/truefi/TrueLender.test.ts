@@ -10,7 +10,7 @@ import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
 import ITrueFiPoolJson from '../../build/ITrueFiPool.json'
 import { deployMockContract } from 'ethereum-waffle'
-import { BigNumberish, parseEther } from 'ethers/utils'
+import { parseEther } from 'ethers/utils'
 
 describe('TrueLender', () => {
   let owner: Wallet
@@ -76,27 +76,27 @@ describe('TrueLender', () => {
         await lendingPool.setMinApy(1234)
         expect(await lendingPool.minApy()).to.equal(1234)
       })
-      
+
       it('emits MinApyChanged', async () => {
         await expect(lendingPool.setMinApy(1234)).to.emit(lendingPool, 'MinApyChanged').withArgs(1234)
       })
-      
+
       it('must be called by owner', async () => {
         await expect(lendingPool.connect(otherWallet).setMinApy(1234)).to.be.revertedWith('caller is not the owner')
       })
     })
-    
+
     describe('setSizeLimits', () => {
-      it(`changes minSize and maxSize`, async () => {
+      it('changes minSize and maxSize', async () => {
         await lendingPool.setSizeLimits(7654, 234567)
         expect(await lendingPool.minSize()).to.equal(7654)
         expect(await lendingPool.maxSize()).to.equal(234567)
       })
-      
-      it(`emits SizeLimitsChanged`, async () => {
+
+      it('emits SizeLimitsChanged', async () => {
         await expect(lendingPool.setSizeLimits(7654, 234567)).to.emit(lendingPool, 'SizeLimitsChanged').withArgs(7654, 234567)
       })
-      
+
       it('must be called by owner', async () => {
         await expect(lendingPool.connect(otherWallet).setSizeLimits(7654, 234567)).to.be.revertedWith('caller is not the owner')
       })
@@ -104,23 +104,23 @@ describe('TrueLender', () => {
       it('cannot set minSize to be bigger than maxSize', async () => {
         await expect(lendingPool.setSizeLimits(2, 1)).to.be.revertedWith('TrueLender: Maximal loan size is smaller than minimal')
       })
-      
+
       it('can set minSize to same value as maxSize', async () => {
         await expect(lendingPool.setSizeLimits(2, 2)).to.be.not.reverted
       })
     })
-    
+
     describe('setDurationLimits', () => {
-      it(`changes minDuration and maxDuration`, async () => {
+      it('changes minDuration and maxDuration', async () => {
         await lendingPool.setDurationLimits(7654, 234567)
         expect(await lendingPool.minDuration()).to.equal(7654)
         expect(await lendingPool.maxDuration()).to.equal(234567)
       })
-      
-      it(`emits DurationLimitsChanged`, async () => {
+
+      it('emits DurationLimitsChanged', async () => {
         await expect(lendingPool.setDurationLimits(7654, 234567)).to.emit(lendingPool, 'DurationLimitsChanged').withArgs(7654, 234567)
       })
-      
+
       it('must be called by owner', async () => {
         await expect(lendingPool.connect(otherWallet).setDurationLimits(7654, 234567)).to.be.revertedWith('caller is not the owner')
       })
@@ -128,7 +128,7 @@ describe('TrueLender', () => {
       it('cannot set minDuration to be bigger than maxDuration', async () => {
         await expect(lendingPool.setDurationLimits(2, 1)).to.be.revertedWith('TrueLender: Maximal loan duration is smaller than minimal')
       })
-      
+
       it('can set minDuration to same value as maxDuration', async () => {
         await expect(lendingPool.setDurationLimits(2, 2)).to.be.not.reverted
       })
