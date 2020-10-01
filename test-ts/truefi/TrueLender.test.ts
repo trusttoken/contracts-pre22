@@ -8,7 +8,7 @@ import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
 import { TrueLender } from '../../build/types/TrueLender'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
-import ITrueFiPoolJson from '../../build/ITrueFiPool.json'
+import ITruePoolJson from '../../build/ITruePool.json'
 import { deployMockContract } from 'ethereum-waffle'
 import { parseEther } from 'ethers/utils'
 
@@ -25,7 +25,7 @@ describe('TrueLender', () => {
     [owner, otherWallet] = wallets
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
     await tusd.initialize()
-    underlyingPool = await deployMockContract(owner, ITrueFiPoolJson.abi)
+    underlyingPool = await deployMockContract(owner, ITruePoolJson.abi)
     await underlyingPool.mock.token.returns(tusd.address)
     lendingPool = await new TrueLenderFactory(owner).deploy(underlyingPool.address)
   })

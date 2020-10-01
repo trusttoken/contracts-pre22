@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ICurvePool, ICurve} from "../ICurvePool.sol";
+import {ICurvePool, ICurve} from "../interface/ICurvePool.sol";
 import {MockERC20Token} from "../../trusttoken/mocks/MockERC20Token.sol";
 
 contract MockCurve is ICurve {
