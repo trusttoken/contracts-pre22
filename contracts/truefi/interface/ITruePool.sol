@@ -4,14 +4,14 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * TrueFiPool is an ERC20 which represents a share of a pool
+ * TruePool is an ERC20 which represents a share of a pool
  *
  * This contract can be used to wrap opportunities to be compatible
  * with TrueFi and allow users to directly opt-in through the TUSD contract
  *
- * Each TrueFiPool is also a staking opportunity for TRU
+ * Each TruePool is also a staking opportunity for TRU
  */
-interface ITrueFiPool is IERC20 {
+interface ITruePool is IERC20 {
     /// @dev pool token (TUSD)
     function token() external view returns (IERC20);
 

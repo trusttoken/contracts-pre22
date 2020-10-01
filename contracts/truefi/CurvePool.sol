@@ -2,17 +2,18 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {TrueFiPool, IERC20} from "./TrueFiPool.sol";
-import {ICurvePool} from "./ICurvePool.sol";
+import {TruePool, IERC20} from "./TruePool.sol";
+import {ICurvePool} from "./interface/ICurvePool.sol";
 
-contract CurvePool is TrueFiPool {
+contract CurvePool is TruePool {
     using SafeMath for uint256;
 
     ICurvePool public curvePool;
+
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
 
-    constructor(ICurvePool _curve, IERC20 _token) public TrueFiPool(_token, "CurveTUSDPool", "CurTUSD") {
+    constructor(ICurvePool _curve, IERC20 _token) public TruePool(_token, "CurveTUSDPool", "CurTUSD") {
         curvePool = _curve;
         token().approve(address(curvePool), uint256(-1));
         curvePool.token().approve(address(curvePool), uint256(-1));
