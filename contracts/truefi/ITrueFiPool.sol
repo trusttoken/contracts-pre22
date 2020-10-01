@@ -12,6 +12,9 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * Each TrueFiPool is also a staking opportunity for TRU
  */
 interface ITrueFiPool is IERC20 {
+    /// @dev pool token (TUSD)
+    function token() external view returns (IERC20);
+
     /**
      * @dev join pool
      * 1. Transfer TUSD from sender
