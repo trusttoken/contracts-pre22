@@ -3,7 +3,7 @@ pragma solidity 0.6.10;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {ITrueFiPool, IERC20} from "./ITrueFiPool.sol";
+import {ITruePool, IERC20} from "./interface/ITruePool.sol";
 
 contract TrueLender is Ownable {
     using SafeMath for uint256;
@@ -22,7 +22,7 @@ contract TrueLender is Ownable {
     mapping(bytes8 => Application) public applications;
 
     /*immutable*/
-    ITrueFiPool public pool;
+    ITruePool public pool;
     /*immutable*/
     IERC20 public token;
 
@@ -54,7 +54,7 @@ contract TrueLender is Ownable {
         _;
     }
 
-    constructor(ITrueFiPool _pool) public {
+    constructor(ITruePool _pool) public {
         pool = _pool;
         token = _pool.token();
         token.approve(address(_pool), uint256(-1));
