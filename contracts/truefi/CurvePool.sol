@@ -9,6 +9,7 @@ contract CurvePool is TruePool {
     using SafeMath for uint256;
 
     ICurvePool public curvePool;
+
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
 
