@@ -39,11 +39,11 @@ describe('TrueLender', () => {
     trustToken = await new TrustTokenFactory(owner).deploy()
     await trustToken.initialize()
     await trustToken.mint(owner.address, parseTT(1000))
-    
+
     underlyingPool = await deployMockContract(owner, ITruePoolJson.abi)
     await underlyingPool.mock.token.returns(tusd.address)
     lendingPool = await new TrueLenderFactory(owner).deploy(underlyingPool.address, trustToken.address)
-    
+
     await trustToken.approve(lendingPool.address, parseTT(1000))
   })
 
@@ -268,7 +268,7 @@ describe('TrueLender', () => {
 
       it('keeps track of votes', async () => {
         await lendingPool.yeah(applicationId, stake)
-        const application = await lendingPool.applications(applicationId)
+        await lendingPool.applications(applicationId)
         expect(await lendingPool.getYeahVote(applicationId, owner.address)).to.be.equal(stake)
         expect(await lendingPool.getNahVote(applicationId, owner.address)).to.be.equal(0)
       })
@@ -319,11 +319,10 @@ describe('TrueLender', () => {
 
       it('keeps track of votes', async () => {
         await lendingPool.nah(applicationId, stake)
-        const application = await lendingPool.applications(applicationId)
+        await lendingPool.applications(applicationId)
         expect(await lendingPool.getNahVote(applicationId, owner.address)).to.be.equal(stake)
         expect(await lendingPool.getYeahVote(applicationId, owner.address)).to.be.equal(0)
       })
-
 
       it('increases applications nah value', async () => {
         await lendingPool.nah(applicationId, stake)
