@@ -216,7 +216,7 @@ describe('TrueLender', () => {
     it('application can be removed by borrower', async () => {
       const tx = await lendingPool.submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
       const applicationId = await extractApplicationId(tx)
-      
+
       await lendingPool.retract(applicationId)
 
       const application = await lendingPool.applications(applicationId)
