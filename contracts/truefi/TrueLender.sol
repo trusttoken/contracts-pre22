@@ -16,6 +16,9 @@ contract TrueLender is Ownable {
         uint256 amount;
         uint256 apy;
         uint256 duration;
+        uint256 yeah;
+        uint256 nah;
+        mapping(address => mapping(bool => uint256)) votes;
     }
 
     mapping(address => bool) public borrowers;
@@ -24,7 +27,9 @@ contract TrueLender is Ownable {
     /*immutable*/
     ITruePool public pool;
     /*immutable*/
-    IERC20 public token;
+    IERC20 public currencyToken;
+    /*immutable*/
+    IERC20 public trustToken;
 
     // ===== Pool parameters =====
     /**
@@ -36,16 +41,18 @@ contract TrueLender is Ownable {
     uint256 public maxSize = 10000000 ether;
     uint256 public minDuration = 180 days;
     uint256 public maxDuration = 3600 days;
+    uint256 public votingPeriod = 7 days;
 
-    event Whitelisted(address indexed who, bool status);
+    event Allowed(address indexed who, bool status);
     event MinApyChanged(uint256 minApy);
+    event VotingPeriodChanged(uint256 votingPeriod);
     event SizeLimitsChanged(uint256 minSize, uint256 maxSize);
     event DurationLimitsChanged(uint256 minDuration, uint256 maxDuration);
     event ApplicationSubmitted(bytes8 id, address borrower, address beneficiary, uint256 amount, uint256 apy, uint256 duration);
     event ApplicationRetracted(bytes8 id);
 
-    modifier onlyWhitelisted() {
-        require(borrowers[msg.sender], "TrueLender: sender not whitelisted borrower");
+    modifier onlyAllowed() {
+        require(borrowers[msg.sender], "TrueLender: sender not allowed borrower");
         _;
     }
 
@@ -54,10 +61,16 @@ contract TrueLender is Ownable {
         _;
     }
 
-    constructor(ITruePool _pool) public {
+    modifier onlyDuringVoting(bytes8 id) {
+        require(applications[id].timestamp.add(votingPeriod) >= block.timestamp, "TrueLender: can't vote outside the voting period");
+        _;
+    }
+
+    constructor(ITruePool _pool, IERC20 _trustToken) public {
         pool = _pool;
-        token = _pool.token();
-        token.approve(address(_pool), uint256(-1));
+        currencyToken = _pool.token();
+        currencyToken.approve(address(_pool), uint256(-1));
+        trustToken = _trustToken;
     }
 
     function setSizeLimits(uint256 min, uint256 max) external onlyOwner {
@@ -79,9 +92,22 @@ contract TrueLender is Ownable {
         emit MinApyChanged(newMinApy);
     }
 
-    function whitelistAsBorrower(address who, bool status) external onlyOwner {
+    function setVotingPeriod(uint256 newVotingPeriod) external onlyOwner {
+        votingPeriod = newVotingPeriod;
+        emit VotingPeriodChanged(newVotingPeriod);
+    }
+
+    function getYeahVote(bytes8 id, address voter) public view returns (uint256) {
+        return applications[id].votes[voter][true];
+    }
+
+    function getNahVote(bytes8 id, address voter) public view returns (uint256) {
+        return applications[id].votes[voter][false];
+    }
+
+    function allow(address who, bool status) external onlyOwner {
         borrowers[who] = status;
-        emit Whitelisted(who, status);
+        emit Allowed(who, status);
     }
 
     function submit(
@@ -89,7 +115,7 @@ contract TrueLender is Ownable {
         uint256 amount,
         uint256 apy,
         uint256 duration
-    ) external onlyWhitelisted {
+    ) external onlyAllowed {
         bytes8 id = bytes8(uint64(uint256(keccak256(abi.encodePacked(msg.sender, beneficiary, block.number, amount, apy, duration)))));
         require(applications[id].creationBlock == 0, "TrueLender: Cannot create two same applications in a single block");
         require(amount >= minSize && amount <= maxSize, "TrueLender: Loan size is out of bounds");
@@ -103,7 +129,9 @@ contract TrueLender is Ownable {
             beneficiary: beneficiary,
             amount: amount,
             apy: apy,
-            duration: duration
+            duration: duration,
+            yeah: 0,
+            nah: 0
         });
 
         emit ApplicationSubmitted(id, msg.sender, beneficiary, amount, apy, duration);
@@ -114,5 +142,25 @@ contract TrueLender is Ownable {
         delete applications[id];
 
         emit ApplicationRetracted(id);
+    }
+
+    function vote(
+        bytes8 id,
+        uint256 stake,
+        bool choice
+    ) internal {
+        require(applications[id].votes[msg.sender][!choice] == 0, "TrueLender: can't vote both yeah and nah");
+        applications[id].votes[msg.sender][choice] = applications[id].votes[msg.sender][choice].add(stake);
+        require(trustToken.transferFrom(msg.sender, address(this), stake));
+    }
+
+    function yeah(bytes8 id, uint256 stake) external applicationExists(id) onlyDuringVoting(id) {
+        applications[id].yeah = applications[id].yeah.add(stake);
+        vote(id, stake, true);
+    }
+
+    function nah(bytes8 id, uint256 stake) external applicationExists(id) onlyDuringVoting(id) {
+        applications[id].nah = applications[id].nah.add(stake);
+        vote(id, stake, false);
     }
 }

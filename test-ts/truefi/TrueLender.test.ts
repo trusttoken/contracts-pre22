@@ -8,26 +8,43 @@ import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
 import { TrueLender } from '../../build/types/TrueLender'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
+import { TrustTokenFactory } from '../../build/types/TrustTokenFactory'
+import { TrustToken } from '../../build/types/TrustToken'
 import ITruePoolJson from '../../build/ITruePool.json'
 import { deployMockContract } from 'ethereum-waffle'
 import { parseEther } from 'ethers/utils'
+import { parseTT } from '../utils/parseTT'
+import { timeTravel } from '../utils/timeTravel'
+import { JsonRpcProvider } from 'ethers/providers'
 
 describe('TrueLender', () => {
   let owner: Wallet
   let otherWallet: Wallet
   let lendingPool: TrueLender
   let tusd: MockTrueCurrency
+  let trustToken: TrustToken
   let underlyingPool: Contract
+  let provider: JsonRpcProvider
 
-  const monthInSeconds = 60 * 60 * 24 * 30
+  const dayInSeconds = 60 * 60 * 24
+  const monthInSeconds = dayInSeconds * 30
 
   beforeEachWithFixture(async (_provider, wallets) => {
     [owner, otherWallet] = wallets
+    provider = _provider
+
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
     await tusd.initialize()
+
+    trustToken = await new TrustTokenFactory(owner).deploy()
+    await trustToken.initialize()
+    await trustToken.mint(owner.address, parseTT(1000))
+    
     underlyingPool = await deployMockContract(owner, ITruePoolJson.abi)
     await underlyingPool.mock.token.returns(tusd.address)
-    lendingPool = await new TrueLenderFactory(owner).deploy(underlyingPool.address)
+    lendingPool = await new TrueLenderFactory(owner).deploy(underlyingPool.address, trustToken.address)
+    
+    await trustToken.approve(lendingPool.address, parseTT(1000))
   })
 
   describe('Constructor', () => {
@@ -45,28 +62,7 @@ describe('TrueLender', () => {
       expect(await lendingPool.minDuration()).to.equal(monthInSeconds * 6)
       expect(await lendingPool.maxDuration()).to.equal(monthInSeconds * 120)
       expect(await lendingPool.minApy()).to.equal('1000')
-    })
-  })
-
-  describe('Whitelisting', () => {
-    it('changes whitelist status', async () => {
-      expect(await lendingPool.borrowers(otherWallet.address)).to.be.false
-      await lendingPool.whitelistAsBorrower(otherWallet.address, true)
-      expect(await lendingPool.borrowers(otherWallet.address)).to.be.true
-      await lendingPool.whitelistAsBorrower(otherWallet.address, false)
-      expect(await lendingPool.borrowers(otherWallet.address)).to.be.false
-    })
-
-    it('emits event', async () => {
-      await expect(lendingPool.whitelistAsBorrower(otherWallet.address, true))
-        .to.emit(lendingPool, 'Whitelisted').withArgs(otherWallet.address, true)
-      await expect(lendingPool.whitelistAsBorrower(otherWallet.address, false))
-        .to.emit(lendingPool, 'Whitelisted').withArgs(otherWallet.address, false)
-    })
-
-    it('reverts when performed by non-owner', async () => {
-      await expect(lendingPool.connect(otherWallet).whitelistAsBorrower(otherWallet.address, true))
-        .to.be.revertedWith('caller is not the owner')
+      expect(await lendingPool.votingPeriod()).to.equal(dayInSeconds * 7)
     })
   })
 
@@ -83,6 +79,21 @@ describe('TrueLender', () => {
 
       it('must be called by owner', async () => {
         await expect(lendingPool.connect(otherWallet).setMinApy(1234)).to.be.revertedWith('caller is not the owner')
+      })
+    })
+
+    describe('setVotingPeriod', () => {
+      it('changes votingPeriod', async () => {
+        await lendingPool.setVotingPeriod(dayInSeconds * 3)
+        expect(await lendingPool.votingPeriod()).to.equal(dayInSeconds * 3)
+      })
+
+      it('emits VotingPeriodChanged', async () => {
+        await expect(lendingPool.setVotingPeriod(dayInSeconds * 3)).to.emit(lendingPool, 'VotingPeriodChanged').withArgs(dayInSeconds * 3)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lendingPool.connect(otherWallet).setVotingPeriod(dayInSeconds * 3)).to.be.revertedWith('caller is not the owner')
       })
     })
 
@@ -135,9 +146,31 @@ describe('TrueLender', () => {
     })
   })
 
+  describe('Whitelisting', () => {
+    it('changes whitelist status', async () => {
+      expect(await lendingPool.borrowers(otherWallet.address)).to.be.false
+      await lendingPool.allow(otherWallet.address, true)
+      expect(await lendingPool.borrowers(otherWallet.address)).to.be.true
+      await lendingPool.allow(otherWallet.address, false)
+      expect(await lendingPool.borrowers(otherWallet.address)).to.be.false
+    })
+
+    it('emits event', async () => {
+      await expect(lendingPool.allow(otherWallet.address, true))
+        .to.emit(lendingPool, 'Allowed').withArgs(otherWallet.address, true)
+      await expect(lendingPool.allow(otherWallet.address, false))
+        .to.emit(lendingPool, 'Allowed').withArgs(otherWallet.address, false)
+    })
+
+    it('reverts when performed by non-owner', async () => {
+      await expect(lendingPool.connect(otherWallet).allow(otherWallet.address, true))
+        .to.be.revertedWith('caller is not the owner')
+    })
+  })
+
   describe('Submiting/Retracting application', () => {
     beforeEach(async () => {
-      await lendingPool.whitelistAsBorrower(owner.address, true)
+      await lendingPool.allow(owner.address, true)
     })
 
     it('creates loan application', async () => {
@@ -151,6 +184,8 @@ describe('TrueLender', () => {
       expect(application.amount).to.equal(parseEther('2000000'))
       expect(application.apy).to.equal(1200)
       expect(application.duration).to.equal(monthInSeconds * 12)
+      expect(application.yeah).to.be.equal(0)
+      expect(application.nah).to.be.equal(0)
     })
 
     it('emits event on creation', async () => {
@@ -158,9 +193,9 @@ describe('TrueLender', () => {
         .to.emit(lendingPool, 'ApplicationSubmitted').withArgs('0x45852ad67ae2dde5', owner.address, otherWallet.address, parseEther('1000000'), 1300, monthInSeconds * 18)
     })
 
-    it('should be whitelisted to create loan application', async () => {
+    it('should be allowed to create loan application', async () => {
       await expect(lendingPool.connect(otherWallet).submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12))
-        .to.be.revertedWith('TrueLender: sender not whitelisted')
+        .to.be.revertedWith('TrueLender: sender not allowed')
     })
 
     it('checks loan amount to be within boundaries', async () => {
@@ -193,7 +228,7 @@ describe('TrueLender', () => {
     })
 
     it('cannot remove application created by someone else', async () => {
-      await lendingPool.whitelistAsBorrower(otherWallet.address, true)
+      await lendingPool.allow(otherWallet.address, true)
       await lendingPool.connect(otherWallet).submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
       await expect(lendingPool.retract('0x4d0aa9e1b69a8f90')).to.be.revertedWith('TrueLender: not retractor\'s application')
     })
@@ -201,6 +236,122 @@ describe('TrueLender', () => {
     it('emits event on remove', async () => {
       await lendingPool.submit(otherWallet.address, parseEther('1000000'), 1300, monthInSeconds * 12)
       await expect(lendingPool.retract('0x37b341c3a6e097a7')).to.emit(lendingPool, 'ApplicationRetracted')
+    })
+  })
+
+  describe('Voting', () => {
+    let applicationId: string
+    let fakeApplicationId: string
+
+    const stake = 1000
+    beforeEach(async () => {
+      await lendingPool.allow(owner.address, true)
+      await lendingPool.submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
+      applicationId = '0x6fa18b35bc27d09e'
+      fakeApplicationId = '0xdeadbeefdadface0'
+    })
+
+    describe('Yeah', () => {
+      it('transfers funds from voter', async () => {
+        const balanceBefore = await trustToken.balanceOf(owner.address)
+        await lendingPool.yeah(applicationId, stake)
+        const balanceAfter = await trustToken.balanceOf(owner.address)
+        expect(balanceAfter.add(stake)).to.equal(balanceBefore)
+      })
+
+      it('transfers funds to lender contract', async () => {
+        const balanceBefore = await trustToken.balanceOf(lendingPool.address)
+        await lendingPool.yeah(applicationId, stake)
+        const balanceAfter = await trustToken.balanceOf(lendingPool.address)
+        expect(balanceAfter.sub(stake)).to.equal(balanceBefore)
+      })
+
+      it('keeps track of votes', async () => {
+        await lendingPool.yeah(applicationId, stake)
+        const application = await lendingPool.applications(applicationId)
+        expect(await lendingPool.getYeahVote(applicationId, owner.address)).to.be.equal(stake)
+        expect(await lendingPool.getNahVote(applicationId, owner.address)).to.be.equal(0)
+      })
+
+      it('increases applications yeah value', async () => {
+        await lendingPool.yeah(applicationId, stake)
+        const application = await lendingPool.applications(applicationId)
+        expect(application.yeah).to.be.equal(stake)
+      })
+
+      it('increases applications yeah value when voted multiple times', async () => {
+        await lendingPool.yeah(applicationId, stake)
+        await lendingPool.yeah(applicationId, stake)
+        const application = await lendingPool.applications(applicationId)
+        expect(application.yeah).to.be.equal(stake * 2)
+      })
+
+      it('after voting yeah, disallows voting nah', async () => {
+        await lendingPool.yeah(applicationId, stake)
+        await expect(lendingPool.nah(applicationId, stake)).to.be.revertedWith('TrueLender: can\'t vote both yeah and nah')
+      })
+
+      it('is only possible during voting period', async () => {
+        await lendingPool.yeah(applicationId, stake)
+        timeTravel(provider, dayInSeconds * 8)
+        await expect(lendingPool.yeah(applicationId, stake)).to.be.revertedWith('TrueLender: can\'t vote outside the voting period')
+      })
+
+      it('is only possible for existing applications', async () => {
+        await expect(lendingPool.yeah(fakeApplicationId, stake)).to.be.revertedWith('TrueLender: application doesn\'t exist')
+      })
+    })
+
+    describe('Nah', () => {
+      it('transfers funds from voter', async () => {
+        const balanceBefore = await trustToken.balanceOf(owner.address)
+        await lendingPool.nah(applicationId, stake)
+        const balanceAfter = await trustToken.balanceOf(owner.address)
+        expect(balanceAfter.add(stake)).to.equal(balanceBefore)
+      })
+
+      it('transfers funds to lender contract', async () => {
+        const balanceBefore = await trustToken.balanceOf(lendingPool.address)
+        await lendingPool.nah(applicationId, stake)
+        const balanceAfter = await trustToken.balanceOf(lendingPool.address)
+        expect(balanceAfter.sub(stake)).to.equal(balanceBefore)
+      })
+
+      it('keeps track of votes', async () => {
+        await lendingPool.nah(applicationId, stake)
+        const application = await lendingPool.applications(applicationId)
+        expect(await lendingPool.getNahVote(applicationId, owner.address)).to.be.equal(stake)
+        expect(await lendingPool.getYeahVote(applicationId, owner.address)).to.be.equal(0)
+      })
+
+
+      it('increases applications nah value', async () => {
+        await lendingPool.nah(applicationId, stake)
+        const application = await lendingPool.applications(applicationId)
+        expect(application.nah).to.be.equal(stake)
+      })
+
+      it('increases applications nah value when voted multiple times', async () => {
+        await lendingPool.nah(applicationId, stake)
+        await lendingPool.nah(applicationId, stake)
+        const application = await lendingPool.applications(applicationId)
+        expect(application.nah).to.be.equal(stake * 2)
+      })
+
+      it('after voting nah, disallows voting nah', async () => {
+        await lendingPool.nah(applicationId, stake)
+        await expect(lendingPool.yeah(applicationId, stake)).to.be.revertedWith('TrueLender: can\'t vote both yeah and nah')
+      })
+
+      it('is only possible during voting period', async () => {
+        await lendingPool.nah(applicationId, stake)
+        timeTravel(provider, dayInSeconds * 8)
+        await expect(lendingPool.nah(applicationId, stake)).to.be.revertedWith('TrueLender: can\'t vote outside the voting period')
+      })
+
+      it('is only possible for existing applications', async () => {
+        await expect(lendingPool.nah(fakeApplicationId, stake)).to.be.revertedWith('TrueLender: application doesn\'t exist')
+      })
     })
   })
 })
