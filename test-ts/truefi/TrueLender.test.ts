@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { Contract, Wallet } from 'ethers'
+import { Contract, ContractTransaction, Wallet } from 'ethers'
 import { AddressZero, MaxUint256 } from 'ethers/constants'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
@@ -28,6 +28,8 @@ describe('TrueLender', () => {
 
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
+
+  const extractApplicationId = async (submitTransaction: ContractTransaction) => ((await submitTransaction.wait()).events[0].args as any).id
 
   beforeEachWithFixture(async (_provider, wallets) => {
     [owner, otherWallet] = wallets
@@ -174,10 +176,11 @@ describe('TrueLender', () => {
     })
 
     it('creates loan application', async () => {
-      await lendingPool.submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
+      const tx = await lendingPool.submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
+      const applicationId = await extractApplicationId(tx)
 
-      const application = await lendingPool.applications('0xb159518c94e5ad5b')
-      expect(application.creationBlock).to.equal(7)
+      const application = await lendingPool.applications(applicationId)
+      expect(application.creationBlock).to.equal(11)
       expect(application.timestamp).to.be.gt(0)
       expect(application.borrower).to.equal(owner.address)
       expect(application.beneficiary).to.equal(otherWallet.address)
@@ -190,7 +193,7 @@ describe('TrueLender', () => {
 
     it('emits event on creation', async () => {
       await expect(lendingPool.submit(otherWallet.address, parseEther('1000000'), 1300, monthInSeconds * 18))
-        .to.emit(lendingPool, 'ApplicationSubmitted').withArgs('0x45852ad67ae2dde5', owner.address, otherWallet.address, parseEther('1000000'), 1300, monthInSeconds * 18)
+        .to.emit(lendingPool, 'ApplicationSubmitted').withArgs('0xe4d93541ea22476f', owner.address, otherWallet.address, parseEther('1000000'), 1300, monthInSeconds * 18)
     })
 
     it('should be allowed to create loan application', async () => {
@@ -211,10 +214,12 @@ describe('TrueLender', () => {
     })
 
     it('application can be removed by borrower', async () => {
-      await lendingPool.submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
-      await lendingPool.retract('0xb159518c94e5ad5b')
+      const tx = await lendingPool.submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
+      const applicationId = await extractApplicationId(tx)
+      
+      await lendingPool.retract(applicationId)
 
-      const application = await lendingPool.applications('0xb159518c94e5ad5b')
+      const application = await lendingPool.applications(applicationId)
       expect(application.creationBlock).to.equal(0)
       expect(application.borrower).to.equal(AddressZero)
       expect(application.beneficiary).to.equal(AddressZero)
@@ -224,18 +229,22 @@ describe('TrueLender', () => {
     })
 
     it('throws when removing not existing application', async () => {
-      await expect(lendingPool.retract('0xdf606ca5ed7b19de')).to.be.revertedWith('TrueLender: application doesn\'t exist')
+      await expect(lendingPool.retract('0xfadedeadbeefface')).to.be.revertedWith('TrueLender: application doesn\'t exist')
     })
 
     it('cannot remove application created by someone else', async () => {
       await lendingPool.allow(otherWallet.address, true)
-      await lendingPool.connect(otherWallet).submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
-      await expect(lendingPool.retract('0x4d0aa9e1b69a8f90')).to.be.revertedWith('TrueLender: not retractor\'s application')
+      const tx = await lendingPool.connect(otherWallet).submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
+      const applicationId = await extractApplicationId(tx)
+
+      await expect(lendingPool.retract(applicationId)).to.be.revertedWith('TrueLender: not retractor\'s application')
     })
 
     it('emits event on remove', async () => {
-      await lendingPool.submit(otherWallet.address, parseEther('1000000'), 1300, monthInSeconds * 12)
-      await expect(lendingPool.retract('0x37b341c3a6e097a7')).to.emit(lendingPool, 'ApplicationRetracted')
+      const tx = await lendingPool.submit(otherWallet.address, parseEther('1000000'), 1300, monthInSeconds * 12)
+      const applicationId = await extractApplicationId(tx)
+
+      await expect(lendingPool.retract(applicationId)).to.emit(lendingPool, 'ApplicationRetracted')
     })
   })
 
