@@ -33,7 +33,7 @@ contract TrueLender is Ownable {
     /*immutable*/
     IERC20 public trustToken;
 
-    uint256 private constant tokenPrecisionDifference = 10**10;
+    uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
 
     // ===== Pool parameters =====
     /**
@@ -187,7 +187,7 @@ contract TrueLender is Ownable {
         if (loan.timestamp.add(votingPeriod) >= block.timestamp) {
             return ApplicationStatus.Pending;
         }
-        if (loan.amount.mul(participationFactor) > loan.yeah.mul(10000).mul(tokenPrecisionDifference)) {
+        if (loan.amount.mul(participationFactor) > loan.yeah.mul(10000).mul(TOKEN_PRECISION_DIFFERENCE)) {
             return ApplicationStatus.Rejected;
         }
         if (loan.apy.mul(loan.duration).mul(loan.yeah).div(360 days) < loan.nah.mul(riskAversion)) {
