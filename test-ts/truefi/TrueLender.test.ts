@@ -41,14 +41,12 @@ describe('TrueLender', () => {
     trustToken = await new TrustTokenFactory(owner).deploy()
     await trustToken.initialize()
     await trustToken.mint(owner.address, parseTT(100000000))
-    await trustToken.mint(otherWallet.address, parseTT(100000000))
 
     underlyingPool = await deployMockContract(owner, ITruePoolJson.abi)
     await underlyingPool.mock.currencyToken.returns(tusd.address)
     lendingPool = await new TrueLenderFactory(owner).deploy(underlyingPool.address, trustToken.address)
 
     await trustToken.approve(lendingPool.address, parseTT(100000000))
-    await trustToken.connect(otherWallet).approve(lendingPool.address, parseTT(100000000))
   })
 
   describe('Constructor', () => {
@@ -408,6 +406,8 @@ describe('TrueLender', () => {
     let applicationId: string
 
     beforeEach(async () => {
+      await trustToken.mint(otherWallet.address, parseTT(100000000))
+      await trustToken.connect(otherWallet).approve(lendingPool.address, parseTT(100000000))
       await lendingPool.allow(owner.address, true)
       const tx = await lendingPool.submit(otherWallet.address, parseEther(loanAmount), 1000, monthInSeconds * 12)
       applicationId = await extractApplicationId(tx)
