@@ -23,7 +23,7 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
     uint256 public rate;
     uint256 public expiry;
     bool public approved;
-    IERC20 public token;
+    IERC20 public currencyToken;
 
     constructor(
         address _borrower,
@@ -39,7 +39,7 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
 
     /// get balance of deposit tokens
     function balance() public override view returns (uint256) {
-        return token.balanceOf(address(this));
+        return currencyToken.balanceOf(address(this));
     }
 
     /// calculate interest given amount
@@ -59,7 +59,7 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
         if (balance().add(amount) > principal) {
             amount = principal.sub(balance());
         }
-        token.transferFrom(msg.sender, address(this), amount);
+        currencyToken.transferFrom(msg.sender, address(this), amount);
         _mint(msg.sender, amount);
     }
 
@@ -68,7 +68,7 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
         require(block.timestamp >= expiry, "cannot redeem: before expiry");
         require(approved, "cannot redeem: loan not approved");
         _burn(msg.sender, amount);
-        token.transfer(msg.sender, interest(amount));
+        currencyToken.transfer(msg.sender, interest(amount));
     }
 
     /// approve loan, set approved, set expiry, transfer funds
@@ -87,6 +87,6 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
     /// pay back loan in full
     function pay() public override {
         require(approved, "cannot pay: loan approved");
-        token.transferFrom(msg.sender, address(this), interest(principal));
+        currencyToken.transferFrom(msg.sender, address(this), interest(principal));
     }
 }

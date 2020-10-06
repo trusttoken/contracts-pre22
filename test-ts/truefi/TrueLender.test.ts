@@ -43,7 +43,7 @@ describe('TrueLender', () => {
     await trustToken.mint(owner.address, parseTT(1000))
 
     underlyingPool = await deployMockContract(owner, ITruePoolJson.abi)
-    await underlyingPool.mock.token.returns(tusd.address)
+    await underlyingPool.mock.currencyToken.returns(tusd.address)
     lendingPool = await new TrueLenderFactory(owner).deploy(underlyingPool.address, trustToken.address)
 
     await trustToken.approve(lendingPool.address, parseTT(1000))
