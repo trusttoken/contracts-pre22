@@ -195,31 +195,4 @@ contract TrueLender is Ownable {
         }
         return ApplicationStatus.Approved;
     }
-
-    // #1
-    // APY: 1000 (10%)
-    // duration: 360 days (1 yr)
-    // yeah: 700 (70%)
-    // nah: 300 (30%)
-    // riskAversion: 10000 (1)
-    // calc: 1000 * 1 * 700 - 300 * 10000
-    // result: REJECTED
-
-    // #2
-    // APY: 1000 (10%)
-    // duration: 360 days (1 yr)
-    // yeah: 950 (95%)
-    // nah: 50 (5%)
-    // riskAversion: 10000 (1)
-    // calc: 1000 * 1 * 950 - 50 * 10000
-    // result: APPROVED
-
-    // #3
-    // APY: 2500 (25%)
-    // duration: 360 days (1 yr)
-    // yeah: 800 (80%)
-    // nah: 200 (20%)
-    // riskAversion: 10000 (1)
-    // calc: 2500 * 1 * 800 - 200 * 10000
-    // result: APPROVED
 }
