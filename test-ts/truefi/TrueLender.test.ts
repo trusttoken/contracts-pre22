@@ -465,6 +465,13 @@ describe('TrueLender', () => {
         yeahPercentage: number,
       }
 
+      const scenario = (APY: number, months: number, riskAversion: number, yeahPercentage: number) => ({
+        APY: APY * 100,
+        duration: monthInSeconds * months,
+        riskAversion: riskAversion * 100,
+        yeahPercentage,
+      })
+
       const execute = async (loanScenario: LoanScenario) => {
         await lendingPool.setRiskAversion(loanScenario.riskAversion)
         const tx = await lendingPool.submit(otherWallet.address, parseEther(loanAmount), loanScenario.APY, loanScenario.duration)
@@ -476,22 +483,14 @@ describe('TrueLender', () => {
 
       describe('Approvals', () => {
         const approvedLoanScenarios = [
-          {
-            APY: 1000,
-            duration: monthInSeconds * 12,
-            riskAversion: 10000,
-            yeahPercentage: 95,
-          },
-          {
-            APY: 2500,
-            duration: monthInSeconds * 12,
-            riskAversion: 10000,
-            yeahPercentage: 80,
-          },
+          scenario(10, 12, 100, 95),
+          scenario(25, 12, 100, 80),
+          scenario(10, 12, 50, 85),
+          scenario(10, 36, 100, 80),
         ]
 
-        approvedLoanScenarios.forEach(loanScenario => {
-          it(`approved loan case #${approvedLoanScenarios.indexOf(loanScenario)}`, async () => {
+        approvedLoanScenarios.forEach((loanScenario, index) => {
+          it(`approved loan case #${index + 1}`, async () => {
             await execute(loanScenario)
             expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Approved)
           })
@@ -500,16 +499,14 @@ describe('TrueLender', () => {
 
       describe('Rejections', () => {
         const rejectedLoanScenarios = [
-          {
-            APY: 1000,
-            duration: monthInSeconds * 12,
-            riskAversion: 10000,
-            yeahPercentage: 80,
-          },
+          scenario(10, 12, 100, 85),
+          scenario(25, 12, 100, 60),
+          scenario(10, 12, 50, 75),
+          scenario(10, 36, 100, 70),
         ]
 
-        rejectedLoanScenarios.forEach(loanScenario => {
-          it(`rejected loan case #${rejectedLoanScenarios.indexOf(loanScenario)}`, async () => {
+        rejectedLoanScenarios.forEach((loanScenario, index) => {
+          it(`rejected loan case #${index + 1}`, async () => {
             await execute(loanScenario)
             expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
           })
