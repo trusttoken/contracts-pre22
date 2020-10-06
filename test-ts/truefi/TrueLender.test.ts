@@ -457,54 +457,62 @@ describe('TrueLender', () => {
       expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Approved)
     })
 
-    describe('Complex approval cases', () => {
-      const approvedLoanScenarios = [
-        {
-          APY: 1000,
-          duration: monthInSeconds * 12,
-          riskAversion: 10000,
-          yeahPercentage: 95,
-        },
-        {
-          APY: 2500,
-          duration: monthInSeconds * 12,
-          riskAversion: 10000,
-          yeahPercentage: 80,
-        },
-      ]
+    describe('Complex cases', () => {
+      interface LoanScenario {
+        APY: number,
+        duration: number,
+        riskAversion: number,
+        yeahPercentage: number,
+      }
 
-      approvedLoanScenarios.forEach(loanScenario => {
-        it(`approved loan case #${approvedLoanScenarios.indexOf(loanScenario)}`, async () => {
-          await lendingPool.setRiskAversion(loanScenario.riskAversion)
-          const tx = await lendingPool.submit(otherWallet.address, parseEther(loanAmount), loanScenario.APY, loanScenario.duration)
-          applicationId = await extractApplicationId(tx)
-          await lendingPool.yeah(applicationId, parseTT(loanAmount).mul(loanScenario.yeahPercentage))
-          await lendingPool.connect(otherWallet).nah(applicationId, parseTT(loanAmount).mul(100 - loanScenario.yeahPercentage))
-          await timeTravel(provider, dayInSeconds * 7 + 100)
-          expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Approved)
+      const execute = async (loanScenario: LoanScenario) => {
+        await lendingPool.setRiskAversion(loanScenario.riskAversion)
+        const tx = await lendingPool.submit(otherWallet.address, parseEther(loanAmount), loanScenario.APY, loanScenario.duration)
+        applicationId = await extractApplicationId(tx)
+        await lendingPool.yeah(applicationId, parseTT(loanAmount).mul(loanScenario.yeahPercentage))
+        await lendingPool.connect(otherWallet).nah(applicationId, parseTT(loanAmount).mul(100 - loanScenario.yeahPercentage))
+        await timeTravel(provider, dayInSeconds * 7 + 100)
+      }
+
+      describe('Approvals', () => {
+        const approvedLoanScenarios = [
+          {
+            APY: 1000,
+            duration: monthInSeconds * 12,
+            riskAversion: 10000,
+            yeahPercentage: 95,
+          },
+          {
+            APY: 2500,
+            duration: monthInSeconds * 12,
+            riskAversion: 10000,
+            yeahPercentage: 80,
+          },
+        ]
+
+        approvedLoanScenarios.forEach(loanScenario => {
+          it(`approved loan case #${approvedLoanScenarios.indexOf(loanScenario)}`, async () => {
+            await execute(loanScenario)
+            expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Approved)
+          })
         })
       })
-    })
 
-    describe('Complex rejection cases', () => {
-      const rejectedLoanScenarios = [
-        {
-          APY: 1000,
-          duration: monthInSeconds * 12,
-          riskAversion: 10000,
-          yeahPercentage: 80,
-        },
-      ]
+      describe('Rejections', () => {
+        const rejectedLoanScenarios = [
+          {
+            APY: 1000,
+            duration: monthInSeconds * 12,
+            riskAversion: 10000,
+            yeahPercentage: 80,
+          },
+        ]
 
-      rejectedLoanScenarios.forEach(loanScenario => {
-        it(`rejected loan case #${rejectedLoanScenarios.indexOf(loanScenario)}`, async () => {
-          await lendingPool.setRiskAversion(loanScenario.riskAversion)
-          const tx = await lendingPool.submit(otherWallet.address, parseEther(loanAmount), loanScenario.APY, loanScenario.duration)
-          applicationId = await extractApplicationId(tx)
-          await lendingPool.yeah(applicationId, parseTT(loanAmount).mul(loanScenario.yeahPercentage))
-          await lendingPool.connect(otherWallet).nah(applicationId, parseTT(loanAmount).mul(100 - loanScenario.yeahPercentage))
-          await timeTravel(provider, dayInSeconds * 7 + 100)
-          expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
+        rejectedLoanScenarios.forEach(loanScenario => {
+          it(`rejected loan case #${rejectedLoanScenarios.indexOf(loanScenario)}`, async () => {
+            await execute(loanScenario)
+            expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
+          })
         })
       })
     })
