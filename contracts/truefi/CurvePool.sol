@@ -13,14 +13,14 @@ contract CurvePool is TruePool {
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
 
-    constructor(ICurvePool _curve, IERC20 _token) public TruePool(_token, "CurveTUSDPool", "CurTUSD") {
+    constructor(ICurvePool _curve, IERC20 _currencyToken) public TruePool(_currencyToken, "CurveTUSDPool", "CurTUSD") {
         curvePool = _curve;
-        token().approve(address(curvePool), uint256(-1));
+        currencyToken().approve(address(curvePool), uint256(-1));
         curvePool.token().approve(address(curvePool), uint256(-1));
     }
 
     function join(uint256 amount) external override {
-        require(token().transferFrom(msg.sender, address(this), amount));
+        require(currencyToken().transferFrom(msg.sender, address(this), amount));
 
         uint256[N_TOKENS] memory amounts = [0, 0, 0, amount];
         uint256 minTokenAmount = curvePool.curve().calc_token_amount(amounts, true).mul(99).div(100);
@@ -36,10 +36,10 @@ contract CurvePool is TruePool {
 
         uint256 minTokenAmount = curvePool.calc_withdraw_one_coin(amount, TUSD_INDEX).mul(99).div(100);
 
-        uint256 balanceBefore = token().balanceOf(address(this));
+        uint256 balanceBefore = currencyToken().balanceOf(address(this));
         curvePool.remove_liquidity_one_coin(amount, TUSD_INDEX, minTokenAmount);
-        uint256 balanceAfter = token().balanceOf(address(this));
-        require(token().transfer(msg.sender, balanceAfter.sub(balanceBefore)));
+        uint256 balanceAfter = currencyToken().balanceOf(address(this));
+        require(currencyToken().transfer(msg.sender, balanceAfter.sub(balanceBefore)));
         _burn(msg.sender, amount);
     }
 

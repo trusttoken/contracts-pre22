@@ -13,7 +13,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 interface ITruePool is IERC20 {
     /// @dev pool token (TUSD)
-    function token() external view returns (IERC20);
+    function currencyToken() external view returns (IERC20);
 
     /**
      * @dev join pool

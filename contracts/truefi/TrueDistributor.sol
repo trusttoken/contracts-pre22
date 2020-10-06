@@ -8,7 +8,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 /**
  * @title TrueDistributor
  * @notice Distributes TRU to TrueFarm farms
- * @dev This contract distributes tokens starting from `startingBlock` for the next 10 million block (roughly 4.5 years)
+ * @dev This contract distributes trustTokens starting from `startingBlock` for the next 10 million block (roughly 4.5 years)
  * The tokens will be distributed according to the declining quadratic curve
  * For each block `DISTRIBUTION_FACTOR*(10M-n)^2` TRU is awarded where `n` if a block number since `startingBlock`
  * `DISTRIBUTION_FACTOR` has been selected so that 536,500,000 (39% of total TRU supply) will be awarded in total
@@ -24,7 +24,7 @@ contract TrueDistributor is Ownable {
     uint256 public constant PRECISION = 1e33;
     uint256 public constant TOTAL_SHARES = 1e7;
 
-    ERC20 public token;
+    ERC20 public trustToken;
     uint256 public startingBlock;
     uint256 public lastBlock;
     mapping(address => Farm) public farms;
@@ -37,10 +37,10 @@ contract TrueDistributor is Ownable {
         return 1e7;
     }
 
-    constructor(uint256 _startingBlock, ERC20 _token) public {
+    constructor(uint256 _startingBlock, ERC20 _trustToken) public {
         startingBlock = _startingBlock;
         lastBlock = startingBlock.add(getTotalBlocks());
-        token = _token;
+        trustToken = _trustToken;
         farms[msg.sender].shares = TOTAL_SHARES;
     }
 
@@ -60,7 +60,7 @@ contract TrueDistributor is Ownable {
             return;
         }
 
-        require(token.transfer(farm, normalise(farmsReward)));
+        require(trustToken.transfer(farm, normalise(farmsReward)));
     }
 
     function normalise(uint256 amount) public pure returns (uint256) {

@@ -68,7 +68,7 @@ contract TrueLender is Ownable {
 
     constructor(ITruePool _pool, IERC20 _trustToken) public {
         pool = _pool;
-        currencyToken = _pool.token();
+        currencyToken = _pool.currencyToken();
         currencyToken.approve(address(_pool), uint256(-1));
         trustToken = _trustToken;
     }
