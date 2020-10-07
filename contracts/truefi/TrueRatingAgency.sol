@@ -141,10 +141,10 @@ contract TrueRatingAgency is Ownable {
         //     return LoanStatus.Running; <- will block all voting-related actions
         // }
         // if(loan was funded and successfully repaid) {
-        //     return LoanStatus.Settled; <- will allow withdrawing stake, but will losers/winners modifiers
+        //     return LoanStatus.Settled; <- will allow withdrawing stake, but with losers/winners modifiers
         // }
         // if(loan was funded and defaulted) {
-        //     return LoanStatus.Defaulted; <- will allow withdrawing stake, but will losers/winners modifiers
+        //     return LoanStatus.Defaulted; <- will allow withdrawing stake, but with losers/winners modifiers
         // }
         return LoanStatus.Pending;
     }
