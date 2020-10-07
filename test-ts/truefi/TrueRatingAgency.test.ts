@@ -143,7 +143,7 @@ describe('TrueRatingAgency', () => {
       await rater.connect(otherWallet).submit(exampleLoanTokenAddress)
 
       await expect(rater.retract(exampleLoanTokenAddress))
-        .to.be.revertedWith('TrueRatingAgency: not retractor\'s loan')
+        .to.be.revertedWith('TrueRatingAgency: not sender\'s loan')
     })
   })
 

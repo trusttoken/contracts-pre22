@@ -32,7 +32,7 @@ contract TrueRatingAgency is Ownable {
     }
 
     modifier onlyBorrower(address id) {
-        require(loans[id].borrower == msg.sender, "TrueRatingAgency: not retractor's loan");
+        require(loans[id].borrower == msg.sender, "TrueRatingAgency: not sender's loan");
         _;
     }
 
