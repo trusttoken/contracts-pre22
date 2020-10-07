@@ -121,10 +121,10 @@ contract TrueRatingAgency is Ownable {
         }
         uint256 amountToTransfer = stake;
         // if (status(id) == LoanStatus.Settled) {
-        //     add bonus/penalty to payout amount depending on choice
+        //     add bonus/penalty to payout amount depending on yes/no choice
         // }
         // if (status(id) == LoanStatus.Defaulted) {
-        //     add bonus/penalty to payout amount depending on choice
+        //     add bonus/penalty to payout amount depending on no/yes choice
         // }
         require(trustToken.transfer(msg.sender, amountToTransfer));
     }
