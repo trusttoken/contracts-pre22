@@ -4,16 +4,16 @@ import { AddressZero } from 'ethers/constants'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 
-import { TrueRaterFactory } from '../../build/types/TrueRaterFactory'
-import { TrueRater } from '../../build/types/TrueRater'
+import { TrueRatingAgencyFactory } from '../../build/types/TrueRatingAgencyFactory'
+import { TrueRatingAgency } from '../../build/types/TrueRatingAgency'
 import { TrustTokenFactory } from '../../build/types/TrustTokenFactory'
 import { TrustToken } from '../../build/types/TrustToken'
 import { parseTT } from '../utils/parseTT'
 
-describe('TrueRater', () => {
+describe('TrueRatingAgency', () => {
   let owner: Wallet
   let otherWallet: Wallet
-  let rater: TrueRater
+  let rater: TrueRatingAgency
   let trustToken: TrustToken
 
   const exampleLoanTokenAddress = '0x7dd5a4Eaf5dB6842aB539Cf506CFc6f9C70bb85E'
@@ -26,7 +26,7 @@ describe('TrueRater', () => {
     trustToken = await new TrustTokenFactory(owner).deploy()
     await trustToken.initialize()
 
-    rater = await new TrueRaterFactory(owner).deploy(trustToken.address)
+    rater = await new TrueRatingAgencyFactory(owner).deploy(trustToken.address)
 
     await trustToken.mint(owner.address, parseTT(100000000))
     await trustToken.approve(rater.address, parseTT(100000000))
@@ -115,27 +115,27 @@ describe('TrueRater', () => {
 
     it('sender should be allowed by owner to create loan', async () => {
       await expect(rater.connect(otherWallet).submit(exampleLoanTokenAddress))
-        .to.be.revertedWith('TrueRater: sender not allowed')
+        .to.be.revertedWith('TrueRatingAgency: sender not allowed')
     })
 
     it('reverts on attempt of creating the same loan twice', async () => {
       await rater.submit(exampleLoanTokenAddress)
       await expect(rater.submit(exampleLoanTokenAddress))
-        .to.be.revertedWith('TrueRater: loan was already created')
+        .to.be.revertedWith('TrueRatingAgency: loan was already created')
     })
 
     it('does not allow to resubmit retracted loan', async () => {
       await rater.submit(exampleLoanTokenAddress)
       await rater.retract(exampleLoanTokenAddress)
       await expect(rater.submit(exampleLoanTokenAddress))
-        .to.be.revertedWith('TrueRater: loan was already created')
+        .to.be.revertedWith('TrueRatingAgency: loan was already created')
     })
 
     it('retracting is only possible until loan is funded (only pending phase)')
 
     it('throws when removing not pending loan', async () => {
       await expect(rater.retract(fakeLoanTokenAddress))
-        .to.be.revertedWith('TrueRater: loan is not currently pending')
+        .to.be.revertedWith('TrueRatingAgency: loan is not currently pending')
     })
 
     it('cannot remove loan created by someone else', async () => {
@@ -143,7 +143,7 @@ describe('TrueRater', () => {
       await rater.connect(otherWallet).submit(exampleLoanTokenAddress)
 
       await expect(rater.retract(exampleLoanTokenAddress))
-        .to.be.revertedWith('TrueRater: not retractor\'s loan')
+        .to.be.revertedWith('TrueRatingAgency: not retractor\'s loan')
     })
   })
 
@@ -189,14 +189,14 @@ describe('TrueRater', () => {
       it('after voting yes, disallows voting no', async () => {
         await rater.yes(exampleLoanTokenAddress, stake)
         await expect(rater.no(exampleLoanTokenAddress, stake))
-          .to.be.revertedWith('TrueRater: can\'t vote both yes and no')
+          .to.be.revertedWith('TrueRatingAgency: can\'t vote both yes and no')
       })
 
       it('is only possible until loan is funded (only pending phase)')
 
       it('is only possible for existing loans', async () => {
         await expect(rater.yes(fakeLoanTokenAddress, stake))
-          .to.be.revertedWith('TrueRater: loan is not currently pending')
+          .to.be.revertedWith('TrueRatingAgency: loan is not currently pending')
       })
     })
 
@@ -236,14 +236,14 @@ describe('TrueRater', () => {
       it('after voting no, disallows voting no', async () => {
         await rater.no(exampleLoanTokenAddress, stake)
         await expect(rater.yes(exampleLoanTokenAddress, stake))
-          .to.be.revertedWith('TrueRater: can\'t vote both yes and no')
+          .to.be.revertedWith('TrueRatingAgency: can\'t vote both yes and no')
       })
 
       it('is only possible until loan is funded (only pending phase)')
 
       it('is only possible for existing loans', async () => {
         await expect(rater.no(fakeLoanTokenAddress, stake))
-          .to.be.revertedWith('TrueRater: loan is not currently pending')
+          .to.be.revertedWith('TrueRatingAgency: loan is not currently pending')
       })
     })
 

@@ -5,7 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {ITruePool, IERC20} from "./interface/ITruePool.sol";
 
-contract TrueRater is Ownable {
+contract TrueRatingAgency is Ownable {
     using SafeMath for uint256;
 
     enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
@@ -27,27 +27,27 @@ contract TrueRater is Ownable {
     event LoanRetracted(address id);
 
     modifier onlyAllowed() {
-        require(borrowers[msg.sender], "TrueRater: sender not allowed borrower");
+        require(borrowers[msg.sender], "TrueRatingAgency: sender not allowed borrower");
         _;
     }
 
     modifier onlyBorrower(address id) {
-        require(loans[id].borrower == msg.sender, "TrueRater: not retractor's loan");
+        require(loans[id].borrower == msg.sender, "TrueRatingAgency: not retractor's loan");
         _;
     }
 
     modifier onlyNotExistingLoans(address id) {
-        require(status(id) == LoanStatus.Void, "TrueRater: loan was already created");
+        require(status(id) == LoanStatus.Void, "TrueRatingAgency: loan was already created");
         _;
     }
 
     modifier onlyPendingLoans(address id) {
-        require(status(id) == LoanStatus.Pending, "TrueRater: loan is not currently pending");
+        require(status(id) == LoanStatus.Pending, "TrueRatingAgency: loan is not currently pending");
         _;
     }
 
     modifier onlyNotRunningLoans(address id) {
-        require(status(id) != LoanStatus.Running, "TrueRater: loan is currently running");
+        require(status(id) != LoanStatus.Running, "TrueRatingAgency: loan is currently running");
         _;
     }
 
@@ -98,7 +98,7 @@ contract TrueRater is Ownable {
         uint256 stake,
         bool choice
     ) internal {
-        require(loans[id].votes[msg.sender][!choice] == 0, "TrueRater: can't vote both yes and no");
+        require(loans[id].votes[msg.sender][!choice] == 0, "TrueRatingAgency: can't vote both yes and no");
         loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].add(stake);
         require(trustToken.transferFrom(msg.sender, address(this), stake));
