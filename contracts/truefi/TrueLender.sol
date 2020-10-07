@@ -8,6 +8,8 @@ import {ITruePool, IERC20} from "./interface/ITruePool.sol";
 contract TrueLender is Ownable {
     using SafeMath for uint256;
 
+    enum ApplicationStatus {Pending, Approved, Rejected}
+
     struct Application {
         uint256 creationBlock;
         uint256 timestamp;
@@ -31,12 +33,16 @@ contract TrueLender is Ownable {
     /*immutable*/
     IERC20 public trustToken;
 
+    uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
+
     // ===== Pool parameters =====
     /**
-     * @notice Minimal APY for a loan
      * @dev % multiplied by 100. e.g. 10.5% = 1050
      */
     uint256 public minApy = 1000;
+    uint256 public participationFactor = 10000;
+    uint256 public riskAversion = 15000;
+
     uint256 public minSize = 1000000 ether;
     uint256 public maxSize = 10000000 ether;
     uint256 public minDuration = 180 days;
@@ -45,6 +51,8 @@ contract TrueLender is Ownable {
 
     event Allowed(address indexed who, bool status);
     event MinApyChanged(uint256 minApy);
+    event ParticipationFactorChanged(uint256 participationFactor);
+    event RiskAversionChanged(uint256 participationFactor);
     event VotingPeriodChanged(uint256 votingPeriod);
     event SizeLimitsChanged(uint256 minSize, uint256 maxSize);
     event DurationLimitsChanged(uint256 minDuration, uint256 maxDuration);
@@ -62,7 +70,7 @@ contract TrueLender is Ownable {
     }
 
     modifier onlyDuringVoting(bytes8 id) {
-        require(applications[id].timestamp.add(votingPeriod) >= block.timestamp, "TrueLender: can't vote outside the voting period");
+        require(status(id) == ApplicationStatus.Pending, "TrueLender: can't vote outside the voting period");
         _;
     }
 
@@ -90,6 +98,16 @@ contract TrueLender is Ownable {
     function setMinApy(uint256 newMinApy) external onlyOwner {
         minApy = newMinApy;
         emit MinApyChanged(newMinApy);
+    }
+
+    function setParticipationFactor(uint256 newParticipationFactor) external onlyOwner {
+        participationFactor = newParticipationFactor;
+        emit ParticipationFactorChanged(newParticipationFactor);
+    }
+
+    function setRiskAversion(uint256 newRiskAversion) external onlyOwner {
+        riskAversion = newRiskAversion;
+        emit RiskAversionChanged(newRiskAversion);
     }
 
     function setVotingPeriod(uint256 newVotingPeriod) external onlyOwner {
@@ -162,5 +180,19 @@ contract TrueLender is Ownable {
     function nah(bytes8 id, uint256 stake) external applicationExists(id) onlyDuringVoting(id) {
         applications[id].nah = applications[id].nah.add(stake);
         vote(id, stake, false);
+    }
+
+    function status(bytes8 id) public view applicationExists(id) returns (ApplicationStatus) {
+        Application storage loan = applications[id];
+        if (loan.timestamp.add(votingPeriod) >= block.timestamp) {
+            return ApplicationStatus.Pending;
+        }
+        if (loan.amount.mul(participationFactor) > loan.yeah.mul(10000).mul(TOKEN_PRECISION_DIFFERENCE)) {
+            return ApplicationStatus.Rejected;
+        }
+        if (loan.apy.mul(loan.duration).mul(loan.yeah).div(360 days) < loan.nah.mul(riskAversion)) {
+            return ApplicationStatus.Rejected;
+        }
+        return ApplicationStatus.Approved;
     }
 }

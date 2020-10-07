@@ -40,13 +40,13 @@ describe('TrueLender', () => {
 
     trustToken = await new TrustTokenFactory(owner).deploy()
     await trustToken.initialize()
-    await trustToken.mint(owner.address, parseTT(1000))
+    await trustToken.mint(owner.address, parseTT(100000000))
 
     underlyingPool = await deployMockContract(owner, ITruePoolJson.abi)
     await underlyingPool.mock.currencyToken.returns(tusd.address)
     lendingPool = await new TrueLenderFactory(owner).deploy(underlyingPool.address, trustToken.address)
 
-    await trustToken.approve(lendingPool.address, parseTT(1000))
+    await trustToken.approve(lendingPool.address, parseTT(100000000))
   })
 
   describe('Constructor', () => {
@@ -76,11 +76,44 @@ describe('TrueLender', () => {
       })
 
       it('emits MinApyChanged', async () => {
-        await expect(lendingPool.setMinApy(1234)).to.emit(lendingPool, 'MinApyChanged').withArgs(1234)
+        await expect(lendingPool.setMinApy(1234))
+          .to.emit(lendingPool, 'MinApyChanged').withArgs(1234)
       })
 
       it('must be called by owner', async () => {
         await expect(lendingPool.connect(otherWallet).setMinApy(1234)).to.be.revertedWith('caller is not the owner')
+      })
+    })
+
+    describe('setParticipationFactor', () => {
+      it('changes participationFactor', async () => {
+        await lendingPool.setParticipationFactor(1234)
+        expect(await lendingPool.participationFactor()).to.equal(1234)
+      })
+
+      it('emits ParticipationFactorChanged', async () => {
+        await expect(lendingPool.setParticipationFactor(1234))
+          .to.emit(lendingPool, 'ParticipationFactorChanged').withArgs(1234)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lendingPool.connect(otherWallet).setParticipationFactor(1234)).to.be.revertedWith('caller is not the owner')
+      })
+    })
+
+    describe('setRiskAversion', () => {
+      it('changes riskAversion', async () => {
+        await lendingPool.setRiskAversion(1234)
+        expect(await lendingPool.riskAversion()).to.equal(1234)
+      })
+
+      it('emits RiskAversionChanged', async () => {
+        await expect(lendingPool.setRiskAversion(1234))
+          .to.emit(lendingPool, 'RiskAversionChanged').withArgs(1234)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lendingPool.connect(otherWallet).setRiskAversion(1234)).to.be.revertedWith('caller is not the owner')
       })
     })
 
@@ -91,7 +124,8 @@ describe('TrueLender', () => {
       })
 
       it('emits VotingPeriodChanged', async () => {
-        await expect(lendingPool.setVotingPeriod(dayInSeconds * 3)).to.emit(lendingPool, 'VotingPeriodChanged').withArgs(dayInSeconds * 3)
+        await expect(lendingPool.setVotingPeriod(dayInSeconds * 3))
+          .to.emit(lendingPool, 'VotingPeriodChanged').withArgs(dayInSeconds * 3)
       })
 
       it('must be called by owner', async () => {
@@ -107,7 +141,8 @@ describe('TrueLender', () => {
       })
 
       it('emits SizeLimitsChanged', async () => {
-        await expect(lendingPool.setSizeLimits(7654, 234567)).to.emit(lendingPool, 'SizeLimitsChanged').withArgs(7654, 234567)
+        await expect(lendingPool.setSizeLimits(7654, 234567))
+          .to.emit(lendingPool, 'SizeLimitsChanged').withArgs(7654, 234567)
       })
 
       it('must be called by owner', async () => {
@@ -131,7 +166,8 @@ describe('TrueLender', () => {
       })
 
       it('emits DurationLimitsChanged', async () => {
-        await expect(lendingPool.setDurationLimits(7654, 234567)).to.emit(lendingPool, 'DurationLimitsChanged').withArgs(7654, 234567)
+        await expect(lendingPool.setDurationLimits(7654, 234567))
+          .to.emit(lendingPool, 'DurationLimitsChanged').withArgs(7654, 234567)
       })
 
       it('must be called by owner', async () => {
@@ -302,7 +338,7 @@ describe('TrueLender', () => {
 
       it('is only possible during voting period', async () => {
         await lendingPool.yeah(applicationId, stake)
-        timeTravel(provider, dayInSeconds * 8)
+        await timeTravel(provider, dayInSeconds * 8)
         await expect(lendingPool.yeah(applicationId, stake)).to.be.revertedWith('TrueLender: can\'t vote outside the voting period')
       })
 
@@ -353,12 +389,128 @@ describe('TrueLender', () => {
 
       it('is only possible during voting period', async () => {
         await lendingPool.nah(applicationId, stake)
-        timeTravel(provider, dayInSeconds * 8)
+        await timeTravel(provider, dayInSeconds * 8)
         await expect(lendingPool.nah(applicationId, stake)).to.be.revertedWith('TrueLender: can\'t vote outside the voting period')
       })
 
       it('is only possible for existing applications', async () => {
         await expect(lendingPool.nah(fakeApplicationId, stake)).to.be.revertedWith('TrueLender: application doesn\'t exist')
+      })
+    })
+  })
+
+  describe('Status', () => {
+    enum ApplicationStatus { Pending, Approved, Rejected }
+    const loanAmount = '1000000'
+
+    let applicationId: string
+
+    beforeEach(async () => {
+      await trustToken.mint(otherWallet.address, parseTT(100000000))
+      await trustToken.connect(otherWallet).approve(lendingPool.address, parseTT(100000000))
+      await lendingPool.allow(owner.address, true)
+      const tx = await lendingPool.submit(otherWallet.address, parseEther(loanAmount), 1000, monthInSeconds * 12)
+      applicationId = await extractApplicationId(tx)
+    })
+
+    it('returns pending if called during voting period', async () => {
+      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Pending)
+    })
+
+    it('returns pending not whole voting period passed', async () => {
+      await timeTravel(provider, dayInSeconds * 7 - 10)
+      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Pending)
+    })
+
+    it('returns rejected if voting period passed and noone voted', async () => {
+      await timeTravel(provider, dayInSeconds * 7 + 100)
+      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
+    })
+
+    it('returns rejected if not enough yeah votes collected', async () => {
+      await lendingPool.yeah(applicationId, parseTT(loanAmount).sub(1))
+      await timeTravel(provider, dayInSeconds * 7 + 100)
+
+      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
+    })
+
+    it('returns rejected if not enough yeah votes collected (bigger participationFactor)', async () => {
+      await lendingPool.setParticipationFactor(20000)
+      await lendingPool.yeah(applicationId, parseTT(loanAmount).mul(2).sub(1))
+      await timeTravel(provider, dayInSeconds * 7 + 100)
+
+      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
+    })
+
+    it('returns rejected if not enough yeah votes collected (smaller participationFactor)', async () => {
+      await lendingPool.setParticipationFactor(5000)
+      await lendingPool.yeah(applicationId, parseTT(loanAmount).div(2).sub(1))
+      await timeTravel(provider, dayInSeconds * 7 + 100)
+
+      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
+    })
+
+    it('returns approved if enough yeah votes collected and all votes were yeah', async () => {
+      await lendingPool.yeah(applicationId, parseTT(loanAmount))
+      await timeTravel(provider, dayInSeconds * 7 + 100)
+
+      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Approved)
+    })
+
+    describe('Complex cases', () => {
+      interface LoanScenario {
+        APY: number,
+        duration: number,
+        riskAversion: number,
+        yeahPercentage: number,
+      }
+
+      const scenario = (APY: number, months: number, riskAversion: number, yeahPercentage: number) => ({
+        APY: APY * 100,
+        duration: monthInSeconds * months,
+        riskAversion: riskAversion * 100,
+        yeahPercentage,
+      })
+
+      const execute = async (loanScenario: LoanScenario) => {
+        await lendingPool.setRiskAversion(loanScenario.riskAversion)
+        const tx = await lendingPool.submit(otherWallet.address, parseEther(loanAmount), loanScenario.APY, loanScenario.duration)
+        applicationId = await extractApplicationId(tx)
+        await lendingPool.yeah(applicationId, parseTT(loanAmount).mul(loanScenario.yeahPercentage))
+        await lendingPool.connect(otherWallet).nah(applicationId, parseTT(loanAmount).mul(100 - loanScenario.yeahPercentage))
+        await timeTravel(provider, dayInSeconds * 7 + 100)
+      }
+
+      describe('Approvals', () => {
+        const approvedLoanScenarios = [
+          scenario(10, 12, 100, 95),
+          scenario(25, 12, 100, 80),
+          scenario(10, 12, 50, 85),
+          scenario(10, 36, 100, 80),
+        ]
+
+        approvedLoanScenarios.forEach((loanScenario, index) => {
+          it(`approved loan case #${index + 1}`, async () => {
+            await execute(loanScenario)
+            expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Approved)
+          })
+        })
+      })
+
+      describe('Rejections', () => {
+        const rejectedLoanScenarios = [
+          scenario(10, 12, 100, 85),
+          scenario(25, 12, 100, 60),
+          scenario(10, 12, 50, 75),
+          scenario(10, 36, 100, 70),
+        ]
+
+        rejectedLoanScenarios.forEach((loanScenario, index) => {
+          it(`rejected loan case #${index + 1}`, async () => {
+            await execute(loanScenario)
+            expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
+          })
+        })
       })
     })
   })
