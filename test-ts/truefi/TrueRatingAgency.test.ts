@@ -38,33 +38,7 @@ describe('TrueRatingAgency', () => {
     })
   })
 
-  describe('Whitelisting', () => {
-    it('changes whitelist status', async () => {
-      expect(await rater.borrowers(otherWallet.address)).to.be.false
-      await rater.allow(otherWallet.address, true)
-      expect(await rater.borrowers(otherWallet.address)).to.be.true
-      await rater.allow(otherWallet.address, false)
-      expect(await rater.borrowers(otherWallet.address)).to.be.false
-    })
-
-    it('emits event', async () => {
-      await expect(rater.allow(otherWallet.address, true))
-        .to.emit(rater, 'Allowed').withArgs(otherWallet.address, true)
-      await expect(rater.allow(otherWallet.address, false))
-        .to.emit(rater, 'Allowed').withArgs(otherWallet.address, false)
-    })
-
-    it('reverts when performed by non-owner', async () => {
-      await expect(rater.connect(otherWallet).allow(otherWallet.address, true))
-        .to.be.revertedWith('caller is not the owner')
-    })
-  })
-
   describe('Submiting/Retracting loan', () => {
-    beforeEach(async () => {
-      await rater.allow(owner.address, true)
-    })
-
     it('creates loan loan', async () => {
       await rater.submit(exampleLoanTokenAddress)
 
@@ -113,11 +87,6 @@ describe('TrueRatingAgency', () => {
       expect(await rater.getTotalNoVotes(exampleLoanTokenAddress)).to.be.equal(0)
     })
 
-    it('sender should be allowed by owner to create loan', async () => {
-      await expect(rater.connect(otherWallet).submit(exampleLoanTokenAddress))
-        .to.be.revertedWith('TrueRatingAgency: sender not allowed')
-    })
-
     it('reverts on attempt of creating the same loan twice', async () => {
       await rater.submit(exampleLoanTokenAddress)
       await expect(rater.submit(exampleLoanTokenAddress))
@@ -139,7 +108,6 @@ describe('TrueRatingAgency', () => {
     })
 
     it('cannot remove loan created by someone else', async () => {
-      await rater.allow(otherWallet.address, true)
       await rater.connect(otherWallet).submit(exampleLoanTokenAddress)
 
       await expect(rater.retract(exampleLoanTokenAddress))
@@ -149,7 +117,6 @@ describe('TrueRatingAgency', () => {
 
   describe('Voting', () => {
     beforeEach(async () => {
-      await rater.allow(owner.address, true)
       await rater.submit(exampleLoanTokenAddress)
     })
 

@@ -17,19 +17,12 @@ contract TrueRatingAgency is Ownable {
         mapping(address => mapping(bool => uint256)) votes;
     }
 
-    mapping(address => bool) public borrowers;
     mapping(address => Loan) public loans;
 
     IERC20 public trustToken;
 
-    event Allowed(address indexed who, bool status);
     event LoanSubmitted(address id);
     event LoanRetracted(address id);
-
-    modifier onlyAllowed() {
-        require(borrowers[msg.sender], "TrueRatingAgency: sender not allowed borrower");
-        _;
-    }
 
     modifier onlyBorrower(address id) {
         require(loans[id].borrower == msg.sender, "TrueRatingAgency: not sender's loan");
@@ -75,12 +68,7 @@ contract TrueRatingAgency is Ownable {
         return (getTotalNoVotes(id), getTotalYesVotes(id));
     }
 
-    function allow(address who, bool status) external onlyOwner {
-        borrowers[who] = status;
-        emit Allowed(who, status);
-    }
-
-    function submit(address id) external onlyAllowed onlyNotExistingLoans(id) {
+    function submit(address id) external onlyNotExistingLoans(id) {
         loans[id] = Loan({borrower: msg.sender, timestamp: block.timestamp});
         emit LoanSubmitted(id);
     }
