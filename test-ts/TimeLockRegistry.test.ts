@@ -142,6 +142,15 @@ describe('TimeLockRegistry', () => {
       await registry.cancel(holder.address)
       await expect(registry.connect(holder).claim()).to.be.revertedWith('Not registered')
     })
+
+    it('register, claim, re-register', async () => {
+      await trustToken.approve(registry.address, toTrustToken(20))
+      await registry.register(holder.address, toTrustToken(10))
+      await registry.connect(holder).claim()
+      await registry.register(holder.address, toTrustToken(10))
+      await registry.connect(holder).claim()
+      expect(await trustToken.balanceOf(holder.address)).to.equal(toTrustToken(20))
+    })
   })
 
   describe('Register SAFT accounts script', () => {

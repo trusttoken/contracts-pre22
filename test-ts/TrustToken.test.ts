@@ -589,8 +589,11 @@ describe('TrustToken', () => {
       expect(await trustToken.nextEpoch()).to.equal(constants.MaxUint256)
     })
 
-    it('is impossible to give lock funds twice to a person', async () => {
-      await expect(trustToken.connect(timeLockRegistry).registerLockup(saftHolder.address, parseTT(100))).to.be.revertedWith('distribution already set')
+    it('can lock funds multiple times for one account', async () => {
+      await trustToken.connect(timeLockRegistry).registerLockup(saftHolder.address, parseTT(100))
+      expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(parseTT(0))
+      expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(parseTT(200))
+      expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(200))
     })
 
     it('only timeLockRegistry can register lockups', async () => {
