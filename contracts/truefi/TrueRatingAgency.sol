@@ -102,7 +102,7 @@ contract TrueRatingAgency is Ownable {
 
     function withdraw(address id, uint256 stake) public onlyNotRunningLoans(id) {
         bool choice = loans[id].votes[msg.sender][true] > 0;
-        require(loans[id].votes[msg.sender][choice] >= stake);
+        require(loans[id].votes[msg.sender][choice] >= stake, "TrueRatingAgency: can't withdraw more than was staked");
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
         if (status(id) == LoanStatus.Pending) {
             loans[id].prediction[choice] = loans[id].prediction[choice].sub(stake);
