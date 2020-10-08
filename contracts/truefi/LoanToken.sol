@@ -4,10 +4,9 @@ pragma solidity 0.6.10;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 
-contract LoanToken is ILoanToken, ERC20, Ownable {
+contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
 
     enum Status {Awaiting, Funded, Closed}
@@ -42,17 +41,17 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
     }
 
     modifier onlyBorrower() {
-        require(msg.sender == borrower);
+        require(msg.sender == borrower, "LoanToken: caller is not the borrower");
         _;
     }
 
     modifier onlyClosed() {
-        require(status == Status.Closed);
+        require(status == Status.Closed, "LoanToken: current status should be Closed");
         _;
     }
 
     modifier onlyFunded() {
-        require(status != Status.Funded);
+        require(status == Status.Funded, "LoanToken: current status should be Funded");
         _;
     }
 
@@ -77,7 +76,7 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
     }
 
     function close() external override onlyFunded {
-        require(start.add(duration) <= block.timestamp);
+        require(start.add(duration) <= block.timestamp, "LoanToken: loan cannot be closed yet");
         status = Status.Closed;
         returned = currencyToken.balanceOf(address(this));
     }
