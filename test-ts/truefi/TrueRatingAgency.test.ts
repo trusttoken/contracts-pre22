@@ -39,7 +39,7 @@ describe('TrueRatingAgency', () => {
   })
 
   describe('Submiting/Retracting loan', () => {
-    it('creates loan loan', async () => {
+    it('creates loan', async () => {
       await rater.submit(exampleLoanTokenAddress)
 
       const loan = await rater.loans(exampleLoanTokenAddress)
