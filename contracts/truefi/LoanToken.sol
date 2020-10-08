@@ -10,19 +10,19 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
 contract LoanToken is ILoanToken, ERC20, Ownable {
     using SafeMath for uint256;
 
-    enum LoanTokenStatus {Awaiting, Funded, Closed}
+    enum Status {Awaiting, Funded, Closed}
 
     address public borrower;
+    uint256 public amount;
     uint256 public duration;
     uint256 public apy;
-    uint256 public amount;
 
     uint256 public start;
     uint256 public debt;
 
     uint256 public returned;
 
-    LoanTokenStatus status;
+    Status public status;
 
     IERC20 public currencyToken;
 
@@ -47,17 +47,17 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
     }
 
     modifier onlyClosed() {
-        require(status == LoanTokenStatus.Closed);
+        require(status == Status.Closed);
         _;
     }
 
     modifier onlyFunded() {
-        require(status != LoanTokenStatus.Funded);
+        require(status != Status.Funded);
         _;
     }
 
     modifier onlyAwaiting() {
-        require(status == LoanTokenStatus.Awaiting);
+        require(status == Status.Awaiting, "LoanToken: current status should be Awaiting");
         _;
     }
 
@@ -65,12 +65,11 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
         return true;
     }
 
-    function fund() external override onlyAwaiting returns (uint256) {
-        status = LoanTokenStatus.Funded;
+    function fund() external override onlyAwaiting {
+        status = Status.Funded;
         start = block.timestamp;
         _mint(msg.sender, debt);
         require(currencyToken.transferFrom(msg.sender, address(this), amount));
-        return debt;
     }
 
     function withdraw(address _beneficiary, uint256 _amount) external override onlyBorrower onlyFunded {
@@ -79,7 +78,7 @@ contract LoanToken is ILoanToken, ERC20, Ownable {
 
     function close() external override onlyFunded {
         require(start.add(duration) <= block.timestamp);
-        status = LoanTokenStatus.Closed;
+        status = Status.Closed;
         returned = currencyToken.balanceOf(address(this));
     }
 

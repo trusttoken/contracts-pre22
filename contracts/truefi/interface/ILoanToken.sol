@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 interface ILoanToken is IERC20 {
     function isLoanToken() external pure returns (bool);
 
-    function fund() external returns (uint256);
+    function fund() external;
 
     function withdraw(address _beneficiary, uint256 _amount) external;
 
