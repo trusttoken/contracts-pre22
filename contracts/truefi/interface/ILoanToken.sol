@@ -8,7 +8,7 @@ interface ILoanToken is IERC20 {
 
     function fund() external;
 
-    function withdraw(address _beneficiary, uint256 _amount) external;
+    function withdraw(address _beneficiary) external;
 
     function close() external;
 

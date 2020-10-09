@@ -9,7 +9,7 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
 contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
 
-    enum Status {Awaiting, Funded, Closed}
+    enum Status {Awaiting, Funded, Withdrawn, Closed}
 
     address public borrower;
     uint256 public amount;
@@ -50,6 +50,11 @@ contract LoanToken is ILoanToken, ERC20 {
         _;
     }
 
+    modifier onlyOngoing() {
+        require(status == Status.Funded || status == Status.Withdrawn, "LoanToken: current status should be Funded or Withdrawn");
+        _;
+    }
+
     modifier onlyFunded() {
         require(status == Status.Funded, "LoanToken: current status should be Funded");
         _;
@@ -71,11 +76,12 @@ contract LoanToken is ILoanToken, ERC20 {
         require(currencyToken.transferFrom(msg.sender, address(this), amount));
     }
 
-    function withdraw(address _beneficiary, uint256 _amount) external override onlyBorrower onlyFunded {
-        require(currencyToken.transfer(_beneficiary, _amount));
+    function withdraw(address _beneficiary) external override onlyBorrower onlyFunded {
+        status = Status.Withdrawn;
+        require(currencyToken.transfer(_beneficiary, amount));
     }
 
-    function close() external override onlyFunded {
+    function close() external override onlyOngoing {
         require(start.add(duration) <= block.timestamp, "LoanToken: loan cannot be closed yet");
         status = Status.Closed;
         returned = currencyToken.balanceOf(address(this));

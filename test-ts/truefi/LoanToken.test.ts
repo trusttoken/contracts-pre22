@@ -8,11 +8,11 @@ import { LoanToken } from '../../build/types/LoanToken'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
 import { MockProvider } from 'ethereum-waffle'
-import { BigNumberish, parseEther } from 'ethers/utils'
+import { parseEther } from 'ethers/utils'
 import { timeTravel } from '../utils/timeTravel'
 
 describe('LoanToken', () => {
-  enum LoanTokenStatus {Awaiting, Funded, Closed}
+  enum LoanTokenStatus {Awaiting, Funded, Withdrawn, Closed}
 
   let provider: MockProvider
   let owner: Wallet
@@ -23,8 +23,8 @@ describe('LoanToken', () => {
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
 
-  const withdraw = async (wallet: Wallet, amount: BigNumberish, beneficiary = wallet.address) =>
-    loanToken.connect(wallet).withdraw(beneficiary, amount)
+  const withdraw = async (wallet: Wallet, beneficiary = wallet.address) =>
+    loanToken.connect(wallet).withdraw(beneficiary)
 
   beforeEachWithFixture(async (_provider, wallets) => {
     [owner, borrower] = wallets
@@ -63,7 +63,7 @@ describe('LoanToken', () => {
       expect(await loanToken.isLoanToken()).to.be.true
     })
 
-    it('sets borrrowers debt', async () => {
+    it('sets borrowers debt', async () => {
       expect(await loanToken.debt()).to.equal(parseEther('1100'))
     })
   })
@@ -103,36 +103,37 @@ describe('LoanToken', () => {
   describe('Withdraw', () => {
     it('borrower can take funds from loan token', async () => {
       await loanToken.fund()
-      await withdraw(borrower, parseEther('500'))
-      expect(await tusd.balanceOf(borrower.address)).to.equal(parseEther('500'))
+      await withdraw(borrower)
+      expect(await tusd.balanceOf(borrower.address)).to.equal(parseEther('1000'))
     })
 
     it('transfers funds to beneficiary', async () => {
       await loanToken.fund()
       const randomAddress = Wallet.createRandom().address
-      await withdraw(borrower, parseEther('500'), randomAddress)
-      expect(await tusd.balanceOf(randomAddress)).to.equal(parseEther('500'))
+      await withdraw(borrower, randomAddress)
+      expect(await tusd.balanceOf(randomAddress)).to.equal(parseEther('1000'))
     })
 
-    it('reverts when withdrawing more than loan amount', async () => {
+    it('reverts if trying to withdraw twice', async () => {
       await loanToken.fund()
-      await expect(withdraw(borrower, parseEther('1100'))).to.be.revertedWith('ERC20: transfer amount exceeds balance')
+      await withdraw(borrower)
+      await expect(withdraw(borrower)).to.be.revertedWith('LoanToken: current status should be Funded')
     })
 
     it('reverts when withdrawing from not funded loan', async () => {
-      await expect(withdraw(borrower, parseEther('500'))).to.be.revertedWith('LoanToken: current status should be Funded')
+      await expect(withdraw(borrower)).to.be.revertedWith('LoanToken: current status should be Funded')
     })
 
     it('reverts when withdrawing from not closed loan', async () => {
       await loanToken.fund()
       await timeTravel(provider, monthInSeconds * 12)
       await loanToken.close()
-      await expect(withdraw(borrower, parseEther('500'))).to.be.revertedWith('LoanToken: current status should be Funded')
+      await expect(withdraw(borrower)).to.be.revertedWith('LoanToken: current status should be Funded')
     })
 
     it('reverts when sender is not a borrower', async () => {
       await loanToken.fund()
-      await expect(withdraw(owner, parseEther('500'))).to.be.revertedWith('LoanToken: caller is not the borrower')
+      await expect(withdraw(owner)).to.be.revertedWith('LoanToken: caller is not the borrower')
     })
   })
 
@@ -147,9 +148,9 @@ describe('LoanToken', () => {
     it('saves returned amount', async () => {
       await loanToken.fund()
       await timeTravel(provider, monthInSeconds * 12)
-      await withdraw(borrower, parseEther('200'))
+      await withdraw(borrower)
       await loanToken.close()
-      expect(await loanToken.returned()).to.equal(parseEther('800'))
+      expect(await loanToken.returned()).to.equal(0)
     })
 
     it('reverts when closing not funded loan', async () => {
