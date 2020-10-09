@@ -9,7 +9,7 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
 contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
 
-    enum Status {Awaiting, Funded, Withdrawn, Closed}
+    enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted}
 
     address public borrower;
     uint256 public amount;
@@ -19,7 +19,7 @@ contract LoanToken is ILoanToken, ERC20 {
     uint256 public start;
     uint256 public debt;
 
-    uint256 public returned;
+    uint256 public redeemed;
 
     Status public status;
 
@@ -46,7 +46,7 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     modifier onlyClosed() {
-        require(status == Status.Closed, "LoanToken: current status should be Closed");
+        require(status == Status.Settled || status == Status.Defaulted, "LoanToken: current status should be Settled or Defaulted");
         _;
     }
 
@@ -57,6 +57,11 @@ contract LoanToken is ILoanToken, ERC20 {
 
     modifier onlyFunded() {
         require(status == Status.Funded, "LoanToken: current status should be Funded");
+        _;
+    }
+
+    modifier onlyAfterWithdraw() {
+        require(status >= Status.Withdrawn, "LoanToken: only after loan has been withdrawn");
         _;
     }
 
@@ -83,21 +88,33 @@ contract LoanToken is ILoanToken, ERC20 {
 
     function close() external override onlyOngoing {
         require(start.add(duration) <= block.timestamp, "LoanToken: loan cannot be closed yet");
-        status = Status.Closed;
-        returned = currencyToken.balanceOf(address(this));
+        if (_balance() >= debt) {
+            status = Status.Settled;
+        } else {
+            status = Status.Defaulted;
+        }
     }
 
     function redeem(uint256 _amount) external override onlyClosed {
-        uint256 amountToReturn = _amount.mul(returned).div(debt);
+        uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
+        redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
         require(currencyToken.transfer(msg.sender, amountToReturn));
     }
 
-    function settled() external override view onlyClosed returns (bool) {
-        return returned >= debt;
+    function repay(address _sender, uint256 _amount) external override onlyAfterWithdraw {
+        require(currencyToken.transferFrom(_sender, address(this), _amount));
+    }
+
+    function repaid() external override view onlyAfterWithdraw returns (uint256) {
+        return _balance().add(redeemed);
     }
 
     function balance() external override view returns (uint256) {
+        return _balance();
+    }
+
+    function _balance() internal view returns (uint256) {
         return currencyToken.balanceOf(address(this));
     }
 

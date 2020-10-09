@@ -2,21 +2,21 @@ import { expect } from 'chai'
 import { Wallet } from 'ethers'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-
 import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
 import { LoanToken } from '../../build/types/LoanToken'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
 import { MockProvider } from 'ethereum-waffle'
-import { parseEther } from 'ethers/utils'
+import { BigNumberish, formatEther, parseEther } from 'ethers/utils'
 import { timeTravel } from '../utils/timeTravel'
 
 describe('LoanToken', () => {
-  enum LoanTokenStatus {Awaiting, Funded, Withdrawn, Closed}
+  enum LoanTokenStatus {Awaiting, Funded, Withdrawn, Settled, Defaulted}
 
   let provider: MockProvider
-  let owner: Wallet
+  let lender: Wallet
   let borrower: Wallet
+  let other: Wallet
   let loanToken: LoanToken
   let tusd: MockTrueCurrency
 
@@ -26,15 +26,18 @@ describe('LoanToken', () => {
   const withdraw = async (wallet: Wallet, beneficiary = wallet.address) =>
     loanToken.connect(wallet).withdraw(beneficiary)
 
+  const payback = async (wallet: Wallet, amount: BigNumberish) =>
+    tusd.connect(wallet).transfer(loanToken.address, amount)
+
   beforeEachWithFixture(async (_provider, wallets) => {
-    [owner, borrower] = wallets
+    [lender, borrower, other] = wallets
     provider = _provider
 
-    tusd = await new MockTrueCurrencyFactory(owner).deploy()
+    tusd = await new MockTrueCurrencyFactory(lender).deploy()
     await tusd.initialize()
-    await tusd.mint(owner.address, parseEther('100000000'))
+    await tusd.mint(lender.address, parseEther('1000'))
 
-    loanToken = await new LoanTokenFactory(owner).deploy(
+    loanToken = await new LoanTokenFactory(lender).deploy(
       tusd.address,
       borrower.address,
       parseEther('1000'),
@@ -42,7 +45,7 @@ describe('LoanToken', () => {
       1000,
     )
 
-    await tusd.approve(loanToken.address, parseEther('100000000'))
+    await tusd.approve(loanToken.address, parseEther('1000'))
   })
 
   it('isLoanToken', async () => {
@@ -61,6 +64,7 @@ describe('LoanToken', () => {
       expect(await loanToken.apy()).to.equal(1000)
       expect(await loanToken.start()).to.be.equal(0)
       expect(await loanToken.isLoanToken()).to.be.true
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Awaiting)
     })
 
     it('sets borrowers debt', async () => {
@@ -86,7 +90,7 @@ describe('LoanToken', () => {
     })
 
     it('mints funders loan tokens', async () => {
-      expect(await loanToken.balanceOf(owner.address)).to.equal(parseEther('1100'))
+      expect(await loanToken.balanceOf(lender.address)).to.equal(parseEther('1100'))
       expect(await loanToken.totalSupply()).to.equal(parseEther('1100'))
     })
 
@@ -114,6 +118,12 @@ describe('LoanToken', () => {
       expect(await tusd.balanceOf(randomAddress)).to.equal(parseEther('1000'))
     })
 
+    it('sets status to Withdrawn', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Withdrawn)
+    })
+
     it('reverts if trying to withdraw twice', async () => {
       await loanToken.fund()
       await withdraw(borrower)
@@ -133,24 +143,35 @@ describe('LoanToken', () => {
 
     it('reverts when sender is not a borrower', async () => {
       await loanToken.fund()
-      await expect(withdraw(owner)).to.be.revertedWith('LoanToken: caller is not the borrower')
+      await expect(withdraw(lender)).to.be.revertedWith('LoanToken: caller is not the borrower')
     })
   })
 
   describe('Close', () => {
-    it('sets status to Closed', async () => {
+    it('sets status to Defaulted if no debt has been returned', async () => {
       await loanToken.fund()
+      await withdraw(borrower)
       await timeTravel(provider, monthInSeconds * 12)
       await loanToken.close()
-      expect(await loanToken.status()).to.equal(LoanTokenStatus.Closed)
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
     })
 
-    it('saves returned amount', async () => {
+    it('sets status to Defaulted if not whole debt has been returned', async () => {
       await loanToken.fund()
-      await timeTravel(provider, monthInSeconds * 12)
       await withdraw(borrower)
+      await timeTravel(provider, monthInSeconds * 12)
+      await tusd.mint(loanToken.address, parseEther('1099'))
       await loanToken.close()
-      expect(await loanToken.returned()).to.equal(0)
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
+    })
+
+    it('sets status to Settled if whole debt has been returned', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await timeTravel(provider, monthInSeconds * 12)
+      await tusd.mint(loanToken.address, parseEther('1100'))
+      await loanToken.close()
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
     })
 
     it('reverts when closing not funded loan', async () => {
@@ -172,8 +193,181 @@ describe('LoanToken', () => {
     })
   })
 
+  describe('Repay', () => {
+    it('reverts if called before withdraw', async () => {
+      await expect(loanToken.repay(lender.address, 1)).to.be.revertedWith('LoanToken: only after loan has been withdrawn')
+      await loanToken.fund()
+      await expect(loanToken.repay(lender.address, 1)).to.be.revertedWith('LoanToken: only after loan has been withdrawn')
+    })
+
+    it('transfers trueCurrencies to loanToken', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await tusd.connect(borrower).approve(loanToken.address, parseEther('100'))
+      await loanToken.repay(borrower.address, parseEther('100'))
+
+      expect(await tusd.balanceOf(borrower.address)).to.equal(parseEther('900'))
+      expect(await tusd.balanceOf(loanToken.address)).to.equal(parseEther('100'))
+    })
+  })
+
   describe('Redeem', () => {
-    describe('When loan succeeds', () => {})
-    describe('When loan defaults', () => {})
+    beforeEach(async () => {
+      await tusd.mint(borrower.address, parseEther('100'))
+    })
+
+    it('reverts if called before loan is closed', async () => {
+      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: current status should be Settled or Defaulted')
+      await loanToken.fund()
+      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: current status should be Settled or Defaulted')
+      await withdraw(borrower)
+      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: current status should be Settled or Defaulted')
+    })
+
+    it('reverts if redeeming more than own balance', async () => {
+      await loanToken.fund()
+      await timeTravel(provider, monthInSeconds * 12)
+      await payback(borrower, parseEther('100'))
+      await expect(loanToken.redeem(parseEther('1100'))).to.be.revertedWith('LoanToken: current status should be Settled or Defaulted')
+    })
+
+    describe('Simple case: loan settled, redeem all', () => {
+      beforeEach(async () => {
+        await loanToken.fund()
+        await timeTravel(provider, monthInSeconds * 12)
+        await payback(borrower, parseEther('100'))
+        await loanToken.close()
+        await loanToken.redeem(parseEther('1100'))
+      })
+
+      it('transfers all trueCurrency tokens to lender', async () => {
+        expect(await tusd.balanceOf(lender.address)).to.equal(parseEther('1100'))
+      })
+
+      it('burns loan tokens', async () => {
+        expect(await loanToken.totalSupply()).to.equal(0)
+        expect(await loanToken.balanceOf(lender.address)).to.equal(0)
+      })
+
+      it('repaid amount does not change', async () => {
+        expect(await loanToken.repaid()).to.equal(parseEther('1100'))
+      })
+    })
+
+    describe('loan defaulted (3/4 paid back), redeem all', () => {
+      beforeEach(async () => {
+        await loanToken.fund()
+        await timeTravel(provider, monthInSeconds * 12)
+        await withdraw(borrower)
+        await payback(borrower, parseEther('825'))
+        await loanToken.close()
+        await loanToken.redeem(parseEther('1100'))
+      })
+
+      it('transfers all trueCurrency tokens to lender', async () => {
+        expect(await tusd.balanceOf(lender.address)).to.equal(parseEther('825'))
+      })
+
+      it('burns loan tokens', async () => {
+        expect(await loanToken.totalSupply()).to.equal(0)
+        expect(await loanToken.balanceOf(lender.address)).to.equal(0)
+      })
+
+      it('repaid amount does not change', async () => {
+        expect(await loanToken.repaid()).to.equal(parseEther('825'))
+      })
+    })
+
+    describe('loan defaulted (1/2 paid back), redeem half, then rest is paid back, redeem rest', () => {
+      beforeEach(async () => {
+        await loanToken.fund()
+        await timeTravel(provider, monthInSeconds * 12)
+        await withdraw(borrower)
+        await payback(borrower, parseEther('550'))
+        await loanToken.close()
+        await loanToken.redeem(parseEther('550'))
+        expect(await tusd.balanceOf(lender.address)).to.equal(parseEther('275'))
+        await payback(borrower, parseEther('550'))
+        await loanToken.redeem(parseEther('550'))
+      })
+
+      it('transfers all trueCurrency tokens to lender', async () => {
+        expect(await tusd.balanceOf(lender.address)).to.equal(parseEther('1100'))
+      })
+
+      it('burns loan tokens', async () => {
+        expect(await loanToken.totalSupply()).to.equal(0)
+        expect(await loanToken.balanceOf(lender.address)).to.equal(0)
+      })
+
+      it('repaid is total paid back amount', async () => {
+        expect(await loanToken.repaid()).to.equal(parseEther('1100'))
+      })
+
+      it('status is still DEFAULTED', async () => {
+        expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
+      })
+    })
+
+    describe('loan defaulted (1/2 paid back), redeem part, then rest is paid back, redeem rest - many LOAN hodlers', () => {
+      beforeEach(async () => {
+        await loanToken.fund()
+        await loanToken.transfer(other.address, parseEther('550'))
+        await timeTravel(provider, monthInSeconds * 12)
+        await withdraw(borrower)
+        await payback(borrower, parseEther('550'))
+        await loanToken.close()
+        await loanToken.redeem(parseEther('275'))
+        expect(await tusd.balanceOf(lender.address)).to.equal(parseEther('275').div(2))
+        await payback(borrower, parseEther('550'))
+        await loanToken.redeem(parseEther('275'))
+        await loanToken.connect(other).redeem(parseEther('550'))
+      })
+
+      it('transfers all trueCurrency tokens to LOAN holders', async () => {
+        expect(await tusd.balanceOf(lender.address)).to.equal(parseEther('275').div(2).add(parseEther('1100').mul(7).div(24)))
+        expect(await tusd.balanceOf(other.address)).to.equal(parseEther('1100').mul(7).div(12).add(1)) // 1 wei err
+      })
+
+      it('burns loan tokens', async () => {
+        expect(await loanToken.totalSupply()).to.equal(0)
+        expect(await loanToken.balanceOf(lender.address)).to.equal(0)
+      })
+
+      it('repaid is total paid back amount', async () => {
+        expect(await loanToken.repaid()).to.equal(parseEther('1100'))
+      })
+
+      it('status is still DEFAULTED', async () => {
+        expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
+      })
+    })
+  })
+
+  describe('Debt calculation', () => {
+    const getDebt = async (amount: number, termInMonths: number, apy: number) => {
+      const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, borrower.address, parseEther(amount.toString()), termInMonths * monthInSeconds, apy)
+      return Number.parseInt(formatEther(await contract.debt()))
+    }
+
+    it('1 year, 10%', async () => {
+      expect(await getDebt(1000, 12, 1000)).to.equal(1100)
+    })
+
+    it('1 year, 25%', async () => {
+      expect(await getDebt(1000, 12, 2500)).to.equal(1250)
+    })
+
+    it('0.5 year, 10%', async () => {
+      expect(await getDebt(1000, 6, 1000)).to.equal(1050)
+    })
+
+    it('3 years, 8%', async () => {
+      expect(await getDebt(1000, 36, 800)).to.equal(1240)
+    })
+
+    it('2.5 years, 12%', async () => {
+      expect(await getDebt(1000, 30, 1200)).to.equal(1300)
+    })
   })
 })
