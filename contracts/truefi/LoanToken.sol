@@ -19,7 +19,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     uint256 public redeemed;
 
-    Status public status;
+    Status public override status;
 
     IERC20 public currencyToken;
 
