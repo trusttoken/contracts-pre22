@@ -11,10 +11,10 @@ contract LoanToken is ILoanToken, ERC20 {
 
     enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted}
 
-    address public borrower;
-    uint256 public amount;
-    uint256 public duration;
-    uint256 public apy;
+    address public override borrower;
+    uint256 public override amount;
+    uint256 public override duration;
+    uint256 public override apy;
 
     uint256 public start;
     uint256 public debt;
