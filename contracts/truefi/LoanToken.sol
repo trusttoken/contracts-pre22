@@ -28,7 +28,7 @@ contract LoanToken is ILoanToken, ERC20 {
     event Funded(address funder);
     event Withdrawn(address beneficiary);
     event Closed(Status status, uint256 returnedAmount);
-    event Redeemed(address receiver, uint256 burnedAmount, uint256 returnedAmound);
+    event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound);
 
     constructor(
         IERC20 _currencyToken,
