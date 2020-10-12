@@ -4,6 +4,8 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ILoanToken is IERC20 {
+    enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted}
+
     function borrower() external view returns (address);
 
     function amount() external view returns (uint256);

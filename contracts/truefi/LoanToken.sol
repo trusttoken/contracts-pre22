@@ -9,8 +9,6 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
 contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
 
-    enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted}
-
     address public override borrower;
     uint256 public override amount;
     uint256 public override duration;
