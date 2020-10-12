@@ -25,6 +25,11 @@ contract LoanToken is ILoanToken, ERC20 {
 
     IERC20 public currencyToken;
 
+    event Funded(address funder);
+    event Withdrawn(address beneficiary);
+    event Closed(Status status, uint256 returnedAmount);
+    event Redeemed(address receiver, uint256 burnedAmount, uint256 returnedAmound);
+
     constructor(
         IERC20 _currencyToken,
         address _borrower,
@@ -79,11 +84,15 @@ contract LoanToken is ILoanToken, ERC20 {
         start = block.timestamp;
         _mint(msg.sender, debt);
         require(currencyToken.transferFrom(msg.sender, address(this), amount));
+
+        emit Funded(msg.sender);
     }
 
     function withdraw(address _beneficiary) external override onlyBorrower onlyFunded {
         status = Status.Withdrawn;
         require(currencyToken.transfer(_beneficiary, amount));
+
+        emit Withdrawn(_beneficiary);
     }
 
     function close() external override onlyOngoing {
@@ -93,6 +102,8 @@ contract LoanToken is ILoanToken, ERC20 {
         } else {
             status = Status.Defaulted;
         }
+
+        emit Closed(status, _balance());
     }
 
     function redeem(uint256 _amount) external override onlyClosed {
@@ -100,6 +111,8 @@ contract LoanToken is ILoanToken, ERC20 {
         redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
         require(currencyToken.transfer(msg.sender, amountToReturn));
+
+        emit Redeemed(msg.sender, _amount, amountToReturn);
     }
 
     function repay(address _sender, uint256 _amount) external override onlyAfterWithdraw {

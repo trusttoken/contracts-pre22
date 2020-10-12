@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { Wallet } from 'ethers'
+import { ContractTransaction, Wallet } from 'ethers'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
@@ -74,9 +74,10 @@ describe('LoanToken', () => {
 
   describe('Fund', () => {
     let creationTimestamp: number
+    let tx: ContractTransaction
 
     beforeEach(async () => {
-      const tx = await loanToken.fund()
+      tx = await loanToken.fund()
       const { blockNumber } = await tx.wait()
       creationTimestamp = (await provider.getBlock(blockNumber)).timestamp
     })
@@ -101,6 +102,10 @@ describe('LoanToken', () => {
     it('reverts when funding the same loan token twice', async () => {
       await expect(loanToken.fund())
         .to.be.revertedWith('LoanToken: current status should be Awaiting')
+    })
+
+    it('emits event', async () => {
+      await expect(Promise.resolve(tx)).to.emit(loanToken, 'Funded').withArgs(lender.address)
     })
   })
 
@@ -144,6 +149,11 @@ describe('LoanToken', () => {
     it('reverts when sender is not a borrower', async () => {
       await loanToken.fund()
       await expect(withdraw(lender)).to.be.revertedWith('LoanToken: caller is not the borrower')
+    })
+
+    it('emits event', async () => {
+      await loanToken.fund()
+      await expect(withdraw(borrower)).to.emit(loanToken, 'Withdrawn').withArgs(borrower.address)
     })
   })
 
@@ -191,6 +201,14 @@ describe('LoanToken', () => {
       await loanToken.close()
       await expect(loanToken.close()).to.be.revertedWith('LoanToken: current status should be Funded')
     })
+
+    it('emits event', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await tusd.mint(loanToken.address, parseEther('1099'))
+      await timeTravel(provider, monthInSeconds * 12)
+      await expect(loanToken.close()).to.emit(loanToken, 'Closed').withArgs(LoanTokenStatus.Defaulted, parseEther('1099'))
+    })
   })
 
   describe('Repay', () => {
@@ -229,6 +247,13 @@ describe('LoanToken', () => {
       await timeTravel(provider, monthInSeconds * 12)
       await payback(borrower, parseEther('100'))
       await expect(loanToken.redeem(parseEther('1100'))).to.be.revertedWith('LoanToken: current status should be Settled or Defaulted')
+    })
+
+    it('emits event', async () => {
+      await loanToken.fund()
+      await timeTravel(provider, monthInSeconds * 12)
+      await loanToken.close()
+      await expect(loanToken.redeem(parseEther('1100'))).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEther('1100'), parseEther('1000'))
     })
 
     describe('Simple case: loan settled, redeem all', () => {
