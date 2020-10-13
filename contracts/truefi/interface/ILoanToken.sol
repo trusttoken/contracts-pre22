@@ -4,27 +4,31 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ILoanToken is IERC20 {
-    /// get balance of deposit tokens
+    enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted}
+
+    function borrower() external view returns (address);
+
+    function amount() external view returns (uint256);
+
+    function duration() external view returns (uint256);
+
+    function apy() external view returns (uint256);
+
+    function status() external view returns (Status);
+
+    function isLoanToken() external pure returns (bool);
+
+    function fund() external;
+
+    function withdraw(address _beneficiary) external;
+
+    function close() external;
+
+    function redeem(uint256 _amount) external;
+
+    function repay(address _sender, uint256 _amount) external;
+
+    function repaid() external view returns (uint256);
+
     function balance() external view returns (uint256);
-
-    /// calculate interest given amount
-    //function interest(uint256 amount) internal view returns (uint256);
-
-    /// get value of principal plus interest
-    function value() external view returns (uint256);
-
-    /// transfer deposit tokens to this contract and mint loan tokens
-    function deposit(uint256 amount) external;
-
-    /// redeem and burn loan tokens, withdraw tokens
-    function redeem(uint256 amount) external;
-
-    /// approve loan, set approved, set expiry, transfer funds
-    function approve() external;
-
-    /// borrower can call this function to borrow approved funds
-    function borrow() external;
-
-    /// pay back loan in full
-    function pay() external;
 }

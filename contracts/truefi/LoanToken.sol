@@ -4,89 +4,132 @@ pragma solidity 0.6.10;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 
-/**
- * @title LoanToken
- * @dev Lend ERC20 tokens for a length of time with interest
- *
- * Create undercollateralized loans with LoanTokens representing
- * stake in the paid back loan after expiration
- */
-contract LoanToken is ILoanToken, ERC20, Ownable {
+contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
 
-    address public borrower;
-    uint256 public principal;
-    uint256 public length;
-    uint256 public rate;
-    uint256 public expiry;
-    bool public approved;
+    address public override borrower;
+    uint256 public override amount;
+    uint256 public override duration;
+    uint256 public override apy;
+
+    uint256 public start;
+    uint256 public debt;
+
+    uint256 public redeemed;
+
+    Status public override status;
+
     IERC20 public currencyToken;
 
+    event Funded(address funder);
+    event Withdrawn(address beneficiary);
+    event Closed(Status status, uint256 returnedAmount);
+    event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound);
+
     constructor(
+        IERC20 _currencyToken,
         address _borrower,
-        uint256 _principal,
-        uint256 _length,
-        uint256 _rate
+        uint256 _amount,
+        uint256 _duration,
+        uint256 _apy
     ) public ERC20("Loan Token", "LOAN") {
+        currencyToken = _currencyToken;
         borrower = _borrower;
-        principal = _principal;
-        expiry = _length;
-        rate = _rate;
+        amount = _amount;
+        duration = _duration;
+        apy = _apy;
+        debt = interest(amount);
     }
 
-    /// get balance of deposit tokens
-    function balance() public override view returns (uint256) {
+    modifier onlyBorrower() {
+        require(msg.sender == borrower, "LoanToken: caller is not the borrower");
+        _;
+    }
+
+    modifier onlyClosed() {
+        require(status == Status.Settled || status == Status.Defaulted, "LoanToken: current status should be Settled or Defaulted");
+        _;
+    }
+
+    modifier onlyOngoing() {
+        require(status == Status.Funded || status == Status.Withdrawn, "LoanToken: current status should be Funded or Withdrawn");
+        _;
+    }
+
+    modifier onlyFunded() {
+        require(status == Status.Funded, "LoanToken: current status should be Funded");
+        _;
+    }
+
+    modifier onlyAfterWithdraw() {
+        require(status >= Status.Withdrawn, "LoanToken: only after loan has been withdrawn");
+        _;
+    }
+
+    modifier onlyAwaiting() {
+        require(status == Status.Awaiting, "LoanToken: current status should be Awaiting");
+        _;
+    }
+
+    function isLoanToken() external override pure returns (bool) {
+        return true;
+    }
+
+    function fund() external override onlyAwaiting {
+        status = Status.Funded;
+        start = block.timestamp;
+        _mint(msg.sender, debt);
+        require(currencyToken.transferFrom(msg.sender, address(this), amount));
+
+        emit Funded(msg.sender);
+    }
+
+    function withdraw(address _beneficiary) external override onlyBorrower onlyFunded {
+        status = Status.Withdrawn;
+        require(currencyToken.transfer(_beneficiary, amount));
+
+        emit Withdrawn(_beneficiary);
+    }
+
+    function close() external override onlyOngoing {
+        require(start.add(duration) <= block.timestamp, "LoanToken: loan cannot be closed yet");
+        if (_balance() >= debt) {
+            status = Status.Settled;
+        } else {
+            status = Status.Defaulted;
+        }
+
+        emit Closed(status, _balance());
+    }
+
+    function redeem(uint256 _amount) external override onlyClosed {
+        uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
+        redeemed = redeemed.add(amountToReturn);
+        _burn(msg.sender, _amount);
+        require(currencyToken.transfer(msg.sender, amountToReturn));
+
+        emit Redeemed(msg.sender, _amount, amountToReturn);
+    }
+
+    function repay(address _sender, uint256 _amount) external override onlyAfterWithdraw {
+        require(currencyToken.transferFrom(_sender, address(this), _amount));
+    }
+
+    function repaid() external override view onlyAfterWithdraw returns (uint256) {
+        return _balance().add(redeemed);
+    }
+
+    function balance() external override view returns (uint256) {
+        return _balance();
+    }
+
+    function _balance() internal view returns (uint256) {
         return currencyToken.balanceOf(address(this));
     }
 
-    /// calculate interest given amount
-    function interest(uint256 amount) internal view returns (uint256) {
-        return amount.add(amount.mul(rate).div(10**18));
-    }
-
-    /// get value of principal plus interest
-    function value() public override view returns (uint256) {
-        return interest(principal);
-    }
-
-    /// transfer deposit tokens to this contract and mint loan tokens
-    function deposit(uint256 amount) public override {
-        require(!approved, "cannot deposit: loan approved");
-        // if depositor sends too much, only deposit amount needed
-        if (balance().add(amount) > principal) {
-            amount = principal.sub(balance());
-        }
-        currencyToken.transferFrom(msg.sender, address(this), amount);
-        _mint(msg.sender, amount);
-    }
-
-    /// redeem and burn loan tokens, withdraw tokens
-    function redeem(uint256 amount) public override {
-        require(block.timestamp >= expiry, "cannot redeem: before expiry");
-        require(approved, "cannot redeem: loan not approved");
-        _burn(msg.sender, amount);
-        currencyToken.transfer(msg.sender, interest(amount));
-    }
-
-    /// approve loan, set approved, set expiry, transfer funds
-    function approve() public override onlyOwner {
-        require(!approved, "cannot approve: loan approved");
-        approved = true;
-    }
-
-    /// borrower can call this function to borrow approved funds
-    function borrow() public override {
-        require(msg.sender == borrower, "only borrower");
-        require(approved, "must be approved to borrow");
-        expiry = block.timestamp.add(length);
-    }
-
-    /// pay back loan in full
-    function pay() public override {
-        require(approved, "cannot pay: loan approved");
-        currencyToken.transferFrom(msg.sender, address(this), interest(principal));
+    function interest(uint256 _amount) internal view returns (uint256) {
+        return _amount.add(_amount.mul(apy).mul(duration).div(360 days).div(10000));
     }
 }
