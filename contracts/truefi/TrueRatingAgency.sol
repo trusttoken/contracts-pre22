@@ -11,7 +11,7 @@ contract TrueRatingAgency is Ownable {
     enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
 
     struct Loan {
-        address borrower;
+        address creator;
         uint256 timestamp;
         mapping(bool => uint256) prediction;
         mapping(address => mapping(bool => uint256)) votes;
@@ -24,8 +24,8 @@ contract TrueRatingAgency is Ownable {
     event LoanSubmitted(address id);
     event LoanRetracted(address id);
 
-    modifier onlyBorrower(address id) {
-        require(loans[id].borrower == msg.sender, "TrueRatingAgency: not sender's loan");
+    modifier onlyCreator(address id) {
+        require(loans[id].creator == msg.sender, "TrueRatingAgency: not sender's loan");
         _;
     }
 
@@ -69,12 +69,12 @@ contract TrueRatingAgency is Ownable {
     }
 
     function submit(address id) external onlyNotExistingLoans(id) {
-        loans[id] = Loan({borrower: msg.sender, timestamp: block.timestamp});
+        loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp});
         emit LoanSubmitted(id);
     }
 
-    function retract(address id) external onlyPendingLoans(id) onlyBorrower(id) {
-        loans[id].borrower = address(0);
+    function retract(address id) external onlyPendingLoans(id) onlyCreator(id) {
+        loans[id].creator = address(0);
         loans[id].prediction[true] = 0;
         loans[id].prediction[false] = 0;
 
@@ -119,10 +119,10 @@ contract TrueRatingAgency is Ownable {
 
     function status(address id) public view returns (LoanStatus) {
         Loan storage loan = loans[id];
-        if (loan.borrower == address(0) && loan.timestamp == 0) {
+        if (loan.creator == address(0) && loan.timestamp == 0) {
             return LoanStatus.Void;
         }
-        if (loan.borrower == address(0) && loan.timestamp != 0) {
+        if (loan.creator == address(0) && loan.timestamp != 0) {
             return LoanStatus.Retracted;
         }
         // if(loan was funded and it is still ongoing) {

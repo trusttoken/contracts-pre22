@@ -30,6 +30,8 @@ interface ITruePool is IERC20 {
      */
     function exit(uint256 amount) external;
 
+    function borrow(uint256 amount) external;
+
     /// @dev get token value for pool token
     function value() external view returns (uint256);
 
