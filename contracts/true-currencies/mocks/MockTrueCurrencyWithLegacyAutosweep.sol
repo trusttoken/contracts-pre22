@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {DelegateERC20} from "./DelegateERC20.sol";
+import {MockTrueCurrencyWithDelegate} from "./MockTrueCurrencyWithDelegate.sol";
 
 /**
  * @dev Contract that prevents addresses that were previously using autosweep addresses from
@@ -19,7 +19,7 @@ import {DelegateERC20} from "./DelegateERC20.sol";
  *
  * This contract will reject a transfer to these 4*(16^5-1) addresses to prevent accidental token freeze.
  */
-abstract contract TrueCurrencyWithLegacyAutosweep is DelegateERC20 {
+abstract contract MockTrueCurrencyWithLegacyAutosweep is MockTrueCurrencyWithDelegate {
     function _transfer(
         address sender,
         address recipient,
