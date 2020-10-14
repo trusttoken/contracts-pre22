@@ -1,8 +1,8 @@
 import { expect } from 'chai'
 import { deployMockContract } from 'ethereum-waffle'
 import { Contract, Wallet } from 'ethers'
-import { MaxUint256 } from 'ethers/constants'
-import { parseEther } from 'ethers/utils'
+import { MaxUint256, AddressZero } from 'ethers/constants'
+import { BigNumber, parseEther } from 'ethers/utils'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 
@@ -12,6 +12,7 @@ import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
 
 import ITruePoolJson from '../../build/ITruePool.json'
+import ILoanTokenJson from '../../build/ILoanToken.json'
 import ITrueRatingAgencyJson from '../../build/ITrueRatingAgency.json'
 
 describe('TrueLender', () => {
@@ -200,17 +201,58 @@ describe('TrueLender', () => {
   })
 
   describe('Funding', () => {
-    it('reverts if passed address is not a LoanToken')
+    let mockLoanToken: Contract
+    let amount: BigNumber
+    let apy: BigNumber
+    let duration: BigNumber
 
-    it('reverts if loan size is out of bounds (too small)')
+    beforeEach(async () => {
+      mockLoanToken = await deployMockContract(owner, ILoanTokenJson.abi)
+      await mockLoanToken.mock.isLoanToken.returns(true)
 
-    it('reverts if loan size is out of bounds (too big)')
+      await lendingPool.allow(owner.address, true)
 
-    it('reverts if loan duration is out of bounds (too short)')
+      amount = (await lendingPool.minSize()).mul(2)
+      apy = (await lendingPool.minApy()).mul(2)
+      duration = (await lendingPool.minDuration()).mul(2)
+    })
 
-    it('reverts if loan duration is out of bounds (too long)')
+    it('reverts if passed address is not a LoanToken', async () => {
+      await expect(lendingPool.fund(AddressZero))
+        .to.be.reverted
+      await expect(lendingPool.fund(otherWallet.address))
+        .to.be.reverted
+    })
 
-    it('reverts if loan has to small APY')
+    it('reverts if loan size is out of bounds (too small)', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount.div(10), apy, duration)
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Loan size is out of bounds')
+    })
+
+    it('reverts if loan size is out of bounds (too big)', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount.mul(10000), apy, duration)
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Loan size is out of bounds')
+    })
+
+    it('reverts if loan duration is out of bounds (too short)', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount, apy, duration.div(10))
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Loan duration is out of bounds')
+    })
+
+    it('reverts if loan duration is out of bounds (too long)', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount, apy, duration.mul(100))
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Loan duration is out of bounds')
+    })
+
+    it('reverts if loan has to small APY', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount, apy.div(10), duration)
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: APY is below minimum')
+    })
 
     it('reverts if loan was not long enough under voting')
 

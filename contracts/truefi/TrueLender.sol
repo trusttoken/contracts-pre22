@@ -94,7 +94,7 @@ contract TrueLender is Ownable {
     }
 
     function fund(ILoanToken loanToken) external onlyAllowedBorrowers {
-        require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be funded");
+        require(isLoanToken(address(loanToken)), "TrueLender: Only LoanTokens can be funded");
 
         (uint256 amount, uint256 apy, uint256 duration) = loanToken.getParameters();
         (uint256 start, uint256 no, uint256 yes) = ratingAgency.getResults(address(loanToken));
@@ -109,6 +109,14 @@ contract TrueLender is Ownable {
         currencyToken.approve(address(loanToken), loanToken.amount());
         pool.borrow(loanToken.amount());
         loanToken.fund();
+    }
+
+    function isLoanToken(address loanTokenAddress) internal pure returns (bool) {
+        try ILoanToken(loanTokenAddress).isLoanToken() returns (bool response) {
+            return response;
+        } catch {
+            return false;
+        }
     }
 
     function loanIsAttractiveEnough(uint256 apy) public view returns (bool) {
