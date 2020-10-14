@@ -1,6 +1,5 @@
-import { utils, constants, Wallet } from 'ethers'
+import { BigNumberish, BigNumber, constants, Wallet } from 'ethers'
 import { expect } from 'chai'
-import { MockProvider } from 'ethereum-waffle'
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { MockTrueCurrencyWithAutosweep } from '../../build/types/MockTrueCurrencyWithAutosweep'
 import { MockTrueCurrencyWithAutosweepFactory } from '../../build/types/MockTrueCurrencyWithAutosweepFactory'
@@ -18,12 +17,12 @@ describe('TrueCurrency - Delegate ERC20', () => {
   let token: MockDelegateErc20
   let delegateToken: MockTrueCurrencyWithAutosweep
 
-  function approve (tokenOwner: Wallet, spender: WalletOrAddress, amount: utils.BigNumberish) {
+  function approve (tokenOwner: Wallet, spender: WalletOrAddress, amount: BigNumberish) {
     const asTokenOwner = token.connect(tokenOwner)
     return asTokenOwner.approve(toAddress(spender), amount)
   }
 
-  beforeEachWithFixture(async (provider: MockProvider, wallets: Wallet[]) => {
+  beforeEachWithFixture(async (wallets: Wallet[]) => {
     [initialHolder, secondAccount, thirdAccount] = wallets
     const deployContract = setupDeploy(initialHolder)
     const implementation = await deployContract(MockTrueCurrencyWithAutosweepFactory)
@@ -58,7 +57,7 @@ describe('TrueCurrency - Delegate ERC20', () => {
   })
 
   describe('transfer', () => {
-    function transfer (sender: Wallet, recipient: WalletOrAddress, amount: utils.BigNumberish) {
+    function transfer (sender: Wallet, recipient: WalletOrAddress, amount: BigNumberish) {
       const asSender = token.connect(sender)
       return asSender.transfer(toAddress(recipient), amount)
     }
@@ -133,7 +132,7 @@ describe('TrueCurrency - Delegate ERC20', () => {
       spender: Wallet,
       tokenOwner: WalletOrAddress,
       recipient: WalletOrAddress,
-      amount: utils.BigNumberish,
+      amount: BigNumberish,
     ) {
       const asSpender = token.connect(spender)
       return asSpender.transferFrom(toAddress(tokenOwner), toAddress(recipient), amount)
@@ -271,7 +270,7 @@ describe('TrueCurrency - Delegate ERC20', () => {
         spender = secondAccount
       })
 
-      function describeApprove (description: string, amount: utils.BigNumberish) {
+      function describeApprove (description: string, amount: BigNumberish) {
         describe(description, () => {
           it('emits an approval event', async () => {
             await expect(approve(tokenOwner, spender, amount))
@@ -314,7 +313,7 @@ describe('TrueCurrency - Delegate ERC20', () => {
   })
 
   describe('decreaseApproval', () => {
-    function decreaseApproval (tokenOwner: Wallet, spender: WalletOrAddress, subtractedValue: utils.BigNumberish) {
+    function decreaseApproval (tokenOwner: Wallet, spender: WalletOrAddress, subtractedValue: BigNumberish) {
       const asTokenOwner = token.connect(tokenOwner)
       return asTokenOwner.decreaseApproval(toAddress(spender), subtractedValue)
     }
@@ -332,7 +331,7 @@ describe('TrueCurrency - Delegate ERC20', () => {
         spender = secondAccount
       })
 
-      function shouldDecreaseApproval (amount: utils.BigNumber) {
+      function shouldDecreaseApproval (amount: BigNumber) {
         describe('when there was no approved amount before', () => {
           it('reverts', async () => {
             await expect(decreaseApproval(tokenOwner, spender, amount))
@@ -391,7 +390,7 @@ describe('TrueCurrency - Delegate ERC20', () => {
   })
 
   describe('increaseApproval', () => {
-    function increaseApproval (tokenOwner: Wallet, spender: WalletOrAddress, addedValue: utils.BigNumberish) {
+    function increaseApproval (tokenOwner: Wallet, spender: WalletOrAddress, addedValue: BigNumberish) {
       const asTokenOwner = token.connect(tokenOwner)
       return asTokenOwner.increaseApproval(toAddress(spender), addedValue)
     }
@@ -409,7 +408,7 @@ describe('TrueCurrency - Delegate ERC20', () => {
         spender = secondAccount
       })
 
-      function shouldIncreaseApproval (amount: utils.BigNumber) {
+      function shouldIncreaseApproval (amount: BigNumber) {
         it('emits an approval event', async () => {
           await expect(increaseApproval(tokenOwner, spender, amount))
             .to.emit(delegateToken, 'Approval')

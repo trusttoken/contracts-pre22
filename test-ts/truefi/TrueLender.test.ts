@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { Contract, ContractTransaction, Wallet } from 'ethers'
-import { AddressZero, MaxUint256 } from 'ethers/constants'
+import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 
@@ -12,10 +12,10 @@ import { TrustTokenFactory } from '../../build/types/TrustTokenFactory'
 import { TrustToken } from '../../build/types/TrustToken'
 import ITruePoolJson from '../../build/ITruePool.json'
 import { deployMockContract } from 'ethereum-waffle'
-import { parseEther } from 'ethers/utils'
+import { parseEther } from '@ethersproject/units'
 import { parseTT } from '../utils/parseTT'
 import { timeTravel } from '../utils/timeTravel'
-import { JsonRpcProvider } from 'ethers/providers'
+import { JsonRpcProvider } from '@ethersproject/providers'
 
 describe('TrueLender', () => {
   let owner: Wallet
@@ -31,7 +31,7 @@ describe('TrueLender', () => {
 
   const extractApplicationId = async (submitTransaction: ContractTransaction) => ((await submitTransaction.wait()).events[0].args as any).id
 
-  beforeEachWithFixture(async (_provider, wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [owner, otherWallet] = wallets
     provider = _provider
 

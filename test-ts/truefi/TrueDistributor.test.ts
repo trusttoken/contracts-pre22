@@ -21,7 +21,7 @@ describe('TrueDistributor', () => {
 
   const skipBlocks = async (numberOfBlocks: number) => skipBlocksWithProvider(provider, numberOfBlocks)
 
-  const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div(bigNumberify(10).pow(33))
+  const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div(BigNumber.from(10).pow(33))
 
   const expectBlock = async (expectedBlockNumber: number) => {
     expect(await provider.getBlockNumber()).to.equal(expectedBlockNumber)

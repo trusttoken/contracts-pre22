@@ -1,5 +1,5 @@
 import { providers } from 'ethers'
-import { Web3Provider } from 'ethers/providers'
+import { Web3Provider } from '@ethersproject/providers'
 
 export const timeTravel = async (provider: providers.JsonRpcProvider, time: number) => {
   await provider.send('evm_increaseTime', [time])

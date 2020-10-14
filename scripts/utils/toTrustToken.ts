@@ -1,3 +1,4 @@
-import { utils } from 'ethers'
+import { BigNumberish } from 'ethers'
+import { parseUnits } from '@ethersproject/units'
 
-export const toTrustToken = (amount: utils.BigNumberish) => utils.parseUnits(amount.toString(), 8)
+export const toTrustToken = (amount: BigNumberish) => parseUnits(amount.toString(), 8)

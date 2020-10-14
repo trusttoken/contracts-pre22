@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { Wallet } from 'ethers'
-import { AddressZero } from 'ethers/constants'
+import { AddressZero } from '@ethersproject/constants'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 
@@ -20,7 +20,7 @@ describe('TrueRatingAgency', () => {
   const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
   const stake = 1000
 
-  beforeEachWithFixture(async (_provider, wallets) => {
+  beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet] = wallets
 
     trustToken = await new TrustTokenFactory(owner).deploy()

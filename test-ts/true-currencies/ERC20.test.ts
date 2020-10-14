@@ -1,4 +1,4 @@
-import { utils, constants, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, constants, Wallet } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
 import { expect } from 'chai'
 import { TrueCurrency } from '../../build/types/TrueCurrency'
@@ -11,7 +11,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
   let thirdAccount: Wallet
   let token: TrueCurrency
 
-  function approve (tokenOwner: Wallet, spender: WalletOrAddress, amount: utils.BigNumberish) {
+  function approve (tokenOwner: Wallet, spender: WalletOrAddress, amount: BigNumberish) {
     const asTokenOwner = token.connect(tokenOwner)
     return asTokenOwner.approve(toAddress(spender), amount)
   }
@@ -41,7 +41,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
   })
 
   describe('transfer', () => {
-    function transfer (sender: Wallet, recipient: WalletOrAddress, amount: utils.BigNumberish) {
+    function transfer (sender: Wallet, recipient: WalletOrAddress, amount: BigNumberish) {
       const asSender = token.connect(sender)
       return asSender.transfer(toAddress(recipient), amount)
     }
@@ -116,7 +116,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
       spender: Wallet,
       tokenOwner: WalletOrAddress,
       recipient: WalletOrAddress,
-      amount: utils.BigNumberish,
+      amount: BigNumberish,
     ) {
       const asSpender = token.connect(spender)
       return asSpender.transferFrom(toAddress(tokenOwner), toAddress(recipient), amount)
@@ -254,7 +254,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
         spender = secondAccount
       })
 
-      function describeApprove (description: string, amount: utils.BigNumberish) {
+      function describeApprove (description: string, amount: BigNumberish) {
         describe(description, () => {
           it('emits an approval event', async () => {
             await expect(approve(tokenOwner, spender, amount))
@@ -297,7 +297,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
   })
 
   describe('decreaseAllowance', () => {
-    function decreaseAllowance (tokenOwner: Wallet, spender: WalletOrAddress, subtractedValue: utils.BigNumberish) {
+    function decreaseAllowance (tokenOwner: Wallet, spender: WalletOrAddress, subtractedValue: BigNumberish) {
       const asTokenOwner = token.connect(tokenOwner)
       return asTokenOwner.decreaseAllowance(toAddress(spender), subtractedValue)
     }
@@ -315,7 +315,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
         spender = secondAccount
       })
 
-      function shouldDecreaseApproval (amount: utils.BigNumber) {
+      function shouldDecreaseApproval (amount: BigNumber) {
         describe('when there was no approved amount before', () => {
           it('reverts', async () => {
             await expect(decreaseAllowance(tokenOwner, spender, amount))
@@ -374,7 +374,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
   })
 
   describe('increaseAllowance', () => {
-    function increaseAllowance (tokenOwner: Wallet, spender: WalletOrAddress, addedValue: utils.BigNumberish) {
+    function increaseAllowance (tokenOwner: Wallet, spender: WalletOrAddress, addedValue: BigNumberish) {
       const asTokenOwner = token.connect(tokenOwner)
       return asTokenOwner.increaseAllowance(toAddress(spender), addedValue)
     }
@@ -392,7 +392,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
         spender = secondAccount
       })
 
-      function shouldIncreaseApproval (amount: utils.BigNumber) {
+      function shouldIncreaseApproval (amount: BigNumber) {
         it('emits an approval event', async () => {
           await expect(increaseAllowance(tokenOwner, spender, amount))
             .to.emit(token, 'Approval')
