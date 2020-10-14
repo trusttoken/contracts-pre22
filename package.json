@@ -58,7 +58,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.1.0",
-    "ethers": "^5.0.17",
+    "ethers": "5.0.12",
     "ganache-cli": "6.8.1",
     "ganache-time-traveler": "^1.0.14",
     "husky": "^4.2.5",

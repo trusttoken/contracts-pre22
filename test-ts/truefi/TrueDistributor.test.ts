@@ -9,7 +9,7 @@ import { TrueDistributor } from '../../build/types/TrueDistributor'
 import { TrueDistributorFactory } from '../../build/types/TrueDistributorFactory'
 import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
 import { MockErc20Token } from '../../build/types/MockErc20Token'
-import { skipBlocksWithProvider } from '../utils/timeTravel'
+import { getBlockNumber, skipBlocksWithProvider } from '../utils/timeTravel'
 
 describe('TrueDistributor', () => {
   let owner: Wallet
@@ -23,10 +23,9 @@ describe('TrueDistributor', () => {
 
   const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div(BigNumber.from(10).pow(33))
 
-  const getBlockNumber = async () => Number.parseInt(await provider.send('eth_blockNumber', []))
 
   const expectBlock = async (expectedBlockNumber: number) => {
-    expect(await getBlockNumber()).to.equal(expectedBlockNumber)
+    expect(await getBlockNumber(provider)).to.equal(expectedBlockNumber)
   }
 
   beforeEachWithFixture(async (wallets, _provider) => {
@@ -88,11 +87,11 @@ describe('TrueDistributor', () => {
       const halfOfShares = (await distributor.TOTAL_SHARES()).div(2)
 
       await distributor.transfer(owner.address, farm.address, halfOfShares)
-      const block1 = await getBlockNumber()
+      const block1 = await getBlockNumber(provider)
 
       await skipBlocks(10)
       await distributor.distribute(owner.address)
-      const block2 = await getBlockNumber()
+      const block2 = await getBlockNumber(provider)
 
       const expectedOwnersReward = (await distributor.reward(0, block1))
         .add((await distributor.reward(block1, block2)).div(2))
@@ -102,7 +101,7 @@ describe('TrueDistributor', () => {
 
       await skipBlocks(3)
       await distributor.distribute(farm.address)
-      const block3 = await getBlockNumber()
+      const block3 = await getBlockNumber(provider)
       const expectedFarmsReward = (await distributor.reward(block1, block3)).div(2)
 
       expect(await trustToken.balanceOf(farm.address))
