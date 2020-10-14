@@ -33,7 +33,6 @@ describe('TrueLender', () => {
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
 
-
   beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet] = wallets
 
