@@ -22,8 +22,13 @@ describe('TrueLender', () => {
   let lendingPool: TrueLender
 
   let tusd: MockTrueCurrency
-  let underlyingPool: Contract
-  let ratingAgency: Contract
+  let mockPool: Contract
+  let mockLoanToken: Contract
+  let mockRatingAgency: Contract
+
+  let amount: BigNumber
+  let apy: BigNumber
+  let duration: BigNumber
 
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
@@ -34,22 +39,33 @@ describe('TrueLender', () => {
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
     await tusd.initialize()
 
-    underlyingPool = await deployMockContract(owner, ITruePoolJson.abi)
-    await underlyingPool.mock.currencyToken.returns(tusd.address)
+    mockPool = await deployMockContract(owner, ITruePoolJson.abi)
+    await mockPool.mock.currencyToken.returns(tusd.address)
+    await mockPool.mock.borrow.returns()
 
-    ratingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
-    await ratingAgency.mock.getResults.returns(0, 0, 0)
+    mockLoanToken = await deployMockContract(owner, ILoanTokenJson.abi)
+    await mockLoanToken.mock.isLoanToken.returns(true)
+    await mockLoanToken.mock.fund.returns()
 
-    lendingPool = await new TrueLenderFactory(owner).deploy(underlyingPool.address, ratingAgency.address)
+    mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
+    await mockRatingAgency.mock.getResults.returns(0, 0, 0)
+
+    lendingPool = await new TrueLenderFactory(owner).deploy(mockPool.address, mockRatingAgency.address)
+
+    amount = (await lendingPool.minSize()).mul(2)
+    apy = (await lendingPool.minApy()).mul(2)
+    duration = (await lendingPool.minDuration()).mul(2)
+    await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
+  
   })
 
   describe('Constructor', () => {
     it('sets the pool address', async () => {
-      expect(await lendingPool.pool()).to.equal(underlyingPool.address)
+      expect(await lendingPool.pool()).to.equal(mockPool.address)
     })
 
     it('approves infinite amount to underlying pool', async () => {
-      expect(await tusd.allowance(lendingPool.address, underlyingPool.address)).to.equal(MaxUint256)
+      expect(await tusd.allowance(lendingPool.address, mockPool.address)).to.equal(MaxUint256)
     })
 
     it('default params', async () => {
@@ -201,20 +217,8 @@ describe('TrueLender', () => {
   })
 
   describe('Funding', () => {
-    let mockLoanToken: Contract
-    let amount: BigNumber
-    let apy: BigNumber
-    let duration: BigNumber
-
     beforeEach(async () => {
-      mockLoanToken = await deployMockContract(owner, ILoanTokenJson.abi)
-      await mockLoanToken.mock.isLoanToken.returns(true)
-
       await lendingPool.allow(owner.address, true)
-
-      amount = (await lendingPool.minSize()).mul(2)
-      apy = (await lendingPool.minApy()).mul(2)
-      duration = (await lendingPool.minDuration()).mul(2)
     })
 
     it('reverts if passed address is not a LoanToken', async () => {
@@ -254,20 +258,52 @@ describe('TrueLender', () => {
         .to.be.revertedWith('TrueLender: APY is below minimum')
     })
 
-    it('reverts if loan was not long enough under voting')
+    it('reverts if loan was not long enough under voting', async () => {
+      const { timestamp } = (await owner.provider.getBlock('latest'))
+      await mockRatingAgency.mock.getResults.returns(timestamp, 0, amount.mul(100))
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Voting time is below minimum')  
+    })
 
-    it('reverts if absolute amount out yes votes is not enough in relation to loan size')
+    it('reverts if absolute amount out yes votes is not enough in relation to loan size', async () => {
+      await mockRatingAgency.mock.getResults.returns(0, 0, 10)
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Not enough votes given for the loan')  
+    })
 
-    it('reverts if loan is predicted to be too risky')
+    it('reverts if loan is predicted to be too risky', async () => {
+      await mockRatingAgency.mock.getResults.returns(0, amount.mul(10), amount.div(10))
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Loan risk is too high')  
+    })
 
     describe('all requirements are met', () => {
-      it('borrows tokens from pool')
+      beforeEach(async () => {
+        await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
+        await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
+      })
+  
+      it('borrows tokens from pool', async () => {
+        await lendingPool.fund(mockLoanToken.address)
+        expect('borrow').to.be.calledOnContractWith(mockPool, [amount])
+      })
 
-      it('approves LoanToken to spend funds borrowed from pool')
+      it('approves LoanToken to spend funds borrowed from pool', async () => {
+        await lendingPool.fund(mockLoanToken.address)
+        expect(await tusd.allowance(lendingPool.address, mockLoanToken.address))
+          .to.equal(amount)
+      })
 
-      it('calls fund function')
+      it('calls fund function', async () => {
+        await lendingPool.fund(mockLoanToken.address)
+        expect('fund').to.be.calledOnContractWith(mockLoanToken, [])
+      })
 
-      it('emits proper event')
+      it('emits proper event', async() => {
+        await expect(lendingPool.fund(mockLoanToken.address))
+          .to.emit(lendingPool, 'Funded')
+          .withArgs(mockLoanToken.address, amount)
+      })
     })
 
     describe('complex credibility cases', () => {

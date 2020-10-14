@@ -41,6 +41,7 @@ contract TrueLender is Ownable {
     event VotingPeriodChanged(uint256 votingPeriod);
     event SizeLimitsChanged(uint256 minSize, uint256 maxSize);
     event DurationLimitsChanged(uint256 minDuration, uint256 maxDuration);
+    event Funded(address indexed loanToken, uint256 amount);
 
     modifier onlyAllowedBorrowers() {
         require(allowedBorrowers[msg.sender], "TrueLender: sender not allowed borrower");
@@ -106,9 +107,10 @@ contract TrueLender is Ownable {
         require(votesTresholdReached(amount, yes), "TrueLender: Not enough votes given for the loan");
         require(loanIsCredible(apy, duration, yes, no), "TrueLender: Loan risk is too high");
 
-        currencyToken.approve(address(loanToken), loanToken.amount());
-        pool.borrow(loanToken.amount());
+        currencyToken.approve(address(loanToken), amount);
+        pool.borrow(amount);
         loanToken.fund();
+        emit Funded(address(loanToken), amount);
     }
 
     function isLoanToken(address loanTokenAddress) internal pure returns (bool) {
