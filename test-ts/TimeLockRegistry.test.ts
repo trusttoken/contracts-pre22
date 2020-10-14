@@ -11,7 +11,7 @@ import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { toTrustToken } from '../scripts/utils'
 
-import { AddressZero } from 'ethers/constants'
+import { AddressZero } from '@ethersproject/constants'
 import { expectEvent } from './utils/eventHelpers'
 import { parseAccountList, registerSaftAccounts } from '../scripts/register_saft_addresses'
 
@@ -22,7 +22,7 @@ describe('TimeLockRegistry', () => {
   let registry: TimeLockRegistry
   let trustToken: TrustToken
 
-  beforeEachWithFixture(async (provider, wallets) => {
+  beforeEachWithFixture(async (wallets) => {
     ([owner, holder, another] = wallets)
     const deployContract = setupDeploy(owner)
     trustToken = await deployContract(TrustTokenFactory)
