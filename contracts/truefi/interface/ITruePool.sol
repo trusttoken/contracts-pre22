@@ -30,12 +30,20 @@ interface ITruePool is IERC20 {
      */
     function exit(uint256 amount) external;
 
+    /**
+     * @dev borrow from pool
+     * 1. Transfer TUSD to sender
+     * 2. Only lending pool should be allowed to call this
+     */
+    function borrow(uint256 amount) external;
+
+    /**
+     * @dev join pool
+     * 1. Transfer TUSD from sender
+     * 2. Only lending pool should be allowed to call this
+     */
+    function repay(uint256 amount) external;
+
     /// @dev get token value for pool token
     function value() external view returns (uint256);
-
-    /// @dev stake TRU
-    function stake(uint256 amount) external;
-
-    /// @dev unstake TRU
-    function unstake(uint256 amount) external;
 }
