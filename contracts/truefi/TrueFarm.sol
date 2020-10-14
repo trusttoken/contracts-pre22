@@ -36,7 +36,7 @@ contract TrueFarm {
     }
 
     function unstake(uint256 amount) public update {
-        require(amount <= staked[msg.sender], "insufficient staking balance");
+        require(amount <= staked[msg.sender], "TrueFarm: Cannot withdraw amount bigger than available balance");
         staked[msg.sender] = staked[msg.sender].sub(amount);
         totalStaked = totalStaked.sub(amount);
         require(stakingToken.transfer(msg.sender, amount));

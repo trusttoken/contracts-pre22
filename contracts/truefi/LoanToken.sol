@@ -44,32 +44,32 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     modifier onlyBorrower() {
-        require(msg.sender == borrower, "LoanToken: caller is not the borrower");
+        require(msg.sender == borrower, "LoanToken: Caller is not the borrower");
         _;
     }
 
     modifier onlyClosed() {
-        require(status == Status.Settled || status == Status.Defaulted, "LoanToken: current status should be Settled or Defaulted");
+        require(status == Status.Settled || status == Status.Defaulted, "LoanToken: Current status should be Settled or Defaulted");
         _;
     }
 
     modifier onlyOngoing() {
-        require(status == Status.Funded || status == Status.Withdrawn, "LoanToken: current status should be Funded or Withdrawn");
+        require(status == Status.Funded || status == Status.Withdrawn, "LoanToken: Current status should be Funded or Withdrawn");
         _;
     }
 
     modifier onlyFunded() {
-        require(status == Status.Funded, "LoanToken: current status should be Funded");
+        require(status == Status.Funded, "LoanToken: Current status should be Funded");
         _;
     }
 
     modifier onlyAfterWithdraw() {
-        require(status >= Status.Withdrawn, "LoanToken: only after loan has been withdrawn");
+        require(status >= Status.Withdrawn, "LoanToken: Only after loan has been withdrawn");
         _;
     }
 
     modifier onlyAwaiting() {
-        require(status == Status.Awaiting, "LoanToken: current status should be Awaiting");
+        require(status == Status.Awaiting, "LoanToken: Current status should be Awaiting");
         _;
     }
 
@@ -107,7 +107,7 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     function close() external override onlyOngoing {
-        require(start.add(duration) <= block.timestamp, "LoanToken: loan cannot be closed yet");
+        require(start.add(duration) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
         if (_balance() >= debt) {
             status = Status.Settled;
         } else {

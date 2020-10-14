@@ -28,22 +28,22 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     event LoanRetracted(address id);
 
     modifier onlyCreator(address id) {
-        require(loans[id].creator == msg.sender, "TrueRatingAgency: not sender's loan");
+        require(loans[id].creator == msg.sender, "TrueRatingAgency: Not sender's loan");
         _;
     }
 
     modifier onlyNotExistingLoans(address id) {
-        require(status(id) == LoanStatus.Void, "TrueRatingAgency: loan was already created");
+        require(status(id) == LoanStatus.Void, "TrueRatingAgency: Loan was already created");
         _;
     }
 
     modifier onlyPendingLoans(address id) {
-        require(status(id) == LoanStatus.Pending, "TrueRatingAgency: loan is not currently pending");
+        require(status(id) == LoanStatus.Pending, "TrueRatingAgency: Loan is not currently pending");
         _;
     }
 
     modifier onlyNotRunningLoans(address id) {
-        require(status(id) != LoanStatus.Running, "TrueRatingAgency: loan is currently running");
+        require(status(id) != LoanStatus.Running, "TrueRatingAgency: Loan is currently running");
         _;
     }
 
@@ -102,7 +102,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         uint256 stake,
         bool choice
     ) internal {
-        require(loans[id].votes[msg.sender][!choice] == 0, "TrueRatingAgency: can't vote both yes and no");
+        require(loans[id].votes[msg.sender][!choice] == 0, "TrueRatingAgency: Cannot vote both yes and no");
         loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].add(stake);
         require(trustToken.transferFrom(msg.sender, address(this), stake));
@@ -118,7 +118,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     function withdraw(address id, uint256 stake) external override onlyNotRunningLoans(id) {
         bool choice = loans[id].votes[msg.sender][true] > 0;
-        require(loans[id].votes[msg.sender][choice] >= stake, "TrueRatingAgency: can't withdraw more than was staked");
+        require(loans[id].votes[msg.sender][choice] >= stake, "TrueRatingAgency: Cannot withdraw more than was staked");
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
         if (status(id) == LoanStatus.Pending) {
             loans[id].prediction[choice] = loans[id].prediction[choice].sub(stake);
