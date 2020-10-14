@@ -3,9 +3,11 @@ pragma solidity 0.6.10;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {ITruePool, IERC20} from "./interface/ITruePool.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+import {ITruePool} from "./interface/ITruePool.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
-import {TrueRatingAgency} from "./TrueRatingAgency.sol";
+import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
 
 contract TrueLender is Ownable {
     using SafeMath for uint256;
@@ -14,7 +16,7 @@ contract TrueLender is Ownable {
 
     ITruePool public pool;
     IERC20 public currencyToken;
-    TrueRatingAgency public predictionMarket;
+    ITrueRatingAgency public ratingAgency;
 
     uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
 
@@ -45,11 +47,11 @@ contract TrueLender is Ownable {
         _;
     }
 
-    constructor(ITruePool _pool, TrueRatingAgency _predictionMarket) public {
+    constructor(ITruePool _pool, ITrueRatingAgency _ratingAgency) public {
         pool = _pool;
         currencyToken = _pool.currencyToken();
         currencyToken.approve(address(_pool), uint256(-1));
-        predictionMarket = _predictionMarket;
+        ratingAgency = _ratingAgency;
     }
 
     function setSizeLimits(uint256 min, uint256 max) external onlyOwner {
@@ -95,7 +97,7 @@ contract TrueLender is Ownable {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be funded");
 
         (uint256 amount, uint256 apy, uint256 duration) = loanToken.getParameters();
-        (uint256 start, uint256 no, uint256 yes) = predictionMarket.getResults(address(loanToken));
+        (uint256 start, uint256 no, uint256 yes) = ratingAgency.getResults(address(loanToken));
 
         require(loanSizeIsInBounds(amount), "TrueLender: Loan size is out of bounds");
         require(loanDurationIsInBounds(duration), "TrueLender: Loan duration is out of bounds");

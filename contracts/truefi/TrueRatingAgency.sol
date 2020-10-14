@@ -3,9 +3,12 @@ pragma solidity 0.6.10;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {ITruePool, IERC20} from "./interface/ITruePool.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract TrueRatingAgency is Ownable {
+import {ITruePool} from "./interface/ITruePool.sol";
+import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
+
+contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     using SafeMath for uint256;
 
     enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
@@ -69,7 +72,8 @@ contract TrueRatingAgency is Ownable {
     }
 
     function getResults(address id)
-        public
+        external
+        override
         view
         returns (
             uint256,
@@ -80,12 +84,12 @@ contract TrueRatingAgency is Ownable {
         return (getVotingStart(id), getTotalNoVotes(id), getTotalYesVotes(id));
     }
 
-    function submit(address id) external onlyNotExistingLoans(id) {
+    function submit(address id) external override onlyNotExistingLoans(id) {
         loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp});
         emit LoanSubmitted(id);
     }
 
-    function retract(address id) external onlyPendingLoans(id) onlyCreator(id) {
+    function retract(address id) external override onlyPendingLoans(id) onlyCreator(id) {
         loans[id].creator = address(0);
         loans[id].prediction[true] = 0;
         loans[id].prediction[false] = 0;
@@ -104,15 +108,15 @@ contract TrueRatingAgency is Ownable {
         require(trustToken.transferFrom(msg.sender, address(this), stake));
     }
 
-    function yes(address id, uint256 stake) external onlyPendingLoans(id) {
+    function yes(address id, uint256 stake) external override onlyPendingLoans(id) {
         vote(id, stake, true);
     }
 
-    function no(address id, uint256 stake) external onlyPendingLoans(id) {
+    function no(address id, uint256 stake) external override onlyPendingLoans(id) {
         vote(id, stake, false);
     }
 
-    function withdraw(address id, uint256 stake) public onlyNotRunningLoans(id) {
+    function withdraw(address id, uint256 stake) external override onlyNotRunningLoans(id) {
         bool choice = loans[id].votes[msg.sender][true] > 0;
         require(loans[id].votes[msg.sender][choice] >= stake, "TrueRatingAgency: can't withdraw more than was staked");
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
