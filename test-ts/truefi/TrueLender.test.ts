@@ -56,7 +56,6 @@ describe('TrueLender', () => {
     apy = (await lendingPool.minApy()).mul(2)
     duration = (await lendingPool.minDuration()).mul(2)
     await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
-  
   })
 
   describe('Constructor', () => {
@@ -262,19 +261,19 @@ describe('TrueLender', () => {
       const { timestamp } = (await owner.provider.getBlock('latest'))
       await mockRatingAgency.mock.getResults.returns(timestamp, 0, amount.mul(100))
       await expect(lendingPool.fund(mockLoanToken.address))
-        .to.be.revertedWith('TrueLender: Voting time is below minimum')  
+        .to.be.revertedWith('TrueLender: Voting time is below minimum')
     })
 
     it('reverts if absolute amount out yes votes is not enough in relation to loan size', async () => {
       await mockRatingAgency.mock.getResults.returns(0, 0, 10)
       await expect(lendingPool.fund(mockLoanToken.address))
-        .to.be.revertedWith('TrueLender: Not enough votes given for the loan')  
+        .to.be.revertedWith('TrueLender: Not enough votes given for the loan')
     })
 
     it('reverts if loan is predicted to be too risky', async () => {
       await mockRatingAgency.mock.getResults.returns(0, amount.mul(10), amount.div(10))
       await expect(lendingPool.fund(mockLoanToken.address))
-        .to.be.revertedWith('TrueLender: Loan risk is too high')  
+        .to.be.revertedWith('TrueLender: Loan risk is too high')
     })
 
     describe('all requirements are met', () => {
@@ -282,7 +281,7 @@ describe('TrueLender', () => {
         await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
         await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
       })
-  
+
       it('borrows tokens from pool', async () => {
         await lendingPool.fund(mockLoanToken.address)
         expect('borrow').to.be.calledOnContractWith(mockPool, [amount])
@@ -299,7 +298,7 @@ describe('TrueLender', () => {
         expect('fund').to.be.calledOnContractWith(mockLoanToken, [])
       })
 
-      it('emits proper event', async() => {
+      it('emits proper event', async () => {
         await expect(lendingPool.fund(mockLoanToken.address))
           .to.emit(lendingPool, 'Funded')
           .withArgs(mockLoanToken.address, amount)
