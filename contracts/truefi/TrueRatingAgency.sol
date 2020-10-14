@@ -102,7 +102,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         uint256 stake,
         bool choice
     ) internal {
-        require(loans[id].votes[msg.sender][!choice] == 0, "TrueRatingAgency: Can't vote both yes and no");
+        require(loans[id].votes[msg.sender][!choice] == 0, "TrueRatingAgency: Cannot vote both yes and no");
         loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].add(stake);
         require(trustToken.transferFrom(msg.sender, address(this), stake));
@@ -118,7 +118,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     function withdraw(address id, uint256 stake) external override onlyNotRunningLoans(id) {
         bool choice = loans[id].votes[msg.sender][true] > 0;
-        require(loans[id].votes[msg.sender][choice] >= stake, "TrueRatingAgency: Can't withdraw more than was staked");
+        require(loans[id].votes[msg.sender][choice] >= stake, "TrueRatingAgency: Cannot withdraw more than was staked");
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
         if (status(id) == LoanStatus.Pending) {
             loans[id].prediction[choice] = loans[id].prediction[choice].sub(stake);

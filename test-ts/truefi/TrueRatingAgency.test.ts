@@ -159,7 +159,7 @@ describe('TrueRatingAgency', () => {
       it('after voting yes, disallows voting no', async () => {
         await rater.yes(exampleLoanTokenAddress, stake)
         await expect(rater.no(exampleLoanTokenAddress, stake))
-          .to.be.revertedWith('TrueRatingAgency: Can\'t vote both yes and no')
+          .to.be.revertedWith('TrueRatingAgency: Cannot vote both yes and no')
       })
 
       it('is only possible until loan is funded (only pending phase)')
@@ -206,7 +206,7 @@ describe('TrueRatingAgency', () => {
       it('after voting no, disallows voting no', async () => {
         await rater.no(exampleLoanTokenAddress, stake)
         await expect(rater.yes(exampleLoanTokenAddress, stake))
-          .to.be.revertedWith('TrueRatingAgency: Can\'t vote both yes and no')
+          .to.be.revertedWith('TrueRatingAgency: Cannot vote both yes and no')
       })
 
       it('is only possible until loan is funded (only pending phase)')
@@ -220,7 +220,7 @@ describe('TrueRatingAgency', () => {
     describe('Withdraw', () => {
       it('reverts if no vote was placed at all', async () => {
         await expect(rater.withdraw(exampleLoanTokenAddress, stake))
-          .to.be.revertedWith('TrueRatingAgency: Can\'t withdraw more than was staked')
+          .to.be.revertedWith('TrueRatingAgency: Cannot withdraw more than was staked')
       })
 
       it('properly reduces stakers voting balance (yes)', async () => {
@@ -246,7 +246,7 @@ describe('TrueRatingAgency', () => {
       it('reverts if tried to withdraw more than was voted', async () => {
         await rater.yes(exampleLoanTokenAddress, stake)
         await expect(rater.withdraw(exampleLoanTokenAddress, stake * 2))
-          .to.be.revertedWith('TrueRatingAgency: Can\'t withdraw more than was staked')
+          .to.be.revertedWith('TrueRatingAgency: Cannot withdraw more than was staked')
       })
 
       it('reverts if loan was funded and is currently running')
