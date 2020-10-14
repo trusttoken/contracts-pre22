@@ -100,8 +100,8 @@ contract TrueLender is Ownable {
         (uint256 amount, uint256 apy, uint256 duration) = loanToken.getParameters();
         (uint256 start, uint256 no, uint256 yes) = ratingAgency.getResults(address(loanToken));
 
-        require(loanSizeIsInBounds(amount), "TrueLender: Loan size is out of bounds");
-        require(loanDurationIsInBounds(duration), "TrueLender: Loan duration is out of bounds");
+        require(loanSizeWithinBounds(amount), "TrueLender: Loan size is out of bounds");
+        require(loanDurationWithinBounds(duration), "TrueLender: Loan duration is out of bounds");
         require(loanIsAttractiveEnough(apy), "TrueLender: APY is below minimum");
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
         require(votesTresholdReached(amount, yes), "TrueLender: Not enough votes given for the loan");
@@ -121,11 +121,11 @@ contract TrueLender is Ownable {
         return start.add(votingPeriod) <= block.timestamp;
     }
 
-    function loanSizeIsInBounds(uint256 amount) public view returns (bool) {
+    function loanSizeWithinBounds(uint256 amount) public view returns (bool) {
         return amount >= minSize && amount <= maxSize;
     }
 
-    function loanDurationIsInBounds(uint256 duration) public view returns (bool) {
+    function loanDurationWithinBounds(uint256 duration) public view returns (bool) {
         return duration >= minDuration && duration <= maxDuration;
     }
 
