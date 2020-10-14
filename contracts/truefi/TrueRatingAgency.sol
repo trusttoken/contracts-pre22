@@ -64,8 +64,20 @@ contract TrueRatingAgency is Ownable {
         return loans[id].prediction[true];
     }
 
-    function getResults(address id) public view returns (uint256, uint256) {
-        return (getTotalNoVotes(id), getTotalYesVotes(id));
+    function getVotingStart(address id) public view returns (uint256) {
+        return loans[id].timestamp;
+    }
+
+    function getResults(address id)
+        public
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        return (getVotingStart(id), getTotalNoVotes(id), getTotalYesVotes(id));
     }
 
     function submit(address id) external onlyNotExistingLoans(id) {

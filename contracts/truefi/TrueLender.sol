@@ -41,7 +41,7 @@ contract TrueLender is Ownable {
     event DurationLimitsChanged(uint256 minDuration, uint256 maxDuration);
 
     modifier onlyAllowedBorrowers() {
-        require(borrowers[msg.sender], "TrueLender: sender not allowed borrower");
+        require(allowedBorrowers[msg.sender], "TrueLender: sender not allowed borrower");
         _;
     }
 
@@ -87,34 +87,54 @@ contract TrueLender is Ownable {
     }
 
     function allow(address who, bool status) external onlyOwner {
-        borrowers[who] = status;
+        allowedBorrowers[who] = status;
         emit Allowed(who, status);
     }
 
     function fund(ILoanToken loanToken) external onlyAllowedBorrowers {
-        require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens supported for loan applications");
-        require(loanToken.amount() >= minSize && loanToken.amount() <= maxSize, "TrueLender: Loan size is out of bounds");
-        require(
-            loanToken.duration() >= minDuration && loanToken.duration() <= maxDuration,
-            "TrueLender: Loan duration is out of bounds"
-        );
-        require(loanToken.apy() >= minApy, "TrueLender: APY is below minimum");
-        require(predictionMarket.loans().timestamp.add(votingPeriod) <= block.timestamp, "TrueLender: Voting time is below minimum");
-        require(areEnoughVotesGivenToSubmit(loanToken), "TrueLender: Not enough votes given for the loan");
-        require(isLoanCredible(loanToken), "TrueLender: Loan risk is too high to approve");
+        require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be funded");
 
-        trueCurrency.approve(address(loanToken), loanToken.amount());
+        (uint256 amount, uint256 apy, uint256 duration) = loanToken.getParameters();
+        (uint256 start, uint256 no, uint256 yes) = predictionMarket.getResults(address(loanToken));
+
+        require(loanSizeIsInBounds(amount), "TrueLender: Loan size is out of bounds");
+        require(loanDurationIsInBounds(duration), "TrueLender: Loan duration is out of bounds");
+        require(loanIsAttractiveEnough(apy), "TrueLender: APY is below minimum");
+        require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
+        require(votesTresholdReached(amount, yes), "TrueLender: Not enough votes given for the loan");
+        require(loanIsCredible(apy, duration, yes, no), "TrueLender: Loan risk is too high to approve");
+
+        currencyToken.approve(address(loanToken), loanToken.amount());
         pool.borrow(loanToken.amount());
         loanToken.fund();
     }
 
-    function areEnoughVotesGivenToSubmit(ILoanToken loanToken) public view returns (bool) {
-        return loanToken.amount().mul(participationFactor) <= predictionMarket.getYesVote().mul(10000).mul(TOKEN_PRECISION_DIFFERENCE);
+    function loanIsAttractiveEnough(uint256 apy) public view returns (bool) {
+        return apy >= minApy;
     }
 
-    function isLoanCredible(ILoanToken loanToken) public view returns (bool) {
-        return
-            loanToken.apy().mul(loanToken.duration()).mul(loanToken.getYesVote()).div(360 days) >=
-            loanToken.getNoVote().mul(riskAversion);
+    function votingLastedLongEnough(uint256 start) public view returns (bool) {
+        return start.add(votingPeriod) <= block.timestamp;
+    }
+
+    function loanSizeIsInBounds(uint256 amount) public view returns (bool) {
+        return amount >= minSize && amount <= maxSize;
+    }
+
+    function loanDurationIsInBounds(uint256 duration) public view returns (bool) {
+        return duration >= minDuration && duration <= maxDuration;
+    }
+
+    function votesTresholdReached(uint256 amount, uint256 yesVotes) public view returns (bool) {
+        return amount.mul(participationFactor) <= yesVotes.mul(10000).mul(TOKEN_PRECISION_DIFFERENCE);
+    }
+
+    function loanIsCredible(
+        uint256 apy,
+        uint256 duration,
+        uint256 yesVotes,
+        uint256 noVotes
+    ) public view returns (bool) {
+        return apy.mul(duration).mul(yesVotes).div(360 days) >= noVotes.mul(riskAversion);
     }
 }

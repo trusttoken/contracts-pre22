@@ -18,6 +18,15 @@ interface ILoanToken is IERC20 {
 
     function isLoanToken() external pure returns (bool);
 
+    function getParameters()
+        external
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256
+        );
+
     function fund() external;
 
     function withdraw(address _beneficiary) external;
