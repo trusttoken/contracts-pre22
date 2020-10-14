@@ -6,7 +6,7 @@ import { CurvePoolFactory } from '../../build/types/CurvePoolFactory'
 import { CurvePool } from '../../build/types/CurvePool'
 import { MockCurvePool } from '../../build/types/MockCurvePool'
 import { MockCurvePoolFactory } from '../../build/types/MockCurvePoolFactory'
-import { parseEther } from 'ethers/utils'
+import { parseEther } from '@ethersproject/units'
 import { Erc20 } from '../../build/types/Erc20'
 import { Erc20Factory } from '../../build/types/Erc20Factory'
 import { expect } from 'chai'
@@ -18,7 +18,7 @@ describe('Curve Pool', () => {
   let curve: MockCurvePool
   let pool: CurvePool
 
-  beforeEachWithFixture(async (provider, wallets) => {
+  beforeEachWithFixture(async (wallets) => {
     [owner] = wallets
     token = await new MockErc20TokenFactory(owner).deploy()
     await token.mint(owner.address, parseEther('1'))

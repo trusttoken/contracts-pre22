@@ -7,7 +7,8 @@ import { LoanToken } from '../../build/types/LoanToken'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
 import { MockProvider } from 'ethereum-waffle'
-import { BigNumberish, formatEther, parseEther } from 'ethers/utils'
+import { BigNumberish } from 'ethers'
+import { formatEther, parseEther } from '@ethersproject/units'
 import { timeTravel } from '../utils/timeTravel'
 
 describe('LoanToken', () => {
@@ -29,7 +30,7 @@ describe('LoanToken', () => {
   const payback = async (wallet: Wallet, amount: BigNumberish) =>
     tusd.connect(wallet).transfer(loanToken.address, amount)
 
-  beforeEachWithFixture(async (_provider, wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [lender, borrower, other] = wallets
     provider = _provider
 

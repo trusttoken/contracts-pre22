@@ -1,17 +1,15 @@
 import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
-import { MaxUint256, Zero } from 'ethers/constants'
-import { BigNumber, bigNumberify, parseEther } from 'ethers/utils'
-
+import { utils, BigNumber } from 'ethers'
+import { Zero, MaxUint256 } from '@ethersproject/constants'
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { toTrustToken } from '../../scripts/utils'
-
 import { TrueDistributor } from '../../build/types/TrueDistributor'
 import { TrueDistributorFactory } from '../../build/types/TrueDistributorFactory'
 import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
 import { MockErc20Token } from '../../build/types/MockErc20Token'
-import { skipBlocksWithProvider } from '../utils/timeTravel'
+import { getBlockNumber, skipBlocksWithProvider } from '../utils/timeTravel'
 
 describe('TrueDistributor', () => {
   let owner: Wallet
@@ -23,18 +21,18 @@ describe('TrueDistributor', () => {
 
   const skipBlocks = async (numberOfBlocks: number) => skipBlocksWithProvider(provider, numberOfBlocks)
 
-  const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div(bigNumberify(10).pow(33))
+  const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div(BigNumber.from(10).pow(33))
 
   const expectBlock = async (expectedBlockNumber: number) => {
-    expect(await provider.getBlockNumber()).to.equal(expectedBlockNumber)
+    expect(await getBlockNumber(provider)).to.equal(expectedBlockNumber)
   }
 
-  beforeEachWithFixture(async (_provider, wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [owner, farm, fakeToken] = wallets
     provider = _provider
     trustToken = await new MockErc20TokenFactory(owner).deploy()
     distributor = await new TrueDistributorFactory(owner).deploy(0, trustToken.address)
-    await trustToken.mint(distributor.address, parseEther('5365000000000000000'))
+    await trustToken.mint(distributor.address, utils.parseEther('5365000000000000000'))
   })
 
   describe('constructor', () => {
@@ -88,22 +86,22 @@ describe('TrueDistributor', () => {
       const halfOfShares = (await distributor.TOTAL_SHARES()).div(2)
 
       await distributor.transfer(owner.address, farm.address, halfOfShares)
-      await expectBlock(4)
+      const block1 = await getBlockNumber(provider)
 
-      await skipBlocks(2)
+      await skipBlocks(10)
       await distributor.distribute(owner.address)
-      await expectBlock(7)
+      const block2 = await getBlockNumber(provider)
 
-      const expectedOwnersReward = (await distributor.reward(0, 4))
-        .add((await distributor.reward(4, 7)).div(2))
+      const expectedOwnersReward = (await distributor.reward(0, block1))
+        .add((await distributor.reward(block1, block2)).div(2))
 
       expect(await trustToken.balanceOf(owner.address))
         .to.equal(normaliseRewardToTrustTokens(expectedOwnersReward))
 
       await skipBlocks(3)
       await distributor.distribute(farm.address)
-      await expectBlock(11)
-      const expectedFarmsReward = (await distributor.reward(4, 11)).div(2)
+      const block3 = await getBlockNumber(provider)
+      const expectedFarmsReward = (await distributor.reward(block1, block3)).div(2)
 
       expect(await trustToken.balanceOf(farm.address))
         .to.equal(normaliseRewardToTrustTokens(expectedFarmsReward))
