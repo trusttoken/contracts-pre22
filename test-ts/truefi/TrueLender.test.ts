@@ -234,7 +234,7 @@ describe('TrueLender', () => {
 
     it('should be allowed to create loan application', async () => {
       await expect(lendingPool.connect(otherWallet).submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12))
-        .to.be.revertedWith('TrueLender: sender not allowed')
+        .to.be.revertedWith('TrueLender: Sender not allowed')
     })
 
     it('checks loan amount to be within boundaries', async () => {
@@ -265,7 +265,7 @@ describe('TrueLender', () => {
     })
 
     it('throws when removing not existing application', async () => {
-      await expect(lendingPool.retract('0xfadedeadbeefface')).to.be.revertedWith('TrueLender: application doesn\'t exist')
+      await expect(lendingPool.retract('0xfadedeadbeefface')).to.be.revertedWith('TrueLender: Application doesn\'t exist')
     })
 
     it('cannot remove application created by someone else', async () => {
@@ -273,7 +273,7 @@ describe('TrueLender', () => {
       const tx = await lendingPool.connect(otherWallet).submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
       const applicationId = await extractApplicationId(tx)
 
-      await expect(lendingPool.retract(applicationId)).to.be.revertedWith('TrueLender: not retractor\'s application')
+      await expect(lendingPool.retract(applicationId)).to.be.revertedWith('TrueLender: Not retractor\'s application')
     })
 
     it('emits event on remove', async () => {
@@ -333,17 +333,17 @@ describe('TrueLender', () => {
 
       it('after voting yeah, disallows voting nah', async () => {
         await lendingPool.yeah(applicationId, stake)
-        await expect(lendingPool.nah(applicationId, stake)).to.be.revertedWith('TrueLender: can\'t vote both yeah and nah')
+        await expect(lendingPool.nah(applicationId, stake)).to.be.revertedWith('TrueLender: Can\'t vote both yeah and nah')
       })
 
       it('is only possible during voting period', async () => {
         await lendingPool.yeah(applicationId, stake)
         await timeTravel(provider, dayInSeconds * 8)
-        await expect(lendingPool.yeah(applicationId, stake)).to.be.revertedWith('TrueLender: can\'t vote outside the voting period')
+        await expect(lendingPool.yeah(applicationId, stake)).to.be.revertedWith('TrueLender: Can\'t vote outside the voting period')
       })
 
       it('is only possible for existing applications', async () => {
-        await expect(lendingPool.yeah(fakeApplicationId, stake)).to.be.revertedWith('TrueLender: application doesn\'t exist')
+        await expect(lendingPool.yeah(fakeApplicationId, stake)).to.be.revertedWith('TrueLender: Application doesn\'t exist')
       })
     })
 
@@ -384,17 +384,17 @@ describe('TrueLender', () => {
 
       it('after voting nah, disallows voting nah', async () => {
         await lendingPool.nah(applicationId, stake)
-        await expect(lendingPool.yeah(applicationId, stake)).to.be.revertedWith('TrueLender: can\'t vote both yeah and nah')
+        await expect(lendingPool.yeah(applicationId, stake)).to.be.revertedWith('TrueLender: Can\'t vote both yeah and nah')
       })
 
       it('is only possible during voting period', async () => {
         await lendingPool.nah(applicationId, stake)
         await timeTravel(provider, dayInSeconds * 8)
-        await expect(lendingPool.nah(applicationId, stake)).to.be.revertedWith('TrueLender: can\'t vote outside the voting period')
+        await expect(lendingPool.nah(applicationId, stake)).to.be.revertedWith('TrueLender: Can\'t vote outside the voting period')
       })
 
       it('is only possible for existing applications', async () => {
-        await expect(lendingPool.nah(fakeApplicationId, stake)).to.be.revertedWith('TrueLender: application doesn\'t exist')
+        await expect(lendingPool.nah(fakeApplicationId, stake)).to.be.revertedWith('TrueLender: Application doesn\'t exist')
       })
     })
   })

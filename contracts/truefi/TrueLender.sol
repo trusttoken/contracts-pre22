@@ -60,17 +60,17 @@ contract TrueLender is Ownable {
     event ApplicationRetracted(bytes8 id);
 
     modifier onlyAllowed() {
-        require(borrowers[msg.sender], "TrueLender: sender not allowed borrower");
+        require(borrowers[msg.sender], "TrueLender: Sender not allowed borrower");
         _;
     }
 
     modifier applicationExists(bytes8 id) {
-        require(applications[id].creationBlock != 0, "TrueLender: application doesn't exist");
+        require(applications[id].creationBlock != 0, "TrueLender: Application doesn't exist");
         _;
     }
 
     modifier onlyDuringVoting(bytes8 id) {
-        require(status(id) == ApplicationStatus.Pending, "TrueLender: can't vote outside the voting period");
+        require(status(id) == ApplicationStatus.Pending, "TrueLender: Can't vote outside the voting period");
         _;
     }
 
@@ -156,7 +156,7 @@ contract TrueLender is Ownable {
     }
 
     function retract(bytes8 id) external applicationExists(id) {
-        require(applications[id].borrower == msg.sender, "TrueLender: not retractor's application");
+        require(applications[id].borrower == msg.sender, "TrueLender: Not retractor's application");
         delete applications[id];
 
         emit ApplicationRetracted(id);
@@ -167,7 +167,7 @@ contract TrueLender is Ownable {
         uint256 stake,
         bool choice
     ) internal {
-        require(applications[id].votes[msg.sender][!choice] == 0, "TrueLender: can't vote both yeah and nah");
+        require(applications[id].votes[msg.sender][!choice] == 0, "TrueLender: Can't vote both yeah and nah");
         applications[id].votes[msg.sender][choice] = applications[id].votes[msg.sender][choice].add(stake);
         require(trustToken.transferFrom(msg.sender, address(this), stake));
     }

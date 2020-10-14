@@ -90,28 +90,28 @@ describe('TrueRatingAgency', () => {
     it('reverts on attempt of creating the same loan twice', async () => {
       await rater.submit(exampleLoanTokenAddress)
       await expect(rater.submit(exampleLoanTokenAddress))
-        .to.be.revertedWith('TrueRatingAgency: loan was already created')
+        .to.be.revertedWith('TrueRatingAgency: Loan was already created')
     })
 
     it('does not allow to resubmit retracted loan', async () => {
       await rater.submit(exampleLoanTokenAddress)
       await rater.retract(exampleLoanTokenAddress)
       await expect(rater.submit(exampleLoanTokenAddress))
-        .to.be.revertedWith('TrueRatingAgency: loan was already created')
+        .to.be.revertedWith('TrueRatingAgency: Loan was already created')
     })
 
     it('retracting is only possible until loan is funded (only pending phase)')
 
     it('throws when removing not pending loan', async () => {
       await expect(rater.retract(fakeLoanTokenAddress))
-        .to.be.revertedWith('TrueRatingAgency: loan is not currently pending')
+        .to.be.revertedWith('TrueRatingAgency: Loan is not currently pending')
     })
 
     it('cannot remove loan created by someone else', async () => {
       await rater.connect(otherWallet).submit(exampleLoanTokenAddress)
 
       await expect(rater.retract(exampleLoanTokenAddress))
-        .to.be.revertedWith('TrueRatingAgency: not sender\'s loan')
+        .to.be.revertedWith('TrueRatingAgency: Not sender\'s loan')
     })
   })
 
@@ -156,14 +156,14 @@ describe('TrueRatingAgency', () => {
       it('after voting yes, disallows voting no', async () => {
         await rater.yes(exampleLoanTokenAddress, stake)
         await expect(rater.no(exampleLoanTokenAddress, stake))
-          .to.be.revertedWith('TrueRatingAgency: can\'t vote both yes and no')
+          .to.be.revertedWith('TrueRatingAgency: Can\'t vote both yes and no')
       })
 
       it('is only possible until loan is funded (only pending phase)')
 
       it('is only possible for existing loans', async () => {
         await expect(rater.yes(fakeLoanTokenAddress, stake))
-          .to.be.revertedWith('TrueRatingAgency: loan is not currently pending')
+          .to.be.revertedWith('TrueRatingAgency: Loan is not currently pending')
       })
     })
 
@@ -203,21 +203,21 @@ describe('TrueRatingAgency', () => {
       it('after voting no, disallows voting no', async () => {
         await rater.no(exampleLoanTokenAddress, stake)
         await expect(rater.yes(exampleLoanTokenAddress, stake))
-          .to.be.revertedWith('TrueRatingAgency: can\'t vote both yes and no')
+          .to.be.revertedWith('TrueRatingAgency: Can\'t vote both yes and no')
       })
 
       it('is only possible until loan is funded (only pending phase)')
 
       it('is only possible for existing loans', async () => {
         await expect(rater.no(fakeLoanTokenAddress, stake))
-          .to.be.revertedWith('TrueRatingAgency: loan is not currently pending')
+          .to.be.revertedWith('TrueRatingAgency: Loan is not currently pending')
       })
     })
 
     describe('Withdraw', () => {
       it('reverts if no vote was placed at all', async () => {
         await expect(rater.withdraw(exampleLoanTokenAddress, stake))
-          .to.be.revertedWith('TrueRatingAgency: can\'t withdraw more than was staked')
+          .to.be.revertedWith('TrueRatingAgency: Can\'t withdraw more than was staked')
       })
 
       it('properly reduces stakers voting balance (yes)', async () => {
@@ -243,7 +243,7 @@ describe('TrueRatingAgency', () => {
       it('reverts if tried to withdraw more than was voted', async () => {
         await rater.yes(exampleLoanTokenAddress, stake)
         await expect(rater.withdraw(exampleLoanTokenAddress, stake * 2))
-          .to.be.revertedWith('TrueRatingAgency: can\'t withdraw more than was staked')
+          .to.be.revertedWith('TrueRatingAgency: Can\'t withdraw more than was staked')
       })
 
       it('reverts if loan was funded and is currently running')
