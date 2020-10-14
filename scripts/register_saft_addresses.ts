@@ -5,7 +5,7 @@
  */
 
 import fs from 'fs'
-import { utils, constants, providers, Wallet } from 'ethers'
+import { BigNumber, constants, providers, Wallet } from 'ethers'
 import { TimeLockRegistry } from '../build/types/TimeLockRegistry'
 import { TimeLockRegistryFactory } from '../build/types/TimeLockRegistryFactory'
 import { TrustToken } from '../build/types/TrustToken'
@@ -20,7 +20,7 @@ export interface SaftAccount {
   amount: string,
 }
 
-const sum = (numbers: utils.BigNumber[]) => numbers.reduce((a, b) => a.add(b), constants.Zero)
+const sum = (numbers: BigNumber[]) => numbers.reduce((a, b) => a.add(b), constants.Zero)
 
 export const registerSaftAccounts = async (registry: TimeLockRegistry, trustToken: TrustToken, accounts: SaftAccount[]) => {
   const totalAllowance = sum(accounts.map(({ amount }) => toTrustToken(amount)))

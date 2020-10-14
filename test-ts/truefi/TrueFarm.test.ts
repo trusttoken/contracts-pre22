@@ -1,6 +1,6 @@
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
-import { parseEther } from 'ethers/utils'
+import { parseEther } from '@ethersproject/units'
 import { expect, use } from 'chai'
 import { ContractTransaction, Wallet } from 'ethers'
 import { TrueDistributor } from '../../build/types/TrueDistributor'
@@ -9,7 +9,7 @@ import { MockProvider, solidity } from 'ethereum-waffle'
 import { TrueFarmFactory } from '../../build/types/TrueFarmFactory'
 import { TrueFarm } from '../../build/types/TrueFarm'
 import { skipBlocksWithProvider, skipToBlockWithProvider } from '../utils/timeTravel'
-import { MaxUint256 } from 'ethers/constants'
+import { MaxUint256 } from '@ethersproject/constants'
 import { MockDistributorFactory } from '../../build/types/MockDistributorFactory'
 
 use(solidity)
@@ -32,7 +32,7 @@ describe('TrueFarm', () => {
 
   const skipToBlock = async (targetBlock: number) => skipToBlockWithProvider(provider, targetBlock)
 
-  beforeEachWithFixture(async (_provider, wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [owner, staker1, staker2] = wallets
     provider = _provider
     trustToken = await new MockErc20TokenFactory(owner).deploy()
