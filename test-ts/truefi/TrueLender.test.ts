@@ -19,7 +19,7 @@ describe('TrueLender', () => {
   let owner: Wallet
   let otherWallet: Wallet
 
-  let lendingPool: TrueLender
+  let lender: TrueLender
 
   let tusd: MockTrueCurrency
   let mockPool: Contract
@@ -50,234 +50,234 @@ describe('TrueLender', () => {
     mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
 
-    lendingPool = await new TrueLenderFactory(owner).deploy(mockPool.address, mockRatingAgency.address)
+    lender = await new TrueLenderFactory(owner).deploy(mockPool.address, mockRatingAgency.address)
 
-    amount = (await lendingPool.minSize()).mul(2)
-    apy = (await lendingPool.minApy()).mul(2)
-    duration = (await lendingPool.minDuration()).mul(2)
+    amount = (await lender.minSize()).mul(2)
+    apy = (await lender.minApy()).mul(2)
+    duration = (await lender.minDuration()).mul(2)
     await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
   })
 
   describe('Constructor', () => {
     it('sets the pool address', async () => {
-      expect(await lendingPool.pool()).to.equal(mockPool.address)
+      expect(await lender.pool()).to.equal(mockPool.address)
     })
 
     it('approves infinite amount to underlying pool', async () => {
-      expect(await tusd.allowance(lendingPool.address, mockPool.address)).to.equal(MaxUint256)
+      expect(await tusd.allowance(lender.address, mockPool.address)).to.equal(MaxUint256)
     })
 
     it('default params', async () => {
-      expect(await lendingPool.minSize()).to.equal(parseEther('1000000'))
-      expect(await lendingPool.maxSize()).to.equal(parseEther('10000000'))
-      expect(await lendingPool.minDuration()).to.equal(monthInSeconds * 6)
-      expect(await lendingPool.maxDuration()).to.equal(monthInSeconds * 120)
-      expect(await lendingPool.minApy()).to.equal('1000')
-      expect(await lendingPool.votingPeriod()).to.equal(dayInSeconds * 7)
+      expect(await lender.minSize()).to.equal(parseEther('1000000'))
+      expect(await lender.maxSize()).to.equal(parseEther('10000000'))
+      expect(await lender.minDuration()).to.equal(monthInSeconds * 6)
+      expect(await lender.maxDuration()).to.equal(monthInSeconds * 120)
+      expect(await lender.minApy()).to.equal('1000')
+      expect(await lender.votingPeriod()).to.equal(dayInSeconds * 7)
     })
   })
 
   describe('Parameters set up', () => {
     describe('setMinApy', () => {
       it('changes minApy', async () => {
-        await lendingPool.setMinApy(1234)
-        expect(await lendingPool.minApy()).to.equal(1234)
+        await lender.setMinApy(1234)
+        expect(await lender.minApy()).to.equal(1234)
       })
 
       it('emits MinApyChanged', async () => {
-        await expect(lendingPool.setMinApy(1234))
-          .to.emit(lendingPool, 'MinApyChanged').withArgs(1234)
+        await expect(lender.setMinApy(1234))
+          .to.emit(lender, 'MinApyChanged').withArgs(1234)
       })
 
       it('must be called by owner', async () => {
-        await expect(lendingPool.connect(otherWallet).setMinApy(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(otherWallet).setMinApy(1234)).to.be.revertedWith('caller is not the owner')
       })
     })
 
     describe('setParticipationFactor', () => {
       it('changes participationFactor', async () => {
-        await lendingPool.setParticipationFactor(1234)
-        expect(await lendingPool.participationFactor()).to.equal(1234)
+        await lender.setParticipationFactor(1234)
+        expect(await lender.participationFactor()).to.equal(1234)
       })
 
       it('emits ParticipationFactorChanged', async () => {
-        await expect(lendingPool.setParticipationFactor(1234))
-          .to.emit(lendingPool, 'ParticipationFactorChanged').withArgs(1234)
+        await expect(lender.setParticipationFactor(1234))
+          .to.emit(lender, 'ParticipationFactorChanged').withArgs(1234)
       })
 
       it('must be called by owner', async () => {
-        await expect(lendingPool.connect(otherWallet).setParticipationFactor(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(otherWallet).setParticipationFactor(1234)).to.be.revertedWith('caller is not the owner')
       })
     })
 
     describe('setRiskAversion', () => {
       it('changes riskAversion', async () => {
-        await lendingPool.setRiskAversion(1234)
-        expect(await lendingPool.riskAversion()).to.equal(1234)
+        await lender.setRiskAversion(1234)
+        expect(await lender.riskAversion()).to.equal(1234)
       })
 
       it('emits RiskAversionChanged', async () => {
-        await expect(lendingPool.setRiskAversion(1234))
-          .to.emit(lendingPool, 'RiskAversionChanged').withArgs(1234)
+        await expect(lender.setRiskAversion(1234))
+          .to.emit(lender, 'RiskAversionChanged').withArgs(1234)
       })
 
       it('must be called by owner', async () => {
-        await expect(lendingPool.connect(otherWallet).setRiskAversion(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(otherWallet).setRiskAversion(1234)).to.be.revertedWith('caller is not the owner')
       })
     })
 
     describe('setVotingPeriod', () => {
       it('changes votingPeriod', async () => {
-        await lendingPool.setVotingPeriod(dayInSeconds * 3)
-        expect(await lendingPool.votingPeriod()).to.equal(dayInSeconds * 3)
+        await lender.setVotingPeriod(dayInSeconds * 3)
+        expect(await lender.votingPeriod()).to.equal(dayInSeconds * 3)
       })
 
       it('emits VotingPeriodChanged', async () => {
-        await expect(lendingPool.setVotingPeriod(dayInSeconds * 3))
-          .to.emit(lendingPool, 'VotingPeriodChanged').withArgs(dayInSeconds * 3)
+        await expect(lender.setVotingPeriod(dayInSeconds * 3))
+          .to.emit(lender, 'VotingPeriodChanged').withArgs(dayInSeconds * 3)
       })
 
       it('must be called by owner', async () => {
-        await expect(lendingPool.connect(otherWallet).setVotingPeriod(dayInSeconds * 3)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(otherWallet).setVotingPeriod(dayInSeconds * 3)).to.be.revertedWith('caller is not the owner')
       })
     })
 
     describe('setSizeLimits', () => {
       it('changes minSize and maxSize', async () => {
-        await lendingPool.setSizeLimits(7654, 234567)
-        expect(await lendingPool.minSize()).to.equal(7654)
-        expect(await lendingPool.maxSize()).to.equal(234567)
+        await lender.setSizeLimits(7654, 234567)
+        expect(await lender.minSize()).to.equal(7654)
+        expect(await lender.maxSize()).to.equal(234567)
       })
 
       it('emits SizeLimitsChanged', async () => {
-        await expect(lendingPool.setSizeLimits(7654, 234567))
-          .to.emit(lendingPool, 'SizeLimitsChanged').withArgs(7654, 234567)
+        await expect(lender.setSizeLimits(7654, 234567))
+          .to.emit(lender, 'SizeLimitsChanged').withArgs(7654, 234567)
       })
 
       it('must be called by owner', async () => {
-        await expect(lendingPool.connect(otherWallet).setSizeLimits(7654, 234567)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(otherWallet).setSizeLimits(7654, 234567)).to.be.revertedWith('caller is not the owner')
       })
 
       it('cannot set minSize to be bigger than maxSize', async () => {
-        await expect(lendingPool.setSizeLimits(2, 1)).to.be.revertedWith('TrueLender: Maximal loan size is smaller than minimal')
+        await expect(lender.setSizeLimits(2, 1)).to.be.revertedWith('TrueLender: Maximal loan size is smaller than minimal')
       })
 
       it('can set minSize to same value as maxSize', async () => {
-        await expect(lendingPool.setSizeLimits(2, 2)).to.be.not.reverted
+        await expect(lender.setSizeLimits(2, 2)).to.be.not.reverted
       })
     })
 
     describe('setDurationLimits', () => {
       it('changes minDuration and maxDuration', async () => {
-        await lendingPool.setDurationLimits(7654, 234567)
-        expect(await lendingPool.minDuration()).to.equal(7654)
-        expect(await lendingPool.maxDuration()).to.equal(234567)
+        await lender.setDurationLimits(7654, 234567)
+        expect(await lender.minDuration()).to.equal(7654)
+        expect(await lender.maxDuration()).to.equal(234567)
       })
 
       it('emits DurationLimitsChanged', async () => {
-        await expect(lendingPool.setDurationLimits(7654, 234567))
-          .to.emit(lendingPool, 'DurationLimitsChanged').withArgs(7654, 234567)
+        await expect(lender.setDurationLimits(7654, 234567))
+          .to.emit(lender, 'DurationLimitsChanged').withArgs(7654, 234567)
       })
 
       it('must be called by owner', async () => {
-        await expect(lendingPool.connect(otherWallet).setDurationLimits(7654, 234567)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(otherWallet).setDurationLimits(7654, 234567)).to.be.revertedWith('caller is not the owner')
       })
 
       it('cannot set minDuration to be bigger than maxDuration', async () => {
-        await expect(lendingPool.setDurationLimits(2, 1)).to.be.revertedWith('TrueLender: Maximal loan duration is smaller than minimal')
+        await expect(lender.setDurationLimits(2, 1)).to.be.revertedWith('TrueLender: Maximal loan duration is smaller than minimal')
       })
 
       it('can set minDuration to same value as maxDuration', async () => {
-        await expect(lendingPool.setDurationLimits(2, 2)).to.be.not.reverted
+        await expect(lender.setDurationLimits(2, 2)).to.be.not.reverted
       })
     })
   })
 
   describe('Whitelisting', () => {
     it('changes whitelist status', async () => {
-      expect(await lendingPool.allowedBorrowers(otherWallet.address)).to.be.false
-      await lendingPool.allow(otherWallet.address, true)
-      expect(await lendingPool.allowedBorrowers(otherWallet.address)).to.be.true
-      await lendingPool.allow(otherWallet.address, false)
-      expect(await lendingPool.allowedBorrowers(otherWallet.address)).to.be.false
+      expect(await lender.allowedBorrowers(otherWallet.address)).to.be.false
+      await lender.allow(otherWallet.address, true)
+      expect(await lender.allowedBorrowers(otherWallet.address)).to.be.true
+      await lender.allow(otherWallet.address, false)
+      expect(await lender.allowedBorrowers(otherWallet.address)).to.be.false
     })
 
     it('emits event', async () => {
-      await expect(lendingPool.allow(otherWallet.address, true))
-        .to.emit(lendingPool, 'Allowed').withArgs(otherWallet.address, true)
-      await expect(lendingPool.allow(otherWallet.address, false))
-        .to.emit(lendingPool, 'Allowed').withArgs(otherWallet.address, false)
+      await expect(lender.allow(otherWallet.address, true))
+        .to.emit(lender, 'Allowed').withArgs(otherWallet.address, true)
+      await expect(lender.allow(otherWallet.address, false))
+        .to.emit(lender, 'Allowed').withArgs(otherWallet.address, false)
     })
 
     it('reverts when performed by non-owner', async () => {
-      await expect(lendingPool.connect(otherWallet).allow(otherWallet.address, true))
+      await expect(lender.connect(otherWallet).allow(otherWallet.address, true))
         .to.be.revertedWith('caller is not the owner')
     })
   })
 
   describe('Funding', () => {
     beforeEach(async () => {
-      await lendingPool.allow(owner.address, true)
+      await lender.allow(owner.address, true)
     })
 
     it('reverts if passed address is not a LoanToken', async () => {
-      await expect(lendingPool.fund(AddressZero))
+      await expect(lender.fund(AddressZero))
         .to.be.reverted
-      await expect(lendingPool.fund(otherWallet.address))
+      await expect(lender.fund(otherWallet.address))
         .to.be.reverted
     })
 
     it('reverts if sender is not an allowed borrower', async () => {
-      await expect(lendingPool.connect(otherWallet).fund(mockLoanToken.address))
+      await expect(lender.connect(otherWallet).fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Sender is not allowed to borrow')
     })
 
     it('reverts if loan size is out of bounds (too small)', async () => {
       await mockLoanToken.mock.getParameters.returns(amount.div(10), apy, duration)
-      await expect(lendingPool.fund(mockLoanToken.address))
+      await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Loan size is out of bounds')
     })
 
     it('reverts if loan size is out of bounds (too big)', async () => {
       await mockLoanToken.mock.getParameters.returns(amount.mul(10000), apy, duration)
-      await expect(lendingPool.fund(mockLoanToken.address))
+      await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Loan size is out of bounds')
     })
 
     it('reverts if loan duration is out of bounds (too short)', async () => {
       await mockLoanToken.mock.getParameters.returns(amount, apy, duration.div(10))
-      await expect(lendingPool.fund(mockLoanToken.address))
+      await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Loan duration is out of bounds')
     })
 
     it('reverts if loan duration is out of bounds (too long)', async () => {
       await mockLoanToken.mock.getParameters.returns(amount, apy, duration.mul(100))
-      await expect(lendingPool.fund(mockLoanToken.address))
+      await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Loan duration is out of bounds')
     })
 
     it('reverts if loan has to small APY', async () => {
       await mockLoanToken.mock.getParameters.returns(amount, apy.div(10), duration)
-      await expect(lendingPool.fund(mockLoanToken.address))
+      await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: APY is below minimum')
     })
 
     it('reverts if loan was not long enough under voting', async () => {
       const { timestamp } = (await owner.provider.getBlock('latest'))
       await mockRatingAgency.mock.getResults.returns(timestamp, 0, amount.mul(100))
-      await expect(lendingPool.fund(mockLoanToken.address))
+      await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Voting time is below minimum')
     })
 
     it('reverts if absolute amount out yes votes is not enough in relation to loan size', async () => {
       await mockRatingAgency.mock.getResults.returns(0, 0, 10)
-      await expect(lendingPool.fund(mockLoanToken.address))
+      await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Not enough votes given for the loan')
     })
 
     it('reverts if loan is predicted to be too risky', async () => {
       await mockRatingAgency.mock.getResults.returns(0, amount.mul(10), amount.div(10))
-      await expect(lendingPool.fund(mockLoanToken.address))
+      await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Loan risk is too high')
     })
 
@@ -288,24 +288,24 @@ describe('TrueLender', () => {
       })
 
       it('borrows tokens from pool', async () => {
-        await lendingPool.fund(mockLoanToken.address)
+        await lender.fund(mockLoanToken.address)
         expect('borrow').to.be.calledOnContractWith(mockPool, [amount])
       })
 
       it('approves LoanToken to spend funds borrowed from pool', async () => {
-        await lendingPool.fund(mockLoanToken.address)
-        expect(await tusd.allowance(lendingPool.address, mockLoanToken.address))
+        await lender.fund(mockLoanToken.address)
+        expect(await tusd.allowance(lender.address, mockLoanToken.address))
           .to.equal(amount)
       })
 
       it('calls fund function', async () => {
-        await lendingPool.fund(mockLoanToken.address)
+        await lender.fund(mockLoanToken.address)
         expect('fund').to.be.calledOnContractWith(mockLoanToken, [])
       })
 
       it('emits proper event', async () => {
-        await expect(lendingPool.fund(mockLoanToken.address))
-          .to.emit(lendingPool, 'Funded')
+        await expect(lender.fund(mockLoanToken.address))
+          .to.emit(lender, 'Funded')
           .withArgs(mockLoanToken.address, amount)
       })
     })
@@ -326,8 +326,8 @@ describe('TrueLender', () => {
       })
 
       const loanIsCredible = async (loanScenario: LoanScenario) => {
-        await lendingPool.setRiskAversion(loanScenario.riskAversion)
-        return lendingPool.loanIsCredible(
+        await lender.setRiskAversion(loanScenario.riskAversion)
+        return lender.loanIsCredible(
           loanScenario.APY,
           loanScenario.duration,
           (loanScenario.yesPercentage) * 1000,
