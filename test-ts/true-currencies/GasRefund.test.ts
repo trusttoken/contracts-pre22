@@ -1,5 +1,4 @@
 import { Wallet } from 'ethers'
-import { MockProvider } from 'ethereum-waffle'
 import { expect } from 'chai'
 import { MockHookFactory } from '../../build/types/MockHookFactory'
 import { MockHook } from '../../build/types/MockHook'
