@@ -227,6 +227,11 @@ describe('TrueLender', () => {
         .to.be.reverted
     })
 
+    it('reverts if sender is not an allowed borrower', async () => {
+      await expect(lendingPool.connect(otherWallet).fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Sender is not allowed to borrow')
+    })
+
     it('reverts if loan size is out of bounds (too small)', async () => {
       await mockLoanToken.mock.getParameters.returns(amount.div(10), apy, duration)
       await expect(lendingPool.fund(mockLoanToken.address))

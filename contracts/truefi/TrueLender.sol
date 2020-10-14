@@ -44,7 +44,7 @@ contract TrueLender is Ownable {
     event Funded(address indexed loanToken, uint256 amount);
 
     modifier onlyAllowedBorrowers() {
-        require(allowedBorrowers[msg.sender], "TrueLender: sender not allowed borrower");
+        require(allowedBorrowers[msg.sender], "TrueLender: Sender is not allowed to borrow");
         _;
     }
 
