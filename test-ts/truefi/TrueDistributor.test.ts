@@ -4,11 +4,12 @@ import { Wallet } from 'ethers'
 import { utils, BigNumber } from 'ethers'
 import { Zero, MaxUint256 } from '@ethersproject/constants'
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { toTrustToken } from '../../scripts/utils/toTrustToken'
+import { toTrustToken } from '../../scripts/utils'
 import { TrueDistributor } from '../../build/types/TrueDistributor'
 import { TrueDistributorFactory } from '../../build/types/TrueDistributorFactory'
 import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
 import { MockErc20Token } from '../../build/types/MockErc20Token'
+import { skipBlocksWithProvider } from '../utils/timeTravel'
 
 describe('TrueDistributor', () => {
   let owner: Wallet
@@ -18,13 +19,9 @@ describe('TrueDistributor', () => {
   let trustToken: MockErc20Token
   let provider: MockProvider
 
-  const skipBlocks = async (numberOfBlocks: number) => {
-    for (let i = 0; i < numberOfBlocks; i++) {
-      await provider.send('evm_mine', [])
-    }
-  }
+  const skipBlocks = async (numberOfBlocks: number) => skipBlocksWithProvider(provider, numberOfBlocks)
 
-  const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div('1000000000000000')
+  const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div(bigNumberify(10).pow(33))
 
   const expectBlock = async (expectedBlockNumber: number) => {
     expect(await provider.getBlockNumber()).to.equal(expectedBlockNumber)
@@ -57,33 +54,10 @@ describe('TrueDistributor', () => {
   })
 
   describe('normalise', () => {
-    let normalisedValue: string
-    let rewardPrecision: number
-    let normalisationResult: BigNumber
-
-    beforeEach(async () => {
-      rewardPrecision = (await distributor.PRECISION()).toString().length - 1
-      expect(rewardPrecision).to.equal(33)
-      normalisedValue = '100'.concat('0'.repeat(rewardPrecision))
-    })
-
-    it('works when normalising to smaller precision', async () => {
-      const smallerPrecision = rewardPrecision - 15
-      normalisationResult = await distributor.normalise(smallerPrecision, normalisedValue)
-      expect(normalisationResult.mul(BigNumber.from(10).pow(15)))
-        .to.equal(normalisedValue)
-    })
-
-    it('works when normalising to the same precision', async () => {
-      normalisationResult = await distributor.normalise(rewardPrecision, normalisedValue)
-      expect(normalisationResult).to.equal(normalisedValue)
-    })
-
-    it('works when normalising to bigger precision', async () => {
-      const biggerPrecision = rewardPrecision + 5
-      normalisationResult = await distributor.normalise(biggerPrecision, normalisedValue)
-      expect(normalisationResult.div(BigNumber.from(10).pow(5)))
-        .to.equal(normalisedValue)
+    it('removes precision', async () => {
+      const normalisedValue = (await distributor.PRECISION()).mul(123)
+      const normalisationResult = await distributor.normalise(normalisedValue)
+      expect(normalisationResult).to.equal(123)
     })
   })
 
@@ -203,17 +177,27 @@ describe('TrueDistributor', () => {
       expect(await distributor.reward(1000, 1000)).to.equal(0)
     })
 
+    it('returns 0 for interval starting after last block', async () => {
+      const lastBlock = await distributor.lastBlock()
+      expect(await distributor.reward(lastBlock, lastBlock.add(100))).to.equal(0)
+    })
+
+    it('returns 0 for interval ending before first block', async () => {
+      const delayedDistributor = await new TrueDistributorFactory(owner).deploy(100, trustToken.address)
+      expect(await delayedDistributor.reward(0, 99)).to.equal(0)
+    })
+
     it('has correct precision', async () => {
-      expect((await distributor.reward(0, await distributor.TOTAL_BLOCKS())).div(await distributor.PRECISION())).to.equal(toTrustToken(536500000).sub(1))
+      expect((await distributor.reward(0, await distributor.getTotalBlocks())).div(await distributor.PRECISION())).to.equal(toTrustToken(536500000).sub(1))
     })
 
     it('from block 0 to last', async () => {
-      expect(await distributor.reward(0, await distributor.TOTAL_BLOCKS())).to.equal('53649999999999999999999999971605309297031160000000')
+      expect(await distributor.reward(0, await distributor.getTotalBlocks())).to.equal('53649999999999999999999999971605309297031160000000')
     })
 
     it('sums to total TRU distributor (with step 1000000)', async () => {
       let sum = Zero
-      const totalBlocks = (await distributor.TOTAL_BLOCKS()).toNumber()
+      const totalBlocks = (await distributor.getTotalBlocks()).toNumber()
 
       for (let i = 0; i < totalBlocks; i += 1000000) {
         const newReward = await distributor.reward(i, Math.min(i + 1000000, totalBlocks))
@@ -224,7 +208,7 @@ describe('TrueDistributor', () => {
 
     it('in every following interval reward is smaller (with step 100000)', async () => {
       let lastReward = MaxUint256
-      const totalBlocks = (await distributor.TOTAL_BLOCKS()).toNumber()
+      const totalBlocks = (await distributor.getTotalBlocks()).toNumber()
 
       for (let i = 0; i < totalBlocks; i += 100000) {
         const newReward = await distributor.reward(i, Math.min(i + 100000, totalBlocks))
@@ -256,6 +240,24 @@ describe('TrueDistributor', () => {
       const rewardFromDefaultDistributor = await distributor.reward(0, 2)
 
       expect(rewardFromPostponedDistributor).to.equal(rewardFromDefaultDistributor)
+    })
+
+    it('returns proper value if interval starts before ending block, but ends after', async () => {
+      const lastBlock = await distributor.lastBlock()
+      const reward = await distributor.reward(lastBlock.sub(2000), lastBlock.add(2000))
+      const expectedReward = await distributor.reward(lastBlock.sub(2000), lastBlock)
+
+      expect(reward).to.equal(expectedReward)
+    })
+
+    it('returns total reward for interval including total rewarding period', async () => {
+      const delayedDistributor = await new TrueDistributorFactory(owner).deploy(1000, fakeToken.address)
+      const lastBlock = await delayedDistributor.lastBlock()
+
+      const reward = await distributor.reward(0, lastBlock.add(2000))
+      const expectedReward = '53649999999999999999999999971605309297031160000000'
+
+      expect(reward).to.equal(expectedReward)
     })
   })
 })

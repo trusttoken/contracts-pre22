@@ -9,7 +9,7 @@ import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabil
 
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
-import { toTrustToken } from '../scripts/utils/toTrustToken'
+import { toTrustToken } from '../scripts/utils'
 
 import { AddressZero } from '@ethersproject/constants'
 import { expectEvent } from './utils/eventHelpers'

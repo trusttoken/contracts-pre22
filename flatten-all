@@ -3,32 +3,24 @@
 # print all commands as they execute
 set -x
 
-mkdir -p flat_contracts
-truffle-flattener contracts/true-currencies-new/TrueUSD.sol > flat_contracts/flat_tusd.sol
-truffle-flattener contracts/true-currencies-new/TrueAUD.sol > flat_contracts/flat_taud.sol
-truffle-flattener contracts/true-currencies-new/TrueCAD.sol > flat_contracts/flat_tcad.sol
-truffle-flattener contracts/true-currencies-new/TrueGBP.sol > flat_contracts/flat_tgbp.sol
-truffle-flattener contracts/true-currencies-new/TrueHKD.sol > flat_contracts/flat_thkd.sol
-truffle-flattener contracts/truecurrencies/Proxy/OwnedUpgradeabilityProxy.sol > flat_contracts/flat_OwnedUpgradeableProxy.sol
-truffle-flattener contracts/admin/TokenController.sol > flat_contracts/flat_TokenController.sol
-truffle-flattener contracts/truecurrencies/utilities/DepositAddressRegistrar.sol > flat_contracts/flat_depositAddressRegistrar.sol
-truffle-flattener contracts/truecurrencies/utilities/PausedCurrencies.sol > flat_contracts/flat_PausedCurrencies.sol
-truffle-flattener contracts/truecurrencies/Admin/MultisigOwner.sol > flat_contracts/flat_MultisigOwner.sol
-truffle-flattener contracts/truecurrencies/Proxy/TimeOwnedUpgradeabilityProxy.sol > flat_contracts/flat_TimeOwnedUpgradeabilityProxy.sol
-truffle-flattener contracts/truecurrencies/utilities/TokenFaucet.sol > flat_contracts/flat_TokenFaucet.sol
+# create folder
+mkdir -p flat-contracts
 
-truffle-flattener contracts/truereward/utilities/FractionalExponents.sol > flat_contracts/flat_FractionalExponents.sol
-truffle-flattener contracts/truereward/AssuredFinancialOpportunity.sol > flat_contracts/flat_AssuredFinancialOpportunity.sol
-truffle-flattener contracts/truereward/AaveFinancialOpportunity.sol > flat_contracts/flat_AaveFinancialOpportunity.sol
-truffle-flattener contracts/truereward/mocks/LendingPoolCoreMock.sol > flat_contracts/flat_LendingPoolCoreMock.sol
-truffle-flattener contracts/truereward/FinancialOpportunity.sol > flat_contracts/flat_thkd.sol
-truffle-flattener contracts/truereward/mocks/ATokenMock.sol > flat_contracts/flat_ATokenMock.sol
-truffle-flattener contracts/truereward/mocks/ConfigurableFinancialOpportunityMock.sol > flat_contracts/flat_ConfigurableFinancialOpportunityMock.sol
-truffle-flattener contracts/truereward/mocks/ConfigurableAaveFinancialOpportuniy.sol > flat_contracts/flat_ConfigurableAaveFinancialOpportuniy.sol
+# true currencies
+truffle-flattener contracts/true-currencies/tokens/TrueUSD.sol > flat-contracts/flat_TrueUSD.sol
+truffle-flattener contracts/true-currencies/tokens/TrueAUD.sol > flat-contracts/flat_TrueAUD.sol
+truffle-flattener contracts/true-currencies/tokens/TrueCAD.sol > flat-contracts/flat_TrueCAD.sol
+truffle-flattener contracts/true-currencies/tokens/TrueGBP.sol > flat-contracts/flat_TrueGBP.sol
+truffle-flattener contracts/true-currencies/tokens/TrueHKD.sol > flat-contracts/flat_TrueHKD.sol
 
-truffle-flattener contracts/deploy/DeployHelper.sol > flat_contracts/flat_DeployHelper.sol
+# trusttoken & truefi
+truffle-flattener contracts/trusttoken/TrustToken.sol > flat-contracts/flat_TrustToken.sol
+truffle-flattener contracts/truefi/CurvePool.sol > flat-contracts/flat_CurvePool.sol
 
-truffle-flattener contracts/trusttokens/Registry/Registry.sol > flat_contracts/flat_Registry.sol
-truffle-flattener contracts/trusttokens/Liquidator.sol > flat_contracts/flat_Liquidator.sol
-truffle-flattener contracts/trusttokens/TrustToken.sol > flat_contracts/flat_TrustToken.sol
-truffle-flattener contracts/trusttokens/StakedToken.sol > flat_contracts/flat_StakedToken.sol
+# token controller & regsitry
+truffle-flattener contracts/true-currencies/TokenController.sol > flat-contracts/flat_TokenController.sol
+truffle-flattener contracts/registry/Registry.sol > flat-contracts/flat_Registry.sol
+
+# proxies
+truffle-flattener contracts/proxy/OwnedUpgradeabilityProxy.sol > flat-contracts/flat_OwnedUpgradeabilityProxy.sol
+truffle-flattener contracts/proxy/TimeOwnedUpgradeabilityProxy.sol > flat-contracts/flat_TimeOwnedUpgradeabilityProxy.sol

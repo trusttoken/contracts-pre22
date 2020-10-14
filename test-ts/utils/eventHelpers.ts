@@ -16,11 +16,3 @@ export const expectMintEventOn = (contract: Contract) => async (tx: Transaction,
 export const expectEventsCountOn = (contract: Contract) => async (eventName: string, tx: ContractTransaction, count: number) => {
   expect((await tx.wait()).events.filter(({ address, event }) => address === contract.address && event === eventName).length).to.equal(count)
 }
-
-export const expectRewardBackedBurnEventOn = (contract: Contract) => async (tx: Transaction, from: string, amount: BigNumberish) => {
-  await expectEvent(contract, 'BurnRewardBackedToken')(tx, from, amount)
-}
-
-export const expectRewardBackedMintEventOn = (contract: Contract) => async (tx: Transaction, from: string, amount: BigNumberish) => {
-  await expectEvent(contract, 'MintRewardBackedToken')(tx, from, amount)
-}
