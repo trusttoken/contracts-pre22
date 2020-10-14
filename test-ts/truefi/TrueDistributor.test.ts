@@ -23,7 +23,6 @@ describe('TrueDistributor', () => {
 
   const normaliseRewardToTrustTokens = (amount: BigNumber) => amount.div(BigNumber.from(10).pow(33))
 
-
   const expectBlock = async (expectedBlockNumber: number) => {
     expect(await getBlockNumber(provider)).to.equal(expectedBlockNumber)
   }
