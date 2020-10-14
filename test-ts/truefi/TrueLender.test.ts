@@ -1,10 +1,8 @@
 import { expect } from 'chai'
 import { deployMockContract } from 'ethereum-waffle'
-import { Contract, Wallet } from 'ethers'
-import { MaxUint256, AddressZero } from 'ethers/constants'
-import { BigNumber, parseEther } from 'ethers/utils'
-import { Contract, ContractTransaction, Wallet } from 'ethers'
+import { Contract, Wallet, BigNumber } from 'ethers'
 import { AddressZero, MaxUint256 } from '@ethersproject/constants'
+import { parseEther } from '@ethersproject/units'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 
@@ -16,11 +14,6 @@ import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFacto
 import ITruePoolJson from '../../build/ITruePool.json'
 import ILoanTokenJson from '../../build/ILoanToken.json'
 import ITrueRatingAgencyJson from '../../build/ITrueRatingAgency.json'
-import { deployMockContract } from 'ethereum-waffle'
-import { parseEther } from '@ethersproject/units'
-import { parseTT } from '../utils/parseTT'
-import { timeTravel } from '../utils/timeTravel'
-import { JsonRpcProvider } from '@ethersproject/providers'
 
 describe('TrueLender', () => {
   let owner: Wallet
@@ -41,7 +34,7 @@ describe('TrueLender', () => {
   const monthInSeconds = dayInSeconds * 30
 
 
-  beforeEachWithFixture(async ([owner, otherWallet], _provider) => {
+  beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet] = wallets
 
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
