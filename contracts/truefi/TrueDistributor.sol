@@ -100,7 +100,7 @@ contract TrueDistributor is Ownable {
      * @notice Reward from `fromBlock` to `toBlock`.
      */
     function reward(uint256 fromBlock, uint256 toBlock) public view returns (uint256) {
-        require(fromBlock <= toBlock, "invalid interval");
+        require(fromBlock <= toBlock, "TrueDistributor: Cannot pass an invalid interval");
         if (toBlock < startingBlock || fromBlock > lastBlock || fromBlock == toBlock) {
             return 0;
         }

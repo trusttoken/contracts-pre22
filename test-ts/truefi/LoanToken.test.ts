@@ -102,7 +102,7 @@ describe('LoanToken', () => {
 
     it('reverts when funding the same loan token twice', async () => {
       await expect(loanToken.fund())
-        .to.be.revertedWith('LoanToken: current status should be Awaiting')
+        .to.be.revertedWith('LoanToken: Current status should be Awaiting')
     })
 
     it('emits event', async () => {
@@ -133,23 +133,23 @@ describe('LoanToken', () => {
     it('reverts if trying to withdraw twice', async () => {
       await loanToken.fund()
       await withdraw(borrower)
-      await expect(withdraw(borrower)).to.be.revertedWith('LoanToken: current status should be Funded')
+      await expect(withdraw(borrower)).to.be.revertedWith('LoanToken: Current status should be Funded')
     })
 
     it('reverts when withdrawing from not funded loan', async () => {
-      await expect(withdraw(borrower)).to.be.revertedWith('LoanToken: current status should be Funded')
+      await expect(withdraw(borrower)).to.be.revertedWith('LoanToken: Current status should be Funded')
     })
 
     it('reverts when withdrawing from not closed loan', async () => {
       await loanToken.fund()
       await timeTravel(provider, monthInSeconds * 12)
       await loanToken.close()
-      await expect(withdraw(borrower)).to.be.revertedWith('LoanToken: current status should be Funded')
+      await expect(withdraw(borrower)).to.be.revertedWith('LoanToken: Current status should be Funded')
     })
 
     it('reverts when sender is not a borrower', async () => {
       await loanToken.fund()
-      await expect(withdraw(lender)).to.be.revertedWith('LoanToken: caller is not the borrower')
+      await expect(withdraw(lender)).to.be.revertedWith('LoanToken: Caller is not the borrower')
     })
 
     it('emits event', async () => {
@@ -186,21 +186,21 @@ describe('LoanToken', () => {
     })
 
     it('reverts when closing not funded loan', async () => {
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: current status should be Funded')
+      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Current status should be Funded')
     })
 
     it('reverts when closing ongoing loan', async () => {
       await loanToken.fund()
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: loan cannot be closed yet')
+      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
       await timeTravel(provider, monthInSeconds * 12 - 10)
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: loan cannot be closed yet')
+      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
     })
 
     it('reverts when trying to close already closed loan', async () => {
       await loanToken.fund()
       await timeTravel(provider, monthInSeconds * 12)
       await loanToken.close()
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: current status should be Funded')
+      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Current status should be Funded')
     })
 
     it('emits event', async () => {
@@ -214,9 +214,9 @@ describe('LoanToken', () => {
 
   describe('Repay', () => {
     it('reverts if called before withdraw', async () => {
-      await expect(loanToken.repay(lender.address, 1)).to.be.revertedWith('LoanToken: only after loan has been withdrawn')
+      await expect(loanToken.repay(lender.address, 1)).to.be.revertedWith('LoanToken: Only after loan has been withdrawn')
       await loanToken.fund()
-      await expect(loanToken.repay(lender.address, 1)).to.be.revertedWith('LoanToken: only after loan has been withdrawn')
+      await expect(loanToken.repay(lender.address, 1)).to.be.revertedWith('LoanToken: Only after loan has been withdrawn')
     })
 
     it('transfers trueCurrencies to loanToken', async () => {
@@ -236,18 +236,18 @@ describe('LoanToken', () => {
     })
 
     it('reverts if called before loan is closed', async () => {
-      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: current status should be Settled or Defaulted')
+      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
       await loanToken.fund()
-      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: current status should be Settled or Defaulted')
+      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
       await withdraw(borrower)
-      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: current status should be Settled or Defaulted')
+      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
     })
 
     it('reverts if redeeming more than own balance', async () => {
       await loanToken.fund()
       await timeTravel(provider, monthInSeconds * 12)
       await payback(borrower, parseEther('100'))
-      await expect(loanToken.redeem(parseEther('1100'))).to.be.revertedWith('LoanToken: current status should be Settled or Defaulted')
+      await expect(loanToken.redeem(parseEther('1100'))).to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
     })
 
     it('emits event', async () => {

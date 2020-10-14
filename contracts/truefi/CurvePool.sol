@@ -32,7 +32,7 @@ contract CurvePool is TruePool {
     }
 
     function exit(uint256 amount) external override {
-        require(amount <= balanceOf(msg.sender), "Insufficient balance");
+        require(amount <= balanceOf(msg.sender), "CurvePool: Cannot withdraw amount bigger than available balance");
 
         uint256 minTokenAmount = curvePool.calc_withdraw_one_coin(amount, TUSD_INDEX).mul(99).div(100);
 

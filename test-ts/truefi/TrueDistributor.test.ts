@@ -218,7 +218,7 @@ describe('TrueDistributor', () => {
     })
 
     it('reverts on invalid interval', async () => {
-      await expect(distributor.reward(10, 1)).to.be.revertedWith('invalid interval')
+      await expect(distributor.reward(10, 1)).to.be.revertedWith('TrueDistributor: Cannot pass an invalid interval')
     })
 
     it('no reward can be claimed before starting block', async () => {
