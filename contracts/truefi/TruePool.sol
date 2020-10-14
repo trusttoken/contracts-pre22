@@ -60,13 +60,13 @@ abstract contract TruePool is ITruePool, ERC20 {
         return 0;
     }
 
-    /// @dev stake TRU
-    function stake(uint256 amount) external override {
+    /// @dev borrow TUSD from pool
+    function borrow(uint256 amount) external virtual override {
         // TODO
     }
 
-    /// @dev unstake TRU
-    function unstake(uint256 amount) external override {
+    /// @dev repay TUSD to pool
+    function repay(uint256 amount) external virtual override {
         // TODO
     }
 

@@ -3,15 +3,18 @@ pragma solidity 0.6.10;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {ITruePool, IERC20} from "./interface/ITruePool.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract TrueRatingAgency is Ownable {
+import {ITruePool} from "./interface/ITruePool.sol";
+import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
+
+contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     using SafeMath for uint256;
 
     enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
 
     struct Loan {
-        address borrower;
+        address creator;
         uint256 timestamp;
         mapping(bool => uint256) prediction;
         mapping(address => mapping(bool => uint256)) votes;
@@ -24,8 +27,8 @@ contract TrueRatingAgency is Ownable {
     event LoanSubmitted(address id);
     event LoanRetracted(address id);
 
-    modifier onlyBorrower(address id) {
-        require(loans[id].borrower == msg.sender, "TrueRatingAgency: Not sender's loan");
+    modifier onlyCreator(address id) {
+        require(loans[id].creator == msg.sender, "TrueRatingAgency: Not sender's loan");
         _;
     }
 
@@ -64,17 +67,30 @@ contract TrueRatingAgency is Ownable {
         return loans[id].prediction[true];
     }
 
-    function getResults(address id) public view returns (uint256, uint256) {
-        return (getTotalNoVotes(id), getTotalYesVotes(id));
+    function getVotingStart(address id) public view returns (uint256) {
+        return loans[id].timestamp;
     }
 
-    function submit(address id) external onlyNotExistingLoans(id) {
-        loans[id] = Loan({borrower: msg.sender, timestamp: block.timestamp});
+    function getResults(address id)
+        external
+        override
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        return (getVotingStart(id), getTotalNoVotes(id), getTotalYesVotes(id));
+    }
+
+    function submit(address id) external override onlyNotExistingLoans(id) {
+        loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp});
         emit LoanSubmitted(id);
     }
 
-    function retract(address id) external onlyPendingLoans(id) onlyBorrower(id) {
-        loans[id].borrower = address(0);
+    function retract(address id) external override onlyPendingLoans(id) onlyCreator(id) {
+        loans[id].creator = address(0);
         loans[id].prediction[true] = 0;
         loans[id].prediction[false] = 0;
 
@@ -92,15 +108,15 @@ contract TrueRatingAgency is Ownable {
         require(trustToken.transferFrom(msg.sender, address(this), stake));
     }
 
-    function yes(address id, uint256 stake) external onlyPendingLoans(id) {
+    function yes(address id, uint256 stake) external override onlyPendingLoans(id) {
         vote(id, stake, true);
     }
 
-    function no(address id, uint256 stake) external onlyPendingLoans(id) {
+    function no(address id, uint256 stake) external override onlyPendingLoans(id) {
         vote(id, stake, false);
     }
 
-    function withdraw(address id, uint256 stake) public onlyNotRunningLoans(id) {
+    function withdraw(address id, uint256 stake) external override onlyNotRunningLoans(id) {
         bool choice = loans[id].votes[msg.sender][true] > 0;
         require(loans[id].votes[msg.sender][choice] >= stake, "TrueRatingAgency: Can't withdraw more than was staked");
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
@@ -119,10 +135,10 @@ contract TrueRatingAgency is Ownable {
 
     function status(address id) public view returns (LoanStatus) {
         Loan storage loan = loans[id];
-        if (loan.borrower == address(0) && loan.timestamp == 0) {
+        if (loan.creator == address(0) && loan.timestamp == 0) {
             return LoanStatus.Void;
         }
-        if (loan.borrower == address(0) && loan.timestamp != 0) {
+        if (loan.creator == address(0) && loan.timestamp != 0) {
             return LoanStatus.Retracted;
         }
         // if(loan was funded and it is still ongoing) {

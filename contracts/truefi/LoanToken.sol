@@ -77,6 +77,19 @@ contract LoanToken is ILoanToken, ERC20 {
         return true;
     }
 
+    function getParameters()
+        external
+        override
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        return (amount, apy, duration);
+    }
+
     function fund() external override onlyAwaiting {
         status = Status.Funded;
         start = block.timestamp;

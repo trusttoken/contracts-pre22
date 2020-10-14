@@ -1,61 +1,70 @@
 import { expect } from 'chai'
-import { Contract, ContractTransaction, Wallet } from 'ethers'
+import { deployMockContract } from 'ethereum-waffle'
+import { Contract, Wallet, BigNumber } from 'ethers'
 import { AddressZero, MaxUint256 } from '@ethersproject/constants'
+import { parseEther } from '@ethersproject/units'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 
-import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
 import { TrueLender } from '../../build/types/TrueLender'
+import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
-import { TrustTokenFactory } from '../../build/types/TrustTokenFactory'
-import { TrustToken } from '../../build/types/TrustToken'
+
 import ITruePoolJson from '../../build/ITruePool.json'
-import { deployMockContract } from 'ethereum-waffle'
-import { parseEther } from '@ethersproject/units'
-import { parseTT } from '../utils/parseTT'
-import { timeTravel } from '../utils/timeTravel'
-import { JsonRpcProvider } from '@ethersproject/providers'
+import ILoanTokenJson from '../../build/ILoanToken.json'
+import ITrueRatingAgencyJson from '../../build/ITrueRatingAgency.json'
 
 describe('TrueLender', () => {
   let owner: Wallet
   let otherWallet: Wallet
+
   let lendingPool: TrueLender
+
   let tusd: MockTrueCurrency
-  let trustToken: TrustToken
-  let underlyingPool: Contract
-  let provider: JsonRpcProvider
+  let mockPool: Contract
+  let mockLoanToken: Contract
+  let mockRatingAgency: Contract
+
+  let amount: BigNumber
+  let apy: BigNumber
+  let duration: BigNumber
 
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
 
-  const extractApplicationId = async (submitTransaction: ContractTransaction) => ((await submitTransaction.wait()).events[0].args as any).id
-
-  beforeEachWithFixture(async (wallets, _provider) => {
+  beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet] = wallets
-    provider = _provider
 
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
     await tusd.initialize()
 
-    trustToken = await new TrustTokenFactory(owner).deploy()
-    await trustToken.initialize()
-    await trustToken.mint(owner.address, parseTT(100000000))
+    mockPool = await deployMockContract(owner, ITruePoolJson.abi)
+    await mockPool.mock.currencyToken.returns(tusd.address)
+    await mockPool.mock.borrow.returns()
 
-    underlyingPool = await deployMockContract(owner, ITruePoolJson.abi)
-    await underlyingPool.mock.currencyToken.returns(tusd.address)
-    lendingPool = await new TrueLenderFactory(owner).deploy(underlyingPool.address, trustToken.address)
+    mockLoanToken = await deployMockContract(owner, ILoanTokenJson.abi)
+    await mockLoanToken.mock.isLoanToken.returns(true)
+    await mockLoanToken.mock.fund.returns()
 
-    await trustToken.approve(lendingPool.address, parseTT(100000000))
+    mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
+    await mockRatingAgency.mock.getResults.returns(0, 0, 0)
+
+    lendingPool = await new TrueLenderFactory(owner).deploy(mockPool.address, mockRatingAgency.address)
+
+    amount = (await lendingPool.minSize()).mul(2)
+    apy = (await lendingPool.minApy()).mul(2)
+    duration = (await lendingPool.minDuration()).mul(2)
+    await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
   })
 
   describe('Constructor', () => {
     it('sets the pool address', async () => {
-      expect(await lendingPool.pool()).to.equal(underlyingPool.address)
+      expect(await lendingPool.pool()).to.equal(mockPool.address)
     })
 
     it('approves infinite amount to underlying pool', async () => {
-      expect(await tusd.allowance(lendingPool.address, underlyingPool.address)).to.equal(MaxUint256)
+      expect(await tusd.allowance(lendingPool.address, mockPool.address)).to.equal(MaxUint256)
     })
 
     it('default params', async () => {
@@ -186,11 +195,11 @@ describe('TrueLender', () => {
 
   describe('Whitelisting', () => {
     it('changes whitelist status', async () => {
-      expect(await lendingPool.borrowers(otherWallet.address)).to.be.false
+      expect(await lendingPool.allowedBorrowers(otherWallet.address)).to.be.false
       await lendingPool.allow(otherWallet.address, true)
-      expect(await lendingPool.borrowers(otherWallet.address)).to.be.true
+      expect(await lendingPool.allowedBorrowers(otherWallet.address)).to.be.true
       await lendingPool.allow(otherWallet.address, false)
-      expect(await lendingPool.borrowers(otherWallet.address)).to.be.false
+      expect(await lendingPool.allowedBorrowers(otherWallet.address)).to.be.false
     })
 
     it('emits event', async () => {
@@ -206,282 +215,127 @@ describe('TrueLender', () => {
     })
   })
 
-  describe('Submiting/Retracting application', () => {
+  describe('Funding', () => {
     beforeEach(async () => {
       await lendingPool.allow(owner.address, true)
     })
 
-    it('creates loan application', async () => {
-      const tx = await lendingPool.submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
-      const applicationId = await extractApplicationId(tx)
-
-      const application = await lendingPool.applications(applicationId)
-      expect(application.creationBlock).to.equal(11)
-      expect(application.timestamp).to.be.gt(0)
-      expect(application.borrower).to.equal(owner.address)
-      expect(application.beneficiary).to.equal(otherWallet.address)
-      expect(application.amount).to.equal(parseEther('2000000'))
-      expect(application.apy).to.equal(1200)
-      expect(application.duration).to.equal(monthInSeconds * 12)
-      expect(application.yeah).to.be.equal(0)
-      expect(application.nah).to.be.equal(0)
+    it('reverts if passed address is not a LoanToken', async () => {
+      await expect(lendingPool.fund(AddressZero))
+        .to.be.reverted
+      await expect(lendingPool.fund(otherWallet.address))
+        .to.be.reverted
     })
 
-    it('emits event on creation', async () => {
-      await expect(lendingPool.submit(otherWallet.address, parseEther('1000000'), 1300, monthInSeconds * 18))
-        .to.emit(lendingPool, 'ApplicationSubmitted').withArgs('0xe4d93541ea22476f', owner.address, otherWallet.address, parseEther('1000000'), 1300, monthInSeconds * 18)
+    it('reverts if sender is not an allowed borrower', async () => {
+      await expect(lendingPool.connect(otherWallet).fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Sender is not allowed to borrow')
     })
 
-    it('should be allowed to create loan application', async () => {
-      await expect(lendingPool.connect(otherWallet).submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12))
-        .to.be.revertedWith('TrueLender: Sender not allowed')
-    })
-
-    it('checks loan amount to be within boundaries', async () => {
-      await expect(lendingPool.submit(otherWallet.address, parseEther('999999'), 1200, monthInSeconds * 12))
-        .to.be.revertedWith('TrueLender: Loan size is out of bounds')
-      await expect(lendingPool.submit(otherWallet.address, parseEther('10000001'), 1200, monthInSeconds * 12))
+    it('reverts if loan size is out of bounds (too small)', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount.div(10), apy, duration)
+      await expect(lendingPool.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Loan size is out of bounds')
     })
 
-    it('checks APY to be not below minimum', async () => {
-      await expect(lendingPool.submit(otherWallet.address, parseEther('1000000'), 900, monthInSeconds * 12))
+    it('reverts if loan size is out of bounds (too big)', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount.mul(10000), apy, duration)
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Loan size is out of bounds')
+    })
+
+    it('reverts if loan duration is out of bounds (too short)', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount, apy, duration.div(10))
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Loan duration is out of bounds')
+    })
+
+    it('reverts if loan duration is out of bounds (too long)', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount, apy, duration.mul(100))
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Loan duration is out of bounds')
+    })
+
+    it('reverts if loan has to small APY', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount, apy.div(10), duration)
+      await expect(lendingPool.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: APY is below minimum')
     })
 
-    it('application can be removed by borrower', async () => {
-      const tx = await lendingPool.submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
-      const applicationId = await extractApplicationId(tx)
-
-      await lendingPool.retract(applicationId)
-
-      const application = await lendingPool.applications(applicationId)
-      expect(application.creationBlock).to.equal(0)
-      expect(application.borrower).to.equal(AddressZero)
-      expect(application.beneficiary).to.equal(AddressZero)
-      expect(application.amount).to.equal(0)
-      expect(application.apy).to.equal(0)
-      expect(application.duration).to.equal(0)
+    it('reverts if loan was not long enough under voting', async () => {
+      const { timestamp } = (await owner.provider.getBlock('latest'))
+      await mockRatingAgency.mock.getResults.returns(timestamp, 0, amount.mul(100))
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Voting time is below minimum')
     })
 
-    it('throws when removing not existing application', async () => {
-      await expect(lendingPool.retract('0xfadedeadbeefface')).to.be.revertedWith('TrueLender: Application doesn\'t exist')
+    it('reverts if absolute amount out yes votes is not enough in relation to loan size', async () => {
+      await mockRatingAgency.mock.getResults.returns(0, 0, 10)
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Not enough votes given for the loan')
     })
 
-    it('cannot remove application created by someone else', async () => {
-      await lendingPool.allow(otherWallet.address, true)
-      const tx = await lendingPool.connect(otherWallet).submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
-      const applicationId = await extractApplicationId(tx)
-
-      await expect(lendingPool.retract(applicationId)).to.be.revertedWith('TrueLender: Not retractor\'s application')
+    it('reverts if loan is predicted to be too risky', async () => {
+      await mockRatingAgency.mock.getResults.returns(0, amount.mul(10), amount.div(10))
+      await expect(lendingPool.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Loan risk is too high')
     })
 
-    it('emits event on remove', async () => {
-      const tx = await lendingPool.submit(otherWallet.address, parseEther('1000000'), 1300, monthInSeconds * 12)
-      const applicationId = await extractApplicationId(tx)
-
-      await expect(lendingPool.retract(applicationId)).to.emit(lendingPool, 'ApplicationRetracted')
-    })
-  })
-
-  describe('Voting', () => {
-    let applicationId: string
-    let fakeApplicationId: string
-
-    const stake = 1000
-    beforeEach(async () => {
-      await lendingPool.allow(owner.address, true)
-      await lendingPool.submit(otherWallet.address, parseEther('2000000'), 1200, monthInSeconds * 12)
-      applicationId = '0x6fa18b35bc27d09e'
-      fakeApplicationId = '0xdeadbeefdadface0'
-    })
-
-    describe('Yeah', () => {
-      it('transfers funds from voter', async () => {
-        const balanceBefore = await trustToken.balanceOf(owner.address)
-        await lendingPool.yeah(applicationId, stake)
-        const balanceAfter = await trustToken.balanceOf(owner.address)
-        expect(balanceAfter.add(stake)).to.equal(balanceBefore)
+    describe('all requirements are met', () => {
+      beforeEach(async () => {
+        await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
+        await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
       })
 
-      it('transfers funds to lender contract', async () => {
-        const balanceBefore = await trustToken.balanceOf(lendingPool.address)
-        await lendingPool.yeah(applicationId, stake)
-        const balanceAfter = await trustToken.balanceOf(lendingPool.address)
-        expect(balanceAfter.sub(stake)).to.equal(balanceBefore)
+      it('borrows tokens from pool', async () => {
+        await lendingPool.fund(mockLoanToken.address)
+        expect('borrow').to.be.calledOnContractWith(mockPool, [amount])
       })
 
-      it('keeps track of votes', async () => {
-        await lendingPool.yeah(applicationId, stake)
-        await lendingPool.applications(applicationId)
-        expect(await lendingPool.getYeahVote(applicationId, owner.address)).to.be.equal(stake)
-        expect(await lendingPool.getNahVote(applicationId, owner.address)).to.be.equal(0)
+      it('approves LoanToken to spend funds borrowed from pool', async () => {
+        await lendingPool.fund(mockLoanToken.address)
+        expect(await tusd.allowance(lendingPool.address, mockLoanToken.address))
+          .to.equal(amount)
       })
 
-      it('increases applications yeah value', async () => {
-        await lendingPool.yeah(applicationId, stake)
-        const application = await lendingPool.applications(applicationId)
-        expect(application.yeah).to.be.equal(stake)
+      it('calls fund function', async () => {
+        await lendingPool.fund(mockLoanToken.address)
+        expect('fund').to.be.calledOnContractWith(mockLoanToken, [])
       })
 
-      it('increases applications yeah value when voted multiple times', async () => {
-        await lendingPool.yeah(applicationId, stake)
-        await lendingPool.yeah(applicationId, stake)
-        const application = await lendingPool.applications(applicationId)
-        expect(application.yeah).to.be.equal(stake * 2)
-      })
-
-      it('after voting yeah, disallows voting nah', async () => {
-        await lendingPool.yeah(applicationId, stake)
-        await expect(lendingPool.nah(applicationId, stake)).to.be.revertedWith('TrueLender: Can\'t vote both yeah and nah')
-      })
-
-      it('is only possible during voting period', async () => {
-        await lendingPool.yeah(applicationId, stake)
-        await timeTravel(provider, dayInSeconds * 8)
-        await expect(lendingPool.yeah(applicationId, stake)).to.be.revertedWith('TrueLender: Can\'t vote outside the voting period')
-      })
-
-      it('is only possible for existing applications', async () => {
-        await expect(lendingPool.yeah(fakeApplicationId, stake)).to.be.revertedWith('TrueLender: Application doesn\'t exist')
+      it('emits proper event', async () => {
+        await expect(lendingPool.fund(mockLoanToken.address))
+          .to.emit(lendingPool, 'Funded')
+          .withArgs(mockLoanToken.address, amount)
       })
     })
 
-    describe('Nah', () => {
-      it('transfers funds from voter', async () => {
-        const balanceBefore = await trustToken.balanceOf(owner.address)
-        await lendingPool.nah(applicationId, stake)
-        const balanceAfter = await trustToken.balanceOf(owner.address)
-        expect(balanceAfter.add(stake)).to.equal(balanceBefore)
-      })
-
-      it('transfers funds to lender contract', async () => {
-        const balanceBefore = await trustToken.balanceOf(lendingPool.address)
-        await lendingPool.nah(applicationId, stake)
-        const balanceAfter = await trustToken.balanceOf(lendingPool.address)
-        expect(balanceAfter.sub(stake)).to.equal(balanceBefore)
-      })
-
-      it('keeps track of votes', async () => {
-        await lendingPool.nah(applicationId, stake)
-        await lendingPool.applications(applicationId)
-        expect(await lendingPool.getNahVote(applicationId, owner.address)).to.be.equal(stake)
-        expect(await lendingPool.getYeahVote(applicationId, owner.address)).to.be.equal(0)
-      })
-
-      it('increases applications nah value', async () => {
-        await lendingPool.nah(applicationId, stake)
-        const application = await lendingPool.applications(applicationId)
-        expect(application.nah).to.be.equal(stake)
-      })
-
-      it('increases applications nah value when voted multiple times', async () => {
-        await lendingPool.nah(applicationId, stake)
-        await lendingPool.nah(applicationId, stake)
-        const application = await lendingPool.applications(applicationId)
-        expect(application.nah).to.be.equal(stake * 2)
-      })
-
-      it('after voting nah, disallows voting nah', async () => {
-        await lendingPool.nah(applicationId, stake)
-        await expect(lendingPool.yeah(applicationId, stake)).to.be.revertedWith('TrueLender: Can\'t vote both yeah and nah')
-      })
-
-      it('is only possible during voting period', async () => {
-        await lendingPool.nah(applicationId, stake)
-        await timeTravel(provider, dayInSeconds * 8)
-        await expect(lendingPool.nah(applicationId, stake)).to.be.revertedWith('TrueLender: Can\'t vote outside the voting period')
-      })
-
-      it('is only possible for existing applications', async () => {
-        await expect(lendingPool.nah(fakeApplicationId, stake)).to.be.revertedWith('TrueLender: Application doesn\'t exist')
-      })
-    })
-  })
-
-  describe('Status', () => {
-    enum ApplicationStatus { Pending, Approved, Rejected }
-    const loanAmount = '1000000'
-
-    let applicationId: string
-
-    beforeEach(async () => {
-      await trustToken.mint(otherWallet.address, parseTT(100000000))
-      await trustToken.connect(otherWallet).approve(lendingPool.address, parseTT(100000000))
-      await lendingPool.allow(owner.address, true)
-      const tx = await lendingPool.submit(otherWallet.address, parseEther(loanAmount), 1000, monthInSeconds * 12)
-      applicationId = await extractApplicationId(tx)
-    })
-
-    it('returns pending if called during voting period', async () => {
-      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Pending)
-    })
-
-    it('returns pending not whole voting period passed', async () => {
-      await timeTravel(provider, dayInSeconds * 7 - 10)
-      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Pending)
-    })
-
-    it('returns rejected if voting period passed and noone voted', async () => {
-      await timeTravel(provider, dayInSeconds * 7 + 100)
-      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
-    })
-
-    it('returns rejected if not enough yeah votes collected', async () => {
-      await lendingPool.yeah(applicationId, parseTT(loanAmount).sub(1))
-      await timeTravel(provider, dayInSeconds * 7 + 100)
-
-      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
-    })
-
-    it('returns rejected if not enough yeah votes collected (bigger participationFactor)', async () => {
-      await lendingPool.setParticipationFactor(20000)
-      await lendingPool.yeah(applicationId, parseTT(loanAmount).mul(2).sub(1))
-      await timeTravel(provider, dayInSeconds * 7 + 100)
-
-      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
-    })
-
-    it('returns rejected if not enough yeah votes collected (smaller participationFactor)', async () => {
-      await lendingPool.setParticipationFactor(5000)
-      await lendingPool.yeah(applicationId, parseTT(loanAmount).div(2).sub(1))
-      await timeTravel(provider, dayInSeconds * 7 + 100)
-
-      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
-    })
-
-    it('returns approved if enough yeah votes collected and all votes were yeah', async () => {
-      await lendingPool.yeah(applicationId, parseTT(loanAmount))
-      await timeTravel(provider, dayInSeconds * 7 + 100)
-
-      expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Approved)
-    })
-
-    describe('Complex cases', () => {
+    describe('complex credibility cases', () => {
       interface LoanScenario {
         APY: number,
         duration: number,
         riskAversion: number,
-        yeahPercentage: number,
+        yesPercentage: number,
       }
 
-      const scenario = (APY: number, months: number, riskAversion: number, yeahPercentage: number) => ({
+      const scenario = (APY: number, months: number, riskAversion: number, yesPercentage: number) => ({
         APY: APY * 100,
         duration: monthInSeconds * months,
         riskAversion: riskAversion * 100,
-        yeahPercentage,
+        yesPercentage,
       })
 
-      const execute = async (loanScenario: LoanScenario) => {
+      const loanIsCredible = async (loanScenario: LoanScenario) => {
         await lendingPool.setRiskAversion(loanScenario.riskAversion)
-        const tx = await lendingPool.submit(otherWallet.address, parseEther(loanAmount), loanScenario.APY, loanScenario.duration)
-        applicationId = await extractApplicationId(tx)
-        await lendingPool.yeah(applicationId, parseTT(loanAmount).mul(loanScenario.yeahPercentage))
-        await lendingPool.connect(otherWallet).nah(applicationId, parseTT(loanAmount).mul(100 - loanScenario.yeahPercentage))
-        await timeTravel(provider, dayInSeconds * 7 + 100)
+        return lendingPool.loanIsCredible(
+          loanScenario.APY,
+          loanScenario.duration,
+          (loanScenario.yesPercentage) * 1000,
+          (100 - loanScenario.yesPercentage) * 1000,
+        )
       }
 
-      describe('Approvals', () => {
+      describe('approvals', () => {
         const approvedLoanScenarios = [
           scenario(10, 12, 100, 95),
           scenario(25, 12, 100, 80),
@@ -491,13 +345,12 @@ describe('TrueLender', () => {
 
         approvedLoanScenarios.forEach((loanScenario, index) => {
           it(`approved loan case #${index + 1}`, async () => {
-            await execute(loanScenario)
-            expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Approved)
+            expect(await loanIsCredible(loanScenario)).to.be.true
           })
         })
       })
 
-      describe('Rejections', () => {
+      describe('rejections', () => {
         const rejectedLoanScenarios = [
           scenario(10, 12, 100, 85),
           scenario(25, 12, 100, 60),
@@ -507,8 +360,7 @@ describe('TrueLender', () => {
 
         rejectedLoanScenarios.forEach((loanScenario, index) => {
           it(`rejected loan case #${index + 1}`, async () => {
-            await execute(loanScenario)
-            expect(await lendingPool.status(applicationId)).to.be.equal(ApplicationStatus.Rejected)
+            expect(await loanIsCredible(loanScenario)).to.be.false
           })
         })
       })

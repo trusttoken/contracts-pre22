@@ -32,6 +32,9 @@ describe('TrueRatingAgency', () => {
     await trustToken.approve(rater.address, parseTT(100000000))
   })
 
+  const submit = async (loanTokenAddress: string, wallet = owner) =>
+    rater.connect(wallet).submit(loanTokenAddress)
+
   describe('Constructor', () => {
     it('sets trust token address', async () => {
       expect(await rater.trustToken()).to.equal(trustToken.address)
@@ -40,47 +43,47 @@ describe('TrueRatingAgency', () => {
 
   describe('Submiting/Retracting loan', () => {
     it('creates loan', async () => {
-      await rater.submit(exampleLoanTokenAddress)
+      await submit(exampleLoanTokenAddress)
 
       const loan = await rater.loans(exampleLoanTokenAddress)
       expect(loan.timestamp).to.be.gt(0)
-      expect(loan.borrower).to.equal(owner.address)
+      expect(loan.creator).to.equal(owner.address)
       expect(await rater.getTotalYesVotes(exampleLoanTokenAddress)).to.be.equal(0)
       expect(await rater.getTotalNoVotes(exampleLoanTokenAddress)).to.be.equal(0)
     })
 
     it('emits event on creation', async () => {
-      await expect(rater.submit(exampleLoanTokenAddress))
+      await expect(submit(exampleLoanTokenAddress))
         .to.emit(rater, 'LoanSubmitted').withArgs(exampleLoanTokenAddress)
     })
 
     it('emits event on removal', async () => {
-      await rater.submit(exampleLoanTokenAddress)
+      await submit(exampleLoanTokenAddress)
 
       await expect(rater.retract(exampleLoanTokenAddress))
         .to.emit(rater, 'LoanRetracted').withArgs(exampleLoanTokenAddress)
     })
 
     it('loan can be removed by borrower', async () => {
-      await rater.submit(exampleLoanTokenAddress)
+      await submit(exampleLoanTokenAddress)
       await rater.retract(exampleLoanTokenAddress)
 
       const loan = await rater.loans(exampleLoanTokenAddress)
       expect(loan.timestamp).to.gt(0)
-      expect(loan.borrower).to.equal(AddressZero)
+      expect(loan.creator).to.equal(AddressZero)
       expect(await rater.getTotalYesVotes(exampleLoanTokenAddress)).to.be.equal(0)
       expect(await rater.getTotalNoVotes(exampleLoanTokenAddress)).to.be.equal(0)
     })
 
     it('retracting does not remove information about votes', async () => {
-      await rater.submit(exampleLoanTokenAddress)
+      await submit(exampleLoanTokenAddress)
       await rater.yes(exampleLoanTokenAddress, stake)
       await rater.retract(exampleLoanTokenAddress)
       expect(await rater.getYesVote(exampleLoanTokenAddress, owner.address)).to.be.equal(stake)
     })
 
     it('if loan is retracted, stakers total vote-based prediction is lost', async () => {
-      await rater.submit(exampleLoanTokenAddress)
+      await submit(exampleLoanTokenAddress)
       await rater.yes(exampleLoanTokenAddress, stake)
       await rater.retract(exampleLoanTokenAddress)
       expect(await rater.getTotalYesVotes(exampleLoanTokenAddress)).to.be.equal(0)
@@ -88,15 +91,15 @@ describe('TrueRatingAgency', () => {
     })
 
     it('reverts on attempt of creating the same loan twice', async () => {
-      await rater.submit(exampleLoanTokenAddress)
-      await expect(rater.submit(exampleLoanTokenAddress))
+      await submit(exampleLoanTokenAddress)
+      await expect(submit(exampleLoanTokenAddress))
         .to.be.revertedWith('TrueRatingAgency: Loan was already created')
     })
 
     it('does not allow to resubmit retracted loan', async () => {
-      await rater.submit(exampleLoanTokenAddress)
+      await submit(exampleLoanTokenAddress)
       await rater.retract(exampleLoanTokenAddress)
-      await expect(rater.submit(exampleLoanTokenAddress))
+      await expect(submit(exampleLoanTokenAddress))
         .to.be.revertedWith('TrueRatingAgency: Loan was already created')
     })
 
@@ -108,7 +111,7 @@ describe('TrueRatingAgency', () => {
     })
 
     it('cannot remove loan created by someone else', async () => {
-      await rater.connect(otherWallet).submit(exampleLoanTokenAddress)
+      await submit(exampleLoanTokenAddress, otherWallet)
 
       await expect(rater.retract(exampleLoanTokenAddress))
         .to.be.revertedWith('TrueRatingAgency: Not sender\'s loan')
@@ -117,7 +120,7 @@ describe('TrueRatingAgency', () => {
 
   describe('Voting', () => {
     beforeEach(async () => {
-      await rater.submit(exampleLoanTokenAddress)
+      await submit(exampleLoanTokenAddress)
     })
 
     describe('Yes', () => {

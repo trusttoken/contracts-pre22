@@ -43,6 +43,14 @@ contract CurvePool is TruePool {
         _burn(msg.sender, amount);
     }
 
+    function borrow(uint256 amount) external override {
+        // TODO
+    }
+
+    function repay(uint256 amount) external override {
+        // TODO
+    }
+
     function value() external override view returns (uint256) {
         return curvePool.calc_withdraw_one_coin(1 ether, TUSD_INDEX);
     }
