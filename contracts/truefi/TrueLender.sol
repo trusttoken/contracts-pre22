@@ -102,7 +102,7 @@ contract TrueLender is Ownable {
         require(loanIsAttractiveEnough(apy), "TrueLender: APY is below minimum");
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
         require(votesTresholdReached(amount, yes), "TrueLender: Not enough votes given for the loan");
-        require(loanIsCredible(apy, duration, yes, no), "TrueLender: Loan risk is too high to approve");
+        require(loanIsCredible(apy, duration, yes, no), "TrueLender: Loan risk is too high");
 
         currencyToken.approve(address(loanToken), loanToken.amount());
         pool.borrow(loanToken.amount());
