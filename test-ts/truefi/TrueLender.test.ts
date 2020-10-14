@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { deployMockContract } from 'ethereum-waffle'
-import { Contract, ContractTransaction, Wallet } from 'ethers'
-import { AddressZero, MaxUint256 } from 'ethers/constants'
+import { Contract, Wallet } from 'ethers'
+import { MaxUint256 } from 'ethers/constants'
 import { parseEther } from 'ethers/utils'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
@@ -203,11 +203,11 @@ describe('TrueLender', () => {
     it('reverts if passed address is not a LoanToken')
 
     it('reverts if loan size is out of bounds (too small)')
-    
+
     it('reverts if loan size is out of bounds (too big)')
 
     it('reverts if loan duration is out of bounds (too short)')
-    
+
     it('reverts if loan duration is out of bounds (too long)')
 
     it('reverts if loan has to small APY')
@@ -250,7 +250,7 @@ describe('TrueLender', () => {
           loanScenario.duration,
           (loanScenario.yesPercentage) * 1000,
           (100 - loanScenario.yesPercentage) * 1000,
-          )
+        )
       }
 
       describe('approvals', () => {
@@ -283,4 +283,5 @@ describe('TrueLender', () => {
         })
       })
     })
-  })})
+  })
+})
