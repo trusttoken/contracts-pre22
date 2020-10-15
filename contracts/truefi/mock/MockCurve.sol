@@ -35,8 +35,9 @@ contract MockCurvePool is ICurvePool {
 
     function remove_liquidity_one_coin(
         uint256 _token_amount,
-        uint128,
-        uint256
+        int128,
+        uint256,
+        bool
     ) external override {
         cToken.transferFrom(msg.sender, address(this), _token_amount);
         poolToken.transfer(msg.sender, (_token_amount * _curve.sharePrice()) / 1e18);
