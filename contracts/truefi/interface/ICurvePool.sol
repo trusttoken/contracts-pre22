@@ -2,6 +2,7 @@
 pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IYToken} from "./IYToken.sol";
 
 interface ICurve {
     function calc_token_amount(uint256[4] memory amounts, bool deposit) external view returns (uint256);
@@ -22,4 +23,6 @@ interface ICurvePool {
     function token() external view returns (IERC20);
 
     function curve() external view returns (ICurve);
+
+    function coins(int128 id) external view returns (IYToken);
 }

@@ -45,5 +45,5 @@ interface ITruePool is IERC20 {
     function repay(uint256 amount) external;
 
     /// @dev get token value for pool token
-    function value() external view returns (uint256);
+    function value(uint256 amount) external view returns (uint256);
 }

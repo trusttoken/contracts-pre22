@@ -55,7 +55,7 @@ abstract contract TruePool is ITruePool, ERC20 {
     }
 
     /// @dev get token value for pool token
-    function value() external virtual override view returns (uint256) {
+    function value(uint256 amount) external virtual override view returns (uint256) {
         // TODO
         return 0;
     }

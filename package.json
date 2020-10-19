@@ -67,5 +67,9 @@
     "truffle-flattener": "^1.4.3",
     "truffle-hdwallet-provider": "0.0.3",
     "web3": "1.2.4"
+  },
+  "resolutions": {
+    "ethereum-waffle/**/ganache-core": "^2.13.0",
+    "@ethereum-waffle/provider/ganache-core": "^2.13.0"
   }
 }

@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ICurvePool, ICurve} from "../interface/ICurvePool.sol";
+import {ICurvePool, ICurve, IYToken} from "../interface/ICurvePool.sol";
 import {MockERC20Token} from "../../trusttoken/mocks/MockERC20Token.sol";
 
 contract MockCurve is ICurve {
@@ -58,5 +58,9 @@ contract MockCurvePool is ICurvePool {
 
     function curve() external override view returns (ICurve) {
         return _curve;
+    }
+
+    function coins(int128 id) external override view returns (IYToken) {
+        return IYToken(address(0));
     }
 }
