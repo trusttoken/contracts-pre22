@@ -8,6 +8,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
+import {TrustToken} from "../trusttoken/TrustToken.sol";
 
 contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     using SafeMath for uint256;
@@ -23,7 +24,10 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     mapping(address => Loan) public loans;
 
-    IERC20 public trustToken;
+    TrustToken public trustToken;
+
+    uint256 public lossFactor = 2500;
+    uint256 public burnFactor = 2500;
 
     event LoanSubmitted(address id);
     event LoanRetracted(address id);
@@ -48,7 +52,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         _;
     }
 
-    constructor(IERC20 _trustToken) public {
+    constructor(TrustToken _trustToken) public {
         trustToken = _trustToken;
     }
 
@@ -86,6 +90,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     function submit(address id) external override onlyNotExistingLoans(id) {
+        require(ILoanToken(id).isLoanToken(), "TrueRatingAgency: Only LoanTokens are supported");
         loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp});
         emit LoanSubmitted(id);
     }
@@ -119,19 +124,44 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     function withdraw(address id, uint256 stake) external override onlyNotRunningLoans(id) {
         bool choice = loans[id].votes[msg.sender][true] > 0;
+        LoanStatus _status = status(id);
+
         require(loans[id].votes[msg.sender][choice] >= stake, "TrueRatingAgency: Cannot withdraw more than was staked");
+        require(_status != LoanStatus.Running, "TrueRatingAgency: Cannot withdraw when loan is ongoing");
+
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
-        if (status(id) == LoanStatus.Pending) {
+        if (_status == LoanStatus.Pending) {
             loans[id].prediction[choice] = loans[id].prediction[choice].sub(stake);
         }
+
         uint256 amountToTransfer = stake;
-        if (status(id) == LoanStatus.Settled) {
-            // TODO: add bonus/penalty to payout amount depending on yes/no choice
-        }
-        if (status(id) == LoanStatus.Defaulted) {
-            // TODO: add bonus/penalty to payout amount depending on no/yes choice
+        if (_status > LoanStatus.Running) {
+            bool correct = wasPredictionCorrect(id, choice);
+            if (correct) {
+                // Take loot from losers
+                amountToTransfer = amountToTransfer.add(loot(id, !choice).mul(amountToTransfer).div(loans[id].prediction[choice]));
+            } else {
+                // Take what's left
+                uint256 lostAmount = amountToTransfer.mul(lossFactor).div(10000);
+                amountToTransfer = amountToTransfer.sub(lostAmount);
+                trustToken.burn(lostAmount.mul(burnFactor).div(10000));
+            }
         }
         require(trustToken.transfer(msg.sender, amountToTransfer));
+    }
+
+    function loot(address id, bool incorrectChoice) internal view returns (uint256) {
+        return loans[id].prediction[incorrectChoice].mul(lossFactor).mul(uint256(10000).sub(burnFactor)).div(10000**2);
+    }
+
+    function wasPredictionCorrect(address id, bool choice) internal view returns (bool) {
+        if (status(id) == LoanStatus.Settled && choice) {
+            return true;
+        }
+        if (status(id) == LoanStatus.Defaulted && !choice) {
+            return true;
+        }
+        return false;
     }
 
     function status(address id) public view returns (LoanStatus) {
@@ -142,10 +172,14 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         if (loan.creator == address(0) && loan.timestamp != 0) {
             return LoanStatus.Retracted;
         }
-        if (ILoanToken(id).status() == ILoanToken.Status.Settled) {
+        ILoanToken.Status _status = ILoanToken(id).status();
+        if (_status == ILoanToken.Status.Funded || _status == ILoanToken.Status.Withdrawn) {
+            return LoanStatus.Running;
+        }
+        if (_status == ILoanToken.Status.Settled) {
             return LoanStatus.Settled;
         }
-        if (ILoanToken(id).status() == ILoanToken.Status.Defaulted) {
+        if (_status == ILoanToken.Status.Defaulted) {
             return LoanStatus.Defaulted;
         }
         return LoanStatus.Pending;
