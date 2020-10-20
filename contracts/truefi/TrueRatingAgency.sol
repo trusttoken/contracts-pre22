@@ -5,6 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
 
@@ -124,12 +125,12 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
             loans[id].prediction[choice] = loans[id].prediction[choice].sub(stake);
         }
         uint256 amountToTransfer = stake;
-        // if (status(id) == LoanStatus.Settled) {
-        //     add bonus/penalty to payout amount depending on yes/no choice
-        // }
-        // if (status(id) == LoanStatus.Defaulted) {
-        //     add bonus/penalty to payout amount depending on no/yes choice
-        // }
+        if (status(id) == LoanStatus.Settled) {
+            // TODO: add bonus/penalty to payout amount depending on yes/no choice
+        }
+        if (status(id) == LoanStatus.Defaulted) {
+            // TODO: add bonus/penalty to payout amount depending on no/yes choice
+        }
         require(trustToken.transfer(msg.sender, amountToTransfer));
     }
 
@@ -141,15 +142,12 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         if (loan.creator == address(0) && loan.timestamp != 0) {
             return LoanStatus.Retracted;
         }
-        // if(loan was funded and it is still ongoing) {
-        //     return LoanStatus.Running; <- will block all voting-related actions
-        // }
-        // if(loan was funded and successfully repaid) {
-        //     return LoanStatus.Settled; <- will allow withdrawing stake, but with losers/winners modifiers
-        // }
-        // if(loan was funded and defaulted) {
-        //     return LoanStatus.Defaulted; <- will allow withdrawing stake, but with losers/winners modifiers
-        // }
+        if (ILoanToken(id).status() == ILoanToken.Status.Settled) {
+            return LoanStatus.Settled;
+        }
+        if (ILoanToken(id).status() == ILoanToken.Status.Defaulted) {
+            return LoanStatus.Defaulted;
+        }
         return LoanStatus.Pending;
     }
 }
