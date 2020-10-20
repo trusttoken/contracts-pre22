@@ -370,6 +370,30 @@ describe('LoanToken', () => {
     })
   })
 
+  describe('Whitelisting', () => {
+    it('reverts when not whitelisted before funding', async () => {
+      await expect(loanToken.allowTransfer(other.address, true)).to.be.revertedWith('LoanToken: This can be performed only by funder')
+    })
+
+    it('reverts when not whitelisted not by a funder', async () => {
+      await loanToken.fund()
+      await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken: This can be performed only by funder')
+    })
+
+    it('non-whitelisted address cannot transfer', async () => {
+      await loanToken.fund()
+      await loanToken.transfer(other.address, 10)
+      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.revertedWith('LoanToken: This can be performed only by funder or accounts allowed to transfer')
+    })
+
+    it('whitelisted address can transfer', async () => {
+      await loanToken.fund()
+      await loanToken.transfer(other.address, 10)
+      await loanToken.allowTransfer(other.address, true)
+      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.not.reverted
+    })
+  })
+
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
       const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, borrower.address, parseEther(amount.toString()), termInMonths * monthInSeconds, apy)

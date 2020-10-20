@@ -15,15 +15,19 @@ contract LoanToken is ILoanToken, ERC20 {
     uint256 public override apy;
 
     uint256 public start;
+    address public funder;
     uint256 public debt;
 
     uint256 public redeemed;
+
+    mapping(address => bool) public canTransfer;
 
     Status public override status;
 
     IERC20 public currencyToken;
 
     event Funded(address funder);
+    event TransferAllowanceChanged(address account, bool status);
     event Withdrawn(address beneficiary);
     event Closed(Status status, uint256 returnedAmount);
     event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound);
@@ -73,6 +77,19 @@ contract LoanToken is ILoanToken, ERC20 {
         _;
     }
 
+    modifier onlyWhoCanTransfer(address sender) {
+        require(
+            sender == funder || canTransfer[sender],
+            "LoanToken: This can be performed only by funder or accounts allowed to transfer"
+        );
+        _;
+    }
+
+    modifier onlyFunder() {
+        require(msg.sender == funder, "LoanToken: This can be performed only by funder");
+        _;
+    }
+
     function isLoanToken() external override pure returns (bool) {
         return true;
     }
@@ -93,10 +110,16 @@ contract LoanToken is ILoanToken, ERC20 {
     function fund() external override onlyAwaiting {
         status = Status.Funded;
         start = block.timestamp;
+        funder = msg.sender;
         _mint(msg.sender, debt);
         require(currencyToken.transferFrom(msg.sender, address(this), amount));
 
         emit Funded(msg.sender);
+    }
+
+    function allowTransfer(address account, bool _status) external override onlyFunder {
+        canTransfer[account] = _status;
+        emit TransferAllowanceChanged(account, _status);
     }
 
     function withdraw(address _beneficiary) external override onlyBorrower onlyFunded {
@@ -144,5 +167,13 @@ contract LoanToken is ILoanToken, ERC20 {
 
     function interest(uint256 _amount) internal view returns (uint256) {
         return _amount.add(_amount.mul(apy).mul(duration).div(360 days).div(10000));
+    }
+
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 _amount
+    ) internal override onlyWhoCanTransfer(sender) {
+        return super._transfer(sender, recipient, _amount);
     }
 }
