@@ -294,7 +294,7 @@ describe('TrueRatingAgency', () => {
       })
     })
 
-    describe.only('Withdraw', () => {
+    describe('Withdraw', () => {
       const vote = async (amount: string | number, yes: boolean, wallet = owner) => {
         if (wallet !== owner) {
           await trustToken.transfer(wallet.address, amount)
