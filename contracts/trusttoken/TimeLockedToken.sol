@@ -95,9 +95,10 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
      */
     function registerLockup(address receiver, uint256 amount) external onlyTimeLockRegistry {
         require(balanceOf[msg.sender] >= amount, "insufficient balance");
+        require(distribution[receiver] == 0, "distribution already set");
 
-        // add amount to locked distribution
-        distribution[receiver] = distribution[receiver].add(amount);
+        // set distribution to lockup amount
+        distribution[receiver] = amount;
 
         // transfer to recipient
         _transfer(msg.sender, receiver, amount);

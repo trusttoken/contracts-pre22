@@ -1,4 +1,4 @@
-import { utils, constants, Wallet } from 'ethers'
+import { BigNumberish, constants, Wallet } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
 import { expect } from 'chai'
 import { TrueCurrency } from '../../build/types/TrueCurrency'
@@ -14,7 +14,7 @@ describe('TrueCurrency - ERC20Burnable behaviour', () => {
   })
 
   describe('burn', () => {
-    async function burn (caller: Wallet, amount: utils.BigNumberish) {
+    async function burn (caller: Wallet, amount: BigNumberish) {
       await token.setCanBurn(caller.address, true)
       return token.connect(caller).burn(amount)
     }
@@ -32,7 +32,7 @@ describe('TrueCurrency - ERC20Burnable behaviour', () => {
         shouldBurn(12_000_000)
       })
 
-      function shouldBurn (amount: utils.BigNumberish) {
+      function shouldBurn (amount: BigNumberish) {
         it('burns the requested amount', async () => {
           await burn(initialHolder, amount)
           expect(await token.balanceOf(initialHolder.address)).to.eq(initialSupply.sub(amount))

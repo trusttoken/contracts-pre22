@@ -9,9 +9,9 @@ import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabil
 
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
-import { toTrustToken } from '../scripts/utils/toTrustToken'
+import { toTrustToken } from '../scripts/utils'
 
-import { AddressZero } from 'ethers/constants'
+import { AddressZero } from '@ethersproject/constants'
 import { expectEvent } from './utils/eventHelpers'
 import { parseAccountList, registerSaftAccounts } from '../scripts/register_saft_addresses'
 
@@ -22,7 +22,7 @@ describe('TimeLockRegistry', () => {
   let registry: TimeLockRegistry
   let trustToken: TrustToken
 
-  beforeEachWithFixture(async (provider, wallets) => {
+  beforeEachWithFixture(async (wallets) => {
     ([owner, holder, another] = wallets)
     const deployContract = setupDeploy(owner)
     trustToken = await deployContract(TrustTokenFactory)
@@ -141,15 +141,6 @@ describe('TimeLockRegistry', () => {
       await registry.register(holder.address, toTrustToken(10))
       await registry.cancel(holder.address)
       await expect(registry.connect(holder).claim()).to.be.revertedWith('Not registered')
-    })
-
-    it('register, claim, re-register', async () => {
-      await trustToken.approve(registry.address, toTrustToken(20))
-      await registry.register(holder.address, toTrustToken(10))
-      await registry.connect(holder).claim()
-      await registry.register(holder.address, toTrustToken(10))
-      await registry.connect(holder).claim()
-      expect(await trustToken.balanceOf(holder.address)).to.equal(toTrustToken(20))
     })
   })
 

@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { Wallet } from 'ethers'
-import { Zero } from 'ethers/constants'
+import { Zero } from '@ethersproject/constants'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 
@@ -12,7 +12,7 @@ describe('FastTrueDistributor', () => {
   let fakeToken: Wallet
   let distributor: FastTrueDistributor
 
-  beforeEachWithFixture(async (_provider, wallets) => {
+  beforeEachWithFixture(async (wallets) => {
     [owner, fakeToken] = wallets
     distributor = await new FastTrueDistributorFactory(owner).deploy(0, fakeToken.address)
   })

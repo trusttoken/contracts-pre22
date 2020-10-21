@@ -1,4 +1,4 @@
-import { constants, providers, utils, Wallet } from 'ethers'
+import { constants, providers, BigNumberish, BigNumber, Wallet } from 'ethers'
 import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
@@ -17,7 +17,7 @@ describe('TrustToken', () => {
   let trustToken: TrustToken
   let provider: providers.JsonRpcProvider
 
-  beforeEachWithFixture(async (_provider, wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, timeLockRegistry, saftHolder, initialHolder, secondAccount, thirdAccount] = wallets)
     provider = _provider
     const deployContract = setupDeploy(owner)
@@ -29,7 +29,7 @@ describe('TrustToken', () => {
   })
 
   describe('ERC20 - standard behaviour', () => {
-    function approve (tokenOwner: Wallet, spender: WalletOrAddress, amount: utils.BigNumberish) {
+    function approve (tokenOwner: Wallet, spender: WalletOrAddress, amount: BigNumberish) {
       const asTokenOwner = trustToken.connect(tokenOwner)
       return asTokenOwner.approve(toAddress(spender), amount)
     }
@@ -55,7 +55,7 @@ describe('TrustToken', () => {
     })
 
     describe('transfer', () => {
-      function transfer (sender: Wallet, recipient: WalletOrAddress, amount: utils.BigNumberish) {
+      function transfer (sender: Wallet, recipient: WalletOrAddress, amount: BigNumberish) {
         const asSender = trustToken.connect(sender)
         return asSender.transfer(toAddress(recipient), amount)
       }
@@ -130,7 +130,7 @@ describe('TrustToken', () => {
         spender: Wallet,
         tokenOwner: WalletOrAddress,
         recipient: WalletOrAddress,
-        amount: utils.BigNumberish,
+        amount: BigNumberish,
       ) {
         const asSpender = trustToken.connect(spender)
         return asSpender.transferFrom(toAddress(tokenOwner), toAddress(recipient), amount)
@@ -268,7 +268,7 @@ describe('TrustToken', () => {
           spender = secondAccount
         })
 
-        function describeApprove (description: string, amount: utils.BigNumberish) {
+        function describeApprove (description: string, amount: BigNumberish) {
           describe(description, () => {
             it('emits an approval event', async () => {
               await expect(approve(tokenOwner, spender, amount))
@@ -311,7 +311,7 @@ describe('TrustToken', () => {
     })
 
     describe('decreaseAllowance', () => {
-      function decreaseAllowance (tokenOwner: Wallet, spender: WalletOrAddress, subtractedValue: utils.BigNumberish) {
+      function decreaseAllowance (tokenOwner: Wallet, spender: WalletOrAddress, subtractedValue: BigNumberish) {
         const asTokenOwner = trustToken.connect(tokenOwner)
         return asTokenOwner.decreaseAllowance(toAddress(spender), subtractedValue)
       }
@@ -329,7 +329,7 @@ describe('TrustToken', () => {
           spender = secondAccount
         })
 
-        function shouldDecreaseApproval (amount: utils.BigNumber) {
+        function shouldDecreaseApproval (amount: BigNumber) {
           describe('when there was no approved amount before', () => {
             it('reverts', async () => {
               await expect(decreaseAllowance(tokenOwner, spender, amount))
@@ -388,7 +388,7 @@ describe('TrustToken', () => {
     })
 
     describe('increaseAllowance', () => {
-      function increaseAllowance (tokenOwner: Wallet, spender: WalletOrAddress, addedValue: utils.BigNumberish) {
+      function increaseAllowance (tokenOwner: Wallet, spender: WalletOrAddress, addedValue: BigNumberish) {
         const asTokenOwner = trustToken.connect(tokenOwner)
         return asTokenOwner.increaseAllowance(toAddress(spender), addedValue)
       }
@@ -406,7 +406,7 @@ describe('TrustToken', () => {
           spender = secondAccount
         })
 
-        function shouldIncreaseApproval (amount: utils.BigNumber) {
+        function shouldIncreaseApproval (amount: BigNumber) {
           it('emits an approval event', async () => {
             await expect(increaseAllowance(tokenOwner, spender, amount))
               .to.emit(trustToken, 'Approval')
@@ -589,11 +589,8 @@ describe('TrustToken', () => {
       expect(await trustToken.nextEpoch()).to.equal(constants.MaxUint256)
     })
 
-    it('can lock funds multiple times for one account', async () => {
-      await trustToken.connect(timeLockRegistry).registerLockup(saftHolder.address, parseTT(100))
-      expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(parseTT(0))
-      expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(parseTT(200))
-      expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(200))
+    it('is impossible to give lock funds twice to a person', async () => {
+      await expect(trustToken.connect(timeLockRegistry).registerLockup(saftHolder.address, parseTT(100))).to.be.revertedWith('distribution already set')
     })
 
     it('only timeLockRegistry can register lockups', async () => {

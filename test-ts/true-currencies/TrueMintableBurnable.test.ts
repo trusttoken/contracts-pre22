@@ -1,11 +1,11 @@
-import { utils, constants, Wallet } from 'ethers'
+import { constants, Wallet, BigNumber, BigNumberish } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
 import { expect } from 'chai'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { toAddress, WalletOrAddress } from '../utils/toAddress'
 import { initialSupply, trueCurrency } from '../fixtures/trueCurrency'
-import { parseEther } from 'ethers/utils'
-import { AddressZero, Zero } from 'ethers/constants'
+import { parseEther } from '@ethersproject/units'
+import { AddressZero, Zero } from '@ethersproject/constants'
 
 describe('TrueCurrency - Mint/Burn behaviour', () => {
   const redemptionAddress = '0x0000000000000000000000000000000000074D72'
@@ -14,16 +14,16 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
   let secondAccount: Wallet
   let token: MockTrueCurrency
 
-  function approve (tokenOwner: Wallet, spender: WalletOrAddress, amount: utils.BigNumberish) {
+  function approve (tokenOwner: Wallet, spender: WalletOrAddress, amount: BigNumberish) {
     const asTokenOwner = token.connect(tokenOwner)
     return asTokenOwner.approve(toAddress(spender), amount)
   }
 
-  function transfer (sender: Wallet, recipient: WalletOrAddress, amount: utils.BigNumberish) {
+  function transfer (sender: Wallet, recipient: WalletOrAddress, amount: BigNumberish) {
     return token.connect(sender).transfer(toAddress(recipient), amount)
   }
 
-  function transferFrom (spender: Wallet, tokenOwner: Wallet, recipient: WalletOrAddress, amount: utils.BigNumberish) {
+  function transferFrom (spender: Wallet, tokenOwner: Wallet, recipient: WalletOrAddress, amount: BigNumberish) {
     return token.connect(spender).transferFrom(toAddress(tokenOwner), toAddress(recipient), amount)
   }
 
@@ -55,10 +55,10 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
         })
 
         describe('for a non-zero amount', () => {
-          shouldBurn(utils.parseEther('12'))
+          shouldBurn(parseEther('12'))
         })
 
-        function shouldBurn (amount: utils.BigNumber) {
+        function shouldBurn (amount: BigNumber) {
           it('burns the requested amount', async () => {
             await transfer(tokenOwner, redemptionAddress, amount)
             expect(await token.balanceOf(tokenOwner.address)).to.eq(initialBalance.sub(amount))
@@ -108,14 +108,14 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
     describe('transferFrom', () => {
       describe('on success', () => {
         describe('for a zero amount', () => {
-          shouldBurnFrom(utils.bigNumberify(0))
+          shouldBurnFrom(BigNumber.from(0))
         })
 
         describe('for a non-zero amount', () => {
           shouldBurnFrom(parseEther('12'))
         })
 
-        function shouldBurnFrom (amount: utils.BigNumber) {
+        function shouldBurnFrom (amount: BigNumber) {
           const originalAllowance = amount.mul(3)
 
           beforeEach(async () => {
@@ -164,7 +164,7 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
       })
 
       describe('when the given amount is greater than the allowance', () => {
-        const allowance = utils.bigNumberify(12_000_000)
+        const allowance = BigNumber.from(12_000_000)
 
         it('reverts', async () => {
           await approve(tokenOwner, burner, allowance)
@@ -184,7 +184,7 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
   })
 
   describe('setBurnBounds', () => {
-    function setBurnBounds (caller: Wallet, minAmount: utils.BigNumberish, maxAmount: utils.BigNumberish) {
+    function setBurnBounds (caller: Wallet, minAmount: BigNumberish, maxAmount: BigNumberish) {
       return token.connect(caller).setBurnBounds(minAmount, maxAmount)
     }
 
@@ -227,7 +227,7 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
   })
 
   describe('mint', () => {
-    function mint (caller: Wallet, to: WalletOrAddress, amount: utils.BigNumberish) {
+    function mint (caller: Wallet, to: WalletOrAddress, amount: BigNumberish) {
       return token.connect(caller).mint(toAddress(to), amount)
     }
 
@@ -242,14 +242,14 @@ describe('TrueCurrency - Mint/Burn behaviour', () => {
     describe('when the caller is the contract owner', () => {
       describe('when the target account is not the zero address', () => {
         describe('for a zero amount', () => {
-          shouldMint(utils.bigNumberify(0))
+          shouldMint(BigNumber.from(0))
         })
 
         describe('for a non-zero amount', () => {
-          shouldMint(utils.bigNumberify(100))
+          shouldMint(BigNumber.from(100))
         })
 
-        function shouldMint (amount: utils.BigNumber) {
+        function shouldMint (amount: BigNumber) {
           it('mints the requested amount', async () => {
             const initialSupply = await token.totalSupply()
             const initialBalance = await token.balanceOf(other.address)

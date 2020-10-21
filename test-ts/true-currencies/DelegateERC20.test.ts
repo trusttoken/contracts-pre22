@@ -1,23 +1,39 @@
-import { BigNumber, BigNumberish, constants, Wallet } from 'ethers'
-import { loadFixture } from 'ethereum-waffle'
+import { BigNumberish, BigNumber, constants, Wallet } from 'ethers'
 import { expect } from 'chai'
-import { TrueCurrency } from '../../build/types/TrueCurrency'
+import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { MockTrueCurrencyWithAutosweep } from '../../build/types/MockTrueCurrencyWithAutosweep'
+import { MockTrueCurrencyWithAutosweepFactory } from '../../build/types/MockTrueCurrencyWithAutosweepFactory'
+import { OwnedUpgradeabilityProxyFactory } from '../../build/types/OwnedUpgradeabilityProxyFactory'
+import { MockDelegateErc20 } from '../../build/types/MockDelegateErc20'
+import { MockDelegateErc20Factory } from '../../build/types/MockDelegateErc20Factory'
 import { toAddress, WalletOrAddress } from '../utils/toAddress'
-import { initialSupply, trueCurrency } from '../fixtures/trueCurrency'
+import { initialSupply } from '../fixtures/trueCurrency'
+import { setupDeploy } from '../../scripts/utils'
 
-describe('TrueCurrency - ERC20 behaviour', () => {
+describe('TrueCurrency - Delegate ERC20', () => {
   let initialHolder: Wallet
   let secondAccount: Wallet
   let thirdAccount: Wallet
-  let token: TrueCurrency
+  let token: MockDelegateErc20
+  let delegateToken: MockTrueCurrencyWithAutosweep
 
   function approve (tokenOwner: Wallet, spender: WalletOrAddress, amount: BigNumberish) {
     const asTokenOwner = token.connect(tokenOwner)
     return asTokenOwner.approve(toAddress(spender), amount)
   }
 
-  beforeEach(async () => {
-    ({ wallets: [initialHolder, secondAccount, thirdAccount], token } = await loadFixture(trueCurrency))
+  beforeEachWithFixture(async (wallets: Wallet[]) => {
+    [initialHolder, secondAccount, thirdAccount] = wallets
+    const deployContract = setupDeploy(initialHolder)
+    const implementation = await deployContract(MockTrueCurrencyWithAutosweepFactory)
+    const proxy = await deployContract(OwnedUpgradeabilityProxyFactory)
+    delegateToken = implementation.attach(proxy.address)
+    await proxy.upgradeTo(implementation.address)
+    await delegateToken.initialize()
+    await delegateToken.mint(initialHolder.address, initialSupply)
+    token = await new MockDelegateErc20Factory(initialHolder).deploy()
+    await delegateToken.setDelegateAddress(token.address)
+    await token.delegateToNewContract(delegateToken.address)
   })
 
   describe('totalSupply', () => {
@@ -73,7 +89,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
 
         it('emits a transfer event', async () => {
           await expect(transfer(from, to, amount))
-            .to.emit(token, 'Transfer')
+            .to.emit(delegateToken, 'Transfer')
             .withArgs(from.address, to.address, amount)
         })
       })
@@ -97,7 +113,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
 
         it('emits a transfer event', async () => {
           await expect(transfer(from, to, amount))
-            .to.emit(token, 'Transfer')
+            .to.emit(delegateToken, 'Transfer')
             .withArgs(from.address, to.address, amount)
         })
       })
@@ -169,13 +185,13 @@ describe('TrueCurrency - ERC20 behaviour', () => {
 
             it('emits a transfer event', async () => {
               await expect(transferFrom(spender, tokenOwner, recipient, amount))
-                .to.emit(token, 'Transfer')
+                .to.emit(delegateToken, 'Transfer')
                 .withArgs(tokenOwner.address, recipient.address, amount)
             })
 
             it('emits an approval event', async () => {
               await expect(transferFrom(spender, tokenOwner, recipient, amount))
-                .to.emit(token, 'Approval')
+                .to.emit(delegateToken, 'Approval')
                 .withArgs(tokenOwner.address, spender.address, 0)
             })
           })
@@ -258,7 +274,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
         describe(description, () => {
           it('emits an approval event', async () => {
             await expect(approve(tokenOwner, spender, amount))
-              .to.emit(token, 'Approval')
+              .to.emit(delegateToken, 'Approval')
               .withArgs(tokenOwner.address, spender.address, amount)
           })
 
@@ -296,10 +312,10 @@ describe('TrueCurrency - ERC20 behaviour', () => {
     })
   })
 
-  describe('decreaseAllowance', () => {
-    function decreaseAllowance (tokenOwner: Wallet, spender: WalletOrAddress, subtractedValue: BigNumberish) {
+  describe('decreaseApproval', () => {
+    function decreaseApproval (tokenOwner: Wallet, spender: WalletOrAddress, subtractedValue: BigNumberish) {
       const asTokenOwner = token.connect(tokenOwner)
-      return asTokenOwner.decreaseAllowance(toAddress(spender), subtractedValue)
+      return asTokenOwner.decreaseApproval(toAddress(spender), subtractedValue)
     }
 
     let tokenOwner: Wallet
@@ -318,7 +334,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
       function shouldDecreaseApproval (amount: BigNumber) {
         describe('when there was no approved amount before', () => {
           it('reverts', async () => {
-            await expect(decreaseAllowance(tokenOwner, spender, amount))
+            await expect(decreaseApproval(tokenOwner, spender, amount))
               .to.be.revertedWith('ERC20: decreased allowance below zero')
           })
         })
@@ -331,23 +347,23 @@ describe('TrueCurrency - ERC20 behaviour', () => {
           })
 
           it('emits an approval event', async () => {
-            await expect(decreaseAllowance(tokenOwner, spender, approvedAmount))
-              .to.emit(token, 'Approval')
+            await expect(decreaseApproval(tokenOwner, spender, approvedAmount))
+              .to.emit(delegateToken, 'Approval')
               .withArgs(tokenOwner.address, spender.address, 0)
           })
 
           it('decreases the spender allowance subtracting the requested amount', async () => {
-            await decreaseAllowance(tokenOwner, spender, approvedAmount.sub(1))
+            await decreaseApproval(tokenOwner, spender, approvedAmount.sub(1))
             expect(await token.allowance(tokenOwner.address, spender.address)).to.eq(1)
           })
 
           it('sets the allowance to zero when all allowance is removed', async () => {
-            await decreaseAllowance(tokenOwner, spender, approvedAmount)
+            await decreaseApproval(tokenOwner, spender, approvedAmount)
             expect(await token.allowance(tokenOwner.address, spender.address)).to.eq(0)
           })
 
           it('reverts when more than the full allowance is removed', async () => {
-            await expect(decreaseAllowance(tokenOwner, spender, approvedAmount.add(1)))
+            await expect(decreaseApproval(tokenOwner, spender, approvedAmount.add(1)))
               .to.be.revertedWith('ERC20: decreased allowance below zero')
           })
         })
@@ -367,16 +383,16 @@ describe('TrueCurrency - ERC20 behaviour', () => {
       const amount = initialSupply
 
       it('reverts', async () => {
-        await expect(decreaseAllowance(tokenOwner, spender, amount))
+        await expect(decreaseApproval(tokenOwner, spender, amount))
           .to.be.revertedWith('ERC20: decreased allowance below zero')
       })
     })
   })
 
-  describe('increaseAllowance', () => {
-    function increaseAllowance (tokenOwner: Wallet, spender: WalletOrAddress, addedValue: BigNumberish) {
+  describe('increaseApproval', () => {
+    function increaseApproval (tokenOwner: Wallet, spender: WalletOrAddress, addedValue: BigNumberish) {
       const asTokenOwner = token.connect(tokenOwner)
-      return asTokenOwner.increaseAllowance(toAddress(spender), addedValue)
+      return asTokenOwner.increaseApproval(toAddress(spender), addedValue)
     }
 
     let tokenOwner: Wallet
@@ -394,14 +410,14 @@ describe('TrueCurrency - ERC20 behaviour', () => {
 
       function shouldIncreaseApproval (amount: BigNumber) {
         it('emits an approval event', async () => {
-          await expect(increaseAllowance(tokenOwner, spender, amount))
-            .to.emit(token, 'Approval')
+          await expect(increaseApproval(tokenOwner, spender, amount))
+            .to.emit(delegateToken, 'Approval')
             .withArgs(tokenOwner.address, spender.address, amount)
         })
 
         describe('when there was no approved amount before', () => {
           it('approves the requested amount', async () => {
-            await increaseAllowance(tokenOwner, spender, amount)
+            await increaseApproval(tokenOwner, spender, amount)
             expect(await token.allowance(tokenOwner.address, spender.address)).to.eq(amount)
           })
         })
@@ -412,7 +428,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
           })
 
           it('increases the spender allowance adding the requested amount', async () => {
-            await increaseAllowance(tokenOwner, spender, amount)
+            await increaseApproval(tokenOwner, spender, amount)
             expect(await token.allowance(tokenOwner.address, spender.address)).to.eq(amount.add(1))
           })
         })
@@ -432,7 +448,7 @@ describe('TrueCurrency - ERC20 behaviour', () => {
       const amount = initialSupply
 
       it('reverts', async () => {
-        await expect(increaseAllowance(tokenOwner, spender, amount))
+        await expect(increaseApproval(tokenOwner, spender, amount))
           .to.be.revertedWith('ERC20: approve to the zero address')
       })
     })
