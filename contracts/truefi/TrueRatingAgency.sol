@@ -32,8 +32,8 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     uint256 public lossFactor = 2500;
     uint256 public burnFactor = 2500;
 
-    event LossFactorChanged(uint256 participationFactor);
-    event BurnFactorChanged(uint256 votingPeriod);
+    event LossFactorChanged(uint256 lossFactor);
+    event BurnFactorChanged(uint256 burnFactor);
     event LoanSubmitted(address id);
     event LoanRetracted(address id);
 
