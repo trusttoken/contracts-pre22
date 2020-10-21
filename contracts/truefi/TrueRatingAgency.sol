@@ -153,10 +153,10 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         if (loanStatus > LoanStatus.Running) {
             bool correct = wasPredictionCorrect(id, choice);
             if (correct) {
-                // Take loot from losers
-                amountToTransfer = amountToTransfer.add(loot(id, !choice).mul(amountToTransfer).div(loans[id].prediction[choice]));
+                // Take bounty from losers
+                amountToTransfer = amountToTransfer.add(bounty(id, !choice).mul(amountToTransfer).div(loans[id].prediction[choice]));
             } else {
-                // Take what's left
+                // Take what is left
                 uint256 lostAmount = amountToTransfer.mul(lossFactor).div(10000);
                 amountToTransfer = amountToTransfer.sub(lostAmount);
                 trustToken.burn(lostAmount.mul(burnFactor).div(10000));
@@ -165,7 +165,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         require(trustToken.transfer(msg.sender, amountToTransfer));
     }
 
-    function loot(address id, bool incorrectChoice) internal view returns (uint256) {
+    function bounty(address id, bool incorrectChoice) internal view returns (uint256) {
         return loans[id].prediction[incorrectChoice].mul(lossFactor).mul(uint256(10000).sub(burnFactor)).div(10000**2);
     }
 
