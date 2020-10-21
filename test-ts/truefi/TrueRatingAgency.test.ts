@@ -21,20 +21,20 @@ describe('TrueRatingAgency', () => {
   let owner: Wallet
   let otherWallet: Wallet
   let wallets: Wallet[]
-  
+
   let rater: TrueRatingAgency
   let trustToken: TrustToken
   let loanToken: LoanToken
   let tusd: MockTrueCurrency
-  
+
   const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
   const stake = 1000000
-  
+
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
-  
+
   let timeTravel: (time: number) => void
-  
+
   beforeEachWithFixture(async (_wallets, _provider) => {
     [owner, otherWallet, ...wallets] = _wallets
 
