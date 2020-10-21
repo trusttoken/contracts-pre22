@@ -30,7 +30,7 @@ abstract contract TruePool is ITruePool, ERC20 {
     }
 
     /// @dev update paramaters
-    function update(bytes32 params) external onlyTrueFi {
+    function update(bytes32) external onlyTrueFi {
         // TODO
         // do we need this function, or do updates happen via proxy upgrades?
     }
@@ -40,7 +40,7 @@ abstract contract TruePool is ITruePool, ERC20 {
      * 1. Transfer TUSD from sender
      * 2. Exchange TUSD for pool tokens
      */
-    function join(uint256 amount) external virtual override {
+    function join(uint256) external virtual override {
         // TODO
     }
 
@@ -50,23 +50,23 @@ abstract contract TruePool is ITruePool, ERC20 {
      * 2. Exchange pool tokens for TUSD
      * 3. Burn pool tokens
      */
-    function exit(uint256 amount) external virtual override {
+    function exit(uint256) external virtual override {
         // TODO
     }
 
     /// @dev get token value for pool token
-    function value() external virtual override view returns (uint256) {
+    function value(uint256) external virtual override view returns (uint256) {
         // TODO
         return 0;
     }
 
     /// @dev borrow TUSD from pool
-    function borrow(uint256 amount) external virtual override {
+    function borrow(uint256) external virtual override {
         // TODO
     }
 
     /// @dev repay TUSD to pool
-    function repay(uint256 amount) external virtual override {
+    function repay(uint256) external virtual override {
         // TODO
     }
 
