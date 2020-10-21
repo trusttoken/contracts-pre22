@@ -437,6 +437,53 @@ describe('TrueRatingAgency', () => {
           await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * 1.046875, otherWallet)
         })
 
+        it('no votes = yes votes, no voters get 75%', async () => {
+          await vote(stake, false, otherWallet)
+          await settleLoan()
+          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * 0.75, otherWallet)
+        })
+
+        it('no votes < yes votes, no voters get 75%', async () => {
+          await vote(stake / 2, false, otherWallet)
+          await settleLoan()
+          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake / 2), (stake / 2) * 0.75, otherWallet)
+        })
+
+        it('25% of stake lost by no voters is burned', async () => {
+          const totalSupplyBefore = await trustToken.totalSupply()
+          await vote(stake, false, otherWallet)
+          await settleLoan()
+          await rater.connect(otherWallet).withdraw(loanToken.address, stake)
+          const totalSupplyAfter = await trustToken.totalSupply()
+
+          expect(totalSupplyBefore.sub(totalSupplyAfter)).to.equal(stake * 0.25 * 0.25)
+        })
+
+        describe('works for different lossFactor and burnFactor', () => {
+          beforeEach(async () => {
+            await rater.setLossFactor(1000)
+            await rater.setBurnFactor(5000)
+            await vote(stake, false, otherWallet)
+            await settleLoan()
+          })
+
+          it('correct amount is burned', async () => {
+            const totalSupplyBefore = await trustToken.totalSupply()
+            await rater.connect(otherWallet).withdraw(loanToken.address, stake)
+            const totalSupplyAfter = await trustToken.totalSupply()
+  
+            expect(totalSupplyBefore.sub(totalSupplyAfter)).to.equal(stake * 0.1 * 0.5)
+          })
+
+          it('yes voters receive proper amount', async () => {
+            await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * (1 + 0.1 * 0.5))            
+          })
+          
+          it('no voters receive proper amount', async () => {
+            await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * (1 - 0.1), otherWallet)            
+          })
+        })
+
         it('does not change total loan yes votes', async () => {
           await settleLoan()
           await rater.withdraw(loanToken.address, stake)
@@ -489,6 +536,53 @@ describe('TrueRatingAgency', () => {
           await defaultLoan()
           await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * 1.046875) // 1+0.25*0.25*0.75 = 1.046875
           await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * 1.046875, otherWallet)
+        })
+
+        it('no votes = yes votes, yes voters get 75%', async () => {
+          await vote(stake, true, otherWallet)
+          await defaultLoan()
+          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * 0.75, otherWallet)
+        })
+
+        it('yes votes < no votes, yes voters get 75%', async () => {
+          await vote(stake / 2, true, otherWallet)
+          await defaultLoan()
+          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake / 2), (stake / 2) * 0.75, otherWallet)
+        })
+
+        it('25% of stake lost by yes voters is burned', async () => {
+          const totalSupplyBefore = await trustToken.totalSupply()
+          await vote(stake, true, otherWallet)
+          await defaultLoan()
+          await rater.connect(otherWallet).withdraw(loanToken.address, stake)
+          const totalSupplyAfter = await trustToken.totalSupply()
+
+          expect(totalSupplyBefore.sub(totalSupplyAfter)).to.equal(stake * 0.25 * 0.25)
+        })
+
+        describe('works for different lossFactor and burnFactor', () => {
+          beforeEach(async () => {
+            await rater.setLossFactor(1000)
+            await rater.setBurnFactor(5000)
+            await vote(stake, true, otherWallet)
+            await defaultLoan()
+          })
+
+          it('correct amount is burned', async () => {
+            const totalSupplyBefore = await trustToken.totalSupply()
+            await rater.connect(otherWallet).withdraw(loanToken.address, stake)
+            const totalSupplyAfter = await trustToken.totalSupply()
+  
+            expect(totalSupplyBefore.sub(totalSupplyAfter)).to.equal(stake * 0.1 * 0.5)
+          })
+
+          it('no voters receive proper amount', async () => {
+            await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * (1 + 0.1 * 0.5))            
+          })
+          
+          it('yes voters receive proper amount', async () => {
+            await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * (1 - 0.1), otherWallet)            
+          })
         })
 
         it('does not change total loan yes votes', async () => {
