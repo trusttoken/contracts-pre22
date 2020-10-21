@@ -154,7 +154,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
             bool correct = wasPredictionCorrect(id, choice);
             if (correct) {
                 // Take bounty from losers
-                amountToTransfer = amountToTransfer.add(bounty(id, !choice).mul(amountToTransfer).div(loans[id].prediction[choice]));
+                amountToTransfer = amountToTransfer.add(bounty(id, !choice).mul(stake).div(loans[id].prediction[choice]));
             } else {
                 // Take what is left
                 uint256 lostAmount = amountToTransfer.mul(lossFactor).div(10000);
