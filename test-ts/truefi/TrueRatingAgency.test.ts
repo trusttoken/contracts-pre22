@@ -471,16 +471,16 @@ describe('TrueRatingAgency', () => {
             const totalSupplyBefore = await trustToken.totalSupply()
             await rater.connect(otherWallet).withdraw(loanToken.address, stake)
             const totalSupplyAfter = await trustToken.totalSupply()
-  
+
             expect(totalSupplyBefore.sub(totalSupplyAfter)).to.equal(stake * 0.1 * 0.5)
           })
 
           it('yes voters receive proper amount', async () => {
-            await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * (1 + 0.1 * 0.5))            
+            await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * (1 + 0.1 * 0.5))
           })
-          
+
           it('no voters receive proper amount', async () => {
-            await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * (1 - 0.1), otherWallet)            
+            await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * (1 - 0.1), otherWallet)
           })
         })
 
@@ -572,16 +572,16 @@ describe('TrueRatingAgency', () => {
             const totalSupplyBefore = await trustToken.totalSupply()
             await rater.connect(otherWallet).withdraw(loanToken.address, stake)
             const totalSupplyAfter = await trustToken.totalSupply()
-  
+
             expect(totalSupplyBefore.sub(totalSupplyAfter)).to.equal(stake * 0.1 * 0.5)
           })
 
           it('no voters receive proper amount', async () => {
-            await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * (1 + 0.1 * 0.5))            
+            await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * (1 + 0.1 * 0.5))
           })
-          
+
           it('yes voters receive proper amount', async () => {
-            await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * (1 - 0.1), otherWallet)            
+            await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * (1 - 0.1), otherWallet)
           })
         })
 
