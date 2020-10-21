@@ -39,7 +39,7 @@ describe('Curve Pool', () => {
     it('minimal token amount on equals 99% of curve estimation', async () => {
       await token.approve(pool.address, parseEther('1'))
       await pool.join(parseEther('1'))
-      expect('add_liquidity').to.be.calledOnContractWith(curve, [[0, 0, 0, parseEther('1')], parseEther('0.95')])
+      expect('add_liquidity').to.be.calledOnContractWith(curve, [[0, 0, 0, parseEther('1')], 0])
     })
   })
 
@@ -59,7 +59,7 @@ describe('Curve Pool', () => {
 
     it('minimal token amount on withdrawal equals 99% of curve estimation', async () => {
       await pool.exit(parseEther('1'))
-      expect('remove_liquidity_one_coin').to.be.calledOnContractWith(curve, [parseEther('1'), 3, parseEther('0.95'), false])
+      expect('remove_liquidity_one_coin').to.be.calledOnContractWith(curve, [parseEther('1'), 3, 0, false])
     })
   })
 })
