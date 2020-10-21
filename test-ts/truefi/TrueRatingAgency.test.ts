@@ -4,6 +4,7 @@ import { AddressZero } from '@ethersproject/constants'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { parseTT } from '../utils/parseTT'
+import { timeTravel as _timeTravel } from '../utils/timeTravel'
 
 import { TrueRatingAgencyFactory } from '../../build/types/TrueRatingAgencyFactory'
 import { TrueRatingAgency } from '../../build/types/TrueRatingAgency'
@@ -13,27 +14,27 @@ import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
 import { LoanToken } from '../../build/types/LoanToken'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
-import { timeTravel } from '../utils/timeTravel'
-import { MockProvider } from 'ethereum-waffle'
 
 describe('TrueRatingAgency', () => {
   enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
 
-  let provider: MockProvider
   let owner: Wallet
   let otherWallet: Wallet
   let wallets: Wallet[]
+  
   let rater: TrueRatingAgency
   let trustToken: TrustToken
   let loanToken: LoanToken
   let tusd: MockTrueCurrency
-
+  
   const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
   const stake = 1000000
-
+  
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
-
+  
+  let timeTravel: (time: number) => void
+  
   beforeEachWithFixture(async (_wallets, _provider) => {
     [owner, otherWallet, ...wallets] = _wallets
 
@@ -56,7 +57,7 @@ describe('TrueRatingAgency', () => {
     await trustToken.mint(owner.address, parseTT(100000000))
     await trustToken.approve(rater.address, parseTT(100000000))
 
-    provider = _provider
+    timeTravel = (time: number) => _timeTravel(_provider, time)
   })
 
   const submit = async (loanTokenAddress: string, wallet = owner) =>
@@ -416,7 +417,7 @@ describe('TrueRatingAgency', () => {
           await loanToken.fund()
           await loanToken.withdraw(owner.address)
           await tusd.transfer(loanToken.address, await loanToken.debt())
-          await timeTravel(provider, monthInSeconds * 24)
+          await timeTravel(monthInSeconds * 24)
           await loanToken.close()
           expect(await rater.status(loanToken.address)).to.equal(LoanStatus.Settled)
         }
@@ -517,7 +518,7 @@ describe('TrueRatingAgency', () => {
         const defaultLoan = async () => {
           await loanToken.fund()
           await loanToken.withdraw(owner.address)
-          await timeTravel(provider, monthInSeconds * 24)
+          await timeTravel(monthInSeconds * 24)
           await loanToken.close()
           expect(await rater.status(loanToken.address)).to.equal(LoanStatus.Defaulted)
         }
