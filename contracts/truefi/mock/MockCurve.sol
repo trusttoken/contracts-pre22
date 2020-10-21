@@ -60,7 +60,7 @@ contract MockCurvePool is ICurvePool {
         return _curve;
     }
 
-    function coins(int128 id) external override view returns (IYToken) {
+    function coins(int128) external override view returns (IYToken) {
         return IYToken(address(0));
     }
 }
