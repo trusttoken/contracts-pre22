@@ -241,6 +241,11 @@ describe('TrueRatingAgency', () => {
         await expect(rater.yes(fakeLoanTokenAddress, stake))
           .to.be.revertedWith('TrueRatingAgency: Loan is not currently pending')
       })
+
+      it('emits proper event', async () => {
+        await expect(rater.yes(loanToken.address, stake))
+          .to.emit(rater, 'Voted').withArgs(loanToken.address, owner.address, true, stake)
+      })
     })
 
     describe('No', () => {
@@ -291,6 +296,11 @@ describe('TrueRatingAgency', () => {
       it('is only possible for existing loans', async () => {
         await expect(rater.no(fakeLoanTokenAddress, stake))
           .to.be.revertedWith('TrueRatingAgency: Loan is not currently pending')
+      })
+
+      it('emits proper event', async () => {
+        await expect(rater.no(loanToken.address, stake))
+          .to.emit(rater, 'Voted').withArgs(loanToken.address, owner.address, false, stake)
       })
     })
 
@@ -387,6 +397,11 @@ describe('TrueRatingAgency', () => {
 
           expect(totalVotedBefore).to.equal(stake)
           expect(totalVotedAfter).to.equal(0)
+        })
+
+        it('emits proper event', async () => {
+          await expect(rater.withdraw(loanToken.address, stake))
+            .to.emit(rater, 'Withdrawn').withArgs(loanToken.address, owner.address, stake, stake, 0)
         })
       })
 

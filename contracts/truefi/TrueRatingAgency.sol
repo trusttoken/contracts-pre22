@@ -36,6 +36,8 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     event BurnFactorChanged(uint256 burnFactor);
     event LoanSubmitted(address id);
     event LoanRetracted(address id);
+    event Voted(address loanToken, address voter, bool choice, uint256 stake);
+    event Withdrawn(address loanToken, address voter, uint256 stake, uint256 received, uint256 burned);
 
     modifier onlyCreator(address id) {
         require(loans[id].creator == msg.sender, "TrueRatingAgency: Not sender's loan");
@@ -127,6 +129,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].add(stake);
         require(trustToken.transferFrom(msg.sender, address(this), stake));
+        emit Voted(id, msg.sender, choice, stake);
     }
 
     function yes(address id, uint256 stake) external override onlyPendingLoans(id) {
@@ -149,6 +152,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         }
 
         uint256 amountToTransfer = stake;
+        uint256 burned = 0;
         if (loanStatus > LoanStatus.Running) {
             bool correct = wasPredictionCorrect(id, choice);
             if (correct) {
@@ -158,10 +162,12 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
                 // Take what is left
                 uint256 lostAmount = amountToTransfer.mul(lossFactor).div(10000);
                 amountToTransfer = amountToTransfer.sub(lostAmount);
-                trustToken.burn(lostAmount.mul(burnFactor).div(10000));
+                burned = lostAmount.mul(burnFactor).div(10000);
+                trustToken.burn(burned);
             }
         }
         require(trustToken.transfer(msg.sender, amountToTransfer));
+        emit Withdrawn(id, msg.sender, stake, amountToTransfer, burned);
     }
 
     function bounty(address id, bool incorrectChoice) internal view returns (uint256) {
