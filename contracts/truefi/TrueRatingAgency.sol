@@ -142,7 +142,6 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         LoanStatus loanStatus = status(id);
 
         require(loans[id].votes[msg.sender][choice] >= stake, "TrueRatingAgency: Cannot withdraw more than was staked");
-        require(loanStatus != LoanStatus.Running, "TrueRatingAgency: Cannot withdraw when loan is ongoing");
 
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
         if (loanStatus == LoanStatus.Pending) {
