@@ -156,10 +156,8 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         if (loanStatus > LoanStatus.Running) {
             bool correct = wasPredictionCorrect(id, choice);
             if (correct) {
-                // Take bounty from losers
                 amountToTransfer = amountToTransfer.add(bounty(id, !choice).mul(stake).div(loans[id].prediction[choice]));
             } else {
-                // Take what is left
                 uint256 lostAmount = amountToTransfer.mul(lossFactor).div(10000);
                 amountToTransfer = amountToTransfer.sub(lostAmount);
                 burned = lostAmount.mul(burnFactor).div(10000);
