@@ -11,6 +11,8 @@ import { TrustTokenFactory } from '../../build/types/TrustTokenFactory'
 import { TrustToken } from '../../build/types/TrustToken'
 import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
 import { LoanToken } from '../../build/types/LoanToken'
+import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
+import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 
 describe('TrueRatingAgency', () => {
   let owner: Wallet
@@ -19,7 +21,6 @@ describe('TrueRatingAgency', () => {
   let trustToken: TrustToken
   let loanToken: LoanToken
 
-  const fakeTUSDAddress = '0x7dd5a4Eaf5dB6842aB539Cf506CFc6f9C70bb85E'
   const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
   const stake = 1000
 
@@ -31,14 +32,17 @@ describe('TrueRatingAgency', () => {
 
     trustToken = await new TrustTokenFactory(owner).deploy()
     await trustToken.initialize()
+    const tusd: MockTrueCurrency = await new MockTrueCurrencyFactory(owner).deploy()
+    await tusd.mint(owner.address, 5_000_000)
 
     loanToken = await new LoanTokenFactory(owner).deploy(
-      fakeTUSDAddress,
+      tusd.address,
       owner.address,
       5_000_000,
       monthInSeconds * 24,
-      1000
-      )
+      1000,
+    )
+    await tusd.approve(loanToken.address, 5_000_000)
 
     rater = await new TrueRatingAgencyFactory(owner).deploy(trustToken.address)
 
@@ -301,7 +305,12 @@ describe('TrueRatingAgency', () => {
           .to.be.revertedWith('TrueRatingAgency: Cannot withdraw more than was staked')
       })
 
-      it('reverts if loan was funded and is currently running')
+      it('reverts if loan was funded and is currently running', async () => {
+        await rater.yes(loanToken.address, stake)
+        await loanToken.fund()
+        await expect(rater.withdraw(loanToken.address, stake))
+          .to.be.revertedWith('TrueRatingAgency: Loan is currently running')
+      })
 
       describe('Retracted', () => {
         beforeEach(async () => {
