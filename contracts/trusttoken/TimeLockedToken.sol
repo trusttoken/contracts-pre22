@@ -89,16 +89,14 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
      * @dev Transfer tokens to another account under the lockup schedule
      * Emits a transfer event showing a transfer to the recipient
      * Only the registry can call this function
-     * Once registered, the distribution cannot be registered again
      * @param receiver Address to receive the tokens
      * @param amount Tokens to be transferred
      */
     function registerLockup(address receiver, uint256 amount) external onlyTimeLockRegistry {
         require(balanceOf[msg.sender] >= amount, "insufficient balance");
-        require(distribution[receiver] == 0, "distribution already set");
 
-        // set distribution to lockup amount
-        distribution[receiver] = amount;
+        // add amount to locked distribution
+        distribution[receiver] = distribution[receiver].add(amount);
 
         // transfer to recipient
         _transfer(msg.sender, receiver, amount);
