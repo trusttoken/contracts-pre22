@@ -26,9 +26,14 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     TrustToken public trustToken;
 
+    /**
+     * @dev % multiplied by 100. e.g. 10.5% = 1050
+     */
     uint256 public lossFactor = 2500;
     uint256 public burnFactor = 2500;
 
+    event LossFactorChanged(uint256 participationFactor);
+    event BurnFactorChanged(uint256 votingPeriod);
     event LoanSubmitted(address id);
     event LoanRetracted(address id);
 
@@ -54,6 +59,16 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     constructor(TrustToken _trustToken) public {
         trustToken = _trustToken;
+    }
+
+    function setLossFactor(uint256 newLossFactor) external onlyOwner {
+        lossFactor = newLossFactor;
+        emit LossFactorChanged(newLossFactor);
+    }
+
+    function setBurnFactor(uint256 newBurnFactor) external onlyOwner {
+        burnFactor = newBurnFactor;
+        emit BurnFactorChanged(newBurnFactor);
     }
 
     function getNoVote(address id, address voter) public view returns (uint256) {
@@ -124,18 +139,18 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     function withdraw(address id, uint256 stake) external override onlyNotRunningLoans(id) {
         bool choice = loans[id].votes[msg.sender][true] > 0;
-        LoanStatus _status = status(id);
+        LoanStatus loanStatus = status(id);
 
         require(loans[id].votes[msg.sender][choice] >= stake, "TrueRatingAgency: Cannot withdraw more than was staked");
-        require(_status != LoanStatus.Running, "TrueRatingAgency: Cannot withdraw when loan is ongoing");
+        require(loanStatus != LoanStatus.Running, "TrueRatingAgency: Cannot withdraw when loan is ongoing");
 
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
-        if (_status == LoanStatus.Pending) {
+        if (loanStatus == LoanStatus.Pending) {
             loans[id].prediction[choice] = loans[id].prediction[choice].sub(stake);
         }
 
         uint256 amountToTransfer = stake;
-        if (_status > LoanStatus.Running) {
+        if (loanStatus > LoanStatus.Running) {
             bool correct = wasPredictionCorrect(id, choice);
             if (correct) {
                 // Take loot from losers
@@ -172,14 +187,14 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         if (loan.creator == address(0) && loan.timestamp != 0) {
             return LoanStatus.Retracted;
         }
-        ILoanToken.Status _status = ILoanToken(id).status();
-        if (_status == ILoanToken.Status.Funded || _status == ILoanToken.Status.Withdrawn) {
+        ILoanToken.Status loanInternalStatus = ILoanToken(id).status();
+        if (loanInternalStatus == ILoanToken.Status.Funded || loanInternalStatus == ILoanToken.Status.Withdrawn) {
             return LoanStatus.Running;
         }
-        if (_status == ILoanToken.Status.Settled) {
+        if (loanInternalStatus == ILoanToken.Status.Settled) {
             return LoanStatus.Settled;
         }
-        if (_status == ILoanToken.Status.Defaulted) {
+        if (loanInternalStatus == ILoanToken.Status.Defaulted) {
             return LoanStatus.Defaulted;
         }
         return LoanStatus.Pending;

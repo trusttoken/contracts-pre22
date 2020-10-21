@@ -41,6 +41,44 @@ describe('TrueRatingAgency', () => {
     })
   })
 
+  describe('Parameters set up', () => {
+    describe('setLossFactor', () => {
+      it('changes lossFactor', async () => {
+        await rater.setLossFactor(1234)
+        expect(await rater.lossFactor())
+          .to.equal(1234)
+      })
+
+      it('emits LossFactorChanged', async () => {
+        await expect(rater.setLossFactor(1234))
+          .to.emit(rater, 'LossFactorChanged').withArgs(1234)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(rater.connect(otherWallet).setLossFactor(1234))
+          .to.be.revertedWith('caller is not the owner')
+      })
+    })
+
+    describe('setBurnFactor', () => {
+      it('changes burnFactor', async () => {
+        await rater.setBurnFactor(1234)
+        expect(await rater.burnFactor())
+          .to.equal(1234)
+      })
+
+      it('emits BurnFactorChanged', async () => {
+        await expect(rater.setBurnFactor(1234))
+          .to.emit(rater, 'BurnFactorChanged').withArgs(1234)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(rater.connect(otherWallet).setBurnFactor(1234))
+          .to.be.revertedWith('caller is not the owner')
+      })
+    })
+  })
+
   describe('Submiting/Retracting loan', () => {
     it('creates loan', async () => {
       await submit(exampleLoanTokenAddress)
