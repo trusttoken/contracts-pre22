@@ -8,7 +8,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
-import {TrustToken} from "../trusttoken/TrustToken.sol";
+import {IBurnableERC20} from "../trusttoken/IBurnableERC20.sol";
 
 contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     using SafeMath for uint256;
@@ -24,7 +24,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     mapping(address => Loan) public loans;
 
-    TrustToken public trustToken;
+    IBurnableERC20 public trustToken;
 
     /**
      * @dev % multiplied by 100. e.g. 10.5% = 1050
@@ -57,7 +57,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         _;
     }
 
-    constructor(TrustToken _trustToken) public {
+    constructor(IBurnableERC20 _trustToken) public {
         trustToken = _trustToken;
     }
 
