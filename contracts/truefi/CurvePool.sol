@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {TruePool, IERC20} from "./TruePool.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+
+import {ITruePool} from "./interface/ITruePool.sol";
 import {ICurvePool} from "./interface/ICurvePool.sol";
 
-contract CurvePool is TruePool, ReentrancyGuard {
+contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
     using SafeMath for uint256;
 
     ICurvePool public curvePool;
+    IERC20 public _currencyToken;
     address public lender;
 
     /**
@@ -23,17 +27,22 @@ contract CurvePool is TruePool, ReentrancyGuard {
 
     constructor(
         ICurvePool _curve,
-        IERC20 _currencyToken,
+        IERC20 __currencyToken,
         address _lender
-    ) public TruePool(_currencyToken, "CurveTUSDPool", "CurTUSD") {
+    ) public ERC20("CurveTUSDPool", "CurTUSD") {
+        _currencyToken = __currencyToken;
         curvePool = _curve;
         lender = _lender;
-        currencyToken().approve(address(curvePool), uint256(-1));
+        _currencyToken.approve(address(curvePool), uint256(-1));
         curvePool.token().approve(address(curvePool), uint256(-1));
     }
 
+    function currencyToken() public override view returns (IERC20) {
+        return _currencyToken;
+    }
+
     function join(uint256 amount) external override nonReentrant {
-        require(currencyToken().transferFrom(msg.sender, address(this), amount));
+        require(_currencyToken.transferFrom(msg.sender, address(this), amount));
 
         uint256[N_TOKENS] memory amounts = [0, 0, 0, amount];
 
@@ -47,10 +56,10 @@ contract CurvePool is TruePool, ReentrancyGuard {
         require(amount <= balanceOf(msg.sender), "CurvePool: Cannot withdraw amount bigger than available balance");
         require(amount <= curvePool.token().balanceOf(address(this)), "CurvePool: Not enough cTokens in pool");
 
-        uint256 balanceBefore = currencyToken().balanceOf(address(this));
+        uint256 balanceBefore = _currencyToken.balanceOf(address(this));
         curvePool.remove_liquidity_one_coin(amount, TUSD_INDEX, 0, false);
-        uint256 balanceAfter = currencyToken().balanceOf(address(this));
-        require(currencyToken().transfer(msg.sender, balanceAfter.sub(balanceBefore)));
+        uint256 balanceAfter = _currencyToken.balanceOf(address(this));
+        require(_currencyToken.transfer(msg.sender, balanceAfter.sub(balanceBefore)));
         _burn(msg.sender, amount);
     }
 
@@ -63,18 +72,18 @@ contract CurvePool is TruePool, ReentrancyGuard {
             "CurvePool: Not enough cTokens in pool to cover borrow"
         );
 
-        uint256 balanceBefore = currencyToken().balanceOf(address(this));
+        uint256 balanceBefore = _currencyToken.balanceOf(address(this));
         curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
-        uint256 balanceAfter = currencyToken().balanceOf(address(this));
+        uint256 balanceAfter = _currencyToken.balanceOf(address(this));
 
         require(balanceAfter.sub(balanceBefore) >= expectedAmount, "CurvePool: Not enough tokens withdrawn");
-        require(currencyToken().transfer(msg.sender, expectedAmount));
+        require(_currencyToken.transfer(msg.sender, expectedAmount));
     }
 
     function repay(uint256 amount) external override nonReentrant {
-        require(currencyToken().transferFrom(msg.sender, address(this), amount));
+        require(_currencyToken.transferFrom(msg.sender, address(this), amount));
 
-        uint256 amountToDeposit = currencyToken().balanceOf(address(this));
+        uint256 amountToDeposit = _currencyToken.balanceOf(address(this));
         uint256[N_TOKENS] memory amounts = [0, 0, 0, amountToDeposit];
 
         curvePool.add_liquidity(amounts, 0);
