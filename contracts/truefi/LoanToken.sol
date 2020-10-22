@@ -117,6 +117,10 @@ contract LoanToken is ILoanToken, ERC20 {
         emit Funded(msg.sender);
     }
 
+    function reclaim(uint256 amount) public onlyFunder onlyClosed {
+        require(currencyToken.transfer(msg.sender, amount));
+    }
+
     function allowTransfer(address account, bool _status) external override onlyFunder {
         canTransfer[account] = _status;
         emit TransferAllowanceChanged(account, _status);
