@@ -589,8 +589,11 @@ describe('TrustToken', () => {
       expect(await trustToken.nextEpoch()).to.equal(constants.MaxUint256)
     })
 
-    it('is impossible to give lock funds twice to a person', async () => {
-      await expect(trustToken.connect(timeLockRegistry).registerLockup(saftHolder.address, parseTT(100))).to.be.revertedWith('distribution already set')
+    it('can lock funds multiple times for one account', async () => {
+      await trustToken.connect(timeLockRegistry).registerLockup(saftHolder.address, parseTT(100))
+      expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(parseTT(0))
+      expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(parseTT(200))
+      expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(200))
     })
 
     it('only timeLockRegistry can register lockups', async () => {
@@ -602,6 +605,17 @@ describe('TrustToken', () => {
       await timeTravel(provider, DAY * 120)
       await expect(trustToken.connect(saftHolder).burn(parseTT(100).div(8).add(1))).to.be.revertedWith('attempting to burn locked funds')
       await expect(trustToken.connect(saftHolder).burn(parseTT(100).div(8))).to.be.not.reverted
+    })
+
+    it('works correctly when new lockup is registered not on first block', async () => {
+      await timeTravel(provider, DAY * 300) // epoch 3
+      expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(parseTT(100).div(8).mul(3))
+      expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(parseTT(100).div(8).mul(5))
+      expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(100))
+      await trustToken.connect(timeLockRegistry).registerLockup(saftHolder.address, parseTT(100))
+      expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(parseTT(200).div(8).mul(3))
+      expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(parseTT(200).div(8).mul(5))
+      expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(200))
     })
 
     context('Transfers', () => {
