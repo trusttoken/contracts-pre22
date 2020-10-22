@@ -121,7 +121,7 @@ contract TrueLender is Ownable {
         uint256 availableAmount = loanToken.balance();
         loanToken.reclaim(availableAmount);
         pool.repay(availableAmount);
-        emit Reclaimed(address(loanToken), amount);
+        emit Reclaimed(address(loanToken), availableAmount);
     }
 
     function loanIsAttractiveEnough(uint256 apy) public view returns (bool) {
