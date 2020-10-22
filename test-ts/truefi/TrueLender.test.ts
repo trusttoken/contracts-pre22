@@ -366,4 +366,16 @@ describe('TrueLender', () => {
       })
     })
   })
+
+  describe('Reclaiming', () => {
+      it('works only for loan tokens')
+
+      it('works only for closed loans')
+
+      it('reclaims funds from loan token')
+      
+      it('repays funds from the pool')
+      
+      it('emits a proper event')
+  })
 })
