@@ -15,7 +15,7 @@ contract LoanToken is ILoanToken, ERC20 {
     uint256 public override apy;
 
     uint256 public start;
-    address public funder;
+    address public lender;
     uint256 public debt;
 
     uint256 public redeemed;
@@ -26,7 +26,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     IERC20 public currencyToken;
 
-    event Funded(address funder);
+    event Funded(address lender);
     event TransferAllowanceChanged(address account, bool status);
     event Withdrawn(address beneficiary);
     event Closed(Status status, uint256 returnedAmount);
@@ -79,14 +79,14 @@ contract LoanToken is ILoanToken, ERC20 {
 
     modifier onlyWhoCanTransfer(address sender) {
         require(
-            sender == funder || canTransfer[sender],
-            "LoanToken: This can be performed only by funder or accounts allowed to transfer"
+            sender == lender || canTransfer[sender],
+            "LoanToken: This can be performed only by lender or accounts allowed to transfer"
         );
         _;
     }
 
     modifier onlyFunder() {
-        require(msg.sender == funder, "LoanToken: This can be performed only by funder");
+        require(msg.sender == lender, "LoanToken: This can be performed only by lender");
         _;
     }
 
@@ -110,7 +110,7 @@ contract LoanToken is ILoanToken, ERC20 {
     function fund() external override onlyAwaiting {
         status = Status.Funded;
         start = block.timestamp;
-        funder = msg.sender;
+        lender = msg.sender;
         _mint(msg.sender, debt);
         require(currencyToken.transferFrom(msg.sender, address(this), amount));
 

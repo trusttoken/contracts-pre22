@@ -91,12 +91,12 @@ describe('LoanToken', () => {
       expect(await loanToken.start()).to.equal(creationTimestamp)
     })
 
-    it('mints funders loan tokens', async () => {
+    it('mints lenders loan tokens', async () => {
       expect(await loanToken.balanceOf(lender.address)).to.equal(parseEther('1100'))
       expect(await loanToken.totalSupply()).to.equal(parseEther('1100'))
     })
 
-    it('transfers proper amount of currency token from funder to loanToken contact', async () => {
+    it('transfers proper amount of currency token from lender to loanToken contact', async () => {
       expect(await tusd.balanceOf(loanToken.address)).to.equal(parseEther('1000'))
     })
 
@@ -108,6 +108,12 @@ describe('LoanToken', () => {
     it('emits event', async () => {
       await expect(Promise.resolve(tx)).to.emit(loanToken, 'Funded').withArgs(lender.address)
     })
+  })
+
+  describe('Reclaim', () => {
+      it('can only be called by lender')
+      it('can only be called when status is settled or defaulted')
+      it('transfers demanded amount to sender')
   })
 
   describe('Withdraw', () => {
@@ -372,18 +378,18 @@ describe('LoanToken', () => {
 
   describe('Whitelisting', () => {
     it('reverts when not whitelisted before funding', async () => {
-      await expect(loanToken.allowTransfer(other.address, true)).to.be.revertedWith('LoanToken: This can be performed only by funder')
+      await expect(loanToken.allowTransfer(other.address, true)).to.be.revertedWith('LoanToken: This can be performed only by lender')
     })
 
-    it('reverts when not whitelisted not by a funder', async () => {
+    it('reverts when not whitelisted not by a lender', async () => {
       await loanToken.fund()
-      await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken: This can be performed only by funder')
+      await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken: This can be performed only by lender')
     })
 
     it('non-whitelisted address cannot transfer', async () => {
       await loanToken.fund()
       await loanToken.transfer(other.address, 10)
-      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.revertedWith('LoanToken: This can be performed only by funder or accounts allowed to transfer')
+      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.revertedWith('LoanToken: This can be performed only by lender or accounts allowed to transfer')
     })
 
     it('whitelisted address can transfer', async () => {
