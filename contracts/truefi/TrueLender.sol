@@ -116,7 +116,10 @@ contract TrueLender is Ownable {
 
     function reclaim(ILoanToken loanToken) external {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be used to reclaimed");
-        require(loanToken.status() >= ILoanToken.Status.Settled, "TrueLender: LoanToken is not closed yet");
+        require(
+            loanToken.status() == ILoanToken.Status.Settled || loanToken.status() == ILoanToken.Status.Defaulted,
+            "TrueLender: LoanToken is not closed yet"
+        );
 
         uint256 availableAmount = loanToken.balance();
         loanToken.reclaim(availableAmount);
