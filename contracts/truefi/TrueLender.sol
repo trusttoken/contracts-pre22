@@ -42,6 +42,7 @@ contract TrueLender is Ownable {
     event SizeLimitsChanged(uint256 minSize, uint256 maxSize);
     event DurationLimitsChanged(uint256 minDuration, uint256 maxDuration);
     event Funded(address indexed loanToken, uint256 amount);
+    event Reclaimed(address indexed loanToken, uint256 amount);
 
     modifier onlyAllowedBorrowers() {
         require(allowedBorrowers[msg.sender], "TrueLender: Sender is not allowed to borrow");
@@ -111,6 +112,19 @@ contract TrueLender is Ownable {
         currencyToken.approve(address(loanToken), amount);
         loanToken.fund();
         emit Funded(address(loanToken), amount);
+    }
+
+    function reclaim(ILoanToken loanToken) external {
+        require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be used to reclaimed");
+        require(
+            loanToken.status() == ILoanToken.Status.Settled || loanToken.status() == ILoanToken.Status.Defaulted,
+            "TrueLender: LoanToken is not closed yet"
+        );
+
+        uint256 availableAmount = loanToken.balance();
+        loanToken.reclaim(availableAmount);
+        pool.repay(availableAmount);
+        emit Reclaimed(address(loanToken), availableAmount);
     }
 
     function loanIsAttractiveEnough(uint256 apy) public view returns (bool) {
