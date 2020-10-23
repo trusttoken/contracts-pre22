@@ -43,7 +43,7 @@
     "babel-register": "^6.26.0",
     "chai": "^4.2.0",
     "eslint": "^6.8.0",
-    "ethereum-waffle": "^3.1.1",
+    "ethereum-waffle": "^3.1.2",
     "mocha": "^7.1.1",
     "patch-package": "^6.2.2",
     "postinstall-postinstall": "^2.1.0",
