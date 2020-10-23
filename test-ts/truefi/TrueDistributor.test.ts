@@ -5,17 +5,17 @@ import { utils, BigNumber } from 'ethers'
 import { Zero, MaxUint256 } from '@ethersproject/constants'
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { toTrustToken } from '../../scripts/utils'
-import { TrueDistributor } from '../../build/types/TrueDistributor'
-import { TrueDistributorFactory } from '../../build/types/TrueDistributorFactory'
+import { CurveTrueDistributor } from '../../build/types/CurveTrueDistributor'
+import { CurveTrueDistributorFactory } from '../../build/types/CurveTrueDistributorFactory'
 import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
 import { MockErc20Token } from '../../build/types/MockErc20Token'
 import { getBlockNumber, skipBlocksWithProvider } from '../utils/timeTravel'
 
-describe('TrueDistributor', () => {
+describe('CurveTrueDistributor', () => {
   let owner: Wallet
   let farm: Wallet
   let fakeToken: Wallet
-  let distributor: TrueDistributor
+  let distributor: CurveTrueDistributor
   let trustToken: MockErc20Token
   let provider: MockProvider
 
@@ -31,14 +31,14 @@ describe('TrueDistributor', () => {
     [owner, farm, fakeToken] = wallets
     provider = _provider
     trustToken = await new MockErc20TokenFactory(owner).deploy()
-    distributor = await new TrueDistributorFactory(owner).deploy(0, trustToken.address)
+    distributor = await new CurveTrueDistributorFactory(owner).deploy(0, trustToken.address)
     await trustToken.mint(distributor.address, utils.parseEther('5365000000000000000'))
   })
 
   describe('constructor', () => {
     it('startingBlock is properly set', async () => {
       const arbitraryBlockNumber = 1234567890
-      const freshDistributorWithCustomStartingBlock = await new TrueDistributorFactory(owner).deploy(arbitraryBlockNumber, fakeToken.address)
+      const freshDistributorWithCustomStartingBlock = await new CurveTrueDistributorFactory(owner).deploy(arbitraryBlockNumber, fakeToken.address)
       expect(await freshDistributorWithCustomStartingBlock.startingBlock()).to.equal(arbitraryBlockNumber)
     })
 
@@ -177,7 +177,7 @@ describe('TrueDistributor', () => {
     })
 
     it('returns 0 for interval ending before first block', async () => {
-      const delayedDistributor = await new TrueDistributorFactory(owner).deploy(100, trustToken.address)
+      const delayedDistributor = await new CurveTrueDistributorFactory(owner).deploy(100, trustToken.address)
       expect(await delayedDistributor.reward(0, 99)).to.equal(0)
     })
 
@@ -212,16 +212,16 @@ describe('TrueDistributor', () => {
     })
 
     it('reverts on invalid interval', async () => {
-      await expect(distributor.reward(10, 1)).to.be.revertedWith('TrueDistributor: Cannot pass an invalid interval')
+      await expect(distributor.reward(10, 1)).to.be.revertedWith('CurveTrueDistributor: Cannot pass an invalid interval')
     })
 
     it('no reward can be claimed before starting block', async () => {
-      const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(100, fakeToken.address)
+      const distributorWithPostponedRewards = await new CurveTrueDistributorFactory(owner).deploy(100, fakeToken.address)
       expect(await distributorWithPostponedRewards.reward(0, 1)).to.equal('0')
     })
 
     it('returns proper value (starting block is > 0)', async () => {
-      const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(2000, fakeToken.address)
+      const distributorWithPostponedRewards = await new CurveTrueDistributorFactory(owner).deploy(2000, fakeToken.address)
       const rewardFromPostponedDistributor = await distributorWithPostponedRewards.reward(2000, 2004)
       const rewardFromDefaultDistributor = await distributor.reward(0, 4)
 
@@ -229,7 +229,7 @@ describe('TrueDistributor', () => {
     })
 
     it('returns proper value if interval starts before starting block, but ends after', async () => {
-      const distributorWithPostponedRewards = await new TrueDistributorFactory(owner).deploy(2, fakeToken.address)
+      const distributorWithPostponedRewards = await new CurveTrueDistributorFactory(owner).deploy(2, fakeToken.address)
       const rewardFromPostponedDistributor = await distributorWithPostponedRewards.reward(0, 4)
       const rewardFromDefaultDistributor = await distributor.reward(0, 2)
 
@@ -245,7 +245,7 @@ describe('TrueDistributor', () => {
     })
 
     it('returns total reward for interval including total rewarding period', async () => {
-      const delayedDistributor = await new TrueDistributorFactory(owner).deploy(1000, fakeToken.address)
+      const delayedDistributor = await new CurveTrueDistributorFactory(owner).deploy(1000, fakeToken.address)
       const lastBlock = await delayedDistributor.lastBlock()
 
       const reward = await distributor.reward(0, lastBlock.add(2000))
