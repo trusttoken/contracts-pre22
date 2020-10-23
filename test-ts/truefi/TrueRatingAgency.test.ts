@@ -195,17 +195,13 @@ describe('TrueRatingAgency', () => {
 
     describe('Yes', () => {
       it('transfers funds from voter', async () => {
-        const balanceBefore = await trustToken.balanceOf(owner.address)
-        await rater.yes(loanToken.address, stake)
-        const balanceAfter = await trustToken.balanceOf(owner.address)
-        expect(balanceAfter.add(stake)).to.equal(balanceBefore)
+        await expect(() => rater.yes(loanToken.address, stake))
+          .to.changeTokenBalance(trustToken, owner, -stake)
       })
 
       it('transfers funds to lender contract', async () => {
-        const balanceBefore = await trustToken.balanceOf(rater.address)
-        await rater.yes(loanToken.address, stake)
-        const balanceAfter = await trustToken.balanceOf(rater.address)
-        expect(balanceAfter.sub(stake)).to.equal(balanceBefore)
+        await expect(() => rater.yes(loanToken.address, stake))
+          .to.changeTokenBalance(trustToken, rater, stake)
       })
 
       it('keeps track of votes', async () => {
@@ -251,17 +247,13 @@ describe('TrueRatingAgency', () => {
 
     describe('No', () => {
       it('transfers funds from voter', async () => {
-        const balanceBefore = await trustToken.balanceOf(owner.address)
-        await rater.no(loanToken.address, stake)
-        const balanceAfter = await trustToken.balanceOf(owner.address)
-        expect(balanceAfter.add(stake)).to.equal(balanceBefore)
+        await expect(() => rater.no(loanToken.address, stake))
+          .to.changeTokenBalance(trustToken, owner, -stake)
       })
 
       it('transfers funds to lender contract', async () => {
-        const balanceBefore = await trustToken.balanceOf(rater.address)
-        await rater.no(loanToken.address, stake)
-        const balanceAfter = await trustToken.balanceOf(rater.address)
-        expect(balanceAfter.sub(stake)).to.equal(balanceBefore)
+        await expect(() => rater.no(loanToken.address, stake))
+          .to.changeTokenBalance(trustToken, rater, stake)
       })
 
       it('keeps track of votes', async () => {
@@ -363,10 +355,8 @@ describe('TrueRatingAgency', () => {
         })
 
         it('properly sends unchanged amount of tokens', async () => {
-          const balanceBefore = await trustToken.balanceOf(owner.address)
-          await rater.withdraw(loanToken.address, stake)
-          const balanceAfter = await trustToken.balanceOf(owner.address)
-          expect(balanceAfter.sub(stake)).to.equal(balanceBefore)
+          await expect(() => rater.withdraw(loanToken.address, stake))
+            .to.changeTokenBalance(trustToken, owner, stake)
         })
 
         it('leaves total loan votes at zero', async () => {
@@ -385,10 +375,8 @@ describe('TrueRatingAgency', () => {
         })
 
         it('properly sends unchanged amount of tokens', async () => {
-          const balanceBefore = await trustToken.balanceOf(owner.address)
-          await rater.withdraw(loanToken.address, stake)
-          const balanceAfter = await trustToken.balanceOf(owner.address)
-          expect(balanceAfter.sub(stake)).to.equal(balanceBefore)
+          await expect(() => rater.withdraw(loanToken.address, stake))
+            .to.changeTokenBalance(trustToken, owner, stake)
         })
 
         it('reduces total loan votes', async () => {

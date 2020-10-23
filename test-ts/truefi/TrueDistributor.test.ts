@@ -114,16 +114,10 @@ describe('TrueDistributor', () => {
       await distributor.distribute(owner.address)
       await expectBlock(8)
 
-      const balanceBeforeSecondDistribution = await trustToken.balanceOf(owner.address)
-
       await skipBlocks(2)
-      await distributor.distribute(owner.address)
+      await expect(() => distributor.distribute(owner.address))
+        .to.changeTokenBalance(trustToken, owner, normaliseRewardToTrustTokens(expectedReward))
       await expectBlock(11)
-
-      const balanceAfterSecondDistribution = await trustToken.balanceOf(owner.address)
-
-      expect(balanceAfterSecondDistribution.sub(balanceBeforeSecondDistribution))
-        .to.equal(normaliseRewardToTrustTokens(expectedReward))
     })
   })
 
