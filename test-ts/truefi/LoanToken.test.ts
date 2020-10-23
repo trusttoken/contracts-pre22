@@ -12,7 +12,7 @@ import { formatEther, parseEther } from '@ethersproject/units'
 import { timeTravel } from '../utils/timeTravel'
 
 describe('LoanToken', () => {
-  enum LoanTokenStatus {Awaiting, Funded, Withdrawn, Settled, Defaulted}
+  enum LoanTokenStatus { Awaiting, Funded, Withdrawn, Settled, Defaulted }
 
   let provider: MockProvider
   let lender: Wallet
@@ -111,9 +111,43 @@ describe('LoanToken', () => {
   })
 
   describe('Reclaim', () => {
-      it('can only be called by lender')
-      it('can only be called when status is settled or defaulted')
-      it('transfers demanded amount to sender')
+    beforeEach(async () => {
+      await loanToken.fund()
+      await loanToken.connect(borrower).withdraw(borrower.address)
+    })
+
+    it('can only be called by lender', async () => {
+      await payback(borrower, 1000)
+      await timeTravel(provider, monthInSeconds * 12)
+      await loanToken.close()
+      await expect(loanToken.connect(other).reclaim(1000))
+        .to.be.revertedWith('LoanToken: This can be performed only by lender')
+    })
+
+    it('can only be called when status is settled or defaulted', async () => {
+      await payback(borrower, 1000)
+      await expect(loanToken.reclaim(1000))
+        .to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
+    })
+
+    it('transfers demanded amount to sender', async () => {
+      await payback(borrower, 1000)
+      await timeTravel(provider, monthInSeconds * 12)
+      await loanToken.close()
+
+      const contractBalanceBeforeReclaiming = await tusd.balanceOf(loanToken.address)
+      const lenderBalanceBeforeReclaiming = await tusd.balanceOf(lender.address)
+
+      await loanToken.reclaim(1000)
+
+      const contractBalanceAfterReclaiming = await tusd.balanceOf(loanToken.address)
+      const lenderBalanceAfterReclaiming = await tusd.balanceOf(lender.address)
+
+      expect(contractBalanceBeforeReclaiming.sub(contractBalanceAfterReclaiming))
+        .to.equal(1000)
+      expect(lenderBalanceAfterReclaiming.sub(lenderBalanceBeforeReclaiming))
+        .to.equal(1000)
+    })
   })
 
   describe('Withdraw', () => {

@@ -85,7 +85,7 @@ contract LoanToken is ILoanToken, ERC20 {
         _;
     }
 
-    modifier onlyFunder() {
+    modifier onlyLender() {
         require(msg.sender == lender, "LoanToken: This can be performed only by lender");
         _;
     }
@@ -117,11 +117,11 @@ contract LoanToken is ILoanToken, ERC20 {
         emit Funded(msg.sender);
     }
 
-    function reclaim(uint256 _amount) external override onlyFunder onlyClosed {
+    function reclaim(uint256 _amount) external override onlyLender onlyClosed {
         require(currencyToken.transfer(msg.sender, _amount));
     }
 
-    function allowTransfer(address account, bool _status) external override onlyFunder {
+    function allowTransfer(address account, bool _status) external override onlyLender {
         canTransfer[account] = _status;
         emit TransferAllowanceChanged(account, _status);
     }
