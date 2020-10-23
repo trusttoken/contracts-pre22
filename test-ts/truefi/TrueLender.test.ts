@@ -42,10 +42,12 @@ describe('TrueLender', () => {
     mockPool = await deployMockContract(owner, ITruePoolJson.abi)
     await mockPool.mock.currencyToken.returns(tusd.address)
     await mockPool.mock.borrow.returns()
+    await mockPool.mock.repay.returns()
 
     mockLoanToken = await deployMockContract(owner, ILoanTokenJson.abi)
     await mockLoanToken.mock.isLoanToken.returns(true)
     await mockLoanToken.mock.fund.returns()
+    await mockLoanToken.mock.reclaim.returns()
 
     mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
@@ -368,14 +370,41 @@ describe('TrueLender', () => {
   })
 
   describe('Reclaiming', () => {
-      it('works only for loan tokens')
+      const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
+      const returnedAmount = 2000
 
-      it('works only for closed loans')
+      beforeEach(async () => {
+        await mockLoanToken.mock.status.returns(3)
+        await mockLoanToken.mock.balance.returns(returnedAmount)
+      })
+      
+      it('works only for loan tokens', async () => {
+        await mockLoanToken.mock.isLoanToken.returns(false)
+        await expect(lender.reclaim(mockLoanToken.address))
+          .to.be.revertedWith('TrueLender: Only LoanTokens can be used to reclaimed')
+        await expect(lender.reclaim(fakeLoanTokenAddress))
+          .to.be.reverted
+      })
 
-      it('reclaims funds from loan token')
+      it('works only for closed loans', async () => {
+        await mockLoanToken.mock.status.returns(2)
+        await expect(lender.reclaim(mockLoanToken.address))
+          .to.be.revertedWith('TrueLender: LoanToken is not closed yet')
+      })
+
+      it('reclaims funds from loan token', async () => {
+        await lender.reclaim(mockLoanToken.address)
+        await expect('reclaim').to.be.calledOnContractWith(mockLoanToken, [returnedAmount])
+      })
       
-      it('repays funds from the pool')
+      it('repays funds from the pool', async () => {
+        await lender.reclaim(mockLoanToken.address)
+        await expect('repay').to.be.calledOnContractWith(mockPool, [returnedAmount])
+      })
       
-      it('emits a proper event')
+      it('emits a proper event', async () => {
+        await expect(lender.reclaim(mockLoanToken.address))
+          .to.emit(lender, 'Reclaimed').withArgs(mockLoanToken.address, returnedAmount)
+      })
   })
 })
