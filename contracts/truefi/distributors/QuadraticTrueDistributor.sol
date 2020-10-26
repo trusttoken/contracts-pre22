@@ -3,7 +3,8 @@ pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ITrueDistributor} from "../interface/ITrueDistributor.sol";
 
 /**
  * @title TrueDistributor
@@ -13,7 +14,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  * For each block `DISTRIBUTION_FACTOR*(10M-n)^2` TRU is awarded where `n` if a block number since `startingBlock`
  * `DISTRIBUTION_FACTOR` has been selected so that 536,500,000 (39% of total TRU supply) will be awarded in total
  */
-contract TrueDistributor is Ownable {
+contract QuadraticTrueDistributor is ITrueDistributor, Ownable {
     using SafeMath for uint256;
 
     struct Farm {
@@ -24,7 +25,7 @@ contract TrueDistributor is Ownable {
     uint256 public constant PRECISION = 1e33;
     uint256 public constant TOTAL_SHARES = 1e7;
 
-    ERC20 public trustToken;
+    IERC20 public override trustToken;
     uint256 public startingBlock;
     uint256 public lastBlock;
     mapping(address => Farm) public farms;
@@ -37,7 +38,7 @@ contract TrueDistributor is Ownable {
         return 1e7;
     }
 
-    constructor(uint256 _startingBlock, ERC20 _trustToken) public {
+    constructor(uint256 _startingBlock, IERC20 _trustToken) public {
         startingBlock = _startingBlock;
         lastBlock = startingBlock.add(getTotalBlocks());
         trustToken = _trustToken;
@@ -48,7 +49,7 @@ contract TrueDistributor is Ownable {
      * @notice transfer all rewards since previous `distribute` call to the `farm`.
      * Transferred reward is proportional to the stake of the farm
      */
-    function distribute(address farm) public {
+    function distribute(address farm) public override {
         uint256 currentBlock = block.number;
         uint256 totalRewardForInterval = reward(farms[farm].lastDistributionBlock, currentBlock);
 
@@ -100,7 +101,7 @@ contract TrueDistributor is Ownable {
      * @notice Reward from `fromBlock` to `toBlock`.
      */
     function reward(uint256 fromBlock, uint256 toBlock) public view returns (uint256) {
-        require(fromBlock <= toBlock, "TrueDistributor: Cannot pass an invalid interval");
+        require(fromBlock <= toBlock, "QuadraticTrueDistributor: Cannot pass an invalid interval");
         if (toBlock < startingBlock || fromBlock > lastBlock || fromBlock == toBlock) {
             return 0;
         }
