@@ -5,9 +5,12 @@ import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 import { parseEther } from '@ethersproject/units'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { timeTravel } from '../utils/timeTravel'
 
 import { TrueLender } from '../../build/types/TrueLender'
 import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
+import { LoanToken } from '../../build/types/LoanToken'
+import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
 
@@ -18,6 +21,7 @@ import ITrueRatingAgencyJson from '../../build/ITrueRatingAgency.json'
 describe('TrueLender', () => {
   let owner: Wallet
   let otherWallet: Wallet
+  let provider: providers.JsonRpcProvider
 
   let lender: TrueLender
 
@@ -33,8 +37,9 @@ describe('TrueLender', () => {
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
 
-  beforeEachWithFixture(async (wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [owner, otherWallet] = wallets
+    provider = _provider
 
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
     await tusd.initialize()
@@ -409,14 +414,59 @@ describe('TrueLender', () => {
   })
 
   describe('Value', () => {
-    it('returns correct value for one closed loan')
+    let firstLoanToken: LoanToken
+    let secondLoanToken: LoanToken
 
-    it('returns correct value for one running loan')
+    beforeEach(async () => {
+      firstLoanToken = await new LoanTokenFactory(owner).deploy(
+        tusd.address,
+        owner.address,
+        parseEther('1000000'),
+        monthInSeconds * 12,
+        5000
+      )
+      secondLoanToken = await new LoanTokenFactory(owner).deploy(
+        tusd.address,
+        owner.address,
+        parseEther('2000000'),
+        monthInSeconds * 36,
+        1000
+      )
+      await lender.allow(owner.address, true)
+      await tusd.mint(lender.address, parseEther('3000000'))
+      await mockRatingAgency.mock.getResults.returns(0, 0, parseEther('10000000'))
+    })
+    it('returns correct value for one closed loan', async () => {
+      await lender.fund(firstLoanToken.address)
+      await timeTravel(provider, (monthInSeconds * 12) + 1)
+      expect(await lender.value()).to.equal(parseEther('1500000'))
+    })
 
-    it('returns correct value for multiple closed loans')
+    it('returns correct value for one running loan', async () => {
+      await lender.fund(firstLoanToken.address)
+      await timeTravel(provider, monthInSeconds * 6)
+      expect(await lender.value()).to.equal(parseEther('1250000'))
+    })
 
-    it('returns correct value for multiple opened loans')
-    
-    it('returns correct value for multiple opened and closed loans')
+    it('returns correct value for multiple closed loans', async () => {
+      await lender.fund(firstLoanToken.address)
+      await lender.fund(secondLoanToken.address)
+      await timeTravel(provider, (monthInSeconds * 36) + 1)
+      expect(await lender.value()).to.equal(parseEther('4100000'))
+    })
+
+    it('returns correct value for multiple opened loans', async () => {
+      await lender.fund(firstLoanToken.address)
+      await lender.fund(secondLoanToken.address)
+      await timeTravel(provider, monthInSeconds * 6)
+      expect(await lender.value()).to.equal(parseEther('3350000'))
+    })
+
+    it('returns correct value for multiple opened and closed loans', async () => {
+      await lender.fund(firstLoanToken.address)
+      await lender.fund(secondLoanToken.address)
+      await timeTravel(provider, monthInSeconds * 18)
+      expect(await lender.value()).to.equal(parseEther('3800000'))
+    })
   })
 })
