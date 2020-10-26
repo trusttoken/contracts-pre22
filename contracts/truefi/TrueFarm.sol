@@ -2,16 +2,17 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {TrueDistributor} from "./TrueDistributor.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ITrueDistributor} from "./interface/ITrueDistributor.sol";
 
 contract TrueFarm {
     using SafeMath for uint256;
     uint256 constant PRECISION = 1e30;
 
-    ERC20 public stakingToken;
-    ERC20 public trustToken;
-    TrueDistributor public trueDistributor;
+    IERC20 public stakingToken;
+    IERC20 public trustToken;
+    ITrueDistributor public trueDistributor;
+    string public name;
 
     uint256 public totalStaked;
     mapping(address => uint256) public staked;
@@ -23,10 +24,15 @@ contract TrueFarm {
     uint256 public totalClaimedRewards;
     uint256 public totalFarmRewards;
 
-    constructor(ERC20 _stakingToken, TrueDistributor _trueDistributor) public {
+    constructor(
+        IERC20 _stakingToken,
+        ITrueDistributor _trueDistributor,
+        string memory _name
+    ) public {
         stakingToken = _stakingToken;
         trueDistributor = _trueDistributor;
         trustToken = _trueDistributor.trustToken();
+        name = _name;
     }
 
     function stake(uint256 amount) public update {
