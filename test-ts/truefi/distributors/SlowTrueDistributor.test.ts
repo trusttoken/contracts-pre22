@@ -2,10 +2,10 @@ import { expect } from 'chai'
 import { Wallet } from 'ethers'
 import { Zero } from '@ethersproject/constants'
 
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
 
-import { SlowTrueDistributor } from '../../build/types/SlowTrueDistributor'
-import { SlowTrueDistributorFactory } from '../../build/types/SlowTrueDistributorFactory'
+import { SlowTrueDistributor } from '../../../build/types/SlowTrueDistributor'
+import { SlowTrueDistributorFactory } from '../../../build/types/SlowTrueDistributorFactory'
 
 describe('SlowTrueDistributor', () => {
   let owner: Wallet

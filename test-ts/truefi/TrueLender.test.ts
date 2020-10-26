@@ -47,7 +47,7 @@ describe('TrueLender', () => {
     mockLoanToken = await deployMockContract(owner, ILoanTokenJson.abi)
     await mockLoanToken.mock.isLoanToken.returns(true)
     await mockLoanToken.mock.fund.returns()
-    await mockLoanToken.mock.reclaim.returns()
+    await mockLoanToken.mock.redeem.returns()
 
     mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
@@ -371,11 +371,11 @@ describe('TrueLender', () => {
 
   describe('Reclaiming', () => {
     const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
-    const returnedAmount = 2000
+    const availableLoanTokens = 1500
 
     beforeEach(async () => {
       await mockLoanToken.mock.status.returns(3)
-      await mockLoanToken.mock.balance.returns(returnedAmount)
+      await mockLoanToken.mock.balanceOf.returns(availableLoanTokens)
     })
 
     it('works only for loan tokens', async () => {
@@ -392,19 +392,19 @@ describe('TrueLender', () => {
         .to.be.revertedWith('TrueLender: LoanToken is not closed yet')
     })
 
-    it('reclaims funds from loan token', async () => {
+    it('redeems funds from loan token', async () => {
       await lender.reclaim(mockLoanToken.address)
-      await expect('reclaim').to.be.calledOnContractWith(mockLoanToken, [returnedAmount])
+      await expect('redeem').to.be.calledOnContractWith(mockLoanToken, [availableLoanTokens])
     })
 
     it('repays funds from the pool', async () => {
       await lender.reclaim(mockLoanToken.address)
-      await expect('repay').to.be.calledOnContractWith(mockPool, [returnedAmount])
+      await expect('repay').to.be.calledOnContract(mockPool)
     })
 
     it('emits a proper event', async () => {
       await expect(lender.reclaim(mockLoanToken.address))
-        .to.emit(lender, 'Reclaimed').withArgs(mockLoanToken.address, returnedAmount)
+        .to.emit(lender, 'Reclaimed')
     })
   })
 })
