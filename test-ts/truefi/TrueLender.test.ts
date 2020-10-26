@@ -407,4 +407,16 @@ describe('TrueLender', () => {
         .to.emit(lender, 'Reclaimed')
     })
   })
+
+  describe('Value', () => {
+    it('returns correct value for one closed loan')
+
+    it('returns correct value for one running loan')
+
+    it('returns correct value for multiple closed loans')
+
+    it('returns correct value for multiple opened loans')
+    
+    it('returns correct value for multiple opened and closed loans')
+  })
 })
