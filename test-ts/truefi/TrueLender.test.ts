@@ -376,7 +376,7 @@ describe('TrueLender', () => {
     beforeEach(async () => {
       await mockLoanToken.mock.status.returns(3)
       await mockLoanToken.mock.balanceOf.returns(availableLoanTokens)
-  })
+    })
 
     it('works only for loan tokens', async () => {
       await mockLoanToken.mock.isLoanToken.returns(false)
