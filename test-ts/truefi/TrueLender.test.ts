@@ -423,14 +423,14 @@ describe('TrueLender', () => {
         owner.address,
         parseEther('1000000'),
         monthInSeconds * 12,
-        5000
+        5000,
       )
       secondLoanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
         owner.address,
         parseEther('2000000'),
         monthInSeconds * 36,
-        1000
+        1000,
       )
       await lender.allow(owner.address, true)
       await tusd.mint(lender.address, parseEther('3000000'))
