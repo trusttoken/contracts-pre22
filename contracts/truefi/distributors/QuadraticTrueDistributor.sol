@@ -14,7 +14,7 @@ import {ITrueDistributor} from "../interface/ITrueDistributor.sol";
  * For each block `DISTRIBUTION_FACTOR*(10M-n)^2` TRU is awarded where `n` if a block number since `startingBlock`
  * `DISTRIBUTION_FACTOR` has been selected so that 536,500,000 (39% of total TRU supply) will be awarded in total
  */
-contract CurveTrueDistributor is ITrueDistributor, Ownable {
+contract QuadraticTrueDistributor is ITrueDistributor, Ownable {
     using SafeMath for uint256;
 
     struct Farm {
@@ -101,7 +101,7 @@ contract CurveTrueDistributor is ITrueDistributor, Ownable {
      * @notice Reward from `fromBlock` to `toBlock`.
      */
     function reward(uint256 fromBlock, uint256 toBlock) public view returns (uint256) {
-        require(fromBlock <= toBlock, "CurveTrueDistributor: Cannot pass an invalid interval");
+        require(fromBlock <= toBlock, "QuadraticTrueDistributor: Cannot pass an invalid interval");
         if (toBlock < startingBlock || fromBlock > lastBlock || fromBlock == toBlock) {
             return 0;
         }
