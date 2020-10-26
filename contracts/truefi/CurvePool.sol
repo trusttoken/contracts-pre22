@@ -42,7 +42,38 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
         return _currencyToken;
     }
 
-    function join(uint256 amount) external override nonReentrant {
+    function poolPrice() public view returns (uint256) {
+        return _currencyToken.balanceOf(address(this));
+    }
+
+    // PP/TS = (PP+amount)/(TS+Y)
+    // PP(TS+Y) = (PP+amount)TS
+    // PP*TS + PP*Y = PP*TS + TS*amount
+    // Y = TS*amount/PP
+    function join(uint256 amount) external override {
+        require(_currencyToken.transferFrom(msg.sender, address(this), amount));
+
+        uint256 amountToMint = amount;
+        if (totalSupply() > 0) {
+            amountToMint = totalSupply().mul(amount).div(poolPrice());
+        }
+        _mint(msg.sender, amountToMint);
+    }
+
+    // PP/TS = (PP-X)/(TS-amount)
+    // PP(TS-amount) = (PP-X)TS
+    // PP*TS - PP*amount = PP*TS - TS*X
+    // X = PP*amount/TS
+    function exit(uint256 amount) external override {
+        require(amount >= balanceOf(msg.sender));
+
+        uint256 amountToTransfer = poolPrice().mul(amount).div(totalSupply());
+        _burn(msg.sender, amount);
+
+        require(_currencyToken.transfer(msg.sender, amountToTransfer));
+    }
+
+    function _join(uint256 amount) external nonReentrant {
         require(_currencyToken.transferFrom(msg.sender, address(this), amount));
 
         uint256[N_TOKENS] memory amounts = [0, 0, 0, amount];
@@ -53,7 +84,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
         _mint(msg.sender, balanceAfter.sub(balanceBefore));
     }
 
-    function exit(uint256 amount) external override nonReentrant {
+    function _exit(uint256 amount) external nonReentrant {
         require(amount <= balanceOf(msg.sender), "CurvePool: Cannot withdraw amount bigger than available balance");
         require(amount <= _curvePool.token().balanceOf(address(this)), "CurvePool: Not enough cTokens in pool");
 

@@ -11,7 +11,7 @@ import { Erc20 } from '../../build/types/Erc20'
 import { Erc20Factory } from '../../build/types/Erc20Factory'
 import { expect } from 'chai'
 
-describe('Curve Pool', () => {
+describe.skip('Curve Pool', () => {
   let owner: Wallet
   let token: MockErc20Token
   let cTUSD: Erc20
