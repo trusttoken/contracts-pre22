@@ -114,17 +114,20 @@ contract TrueLender is Ownable {
         emit Funded(address(loanToken), amount);
     }
 
-    function reclaim(ILoanToken loanToken) external {
+    function reclaim(ILoanToken loanToken) external onlyOwner {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be used to reclaimed");
         require(
             loanToken.status() == ILoanToken.Status.Settled || loanToken.status() == ILoanToken.Status.Defaulted,
             "TrueLender: LoanToken is not closed yet"
         );
 
-        uint256 availableAmount = loanToken.balance();
-        loanToken.reclaim(availableAmount);
-        pool.repay(availableAmount);
-        emit Reclaimed(address(loanToken), availableAmount);
+        uint256 balanceBefore = currencyToken.balanceOf(address(this));
+        loanToken.redeem(loanToken.balanceOf(address(this)));
+        uint256 balanceAfter = currencyToken.balanceOf(address(this));
+
+        uint256 fundsReclaimed = balanceAfter.sub(balanceBefore);
+        pool.repay(fundsReclaimed);
+        emit Reclaimed(address(loanToken), fundsReclaimed);
     }
 
     function loanIsAttractiveEnough(uint256 apy) public view returns (bool) {
