@@ -2,10 +2,10 @@
 pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
+import {ERC20} from "./upgradeability/UpgradeableERC20.sol";
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ICurvePool} from "./interface/ICurvePool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
@@ -26,11 +26,13 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
 
-    constructor(
+    function initialize(
         ICurvePool __curvePool,
         IERC20 __currencyToken,
         ITrueLender __lender
-    ) public ERC20("CurveTUSDPool", "CurTUSD") {
+    ) public initializer {
+        ERC20.__ERC20_initialize("CurveTUSDPool", "CurTUSD");
+
         _currencyToken = __currencyToken;
         _curvePool = __curvePool;
         _lender = __lender;

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
@@ -56,7 +56,9 @@ contract TrueLender is ITrueLender, Ownable {
         _;
     }
 
-    constructor(ITruePool _pool, ITrueRatingAgency _ratingAgency) public {
+    function initialize(ITruePool _pool, ITrueRatingAgency _ratingAgency) public initializer {
+        Ownable.initialize();
+
         pool = _pool;
         currencyToken = _pool.currencyToken();
         currencyToken.approve(address(_pool), uint256(-1));
