@@ -14,7 +14,8 @@ describe('SlowTrueDistributor', () => {
 
   beforeEachWithFixture(async (wallets) => {
     [owner, fakeToken] = wallets
-    distributor = await new SlowTrueDistributorFactory(owner).deploy(0, fakeToken.address)
+    distributor = await new SlowTrueDistributorFactory(owner).deploy()
+    await distributor.initialize(0, fakeToken.address)
   })
 
   describe('reward', () => {

@@ -37,8 +37,10 @@ describe('TrueFarm', () => {
     provider = _provider
     trustToken = await new MockErc20TokenFactory(owner).deploy()
     stakingToken = await new MockErc20TokenFactory(owner).deploy()
-    distributor = await new MockDistributorFactory(owner).deploy(START_BLOCK, trustToken.address)
-    farm = await new TrueFarmFactory(owner).deploy(stakingToken.address, distributor.address, 'Test farm')
+    distributor = await new MockDistributorFactory(owner).deploy()
+    await distributor.initialize(START_BLOCK, trustToken.address)
+    farm = await new TrueFarmFactory(owner).deploy()
+    await farm.initialize(stakingToken.address, distributor.address, 'Test farm')
 
     await trustToken.mint(distributor.address, '5365000000000000000')
     await distributor.transfer(owner.address, farm.address, await distributor.TOTAL_SHARES())
@@ -48,7 +50,7 @@ describe('TrueFarm', () => {
     await stakingToken.connect(staker2).approve(farm.address, MaxUint256)
   })
 
-  describe('constructor', () => {
+  describe('initializer', () => {
     it('name is correct', async () => {
       expect(await farm.name()).to.equal('Test farm')
     })

@@ -4,11 +4,11 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
+import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
 contract TrueLender is ITrueLender, Ownable {
     using SafeMath for uint256;

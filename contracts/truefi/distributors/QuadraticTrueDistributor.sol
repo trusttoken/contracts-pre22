@@ -2,9 +2,10 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import {ITrueDistributor} from "../interface/ITrueDistributor.sol";
+import {Ownable} from "../upgradeability/UpgradeableOwnable.sol";
 
 /**
  * @title TrueDistributor
@@ -38,7 +39,8 @@ contract QuadraticTrueDistributor is ITrueDistributor, Ownable {
         return 1e7;
     }
 
-    constructor(uint256 _startingBlock, IERC20 _trustToken) public {
+    function initialize(uint256 _startingBlock, IERC20 _trustToken) public initializer {
+        Ownable.initialize();
         startingBlock = _startingBlock;
         lastBlock = startingBlock.add(getTotalBlocks());
         trustToken = _trustToken;

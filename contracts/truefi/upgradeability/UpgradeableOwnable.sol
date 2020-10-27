@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.10;
+pragma solidity 0.6.10;
 
 import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
+
 import {Initializable} from "./Initializable.sol";
 
 /**
