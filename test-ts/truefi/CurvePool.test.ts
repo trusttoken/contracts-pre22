@@ -27,7 +27,8 @@ describe('CurvePool', () => {
     [owner] = wallets
     token = await new MockErc20TokenFactory(owner).deploy()
     await token.mint(owner.address, parseEther('1'))
-    curve = await new MockCurvePoolFactory(owner).deploy(token.address)
+    curve = await new MockCurvePoolFactory(owner).deploy()
+    await curve.initialize(token.address)
     // cTUSD = Erc20Factory.connect(await curve.token(), owner)
     pool = await new CurvePoolFactory(owner).deploy()
     const ratingAgency = await deployMockContract(owner, TrueRatingAgency.abi)
