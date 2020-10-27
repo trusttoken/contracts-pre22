@@ -51,6 +51,11 @@ contract TrueLender is ITrueLender, Ownable {
         _;
     }
 
+    modifier onlyPool() {
+        require(msg.sender == address(pool), "TrueLender: Sender is not a pool");
+        _;
+    }
+
     constructor(ITruePool _pool, ITrueRatingAgency _ratingAgency) public {
         pool = _pool;
         currencyToken = _pool.currencyToken();
@@ -170,6 +175,16 @@ contract TrueLender is ITrueLender, Ownable {
         }
 
         emit Reclaimed(address(loanToken), fundsReclaimed);
+    }
+
+    function distribute(
+        address recipient,
+        uint256 numerator,
+        uint256 denominator
+    ) external override onlyPool {
+        for (uint256 index = 0; index < _loans.length; index++) {
+            _loans[index].transfer(recipient, numerator.mul(_loans[index].balanceOf(address(this))).div(denominator));
+        }
     }
 
     function loanIsAttractiveEnough(uint256 apy) public view returns (bool) {

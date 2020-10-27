@@ -71,10 +71,17 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
     function exit(uint256 amount) external override {
         require(amount >= balanceOf(msg.sender));
 
-        uint256 amountToTransfer = poolValue().mul(amount).div(totalSupply());
+        uint256 value = poolValue();
+        uint256 _totalSupply = totalSupply();
+
+        uint256 currencyAmountToTransfer = value.mul(_currencyToken.balanceOf(address(this))).div(_totalSupply);
+        uint256 curveLiquidityAmountToTransfer = value.mul(_curvePool.token().balanceOf(address(this))).div(_totalSupply);
+
         _burn(msg.sender, amount);
 
-        require(_currencyToken.transfer(msg.sender, amountToTransfer));
+        _lender.distribute(msg.sender, value, _totalSupply);
+        require(_currencyToken.transfer(msg.sender, currencyAmountToTransfer));
+        require(_curvePool.token().transfer(msg.sender, curveLiquidityAmountToTransfer));
     }
 
     function _join(uint256 amount) external nonReentrant {
