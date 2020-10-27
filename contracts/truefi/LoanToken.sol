@@ -14,9 +14,9 @@ contract LoanToken is ILoanToken, ERC20 {
     uint256 public override duration;
     uint256 public override apy;
 
-    uint256 public start;
-    address public lender;
-    uint256 public debt;
+    uint256 public override start;
+    address public override lender;
+    uint256 public override debt;
 
     uint256 public redeemed;
 
