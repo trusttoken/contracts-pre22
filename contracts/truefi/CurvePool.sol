@@ -5,10 +5,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {ERC20} from "./upgradeability/UpgradeableERC20.sol";
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ICurvePool} from "./interface/ICurvePool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
+import {ERC20} from "./upgradeability/UpgradeableERC20.sol";
 
 contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
     using SafeMath for uint256;

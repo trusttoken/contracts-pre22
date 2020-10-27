@@ -2,10 +2,12 @@
 pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import {ICurvePool, ICurve, IYToken} from "../interface/ICurvePool.sol";
 import {MockERC20Token} from "../../trusttoken/mocks/MockERC20Token.sol";
+import {Initializable} from "../upgradeability/Initializable.sol";
 
-contract MockCurve is ICurve {
+contract MockCurve is ICurve, Initializable {
     uint256 public sharePrice = 1e18;
 
     function calc_token_amount(uint256[4] memory amounts, bool) external override view returns (uint256) {
@@ -26,7 +28,7 @@ contract MockCurvePool is ICurvePool {
     MockERC20Token cToken;
     MockCurve _curve;
 
-    constructor(IERC20 _token) public {
+    function initalized(IERC20 _token) public initializer {
         poolToken = _token;
         cToken = new MockERC20Token();
         _curve = new MockCurve();

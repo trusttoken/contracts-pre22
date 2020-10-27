@@ -31,14 +31,16 @@ describe('QuadraticTrueDistributor', () => {
     [owner, farm, fakeToken] = wallets
     provider = _provider
     trustToken = await new MockErc20TokenFactory(owner).deploy()
-    distributor = await new QuadraticTrueDistributorFactory(owner).deploy(0, trustToken.address)
+    distributor = await new QuadraticTrueDistributorFactory(owner).deploy()
+    await distributor.initialize(0, trustToken.address)
     await trustToken.mint(distributor.address, utils.parseEther('5365000000000000000'))
   })
 
-  describe('constructor', () => {
+  describe('initializer', () => {
     it('startingBlock is properly set', async () => {
       const arbitraryBlockNumber = 1234567890
-      const freshDistributorWithCustomStartingBlock = await new QuadraticTrueDistributorFactory(owner).deploy(arbitraryBlockNumber, fakeToken.address)
+      const freshDistributorWithCustomStartingBlock = await new QuadraticTrueDistributorFactory(owner).deploy()
+      await freshDistributorWithCustomStartingBlock.initialize(arbitraryBlockNumber, fakeToken.address)
       expect(await freshDistributorWithCustomStartingBlock.startingBlock()).to.equal(arbitraryBlockNumber)
     })
 
@@ -63,18 +65,18 @@ describe('QuadraticTrueDistributor', () => {
 
   describe('distribute', () => {
     it('should properly save distribution block', async () => {
-      await expectBlock(3)
+      await expectBlock(4)
       await skipBlocks(4)
-      await expectBlock(7)
-      await distributor.distribute(owner.address)
       await expectBlock(8)
+      await distributor.distribute(owner.address)
+      await expectBlock(9)
 
-      expect(await distributor.getLastDistributionBlock(owner.address)).to.equal(8)
+      expect(await distributor.getLastDistributionBlock(owner.address)).to.equal(9)
     })
 
     it('should transfer tokens to share holder', async () => {
       const expectedReward = await distributor.reward(0, 7)
-      await skipBlocks(3)
+      await skipBlocks(2)
       await distributor.distribute(owner.address)
       await expectBlock(7)
 
@@ -82,13 +84,13 @@ describe('QuadraticTrueDistributor', () => {
         .to.equal(normaliseRewardToTrustTokens(expectedReward))
     })
 
-    it('should properly split tokens between multiple share holders', async () => {
+    it.only('should properly split tokens between multiple share holders', async () => {
       const halfOfShares = (await distributor.TOTAL_SHARES()).div(2)
 
       await distributor.transfer(owner.address, farm.address, halfOfShares)
       const block1 = await getBlockNumber(provider)
 
-      await skipBlocks(10)
+      await skipBlocks(9)
       await distributor.distribute(owner.address)
       const block2 = await getBlockNumber(provider)
 
@@ -96,7 +98,7 @@ describe('QuadraticTrueDistributor', () => {
         .add((await distributor.reward(block1, block2)).div(2))
 
       expect(await trustToken.balanceOf(owner.address))
-        .to.equal(normaliseRewardToTrustTokens(expectedOwnersReward))
+        .to.equal(normaliseRewardToTrustTokens(expectedOwnersReward).sub(1))
 
       await skipBlocks(3)
       await distributor.distribute(farm.address)
@@ -110,7 +112,7 @@ describe('QuadraticTrueDistributor', () => {
     it('should distribute tokens for correct interval', async () => {
       const expectedReward = await distributor.reward(8, 11)
 
-      await skipBlocks(4)
+      await skipBlocks(3)
       await distributor.distribute(owner.address)
       await expectBlock(8)
 
@@ -177,7 +179,8 @@ describe('QuadraticTrueDistributor', () => {
     })
 
     it('returns 0 for interval ending before first block', async () => {
-      const delayedDistributor = await new QuadraticTrueDistributorFactory(owner).deploy(100, trustToken.address)
+      const delayedDistributor = await new QuadraticTrueDistributorFactory(owner).deploy()
+      await delayedDistributor.initialize(100, trustToken.address)
       expect(await delayedDistributor.reward(0, 99)).to.equal(0)
     })
 
@@ -216,12 +219,14 @@ describe('QuadraticTrueDistributor', () => {
     })
 
     it('no reward can be claimed before starting block', async () => {
-      const distributorWithPostponedRewards = await new QuadraticTrueDistributorFactory(owner).deploy(100, fakeToken.address)
+      const distributorWithPostponedRewards = await new QuadraticTrueDistributorFactory(owner).deploy()
+      await distributorWithPostponedRewards.initialize(100, fakeToken.address)
       expect(await distributorWithPostponedRewards.reward(0, 1)).to.equal('0')
     })
 
     it('returns proper value (starting block is > 0)', async () => {
-      const distributorWithPostponedRewards = await new QuadraticTrueDistributorFactory(owner).deploy(2000, fakeToken.address)
+      const distributorWithPostponedRewards = await new QuadraticTrueDistributorFactory(owner).deploy()
+      await distributorWithPostponedRewards.initialize(2000, fakeToken.address)
       const rewardFromPostponedDistributor = await distributorWithPostponedRewards.reward(2000, 2004)
       const rewardFromDefaultDistributor = await distributor.reward(0, 4)
 
@@ -229,7 +234,8 @@ describe('QuadraticTrueDistributor', () => {
     })
 
     it('returns proper value if interval starts before starting block, but ends after', async () => {
-      const distributorWithPostponedRewards = await new QuadraticTrueDistributorFactory(owner).deploy(2, fakeToken.address)
+      const distributorWithPostponedRewards = await new QuadraticTrueDistributorFactory(owner).deploy()
+      await distributorWithPostponedRewards.initialize(2, fakeToken.address)
       const rewardFromPostponedDistributor = await distributorWithPostponedRewards.reward(0, 4)
       const rewardFromDefaultDistributor = await distributor.reward(0, 2)
 
@@ -245,7 +251,8 @@ describe('QuadraticTrueDistributor', () => {
     })
 
     it('returns total reward for interval including total rewarding period', async () => {
-      const delayedDistributor = await new QuadraticTrueDistributorFactory(owner).deploy(1000, fakeToken.address)
+      const delayedDistributor = await new QuadraticTrueDistributorFactory(owner).deploy()
+      await delayedDistributor.initialize(1000, fakeToken.address)
       const lastBlock = await delayedDistributor.lastBlock()
 
       const reward = await distributor.reward(0, lastBlock.add(2000))

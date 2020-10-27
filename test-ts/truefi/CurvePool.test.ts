@@ -7,8 +7,8 @@ import { CurvePoolFactory } from '../../build/types/CurvePoolFactory'
 import { CurvePool } from '../../build/types/CurvePool'
 import { MockCurvePool } from '../../build/types/MockCurvePool'
 import { MockCurvePoolFactory } from '../../build/types/MockCurvePoolFactory'
-import { Erc20 } from '../../build/types/Erc20'
-import { Erc20Factory } from '../../build/types/Erc20Factory'
+// import { Erc20 } from '../../build/types/Erc20'
+// import { Erc20Factory } from '../../build/types/Erc20Factory'
 import { expect } from 'chai'
 import { TrueLender } from '../../build/types/TrueLender'
 import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
@@ -18,7 +18,7 @@ import { deployMockContract } from 'ethereum-waffle'
 describe('CurvePool', () => {
   let owner: Wallet
   let token: MockErc20Token
-  let cTUSD: Erc20
+  // let cTUSD: Erc20
   let curve: MockCurvePool
   let pool: CurvePool
   let lender: TrueLender
@@ -28,7 +28,7 @@ describe('CurvePool', () => {
     token = await new MockErc20TokenFactory(owner).deploy()
     await token.mint(owner.address, parseEther('1'))
     curve = await new MockCurvePoolFactory(owner).deploy(token.address)
-    cTUSD = Erc20Factory.connect(await curve.token(), owner)
+    // cTUSD = Erc20Factory.connect(await curve.token(), owner)
     pool = await new CurvePoolFactory(owner).deploy()
     const ratingAgency = await deployMockContract(owner, TrueRatingAgency.abi)
     lender = await new TrueLenderFactory(owner).deploy()

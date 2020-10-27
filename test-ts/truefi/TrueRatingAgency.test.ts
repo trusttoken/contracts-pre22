@@ -64,7 +64,7 @@ describe('TrueRatingAgency', () => {
   const submit = async (loanTokenAddress: string, wallet = owner) =>
     rater.connect(wallet).submit(loanTokenAddress, { gasLimit: 4_000_000 })
 
-  describe('Initializator', () => {
+  describe('Initializer', () => {
     it('sets trust token address', async () => {
       expect(await rater.trustToken()).to.equal(trustToken.address)
     })

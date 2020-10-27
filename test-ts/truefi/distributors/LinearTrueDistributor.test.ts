@@ -28,7 +28,8 @@ describe('LinearTrueDistributor', () => {
     trustToken = await new MockErc20TokenFactory(owner).deploy()
     const now = Math.floor(Date.now() / 1000)
     startDate = now + DAY
-    distributor = await new LinearTrueDistributorFactory(owner).deploy(startDate, DAY * 30, distributionAmount, trustToken.address)
+    distributor = await new LinearTrueDistributorFactory(owner).deploy()
+    await distributor.initialize(startDate, DAY * 30, distributionAmount, trustToken.address)
     await trustToken.mint(distributor.address, distributionAmount)
   })
 
