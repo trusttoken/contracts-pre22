@@ -10,15 +10,15 @@ import { parseTT } from './utils/parseTT'
 
 import { toAddress, WalletOrAddress } from './utils/toAddress'
 
-use(solidity)
+use(solidity)  
 
 describe('TrustToken', () => {
-  let owner: Wallet, timeLockRegistry: Wallet, saftHolder: Wallet, initialHolder: Wallet, secondAccount: Wallet, thirdAccount: Wallet
+  let owner: Wallet, timeLockRegistry: Wallet, saftHolder: Wallet, initialHolder: Wallet, secondAccount: Wallet, thirdAccount: Wallet, fourthAccount: Wallet
   let trustToken: TrustToken
   let provider: providers.JsonRpcProvider
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    ([owner, timeLockRegistry, saftHolder, initialHolder, secondAccount, thirdAccount] = wallets)
+    ([owner, timeLockRegistry, saftHolder, initialHolder, secondAccount, thirdAccount, fourthAccount] = wallets)
     provider = _provider
     const deployContract = setupDeploy(owner)
     trustToken = await deployContract(TrustTokenFactory)
@@ -620,13 +620,31 @@ describe('TrustToken', () => {
 
     context('Transfers', () => {
       it('cannot transfer locked funds', async () => {
-        await expect(trustToken.connect(saftHolder).transfer(owner.address, 1)).to.be.revertedWith('attempting to transfer locked funds')
+        await expect(trustToken.connect(saftHolder).transfer(fourthAccount.address, 1)).to.be.revertedWith('attempting to transfer locked funds')
+      })
+
+      it('transfers to owner not allowed after returns disabled', async () => {
+        await trustToken.connect(owner).lockReturns()
+        await expect(trustToken.connect(saftHolder).transfer(fourthAccount.address, 1)).to.be.revertedWith('attempting to transfer locked funds')
+      })
+
+      it('transfers to owner allowed', async () => {
+        await trustToken.connect(saftHolder).transfer(owner.address, parseTT(100))
+        expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(0)
+        expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(0)
+        expect(await trustToken.balanceOf(saftHolder.address)).to.equal(0)
+        expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(100))
+      })
+
+      it('transfers to owner transfer unlocked funds first', async () => {
+        await timeTravel(provider, DAY * 120)
+        await trustToken.connect(saftHolder).transfer(owner.address, parseTT(100))
       })
 
       it('can transfer unlocked funds', async () => {
         await timeTravel(provider, DAY * 120)
 
-        await trustToken.connect(saftHolder).transfer(owner.address, parseTT(100).div(8))
+        await trustToken.connect(saftHolder).transfer(fourthAccount.address, parseTT(100).div(8))
 
         expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(0)
         expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(parseTT(100).div(8).mul(7))
@@ -636,7 +654,7 @@ describe('TrustToken', () => {
       it('cannot transfer more than unlocked funds', async () => {
         await timeTravel(provider, DAY * 120)
 
-        await expect(trustToken.connect(saftHolder).transfer(owner.address, parseTT(100).div(8).add(1))).to.be.revertedWith('attempting to transfer locked funds')
+        await expect(trustToken.connect(saftHolder).transfer(fourthAccount.address, parseTT(100).div(8).add(1))).to.be.revertedWith('attempting to transfer locked funds')
       })
 
       it('if account has received tokens in normal way, they are transferable', async () => {
@@ -645,26 +663,26 @@ describe('TrustToken', () => {
         expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(110))
         expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(parseTT(100))
 
-        await trustToken.connect(saftHolder).transfer(owner.address, parseTT(10))
+        await trustToken.connect(saftHolder).transfer(fourthAccount.address, parseTT(10))
 
         expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(100))
-        expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(10))
+        expect(await trustToken.balanceOf(fourthAccount.address)).to.equal(parseTT(10))
       })
 
       it('if account has received tokens in normal way, they are transferable after some epochs has passed', async () => {
         await timeTravel(provider, DAY * 220)
         await trustToken.connect(timeLockRegistry).transfer(saftHolder.address, parseTT(10))
 
-        await trustToken.connect(saftHolder).transfer(owner.address, parseTT(35))
+        await trustToken.connect(saftHolder).transfer(fourthAccount.address, parseTT(35))
 
         expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(75))
-        expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(35))
+        expect(await trustToken.balanceOf(fourthAccount.address)).to.equal(parseTT(35))
 
-        await expect(trustToken.connect(saftHolder).transfer(owner.address, 1)).to.be.revertedWith('attempting to transfer locked funds')
+        await expect(trustToken.connect(saftHolder).transfer(fourthAccount.address, 1)).to.be.revertedWith('attempting to transfer locked funds')
       })
 
       it('cannot transfer more than balance', async () => {
-        await expect(trustToken.connect(saftHolder).transfer(owner.address, parseTT(100).add(1))).to.be.revertedWith('insufficient balance')
+        await expect(trustToken.connect(saftHolder).transfer(fourthAccount.address, parseTT(100).add(1))).to.be.revertedWith('insufficient balance')
       })
 
       describe('transferFrom', () => {
@@ -673,12 +691,12 @@ describe('TrustToken', () => {
         })
 
         it('cannot transfer locked funds', async () => {
-          await expect(trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, owner.address, 1)).to.be.revertedWith('attempting to transfer locked funds')
+          await expect(trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, fourthAccount.address, 1)).to.be.revertedWith('attempting to transfer locked funds')
         })
 
         it('can transfer unlocked funds', async () => {
           await timeTravel(provider, DAY * 120)
-          await trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, owner.address, parseTT(100).div(8))
+          await trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, fourthAccount.address, parseTT(100).div(8))
 
           expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(0)
           expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(parseTT(100).div(8).mul(7))
@@ -688,7 +706,7 @@ describe('TrustToken', () => {
         it('cannot transfer more than unlocked funds', async () => {
           await timeTravel(provider, DAY * 120)
 
-          await expect(trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, owner.address, parseTT(100).div(8).add(1))).to.be.revertedWith('attempting to transfer locked funds')
+          await expect(trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, fourthAccount.address, parseTT(100).div(8).add(1))).to.be.revertedWith('attempting to transfer locked funds')
         })
 
         it('if account has received tokens in normal way, they are transferable', async () => {
@@ -697,26 +715,26 @@ describe('TrustToken', () => {
           expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(110))
           expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(parseTT(100))
 
-          await trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, owner.address, parseTT(10))
+          await trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, fourthAccount.address, parseTT(10))
 
           expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(100))
-          expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(10))
+          expect(await trustToken.balanceOf(fourthAccount.address)).to.equal(parseTT(10))
         })
 
         it('if account has received tokens in normal way, they are transferable after some epochs has passed', async () => {
           await timeTravel(provider, DAY * 220)
           await trustToken.connect(timeLockRegistry).transfer(saftHolder.address, parseTT(10))
 
-          await trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, owner.address, parseTT(35))
+          await trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, fourthAccount.address, parseTT(35))
 
           expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(75))
-          expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(35))
+          expect(await trustToken.balanceOf(fourthAccount.address)).to.equal(parseTT(35))
 
-          await expect(trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, owner.address, 1)).to.be.revertedWith('attempting to transfer locked funds')
+          await expect(trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, fourthAccount.address, 1)).to.be.revertedWith('attempting to transfer locked funds')
         })
 
         it('cannot transfer more than balance', async () => {
-          await expect(trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, owner.address, parseTT(100).add(1))).to.be.revertedWith('insufficient balance')
+          await expect(trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, fourthAccount.address, parseTT(100).add(1))).to.be.revertedWith('insufficient balance')
         })
       })
     })
