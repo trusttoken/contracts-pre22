@@ -72,7 +72,7 @@ describe('MockTrueLender', () => {
     await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
   })
 
-  describe('Constructor', () => {
+  describe('Initializator', () => {
     it('sets the pool address', async () => {
       expect(await lender.pool()).to.equal(mockPool.address)
     })
