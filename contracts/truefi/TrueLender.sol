@@ -13,7 +13,7 @@ contract TrueLender is Ownable {
     using SafeMath for uint256;
 
     mapping(address => bool) public allowedBorrowers;
-    ILoanToken[] loans;
+    ILoanToken[] _loans;
 
     ITruePool public pool;
     IERC20 public currencyToken;
@@ -91,6 +91,10 @@ contract TrueLender is Ownable {
         emit RiskAversionChanged(newRiskAversion);
     }
 
+    function loans() public view returns (ILoanToken[] memory result) {
+        result = _loans;
+    }
+
     function allow(address who, bool status) external onlyOwner {
         allowedBorrowers[who] = status;
         emit Allowed(who, status);
@@ -112,7 +116,7 @@ contract TrueLender is Ownable {
         pool.borrow(amount);
         currencyToken.approve(address(loanToken), amount);
         loanToken.fund();
-        loans.push(loanToken);
+        _loans.push(loanToken);
         emit Funded(address(loanToken), amount);
     }
 
@@ -136,8 +140,8 @@ contract TrueLender is Ownable {
 
     function value() external view returns (uint256) {
         uint256 totalValue;
-        for (uint256 index = 0; index < loans.length; index++) {
-            totalValue = totalValue.add(valueFor(loans[index]));
+        for (uint256 index = 0; index < _loans.length; index++) {
+            totalValue = totalValue.add(valueFor(_loans[index]));
         }
         return totalValue;
     }
@@ -156,10 +160,10 @@ contract TrueLender is Ownable {
         uint256 fundsReclaimed = balanceAfter.sub(balanceBefore);
         pool.repay(fundsReclaimed);
 
-        for (uint256 index = 0; index < loans.length; index++) {
-            if (loans[index] == loanToken) {
-                loans[index] = loans[loans.length];
-                delete loans[loans.length];
+        for (uint256 index = 0; index < _loans.length; index++) {
+            if (_loans[index] == loanToken) {
+                _loans[index] = _loans[_loans.length - 1];
+                _loans.pop();
                 break;
             }
         }
