@@ -95,14 +95,16 @@ describe('CurvePool', () => {
       await timeTravel(provider, dayInSeconds * 180)
       await token.mint(borrower.address, parseEther('1000000'))
       await token.connect(borrower).approve(pool.address, parseEther('1000000'))
+      // PoolValue is 1.005M USD at the moment
+      // After join, owner has around 91.5% of shares
       await pool.connect(borrower).join(parseEther('1000000'))
       const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 2500)
       await lender.fund(loan2.address)
 
       await pool.exit(parseEther('5000000'))
-      isCloseTo(await token.balanceOf(owner.address), parseEther('4126556'))
-      isCloseTo(await loan1.balanceOf(owner.address), parseEther('504356'))
-      isCloseTo(await loan2.balanceOf(owner.address), parseEther('573132'))
+      isCloseTo(await token.balanceOf(owner.address), parseEther('4126556')) // 91.5% of 4.5M
+      isCloseTo(await loan1.balanceOf(owner.address), parseEther('504356')) // 91.5% of 550K
+      isCloseTo(await loan2.balanceOf(owner.address), parseEther('573132')) // 91.5% of 625K
     })
   })
 
