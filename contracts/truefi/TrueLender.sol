@@ -120,16 +120,16 @@ contract TrueLender is Ownable {
         (uint256 amount, uint256 apy, uint256 duration) = loanToken.getParameters();
         uint256 start = loanToken.start();
         uint256 passed = block.timestamp.sub(start);
-        uint256 loanTokenTotalSupply = loanToken.totalSupply();
+        uint256 loanTokenBalance = loanToken.balanceOf(address(this));
         if (passed > duration) {
             passed = duration;
         }
-        if (loanTokenTotalSupply == 0) {
+        if (loanTokenBalance == 0) {
             return 0;
         }
 
-        uint256 helper = amount.mul(apy).mul(passed).mul(loanToken.balanceOf(address(this)));
-        uint256 interest = helper.div(360 days).div(10000).div(loanTokenTotalSupply);
+        uint256 helper = amount.mul(apy).mul(passed).mul(loanTokenBalance);
+        uint256 interest = helper.div(360 days).div(10000).div(loanToken.totalSupply());
 
         return amount.add(interest);
     }
