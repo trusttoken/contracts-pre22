@@ -84,7 +84,7 @@ describe('QuadraticTrueDistributor', () => {
         .to.equal(normaliseRewardToTrustTokens(expectedReward))
     })
 
-    it.only('should properly split tokens between multiple share holders', async () => {
+    it('should properly split tokens between multiple share holders', async () => {
       const halfOfShares = (await distributor.TOTAL_SHARES()).div(2)
 
       await distributor.transfer(owner.address, farm.address, halfOfShares)
