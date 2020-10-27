@@ -8,13 +8,14 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ICurvePool} from "./interface/ICurvePool.sol";
+import {ITrueLender} from "./interface/ITrueLender.sol";
 
 contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
     using SafeMath for uint256;
 
     ICurvePool public _curvePool;
     IERC20 public _currencyToken;
-    address public _lender;
+    ITrueLender public _lender;
 
     /**
      * This is a difference between this token totalSupply and balance of cTokens
@@ -28,7 +29,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
     constructor(
         ICurvePool __curvePool,
         IERC20 __currencyToken,
-        address __lender
+        ITrueLender __lender
     ) public ERC20("CurveTUSDPool", "CurTUSD") {
         _currencyToken = __currencyToken;
         _curvePool = __curvePool;
@@ -42,8 +43,11 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
         return _currencyToken;
     }
 
-    function poolPrice() public view returns (uint256) {
-        return _currencyToken.balanceOf(address(this));
+    function poolValue() public view returns (uint256) {
+        return
+            _currencyToken.balanceOf(address(this)).add(_lender.value()).add(
+                _curvePool.token().balanceOf(address(this)).mul(_curvePool.curve().get_virtual_price()).div(1 ether)
+            );
     }
 
     // PP/TS = (PP+amount)/(TS+Y)
@@ -55,7 +59,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
 
         uint256 amountToMint = amount;
         if (totalSupply() > 0) {
-            amountToMint = totalSupply().mul(amount).div(poolPrice());
+            amountToMint = totalSupply().mul(amount).div(poolValue());
         }
         _mint(msg.sender, amountToMint);
     }
@@ -67,7 +71,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
     function exit(uint256 amount) external override {
         require(amount >= balanceOf(msg.sender));
 
-        uint256 amountToTransfer = poolPrice().mul(amount).div(totalSupply());
+        uint256 amountToTransfer = poolValue().mul(amount).div(totalSupply());
         _burn(msg.sender, amount);
 
         require(_currencyToken.transfer(msg.sender, amountToTransfer));
@@ -96,7 +100,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
     }
 
     function borrow(uint256 expectedAmount) external override nonReentrant {
-        require(msg.sender == _lender, "CurvePool: Only _lender can borrow");
+        require(msg.sender == address(_lender), "CurvePool: Only _lender can borrow");
 
         uint256 roughCurveTokenAmount = value(expectedAmount).mul(1005).div(1000);
         require(

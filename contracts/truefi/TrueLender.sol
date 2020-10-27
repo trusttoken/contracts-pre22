@@ -7,9 +7,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
+import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
 
-contract TrueLender is Ownable {
+contract TrueLender is ITrueLender, Ownable {
     using SafeMath for uint256;
 
     mapping(address => bool) public allowedBorrowers;
@@ -138,7 +139,7 @@ contract TrueLender is Ownable {
         return amount.add(interest);
     }
 
-    function value() external view returns (uint256) {
+    function value() external override view returns (uint256) {
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
             totalValue = totalValue.add(valueFor(_loans[index]));

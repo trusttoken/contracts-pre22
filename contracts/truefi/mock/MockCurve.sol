@@ -15,6 +15,10 @@ contract MockCurve is ICurve {
     function set_withdraw_price(uint256 price) external {
         sharePrice = price;
     }
+
+    function get_virtual_price() external override view returns (uint256) {
+        return sharePrice;
+    }
 }
 
 contract MockCurvePool is ICurvePool {

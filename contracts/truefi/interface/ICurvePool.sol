@@ -6,6 +6,8 @@ import {IYToken} from "./IYToken.sol";
 
 interface ICurve {
     function calc_token_amount(uint256[4] memory amounts, bool deposit) external view returns (uint256);
+
+    function get_virtual_price() external view returns (uint256);
 }
 
 interface ICurvePool {
