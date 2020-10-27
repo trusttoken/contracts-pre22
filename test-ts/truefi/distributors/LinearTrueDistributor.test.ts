@@ -1,14 +1,15 @@
 import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
-import { BigNumber } from 'ethers'
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { toTrustToken } from '../../scripts/utils'
-import { LinearTrueDistributor } from '../../build/types/LinearTrueDistributor'
-import { LinearTrueDistributorFactory } from '../../build/types/LinearTrueDistributorFactory'
-import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
-import { MockErc20Token } from '../../build/types/MockErc20Token'
-import { timeTravel, timeTravelTo } from '../utils/timeTravel'
+
+import { isCloseTo } from '../../utils/isCloseTo'
+import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
+import { toTrustToken } from '../../../scripts/utils'
+import { LinearTrueDistributor } from '../../../build/types/LinearTrueDistributor'
+import { LinearTrueDistributorFactory } from '../../../build/types/LinearTrueDistributorFactory'
+import { MockErc20TokenFactory } from '../../../build/types/MockErc20TokenFactory'
+import { MockErc20Token } from '../../../build/types/MockErc20Token'
+import { timeTravel, timeTravelTo } from '../../utils/timeTravel'
 
 describe('LinearTrueDistributor', () => {
   const DAY = 24 * 3600
@@ -67,16 +68,6 @@ describe('LinearTrueDistributor', () => {
       beforeEach(async () => {
         await timeTravelTo(provider, startDate)
       })
-
-      const isCloseTo = (a: BigNumber, b: BigNumber) => {
-        if (b.eq(a)) {
-          return true
-        }
-        if (b.gt(a)) {
-          [a, b] = [b, a]
-        }
-        expect(a.div(a.sub(b))).to.be.gt(10000)
-      }
 
       it('all distributions are close to being linear', async () => {
         for (let i = 0; i < 30; i++) {

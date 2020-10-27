@@ -1,13 +1,17 @@
 import { expect } from 'chai'
 import { deployMockContract } from 'ethereum-waffle'
-import { Contract, Wallet, BigNumber } from 'ethers'
+import { Contract, Wallet, BigNumber, providers } from 'ethers'
 import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 import { parseEther } from '@ethersproject/units'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { timeTravel } from '../utils/timeTravel'
+import { isCloseTo } from '../utils/isCloseTo'
 
 import { TrueLender } from '../../build/types/TrueLender'
 import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
+import { LoanToken } from '../../build/types/LoanToken'
+import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
 
@@ -18,6 +22,7 @@ import ITrueRatingAgencyJson from '../../build/ITrueRatingAgency.json'
 describe('TrueLender', () => {
   let owner: Wallet
   let otherWallet: Wallet
+  let provider: providers.JsonRpcProvider
 
   let lender: TrueLender
 
@@ -33,8 +38,9 @@ describe('TrueLender', () => {
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
 
-  beforeEachWithFixture(async (wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [owner, otherWallet] = wallets
+    provider = _provider
 
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
     await tusd.initialize()
@@ -47,7 +53,7 @@ describe('TrueLender', () => {
     mockLoanToken = await deployMockContract(owner, ILoanTokenJson.abi)
     await mockLoanToken.mock.isLoanToken.returns(true)
     await mockLoanToken.mock.fund.returns()
-    await mockLoanToken.mock.reclaim.returns()
+    await mockLoanToken.mock.redeem.returns()
 
     mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
@@ -310,6 +316,13 @@ describe('TrueLender', () => {
           .to.emit(lender, 'Funded')
           .withArgs(mockLoanToken.address, amount)
       })
+
+      it('adds funded loan to an array', async () => {
+        await lender.fund(mockLoanToken.address)
+        expect(await lender.loans()).to.deep.equal([mockLoanToken.address])
+        await lender.fund(mockLoanToken.address)
+        expect(await lender.loans()).to.deep.equal([mockLoanToken.address, mockLoanToken.address])
+      })
     })
 
     describe('complex credibility cases', () => {
@@ -371,11 +384,11 @@ describe('TrueLender', () => {
 
   describe('Reclaiming', () => {
     const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
-    const returnedAmount = 2000
+    const availableLoanTokens = 1500
 
     beforeEach(async () => {
       await mockLoanToken.mock.status.returns(3)
-      await mockLoanToken.mock.balance.returns(returnedAmount)
+      await mockLoanToken.mock.balanceOf.returns(availableLoanTokens)
     })
 
     it('works only for loan tokens', async () => {
@@ -392,19 +405,88 @@ describe('TrueLender', () => {
         .to.be.revertedWith('TrueLender: LoanToken is not closed yet')
     })
 
-    it('reclaims funds from loan token', async () => {
+    it('redeems funds from loan token', async () => {
       await lender.reclaim(mockLoanToken.address)
-      await expect('reclaim').to.be.calledOnContractWith(mockLoanToken, [returnedAmount])
+      await expect('redeem').to.be.calledOnContractWith(mockLoanToken, [availableLoanTokens])
     })
 
     it('repays funds from the pool', async () => {
       await lender.reclaim(mockLoanToken.address)
-      await expect('repay').to.be.calledOnContractWith(mockPool, [returnedAmount])
+      await expect('repay').to.be.calledOnContract(mockPool)
     })
 
     it('emits a proper event', async () => {
       await expect(lender.reclaim(mockLoanToken.address))
-        .to.emit(lender, 'Reclaimed').withArgs(mockLoanToken.address, returnedAmount)
+        .to.emit(lender, 'Reclaimed')
+    })
+
+    it('removes loan from the array', async () => {
+      await lender.allow(owner.address, true)
+      await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
+      await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
+
+      await lender.fund(mockLoanToken.address)
+      await lender.fund(mockLoanToken.address)
+      expect(await lender.loans()).to.deep.equal([mockLoanToken.address, mockLoanToken.address])
+      await lender.reclaim(mockLoanToken.address)
+      expect(await lender.loans()).to.deep.equal([mockLoanToken.address])
+    })
+  })
+
+  describe('Value', () => {
+    let firstLoanToken: LoanToken
+    let secondLoanToken: LoanToken
+
+    beforeEach(async () => {
+      firstLoanToken = await new LoanTokenFactory(owner).deploy(
+        tusd.address,
+        owner.address,
+        parseEther('1000000'),
+        monthInSeconds * 12,
+        5000,
+      )
+      secondLoanToken = await new LoanTokenFactory(owner).deploy(
+        tusd.address,
+        owner.address,
+        parseEther('2000000'),
+        monthInSeconds * 36,
+        1000,
+      )
+      await lender.allow(owner.address, true)
+      await tusd.mint(lender.address, parseEther('3000000'))
+      await mockRatingAgency.mock.getResults.returns(0, 0, parseEther('10000000'))
+    })
+    it('returns correct value for one closed loan', async () => {
+      await lender.fund(firstLoanToken.address)
+      await timeTravel(provider, (monthInSeconds * 12) + 1)
+      isCloseTo(await lender.value(), parseEther('1500000'))
+    })
+
+    it('returns correct value for one running loan', async () => {
+      await lender.fund(firstLoanToken.address)
+      await timeTravel(provider, monthInSeconds * 6)
+      isCloseTo(await lender.value(), parseEther('1250000'))
+    })
+
+    it('returns correct value for multiple closed loans', async () => {
+      await lender.fund(firstLoanToken.address)
+      await lender.fund(secondLoanToken.address)
+      await timeTravel(provider, (monthInSeconds * 36) + 1)
+      isCloseTo(await lender.value(), parseEther('4100000'))
+    })
+
+    it('returns correct value for multiple opened loans', async () => {
+      await lender.fund(firstLoanToken.address)
+      await lender.fund(secondLoanToken.address)
+      await timeTravel(provider, monthInSeconds * 6)
+      isCloseTo(await lender.value(), parseEther('3350000'))
+    })
+
+    it('returns correct value for multiple opened and closed loans', async () => {
+      await lender.fund(firstLoanToken.address)
+      await lender.fund(secondLoanToken.address)
+      await timeTravel(provider, monthInSeconds * 18)
+      isCloseTo(await lender.value(), parseEther('3800000'))
     })
   })
 })

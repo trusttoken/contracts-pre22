@@ -13,6 +13,7 @@ contract TrueLender is Ownable {
     using SafeMath for uint256;
 
     mapping(address => bool) public allowedBorrowers;
+    ILoanToken[] _loans;
 
     ITruePool public pool;
     IERC20 public currencyToken;
@@ -90,6 +91,10 @@ contract TrueLender is Ownable {
         emit RiskAversionChanged(newRiskAversion);
     }
 
+    function loans() public view returns (ILoanToken[] memory result) {
+        result = _loans;
+    }
+
     function allow(address who, bool status) external onlyOwner {
         allowedBorrowers[who] = status;
         emit Allowed(who, status);
@@ -111,20 +116,59 @@ contract TrueLender is Ownable {
         pool.borrow(amount);
         currencyToken.approve(address(loanToken), amount);
         loanToken.fund();
+        _loans.push(loanToken);
         emit Funded(address(loanToken), amount);
     }
 
-    function reclaim(ILoanToken loanToken) external {
+    function valueFor(ILoanToken loanToken) public view returns (uint256) {
+        (uint256 amount, uint256 apy, uint256 duration) = loanToken.getParameters();
+        uint256 start = loanToken.start();
+        uint256 passed = block.timestamp.sub(start);
+        uint256 loanTokenBalance = loanToken.balanceOf(address(this));
+        if (passed > duration) {
+            passed = duration;
+        }
+        if (loanTokenBalance == 0) {
+            return 0;
+        }
+
+        uint256 helper = amount.mul(apy).mul(passed).mul(loanTokenBalance);
+        uint256 interest = helper.div(360 days).div(10000).div(loanToken.totalSupply());
+
+        return amount.add(interest);
+    }
+
+    function value() external view returns (uint256) {
+        uint256 totalValue;
+        for (uint256 index = 0; index < _loans.length; index++) {
+            totalValue = totalValue.add(valueFor(_loans[index]));
+        }
+        return totalValue;
+    }
+
+    function reclaim(ILoanToken loanToken) external onlyOwner {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be used to reclaimed");
         require(
             loanToken.status() == ILoanToken.Status.Settled || loanToken.status() == ILoanToken.Status.Defaulted,
             "TrueLender: LoanToken is not closed yet"
         );
 
-        uint256 availableAmount = loanToken.balance();
-        loanToken.reclaim(availableAmount);
-        pool.repay(availableAmount);
-        emit Reclaimed(address(loanToken), availableAmount);
+        uint256 balanceBefore = currencyToken.balanceOf(address(this));
+        loanToken.redeem(loanToken.balanceOf(address(this)));
+        uint256 balanceAfter = currencyToken.balanceOf(address(this));
+
+        uint256 fundsReclaimed = balanceAfter.sub(balanceBefore);
+        pool.repay(fundsReclaimed);
+
+        for (uint256 index = 0; index < _loans.length; index++) {
+            if (_loans[index] == loanToken) {
+                _loans[index] = _loans[_loans.length - 1];
+                _loans.pop();
+                break;
+            }
+        }
+
+        emit Reclaimed(address(loanToken), fundsReclaimed);
     }
 
     function loanIsAttractiveEnough(uint256 apy) public view returns (bool) {

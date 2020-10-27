@@ -14,9 +14,9 @@ contract LoanToken is ILoanToken, ERC20 {
     uint256 public override duration;
     uint256 public override apy;
 
-    uint256 public start;
-    address public lender;
-    uint256 public debt;
+    uint256 public override start;
+    address public override lender;
+    uint256 public override debt;
 
     uint256 public redeemed;
 
@@ -115,10 +115,6 @@ contract LoanToken is ILoanToken, ERC20 {
         require(currencyToken.transferFrom(msg.sender, address(this), amount));
 
         emit Funded(msg.sender);
-    }
-
-    function reclaim(uint256 _amount) external override onlyLender onlyClosed {
-        require(currencyToken.transfer(msg.sender, _amount));
     }
 
     function allowTransfer(address account, bool _status) external override onlyLender {
