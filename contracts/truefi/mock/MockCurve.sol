@@ -28,7 +28,7 @@ contract MockCurvePool is ICurvePool, Initializable {
     MockERC20Token cToken;
     MockCurve _curve;
 
-    function initalize(IERC20 _token) public initializer {
+    function initialize(IERC20 _token) public initializer {
         poolToken = _token;
         cToken = new MockERC20Token();
         _curve = new MockCurve();
