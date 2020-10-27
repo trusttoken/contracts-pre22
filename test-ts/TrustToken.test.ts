@@ -10,7 +10,7 @@ import { parseTT } from './utils/parseTT'
 
 import { toAddress, WalletOrAddress } from './utils/toAddress'
 
-use(solidity)  
+use(solidity)
 
 describe('TrustToken', () => {
   let owner: Wallet, timeLockRegistry: Wallet, saftHolder: Wallet, initialHolder: Wallet, secondAccount: Wallet, thirdAccount: Wallet, fourthAccount: Wallet
