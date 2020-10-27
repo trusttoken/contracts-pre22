@@ -440,34 +440,34 @@ describe('TrueLender', () => {
     it('returns correct value for one closed loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, (monthInSeconds * 12) + 1)
-     isCloseTo(await lender.value(), parseEther('1500000'))
+      isCloseTo(await lender.value(), parseEther('1500000'))
     })
 
     it('returns correct value for one running loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-     isCloseTo(await lender.value(), parseEther('1250000'))
+      isCloseTo(await lender.value(), parseEther('1250000'))
     })
 
     it('returns correct value for multiple closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, (monthInSeconds * 36) + 1)
-     isCloseTo(await lender.value(), parseEther('4100000'))
+      isCloseTo(await lender.value(), parseEther('4100000'))
     })
 
     it('returns correct value for multiple opened loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-     isCloseTo(await lender.value(), parseEther('3350000'))
+      isCloseTo(await lender.value(), parseEther('3350000'))
     })
 
     it('returns correct value for multiple opened and closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 18)
-     isCloseTo(await lender.value(), parseEther('3800000'))
+      isCloseTo(await lender.value(), parseEther('3800000'))
     })
   })
 })
