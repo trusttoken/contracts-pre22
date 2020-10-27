@@ -1,7 +1,8 @@
 import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
-import { BigNumber } from 'ethers'
+
+import { isCloseTo } from '../../utils/isCloseTo'
 import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
 import { toTrustToken } from '../../../scripts/utils'
 import { LinearTrueDistributor } from '../../../build/types/LinearTrueDistributor'
@@ -67,16 +68,6 @@ describe('LinearTrueDistributor', () => {
       beforeEach(async () => {
         await timeTravelTo(provider, startDate)
       })
-
-      const isCloseTo = (a: BigNumber, b: BigNumber) => {
-        if (b.eq(a)) {
-          return true
-        }
-        if (b.gt(a)) {
-          [a, b] = [b, a]
-        }
-        expect(a.div(a.sub(b))).to.be.gt(10000)
-      }
 
       it('all distributions are close to being linear', async () => {
         for (let i = 0; i < 30; i++) {
