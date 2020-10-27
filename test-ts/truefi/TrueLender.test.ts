@@ -316,6 +316,13 @@ describe('TrueLender', () => {
           .to.emit(lender, 'Funded')
           .withArgs(mockLoanToken.address, amount)
       })
+
+      it('adds funded loan to an array', async () => {
+        await lender.fund(mockLoanToken.address)
+        expect(await lender.loans()).to.deep.equal([mockLoanToken.address])
+        await lender.fund(mockLoanToken.address)
+        expect(await lender.loans()).to.deep.equal([mockLoanToken.address, mockLoanToken.address])
+      })
     })
 
     describe('complex credibility cases', () => {
@@ -411,6 +418,18 @@ describe('TrueLender', () => {
     it('emits a proper event', async () => {
       await expect(lender.reclaim(mockLoanToken.address))
         .to.emit(lender, 'Reclaimed')
+    })
+
+    it('removes loan from the array', async () => {
+      await lender.allow(owner.address, true)
+      await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
+      await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
+
+      await lender.fund(mockLoanToken.address)
+      await lender.fund(mockLoanToken.address)
+      expect(await lender.loans()).to.deep.equal([mockLoanToken.address, mockLoanToken.address])
+      await lender.reclaim(mockLoanToken.address)
+      expect(await lender.loans()).to.deep.equal([mockLoanToken.address])
     })
   })
 
