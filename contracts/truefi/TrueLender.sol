@@ -155,6 +155,15 @@ contract TrueLender is Ownable {
 
         uint256 fundsReclaimed = balanceAfter.sub(balanceBefore);
         pool.repay(fundsReclaimed);
+
+        for (uint256 index = 0; index < loans.length; index++) {
+            if (loans[index] == loanToken) {
+                loans[index] = loans[loans.length];
+                delete loans[loans.length];
+                break;
+            }
+        }
+
         emit Reclaimed(address(loanToken), fundsReclaimed);
     }
 
