@@ -7,7 +7,7 @@ import {ICurvePool, ICurve, IYToken} from "../interface/ICurvePool.sol";
 import {MockERC20Token} from "../../trusttoken/mocks/MockERC20Token.sol";
 import {Initializable} from "../upgradeability/Initializable.sol";
 
-contract MockCurve is ICurve, Initializable {
+contract MockCurve is ICurve {
     uint256 public sharePrice = 1e18;
 
     function calc_token_amount(uint256[4] memory amounts, bool) external override view returns (uint256) {
@@ -23,7 +23,7 @@ contract MockCurve is ICurve, Initializable {
     }
 }
 
-contract MockCurvePool is ICurvePool {
+contract MockCurvePool is ICurvePool, Initializable {
     IERC20 poolToken;
     MockERC20Token cToken;
     MockCurve _curve;
