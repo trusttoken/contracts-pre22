@@ -1,11 +1,12 @@
 import { expect } from 'chai'
 import { deployMockContract } from 'ethereum-waffle'
-import { Contract, Wallet, BigNumber } from 'ethers'
+import { Contract, Wallet, BigNumber, providers } from 'ethers'
 import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 import { parseEther } from '@ethersproject/units'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { timeTravel } from '../utils/timeTravel'
+import { isCloseTo } from '../utils/isCloseTo'
 
 import { TrueLender } from '../../build/types/TrueLender'
 import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
@@ -439,34 +440,34 @@ describe('TrueLender', () => {
     it('returns correct value for one closed loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, (monthInSeconds * 12) + 1)
-      expect(await lender.value()).to.equal(parseEther('1500000'))
+     isCloseTo(await lender.value(), parseEther('1500000'))
     })
 
     it('returns correct value for one running loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-      expect(await lender.value()).to.equal(parseEther('1250000'))
+     isCloseTo(await lender.value(), parseEther('1250000'))
     })
 
     it('returns correct value for multiple closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, (monthInSeconds * 36) + 1)
-      expect(await lender.value()).to.equal(parseEther('4100000'))
+     isCloseTo(await lender.value(), parseEther('4100000'))
     })
 
     it('returns correct value for multiple opened loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-      expect(await lender.value()).to.equal(parseEther('3350000'))
+     isCloseTo(await lender.value(), parseEther('3350000'))
     })
 
     it('returns correct value for multiple opened and closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 18)
-      expect(await lender.value()).to.equal(parseEther('3800000'))
+     isCloseTo(await lender.value(), parseEther('3800000'))
     })
   })
 })
