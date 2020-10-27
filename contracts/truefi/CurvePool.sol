@@ -52,11 +52,11 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
             );
     }
 
-    // PP/TS = (PP+amount)/(TS+Y)
-    // PP(TS+Y) = (PP+amount)TS
-    // PP*TS + PP*Y = PP*TS + TS*amount
-    // Y = TS*amount/PP
-    function join(uint256 amount) external override {
+    // PV/TS = (PV+amount)/(TS+Y)
+    // PV(TS+Y) = (PV+amount)TS
+    // PV*TS + PV*Y = PV*TS + TS*amount
+    // Y = TS*amount/PV
+    function join(uint256 amount) external override nonReentrant {
         require(_currencyToken.transferFrom(msg.sender, address(this), amount));
 
         uint256 amountToMint = amount;
@@ -66,24 +66,36 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
         _mint(msg.sender, amountToMint);
     }
 
-    // PP/TS = (PP-X)/(TS-amount)
-    // PP(TS-amount) = (PP-X)TS
-    // PP*TS - PP*amount = PP*TS - TS*X
-    // X = PP*amount/TS
-    function exit(uint256 amount) external override {
-        require(amount >= balanceOf(msg.sender));
+    // PV/TS = (PV-X)/(TS-amount)
+    // PV(TS-amount) = (PV-X)TS
+    // PV*TS - PV*amount = PV*TS - TS*X
+    // X = PV*amount/TS
+    function exit(uint256 amount) external override nonReentrant {
+        require(amount <= balanceOf(msg.sender), "CurvePool: insufficient funds");
 
-        uint256 value = poolValue();
         uint256 _totalSupply = totalSupply();
 
-        uint256 currencyAmountToTransfer = value.mul(_currencyToken.balanceOf(address(this))).div(_totalSupply);
-        uint256 curveLiquidityAmountToTransfer = value.mul(_curvePool.token().balanceOf(address(this))).div(_totalSupply);
+        uint256 currencyAmountToTransfer = amount.mul(_currencyToken.balanceOf(address(this))).div(_totalSupply);
+        uint256 curveLiquidityAmountToTransfer = amount.mul(_curvePool.token().balanceOf(address(this))).div(_totalSupply);
 
         _burn(msg.sender, amount);
 
-        _lender.distribute(msg.sender, value, _totalSupply);
-        require(_currencyToken.transfer(msg.sender, currencyAmountToTransfer));
-        require(_curvePool.token().transfer(msg.sender, curveLiquidityAmountToTransfer));
+        _lender.distribute(msg.sender, amount, _totalSupply);
+        if (currencyAmountToTransfer > 0) {
+            require(_currencyToken.transfer(msg.sender, currencyAmountToTransfer));
+        }
+        if (curveLiquidityAmountToTransfer > 0) {
+            require(_curvePool.token().transfer(msg.sender, curveLiquidityAmountToTransfer));
+        }
+    }
+
+    function borrow(uint256 expectedAmount) external override {
+        require(msg.sender == address(_lender), "CurvePool: Only _lender can borrow");
+        require(_currencyToken.transfer(msg.sender, expectedAmount));
+    }
+
+    function repay(uint256 amount) external override {
+        require(_currencyToken.transferFrom(msg.sender, address(this), amount));
     }
 
     function _join(uint256 amount) external nonReentrant {
@@ -108,7 +120,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
         _burn(msg.sender, amount);
     }
 
-    function borrow(uint256 expectedAmount) external override nonReentrant {
+    function _borrow(uint256 expectedAmount) external nonReentrant {
         require(msg.sender == address(_lender), "CurvePool: Only _lender can borrow");
 
         uint256 roughCurveTokenAmount = value(expectedAmount).mul(1005).div(1000);
@@ -125,7 +137,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
         require(_currencyToken.transfer(msg.sender, expectedAmount));
     }
 
-    function repay(uint256 amount) external override nonReentrant {
+    function _repay(uint256 amount) external nonReentrant {
         require(_currencyToken.transferFrom(msg.sender, address(this), amount));
 
         uint256 amountToDeposit = _currencyToken.balanceOf(address(this));

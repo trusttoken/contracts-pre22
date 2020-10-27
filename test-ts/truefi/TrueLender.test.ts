@@ -65,7 +65,7 @@ describe('MockTrueLender', () => {
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
 
     lender = await new MockTrueLenderFactory(owner).deploy()
-    lender.initialize(mockPool.address, mockRatingAgency.address)
+    await lender.initialize(mockPool.address, mockRatingAgency.address)
 
     amount = (await lender.minSize()).mul(2)
     apy = (await lender.minApy()).mul(2)
