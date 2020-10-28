@@ -1,3 +1,4 @@
+import { expect } from 'chai'
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { constants, Wallet } from 'ethers'
 import { parseEther } from '@ethersproject/units'
@@ -7,7 +8,6 @@ import { CurvePoolFactory } from '../../build/types/CurvePoolFactory'
 import { CurvePool } from '../../build/types/CurvePool'
 import { MockCurvePool } from '../../build/types/MockCurvePool'
 import { MockCurvePoolFactory } from '../../build/types/MockCurvePoolFactory'
-import { expect } from 'chai'
 import { TrueLender } from '../../build/types/TrueLender'
 import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
 import TrueRatingAgency from '../../build/TrueRatingAgency.json'
@@ -199,6 +199,7 @@ describe('CurvePool', () => {
   describe('pull', () => {
     beforeEach(async () => {
       await curveToken.mint(pool.address, parseEther('1000'))
+      await token.mint(curve.address, parseEther('1000'))
     })
 
     it('withdraws given amount from curve', async () => {
@@ -229,6 +230,7 @@ describe('CurvePool', () => {
     })
 
     it('when borrowing less than trueCurrency balance, uses the balance', async () => {
+      provider.clearCallHistory()
       await pool.connect(borrower).borrow(parseEther('5000000'))
       expect(await token.balanceOf(borrower.address)).to.equal(parseEther('5000000'))
       expect(await token.balanceOf(pool.address)).to.equal(0)
@@ -238,6 +240,13 @@ describe('CurvePool', () => {
       await pool.connect(borrower).repay(parseEther('5000000'))
       expect(await token.balanceOf(borrower.address)).to.equal(0)
       expect(await token.balanceOf(pool.address)).to.equal(parseEther('5000000'))
+    })
+
+    it('when trueCurrency balance is not enough, withdraws from curve', async () => {
+      await token.mint(curve.address, parseEther('2000000'))
+      await curve.set_withdraw_price(parseEther('1.5'))
+      await pool.connect(borrower).borrow(parseEther('6000000'))
+      expect(await token.balanceOf(borrower.address)).to.equal(parseEther('6000000'))
     })
   })
 })

@@ -92,37 +92,23 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
 
     function borrow(uint256 expectedAmount) external override {
         require(msg.sender == address(_lender), "CurvePool: Only lender can borrow");
+
+        if (expectedAmount > _currencyToken.balanceOf(address(this))) {
+            uint256 amountToWithdraw = expectedAmount.sub(_currencyToken.balanceOf(address(this)));
+            uint256 roughCurveTokenAmount = calcTokenAmount(amountToWithdraw).mul(1005).div(1000);
+            require(
+                roughCurveTokenAmount <= _curvePool.token().balanceOf(address(this)),
+                "CurvePool: Not enough cTokens in pool to cover borrow"
+            );
+            _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
+            require(expectedAmount <= _currencyToken.balanceOf(address(this)), "CurvePool: Not enough funds in pool to cover borrow");
+        }
+
         require(_currencyToken.transfer(msg.sender, expectedAmount));
     }
 
-    function repay(uint256 amount) external override {
-        require(_currencyToken.transferFrom(msg.sender, address(this), amount));
-    }
-
-    function _borrow(uint256 expectedAmount) external nonReentrant {
-        require(msg.sender == address(_lender), "CurvePool: Only _lender can borrow");
-
-        uint256 roughCurveTokenAmount = calcTokenAmount(expectedAmount).mul(1005).div(1000);
-        require(
-            roughCurveTokenAmount <= _curvePool.token().balanceOf(address(this)),
-            "CurvePool: Not enough cTokens in pool to cover borrow"
-        );
-
-        uint256 balanceBefore = _currencyToken.balanceOf(address(this));
-        _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
-        uint256 balanceAfter = _currencyToken.balanceOf(address(this));
-
-        require(balanceAfter.sub(balanceBefore) >= expectedAmount, "CurvePool: Not enough tokens withdrawn");
-        require(_currencyToken.transfer(msg.sender, expectedAmount));
-    }
-
-    function _repay(uint256 amount) external nonReentrant {
-        require(_currencyToken.transferFrom(msg.sender, address(this), amount));
-
-        uint256 amountToDeposit = _currencyToken.balanceOf(address(this));
-        uint256[N_TOKENS] memory amounts = [0, 0, 0, amountToDeposit];
-
-        _curvePool.add_liquidity(amounts, 0);
+    function repay(uint256 currencyAmount) external override {
+        require(_currencyToken.transferFrom(msg.sender, address(this), currencyAmount));
     }
 
     /**
