@@ -46,7 +46,7 @@ describe('CurvePool', () => {
     provider = _provider
   })
 
-  describe('constructor', () => {
+  describe('initializer', () => {
     it('sets infinite allowances to curve', async () => {
       expect(await token.allowance(pool.address, curve.address)).to.equal(constants.MaxUint256)
       expect(await curveToken.allowance(pool.address, curve.address)).to.equal(constants.MaxUint256)
