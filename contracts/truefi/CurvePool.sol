@@ -77,11 +77,11 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         }
     }
 
-    function flush(uint256 currencyAmount, uint256 minMinAmount) external onlyOwner {
+    function flush(uint256 currencyAmount, uint256 minMintAmount) external onlyOwner {
         require(currencyAmount <= _currencyToken.balanceOf(address(this)), "CurvePool: Insufficient currency balance");
 
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
-        _curvePool.add_liquidity(amounts, minMinAmount);
+        _curvePool.add_liquidity(amounts, minMintAmount);
     }
 
     function pull(uint256 crvAmount, uint256 minCurrencyAmount) external onlyOwner {
