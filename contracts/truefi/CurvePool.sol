@@ -48,7 +48,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
             );
     }
 
-    function join(uint256 amount) external override nonReentrant {
+    function join(uint256 amount) external override {
         uint256 amountToMint = amount;
         if (totalSupply() > 0) {
             amountToMint = totalSupply().mul(amount).div(poolValue());
@@ -90,7 +90,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         _curvePool.remove_liquidity_one_coin(crvAmount, TUSD_INDEX, minCurrencyAmount, false);
     }
 
-    function borrow(uint256 expectedAmount) external override {
+    function borrow(uint256 expectedAmount) external override nonReentrant {
         require(msg.sender == address(_lender), "CurvePool: Only lender can borrow");
 
         if (expectedAmount > _currencyToken.balanceOf(address(this))) {
