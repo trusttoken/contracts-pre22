@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
+import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
+import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
-contract TrueLender is Ownable {
+contract TrueLender is ITrueLender, Ownable {
     using SafeMath for uint256;
 
     mapping(address => bool) public allowedBorrowers;
@@ -50,7 +51,14 @@ contract TrueLender is Ownable {
         _;
     }
 
-    constructor(ITruePool _pool, ITrueRatingAgency _ratingAgency) public {
+    modifier onlyPool() {
+        require(msg.sender == address(pool), "TrueLender: Sender is not a pool");
+        _;
+    }
+
+    function initialize(ITruePool _pool, ITrueRatingAgency _ratingAgency) public initializer {
+        Ownable.initialize();
+
         pool = _pool;
         currencyToken = _pool.currencyToken();
         currencyToken.approve(address(_pool), uint256(-1));
@@ -138,7 +146,7 @@ contract TrueLender is Ownable {
         return amount.add(interest);
     }
 
-    function value() external view returns (uint256) {
+    function value() external override view returns (uint256) {
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
             totalValue = totalValue.add(valueFor(_loans[index]));
@@ -169,6 +177,16 @@ contract TrueLender is Ownable {
         }
 
         emit Reclaimed(address(loanToken), fundsReclaimed);
+    }
+
+    function distribute(
+        address recipient,
+        uint256 numerator,
+        uint256 denominator
+    ) external override onlyPool {
+        for (uint256 index = 0; index < _loans.length; index++) {
+            _loans[index].transfer(recipient, numerator.mul(_loans[index].balanceOf(address(this))).div(denominator));
+        }
     }
 
     function loanIsAttractiveEnough(uint256 apy) public view returns (bool) {
