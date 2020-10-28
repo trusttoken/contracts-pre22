@@ -6,8 +6,9 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {ITrueDistributor} from "./interface/ITrueDistributor.sol";
 import {ITrueFarm} from "./interface/ITrueFarm.sol";
+import {Initializable} from "./upgradeability/Initializable.sol";
 
-contract TrueFarm is ITrueFarm {
+contract TrueFarm is ITrueFarm, Initializable {
     using SafeMath for uint256;
     uint256 constant PRECISION = 1e30;
 
@@ -26,11 +27,11 @@ contract TrueFarm is ITrueFarm {
     uint256 public totalClaimedRewards;
     uint256 public totalFarmRewards;
 
-    constructor(
+    function initialize(
         IERC20 _stakingToken,
         ITrueDistributor _trueDistributor,
         string memory _name
-    ) public {
+    ) public initializer {
         stakingToken = _stakingToken;
         trueDistributor = _trueDistributor;
         trustToken = _trueDistributor.trustToken();

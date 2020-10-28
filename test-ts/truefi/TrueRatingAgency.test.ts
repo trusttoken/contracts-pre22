@@ -52,7 +52,8 @@ describe('TrueRatingAgency', () => {
     )
     await tusd.approve(loanToken.address, 5_000_000)
 
-    rater = await new TrueRatingAgencyFactory(owner).deploy(trustToken.address)
+    rater = await new TrueRatingAgencyFactory(owner).deploy()
+    await rater.initialize(trustToken.address)
 
     await trustToken.mint(owner.address, parseTT(100000000))
     await trustToken.approve(rater.address, parseTT(100000000))
@@ -63,7 +64,7 @@ describe('TrueRatingAgency', () => {
   const submit = async (loanTokenAddress: string, wallet = owner) =>
     rater.connect(wallet).submit(loanTokenAddress, { gasLimit: 4_000_000 })
 
-  describe('Constructor', () => {
+  describe('Initializer', () => {
     it('sets trust token address', async () => {
       expect(await rater.trustToken()).to.equal(trustToken.address)
     })

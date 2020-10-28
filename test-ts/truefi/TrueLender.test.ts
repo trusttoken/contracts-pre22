@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { deployMockContract } from 'ethereum-waffle'
+import { deployMockContract, MockContract } from 'ethereum-waffle'
 import { Contract, Wallet, BigNumber, providers } from 'ethers'
 import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 import { parseEther } from '@ethersproject/units'
@@ -8,8 +8,8 @@ import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { timeTravel } from '../utils/timeTravel'
 import { isCloseTo } from '../utils/isCloseTo'
 
-import { TrueLender } from '../../build/types/TrueLender'
-import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
+import { MockTrueLender } from '../../build/types/MockTrueLender'
+import { MockTrueLenderFactory } from '../../build/types/MockTrueLenderFactory'
 import { LoanToken } from '../../build/types/LoanToken'
 import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
@@ -19,12 +19,12 @@ import ITruePoolJson from '../../build/ITruePool.json'
 import ILoanTokenJson from '../../build/ILoanToken.json'
 import ITrueRatingAgencyJson from '../../build/ITrueRatingAgency.json'
 
-describe('TrueLender', () => {
+describe('MockTrueLender', () => {
   let owner: Wallet
   let otherWallet: Wallet
   let provider: providers.JsonRpcProvider
 
-  let lender: TrueLender
+  let lender: MockTrueLender
 
   let tusd: MockTrueCurrency
   let mockPool: Contract
@@ -38,6 +38,15 @@ describe('TrueLender', () => {
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
 
+  const deployMockLoanToken = async () => {
+    const mock = await deployMockContract(owner, ILoanTokenJson.abi)
+    await mock.mock.isLoanToken.returns(true)
+    await mock.mock.fund.returns()
+    await mock.mock.redeem.returns()
+    await mock.mock.transfer.returns(true)
+    return mock
+  }
+
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, otherWallet] = wallets
     provider = _provider
@@ -50,15 +59,13 @@ describe('TrueLender', () => {
     await mockPool.mock.borrow.returns()
     await mockPool.mock.repay.returns()
 
-    mockLoanToken = await deployMockContract(owner, ILoanTokenJson.abi)
-    await mockLoanToken.mock.isLoanToken.returns(true)
-    await mockLoanToken.mock.fund.returns()
-    await mockLoanToken.mock.redeem.returns()
+    mockLoanToken = await deployMockLoanToken()
 
     mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
 
-    lender = await new TrueLenderFactory(owner).deploy(mockPool.address, mockRatingAgency.address)
+    lender = await new MockTrueLenderFactory(owner).deploy()
+    await lender.initialize(mockPool.address, mockRatingAgency.address)
 
     amount = (await lender.minSize()).mul(2)
     apy = (await lender.minApy()).mul(2)
@@ -66,7 +73,7 @@ describe('TrueLender', () => {
     await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
   })
 
-  describe('Constructor', () => {
+  describe('Initializer', () => {
     it('sets the pool address', async () => {
       expect(await lender.pool()).to.equal(mockPool.address)
     })
@@ -487,6 +494,34 @@ describe('TrueLender', () => {
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 18)
       isCloseTo(await lender.value(), parseEther('3800000'))
+    })
+  })
+
+  describe('Distribute', () => {
+    const loanTokens: MockContract[] = []
+
+    beforeEach(async () => {
+      await lender.allow(owner.address, true)
+      await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
+
+      for (let i = 0; i < 5; i++) {
+        loanTokens.push(await deployMockLoanToken())
+        await loanTokens[i].mock.balanceOf.returns(parseEther(((i + 1) * 10).toString()))
+        await loanTokens[i].mock.getParameters.returns(amount, apy, duration)
+        await lender.fund(loanTokens[i].address)
+      }
+      await lender.setPool(owner.address)
+    })
+
+    it('sends all loan tokens in the same proportion as numerator/denominator', async () => {
+      await lender.distribute(otherWallet.address, 2, 5)
+      for (let i = 0; i < 5; i++) {
+        expect('transfer').to.be.calledOnContractWith(loanTokens[i], [otherWallet.address, parseEther(((i + 1) * 10).toString()).mul(2).div(5)])
+      }
+    })
+
+    it('reverts if not called by pool', async () => {
+      await expect(lender.connect(otherWallet).distribute(otherWallet.address, 2, 5)).to.be.revertedWith('TrueLender: Sender is not a pool')
     })
   })
 })
