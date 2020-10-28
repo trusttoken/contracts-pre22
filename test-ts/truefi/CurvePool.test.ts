@@ -78,6 +78,21 @@ describe('CurvePool', () => {
       await lender.fund(loan2.address)
       expectCloseTo(await pool.poolValue(), parseEther('9000000').add(parseEther('1050000')))
     })
+
+    it('loan tokens + tusd + curve liquidity tokens', async () => {
+      await token.approve(pool.address, parseEther('10000000'))
+      await pool.join(parseEther('10000000'))
+      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 1000)
+      await lender.allow(owner.address, true)
+      await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(1000000))
+      await lender.fund(loan1.address)
+      await timeTravel(provider, dayInSeconds * 180)
+      const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 1000)
+      await lender.fund(loan2.address)
+      await pool.flush(parseEther('5000000'), 0)
+      await curve.set_withdraw_price(parseEther('2'))
+      expectCloseTo(await pool.poolValue(), parseEther('4000000').add(parseEther('1050000').add(parseEther('10000000'))))
+    })
   })
 
   describe('join-exit', () => {
