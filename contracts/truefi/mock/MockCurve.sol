@@ -46,7 +46,6 @@ contract MockCurvePool is ICurvePool, Initializable {
         bool
     ) external override {
         cToken.transferFrom(msg.sender, address(this), _token_amount);
-        poolToken.transfer(msg.sender, (_token_amount * _curve.sharePrice()) / 1e18);
         cToken.burn(_token_amount);
     }
 

@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 
-import { isCloseTo } from '../../utils/isCloseTo'
+import { expectCloseTo } from '../../utils/expectCloseTo'
 import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
 import { toTrustToken } from '../../../scripts/utils'
 import { LinearTrueDistributor } from '../../../build/types/LinearTrueDistributor'
@@ -76,7 +76,7 @@ describe('LinearTrueDistributor', () => {
           const balanceBefore = await trustToken.balanceOf(farm.address)
           await distributor.distribute(farm.address)
           const balanceAfter = await trustToken.balanceOf(farm.address)
-          expect(isCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(30)))
+          expect(expectCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(30)))
         }
       })
 

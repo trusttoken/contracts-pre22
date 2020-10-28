@@ -9,19 +9,14 @@ import {ITruePool} from "./interface/ITruePool.sol";
 import {ICurvePool} from "./interface/ICurvePool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ERC20} from "./upgradeability/UpgradeableERC20.sol";
+import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
-contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
+contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
 
     ICurvePool public _curvePool;
     IERC20 public _currencyToken;
     ITrueLender public _lender;
-
-    /**
-     * This is a difference between this token totalSupply and balance of cTokens
-     * Should be not above zero to make full complete exit possible
-     */
-    int256 public totalBorrowCoverage = 0;
 
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
@@ -31,7 +26,8 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
         IERC20 __currencyToken,
         ITrueLender __lender
     ) public initializer {
-        ERC20.__ERC20_initialize("CurveTUSDPool", "CurTUSD");
+        ERC20.__ERC20_initialize("CurveTUSDPool", "crvTUSD");
+        Ownable.initialize();
 
         _currencyToken = __currencyToken;
         _curvePool = __curvePool;
@@ -52,24 +48,16 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
             );
     }
 
-    // PV/TS = (PV+amount)/(TS+Y)
-    // PV(TS+Y) = (PV+amount)TS
-    // PV*TS + PV*Y = PV*TS + TS*amount
-    // Y = TS*amount/PV
     function join(uint256 amount) external override nonReentrant {
-        require(_currencyToken.transferFrom(msg.sender, address(this), amount));
-
         uint256 amountToMint = amount;
         if (totalSupply() > 0) {
             amountToMint = totalSupply().mul(amount).div(poolValue());
         }
         _mint(msg.sender, amountToMint);
+
+        require(_currencyToken.transferFrom(msg.sender, address(this), amount));
     }
 
-    // PV/TS = (PV-X)/(TS-amount)
-    // PV(TS-amount) = (PV-X)TS
-    // PV*TS - PV*amount = PV*TS - TS*X
-    // X = PV*amount/TS
     function exit(uint256 amount) external override nonReentrant {
         require(amount <= balanceOf(msg.sender), "CurvePool: insufficient funds");
 
@@ -89,8 +77,21 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
         }
     }
 
+    function flush(uint256 currencyAmount, uint256 minMinAmount) external onlyOwner {
+        require(currencyAmount <= _currencyToken.balanceOf(address(this)), "CurvePool: Insufficient currency balance");
+
+        uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
+        _curvePool.add_liquidity(amounts, minMinAmount);
+    }
+
+    function pull(uint256 crvAmount, uint256 minCurrencyAmount) external onlyOwner {
+        require(crvAmount <= _curvePool.token().balanceOf(address(this)), "CurvePool: Insufficient Curve liquidity balance");
+
+        _curvePool.remove_liquidity_one_coin(crvAmount, TUSD_INDEX, minCurrencyAmount, false);
+    }
+
     function borrow(uint256 expectedAmount) external override {
-        require(msg.sender == address(_lender), "CurvePool: Only _lender can borrow");
+        require(msg.sender == address(_lender), "CurvePool: Only lender can borrow");
         require(_currencyToken.transfer(msg.sender, expectedAmount));
     }
 
@@ -98,32 +99,10 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
         require(_currencyToken.transferFrom(msg.sender, address(this), amount));
     }
 
-    function _join(uint256 amount) external nonReentrant {
-        require(_currencyToken.transferFrom(msg.sender, address(this), amount));
-
-        uint256[N_TOKENS] memory amounts = [0, 0, 0, amount];
-
-        uint256 balanceBefore = _curvePool.token().balanceOf(address(this));
-        _curvePool.add_liquidity(amounts, 0);
-        uint256 balanceAfter = _curvePool.token().balanceOf(address(this));
-        _mint(msg.sender, balanceAfter.sub(balanceBefore));
-    }
-
-    function _exit(uint256 amount) external nonReentrant {
-        require(amount <= balanceOf(msg.sender), "CurvePool: Cannot withdraw amount bigger than available balance");
-        require(amount <= _curvePool.token().balanceOf(address(this)), "CurvePool: Not enough cTokens in pool");
-
-        uint256 balanceBefore = _currencyToken.balanceOf(address(this));
-        _curvePool.remove_liquidity_one_coin(amount, TUSD_INDEX, 0, false);
-        uint256 balanceAfter = _currencyToken.balanceOf(address(this));
-        require(_currencyToken.transfer(msg.sender, balanceAfter.sub(balanceBefore)));
-        _burn(msg.sender, amount);
-    }
-
     function _borrow(uint256 expectedAmount) external nonReentrant {
         require(msg.sender == address(_lender), "CurvePool: Only _lender can borrow");
 
-        uint256 roughCurveTokenAmount = value(expectedAmount).mul(1005).div(1000);
+        uint256 roughCurveTokenAmount = calcTokenAmount(expectedAmount).mul(1005).div(1000);
         require(
             roughCurveTokenAmount <= _curvePool.token().balanceOf(address(this)),
             "CurvePool: Not enough cTokens in pool to cover borrow"
@@ -146,9 +125,17 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard {
         _curvePool.add_liquidity(amounts, 0);
     }
 
-    function value(uint256 currencyAmount) public override view returns (uint256) {
+    /**
+     * @notice Expected amount of minted Curve.fi yDAI/yUSDC/yUSDT/yTUSD tokens.
+     * Can be used to control slippage
+     */
+    function calcTokenAmount(uint256 currencyAmount) public view returns (uint256) {
         uint256 yTokenAmount = currencyAmount.mul(1e18).div(_curvePool.coins(TUSD_INDEX).getPricePerFullShare());
         uint256[N_TOKENS] memory yAmounts = [0, 0, 0, yTokenAmount];
-        return _curvePool.curve().calc_token_amount(yAmounts, false);
+        return _curvePool.curve().calc_token_amount(yAmounts, true);
+    }
+
+    function calcWithdrawOneCoin(uint256 crvAmount) public view returns (uint256) {
+        return _curvePool.calc_withdraw_one_coin(crvAmount, TUSD_INDEX);
     }
 }
