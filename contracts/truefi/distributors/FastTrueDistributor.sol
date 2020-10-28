@@ -2,11 +2,10 @@
 pragma solidity 0.6.10;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 import {QuadraticTrueDistributor} from "./QuadraticTrueDistributor.sol";
 
 contract FastTrueDistributor is QuadraticTrueDistributor {
-    constructor(uint256 _startingBlock, ERC20 _trustToken) public QuadraticTrueDistributor(_startingBlock, _trustToken) {}
-
     function getDistributionFactor() public override pure returns (uint256) {
         return 1674871870358735349205214274168;
     }
