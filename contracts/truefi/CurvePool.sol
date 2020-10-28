@@ -98,7 +98,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
             uint256 roughCurveTokenAmount = calcTokenAmount(amountToWithdraw).mul(1005).div(1000);
             require(
                 roughCurveTokenAmount <= _curvePool.token().balanceOf(address(this)),
-                "CurvePool: Not enough cTokens in pool to cover borrow"
+                "CurvePool: Not enough Curve liquidity tokens in pool to cover borrow"
             );
             _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
             require(expectedAmount <= _currencyToken.balanceOf(address(this)), "CurvePool: Not enough funds in pool to cover borrow");
