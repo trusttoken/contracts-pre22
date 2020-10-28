@@ -6,7 +6,7 @@ import { parseEther } from '@ethersproject/units'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { timeTravel } from '../utils/timeTravel'
-import { isCloseTo } from '../utils/isCloseTo'
+import { expectCloseTo } from '../utils/expectCloseTo'
 
 import { MockTrueLender } from '../../build/types/MockTrueLender'
 import { MockTrueLenderFactory } from '../../build/types/MockTrueLenderFactory'
@@ -466,34 +466,34 @@ describe('MockTrueLender', () => {
     it('returns correct value for one closed loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, (monthInSeconds * 12) + 1)
-      isCloseTo(await lender.value(), parseEther('1500000'))
+      expectCloseTo(await lender.value(), parseEther('1500000'))
     })
 
     it('returns correct value for one running loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-      isCloseTo(await lender.value(), parseEther('1250000'))
+      expectCloseTo(await lender.value(), parseEther('1250000'))
     })
 
     it('returns correct value for multiple closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, (monthInSeconds * 36) + 1)
-      isCloseTo(await lender.value(), parseEther('4100000'))
+      expectCloseTo(await lender.value(), parseEther('4100000'))
     })
 
     it('returns correct value for multiple opened loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-      isCloseTo(await lender.value(), parseEther('3350000'))
+      expectCloseTo(await lender.value(), parseEther('3350000'))
     })
 
     it('returns correct value for multiple opened and closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 18)
-      isCloseTo(await lender.value(), parseEther('3800000'))
+      expectCloseTo(await lender.value(), parseEther('3800000'))
     })
   })
 
