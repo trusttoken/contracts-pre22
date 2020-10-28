@@ -59,7 +59,7 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
     }
 
     /**
-     * @dev Permanently lock transfers to return addresss
+     * @dev Permanently lock transfers to return address
      * Lock returns so there isn't always a way to send locked tokens
      */
     function lockReturns() external onlyOwner {
