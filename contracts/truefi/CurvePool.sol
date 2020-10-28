@@ -6,7 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {ITruePool} from "./interface/ITruePool.sol";
-import {ICurvePool} from "./interface/ICurvePool.sol";
+import {ICurvePool, ICurveGauge} from "./interface/ICurvePool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ERC20} from "./upgradeability/UpgradeableERC20.sol";
 import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
@@ -15,6 +15,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
 
     ICurvePool public _curvePool;
+    ICurveGauge public _curveGauge;
     IERC20 public _currencyToken;
     ITrueLender public _lender;
 
@@ -23,14 +24,16 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
 
     function initialize(
         ICurvePool __curvePool,
+        ICurveGauge __curveGauge,
         IERC20 __currencyToken,
         ITrueLender __lender
     ) public initializer {
         ERC20.__ERC20_initialize("CurveTUSDPool", "crvTUSD");
         Ownable.initialize();
 
-        _currencyToken = __currencyToken;
         _curvePool = __curvePool;
+        _curveGauge = __curveGauge;
+        _currencyToken = __currencyToken;
         _lender = __lender;
 
         _currencyToken.approve(address(_curvePool), uint256(-1));
@@ -82,11 +85,13 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
 
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
         _curvePool.add_liquidity(amounts, minMintAmount);
+        _curveGauge.deposit(_curvePool.token().balanceOf(address(this)));
     }
 
     function pull(uint256 crvAmount, uint256 minCurrencyAmount) external onlyOwner {
         require(crvAmount <= _curvePool.token().balanceOf(address(this)), "CurvePool: Insufficient Curve liquidity balance");
 
+        _curveGauge.withdraw(crvAmount);
         _curvePool.remove_liquidity_one_coin(crvAmount, TUSD_INDEX, minCurrencyAmount, false);
     }
 
