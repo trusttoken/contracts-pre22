@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { Wallet } from 'ethers'
+import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
@@ -16,6 +16,8 @@ import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFacto
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { ArbitraryDistributorFactory } from '../../build/types/ArbitraryDistributorFactory'
 import { ArbitraryDistributor } from '../../build/types/ArbitraryDistributor'
+import { parseEther } from 'ethers/lib/utils'
+import { expectCloseTo } from '../utils/expectCloseTo'
 
 describe('TrueRatingAgency', () => {
   enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
@@ -49,16 +51,16 @@ describe('TrueRatingAgency', () => {
     trustToken = await new TrustTokenFactory(owner).deploy()
     await trustToken.initialize()
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
-    await tusd.mint(owner.address, 7_000_000)
+    await tusd.mint(owner.address, parseEther('10000000'))
 
     loanToken = await new LoanTokenFactory(owner).deploy(
       tusd.address,
       owner.address,
-      5_000_000,
+      parseEther('5000000'),
       monthInSeconds * 24,
       1000,
     )
-    await tusd.approve(loanToken.address, 5_000_000)
+    await tusd.approve(loanToken.address, parseEther('5000000'))
 
     distributor = await new ArbitraryDistributorFactory(owner).deploy()
     rater = await new TrueRatingAgencyFactory(owner).deploy()
@@ -616,6 +618,100 @@ describe('TrueRatingAgency', () => {
           await rater.withdraw(loanToken.address, stake, txArgs)
           expect(await rater.getTotalNoVotes(loanToken.address)).to.equal(stake)
         })
+      })
+    })
+    
+    describe.only('Claim', () => {
+      const expectRoughTrustTokenBalanceChangeAfterClaim = async (expectedChange: BigNumberish, wallet: Wallet = owner) => {
+        const balanceBefore = await trustToken.balanceOf(wallet.address)
+        await rater.claim(loanToken.address, wallet.address, txArgs)
+        const balanceAfter = await trustToken.balanceOf(wallet.address)
+        expectCloseTo(balanceAfter.sub(balanceBefore), BigNumber.from(expectedChange))
+      }
+      
+      it('can only be called after loan is funded', async () => {
+        await rater.yes(loanToken.address, 1000)
+        await expect(rater.claim(loanToken.address, owner.address))
+          .to.be.revertedWith('TrueRatingAgency: Loan was not funded')
+      })
+
+      it('when called for the first time, moves funds from distributor to rater', async () => {
+        await rater.yes(loanToken.address, 1000)
+        await loanToken.fund()
+        
+        await expect(() => rater.claim(loanToken.address, owner.address, txArgs))
+          .to.changeTokenBalance(trustToken, rater, '100000000000000')
+      })
+      
+      it('when called for the second time, does not interact with distributor anymore', async () => {
+        await rater.yes(loanToken.address, 1000)
+        await loanToken.fund()
+        
+        await rater.claim(loanToken.address, owner.address, txArgs)
+        await expect(() => rater.claim(loanToken.address, owner.address, txArgs))
+          .to.changeTokenBalance(trustToken, rater, '0')
+      })
+
+      describe('Running', () => {
+        it('properly saves claimed amount and moves funds (1 voter, called once)', async () => {
+          await rater.yes(loanToken.address, 1000)
+          await loanToken.fund()
+          
+          await timeTravel(monthInSeconds * 12)
+          await expectRoughTrustTokenBalanceChangeAfterClaim('50000000000000')
+        })
+        
+        it('properly saves claimed amount and moves funds (1 voter, called multiple times)', async () => {
+          await rater.yes(loanToken.address, 1000)
+          await loanToken.fund()
+          
+          await timeTravel(monthInSeconds * 6)
+          await expectRoughTrustTokenBalanceChangeAfterClaim('25000000000000')
+          await timeTravel(monthInSeconds * 12)
+          await expectRoughTrustTokenBalanceChangeAfterClaim('50000000000000')
+          await timeTravel(monthInSeconds * 3)
+          await expectRoughTrustTokenBalanceChangeAfterClaim('12500000000000')
+          await timeTravel(monthInSeconds * 10)
+          await expectRoughTrustTokenBalanceChangeAfterClaim('12500000000000')
+        })
+        
+        it('properly saves claimed amount and moves funds (multiple voters, called once)', async () => {
+          await rater.yes(loanToken.address, 2000)
+          await trustToken.mint(otherWallet.address, parseTT(100000000))
+          await trustToken.connect(otherWallet).approve(rater.address, 3000)
+          await rater.connect(otherWallet).yes(loanToken.address, 3000)
+          await loanToken.fund()
+
+          await timeTravel(monthInSeconds * 12)
+          await expectRoughTrustTokenBalanceChangeAfterClaim('20000000000000', owner)
+          await expectRoughTrustTokenBalanceChangeAfterClaim('30000000000000', otherWallet)
+          
+        })
+        
+        it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
+          await rater.yes(loanToken.address, 2000)
+          await trustToken.mint(otherWallet.address, parseTT(100000000))
+          await trustToken.connect(otherWallet).approve(rater.address, 3000)
+          await rater.connect(otherWallet).yes(loanToken.address, 3000)
+          await loanToken.fund()
+
+          await timeTravel(monthInSeconds * 12)
+          await expectRoughTrustTokenBalanceChangeAfterClaim('20000000000000', owner)
+          await expectRoughTrustTokenBalanceChangeAfterClaim('30000000000000', otherWallet)
+          await timeTravel(monthInSeconds * 6)
+          await expectRoughTrustTokenBalanceChangeAfterClaim('10000000000000', owner)
+          await timeTravel(monthInSeconds * 6)
+          await expectRoughTrustTokenBalanceChangeAfterClaim('10000000000000', owner)
+          await expectRoughTrustTokenBalanceChangeAfterClaim('30000000000000', otherWallet)
+        })
+      })
+
+      describe('Closed', () => {
+        it('properly saves claimed amount and moves funds (1 voter, called once)')
+        
+        it('properly saves claimed amount and moves funds (multiple voters, called once)')
+        
+        it('does not do anything when called multiple times')
       })
     })
   })
