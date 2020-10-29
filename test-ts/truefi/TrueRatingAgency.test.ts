@@ -720,7 +720,7 @@ describe('TrueRatingAgency', () => {
           await timeTravel(monthInSeconds * 30)
           await loanToken.close()
           await expectRoughTrustTokenBalanceChangeAfterClaim('20000000000000', owner)
-          await rater.withdraw(loanToken.address, await rater.getYesVote(loanToken.address, owner.address))
+          await rater.withdraw(loanToken.address, await rater.getYesVote(loanToken.address, owner.address), txArgs)
           await expectRoughTrustTokenBalanceChangeAfterClaim('60000000000000', otherWallet)
         })
 
@@ -740,7 +740,7 @@ describe('TrueRatingAgency', () => {
           await loanToken.close()
           const staked = await rater.getYesVote(loanToken.address, owner.address)
 
-          await expect(async () => rater.withdraw(loanToken.address, staked))
+          await expect(async () => rater.withdraw(loanToken.address, staked, txArgs))
             .to.changeTokenBalance(trustToken, owner, staked.add('100000000000000'))
         })
       })
