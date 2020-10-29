@@ -222,7 +222,9 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         uint256 claimable = helper.div(totalTime).div(loans[id].staked).sub(loans[id].claimed[voter]);
         loans[id].claimed[voter] = loans[id].claimed[voter].add(claimable);
 
-        require(trustToken.transfer(voter, claimable));
+        if (claimable > 0) {
+            require(trustToken.transfer(voter, claimable));
+        }
     }
 
     function wasPredictionCorrect(address id, bool choice) internal view returns (bool) {
