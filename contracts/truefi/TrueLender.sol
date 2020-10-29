@@ -27,7 +27,7 @@ contract TrueLender is ITrueLender, Ownable {
      * @dev % multiplied by 100. e.g. 10.5% = 1050
      */
     uint256 public minApy = 1000;
-    uint256 public maxApy = 3000;
+    uint256 public maxApy = 2000;
     uint256 public participationFactor = 10000;
     uint256 public riskAversion = 15000;
 
