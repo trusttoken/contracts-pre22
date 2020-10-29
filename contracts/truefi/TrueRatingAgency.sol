@@ -23,7 +23,6 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         mapping(address => mapping(bool => uint256)) votes;
         mapping(address => uint256) claimed;
         uint256 reward;
-        uint256 staked;
     }
 
     mapping(address => Loan) public loans;
@@ -122,7 +121,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     function submit(address id) external override onlyNotExistingLoans(id) {
         require(ILoanToken(id).isLoanToken(), "TrueRatingAgency: Only LoanTokens are supported");
-        loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0, staked: 0});
+        loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0});
         emit LoanSubmitted(id);
     }
 
@@ -142,7 +141,6 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         require(loans[id].votes[msg.sender][!choice] == 0, "TrueRatingAgency: Cannot vote both yes and no");
 
         loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
-        loans[id].staked = loans[id].staked.add(stake);
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].add(stake);
 
         require(trustToken.transferFrom(msg.sender, address(this), stake));
@@ -182,7 +180,6 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
             loans[id].prediction[choice] = loans[id].prediction[choice].sub(stake);
         }
 
-        loans[id].staked = loans[id].staked.sub(stake);
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
 
         require(trustToken.transfer(msg.sender, amountToTransfer));
@@ -215,11 +212,12 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         if (passedTime > totalTime) {
             passedTime = totalTime;
         }
-        uint256 staked = loans[id].votes[voter][false].add(loans[id].votes[voter][true]);
+        uint256 stakedByVoter = loans[id].votes[voter][false].add(loans[id].votes[voter][true]);
+        uint256 totalStaked = loans[id].prediction[false].add(loans[id].prediction[true]);
 
-        uint256 helper = loans[id].reward.mul(passedTime).mul(staked);
+        uint256 helper = loans[id].reward.mul(passedTime).mul(stakedByVoter);
+        uint256 claimable = helper.div(totalTime).div(totalStaked).sub(loans[id].claimed[voter]);
 
-        uint256 claimable = helper.div(totalTime).div(loans[id].staked).sub(loans[id].claimed[voter]);
         loans[id].claimed[voter] = loans[id].claimed[voter].add(claimable);
 
         if (claimable > 0) {
