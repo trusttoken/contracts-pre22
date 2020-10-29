@@ -280,10 +280,16 @@ describe('MockTrueLender', () => {
         .to.be.revertedWith('TrueLender: Loan duration is out of bounds')
     })
 
-    it('reverts if loan has to small APY', async () => {
+    it('reverts if loan has too small APY', async () => {
       await mockLoanToken.mock.getParameters.returns(amount, apy.div(10), duration)
       await expect(lender.fund(mockLoanToken.address))
-        .to.be.revertedWith('TrueLender: APY is below minimum')
+        .to.be.revertedWith('TrueLender: APY is out of bounds')
+    })
+
+    it('reverts if loan has too big APY', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount, 5000, duration)
+      await expect(lender.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: APY is out of bounds')
     })
 
     it('reverts if loan was not long enough under voting', async () => {

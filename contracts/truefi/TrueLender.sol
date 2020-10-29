@@ -119,7 +119,7 @@ contract TrueLender is ITrueLender, Ownable {
 
         require(loanSizeWithinBounds(amount), "TrueLender: Loan size is out of bounds");
         require(loanDurationWithinBounds(duration), "TrueLender: Loan duration is out of bounds");
-        require(loanIsAttractiveEnough(apy), "TrueLender: APY is below minimum");
+        require(loanIsAttractiveEnough(apy), "TrueLender: APY is out of bounds");
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
         require(votesThresholdReached(amount, yes), "TrueLender: Not enough votes given for the loan");
         require(loanIsCredible(apy, duration, yes, no), "TrueLender: Loan risk is too high");
@@ -193,7 +193,7 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     function loanIsAttractiveEnough(uint256 apy) public view returns (bool) {
-        return apy >= minApy;
+        return apy >= minApy && apy <= maxApy;
     }
 
     function votingLastedLongEnough(uint256 start) public view returns (bool) {
