@@ -4,15 +4,16 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import {IArbitraryDistributor} from "../interface/IArbitraryDistributor.sol";
 import {Initializable} from "../upgradeability/Initializable.sol";
 
-contract ArbitraryDistributor is Initializable {
+contract ArbitraryDistributor is IArbitraryDistributor, Initializable {
     using SafeMath for uint256;
 
     IERC20 public trustToken;
     address public beneficiary;
-    uint256 public amount;
-    uint256 public remaining;
+    uint256 public override amount;
+    uint256 public override remaining;
 
     function initialize(
         address _beneficiary,
@@ -30,7 +31,7 @@ contract ArbitraryDistributor is Initializable {
         _;
     }
 
-    function distribute(uint256 _amount) public onlyBeneficiary {
+    function distribute(uint256 _amount) public override onlyBeneficiary {
         remaining = remaining.sub(_amount);
         require(trustToken.transfer(msg.sender, _amount));
     }
