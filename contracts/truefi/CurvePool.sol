@@ -44,10 +44,14 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         return _currencyToken;
     }
 
+    function totalLiquidityTokenBalance() public view returns (uint256) {
+        return _curvePool.token().balanceOf(address(this)).add(_curveGauge.balanceOf(address(this)));
+    }
+
     function poolValue() public view returns (uint256) {
         return
             _currencyToken.balanceOf(address(this)).add(_lender.value()).add(
-                _curvePool.token().balanceOf(address(this)).mul(_curvePool.curve().get_virtual_price()).div(1 ether)
+                totalLiquidityTokenBalance().mul(_curvePool.curve().get_virtual_price()).div(1 ether)
             );
     }
 
@@ -67,7 +71,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         uint256 _totalSupply = totalSupply();
 
         uint256 currencyAmountToTransfer = amount.mul(_currencyToken.balanceOf(address(this))).div(_totalSupply);
-        uint256 curveLiquidityAmountToTransfer = amount.mul(_curvePool.token().balanceOf(address(this))).div(_totalSupply);
+        uint256 curveLiquidityAmountToTransfer = amount.mul(totalLiquidityTokenBalance()).div(_totalSupply);
 
         _burn(msg.sender, amount);
 
@@ -76,6 +80,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
             require(_currencyToken.transfer(msg.sender, currencyAmountToTransfer));
         }
         if (curveLiquidityAmountToTransfer > 0) {
+            _curveGauge.withdraw(curveLiquidityAmountToTransfer); // TODO: stop assuming that everything is in gauge
             require(_curvePool.token().transfer(msg.sender, curveLiquidityAmountToTransfer));
         }
     }
@@ -89,9 +94,9 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     }
 
     function pull(uint256 crvAmount, uint256 minCurrencyAmount) external onlyOwner {
-        require(crvAmount <= _curvePool.token().balanceOf(address(this)), "CurvePool: Insufficient Curve liquidity balance");
+        require(crvAmount <= totalLiquidityTokenBalance(), "CurvePool: Insufficient Curve liquidity balance");
 
-        _curveGauge.withdraw(crvAmount);
+        _curveGauge.withdraw(crvAmount); // TODO: stop assuming that everything is in gauge
         _curvePool.remove_liquidity_one_coin(crvAmount, TUSD_INDEX, minCurrencyAmount, false);
     }
 
@@ -102,9 +107,10 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
             uint256 amountToWithdraw = expectedAmount.sub(_currencyToken.balanceOf(address(this)));
             uint256 roughCurveTokenAmount = calcTokenAmount(amountToWithdraw).mul(1005).div(1000);
             require(
-                roughCurveTokenAmount <= _curvePool.token().balanceOf(address(this)),
+                roughCurveTokenAmount <= totalLiquidityTokenBalance(),
                 "CurvePool: Not enough Curve liquidity tokens in pool to cover borrow"
             );
+            _curveGauge.withdraw(roughCurveTokenAmount); // TODO: stop assuming that everything is in gauge
             _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
             require(expectedAmount <= _currencyToken.balanceOf(address(this)), "CurvePool: Not enough funds in pool to cover borrow");
         }

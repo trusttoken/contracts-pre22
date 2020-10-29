@@ -11,6 +11,7 @@ import { MockCurvePoolFactory } from '../../build/types/MockCurvePoolFactory'
 import { TrueLender } from '../../build/types/TrueLender'
 import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
 import TrueRatingAgency from '../../build/TrueRatingAgency.json'
+import ICurveGauge from '../../build/ICurveGauge.json'
 import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
 import { toTrustToken } from '../../scripts/utils'
@@ -28,6 +29,7 @@ describe('CurvePool', () => {
   let pool: CurvePool
   let lender: TrueLender
   let mockRatingAgency: MockContract
+  let mockCurveGauge: MockContract
 
   const dayInSeconds = 60 * 60 * 24
 
@@ -40,8 +42,11 @@ describe('CurvePool', () => {
     curveToken = MockErc20TokenFactory.connect(await curve.token(), owner)
     pool = await new CurvePoolFactory(owner).deploy()
     mockRatingAgency = await deployMockContract(owner, TrueRatingAgency.abi)
+    mockCurveGauge = await deployMockContract(owner, ICurveGauge.abi)
+    await mockCurveGauge.mock.deposit.returns()
+    await mockCurveGauge.mock.withdraw.returns()
     lender = await new TrueLenderFactory(owner).deploy()
-    await pool.initialize(curve.address, token.address, lender.address)
+    await pool.initialize(curve.address, mockCurveGauge.address, token.address, lender.address)
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
   })
@@ -194,6 +199,10 @@ describe('CurvePool', () => {
     it('reverts if flushing more than tUSD balance', async () => {
       await expect(pool.flush(parseEther('10000001'), 0)).to.be.revertedWith('CurvePool: Insufficient currency balance')
     })
+    
+    it('deposits liquidity tokens in curve gauge', async () => {
+      await expect('deposit').to.be.calledOnContractWith(mockCurveGauge, [parseEther('100')])
+    })
   })
 
   describe('pull', () => {
@@ -214,12 +223,16 @@ describe('CurvePool', () => {
     it('reverts if flushing more than curve balance', async () => {
       await expect(pool.pull(parseEther('1001'), 0)).to.be.revertedWith('CurvePool: Insufficient Curve liquidity balance')
     })
+    
+    it('withdraws liquidity tokens from curve gauge', async () => {
+      await expect('withdraw').to.be.calledOnContractWith(mockCurveGauge, [parseEther('100')])
+    })
   })
 
   describe('borrow-repay', () => {
     beforeEach(async () => {
       pool = await new CurvePoolFactory(owner).deploy()
-      await pool.initialize(curve.address, token.address, borrower.address)
+      await pool.initialize(curve.address, mockCurveGauge.address, token.address, borrower.address)
       await token.approve(pool.address, parseEther('10000000'))
       await pool.join(parseEther('10000000'))
       await pool.flush(parseEther('5000000'), 0)
@@ -246,6 +259,7 @@ describe('CurvePool', () => {
       await token.mint(curve.address, parseEther('2000000'))
       await curve.set_withdraw_price(parseEther('1.5'))
       await pool.connect(borrower).borrow(parseEther('6000000'))
+      await expect('withdraw').to.be.calledOnContract(mockCurveGauge)
       expect(await token.balanceOf(borrower.address)).to.equal(parseEther('6000000'))
     })
   })
