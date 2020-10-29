@@ -27,6 +27,7 @@ contract TrueLender is ITrueLender, Ownable {
      * @dev % multiplied by 100. e.g. 10.5% = 1050
      */
     uint256 public minApy = 1000;
+    uint256 public maxApy = 3000;
     uint256 public participationFactor = 10000;
     uint256 public riskAversion = 15000;
 
@@ -37,7 +38,7 @@ contract TrueLender is ITrueLender, Ownable {
     uint256 public votingPeriod = 7 days;
 
     event Allowed(address indexed who, bool status);
-    event MinApyChanged(uint256 minApy);
+    event ApyLimitsChanged(uint256 minApy, uint256 maxApy);
     event ParticipationFactorChanged(uint256 participationFactor);
     event RiskAversionChanged(uint256 participationFactor);
     event VotingPeriodChanged(uint256 votingPeriod);
@@ -79,9 +80,11 @@ contract TrueLender is ITrueLender, Ownable {
         emit DurationLimitsChanged(min, max);
     }
 
-    function setMinApy(uint256 newMinApy) external onlyOwner {
+    function setApyLimits(uint256 newMinApy, uint256 newMaxApy) external onlyOwner {
+        require(newMaxApy >= newMinApy, "TrueLender: Maximal APY is smaller than minimal");
         minApy = newMinApy;
-        emit MinApyChanged(newMinApy);
+        maxApy = newMaxApy;
+        emit ApyLimitsChanged(newMinApy, newMaxApy);
     }
 
     function setVotingPeriod(uint256 newVotingPeriod) external onlyOwner {

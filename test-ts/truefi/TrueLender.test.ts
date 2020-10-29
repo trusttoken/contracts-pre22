@@ -93,19 +93,28 @@ describe('MockTrueLender', () => {
   })
 
   describe('Parameters set up', () => {
-    describe('setMinApy', () => {
+    describe('setApyLimits', () => {
       it('changes minApy', async () => {
-        await lender.setMinApy(1234)
+        await lender.setApyLimits(1234, 3456)
         expect(await lender.minApy()).to.equal(1234)
+        expect(await lender.maxApy()).to.equal(3456)
       })
 
-      it('emits MinApyChanged', async () => {
-        await expect(lender.setMinApy(1234))
-          .to.emit(lender, 'MinApyChanged').withArgs(1234)
+      it('emits ApyLimitsChanged', async () => {
+        await expect(lender.setApyLimits(1234, 3456))
+          .to.emit(lender, 'ApyLimitsChanged').withArgs(1234, 3456)
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(otherWallet).setMinApy(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(otherWallet).setApyLimits(1234, 3456)).to.be.revertedWith('caller is not the owner')
+      })
+
+      it('cannot set minApy to be bigger than maxApy', async () => {
+        await expect(lender.setApyLimits(2, 1)).to.be.revertedWith('TrueLender: Maximal APY is smaller than minimal')
+      })
+
+      it('can set minApy to same value as maxApy', async () => {
+        await expect(lender.setApyLimits(2, 2)).to.be.not.reverted
       })
     })
 
