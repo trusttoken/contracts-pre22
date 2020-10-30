@@ -123,11 +123,11 @@ describe('TrueRatingAgency', () => {
 
   describe('Whitelisting', () => {
     it('changes whitelist status', async () => {
-      expect(await rater.allowedBorrowers(otherWallet.address)).to.be.false
+      expect(await rater.allowedSubmitters(otherWallet.address)).to.be.false
       await rater.allow(otherWallet.address, true)
-      expect(await rater.allowedBorrowers(otherWallet.address)).to.be.true
+      expect(await rater.allowedSubmitters(otherWallet.address)).to.be.true
       await rater.allow(otherWallet.address, false)
-      expect(await rater.allowedBorrowers(otherWallet.address)).to.be.false
+      expect(await rater.allowedSubmitters(otherWallet.address)).to.be.false
     })
 
     it('emits event', async () => {

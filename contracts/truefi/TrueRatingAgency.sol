@@ -25,7 +25,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         uint256 reward;
     }
 
-    mapping(address => bool) public allowedBorrowers;
+    mapping(address => bool) public allowedSubmitters;
     mapping(address => Loan) public loans;
 
     IBurnableERC20 public trustToken;
@@ -47,8 +47,8 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     event Voted(address loanToken, address voter, bool choice, uint256 stake);
     event Withdrawn(address loanToken, address voter, uint256 stake, uint256 received, uint256 burned);
 
-    modifier onlyAllowedBorrowers() {
-        require(allowedBorrowers[msg.sender], "TrueRatingAgency: Sender is not allowed to submit");
+    modifier onlyAllowedSubmitters() {
+        require(allowedSubmitters[msg.sender], "TrueRatingAgency: Sender is not allowed to submit");
         _;
     }
 
@@ -127,11 +127,11 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     function allow(address who, bool status) external onlyOwner {
-        allowedBorrowers[who] = status;
+        allowedSubmitters[who] = status;
         emit Allowed(who, status);
     }
 
-    function submit(address id) external override onlyAllowedBorrowers onlyNotExistingLoans(id) {
+    function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
         require(ILoanToken(id).isLoanToken(), "TrueRatingAgency: Only LoanTokens are supported");
         loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0});
         emit LoanSubmitted(id);
