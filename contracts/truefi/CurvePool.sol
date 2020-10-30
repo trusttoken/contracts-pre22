@@ -55,7 +55,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
             );
     }
 
-    function ensureEnoughLiquidityTokensAreAvailable(uint256 neededAmount) internal {
+    function ensureEnoughTokensAreAvailable(uint256 neededAmount) internal {
         uint256 currentlyAvailableAmount = _curvePool.token().balanceOf(address(this));
         if (currentlyAvailableAmount < neededAmount) {
             _curveGauge.withdraw(neededAmount.sub(currentlyAvailableAmount));
@@ -87,7 +87,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
             require(_currencyToken.transfer(msg.sender, currencyAmountToTransfer));
         }
         if (curveLiquidityAmountToTransfer > 0) {
-            ensureEnoughLiquidityTokensAreAvailable(curveLiquidityAmountToTransfer);
+            ensureEnoughTokensAreAvailable(curveLiquidityAmountToTransfer);
             require(_curvePool.token().transfer(msg.sender, curveLiquidityAmountToTransfer));
         }
     }
@@ -103,7 +103,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     function pull(uint256 crvAmount, uint256 minCurrencyAmount) external onlyOwner {
         require(crvAmount <= totalLiquidityTokenBalance(), "CurvePool: Insufficient Curve liquidity balance");
 
-        ensureEnoughLiquidityTokensAreAvailable(crvAmount);
+        ensureEnoughTokensAreAvailable(crvAmount);
         _curvePool.remove_liquidity_one_coin(crvAmount, TUSD_INDEX, minCurrencyAmount, false);
     }
 
@@ -117,7 +117,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
                 roughCurveTokenAmount <= totalLiquidityTokenBalance(),
                 "CurvePool: Not enough Curve liquidity tokens in pool to cover borrow"
             );
-            ensureEnoughLiquidityTokensAreAvailable(roughCurveTokenAmount);
+            ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
             _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
             require(expectedAmount <= _currencyToken.balanceOf(address(this)), "CurvePool: Not enough funds in pool to cover borrow");
         }
