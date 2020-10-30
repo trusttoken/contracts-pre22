@@ -11,6 +11,20 @@ interface ICurve {
     function get_virtual_price() external view returns (uint256);
 }
 
+interface ICurveGauge {
+    function balanceOf(address depositor) external view returns (uint256);
+
+    function minter() external returns (ICurveMinter);
+
+    function deposit(uint256 amount) external;
+
+    function withdraw(uint256 amount) external;
+}
+
+interface ICurveMinter {
+    function mint(address gauge) external;
+}
+
 interface ICurvePool {
     function add_liquidity(uint256[4] memory amounts, uint256 min_mint_amount) external;
 
