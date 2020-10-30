@@ -199,7 +199,7 @@ describe('CurvePool', () => {
     it('reverts if flushing more than tUSD balance', async () => {
       await expect(pool.flush(parseEther('10000001'), 0)).to.be.revertedWith('CurvePool: Insufficient currency balance')
     })
-    
+
     it('deposits liquidity tokens in curve gauge', async () => {
       await expect('deposit').to.be.calledOnContractWith(mockCurveGauge, [parseEther('100')])
     })
@@ -223,7 +223,7 @@ describe('CurvePool', () => {
     it('reverts if flushing more than curve balance', async () => {
       await expect(pool.pull(parseEther('1001'), 0)).to.be.revertedWith('CurvePool: Insufficient Curve liquidity balance')
     })
-    
+
     it('withdraws liquidity tokens from curve gauge', async () => {
       await expect('withdraw').to.be.calledOnContractWith(mockCurveGauge, [parseEther('100')])
     })
