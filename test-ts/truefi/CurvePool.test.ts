@@ -224,10 +224,6 @@ describe('CurvePool', () => {
     it('reverts if flushing more than curve balance', async () => {
       await expect(pool.pull(parseEther('1001'), 0)).to.be.revertedWith('CurvePool: Insufficient Curve liquidity balance')
     })
-
-    it('withdraws liquidity tokens from curve gauge', async () => {
-      await expect('withdraw').to.be.calledOnContractWith(mockCurveGauge, [parseEther('100')])
-    })
   })
 
   describe('borrow-repay', () => {
@@ -260,7 +256,6 @@ describe('CurvePool', () => {
       await token.mint(curve.address, parseEther('2000000'))
       await curve.set_withdraw_price(parseEther('1.5'))
       await pool.connect(borrower).borrow(parseEther('6000000'))
-      await expect('withdraw').to.be.calledOnContract(mockCurveGauge)
       expect(await token.balanceOf(borrower.address)).to.equal(parseEther('6000000'))
     })
   })
