@@ -17,11 +17,11 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
  * - loan APY
  *
  * Loan progresses through the following states:
- * Awaiting: Waiting for funding to meet capital requirements
- * Funded: Capital requirements met, borrower can withdraw
- * Withdrawn: Borrower withdraws money, loan waiting to be repaid
- * Settled: Loan has been paid back in full with interest
- * Defaulted: Loan has not been paid back in full
+ * Awaiting:    Waiting for funding to meet capital requirements
+ * Funded:      Capital requirements met, borrower can withdraw
+ * Withdrawn:   Borrower withdraws money, loan waiting to be repaid
+ * Settled:     Loan has been paid back in full with interest
+ * Defaulted:   Loan has not been paid back in full
  *
  * LoanTokens are non-transferrable except for whitelisted addresses
  */

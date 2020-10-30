@@ -11,6 +11,10 @@ import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ERC20} from "./upgradeability/UpgradeableERC20.sol";
 import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
+/**
+ * @title CurvePool
+ * @notice TruePool which uses curve.fi to store idle funds
+ */
 contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
 

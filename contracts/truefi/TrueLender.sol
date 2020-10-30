@@ -10,6 +10,10 @@ import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
 import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
+/**
+ * @title TrueLender
+ * @dev TrueFI lending pool
+ */
 contract TrueLender is ITrueLender, Ownable {
     using SafeMath for uint256;
 
