@@ -170,6 +170,10 @@ contract LoanToken is ILoanToken, ERC20 {
         return _amount.add(_amount.mul(apy).mul(duration).div(360 days).div(10000));
     }
 
+    function profit() external override view returns (uint256) {
+        return debt.sub(amount);
+    }
+
     function _transfer(
         address sender,
         address recipient,
