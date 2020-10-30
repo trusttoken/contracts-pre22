@@ -45,6 +45,7 @@ describe('CurvePool', () => {
     mockCurveGauge = await deployMockContract(owner, ICurveGauge.abi)
     await mockCurveGauge.mock.deposit.returns()
     await mockCurveGauge.mock.withdraw.returns()
+    await mockCurveGauge.mock.balanceOf.returns(0)
     lender = await new TrueLenderFactory(owner).deploy()
     await pool.initialize(curve.address, mockCurveGauge.address, token.address, lender.address)
     await lender.initialize(pool.address, mockRatingAgency.address)
