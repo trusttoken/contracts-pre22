@@ -32,6 +32,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     event Pulled(uint256 crvAmount);
     event Borrow(uint256 amount);
     event Repaid(address indexed payer, uint256 amount);
+    event Collected(address indexed beneficiary, uint256 amount);
 
     function initialize(
         ICurvePool __curvePool,
@@ -168,6 +169,8 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         if (amount > 0) {
             require(_currencyToken.transfer(beneficiary, amount));
         }
+
+        emit Collected(beneficiary, amount);
     }
 
     /**
