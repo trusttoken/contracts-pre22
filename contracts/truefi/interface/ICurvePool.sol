@@ -12,7 +12,7 @@ interface ICurve {
 }
 
 interface ICurveGauge {
-    function balanceOf(address depositor) external returns (uint256);
+    function balanceOf(address depositor) external view returns (uint256);
 
     function minter() external returns (ICurveMinter);
 
