@@ -235,6 +235,14 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
+     * @dev get profit for this loan
+     * @return profit for this loan
+     */
+    function profit() external override view returns (uint256) {
+        return debt.sub(amount);
+    }
+
+    /**
      * @dev Override ERC20 _transfer so only whitelisted addresses can transfer
      * @param sender sender of the transaction
      * @param recipient recipient of the transaction

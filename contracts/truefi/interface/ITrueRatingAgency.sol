@@ -20,4 +20,6 @@ interface ITrueRatingAgency {
     function no(address id, uint256 stake) external;
 
     function withdraw(address id, uint256 stake) external;
+
+    function claim(address id, address voter) external;
 }
