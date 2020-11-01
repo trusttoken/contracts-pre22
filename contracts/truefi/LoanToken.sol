@@ -127,6 +127,22 @@ contract LoanToken is ILoanToken, ERC20 {
         return (amount, apy, duration);
     }
 
+    function value(uint256 _balance) external override view returns (uint256) {
+        if (_balance == 0) {
+            return 0;
+        }
+
+        uint256 passed = block.timestamp.sub(start);
+        if (passed > duration) {
+            passed = duration;
+        }
+
+        uint256 helper = amount.mul(apy).mul(passed).mul(_balance);
+        uint256 interest = helper.div(360 days).div(10000).div(totalSupply());
+
+        return amount.add(interest);
+    }
+
     /**
      * @dev Fund a loan
      * Set status, start time, lender
