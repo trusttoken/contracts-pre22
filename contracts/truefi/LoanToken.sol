@@ -108,8 +108,8 @@ contract LoanToken is ILoanToken, ERC20 {
         return (amount, apy, duration);
     }
 
-    function value(uint256 balance) external override view returns (uint256) {
-        if (balance == 0) {
+    function value(uint256 _balance) external override view returns (uint256) {
+        if (_balance == 0) {
             return 0;
         }
 
@@ -118,7 +118,7 @@ contract LoanToken is ILoanToken, ERC20 {
             passed = duration;
         }
 
-        uint256 helper = amount.mul(apy).mul(passed).mul(balance);
+        uint256 helper = amount.mul(apy).mul(passed).mul(_balance);
         uint256 interest = helper.div(360 days).div(10000).div(totalSupply());
 
         return amount.add(interest);
