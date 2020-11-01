@@ -134,7 +134,7 @@ contract TrueLender is ITrueLender, Ownable {
     function value() external override view returns (uint256) {
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
-            totalValue = totalValue.add(_loans[index].value(address(this)));
+            totalValue = totalValue.add(_loans[index].value(_loans[index].balanceOf(address(this))));
         }
         return totalValue;
     }

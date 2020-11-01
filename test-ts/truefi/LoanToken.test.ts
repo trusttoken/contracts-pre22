@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { ContractTransaction, Wallet } from 'ethers'
+import { BigNumber, ContractTransaction, Wallet } from 'ethers'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
@@ -422,24 +422,27 @@ describe('LoanToken', () => {
   })
 
   describe('Value', () => {
+    let loanTokenBalance: BigNumber
+
     beforeEach(async () => {
       await loanToken.fund()
+      loanTokenBalance = await loanToken.balanceOf(lender.address)
     })
 
     it('returns proper value at the beginning of the loan', async () => {
-      expect(await loanToken.value(lender.address)).to.equal(parseEther('1000'))
+      expect(await loanToken.value(loanTokenBalance)).to.equal(parseEther('1000'))
     })
 
     it('returns proper value in the middle of the loan', async () => {
       await timeTravel(provider, monthInSeconds * 6)
-      expect(await loanToken.value(lender.address)).to.equal(parseEther('1050'))
+      expect(await loanToken.value(loanTokenBalance)).to.equal(parseEther('1050'))
       await timeTravel(provider, monthInSeconds * 3)
-      expect(await loanToken.value(lender.address)).to.equal(parseEther('1075'))
+      expect(await loanToken.value(loanTokenBalance)).to.equal(parseEther('1075'))
     })
 
     it('returns proper value at the end of the loan', async () => {
       await timeTravel(provider, monthInSeconds * 12)
-      expect(await loanToken.value(lender.address)).to.equal(parseEther('1100'))
+      expect(await loanToken.value(loanTokenBalance)).to.equal(parseEther('1100'))
     })
   })
 })
