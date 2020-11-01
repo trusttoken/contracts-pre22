@@ -6,7 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {ITruePool} from "./interface/ITruePool.sol";
-import {ICurvePool, ICurveGauge} from "./interface/ICurvePool.sol";
+import {ICurvePool, ICurveGauge, ICurveMinter} from "./interface/ICurvePool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ERC20} from "./upgradeability/UpgradeableERC20.sol";
 import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
@@ -30,6 +30,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     ICurveGauge public _curveGauge;
     IERC20 public _currencyToken;
     ITrueLender public _lender;
+    ICurveMinter public _minter;
 
     uint256 public ownerFee = 25;
     uint256 public claimableFees;
@@ -50,8 +51,8 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
      * @dev Initialize pool
      * @param __curvePool curve pool address
      * @param __curveGauge curve gauge address
-     * @param __currencyToken
-     * @param __lender
+     * @param __currencyToken curve pool underlying token
+     * @param __lender TrueLender address
      */
     function initialize(
         ICurvePool __curvePool,
@@ -66,6 +67,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         _curveGauge = __curveGauge;
         _currencyToken = __currencyToken;
         _lender = __lender;
+        _minter = _curveGauge.minter();
 
         _currencyToken.approve(address(_curvePool), uint256(-1));
         _curvePool.token().approve(address(_curvePool), uint256(-1));
@@ -223,6 +225,13 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         require(_currencyToken.transferFrom(msg.sender, address(this), currencyAmount));
 
         emit Repaid(msg.sender, currencyAmount);
+    }
+
+    /**
+     * @dev Collect CRV tokens minted by staking at gauge
+     */
+    function collectCrv() external {
+        _minter.mint(address(_curveGauge));
     }
 
     /**
