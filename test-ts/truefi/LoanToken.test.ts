@@ -429,14 +429,14 @@ describe('LoanToken', () => {
     it('returns proper value at the beginning of the loan', async () => {
       expect(await loanToken.value(lender.address)).to.equal(parseEther('1000'))
     })
-    
+
     it('returns proper value in the middle of the loan', async () => {
       await timeTravel(provider, monthInSeconds * 6)
       expect(await loanToken.value(lender.address)).to.equal(parseEther('1050'))
       await timeTravel(provider, monthInSeconds * 3)
       expect(await loanToken.value(lender.address)).to.equal(parseEther('1075'))
     })
-    
+
     it('returns proper value at the end of the loan', async () => {
       await timeTravel(provider, monthInSeconds * 12)
       expect(await loanToken.value(lender.address)).to.equal(parseEther('1100'))
