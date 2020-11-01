@@ -1,15 +1,16 @@
 import { expect } from 'chai'
-import { BigNumber, ContractTransaction, Wallet } from 'ethers'
+import { MockProvider } from 'ethereum-waffle'
+import { BigNumber, ContractTransaction, Wallet, BigNumberish } from 'ethers'
+import { formatEther, parseEther } from '@ethersproject/units'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { timeTravel } from '../utils/timeTravel'
+import { expectCloseTo } from '../utils/expectCloseTo'
+
 import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
 import { LoanToken } from '../../build/types/LoanToken'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
-import { MockProvider } from 'ethereum-waffle'
-import { BigNumberish } from 'ethers'
-import { formatEther, parseEther } from '@ethersproject/units'
-import { timeTravel } from '../utils/timeTravel'
 
 describe('LoanToken', () => {
   enum LoanTokenStatus { Awaiting, Funded, Withdrawn, Settled, Defaulted }
@@ -430,19 +431,19 @@ describe('LoanToken', () => {
     })
 
     it('returns proper value at the beginning of the loan', async () => {
-      expect(await loanToken.value(loanTokenBalance)).to.equal(parseEther('1000'))
+      expectCloseTo(await loanToken.value(loanTokenBalance), parseEther('1000'))
     })
 
     it('returns proper value in the middle of the loan', async () => {
       await timeTravel(provider, monthInSeconds * 6)
-      expect(await loanToken.value(loanTokenBalance)).to.equal(parseEther('1050'))
+      expectCloseTo(await loanToken.value(loanTokenBalance), parseEther('1050'))
       await timeTravel(provider, monthInSeconds * 3)
-      expect(await loanToken.value(loanTokenBalance)).to.equal(parseEther('1075'))
+      expectCloseTo(await loanToken.value(loanTokenBalance), parseEther('1075'))
     })
 
     it('returns proper value at the end of the loan', async () => {
       await timeTravel(provider, monthInSeconds * 12)
-      expect(await loanToken.value(loanTokenBalance)).to.equal(parseEther('1100'))
+      expectCloseTo(await loanToken.value(loanTokenBalance), parseEther('1100'))
     })
   })
 })
