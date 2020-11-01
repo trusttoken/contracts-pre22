@@ -8,6 +8,10 @@ import {ITrueDistributor} from "./interface/ITrueDistributor.sol";
 import {ITrueFarm} from "./interface/ITrueFarm.sol";
 import {Initializable} from "./upgradeability/Initializable.sol";
 
+/**
+ * @title TrueFarm
+ * @notice Deposit liquidity tokens to earn TRU rewards over time
+ */
 contract TrueFarm is ITrueFarm, Initializable {
     using SafeMath for uint256;
     uint256 constant PRECISION = 1e30;

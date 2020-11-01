@@ -6,11 +6,23 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {ITruePool} from "./interface/ITruePool.sol";
-import {ICurvePool, ICurveGauge} from "./interface/ICurvePool.sol";
+import {ICurvePool, ICurveGauge, ICurveMinter} from "./interface/ICurvePool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ERC20} from "./upgradeability/UpgradeableERC20.sol";
 import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
+/**
+ * @title TrueFi Pool
+ * @dev Lending pool which uses curve.fi to store idle funds
+ * Earn high interest rates on currency deposits through uncollateralized loans
+ *
+ * Funds deposited in this pool are NOT LIQUID!
+ * Exiting the pool will withdraw a basket of LoanTokens backing the pool
+ * After exiting, an account will need to wait for LoanTokens to expire and burn them
+ * It is recommended to perform a zap or swap tokens on Uniswap for liquidity
+ *
+ * Funds are managed through an external function to save gas on deposits
+ */
 contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
 
@@ -18,6 +30,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     ICurveGauge public _curveGauge;
     IERC20 public _currencyToken;
     ITrueLender public _lender;
+    ICurveMinter public _minter;
 
     uint256 public ownerFee = 25;
     uint256 public claimableFees;
@@ -34,6 +47,13 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     event Repaid(address indexed payer, uint256 amount);
     event Collected(address indexed beneficiary, uint256 amount);
 
+    /**
+     * @dev Initialize pool
+     * @param __curvePool curve pool address
+     * @param __curveGauge curve gauge address
+     * @param __currencyToken curve pool underlying token
+     * @param __lender TrueLender address
+     */
     function initialize(
         ICurvePool __curvePool,
         ICurveGauge __curveGauge,
@@ -47,19 +67,31 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         _curveGauge = __curveGauge;
         _currencyToken = __currencyToken;
         _lender = __lender;
+        _minter = _curveGauge.minter();
 
         _currencyToken.approve(address(_curvePool), uint256(-1));
         _curvePool.token().approve(address(_curvePool), uint256(-1));
     }
 
+    /**
+     * @dev get currency token address
+     * @return currency token address
+     */
     function currencyToken() public override view returns (IERC20) {
         return _currencyToken;
     }
 
+    /**
+     * @dev Get total balance of curve.fi pool tokens
+     */
     function totalLiquidityTokenBalance() public view returns (uint256) {
         return _curvePool.token().balanceOf(address(this)).add(_curveGauge.balanceOf(address(this)));
     }
 
+    /**
+     * @dev Calculate pool value in USD
+     * @return pool value in USD
+     */
     function poolValue() public view returns (uint256) {
         return
             currencyBalance().add(_lender.value()).add(
@@ -67,6 +99,10 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
             );
     }
 
+    /**
+     * @dev ensure enough curve.fi pool tokens are available
+     * @param neededAmount amount required
+     */
     function ensureEnoughTokensAreAvailable(uint256 neededAmount) internal {
         uint256 currentlyAvailableAmount = _curvePool.token().balanceOf(address(this));
         if (currentlyAvailableAmount < neededAmount) {
@@ -74,11 +110,19 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         }
     }
 
+    /**
+     * @dev set pool fee
+     * @param fee pool fee
+     */
     function setFee(uint256 fee) external onlyOwner {
         ownerFee = fee;
         emit FeeChanged(fee);
     }
 
+    /**
+     * @dev Join the pool by depositing currency tokens
+     * @param amount amount of currency token to deposit
+     */
     function join(uint256 amount) external override {
         uint256 fee = amount.mul(ownerFee).div(10000);
         uint256 amountToDeposit = amount.sub(fee);
@@ -95,6 +139,11 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         emit Joined(msg.sender, amount, amountToMint);
     }
 
+    /**
+     * @dev Exit pool
+     * This function will withdraw a basket of currencies backing the pool value
+     * @param amount amount of pool tokens to redeem for underlying tokens
+     */
     function exit(uint256 amount) external override nonReentrant {
         require(amount <= balanceOf(msg.sender), "CurvePool: insufficient funds");
 
@@ -117,6 +166,9 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         emit Exited(msg.sender, amount);
     }
 
+    /**
+     * @dev Deposit idle funds into curve.fi pool and stake in gauge
+     */
     function flush(uint256 currencyAmount, uint256 minMintAmount) external onlyOwner {
         require(currencyAmount <= currencyBalance(), "CurvePool: Insufficient currency balance");
 
@@ -127,6 +179,11 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         emit Flushed(currencyAmount);
     }
 
+    /**
+     * @dev Remove liquidity from curve
+     * @param crvAmount amount of curve pool tokens
+     * @param minCurrencyAmount minimum amount of tokens to withdraw
+     */
     function pull(uint256 crvAmount, uint256 minCurrencyAmount) external onlyOwner {
         require(crvAmount <= totalLiquidityTokenBalance(), "CurvePool: Insufficient Curve liquidity balance");
 
@@ -136,6 +193,10 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         emit Pulled(crvAmount);
     }
 
+    /**
+     * @dev Remove liquidity from curve and transfer to borrower
+     * @param expectedAmount expected amount to borrow
+     */
     function borrow(uint256 expectedAmount) external override nonReentrant {
         require(msg.sender == address(_lender), "CurvePool: Only lender can borrow");
 
@@ -156,12 +217,27 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         emit Borrow(expectedAmount);
     }
 
+    /**
+     * @dev repay debt by transferring tokens to the contract
+     * @param currencyAmount amount to repay
+     */
     function repay(uint256 currencyAmount) external override {
         require(_currencyToken.transferFrom(msg.sender, address(this), currencyAmount));
 
         emit Repaid(msg.sender, currencyAmount);
     }
 
+    /**
+     * @dev Collect CRV tokens minted by staking at gauge
+     */
+    function collectCrv() external {
+        _minter.mint(address(_curveGauge));
+    }
+
+    /**
+     * @dev Claim fees from the pool
+     * @param beneficiary account to send funds to
+     */
     function collectFees(address beneficiary) external onlyOwner {
         uint256 amount = claimableFees;
         claimableFees = 0;
@@ -176,6 +252,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     /**
      * @notice Expected amount of minted Curve.fi yDAI/yUSDC/yUSDT/yTUSD tokens.
      * Can be used to control slippage
+     * @param currencyAmount amount to calculate for
      */
     function calcTokenAmount(uint256 currencyAmount) public view returns (uint256) {
         uint256 yTokenAmount = currencyAmount.mul(1e18).div(_curvePool.coins(TUSD_INDEX).getPricePerFullShare());
@@ -183,10 +260,17 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         return _curvePool.curve().calc_token_amount(yAmounts, true);
     }
 
+    /**
+     * @dev Converts the value of a single yCRV into an underlying asset
+     * @param crvAmount amount of curve pool tokens to calculate for
+     */
     function calcWithdrawOneCoin(uint256 crvAmount) public view returns (uint256) {
         return _curvePool.calc_withdraw_one_coin(crvAmount, TUSD_INDEX);
     }
 
+    /**
+     * @dev Currency token balance
+     */
     function currencyBalance() internal view returns (uint256) {
         return _currencyToken.balanceOf(address(this)).sub(claimableFees);
     }

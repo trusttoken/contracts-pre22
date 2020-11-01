@@ -11,6 +11,18 @@ import {ITruePool} from "./interface/ITruePool.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
 import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
+/**
+ * @title TrueRatingAgency
+ * @dev Credit prediction market for LoanTokens
+ *
+ * The RatingAgency has several states:
+ * Void:        Rated loan is invalid
+ * Pending:     Waiting to be funded
+ * Retracted:   Rating has been cancelled
+ * Running:     Rated loan has been funded
+ * Settled:     Rated loan has been paid back in full
+ * Defaulted:   Rated loan has not been paid back in full
+ */
 contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     using SafeMath for uint256;
 
