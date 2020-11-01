@@ -19,8 +19,8 @@ import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
  * Funds deposited in this pool are NOT LIQUID!
  * Exiting the pool will withdraw a basket of LoanTokens backing the pool
  * After exiting, an account will need to wait for LoanTokens to expire and burn them
- * It is reccomended to perform a zap or swap tokens on Uniswap for liquidity
- * 
+ * It is recommended to perform a zap or swap tokens on Uniswap for liquidity
+ *
  * Funds are managed through an external function to save gas on deposits
  */
 contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
@@ -226,7 +226,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev Claim fees from the pool 
+     * @dev Claim fees from the pool
      * @param beneficiary account to send funds to
      */
     function collectFees(address beneficiary) external onlyOwner {

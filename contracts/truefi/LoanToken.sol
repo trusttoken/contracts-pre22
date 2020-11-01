@@ -10,7 +10,7 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
 /**
  * @title LoanToken
  * @dev A token which represents share of a debt obligation
- * Each LoanToken has: 
+ * Each LoanToken has:
  * - borrower address
  * - borrow amount
  * - loan duration
