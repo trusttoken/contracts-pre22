@@ -274,9 +274,9 @@ describe('TrueFiPool', () => {
     it('adds fee to claimableFees and borrows less if fee is not 0', async () => {
       const borrowedAmount = excludeFee(parseEther('5000000'))
       const claimableFeesBefore = await pool2.claimableFees()
-      await pool2.connect(borrower).borrow(borrowedAmount, borrowedAmount.mul(9925).div(10000))
-      const claimableFeesAfter = await pool2.claimableFees()
       const fee = borrowedAmount.mul(25).div(10000)
+      await pool2.connect(borrower).borrow(borrowedAmount, borrowedAmount.sub(fee))
+      const claimableFeesAfter = await pool2.claimableFees()
       expect(await token.balanceOf(borrower.address)).to.equal(borrowedAmount.sub(fee))
       expect(claimableFeesAfter.sub(claimableFeesBefore)).to.equal(fee)
       expect(await token.balanceOf(pool2.address)).to.equal(claimableFeesAfter)

@@ -244,7 +244,7 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     function receivedAmount() public override view returns (uint256) {
-        return amount.sub(amount.mul(amount).div(10000));
+        return amount.sub(amount.mul(borrowerFee).div(10000));
     }
 
     /**

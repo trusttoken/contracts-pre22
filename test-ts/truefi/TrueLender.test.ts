@@ -19,7 +19,7 @@ import ITruePoolJson from '../../build/ITruePool.json'
 import ILoanTokenJson from '../../build/ILoanToken.json'
 import ITrueRatingAgencyJson from '../../build/ITrueRatingAgency.json'
 
-describe('MockTrueLender', () => {
+describe('TrueLender', () => {
   let owner: Wallet
   let otherWallet: Wallet
   let provider: providers.JsonRpcProvider
@@ -44,6 +44,7 @@ describe('MockTrueLender', () => {
     await mock.mock.fund.returns()
     await mock.mock.redeem.returns()
     await mock.mock.transfer.returns(true)
+    await mock.mock.receivedAmount.returns(0)
     return mock
   }
 
@@ -315,18 +316,19 @@ describe('MockTrueLender', () => {
     describe('all requirements are met', () => {
       beforeEach(async () => {
         await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
+        await mockLoanToken.mock.receivedAmount.returns(amount.sub(10))
         await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
       })
 
       it('borrows tokens from pool', async () => {
         await lender.fund(mockLoanToken.address)
-        expect('borrow').to.be.calledOnContractWith(mockPool, [amount, 25])
+        expect('borrow').to.be.calledOnContractWith(mockPool, [amount, amount.sub(10)])
       })
 
       it('approves LoanToken to spend funds borrowed from pool', async () => {
         await lender.fund(mockLoanToken.address)
         expect(await tusd.allowance(lender.address, mockLoanToken.address))
-          .to.equal(amount)
+          .to.equal(amount.sub(10))
       })
 
       it('calls fund function', async () => {
@@ -337,7 +339,7 @@ describe('MockTrueLender', () => {
       it('emits proper event', async () => {
         await expect(lender.fund(mockLoanToken.address))
           .to.emit(lender, 'Funded')
-          .withArgs(mockLoanToken.address, amount)
+          .withArgs(mockLoanToken.address, amount.sub(10))
       })
 
       it('adds funded loan to an array', async () => {
