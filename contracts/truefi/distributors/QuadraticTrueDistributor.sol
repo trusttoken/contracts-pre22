@@ -66,6 +66,10 @@ contract QuadraticTrueDistributor is ITrueDistributor, Ownable {
         require(trustToken.transfer(farm, normalise(farmsReward)));
     }
 
+    function withdraw(uint256 _amount) public override onlyOwner {
+        require(trustToken.transfer(msg.sender, _amount));
+    }
+
     function normalise(uint256 amount) public pure returns (uint256) {
         return amount.div(PRECISION);
     }

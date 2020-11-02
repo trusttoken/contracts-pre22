@@ -7,4 +7,6 @@ interface IArbitraryDistributor {
     function remaining() external returns (uint256);
 
     function distribute(uint256 _amount) external;
+
+    function withdraw(uint256 _amount) external;
 }

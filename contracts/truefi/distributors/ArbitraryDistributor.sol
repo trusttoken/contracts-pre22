@@ -5,9 +5,9 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {IArbitraryDistributor} from "../interface/IArbitraryDistributor.sol";
-import {Initializable} from "../upgradeability/Initializable.sol";
+import {Ownable} from "../upgradeability/UpgradeableOwnable.sol";
 
-contract ArbitraryDistributor is IArbitraryDistributor, Initializable {
+contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
     using SafeMath for uint256;
 
     IERC20 public trustToken;
@@ -20,6 +20,7 @@ contract ArbitraryDistributor is IArbitraryDistributor, Initializable {
         IERC20 _trustToken,
         uint256 _amount
     ) public initializer {
+        Ownable.initialize();
         trustToken = _trustToken;
         beneficiary = _beneficiary;
         amount = _amount;
@@ -32,6 +33,11 @@ contract ArbitraryDistributor is IArbitraryDistributor, Initializable {
     }
 
     function distribute(uint256 _amount) public override onlyBeneficiary {
+        remaining = remaining.sub(_amount);
+        require(trustToken.transfer(msg.sender, _amount));
+    }
+
+    function withdraw(uint256 _amount) public override onlyOwner {
         remaining = remaining.sub(_amount);
         require(trustToken.transfer(msg.sender, _amount));
     }

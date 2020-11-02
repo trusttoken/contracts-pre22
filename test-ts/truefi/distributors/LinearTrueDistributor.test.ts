@@ -89,4 +89,25 @@ describe('LinearTrueDistributor', () => {
       })
     })
   })
+
+  describe('withdraw', () => {
+    const withdrawnAmount = 100
+
+    it('only owner can withdraw', async () => {
+      await expect(distributor.connect(farm).withdraw(withdrawnAmount))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('transfer demanded amount to sender', async () => {
+      await expect(() => distributor.withdraw(withdrawnAmount))
+        .to.changeTokenBalance(trustToken, owner, withdrawnAmount)
+    })
+
+    it('changes distributed variable', async () => {
+      const distributedBefore = await distributor.distributed()
+      await distributor.withdraw(withdrawnAmount)
+      const distributedAfter = await distributor.distributed()
+      expect(distributedAfter.sub(distributedBefore)).to.equal(withdrawnAmount)
+    })
+  })
 })

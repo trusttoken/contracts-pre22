@@ -63,4 +63,25 @@ describe('ArbitraryDistributor', () => {
       expect(await distributor.remaining()).to.equal(totalAmount.sub(distributedAmount))
     })
   })
+
+  describe('withdraw', () => {
+    const withdrawnAmount = 100
+
+    it('only owner can withdraw', async () => {
+      await expect(distributor.connect(otherWallet).withdraw(withdrawnAmount))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('transfer demanded amount to sender', async () => {
+      await expect(() => distributor.withdraw(withdrawnAmount))
+        .to.changeTokenBalance(trustToken, owner, withdrawnAmount)
+    })
+
+    it('changes remaining variable', async () => {
+      const remainingBefore = await distributor.remaining()
+      await distributor.withdraw(withdrawnAmount)
+      const remainingAfter = await distributor.remaining()
+      expect(remainingBefore.sub(remainingAfter)).to.equal(withdrawnAmount)
+    })
+  })
 })
