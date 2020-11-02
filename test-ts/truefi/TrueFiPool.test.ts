@@ -247,13 +247,13 @@ describe('TrueFiPool', () => {
     })
 
     it('reverts if borrower is not a lender', async () => {
-      await expect(pool2.borrow(parseEther('1001'))).to.be.revertedWith('CurvePool: Only lender can borrow')
+      await expect(pool2.borrow(parseEther('1001'), parseEther('1001'))).to.be.revertedWith('CurvePool: Only lender can borrow')
     })
 
     it('when borrowing less than trueCurrency balance, uses the balance', async () => {
       provider.clearCallHistory()
       const borrowedAmount = excludeFee(parseEther('5000000'))
-      await pool2.connect(borrower).borrow(borrowedAmount)
+      await pool2.connect(borrower).borrow(borrowedAmount, borrowedAmount)
       expect(await token.balanceOf(borrower.address)).to.equal(borrowedAmount)
       expect(await token.balanceOf(pool2.address)).to.equal(await pool2.claimableFees())
       expect('remove_liquidity_one_coin').to.be.not.calledOnContract(curvePool)
@@ -267,8 +267,19 @@ describe('TrueFiPool', () => {
     it('when trueCurrency balance is not enough, withdraws from curve', async () => {
       await token.mint(curvePool.address, parseEther('2000000'))
       await curvePool.set_withdraw_price(parseEther('1.5'))
-      await pool2.connect(borrower).borrow(parseEther('6000000'))
+      await pool2.connect(borrower).borrow(parseEther('6000000'), parseEther('6000000'))
       expect(await token.balanceOf(borrower.address)).to.equal(parseEther('6000000'))
+    })
+
+    it('adds fee to claimableFees and borrows less if fee is not 0', async () => {
+      const borrowedAmount = excludeFee(parseEther('5000000'))
+      const claimableFeesBefore = await pool2.claimableFees()
+      const fee = borrowedAmount.mul(25).div(10000)
+      await pool2.connect(borrower).borrow(borrowedAmount, borrowedAmount.sub(fee))
+      const claimableFeesAfter = await pool2.claimableFees()
+      expect(await token.balanceOf(borrower.address)).to.equal(borrowedAmount.sub(fee))
+      expect(claimableFeesAfter.sub(claimableFeesBefore)).to.equal(fee)
+      expect(await token.balanceOf(pool2.address)).to.equal(claimableFeesAfter)
     })
   })
 
@@ -296,14 +307,14 @@ describe('TrueFiPool', () => {
     })
   })
 
-  describe('setFee', () => {
+  describe('setJoiningFee', () => {
     it('sets fee value', async () => {
-      await pool.setFee(50)
-      expect(await pool.ownerFee()).to.equal(50)
+      await pool.setJoiningFee(50)
+      expect(await pool.joiningFee()).to.equal(50)
     })
 
     it('reverts when called not by owner', async () => {
-      await expect(pool.connect(borrower).setFee(50)).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(pool.connect(borrower).setJoiningFee(50)).to.be.revertedWith('Ownable: caller is not the owner')
     })
   })
 })

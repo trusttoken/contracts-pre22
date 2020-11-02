@@ -34,18 +34,18 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     ICurveMinter public _minter;
     IUniswapRouter public _uniRouter;
 
-    uint256 public ownerFee = 25;
+    uint256 public joiningFee = 25;
     uint256 public claimableFees;
 
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
 
-    event FeeChanged(uint256 newFee);
+    event JoiningFeeChanged(uint256 newFee);
     event Joined(address indexed staker, uint256 deposited, uint256 minted);
     event Exited(address indexed staker, uint256 amount);
     event Flushed(uint256 currencyAmount);
     event Pulled(uint256 crvAmount);
-    event Borrow(uint256 amount);
+    event Borrow(uint256 amount, uint256 fee);
     event Repaid(address indexed payer, uint256 amount);
     event Collected(address indexed beneficiary, uint256 amount);
 
@@ -115,12 +115,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev set pool fee
-     * @param fee pool fee
+     * @dev set pool join fee
+     * @param fee new fee
      */
-    function setFee(uint256 fee) external onlyOwner {
-        ownerFee = fee;
-        emit FeeChanged(fee);
+    function setJoiningFee(uint256 fee) external onlyOwner {
+        joiningFee = fee;
+        emit JoiningFeeChanged(fee);
     }
 
     /**
@@ -128,7 +128,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param amount amount of currency token to deposit
      */
     function join(uint256 amount) external override {
-        uint256 fee = amount.mul(ownerFee).div(10000);
+        uint256 fee = amount.mul(joiningFee).div(10000);
         uint256 amountToDeposit = amount.sub(fee);
 
         uint256 amountToMint = amountToDeposit;
@@ -201,7 +201,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev Remove liquidity from curve and transfer to borrower
      * @param expectedAmount expected amount to borrow
      */
-    function borrow(uint256 expectedAmount) external override nonReentrant {
+    function borrow(uint256 expectedAmount, uint256 amountWithoutFee) external override nonReentrant {
+        require(expectedAmount >= amountWithoutFee, "CurvePool: Fee cannot be negative");
         require(msg.sender == address(_lender), "CurvePool: Only lender can borrow");
 
         if (expectedAmount > currencyBalance()) {
@@ -216,9 +217,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
             require(expectedAmount <= currencyBalance(), "CurvePool: Not enough funds in pool to cover borrow");
         }
 
-        require(_currencyToken.transfer(msg.sender, expectedAmount));
+        uint256 fee = expectedAmount.sub(amountWithoutFee);
+        claimableFees = claimableFees.add(fee);
 
-        emit Borrow(expectedAmount);
+        require(_currencyToken.transfer(msg.sender, amountWithoutFee));
+
+        emit Borrow(expectedAmount, fee);
     }
 
     /**
