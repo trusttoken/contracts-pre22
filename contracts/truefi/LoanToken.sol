@@ -39,6 +39,8 @@ contract LoanToken is ILoanToken, ERC20 {
 
     uint256 public redeemed;
 
+    uint256 public constant override borrowerFee = 25;
+
     // whitelist for transfers
     mapping(address => bool) public canTransfer;
 
@@ -152,7 +154,7 @@ contract LoanToken is ILoanToken, ERC20 {
         start = block.timestamp;
         lender = msg.sender;
         _mint(msg.sender, debt);
-        require(currencyToken.transferFrom(msg.sender, address(this), amount));
+        require(currencyToken.transferFrom(msg.sender, address(this), receivedAmount()));
 
         emit Funded(msg.sender);
     }
@@ -174,7 +176,7 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function withdraw(address _beneficiary) external override onlyBorrower onlyFunded {
         status = Status.Withdrawn;
-        require(currencyToken.transfer(_beneficiary, amount));
+        require(currencyToken.transfer(_beneficiary, receivedAmount()));
 
         emit Withdrawn(_beneficiary);
     }
@@ -239,6 +241,10 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function _balance() internal view returns (uint256) {
         return currencyToken.balanceOf(address(this));
+    }
+
+    function receivedAmount() public override view returns (uint256) {
+        return amount.sub(amount.mul(borrowerFee).div(10000));
     }
 
     /**
