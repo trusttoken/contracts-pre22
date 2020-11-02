@@ -7,6 +7,16 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IArbitraryDistributor} from "../interface/IArbitraryDistributor.sol";
 import {Initializable} from "../upgradeability/Initializable.sol";
 
+
+/**
+ * @title ArbitraryTrueDistributor
+ * @notice Distribute TRU to a smart contract
+ * @dev Allows for arbitrary claiming of TRU by a farm contract
+ *
+ * Contracts are registered to receive distributions. Once registered, 
+ * a farm contract can claim TRU from the distributor.
+ * - Owner can withdraw funds in case distribution need to be re-allocated
+ */
 contract ArbitraryDistributor is IArbitraryDistributor, Initializable {
     using SafeMath for uint256;
 

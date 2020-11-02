@@ -114,6 +114,9 @@ contract QuadraticTrueDistributor is ITrueDistributor, Ownable {
     /**
      * @dev Calculates sum of rewards from `fromBlock` to `toBlock`.
      * Uses the fact that sum of n first squares is calculated by n(n+1)(2n+1)/6
+     * @param fromBlock Start Block
+     * @param toBlock End block
+     * @return
      */
     function rewardFormula(uint256 fromBlock, uint256 toBlock) internal virtual pure returns (uint256) {
         return
@@ -122,6 +125,10 @@ contract QuadraticTrueDistributor is ITrueDistributor, Ownable {
             );
     }
 
+    /**
+     * @dev Calculate square sum * 6 to find area under the curve
+     * @return square sum times 6 of n
+     */
     function squareSumTimes6(uint256 n) internal pure returns (uint256) {
         return n.mul(n.add(1)).mul(n.mul(2).add(1));
     }
