@@ -63,4 +63,17 @@ describe('ArbitraryDistributor', () => {
       expect(await distributor.remaining()).to.equal(totalAmount.sub(distributedAmount))
     })
   })
+
+  describe('empty', () => {
+    it('only owner can empty', async () => {
+      await expect(distributor.connect(otherWallet).empty())
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('transfer total balance to sender', async () => {
+      const totalBalance = await trustToken.balanceOf(distributor.address)
+      await expect(() => distributor.empty())
+        .to.changeTokenBalance(trustToken, owner, totalBalance)
+    })
+  })
 })

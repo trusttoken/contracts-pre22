@@ -91,4 +91,8 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
 
         require(trustToken.transfer(farm, amount));
     }
+
+    function empty() public override onlyOwner {
+        require(trustToken.transfer(msg.sender, trustToken.balanceOf(address(this))));
+    }
 }
