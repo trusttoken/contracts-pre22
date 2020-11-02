@@ -12,8 +12,8 @@ import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
 import { MockErc20Token } from '../../build/types/MockErc20Token'
 import { TrueFiPoolFactory } from '../../build/types/TrueFiPoolFactory'
 import { TrueFiPool } from '../../build/types/TrueFiPool'
-import { MockTrueFiPool } from '../../build/types/MockTrueFiPool'
-import { MockTrueFiPoolFactory } from '../../build/types/MockTrueFiPoolFactory'
+import { MockCurvePool } from '../../build/types/MockCurvePool'
+import { MockCurvePoolFactory } from '../../build/types/MockCurvePoolFactory'
 import { TrueLender } from '../../build/types/TrueLender'
 import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
 import TrueRatingAgency from '../../build/TrueRatingAgency.json'
@@ -27,7 +27,7 @@ describe('TrueFiPool', () => {
   let borrower: Wallet
   let token: MockErc20Token
   let curveToken: MockErc20Token
-  let trueFi: MockTrueFiPool
+  let curvePool: MockCurvePool
   let pool: TrueFiPool
   let lender: TrueLender
   let mockRatingAgency: MockContract
@@ -39,9 +39,9 @@ describe('TrueFiPool', () => {
     [owner, borrower] = wallets
     token = await new MockErc20TokenFactory(owner).deploy()
     await token.mint(owner.address, parseEther('10000000'))
-    trueFi = await new MockTrueFiPoolFactory(owner).deploy()
-    await trueFi.initialize(token.address)
-    curveToken = MockErc20TokenFactory.connect(await trueFi.token(), owner)
+    curvePool = await new MockCurvePoolFactory(owner).deploy()
+    await curvePool.initialize(token.address)
+    curveToken = MockErc20TokenFactory.connect(await curvePool.token(), owner)
     pool = await new TrueFiPoolFactory(owner).deploy()
     mockRatingAgency = await deployMockContract(owner, TrueRatingAgency.abi)
     mockCurveGauge = await deployMockContract(owner, ICurveGauge.abi)
@@ -50,15 +50,15 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.balanceOf.returns(0)
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
     lender = await new TrueLenderFactory(owner).deploy()
-    await pool.initialize(trueFi.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
+    await pool.initialize(curvePool.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
   })
 
   describe('initializer', () => {
     it('sets infinite allowances to curve', async () => {
-      expect(await token.allowance(pool.address, trueFi.address)).to.equal(constants.MaxUint256)
-      expect(await curveToken.allowance(pool.address, trueFi.address)).to.equal(constants.MaxUint256)
+      expect(await token.allowance(pool.address, curvePool.address)).to.equal(constants.MaxUint256)
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(constants.MaxUint256)
     })
 
     it('sets erc20 params', async () => {
@@ -101,7 +101,7 @@ describe('TrueFiPool', () => {
       const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 1000)
       await lender.fund(loan2.address)
       await pool.flush(excludeFee(parseEther('5000000')), 0)
-      await trueFi.set_withdraw_price(parseEther('2'))
+      await curvePool.set_withdraw_price(parseEther('2'))
       expectCloseTo(await pool.poolValue(), excludeFee(parseEther('4000000').add(parseEther('1050000').add(parseEther('10000000')))))
     })
   })
@@ -199,7 +199,7 @@ describe('TrueFiPool', () => {
 
     it('deposits given amount to curve', async () => {
       await pool.flush(parseEther('100'), 123)
-      expect('add_liquidity').to.be.calledOnContractWith(trueFi, [[0, 0, 0, parseEther('100')], 123])
+      expect('add_liquidity').to.be.calledOnContractWith(curvePool, [[0, 0, 0, parseEther('100')], 123])
     })
 
     it('reverts if not called by owner', async () => {
@@ -218,12 +218,12 @@ describe('TrueFiPool', () => {
   describe('pull', () => {
     beforeEach(async () => {
       await curveToken.mint(pool.address, parseEther('1000'))
-      await token.mint(trueFi.address, parseEther('1000'))
+      await token.mint(curvePool.address, parseEther('1000'))
     })
 
     it('withdraws given amount from curve', async () => {
       await pool.pull(parseEther('100'), 123)
-      expect('remove_liquidity_one_coin').to.be.calledOnContractWith(trueFi, [parseEther('100'), 3, 123, false])
+      expect('remove_liquidity_one_coin').to.be.calledOnContractWith(curvePool, [parseEther('100'), 3, 123, false])
     })
 
     it('reverts if not called by owner', async () => {
@@ -240,7 +240,7 @@ describe('TrueFiPool', () => {
 
     beforeEach(async () => {
       pool2 = await new TrueFiPoolFactory(owner).deploy()
-      await pool2.initialize(trueFi.address, mockCurveGauge.address, token.address, borrower.address, constants.AddressZero)
+      await pool2.initialize(curvePool.address, mockCurveGauge.address, token.address, borrower.address, constants.AddressZero)
       await token.approve(pool2.address, parseEther('10000000'))
       await pool2.join(parseEther('10000000'))
       await pool2.flush(excludeFee(parseEther('5000000')), 0)
@@ -256,7 +256,7 @@ describe('TrueFiPool', () => {
       await pool2.connect(borrower).borrow(borrowedAmount)
       expect(await token.balanceOf(borrower.address)).to.equal(borrowedAmount)
       expect(await token.balanceOf(pool2.address)).to.equal(await pool2.claimableFees())
-      expect('remove_liquidity_one_coin').to.be.not.calledOnContract(trueFi)
+      expect('remove_liquidity_one_coin').to.be.not.calledOnContract(curvePool)
 
       await token.connect(borrower).approve(pool2.address, borrowedAmount)
       await pool2.connect(borrower).repay(borrowedAmount)
@@ -265,8 +265,8 @@ describe('TrueFiPool', () => {
     })
 
     it('when trueCurrency balance is not enough, withdraws from curve', async () => {
-      await token.mint(trueFi.address, parseEther('2000000'))
-      await trueFi.set_withdraw_price(parseEther('1.5'))
+      await token.mint(curvePool.address, parseEther('2000000'))
+      await curvePool.set_withdraw_price(parseEther('1.5'))
       await pool2.connect(borrower).borrow(parseEther('6000000'))
       expect(await token.balanceOf(borrower.address)).to.equal(parseEther('6000000'))
     })
