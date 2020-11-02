@@ -102,12 +102,5 @@ describe('LinearTrueDistributor', () => {
       await expect(() => distributor.withdraw(withdrawnAmount))
         .to.changeTokenBalance(trustToken, owner, withdrawnAmount)
     })
-
-    it('changes distributed variable', async () => {
-      const distributedBefore = await distributor.distributed()
-      await distributor.withdraw(withdrawnAmount)
-      const distributedAfter = await distributor.distributed()
-      expect(distributedAfter.sub(distributedBefore)).to.equal(withdrawnAmount)
-    })
   })
 })

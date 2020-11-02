@@ -76,12 +76,5 @@ describe('ArbitraryDistributor', () => {
       await expect(() => distributor.withdraw(withdrawnAmount))
         .to.changeTokenBalance(trustToken, owner, withdrawnAmount)
     })
-
-    it('changes remaining variable', async () => {
-      const remainingBefore = await distributor.remaining()
-      await distributor.withdraw(withdrawnAmount)
-      const remainingAfter = await distributor.remaining()
-      expect(remainingBefore.sub(remainingAfter)).to.equal(withdrawnAmount)
-    })
   })
 })

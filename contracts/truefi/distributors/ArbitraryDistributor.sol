@@ -38,7 +38,6 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
     }
 
     function withdraw(uint256 _amount) public override onlyOwner {
-        remaining = remaining.sub(_amount);
         require(trustToken.transfer(msg.sender, _amount));
     }
 }
