@@ -78,15 +78,34 @@ describe('TrueFarm', () => {
       expect(await farm.totalStaked()).to.equal(parseEther('500'))
     })
 
+    it('exiting changes stake balance', async () => {
+      await farm.connect(staker1).stake(parseEther('1000'))
+      await farm.connect(staker1).exit(parseEther('500'))
+      expect(await farm.staked(staker1.address)).to.equal(parseEther('500'))
+      expect(await farm.totalStaked()).to.equal(parseEther('500'))
+    })
+
     it('cannot unstake more than is staked', async () => {
       await farm.connect(staker1).stake(parseEther('1000'))
       await expect(farm.connect(staker1).unstake(parseEther('1001'))).to.be.revertedWith('TrueFarm: Cannot withdraw amount bigger than available balance')
     })
 
-    it('yields rewards per staked tokens', async () => {
+    it('cannot exit more than is staked', async () => {
+      await farm.connect(staker1).stake(parseEther('1000'))
+      await expect(farm.connect(staker1).exit(parseEther('1001'))).to.be.revertedWith('TrueFarm: Cannot withdraw amount bigger than available balance')
+    })
+
+    it('yields rewards per staked tokens (using claim)', async () => {
       const stakeBlock = await getBlock(farm.connect(staker1).stake(parseEther('1000')))
       await skipBlocksWithProvider(provider, 5)
       const claimBlock = await getBlock(farm.connect(staker1).claim())
+      expect(await trustToken.balanceOf(staker1.address)).to.equal((claimBlock - stakeBlock) * 100)
+    })
+
+    it('yields rewards per staked tokens (using exit)', async () => {
+      const stakeBlock = await getBlock(farm.connect(staker1).stake(parseEther('1000')))
+      await skipBlocksWithProvider(provider, 5)
+      const claimBlock = await getBlock(farm.connect(staker1).exit(parseEther('1000')))
       expect(await trustToken.balanceOf(staker1.address)).to.equal((claimBlock - stakeBlock) * 100)
     })
 
