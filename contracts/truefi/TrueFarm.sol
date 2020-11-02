@@ -70,7 +70,7 @@ contract TrueFarm is ITrueFarm, Initializable {
         emit Stake(msg.sender, amount);
     }
 
-    function unstake(uint256 amount) external override update {
+    function _unstake(uint256 amount) internal {
         require(amount <= staked[msg.sender], "TrueFarm: Cannot withdraw amount bigger than available balance");
         staked[msg.sender] = staked[msg.sender].sub(amount);
         totalStaked = totalStaked.sub(amount);
@@ -78,12 +78,25 @@ contract TrueFarm is ITrueFarm, Initializable {
         emit Unstake(msg.sender, amount);
     }
 
-    function claim() external override update {
+    function _claim() internal {
         totalClaimedRewards = totalClaimedRewards.add(claimableReward[msg.sender]);
         uint256 rewardToClaim = claimableReward[msg.sender];
         claimableReward[msg.sender] = 0;
         require(trustToken.transfer(msg.sender, rewardToClaim));
         emit Claim(msg.sender, rewardToClaim);
+    }
+
+    function unstake(uint256 amount) external override update {
+        _unstake(amount);
+    }
+
+    function claim() external override update {
+        _claim();
+    }
+
+    function exit(uint256 amount) external override update {
+        _unstake(amount);
+        _claim();
     }
 
     modifier update() {
