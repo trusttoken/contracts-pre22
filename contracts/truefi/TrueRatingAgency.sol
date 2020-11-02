@@ -351,7 +351,9 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      */
     function bounty(address id, bool incorrectChoice) internal view returns (uint256) {
         // reward = (incorrect_tokens_staked) * (loss_factor) * (1 - burn_factor)
-        return loans[id].prediction[incorrectChoice].mul(lossFactor).mul(uint256(10000).sub(burnFactor)).div(10000**2);
+        // prettier-ignore
+        return loans[id].prediction[incorrectChoice].mul(
+            lossFactor).mul(uint256(10000).sub(burnFactor)).div(10000**2);
     }
 
     /**
@@ -374,7 +376,12 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     modifier calculateTotalReward(address id) {
         if (loans[id].reward == 0) {
             uint256 interest = ILoanToken(id).profit();
-            uint256 reward = toTrustToken(interest.mul(distributor.remaining()).div(distributor.amount()));
+
+            // calculate reward
+            // prettier-ignore
+            uint256 reward = toTrustToken(interest.mul(
+                distributor.remaining()).div(distributor.amount()));
+
             loans[id].reward = reward;
             if (loans[id].reward > 0) {
                 distributor.distribute(reward);

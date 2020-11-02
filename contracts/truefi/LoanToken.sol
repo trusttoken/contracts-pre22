@@ -42,7 +42,7 @@ contract LoanToken is ILoanToken, ERC20 {
     uint256 public redeemed;
 
     // borrow fee -> 100 = 1%
-    uint256 public constant override BORROW_FEE = 25;
+    uint256 public override borrowerFee = 25;
 
     // whitelist for transfers
     mapping(address => bool) public canTransfer;
@@ -326,7 +326,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @return Amount minus fees
      */
     function receivedAmount() public override view returns (uint256) {
-        return amount.sub(amount.mul(BORROW_FEE).div(10000));
+        return amount.sub(amount.mul(borrowerFee).div(10000));
     }
 
     /**

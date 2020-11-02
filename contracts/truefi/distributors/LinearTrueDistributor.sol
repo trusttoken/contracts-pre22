@@ -37,7 +37,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
 
     /**
      * @dev Emitted when a distribution occurs
-     * @param farm Farm this distribution is sent to
+     * @param amount Amount of TRU distributed to farm
      */
     event Distributed(uint256 amount);
 
