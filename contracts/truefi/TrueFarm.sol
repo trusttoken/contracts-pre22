@@ -33,6 +33,27 @@ contract TrueFarm is ITrueFarm, Initializable {
     uint256 public totalClaimedRewards;
     uint256 public totalFarmRewards;
 
+    /*
+     * @dev Emitted when an account stakes
+     * @param who Account staking
+     * @param amountStaked Amount of tokens staked
+     */
+    event Stake(address indexed who, uint256 amountStaked);
+
+    /**
+     * @dev Emitted when an account unstakes
+     * @param who Account unstaking
+     * @param amountUnstaked Amount of tokens unstaked
+     */
+    event Unstake(address indexed who, uint256 amountUnstaked);
+
+    /**
+     * @dev Emitted when an account claims TRU rewards
+     * @param who Account claiming
+     * @param amountClaimed Amount of TRU claimed
+     */
+    event Claim(address indexed who, uint256 amountClaimed);
+
     /**
      * @dev Initalize staking pool with a Distributor contraxct
      * The distributor contract calculates how much TRU rewards this contract
@@ -60,6 +81,7 @@ contract TrueFarm is ITrueFarm, Initializable {
         staked[msg.sender] = staked[msg.sender].add(amount);
         totalStaked = totalStaked.add(amount);
         require(stakingToken.transferFrom(msg.sender, address(this), amount));
+        emit Stake(msg.sender, amount);
     }
 
     /**
@@ -71,6 +93,7 @@ contract TrueFarm is ITrueFarm, Initializable {
         staked[msg.sender] = staked[msg.sender].sub(amount);
         totalStaked = totalStaked.sub(amount);
         require(stakingToken.transfer(msg.sender, amount));
+        emit Unstake(msg.sender, amount);
     }
 
     /**
@@ -81,6 +104,7 @@ contract TrueFarm is ITrueFarm, Initializable {
         uint256 rewardToClaim = claimableReward[msg.sender];
         claimableReward[msg.sender] = 0;
         require(trustToken.transfer(msg.sender, rewardToClaim));
+        emit Claim(msg.sender, rewardToClaim);
     }
 
     /**
