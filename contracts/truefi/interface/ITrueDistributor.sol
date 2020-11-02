@@ -8,5 +8,5 @@ interface ITrueDistributor {
 
     function distribute(address farm) external;
 
-    function withdraw(uint256 _amount) external;
+    function empty() external;
 }

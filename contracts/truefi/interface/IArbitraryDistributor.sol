@@ -8,5 +8,5 @@ interface IArbitraryDistributor {
 
     function distribute(uint256 _amount) external;
 
-    function withdraw(uint256 _amount) external;
+    function empty() external;
 }
