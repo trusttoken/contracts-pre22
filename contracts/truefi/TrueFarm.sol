@@ -33,7 +33,7 @@ contract TrueFarm is ITrueFarm, Initializable {
     uint256 public totalClaimedRewards;
     uint256 public totalFarmRewards;
 
-    /*
+    /**
      * @dev Emitted when an account stakes
      * @param who Account staking
      * @param amountStaked Amount of tokens staked
@@ -58,7 +58,7 @@ contract TrueFarm is ITrueFarm, Initializable {
      * @dev Initalize staking pool with a Distributor contraxct
      * The distributor contract calculates how much TRU rewards this contract
      * gets, and stores TRU for distribution.
-     * @param _stakingToken Token to Stake
+     * @param _stakingToken Token to stake
      * @param _trueDistributor Distributor contract
      * @param _name Farm name
      */
