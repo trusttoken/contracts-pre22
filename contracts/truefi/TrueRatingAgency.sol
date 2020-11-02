@@ -9,6 +9,7 @@ import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
+import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
 /**
@@ -58,6 +59,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     IBurnableERC20 public trustToken;
     IArbitraryDistributor public distributor;
+    ILoanFactory public factory;
 
     uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
 
@@ -128,11 +130,17 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * Distributor contract decides how much TRU is rewarded to stakers
      * @param _trustToken TRU contract
      * @param _distributor Distributor contract
+     * @param _factory Factory contract for deploying tokens
      */
-    function initialize(IBurnableERC20 _trustToken, IArbitraryDistributor _distributor) public initializer {
+    function initialize(
+        IBurnableERC20 _trustToken,
+        IArbitraryDistributor _distributor,
+        ILoanFactory _factory
+    ) public initializer {
         Ownable.initialize();
         trustToken = _trustToken;
         distributor = _distributor;
+        factory = _factory;
     }
 
     /**
@@ -230,7 +238,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param id Loan ID
      */
     function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
-        require(ILoanToken(id).isLoanToken(), "TrueRatingAgency: Only LoanTokens are supported");
+        require(factory.isLoanToken(id), "TrueRatingAgency: Only LoanTokens created via LoanFactory are supported");
         loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0});
         emit LoanSubmitted(id);
     }
