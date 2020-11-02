@@ -6,6 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {ITruePool} from "./interface/ITruePool.sol";
+import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 import {ICurvePool, ICurveGauge, ICurveMinter} from "./interface/ICurvePool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ERC20} from "./upgradeability/UpgradeableERC20.sol";
@@ -31,6 +32,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     IERC20 public _currencyToken;
     ITrueLender public _lender;
     ICurveMinter public _minter;
+    IUniswapRouter public _uniRouter;
 
     uint256 public ownerFee = 25;
     uint256 public claimableFees;
@@ -58,7 +60,8 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         ICurvePool __curvePool,
         ICurveGauge __curveGauge,
         IERC20 __currencyToken,
-        ITrueLender __lender
+        ITrueLender __lender,
+        IUniswapRouter __uniRouter
     ) public initializer {
         ERC20.__ERC20_initialize("CurveTUSDPool", "crvTUSD");
         Ownable.initialize();
@@ -68,6 +71,7 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
         _currencyToken = __currencyToken;
         _lender = __lender;
         _minter = _curveGauge.minter();
+        _uniRouter = __uniRouter;
 
         _currencyToken.approve(address(_curvePool), uint256(-1));
         _curvePool.token().approve(address(_curvePool), uint256(-1));
@@ -229,9 +233,18 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Collect CRV tokens minted by staking at gauge
+     * @param amountOutMin see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
+     * @param path see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      */
-    function collectCrv() external {
+    function collectCrv(uint256 amountOutMin, address[] calldata path) external onlyOwner {
         _minter.mint(address(_curveGauge));
+        _uniRouter.swapExactTokensForTokens(
+            _minter.token().balanceOf(address(this)),
+            amountOutMin,
+            path,
+            address(this),
+            block.timestamp + 1 days
+        );
     }
 
     /**
