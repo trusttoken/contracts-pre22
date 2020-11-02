@@ -48,7 +48,7 @@ describe('CurvePool', () => {
     await mockCurveGauge.mock.balanceOf.returns(0)
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
     lender = await new TrueLenderFactory(owner).deploy()
-    await pool.initialize(curve.address, mockCurveGauge.address, token.address, lender.address)
+    await pool.initialize(curve.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
   })
@@ -238,7 +238,7 @@ describe('CurvePool', () => {
 
     beforeEach(async () => {
       pool2 = await new CurvePoolFactory(owner).deploy()
-      await pool2.initialize(curve.address, mockCurveGauge.address, token.address, borrower.address)
+      await pool2.initialize(curve.address, mockCurveGauge.address, token.address, borrower.address, constants.AddressZero)
       await token.approve(pool2.address, parseEther('10000000'))
       await pool2.join(parseEther('10000000'))
       await pool2.flush(excludeFee(parseEther('5000000')), 0)
