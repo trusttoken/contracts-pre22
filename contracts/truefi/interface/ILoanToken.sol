@@ -10,7 +10,7 @@ interface ILoanToken is IERC20 {
 
     function amount() external view returns (uint256);
 
-    function duration() external view returns (uint256);
+    function term() external view returns (uint256);
 
     function apy() external view returns (uint256);
 

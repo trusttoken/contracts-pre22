@@ -14,7 +14,7 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
  * Each LoanToken has:
  * - borrower address
  * - borrow amount
- * - loan term
+ * - loan duration
  * - loan APY
  *
  * Loan progresses through the following states:
@@ -32,7 +32,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     address public override borrower;
     uint256 public override amount;
-    uint256 public override term;
+    uint256 public override duration;
     uint256 public override apy;
 
     uint256 public override start;
@@ -68,7 +68,7 @@ contract LoanToken is ILoanToken, ERC20 {
     event Withdrawn(address beneficiary);
 
     /**
-     * @dev Emitted when term is over
+     * @dev Emitted when duration is over
      * @param status Final loan status
      * @param returnedAmount Amount that was retured before expiry
      */
@@ -87,20 +87,20 @@ contract LoanToken is ILoanToken, ERC20 {
      * @param _currencyToken Token to lend
      * @param _borrower Borrwer addresss
      * @param _amount Borrow amount of currency tokens
-     * @param _term Loan length
+     * @param _duration Loan length
      * @param _apy Loan APY
      */
     constructor(
         IERC20 _currencyToken,
         address _borrower,
         uint256 _amount,
-        uint256 _term,
+        uint256 _duration,
         uint256 _apy
     ) public ERC20("Loan Token", "LOAN") {
         currencyToken = _currencyToken;
         borrower = _borrower;
         amount = _amount;
-        term = _term;
+        duration = _duration;
         apy = _apy;
         debt = interest(amount);
     }
@@ -182,7 +182,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     /**
      * @dev Get loan parameters
-     * @return (amount, term, apy)
+     * @return (amount, duration, apy)
      */
     function getParameters()
         external
@@ -194,7 +194,7 @@ contract LoanToken is ILoanToken, ERC20 {
             uint256
         )
     {
-        return (amount, apy, term);
+        return (amount, apy, duration);
     }
 
     /**
@@ -209,8 +209,8 @@ contract LoanToken is ILoanToken, ERC20 {
         }
 
         uint256 passed = block.timestamp.sub(start);
-        if (passed > term) {
-            passed = term;
+        if (passed > duration) {
+            passed = duration;
         }
 
         uint256 helper = amount.mul(apy).mul(passed).mul(_balance);
@@ -259,7 +259,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Close the loan and check if it has been repaid
      */
     function close() external override onlyOngoing {
-        require(start.add(term) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
+        require(start.add(duration) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
         if (_balance() >= debt) {
             status = Status.Settled;
         } else {
@@ -319,12 +319,12 @@ contract LoanToken is ILoanToken, ERC20 {
 
     /**
      * @dev Calculate interest that will be paid by this loan for an amount
-     * (amount * apy * term) / (1 year / precision)
+     * (amount * apy * duration) / (1 year / precision)
      * @param _amount amount
      * @return Amount of interest paid for _amount
      */
     function interest(uint256 _amount) internal view returns (uint256) {
-        return _amount.add(_amount.mul(apy).mul(term).div(360 days).div(10000));
+        return _amount.add(_amount.mul(apy).mul(duration).div(360 days).div(10000));
     }
 
     /**

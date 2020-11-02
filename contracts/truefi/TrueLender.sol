@@ -37,8 +37,8 @@ contract TrueLender is ITrueLender, Ownable {
 
     uint256 public minSize = 1000000 ether;
     uint256 public maxSize = 10000000 ether;
-    uint256 public minDuration = 180 days;
-    uint256 public maxDuration = 3600 days;
+    uint256 public minTerm = 180 days;
+    uint256 public maxTerm = 3600 days;
     uint256 public votingPeriod = 7 days;
 
     event Allowed(address indexed who, bool status);
@@ -47,7 +47,7 @@ contract TrueLender is ITrueLender, Ownable {
     event RiskAversionChanged(uint256 participationFactor);
     event VotingPeriodChanged(uint256 votingPeriod);
     event SizeLimitsChanged(uint256 minSize, uint256 maxSize);
-    event DurationLimitsChanged(uint256 minDuration, uint256 maxDuration);
+    event DurationLimitsChanged(uint256 minTerm, uint256 maxTerm);
     event Funded(address indexed loanToken, uint256 amount);
     event Reclaimed(address indexed loanToken, uint256 amount);
 
@@ -79,8 +79,8 @@ contract TrueLender is ITrueLender, Ownable {
 
     function setDurationLimits(uint256 min, uint256 max) external onlyOwner {
         require(max >= min, "TrueLender: Maximal loan duration is smaller than minimal");
-        minDuration = min;
-        maxDuration = max;
+        minTerm = min;
+        maxTerm = max;
         emit DurationLimitsChanged(min, max);
     }
 
@@ -191,7 +191,7 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     function loanDurationWithinBounds(uint256 duration) public view returns (bool) {
-        return duration >= minDuration && duration <= maxDuration;
+        return duration >= minTerm && duration <= maxTerm;
     }
 
     function votesThresholdReached(uint256 amount, uint256 yesVotes) public view returns (bool) {

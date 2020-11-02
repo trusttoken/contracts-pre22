@@ -19,10 +19,10 @@ contract LoanFactory is ILoanFactory, Initializable {
     function createLoanToken(
         address _borrower,
         uint256 _amount,
-        uint256 _duration,
+        uint256 _term,
         uint256 _apy
     ) external override {
-        address newToken = address(new LoanToken(currencyToken, _borrower, _amount, _duration, _apy));
+        address newToken = address(new LoanToken(currencyToken, _borrower, _amount, _term, _apy));
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);
