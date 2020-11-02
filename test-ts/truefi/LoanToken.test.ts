@@ -28,9 +28,7 @@ describe('LoanToken', () => {
   const withdraw = async (wallet: Wallet, beneficiary = wallet.address) =>
     loanToken.connect(wallet).withdraw(beneficiary)
 
-  const payback = async (wallet: Wallet, amount: BigNumberish) => {
-    return tusd.mint(loanToken.address, amount)
-  }
+  const payback = async (wallet: Wallet, amount: BigNumberish) => tusd.mint(loanToken.address, amount)
 
   const removeFee = (amount: BigNumber) => amount.mul(9975).div(10000)
   const addFee = async (amount: BigNumber) => amount.add((await loanToken.amount()).mul(25).div(10000))
