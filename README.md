@@ -2,20 +2,15 @@
 Our development environment uses Truffle and Solidity. We require vyper as a dependency for uniswap.
 
 ## Develop
-```bash
+```
 git submodule update --init --recursive
 yarn install
-
-## The following lines are required to run vyper compiler natively.
-## They can be skipped, in which case vyper will be compiled using docker (running docker daemon will be required) 
 brew install python3
 brew install gmp leveldb
 pip3 install virtualenv
 python3 -m venv ~/vyper-env
 source ~/vyper-env/bin/activate
 pip install vyper
-## Vyper setup end
-
 ./test.sh
 ```
 
@@ -128,20 +123,6 @@ We reduce the amount of gas you pay by refunding gas during your transfer.
 These are the top-level ERC20 contracts.
 They inherit the aforementioned functionality.
 
-
-## True Rewards contracts
-| Contract | Mainnet Address | Ropsten Address 
-| ---------|:-------------:|:------------------:|
-| TrueUSD | `0x0000000000085d4780B73119b644AE5ecd22b376` | `0xa2EA00Df6d8594DBc76b79beFe22db9043b8896F` |
-| Token Controller | `0x0000000000075EfBeE23fe2de1bd0b7690883cc9` | `0x47106c72DE9144d43Bb026d848806Ab29e2A0227` |
-| Assured Financial Opportunity | `0xffe7361B401AF1954641732AFc28811ac701e7e1` | `0xFadBBfFe15F25c64a4C06b6251357351e2def278` |
-| Aave Financial Opportunity | `0x3146fA2f055d18Ea39188a7863f095A2a3DAdB1C` | `0xe1a91cca64b34e47a92d3ef0d422481a5872cfa9` |
-| TrustToken | `0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784` | `0x711161BaF6fA362Fa41F80aD2295F1f601b44f3F` |
-| Staked Token | `0x9499e8D5a56bB9ECf1B7C6A95e1c4f5331805A2e` | `0xE510468dAD975bC77F0B81fADdE2f9DdF4231cf4` |
-| Liquidator | `0x1dfB7700E67e6046898c2FEfe160FB53fEC3A27c` | `0xe06dabc0fef1dc05cf07c167422be985d0cbbd4d` |
-| Registry | `0x0000000000013949F288172bD7E36837bDdC7211` | `0xe24c8f14295da7f308B73B94C72197e8Ee73A484` |
-
-
 # Contributing
 Before creating a pull request, please run the tests, the profiler, and the flattener.
 
@@ -180,7 +161,6 @@ yarn flatten # runs ./flatten-all
 | Etherscan: TGBP | https://etherscan.io/token/0x00000000441378008EA67F4284A57932B1c000a5 |
 | Etherscan: TAUD | https://etherscan.io/token/0x00006100F7090010005F1bd7aE6122c3C2CF0090 |
 | Etherscan: TCAD | https://etherscan.io/token/0x00000100F2A2bd000715001920eB70D229700085 |
-| Etherscan: THKD | https://etherscan.io/token/0x0000852600CEB001E08e00bC008be620d60031F2 |
 | CoinMarketCap: TUSD  | https://coinmarketcap.com/currencies/trueusd/  |
 
 ## Social
