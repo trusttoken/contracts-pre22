@@ -62,12 +62,13 @@ describe('TrueFarm', () => {
     })
 
     it('correct events emitted', async () => {
-      await expect(farm.connect(staker1).stake(parseEther('500'))).to.emit(farm, 'Stake')
+      const asStaker = await farm.connect(staker1)
+      await expect(asStaker.stake(parseEther('500'))).to.emit(farm, 'Stake')
         .withArgs(staker1.address, parseEther('500'))
       await skipBlocksWithProvider(provider, 5)
-      await expect(getBlock(farm.connect(staker1).claim())).to.emit(farm, 'Claim')
-        .withArgs(staker1.address, parseEther('500'))
-      await expect(farm.connect(staker1).unstake(parseEther('500'))).to.emit(farm, 'Unstake')
+      await expect(asStaker.claim()).to.emit(farm, 'Claim')
+        .withArgs(staker1.address, 600)
+      await expect(asStaker.unstake(parseEther('500'))).to.emit(farm, 'Unstake')
         .withArgs(staker1.address, parseEther('500'))
     })
 
