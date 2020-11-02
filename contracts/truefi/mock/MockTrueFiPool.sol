@@ -3,7 +3,9 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {ICurvePool, ICurve, IYToken} from "../interface/ICurvePool.sol";
+import {ICurve} from "../interface/ICurve.sol";
+import {IYToken} from "../interface/IYToken.sol";
+import {ITrueFiPool} from "../interface/ITrueFiPool.sol";
 import {MockERC20Token} from "../../trusttoken/mocks/MockERC20Token.sol";
 import {Initializable} from "../upgradeability/Initializable.sol";
 import {MockERC20Token} from "../../trusttoken/mocks/MockERC20Token.sol";
@@ -30,7 +32,7 @@ contract MockYToken is MockERC20Token {
     }
 }
 
-contract MockCurvePool is ICurvePool, Initializable {
+contract MockTrueFiPool is ITrueFiPool, Initializable {
     IERC20 poolToken;
     MockERC20Token cToken;
     MockCurve _curve;
