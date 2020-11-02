@@ -11,6 +11,8 @@ import {Initializable} from "./upgradeability/Initializable.sol";
 /**
  * @title TrueFarm
  * @notice Deposit liquidity tokens to earn TRU rewards over time
+ * @dev Staking pool where tokens are staked for TRU rewards
+ * A Distributor contract decides how much TRU a farm can earn over time
  */
 contract TrueFarm is ITrueFarm, Initializable {
     using SafeMath for uint256;
@@ -31,6 +33,14 @@ contract TrueFarm is ITrueFarm, Initializable {
     uint256 public totalClaimedRewards;
     uint256 public totalFarmRewards;
 
+    /**
+     * @dev Initalize staking pool with a Distributor contraxct
+     * The distributor contract calculates how much TRU rewards this contract
+     * gets, and stores TRU for distribution.
+     * @param _stakingToken
+     * @param _trueDistributor
+     * @param _name
+     */
     function initialize(
         IERC20 _stakingToken,
         ITrueDistributor _trueDistributor,
@@ -42,12 +52,20 @@ contract TrueFarm is ITrueFarm, Initializable {
         name = _name;
     }
 
+    /**
+     * @dev Stake tokens for TRU rewards.
+     * @param amount Amount of tokens to stake
+     */
     function stake(uint256 amount) external override update {
         staked[msg.sender] = staked[msg.sender].add(amount);
         totalStaked = totalStaked.add(amount);
         require(stakingToken.transferFrom(msg.sender, address(this), amount));
     }
 
+    /**
+     * @dev Remove staked tokens
+     * @param amount Amount of tokens to unstake
+     */
     function unstake(uint256 amount) external override update {
         require(amount <= staked[msg.sender], "TrueFarm: Cannot withdraw amount bigger than available balance");
         staked[msg.sender] = staked[msg.sender].sub(amount);
@@ -55,6 +73,9 @@ contract TrueFarm is ITrueFarm, Initializable {
         require(stakingToken.transfer(msg.sender, amount));
     }
 
+    /**
+     * @dev Claim TRU Rewards
+     */
     function claim() external override update {
         totalClaimedRewards = totalClaimedRewards.add(claimableReward[msg.sender]);
         uint256 rewardToClaim = claimableReward[msg.sender];
@@ -62,6 +83,9 @@ contract TrueFarm is ITrueFarm, Initializable {
         require(trustToken.transfer(msg.sender, rewardToClaim));
     }
 
+    /**
+     * @dev Update state and get TRU from distributor
+     */
     modifier update() {
         trueDistributor.distribute(address(this));
         uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(totalClaimedRewards).mul(PRECISION);
