@@ -5,11 +5,24 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {IBurnableERC20} from "../trusttoken/IBurnableERC20.sol";
+import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
 import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
+/**
+ * @title TrueRatingAgency
+ * @dev Credit prediction market for LoanTokens
+ *
+ * The RatingAgency has several states:
+ * Void:        Rated loan is invalid
+ * Pending:     Waiting to be funded
+ * Retracted:   Rating has been cancelled
+ * Running:     Rated loan has been funded
+ * Settled:     Rated loan has been paid back in full
+ * Defaulted:   Rated loan has not been paid back in full
+ */
 contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     using SafeMath for uint256;
 
@@ -20,11 +33,17 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         uint256 timestamp;
         mapping(bool => uint256) prediction;
         mapping(address => mapping(bool => uint256)) votes;
+        mapping(address => uint256) claimed;
+        uint256 reward;
     }
 
+    mapping(address => bool) public allowedSubmitters;
     mapping(address => Loan) public loans;
 
     IBurnableERC20 public trustToken;
+    IArbitraryDistributor public distributor;
+
+    uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
 
     /**
      * @dev % multiplied by 100. e.g. 10.5% = 1050
@@ -32,12 +51,18 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     uint256 public lossFactor = 2500;
     uint256 public burnFactor = 2500;
 
+    event Allowed(address indexed who, bool status);
     event LossFactorChanged(uint256 lossFactor);
     event BurnFactorChanged(uint256 burnFactor);
     event LoanSubmitted(address id);
     event LoanRetracted(address id);
     event Voted(address loanToken, address voter, bool choice, uint256 stake);
     event Withdrawn(address loanToken, address voter, uint256 stake, uint256 received, uint256 burned);
+
+    modifier onlyAllowedSubmitters() {
+        require(allowedSubmitters[msg.sender], "TrueRatingAgency: Sender is not allowed to submit");
+        _;
+    }
 
     modifier onlyCreator(address id) {
         require(loans[id].creator == msg.sender, "TrueRatingAgency: Not sender's loan");
@@ -59,9 +84,15 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         _;
     }
 
-    function initialize(IBurnableERC20 _trustToken) public initializer {
+    modifier onlyFundedLoans(address id) {
+        require(status(id) >= LoanStatus.Running, "TrueRatingAgency: Loan was not funded");
+        _;
+    }
+
+    function initialize(IBurnableERC20 _trustToken, IArbitraryDistributor _distributor) public initializer {
         Ownable.initialize();
         trustToken = _trustToken;
+        distributor = _distributor;
     }
 
     function setLossFactor(uint256 newLossFactor) external onlyOwner {
@@ -107,9 +138,14 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         return (getVotingStart(id), getTotalNoVotes(id), getTotalYesVotes(id));
     }
 
-    function submit(address id) external override onlyNotExistingLoans(id) {
+    function allow(address who, bool status) external onlyOwner {
+        allowedSubmitters[who] = status;
+        emit Allowed(who, status);
+    }
+
+    function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
         require(ILoanToken(id).isLoanToken(), "TrueRatingAgency: Only LoanTokens are supported");
-        loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp});
+        loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0});
         emit LoanSubmitted(id);
     }
 
@@ -127,8 +163,10 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         bool choice
     ) internal {
         require(loans[id].votes[msg.sender][!choice] == 0, "TrueRatingAgency: Cannot vote both yes and no");
+
         loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].add(stake);
+
         require(trustToken.transferFrom(msg.sender, address(this), stake));
         emit Voted(id, msg.sender, choice, stake);
     }
@@ -147,14 +185,10 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
         require(loans[id].votes[msg.sender][choice] >= stake, "TrueRatingAgency: Cannot withdraw more than was staked");
 
-        loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
-        if (loanStatus == LoanStatus.Pending) {
-            loans[id].prediction[choice] = loans[id].prediction[choice].sub(stake);
-        }
-
         uint256 amountToTransfer = stake;
         uint256 burned = 0;
         if (loanStatus > LoanStatus.Running) {
+            claim(id, msg.sender);
             bool correct = wasPredictionCorrect(id, choice);
             if (correct) {
                 amountToTransfer = amountToTransfer.add(bounty(id, !choice).mul(stake).div(loans[id].prediction[choice]));
@@ -165,12 +199,54 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
                 trustToken.burn(burned);
             }
         }
+
+        if (loanStatus == LoanStatus.Pending) {
+            loans[id].prediction[choice] = loans[id].prediction[choice].sub(stake);
+        }
+
+        loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
+
         require(trustToken.transfer(msg.sender, amountToTransfer));
         emit Withdrawn(id, msg.sender, stake, amountToTransfer, burned);
     }
 
     function bounty(address id, bool incorrectChoice) internal view returns (uint256) {
         return loans[id].prediction[incorrectChoice].mul(lossFactor).mul(uint256(10000).sub(burnFactor)).div(10000**2);
+    }
+
+    function toTrustToken(uint256 input) internal pure returns (uint256 output) {
+        output = input.div(TOKEN_PRECISION_DIFFERENCE);
+    }
+
+    modifier calculateTotalReward(address id) {
+        if (loans[id].reward == 0) {
+            uint256 interest = ILoanToken(id).profit();
+            uint256 reward = toTrustToken(interest.mul(distributor.remaining()).div(distributor.amount()));
+            loans[id].reward = reward;
+            if (loans[id].reward > 0) {
+                distributor.distribute(reward);
+            }
+        }
+        _;
+    }
+
+    function claim(address id, address voter) public override onlyFundedLoans(id) calculateTotalReward(id) {
+        uint256 totalTime = ILoanToken(id).duration();
+        uint256 passedTime = block.timestamp.sub(ILoanToken(id).start());
+        if (passedTime > totalTime) {
+            passedTime = totalTime;
+        }
+        uint256 stakedByVoter = loans[id].votes[voter][false].add(loans[id].votes[voter][true]);
+        uint256 totalStaked = loans[id].prediction[false].add(loans[id].prediction[true]);
+
+        uint256 helper = loans[id].reward.mul(passedTime).mul(stakedByVoter);
+        uint256 claimable = helper.div(totalTime).div(totalStaked).sub(loans[id].claimed[voter]);
+
+        loans[id].claimed[voter] = loans[id].claimed[voter].add(claimable);
+
+        if (claimable > 0) {
+            require(trustToken.transfer(voter, claimable));
+        }
     }
 
     function wasPredictionCorrect(address id, bool choice) internal view returns (bool) {

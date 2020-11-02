@@ -10,6 +10,10 @@ import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
 import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
+/**
+ * @title TrueLender
+ * @dev TrueFI lending pool
+ */
 contract TrueLender is ITrueLender, Ownable {
     using SafeMath for uint256;
 
@@ -27,6 +31,7 @@ contract TrueLender is ITrueLender, Ownable {
      * @dev % multiplied by 100. e.g. 10.5% = 1050
      */
     uint256 public minApy = 1000;
+    uint256 public maxApy = 3000;
     uint256 public participationFactor = 10000;
     uint256 public riskAversion = 15000;
 
@@ -37,7 +42,7 @@ contract TrueLender is ITrueLender, Ownable {
     uint256 public votingPeriod = 7 days;
 
     event Allowed(address indexed who, bool status);
-    event MinApyChanged(uint256 minApy);
+    event ApyLimitsChanged(uint256 minApy, uint256 maxApy);
     event ParticipationFactorChanged(uint256 participationFactor);
     event RiskAversionChanged(uint256 participationFactor);
     event VotingPeriodChanged(uint256 votingPeriod);
@@ -79,9 +84,11 @@ contract TrueLender is ITrueLender, Ownable {
         emit DurationLimitsChanged(min, max);
     }
 
-    function setMinApy(uint256 newMinApy) external onlyOwner {
+    function setApyLimits(uint256 newMinApy, uint256 newMaxApy) external onlyOwner {
+        require(newMaxApy >= newMinApy, "TrueLender: Maximal APY is smaller than minimal");
         minApy = newMinApy;
-        emit MinApyChanged(newMinApy);
+        maxApy = newMaxApy;
+        emit ApyLimitsChanged(newMinApy, newMaxApy);
     }
 
     function setVotingPeriod(uint256 newVotingPeriod) external onlyOwner {
@@ -116,7 +123,7 @@ contract TrueLender is ITrueLender, Ownable {
 
         require(loanSizeWithinBounds(amount), "TrueLender: Loan size is out of bounds");
         require(loanDurationWithinBounds(duration), "TrueLender: Loan duration is out of bounds");
-        require(loanIsAttractiveEnough(apy), "TrueLender: APY is below minimum");
+        require(loanIsAttractiveEnough(apy), "TrueLender: APY is out of bounds");
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
         require(votesThresholdReached(amount, yes), "TrueLender: Not enough votes given for the loan");
         require(loanIsCredible(apy, duration, yes, no), "TrueLender: Loan risk is too high");
@@ -128,28 +135,10 @@ contract TrueLender is ITrueLender, Ownable {
         emit Funded(address(loanToken), amount);
     }
 
-    function valueFor(ILoanToken loanToken) public view returns (uint256) {
-        (uint256 amount, uint256 apy, uint256 duration) = loanToken.getParameters();
-        uint256 start = loanToken.start();
-        uint256 passed = block.timestamp.sub(start);
-        uint256 loanTokenBalance = loanToken.balanceOf(address(this));
-        if (passed > duration) {
-            passed = duration;
-        }
-        if (loanTokenBalance == 0) {
-            return 0;
-        }
-
-        uint256 helper = amount.mul(apy).mul(passed).mul(loanTokenBalance);
-        uint256 interest = helper.div(360 days).div(10000).div(loanToken.totalSupply());
-
-        return amount.add(interest);
-    }
-
     function value() external override view returns (uint256) {
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
-            totalValue = totalValue.add(valueFor(_loans[index]));
+            totalValue = totalValue.add(_loans[index].value(_loans[index].balanceOf(address(this))));
         }
         return totalValue;
     }
@@ -190,7 +179,7 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     function loanIsAttractiveEnough(uint256 apy) public view returns (bool) {
-        return apy >= minApy;
+        return apy >= minApy && apy <= maxApy;
     }
 
     function votingLastedLongEnough(uint256 start) public view returns (bool) {

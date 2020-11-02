@@ -6,6 +6,10 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {ITrueDistributor, IERC20} from "../interface/ITrueDistributor.sol";
 import {Ownable} from "../upgradeability/UpgradeableOwnable.sol";
 
+/**
+ * @title LinearTrueDistributor
+ * @notice Distribute TRU in a linear manner
+ */
 contract LinearTrueDistributor is ITrueDistributor, Ownable {
     using SafeMath for uint256;
 

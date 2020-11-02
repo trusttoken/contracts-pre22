@@ -43,7 +43,4 @@ interface ITruePool is IERC20 {
      * 2. Only lending pool should be allowed to call this
      */
     function repay(uint256 amount) external;
-
-    /// @dev get token value for pool token
-    function value(uint256 amount) external view returns (uint256);
 }

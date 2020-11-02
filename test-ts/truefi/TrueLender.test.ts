@@ -6,7 +6,7 @@ import { parseEther } from '@ethersproject/units'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { timeTravel } from '../utils/timeTravel'
-import { isCloseTo } from '../utils/isCloseTo'
+import { expectCloseTo } from '../utils/expectCloseTo'
 
 import { MockTrueLender } from '../../build/types/MockTrueLender'
 import { MockTrueLenderFactory } from '../../build/types/MockTrueLenderFactory'
@@ -93,19 +93,28 @@ describe('MockTrueLender', () => {
   })
 
   describe('Parameters set up', () => {
-    describe('setMinApy', () => {
+    describe('setApyLimits', () => {
       it('changes minApy', async () => {
-        await lender.setMinApy(1234)
+        await lender.setApyLimits(1234, 3456)
         expect(await lender.minApy()).to.equal(1234)
+        expect(await lender.maxApy()).to.equal(3456)
       })
 
-      it('emits MinApyChanged', async () => {
-        await expect(lender.setMinApy(1234))
-          .to.emit(lender, 'MinApyChanged').withArgs(1234)
+      it('emits ApyLimitsChanged', async () => {
+        await expect(lender.setApyLimits(1234, 3456))
+          .to.emit(lender, 'ApyLimitsChanged').withArgs(1234, 3456)
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(otherWallet).setMinApy(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(otherWallet).setApyLimits(1234, 3456)).to.be.revertedWith('caller is not the owner')
+      })
+
+      it('cannot set minApy to be bigger than maxApy', async () => {
+        await expect(lender.setApyLimits(2, 1)).to.be.revertedWith('TrueLender: Maximal APY is smaller than minimal')
+      })
+
+      it('can set minApy to same value as maxApy', async () => {
+        await expect(lender.setApyLimits(2, 2)).to.be.not.reverted
       })
     })
 
@@ -271,10 +280,16 @@ describe('MockTrueLender', () => {
         .to.be.revertedWith('TrueLender: Loan duration is out of bounds')
     })
 
-    it('reverts if loan has to small APY', async () => {
+    it('reverts if loan has too small APY', async () => {
       await mockLoanToken.mock.getParameters.returns(amount, apy.div(10), duration)
       await expect(lender.fund(mockLoanToken.address))
-        .to.be.revertedWith('TrueLender: APY is below minimum')
+        .to.be.revertedWith('TrueLender: APY is out of bounds')
+    })
+
+    it('reverts if loan has too big APY', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount, 5000, duration)
+      await expect(lender.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: APY is out of bounds')
     })
 
     it('reverts if loan was not long enough under voting', async () => {
@@ -450,7 +465,7 @@ describe('MockTrueLender', () => {
         owner.address,
         parseEther('1000000'),
         monthInSeconds * 12,
-        5000,
+        2000,
       )
       secondLoanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
@@ -466,34 +481,34 @@ describe('MockTrueLender', () => {
     it('returns correct value for one closed loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, (monthInSeconds * 12) + 1)
-      isCloseTo(await lender.value(), parseEther('1500000'))
+      expectCloseTo(await lender.value(), parseEther('1200000'))
     })
 
     it('returns correct value for one running loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-      isCloseTo(await lender.value(), parseEther('1250000'))
+      expectCloseTo(await lender.value(), parseEther('1100000'))
     })
 
     it('returns correct value for multiple closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, (monthInSeconds * 36) + 1)
-      isCloseTo(await lender.value(), parseEther('4100000'))
+      expectCloseTo(await lender.value(), parseEther('3800000'))
     })
 
     it('returns correct value for multiple opened loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-      isCloseTo(await lender.value(), parseEther('3350000'))
+      expectCloseTo(await lender.value(), parseEther('3200000'))
     })
 
     it('returns correct value for multiple opened and closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 18)
-      isCloseTo(await lender.value(), parseEther('3800000'))
+      expectCloseTo(await lender.value(), parseEther('3500000'))
     })
   })
 

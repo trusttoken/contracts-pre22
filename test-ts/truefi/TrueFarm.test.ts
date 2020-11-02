@@ -1,10 +1,10 @@
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { MockErc20Token } from '../../build/types/MockErc20Token'
 import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
 import { parseEther } from '@ethersproject/units'
 import { expect, use } from 'chai'
 import { ContractTransaction, Wallet } from 'ethers'
 import { TrueDistributor } from '../../build/types/TrueDistributor'
-import { MockErc20Token } from '../../build/types/MockErc20Token'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { TrueFarmFactory } from '../../build/types/TrueFarmFactory'
 import { TrueFarm } from '../../build/types/TrueFarm'
@@ -61,6 +61,17 @@ describe('TrueFarm', () => {
       await skipToBlock(START_BLOCK)
     })
 
+    it('correct events emitted', async () => {
+      const asStaker = await farm.connect(staker1)
+      await expect(asStaker.stake(parseEther('500'))).to.emit(farm, 'Stake')
+        .withArgs(staker1.address, parseEther('500'))
+      await skipBlocksWithProvider(provider, 5)
+      await expect(asStaker.claim()).to.emit(farm, 'Claim')
+        .withArgs(staker1.address, 600)
+      await expect(asStaker.unstake(parseEther('500'))).to.emit(farm, 'Unstake')
+        .withArgs(staker1.address, parseEther('500'))
+    })
+
     it('staking changes stake balance', async () => {
       await farm.connect(staker1).stake(parseEther('500'))
       expect(await farm.staked(staker1.address)).to.equal(parseEther('500'))
@@ -78,15 +89,34 @@ describe('TrueFarm', () => {
       expect(await farm.totalStaked()).to.equal(parseEther('500'))
     })
 
+    it('exiting changes stake balance', async () => {
+      await farm.connect(staker1).stake(parseEther('1000'))
+      await farm.connect(staker1).exit(parseEther('500'))
+      expect(await farm.staked(staker1.address)).to.equal(parseEther('500'))
+      expect(await farm.totalStaked()).to.equal(parseEther('500'))
+    })
+
     it('cannot unstake more than is staked', async () => {
       await farm.connect(staker1).stake(parseEther('1000'))
       await expect(farm.connect(staker1).unstake(parseEther('1001'))).to.be.revertedWith('TrueFarm: Cannot withdraw amount bigger than available balance')
     })
 
-    it('yields rewards per staked tokens', async () => {
+    it('cannot exit more than is staked', async () => {
+      await farm.connect(staker1).stake(parseEther('1000'))
+      await expect(farm.connect(staker1).exit(parseEther('1001'))).to.be.revertedWith('TrueFarm: Cannot withdraw amount bigger than available balance')
+    })
+
+    it('yields rewards per staked tokens (using claim)', async () => {
       const stakeBlock = await getBlock(farm.connect(staker1).stake(parseEther('1000')))
       await skipBlocksWithProvider(provider, 5)
       const claimBlock = await getBlock(farm.connect(staker1).claim())
+      expect(await trustToken.balanceOf(staker1.address)).to.equal((claimBlock - stakeBlock) * 100)
+    })
+
+    it('yields rewards per staked tokens (using exit)', async () => {
+      const stakeBlock = await getBlock(farm.connect(staker1).stake(parseEther('1000')))
+      await skipBlocksWithProvider(provider, 5)
+      const claimBlock = await getBlock(farm.connect(staker1).exit(parseEther('1000')))
       expect(await trustToken.balanceOf(staker1.address)).to.equal((claimBlock - stakeBlock) * 100)
     })
 

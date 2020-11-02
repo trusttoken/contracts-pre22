@@ -7,6 +7,24 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {ILoanToken} from "./interface/ILoanToken.sol";
 
+/**
+ * @title LoanToken
+ * @dev A token which represents share of a debt obligation
+ * Each LoanToken has:
+ * - borrower address
+ * - borrow amount
+ * - loan duration
+ * - loan APY
+ *
+ * Loan progresses through the following states:
+ * Awaiting:    Waiting for funding to meet capital requirements
+ * Funded:      Capital requirements met, borrower can withdraw
+ * Withdrawn:   Borrower withdraws money, loan waiting to be repaid
+ * Settled:     Loan has been paid back in full with interest
+ * Defaulted:   Loan has not been paid back in full
+ *
+ * LoanTokens are non-transferrable except for whitelisted addresses
+ */
 contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
 
@@ -21,6 +39,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     uint256 public redeemed;
 
+    // whitelist for transfers
     mapping(address => bool) public canTransfer;
 
     Status public override status;
@@ -108,6 +127,26 @@ contract LoanToken is ILoanToken, ERC20 {
         return (amount, apy, duration);
     }
 
+    function value(uint256 _balance) external override view returns (uint256) {
+        if (_balance == 0) {
+            return 0;
+        }
+
+        uint256 passed = block.timestamp.sub(start);
+        if (passed > duration) {
+            passed = duration;
+        }
+
+        uint256 helper = amount.mul(apy).mul(passed).mul(_balance);
+        uint256 interest = helper.div(360 days).div(10000).div(totalSupply());
+
+        return amount.add(interest);
+    }
+
+    /**
+     * @dev Fund a loan
+     * Set status, start time, lender
+     */
     function fund() external override onlyAwaiting {
         status = Status.Funded;
         start = block.timestamp;
@@ -118,11 +157,21 @@ contract LoanToken is ILoanToken, ERC20 {
         emit Funded(msg.sender);
     }
 
+    /**
+     * @dev Whitelist accounts to transfer
+     * @param account address to allow transfers for
+     * @param _status true allows transfers, false disables transfers
+     */
     function allowTransfer(address account, bool _status) external override onlyLender {
         canTransfer[account] = _status;
         emit TransferAllowanceChanged(account, _status);
     }
 
+    /**
+     * @dev Borrower calls this function to withdraw funds
+     * Sets the status of the loan to Withdrawn
+     * @param _beneficiary address to send funds to
+     */
     function withdraw(address _beneficiary) external override onlyBorrower onlyFunded {
         status = Status.Withdrawn;
         require(currencyToken.transfer(_beneficiary, amount));
@@ -130,6 +179,9 @@ contract LoanToken is ILoanToken, ERC20 {
         emit Withdrawn(_beneficiary);
     }
 
+    /**
+     * @dev Close the loan and check if it has been repaid
+     */
     function close() external override onlyOngoing {
         require(start.add(duration) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
         if (_balance() >= debt) {
@@ -141,6 +193,11 @@ contract LoanToken is ILoanToken, ERC20 {
         emit Closed(status, _balance());
     }
 
+    /**
+     * @dev Redeem LoanToken balances for underlying currencyToken
+     * Can only call this function after the loan is Closed
+     * @param _amount amount to redeem
+     */
     function redeem(uint256 _amount) external override onlyClosed {
         uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
         redeemed = redeemed.add(amountToReturn);
@@ -150,26 +207,63 @@ contract LoanToken is ILoanToken, ERC20 {
         emit Redeemed(msg.sender, _amount, amountToReturn);
     }
 
+    /**
+     * @dev Function for borrower to repay the loan
+     * Borrower can repay at any time
+     * @param _sender account sending currencyToken to repay
+     * @param _amount amount of currencyToken to repay
+     */
     function repay(address _sender, uint256 _amount) external override onlyAfterWithdraw {
         require(currencyToken.transferFrom(_sender, address(this), _amount));
     }
 
+    /**
+     * @dev Check if loan has been repaid
+     * @return Boolean representing whether the loan has been repaid or not
+     */
     function repaid() external override view onlyAfterWithdraw returns (uint256) {
         return _balance().add(redeemed);
     }
 
+    /**
+     * @dev Public currency token balance function
+     * @return currencyToken balance of this contract
+     */
     function balance() external override view returns (uint256) {
         return _balance();
     }
 
+    /**
+     * @dev Get currency token balance for this contract
+     * @return currencyToken balance of this contract
+     */
     function _balance() internal view returns (uint256) {
         return currencyToken.balanceOf(address(this));
     }
 
+    /**
+     * @dev Calculate interest that will be paid by this loan for an amount
+     * @param _amount amount
+     * @return Amount of interest paid for _amount
+     */
     function interest(uint256 _amount) internal view returns (uint256) {
         return _amount.add(_amount.mul(apy).mul(duration).div(360 days).div(10000));
     }
 
+    /**
+     * @dev get profit for this loan
+     * @return profit for this loan
+     */
+    function profit() external override view returns (uint256) {
+        return debt.sub(amount);
+    }
+
+    /**
+     * @dev Override ERC20 _transfer so only whitelisted addresses can transfer
+     * @param sender sender of the transaction
+     * @param recipient recipient of the transaction
+     * @param _amount amount to send
+     */
     function _transfer(
         address sender,
         address recipient,

@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { Wallet } from 'ethers'
+import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
@@ -14,6 +14,10 @@ import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
 import { LoanToken } from '../../build/types/LoanToken'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
+import { ArbitraryDistributorFactory } from '../../build/types/ArbitraryDistributorFactory'
+import { ArbitraryDistributor } from '../../build/types/ArbitraryDistributor'
+import { parseEther } from 'ethers/lib/utils'
+import { expectCloseTo } from '../utils/expectCloseTo'
 
 describe('TrueRatingAgency', () => {
   enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
@@ -25,6 +29,7 @@ describe('TrueRatingAgency', () => {
   let rater: TrueRatingAgency
   let trustToken: TrustToken
   let loanToken: LoanToken
+  let distributor: ArbitraryDistributor
   let tusd: MockTrueCurrency
 
   const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
@@ -32,6 +37,10 @@ describe('TrueRatingAgency', () => {
 
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
+
+  const txArgs = {
+    gasLimit: 6_000_000,
+  }
 
   let timeTravel: (time: number) => void
 
@@ -41,7 +50,7 @@ describe('TrueRatingAgency', () => {
     trustToken = await new TrustTokenFactory(owner).deploy()
     await trustToken.initialize()
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
-    await tusd.mint(owner.address, 7_000_000)
+    await tusd.mint(owner.address, parseEther('10000000'))
 
     loanToken = await new LoanTokenFactory(owner).deploy(
       tusd.address,
@@ -52,10 +61,14 @@ describe('TrueRatingAgency', () => {
     )
     await tusd.approve(loanToken.address, 5_000_000)
 
+    distributor = await new ArbitraryDistributorFactory(owner).deploy()
     rater = await new TrueRatingAgencyFactory(owner).deploy()
-    await rater.initialize(trustToken.address)
+
+    await distributor.initialize(rater.address, trustToken.address, parseTT(100000000))
+    await rater.initialize(trustToken.address, distributor.address)
 
     await trustToken.mint(owner.address, parseTT(100000000))
+    await trustToken.mint(distributor.address, parseTT(100000000))
     await trustToken.approve(rater.address, parseTT(100000000))
 
     timeTravel = (time: number) => _timeTravel(_provider, time)
@@ -108,12 +121,44 @@ describe('TrueRatingAgency', () => {
     })
   })
 
+  describe('Whitelisting', () => {
+    it('changes whitelist status', async () => {
+      expect(await rater.allowedSubmitters(otherWallet.address)).to.be.false
+      await rater.allow(otherWallet.address, true)
+      expect(await rater.allowedSubmitters(otherWallet.address)).to.be.true
+      await rater.allow(otherWallet.address, false)
+      expect(await rater.allowedSubmitters(otherWallet.address)).to.be.false
+    })
+
+    it('emits event', async () => {
+      await expect(rater.allow(otherWallet.address, true))
+        .to.emit(rater, 'Allowed').withArgs(otherWallet.address, true)
+      await expect(rater.allow(otherWallet.address, false))
+        .to.emit(rater, 'Allowed').withArgs(otherWallet.address, false)
+    })
+
+    it('reverts when performed by non-owner', async () => {
+      await expect(rater.connect(otherWallet).allow(otherWallet.address, true))
+        .to.be.revertedWith('caller is not the owner')
+    })
+  })
+
   describe('Submiting/Retracting loan', () => {
+    beforeEach(async () => {
+      await rater.allow(owner.address, true)
+    })
+
+    it('reverts when creator is not whitelisted', async () => {
+      await expect(submit(loanToken.address, otherWallet))
+        .to.be.revertedWith('TrueRatingAgency: Sender is not allowed to submit')
+    })
+
     it('creates loan', async () => {
       await submit(loanToken.address)
 
       const loan = await rater.loans(loanToken.address)
       expect(loan.timestamp).to.be.gt(0)
+      expect(loan.reward).to.be.equal(0)
       expect(loan.creator).to.equal(owner.address)
       expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
       expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
@@ -182,6 +227,7 @@ describe('TrueRatingAgency', () => {
     })
 
     it('cannot remove loan created by someone else', async () => {
+      await rater.allow(otherWallet.address, true)
       await submit(loanToken.address, otherWallet)
 
       await expect(rater.retract(loanToken.address))
@@ -191,6 +237,7 @@ describe('TrueRatingAgency', () => {
 
   describe('Voting', () => {
     beforeEach(async () => {
+      await rater.allow(owner.address, true)
       await submit(loanToken.address)
     })
 
@@ -312,13 +359,13 @@ describe('TrueRatingAgency', () => {
       }
 
       it('reverts if no vote was placed at all', async () => {
-        await expect(rater.withdraw(loanToken.address, stake))
+        await expect(rater.withdraw(loanToken.address, stake, txArgs))
           .to.be.revertedWith('TrueRatingAgency: Cannot withdraw more than was staked')
       })
 
       it('properly reduces stakers voting balance (yes)', async () => {
         await rater.yes(loanToken.address, stake * 3)
-        await rater.withdraw(loanToken.address, stake)
+        await rater.withdraw(loanToken.address, stake, txArgs)
 
         expect(await rater.getYesVote(loanToken.address, owner.address))
           .to.be.equal(stake * 2)
@@ -328,7 +375,7 @@ describe('TrueRatingAgency', () => {
 
       it('properly reduces stakers voting balance (no)', async () => {
         await rater.no(loanToken.address, stake * 3)
-        await rater.withdraw(loanToken.address, stake)
+        await rater.withdraw(loanToken.address, stake, txArgs)
 
         expect(await rater.getNoVote(loanToken.address, owner.address))
           .to.be.equal(stake * 2)
@@ -338,14 +385,14 @@ describe('TrueRatingAgency', () => {
 
       it('reverts if tried to withdraw more than was voted', async () => {
         await rater.yes(loanToken.address, stake)
-        await expect(rater.withdraw(loanToken.address, stake * 2))
+        await expect(rater.withdraw(loanToken.address, stake * 2, txArgs))
           .to.be.revertedWith('TrueRatingAgency: Cannot withdraw more than was staked')
       })
 
       it('reverts if loan was funded and is currently running', async () => {
         await rater.yes(loanToken.address, stake)
         await loanToken.fund()
-        await expect(rater.withdraw(loanToken.address, stake))
+        await expect(rater.withdraw(loanToken.address, stake, txArgs))
           .to.be.revertedWith('TrueRatingAgency: Loan is currently running')
       })
 
@@ -356,13 +403,13 @@ describe('TrueRatingAgency', () => {
         })
 
         it('properly sends unchanged amount of tokens', async () => {
-          await expect(() => rater.withdraw(loanToken.address, stake))
+          await expect(() => rater.withdraw(loanToken.address, stake, txArgs))
             .to.changeTokenBalance(trustToken, owner, stake)
         })
 
         it('leaves total loan votes at zero', async () => {
           const totalVotedBefore = await rater.getTotalYesVotes(loanToken.address)
-          await rater.withdraw(loanToken.address, stake)
+          await rater.withdraw(loanToken.address, stake, txArgs)
           const totalVotedAfter = await rater.getTotalYesVotes(loanToken.address)
 
           expect(totalVotedBefore).to.equal(0)
@@ -376,13 +423,13 @@ describe('TrueRatingAgency', () => {
         })
 
         it('properly sends unchanged amount of tokens', async () => {
-          await expect(() => rater.withdraw(loanToken.address, stake))
+          await expect(() => rater.withdraw(loanToken.address, stake, txArgs))
             .to.changeTokenBalance(trustToken, owner, stake)
         })
 
         it('reduces total loan votes', async () => {
           const totalVotedBefore = await rater.getTotalYesVotes(loanToken.address)
-          await rater.withdraw(loanToken.address, stake)
+          await rater.withdraw(loanToken.address, stake, txArgs)
           const totalVotedAfter = await rater.getTotalYesVotes(loanToken.address)
 
           expect(totalVotedBefore).to.equal(stake)
@@ -390,7 +437,7 @@ describe('TrueRatingAgency', () => {
         })
 
         it('emits proper event', async () => {
-          await expect(rater.withdraw(loanToken.address, stake))
+          await expect(rater.withdraw(loanToken.address, stake, txArgs))
             .to.emit(rater, 'Withdrawn').withArgs(loanToken.address, owner.address, stake, stake, 0)
         })
       })
@@ -404,7 +451,7 @@ describe('TrueRatingAgency', () => {
       describe('Settled', () => {
         const settleLoan = async () => {
           await loanToken.fund()
-          await loanToken.withdraw(owner.address)
+          await loanToken.withdraw(owner.address, txArgs)
           await tusd.transfer(loanToken.address, await loanToken.debt())
           await timeTravel(monthInSeconds * 24)
           await loanToken.close()
@@ -417,48 +464,48 @@ describe('TrueRatingAgency', () => {
 
         it('nobody voted no: yes-voters do not receive bounty', async () => {
           await settleLoan()
-          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake)
+          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake, txArgs), stake)
         })
 
         it('no votes = yes votes, yes voters get 75% of 25% of no voters', async () => {
           await vote(stake, false, otherWallet)
           await settleLoan()
-          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * 1.1875) // 1+1*0.25*0.75 = 1.1875
+          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake, txArgs), stake * 1.1875) // 1+1*0.25*0.75 = 1.1875
         })
 
         it('no votes = yes votes, yes voter withdraws in tranches', async () => {
           await vote(stake, false, otherWallet)
           await settleLoan()
-          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake * 0.4), stake * 0.4 * 1.1875)
-          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake * 0.4), stake * 0.4 * 1.1875)
-          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake * 0.2), stake * 0.2 * 1.1875)
+          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake * 0.4, txArgs), stake * 0.4 * 1.1875)
+          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake * 0.4, txArgs), stake * 0.4 * 1.1875)
+          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake * 0.2, txArgs), stake * 0.2 * 1.1875)
         })
 
         it('2 yes staker, 1 no staker with 1/4 of yes votes', async () => {
           await vote(stake, true, otherWallet)
           await vote(stake / 2, false, wallets[0])
           await settleLoan()
-          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * 1.046875) // 1+0.25*0.25*0.75 = 1.046875
-          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * 1.046875, otherWallet)
+          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake, txArgs), stake * 1.046875) // 1+0.25*0.25*0.75 = 1.046875
+          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake, txArgs), stake * 1.046875, otherWallet)
         })
 
         it('no votes = yes votes, no voters get 75%', async () => {
           await vote(stake, false, otherWallet)
           await settleLoan()
-          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * 0.75, otherWallet)
+          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake, txArgs), stake * 0.75, otherWallet)
         })
 
         it('no votes < yes votes, no voters get 75%', async () => {
           await vote(stake / 2, false, otherWallet)
           await settleLoan()
-          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake / 2), (stake / 2) * 0.75, otherWallet)
+          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake / 2, txArgs), (stake / 2) * 0.75, otherWallet)
         })
 
         it('25% of stake lost by no voters is burned', async () => {
           const totalSupplyBefore = await trustToken.totalSupply()
           await vote(stake, false, otherWallet)
           await settleLoan()
-          await rater.connect(otherWallet).withdraw(loanToken.address, stake)
+          await rater.connect(otherWallet).withdraw(loanToken.address, stake, txArgs)
           const totalSupplyAfter = await trustToken.totalSupply()
 
           expect(totalSupplyBefore.sub(totalSupplyAfter)).to.equal(stake * 0.25 * 0.25)
@@ -474,31 +521,31 @@ describe('TrueRatingAgency', () => {
 
           it('correct amount is burned', async () => {
             const totalSupplyBefore = await trustToken.totalSupply()
-            await rater.connect(otherWallet).withdraw(loanToken.address, stake)
+            await rater.connect(otherWallet).withdraw(loanToken.address, stake, txArgs)
             const totalSupplyAfter = await trustToken.totalSupply()
 
             expect(totalSupplyBefore.sub(totalSupplyAfter)).to.equal(stake * 0.1 * 0.5)
           })
 
           it('yes voters receive proper amount', async () => {
-            await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * (1 + 0.1 * 0.5))
+            await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake, txArgs), stake * (1 + 0.1 * 0.5))
           })
 
           it('no voters receive proper amount', async () => {
-            await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * (1 - 0.1), otherWallet)
+            await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake, txArgs), stake * (1 - 0.1), otherWallet)
           })
         })
 
         it('does not change total loan yes votes', async () => {
           await settleLoan()
-          await rater.withdraw(loanToken.address, stake)
+          await rater.withdraw(loanToken.address, stake, txArgs)
           expect(await rater.getTotalYesVotes(loanToken.address)).to.equal(stake)
         })
 
         it('does not change total loan no votes', async () => {
           await vote(stake / 10, false, otherWallet)
           await settleLoan()
-          await rater.withdraw(loanToken.address, stake)
+          await rater.withdraw(loanToken.address, stake, txArgs)
           expect(await rater.getTotalNoVotes(loanToken.address)).to.equal(stake / 10)
         })
       })
@@ -506,7 +553,7 @@ describe('TrueRatingAgency', () => {
       describe('Defaulted', () => {
         const defaultLoan = async () => {
           await loanToken.fund()
-          await loanToken.withdraw(owner.address)
+          await loanToken.withdraw(owner.address, txArgs)
           await timeTravel(monthInSeconds * 24)
           await loanToken.close()
           expect(await rater.status(loanToken.address)).to.equal(LoanStatus.Defaulted)
@@ -518,48 +565,48 @@ describe('TrueRatingAgency', () => {
 
         it('nobody voted yes: no-voters do not receive bounty', async () => {
           await defaultLoan()
-          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake)
+          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake, txArgs), stake)
         })
 
         it('no votes = yes votes, no voters get 75% of 25% of yes voters', async () => {
           await vote(stake, true, otherWallet)
           await defaultLoan()
-          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * 1.1875) // 1+1*0.25*0.75 = 1.1875
+          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake, txArgs), stake * 1.1875) // 1+1*0.25*0.75 = 1.1875
         })
 
         it('no votes = yes votes, no voter withdraws in tranches', async () => {
           await vote(stake, true, otherWallet)
           await defaultLoan()
-          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake * 0.4), stake * 0.4 * 1.1875)
-          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake * 0.4), stake * 0.4 * 1.1875)
-          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake * 0.2), stake * 0.2 * 1.1875)
+          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake * 0.4, txArgs), stake * 0.4 * 1.1875)
+          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake * 0.4, txArgs), stake * 0.4 * 1.1875)
+          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake * 0.2, txArgs), stake * 0.2 * 1.1875)
         })
 
         it('2 no staker, 1 yes staker with 1/4 of no votes', async () => {
           await vote(stake, false, otherWallet)
           await vote(stake / 2, true, wallets[0])
           await defaultLoan()
-          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * 1.046875) // 1+0.25*0.25*0.75 = 1.046875
-          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * 1.046875, otherWallet)
+          await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake, txArgs), stake * 1.046875) // 1+0.25*0.25*0.75 = 1.046875
+          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake, txArgs), stake * 1.046875, otherWallet)
         })
 
         it('no votes = yes votes, yes voters get 75%', async () => {
           await vote(stake, true, otherWallet)
           await defaultLoan()
-          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * 0.75, otherWallet)
+          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake, txArgs), stake * 0.75, otherWallet)
         })
 
         it('yes votes < no votes, yes voters get 75%', async () => {
           await vote(stake / 2, true, otherWallet)
           await defaultLoan()
-          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake / 2), (stake / 2) * 0.75, otherWallet)
+          await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake / 2, txArgs), (stake / 2) * 0.75, otherWallet)
         })
 
         it('25% of stake lost by yes voters is burned', async () => {
           const totalSupplyBefore = await trustToken.totalSupply()
           await vote(stake, true, otherWallet)
           await defaultLoan()
-          await rater.connect(otherWallet).withdraw(loanToken.address, stake)
+          await rater.connect(otherWallet).withdraw(loanToken.address, stake, txArgs)
           const totalSupplyAfter = await trustToken.totalSupply()
 
           expect(totalSupplyBefore.sub(totalSupplyAfter)).to.equal(stake * 0.25 * 0.25)
@@ -575,33 +622,172 @@ describe('TrueRatingAgency', () => {
 
           it('correct amount is burned', async () => {
             const totalSupplyBefore = await trustToken.totalSupply()
-            await rater.connect(otherWallet).withdraw(loanToken.address, stake)
+            await rater.connect(otherWallet).withdraw(loanToken.address, stake, txArgs)
             const totalSupplyAfter = await trustToken.totalSupply()
 
             expect(totalSupplyBefore.sub(totalSupplyAfter)).to.equal(stake * 0.1 * 0.5)
           })
 
           it('no voters receive proper amount', async () => {
-            await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake), stake * (1 + 0.1 * 0.5))
+            await expectTrustTokenBalanceChange(() => rater.withdraw(loanToken.address, stake, txArgs), stake * (1 + 0.1 * 0.5))
           })
 
           it('yes voters receive proper amount', async () => {
-            await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake), stake * (1 - 0.1), otherWallet)
+            await expectTrustTokenBalanceChange(() => rater.connect(otherWallet).withdraw(loanToken.address, stake, txArgs), stake * (1 - 0.1), otherWallet)
           })
         })
 
         it('does not change total loan yes votes', async () => {
           await vote(stake * 10, true, otherWallet)
           await defaultLoan()
-          await rater.withdraw(loanToken.address, stake)
+          await rater.withdraw(loanToken.address, stake, txArgs)
           expect(await rater.getTotalYesVotes(loanToken.address)).to.equal(stake * 10)
         })
 
         it('does not change total loan no votes', async () => {
           await defaultLoan()
-          await rater.withdraw(loanToken.address, stake)
+          await rater.withdraw(loanToken.address, stake, txArgs)
           expect(await rater.getTotalNoVotes(loanToken.address)).to.equal(stake)
         })
+      })
+    })
+  })
+
+  describe('Claim', () => {
+    beforeEach(async () => {
+      loanToken = await new LoanTokenFactory(owner).deploy(
+        tusd.address,
+        owner.address,
+        parseEther('5000000'),
+        monthInSeconds * 24,
+        1000,
+      )
+      await tusd.approve(loanToken.address, parseEther('5000000'))
+      await rater.allow(owner.address, true)
+      await submit(loanToken.address)
+    })
+
+    const expectRoughTrustTokenBalanceChangeAfterClaim = async (expectedChange: BigNumberish, wallet: Wallet = owner) => {
+      const balanceBefore = await trustToken.balanceOf(wallet.address)
+      await rater.claim(loanToken.address, wallet.address, txArgs)
+      const balanceAfter = await trustToken.balanceOf(wallet.address)
+      expectCloseTo(balanceAfter.sub(balanceBefore), BigNumber.from(expectedChange))
+    }
+
+    it('can only be called after loan is funded', async () => {
+      await rater.yes(loanToken.address, 1000)
+      await expect(rater.claim(loanToken.address, owner.address))
+        .to.be.revertedWith('TrueRatingAgency: Loan was not funded')
+    })
+
+    it('when called for the first time, moves funds from distributor to rater', async () => {
+      await rater.yes(loanToken.address, 1000)
+      await loanToken.fund()
+
+      await expect(() => rater.claim(loanToken.address, owner.address, txArgs))
+        .to.changeTokenBalance(trustToken, rater, '100000000000000')
+    })
+
+    it('when called for the second time, does not interact with distributor anymore', async () => {
+      await rater.yes(loanToken.address, 1000)
+      await loanToken.fund()
+
+      await rater.claim(loanToken.address, owner.address, txArgs)
+      await expect(() => rater.claim(loanToken.address, owner.address, txArgs))
+        .to.changeTokenBalance(trustToken, rater, '0')
+    })
+
+    describe('Running', () => {
+      it('properly saves claimed amount and moves funds (1 voter, called once)', async () => {
+        await rater.yes(loanToken.address, 1000)
+        await loanToken.fund()
+
+        await timeTravel(monthInSeconds * 12)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('50000000000000')
+      })
+
+      it('properly saves claimed amount and moves funds (1 voter, called multiple times)', async () => {
+        await rater.yes(loanToken.address, 1000)
+        await loanToken.fund()
+
+        await timeTravel(monthInSeconds * 6)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('25000000000000')
+        await timeTravel(monthInSeconds * 12)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('50000000000000')
+        await timeTravel(monthInSeconds * 3)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('12500000000000')
+        await timeTravel(monthInSeconds * 10)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('12500000000000')
+      })
+
+      it('properly saves claimed amount and moves funds (multiple voters, called once)', async () => {
+        await rater.yes(loanToken.address, 2000)
+        await trustToken.mint(otherWallet.address, parseTT(100000000))
+        await trustToken.connect(otherWallet).approve(rater.address, 3000)
+        await rater.connect(otherWallet).yes(loanToken.address, 3000)
+        await loanToken.fund()
+
+        await timeTravel(monthInSeconds * 12)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('20000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('30000000000000', otherWallet)
+      })
+
+      it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
+        await rater.yes(loanToken.address, 2000)
+        await trustToken.mint(otherWallet.address, parseTT(100000000))
+        await trustToken.connect(otherWallet).approve(rater.address, 3000)
+        await rater.connect(otherWallet).yes(loanToken.address, 3000)
+        await loanToken.fund()
+
+        await timeTravel(monthInSeconds * 12)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('20000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('30000000000000', otherWallet)
+        await timeTravel(monthInSeconds * 6)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('10000000000000', owner)
+        await timeTravel(monthInSeconds * 6)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('10000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('30000000000000', otherWallet)
+      })
+    })
+
+    describe('Closed', () => {
+      beforeEach(async () => {
+        await rater.yes(loanToken.address, 2000)
+      })
+
+      it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
+        await trustToken.mint(otherWallet.address, parseTT(100000000))
+        await trustToken.connect(otherWallet).approve(rater.address, 3000)
+        await rater.connect(otherWallet).yes(loanToken.address, 3000)
+        await loanToken.fund()
+
+        await timeTravel(monthInSeconds * 12)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('20000000000000', owner)
+        await timeTravel(monthInSeconds * 30)
+        await loanToken.close()
+        await expectRoughTrustTokenBalanceChangeAfterClaim('20000000000000', owner)
+        await rater.withdraw(loanToken.address, await rater.getYesVote(loanToken.address, owner.address), txArgs)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('60000000000000', otherWallet)
+      })
+
+      it('does not do anything when called multiple times', async () => {
+        await loanToken.fund()
+        await timeTravel(monthInSeconds * 24)
+        await loanToken.close()
+
+        await expectRoughTrustTokenBalanceChangeAfterClaim('100000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(0, owner)
+      })
+
+      it('does claim with withdraw', async () => {
+        await loanToken.fund()
+        await timeTravel(monthInSeconds * 24)
+        await tusd.mint(loanToken.address, parseEther('1312312312321'))
+        await loanToken.close()
+        const staked = await rater.getYesVote(loanToken.address, owner.address)
+
+        await expect(async () => rater.withdraw(loanToken.address, staked, txArgs))
+          .to.changeTokenBalance(trustToken, owner, staked.add('100000000000000'))
       })
     })
   })
