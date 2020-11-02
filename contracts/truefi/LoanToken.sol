@@ -39,7 +39,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     uint256 public redeemed;
 
-    uint256 public override borrowerFee = 25;
+    uint256 public constant override borrowerFee = 25;
 
     // whitelist for transfers
     mapping(address => bool) public canTransfer;
