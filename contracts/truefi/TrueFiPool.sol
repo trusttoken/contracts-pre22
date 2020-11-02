@@ -148,15 +148,19 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @return pool value in TUSD
      */
     function poolValue() public view returns (uint256) {
-        return
-            currencyBalance().add(_lender.value()).add(
-                yTokenBalance().mul(_curvePool.curve().get_virtual_price()).div(1 ether)
-            );
+        // prettier-ignore
+        return 
+            currencyBalance()
+            .add(_lender.value())
+            .add(
+                yTokenBalance()
+                .mul(_curvePool.curve().get_virtual_price())
+                .div(1 ether));
     }
 
     /**
      * @dev ensure enough curve.fi pool tokens are available
-     * Check if current available amount of TUSD is enough and 
+     * Check if current available amount of TUSD is enough and
      * withdraw remainder from gauge
      * @param neededAmount amount required
      */
@@ -198,6 +202,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         emit Joined(msg.sender, amount, amountToMint);
     }
 
+    // prettier-ignore
     /**
      * @dev Exit pool
      * This function will withdraw a basket of currencies backing the pool value
@@ -209,7 +214,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         uint256 _totalSupply = totalSupply();
 
         // get share of currency tokens kept in the pool
-        uint256 currencyAmountToTransfer = amount.mul(currencyBalance()).div(_totalSupply);
+        uint256 currencyAmountToTransfer = amount.mul(
+            currencyBalance()).div(_totalSupply);
 
         // calculate amount of curve.fi pool tokens
         uint256 curveLiquidityAmountToTransfer = amount.mul(
@@ -271,6 +277,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         emit Pulled(yAmount);
     }
 
+    // prettier-ignore
     /**
      * @dev Remove liquidity from curve and transfer to borrower
      * @param expectedAmount expected amount to borrow
@@ -310,7 +317,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      */
     function repay(uint256 currencyAmount) external override {
         require(_currencyToken.transferFrom(msg.sender, address(this), currencyAmount));
-
         emit Repaid(msg.sender, currencyAmount);
     }
 
@@ -357,6 +363,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param currencyAmount amount to calculate for
      */
     function calcTokenAmount(uint256 currencyAmount) public view returns (uint256) {
+        // prettier-ignore
         uint256 yTokenAmount = currencyAmount.mul(1e18).div(
             _curvePool.coins(TUSD_INDEX).getPricePerFullShare());
         uint256[N_TOKENS] memory yAmounts = [0, 0, 0, yTokenAmount];

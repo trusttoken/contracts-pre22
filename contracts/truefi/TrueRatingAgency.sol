@@ -294,6 +294,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         vote(id, stake, false);
     }
 
+    // prettier-ignore
     /**
      * @dev Withdraw stake on a loan and remove votes.
      * Unstaking only allowed for loans that are not Running
@@ -392,7 +393,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * interest = (loan APY * term * principal)
      * R = Total Reward = (interest * chi)
      * R is distributed to voters based on their proportion of votes/total_votes
-     * 
+     *
      * Claimable reward = R x (current time / total time)
      *      * (account TRU staked / total TRU staked) - (amount claimed)
      *

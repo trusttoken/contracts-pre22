@@ -10,7 +10,6 @@ import {QuadraticTrueDistributor} from "./QuadraticTrueDistributor.sol";
  * @notice Distribute TRU slowly in a quadratic fashion
  */
 contract SlowTrueDistributor is QuadraticTrueDistributor {
-
     /**
      * @dev Get Distribution factor to be slow
      * @return distribution factor

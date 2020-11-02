@@ -12,7 +12,7 @@ import {Ownable} from "../upgradeability/UpgradeableOwnable.sol";
  * @notice Distribute TRU to a smart contract
  * @dev Allows for arbitrary claiming of TRU by a farm contract
  *
- * Contracts are registered to receive distributions. Once registered, 
+ * Contracts are registered to receive distributions. Once registered,
  * a farm contract can claim TRU from the distributor.
  * - Owner can withdraw funds in case distribution need to be re-allocated
  */
@@ -24,6 +24,12 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
     uint256 public override amount;
     uint256 public override remaining;
 
+    /**
+     * @dev Initialize distributor
+     * @param _beneficiary Address for distribution
+     * @param _trustToken TRU address
+     * @param _amount Amount to distribute
+     */
     function initialize(
         address _beneficiary,
         IERC20 _trustToken,
@@ -36,16 +42,28 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
         remaining = _amount;
     }
 
+    /**
+     * @dev Only beneficiary can receive TRU
+     */
     modifier onlyBeneficiary {
-        require(msg.sender == beneficiary, "ArbitraryDistributor: Only beneficiary can distribute tokens");
+        // prettier-ignore
+        require(msg.sender == beneficiary, 
+            "ArbitraryDistributor: Only beneficiary can receive tokens");
         _;
     }
 
+    /**
+     * @dev Distribute arbitrary number of tokens
+     * @param _amount Amount of TRU to distribute
+     */
     function distribute(uint256 _amount) public override onlyBeneficiary {
         remaining = remaining.sub(_amount);
         require(trustToken.transfer(msg.sender, _amount));
     }
 
+    /**
+     * @dev Withdraw funds (for instance if owner decides to create a new distribution)
+     */
     function empty() public override onlyOwner {
         require(trustToken.transfer(msg.sender, trustToken.balanceOf(address(this))));
     }

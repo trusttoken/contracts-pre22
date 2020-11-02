@@ -11,7 +11,7 @@ import {Ownable} from "../upgradeability/UpgradeableOwnable.sol";
  * @notice Distribute TRU in a linear fashion
  * @dev Distributor contract which uses a linear distribution
  *
- * Contracts are registered to receive distributions. Once registered, 
+ * Contracts are registered to receive distributions. Once registered,
  * a farm contract can claim TRU from the distributor.
  * - Distributions are based on time.
  * - Owner can withdraw funds in case distribution need to be re-allocated
@@ -39,7 +39,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
      * @dev Emitted when a distribution occurs
      * @param farm Farm this distribution is sent to
      */
-    event Distributed(address farm);
+    event Distributed(uint256 amount);
 
     /**
      * @dev Initialize distributor
@@ -79,22 +79,26 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
         if (block.timestamp < distributionStart) {
             return;
         }
-
-        // 
+        // calculate distribution amount
         uint256 amount = totalAmount.sub(distributed);
         if (block.timestamp < distributionStart.add(duration)) {
             amount = block.timestamp.sub(lastDistribution).mul(totalAmount).div(duration);
         }
-
+        // store last distribution
         lastDistribution = block.timestamp;
         if (amount == 0) {
             return;
         }
+        // transfer tokens & update distributed amount
         distributed = distributed.add(amount);
-
         require(trustToken.transfer(farm, amount));
+
+        emit Distributed(amount);
     }
 
+    /**
+     * @dev Withdraw funds (for instance if owner decides to create a new distribution)
+     */
     function empty() public override onlyOwner {
         require(trustToken.transfer(msg.sender, trustToken.balanceOf(address(this))));
     }

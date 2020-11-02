@@ -33,7 +33,7 @@ contract TrueFarm is ITrueFarm, Initializable {
     mapping(address => uint256) public previousCumulatedRewardPerToken;
     // track claimable rewards for accounts
     mapping(address => uint256) public claimableReward;
-    
+
     // track total rewards
     uint256 public totalClaimedRewards;
     uint256 public totalFarmRewards;
@@ -143,8 +143,7 @@ contract TrueFarm is ITrueFarm, Initializable {
         // pull TRU from distributor
         trueDistributor.distribute(address(this));
         // calculate total rewards
-        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(
-            totalClaimedRewards).mul(PRECISION);
+        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(totalClaimedRewards).mul(PRECISION);
         // calculate block reward
         uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards);
         // update farm rewards
