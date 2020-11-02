@@ -35,7 +35,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     IUniswapRouter public _uniRouter;
 
     // 0.25% for deposits
-    uint256 public ownerFee = 25;
+    uint256 public joiningFee = 25;
     uint256 public claimableFees;
 
     // curve.fi
@@ -46,7 +46,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev Emitted when fee is changed
      * @param newFee New fee
      */
-    event FeeChanged(uint256 newFee);
+    event JoiningFeeChanged(uint256 newFee);
 
     /**
      * @dev Emitted when someone joins the pool
@@ -165,12 +165,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev set pool fee
-     * @param fee pool fee
+     * @dev set pool join fee
+     * @param fee new fee
      */
-    function setFee(uint256 fee) external onlyOwner {
-        ownerFee = fee;
-        emit FeeChanged(fee);
+    function setJoiningFee(uint256 fee) external onlyOwner {
+        joiningFee = fee;
+        emit JoiningFeeChanged(fee);
     }
 
     /**
@@ -178,10 +178,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param amount amount of currency token to deposit
      */
     function join(uint256 amount) external override {
-        // calculate join fee
-        uint256 fee = amount.mul(ownerFee).div(10000);
+        uint256 fee = amount.mul(joiningFee).div(10000);
         uint256 amountToDeposit = amount.sub(fee);
-
         uint256 amountToMint = amountToDeposit;
 
         // first staker mints same amount deposited
@@ -274,8 +272,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev Remove liquidity from curve and transfer to borrower
      * @param expectedAmount expected amount to borrow
      */
-    function borrow(uint256 expectedAmount) external override nonReentrant {
-        // TODO: create modifier
+    function borrow(uint256 expectedAmount, uint256 amountWithoutFee) external override nonReentrant {
+        require(expectedAmount >= amountWithoutFee, "CurvePool: Fee cannot be negative");
+        // TODO: create modifier for onlyLender
         require(msg.sender == address(_lender), "CurvePool: Only lender can borrow");
 
         // if there is not enough TUSD, withdraw from curve
@@ -294,10 +293,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
             require(expectedAmount <= currencyBalance(), "CurvePool: Not enough funds in pool to cover borrow");
         }
 
-        // trasfer 
-        require(_currencyToken.transfer(msg.sender, expectedAmount));
+        // calculate fees and transfer remainder
+        uint256 fee = expectedAmount.sub(amountWithoutFee);
+        claimableFees = claimableFees.add(fee);
+        require(_currencyToken.transfer(msg.sender, amountWithoutFee));
 
-        emit Borrow(expectedAmount);
+        emit Borrow(expectedAmount, fee);
     }
 
     /**

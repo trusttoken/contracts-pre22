@@ -28,8 +28,10 @@ describe('LoanToken', () => {
   const withdraw = async (wallet: Wallet, beneficiary = wallet.address) =>
     loanToken.connect(wallet).withdraw(beneficiary)
 
-  const payback = async (wallet: Wallet, amount: BigNumberish) =>
-    tusd.connect(wallet).transfer(loanToken.address, amount)
+  const payback = async (wallet: Wallet, amount: BigNumberish) => tusd.mint(loanToken.address, amount)
+
+  const removeFee = (amount: BigNumber) => amount.mul(9975).div(10000)
+  const addFee = async (amount: BigNumber) => amount.add((await loanToken.amount()).mul(25).div(10000))
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [lender, borrower, other] = wallets
@@ -72,6 +74,10 @@ describe('LoanToken', () => {
     it('sets borrowers debt', async () => {
       expect(await loanToken.debt()).to.equal(parseEther('1100'))
     })
+
+    it('received amount if total amount minus fee', async () => {
+      expect(await loanToken.receivedAmount()).to.equal(parseEther('1000').mul(9975).div(10000))
+    })
   })
 
   describe('Fund', () => {
@@ -98,7 +104,7 @@ describe('LoanToken', () => {
     })
 
     it('transfers proper amount of currency token from lender to loanToken contact', async () => {
-      expect(await tusd.balanceOf(loanToken.address)).to.equal(parseEther('1000'))
+      expect(await tusd.balanceOf(loanToken.address)).to.equal(removeFee(parseEther('1000')))
     })
 
     it('reverts when funding the same loan token twice', async () => {
@@ -115,14 +121,14 @@ describe('LoanToken', () => {
     it('borrower can take funds from loan token', async () => {
       await loanToken.fund()
       await withdraw(borrower)
-      expect(await tusd.balanceOf(borrower.address)).to.equal(parseEther('1000'))
+      expect(await tusd.balanceOf(borrower.address)).to.equal(await loanToken.receivedAmount())
     })
 
     it('transfers funds to beneficiary', async () => {
       await loanToken.fund()
       const randomAddress = Wallet.createRandom().address
       await withdraw(borrower, randomAddress)
-      expect(await tusd.balanceOf(randomAddress)).to.equal(parseEther('1000'))
+      expect(await tusd.balanceOf(randomAddress)).to.equal(await loanToken.receivedAmount())
     })
 
     it('sets status to Withdrawn', async () => {
@@ -226,7 +232,7 @@ describe('LoanToken', () => {
       await tusd.connect(borrower).approve(loanToken.address, parseEther('100'))
       await loanToken.repay(borrower.address, parseEther('100'))
 
-      expect(await tusd.balanceOf(borrower.address)).to.equal(parseEther('900'))
+      expect(await tusd.balanceOf(borrower.address)).to.equal(removeFee(parseEther('1000')).sub(parseEther('100')))
       expect(await tusd.balanceOf(loanToken.address)).to.equal(parseEther('100'))
     })
   })
@@ -255,20 +261,16 @@ describe('LoanToken', () => {
       await loanToken.fund()
       await timeTravel(provider, monthInSeconds * 12)
       await loanToken.close()
-      await expect(loanToken.redeem(parseEther('1100'))).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEther('1100'), parseEther('1000'))
+      await expect(loanToken.redeem(parseEther('1100'))).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEther('1100'), removeFee(parseEther('1000')))
     })
 
     describe('Simple case: loan settled, redeem all', () => {
       beforeEach(async () => {
         await loanToken.fund()
         await timeTravel(provider, monthInSeconds * 12)
-        await payback(borrower, parseEther('100'))
+        await payback(borrower, await addFee(parseEther('100')))
         await loanToken.close()
-        await loanToken.redeem(parseEther('1100'))
-      })
-
-      it('transfers all trueCurrency tokens to lender', async () => {
-        expect(await tusd.balanceOf(lender.address)).to.equal(parseEther('1100'))
+        await expect(() => loanToken.redeem(parseEther('1100'))).to.changeTokenBalance(tusd, lender, parseEther('1100'))
       })
 
       it('burns loan tokens', async () => {
@@ -288,11 +290,7 @@ describe('LoanToken', () => {
         await withdraw(borrower)
         await payback(borrower, parseEther('825'))
         await loanToken.close()
-        await loanToken.redeem(parseEther('1100'))
-      })
-
-      it('transfers all trueCurrency tokens to lender', async () => {
-        expect(await tusd.balanceOf(lender.address)).to.equal(parseEther('825'))
+        await expect(() => loanToken.redeem(parseEther('1100'))).to.changeTokenBalance(tusd, lender, parseEther('825'))
       })
 
       it('burns loan tokens', async () => {
@@ -313,13 +311,13 @@ describe('LoanToken', () => {
         await payback(borrower, parseEther('550'))
         await loanToken.close()
         await loanToken.redeem(parseEther('550'))
-        expect(await tusd.balanceOf(lender.address)).to.equal(parseEther('275'))
+        expect(await tusd.balanceOf(lender.address)).to.equal(await addFee(parseEther('275')))
         await payback(borrower, parseEther('550'))
         await loanToken.redeem(parseEther('550'))
       })
 
       it('transfers all trueCurrency tokens to lender', async () => {
-        expect(await tusd.balanceOf(lender.address)).to.equal(parseEther('1100'))
+        expect(await tusd.balanceOf(lender.address)).to.equal(await addFee(parseEther('1100')))
       })
 
       it('burns loan tokens', async () => {
@@ -339,6 +337,8 @@ describe('LoanToken', () => {
     describe('loan defaulted (1/2 paid back), redeem part, then rest is paid back, redeem rest - many LOAN hodlers', () => {
       beforeEach(async () => {
         await loanToken.fund()
+        // burn excessive tokens
+        await tusd.transfer(Wallet.createRandom().address, await tusd.balanceOf(lender.address))
         await loanToken.transfer(other.address, parseEther('550'))
         await timeTravel(provider, monthInSeconds * 12)
         await withdraw(borrower)
