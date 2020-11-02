@@ -16,8 +16,10 @@ import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFacto
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { ArbitraryDistributorFactory } from '../../build/types/ArbitraryDistributorFactory'
 import { ArbitraryDistributor } from '../../build/types/ArbitraryDistributor'
+import ILoanFactory from '../../build/ILoanFactory.json'
 import { parseEther } from 'ethers/lib/utils'
 import { expectCloseTo } from '../utils/expectCloseTo'
+import { MockContract, deployMockContract } from 'ethereum-waffle'
 
 describe('TrueRatingAgency', () => {
   enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
@@ -31,6 +33,7 @@ describe('TrueRatingAgency', () => {
   let loanToken: LoanToken
   let distributor: ArbitraryDistributor
   let tusd: MockTrueCurrency
+  let mockFactory: MockContract
 
   const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
   const stake = 1000000
@@ -62,10 +65,12 @@ describe('TrueRatingAgency', () => {
     await tusd.approve(loanToken.address, 5_000_000)
 
     distributor = await new ArbitraryDistributorFactory(owner).deploy()
+    mockFactory = await deployMockContract(owner, ILoanFactory.abi)
     rater = await new TrueRatingAgencyFactory(owner).deploy()
 
+    await mockFactory.mock.isLoanToken.returns(true)
     await distributor.initialize(rater.address, trustToken.address, parseTT(100000000))
-    await rater.initialize(trustToken.address, distributor.address)
+    await rater.initialize(trustToken.address, distributor.address, mockFactory.address)
 
     await trustToken.mint(owner.address, parseTT(100000000))
     await trustToken.mint(distributor.address, parseTT(100000000))
@@ -200,6 +205,11 @@ describe('TrueRatingAgency', () => {
       await rater.retract(loanToken.address)
       expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
       expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
+    })
+
+    it('reverts if token was not created with LoanFactory', async () => {
+      await mockFactory.mock.isLoanToken.returns(false)
+      await expect(submit(loanToken.address)).to.be.revertedWith('TrueRatingAgency: Only LoanTokens created via LoanFactory are supported')
     })
 
     it('reverts on attempt of creating the same loan twice', async () => {
