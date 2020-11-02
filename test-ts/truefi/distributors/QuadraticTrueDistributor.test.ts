@@ -123,6 +123,19 @@ describe('QuadraticTrueDistributor', () => {
     })
   })
 
+  describe('empty', () => {
+    it('only owner can empty', async () => {
+      await expect(distributor.connect(farm).empty())
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('transfer total balance to sender', async () => {
+      const totalBalance = await trustToken.balanceOf(distributor.address)
+      await expect(() => distributor.empty())
+        .to.changeTokenBalance(trustToken, owner, totalBalance)
+    })
+  })
+
   describe('transfer', () => {
     it('properly transfers', async () => {
       const totalShares = await distributor.TOTAL_SHARES()
