@@ -23,9 +23,11 @@ contract TrueFarm is ITrueFarm, Initializable {
     ITrueDistributor public override trueDistributor;
     string public override name;
 
+    // track stakes
     uint256 public override totalStaked;
     mapping(address => uint256) public staked;
 
+    // track cumulative rewards
     uint256 public cumulativeRewardPerToken;
     mapping(address => uint256) public previousCumulatedRewardPerToken;
     mapping(address => uint256) public claimableReward;
@@ -135,16 +137,24 @@ contract TrueFarm is ITrueFarm, Initializable {
      * @dev Update state and get TRU from distributor
      */
     modifier update() {
+        // pull TRU from distributor
         trueDistributor.distribute(address(this));
-        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(totalClaimedRewards).mul(PRECISION);
+        // calculate total rewards
+        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(
+            totalClaimedRewards).mul(PRECISION);
+        // calculate block reward
         uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards);
+        // update farm rewards
         totalFarmRewards = newTotalFarmRewards;
+        // if there are stakers
         if (totalStaked > 0) {
             cumulativeRewardPerToken = cumulativeRewardPerToken.add(totalBlockReward.div(totalStaked));
         }
+        // update claimable reward for sender
         claimableReward[msg.sender] = claimableReward[msg.sender].add(
             staked[msg.sender].mul(cumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[msg.sender])).div(PRECISION)
         );
+        // update previous cumulative for sender
         previousCumulatedRewardPerToken[msg.sender] = cumulativeRewardPerToken;
         _;
     }

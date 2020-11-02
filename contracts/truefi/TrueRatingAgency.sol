@@ -304,16 +304,24 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         bool choice = loans[id].votes[msg.sender][true] > 0;
         LoanStatus loanStatus = status(id);
 
-        require(loans[id].votes[msg.sender][choice] >= stake, "TrueRatingAgency: Cannot withdraw more than was staked");
+        require(loans[id].votes[msg.sender][choice] >= stake, 
+            "TrueRatingAgency: Cannot withdraw more than was staked");
 
         uint256 amountToTransfer = stake;
         uint256 burned = 0;
         if (loanStatus > LoanStatus.Running) {
+            // claim TRU reward
             claim(id, msg.sender);
+            // check if prediction correct
             bool correct = wasPredictionCorrect(id, choice);
             if (correct) {
-                amountToTransfer = amountToTransfer.add(bounty(id, !choice).mul(stake).div(loans[id].prediction[choice]));
+                // if correct, take some from incorrect side's stake
+                // amount taken from incorrect side but not burned
+                amountToTransfer = amountToTransfer.add(
+                    bounty(id, !choice).mul(stake).div(loans[id].prediction[choice]));
             } else {
+                // if incorrect, calculate loss & burn stake
+                // stake - (stake * lossFactor)
                 uint256 lostAmount = amountToTransfer.mul(lossFactor).div(10000);
                 amountToTransfer = amountToTransfer.sub(lostAmount);
                 burned = lostAmount.mul(burnFactor).div(10000);
@@ -321,23 +329,27 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
             }
         }
 
+        // if loan still pending, update total votes
         if (loanStatus == LoanStatus.Pending) {
             loans[id].prediction[choice] = loans[id].prediction[choice].sub(stake);
         }
 
+        // update account votes
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
 
+        // transfer tokens to sender and emit event
         require(trustToken.transfer(msg.sender, amountToTransfer));
         emit Withdrawn(id, msg.sender, stake, amountToTransfer, burned);
     }
 
     /**
-     * @dev Internal function to calculate TRU loss for incorrect voters
+     * @dev Total amount of funds given to correct voters
      * @param id Loan ID
      * @param incorrectChoice Vote which was incorrect
      * @return TRU amount remaining for incorrect voters
      */
     function bounty(address id, bool incorrectChoice) internal view returns (uint256) {
+        // reward = (incorrect_tokens_staked) * (loss_factor) * (1 - burn_factor)
         return loans[id].prediction[incorrectChoice].mul(lossFactor).mul(uint256(10000).sub(burnFactor)).div(10000**2);
     }
 
@@ -352,6 +364,10 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     /**
      * @dev Update total TRU reward for a Loan
+     * Reward is divided proportionally based on # TRU staked
+     * chi = (TRU remaining in distributor) / (Total TRU allocated for distribution)
+     * interest = (loan APY * term * principal)
+     * R = Total Reward = (interest * chi)
      * @param id Loan ID
      */
     modifier calculateTotalReward(address id) {
@@ -368,32 +384,42 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     /**
      * @dev Claim TRU rewards for voters
-     * Only can claim TRU rewards for funded loans
-     * Voters can claim a portion of their total rewards over time
+     * - Only can claim TRU rewards for funded loans
+     * - Voters can claim a portion of their total rewards over time
+     * - Claimed automatically when a user withdraws stake
+     *
      * chi = (TRU remaining in distributor) / (Total TRU allocated for distribution)
      * interest = (loan APY * term * principal)
      * R = Total Reward = (interest * chi)
      * R is distributed to voters based on their proportion of votes/total_votes
-     * Voters can claim their proportion based on time.
+     * 
      * Claimable reward = R x (current time / total time)
      *      * (account TRU staked / total TRU staked) - (amount claimed)
+     *
      * @param id Loan ID
      * @param voter Voter account
      */
     function claim(address id, address voter) public override onlyFundedLoans(id) calculateTotalReward(id) {
         uint256 totalTime = ILoanToken(id).duration();
         uint256 passedTime = block.timestamp.sub(ILoanToken(id).start());
+
+        // check time of loan
         if (passedTime > totalTime) {
             passedTime = totalTime;
         }
+        // calculate how many tokens user can claim
+        // claimable = stakedByVoter / totalStaked
         uint256 stakedByVoter = loans[id].votes[voter][false].add(loans[id].votes[voter][true]);
         uint256 totalStaked = loans[id].prediction[false].add(loans[id].prediction[true]);
 
+        // calculate claimable rewards at current time
         uint256 helper = loans[id].reward.mul(passedTime).mul(stakedByVoter);
         uint256 claimable = helper.div(totalTime).div(totalStaked).sub(loans[id].claimed[voter]);
 
+        // track amount of claimed tokens
         loans[id].claimed[voter] = loans[id].claimed[voter].add(claimable);
 
+        // transfer tokens
         if (claimable > 0) {
             require(trustToken.transfer(voter, claimable));
         }
@@ -416,27 +442,36 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     /**
      * @dev Get status for a specific loan
+     * We rely on correct implementation of LoanToken
      * @param id Loan ID
      * @return Status of loan
      */
     function status(address id) public view returns (LoanStatus) {
         Loan storage loan = loans[id];
+        // Void loan doesn't exist because timestamp is zero
         if (loan.creator == address(0) && loan.timestamp == 0) {
             return LoanStatus.Void;
         }
+        // Retracted loan was cancelled by borrower
         if (loan.creator == address(0) && loan.timestamp != 0) {
             return LoanStatus.Retracted;
         }
+        // get internal status
         ILoanToken.Status loanInternalStatus = ILoanToken(id).status();
+
+        // Running is Funded || Withdrawn
         if (loanInternalStatus == ILoanToken.Status.Funded || loanInternalStatus == ILoanToken.Status.Withdrawn) {
             return LoanStatus.Running;
         }
+        // Settled has been paid back in full and past term
         if (loanInternalStatus == ILoanToken.Status.Settled) {
             return LoanStatus.Settled;
         }
+        // Defaulted has not been paid back in full and past term
         if (loanInternalStatus == ILoanToken.Status.Defaulted) {
             return LoanStatus.Defaulted;
         }
+        // otherwise return Pending
         return LoanStatus.Pending;
     }
 }

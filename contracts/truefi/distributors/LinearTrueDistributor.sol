@@ -26,6 +26,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
     uint256 public lastDistribution;
     uint256 public distributed;
 
+    // contract which claim tokens from distributor
     address public farm;
 
     /**
@@ -71,7 +72,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
     }
 
     /**
-     * @dev Distribute tokens to farm
+     * @dev Distribute tokens to farm in linear fashion based on time
      */
     function distribute(address) public override {
         if (block.timestamp < distributionStart) {

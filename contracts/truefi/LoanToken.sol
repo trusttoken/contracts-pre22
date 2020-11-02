@@ -214,6 +214,7 @@ contract LoanToken is ILoanToken, ERC20 {
         }
 
         uint256 helper = amount.mul(apy).mul(passed).mul(_balance);
+        // assume month is 30 days
         uint256 interest = helper.div(360 days).div(10000).div(totalSupply());
 
         return amount.add(interest);
@@ -319,7 +320,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     /**
      * @dev Calculate interest that will be paid by this loan for an amount
-     * (amount * apy * duration) / (1 year / precision)
+     * (amount * apy * duration) / (360 days / precision)
      * @param _amount amount
      * @return Amount of interest paid for _amount
      */
