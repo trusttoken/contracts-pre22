@@ -15,7 +15,7 @@ import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
 
-import ITruePoolJson from '../../build/ITruePool.json'
+import ITrueFiPoolJson from '../../build/ITrueFiPool.json'
 import ILoanTokenJson from '../../build/ILoanToken.json'
 import ITrueRatingAgencyJson from '../../build/ITrueRatingAgency.json'
 
@@ -55,7 +55,7 @@ describe('TrueLender', () => {
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
     await tusd.initialize()
 
-    mockPool = await deployMockContract(owner, ITruePoolJson.abi)
+    mockPool = await deployMockContract(owner, ITrueFiPoolJson.abi)
     await mockPool.mock.currencyToken.returns(tusd.address)
     await mockPool.mock.borrow.returns()
     await mockPool.mock.repay.returns()

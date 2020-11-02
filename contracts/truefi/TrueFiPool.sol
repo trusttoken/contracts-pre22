@@ -5,10 +5,9 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {ITruePool} from "./interface/ITruePool.sol";
+import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 import {ICurveGauge, ICurveMinter, ICurvePool} from "./interface/ICurve.sol";
-import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ERC20} from "./upgradeability/UpgradeableERC20.sol";
 import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
@@ -25,7 +24,7 @@ import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
  *
  * Funds are managed through an external function to save gas on deposits
  */
-contract TrueFiPool is ITruePool, ERC20, ReentrancyGuard, Ownable {
+contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
 
     ICurvePool public _curvePool;

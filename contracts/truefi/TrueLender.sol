@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {ITruePool} from "./interface/ITruePool.sol";
+import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
@@ -20,7 +20,7 @@ contract TrueLender is ITrueLender, Ownable {
     mapping(address => bool) public allowedBorrowers;
     ILoanToken[] _loans;
 
-    ITruePool public pool;
+    ITrueFiPool public pool;
     IERC20 public currencyToken;
     ITrueRatingAgency public ratingAgency;
 
@@ -61,7 +61,7 @@ contract TrueLender is ITrueLender, Ownable {
         _;
     }
 
-    function initialize(ITruePool _pool, ITrueRatingAgency _ratingAgency) public initializer {
+    function initialize(ITrueFiPool _pool, ITrueRatingAgency _ratingAgency) public initializer {
         Ownable.initialize();
 
         pool = _pool;
