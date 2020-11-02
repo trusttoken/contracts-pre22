@@ -41,13 +41,57 @@ contract TrueFiPool is ITruePool, ERC20, ReentrancyGuard, Ownable {
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
 
+    /**
+     * @dev Emitted when fee is changed
+     * @param newFee New fee
+     */
     event FeeChanged(uint256 newFee);
+
+    /**
+     * @dev Emitted when someone joins the pool
+     * @param staker Account staking
+     * @param deposited Amount deposited
+     * @param minted Amount of pool tokens minted
+     */
     event Joined(address indexed staker, uint256 deposited, uint256 minted);
+
+    /**
+     * @dev Emitted when someone exits the pool
+     * @param staker Account exiting
+     * @param amount Amount unstaking
+     */
     event Exited(address indexed staker, uint256 amount);
+
+    /**
+     * @dev Emitted when funds are flushed into curve.fi
+     * @param currencyAmount Amount of tokens deposited
+     */
     event Flushed(uint256 currencyAmount);
-    event Pulled(uint256 crvAmount);
+
+    /**
+     * @dev Emitted when funds are pulled from curve.fi
+     * @param crvAmount Amount
+     */
+    event Pulled(uint256 yAmount);
+
+    /**
+     * @dev Emitted when funds are borrowed from pool
+     * @param Amount of funds borrowed from pool
+     */
     event Borrow(uint256 amount);
+
+    /**
+     * @dev Emitted when borrower repays the pool
+     * @param payer Address of borrower
+     * @param amount Amount repaid
+     */
     event Repaid(address indexed payer, uint256 amount);
+
+    /**
+     * @dev Emitted when fees are collected
+     * @param beneficiary Account to receive fees
+     * @param amount Amount of fees collected
+     */
     event Collected(address indexed beneficiary, uint256 amount);
 
     /**
@@ -56,6 +100,7 @@ contract TrueFiPool is ITruePool, ERC20, ReentrancyGuard, Ownable {
      * @param __curveGauge curve gauge address
      * @param __currencyToken curve pool underlying token
      * @param __lender TrueLender address
+     * @param __uniRouter Uniswap router
      */
     function initialize(
         ICurvePool __curvePool,
@@ -173,6 +218,9 @@ contract TrueFiPool is ITruePool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Deposit idle funds into curve.fi pool and stake in gauge
+     * Called by owner to help manage funds in pool and save on gas for deposits
+     * @param currencyAmount Amount of funds to deposit into curve
+     * @param minMintAmount Minimum amount to mint
      */
     function flush(uint256 currencyAmount, uint256 minMintAmount) external onlyOwner {
         require(currencyAmount <= currencyBalance(), "CurvePool: Insufficient currency balance");
@@ -189,13 +237,13 @@ contract TrueFiPool is ITruePool, ERC20, ReentrancyGuard, Ownable {
      * @param crvAmount amount of curve pool tokens
      * @param minCurrencyAmount minimum amount of tokens to withdraw
      */
-    function pull(uint256 crvAmount, uint256 minCurrencyAmount) external onlyOwner {
-        require(crvAmount <= totalLiquidityTokenBalance(), "CurvePool: Insufficient Curve liquidity balance");
+    function pull(uint256 yAmount, uint256 minCurrencyAmount) external onlyOwner {
+        require(yAmount <= totalLiquidityTokenBalance(), "CurvePool: Insufficient Curve liquidity balance");
 
-        ensureEnoughTokensAreAvailable(crvAmount);
-        _curvePool.remove_liquidity_one_coin(crvAmount, TUSD_INDEX, minCurrencyAmount, false);
+        ensureEnoughTokensAreAvailable(yAmount);
+        _curvePool.remove_liquidity_one_coin(yAmount, TUSD_INDEX, minCurrencyAmount, false);
 
-        emit Pulled(crvAmount);
+        emit Pulled(yAmount);
     }
 
     /**
