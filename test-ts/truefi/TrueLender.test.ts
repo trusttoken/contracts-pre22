@@ -60,6 +60,7 @@ describe('MockTrueLender', () => {
     await mockPool.mock.repay.returns()
 
     mockLoanToken = await deployMockLoanToken()
+    await mockLoanToken.mock.borrowerFee.returns(25)
 
     mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
@@ -319,7 +320,7 @@ describe('MockTrueLender', () => {
 
       it('borrows tokens from pool', async () => {
         await lender.fund(mockLoanToken.address)
-        expect('borrow').to.be.calledOnContractWith(mockPool, [amount])
+        expect('borrow').to.be.calledOnContractWith(mockPool, [amount, 25])
       })
 
       it('approves LoanToken to spend funds borrowed from pool', async () => {
@@ -523,6 +524,7 @@ describe('MockTrueLender', () => {
         loanTokens.push(await deployMockLoanToken())
         await loanTokens[i].mock.balanceOf.returns(parseEther(((i + 1) * 10).toString()))
         await loanTokens[i].mock.getParameters.returns(amount, apy, duration)
+        await loanTokens[i].mock.borrowerFee.returns(25)
         await lender.fund(loanTokens[i].address)
       }
       await lender.setPool(owner.address)

@@ -39,6 +39,8 @@ contract LoanToken is ILoanToken, ERC20 {
 
     uint256 public redeemed;
 
+    uint256 public override borrowerFee = 25;
+
     // whitelist for transfers
     mapping(address => bool) public canTransfer;
 
@@ -152,7 +154,8 @@ contract LoanToken is ILoanToken, ERC20 {
         start = block.timestamp;
         lender = msg.sender;
         _mint(msg.sender, debt);
-        require(currencyToken.transferFrom(msg.sender, address(this), amount));
+        uint256 fee = amount.mul(borrowerFee).div(10000);
+        require(currencyToken.transferFrom(msg.sender, address(this), amount.sub(fee)));
 
         emit Funded(msg.sender);
     }

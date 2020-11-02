@@ -128,11 +128,12 @@ contract TrueLender is ITrueLender, Ownable {
         require(votesThresholdReached(amount, yes), "TrueLender: Not enough votes given for the loan");
         require(loanIsCredible(apy, duration, yes, no), "TrueLender: Loan risk is too high");
 
-        pool.borrow(amount);
-        currencyToken.approve(address(loanToken), amount);
+        pool.borrow(amount, loanToken.borrowerFee());
+        uint256 amountWithoutFee = amount.sub(amount.mul(loanToken.borrowerFee()).div(10000));
+        currencyToken.approve(address(loanToken), amountWithoutFee);
         loanToken.fund();
         _loans.push(loanToken);
-        emit Funded(address(loanToken), amount);
+        emit Funded(address(loanToken), amountWithoutFee);
     }
 
     function value() external override view returns (uint256) {
