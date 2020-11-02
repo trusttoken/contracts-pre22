@@ -5,7 +5,7 @@ import { parseEther } from '@ethersproject/units'
 import { LoanTokenFactory, MockErc20TokenFactory, LoanFactoryFactory } from '../../build/types'
 import { LoanFactory } from '../../build/types/LoanFactory'
 
-describe('LoanTokenFactory', () => {
+describe('LoanFactory', () => {
   let owner: Wallet, borrower: Wallet
   let contractAddress: string
   let factory: LoanFactory
