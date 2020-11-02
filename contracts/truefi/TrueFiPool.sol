@@ -202,7 +202,8 @@ contract TrueFiPool is ITruePool, ERC20, ReentrancyGuard, Ownable {
      * @dev Remove liquidity from curve and transfer to borrower
      * @param expectedAmount expected amount to borrow
      */
-    function borrow(uint256 expectedAmount, uint256 borrowerFee) external override nonReentrant {
+    function borrow(uint256 expectedAmount, uint256 amountWithoutFee) external override nonReentrant {
+        require(expectedAmount >= amountWithoutFee, "CurvePool: Fee cannot be negative");
         require(msg.sender == address(_lender), "CurvePool: Only lender can borrow");
 
         if (expectedAmount > currencyBalance()) {
@@ -217,10 +218,10 @@ contract TrueFiPool is ITruePool, ERC20, ReentrancyGuard, Ownable {
             require(expectedAmount <= currencyBalance(), "CurvePool: Not enough funds in pool to cover borrow");
         }
 
-        uint256 fee = expectedAmount.mul(borrowerFee).div(10000);
+        uint256 fee = expectedAmount.sub(amountWithoutFee);
         claimableFees = claimableFees.add(fee);
 
-        require(_currencyToken.transfer(msg.sender, expectedAmount.sub(fee)));
+        require(_currencyToken.transfer(msg.sender, amountWithoutFee));
 
         emit Borrow(expectedAmount, fee);
     }

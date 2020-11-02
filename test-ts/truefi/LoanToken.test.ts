@@ -31,6 +31,8 @@ describe('LoanToken', () => {
   const payback = async (wallet: Wallet, amount: BigNumberish) =>
     tusd.connect(wallet).transfer(loanToken.address, amount)
 
+  const withFee = (amount: BigNumber) => amount.mul(9975).div(10000)
+
   beforeEachWithFixture(async (wallets, _provider) => {
     [lender, borrower, other] = wallets
     provider = _provider
@@ -98,7 +100,7 @@ describe('LoanToken', () => {
     })
 
     it('transfers proper amount of currency token from lender to loanToken contact', async () => {
-      expect(await tusd.balanceOf(loanToken.address)).to.equal(parseEther('1000'))
+      expect(await tusd.balanceOf(loanToken.address)).to.equal(withFee(parseEther('1000')))
     })
 
     it('reverts when funding the same loan token twice', async () => {

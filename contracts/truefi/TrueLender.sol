@@ -119,6 +119,7 @@ contract TrueLender is ITrueLender, Ownable {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be funded");
 
         (uint256 amount, uint256 apy, uint256 duration) = loanToken.getParameters();
+        uint256 receivedAmount = loanToken.receivedAmount();
         (uint256 start, uint256 no, uint256 yes) = ratingAgency.getResults(address(loanToken));
 
         require(loanSizeWithinBounds(amount), "TrueLender: Loan size is out of bounds");
@@ -128,12 +129,11 @@ contract TrueLender is ITrueLender, Ownable {
         require(votesThresholdReached(amount, yes), "TrueLender: Not enough votes given for the loan");
         require(loanIsCredible(apy, duration, yes, no), "TrueLender: Loan risk is too high");
 
-        pool.borrow(amount, loanToken.borrowerFee());
-        uint256 amountWithoutFee = amount.sub(amount.mul(loanToken.borrowerFee()).div(10000));
-        currencyToken.approve(address(loanToken), amountWithoutFee);
+        pool.borrow(amount, receivedAmount);
+        currencyToken.approve(address(loanToken), receivedAmount);
         loanToken.fund();
         _loans.push(loanToken);
-        emit Funded(address(loanToken), amountWithoutFee);
+        emit Funded(address(loanToken), receivedAmount);
     }
 
     function value() external override view returns (uint256) {

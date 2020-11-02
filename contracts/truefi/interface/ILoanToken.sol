@@ -26,6 +26,8 @@ interface ILoanToken is IERC20 {
 
     function borrowerFee() external view returns (uint256);
 
+    function receivedAmount() external view returns (uint256);
+
     function isLoanToken() external pure returns (bool);
 
     function getParameters()
