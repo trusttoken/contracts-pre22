@@ -10,7 +10,7 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
 /**
  * @title LoanToken
  * @dev A token which represents share of a debt obligation
- * Each LoanToken has: 
+ * Each LoanToken has:
  * - borrower address
  * - borrow amount
  * - loan duration
@@ -125,6 +125,28 @@ contract LoanToken is ILoanToken, ERC20 {
         )
     {
         return (amount, apy, duration);
+    }
+
+    /**
+     * @dev Get coupon value of this loan token in currencyToken
+     * This assumes the loan will be paid back on time, with interest
+     * @value number of LoanTokens to get value for
+     * @return coupon value of _balance LoanTokens in currencyTokens
+     */
+    function value(uint256 _balance) external override view returns (uint256) {
+        if (_balance == 0) {
+            return 0;
+        }
+
+        uint256 passed = block.timestamp.sub(start);
+        if (passed > duration) {
+            passed = duration;
+        }
+
+        uint256 helper = amount.mul(apy).mul(passed).mul(_balance);
+        uint256 interest = helper.div(360 days).div(10000).div(totalSupply());
+
+        return amount.add(interest);
     }
 
     /**
