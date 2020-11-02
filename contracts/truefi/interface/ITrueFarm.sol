@@ -21,4 +21,6 @@ interface ITrueFarm {
     function unstake(uint256 amount) external;
 
     function claim() external;
+
+    function exit(uint256 amount) external;
 }
