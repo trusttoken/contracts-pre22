@@ -9,6 +9,7 @@ import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITruePool} from "./interface/ITruePool.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
+import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
 /**
@@ -42,6 +43,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     IBurnableERC20 public trustToken;
     IArbitraryDistributor public distributor;
+    ILoanFactory public factory;
 
     uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
 
@@ -89,10 +91,15 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         _;
     }
 
-    function initialize(IBurnableERC20 _trustToken, IArbitraryDistributor _distributor) public initializer {
+    function initialize(
+        IBurnableERC20 _trustToken,
+        IArbitraryDistributor _distributor,
+        ILoanFactory _factory
+    ) public initializer {
         Ownable.initialize();
         trustToken = _trustToken;
         distributor = _distributor;
+        factory = _factory;
     }
 
     function setLossFactor(uint256 newLossFactor) external onlyOwner {
@@ -144,7 +151,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
-        require(ILoanToken(id).isLoanToken(), "TrueRatingAgency: Only LoanTokens are supported");
+        require(factory.isLoanToken(id), "TrueRatingAgency: Only LoanTokens created via LoanFactory are supported");
         loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0});
         emit LoanSubmitted(id);
     }
