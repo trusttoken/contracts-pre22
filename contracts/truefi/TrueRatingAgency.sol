@@ -400,7 +400,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param voter Voter account
      */
     function claim(address id, address voter) public override onlyFundedLoans(id) calculateTotalReward(id) {
-        uint256 totalTime = ILoanToken(id).duration();
+        uint256 totalTime = ILoanToken(id).term();
         uint256 passedTime = block.timestamp.sub(ILoanToken(id).start());
 
         // check time of loan

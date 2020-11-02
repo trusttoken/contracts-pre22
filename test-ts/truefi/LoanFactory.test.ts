@@ -23,7 +23,7 @@ describe('LoanFactory', () => {
   it('deploys loan token contract', async () => {
     const loanToken = LoanTokenFactory.connect(contractAddress, owner)
     expect(await loanToken.amount()).to.equal(parseEther('123'))
-    expect(await loanToken.duration()).to.equal(100)
+    expect(await loanToken.term()).to.equal(100)
     expect(await loanToken.apy()).to.equal(200)
   })
 

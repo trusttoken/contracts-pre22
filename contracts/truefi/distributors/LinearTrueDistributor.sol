@@ -31,7 +31,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
 
     /**
      * @dev Emitted when the farm address is changed
-     * @param
+     * @param newFarm new farm contract
      */
     event FarmChanged(address newFarm);
 
@@ -43,10 +43,10 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
 
     /**
      * @dev Initialize distributor
-     * @param _distributionStart
-     * @param _duration
-     * @param _amount
-     * @param _trustToken
+     * @param _distributionStart Start time for distribution
+     * @param _duration Length of distribution
+     * @param _amount Amount to distribute
+     * @param _trustToken TRU address
      */
     function initialize(
         uint256 _distributionStart,
@@ -75,10 +75,12 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
      * @dev Distribute tokens to farm in linear fashion based on time
      */
     function distribute(address) public override {
+        // cannot distribute until distribution start
         if (block.timestamp < distributionStart) {
             return;
         }
 
+        // 
         uint256 amount = totalAmount.sub(distributed);
         if (block.timestamp < distributionStart.add(duration)) {
             amount = block.timestamp.sub(lastDistribution).mul(totalAmount).div(duration);

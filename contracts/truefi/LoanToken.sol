@@ -14,12 +14,12 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
  * Each LoanToken has:
  * - borrower address
  * - borrow amount
- * - loan duration
+ * - loan term
  * - loan APY
  *
  * Loan progresses through the following states:
  * Awaiting:    Waiting for funding to meet capital requirements
- * Funded:      Capital requirements met, borrower can withdraw
+ * Funded:      Capital requireme`nts met, borrower can withdraw
  * Withdrawn:   Borrower withdraws money, loan waiting to be repaid
  * Settled:     Loan has been paid back in full with interest
  * Defaulted:   Loan has not been paid back in full
@@ -32,7 +32,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     address public override borrower;
     uint256 public override amount;
-    uint256 public override duration;
+    uint256 public override term;
     uint256 public override apy;
 
     uint256 public override start;
@@ -70,7 +70,7 @@ contract LoanToken is ILoanToken, ERC20 {
     event Withdrawn(address beneficiary);
 
     /**
-     * @dev Emitted when duration is over
+     * @dev Emitted when term is over
      * @param status Final loan status
      * @param returnedAmount Amount that was retured before expiry
      */
@@ -89,20 +89,20 @@ contract LoanToken is ILoanToken, ERC20 {
      * @param _currencyToken Token to lend
      * @param _borrower Borrwer addresss
      * @param _amount Borrow amount of currency tokens
-     * @param _duration Loan length
+     * @param _term Loan length
      * @param _apy Loan APY
      */
     constructor(
         IERC20 _currencyToken,
         address _borrower,
         uint256 _amount,
-        uint256 _duration,
+        uint256 _term,
         uint256 _apy
     ) public ERC20("Loan Token", "LOAN") {
         currencyToken = _currencyToken;
         borrower = _borrower;
         amount = _amount;
-        duration = _duration;
+        term = _term;
         apy = _apy;
         debt = interest(amount);
     }
@@ -184,7 +184,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     /**
      * @dev Get loan parameters
-     * @return (amount, duration, apy)
+     * @return amount, term, apy
      */
     function getParameters()
         external
@@ -196,7 +196,7 @@ contract LoanToken is ILoanToken, ERC20 {
             uint256
         )
     {
-        return (amount, apy, duration);
+        return (amount, apy, term);
     }
 
     /**
@@ -211,8 +211,8 @@ contract LoanToken is ILoanToken, ERC20 {
         }
 
         uint256 passed = block.timestamp.sub(start);
-        if (passed > duration) {
-            passed = duration;
+        if (passed > term) {
+            passed = term;
         }
 
         uint256 helper = amount.mul(apy).mul(passed).mul(_balance);
@@ -262,7 +262,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Close the loan and check if it has been repaid
      */
     function close() external override onlyOngoing {
-        require(start.add(duration) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
+        require(start.add(term) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
         if (_balance() >= debt) {
             status = Status.Settled;
         } else {
@@ -320,18 +320,22 @@ contract LoanToken is ILoanToken, ERC20 {
         return currencyToken.balanceOf(address(this));
     }
 
+    /**
+     * @dev Calculate amount borrowed minus fee
+     * @return Amount minus fees
+     */
     function receivedAmount() public override view returns (uint256) {
         return amount.sub(amount.mul(borrowerFee).div(10000));
     }
 
     /**
      * @dev Calculate interest that will be paid by this loan for an amount
-     * (amount * apy * duration) / (360 days / precision)
+     * (amount * apy * term) / (360 days / precision)
      * @param _amount amount
-     * @return Amount of interest paid for _amount
+     * @return uint256 Amount of interest paid for _amount
      */
     function interest(uint256 _amount) internal view returns (uint256) {
-        return _amount.add(_amount.mul(apy).mul(duration).div(360 days).div(10000));
+        return _amount.add(_amount.mul(apy).mul(term).div(360 days).div(10000));
     }
 
     /**

@@ -120,7 +120,7 @@ contract QuadraticTrueDistributor is ITrueDistributor, Ownable {
      * Uses the fact that sum of n first squares is calculated by n(n+1)(2n+1)/6
      * @param fromBlock Start Block
      * @param toBlock End block
-     * @return
+     * @return Reward for block range
      */
     function rewardFormula(uint256 fromBlock, uint256 toBlock) internal virtual pure returns (uint256) {
         return

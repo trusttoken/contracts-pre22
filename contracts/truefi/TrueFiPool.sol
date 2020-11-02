@@ -34,11 +34,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     ICurveMinter public _minter;
     IUniswapRouter public _uniRouter;
 
-    // 0.25% for deposits
+    // fee for deposits
     uint256 public joiningFee = 25;
+    // track claimable fees
     uint256 public claimableFees;
 
-    // curve.fi
+    // curve.fi data
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
 
@@ -71,15 +72,17 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Emitted when funds are pulled from curve.fi
-     * @param crvAmount Amount
+     * @param yAmount Amount of pool tokens
      */
     event Pulled(uint256 yAmount);
 
     /**
      * @dev Emitted when funds are borrowed from pool
-     * @param Amount of funds borrowed from pool
+     * @param borrower Borrower address
+     * @param amount Amount of funds borrowed from pool
+     * @param fee Fees collected from this transaction
      */
-    event Borrow(uint256 amount);
+    event Borrow(address borrower, uint256 amount, uint256 fee);
 
     /**
      * @dev Emitted when borrower repays the pool
@@ -135,7 +138,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     /**
      * @dev Get total balance of curve.fi pool tokens
      */
-    function totalLiquidityTokenBalance() public view returns (uint256) {
+    function yTokenBalance() public view returns (uint256) {
         return _curvePool.token().balanceOf(address(this)).add(_curveGauge.balanceOf(address(this)));
     }
 
@@ -147,7 +150,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     function poolValue() public view returns (uint256) {
         return
             currencyBalance().add(_lender.value()).add(
-                totalLiquidityTokenBalance().mul(_curvePool.curve().get_virtual_price()).div(1 ether)
+                yTokenBalance().mul(_curvePool.curve().get_virtual_price()).div(1 ether)
             );
     }
 
@@ -210,7 +213,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
         // calculate amount of curve.fi pool tokens
         uint256 curveLiquidityAmountToTransfer = amount.mul(
-            totalLiquidityTokenBalance()).div(_totalSupply);
+            yTokenBalance()).div(_totalSupply);
 
         // burn tokens sent
         _burn(msg.sender, amount);
@@ -253,11 +256,11 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Remove liquidity from curve
-     * @param crvAmount amount of curve pool tokens
+     * @param yAmount amount of curve pool tokens
      * @param minCurrencyAmount minimum amount of tokens to withdraw
      */
     function pull(uint256 yAmount, uint256 minCurrencyAmount) external onlyOwner {
-        require(yAmount <= totalLiquidityTokenBalance(), "CurvePool: Insufficient Curve liquidity balance");
+        require(yAmount <= yTokenBalance(), "CurvePool: Insufficient Curve liquidity balance");
 
         // unstake in gauge
         ensureEnoughTokensAreAvailable(yAmount);
@@ -283,8 +286,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
             uint256 amountToWithdraw = expectedAmount.sub(currencyBalance());
             uint256 roughCurveTokenAmount = calcTokenAmount(amountToWithdraw).mul(1005).div(1000);
             require(
-                roughCurveTokenAmount <= totalLiquidityTokenBalance(),
-                "CurvePool: Not enough Curve liquidity tokens in pool to cover borrow"
+                roughCurveTokenAmount <= yTokenBalance(),
+                "CurvePool: Not enough Curve y tokens in pool to cover borrow"
             );
             // pull tokens from gauge
             ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
@@ -298,7 +301,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         claimableFees = claimableFees.add(fee);
         require(_currencyToken.transfer(msg.sender, amountWithoutFee));
 
-        emit Borrow(expectedAmount, fee);
+        emit Borrow(msg.sender, expectedAmount, fee);
     }
 
     /**
@@ -371,7 +374,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Currency token balance
-     * @return currency token balance
+     * @return Currency token balance
      */
     function currencyBalance() internal view returns (uint256) {
         return _currencyToken.balanceOf(address(this)).sub(claimableFees);

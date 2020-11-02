@@ -28,9 +28,6 @@ contract TrueLender is ITrueLender, Ownable {
     uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
 
     // ===== Pool parameters =====
-    /**
-     * @dev % multiplied by 100. e.g. 10.5% = 1050
-     */
 
     // bound on APY
     uint256 public minApy = 1000;

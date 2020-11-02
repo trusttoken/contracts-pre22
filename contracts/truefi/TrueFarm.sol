@@ -27,11 +27,14 @@ contract TrueFarm is ITrueFarm, Initializable {
     uint256 public override totalStaked;
     mapping(address => uint256) public staked;
 
-    // track cumulative rewards
+    // track overall cumulative rewards
     uint256 public cumulativeRewardPerToken;
+    // track previous cumulate rewards for accounts
     mapping(address => uint256) public previousCumulatedRewardPerToken;
+    // track claimable rewards for accounts
     mapping(address => uint256) public claimableReward;
-
+    
+    // track total rewards
     uint256 public totalClaimedRewards;
     uint256 public totalFarmRewards;
 
