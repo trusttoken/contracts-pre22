@@ -130,7 +130,7 @@ contract LoanToken is ILoanToken, ERC20 {
     /**
      * @dev Get coupon value of this loan token in currencyToken
      * This assumes the loan will be paid back on time, with interest
-     * @value number of LoanTokens to get value for
+     * @param _balance number of LoanTokens to get value for
      * @return coupon value of _balance LoanTokens in currencyTokens
      */
     function value(uint256 _balance) external override view returns (uint256) {

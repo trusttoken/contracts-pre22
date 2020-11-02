@@ -37,9 +37,9 @@ contract TrueFarm is ITrueFarm, Initializable {
      * @dev Initalize staking pool with a Distributor contraxct
      * The distributor contract calculates how much TRU rewards this contract
      * gets, and stores TRU for distribution.
-     * @param _stakingToken
-     * @param _trueDistributor
-     * @param _name
+     * @param _stakingToken Token to Stake
+     * @param _trueDistributor Distributor contract
+     * @param _name Farm name
      */
     function initialize(
         IERC20 _stakingToken,

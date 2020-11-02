@@ -275,10 +275,11 @@ contract CurvePool is ITruePool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Converts the value of a single yCRV into an underlying asset
-     * @param crvAmount amount of curve pool tokens to calculate for
+     * @param yAmount amount of curve pool tokens to calculate for
+     * @return Value of one y pool token
      */
-    function calcWithdrawOneCoin(uint256 crvAmount) public view returns (uint256) {
-        return _curvePool.calc_withdraw_one_coin(crvAmount, TUSD_INDEX);
+    function calcWithdrawOneCoin(uint256 yAmount) public view returns (uint256) {
+        return _curvePool.calc_withdraw_one_coin(yAmount, TUSD_INDEX);
     }
 
     /**

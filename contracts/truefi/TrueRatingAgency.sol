@@ -15,16 +15,16 @@ import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
  * @title TrueRatingAgency
  * @dev Credit prediction market for LoanTokens
  *
- * TrueFi uses use a prediction market to signal how risky a loan is. 
- * The Credit Prediction Market estimates the likelihood of a loan defaulting. 
- * Any TRU holder can vote YES or NO and stake TRU as collateral on their vote. 
+ * TrueFi uses use a prediction market to signal how risky a loan is.
+ * The Credit Prediction Market estimates the likelihood of a loan defaulting.
+ * Any TRU holder can vote YES or NO and stake TRU as collateral on their vote.
  * If a loan is funded, TRU is locked into the market until expiry.
- * Locking TRU into the prediction market allows voters to earn and claim 
- * incentive TRU throughout the course of the loan. After the loan's term, 
- * if the voter is correct, they earn a TRU reward plus a portion of the 
+ * Locking TRU into the prediction market allows voters to earn and claim
+ * incentive TRU throughout the course of the loan. After the loan's term,
+ * if the voter is correct, they earn a TRU reward plus a portion of the
  * losing side's vote. A portion of the losing side's TRU is burned.
  *
- * Voting Lifecycle: 
+ * Voting Lifecycle:
  * - Borrowers can apply for loans at any time by deploying a LoanToken
  * - LoanTokens are registered with the prediction market contract
  * - Once registered, TRU holders can vote at any time
@@ -129,10 +129,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param _trustToken TRU contract
      * @param _distributor Distributor contract
      */
-    function initialize(
-        IBurnableERC20 _trustToken, 
-        IArbitraryDistributor _distributor
-    ) public initializer {
+    function initialize(IBurnableERC20 _trustToken, IArbitraryDistributor _distributor) public initializer {
         Ownable.initialize();
         trustToken = _trustToken;
         distributor = _distributor;
@@ -339,7 +336,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     /**
      * @dev Internal view to convert values to 8 decimals precision
      * @param input Value to convert to TRU precision
-     * @return TRU amonut
+     * @return output TRU amount
      */
     function toTrustToken(uint256 input) internal pure returns (uint256 output) {
         output = input.div(TOKEN_PRECISION_DIFFERENCE);
@@ -347,7 +344,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     /**
      * @dev Update total TRU reward for a Loan
-     * @id Loan ID
+     * @param id Loan ID
      */
     modifier calculateTotalReward(address id) {
         if (loans[id].reward == 0) {
@@ -370,7 +367,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * R = Total Reward = (interest * chi)
      * R is distributed to voters based on their proportion of votes/total_votes
      * Voters can claim their proportion based on time.
-     * Claimable reward = R x (current time / total time) 
+     * Claimable reward = R x (current time / total time)
      *      * (account TRU staked / total TRU staked) - (amount claimed)
      * @param id Loan ID
      * @param voter Voter account
