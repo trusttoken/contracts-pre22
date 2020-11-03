@@ -16,7 +16,7 @@ do
     regex='\/([a-zA-Z0-9_]+)\.'
     [[ $file =~ $regex ]]
     name=${BASH_REMATCH[1]}
-	  echo "const $name = require(\"./$name.json\")" >> $outputDir/index.js
+	  echo "const ${name}Json = require(\"./$name.json\")" >> $outputDir/index.js
 done
 
 echo "module.exports = {" >> $outputDir/index.js
