@@ -7,10 +7,10 @@ import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
 import { timeTravel, timeTravelTo } from '../../utils/timeTravel'
 import { toTrustToken } from '../../../scripts/utils'
 
-import { LinearTrueDistributor } from '../../../build/types/LinearTrueDistributor'
-import { LinearTrueDistributorFactory } from '../../../build/types/LinearTrueDistributorFactory'
-import { MockErc20TokenFactory } from '../../../build/types/MockErc20TokenFactory'
-import { MockErc20Token } from '../../../build/types/MockErc20Token'
+import { LinearTrueDistributor } from 'build/types/LinearTrueDistributor'
+import { LinearTrueDistributorFactory } from 'build/types/LinearTrueDistributorFactory'
+import { MockErc20TokenFactory } from 'build/types/MockErc20TokenFactory'
+import { MockErc20Token } from 'build/types/MockErc20Token'
 
 describe('LinearTrueDistributor', () => {
   const DAY = 24 * 3600

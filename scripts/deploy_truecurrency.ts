@@ -2,11 +2,11 @@
  * ts-node scripts/deploy_truecurrency.ts "{private_key}" "{network}"
  */
 import { ethers, providers } from 'ethers'
-// import { TrueAudFactory } from '../build/types/TrueAUDFactory'
-// import { TrueCadFactory } from '../build/types/TrueCADFactory'
-// import { TrueGbpFactory } from '../build/types/TrueGBPFactory'
-// import { TrueHkdFactory } from '../build/types/TrueHKDFactory'
-import { TrueUsdFactory } from '../build/types/TrueUSDFactory'
+// import { TrueAudFactory } from 'build/types/TrueAUDFactory'
+// import { TrueCadFactory } from 'build/types/TrueCADFactory'
+// import { TrueGbpFactory } from 'build/types/TrueGBPFactory'
+// import { TrueHkdFactory } from 'build/types/TrueHKDFactory'
+import { TrueUsdFactory } from 'build/types/TrueUSDFactory'
 
 async function deployTrueCurrency () {
   const txnArgs = { gasLimit: 2_500_000, gasPrice: 100_000_000_000 }

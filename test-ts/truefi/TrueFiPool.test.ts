@@ -8,21 +8,21 @@ import { expectCloseTo } from '../utils/expectCloseTo'
 import { timeTravel } from '../utils/timeTravel'
 import { toTrustToken } from '../../scripts/utils'
 
-import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
-import { MockErc20Token } from '../../build/types/MockErc20Token'
-import { TrueFiPoolFactory } from '../../build/types/TrueFiPoolFactory'
-import { TrueFiPool } from '../../build/types/TrueFiPool'
-import { MockCurvePool } from '../../build/types/MockCurvePool'
-import { MockCurvePoolFactory } from '../../build/types/MockCurvePoolFactory'
-import { TrueLender } from '../../build/types/TrueLender'
-import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
-import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
-import { LoanToken } from '../../build/types/LoanToken'
+import { MockErc20TokenFactory } from 'build/types/MockErc20TokenFactory'
+import { MockErc20Token } from 'build/types/MockErc20Token'
+import { TrueFiPoolFactory } from 'build/types/TrueFiPoolFactory'
+import { TrueFiPool } from 'build/types/TrueFiPool'
+import { MockCurvePool } from 'build/types/MockCurvePool'
+import { MockCurvePoolFactory } from 'build/types/MockCurvePoolFactory'
+import { TrueLender } from 'build/types/TrueLender'
+import { TrueLenderFactory } from 'build/types/TrueLenderFactory'
+import { LoanTokenFactory } from 'build/types/LoanTokenFactory'
+import { LoanToken } from 'build/types/LoanToken'
 
 import {
   TrueRatingAgencyJson,
   ICurveGaugeJson,
-} from '../../build'
+} from 'build'
 
 describe('TrueFiPool', () => {
   let provider: MockProvider

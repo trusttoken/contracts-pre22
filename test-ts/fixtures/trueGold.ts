@@ -2,7 +2,7 @@ import { utils, Wallet } from 'ethers'
 
 import { MAX_BURN_BOUND } from '../utils/constants'
 
-import { TrueGoldFactory } from '../../build/types/TrueGoldFactory'
+import { TrueGoldFactory } from 'build/types/TrueGoldFactory'
 
 export const initialSupply = utils.parseUnits('12000', 6)
 

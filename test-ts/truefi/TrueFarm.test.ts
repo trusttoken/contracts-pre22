@@ -7,12 +7,12 @@ import { MockProvider, solidity } from 'ethereum-waffle'
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { skipBlocksWithProvider, skipToBlockWithProvider } from '../utils/timeTravel'
 
-import { MockErc20Token } from '../../build/types/MockErc20Token'
-import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
-import { TrueDistributor } from '../../build/types/TrueDistributor'
-import { TrueFarmFactory } from '../../build/types/TrueFarmFactory'
-import { TrueFarm } from '../../build/types/TrueFarm'
-import { MockDistributorFactory } from '../../build/types/MockDistributorFactory'
+import { MockErc20Token } from 'build/types/MockErc20Token'
+import { MockErc20TokenFactory } from 'build/types/MockErc20TokenFactory'
+import { TrueDistributor } from 'build/types/TrueDistributor'
+import { TrueFarmFactory } from 'build/types/TrueFarmFactory'
+import { TrueFarm } from 'build/types/TrueFarm'
+import { MockDistributorFactory } from 'build/types/MockDistributorFactory'
 
 use(solidity)
 
