@@ -2,8 +2,9 @@
 pragma solidity 0.6.10;
 
 import "../interface/IOwnable.sol";
-import "../proxy/ProxyStorage.sol";
-import "../proxy/Initializable.sol";
+
+import "./ProxyStorage.sol";
+import "./Initializable.sol";
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where

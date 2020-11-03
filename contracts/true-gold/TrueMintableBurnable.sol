@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./access/Ownable.sol";
-import "./erc20/ERC20Burnable.sol";
-import "./proxy/ProxyStorage.sol";
-import "./proxy/Initializable.sol";
+import "./common/ERC20Burnable.sol";
+import "./common/Initializable.sol";
+import "./common/Ownable.sol";
+import "./common/ProxyStorage.sol";
 
 abstract contract TrueMintableBurnable is ProxyStorage, Initializable, Ownable, ERC20Burnable {
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;

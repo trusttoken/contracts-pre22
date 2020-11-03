@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-import "../proxy/ProxyStorage.sol";
+import "./ProxyStorage.sol";
 
 /**
  * @dev Implementation of the {IERC20} interface.
