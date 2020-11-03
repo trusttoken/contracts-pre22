@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {ITrueFiPool} from "../interface/ITrueFiPool.sol";
 import {ITrueRatingAgency} from "../interface/ITrueRatingAgency.sol";
 
-import {TrueLender, ITrueFiPool, ITrueRatingAgency} from "../TrueLender.sol";
+import {TrueLender} from "../TrueLender.sol";
 
 contract MockTrueLender is TrueLender {
     function setPool(ITrueFiPool newPool) external {
