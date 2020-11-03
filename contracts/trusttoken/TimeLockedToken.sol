@@ -2,8 +2,9 @@
 pragma solidity 0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import {ERC20} from "./ERC20.sol";
-import "./ClaimableContract.sol";
+
+import {ClaimableContract} from "./common/ClaimableContract.sol";
+import {ERC20} from "./common/ERC20.sol";
 
 /**
  * @title TimeLockedToken
