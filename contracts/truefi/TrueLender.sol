@@ -12,7 +12,8 @@ import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
 /**
  * @title TrueLender
- * @dev TrueFI lending pool
+ * @dev TrueFi lending pool
+ * TODO: More docs
  */
 contract TrueLender is ITrueLender, Ownable {
     using SafeMath for uint256;
@@ -27,18 +28,26 @@ contract TrueLender is ITrueLender, Ownable {
     uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
 
     // ===== Pool parameters =====
-    /**
-     * @dev % multiplied by 100. e.g. 10.5% = 1050
-     */
+
+    // bound on APY
     uint256 public minApy = 1000;
     uint256 public maxApy = 3000;
+
+    // How many votes in predction market
     uint256 public participationFactor = 10000;
+
+    // How much worse is it to lose $1 TUSD than it is to gain $1 TUSD
     uint256 public riskAversion = 15000;
 
+    // bound on min & max loan sizes
     uint256 public minSize = 1000000 ether;
     uint256 public maxSize = 10000000 ether;
-    uint256 public minDuration = 180 days;
-    uint256 public maxDuration = 3600 days;
+
+    // bound on min & max loan terms
+    uint256 public minTerm = 180 days;
+    uint256 public maxTerm = 3600 days;
+
+    // minimum prediction market voting period
     uint256 public votingPeriod = 7 days;
 
     event Allowed(address indexed who, bool status);
@@ -47,7 +56,7 @@ contract TrueLender is ITrueLender, Ownable {
     event RiskAversionChanged(uint256 participationFactor);
     event VotingPeriodChanged(uint256 votingPeriod);
     event SizeLimitsChanged(uint256 minSize, uint256 maxSize);
-    event DurationLimitsChanged(uint256 minDuration, uint256 maxDuration);
+    event TermLimitsChanged(uint256 minTerm, uint256 maxTerm);
     event Funded(address indexed loanToken, uint256 amount);
     event Reclaimed(address indexed loanToken, uint256 amount);
 
@@ -77,11 +86,11 @@ contract TrueLender is ITrueLender, Ownable {
         emit SizeLimitsChanged(min, max);
     }
 
-    function setDurationLimits(uint256 min, uint256 max) external onlyOwner {
-        require(max >= min, "TrueLender: Maximal loan duration is smaller than minimal");
-        minDuration = min;
-        maxDuration = max;
-        emit DurationLimitsChanged(min, max);
+    function setTermLimits(uint256 min, uint256 max) external onlyOwner {
+        require(max >= min, "TrueLender: Maximal loan term is smaller than minimal");
+        minTerm = min;
+        maxTerm = max;
+        emit TermLimitsChanged(min, max);
     }
 
     function setApyLimits(uint256 newMinApy, uint256 newMaxApy) external onlyOwner {
@@ -118,16 +127,16 @@ contract TrueLender is ITrueLender, Ownable {
     function fund(ILoanToken loanToken) external onlyAllowedBorrowers {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be funded");
 
-        (uint256 amount, uint256 apy, uint256 duration) = loanToken.getParameters();
+        (uint256 amount, uint256 apy, uint256 term) = loanToken.getParameters();
         uint256 receivedAmount = loanToken.receivedAmount();
         (uint256 start, uint256 no, uint256 yes) = ratingAgency.getResults(address(loanToken));
 
         require(loanSizeWithinBounds(amount), "TrueLender: Loan size is out of bounds");
-        require(loanDurationWithinBounds(duration), "TrueLender: Loan duration is out of bounds");
+        require(loanTermWithinBounds(term), "TrueLender: Loan term is out of bounds");
         require(loanIsAttractiveEnough(apy), "TrueLender: APY is out of bounds");
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
         require(votesThresholdReached(amount, yes), "TrueLender: Not enough votes given for the loan");
-        require(loanIsCredible(apy, duration, yes, no), "TrueLender: Loan risk is too high");
+        require(loanIsCredible(apy, term, yes, no), "TrueLender: Loan risk is too high");
 
         pool.borrow(amount, receivedAmount);
         currencyToken.approve(address(loanToken), receivedAmount);
@@ -136,6 +145,9 @@ contract TrueLender is ITrueLender, Ownable {
         emit Funded(address(loanToken), receivedAmount);
     }
 
+    // loop through loan tokens and add theoretical value
+    // LoanTokens calculate value
+    // TODO: Set max number of loans in parameters to avoid looping out of gas
     function value() external override view returns (uint256) {
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
@@ -144,6 +156,7 @@ contract TrueLender is ITrueLender, Ownable {
         return totalValue;
     }
 
+    // provides lending contract with possibility of burning tokens & getting funds
     function reclaim(ILoanToken loanToken) external onlyOwner {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be used to reclaimed");
         require(
@@ -151,13 +164,16 @@ contract TrueLender is ITrueLender, Ownable {
             "TrueLender: LoanToken is not closed yet"
         );
 
+        // call redeem function on LoanToken
         uint256 balanceBefore = currencyToken.balanceOf(address(this));
         loanToken.redeem(loanToken.balanceOf(address(this)));
         uint256 balanceAfter = currencyToken.balanceOf(address(this));
 
+        // gets reclaimed amount and pays back to pool
         uint256 fundsReclaimed = balanceAfter.sub(balanceBefore);
         pool.repay(fundsReclaimed);
 
+        // remove loan from loan array
         for (uint256 index = 0; index < _loans.length; index++) {
             if (_loans[index] == loanToken) {
                 _loans[index] = _loans[_loans.length - 1];
@@ -169,6 +185,11 @@ contract TrueLender is ITrueLender, Ownable {
         emit Reclaimed(address(loanToken), fundsReclaimed);
     }
 
+    /**
+     * Withdraw a basket of tokens held by the pool
+     * Loop through recipient's share of LoanTokens and calculate versus total
+     * per loan.
+     */
     function distribute(
         address recipient,
         uint256 numerator,
@@ -191,20 +212,24 @@ contract TrueLender is ITrueLender, Ownable {
         return amount >= minSize && amount <= maxSize;
     }
 
-    function loanDurationWithinBounds(uint256 duration) public view returns (bool) {
-        return duration >= minDuration && duration <= maxDuration;
+    function loanTermWithinBounds(uint256 term) public view returns (bool) {
+        return term >= minTerm && term <= maxTerm;
     }
 
+    // minimum absolute value of yes votes, rather than ratio of yes to no
     function votesThresholdReached(uint256 amount, uint256 yesVotes) public view returns (bool) {
         return amount.mul(participationFactor) <= yesVotes.mul(10000).mul(TOKEN_PRECISION_DIFFERENCE);
     }
 
+    // use APY and term of loan to get expected
+    // expected value = profit - (default_loss * (no / yes))
+    // riskAversion = 10,000 => expected value of 1
     function loanIsCredible(
         uint256 apy,
-        uint256 duration,
+        uint256 term,
         uint256 yesVotes,
         uint256 noVotes
     ) public view returns (bool) {
-        return apy.mul(duration).mul(yesVotes).div(360 days) >= noVotes.mul(riskAversion);
+        return apy.mul(term).mul(yesVotes).div(360 days) >= noVotes.mul(riskAversion);
     }
 }
