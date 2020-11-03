@@ -1,19 +1,19 @@
 import { Wallet } from 'ethers'
+import { expect, use } from 'chai'
+import { solidity } from 'ethereum-waffle'
+import { AddressZero } from '@ethersproject/constants'
+
 import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
+import { expectEvent } from './utils/eventHelpers'
+import { toTrustToken } from '../scripts/utils'
 import { setupDeploy } from '../scripts/utils'
+import { parseAccountList, registerSaftAccounts } from '../scripts/register_saft_addresses'
+
 import { TrustTokenFactory } from '../build/types/TrustTokenFactory'
 import { TrustToken } from '../build/types/TrustToken'
 import { TimeLockRegistryFactory } from '../build/types/TimeLockRegistryFactory'
 import { TimeLockRegistry } from '../build/types/TimeLockRegistry'
 import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
-
-import { expect, use } from 'chai'
-import { solidity } from 'ethereum-waffle'
-import { toTrustToken } from '../scripts/utils'
-
-import { AddressZero } from '@ethersproject/constants'
-import { expectEvent } from './utils/eventHelpers'
-import { parseAccountList, registerSaftAccounts } from '../scripts/register_saft_addresses'
 
 use(solidity)
 
