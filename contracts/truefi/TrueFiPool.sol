@@ -5,10 +5,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
-import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 import {ICurveGauge, ICurveMinter, ICurvePool} from "./interface/ICurve.sol";
+import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
+import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 import {ERC20} from "./upgradeability/UpgradeableERC20.sol";
 import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
