@@ -7,7 +7,8 @@
     "test": "./test.sh"
   },
   "scripts": {
-    "postinstall": "patch-package && link-module-alias",
+    "postinstall": "patch-package && yarn bind",
+    "bind": "link-module-alias",
     "coverage": "./coverage.sh",
     "flatten": "./flatten-all",
     "clean": "rm -rf ./build",
