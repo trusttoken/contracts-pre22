@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./access/Ownable.sol";
-import "./access/IOwnable.sol";
+import "./interface/IOwnable.sol";
 import "./proxy/ProxyStorage.sol";
 
 contract Reclaimable is Ownable {
