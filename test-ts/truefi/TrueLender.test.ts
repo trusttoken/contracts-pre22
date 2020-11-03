@@ -19,7 +19,7 @@ import {
   ITrueFiPoolJson,
   ILoanTokenJson,
   ITrueRatingAgencyJson,
-} from 'build/'
+} from 'build'
 
 describe('TrueLender', () => {
   let owner: Wallet
