@@ -1,7 +1,9 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { Wallet } from 'ethers'
 import { parseEther } from '@ethersproject/units'
+
+import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+
 import { LoanTokenFactory, MockErc20TokenFactory, LoanFactoryFactory } from '../../build/types'
 import { LoanFactory } from '../../build/types/LoanFactory'
 

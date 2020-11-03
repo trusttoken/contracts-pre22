@@ -1,10 +1,13 @@
 import { expect } from 'chai'
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { parseEther } from 'ethers/lib/utils'
+import { MockContract, deployMockContract } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { parseTT } from '../utils/parseTT'
 import { timeTravel as _timeTravel } from '../utils/timeTravel'
+import { expectCloseTo } from '../utils/expectCloseTo'
 
 import { TrueRatingAgencyFactory } from '../../build/types/TrueRatingAgencyFactory'
 import { TrueRatingAgency } from '../../build/types/TrueRatingAgency'
@@ -16,10 +19,8 @@ import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFacto
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { ArbitraryDistributorFactory } from '../../build/types/ArbitraryDistributorFactory'
 import { ArbitraryDistributor } from '../../build/types/ArbitraryDistributor'
+
 import ILoanFactory from '../../build/ILoanFactory.json'
-import { parseEther } from 'ethers/lib/utils'
-import { expectCloseTo } from '../utils/expectCloseTo'
-import { MockContract, deployMockContract } from 'ethereum-waffle'
 
 describe('TrueRatingAgency', () => {
   enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}

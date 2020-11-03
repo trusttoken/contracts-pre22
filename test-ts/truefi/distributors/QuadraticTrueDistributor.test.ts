@@ -1,15 +1,16 @@
 import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
-import { Wallet } from 'ethers'
-import { utils, BigNumber } from 'ethers'
+import { utils, BigNumber, Wallet } from 'ethers'
 import { Zero, MaxUint256 } from '@ethersproject/constants'
+
 import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
 import { toTrustToken } from '../../../scripts/utils'
+import { getBlockNumber, skipBlocksWithProvider } from '../../utils/timeTravel'
+
 import { QuadraticTrueDistributor } from '../../../build/types/QuadraticTrueDistributor'
 import { QuadraticTrueDistributorFactory } from '../../../build/types/QuadraticTrueDistributorFactory'
 import { MockErc20TokenFactory } from '../../../build/types/MockErc20TokenFactory'
 import { MockErc20Token } from '../../../build/types/MockErc20Token'
-import { getBlockNumber, skipBlocksWithProvider } from '../../utils/timeTravel'
 
 describe('QuadraticTrueDistributor', () => {
   let owner: Wallet

@@ -1,15 +1,17 @@
+import { expect, use } from 'chai'
+import { parseEther } from '@ethersproject/units'
+import { MaxUint256 } from '@ethersproject/constants'
+import { ContractTransaction, Wallet } from 'ethers'
+import { MockProvider, solidity } from 'ethereum-waffle'
+
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { skipBlocksWithProvider, skipToBlockWithProvider } from '../utils/timeTravel'
+
 import { MockErc20Token } from '../../build/types/MockErc20Token'
 import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
-import { parseEther } from '@ethersproject/units'
-import { expect, use } from 'chai'
-import { ContractTransaction, Wallet } from 'ethers'
 import { TrueDistributor } from '../../build/types/TrueDistributor'
-import { MockProvider, solidity } from 'ethereum-waffle'
 import { TrueFarmFactory } from '../../build/types/TrueFarmFactory'
 import { TrueFarm } from '../../build/types/TrueFarm'
-import { skipBlocksWithProvider, skipToBlockWithProvider } from '../utils/timeTravel'
-import { MaxUint256 } from '@ethersproject/constants'
 import { MockDistributorFactory } from '../../build/types/MockDistributorFactory'
 
 use(solidity)
