@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./proxy/Initializable.sol";
 import "./access/Ownable.sol";
-import "./TrueMintableBurnable.sol";
+import "./proxy/Initializable.sol";
+
 import "./Reclaimable.sol";
+import "./TrueMintableBurnable.sol";
 
 contract TrueGold is Initializable, Ownable, TrueMintableBurnable, Reclaimable {
     using SafeMath for uint256;

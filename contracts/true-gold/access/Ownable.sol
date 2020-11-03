@@ -3,6 +3,7 @@ pragma solidity 0.6.10;
 
 import "../proxy/ProxyStorage.sol";
 import "../proxy/Initializable.sol";
+
 import "./IOwnable.sol";
 
 /**

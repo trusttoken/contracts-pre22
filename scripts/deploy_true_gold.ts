@@ -8,8 +8,8 @@ import { asProxy } from './utils/asProxy'
 
 import { TrueGoldFactory } from '../build/types/TrueGoldFactory'
 import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
-import { TokenControllerFactory } from '../build/types/TokenControllerFactory'
-import { TokenController } from '../build/types/TokenController'
+import { TrueGoldControllerFactory } from '../build/types/TrueGoldControllerFactory'
+import { TrueGoldController } from '../build/types/TrueGoldController'
 import { TrueGold } from '../build/types/TrueGold'
 
 interface DeploymentParams {
@@ -22,7 +22,7 @@ interface DeploymentParams {
 }
 
 interface DeploymentResult {
-  controller: TokenController,
+  controller: TrueGoldController,
   token: TrueGold,
 }
 
@@ -39,13 +39,13 @@ export async function deployTrueGold (deployer: Wallet, params: DeploymentParams
 }
 
 async function deployControllerBehindProxy (deployer: Wallet) {
-  const controllerImpl = await deployContract(deployer, TokenControllerFactory)
+  const controllerImpl = await deployContract(deployer, TrueGoldControllerFactory)
   await waitForTx(controllerImpl.initialize()) // controllerImpl.owner = deployer
 
   const proxy = await deployContract(deployer, OwnedUpgradeabilityProxyFactory) // controller.proxyOwner = deployer
   await waitForTx(proxy.upgradeTo(controllerImpl.address))
 
-  const controller = TokenControllerFactory.connect(proxy.address, deployer)
+  const controller = TrueGoldControllerFactory.connect(proxy.address, deployer)
   await waitForTx(controller.initialize()) // controller.owner = deployer
 
   return { controller, controllerImpl }
@@ -64,18 +64,18 @@ async function deployTokenBehindProxy (deployer: Wallet, burnBounds: DeploymentP
   return { token, tokenImpl }
 }
 
-async function transferImplContractsOwnership (tokenImpl: TrueGold, controllerImpl: TokenController, implContractsOwner: Address) {
+async function transferImplContractsOwnership (tokenImpl: TrueGold, controllerImpl: TrueGoldController, implContractsOwner: Address) {
   await waitForTx(tokenImpl.transferOwnership(implContractsOwner)) // tokenImpl._owner = implContractsOwner
   await waitForTx(controllerImpl.transferOwnership(implContractsOwner)) // controllerImpl.pendingOwner = implContractsOwner
 }
 
-async function transferTokenOwnership (token: TrueGold, controller: TokenController) {
+async function transferTokenOwnership (token: TrueGold, controller: TrueGoldController) {
   await waitForTx(token.transferOwnership(controller.address)) // token._owner = controller
   await waitForTx(asProxy(token).transferProxyOwnership(controller.address)) // token.pendingProxyOwner = controller
   await waitForTx(controller.claimTokenProxyOwnership()) // token.pendingProxyOwner = address(0), token.proxyOwner = controller
 }
 
-async function transferControllerOwnership (controller: TokenController, controllerOwner: Address) {
+async function transferControllerOwnership (controller: TrueGoldController, controllerOwner: Address) {
   await waitForTx(controller.transferOwnership(controllerOwner)) // controller.pendingOwner = controllerOwner
   await waitForTx(asProxy(controller).transferProxyOwnership(controllerOwner)) // controller.pendingProxyOwner = controllerOwner
 }
