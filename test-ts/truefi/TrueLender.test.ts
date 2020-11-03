@@ -15,9 +15,11 @@ import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
 import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
 
-import ITrueFiPoolJson from '../../build/ITrueFiPool.json'
-import ILoanTokenJson from '../../build/ILoanToken.json'
-import ITrueRatingAgencyJson from '../../build/ITrueRatingAgency.json'
+import {
+  ITrueFiPoolJson,
+  ILoanTokenJson,
+  ITrueRatingAgencyJson,
+} from '../../build/'
 
 describe('TrueLender', () => {
   let owner: Wallet

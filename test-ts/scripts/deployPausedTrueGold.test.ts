@@ -6,7 +6,7 @@ import { toHex } from '../utils/toHex'
 
 import { PausedTrueGold } from '../../build/types/PausedTrueGold'
 
-import PausedTrueGoldJson from '../../build/PausedTrueGold.json'
+import { PausedTrueGoldJson } from '../../build'
 
 describe('deployPausedTrueGold', () => {
   const pausedTokenBytecode = toHex(PausedTrueGoldJson.evm.deployedBytecode.object)

@@ -12,12 +12,14 @@ import { TrueGoldController } from '../../build/types/TrueGoldController'
 import { TrueGoldFactory } from '../../build/types/TrueGoldFactory'
 import { TrueGoldControllerFactory } from '../../build/types/TrueGoldControllerFactory'
 
-import OwnedUpgradeabilityProxy from '../../build/OwnedUpgradeabilityProxy.json'
-import TrueGoldJson from '../../build/TrueGold.json'
-import TrueGoldControllerJson from '../../build/TrueGoldController.json'
+import {
+  OwnedUpgradeabilityProxyJson,
+  TrueGoldJson,
+  TrueGoldControllerJson,
+} from '../../build'
 
 describe('deployTrueGold', () => {
-  const proxyBytecode = toHex(OwnedUpgradeabilityProxy.evm.deployedBytecode.object)
+  const proxyBytecode = toHex(OwnedUpgradeabilityProxyJson.evm.deployedBytecode.object)
   const tokenBytecode = toHex(TrueGoldJson.evm.deployedBytecode.object)
   const controllerBytecode = toHex(TrueGoldControllerJson.evm.deployedBytecode.object)
 

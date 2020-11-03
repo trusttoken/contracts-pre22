@@ -20,7 +20,7 @@ import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
 import { ArbitraryDistributorFactory } from '../../build/types/ArbitraryDistributorFactory'
 import { ArbitraryDistributor } from '../../build/types/ArbitraryDistributor'
 
-import ILoanFactory from '../../build/ILoanFactory.json'
+import { ILoanFactoryJson } from '../../build'
 
 describe('TrueRatingAgency', () => {
   enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
@@ -66,7 +66,7 @@ describe('TrueRatingAgency', () => {
     await tusd.approve(loanToken.address, 5_000_000)
 
     distributor = await new ArbitraryDistributorFactory(owner).deploy()
-    mockFactory = await deployMockContract(owner, ILoanFactory.abi)
+    mockFactory = await deployMockContract(owner, ILoanFactoryJson.abi)
     rater = await new TrueRatingAgencyFactory(owner).deploy()
 
     await mockFactory.mock.isLoanToken.returns(true)

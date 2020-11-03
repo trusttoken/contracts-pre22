@@ -27,7 +27,7 @@ do
     regex='\/([a-zA-Z0-9_]+)\.'
     [[ $file =~ $regex ]]
     name=${BASH_REMATCH[1]}
-	  echo "  $name," >> $outputDir/index.js
+	  echo "  ${name}Json," >> $outputDir/index.js
 done
 
 echo "}" >> $outputDir/index.js
