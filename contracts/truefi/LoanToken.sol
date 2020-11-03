@@ -10,27 +10,29 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
 /**
  * @title LoanToken
  * @dev A token which represents share of a debt obligation
+ *
  * Each LoanToken has:
  * - borrower address
  * - borrow amount
- * - loan duration
+ * - loan term
  * - loan APY
  *
  * Loan progresses through the following states:
  * Awaiting:    Waiting for funding to meet capital requirements
- * Funded:      Capital requirements met, borrower can withdraw
+ * Funded:      Capital requireme`nts met, borrower can withdraw
  * Withdrawn:   Borrower withdraws money, loan waiting to be repaid
  * Settled:     Loan has been paid back in full with interest
  * Defaulted:   Loan has not been paid back in full
  *
- * LoanTokens are non-transferrable except for whitelisted addresses
+ * - LoanTokens are non-transferrable except for whitelisted addresses
+ * - This version of LoanToken only supports a single funder
  */
 contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
 
     address public override borrower;
     uint256 public override amount;
-    uint256 public override duration;
+    uint256 public override term;
     uint256 public override apy;
 
     uint256 public override start;
@@ -39,7 +41,8 @@ contract LoanToken is ILoanToken, ERC20 {
 
     uint256 public redeemed;
 
-    uint256 public constant override borrowerFee = 25;
+    // borrow fee -> 100 = 1%
+    uint256 public override borrowerFee = 25;
 
     // whitelist for transfers
     mapping(address => bool) public canTransfer;
@@ -48,57 +51,114 @@ contract LoanToken is ILoanToken, ERC20 {
 
     IERC20 public currencyToken;
 
+    /**
+     * @dev Emitted when the loan is funded
+     * @param lender Address which funded the loan
+     */
     event Funded(address lender);
+
+    /**
+     * @dev Emitted when transfer whitelist is updated
+     * @param account Account to whitelist for transfers
+     * @param status New whitelist status
+     */
     event TransferAllowanceChanged(address account, bool status);
+
+    /**
+     * @dev Emitted when borrower withdraws funds
+     * @param beneficiary Account which will receive funds
+     */
     event Withdrawn(address beneficiary);
+
+    /**
+     * @dev Emitted when term is over
+     * @param status Final loan status
+     * @param returnedAmount Amount that was retured before expiry
+     */
     event Closed(Status status, uint256 returnedAmount);
+
+    /**
+     * @dev Emitted when a LoanToken is redeemed for underlying currencyTokens
+     * @param receiver Receiver of currencyTokens
+     * @param burnedAmount Amount of LoanTokens burned
+     * @param redeemedAmound Amount of currencyToken received
+     */
     event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound);
 
+    /**
+     * @dev Create a Loan
+     * @param _currencyToken Token to lend
+     * @param _borrower Borrwer addresss
+     * @param _amount Borrow amount of currency tokens
+     * @param _term Loan length
+     * @param _apy Loan APY
+     */
     constructor(
         IERC20 _currencyToken,
         address _borrower,
         uint256 _amount,
-        uint256 _duration,
+        uint256 _term,
         uint256 _apy
     ) public ERC20("Loan Token", "LOAN") {
         currencyToken = _currencyToken;
         borrower = _borrower;
         amount = _amount;
-        duration = _duration;
+        term = _term;
         apy = _apy;
         debt = interest(amount);
     }
 
+    /**
+     * @dev Only borrwer can withdraw & repay loan
+     */
     modifier onlyBorrower() {
         require(msg.sender == borrower, "LoanToken: Caller is not the borrower");
         _;
     }
 
+    /**
+     * @dev Only when loan is Settled
+     */
     modifier onlyClosed() {
         require(status == Status.Settled || status == Status.Defaulted, "LoanToken: Current status should be Settled or Defaulted");
         _;
     }
 
+    /**
+     * @dev Only when loan is Funded
+     */
     modifier onlyOngoing() {
         require(status == Status.Funded || status == Status.Withdrawn, "LoanToken: Current status should be Funded or Withdrawn");
         _;
     }
 
+    /**
+     * @dev Only when loan is Funded
+     */
     modifier onlyFunded() {
         require(status == Status.Funded, "LoanToken: Current status should be Funded");
         _;
     }
 
+    /**
+     * @dev Only when loan is Withdrawn
+     */
     modifier onlyAfterWithdraw() {
         require(status >= Status.Withdrawn, "LoanToken: Only after loan has been withdrawn");
         _;
     }
 
+    /**
+     * @dev Only when loan is Awaiting
+     */
     modifier onlyAwaiting() {
         require(status == Status.Awaiting, "LoanToken: Current status should be Awaiting");
         _;
     }
 
+    /**
+     * @dev Only whitelisted accounts or lender
+     */
     modifier onlyWhoCanTransfer(address sender) {
         require(
             sender == lender || canTransfer[sender],
@@ -107,15 +167,26 @@ contract LoanToken is ILoanToken, ERC20 {
         _;
     }
 
+    /**
+     * @dev Only lender can perform certain actions
+     */
     modifier onlyLender() {
         require(msg.sender == lender, "LoanToken: This can be performed only by lender");
         _;
     }
 
+    /**
+     * @dev Return true if this contract is a LoanToken
+     * @return True if this contract is a LoanToken
+     */
     function isLoanToken() external override pure returns (bool) {
         return true;
     }
 
+    /**
+     * @dev Get loan parameters
+     * @return amount, term, apy
+     */
     function getParameters()
         external
         override
@@ -126,20 +197,27 @@ contract LoanToken is ILoanToken, ERC20 {
             uint256
         )
     {
-        return (amount, apy, duration);
+        return (amount, apy, term);
     }
 
+    /**
+     * @dev Get coupon value of this loan token in currencyToken
+     * This assumes the loan will be paid back on time, with interest
+     * @param _balance number of LoanTokens to get value for
+     * @return coupon value of _balance LoanTokens in currencyTokens
+     */
     function value(uint256 _balance) external override view returns (uint256) {
         if (_balance == 0) {
             return 0;
         }
 
         uint256 passed = block.timestamp.sub(start);
-        if (passed > duration) {
-            passed = duration;
+        if (passed > term) {
+            passed = term;
         }
 
         uint256 helper = amount.mul(apy).mul(passed).mul(_balance);
+        // assume month is 30 days
         uint256 interest = helper.div(360 days).div(10000).div(totalSupply());
 
         return amount.add(interest);
@@ -185,7 +263,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Close the loan and check if it has been repaid
      */
     function close() external override onlyOngoing {
-        require(start.add(duration) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
+        require(start.add(term) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
         if (_balance() >= debt) {
             status = Status.Settled;
         } else {
@@ -243,17 +321,22 @@ contract LoanToken is ILoanToken, ERC20 {
         return currencyToken.balanceOf(address(this));
     }
 
+    /**
+     * @dev Calculate amount borrowed minus fee
+     * @return Amount minus fees
+     */
     function receivedAmount() public override view returns (uint256) {
         return amount.sub(amount.mul(borrowerFee).div(10000));
     }
 
     /**
      * @dev Calculate interest that will be paid by this loan for an amount
+     * (amount * apy * term) / (360 days / precision)
      * @param _amount amount
-     * @return Amount of interest paid for _amount
+     * @return uint256 Amount of interest paid for _amount
      */
     function interest(uint256 _amount) internal view returns (uint256) {
-        return _amount.add(_amount.mul(apy).mul(duration).div(360 days).div(10000));
+        return _amount.add(_amount.mul(apy).mul(term).div(360 days).div(10000));
     }
 
     /**

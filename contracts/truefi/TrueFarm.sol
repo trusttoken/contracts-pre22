@@ -11,6 +11,8 @@ import {Initializable} from "./upgradeability/Initializable.sol";
 /**
  * @title TrueFarm
  * @notice Deposit liquidity tokens to earn TRU rewards over time
+ * @dev Staking pool where tokens are staked for TRU rewards
+ * A Distributor contract decides how much TRU a farm can earn over time
  */
 contract TrueFarm is ITrueFarm, Initializable {
     using SafeMath for uint256;
@@ -21,13 +23,18 @@ contract TrueFarm is ITrueFarm, Initializable {
     ITrueDistributor public override trueDistributor;
     string public override name;
 
+    // track stakes
     uint256 public override totalStaked;
     mapping(address => uint256) public staked;
 
+    // track overall cumulative rewards
     uint256 public cumulativeRewardPerToken;
+    // track previous cumulate rewards for accounts
     mapping(address => uint256) public previousCumulatedRewardPerToken;
+    // track claimable rewards for accounts
     mapping(address => uint256) public claimableReward;
 
+    // track total rewards
     uint256 public totalClaimedRewards;
     uint256 public totalFarmRewards;
 
@@ -52,6 +59,14 @@ contract TrueFarm is ITrueFarm, Initializable {
      */
     event Claim(address indexed who, uint256 amountClaimed);
 
+    /**
+     * @dev Initalize staking pool with a Distributor contraxct
+     * The distributor contract calculates how much TRU rewards this contract
+     * gets, and stores TRU for distribution.
+     * @param _stakingToken Token to stake
+     * @param _trueDistributor Distributor contract
+     * @param _name Farm name
+     */
     function initialize(
         IERC20 _stakingToken,
         ITrueDistributor _trueDistributor,
@@ -63,6 +78,10 @@ contract TrueFarm is ITrueFarm, Initializable {
         name = _name;
     }
 
+    /**
+     * @dev Stake tokens for TRU rewards.
+     * @param amount Amount of tokens to stake
+     */
     function stake(uint256 amount) external override update {
         staked[msg.sender] = staked[msg.sender].add(amount);
         totalStaked = totalStaked.add(amount);
@@ -70,6 +89,10 @@ contract TrueFarm is ITrueFarm, Initializable {
         emit Stake(msg.sender, amount);
     }
 
+    /**
+     * @dev Internal unstake function
+     * @param amount Amount of tokens to unstake
+     */
     function _unstake(uint256 amount) internal {
         require(amount <= staked[msg.sender], "TrueFarm: Cannot withdraw amount bigger than available balance");
         staked[msg.sender] = staked[msg.sender].sub(amount);
@@ -78,6 +101,9 @@ contract TrueFarm is ITrueFarm, Initializable {
         emit Unstake(msg.sender, amount);
     }
 
+    /**
+     * @dev Internal claim function
+     */
     function _claim() internal {
         totalClaimedRewards = totalClaimedRewards.add(claimableReward[msg.sender]);
         uint256 rewardToClaim = claimableReward[msg.sender];
@@ -86,30 +112,51 @@ contract TrueFarm is ITrueFarm, Initializable {
         emit Claim(msg.sender, rewardToClaim);
     }
 
+    /**
+     * @dev Remove staked tokens
+     * @param amount Amount of tokens to unstake
+     */
     function unstake(uint256 amount) external override update {
         _unstake(amount);
     }
 
+    /**
+     * @dev Claim TRU rewards
+     */
     function claim() external override update {
         _claim();
     }
 
+    /**
+     * @dev Unstake amount and claim rewards
+     * @param amount Amount of tokens to unstake
+     */
     function exit(uint256 amount) external override update {
         _unstake(amount);
         _claim();
     }
 
+    /**
+     * @dev Update state and get TRU from distributor
+     */
     modifier update() {
+        // pull TRU from distributor
         trueDistributor.distribute(address(this));
+        // calculate total rewards
         uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(totalClaimedRewards).mul(PRECISION);
+        // calculate block reward
         uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards);
+        // update farm rewards
         totalFarmRewards = newTotalFarmRewards;
+        // if there are stakers
         if (totalStaked > 0) {
             cumulativeRewardPerToken = cumulativeRewardPerToken.add(totalBlockReward.div(totalStaked));
         }
+        // update claimable reward for sender
         claimableReward[msg.sender] = claimableReward[msg.sender].add(
             staked[msg.sender].mul(cumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[msg.sender])).div(PRECISION)
         );
+        // update previous cumulative for sender
         previousCumulatedRewardPerToken[msg.sender] = cumulativeRewardPerToken;
         _;
     }

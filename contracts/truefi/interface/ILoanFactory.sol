@@ -5,7 +5,7 @@ interface ILoanFactory {
     function createLoanToken(
         address _borrower,
         uint256 _amount,
-        uint256 _duration,
+        uint256 _term,
         uint256 _apy
     ) external;
 

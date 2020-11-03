@@ -34,19 +34,68 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     ICurveMinter public _minter;
     IUniswapRouter public _uniRouter;
 
+    // fee for deposits
     uint256 public joiningFee = 25;
+    // track claimable fees
     uint256 public claimableFees;
 
+    // curve.fi data
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
 
+    /**
+     * @dev Emitted when fee is changed
+     * @param newFee New fee
+     */
     event JoiningFeeChanged(uint256 newFee);
+
+    /**
+     * @dev Emitted when someone joins the pool
+     * @param staker Account staking
+     * @param deposited Amount deposited
+     * @param minted Amount of pool tokens minted
+     */
     event Joined(address indexed staker, uint256 deposited, uint256 minted);
+
+    /**
+     * @dev Emitted when someone exits the pool
+     * @param staker Account exiting
+     * @param amount Amount unstaking
+     */
     event Exited(address indexed staker, uint256 amount);
+
+    /**
+     * @dev Emitted when funds are flushed into curve.fi
+     * @param currencyAmount Amount of tokens deposited
+     */
     event Flushed(uint256 currencyAmount);
-    event Pulled(uint256 crvAmount);
-    event Borrow(uint256 amount, uint256 fee);
+
+    /**
+     * @dev Emitted when funds are pulled from curve.fi
+     * @param yAmount Amount of pool tokens
+     */
+    event Pulled(uint256 yAmount);
+
+    /**
+     * @dev Emitted when funds are borrowed from pool
+     * @param borrower Borrower address
+     * @param amount Amount of funds borrowed from pool
+     * @param fee Fees collected from this transaction
+     */
+    event Borrow(address borrower, uint256 amount, uint256 fee);
+
+    /**
+     * @dev Emitted when borrower repays the pool
+     * @param payer Address of borrower
+     * @param amount Amount repaid
+     */
     event Repaid(address indexed payer, uint256 amount);
+
+    /**
+     * @dev Emitted when fees are collected
+     * @param beneficiary Account to receive fees
+     * @param amount Amount of fees collected
+     */
     event Collected(address indexed beneficiary, uint256 amount);
 
     /**
@@ -55,6 +104,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param __curveGauge curve gauge address
      * @param __currencyToken curve pool underlying token
      * @param __lender TrueLender address
+     * @param __uniRouter Uniswap router
      */
     function initialize(
         ICurvePool __curvePool,
@@ -88,23 +138,30 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     /**
      * @dev Get total balance of curve.fi pool tokens
      */
-    function totalLiquidityTokenBalance() public view returns (uint256) {
+    function yTokenBalance() public view returns (uint256) {
         return _curvePool.token().balanceOf(address(this)).add(_curveGauge.balanceOf(address(this)));
     }
 
     /**
-     * @dev Calculate pool value in USD
-     * @return pool value in USD
+     * @dev Calculate pool value in TUSD
+     * "virtual price" of entire pool - LoanTokens, TUSD, curve y pool tokens
+     * @return pool value in TUSD
      */
     function poolValue() public view returns (uint256) {
-        return
-            currencyBalance().add(_lender.value()).add(
-                totalLiquidityTokenBalance().mul(_curvePool.curve().get_virtual_price()).div(1 ether)
-            );
+        // prettier-ignore
+        return 
+            currencyBalance()
+            .add(_lender.value())
+            .add(
+                yTokenBalance()
+                .mul(_curvePool.curve().get_virtual_price())
+                .div(1 ether));
     }
 
     /**
      * @dev ensure enough curve.fi pool tokens are available
+     * Check if current available amount of TUSD is enough and
+     * withdraw remainder from gauge
      * @param neededAmount amount required
      */
     function ensureEnoughTokensAreAvailable(uint256 neededAmount) internal {
@@ -130,11 +187,13 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     function join(uint256 amount) external override {
         uint256 fee = amount.mul(joiningFee).div(10000);
         uint256 amountToDeposit = amount.sub(fee);
-
         uint256 amountToMint = amountToDeposit;
+
+        // first staker mints same amount deposited
         if (totalSupply() > 0) {
             amountToMint = totalSupply().mul(amountToDeposit).div(poolValue());
         }
+        // mint pool tokens
         _mint(msg.sender, amountToMint);
         claimableFees = claimableFees.add(fee);
 
@@ -143,6 +202,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         emit Joined(msg.sender, amount, amountToMint);
     }
 
+    // prettier-ignore
     /**
      * @dev Exit pool
      * This function will withdraw a basket of currencies backing the pool value
@@ -153,15 +213,25 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
         uint256 _totalSupply = totalSupply();
 
-        uint256 currencyAmountToTransfer = amount.mul(currencyBalance()).div(_totalSupply);
-        uint256 curveLiquidityAmountToTransfer = amount.mul(totalLiquidityTokenBalance()).div(_totalSupply);
+        // get share of currency tokens kept in the pool
+        uint256 currencyAmountToTransfer = amount.mul(
+            currencyBalance()).div(_totalSupply);
 
+        // calculate amount of curve.fi pool tokens
+        uint256 curveLiquidityAmountToTransfer = amount.mul(
+            yTokenBalance()).div(_totalSupply);
+
+        // burn tokens sent
         _burn(msg.sender, amount);
 
+        // withdraw basket of loan tokens
         _lender.distribute(msg.sender, amount, _totalSupply);
+
+        // if currency remaining, transfer
         if (currencyAmountToTransfer > 0) {
             require(_currencyToken.transfer(msg.sender, currencyAmountToTransfer));
         }
+        // if curve tokens remaining, transfer
         if (curveLiquidityAmountToTransfer > 0) {
             ensureEnoughTokensAreAvailable(curveLiquidityAmountToTransfer);
             require(_curvePool.token().transfer(msg.sender, curveLiquidityAmountToTransfer));
@@ -172,12 +242,19 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Deposit idle funds into curve.fi pool and stake in gauge
+     * Called by owner to help manage funds in pool and save on gas for deposits
+     * @param currencyAmount Amount of funds to deposit into curve
+     * @param minMintAmount Minimum amount to mint
      */
     function flush(uint256 currencyAmount, uint256 minMintAmount) external onlyOwner {
         require(currencyAmount <= currencyBalance(), "CurvePool: Insufficient currency balance");
 
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
+
+        // add TUSD to curve
         _curvePool.add_liquidity(amounts, minMintAmount);
+
+        // stake yCurve tokens in gauge
         _curveGauge.deposit(_curvePool.token().balanceOf(address(this)));
 
         emit Flushed(currencyAmount);
@@ -185,44 +262,53 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Remove liquidity from curve
-     * @param crvAmount amount of curve pool tokens
+     * @param yAmount amount of curve pool tokens
      * @param minCurrencyAmount minimum amount of tokens to withdraw
      */
-    function pull(uint256 crvAmount, uint256 minCurrencyAmount) external onlyOwner {
-        require(crvAmount <= totalLiquidityTokenBalance(), "CurvePool: Insufficient Curve liquidity balance");
+    function pull(uint256 yAmount, uint256 minCurrencyAmount) external onlyOwner {
+        require(yAmount <= yTokenBalance(), "CurvePool: Insufficient Curve liquidity balance");
 
-        ensureEnoughTokensAreAvailable(crvAmount);
-        _curvePool.remove_liquidity_one_coin(crvAmount, TUSD_INDEX, minCurrencyAmount, false);
+        // unstake in gauge
+        ensureEnoughTokensAreAvailable(yAmount);
 
-        emit Pulled(crvAmount);
+        // remove TUSD from curve
+        _curvePool.remove_liquidity_one_coin(yAmount, TUSD_INDEX, minCurrencyAmount, false);
+
+        emit Pulled(yAmount);
     }
 
+    // prettier-ignore
     /**
      * @dev Remove liquidity from curve and transfer to borrower
      * @param expectedAmount expected amount to borrow
      */
     function borrow(uint256 expectedAmount, uint256 amountWithoutFee) external override nonReentrant {
         require(expectedAmount >= amountWithoutFee, "CurvePool: Fee cannot be negative");
+        // TODO: create modifier for onlyLender
         require(msg.sender == address(_lender), "CurvePool: Only lender can borrow");
 
+        // if there is not enough TUSD, withdraw from curve
         if (expectedAmount > currencyBalance()) {
+            // get rough estimate of how much TUSD we'll get back from curve
             uint256 amountToWithdraw = expectedAmount.sub(currencyBalance());
             uint256 roughCurveTokenAmount = calcTokenAmount(amountToWithdraw).mul(1005).div(1000);
             require(
-                roughCurveTokenAmount <= totalLiquidityTokenBalance(),
-                "CurvePool: Not enough Curve liquidity tokens in pool to cover borrow"
+                roughCurveTokenAmount <= yTokenBalance(),
+                "CurvePool: Not enough Curve y tokens in pool to cover borrow"
             );
+            // pull tokens from gauge
             ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
+            // remove TUSD from curve
             _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
             require(expectedAmount <= currencyBalance(), "CurvePool: Not enough funds in pool to cover borrow");
         }
 
+        // calculate fees and transfer remainder
         uint256 fee = expectedAmount.sub(amountWithoutFee);
         claimableFees = claimableFees.add(fee);
-
         require(_currencyToken.transfer(msg.sender, amountWithoutFee));
 
-        emit Borrow(expectedAmount, fee);
+        emit Borrow(msg.sender, expectedAmount, fee);
     }
 
     /**
@@ -231,12 +317,16 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      */
     function repay(uint256 currencyAmount) external override {
         require(_currencyToken.transferFrom(msg.sender, address(this), currencyAmount));
-
         emit Repaid(msg.sender, currencyAmount);
     }
 
     /**
-     * @dev Collect CRV tokens minted by staking at gauge
+     * @dev Collect CRV tokens minted by staking at gauge and sell them on Uniswap
+     * - Selling CRV is managed by the contract owner
+     * - Calculations can be made off-chain and called based on market conditions
+     * - Need to pass path of exact pairs to go through while executing exchange
+     * For example, CRV -> WETH -> TUSD
+     *
      * @param amountOutMin see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      * @param path see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      */
@@ -269,24 +359,29 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     /**
      * @notice Expected amount of minted Curve.fi yDAI/yUSDC/yUSDT/yTUSD tokens.
      * Can be used to control slippage
+     * Called in flush() function
      * @param currencyAmount amount to calculate for
      */
     function calcTokenAmount(uint256 currencyAmount) public view returns (uint256) {
-        uint256 yTokenAmount = currencyAmount.mul(1e18).div(_curvePool.coins(TUSD_INDEX).getPricePerFullShare());
+        // prettier-ignore
+        uint256 yTokenAmount = currencyAmount.mul(1e18).div(
+            _curvePool.coins(TUSD_INDEX).getPricePerFullShare());
         uint256[N_TOKENS] memory yAmounts = [0, 0, 0, yTokenAmount];
         return _curvePool.curve().calc_token_amount(yAmounts, true);
     }
 
     /**
      * @dev Converts the value of a single yCRV into an underlying asset
-     * @param crvAmount amount of curve pool tokens to calculate for
+     * @param yAmount amount of curve pool tokens to calculate for
+     * @return Value of one y pool token
      */
-    function calcWithdrawOneCoin(uint256 crvAmount) public view returns (uint256) {
-        return _curvePool.calc_withdraw_one_coin(crvAmount, TUSD_INDEX);
+    function calcWithdrawOneCoin(uint256 yAmount) public view returns (uint256) {
+        return _curvePool.calc_withdraw_one_coin(yAmount, TUSD_INDEX);
     }
 
     /**
      * @dev Currency token balance
+     * @return Currency token balance
      */
     function currencyBalance() internal view returns (uint256) {
         return _currencyToken.balanceOf(address(this)).sub(claimableFees);

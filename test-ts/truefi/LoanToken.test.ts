@@ -64,7 +64,7 @@ describe('LoanToken', () => {
     it('sets loan params', async () => {
       expect(await loanToken.borrower()).to.equal(borrower.address)
       expect(await loanToken.amount()).to.equal(parseEther('1000'))
-      expect(await loanToken.duration()).to.equal(monthInSeconds * 12)
+      expect(await loanToken.term()).to.equal(monthInSeconds * 12)
       expect(await loanToken.apy()).to.equal(1000)
       expect(await loanToken.start()).to.be.equal(0)
       expect(await loanToken.isLoanToken()).to.be.true

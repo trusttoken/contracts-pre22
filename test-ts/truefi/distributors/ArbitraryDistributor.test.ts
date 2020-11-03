@@ -50,7 +50,7 @@ describe('ArbitraryDistributor', () => {
 
     it('only predefined beneficiary can call it', async () => {
       await expect(distributor.connect(otherWallet).distribute(distributedAmount))
-        .to.be.revertedWith('ArbitraryDistributor: Only beneficiary can distribute tokens')
+        .to.be.revertedWith('ArbitraryDistributor: Only beneficiary can receive tokens')
     })
 
     it('properly sends tokens', async () => {
