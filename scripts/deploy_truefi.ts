@@ -18,7 +18,7 @@ async function deployTrueFi () {
 
   const slowDistributor = await (await new SlowTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
   await (await slowDistributor.initialize(startingBlock, truAddress)).wait()
-  
+
   const fastDistributor = await (await new FastTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
   await (await fastDistributor.initialize(startingBlock, truAddress)).wait()
 
