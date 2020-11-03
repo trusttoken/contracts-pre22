@@ -3,11 +3,11 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import {MockERC20Token} from "../../trusttoken/mocks/MockERC20Token.sol";
+
 import {ICurve, ICurvePool} from "../interface/ICurve.sol";
 import {IYToken} from "../interface/IYToken.sol";
-import {MockERC20Token} from "../../trusttoken/mocks/MockERC20Token.sol";
 import {Initializable} from "../upgradeability/Initializable.sol";
-import {MockERC20Token} from "../../trusttoken/mocks/MockERC20Token.sol";
 
 contract MockCurve is ICurve {
     uint256 public sharePrice = 1e18;
