@@ -31,8 +31,8 @@ jobs:
       - pull_submodules
       - install_dependencies
       - run: yarn lint
-      - run: yarn typecheck
       - run: yarn build
+      - run: yarn typecheck
       - run: yarn test
 
 workflows:
