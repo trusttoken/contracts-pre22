@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TokenControllerMock} from "../mocks/TokenControllerMock.sol";
+import {TokenControllerMock} from "./TokenControllerMock.sol";
 
 contract TokenFaucet is TokenControllerMock {
     function faucet(uint256 _amount) external {
