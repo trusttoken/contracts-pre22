@@ -3,8 +3,8 @@ pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
+import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {ITrueDistributor, IERC20} from "../interface/ITrueDistributor.sol";
-import {Ownable} from "../upgradeability/UpgradeableOwnable.sol";
 
 /**
  * @title LinearTrueDistributor

@@ -4,8 +4,8 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
+import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {ITrueDistributor} from "../interface/ITrueDistributor.sol";
-import {Ownable} from "../upgradeability/UpgradeableOwnable.sol";
 
 /**
  * @title TrueDistributor
