@@ -15,19 +15,26 @@ async function deployTrueFi () {
   const truAddress = await ask('TrustToken address: ')
   console.log('Current block ', await provider.getBlockNumber())
   const startingBlock = Number.parseInt(await ask('Starting block: '))
-  const slowDistributor = await (await new SlowTrueDistributorFactory(wallet).deploy(startingBlock, truAddress, txnArgs)).deployed()
-  const fastDistributor = await (await new FastTrueDistributorFactory(wallet).deploy(startingBlock, truAddress, txnArgs)).deployed()
+
+  const slowDistributor = await (await new SlowTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
+  await (await slowDistributor.initialize(startingBlock, truAddress)).wait()
+
+  const fastDistributor = await (await new FastTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
+  await (await fastDistributor.initialize(startingBlock, truAddress)).wait()
 
   const blpAddress = await ask('Balancer BAL/TRU LP address: ')
-  const balancerFarm = await (await new TrueFarmFactory(wallet).deploy(blpAddress, fastDistributor.address, txnArgs)).deployed()
+  const balancerFarm = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
+  await (await balancerFarm.initialize(blpAddress, fastDistributor.address, 'BAL/TRU Farm')).wait()
   console.log('Balancer TrueFarm address: ', balancerFarm.address)
 
   const ulpEthAddress = await ask('Uniswap ETH/TRU LP address: ')
-  const uniswapEthFarm = await (await new TrueFarmFactory(wallet).deploy(ulpEthAddress, fastDistributor.address, txnArgs)).deployed()
+  const uniswapEthFarm = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
+  await (await uniswapEthFarm.initialize(ulpEthAddress, fastDistributor.address, 'ETH/TRU Farm')).wait()
   console.log('Uniswap ETH/TRU TrueFarm address: ', uniswapEthFarm.address)
 
   const ulpTusdAddress2 = await ask('Uniswap TUSD/TrueFiLP address: ')
-  const uniswapTusdFarm = await (await new TrueFarmFactory(wallet).deploy(ulpTusdAddress2, slowDistributor.address, txnArgs)).deployed()
+  const uniswapTusdFarm = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
+  await (await uniswapTusdFarm.initialize(ulpTusdAddress2, slowDistributor.address, 'TUSD/TrueFiLP Farm')).wait()
   console.log('Uniswap TUSD/TrueFiLP TrueFarm address: ', uniswapTusdFarm.address)
 
   await (await fastDistributor.transfer(wallet.address, balancerFarm.address, 5000000, txnArgs)).wait()

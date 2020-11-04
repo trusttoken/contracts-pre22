@@ -9,7 +9,7 @@ import { skipBlocksWithProvider, skipToBlockWithProvider } from '../utils/timeTr
 
 import { MockErc20Token } from 'contracts/types/MockErc20Token'
 import { MockErc20TokenFactory } from 'contracts/types/MockErc20TokenFactory'
-import { TrueDistributor } from 'contracts/types/TrueDistributor'
+import { QuadraticTrueDistributor } from 'contracts/types/QuadraticTrueDistributor'
 import { TrueFarmFactory } from 'contracts/types/TrueFarmFactory'
 import { TrueFarm } from 'contracts/types/TrueFarm'
 import { MockDistributorFactory } from 'contracts/types/MockDistributorFactory'
@@ -20,7 +20,7 @@ describe('TrueFarm', () => {
   let owner: Wallet
   let staker1: Wallet
   let staker2: Wallet
-  let distributor: TrueDistributor
+  let distributor: QuadraticTrueDistributor
   let trustToken: MockErc20Token
   let stakingToken: MockErc20Token
   let provider: MockProvider
