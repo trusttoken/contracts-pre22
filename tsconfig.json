@@ -5,6 +5,9 @@
     "moduleResolution": "node",
     "skipLibCheck": true,
     "target": "esnext",
-    "sourceMap": true
+    "sourceMap": true,
+    "paths": {
+      "contracts": ["./build"]
+    }
   }
 }
