@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "./access/Ownable.sol";
-import "./proxy/Initializable.sol";
+import "./common/Initializable.sol";
+import "./common/Ownable.sol";
 
 import "./Reclaimable.sol";
 import "./TrueMintableBurnable.sol";

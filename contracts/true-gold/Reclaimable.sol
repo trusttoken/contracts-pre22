@@ -3,9 +3,9 @@ pragma solidity 0.6.10;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./access/Ownable.sol";
-import "./access/IOwnable.sol";
-import "./proxy/ProxyStorage.sol";
+import "./common/Ownable.sol";
+import "./common/ProxyStorage.sol";
+import "./interface/IOwnable.sol";
 
 contract Reclaimable is Ownable {
     function reclaimEther(address payable to) public onlyOwner {

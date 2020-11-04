@@ -4,14 +4,14 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {IBurnableERC20} from "../trusttoken/IBurnableERC20.sol";
+import {IBurnableERC20} from "../trusttoken/interface/IBurnableERC20.sol";
 
+import {Ownable} from "./common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
-import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
 /**
  * @title TrueRatingAgency

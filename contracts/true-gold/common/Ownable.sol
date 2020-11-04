@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.10;
 
-import "../proxy/ProxyStorage.sol";
-import "../proxy/Initializable.sol";
+import "../interface/IOwnable.sol";
 
-import "./IOwnable.sol";
+import "./ProxyStorage.sol";
+import "./Initializable.sol";
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where

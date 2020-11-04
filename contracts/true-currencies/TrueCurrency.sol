@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
+import {BurnableTokenWithBounds} from "./common/BurnableTokenWithBounds.sol";
 
 /**
  * @title TrueCurrency

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {GasRefund} from "./GasRefund.sol";
+import {GasRefund} from "./common/GasRefund.sol";
+
 import {TrueCurrency} from "./TrueCurrency.sol";
 
 abstract contract TrueCurrencyWithGasRefund is GasRefund, TrueCurrency {

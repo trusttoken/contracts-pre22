@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {ERC20} from "../ERC20.sol";
+import {ERC20} from "../common/ERC20.sol";
 
 interface IDelegateERC20 {
     function delegateTotalSupply() external view returns (uint256);
