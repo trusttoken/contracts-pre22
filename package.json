@@ -20,7 +20,7 @@
     "build:types": "typechain --target ethers-v5 --outDir build/types 'build/*.json'",
     "build": "yarn clean && yarn build:sol && yarn build:types && bash ./indexBuild.sh",
     "test:js": "./test.sh",
-    "test:ts": "ts-mocha --paths",
+    "test:ts": "mocha",
     "test": "yarn test:ts && yarn test:js",
     "checks": "yarn lint && yarn typecheck && yarn test"
   },
@@ -53,8 +53,8 @@
     "prettylint": "^1.0.0",
     "solhint": "^3.0.0",
     "solidity-coverage": "^0.7.0",
-    "ts-mocha": "^8.0.0",
     "ts-node": "^8.8.2",
+    "tsconfig-paths": "^3.9.0",
     "typechain": "^2.0.0",
     "typescript": "^3.8.3"
   },
