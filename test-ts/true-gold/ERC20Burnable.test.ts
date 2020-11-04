@@ -5,7 +5,7 @@ import { expect } from 'chai'
 import { initialSupply, setupTrueGold } from '../fixtures/trueGold'
 import { toAddress, WalletOrAddress } from '../utils/toAddress'
 
-import { TrueGold } from 'contracts/types/TrueGold'
+import { TrueGold } from 'contracts/types'
 
 describe('TrueGold - ERC20Burnable', () => {
   let initialHolder: Wallet

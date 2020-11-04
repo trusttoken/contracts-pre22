@@ -4,8 +4,10 @@ import { expect } from 'chai'
 
 import { MAX_BURN_BOUND } from '../utils/constants'
 
-import { TrueGold } from 'contracts/types/TrueGold'
-import { TrueGoldFactory } from 'contracts/types/TrueGoldFactory'
+import {
+  TrueGold,
+  TrueGoldFactory,
+} from 'contracts/types'
 
 describe('TrueGold - Initializable', () => {
   let proxy: Wallet

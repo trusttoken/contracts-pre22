@@ -13,7 +13,7 @@ import {
   MockGasRefundToken,
 } from 'contracts/types'
 
-describe('TrueCurrency - ERC20 behaviour', () => {
+describe('TrueCurrency - ERC20', () => {
   let deployer: Wallet
   let refunder: Wallet
   let otherAccount: Wallet

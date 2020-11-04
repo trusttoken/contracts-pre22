@@ -7,7 +7,7 @@ import { toAddress, WalletOrAddress } from '../utils/toAddress'
 
 import { TrueCurrency } from 'contracts/types/TrueCurrency'
 
-describe('TrueCurrency - ERC20 behaviour', () => {
+describe('TrueCurrency - ERC20', () => {
   let initialHolder: Wallet
   let secondAccount: Wallet
   let thirdAccount: Wallet

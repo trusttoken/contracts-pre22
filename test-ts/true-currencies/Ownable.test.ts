@@ -7,7 +7,7 @@ import { toAddress, WalletOrAddress } from '../utils/toAddress'
 
 import { TrueCurrency } from 'contracts/types/TrueCurrency'
 
-describe('TrueCurrency - Ownable behaviour', () => {
+describe('TrueCurrency - Ownable', () => {
   let owner: Wallet
   let newOwner: Wallet
   let other: Wallet

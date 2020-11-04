@@ -5,11 +5,13 @@ import { expect } from 'chai'
 import { setupTrueGold } from '../fixtures/trueGold'
 import { toAddress, WalletOrAddress } from '../utils/toAddress'
 
-import { TrueGold } from 'contracts/types/TrueGold'
-import { Erc20Mock } from 'contracts/types/Erc20Mock'
-import { Erc20MockFactory } from 'contracts/types/Erc20MockFactory'
-import { OwnableMock } from 'contracts/types/OwnableMock'
-import { OwnableMockFactory } from 'contracts/types/OwnableMockFactory'
+import { 
+  TrueGold,
+  Erc20Mock,
+  Erc20MockFactory,
+  OwnableMock,
+  OwnableMockFactory,
+} from 'contracts/types'
 
 describe('TrueGold - Reclaimable', () => {
   const tokenEthBalance = utils.parseEther('1')

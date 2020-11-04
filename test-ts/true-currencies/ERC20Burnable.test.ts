@@ -6,7 +6,7 @@ import { initialSupply, trueCurrency } from '../fixtures/trueCurrency'
 
 import { TrueCurrency } from 'contracts/types/TrueCurrency'
 
-describe('TrueCurrency - ERC20Burnable behaviour', () => {
+describe('TrueCurrency - ERC20Burnable', () => {
   let initialHolder: Wallet
   let otherAccount: Wallet
   let token: TrueCurrency

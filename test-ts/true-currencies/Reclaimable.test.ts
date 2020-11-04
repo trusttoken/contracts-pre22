@@ -12,7 +12,7 @@ import {
   MockErc20Token,
 } from 'contracts/types'
 
-describe('TrueCurrency - Reclaimable behaviour', () => {
+describe('TrueCurrency - Reclaimable', () => {
   const tokenEthBalance = utils.parseEther('1')
 
   let owner: Wallet

@@ -9,7 +9,7 @@ import { toAddress, WalletOrAddress } from '../utils/toAddress'
 
 import { MockTrueCurrency } from 'contracts/types'
 
-describe('TrueCurrency - Mint/Burn behaviour', () => {
+describe('TrueCurrency - Mint/Burn', () => {
   const redemptionAddress = '0x0000000000000000000000000000000000074D72'
 
   let initialHolder: Wallet
