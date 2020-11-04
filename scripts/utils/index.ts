@@ -6,7 +6,7 @@ import readline from 'readline'
 export const txnArgs = { gasLimit: 2_000_000, gasPrice: 16_000_000_000 }
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-export const getContractJSON = (contractName: string) => require(`build/${contractName}.json`)
+export const getContractJSON = (contractName: string) => require(`../build/${contractName}.json`)
 
 const confirmDeploy = async (contractName: string) => {
   const rl = readline.createInterface({
