@@ -1,8 +1,10 @@
 import { Wallet } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
 import { expect } from 'chai'
+
+import { trueCurrency } from '../fixtures/trueCurrency'
+
 import { TrueCurrency } from 'contracts/types/TrueCurrency'
-import { trueCurrency } from './fixtures/trueCurrency'
 import { TokenControllerMockFactory } from 'contracts/types/TokenControllerMockFactory'
 import { TokenControllerMock } from 'contracts/types/TokenControllerMock'
 
