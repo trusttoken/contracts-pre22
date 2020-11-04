@@ -7,7 +7,7 @@ import { toAddress, WalletOrAddress } from '../utils/toAddress'
 
 import { TrueGold } from 'contracts/types/TrueGold'
 
-describe('TrueGold - TrueMintableBurnable behaviour', () => {
+describe('TrueGold - TrueMintableBurnable', () => {
   const redemptionAddress = '0x0000000000000000000000000000000000074D72'
 
   let deployer: Wallet
