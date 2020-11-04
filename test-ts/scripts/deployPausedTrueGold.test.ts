@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import { deployPausedTrueGold } from '../../scripts/deploy_paused_true_gold'
 import { toHex } from '../utils/toHex'
 
-import { PausedTrueGold } from 'contracts/types/PausedTrueGold'
+import { PausedTrueGold } from 'contracts/types'
 
 import { PausedTrueGoldJson } from 'contracts'
 

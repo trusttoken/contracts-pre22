@@ -1,12 +1,16 @@
 import { ContractFactory } from 'ethers'
 import { MockProvider } from 'ethereum-waffle'
 import { expect } from 'chai'
+
 import { Newable } from '../../scripts/utils'
+
 import { TrueCurrency } from 'contracts/types/TrueCurrency'
-import { TrueCadFactory } from 'contracts/types/TrueCadFactory'
-import { TrueAudFactory } from 'contracts/types/TrueAudFactory'
-import { TrueGbpFactory } from 'contracts/types/TrueGbpFactory'
-import { TrueHkdFactory } from 'contracts/types/TrueHkdFactory'
+import {
+  TrueCadFactory,
+  TrueAudFactory,
+  TrueGbpFactory,
+  TrueHkdFactory,
+} from 'contracts/types'
 
 describe('TrueCurrency - Tokens', () => {
   function shouldHaveCorrectAttributes (TokenFactory: Newable<ContractFactory>, name: string, symbol: string) {

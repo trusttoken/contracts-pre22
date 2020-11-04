@@ -4,8 +4,12 @@ import { parseEther } from '@ethersproject/units'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 
-import { LoanTokenFactory, MockErc20TokenFactory, LoanFactoryFactory } from 'contracts/types'
-import { LoanFactory } from 'contracts/types/LoanFactory'
+import {
+  LoanFactory,
+  LoanTokenFactory,
+  MockErc20TokenFactory,
+  LoanFactoryFactory,
+} from 'contracts/types'
 
 describe('LoanFactory', () => {
   let owner: Wallet, borrower: Wallet

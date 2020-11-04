@@ -4,8 +4,10 @@ import { Zero } from '@ethersproject/constants'
 
 import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
 
-import { SlowTrueDistributor } from 'contracts/types/SlowTrueDistributor'
-import { SlowTrueDistributorFactory } from 'contracts/types/SlowTrueDistributorFactory'
+import {
+  SlowTrueDistributor,
+  SlowTrueDistributorFactory,
+} from 'contracts/types'
 
 describe('SlowTrueDistributor', () => {
   let owner: Wallet

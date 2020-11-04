@@ -1,11 +1,13 @@
 import { constants, Wallet, BigNumber, BigNumberish } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
-import { expect } from 'chai'
-import { MockTrueCurrency } from 'contracts/types/MockTrueCurrency'
-import { toAddress, WalletOrAddress } from '../utils/toAddress'
-import { initialSupply, trueCurrency } from '../fixtures/trueCurrency'
 import { parseEther } from '@ethersproject/units'
 import { AddressZero, Zero } from '@ethersproject/constants'
+import { expect } from 'chai'
+
+import { initialSupply, trueCurrency } from '../fixtures/trueCurrency'
+import { toAddress, WalletOrAddress } from '../utils/toAddress'
+
+import { MockTrueCurrency } from 'contracts/types'
 
 describe('TrueCurrency - Mint/Burn behaviour', () => {
   const redemptionAddress = '0x0000000000000000000000000000000000074D72'
