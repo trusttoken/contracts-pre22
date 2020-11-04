@@ -11,7 +11,6 @@ import { setupDeploy } from '../../scripts/utils'
 import { TrustTokenFactory } from 'contracts/types/TrustTokenFactory'
 import { TrustToken } from 'contracts/types/TrustToken'
 
-
 use(solidity)
 
 describe('TrustToken', () => {
