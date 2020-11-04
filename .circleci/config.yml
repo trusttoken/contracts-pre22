@@ -32,7 +32,6 @@ jobs:
       - install_dependencies
       - run: yarn lint
       - run: yarn build
-      - run: yarn bind
       - run: yarn test
 
 workflows:

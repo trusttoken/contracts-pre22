@@ -6,6 +6,7 @@
     "skipLibCheck": true,
     "target": "esnext",
     "sourceMap": true,
+    "baseUrl": ".",
     "paths": {
       "contracts": ["./build"]
     }
