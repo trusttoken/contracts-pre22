@@ -26,7 +26,7 @@
     "checks": "yarn lint && yarn typecheck && yarn test"
   },
   "_moduleAliases": {
-    "build": "./build"
+    "contracts": "./build"
   },
   "husky": {
     "hooks": {}

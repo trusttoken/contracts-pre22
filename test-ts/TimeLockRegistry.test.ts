@@ -9,11 +9,11 @@ import { toTrustToken } from '../scripts/utils'
 import { setupDeploy } from '../scripts/utils'
 import { parseAccountList, registerSaftAccounts } from '../scripts/register_saft_addresses'
 
-import { TrustTokenFactory } from 'build/types/TrustTokenFactory'
-import { TrustToken } from 'build/types/TrustToken'
-import { TimeLockRegistryFactory } from 'build/types/TimeLockRegistryFactory'
-import { TimeLockRegistry } from 'build/types/TimeLockRegistry'
-import { OwnedUpgradeabilityProxyFactory } from 'build/types/OwnedUpgradeabilityProxyFactory'
+import { TrustTokenFactory } from 'contracts/types/TrustTokenFactory'
+import { TrustToken } from 'contracts/types/TrustToken'
+import { TimeLockRegistryFactory } from 'contracts/types/TimeLockRegistryFactory'
+import { TimeLockRegistry } from 'contracts/types/TimeLockRegistry'
+import { OwnedUpgradeabilityProxyFactory } from 'contracts/types/OwnedUpgradeabilityProxyFactory'
 
 use(solidity)
 

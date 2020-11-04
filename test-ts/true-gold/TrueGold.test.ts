@@ -5,7 +5,7 @@ import { loadFixture } from 'ethereum-waffle'
 import { toAddress, WalletOrAddress } from '../utils/toAddress'
 import { initialSupply, setupTrueGold } from '../fixtures/trueGold'
 
-import { TrueGold } from 'build/types/TrueGold'
+import { TrueGold } from 'contracts/types/TrueGold'
 
 describe('TrueGold', () => {
   const redemptionAddress = '0x0000000000000000000000000000000000074D72'

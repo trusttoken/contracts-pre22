@@ -8,18 +8,18 @@ import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { timeTravel } from '../utils/timeTravel'
 import { expectCloseTo } from '../utils/expectCloseTo'
 
-import { MockTrueLender } from 'build/types/MockTrueLender'
-import { MockTrueLenderFactory } from 'build/types/MockTrueLenderFactory'
-import { LoanToken } from 'build/types/LoanToken'
-import { LoanTokenFactory } from 'build/types/LoanTokenFactory'
-import { MockTrueCurrency } from 'build/types/MockTrueCurrency'
-import { MockTrueCurrencyFactory } from 'build/types/MockTrueCurrencyFactory'
+import { MockTrueLender } from 'contracts/types/MockTrueLender'
+import { MockTrueLenderFactory } from 'contracts/types/MockTrueLenderFactory'
+import { LoanToken } from 'contracts/types/LoanToken'
+import { LoanTokenFactory } from 'contracts/types/LoanTokenFactory'
+import { MockTrueCurrency } from 'contracts/types/MockTrueCurrency'
+import { MockTrueCurrencyFactory } from 'contracts/types/MockTrueCurrencyFactory'
 
 import {
   ITrueFiPoolJson,
   ILoanTokenJson,
   ITrueRatingAgencyJson,
-} from 'build'
+} from 'contracts'
 
 describe('TrueLender', () => {
   let owner: Wallet

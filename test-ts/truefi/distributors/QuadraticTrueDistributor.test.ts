@@ -7,10 +7,10 @@ import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
 import { toTrustToken } from '../../../scripts/utils'
 import { getBlockNumber, skipBlocksWithProvider } from '../../utils/timeTravel'
 
-import { QuadraticTrueDistributor } from 'build/types/QuadraticTrueDistributor'
-import { QuadraticTrueDistributorFactory } from 'build/types/QuadraticTrueDistributorFactory'
-import { MockErc20TokenFactory } from 'build/types/MockErc20TokenFactory'
-import { MockErc20Token } from 'build/types/MockErc20Token'
+import { QuadraticTrueDistributor } from 'contracts/types/QuadraticTrueDistributor'
+import { QuadraticTrueDistributorFactory } from 'contracts/types/QuadraticTrueDistributorFactory'
+import { MockErc20TokenFactory } from 'contracts/types/MockErc20TokenFactory'
+import { MockErc20Token } from 'contracts/types/MockErc20Token'
 
 describe('QuadraticTrueDistributor', () => {
   let owner: Wallet

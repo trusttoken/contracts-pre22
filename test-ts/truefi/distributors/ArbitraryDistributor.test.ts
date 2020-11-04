@@ -4,10 +4,10 @@ import { parseEther } from 'ethers/lib/utils'
 
 import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
 
-import { MockErc20Token } from 'build/types/MockErc20Token'
-import { MockErc20TokenFactory } from 'build/types/MockErc20TokenFactory'
-import { ArbitraryDistributor } from 'build/types/ArbitraryDistributor'
-import { ArbitraryDistributorFactory } from 'build/types/ArbitraryDistributorFactory'
+import { MockErc20Token } from 'contracts/types/MockErc20Token'
+import { MockErc20TokenFactory } from 'contracts/types/MockErc20TokenFactory'
+import { ArbitraryDistributor } from 'contracts/types/ArbitraryDistributor'
+import { ArbitraryDistributorFactory } from 'contracts/types/ArbitraryDistributorFactory'
 
 describe('ArbitraryDistributor', () => {
   let trustToken: MockErc20Token

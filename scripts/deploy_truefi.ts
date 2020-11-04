@@ -3,9 +3,9 @@
  */
 import { ethers, providers } from 'ethers'
 import { ask } from './utils'
-import { TrueFarmFactory } from 'build/types/TrueFarmFactory'
-import { SlowTrueDistributorFactory } from 'build/types/SlowTrueDistributorFactory'
-import { FastTrueDistributorFactory } from 'build/types/FastTrueDistributorFactory'
+import { TrueFarmFactory } from 'contracts/types/TrueFarmFactory'
+import { SlowTrueDistributorFactory } from 'contracts/types/SlowTrueDistributorFactory'
+import { FastTrueDistributorFactory } from 'contracts/types/FastTrueDistributorFactory'
 
 async function deployTrueFi () {
   const txnArgs = { gasLimit: 2_500_000, gasPrice: 100_000_000_000 }
