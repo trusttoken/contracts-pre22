@@ -1,12 +1,12 @@
 import { Wallet } from 'ethers'
 import { expect } from 'chai'
-import { MockHookFactory } from '../../build/types/MockHookFactory'
-import { MockHook } from '../../build/types/MockHook'
-import { TokenControllerMock } from '../../build/types/TokenControllerMock'
-import { TokenControllerMockFactory } from '../../build/types/TokenControllerMockFactory'
+import { MockHookFactory } from 'contracts/types/MockHookFactory'
+import { MockHook } from 'contracts/types/MockHook'
+import { TokenControllerMock } from 'contracts/types/TokenControllerMock'
+import { TokenControllerMockFactory } from 'contracts/types/TokenControllerMockFactory'
 import { setupDeploy } from '../../scripts/utils'
-import { MockGasRefundTokenFactory } from '../../build/types/MockGasRefundTokenFactory'
-import { MockGasRefundToken } from '../../build/types/MockGasRefundToken'
+import { MockGasRefundTokenFactory } from 'contracts/types/MockGasRefundTokenFactory'
+import { MockGasRefundToken } from 'contracts/types/MockGasRefundToken'
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 
 describe('TrueCurrency - ERC20 behaviour', () => {

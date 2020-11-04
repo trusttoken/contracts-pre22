@@ -1,7 +1,7 @@
 import { constants, Wallet, BigNumber, BigNumberish } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
 import { expect } from 'chai'
-import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
+import { MockTrueCurrency } from 'contracts/types/MockTrueCurrency'
 import { toAddress, WalletOrAddress } from '../utils/toAddress'
 import { initialSupply, trueCurrency } from '../fixtures/trueCurrency'
 import { parseEther } from '@ethersproject/units'

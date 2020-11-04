@@ -8,18 +8,21 @@ import { expectCloseTo } from '../utils/expectCloseTo'
 import { timeTravel } from '../utils/timeTravel'
 import { toTrustToken } from '../../scripts/utils'
 
-import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
-import { MockErc20Token } from '../../build/types/MockErc20Token'
-import { TrueFiPoolFactory } from '../../build/types/TrueFiPoolFactory'
-import { TrueFiPool } from '../../build/types/TrueFiPool'
-import { MockCurvePool } from '../../build/types/MockCurvePool'
-import { MockCurvePoolFactory } from '../../build/types/MockCurvePoolFactory'
-import { TrueLender } from '../../build/types/TrueLender'
-import { TrueLenderFactory } from '../../build/types/TrueLenderFactory'
-import TrueRatingAgency from '../../build/TrueRatingAgency.json'
-import ICurveGauge from '../../build/ICurveGauge.json'
-import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
-import { LoanToken } from '../../build/types/LoanToken'
+import { MockErc20TokenFactory } from 'contracts/types/MockErc20TokenFactory'
+import { MockErc20Token } from 'contracts/types/MockErc20Token'
+import { TrueFiPoolFactory } from 'contracts/types/TrueFiPoolFactory'
+import { TrueFiPool } from 'contracts/types/TrueFiPool'
+import { MockCurvePool } from 'contracts/types/MockCurvePool'
+import { MockCurvePoolFactory } from 'contracts/types/MockCurvePoolFactory'
+import { TrueLender } from 'contracts/types/TrueLender'
+import { TrueLenderFactory } from 'contracts/types/TrueLenderFactory'
+import { LoanTokenFactory } from 'contracts/types/LoanTokenFactory'
+import { LoanToken } from 'contracts/types/LoanToken'
+
+import {
+  TrueRatingAgencyJson,
+  ICurveGaugeJson,
+} from 'contracts'
 
 describe('TrueFiPool', () => {
   let provider: MockProvider
@@ -43,8 +46,8 @@ describe('TrueFiPool', () => {
     await curvePool.initialize(token.address)
     curveToken = MockErc20TokenFactory.connect(await curvePool.token(), owner)
     pool = await new TrueFiPoolFactory(owner).deploy()
-    mockRatingAgency = await deployMockContract(owner, TrueRatingAgency.abi)
-    mockCurveGauge = await deployMockContract(owner, ICurveGauge.abi)
+    mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyJson.abi)
+    mockCurveGauge = await deployMockContract(owner, ICurveGaugeJson.abi)
     await mockCurveGauge.mock.deposit.returns()
     await mockCurveGauge.mock.withdraw.returns()
     await mockCurveGauge.mock.balanceOf.returns(0)
