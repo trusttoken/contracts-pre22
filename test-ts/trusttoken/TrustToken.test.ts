@@ -1,14 +1,16 @@
 import { constants, providers, BigNumberish, BigNumber, Wallet } from 'ethers'
 import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
-import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
-import { setupDeploy } from '../scripts/utils'
+
+import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { parseTT } from '../utils/parseTT'
+import { timeTravel, timeTravelTo } from '../utils/timeTravel'
+import { toAddress, WalletOrAddress } from '../utils/toAddress'
+import { setupDeploy } from '../../scripts/utils'
+
 import { TrustTokenFactory } from 'contracts/types/TrustTokenFactory'
 import { TrustToken } from 'contracts/types/TrustToken'
-import { timeTravel, timeTravelTo } from './utils/timeTravel'
-import { parseTT } from './utils/parseTT'
 
-import { toAddress, WalletOrAddress } from './utils/toAddress'
 
 use(solidity)
 
