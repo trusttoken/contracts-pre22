@@ -5,7 +5,7 @@ import { expect } from 'chai'
 import { setupTrueGold } from '../fixtures/trueGold'
 import { toAddress, WalletOrAddress } from '../utils/toAddress'
 
-import { 
+import {
   TrueGold,
   Erc20Mock,
   Erc20MockFactory,

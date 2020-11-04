@@ -9,7 +9,7 @@ import { toTrustToken } from '../../scripts/utils'
 import { setupDeploy } from '../../scripts/utils'
 import { parseAccountList, registerSaftAccounts } from '../../scripts/register_saft_addresses'
 
-import { 
+import {
   TrustTokenFactory,
   TrustToken,
   TimeLockRegistryFactory,

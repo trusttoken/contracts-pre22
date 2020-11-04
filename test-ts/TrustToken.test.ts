@@ -13,7 +13,6 @@ import {
   TrustToken,
 } from 'contracts/types'
 
-
 use(solidity)
 
 describe('TrustToken', () => {
