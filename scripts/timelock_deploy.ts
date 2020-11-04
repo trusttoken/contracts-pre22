@@ -2,9 +2,9 @@
  * PRIVATE_KEY={private_key} ts-node scripts/timelock_deploy.ts "{network}"
  */
 import { ethers, providers } from 'ethers'
-import { TrustTokenFactory } from '../build/types/TrustTokenFactory'
-import { TimeLockRegistryFactory } from '../build/types/TimeLockRegistryFactory'
-import { OwnedUpgradeabilityProxyFactory } from '../build/types/OwnedUpgradeabilityProxyFactory'
+import { TrustTokenFactory } from 'contracts/types/TrustTokenFactory'
+import { TimeLockRegistryFactory } from 'contracts/types/TimeLockRegistryFactory'
+import { OwnedUpgradeabilityProxyFactory } from 'contracts/types/OwnedUpgradeabilityProxyFactory'
 
 async function deployTimeLockRegistry () {
   const txnArgs = { gasLimit: 5_000_000, gasPrice: 16_000_000_000 }

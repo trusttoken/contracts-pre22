@@ -7,17 +7,19 @@ import { toHex } from '../utils/toHex'
 import { asProxy } from '../../scripts/utils/asProxy'
 import { MAX_BURN_BOUND } from '../utils/constants'
 
-import { TrueGold } from '../../build/types/TrueGold'
-import { TrueGoldController } from '../../build/types/TrueGoldController'
-import { TrueGoldFactory } from '../../build/types/TrueGoldFactory'
-import { TrueGoldControllerFactory } from '../../build/types/TrueGoldControllerFactory'
+import { TrueGold } from 'contracts/types/TrueGold'
+import { TrueGoldController } from 'contracts/types/TrueGoldController'
+import { TrueGoldFactory } from 'contracts/types/TrueGoldFactory'
+import { TrueGoldControllerFactory } from 'contracts/types/TrueGoldControllerFactory'
 
-import OwnedUpgradeabilityProxy from '../../build/OwnedUpgradeabilityProxy.json'
-import TrueGoldJson from '../../build/TrueGold.json'
-import TrueGoldControllerJson from '../../build/TrueGoldController.json'
+import {
+  OwnedUpgradeabilityProxyJson,
+  TrueGoldJson,
+  TrueGoldControllerJson,
+} from 'contracts'
 
 describe('deployTrueGold', () => {
-  const proxyBytecode = toHex(OwnedUpgradeabilityProxy.evm.deployedBytecode.object)
+  const proxyBytecode = toHex(OwnedUpgradeabilityProxyJson.evm.deployedBytecode.object)
   const tokenBytecode = toHex(TrueGoldJson.evm.deployedBytecode.object)
   const controllerBytecode = toHex(TrueGoldControllerJson.evm.deployedBytecode.object)
 

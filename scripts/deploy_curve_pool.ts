@@ -1,10 +1,10 @@
-// /**
-//  * ts-node scripts/deploy_curve_pool.ts "{private_key}" "{network}"
-//  */
+/**
+ * ts-node scripts/deploy_curve_pool.ts "{private_key}" "{network}"
+ */
 // import { ethers, Wallet } from 'ethers'
-// import { CurvePoolFactory } from '../build/types/CurvePoolFactory'
-// import { ICurvePoolFactory } from '../build/types/ICurvePoolFactory'
-// import { TrueUsdFactory } from '../build/types/TrueUsdFactory'
+// import { CurvePoolFactory } from 'contracts/types/CurvePoolFactory'
+// import { ICurvePoolFactory } from 'contracts/types/ICurvePoolFactory'
+// import { TrueUsdFactory } from 'contracts/types/TrueUsdFactory'
 // import { MockProvider } from 'ethereum-waffle'
 
 // const txnArgs = { gasLimit: 4_500_000, gasPrice: 100_000_000_000 }
