@@ -22,9 +22,6 @@ import {
   TrueLenderFactory,
   LoanTokenFactory,
   LoanToken,
-} from 'contracts/types'
-
-import {
   TrueRatingAgencyJson,
   ICurveGaugeJson,
 } from 'contracts'

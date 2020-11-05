@@ -15,7 +15,7 @@ import {
   QuadraticTrueDistributorFactory,
   MockErc20TokenFactory,
   MockErc20Token,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('QuadraticTrueDistributor', () => {
   let owner: Wallet

@@ -7,7 +7,7 @@ import { expect } from 'chai'
 import { initialSupply, trueCurrency } from 'fixtures/trueCurrency'
 import { toAddress, WalletOrAddress } from 'utils'
 
-import { MockTrueCurrency } from 'contracts/types'
+import { MockTrueCurrency } from 'contracts'
 
 describe('TrueCurrency - Mint/Burn', () => {
   const redemptionAddress = '0x0000000000000000000000000000000000074D72'

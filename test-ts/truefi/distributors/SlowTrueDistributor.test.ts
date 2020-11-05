@@ -7,7 +7,7 @@ import { beforeEachWithFixture } from 'utils'
 import {
   SlowTrueDistributor,
   SlowTrueDistributorFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('SlowTrueDistributor', () => {
   let owner: Wallet

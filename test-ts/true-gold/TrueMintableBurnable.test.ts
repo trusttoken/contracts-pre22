@@ -5,7 +5,7 @@ import { expect } from 'chai'
 import { initialSupply, setupTrueGold } from 'fixtures/trueGold'
 import { toAddress, WalletOrAddress } from 'utils'
 
-import { TrueGold } from 'contracts/types'
+import { TrueGold } from 'contracts'
 
 describe('TrueGold - TrueMintableBurnable', () => {
   const redemptionAddress = '0x0000000000000000000000000000000000074D72'

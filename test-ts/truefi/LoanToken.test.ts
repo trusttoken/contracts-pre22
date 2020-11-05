@@ -14,7 +14,7 @@ import {
   LoanTokenFactory,
   MockTrueCurrency,
   MockTrueCurrencyFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('LoanToken', () => {
   enum LoanTokenStatus { Awaiting, Funded, Withdrawn, Settled, Defaulted }

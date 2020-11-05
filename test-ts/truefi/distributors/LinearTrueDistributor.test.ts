@@ -15,7 +15,7 @@ import {
   LinearTrueDistributorFactory,
   MockErc20TokenFactory,
   MockErc20Token,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('LinearTrueDistributor', () => {
   const DAY = 24 * 3600

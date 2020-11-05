@@ -10,7 +10,7 @@ import {
   MockErc20TokenFactory,
   ForceEtherFactory,
   MockErc20Token,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('TrueCurrency - Reclaimable', () => {
   const tokenEthBalance = utils.parseEther('1')

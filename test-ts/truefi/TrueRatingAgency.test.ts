@@ -22,9 +22,8 @@ import {
   MockTrueCurrency,
   ArbitraryDistributorFactory,
   ArbitraryDistributor,
-} from 'contracts/types'
-
-import { ILoanFactoryJson } from 'contracts'
+  ILoanFactoryJson,
+} from 'contracts'
 
 describe('TrueRatingAgency', () => {
   enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}

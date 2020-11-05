@@ -11,7 +11,7 @@ import {
   TokenControllerMockFactory,
   MockGasRefundTokenFactory,
   MockGasRefundToken,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('TrueCurrency - ERC20', () => {
   let deployer: Wallet

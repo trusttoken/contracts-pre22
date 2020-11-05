@@ -11,7 +11,7 @@ import {
   Erc20MockFactory,
   OwnableMock,
   OwnableMockFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('TrueGold - Reclaimable', () => {
   const tokenEthBalance = utils.parseEther('1')

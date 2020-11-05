@@ -5,7 +5,7 @@ import { expect } from 'chai'
 import { setupTrueGold } from 'fixtures/trueGold'
 import { toAddress, WalletOrAddress } from 'utils'
 
-import { TrueGold } from 'contracts/types'
+import { TrueGold } from 'contracts'
 
 describe('TrueGold - Ownable', () => {
   let owner: Wallet

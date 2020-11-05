@@ -6,7 +6,7 @@ import { beforeEachWithFixture } from 'utils'
 import {
   MockTrueCurrencyWithAutosweepFactory,
   MockTrueCurrencyWithAutosweep,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('TrueCurrency - Legacy autosweep', () => {
   let token: MockTrueCurrencyWithAutosweep

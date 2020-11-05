@@ -4,9 +4,10 @@ import { expect } from 'chai'
 import { deployPausedTrueGold } from 'scripts/deploy_paused_true_gold'
 import { toHex } from 'utils'
 
-import { PausedTrueGold } from 'contracts/types'
-
-import { PausedTrueGoldJson } from 'contracts'
+import {
+  PausedTrueGold,
+  PausedTrueGoldJson,
+} from 'contracts'
 
 describe('deployPausedTrueGold', () => {
   const pausedTokenBytecode = toHex(PausedTrueGoldJson.evm.deployedBytecode.object)

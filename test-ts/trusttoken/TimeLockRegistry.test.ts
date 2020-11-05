@@ -20,7 +20,7 @@ import {
   TimeLockRegistryFactory,
   TimeLockRegistry,
   OwnedUpgradeabilityProxyFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 use(solidity)
 
