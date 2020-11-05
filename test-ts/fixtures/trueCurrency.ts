@@ -6,7 +6,7 @@ import { setupDeploy } from '../../scripts/utils'
 import {
   MockTrueCurrencyFactory,
   OwnedUpgradeabilityProxyFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 export const initialSupply = utils.parseEther('1000')
 

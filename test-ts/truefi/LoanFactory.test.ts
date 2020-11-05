@@ -9,7 +9,7 @@ import {
   LoanTokenFactory,
   MockErc20TokenFactory,
   LoanFactoryFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('LoanFactory', () => {
   let owner: Wallet, borrower: Wallet

@@ -9,7 +9,7 @@ import {
   MockErc20TokenFactory,
   ArbitraryDistributor,
   ArbitraryDistributorFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('ArbitraryDistributor', () => {
   let trustToken: MockErc20Token

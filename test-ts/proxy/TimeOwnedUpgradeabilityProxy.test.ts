@@ -9,7 +9,7 @@ import { setupDeploy } from '../../scripts/utils'
 import {
   TimeOwnedUpgradeabilityProxyFactory,
   TimeOwnedUpgradeabilityProxy,
-} from 'contracts/types'
+} from 'contracts'
 
 chai.use(solidity)
 

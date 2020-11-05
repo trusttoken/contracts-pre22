@@ -8,7 +8,7 @@ import { TrueCurrency } from 'contracts/types/TrueCurrency'
 import {
   TokenControllerMockFactory,
   TokenControllerMock,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('TokenController', () => {
   let owner: Wallet

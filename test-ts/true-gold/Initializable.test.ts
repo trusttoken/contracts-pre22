@@ -7,7 +7,7 @@ import { MAX_BURN_BOUND } from '../utils/constants'
 import {
   TrueGold,
   TrueGoldFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('TrueGold - Initializable', () => {
   let proxy: Wallet
