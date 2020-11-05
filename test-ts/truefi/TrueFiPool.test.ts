@@ -8,16 +8,18 @@ import { expectCloseTo } from '../utils/expectCloseTo'
 import { timeTravel } from '../utils/timeTravel'
 import { toTrustToken } from '../../scripts/utils'
 
-import { MockErc20TokenFactory } from 'contracts/types/MockErc20TokenFactory'
-import { MockErc20Token } from 'contracts/types/MockErc20Token'
-import { TrueFiPoolFactory } from 'contracts/types/TrueFiPoolFactory'
-import { TrueFiPool } from 'contracts/types/TrueFiPool'
-import { MockCurvePool } from 'contracts/types/MockCurvePool'
-import { MockCurvePoolFactory } from 'contracts/types/MockCurvePoolFactory'
-import { TrueLender } from 'contracts/types/TrueLender'
-import { TrueLenderFactory } from 'contracts/types/TrueLenderFactory'
-import { LoanTokenFactory } from 'contracts/types/LoanTokenFactory'
-import { LoanToken } from 'contracts/types/LoanToken'
+import {
+  MockErc20TokenFactory,
+  MockErc20Token,
+  TrueFiPoolFactory,
+  TrueFiPool,
+  MockCurvePool,
+  MockCurvePoolFactory,
+  TrueLender,
+  TrueLenderFactory,
+  LoanTokenFactory,
+  LoanToken,
+} from 'contracts/types'
 
 import {
   TrueRatingAgencyJson,

@@ -1,14 +1,18 @@
 import { utils, Wallet } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
 import { expect } from 'chai'
-import { TrueCurrency } from 'contracts/types/TrueCurrency'
-import { MockErc20TokenFactory } from 'contracts/types/MockErc20TokenFactory'
-import { ForceEtherFactory } from 'contracts/types/ForceEtherFactory'
-import { MockErc20Token } from 'contracts/types/MockErc20Token'
-import { toAddress, WalletOrAddress } from '../utils/toAddress'
-import { trueCurrency } from '../fixtures/trueCurrency'
 
-describe('TrueCurrency - Reclaimable behaviour', () => {
+import { trueCurrency } from '../fixtures/trueCurrency'
+import { toAddress, WalletOrAddress } from '../utils/toAddress'
+
+import { TrueCurrency } from 'contracts/types/TrueCurrency'
+import {
+  MockErc20TokenFactory,
+  ForceEtherFactory,
+  MockErc20Token,
+} from 'contracts/types'
+
+describe('TrueCurrency - Reclaimable', () => {
   const tokenEthBalance = utils.parseEther('1')
 
   let owner: Wallet

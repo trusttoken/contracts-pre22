@@ -7,10 +7,12 @@ import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { timeTravel } from '../utils/timeTravel'
 import { expectCloseTo } from '../utils/expectCloseTo'
 
-import { LoanTokenFactory } from 'contracts/types/LoanTokenFactory'
-import { LoanToken } from 'contracts/types/LoanToken'
-import { MockTrueCurrency } from 'contracts/types/MockTrueCurrency'
-import { MockTrueCurrencyFactory } from 'contracts/types/MockTrueCurrencyFactory'
+import {
+  LoanToken,
+  LoanTokenFactory,
+  MockTrueCurrency,
+  MockTrueCurrencyFactory,
+} from 'contracts/types'
 
 describe('LoanToken', () => {
   enum LoanTokenStatus { Awaiting, Funded, Withdrawn, Settled, Defaulted }

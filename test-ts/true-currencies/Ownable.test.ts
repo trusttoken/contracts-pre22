@@ -1,11 +1,13 @@
 import { Wallet } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
 import { expect } from 'chai'
-import { TrueCurrency } from 'contracts/types/TrueCurrency'
-import { toAddress, WalletOrAddress } from '../utils/toAddress'
-import { trueCurrency } from '../fixtures/trueCurrency'
 
-describe('TrueCurrency - Ownable behaviour', () => {
+import { trueCurrency } from '../fixtures/trueCurrency'
+import { toAddress, WalletOrAddress } from '../utils/toAddress'
+
+import { TrueCurrency } from 'contracts/types/TrueCurrency'
+
+describe('TrueCurrency - Ownable', () => {
   let owner: Wallet
   let newOwner: Wallet
   let other: Wallet

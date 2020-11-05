@@ -9,16 +9,18 @@ import { parseTT } from '../utils/parseTT'
 import { timeTravel as _timeTravel } from '../utils/timeTravel'
 import { expectCloseTo } from '../utils/expectCloseTo'
 
-import { TrueRatingAgencyFactory } from 'contracts/types/TrueRatingAgencyFactory'
-import { TrueRatingAgency } from 'contracts/types/TrueRatingAgency'
-import { TrustTokenFactory } from 'contracts/types/TrustTokenFactory'
-import { TrustToken } from 'contracts/types/TrustToken'
-import { LoanTokenFactory } from 'contracts/types/LoanTokenFactory'
-import { LoanToken } from 'contracts/types/LoanToken'
-import { MockTrueCurrencyFactory } from 'contracts/types/MockTrueCurrencyFactory'
-import { MockTrueCurrency } from 'contracts/types/MockTrueCurrency'
-import { ArbitraryDistributorFactory } from 'contracts/types/ArbitraryDistributorFactory'
-import { ArbitraryDistributor } from 'contracts/types/ArbitraryDistributor'
+import {
+  TrueRatingAgencyFactory,
+  TrueRatingAgency,
+  TrustTokenFactory,
+  TrustToken,
+  LoanTokenFactory,
+  LoanToken,
+  MockTrueCurrencyFactory,
+  MockTrueCurrency,
+  ArbitraryDistributorFactory,
+  ArbitraryDistributor,
+} from 'contracts/types'
 
 import { ILoanFactoryJson } from 'contracts'
 

@@ -8,12 +8,14 @@ import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { timeTravel } from '../utils/timeTravel'
 import { expectCloseTo } from '../utils/expectCloseTo'
 
-import { MockTrueLender } from 'contracts/types/MockTrueLender'
-import { MockTrueLenderFactory } from 'contracts/types/MockTrueLenderFactory'
-import { LoanToken } from 'contracts/types/LoanToken'
-import { LoanTokenFactory } from 'contracts/types/LoanTokenFactory'
-import { MockTrueCurrency } from 'contracts/types/MockTrueCurrency'
-import { MockTrueCurrencyFactory } from 'contracts/types/MockTrueCurrencyFactory'
+import {
+  MockTrueLender,
+  MockTrueLenderFactory,
+  LoanToken,
+  LoanTokenFactory,
+  MockTrueCurrency,
+  MockTrueCurrencyFactory,
+} from 'contracts/types'
 
 import {
   ITrueFiPoolJson,

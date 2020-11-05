@@ -7,10 +7,12 @@ import { toHex } from '../utils/toHex'
 import { asProxy } from '../../scripts/utils/asProxy'
 import { MAX_BURN_BOUND } from '../utils/constants'
 
-import { TrueGold } from 'contracts/types/TrueGold'
-import { TrueGoldController } from 'contracts/types/TrueGoldController'
-import { TrueGoldFactory } from 'contracts/types/TrueGoldFactory'
-import { TrueGoldControllerFactory } from 'contracts/types/TrueGoldControllerFactory'
+import {
+  TrueGold,
+  TrueGoldController,
+  TrueGoldFactory,
+  TrueGoldControllerFactory,
+} from 'contracts/types'
 
 import {
   OwnedUpgradeabilityProxyJson,

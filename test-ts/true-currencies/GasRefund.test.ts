@@ -1,15 +1,19 @@
 import { Wallet } from 'ethers'
 import { expect } from 'chai'
-import { MockHookFactory } from 'contracts/types/MockHookFactory'
-import { MockHook } from 'contracts/types/MockHook'
-import { TokenControllerMock } from 'contracts/types/TokenControllerMock'
-import { TokenControllerMockFactory } from 'contracts/types/TokenControllerMockFactory'
-import { setupDeploy } from '../../scripts/utils'
-import { MockGasRefundTokenFactory } from 'contracts/types/MockGasRefundTokenFactory'
-import { MockGasRefundToken } from 'contracts/types/MockGasRefundToken'
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 
-describe('TrueCurrency - ERC20 behaviour', () => {
+import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { setupDeploy } from '../../scripts/utils'
+
+import {
+  MockHookFactory,
+  MockHook,
+  TokenControllerMock,
+  TokenControllerMockFactory,
+  MockGasRefundTokenFactory,
+  MockGasRefundToken,
+} from 'contracts/types'
+
+describe('TrueCurrency - ERC20', () => {
   let deployer: Wallet
   let refunder: Wallet
   let otherAccount: Wallet
