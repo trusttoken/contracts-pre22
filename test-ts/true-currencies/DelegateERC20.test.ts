@@ -1,14 +1,18 @@
 import { BigNumberish, BigNumber, constants, Wallet } from 'ethers'
 import { expect } from 'chai'
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { MockTrueCurrencyWithAutosweep } from '../../build/types/MockTrueCurrencyWithAutosweep'
-import { MockTrueCurrencyWithAutosweepFactory } from '../../build/types/MockTrueCurrencyWithAutosweepFactory'
-import { OwnedUpgradeabilityProxyFactory } from '../../build/types/OwnedUpgradeabilityProxyFactory'
-import { MockDelegateErc20 } from '../../build/types/MockDelegateErc20'
-import { MockDelegateErc20Factory } from '../../build/types/MockDelegateErc20Factory'
-import { toAddress, WalletOrAddress } from '../utils/toAddress'
+
 import { initialSupply } from '../fixtures/trueCurrency'
+import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { toAddress, WalletOrAddress } from '../utils/toAddress'
 import { setupDeploy } from '../../scripts/utils'
+
+import {
+  MockTrueCurrencyWithAutosweep,
+  MockTrueCurrencyWithAutosweepFactory,
+  OwnedUpgradeabilityProxyFactory,
+  MockDelegateErc20,
+  MockDelegateErc20Factory,
+} from 'contracts'
 
 describe('TrueCurrency - Delegate ERC20', () => {
   let initialHolder: Wallet

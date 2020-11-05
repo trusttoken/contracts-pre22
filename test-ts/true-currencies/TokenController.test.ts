@@ -1,10 +1,14 @@
+import { expect } from 'chai'
 import { Wallet } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
-import { expect } from 'chai'
-import { TrueCurrency } from '../build/types/TrueCurrency'
-import { trueCurrency } from './fixtures/trueCurrency'
-import { TokenControllerMockFactory } from '../build/types/TokenControllerMockFactory'
-import { TokenControllerMock } from '../build/types/TokenControllerMock'
+
+import { trueCurrency } from '../fixtures/trueCurrency'
+
+import { TrueCurrency } from 'contracts/types/TrueCurrency'
+import {
+  TokenControllerMockFactory,
+  TokenControllerMock,
+} from 'contracts'
 
 describe('TokenController', () => {
   let owner: Wallet

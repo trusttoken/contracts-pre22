@@ -1,8 +1,12 @@
 import { Wallet, utils } from 'ethers'
-import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
-import { OwnedUpgradeabilityProxyFactory } from '../../build/types/OwnedUpgradeabilityProxyFactory'
-import { setupDeploy } from '../../scripts/utils'
 import { MockProvider } from 'ethereum-waffle'
+
+import { setupDeploy } from '../../scripts/utils'
+
+import {
+  MockTrueCurrencyFactory,
+  OwnedUpgradeabilityProxyFactory,
+} from 'contracts'
 
 export const initialSupply = utils.parseEther('1000')
 

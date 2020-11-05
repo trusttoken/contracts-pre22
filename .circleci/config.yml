@@ -24,7 +24,7 @@ commands:
 jobs:
   test:
     docker:
-      - image: circleci/node:11.15
+      - image: circleci/node:10.15.3
     steps:
       - checkout
       - setup_remote_docker
@@ -32,6 +32,7 @@ jobs:
       - install_dependencies
       - run: yarn lint
       - run: yarn build
+      - run: yarn typecheck
       - run: yarn test
 
 workflows:

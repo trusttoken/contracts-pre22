@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
+import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {ITrueDistributor} from "../interface/ITrueDistributor.sol";
-import {Ownable} from "../upgradeability/UpgradeableOwnable.sol";
 
 /**
  * @title TrueDistributor
@@ -66,6 +66,10 @@ contract QuadraticTrueDistributor is ITrueDistributor, Ownable {
         require(trustToken.transfer(farm, normalise(farmsReward)));
     }
 
+    function empty() public override onlyOwner {
+        require(trustToken.transfer(msg.sender, trustToken.balanceOf(address(this))));
+    }
+
     function normalise(uint256 amount) public pure returns (uint256) {
         return amount.div(PRECISION);
     }
@@ -114,6 +118,9 @@ contract QuadraticTrueDistributor is ITrueDistributor, Ownable {
     /**
      * @dev Calculates sum of rewards from `fromBlock` to `toBlock`.
      * Uses the fact that sum of n first squares is calculated by n(n+1)(2n+1)/6
+     * @param fromBlock Start Block
+     * @param toBlock End block
+     * @return Reward for block range
      */
     function rewardFormula(uint256 fromBlock, uint256 toBlock) internal virtual pure returns (uint256) {
         return
@@ -122,6 +129,10 @@ contract QuadraticTrueDistributor is ITrueDistributor, Ownable {
             );
     }
 
+    /**
+     * @dev Calculate square sum * 6 to find area under the curve
+     * @return square sum times 6 of n
+     */
     function squareSumTimes6(uint256 n) internal pure returns (uint256) {
         return n.mul(n.add(1)).mul(n.mul(2).add(1));
     }

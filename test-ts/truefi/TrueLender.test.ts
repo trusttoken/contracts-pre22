@@ -8,18 +8,19 @@ import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { timeTravel } from '../utils/timeTravel'
 import { expectCloseTo } from '../utils/expectCloseTo'
 
-import { MockTrueLender } from '../../build/types/MockTrueLender'
-import { MockTrueLenderFactory } from '../../build/types/MockTrueLenderFactory'
-import { LoanToken } from '../../build/types/LoanToken'
-import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
-import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
-import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
+import {
+  MockTrueLender,
+  MockTrueLenderFactory,
+  LoanToken,
+  LoanTokenFactory,
+  MockTrueCurrency,
+  MockTrueCurrencyFactory,
+  ITrueFiPoolJson,
+  ILoanTokenJson,
+  ITrueRatingAgencyJson,
+} from 'contracts'
 
-import ITruePoolJson from '../../build/ITruePool.json'
-import ILoanTokenJson from '../../build/ILoanToken.json'
-import ITrueRatingAgencyJson from '../../build/ITrueRatingAgency.json'
-
-describe('MockTrueLender', () => {
+describe('TrueLender', () => {
   let owner: Wallet
   let otherWallet: Wallet
   let provider: providers.JsonRpcProvider
@@ -33,7 +34,7 @@ describe('MockTrueLender', () => {
 
   let amount: BigNumber
   let apy: BigNumber
-  let duration: BigNumber
+  let term: BigNumber
 
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
@@ -44,6 +45,7 @@ describe('MockTrueLender', () => {
     await mock.mock.fund.returns()
     await mock.mock.redeem.returns()
     await mock.mock.transfer.returns(true)
+    await mock.mock.receivedAmount.returns(0)
     return mock
   }
 
@@ -54,12 +56,13 @@ describe('MockTrueLender', () => {
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
     await tusd.initialize()
 
-    mockPool = await deployMockContract(owner, ITruePoolJson.abi)
+    mockPool = await deployMockContract(owner, ITrueFiPoolJson.abi)
     await mockPool.mock.currencyToken.returns(tusd.address)
     await mockPool.mock.borrow.returns()
     await mockPool.mock.repay.returns()
 
     mockLoanToken = await deployMockLoanToken()
+    await mockLoanToken.mock.borrowerFee.returns(25)
 
     mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
@@ -69,8 +72,8 @@ describe('MockTrueLender', () => {
 
     amount = (await lender.minSize()).mul(2)
     apy = (await lender.minApy()).mul(2)
-    duration = (await lender.minDuration()).mul(2)
-    await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
+    term = (await lender.minTerm()).mul(2)
+    await mockLoanToken.mock.getParameters.returns(amount, apy, term)
   })
 
   describe('Initializer', () => {
@@ -85,8 +88,8 @@ describe('MockTrueLender', () => {
     it('default params', async () => {
       expect(await lender.minSize()).to.equal(parseEther('1000000'))
       expect(await lender.maxSize()).to.equal(parseEther('10000000'))
-      expect(await lender.minDuration()).to.equal(monthInSeconds * 6)
-      expect(await lender.maxDuration()).to.equal(monthInSeconds * 120)
+      expect(await lender.minTerm()).to.equal(monthInSeconds * 6)
+      expect(await lender.maxTerm()).to.equal(monthInSeconds * 120)
       expect(await lender.minApy()).to.equal('1000')
       expect(await lender.votingPeriod()).to.equal(dayInSeconds * 7)
     })
@@ -191,28 +194,28 @@ describe('MockTrueLender', () => {
       })
     })
 
-    describe('setDurationLimits', () => {
-      it('changes minDuration and maxDuration', async () => {
-        await lender.setDurationLimits(7654, 234567)
-        expect(await lender.minDuration()).to.equal(7654)
-        expect(await lender.maxDuration()).to.equal(234567)
+    describe('setTermLimits', () => {
+      it('changes minTerm and maxTerm', async () => {
+        await lender.setTermLimits(7654, 234567)
+        expect(await lender.minTerm()).to.equal(7654)
+        expect(await lender.maxTerm()).to.equal(234567)
       })
 
-      it('emits DurationLimitsChanged', async () => {
-        await expect(lender.setDurationLimits(7654, 234567))
-          .to.emit(lender, 'DurationLimitsChanged').withArgs(7654, 234567)
+      it('emits TermLimitsChanged', async () => {
+        await expect(lender.setTermLimits(7654, 234567))
+          .to.emit(lender, 'TermLimitsChanged').withArgs(7654, 234567)
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(otherWallet).setDurationLimits(7654, 234567)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(otherWallet).setTermLimits(7654, 234567)).to.be.revertedWith('caller is not the owner')
       })
 
-      it('cannot set minDuration to be bigger than maxDuration', async () => {
-        await expect(lender.setDurationLimits(2, 1)).to.be.revertedWith('TrueLender: Maximal loan duration is smaller than minimal')
+      it('cannot set minTerm to be bigger than maxTerm', async () => {
+        await expect(lender.setTermLimits(2, 1)).to.be.revertedWith('TrueLender: Maximal loan term is smaller than minimal')
       })
 
-      it('can set minDuration to same value as maxDuration', async () => {
-        await expect(lender.setDurationLimits(2, 2)).to.be.not.reverted
+      it('can set minTerm to same value as maxTerm', async () => {
+        await expect(lender.setTermLimits(2, 2)).to.be.not.reverted
       })
     })
   })
@@ -257,37 +260,37 @@ describe('MockTrueLender', () => {
     })
 
     it('reverts if loan size is out of bounds (too small)', async () => {
-      await mockLoanToken.mock.getParameters.returns(amount.div(10), apy, duration)
+      await mockLoanToken.mock.getParameters.returns(amount.div(10), apy, term)
       await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Loan size is out of bounds')
     })
 
     it('reverts if loan size is out of bounds (too big)', async () => {
-      await mockLoanToken.mock.getParameters.returns(amount.mul(10000), apy, duration)
+      await mockLoanToken.mock.getParameters.returns(amount.mul(10000), apy, term)
       await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Loan size is out of bounds')
     })
 
-    it('reverts if loan duration is out of bounds (too short)', async () => {
-      await mockLoanToken.mock.getParameters.returns(amount, apy, duration.div(10))
+    it('reverts if loan term is out of bounds (too short)', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount, apy, term.div(10))
       await expect(lender.fund(mockLoanToken.address))
-        .to.be.revertedWith('TrueLender: Loan duration is out of bounds')
+        .to.be.revertedWith('TrueLender: Loan term is out of bounds')
     })
 
-    it('reverts if loan duration is out of bounds (too long)', async () => {
-      await mockLoanToken.mock.getParameters.returns(amount, apy, duration.mul(100))
+    it('reverts if loan term is out of bounds (too long)', async () => {
+      await mockLoanToken.mock.getParameters.returns(amount, apy, term.mul(100))
       await expect(lender.fund(mockLoanToken.address))
-        .to.be.revertedWith('TrueLender: Loan duration is out of bounds')
+        .to.be.revertedWith('TrueLender: Loan term is out of bounds')
     })
 
     it('reverts if loan has too small APY', async () => {
-      await mockLoanToken.mock.getParameters.returns(amount, apy.div(10), duration)
+      await mockLoanToken.mock.getParameters.returns(amount, apy.div(10), term)
       await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: APY is out of bounds')
     })
 
     it('reverts if loan has too big APY', async () => {
-      await mockLoanToken.mock.getParameters.returns(amount, 5000, duration)
+      await mockLoanToken.mock.getParameters.returns(amount, 5000, term)
       await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: APY is out of bounds')
     })
@@ -313,19 +316,20 @@ describe('MockTrueLender', () => {
 
     describe('all requirements are met', () => {
       beforeEach(async () => {
-        await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
+        await mockLoanToken.mock.getParameters.returns(amount, apy, term)
+        await mockLoanToken.mock.receivedAmount.returns(amount.sub(10))
         await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
       })
 
       it('borrows tokens from pool', async () => {
         await lender.fund(mockLoanToken.address)
-        expect('borrow').to.be.calledOnContractWith(mockPool, [amount])
+        expect('borrow').to.be.calledOnContractWith(mockPool, [amount, amount.sub(10)])
       })
 
       it('approves LoanToken to spend funds borrowed from pool', async () => {
         await lender.fund(mockLoanToken.address)
         expect(await tusd.allowance(lender.address, mockLoanToken.address))
-          .to.equal(amount)
+          .to.equal(amount.sub(10))
       })
 
       it('calls fund function', async () => {
@@ -336,7 +340,7 @@ describe('MockTrueLender', () => {
       it('emits proper event', async () => {
         await expect(lender.fund(mockLoanToken.address))
           .to.emit(lender, 'Funded')
-          .withArgs(mockLoanToken.address, amount)
+          .withArgs(mockLoanToken.address, amount.sub(10))
       })
 
       it('adds funded loan to an array', async () => {
@@ -350,14 +354,14 @@ describe('MockTrueLender', () => {
     describe('complex credibility cases', () => {
       interface LoanScenario {
         APY: number,
-        duration: number,
+        term: number,
         riskAversion: number,
         yesPercentage: number,
       }
 
       const scenario = (APY: number, months: number, riskAversion: number, yesPercentage: number) => ({
         APY: APY * 100,
-        duration: monthInSeconds * months,
+        term: monthInSeconds * months,
         riskAversion: riskAversion * 100,
         yesPercentage,
       })
@@ -366,7 +370,7 @@ describe('MockTrueLender', () => {
         await lender.setRiskAversion(loanScenario.riskAversion)
         return lender.loanIsCredible(
           loanScenario.APY,
-          loanScenario.duration,
+          loanScenario.term,
           (loanScenario.yesPercentage) * 1000,
           (100 - loanScenario.yesPercentage) * 1000,
         )
@@ -444,7 +448,7 @@ describe('MockTrueLender', () => {
 
     it('removes loan from the array', async () => {
       await lender.allow(owner.address, true)
-      await mockLoanToken.mock.getParameters.returns(amount, apy, duration)
+      await mockLoanToken.mock.getParameters.returns(amount, apy, term)
       await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
 
       await lender.fund(mockLoanToken.address)
@@ -522,7 +526,8 @@ describe('MockTrueLender', () => {
       for (let i = 0; i < 5; i++) {
         loanTokens.push(await deployMockLoanToken())
         await loanTokens[i].mock.balanceOf.returns(parseEther(((i + 1) * 10).toString()))
-        await loanTokens[i].mock.getParameters.returns(amount, apy, duration)
+        await loanTokens[i].mock.getParameters.returns(amount, apy, term)
+        await loanTokens[i].mock.borrowerFee.returns(25)
         await lender.fund(loanTokens[i].address)
       }
       await lender.setPool(owner.address)

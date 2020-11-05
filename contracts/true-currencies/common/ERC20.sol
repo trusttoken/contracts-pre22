@@ -3,11 +3,10 @@
  * Removing state variables has been necessary due to proxy pattern usage.
  * Changes to Openzeppelin ERC20 https://github.com/OpenZeppelin/openzeppelin-contracts/blob/de99bccbfd4ecd19d7369d01b070aa72c64423c9/contracts/token/ERC20/ERC20.sol:
  * - Remove state variables _name, _symbol, _decimals
- * - Use state variables balances, allowances, totalSupply from ProxyStorage
+ * - Use state variables _balances, _allowances, _totalSupply from ProxyStorage
  * - Remove constructor
  * - Solidity version changed from ^0.6.0 to 0.6.10
  * - Contract made abstract
- * - Remove inheritance from IERC20 because of ProxyStorage name conflicts
  *
  * See also: ClaimableOwnable.sol and ProxyStorage.sol
  */
@@ -16,10 +15,12 @@
 
 pragma solidity 0.6.10;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {ProxyStorage} from "./ProxyStorage.sol";
+
+import {ClaimableOwnable} from "./ClaimableOwnable.sol";
 
 // prettier-ignore
 /**
@@ -46,24 +47,9 @@ import {ProxyStorage} from "./ProxyStorage.sol";
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-abstract contract ERC20 is ProxyStorage, Context {
+abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
     using SafeMath for uint256;
     using Address for address;
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-
 
     /**
      * @dev Returns the name of the token.
@@ -94,6 +80,20 @@ abstract contract ERC20 is ProxyStorage, Context {
     }
 
     /**
+     * @dev See {IERC20-totalSupply}.
+     */
+    function totalSupply() public view virtual override returns (uint256) {
+        return _totalSupply;
+    }
+
+    /**
+     * @dev See {IERC20-balanceOf}.
+     */
+    function balanceOf(address account) public view virtual override returns (uint256) {
+        return _balances[account];
+    }
+
+    /**
      * @dev See {IERC20-transfer}.
      *
      * Requirements:
@@ -101,9 +101,16 @@ abstract contract ERC20 is ProxyStorage, Context {
      * - `recipient` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    function transfer(address recipient, uint256 amount) public virtual returns (bool) {
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
+    }
+
+    /**
+     * @dev See {IERC20-allowance}.
+     */
+    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+        return _allowances[owner][spender];
     }
 
     /**
@@ -113,7 +120,7 @@ abstract contract ERC20 is ProxyStorage, Context {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address spender, uint256 amount) public virtual returns (bool) {
+    function approve(address spender, uint256 amount) public virtual override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
@@ -130,9 +137,9 @@ abstract contract ERC20 is ProxyStorage, Context {
      * - the caller must have allowance for ``sender``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), allowance[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
     }
 
@@ -149,7 +156,7 @@ abstract contract ERC20 is ProxyStorage, Context {
      * - `spender` cannot be the zero address.
      */
     function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, allowance[_msgSender()][spender].add(addedValue));
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
         return true;
     }
 
@@ -168,7 +175,7 @@ abstract contract ERC20 is ProxyStorage, Context {
      * `subtractedValue`.
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, allowance[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
         return true;
     }
 
@@ -192,8 +199,8 @@ abstract contract ERC20 is ProxyStorage, Context {
 
         _beforeTokenTransfer(sender, recipient, amount);
 
-        balanceOf[sender] = balanceOf[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        balanceOf[recipient] = balanceOf[recipient].add(amount);
+        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        _balances[recipient] = _balances[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
     }
 
@@ -211,8 +218,8 @@ abstract contract ERC20 is ProxyStorage, Context {
 
         _beforeTokenTransfer(address(0), account, amount);
 
-        totalSupply = totalSupply.add(amount);
-        balanceOf[account] = balanceOf[account].add(amount);
+        _totalSupply = _totalSupply.add(amount);
+        _balances[account] = _balances[account].add(amount);
         emit Transfer(address(0), account, amount);
     }
 
@@ -232,8 +239,8 @@ abstract contract ERC20 is ProxyStorage, Context {
 
         _beforeTokenTransfer(account, address(0), amount);
 
-        balanceOf[account] = balanceOf[account].sub(amount, "ERC20: burn amount exceeds balance");
-        totalSupply = totalSupply.sub(amount);
+        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
+        _totalSupply = _totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
 
@@ -254,7 +261,7 @@ abstract contract ERC20 is ProxyStorage, Context {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
-        allowance[owner][spender] = amount;
+        _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 

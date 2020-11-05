@@ -10,7 +10,7 @@ interface ILoanToken is IERC20 {
 
     function amount() external view returns (uint256);
 
-    function duration() external view returns (uint256);
+    function term() external view returns (uint256);
 
     function apy() external view returns (uint256);
 
@@ -23,6 +23,10 @@ interface ILoanToken is IERC20 {
     function profit() external view returns (uint256);
 
     function status() external view returns (Status);
+
+    function borrowerFee() external view returns (uint256);
+
+    function receivedAmount() external view returns (uint256);
 
     function isLoanToken() external pure returns (bool);
 

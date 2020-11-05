@@ -4,12 +4,15 @@ import { Wallet } from 'ethers'
 
 import { expectCloseTo } from '../../utils/expectCloseTo'
 import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
-import { toTrustToken } from '../../../scripts/utils'
-import { LinearTrueDistributor } from '../../../build/types/LinearTrueDistributor'
-import { LinearTrueDistributorFactory } from '../../../build/types/LinearTrueDistributorFactory'
-import { MockErc20TokenFactory } from '../../../build/types/MockErc20TokenFactory'
-import { MockErc20Token } from '../../../build/types/MockErc20Token'
 import { timeTravel, timeTravelTo } from '../../utils/timeTravel'
+import { toTrustToken } from '../../../scripts/utils'
+
+import {
+  LinearTrueDistributor,
+  LinearTrueDistributorFactory,
+  MockErc20TokenFactory,
+  MockErc20Token,
+} from 'contracts'
 
 describe('LinearTrueDistributor', () => {
   const DAY = 24 * 3600
@@ -87,6 +90,19 @@ describe('LinearTrueDistributor', () => {
         }
         expect(await trustToken.balanceOf(farm.address)).to.equal(distributionAmount)
       })
+    })
+  })
+
+  describe('empty', () => {
+    it('only owner can empty', async () => {
+      await expect(distributor.connect(farm).empty())
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('transfer total balance to sender', async () => {
+      const totalBalance = await trustToken.balanceOf(distributor.address)
+      await expect(() => distributor.empty())
+        .to.changeTokenBalance(trustToken, owner, totalBalance)
     })
   })
 })

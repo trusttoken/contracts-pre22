@@ -1,15 +1,18 @@
 import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
-import { Wallet } from 'ethers'
-import { utils, BigNumber } from 'ethers'
+import { utils, BigNumber, Wallet } from 'ethers'
 import { Zero, MaxUint256 } from '@ethersproject/constants'
+
 import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
 import { toTrustToken } from '../../../scripts/utils'
-import { QuadraticTrueDistributor } from '../../../build/types/QuadraticTrueDistributor'
-import { QuadraticTrueDistributorFactory } from '../../../build/types/QuadraticTrueDistributorFactory'
-import { MockErc20TokenFactory } from '../../../build/types/MockErc20TokenFactory'
-import { MockErc20Token } from '../../../build/types/MockErc20Token'
 import { getBlockNumber, skipBlocksWithProvider } from '../../utils/timeTravel'
+
+import {
+  QuadraticTrueDistributor,
+  QuadraticTrueDistributorFactory,
+  MockErc20TokenFactory,
+  MockErc20Token,
+} from 'contracts'
 
 describe('QuadraticTrueDistributor', () => {
   let owner: Wallet
@@ -120,6 +123,19 @@ describe('QuadraticTrueDistributor', () => {
       await expect(() => distributor.distribute(owner.address))
         .to.changeTokenBalance(trustToken, owner, normaliseRewardToTrustTokens(expectedReward))
       await expectBlock(11)
+    })
+  })
+
+  describe('empty', () => {
+    it('only owner can empty', async () => {
+      await expect(distributor.connect(farm).empty())
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('transfer total balance to sender', async () => {
+      const totalBalance = await trustToken.balanceOf(distributor.address)
+      await expect(() => distributor.empty())
+        .to.changeTokenBalance(trustToken, owner, totalBalance)
     })
   })
 

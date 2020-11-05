@@ -1,8 +1,12 @@
-import { MockProvider } from 'ethereum-waffle'
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { MockTrueCurrencyWithAutosweepFactory } from '../../build/types/MockTrueCurrencyWithAutosweepFactory'
-import { MockTrueCurrencyWithAutosweep } from '../../build/types/MockTrueCurrencyWithAutosweep'
 import { expect } from 'chai'
+import { MockProvider } from 'ethereum-waffle'
+
+import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+
+import {
+  MockTrueCurrencyWithAutosweepFactory,
+  MockTrueCurrencyWithAutosweep,
+} from 'contracts'
 
 describe('TrueCurrency - Legacy autosweep', () => {
   let token: MockTrueCurrencyWithAutosweep

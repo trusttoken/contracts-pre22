@@ -1,14 +1,17 @@
+import { expect, use } from 'chai'
 import { constants, providers, BigNumberish, BigNumber, Wallet } from 'ethers'
 import { solidity } from 'ethereum-waffle'
-import { expect, use } from 'chai'
-import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
-import { setupDeploy } from '../scripts/utils'
-import { TrustTokenFactory } from '../build/types/TrustTokenFactory'
-import { TrustToken } from '../build/types/TrustToken'
-import { timeTravel, timeTravelTo } from './utils/timeTravel'
-import { parseTT } from './utils/parseTT'
 
+import { beforeEachWithFixture } from './utils/beforeEachWithFixture'
+import { parseTT } from './utils/parseTT'
+import { timeTravel, timeTravelTo } from './utils/timeTravel'
 import { toAddress, WalletOrAddress } from './utils/toAddress'
+import { setupDeploy } from '../scripts/utils'
+
+import {
+  TrustTokenFactory,
+  TrustToken,
+} from 'contracts'
 
 use(solidity)
 
@@ -28,7 +31,7 @@ describe('TrustToken', () => {
     await trustToken.setTimeLockRegistry(timeLockRegistry.address)
   })
 
-  describe('ERC20 - standard behaviour', () => {
+  describe('ERC20 - standard', () => {
     function approve (tokenOwner: Wallet, spender: WalletOrAddress, amount: BigNumberish) {
       const asTokenOwner = trustToken.connect(tokenOwner)
       return asTokenOwner.approve(toAddress(spender), amount)

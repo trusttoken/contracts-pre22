@@ -1,27 +1,13 @@
-/**
- * @notice This is a copy of openzeppelin ERC20 contract with removed state variables.
- * Removing state variables has been necessary due to proxy pattern usage.
- * Changes to Openzeppelin ERC20 https://github.com/OpenZeppelin/openzeppelin-contracts/blob/de99bccbfd4ecd19d7369d01b070aa72c64423c9/contracts/token/ERC20/ERC20.sol:
- * - Remove state variables _name, _symbol, _decimals
- * - Use state variables _balances, _allowances, _totalSupply from ProxyStorage
- * - Remove constructor
- * - Solidity version changed from ^0.6.0 to 0.6.10
- * - Contract made abstract
- *
- * See also: ClaimableOwnable.sol and ProxyStorage.sol
- */
-
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.6.10;
 
-import {ClaimableOwnable} from "./ClaimableOwnable.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-// prettier-ignore
+import {Initializable} from "./Initializable.sol";
+
 /**
  * @dev Implementation of the {IERC20} interface.
  *
@@ -46,20 +32,49 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
+contract ERC20 is Initializable, Context, IERC20 {
     using SafeMath for uint256;
     using Address for address;
+
+    mapping(address => uint256) private _balances;
+
+    mapping(address => mapping(address => uint256)) private _allowances;
+
+    uint256 private _totalSupply;
+
+    string private _name;
+    string private _symbol;
+    uint8 private _decimals;
+
+    /**
+     * @dev Sets the values for {name} and {symbol}, initializes {decimals} with
+     * a default value of 18.
+     *
+     * To select a different value for {decimals}, use {_setupDecimals}.
+     *
+     * All three of these values are immutable: they can only be set once during
+     * construction.
+     */
+    function __ERC20_initialize(string memory name, string memory symbol) internal initializer {
+        _name = name;
+        _symbol = symbol;
+        _decimals = 18;
+    }
 
     /**
      * @dev Returns the name of the token.
      */
-    function name() public virtual pure returns (string memory);
+    function name() public view returns (string memory) {
+        return _name;
+    }
 
     /**
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public virtual pure returns (string memory);
+    function symbol() public view returns (string memory) {
+        return _symbol;
+    }
 
     /**
      * @dev Returns the number of decimals used to get its user representation.
@@ -74,21 +89,21 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public virtual pure returns (uint8) {
-        return 18;
+    function decimals() public view returns (uint8) {
+        return _decimals;
     }
 
     /**
      * @dev See {IERC20-totalSupply}.
      */
-    function totalSupply() public view virtual override returns (uint256) {
+    function totalSupply() public override view returns (uint256) {
         return _totalSupply;
     }
 
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public view virtual override returns (uint256) {
+    function balanceOf(address account) public override view returns (uint256) {
         return _balances[account];
     }
 
@@ -108,7 +123,7 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
     /**
      * @dev See {IERC20-allowance}.
      */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+    function allowance(address owner, address spender) public virtual override view returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -136,7 +151,11 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * - the caller must have allowance for ``sender``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
         _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
@@ -174,7 +193,11 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * `subtractedValue`.
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        _approve(
+            _msgSender(),
+            spender,
+            _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero")
+        );
         return true;
     }
 
@@ -192,7 +215,11 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * - `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
      */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal virtual {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
 
@@ -256,12 +283,27 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * - `owner` cannot be the zero address.
      * - `spender` cannot be the zero address.
      */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
+    function _approve(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal virtual {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
+    }
+
+    /**
+     * @dev Sets {decimals} to a value other than the default one of 18.
+     *
+     * WARNING: This function should only be called from the constructor. Most
+     * applications that interact with token contracts will not expect
+     * {decimals} to ever change, and may work incorrectly if it does.
+     */
+    function _setupDecimals(uint8 decimals_) internal {
+        _decimals = decimals_;
     }
 
     /**
@@ -278,6 +320,9 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    // solhint-disable-next-line no-empty-blocks
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
 }

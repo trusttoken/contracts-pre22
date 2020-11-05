@@ -10,10 +10,18 @@ import {QuadraticTrueDistributor} from "./QuadraticTrueDistributor.sol";
  * @notice Distribute TRU slowly in a quadratic fashion
  */
 contract SlowTrueDistributor is QuadraticTrueDistributor {
+    /**
+     * @dev Get Distribution factor to be slow
+     * @return distribution factor
+     */
     function getDistributionFactor() public override pure returns (uint256) {
         return 19779088491850731219454123509;
     }
 
+    /**
+     * @dev Get total blocks for distribution
+     * @return number of blocks for distribution
+     */
     function getTotalBlocks() public override pure returns (uint256) {
         return 7410000;
     }

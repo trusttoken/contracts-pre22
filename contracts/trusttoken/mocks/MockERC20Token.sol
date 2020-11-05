@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {ERC20} from "../common/ERC20.sol";
+
 import {Registry} from "../../registry/Registry.sol";
-import {ERC20} from "../ERC20.sol";
 
 contract MockERC20Token is ERC20 {
     Registry registryAddress;

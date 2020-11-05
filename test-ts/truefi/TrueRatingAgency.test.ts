@@ -1,23 +1,27 @@
 import { expect } from 'chai'
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { parseEther } from 'ethers/lib/utils'
+import { MockContract, deployMockContract } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { parseTT } from '../utils/parseTT'
 import { timeTravel as _timeTravel } from '../utils/timeTravel'
-
-import { TrueRatingAgencyFactory } from '../../build/types/TrueRatingAgencyFactory'
-import { TrueRatingAgency } from '../../build/types/TrueRatingAgency'
-import { TrustTokenFactory } from '../../build/types/TrustTokenFactory'
-import { TrustToken } from '../../build/types/TrustToken'
-import { LoanTokenFactory } from '../../build/types/LoanTokenFactory'
-import { LoanToken } from '../../build/types/LoanToken'
-import { MockTrueCurrencyFactory } from '../../build/types/MockTrueCurrencyFactory'
-import { MockTrueCurrency } from '../../build/types/MockTrueCurrency'
-import { ArbitraryDistributorFactory } from '../../build/types/ArbitraryDistributorFactory'
-import { ArbitraryDistributor } from '../../build/types/ArbitraryDistributor'
-import { parseEther } from 'ethers/lib/utils'
 import { expectCloseTo } from '../utils/expectCloseTo'
+
+import {
+  TrueRatingAgencyFactory,
+  TrueRatingAgency,
+  TrustTokenFactory,
+  TrustToken,
+  LoanTokenFactory,
+  LoanToken,
+  MockTrueCurrencyFactory,
+  MockTrueCurrency,
+  ArbitraryDistributorFactory,
+  ArbitraryDistributor,
+  ILoanFactoryJson,
+} from 'contracts'
 
 describe('TrueRatingAgency', () => {
   enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
@@ -31,6 +35,7 @@ describe('TrueRatingAgency', () => {
   let loanToken: LoanToken
   let distributor: ArbitraryDistributor
   let tusd: MockTrueCurrency
+  let mockFactory: MockContract
 
   const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
   const stake = 1000000
@@ -62,10 +67,12 @@ describe('TrueRatingAgency', () => {
     await tusd.approve(loanToken.address, 5_000_000)
 
     distributor = await new ArbitraryDistributorFactory(owner).deploy()
+    mockFactory = await deployMockContract(owner, ILoanFactoryJson.abi)
     rater = await new TrueRatingAgencyFactory(owner).deploy()
 
+    await mockFactory.mock.isLoanToken.returns(true)
     await distributor.initialize(rater.address, trustToken.address, parseTT(100000000))
-    await rater.initialize(trustToken.address, distributor.address)
+    await rater.initialize(trustToken.address, distributor.address, mockFactory.address)
 
     await trustToken.mint(owner.address, parseTT(100000000))
     await trustToken.mint(distributor.address, parseTT(100000000))
@@ -200,6 +207,11 @@ describe('TrueRatingAgency', () => {
       await rater.retract(loanToken.address)
       expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
       expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
+    })
+
+    it('reverts if token was not created with LoanFactory', async () => {
+      await mockFactory.mock.isLoanToken.returns(false)
+      await expect(submit(loanToken.address)).to.be.revertedWith('TrueRatingAgency: Only LoanTokens created via LoanFactory are supported')
     })
 
     it('reverts on attempt of creating the same loan twice', async () => {

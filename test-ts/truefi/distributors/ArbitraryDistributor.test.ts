@@ -1,13 +1,15 @@
+import { expect } from 'chai'
 import { Wallet } from 'ethers'
+import { parseEther } from 'ethers/lib/utils'
 
 import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
 
-import { MockErc20Token } from '../../../build/types/MockErc20Token'
-import { MockErc20TokenFactory } from '../../../build/types/MockErc20TokenFactory'
-import { ArbitraryDistributor } from '../../../build/types/ArbitraryDistributor'
-import { ArbitraryDistributorFactory } from '../../../build/types/ArbitraryDistributorFactory'
-import { parseEther } from 'ethers/lib/utils'
-import { expect } from 'chai'
+import {
+  MockErc20Token,
+  MockErc20TokenFactory,
+  ArbitraryDistributor,
+  ArbitraryDistributorFactory,
+} from 'contracts'
 
 describe('ArbitraryDistributor', () => {
   let trustToken: MockErc20Token
@@ -50,7 +52,7 @@ describe('ArbitraryDistributor', () => {
 
     it('only predefined beneficiary can call it', async () => {
       await expect(distributor.connect(otherWallet).distribute(distributedAmount))
-        .to.be.revertedWith('ArbitraryDistributor: Only beneficiary can distribute tokens')
+        .to.be.revertedWith('ArbitraryDistributor: Only beneficiary can receive tokens')
     })
 
     it('properly sends tokens', async () => {
@@ -61,6 +63,19 @@ describe('ArbitraryDistributor', () => {
     it('properly updates remaining tokens value', async () => {
       await distributor.distribute(distributedAmount)
       expect(await distributor.remaining()).to.equal(totalAmount.sub(distributedAmount))
+    })
+  })
+
+  describe('empty', () => {
+    it('only owner can empty', async () => {
+      await expect(distributor.connect(otherWallet).empty())
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('transfer total balance to sender', async () => {
+      const totalBalance = await trustToken.balanceOf(distributor.address)
+      await expect(() => distributor.empty())
+        .to.changeTokenBalance(trustToken, owner, totalBalance)
     })
   })
 })

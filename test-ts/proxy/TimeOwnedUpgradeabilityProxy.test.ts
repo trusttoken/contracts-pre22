@@ -1,11 +1,15 @@
+import chai, { expect } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
+
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { setupDeploy } from '../../scripts/utils'
-import chai, { expect } from 'chai'
-import { TimeOwnedUpgradeabilityProxyFactory } from '../../build/types/TimeOwnedUpgradeabilityProxyFactory'
 import { timeTravel } from '../utils/timeTravel'
-import { TimeOwnedUpgradeabilityProxy } from '../../build/types/TimeOwnedUpgradeabilityProxy'
+import { setupDeploy } from '../../scripts/utils'
+
+import {
+  TimeOwnedUpgradeabilityProxyFactory,
+  TimeOwnedUpgradeabilityProxy,
+} from 'contracts'
 
 chai.use(solidity)
 

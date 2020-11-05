@@ -1,16 +1,20 @@
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { MockErc20Token } from '../../build/types/MockErc20Token'
-import { MockErc20TokenFactory } from '../../build/types/MockErc20TokenFactory'
-import { parseEther } from '@ethersproject/units'
 import { expect, use } from 'chai'
-import { ContractTransaction, Wallet } from 'ethers'
-import { TrueDistributor } from '../../build/types/TrueDistributor'
-import { MockProvider, solidity } from 'ethereum-waffle'
-import { TrueFarmFactory } from '../../build/types/TrueFarmFactory'
-import { TrueFarm } from '../../build/types/TrueFarm'
-import { skipBlocksWithProvider, skipToBlockWithProvider } from '../utils/timeTravel'
+import { parseEther } from '@ethersproject/units'
 import { MaxUint256 } from '@ethersproject/constants'
-import { MockDistributorFactory } from '../../build/types/MockDistributorFactory'
+import { ContractTransaction, Wallet } from 'ethers'
+import { MockProvider, solidity } from 'ethereum-waffle'
+
+import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { skipBlocksWithProvider, skipToBlockWithProvider } from '../utils/timeTravel'
+
+import {
+  MockErc20Token,
+  MockErc20TokenFactory,
+  QuadraticTrueDistributor,
+  TrueFarmFactory,
+  TrueFarm,
+  MockDistributorFactory,
+} from 'contracts'
 
 use(solidity)
 
@@ -18,7 +22,7 @@ describe('TrueFarm', () => {
   let owner: Wallet
   let staker1: Wallet
   let staker2: Wallet
-  let distributor: TrueDistributor
+  let distributor: QuadraticTrueDistributor
   let trustToken: MockErc20Token
   let stakingToken: MockErc20Token
   let provider: MockProvider
