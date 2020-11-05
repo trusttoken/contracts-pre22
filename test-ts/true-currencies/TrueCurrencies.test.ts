@@ -2,7 +2,7 @@ import { ContractFactory } from 'ethers'
 import { MockProvider } from 'ethereum-waffle'
 import { expect } from 'chai'
 
-import { Newable } from '../../scripts/utils'
+import { Newable } from 'scripts/utils'
 
 import { TrueCurrency } from 'contracts/types/TrueCurrency'
 import {

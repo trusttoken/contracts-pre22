@@ -1,16 +1,18 @@
 /* eslint-disable max-len */
 import { BigNumberish, Wallet } from 'ethers'
 
-import { Address } from './model/Address'
-import { deployContract } from './utils/deployContract'
-import { waitForTx } from './utils/waitForTx'
-import { asProxy } from './utils/asProxy'
+import { Address } from 'scripts/model/Address'
+import { deployContract } from 'scripts/utils/deployContract'
+import { waitForTx } from 'scripts/utils/waitForTx'
+import { asProxy } from 'scripts/utils/asProxy'
 
-import { TrueGoldFactory } from 'contracts/types/TrueGoldFactory'
-import { OwnedUpgradeabilityProxyFactory } from 'contracts/types/OwnedUpgradeabilityProxyFactory'
-import { TrueGoldControllerFactory } from 'contracts/types/TrueGoldControllerFactory'
-import { TrueGoldController } from 'contracts/types/TrueGoldController'
-import { TrueGold } from 'contracts/types/TrueGold'
+import {
+  TrueGoldFactory,
+  OwnedUpgradeabilityProxyFactory,
+  TrueGoldControllerFactory,
+  TrueGoldController,
+  TrueGold,
+} from 'contracts'
 
 interface DeploymentParams {
   controllerOwner: Address,

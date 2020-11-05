@@ -1,6 +1,6 @@
 import { utils, Wallet } from 'ethers'
 
-import { MAX_BURN_BOUND } from '../utils/constants'
+import { MAX_BURN_BOUND } from 'utils'
 
 import { TrueGoldFactory } from 'contracts/types/TrueGoldFactory'
 

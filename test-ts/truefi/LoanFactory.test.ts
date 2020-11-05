@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { Wallet } from 'ethers'
 import { parseEther } from '@ethersproject/units'
 
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { beforeEachWithFixture } from 'utils'
 
 import {
   LoanFactory,

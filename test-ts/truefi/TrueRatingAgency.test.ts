@@ -4,10 +4,12 @@ import { parseEther } from 'ethers/lib/utils'
 import { MockContract, deployMockContract } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { parseTT } from '../utils/parseTT'
-import { timeTravel as _timeTravel } from '../utils/timeTravel'
-import { expectCloseTo } from '../utils/expectCloseTo'
+import {
+  beforeEachWithFixture,
+  parseTT,
+  timeTravel as _timeTravel,
+  expectCloseTo,
+} from 'utils'
 
 import {
   TrueRatingAgencyFactory,

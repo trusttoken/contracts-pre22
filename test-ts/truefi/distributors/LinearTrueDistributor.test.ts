@@ -2,10 +2,14 @@ import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 
-import { expectCloseTo } from '../../utils/expectCloseTo'
-import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
-import { timeTravel, timeTravelTo } from '../../utils/timeTravel'
-import { toTrustToken } from '../../../scripts/utils'
+import { toTrustToken } from 'scripts/utils'
+
+import {
+  expectCloseTo,
+  beforeEachWithFixture,
+  timeTravel,
+  timeTravelTo,
+} from 'utils'
 
 import {
   LinearTrueDistributor,

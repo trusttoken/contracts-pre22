@@ -2,10 +2,14 @@
  * ts-node scripts/deploy_truefi.ts "{private_key}" "{network}"
  */
 import { ethers, providers } from 'ethers'
+
 import { ask } from './utils'
-import { TrueFarmFactory } from 'contracts/types/TrueFarmFactory'
-import { SlowTrueDistributorFactory } from 'contracts/types/SlowTrueDistributorFactory'
-import { FastTrueDistributorFactory } from 'contracts/types/FastTrueDistributorFactory'
+
+import {
+  TrueFarmFactory,
+  SlowTrueDistributorFactory,
+  FastTrueDistributorFactory,
+} from 'contracts'
 
 async function deployTrueFi () {
   const txnArgs = { gasLimit: 2_500_000, gasPrice: 100_000_000_000 }

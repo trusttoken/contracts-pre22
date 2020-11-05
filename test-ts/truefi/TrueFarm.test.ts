@@ -4,8 +4,11 @@ import { MaxUint256 } from '@ethersproject/constants'
 import { ContractTransaction, Wallet } from 'ethers'
 import { MockProvider, solidity } from 'ethereum-waffle'
 
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { skipBlocksWithProvider, skipToBlockWithProvider } from '../utils/timeTravel'
+import {
+  beforeEachWithFixture,
+  skipBlocksWithProvider,
+  skipToBlockWithProvider,
+} from 'utils'
 
 import {
   MockErc20Token,

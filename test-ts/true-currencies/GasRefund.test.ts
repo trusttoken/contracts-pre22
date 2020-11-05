@@ -1,8 +1,9 @@
 import { Wallet } from 'ethers'
 import { expect } from 'chai'
 
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { setupDeploy } from '../../scripts/utils'
+import { setupDeploy } from 'scripts/utils'
+
+import { beforeEachWithFixture } from 'utils'
 
 import {
   MockHookFactory,
