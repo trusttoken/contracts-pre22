@@ -2,8 +2,8 @@ import { BigNumber, BigNumberish, constants, Wallet } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
 import { expect } from 'chai'
 
-import { initialSupply, trueCurrency } from '../fixtures/trueCurrency'
-import { toAddress, WalletOrAddress } from '../utils/toAddress'
+import { initialSupply, trueCurrency } from 'fixtures/trueCurrency'
+import { toAddress, WalletOrAddress } from 'utils'
 
 import { TrueCurrency } from 'contracts/types/TrueCurrency'
 

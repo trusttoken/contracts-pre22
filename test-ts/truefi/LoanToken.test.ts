@@ -3,9 +3,11 @@ import { MockProvider } from 'ethereum-waffle'
 import { BigNumber, ContractTransaction, Wallet, BigNumberish } from 'ethers'
 import { formatEther, parseEther } from '@ethersproject/units'
 
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { timeTravel } from '../utils/timeTravel'
-import { expectCloseTo } from '../utils/expectCloseTo'
+import {
+  beforeEachWithFixture,
+  timeTravel,
+  expectCloseTo,
+} from 'utils'
 
 import {
   LoanToken,
