@@ -24,7 +24,7 @@ commands:
 jobs:
   test:
     docker:
-      - image: circleci/node:10.15.3
+      - image: circleci/node:12.19.0
     steps:
       - checkout
       - setup_remote_docker
