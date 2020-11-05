@@ -12,9 +12,6 @@ import {
   TrueGoldController,
   TrueGoldFactory,
   TrueGoldControllerFactory,
-} from 'contracts/types'
-
-import {
   OwnedUpgradeabilityProxyJson,
   TrueGoldJson,
   TrueGoldControllerJson,

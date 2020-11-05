@@ -15,9 +15,6 @@ import {
   LoanTokenFactory,
   MockTrueCurrency,
   MockTrueCurrencyFactory,
-} from 'contracts/types'
-
-import {
   ITrueFiPoolJson,
   ILoanTokenJson,
   ITrueRatingAgencyJson,
