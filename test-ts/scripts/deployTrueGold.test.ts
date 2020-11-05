@@ -4,8 +4,7 @@ import { expect } from 'chai'
 import { deployTrueGold } from 'scripts/deploy_true_gold'
 import { makeAddress } from 'scripts/model/Address'
 import { asProxy } from 'scripts/utils/asProxy'
-import { toHex } from '../utils/toHex'
-import { MAX_BURN_BOUND } from '../utils/constants'
+import { toHex, MAX_BURN_BOUND } from 'utils'
 
 import {
   TrueGold,

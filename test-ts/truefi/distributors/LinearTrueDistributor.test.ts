@@ -3,9 +3,12 @@ import { MockProvider } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 
 import { toTrustToken } from 'scripts/utils'
-import { expectCloseTo } from '../../utils/expectCloseTo'
-import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
-import { timeTravel, timeTravelTo } from '../../utils/timeTravel'
+import {
+  expectCloseTo,
+  beforeEachWithFixture,
+  timeTravel,
+  timeTravelTo,
+} from 'utils'
 
 import {
   LinearTrueDistributor,

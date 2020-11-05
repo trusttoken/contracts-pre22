@@ -2,7 +2,7 @@ import { BigNumberish, Wallet } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
 import { expect } from 'chai'
 
-import { MAX_BURN_BOUND } from '../utils/constants'
+import { MAX_BURN_BOUND } from 'utils'
 
 import {
   TrueGold,

@@ -4,9 +4,12 @@ import { parseEther } from '@ethersproject/units'
 import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 
 import { toTrustToken } from 'scripts/utils'
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { expectCloseTo } from '../utils/expectCloseTo'
-import { timeTravel } from '../utils/timeTravel'
+
+import {
+  beforeEachWithFixture,
+  expectCloseTo,
+  timeTravel,
+} from 'utils'
 
 import {
   MockErc20TokenFactory,

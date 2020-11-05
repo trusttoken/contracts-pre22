@@ -4,8 +4,8 @@ import { parseEther } from '@ethersproject/units'
 import { AddressZero, Zero } from '@ethersproject/constants'
 import { expect } from 'chai'
 
-import { initialSupply, trueCurrency } from '../fixtures/trueCurrency'
-import { toAddress, WalletOrAddress } from '../utils/toAddress'
+import { initialSupply, trueCurrency } from 'fixtures/trueCurrency'
+import { toAddress, WalletOrAddress } from 'utils'
 
 import { MockTrueCurrency } from 'contracts/types'
 

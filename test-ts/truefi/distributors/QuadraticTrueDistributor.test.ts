@@ -4,8 +4,11 @@ import { utils, BigNumber, Wallet } from 'ethers'
 import { Zero, MaxUint256 } from '@ethersproject/constants'
 
 import { toTrustToken } from 'scripts/utils'
-import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
-import { getBlockNumber, skipBlocksWithProvider } from '../../utils/timeTravel'
+import {
+  beforeEachWithFixture,
+  getBlockNumber,
+  skipBlocksWithProvider,
+} from 'utils'
 
 import {
   QuadraticTrueDistributor,

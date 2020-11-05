@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
 
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
+import { beforeEachWithFixture } from 'utils'
 
 import {
   MockTrueCurrencyWithAutosweepFactory,

@@ -4,9 +4,11 @@ import { Contract, Wallet, BigNumber, providers } from 'ethers'
 import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 import { parseEther } from '@ethersproject/units'
 
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { timeTravel } from '../utils/timeTravel'
-import { expectCloseTo } from '../utils/expectCloseTo'
+import {
+  beforeEachWithFixture,
+  timeTravel,
+  expectCloseTo,
+} from 'utils'
 
 import {
   MockTrueLender,

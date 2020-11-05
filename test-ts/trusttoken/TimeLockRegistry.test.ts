@@ -3,11 +3,16 @@ import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
-import { toTrustToken } from 'scripts/utils'
-import { setupDeploy } from 'scripts/utils'
 import { parseAccountList, registerSaftAccounts } from 'scripts/register_saft_addresses'
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { expectEvent } from '../utils/eventHelpers'
+import {
+  toTrustToken,
+  setupDeploy,
+} from 'scripts/utils'
+
+import {
+  expectEvent,
+  beforeEachWithFixture,
+} from 'utils'
 
 import {
   TrustTokenFactory,

@@ -2,9 +2,8 @@ import chai, { expect } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 
-import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
-import { timeTravel } from '../utils/timeTravel'
 import { setupDeploy } from 'scripts/utils'
+import { beforeEachWithFixture, timeTravel } from 'utils'
 
 import {
   TimeOwnedUpgradeabilityProxyFactory,

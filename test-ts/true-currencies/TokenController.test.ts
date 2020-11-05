@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { Wallet } from 'ethers'
 import { loadFixture } from 'ethereum-waffle'
 
-import { trueCurrency } from '../fixtures/trueCurrency'
+import { trueCurrency } from 'fixtures/trueCurrency'
 
 import { TrueCurrency } from 'contracts/types/TrueCurrency'
 import {
