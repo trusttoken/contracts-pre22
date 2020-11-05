@@ -36,7 +36,7 @@ describe('ProxyWithController', () => {
   let tokenProxy: OwnedUpgradeabilityProxy
   let tusdImplementation: MockTrueCurrency
   let token: MockTrueCurrency
-  
+
   let controllerProxy: OwnedUpgradeabilityProxy
   let controllerImplementation: TokenControllerMock
   let controller: TokenControllerMock
@@ -47,7 +47,7 @@ describe('ProxyWithController', () => {
   beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet, thirdWallet, mintKey, pauseKey, approver1, approver2, approver3] = wallets
     registry = await new RegistryMockFactory(owner).deploy()
-    
+
     tokenProxy = await new OwnedUpgradeabilityProxyFactory(owner).deploy()
     tusdImplementation = await new MockTrueCurrencyFactory(owner).deploy()
     await tokenProxy.upgradeTo(tusdImplementation.address)
@@ -93,7 +93,7 @@ describe('ProxyWithController', () => {
     it('token can transfer ownership to controller', async () => {
       await token.transferOwnership(controller.address)
       expect(await token.pendingOwner()).to.equal(controller.address)
-      
+
       await controller.issueClaimOwnership(token.address)
       expect(await token.owner()).to.equal(controller.address)
     })
