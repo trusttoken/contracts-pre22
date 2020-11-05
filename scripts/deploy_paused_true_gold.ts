@@ -6,7 +6,7 @@ import { waitForTx } from 'scripts/utils/waitForTx'
 import {
   PausedTrueGoldFactory,
   PausedTrueGold,
-} from 'contracts/types'
+} from 'contracts'
 
 export async function deployPausedTrueGold (deployer: Wallet): Promise<PausedTrueGold> {
   const pausedToken = await deployContract(deployer, PausedTrueGoldFactory)

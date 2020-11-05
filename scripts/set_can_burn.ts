@@ -10,7 +10,7 @@ import { TrueCurrencyFactory } from 'contracts/types/TrueCurrencyFactory'
 import {
   TokenController,
   TokenControllerFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 export const txnArgs = { gasLimit: 60_000, gasPrice: 90_000_000_000 }
 

@@ -7,14 +7,14 @@
 import fs from 'fs'
 import { BigNumber, constants, providers, Wallet } from 'ethers'
 
+import { toTrustToken } from './utils'
+
 import {
   TimeLockRegistry,
   TimeLockRegistryFactory,
   TrustToken,
   TrustTokenFactory,
-} from 'contracts/types'
-
-import { toTrustToken } from './utils'
+} from 'contracts'
 
 export const txnArgs = { gasLimit: 2_000_000, gasPrice: 20_000_000_000 }
 

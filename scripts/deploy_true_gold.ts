@@ -12,7 +12,7 @@ import {
   TrueGoldControllerFactory,
   TrueGoldController,
   TrueGold,
-} from 'contracts/types'
+} from 'contracts'
 
 interface DeploymentParams {
   controllerOwner: Address,

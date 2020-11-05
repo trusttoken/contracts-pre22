@@ -7,7 +7,7 @@ import {
   TrustTokenFactory,
   TimeLockRegistryFactory,
   OwnedUpgradeabilityProxyFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 async function deployTimeLockRegistry () {
   const txnArgs = { gasLimit: 5_000_000, gasPrice: 16_000_000_000 }

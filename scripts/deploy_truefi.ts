@@ -9,7 +9,7 @@ import {
   TrueFarmFactory,
   SlowTrueDistributorFactory,
   FastTrueDistributorFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 async function deployTrueFi () {
   const txnArgs = { gasLimit: 2_500_000, gasPrice: 100_000_000_000 }

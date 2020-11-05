@@ -3,6 +3,7 @@ import { MockProvider } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 
 import { toTrustToken } from 'scripts/utils'
+
 import {
   expectCloseTo,
   beforeEachWithFixture,
