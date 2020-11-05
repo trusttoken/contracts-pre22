@@ -4,7 +4,7 @@ import { Wallet } from 'ethers'
 
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { timeTravel } from '../utils/timeTravel'
-import { setupDeploy } from '../../scripts/utils'
+import { setupDeploy } from 'scripts/utils'
 
 import {
   TimeOwnedUpgradeabilityProxyFactory,

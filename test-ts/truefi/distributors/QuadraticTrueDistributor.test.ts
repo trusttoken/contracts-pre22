@@ -3,8 +3,8 @@ import { MockProvider } from 'ethereum-waffle'
 import { utils, BigNumber, Wallet } from 'ethers'
 import { Zero, MaxUint256 } from '@ethersproject/constants'
 
+import { toTrustToken } from 'scripts/utils'
 import { beforeEachWithFixture } from '../../utils/beforeEachWithFixture'
-import { toTrustToken } from '../../../scripts/utils'
 import { getBlockNumber, skipBlocksWithProvider } from '../../utils/timeTravel'
 
 import {

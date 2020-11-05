@@ -1,10 +1,10 @@
 import { BigNumberish, BigNumber, constants, Wallet } from 'ethers'
 import { expect } from 'chai'
 
+import { setupDeploy } from 'scripts/utils'
 import { initialSupply } from '../fixtures/trueCurrency'
 import { beforeEachWithFixture } from '../utils/beforeEachWithFixture'
 import { toAddress, WalletOrAddress } from '../utils/toAddress'
-import { setupDeploy } from '../../scripts/utils'
 
 import {
   MockTrueCurrencyWithAutosweep,

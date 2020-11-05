@@ -1,10 +1,10 @@
 import { MockProvider } from 'ethereum-waffle'
 import { expect } from 'chai'
-import { makeAddress } from '../../scripts/model/Address'
 
-import { deployTrueGold } from '../../scripts/deploy_true_gold'
+import { deployTrueGold } from 'scripts/deploy_true_gold'
+import { makeAddress } from 'scripts/model/Address'
+import { asProxy } from 'scripts/utils/asProxy'
 import { toHex } from '../utils/toHex'
-import { asProxy } from '../../scripts/utils/asProxy'
 import { MAX_BURN_BOUND } from '../utils/constants'
 
 import {

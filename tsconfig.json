@@ -9,7 +9,9 @@
     "baseUrl": ".",
     "paths": {
       "contracts/*": ["build/*"],
-      "contracts": ["build"]
+      "contracts": ["build"],
+      "scripts/*": ["scripts/*"],
+      "scripts": ["scripts"]
     }
   }
 }

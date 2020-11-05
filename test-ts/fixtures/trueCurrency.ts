@@ -1,7 +1,7 @@
 import { Wallet, utils } from 'ethers'
 import { MockProvider } from 'ethereum-waffle'
 
-import { setupDeploy } from '../../scripts/utils'
+import { setupDeploy } from 'scripts/utils'
 
 import {
   MockTrueCurrencyFactory,

@@ -1,7 +1,7 @@
 import { MockProvider } from 'ethereum-waffle'
 import { expect } from 'chai'
 
-import { deployPausedTrueGold } from '../../scripts/deploy_paused_true_gold'
+import { deployPausedTrueGold } from 'scripts/deploy_paused_true_gold'
 import { toHex } from '../utils/toHex'
 
 import { PausedTrueGold } from 'contracts/types'
