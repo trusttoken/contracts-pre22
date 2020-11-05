@@ -12,7 +12,7 @@ import {
   OwnedUpgradeabilityProxyFactory,
   MockDelegateErc20,
   MockDelegateErc20Factory,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('TrueCurrency - Delegate ERC20', () => {
   let initialHolder: Wallet

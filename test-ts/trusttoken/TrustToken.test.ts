@@ -11,7 +11,7 @@ import { setupDeploy } from '../../scripts/utils'
 import {
   TrustTokenFactory,
   TrustToken,
-} from 'contracts/types'
+} from 'contracts'
 
 use(solidity)
 

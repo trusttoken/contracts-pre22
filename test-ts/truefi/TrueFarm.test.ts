@@ -14,7 +14,7 @@ import {
   TrueFarmFactory,
   TrueFarm,
   MockDistributorFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 use(solidity)
 

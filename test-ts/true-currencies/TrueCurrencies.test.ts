@@ -10,7 +10,7 @@ import {
   TrueAudFactory,
   TrueGbpFactory,
   TrueHkdFactory,
-} from 'contracts/types'
+} from 'contracts'
 
 describe('TrueCurrency - Tokens', () => {
   function shouldHaveCorrectAttributes (TokenFactory: Newable<ContractFactory>, name: string, symbol: string) {
