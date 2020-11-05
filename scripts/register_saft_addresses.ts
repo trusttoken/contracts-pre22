@@ -6,10 +6,13 @@
 
 import fs from 'fs'
 import { BigNumber, constants, providers, Wallet } from 'ethers'
-import { TimeLockRegistry } from 'contracts/types/TimeLockRegistry'
-import { TimeLockRegistryFactory } from 'contracts/types/TimeLockRegistryFactory'
-import { TrustToken } from 'contracts/types/TrustToken'
-import { TrustTokenFactory } from 'contracts/types/TrustTokenFactory'
+
+import {
+  TimeLockRegistry,
+  TimeLockRegistryFactory,
+  TrustToken,
+  TrustTokenFactory,
+} from 'contracts/types'
 
 import { toTrustToken } from './utils'
 

@@ -6,11 +6,13 @@ import { deployContract } from 'scripts/utils/deployContract'
 import { waitForTx } from 'scripts/utils/waitForTx'
 import { asProxy } from 'scripts/utils/asProxy'
 
-import { TrueGoldFactory } from 'contracts/types/TrueGoldFactory'
-import { OwnedUpgradeabilityProxyFactory } from 'contracts/types/OwnedUpgradeabilityProxyFactory'
-import { TrueGoldControllerFactory } from 'contracts/types/TrueGoldControllerFactory'
-import { TrueGoldController } from 'contracts/types/TrueGoldController'
-import { TrueGold } from 'contracts/types/TrueGold'
+import {
+  TrueGoldFactory,
+  OwnedUpgradeabilityProxyFactory,
+  TrueGoldControllerFactory,
+  TrueGoldController,
+  TrueGold,
+} from 'contracts/types'
 
 interface DeploymentParams {
   controllerOwner: Address,
