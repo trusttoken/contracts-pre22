@@ -101,17 +101,13 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
     function transferToOwner(address _from, uint256 _value) internal {
         uint256 unlocked = unlockedBalance(_from);
 
-        // transfer unlocked first
-        if (unlocked > 0 && unlocked >= _value) {
-            super._transfer(_from, owner_, _value);
+        if (unlocked < _value) {
+            // We want to have unlocked = value, i.e.
+            // value = balance - distribution * epochsLeft / totalEpochs
+            // distribution = (balance - value) * totalEpochs / epochsLeft
+            distribution[_from] = balanceOf[_from].sub(_value).mul(TOTAL_EPOCHS).div(epochsLeft());
         }
-        _value = _value.sub(unlocked);
-
-        // if remainding, transfer from locked balance and update distribution
-        if (_value > 0) {
-            super._transfer(_from, owner_, _value);
-            distribution[_from] = distribution[_from].sub(_value);
-        }
+        super._transfer(_from, owner_, _value);
     }
 
     /**
@@ -150,8 +146,7 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
      */
     function lockedBalance(address account) public view returns (uint256) {
         // distribution * (epochsLeft / totalEpochs)
-        uint256 epochsLeft = TOTAL_EPOCHS.sub(epochsPassed());
-        return distribution[account].mul(epochsLeft).div(TOTAL_EPOCHS);
+        return distribution[account].mul(epochsLeft()).div(TOTAL_EPOCHS);
     }
 
     /**
@@ -191,6 +186,10 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
         }
 
         return totalEpochsPassed;
+    }
+
+    function epochsLeft() public view returns (uint256) {
+        return TOTAL_EPOCHS.sub(epochsPassed());
     }
 
     /**

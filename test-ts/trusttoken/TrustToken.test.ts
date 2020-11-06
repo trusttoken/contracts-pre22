@@ -636,12 +636,35 @@ describe('TrustToken', () => {
         await expect(trustToken.connect(saftHolder).transfer(fourthAccount.address, 1)).to.be.revertedWith('attempting to transfer locked funds')
       })
 
-      it('transfers to owner allowed', async () => {
+      it('transfers to owner allowed - uses locked funds', async () => {
+        expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(0)
         await trustToken.connect(saftHolder).transfer(owner.address, parseTT(100))
         expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(0)
         expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(0)
         expect(await trustToken.balanceOf(saftHolder.address)).to.equal(0)
         expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(100))
+      })
+
+      it('transfers to owner allowed - uses only unlocked funds', async () => {
+        await timeTravel(provider, DAY * 120)
+        expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(parseTT(100).div(8))
+
+        await trustToken.connect(saftHolder).transfer(owner.address, parseTT(10))
+        expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(parseTT(100).div(8).sub(parseTT(10)))
+        expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(parseTT(100).div(8).mul(7))
+        expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(90))
+        expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(10))
+      })
+
+      it('transfers to owner allowed - uses unlocked funds before locked', async () => {
+        await timeTravel(provider, DAY * 120)
+        expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(parseTT(100).div(8))
+
+        await trustToken.connect(saftHolder).transfer(owner.address, parseTT(25))
+        expect(await trustToken.unlockedBalance(saftHolder.address)).to.equal(1)
+        expect(await trustToken.lockedBalance(saftHolder.address)).to.equal(parseTT(100).div(4).mul(3).sub(1))
+        expect(await trustToken.balanceOf(saftHolder.address)).to.equal(parseTT(75))
+        expect(await trustToken.balanceOf(owner.address)).to.equal(parseTT(25))
       })
 
       it('transfers to owner transfer unlocked funds first', async () => {
