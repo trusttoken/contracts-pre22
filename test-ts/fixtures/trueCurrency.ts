@@ -21,5 +21,5 @@ export const trueCurrency = async (wallets: Wallet[], provider: MockProvider) =>
   await token.initialize()
   await token.mint(owner.address, initialSupply)
 
-  return { wallets, provider, token }
+  return { wallets, provider, token, proxy }
 }
