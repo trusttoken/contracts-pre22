@@ -24,7 +24,7 @@ import {
 
 use(solidity)
 
-describe.only('Registry', () => {
+describe('Registry', () => {
   let provider: MockProvider
   let owner: Wallet
   let anotherWallet: Wallet
