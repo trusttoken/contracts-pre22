@@ -12,15 +12,15 @@ export function writeAttributeFor (attribute) {
   return utils.sha3('0x' + bytes.toString('hex'))
 }
 
-// import { keccak256 } from '@ethersproject/keccak256'
+// import { keccak256 } from '@ethersproject/solidity'
 // import { formatBytes32String } from '@ethersproject/strings'
 
-// const canWriteTo = Buffer.from(keccak256(formatBytes32String('canWriteTo-')).slice(2), 'hex')
+// export const canWriteTo = Buffer.from(keccak256(['string'], [formatBytes32String('canWriteTo-')]).slice(2), 'hex')
 
-// function writeAttributeFor(attribute: string) {
+// export const writeAttributeFor = (attribute: string) => {
 //   const bytes = Buffer.from(attribute.slice(2), 'hex')
 //   for (let index = 0; index < canWriteTo.length; index++) {
 //     bytes[index] ^= canWriteTo[index]
 //   }
-//   return keccak256('0x' + bytes.toString('hex'))
+//   return keccak256(['string'], ['0x' + bytes.toString('hex')])
 // }
