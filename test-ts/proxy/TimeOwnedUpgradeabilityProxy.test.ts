@@ -1,4 +1,4 @@
-import chai, { expect } from 'chai'
+import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 
@@ -11,7 +11,7 @@ import {
   TimeOwnedUpgradeabilityProxy,
 } from 'contracts'
 
-chai.use(solidity)
+use(solidity)
 
 describe('TimeOwnedUpgradeabilityProxy', () => {
   const address = Wallet.createRandom().address
