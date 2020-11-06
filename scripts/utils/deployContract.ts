@@ -1,11 +1,11 @@
 import { Contract, Signer, Wallet } from 'ethers'
 
-interface ContractFactoryConstructor<C extends Contract> {
-  new(signer?: Signer): ContractFactory<C>,
-}
-
 interface ContractFactory<C extends Contract> {
   deploy(): Promise<C>,
+}
+
+interface ContractFactoryConstructor<C extends Contract> {
+  new(signer?: Signer): ContractFactory<C>,
 }
 
 export async function deployContract<C extends Contract> (
