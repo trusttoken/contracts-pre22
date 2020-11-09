@@ -1,5 +1,6 @@
 import { expect } from 'chai'
 import { BigNumberish, Wallet } from 'ethers'
+import { MockProvider } from 'ethereum-waffle'
 import { formatBytes32String } from '@ethersproject/strings'
 import { parseEther } from '@ethersproject/units'
 
@@ -14,9 +15,13 @@ import {
   OwnedUpgradeabilityProxyFactory,
   MockTrueCurrencyFactory,
   MockTrueCurrency,
+  ForceEther,
+  ForceEtherFactory,
 } from 'contracts'
 
-describe.only('TokenController', () => {
+describe('TokenController', () => {
+  let provider: MockProvider
+
   let owner: Wallet
   let otherWallet: Wallet
   let thirdWallet: Wallet
@@ -40,8 +45,9 @@ describe.only('TokenController', () => {
     expect(await token.balanceOf(wallet.address)).to.equal(value)
   }
 
-  beforeEachWithFixture(async (wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [owner, registryAdmin, otherWallet, thirdWallet, mintKey, pauseKey, ratifier1, ratifier2, ratifier3] = wallets
+    provider = _provider
 
     registry = await new RegistryMockFactory(owner).deploy()
     controller = await new TokenControllerMockFactory(owner).deploy()
@@ -466,6 +472,112 @@ describe.only('TokenController', () => {
       await controller.refillMultiSigMintPool()
       await controller.connect(mintKey).finalizeMint(3)
       await expectTokenBalance(token, otherWallet, parseEther('3300'))
+    })
+  })
+
+  describe('initialization', function () {
+    it('controller cannot be re-initialized', async function () {
+      await expect(controller.initialize())
+        .to.be.reverted
+    })
+  })
+
+  describe('transfer child', function () {
+    it('can transfer trueUSD ownership to another address', async function () {
+      await controller.transferChild(token.address, owner.address)
+      expect(await token.pendingOwner()).to.equal(owner.address)
+    })
+  })
+
+  describe('setBurnBounds', function () {
+    it('sets burnBounds', async function () {
+      await controller.setBurnBounds(parseEther('3'), parseEther('4'))
+
+      expect(await token.burnMin())
+        .to.equal(parseEther('3'))
+      expect(await token.burnMax())
+        .to.equal(parseEther('4'))
+    })
+
+    it('cannot be called by non Owner', async function () {
+      await expect(controller.connect(otherWallet).setBurnBounds(parseEther('3'), parseEther('4')))
+        .to.be.reverted
+    })
+
+    it('cannot be called by non Owner', async function () {
+      await expect(controller.connect(otherWallet).setBurnBounds(parseEther('3'), parseEther('4')))
+        .to.be.reverted
+    })
+  })
+
+  describe('pause trueUSD and wipe accounts', function () {
+    it('TokenController can pause TrueUSD transfers', async function () {
+      await token.connect(thirdWallet).transfer(mintKey.address, parseEther('10'))
+      await controller.pauseToken()
+      expect(await tokenProxy.implementation())
+        .to.equal('0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291')
+    })
+
+    it('non pauser cannot pause TrueUSD ', async function () {
+      await expect(controller.connect(mintKey).pauseToken())
+        .to.be.reverted
+    })
+  })
+
+  describe('fall back function', function () {
+    it('controller does not accept ether', async function () {
+      await expect(thirdWallet.sendTransaction({ to: controller.address, gasLimit: 6000000, value: 10 }))
+        .to.be.reverted
+    })
+  })
+
+  describe('requestReclaimEther', function () {
+    let forceEther: ForceEther
+
+    beforeEach(async () => {
+      forceEther = await new ForceEtherFactory(thirdWallet).deploy({ value: parseEther('1') })
+    })
+
+    it('reclaims ether', async function () {
+      await forceEther.destroyAndSend(token.address)
+      const balance1 = await provider.getBalance(owner.address)
+      await controller.requestReclaimEther()
+      const balance2 = await provider.getBalance(owner.address)
+      expect(balance2.gt(balance1)).to.be.true
+    })
+
+    it('cannot be called by non-owner', async function () {
+      await forceEther.destroyAndSend(token.address)
+      await expect(controller.connect(otherWallet).requestReclaimEther())
+        .to.be.reverted
+    })
+
+    it('can reclaim ether in the controller contract address', async function () {
+      await forceEther.destroyAndSend(controller.address)
+      const balance1 = await provider.getBalance(owner.address)
+      await controller.reclaimEther(owner.address)
+      const balance2 = await provider.getBalance(owner.address)
+      expect(balance2.gt(balance1)).to.be.true
+    })
+  })
+
+  describe('requestReclaimToken', function () {
+    it('reclaims token', async function () {
+      await token.connect(thirdWallet).transfer(token.address, parseEther('40'))
+      await controller.requestReclaimToken(token.address)
+      await expectTokenBalance(token, owner, parseEther('40'))
+    })
+
+    it('cannot be called by non-owner', async function () {
+      await token.connect(thirdWallet).transfer(token.address, parseEther('40'))
+      await expect(controller.connect(otherWallet).requestReclaimToken(token.address))
+        .to.be.reverted
+    })
+
+    it('can reclaim token in the controller contract address', async function () {
+      await token.connect(thirdWallet).transfer(controller.address, parseEther('40'))
+      await controller.reclaimToken(token.address, owner.address)
+      await expectTokenBalance(token, owner, parseEther('40'))
     })
   })
 
