@@ -1,6 +1,6 @@
 import Web3 from 'web3'
 
-const {utils} = new Web3()
+const { utils } = new Web3()
 
 export const canWriteTo = Buffer.from(utils.sha3('canWriteTo-').slice(2), 'hex')
 

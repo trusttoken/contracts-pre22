@@ -148,7 +148,6 @@ describe('Registry', () => {
     })
 
     it('cannot transfer ether to contract address', async () => {
-      
       await expect(owner.sendTransaction({
         to: registry.address,
         value: 10,
@@ -158,11 +157,11 @@ describe('Registry', () => {
     it('owner can transfer out ether in the contract address', async () => {
       forceEther = await new ForceEtherFactory(owner).deploy({ value: parseEther('10') })
       await forceEther.destroyAndSend(registry.address)
-      const registryInitialWithForcedEther =  await provider.getBalance(registry.address)
+      const registryInitialWithForcedEther = await provider.getBalance(registry.address)
       await registry.reclaimEther(emptyAddress)
-      const registryFinalBalance =  await provider.getBalance(registry.address)
+      const registryFinalBalance = await provider.getBalance(registry.address)
       const emptyAddressFinalBalance = await provider.getBalance(emptyAddress)
-      
+
       expect(registryInitialWithForcedEther).to.equal(parseEther('10'))
       expect(registryFinalBalance).to.equal(0)
       expect(emptyAddressFinalBalance).to.equal(parseEther('10'))
@@ -206,7 +205,7 @@ describe('Registry', () => {
       await registry.subscribe(prop1, token2.address)
       expect(await registryToken.getAttributeValue(thirdWallet.address, prop1)).to.equal(3)
       expect(await token2.getAttributeValue(thirdWallet.address, prop1)).to.equal(0)
-      
+
       await registry.syncAttribute(prop1, 0, [thirdWallet.address])
       expect(await token2.getAttributeValue(thirdWallet.address, prop1)).to.equal(3)
     })
@@ -216,7 +215,7 @@ describe('Registry', () => {
       await registry.subscribe(prop1, token2.address)
       expect(await registryToken.getAttributeValue(thirdWallet.address, prop1)).to.equal(3)
       expect(await token2.getAttributeValue(thirdWallet.address, prop1)).to.equal(0)
-      
+
       await registry.syncAttribute(prop1, 0, [thirdWallet.address])
       expect(await token2.getAttributeValue(thirdWallet.address, prop1)).to.equal(3)
     })
