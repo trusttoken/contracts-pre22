@@ -60,7 +60,6 @@
     "ganache-time-traveler": "^1.0.14",
     "husky": "^4.2.5",
     "openzeppelin-solidity": "^2.4.0",
-    "truffle": "5.1.11",
     "truffle-flattener": "^1.4.3",
     "truffle-hdwallet-provider": "0.0.3",
     "web3": "1.2.4"
