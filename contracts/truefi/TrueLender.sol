@@ -18,6 +18,12 @@ import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
 contract TrueLender is ITrueLender, Ownable {
     using SafeMath for uint256;
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     mapping(address => bool) public allowedBorrowers;
     ILoanToken[] _loans;
 
@@ -49,6 +55,8 @@ contract TrueLender is ITrueLender, Ownable {
 
     // minimum prediction market voting period
     uint256 public votingPeriod = 7 days;
+
+    // ======= STORAGE DECLARATION END ============
 
     event Allowed(address indexed who, bool status);
     event ApyLimitsChanged(uint256 minApy, uint256 maxApy);
