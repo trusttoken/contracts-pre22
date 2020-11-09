@@ -2,7 +2,6 @@
   "name": "truecurrency",
   "version": "2.0.0",
   "description": "",
-  "main": "truffle.js",
   "scripts": {
     "postinstall": "patch-package",
     "flatten": "./flatten-all",
@@ -46,7 +45,6 @@
     "ganache-cli": "6.8.1",
     "ganache-time-traveler": "^1.0.14",
     "openzeppelin-solidity": "^2.4.0",
-    "truffle-flattener": "^1.4.3",
     "web3": "1.2.4"
   },
   "resolutions": {
