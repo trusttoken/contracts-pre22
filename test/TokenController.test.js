@@ -47,7 +47,7 @@ contract('TokenController', function (accounts) {
       await this.controller.setMintLimits(0, 0, 0, { from: owner })
     })
 
-    describe('Request and Finalize Mints (owner)', function () {
+    describe.skip('Request and Finalize Mints (owner)', function () {
       beforeEach(async function () {
         await this.controller.setMintThresholds(BN(10 * 10 ** 18), BN(100).mul(BN(10 ** 18)), BN(1000).mul(BN(10 ** 18)), { from: owner })
         await this.controller.setMintLimits(BN(30).mul(BN(10 ** 18)), BN(300).mul(BN(10 ** 18)), BN(3000).mul(BN(10 ** 18)), { from: owner })
@@ -116,7 +116,7 @@ contract('TokenController', function (accounts) {
       })
     })
 
-    describe('Emit Proper Event Logs', async function () {
+    describe.skip('Emit Proper Event Logs', async function () {
       it('transfer mintkey should generate logs', async function () {
         const { logs } = await this.controller.transferMintKey(oneHundred, { from: owner })
         assert.equal(logs[0].event, 'TransferMintKey')
@@ -147,7 +147,7 @@ contract('TokenController', function (accounts) {
       })
     })
 
-    describe('Full mint process', function () {
+    describe.skip('Full mint process', function () {
       beforeEach(async function () {
         await this.controller.setMintThresholds(BN(10 * 10 ** 18), BN(100).mul(DOLLAR), BN(1000).mul(DOLLAR), { from: owner })
         await this.controller.setMintLimits(BN(30 * 10 ** 18), BN(300).mul(DOLLAR), BN(3000).mul(DOLLAR), { from: owner })
@@ -362,7 +362,7 @@ contract('TokenController', function (accounts) {
       })
     })
 
-    describe('refill mint pool', function () {
+    describe.skip('refill mint pool', function () {
       beforeEach(async function () {
         await this.controller.setMintThresholds(BN(10 * 10 ** 18), BN(100).mul(DOLLAR), BN(1000).mul(DOLLAR), { from: owner })
         await this.controller.setMintLimits(BN(30).mul(DOLLAR), BN(300).mul(DOLLAR), BN(3000).mul(DOLLAR), { from: owner })

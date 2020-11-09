@@ -391,6 +391,84 @@ describe.only('TokenController', () => {
     })
   })
 
+  describe('refill mint pool', function () {
+    beforeEach(async function () {
+      await controller.setMintThresholds(parseEther('10'), parseEther('100'), parseEther('1000'))
+      await controller.setMintLimits(parseEther('30'), parseEther('300'), parseEther('3000'))
+    })
+
+    it('refills multiSig mint pool', async function () {
+      await expect(controller.refillMultiSigMintPool())
+        .to.emit(controller, 'MultiSigPoolRefilled')
+      expect(await controller.multiSigMintPool()).to.equal(parseEther('3000'))
+    })
+
+    it('refills ratify mint pool', async function () {
+      await controller.refillMultiSigMintPool()
+      await controller.connect(ratifier1).refillRatifiedMintPool()
+      await controller.connect(ratifier2).refillRatifiedMintPool()
+
+      await expect(controller.connect(ratifier3).refillRatifiedMintPool())
+        .to.emit(controller, 'RatifyPoolRefilled')
+      expect(await controller.ratifiedMintPool()).to.equal(parseEther('300'))
+      expect(await controller.multiSigMintPool()).to.equal(parseEther('2700'))
+    })
+
+    it('refills instant mint pool', async function () {
+      await controller.refillMultiSigMintPool()
+      await controller.refillRatifiedMintPool()
+
+      await expect(controller.refillInstantMintPool())
+        .to.emit(controller, 'InstantPoolRefilled')
+      expect(await controller.ratifiedMintPool()).to.equal(parseEther('270'))
+      expect(await controller.multiSigMintPool()).to.equal(parseEther('2700'))
+      expect(await controller.instantMintPool()).to.equal(parseEther('30'))
+    })
+
+    it('Ratifier cannot refill RatifiedMintPool alone', async function () {
+      await controller.refillMultiSigMintPool()
+      await controller.connect(ratifier1).refillRatifiedMintPool()
+      await controller.connect(ratifier2).refillRatifiedMintPool()
+      await expect(controller.connect(ratifier1).refillRatifiedMintPool())
+        .to.be.reverted
+      await expect(controller.connect(ratifier2).refillRatifiedMintPool())
+        .to.be.reverted
+    })
+
+    it('refilling the ratify pool clears the array', async function () {
+      await controller.refillMultiSigMintPool()
+      await controller.connect(ratifier1).refillRatifiedMintPool()
+      await controller.connect(ratifier2).refillRatifiedMintPool()
+      await controller.connect(ratifier3).refillRatifiedMintPool()
+      await controller.connect(ratifier1).refillRatifiedMintPool()
+      await controller.connect(ratifier2).refillRatifiedMintPool()
+    })
+
+    it('can finalize mint after refill', async function () {
+      await controller.refillMultiSigMintPool()
+      await controller.connect(mintKey).requestMint(otherWallet.address, parseEther('1000'))
+      await controller.connect(ratifier1).ratifyMint(0, otherWallet.address, parseEther('1000'))
+      await controller.connect(ratifier2).ratifyMint(0, otherWallet.address, parseEther('1000'))
+      await controller.connect(ratifier3).ratifyMint(0, otherWallet.address, parseEther('1000'))
+      await controller.connect(mintKey).requestMint(otherWallet.address, parseEther('1000'))
+      await controller.connect(ratifier1).ratifyMint(1, otherWallet.address, parseEther('1000'))
+      await controller.connect(ratifier2).ratifyMint(1, otherWallet.address, parseEther('1000'))
+      await controller.connect(ratifier3).ratifyMint(1, otherWallet.address, parseEther('1000'))
+      await controller.connect(mintKey).requestMint(otherWallet.address, parseEther('800'))
+      await controller.connect(ratifier1).ratifyMint(2, otherWallet.address, parseEther('800'))
+      await controller.connect(ratifier2).ratifyMint(2, otherWallet.address, parseEther('800'))
+      await controller.connect(ratifier3).ratifyMint(2, otherWallet.address, parseEther('800'))
+      await controller.connect(mintKey).requestMint(otherWallet.address, parseEther('500'))
+      await controller.connect(ratifier1).ratifyMint(3, otherWallet.address, parseEther('500'))
+      await controller.connect(ratifier2).ratifyMint(3, otherWallet.address, parseEther('500'))
+      await controller.connect(ratifier3).ratifyMint(3, otherWallet.address, parseEther('500'))
+      await expectTokenBalance(token, otherWallet, parseEther('2800'))
+      await controller.refillMultiSigMintPool()
+      await controller.connect(mintKey).finalizeMint(3)
+      await expectTokenBalance(token, otherWallet, parseEther('3300'))
+    })
+  })
+
   describe('setCanBurn', () => {
     it('sets whether address can burn', async () => {
       await controller.setCanBurn(otherWallet.address, true)
