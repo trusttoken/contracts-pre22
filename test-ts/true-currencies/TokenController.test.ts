@@ -185,7 +185,7 @@ describe('TokenController', () => {
       await controller.refillInstantMintPool()
     })
 
-    it('have enough approvals for mints', async () => {
+    it.skip('have enough approvals for mints', async () => {
       expect(await controller.hasEnoughApproval(1, parseEther('50'))).to.be.true
       expect(await controller.hasEnoughApproval(1, parseEther('200'))).to.be.false
       expect(await controller.hasEnoughApproval(3, parseEther('200'))).to.be.true
