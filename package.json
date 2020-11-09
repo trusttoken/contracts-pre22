@@ -20,9 +20,6 @@
     "test": "mocha",
     "checks": "yarn lint && yarn typecheck && yarn test"
   },
-  "husky": {
-    "hooks": {}
-  },
   "author": "",
   "license": "SEE LICENSE IN LICENSE.md",
   "devDependencies": {
@@ -58,7 +55,6 @@
     "ethers": "5.0.12",
     "ganache-cli": "6.8.1",
     "ganache-time-traveler": "^1.0.14",
-    "husky": "^4.2.5",
     "openzeppelin-solidity": "^2.4.0",
     "truffle-flattener": "^1.4.3",
     "web3": "1.2.4"
