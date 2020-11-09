@@ -12,7 +12,7 @@ import {
 import {
   expectEvent,
   beforeEachWithFixture,
-} from 'utils'
+} from 'test/utils'
 
 import {
   TrustTokenFactory,

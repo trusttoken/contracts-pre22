@@ -9,7 +9,7 @@
     "clean": "rm -rf ./build",
     "typecheck": "tsc --noEmit",
     "lint:sol": "solhint 'contracts/**/*.sol' && prettylint 'contracts/**/*.sol'",
-    "lint:ts": "eslint '{test,test-ts,scripts}/**/*.ts' -c .eslintrc.typescript.js",
+    "lint:ts": "eslint '{test,scripts}/**/*.ts' -c .eslintrc.typescript.js",
     "lint": "yarn lint:sol && yarn lint:ts",
     "build:sol": "waffle .waffle.json",
     "build:types": "typechain --target ethers-v5 --outDir build/types 'build/*.json'",
