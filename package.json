@@ -61,7 +61,6 @@
     "husky": "^4.2.5",
     "openzeppelin-solidity": "^2.4.0",
     "truffle-flattener": "^1.4.3",
-    "truffle-hdwallet-provider": "0.0.3",
     "web3": "1.2.4"
   },
   "resolutions": {
