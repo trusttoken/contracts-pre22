@@ -3,9 +3,6 @@
   "version": "2.0.0",
   "description": "",
   "main": "truffle.js",
-  "directories": {
-    "test": "./test.sh"
-  },
   "scripts": {
     "postinstall": "patch-package",
     "flatten": "./flatten-all",
