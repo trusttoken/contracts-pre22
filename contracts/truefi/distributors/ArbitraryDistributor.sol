@@ -19,10 +19,18 @@ import {IArbitraryDistributor} from "../interface/IArbitraryDistributor.sol";
 contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
     using SafeMath for uint256;
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     IERC20 public trustToken;
     address public beneficiary;
     uint256 public override amount;
     uint256 public override remaining;
+
+    // ======= STORAGE DECLARATION END ============
 
     /**
      * @dev Initialize distributor
@@ -47,7 +55,7 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
      */
     modifier onlyBeneficiary {
         // prettier-ignore
-        require(msg.sender == beneficiary, 
+        require(msg.sender == beneficiary,
             "ArbitraryDistributor: Only beneficiary can receive tokens");
         _;
     }

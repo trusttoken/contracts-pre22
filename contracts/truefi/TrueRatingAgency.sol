@@ -55,6 +55,14 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         uint256 reward;
     }
 
+    uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
+
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     mapping(address => bool) public allowedSubmitters;
     mapping(address => Loan) public loans;
 
@@ -62,13 +70,13 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     IArbitraryDistributor public distributor;
     ILoanFactory public factory;
 
-    uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
-
     /**
      * @dev % multiplied by 100. e.g. 10.5% = 1050
      */
     uint256 public lossFactor = 2500;
     uint256 public burnFactor = 2500;
+
+    // ======= STORAGE DECLARATION END ============
 
     event Allowed(address indexed who, bool status);
     event LossFactorChanged(uint256 lossFactor);
@@ -306,7 +314,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         bool choice = loans[id].votes[msg.sender][true] > 0;
         LoanStatus loanStatus = status(id);
 
-        require(loans[id].votes[msg.sender][choice] >= stake, 
+        require(loans[id].votes[msg.sender][choice] >= stake,
             "TrueRatingAgency: Cannot withdraw more than was staked");
 
         uint256 amountToTransfer = stake;

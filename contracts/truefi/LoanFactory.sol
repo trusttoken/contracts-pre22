@@ -13,10 +13,18 @@ import {LoanToken, IERC20} from "./LoanToken.sol";
  * LoanTokens adhere to the same contract code, rather than using an interface.
  */
 contract LoanFactory is ILoanFactory, Initializable {
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     IERC20 public currencyToken;
 
     // @dev Track Valid LoanTokens
     mapping(address => bool) public override isLoanToken;
+
+    // ======= STORAGE DECLARATION END ============
 
     /**
      * @dev Emitted when a LoanToken is created
