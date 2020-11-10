@@ -8,6 +8,8 @@ import { Contract } from '@ethersproject/contracts'
 
 import { ask } from './utils'
 import { asProxy } from './utils/asProxy'
+// import { exchangeABI } from './abi/uniswapExchange'
+// import { factoryABI } from './abi/uniswapFactory'
 
 import {
   TrueFarmFactory,
@@ -31,12 +33,12 @@ let tusdAddress: string
 
 // distribution config
 let distributionStart: number
-let ethTruDistributionLength: number
-let tusdTfiDistributionLength: number
-let balDistributionLength: number
-let ethTruDistributionAmount: number
-let tusdTfiDistributionAmount: number
-let balDistributionAmount: number
+let uniswapTfiLength = 365 * 24 * 60 * 60
+let uniswapEthLength = 120 * 24 * 60 * 60
+let balancerLength = 30 * 24 * 60 * 60
+let uniswapTfiAmount = 84_825_000 * 10**8
+let uniswapEthAmount = 42_412_500 * 10**8
+let balancerAmount = 11_310_000 * 10**8
 
 // mainnet uniswap addresses
 let uniswapEthTruAddress: string
@@ -53,12 +55,8 @@ let mainnet = {
 let testnet = {
   truAddress: '0x711161baf6fa362fa41f80ad2295f1f601b44f3f',
   tusdAddress: '0x1cB0906955623920c86A3963593a02a405Bb97fC',
-  tusdTfiDistributionLength: 365 * 24 * 60 * 60,
-  ethTruDistributionLength: 120 * 24 * 60 * 60,
-  balDistributionLength:  30 * 24 * 60 * 60,
-  tusdTfiDistributionAmount: 84_825_000 * 10**8,
-  ethTruDistributionAmount: 42_412_500 * 10**8,
-  balDistributionAmount:  11_310_000 * 10**8
+  controllerAddress: '0x2B5a25Fe01E96d0023764d9331228B9CB25e0089',
+  uniswapFactoryAddress: '0x9c83dCE8CA20E9aAF9D3efc003b2ea62aBC08351',
 }
 
 async function deploy () {
@@ -73,7 +71,8 @@ async function deploy () {
   
   const wallet = new ethers.Wallet(process.argv[2], provider)
 
-  console.log('Current block ', await provider.getBlockNumber())
+  let currentBlock = await provider.getBlockNumber()
+  console.log('Current block ', currentBlock)
   
   if (network == 'local') {
     const[tru, tusd] = await deployTestTokens(wallet, provider)
@@ -82,12 +81,8 @@ async function deploy () {
   if (network != 'mainnet') {
     const tru = await TrustTokenFactory.connect(testnet.truAddress, wallet)
     const tusd = await TrustTokenFactory.connect(testnet.tusdAddress, wallet)
-    tusdTfiDistributionLength = testnet.tusdTfiDistributionLength
-    ethTruDistributionLength = testnet.ethTruDistributionLength
-    balDistributionLength = testnet.balDistributionLength
-    tusdTfiDistributionAmount = testnet.tusdTfiDistributionAmount
-    ethTruDistributionAmount = testnet.ethTruDistributionAmount
-    balDistributionAmount = testnet.balDistributionAmount
+    //const factoryContract = new Contract(testnet.uniswapFactoryAddress, factoryABI, wallet)
+    distributionStart = currentBlock
 
     await deployFarms(wallet, provider, tru)
   }
@@ -96,6 +91,10 @@ async function deploy () {
 }
 
 async function deployLending (wallet, provider, tru, tusd) {
+
+}
+
+async function deployRopstenMockUniswaps(wallet, provider, tru, tusd) {
 
 }
 
@@ -122,15 +121,15 @@ async function deployFarms (wallet, provider, tru) {
     
   // deploy farm implemention
   const uniswapTfiFarmImpl = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
-  console.log('uniswapTfiFarmImpl', uniswapTfiDistributorImpl.address)
+  console.log('uniswapTfiFarmImpl', uniswapTfiFarmImpl.address)
 
   const uniswapEthFarmImpl = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
-  console.log('uniswapEthFarmImpl', uniswapTfiDistributorImpl.address)
+  console.log('uniswapEthFarmImpl', uniswapEthFarmImpl.address)
 
   const balancerFarmImpl = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
-  console.log('balancerFarmImpl', uniswapTfiDistributorImpl.address)
+  console.log('balancerFarmImpl', balancerFarmImpl.address)
 
-    // Put Distributors behind proxy
+  // Put Distributors behind proxy
   const uniswapTfiFarm = await behindProxy(wallet, uniswapTfiFarmImpl, txnArgs.gasPrice)
   console.log('uniswapTfiFarm', uniswapTfiFarm.address)
 
@@ -140,19 +139,26 @@ async function deployFarms (wallet, provider, tru) {
   const balancerFarm = await behindProxy(wallet, balancerFarmImpl, txnArgs.gasPrice)
   console.log('balancerFarmProxy', balancerFarm.address)
 
+  // init distributors
+  await uniswapTfiDistributor.initialize(distributionStart, uniswapTfiLength, uniswapTfiAmount, tru.address)
+  console.log('init uniswapTfiDistributor')
+  await uniswapEthDistributor.initialize(distributionStart, uniswapEthLength, uniswapEthAmount, tru.address)
+  console.log('init uniswapEthDistributor')
+  await balancerDistributor.initialize(distributionStart, balancerLength, balancerAmount, tru.address)
+  console.log('init balancerDistributor')
+
   // Transfer TRU to Distributors (assumes wallet has enough TRU)
+  await (await tru.transfer(uniswapTfiFarm.address, uniswapTfiAmount, txnArgs)).wait()
+  console.log('transferred', uniswapTfiAmount, 'to', 'uniswapTfiFarm')
   
-  await (await tru.transfer(uniswapTfiFarm.address, tusdTfiDistributionAmount, txnArgs)).wait()
-  console.log('transferred', tusdTfiDistributionAmount, 'to', 'uniswapTfiFarm')
-  await (await tru.transfer(uniswapEthFarm.address, ethTruDistributionAmount, txnArgs)).wait()
-  console.log('transferred', ethTruDistributionAmount, 'to', 'uniswapEthFarm')
-  await (await tru.transfer(balancerFarm.address, balDistributionAmount, txnArgs)).wait()
-  console.log('transferred', balDistributionAmount, 'to', 'balancerFarm')
-  console.log('TrueFi deployment completed')
+  await (await tru.transfer(uniswapEthFarm.address, uniswapEthAmount, txnArgs)).wait()
+  console.log('transferred', uniswapEthAmount, 'to', 'uniswapEthFarm')
   
+  await (await tru.transfer(balancerFarm.address, balancerAmount, txnArgs)).wait()
+  console.log('transferred', balancerAmount, 'to', 'balancerFarm')
 }
 
-async function deployTrustToken() {
+async function deployMockTrustToken() {
 
 }
 
@@ -210,7 +216,9 @@ async function deployTestTokens(wallet, provider) {
   await controller.issueClaimOwnership(tusd.address, testArgs)
   console.log('claim tusd')
   await tru.ownerFaucet(wallet.address, '100000000000000000', testArgs) // mint 1 billion tru
-  console.log('initalized mock tokens')
+  console.log('minted tru')
+  await controller.faucet('1000000000000000000000000', testArgs) // mint 1 billion tru
+  console.log('minted tusd')
 
   return [tru, tusd]
 }
