@@ -32,6 +32,9 @@ let distributionStart: number
 let ethTruDistributionLength: number
 let tusdTfiDistributionLength: number
 let balDistributionLength: number
+let ethTruDistributionAmount: number
+let tusdTfiDistributionAmount: number
+let balDistributionAmount: number
 
 // mainnet uniswap addresses
 let uniswapEthTruAddress: string
@@ -80,6 +83,9 @@ async function deploy () {
     tusdTfiDistributionLength = testnet.tusdTfiDistributionLength
     ethTruDistributionLength = testnet.ethTruDistributionLength
     balDistributionLength = testnet.balDistributionLength
+    tusdTfiDistributionAmount = testnet.tusdTfiDistributionAmount
+    ethTruDistributionAmount = testnet.ethTruDistributionAmount
+    balDistributionAmount = testnet.balDistributionAmount
 
     await deployFarms(wallet, provider, tru)
   }
@@ -89,43 +95,6 @@ async function deploy () {
 
 async function deployLending (wallet, provider, tru, tusd) {
 
-}
-
-async function deployTestTokens(wallet, provider) {
-  let testArgs = { gasLimit: 4_500_000, gasPrice: 1_000_000_000 }
-  // deploy implementations
-  const truImpl = await (await new MockTrustTokenFactory(wallet).deploy(testArgs)).deployed()
-  console.log('truImpl', truImpl.address)
-
-  const tusdImpl = await (await new MockTrueCurrencyFactory(wallet).deploy(testArgs)).deployed()
-  console.log('tusdImpl', tusdImpl.address)
-
-  const controllerImpl = await (await new TokenFaucetFactory(wallet).deploy(testArgs)).deployed()
-  console.log('tusdImpl', tusdImpl.address)
-
-  // put contracts behind proxies
-  const tru = await behindProxy(wallet, truImpl, testArgs.gasPrice)
-  console.log('tru', tru.address)
-
-  const tusd = await behindProxy(wallet, tusdImpl, testArgs.gasPrice)
-  console.log('tusd', tusd.address)
-
-  const controller = await behindProxy(wallet, controllerImpl, testArgs.gasPrice)
-  console.log('controller', controller.address)
-
-  // init contracts
-  await tru.initialize(testArgs)
-  await tusd.initialize(testArgs)
-  await controller.initialize(testArgs)
-  await tusd.transferOwnership(controller.address, testArgs)
-  await controller.setRegistry(zeroAddress, testArgs)
-  await controller.setToken(tusd.address, testArgs)
-  await controller.issueClaimOwnership(tusd.address, testArgs)
-  await controller.initializeWithParams(tusd.address, zeroAddress, testArgs)
-  await tru.faucet('100000000000000000', testArgs) // mint 1 billion tru
-  console.log('initalized mock tokens')
-
-  return [tru, tusd]
 }
 
 async function deployFarms (wallet, provider, tru) {
@@ -169,13 +138,16 @@ async function deployFarms (wallet, provider, tru) {
   const balancerFarm = await behindProxy(wallet, balancerFarmImpl, txnArgs.gasPrice)
   console.log('balancerFarmProxy', balancerFarm.address)
 
-  // Transfer TRU to Distributors
-  /*
-  await (await fastDistributor.transfer(wallet.address, balancerFarm.address, 5000000, txnArgs)).wait()
-  await (await fastDistributor.transfer(wallet.address, uniswapEthFarm.address, 5000000, txnArgs)).wait()
-  await (await slowDistributor.transfer(wallet.address, uniswapTusdFarm.address, 10000000, txnArgs)).wait()
+  // Transfer TRU to Distributors (assumes wallet has enough TRU)
+  
+  await (await tru.transfer(uniswapTfiFarm.address, tusdTfiDistributionAmount, txnArgs)).wait()
+  console.log('transferred', tusdTfiDistributionAmount, 'to', 'uniswapTfiFarm')
+  await (await tru.transfer(uniswapEthFarm.address, ethTruDistributionAmount, txnArgs)).wait()
+  console.log('transferred', ethTruDistributionAmount, 'to', 'uniswapEthFarm')
+  await (await tru.transfer(balancerFarm.address, balDistributionAmount, txnArgs)).wait()
+  console.log('transferred', balDistributionAmount, 'to', 'balancerFarm')
   console.log('TrueFi deployment completed')
-  */
+  
 }
 
 async function deployTrustToken() {
@@ -200,6 +172,45 @@ async function initDistributor(
 {
   let txnArgs = { gasLimit: 2_500_000, gasPrice: 1_000_000_000 }
 
+}
+
+async function deployTestTokens(wallet, provider) {
+  let testArgs = { gasLimit: 4_500_000, gasPrice: 1_000_000_000 }
+  // deploy implementations
+  const truImpl = await (await new MockTrustTokenFactory(wallet).deploy(testArgs)).deployed()
+  console.log('truImpl', truImpl.address)
+
+  const tusdImpl = await (await new MockTrueCurrencyFactory(wallet).deploy(testArgs)).deployed()
+  console.log('tusdImpl', tusdImpl.address)
+
+  const controllerImpl = await (await new TokenFaucetFactory(wallet).deploy(testArgs)).deployed()
+  console.log('tusdImpl', tusdImpl.address)
+
+  // put contracts behind proxies
+  const tru = await behindProxy(wallet, truImpl, testArgs.gasPrice)
+  console.log('tru', tru.address)
+
+  const tusd = await behindProxy(wallet, tusdImpl, testArgs.gasPrice)
+  console.log('tusd', tusd.address)
+
+  const controller = await behindProxy(wallet, controllerImpl, testArgs.gasPrice)
+  console.log('controller', controller.address)
+
+  // init contracts
+  await tru.initialize(testArgs)
+  console.log('init tru')
+  await tusd.initialize(testArgs)
+  console.log('init tusd')
+  await controller.initializeWithParams(tusd.address, zeroAddress, testArgs)
+  console.log('init controller')
+  await tusd.transferOwnership(controller.address, testArgs)
+  console.log('transfer tusd')
+  await controller.issueClaimOwnership(tusd.address, testArgs)
+  console.log('claim tusd')
+  await tru.ownerFaucet(wallet.address, '100000000000000000', testArgs) // mint 1 billion tru
+  console.log('initalized mock tokens')
+
+  return [tru, tusd]
 }
 
 deploy().catch(console.error)

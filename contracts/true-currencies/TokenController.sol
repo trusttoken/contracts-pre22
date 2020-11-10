@@ -9,17 +9,60 @@ import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
 
 import {TrueCurrencyWithGasRefund} from "./TrueCurrencyWithGasRefund.sol";
 
-/**
- * @dev Contract that can be called with a gas refund
- */
+/// Contract that can be called with a gas refund
 interface IHook {
     function hook() external;
 }
 
+/// HasOwner
 interface IHasOwner {
     function claimOwnership() external;
-
     function transferOwnership(address newOwner) external;
+}
+
+/// Reclaim Token
+interface IReclaimerToken {
+    function reclaimToken(IERC20 token, address _to) external;
+    function reclaimEther(address payable _to) external;
+}
+
+/// TrueCurrency
+interface ITrueCurrency is IERC20, IReclaimerToken, IHasOwner {
+    function refundGas(uint256 amount) external;
+    function setBlacklisted(address account, bool _isBlacklisted) external;
+    function setCanBurn(address account, bool _canBurn) external;
+    function setBurnBounds(uint256 _min, uint256 _max) external;
+    function mint(address account, uint256 amount) external;
+}
+
+/// Registry Clone
+interface RegistryClone {
+    function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
+}
+
+/// Registry
+interface IRegistry is IHasOwner, IReclaimerToken {
+    function setAttribute(address _who, bytes32 _attribute, uint256 _value, bytes32 _notes) external;
+    function subscribe(bytes32 _attribute, RegistryClone _syncer) external;
+    function unsubscribe(bytes32 _attribute, uint256 _index) external;
+    function subscriberCount(bytes32 _attribute) external view returns (uint256);
+    function setAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
+    function hasAttribute(address _who, bytes32 _attribute) external view returns (bool);
+    function getAttribute(address _who, bytes32 _attribute) external view returns (uint256, bytes32, address, uint256);
+    function getAttributeValue(address _who, bytes32 _attribute) external view returns (uint256);
+    function getAttributeAdminAddr(address _who, bytes32 _attribute) external view returns (address);
+    function getAttributeTimestamp(address _who, bytes32 _attribute) external view returns (uint256);
+    function syncAttribute(bytes32 _attribute, uint256 _startIndex, address[] calldata _addresses) external;
+}
+
+/// Owned Upgradability Proxy
+interface IOwnedUpgradeabilityProxy {
+    function proxyOwner() external view returns (address owner);
+    function pendingProxyOwner() external view returns (address pendingOwner);
+    function transferProxyOwnership(address newOwner) external;
+    function claimProxyOwnership() external;
+    function upgradeTo(address implementation) external;
+    function implementation() external view returns (address impl);
 }
 
 /** @title TokenController
@@ -82,8 +125,8 @@ contract TokenController {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    TrueCurrencyWithGasRefund public token;
-    Registry public registry;
+    ITrueCurrency public token;
+    IRegistry public registry;
     address public registryAdmin;
     address public gasRefunder;
 
@@ -144,7 +187,7 @@ contract TokenController {
     /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
-    event SetToken(TrueCurrencyWithGasRefund newContract);
+    event SetToken(ITrueCurrency newContract);
     /// @dev Emitted when canBurn status of the `burner` was changed to `canBurn`
     event CanBurn(address burner, bool canBurn);
 
@@ -534,7 +577,7 @@ contract TokenController {
      * @dev Update this contract's token pointer to newContract (e.g. if the
      * contract is upgraded)
      */
-    function setToken(TrueCurrencyWithGasRefund _newContract) external onlyOwner {
+    function setToken(ITrueCurrency _newContract) external onlyOwner {
         token = _newContract;
         emit SetToken(_newContract);
     }
@@ -542,7 +585,7 @@ contract TokenController {
     /**
      * @dev Update this contract's registry pointer to _registry
      */
-    function setRegistry(Registry _registry) external onlyOwner {
+    function setRegistry(IRegistry _registry) external onlyOwner {
         registry = _registry;
         emit SetRegistry(address(registry));
     }
