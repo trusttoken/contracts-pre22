@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+// prettier-ignore
 import {
     TokenController, 
     OwnedUpgradeabilityProxy,
@@ -33,10 +34,10 @@ contract TokenControllerMock is TokenController {
         registryAdmin = owner;
         // set mint limits & thresholds
         // instant = 1M, ratified = 10M, multisig = 100M
-        uint256 instant  = 1000000000000000000000000;
+        uint256 instant = 1000000000000000000000000;
         uint256 ratified = 10000000000000000000000000;
         uint256 multiSig = 100000000000000000000000000;
-        instantMintThreshold  = instant;
+        instantMintThreshold = instant;
         ratifiedMintThreshold = ratified;
         multiSigMintThreshold = multiSig;
         instantMintLimit = instant;

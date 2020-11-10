@@ -15,18 +15,21 @@ interface IHook {
 }
 
 /// HasOwner
+// prettier-ignore
 interface IHasOwner {
     function claimOwnership() external;
     function transferOwnership(address newOwner) external;
 }
 
 /// Reclaim Token
+// prettier-ignore
 interface IReclaimerToken {
     function reclaimToken(IERC20 token, address _to) external;
     function reclaimEther(address payable _to) external;
 }
 
 /// TrueCurrency
+// prettier-ignore
 interface ITrueCurrency is IERC20, IReclaimerToken, IHasOwner {
     function refundGas(uint256 amount) external;
     function setBlacklisted(address account, bool _isBlacklisted) external;
@@ -36,11 +39,13 @@ interface ITrueCurrency is IERC20, IReclaimerToken, IHasOwner {
 }
 
 /// Registry Clone
+// prettier-ignore
 interface RegistryClone {
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) external;
 }
 
 /// Registry
+// prettier-ignore
 interface IRegistry is IHasOwner, IReclaimerToken {
     function setAttribute(address _who, bytes32 _attribute, uint256 _value, bytes32 _notes) external;
     function subscribe(bytes32 _attribute, RegistryClone _syncer) external;
@@ -56,6 +61,7 @@ interface IRegistry is IHasOwner, IReclaimerToken {
 }
 
 /// Owned Upgradability Proxy
+// prettier-ignore
 interface IOwnedUpgradeabilityProxy {
     function proxyOwner() external view returns (address owner);
     function pendingProxyOwner() external view returns (address pendingOwner);
