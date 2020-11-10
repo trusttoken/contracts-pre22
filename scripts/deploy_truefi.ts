@@ -2,49 +2,204 @@
  * ts-node scripts/deploy_truefi.ts "{private_key}" "{network}"
  */
 import { ethers, providers } from 'ethers'
+import { Contract, ContractFactory } from "@ethersproject/contracts";
 
 import { ask } from './utils'
+import { asProxy } from './utils/asProxy'
 
 import {
   TrueFarmFactory,
-  SlowTrueDistributorFactory,
-  FastTrueDistributorFactory,
-} from 'contracts'
+  LinearTrueDistributorFactory,
+  OwnedUpgradeabilityProxyFactory,
+  TrustTokenFactory,
+  TrueUsdFactory,
+  MockTrueCurrencyFactory,
+  MockTrustTokenFactory,
+  TokenFaucetFactory
+} from '../build/types'
 
-async function deployTrueFi () {
-  const txnArgs = { gasLimit: 2_500_000, gasPrice: 100_000_000_000 }
-  const provider = new providers.InfuraProvider(process.argv[3], '81447a33c1cd4eb09efb1e8c388fb28e')
-  const wallet = new ethers.Wallet(process.argv[2], provider)
+// default txn args
+const txnArgs = { gasLimit: 2_500_000, gasPrice: 1_000_000_000 }
 
-  const truAddress = await ask('TrustToken address: ')
-  console.log('Current block ', await provider.getBlockNumber())
-  const startingBlock = Number.parseInt(await ask('Starting block: '))
+const zeroAddress = '0x0000000000000000000000000000000000000000'
 
-  const slowDistributor = await (await new SlowTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
-  await (await slowDistributor.initialize(startingBlock, truAddress)).wait()
+// token addresses
+let truAddress: string
+let tusdAddress: string
 
-  const fastDistributor = await (await new FastTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
-  await (await fastDistributor.initialize(startingBlock, truAddress)).wait()
+// distribution config
+let distributionStart: number
+let ethTruDistributionLength: number
+let tusdTfiDistributionLength: number
+let balDistributionLength: number
 
-  const blpAddress = await ask('Balancer BAL/TRU LP address: ')
-  const balancerFarm = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
-  await (await balancerFarm.initialize(blpAddress, fastDistributor.address, 'BAL/TRU Farm')).wait()
-  console.log('Balancer TrueFarm address: ', balancerFarm.address)
+// mainnet uniswap addresses
+let uniswapEthTruAddress: string
+let uniswapTusdTfiAddress: string
+let uniswapBalTruAddress: string
 
-  const ulpEthAddress = await ask('Uniswap ETH/TRU LP address: ')
-  const uniswapEthFarm = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
-  await (await uniswapEthFarm.initialize(ulpEthAddress, fastDistributor.address, 'ETH/TRU Farm')).wait()
-  console.log('Uniswap ETH/TRU TrueFarm address: ', uniswapEthFarm.address)
+// mainnet config
+let mainnet = {
+  truAddress: '0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784',
+  tusdAddress: '0x0000000000085d4780B73119b644AE5ecd22b376'
+}
 
-  const ulpTusdAddress2 = await ask('Uniswap TUSD/TrueFiLP address: ')
-  const uniswapTusdFarm = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
-  await (await uniswapTusdFarm.initialize(ulpTusdAddress2, slowDistributor.address, 'TUSD/TrueFiLP Farm')).wait()
-  console.log('Uniswap TUSD/TrueFiLP TrueFarm address: ', uniswapTusdFarm.address)
+// ropsten config
+let testnet = {
+  truAddress: '0x711161baf6fa362fa41f80ad2295f1f601b44f3f',
+  tusdAddress: '0x1cB0906955623920c86A3963593a02a405Bb97fC',
+  tusdTfiDistributionLength: 365 * 24 * 60 * 60,
+  ethTruDistributionLength: 120 * 24 * 60 * 60,
+  balDistributionLength:  30 * 24 * 60 * 60,
+  tusdTfiDistributionAmount: 84_825_000 * 10**8,
+  ethTruDistributionAmount: 42_412_500 * 10**8,
+  balDistributionAmount:  11_310_000 * 10**8
+}
 
+async function deploy () {
+  let provider
+  const network = process.argv[3]
+  if (network == 'local') {
+    provider = new ethers.providers.JsonRpcProvider('HTTP://127.0.0.1:7545');
+  }
+  else {
+    provider = new providers.InfuraProvider(network, 'e33335b99d78415b82f8b9bc5fdc44c0');
+  }
+  
+  const wallet = new ethers.Wallet(process.argv[2], provider);
+
+  console.log('Current block ', await provider.getBlockNumber());
+  
+  if (network == 'local') {
+    const[tru, tusd] = await deployTestTokens(wallet, provider)
+  }
+
+  if (network != 'mainnet') {
+    const tru = await TrustTokenFactory.connect(testnet.truAddress, wallet)
+    const tusd = await TrustTokenFactory.connect(testnet.tusdAddress, wallet)
+    tusdTfiDistributionLength = testnet.tusdTfiDistributionLength
+    ethTruDistributionLength = testnet.ethTruDistributionLength
+    balDistributionLength = testnet.balDistributionLength
+
+    await deployFarms(wallet, provider, tru)
+  }
+
+  console.log('TrueFi Deployment Completed')
+}
+
+async function deployLending (wallet, provider, tru, tusd) {
+
+}
+
+async function deployTestTokens(wallet, provider) {
+  let testArgs = { gasLimit: 4_500_000, gasPrice: 1_000_000_000 }
+  // deploy implementations
+  const truImpl = await (await new MockTrustTokenFactory(wallet).deploy(testArgs)).deployed()
+  console.log('truImpl', truImpl.address)
+
+  const tusdImpl = await (await new MockTrueCurrencyFactory(wallet).deploy(testArgs)).deployed()
+  console.log('tusdImpl', tusdImpl.address)
+
+  const controllerImpl = await (await new TokenFaucetFactory(wallet).deploy(testArgs)).deployed()
+  console.log('tusdImpl', tusdImpl.address)
+
+  // put contracts behind proxies
+  const tru = await behindProxy(wallet, truImpl, testArgs.gasPrice)
+  console.log('tru', tru.address)
+
+  const tusd = await behindProxy(wallet, tusdImpl, testArgs.gasPrice)
+  console.log('tusd', tusd.address)
+
+  const controller = await behindProxy(wallet, controllerImpl, testArgs.gasPrice)
+  console.log('controller', controller.address)
+
+  // init contracts
+  await tru.initialize(testArgs)
+  await tusd.initialize(testArgs)
+  await controller.initialize(testArgs)
+  await tusd.transferOwnership(controller.address, testArgs)
+  await controller.setRegistry(zeroAddress, testArgs)
+  await controller.setToken(tusd.address, testArgs)
+  await controller.issueClaimOwnership(tusd.address, testArgs)
+  await controller.initializeWithParams(tusd.address, zeroAddress, testArgs)
+  await tru.faucet('100000000000000000', testArgs) // mint 1 billion tru
+  console.log('initalized mock tokens')
+
+  return [tru, tusd]
+}
+
+async function deployFarms (wallet, provider, tru) {
+  // deploy distributor implementations
+  const uniswapTfiDistributorImpl = await (await new LinearTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
+  console.log('uniswapTfiDistributorImpl', uniswapTfiDistributorImpl.address)
+  
+  const uniswapEthDistributorImpl = await (await new LinearTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
+  console.log('uniswapEthDistributorImpl', uniswapEthDistributorImpl.address)
+  
+  const balancerDistributorImpl = await (await new LinearTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
+  console.log('balancerDistributorImpl', balancerDistributorImpl.address)
+
+  // put distributors behind proxy
+  const uniswapTfiDistributor = await behindProxy(wallet, uniswapTfiDistributorImpl, txnArgs.gasPrice)
+  console.log('uniswapTfiDistributor', uniswapTfiDistributor.address)
+
+  const uniswapEthDistributor = await behindProxy(wallet, uniswapEthDistributorImpl, txnArgs.gasPrice)
+  console.log('uniswapEthDistributor', uniswapEthDistributor.address)
+
+  const balancerDistributor = await behindProxy(wallet, balancerDistributorImpl, txnArgs.gasPrice)
+  console.log('balancerDistributorProxy', balancerDistributor.address)
+    
+  // deploy farm implemention
+  const uniswapTfiFarmImpl = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
+  console.log('uniswapTfiFarmImpl', uniswapTfiDistributorImpl.address)
+
+  const uniswapEthFarmImpl = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
+  console.log('uniswapEthFarmImpl', uniswapTfiDistributorImpl.address)
+
+  const balancerFarmImpl = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
+  console.log('balancerFarmImpl', uniswapTfiDistributorImpl.address)
+
+    // Put Distributors behind proxy
+  const uniswapTfiFarm = await behindProxy(wallet, uniswapTfiFarmImpl, txnArgs.gasPrice)
+  console.log('uniswapTfiFarm', uniswapTfiFarm.address)
+
+  const uniswapEthFarm = await behindProxy(wallet, uniswapEthFarmImpl, txnArgs.gasPrice)
+  console.log('uniswapEthFarm', uniswapEthFarm.address)
+
+  const balancerFarm = await behindProxy(wallet, balancerFarmImpl, txnArgs.gasPrice)
+  console.log('balancerFarmProxy', balancerFarm.address)
+
+  // Transfer TRU to Distributors
+  /*
   await (await fastDistributor.transfer(wallet.address, balancerFarm.address, 5000000, txnArgs)).wait()
   await (await fastDistributor.transfer(wallet.address, uniswapEthFarm.address, 5000000, txnArgs)).wait()
   await (await slowDistributor.transfer(wallet.address, uniswapTusdFarm.address, 10000000, txnArgs)).wait()
   console.log('TrueFi deployment completed')
+  */
 }
 
-deployTrueFi().catch(console.error)
+async function deployTrustToken() {
+
+}
+
+async function behindProxy(wallet: ethers.Wallet, implementation: Contract, gasPrice: number) {
+  const proxyTxnArgs = { gasLimit: 2_500_000, gasPrice: gasPrice }
+  const upgradeTxnArgs = { gasLimit: 200_000, gasPrice: gasPrice }
+  const proxy = await (await new OwnedUpgradeabilityProxyFactory(wallet).deploy(proxyTxnArgs)).deployed()
+  await proxy.upgradeTo(implementation.address, upgradeTxnArgs)
+  const contract = implementation.attach(proxy.address).connect(wallet)
+  return contract
+}
+
+async function initDistributor(
+  wallet: ethers.Wallet,
+  startBlock: number,
+  endBlock: number,
+  amount: number,
+  tru: ethers.Contract )
+{
+  let txnArgs = { gasLimit: 2_500_000, gasPrice: 1_000_000_000 }
+
+}
+
+deploy().catch(console.error)
