@@ -1,0 +1,20 @@
+{
+  "mainnet": {
+    "contracts": {
+      "tusd": "0x0000000000085d4780B73119b644AE5ecd22b376",
+      "trustToken": "0x0000000000085d4780B73119b644AE5ecd22b376",
+      "liquidityTokens": {
+        "balTruBal": "",
+        "ethTruUni": "",
+        "tusdLpUni": ""
+      },
+      "nxm": "0xd7c49cee7e9188cca6ad8ff264c1da2e69d4cf3b",
+      "curve": {
+        "pool": "0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3",
+        "yGauge": "0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1"
+      },
+      "uniswapRouter": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d"
+    },
+    "distributionStart": 1606000
+  }
+}

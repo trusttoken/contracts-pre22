@@ -75,7 +75,7 @@ export const setupDeploy = (wallet: Wallet) => async <T extends ContractFactory>
   return contract
 }
 
-export const saveDeployResult = (fileName: string) => async (result: {}) => {
+export const saveDeployResult = (fileName: string) => async (result: unknown) => {
   console.log('saving results...')
   if (!fs.existsSync('./scripts/deploy')) {
     fs.mkdirSync('./scripts/deploy')

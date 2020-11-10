@@ -27,6 +27,12 @@ import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     ICurvePool public _curvePool;
     ICurveGauge public _curveGauge;
     IERC20 public _currencyToken;
@@ -38,6 +44,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     uint256 public joiningFee = 25;
     // track claimable fees
     uint256 public claimableFees;
+
+    // ======= STORAGE DECLARATION END ============
 
     // curve.fi data
     uint8 constant N_TOKENS = 4;
@@ -149,7 +157,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      */
     function poolValue() public view returns (uint256) {
         // prettier-ignore
-        return 
+        return
             currencyBalance()
             .add(_lender.value())
             .add(

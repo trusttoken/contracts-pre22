@@ -26,10 +26,18 @@ contract QuadraticTrueDistributor is ITrueDistributor, Ownable {
     uint256 public constant PRECISION = 1e33;
     uint256 public constant TOTAL_SHARES = 1e7;
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     IERC20 public override trustToken;
     uint256 public startingBlock;
     uint256 public lastBlock;
     mapping(address => Farm) public farms;
+
+    // ======= STORAGE DECLARATION END ============
 
     function getDistributionFactor() public virtual pure returns (uint256) {
         return 26824995976250469437449703116;

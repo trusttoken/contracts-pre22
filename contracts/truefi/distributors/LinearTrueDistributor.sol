@@ -19,6 +19,12 @@ import {ITrueDistributor, IERC20} from "../interface/ITrueDistributor.sol";
 contract LinearTrueDistributor is ITrueDistributor, Ownable {
     using SafeMath for uint256;
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     IERC20 public override trustToken;
     uint256 public distributionStart;
     uint256 public duration;
@@ -28,6 +34,8 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
 
     // contract which claim tokens from distributor
     address public farm;
+
+    // ======= STORAGE DECLARATION END ============
 
     /**
      * @dev Emitted when the farm address is changed

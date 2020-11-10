@@ -18,6 +18,12 @@ contract TrueFarm is ITrueFarm, Initializable {
     using SafeMath for uint256;
     uint256 constant PRECISION = 1e30;
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     IERC20 public override stakingToken;
     IERC20 public override trustToken;
     ITrueDistributor public override trueDistributor;
@@ -37,6 +43,8 @@ contract TrueFarm is ITrueFarm, Initializable {
     // track total rewards
     uint256 public totalClaimedRewards;
     uint256 public totalFarmRewards;
+
+    // ======= STORAGE DECLARATION END ============
 
     /**
      * @dev Emitted when an account stakes
