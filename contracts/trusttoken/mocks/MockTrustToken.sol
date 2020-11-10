@@ -10,10 +10,11 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
  * in order to prevent rewards from getting stuck in the remainder on division.
  * Tolerates dilution to slash stake and accept rewards.
  */
+// prettier-ignore
 contract MockTrustToken is TrustToken {
     using SafeMath for uint256;
 
-    mapping(address=>uint256) faucets;
+    mapping(address => uint256) faucets;
     uint256 constant MAX_FAUCET = 100000000000;
     uint256 constant DURATION = 0 seconds;
 

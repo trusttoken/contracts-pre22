@@ -1,8 +1,10 @@
 /**
  * ts-node scripts/deploy_truefi.ts "{private_key}" "{network}"
  */
+
+/* eslint-disable */
 import { ethers, providers } from 'ethers'
-import { Contract, ContractFactory } from "@ethersproject/contracts";
+import { Contract } from '@ethersproject/contracts'
 
 import { ask } from './utils'
 import { asProxy } from './utils/asProxy'
@@ -12,7 +14,7 @@ import {
   LinearTrueDistributorFactory,
   OwnedUpgradeabilityProxyFactory,
   TrustTokenFactory,
-  TrueUsdFactory,
+  // TrueUsdFactory,
   MockTrueCurrencyFactory,
   MockTrustTokenFactory,
   TokenFaucetFactory
@@ -63,15 +65,15 @@ async function deploy () {
   let provider
   const network = process.argv[3]
   if (network == 'local') {
-    provider = new ethers.providers.JsonRpcProvider('HTTP://127.0.0.1:7545');
+    provider = new ethers.providers.JsonRpcProvider('HTTP://127.0.0.1:7545')
   }
   else {
-    provider = new providers.InfuraProvider(network, 'e33335b99d78415b82f8b9bc5fdc44c0');
+    provider = new providers.InfuraProvider(network, 'e33335b99d78415b82f8b9bc5fdc44c0')
   }
   
-  const wallet = new ethers.Wallet(process.argv[2], provider);
+  const wallet = new ethers.Wallet(process.argv[2], provider)
 
-  console.log('Current block ', await provider.getBlockNumber());
+  console.log('Current block ', await provider.getBlockNumber())
   
   if (network == 'local') {
     const[tru, tusd] = await deployTestTokens(wallet, provider)
@@ -175,7 +177,7 @@ async function initDistributor(
 }
 
 async function deployTestTokens(wallet, provider) {
-  let testArgs = { gasLimit: 4_500_000, gasPrice: 1_000_000_000 }
+  const testArgs = { gasLimit: 4_500_000, gasPrice: 1_000_000_000 }
   // deploy implementations
   const truImpl = await (await new MockTrustTokenFactory(wallet).deploy(testArgs)).deployed()
   console.log('truImpl', truImpl.address)
