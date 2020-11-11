@@ -4,12 +4,12 @@
 
 /* eslint-disable */
 import { ethers, providers } from 'ethers'
-import { Contract } from '@ethersproject/contracts'
+import { Contract, ContractFactory } from '@ethersproject/contracts'
 
 import { ask } from './utils'
 import { asProxy } from './utils/asProxy'
-// import { exchangeABI } from './abi/uniswapExchange'
-// import { factoryABI } from './abi/uniswapFactory'
+import UniswapV2Factory from '@uniswap/v2-core/build/UniswapV2Factory.json'
+import { wethAbi } from './abi/weth'
 
 import {
   TrueFarmFactory,
@@ -45,10 +45,15 @@ let uniswapEthTruAddress: string
 let uniswapTusdTfiAddress: string
 let uniswapBalTruAddress: string
 
+let uniswapFactoryAddress: string
+let balancerFactoryAddress: string
+
 // mainnet config
 let mainnet = {
   truAddress: '0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784',
-  tusdAddress: '0x0000000000085d4780B73119b644AE5ecd22b376'
+  tusdAddress: '0x0000000000085d4780B73119b644AE5ecd22b376',
+  balancerFactoryAddress: '0x9424B1412450D0f8Fc2255FAf6046b98213B76Bd',
+  wethAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 }
 
 // ropsten config
@@ -57,6 +62,7 @@ let testnet = {
   tusdAddress: '0x1cB0906955623920c86A3963593a02a405Bb97fC',
   controllerAddress: '0x2B5a25Fe01E96d0023764d9331228B9CB25e0089',
   uniswapFactoryAddress: '0x9c83dCE8CA20E9aAF9D3efc003b2ea62aBC08351',
+  wethAddress: ''
 }
 
 async function deploy () {
@@ -75,27 +81,51 @@ async function deploy () {
   console.log('Current block ', currentBlock)
   
   if (network == 'local') {
+    const weth = await deployWeth(wallet, provider)
     const[tru, tusd] = await deployTestTokens(wallet, provider)
+    const uniswap = await deployUniswapFactory(wallet, provider)
+    // const weth = await deployWeth(wallet, provider)
+    const [tfi, lender, creditMarket] = await deployTrueFi(wallet, provider, tru, tusd)
+    //const [uniswapTruEth, uniswapTusdTfi] = await deployUniswapPairs(wallet, provider, uniswap, tru, tusd, tfi, weth)
+  }
+
+  if (network == 'ropsten') {
+    // TODO attach or deploy contracts
   }
 
   if (network != 'mainnet') {
     const tru = await TrustTokenFactory.connect(testnet.truAddress, wallet)
     const tusd = await TrustTokenFactory.connect(testnet.tusdAddress, wallet)
-    //const factoryContract = new Contract(testnet.uniswapFactoryAddress, factoryABI, wallet)
     distributionStart = currentBlock
 
-    await deployFarms(wallet, provider, tru)
+    const [uniswapTfiFarm, uniswapEthFarm, balancerFarm] = await deployFarms(wallet, provider, tru)
+    
   }
 
   console.log('TrueFi Deployment Completed')
 }
 
-async function deployLending (wallet, provider, tru, tusd) {
-
+async function deployTrueFi (wallet, provider, tru, tusd) {
+  let tfi, lender, creditMarket
+  return [tfi, lender, creditMarket]
 }
 
-async function deployRopstenMockUniswaps(wallet, provider, tru, tusd) {
+async function deployUniswapPairs(wallet, provider, uniswap, tru, tusd, tfi, weth) {
+  await uniswap.createPair(weth.address, tru.address)
+}
 
+async function deployUniswapFactory(wallet, provider) {
+  const UniswapFactory = new ContractFactory(UniswapV2Factory.abi, UniswapV2Factory.bytecode, wallet)
+  const uniswap = await (await UniswapFactory.deploy(txnArgs)).deployed()
+  console.log('uniswap', uniswap.address)
+  return uniswap
+}
+
+async function deployWeth(wallet, provider) {
+  const WethFactory = new ContractFactory(wethAbi.abi, wethAbi.bytecode, wallet)
+  const weth = await (await WethFactory.deploy(txnArgs)).deployed()
+  console.log('weth', weth.address)
+  return weth
 }
 
 async function deployFarms (wallet, provider, tru) {
@@ -156,12 +186,10 @@ async function deployFarms (wallet, provider, tru) {
   
   await (await tru.transfer(balancerFarm.address, balancerAmount, txnArgs)).wait()
   console.log('transferred', balancerAmount, 'to', 'balancerFarm')
+  return [uniswapTfiFarm, uniswapEthFarm, balancerFarm]
 }
 
-async function deployMockTrustToken() {
-
-}
-
+// deploy contract implementation behind proxy
 async function behindProxy(wallet: ethers.Wallet, implementation: Contract, gasPrice: number) {
   const proxyTxnArgs = { gasLimit: 2_500_000, gasPrice: gasPrice }
   const upgradeTxnArgs = { gasLimit: 200_000, gasPrice: gasPrice }
@@ -171,19 +199,10 @@ async function behindProxy(wallet: ethers.Wallet, implementation: Contract, gasP
   return contract
 }
 
-async function initDistributor(
-  wallet: ethers.Wallet,
-  startBlock: number,
-  endBlock: number,
-  amount: number,
-  tru: ethers.Contract )
-{
-  let txnArgs = { gasLimit: 2_500_000, gasPrice: 1_000_000_000 }
-
-}
-
+// used for local network testing
 async function deployTestTokens(wallet, provider) {
   const testArgs = { gasLimit: 4_500_000, gasPrice: 1_000_000_000 }
+
   // deploy implementations
   const truImpl = await (await new MockTrustTokenFactory(wallet).deploy(testArgs)).deployed()
   console.log('truImpl', truImpl.address)
