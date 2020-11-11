@@ -17,7 +17,7 @@ import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
  * The strategy takes into account several parameters and consumes
  * information from the prediction market in order to approve loans
  *
- * This strategy is conservative to avoid defaults. 
+ * This strategy is conservative to avoid defaults.
  * See: https://github.com/trusttoken/truefi-spec
  *
  * 1. Only approve loans which have the following inherent properties:
@@ -385,7 +385,7 @@ contract TrueLender is ITrueLender, Ownable {
     function votesThresholdReached(uint256 amount, uint256 yesVotes) public view returns (bool) {
         return amount.mul(participationFactor) <= yesVotes.mul(10000).mul(TOKEN_PRECISION_DIFFERENCE);
     }
-    
+
     /**
      * @dev Use APY and term of loan to check expected value of a loan
      * Expected value = profit - (default_loss * (no / yes))
