@@ -1,9 +1,8 @@
+/* eslint-disable */
+
 /**
  * ts-node scripts/deploy_truefi.ts "{private_key}" "{network}"
- 6067139c587f46c6047205f300d54977a84d37e8c4adac06596efc204dbe3550
  */
-
-/* eslint-disable */
 import { ethers, providers, BigNumber } from 'ethers'
 import { Contract, ContractFactory } from '@ethersproject/contracts'
 import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
@@ -37,7 +36,7 @@ import {
 } from '../build'
 
 // default txn args
-const txnArgs = { gasLimit: 2_500_000, gasPrice: 1_000_000_000 }
+const txnArgs = { gasLimit: 2_500_000, gasPrice: 0_001_000_000 }
 
 const zeroAddress = '0x0000000000000000000000000000000000000000'
 
