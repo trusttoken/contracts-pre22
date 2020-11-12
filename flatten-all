@@ -13,10 +13,6 @@ truffle-flattener contracts/true-currencies/tokens/TrueCAD.sol > flat-contracts/
 truffle-flattener contracts/true-currencies/tokens/TrueGBP.sol > flat-contracts/flat_TrueGBP.sol
 truffle-flattener contracts/true-currencies/tokens/TrueHKD.sol > flat-contracts/flat_TrueHKD.sol
 
-# trusttoken & truefi
-truffle-flattener contracts/trusttoken/TrustToken.sol > flat-contracts/flat_TrustToken.sol
-truffle-flattener contracts/truefi/CurvePool.sol > flat-contracts/flat_CurvePool.sol
-
 # token controller & regsitry
 truffle-flattener contracts/true-currencies/TokenController.sol > flat-contracts/flat_TokenController.sol
 truffle-flattener contracts/registry/Registry.sol > flat-contracts/flat_Registry.sol
@@ -24,3 +20,14 @@ truffle-flattener contracts/registry/Registry.sol > flat-contracts/flat_Registry
 # proxies
 truffle-flattener contracts/proxy/OwnedUpgradeabilityProxy.sol > flat-contracts/flat_OwnedUpgradeabilityProxy.sol
 truffle-flattener contracts/proxy/TimeOwnedUpgradeabilityProxy.sol > flat-contracts/flat_TimeOwnedUpgradeabilityProxy.sol
+
+# trusttoken & truefi
+truffle-flattener contracts/trusttoken/TrustToken.sol > flat-contracts/flat_TrustToken.sol
+truffle-flattener contracts/truefi/LoanFactory.sol > flat-contracts/flat_LoanFactory.sol
+truffle-flattener contracts/truefi/TrueRatingAgency.sol > flat-contracts/flat_TrueRatingAgency.sol
+truffle-flattener contracts/truefi/TrueFiPool.sol > flat-contracts/flat_TrueFiPool.sol
+truffle-flattener contracts/truefi/TrueLender.sol > flat-contracts/flat_TrueLender.sol
+truffle-flattener contracts/truefi/LoanToken.sol > flat-contracts/flat_LoanToken.sol
+truffle-flattener contracts/truefi/TrueFarm.sol > flat-contracts/flat_TrueFarm.sol
+truffle-flattener contracts/truefi/distributors/LinearTrueDistributor.sol > flat-contracts/flat_LinearTrueDistributor.sol
+truffle-flattener contracts/truefi/distributors/ArbitraryTrueDistributor.sol > flat-contracts/flat_ArbitraryTrueDistributor.sol

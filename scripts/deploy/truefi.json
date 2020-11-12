@@ -1,0 +1,26 @@
+"ropsten": {
+    "tfi": "0xd943D9CB0904bB2a057f2e6AdE738daCA3e5d405",
+    "tfiImpl": "0x76f7eDF373F0d3c1af45E2263521EA968eAc9b28",
+
+    "lender": "0xb1f283F554995F666bD3238F229ADf0aF7d54fC4",
+    "lenderImpl": "0xd7225d45D736bC7F54C3416C66333D05df1c771f",
+
+    "loanFactory": "0xF2F9604c1eC79833b36bC8f494828C87C0983c96",
+    "loanFactoryImpl": "0xC87Aae035A848e4665D2F170cb74DE5B7261495F",
+
+    "creditMarket": "0xBaf182DDCBE010F764bcC1e1FE25a71Fe6FdA6F7",
+    "creditMarketImpl": "0x701620D3364B5E20599fA17f24A095028213942A",
+
+    "tfiDistributor": "0xBDfC498f4E0753Ba7E13B30201EC2DDa95c3eA37",
+    "tfiDistributorImpl": "0xfEEfec65868E822b1CebdE6511BeaF4455151342",
+
+    "creditMarketDistributor": "0x685BeD3Be782a1af0AC1fb14b24E600ea82551aC",
+    "creditMarketDistributorImpl": "0xBeb68a3acA12b00B10FC8de1Dd38E6D948B8284E",
+
+    "MockCurve": "0x8F2E795761ADd2F038bFe11b6248D93C2397eedB",
+    "MockCRV": "0x0000000000000000000000000000000000000000",
+    "mockCurveGauge": "0xcfa73181B8f4010d9E3d519Bab1D55D1f30c0562",
+}
+"mainnet": {
+
+}

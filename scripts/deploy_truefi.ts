@@ -28,11 +28,11 @@ import {
   TokenFaucetFactory,
   MockErc20TokenFactory,
   MockCurvePoolFactory,
-  MockCurveGaugeFactory
+  MockCurveGaugeFactory,
 } from '../build/types'
 
 import {
-  ICurveGaugeJson
+  ICurveGaugeJson,
 } from '../build'
 
 // default txn args
@@ -74,11 +74,11 @@ let mainnet = {
 
 // ropsten config
 let testnet = {
-  truAddress: '0x711161baf6fa362fa41f80ad2295f1f601b44f3f',
+  truAddress: '0x12b2f909d9ea91c86dc7fbba272d8abbcddfd72c',
   tusdAddress: '0x1cB0906955623920c86A3963593a02a405Bb97fC',
   controllerAddress: '0x2B5a25Fe01E96d0023764d9331228B9CB25e0089',
   uniswapFactoryAddress: '0x9c83dCE8CA20E9aAF9D3efc003b2ea62aBC08351',
-  wethAddress: ''
+  wethAddress: '0xb603cEa165119701B58D56d10D2060fBFB3efad8'
 }
 
 export const wait = async <T>(tx: Promise<{wait: () => Promise<T>}>): Promise<T> => (await tx).wait()
@@ -99,7 +99,7 @@ async function deploy () {
   console.log('Current block ', currentBlock)
   
   // fresh deploy for local testing
-  if (network == 'local' || 'ropsten') {
+  if (network == 'local') {
     distributionStart = currentBlock
     const weth = await deployWeth(wallet, provider)
     const [tru, tusd] = await deployTestTokens(wallet, provider)
@@ -113,8 +113,17 @@ async function deploy () {
 
   // ropsten deploy
   if (network == 'ropsten') {
-    // const tru = await TrustTokenFactory.connect(testnet.truAddress, wallet)
-    // const tusd = await TrustTokenFactory.connect(testnet.tusdAddress, wallet)
+    distributionStart = currentBlock
+    const tru = await TrustTokenFactory.connect(testnet.truAddress, wallet)
+    const tusd = await MockTrueCurrencyFactory.connect(testnet.tusdAddress, wallet)
+    const weth = await MockErc20TokenFactory.connect(testnet.wethAddress, wallet)
+    const uniswap = await new Contract(testnet.uniswapFactoryAddress, UniswapV2Factory.abi, wallet)
+    const [curve, crv, curveGauge] = await deployCurve(wallet, provider, tusd)
+    const balancer = deployBalancer(wallet, provider)
+    const [tfi, lender, creditMarket] = await deployTrueFi(wallet, provider, tru, tusd, curve, curveGauge, uniswap)
+    const [uniswapTruEth, uniswapTusdTfi] = await deployUniswapPairs(wallet, provider, uniswap, tru, tusd, tfi, weth)
+    const [uniswapTfiFarm, uniswapEthFarm, balancerFarm] = await deployFarms(wallet, provider, tru)
+    
     // TODO attach or deploy contracts
   }
 
@@ -156,9 +165,6 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
   const creditMarket = await behindProxy(wallet, creditMarketImpl)
   console.log('creditMarket', creditMarket.address)
 
-  const creditMaretDistributor = await behindProxy(wallet, creditMarketDistributorImpl)
-  console.log('creditMaretDistributor', creditMaretDistributor.address)
-
   const lender = await behindProxy(wallet, lenderImpl)
   console.log('lender', lender.address)
 
@@ -182,7 +188,7 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
   await loanFactory.initialize(tusd.address)
   console.log("init loanFactory")
 
-  await creditMarket.initialize (tru.address, creditMaretDistributor.address, loanFactory.address, txnArgs)
+  await creditMarket.initialize (tru.address, creditMarketDistributor.address, loanFactory.address, txnArgs)
   console.log("init creditMarket")
 
   // not using curve gauge
@@ -204,10 +210,8 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
 
 async function deployUniswapPairs(wallet, provider, uniswap, tru, tusd, tfi, weth) {
   const pairArgs = {gasLimit: 4_000_000, gasPrice: txnArgs.gasPrice}
-  await uniswap.createPair(weth.address, tru.address, pairArgs)
-  await uniswap.createPair(tusd.address, tfi.address, pairArgs)
-  const uniswapTruEth = await uniswap.getPair(weth.address, tru.address, txnArgs)
-  const uniswapTusdTfi = await uniswap.getPair(tusd.address, tfi.address, txnArgs)
+  const uniswapTruEth = await uniswap.createPair(weth.address, tru.address, pairArgs)
+  const uniswapTusdTfi = await uniswap.createPair(tusd.address, tfi.address, pairArgs)
   console.log('uniswap TRU/ETH', uniswapTruEth)
   console.log('uniswap TUSD/TFI', uniswapTusdTfi)
   return [uniswapTruEth, uniswapTusdTfi]
@@ -220,9 +224,12 @@ async function deployBalancer(wallet, provider) {
 // mock curve
 async function deployCurve(wallet, provider, tusd) {
   const curve = await(await new MockCurvePoolFactory(wallet).deploy()).deployed()
-  await(await curve.initialize(tusd.address)).wait()
+  await curve.initialize(tusd.address)
   const crv = MockErc20TokenFactory.connect(await curve.token(), wallet)
   const curveGauge = await(await new MockCurveGaugeFactory(wallet).deploy()).deployed()
+  console.log('MockCurve', curve.address)
+  console.log('MockCRV', crv.address)
+  console.log('mockCurveGauge', curveGauge.address)
   return [curve, crv, curveGauge]
 }
 
