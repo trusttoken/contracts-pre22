@@ -11,7 +11,7 @@ import { ask } from './utils'
 import { waitForTx } from 'scripts/utils/waitForTx'
 import { asProxy } from './utils/asProxy'
 import UniswapV2Factory from '@uniswap/v2-core/build/UniswapV2Factory.json'
-import { wethAbi } from './abi/weth'
+// import { wethAbi } from './abi/weth'
 
 import {
   TrueFarmFactory,
@@ -99,7 +99,7 @@ async function deploy () {
   console.log('Current block ', currentBlock)
   
   // fresh deploy for local testing
-  if (network == 'local') {
+  if (network == 'local' || 'ropsten') {
     distributionStart = currentBlock
     const weth = await deployWeth(wallet, provider)
     const [tru, tusd] = await deployTestTokens(wallet, provider)
@@ -113,8 +113,8 @@ async function deploy () {
 
   // ropsten deploy
   if (network == 'ropsten') {
-    const tru = await TrustTokenFactory.connect(testnet.truAddress, wallet)
-    const tusd = await TrustTokenFactory.connect(testnet.tusdAddress, wallet)
+    // const tru = await TrustTokenFactory.connect(testnet.truAddress, wallet)
+    // const tusd = await TrustTokenFactory.connect(testnet.tusdAddress, wallet)
     // TODO attach or deploy contracts
   }
 
@@ -326,7 +326,7 @@ async function deployTestTokens(wallet, provider) {
   console.log('tusdImpl', tusdImpl.address)
 
   const controllerImpl = await (await new TokenFaucetFactory(wallet).deploy(testArgs)).deployed()
-  console.log('tusdImpl', tusdImpl.address)
+  console.log('controllerImpl', tusdImpl.address)
 
   // put contracts behind proxies
   const tru = await behindProxy(wallet, truImpl)
