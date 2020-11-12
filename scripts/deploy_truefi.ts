@@ -193,6 +193,13 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
   await lender.initialize(tfi.address, creditMarket.address, txnArgs)
   console.log("init lender")
 
+  // Transfer TRU to Distributors (assumes wallet has enough TRU)
+  await tru.transfer(creditMarketDistributor.address, creditMarketAmount, txnArgs)
+  console.log('transferred', creditMarketAmount.toString(), 'to', 'creditMarketDistributor')
+  
+  await tru.transfer(tfiDistributor.address, tfiAmount, txnArgs)
+  console.log('transferred', tfiAmount.toString(), 'to', 'tfiDistributor')
+
   return [tfi, lender, creditMarket]
 }
 
@@ -200,15 +207,15 @@ async function deployUniswapPairs(wallet, provider, uniswap, tru, tusd, tfi, wet
   const pairArgs = {gasLimit: 4_000_000, gasPrice: txnArgs.gasPrice}
   await uniswap.createPair(weth.address, tru.address, pairArgs)
   await uniswap.createPair(tusd.address, tfi.address, pairArgs)
-  const uniswapTruEth = await(uniswap.getPair(weth.address, tru.address, txnArgs))
+  const uniswapTruEth = await uniswap.getPair(weth.address, tru.address, txnArgs)
   const uniswapTusdTfi = await uniswap.getPair(tusd.address, tfi.address, txnArgs)
-  console.log('uniswap TRU/ETH', uniswapTruEth.address)
-  console.log('uniswap TUSD/TFI', uniswapTusdTfi.address)
+  console.log('uniswap TRU/ETH', uniswapTruEth)
+  console.log('uniswap TUSD/TFI', uniswapTusdTfi)
   return [uniswapTruEth, uniswapTusdTfi]
 }
 
 async function deployBalancer(wallet, provider) {
-  return {}
+  return {address: zeroAddress}
 }
 
 // mock curve
@@ -287,14 +294,14 @@ async function deployFarms (wallet, provider, tru) {
   console.log('init balancerDistributor')
 
   // Transfer TRU to Distributors (assumes wallet has enough TRU)
-  await (await tru.transfer(uniswapTfiFarm.address, uniswapTfiAmount, txnArgs)).wait()
-  console.log('transferred', uniswapTfiAmount, 'to', 'uniswapTfiFarm')
+  await tru.transfer(uniswapTfiFarm.address, uniswapTfiAmount, txnArgs)
+  console.log('transferred', uniswapTfiAmount.toString(), 'to', 'uniswapTfiDistributor')
   
-  await (await tru.transfer(uniswapEthFarm.address, uniswapEthAmount, txnArgs)).wait()
-  console.log('transferred', uniswapEthAmount, 'to', 'uniswapEthFarm')
+  await tru.transfer(uniswapEthFarm.address, uniswapEthAmount, txnArgs)
+  console.log('transferred', uniswapEthAmount.toString(), 'to', 'uniswapEthDistributor')
   
-  await (await tru.transfer(balancerFarm.address, balancerAmount, txnArgs)).wait()
-  console.log('transferred', balancerAmount, 'to', 'balancerFarm')
+  await tru.transfer(balancerFarm.address, balancerAmount, txnArgs)
+  console.log('transferred', balancerAmount.toString(), 'to', 'balancerDistributor')
   return [uniswapTfiFarm, uniswapEthFarm, balancerFarm]
 }
 
