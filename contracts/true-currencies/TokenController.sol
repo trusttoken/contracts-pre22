@@ -535,7 +535,7 @@ contract TokenController {
     /**
      * @dev Update this contract's registry pointer to _registry
      */
-    function setRegistry(IRegistry _registry) external onlyOwner {
+    function setRegistry(Registry _registry) external onlyOwner {
         registry = _registry;
         emit SetRegistry(address(registry));
     }
