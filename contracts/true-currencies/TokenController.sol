@@ -4,16 +4,14 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {Registry} from "../registry/Registry.sol";
-import {IRegistry} from "../registry/interface/IRegistry.sol";
-import {IRegistryClone} from "../registry/interface/IRegistryClone.sol";
+import {IOwnedUpgradeabilityProxy as OwnedUpgradeabilityProxy} from "../proxy/interface/IOwnedUpgradeabilityProxy.sol";
 
-import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
-import {IOwnedUpgradeabilityProxy} from "../proxy/interface/IOwnedUpgradeabilityProxy.sol";
+import {IRegistry as Registry} from "../registry/interface/IRegistry.sol";
+import {IRegistryClone as RegistryClone} from "../registry/interface/IRegistryClone.sol";
 
-import {IHasOwner} from "./interface/IHasOwner.sol";
-import {IHook} from "./interface/IHook.sol";
-import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
+import {IHasOwner as HasOwner} from "./interface/IHasOwner.sol";
+import {IHook as Hook} from "./interface/IHook.sol";
+import {ITrueCurrency as TrueCurrency} from "./interface/ITrueCurrency.sol";
 
 import {TrueCurrencyWithGasRefund} from "./TrueCurrencyWithGasRefund.sol";
 
@@ -77,8 +75,8 @@ contract TokenController {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    ITrueCurrency public token;
-    IRegistry public registry;
+    TrueCurrency public token;
+    Registry public registry;
     address public registryAdmin;
     address public gasRefunder;
 
@@ -139,7 +137,7 @@ contract TokenController {
     /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
-    event SetToken(ITrueCurrency newContract);
+    event SetToken(TrueCurrency newContract);
     /// @dev Emitted when canBurn status of the `burner` was changed to `canBurn`
     event CanBurn(address burner, bool canBurn);
 
@@ -529,7 +527,7 @@ contract TokenController {
      * @dev Update this contract's token pointer to newContract (e.g. if the
      * contract is upgraded)
      */
-    function setToken(ITrueCurrency _newContract) external onlyOwner {
+    function setToken(TrueCurrency _newContract) external onlyOwner {
         token = _newContract;
         emit SetToken(_newContract);
     }
@@ -537,16 +535,16 @@ contract TokenController {
     /**
      * @dev Update this contract's registry pointer to _registry
      */
-    function setRegistry(IRegistry _registry) external onlyOwner {
+    function setRegistry(Registry _registry) external onlyOwner {
         registry = _registry;
         emit SetRegistry(address(registry));
     }
 
     /**
-     * @dev Claim ownership of an arbitrary IHasOwner contract
+     * @dev Claim ownership of an arbitrary HasOwner contract
      */
     function issueClaimOwnership(address _other) public onlyOwner {
-        IHasOwner other = IHasOwner(_other);
+        HasOwner other = HasOwner(_other);
         other.claimOwnership();
     }
 
@@ -556,7 +554,7 @@ contract TokenController {
      * @param _child contract that tokenController currently Owns
      * @param _newOwner new owner/pending owner of _child
      */
-    function transferChild(IHasOwner _child, address _newOwner) external onlyOwner {
+    function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
         _child.transferOwnership(_newOwner);
         emit TransferChild(address(_child), _newOwner);
     }
@@ -634,7 +632,7 @@ contract TokenController {
     /**
      * Call hook in `hookContract` with gas refund
      */
-    function refundGasWithHook(IHook hookContract) external onlyGasRefunder {
+    function refundGasWithHook(Hook hookContract) external onlyGasRefunder {
         // calculate start gas amount
         uint256 startGas = gasleft();
         // call hook
