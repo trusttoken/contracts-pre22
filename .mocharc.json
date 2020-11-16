@@ -4,6 +4,6 @@
   "target": "esnext",
   "recursive": true,
   "timeout": 20000,
-  "spec": "test-ts/**/*.test.ts",
-  "watch-files": ["test-ts"]
+  "spec": "test/**/*.test.ts",
+  "watch-files": ["test"]
 }
