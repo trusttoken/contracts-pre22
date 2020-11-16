@@ -1,5 +1,4 @@
-export default IUniswapV2Factory = {
-[
+const IUniswapV2Factory = [
   {
     anonymous: false,
     inputs: [
@@ -136,5 +135,7 @@ export default IUniswapV2Factory = {
     ],
     stateMutability: "view",
     type: "function",
-  },
-];
+  }
+]
+
+export default IUniswapV2Factory
