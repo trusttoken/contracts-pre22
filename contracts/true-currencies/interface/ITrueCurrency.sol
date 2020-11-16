@@ -3,8 +3,8 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {IHasOwner} from "./IHasOwner";
-import {IReclaimerToken} from "./IReclaimerToken";
+import {IHasOwner} from "./IHasOwner.sol";
+import {IReclaimerToken} from "./IReclaimerToken.sol";
 
 interface ITrueCurrency is IERC20, IReclaimerToken, IHasOwner {
     function refundGas(uint256 amount) external;
