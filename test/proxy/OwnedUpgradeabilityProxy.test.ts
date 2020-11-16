@@ -2,7 +2,7 @@ import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture, ZERO_ADDRESS } from 'utils'
 
 import {
   OwnedUpgradeabilityProxyFactory,
@@ -20,8 +20,6 @@ describe('OwnedUpgradeabilityProxy', () => {
 
   let proxy: OwnedUpgradeabilityProxy
   let tusd: MockTrueCurrency
-
-  const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
   beforeEachWithFixture(async (wallets) => {
     [owner, anotherWallet, thirdWallet] = wallets
