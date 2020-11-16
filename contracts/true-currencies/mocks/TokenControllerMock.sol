@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-// prettier-ignore
-import {
-    TokenController, 
-    OwnedUpgradeabilityProxy,
-    ITrueCurrency,
-    IRegistry
-} from "../TokenController.sol";
+import {IOwnedUpgradeabilityProxy as OwnedUpgradeabilityProxy} from "../../proxy/interface/IOwnedUpgradeabilityProxy.sol";
+import {IRegistry as Registry} from "../../registry/interface/IRegistry.sol";
+
+import {ITrueCurrency as TrueCurrency} from "../interface/ITrueCurrency.sol";
+
+import {TokenController} from "../TokenController.sol";
 
 /**
  * Token Controller with custom init function for testing
@@ -22,7 +21,7 @@ contract TokenControllerMock is TokenController {
 
     // initialize with paramaters. useful for tests
     // sets initial paramaters on testnet
-    function initializeWithParams(ITrueCurrency _token, IRegistry _registry) external {
+    function initializeWithParams(TrueCurrency _token, Registry _registry) external {
         require(!initialized, "already initialized");
         owner = msg.sender;
         initialized = true;
