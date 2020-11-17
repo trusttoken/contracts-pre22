@@ -1,26 +1,52 @@
-"ropsten": {
-    "tfi": "0xd943D9CB0904bB2a057f2e6AdE738daCA3e5d405",
-    "tfiImpl": "0x76f7eDF373F0d3c1af45E2263521EA968eAc9b28",
+{
+    "ropsten": {
+        "tusd": "0x12b2f909d9ea91c86dc7fbba272d8abbcddfd72c",
+        "tusdImpl": "0xa1c8b3e344b2bc3793a83e5e758487fba73f4620",
+        "controllerAddress": "0x2B5a25Fe01E96d0023764d9331228B9CB25e0089",
 
-    "lender": "0xb1f283F554995F666bD3238F229ADf0aF7d54fC4",
-    "lenderImpl": "0xd7225d45D736bC7F54C3416C66333D05df1c771f",
+        "tru": "0x12b2f909d9ea91c86dc7fbba272d8abbcddfd72c",
+        "truImpl": "0xa1c8b3e344b2bc3793a83e5e758487fba73f4620",
 
-    "loanFactory": "0xF2F9604c1eC79833b36bC8f494828C87C0983c96",
-    "loanFactoryImpl": "0xC87Aae035A848e4665D2F170cb74DE5B7261495F",
+        "tfi": "0xd943D9CB0904bB2a057f2e6AdE738daCA3e5d405",
+        "tfiImpl": "0x76f7eDF373F0d3c1af45E2263521EA968eAc9b28",
 
-    "creditMarket": "0xBaf182DDCBE010F764bcC1e1FE25a71Fe6FdA6F7",
-    "creditMarketImpl": "0x701620D3364B5E20599fA17f24A095028213942A",
+        "lender": "0xb1f283F554995F666bD3238F229ADf0aF7d54fC4",
+        "lenderImpl": "0xd7225d45D736bC7F54C3416C66333D05df1c771f",
 
-    "tfiDistributor": "0xBDfC498f4E0753Ba7E13B30201EC2DDa95c3eA37",
-    "tfiDistributorImpl": "0xfEEfec65868E822b1CebdE6511BeaF4455151342",
+        "loanFactory": "0xF2F9604c1eC79833b36bC8f494828C87C0983c96",
+        "loanFactoryImpl": "0xC87Aae035A848e4665D2F170cb74DE5B7261495F",
 
-    "creditMarketDistributor": "0x685BeD3Be782a1af0AC1fb14b24E600ea82551aC",
-    "creditMarketDistributorImpl": "0xBeb68a3acA12b00B10FC8de1Dd38E6D948B8284E",
+        "creditMarket": "0xBaf182DDCBE010F764bcC1e1FE25a71Fe6FdA6F7",
+        "creditMarketImpl": "0x701620D3364B5E20599fA17f24A095028213942A",
 
-    "MockCurve": "0x8F2E795761ADd2F038bFe11b6248D93C2397eedB",
-    "MockCRV": "0x0000000000000000000000000000000000000000",
-    "mockCurveGauge": "0xcfa73181B8f4010d9E3d519Bab1D55D1f30c0562",
-}
-"mainnet": {
+        "tfiDistributor": "0xBDfC498f4E0753Ba7E13B30201EC2DDa95c3eA37",
+        "tfiDistributorImpl": "0xfEEfec65868E822b1CebdE6511BeaF4455151342",
 
+        "creditMarketDistributor": "0x685BeD3Be782a1af0AC1fb14b24E600ea82551aC",
+        "creditMarketDistributorImpl": "0xBeb68a3acA12b00B10FC8de1Dd38E6D948B8284E",
+
+        "MockCurve": "0x8F2E795761ADd2F038bFe11b6248D93C2397eedB",
+        "MockCRV": "0x0000000000000000000000000000000000000000",
+        "mockCurveGauge": "0xcfa73181B8f4010d9E3d519Bab1D55D1f30c0562",
+
+        "weth": "0xb603cEa165119701B58D56d10D2060fBFB3efad8",
+        "uniswap": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+        "bal": "0xb94890EF43935Ad5dfd8ee0d4652eDE166B24a5E",
+
+        "uniswapEthTru": "0x6d3dCFdE9462e5Fe857e2C238c08a51ad7235ccE",
+        "uniswapTusdTfi": "0xd6294E136Dc35B95219603e2dCd16039AA5bb3d8",
+        "balancerBalTru": "0x103B94b04800908d25F68F55f6f30e21CCdaC863"
+    },
+
+    "mainnet": {
+        "truAddress": "0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784",
+        "tusdAddress": "0x0000000000085d4780B73119b644AE5ecd22b376",
+        "balancerFactoryAddress": "0x9424B1412450D0f8Fc2255FAf6046b98213B76Bd",
+        "wethAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "uniswapFactoryAddress": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+        "curve": "0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3",
+        "curveGauge": "0x0001FB050Fe7312791bF6475b96569D83F695C9f",
+        "crv": "0xD533a949740bb3306d119CC777fa900bA034cd52",
+        "uniswapTruEth": "0xeC6a6b7dB761A5c9910bA8fcaB98116d384b1B85"
+    }
 }
