@@ -69,7 +69,11 @@ let mainnet = {
   truAddress: '0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784',
   tusdAddress: '0x0000000000085d4780B73119b644AE5ecd22b376',
   balancerFactoryAddress: '0x9424B1412450D0f8Fc2255FAf6046b98213B76Bd',
-  wethAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+  wethAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+  uniswapFactoryAddress: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+  curve: '0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3',
+  curveGauge: '0x0001FB050Fe7312791bF6475b96569D83F695C9f',
+  crv: '0xD533a949740bb3306d119CC777fa900bA034cd52'
 }
 
 // ropsten config
@@ -123,14 +127,14 @@ async function deploy () {
     const [tfi, lender, creditMarket] = await deployTrueFi(wallet, provider, tru, tusd, curve, curveGauge, uniswap)
     const [uniswapTruEth, uniswapTusdTfi] = await deployUniswapPairs(wallet, provider, uniswap, tru, tusd, tfi, weth)
     const [uniswapTfiFarm, uniswapEthFarm, balancerFarm] = await deployFarms(wallet, provider, tru)
-    
-    // TODO attach or deploy contracts
   }
 
   // mainnet deploy
-  if (network != 'mainnet') {
-    
-    
+  if (network == 'mainnet') {
+    const tru = await TrustTokenFactory.connect(mainnet.truAddress, wallet)
+    const tusd = await MockTrueCurrencyFactory.connect(mainnet.tusdAddress, wallet)
+    const weth = await MockErc20TokenFactory.connect(mainnet.wethAddress, wallet)
+    const uniswap = await new Contract(mainnet.uniswapFactoryAddress, UniswapV2Factory.abi, wallet)
   }
 
   console.log('\nTrueFi Deployment Completed')
@@ -178,31 +182,30 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
   console.log('tfiDistributor', tfiDistributor.address)
 
   // initalize contracts
-  await creditMarketDistributor.initialize(creditMarket.address, tru.address, creditMarketAmount)
+  await wait(creditMarketDistributor.initialize(creditMarket.address, tru.address, creditMarketAmount))
   console.log("init creditMarketDistributor")
 
   // start length amount address
-  await tfiDistributor.initialize(distributionStart, tfiLength, tfiAmount, tru.address)
+  await wait(tfiDistributor.initialize(distributionStart, tfiLength, tfiAmount, tru.address))
   console.log("init tfiDistributor")
 
-  await loanFactory.initialize(tusd.address)
+  await wait(loanFactory.initialize(tusd.address))
   console.log("init loanFactory")
 
-  await creditMarket.initialize (tru.address, creditMarketDistributor.address, loanFactory.address, txnArgs)
+  await wait(creditMarket.initialize(tru.address, creditMarketDistributor.address, loanFactory.address, txnArgs))
   console.log("init creditMarket")
 
-  // not using curve gauge
-  await tfi.initialize(curve.address, curveGauge.address, tusd.address, lender.address, zeroAddress, txnArgs)
+  await wait(tfi.initialize(curve.address, curveGauge.address, tusd.address, lender.address, zeroAddress, txnArgs))
   console.log("init tfi")
 
-  await lender.initialize(tfi.address, creditMarket.address, txnArgs)
+  await wait(lender.initialize(tfi.address, creditMarket.address, txnArgs))
   console.log("init lender")
 
   // Transfer TRU to Distributors (assumes wallet has enough TRU)
-  await tru.transfer(creditMarketDistributor.address, creditMarketAmount, txnArgs)
+  await wait(tru.transfer(creditMarketDistributor.address, creditMarketAmount, txnArgs))
   console.log('transferred', creditMarketAmount.toString(), 'to', 'creditMarketDistributor')
   
-  await tru.transfer(tfiDistributor.address, tfiAmount, txnArgs)
+  await wait(tru.transfer(tfiDistributor.address, tfiAmount, txnArgs))
   console.log('transferred', tfiAmount.toString(), 'to', 'tfiDistributor')
 
   return [tfi, lender, creditMarket]
@@ -210,8 +213,8 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
 
 async function deployUniswapPairs(wallet, provider, uniswap, tru, tusd, tfi, weth) {
   const pairArgs = {gasLimit: 4_000_000, gasPrice: txnArgs.gasPrice}
-  const uniswapTruEth = await uniswap.createPair(weth.address, tru.address, pairArgs)
-  const uniswapTusdTfi = await uniswap.createPair(tusd.address, tfi.address, pairArgs)
+  const uniswapTruEth = await wait(uniswap.createPair(weth.address, tru.address, pairArgs))
+  const uniswapTusdTfi = await wait(uniswap.createPair(tusd.address, tfi.address, pairArgs))
   console.log('uniswap TRU/ETH', uniswapTruEth)
   console.log('uniswap TUSD/TFI', uniswapTusdTfi)
   return [uniswapTruEth, uniswapTusdTfi]
@@ -292,21 +295,21 @@ async function deployFarms (wallet, provider, tru) {
   console.log('balancerFarmProxy', balancerFarm.address)
 
   // init distributors
-  await uniswapTfiDistributor.initialize(distributionStart, uniswapTfiLength, uniswapTfiAmount, tru.address)
+  await wait (uniswapTfiDistributor.initialize(distributionStart, uniswapTfiLength, uniswapTfiAmount, tru.address))
   console.log('init uniswapTfiDistributor')
-  await uniswapEthDistributor.initialize(distributionStart, uniswapEthLength, uniswapEthAmount, tru.address)
+  await wait (uniswapEthDistributor.initialize(distributionStart, uniswapEthLength, uniswapEthAmount, tru.address))
   console.log('init uniswapEthDistributor')
-  await balancerDistributor.initialize(distributionStart, balancerLength, balancerAmount, tru.address)
+  await wait (balancerDistributor.initialize(distributionStart, balancerLength, balancerAmount, tru.address))
   console.log('init balancerDistributor')
 
   // Transfer TRU to Distributors (assumes wallet has enough TRU)
-  await tru.transfer(uniswapTfiFarm.address, uniswapTfiAmount, txnArgs)
+  await wait(tru.transfer(uniswapTfiFarm.address, uniswapTfiAmount, txnArgs))
   console.log('transferred', uniswapTfiAmount.toString(), 'to', 'uniswapTfiDistributor')
   
-  await tru.transfer(uniswapEthFarm.address, uniswapEthAmount, txnArgs)
+  await wait(tru.transfer(uniswapEthFarm.address, uniswapEthAmount, txnArgs))
   console.log('transferred', uniswapEthAmount.toString(), 'to', 'uniswapEthDistributor')
   
-  await tru.transfer(balancerFarm.address, balancerAmount, txnArgs)
+  await wait(tru.transfer(balancerFarm.address, balancerAmount, txnArgs))
   console.log('transferred', balancerAmount.toString(), 'to', 'balancerDistributor')
   return [uniswapTfiFarm, uniswapEthFarm, balancerFarm]
 }
@@ -316,7 +319,7 @@ async function behindProxy(wallet: ethers.Wallet, implementation: Contract) {
   const proxyTxnArgs = { gasLimit: 2_500_000, gasPrice: txnArgs.gasPrice }
   const upgradeTxnArgs = { gasLimit: 200_000, gasPrice: txnArgs.gasPrice }
   const proxy = await (await new OwnedUpgradeabilityProxyFactory(wallet).deploy(proxyTxnArgs)).deployed()
-  await proxy.upgradeTo(implementation.address, upgradeTxnArgs)
+  await wait(proxy.upgradeTo(implementation.address, upgradeTxnArgs))
   const contract = implementation.attach(proxy.address).connect(wallet)
   return contract
 }
@@ -346,19 +349,19 @@ async function deployTestTokens(wallet, provider) {
   console.log('controller', controller.address)
 
   // init contracts
-  await tru.initialize(testArgs)
+  await wait(tru.initialize(testArgs))
   console.log('init tru')
-  await tusd.initialize(testArgs)
+  await wait(tusd.initialize(testArgs))
   console.log('init tusd')
-  await controller.initializeWithParams(tusd.address, zeroAddress, testArgs)
+  await wait(controller.initializeWithParams(tusd.address, zeroAddress, testArgs))
   console.log('init controller')
-  await tusd.transferOwnership(controller.address, testArgs)
+  await wait(tusd.transferOwnership(controller.address, testArgs))
   console.log('transfer tusd')
-  await controller.issueClaimOwnership(tusd.address, testArgs)
+  await wait(controller.issueClaimOwnership(tusd.address, testArgs))
   console.log('claim tusd')
-  await tru.ownerFaucet(wallet.address, '100000000000000000', testArgs) // mint 1 billion tru
+  await wait(tru.ownerFaucet(wallet.address, '100000000000000000', testArgs)) // mint 1 billion tru
   console.log('minted tru')
-  await controller.faucet('1000000000000000000000000', testArgs) // mint 1 billion tru
+  await wait(controller.faucet('1000000000000000000000000', testArgs)) // mint 1 billion tru
   console.log('minted tusd')
 
   return [tru, tusd]
