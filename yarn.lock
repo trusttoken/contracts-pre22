@@ -8368,6 +8368,20 @@ snapdragon@^0.8.1:
     source-map-resolve "^0.5.0"
     use "^3.1.0"
 
+"solc-0.6@npm:solc@0.6.10":
+  version "0.6.10"
+  resolved "https://registry.yarnpkg.com/solc/-/solc-0.6.10.tgz#6e45b4f7013c7098fc1e31f7d86ce949e8c49e18"
+  integrity sha512-+oHwIvNjg3bxXvL9yua/Z4ZFEdkCkgRSh7aIGGb+mf/gzoA8PRKiKGYDsjMaj0CJLH1BTBOUpNFeYhhnUFfjRg==
+  dependencies:
+    command-exists "^1.2.8"
+    commander "3.0.2"
+    fs-extra "^0.30.0"
+    js-sha3 "0.8.0"
+    memorystream "^0.3.1"
+    require-from-string "^2.0.0"
+    semver "^5.5.0"
+    tmp "0.0.33"
+
 solc@^0.4.2, solc@^0.4.20:
   version "0.4.26"
   resolved "https://registry.yarnpkg.com/solc/-/solc-0.4.26.tgz#5390a62a99f40806b86258c737c1cf653cc35cb5"
