@@ -12,10 +12,10 @@
       "contracts": ["build"],
       "scripts/*": ["scripts/*"],
       "scripts": ["scripts"],
-      "utils/*": ["test-ts/utils/*"],
-      "utils": ["test-ts/utils"],
-      "fixtures/*": ["test-ts/fixtures/*"],
-      "fixtures": ["test-ts/fixtures"]
+      "utils/*": ["test/utils/*"],
+      "utils": ["test/utils"],
+      "fixtures/*": ["test/fixtures/*"],
+      "fixtures": ["test/fixtures"]
     }
   }
 }
