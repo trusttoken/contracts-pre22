@@ -6,6 +6,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 /**
  * Mock ERC20 contract with public mint&burn functions
  */
+// prettier-ignore
 contract MockERC20 is ERC20 {
 
     constructor (string memory name, string memory symbol) public ERC20(name, symbol) {
