@@ -154,9 +154,6 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
   const tfiImpl = await (await new TrueFiPoolFactory(wallet).deploy(deployArgs)).deployed()
   console.log('tfiImpl', tfiImpl.address)
 
-  const creditMarketDistributorImpl = await (await new ArbitraryDistributorFactory(wallet).deploy(deployArgs)).deployed()
-  console.log('creditMarketDistributorImpl', creditMarketDistributorImpl.address)
-
   // deploy behing proxies
   const loanFactory = await behindProxy(wallet, loanFactoryImpl)
   console.log('loanFactory', loanFactory.address)

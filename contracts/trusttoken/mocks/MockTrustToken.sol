@@ -17,10 +17,11 @@ contract MockTrustToken is TrustToken {
     mapping(address => uint256) faucets;
     uint256 constant MAX_FAUCET = 100000000000;
     uint256 constant DURATION = 0 seconds;
+    uint256 constant FAUCET_MAX_SUPPLY = 290000000000000000;
 
     /**
      * @dev facuet for testnet TRU
-     * Can never mint more than MAX_SUPPLY = 1.45 billion
+     * Can never mint more than FAUCET_MAX_SUPPLY
      * Set duration above 0 for block delays
      * @param to address to mint tokens for
      * @param amount amount of tokens to mint
@@ -30,7 +31,7 @@ contract MockTrustToken is TrustToken {
             "can only call faucet once per minute");
         require(amount <= MAX_FAUCET, 
             "amount exceeds maximum of 100000000000");
-        require(totalSupply.add(amount) <= MAX_SUPPLY,
+        require(totalSupply.add(amount) <= FAUCET_MAX_SUPPLY,
             "Max Supply Exceeded");
             _mint(to, amount);
         faucets[msg.sender] = block.timestamp;
@@ -38,13 +39,13 @@ contract MockTrustToken is TrustToken {
 
     /**
      * @dev facuet for testnet TRU owner
-     * Can never mint more than MAX_SUPPLY = 1.45 billion
+     * Can never mint more than FAUCET_MAX_SUPPLY
      * Set duration above 0 for block delays
      * @param to address to mint tokens for
      * @param amount amount of tokens to mint
      */
     function ownerFaucet(address to, uint256 amount) public onlyOwner {
-        require(totalSupply.add(amount) <= MAX_SUPPLY,
+        require(totalSupply.add(amount) <= FAUCET_MAX_SUPPLY,
             "Max Supply Exceeded");
             _mint(to, amount);
     }
