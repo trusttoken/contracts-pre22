@@ -31,11 +31,12 @@ import {
   MockErc20TokenFactory,
   MockCurvePoolFactory,
   MockCurveGaugeFactory,
-  MockErc20Factory
+  MockErc20Factory,
 } from '../build/types'
 
 import {
   ICurveGaugeJson,
+  IERC20Json
 } from '../build'
 
 // default txn args
@@ -48,7 +49,7 @@ let truAddress: string
 let tusdAddress: string
 
 // distribution config
-let distributionStart: number
+let distributionStart: BigNumber
 let uniswapTfiLength = BigNumber.from(365 * 24 * 60 * 60)
 let uniswapEthLength = BigNumber.from(120 * 24 * 60 * 60)
 let balancerLength = BigNumber.from(30 * 24 * 60 * 60)
@@ -81,39 +82,48 @@ async function deploy () {
   
   const wallet = new ethers.Wallet(process.argv[2], provider)
 
-  let currentBlock = await provider.getBlockNumber()
-  console.log('Current block ', currentBlock)
+  let blockNumber = await provider.getBlockNumber()
+  console.log('Current block ', blockNumber)
+  let timestamp = (await provider.getBlock(blockNumber)).timestamp
+  console.log('Current timestamp ', timestamp)
   
   // fresh deploy for local testing
   if (network == 'local') {
-    distributionStart = currentBlock
+    distributionStart = timestamp
     const weth = await deployWeth(wallet, provider)
     const [tru, tusd] = await deployTestTokens(wallet, provider)
     const uniswap = await deployUniswap(wallet, provider)
     const [curve, crv, curveGauge] = await deployCurve(wallet, provider, tusd)
-    const bal = deployMockBalToken(wallet, provider)
-    const balancer = deployBalancer(wallet, provider)
+    const bal = await deployMockBalToken(wallet, provider)
+    const balancer = await deployBalancer(wallet, provider)
+    const balancerBalTru = await deployMockBalancerPair(wallet, provider)
     const [tfi, lender, creditMarket] = await deployTrueFi(wallet, provider, tru, tusd, curve, curveGauge, uniswap)
-    const [uniswapTruEth, uniswapTusdTfi] = await deployUniswapPairs(wallet, provider, uniswap, tru, tusd, tfi, weth)
-    const [uniswapTfiFarm, uniswapEthFarm, balancerFarm] = await deployFarms(wallet, provider, tru)
+    const [uniswapEthTru, uniswapTusdTfi] = await deployUniswapPairs(wallet, provider, uniswap, tru, tusd, tfi, weth)
+    const [tfiFarm, uniswapTfiFarm, uniswapEthFarm, balancerFarm] = await deployFarms(
+      wallet, provider, tru, tfi, uniswapEthTru, uniswapTusdTfi, balancerBalTru)
   }
 
   // ropsten deploy
   if (network == 'ropsten') {
-    distributionStart = currentBlock
-    // const tru = await TrustTokenFactory.connect(ropsten.tru, wallet)
-    // const tusd = await MockTrueCurrencyFactory.connect(ropsten.tusd, wallet)
-    // const weth = await MockErc20TokenFactory.connect(ropsten.weth, wallet)
-    // const uniswap = await new Contract(ropsten.uniswap, UniswapV2Factory.abi, wallet)
+    distributionStart = timestamp
+    const tru = await TrustTokenFactory.connect(ropsten.tru, wallet)
+    const tusd = await MockTrueCurrencyFactory.connect(ropsten.tusd, wallet)
+    const weth = await new Contract(ropsten.weth, IERC20Json.abi, wallet)
+    const uniswap = await new Contract(ropsten.uniswap, UniswapV2Factory.abi, wallet)
+    const tfi = await TrueFiPoolFactory.connect(ropsten.tfi, wallet)
+    const uniswapEthTru = await new Contract(ropsten.uniswapEthTru, IERC20Json.abi, wallet)
+    const uniswapTusdTfi = await new Contract(ropsten.uniswapTusdTfi, IERC20Json.abi, wallet)
+    const balancerBalTru = await new Contract(ropsten.balancerBalTru, IERC20Json.abi, wallet)
     // const bal = await TrustTokenFactory.connect(ropsten.tru, wallet)
-    const bal = await deployMockBalToken(wallet, provider)
+    const [tfiFarm, uniswapTfiFarm, uniswapEthFarm, balancerFarm] = await deployFarms(
+      wallet, provider, tru, tfi, uniswapEthTru, uniswapTusdTfi, balancerBalTru)
     // const curve = MockCurvePoolFactory.connect(ropsten.curve, wallet)
     // const crv = MockErc20TokenFactory.connect(ropsten.crv, wallet)
     // const curveGauge = MockCurveGaugeFactory.connect(ropsten.curveGauge, wallet)
     // const [curve, crv, curveGauge] = await deployCurve(wallet, provider, tusd)
     // const balancer = deployBalancer(wallet, provider)
     // const [tfi, lender, creditMarket] = await deployTrueFi(wallet, provider, tru, tusd, curve, curveGauge, uniswap)
-    // const [uniswapTruEth, uniswapTusdTfi] = await deployUniswapPairs(wallet, provider, uniswap, tru, tusd, tfi, weth)
+    // const [uniswapEthTru, uniswapTusdTfi] = await deployUniswapPairs(wallet, provider, uniswap, tru, tusd, tfi, weth)
     // const [uniswapTfiFarm, uniswapEthFarm, balancerFarm] = await deployFarms(wallet, provider, tru)
   }
 
@@ -147,9 +157,6 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
   const creditMarketDistributorImpl = await (await new ArbitraryDistributorFactory(wallet).deploy(deployArgs)).deployed()
   console.log('creditMarketDistributorImpl', creditMarketDistributorImpl.address)
 
-  const tfiDistributorImpl = await (await new LinearTrueDistributorFactory(wallet).deploy(deployArgs)).deployed()
-  console.log('tfiDistributorImpl', tfiDistributorImpl.address)
-
   // deploy behing proxies
   const loanFactory = await behindProxy(wallet, loanFactoryImpl)
   console.log('loanFactory', loanFactory.address)
@@ -166,16 +173,9 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
   const creditMarketDistributor = await behindProxy(wallet, creditMarketDistributorImpl)
   console.log('creditMarketDistributor', creditMarketDistributor.address)
 
-  const tfiDistributor = await behindProxy(wallet, tfiDistributorImpl)
-  console.log('tfiDistributor', tfiDistributor.address)
-
   // initalize contracts
-  await wait(creditMarketDistributor.initialize(creditMarket.address, tru.address, creditMarketAmount))
+  await wait(creditMarketDistributor.initialize(creditMarket.address, tru.address, creditMarketAmount.toString()))
   console.log("init creditMarketDistributor")
-
-  // start length amount address
-  await wait(tfiDistributor.initialize(distributionStart, tfiLength, tfiAmount, tru.address))
-  console.log("init tfiDistributor")
 
   await wait(loanFactory.initialize(tusd.address))
   console.log("init loanFactory")
@@ -192,24 +192,30 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
   // Transfer TRU to Distributors (assumes wallet has enough TRU)
   await wait(tru.transfer(creditMarketDistributor.address, creditMarketAmount, txnArgs))
   console.log('transferred', creditMarketAmount.toString(), 'to', 'creditMarketDistributor')
-  
-  await wait(tru.transfer(tfiDistributor.address, tfiAmount, txnArgs))
-  console.log('transferred', tfiAmount.toString(), 'to', 'tfiDistributor')
 
   return [tfi, lender, creditMarket]
 }
 
 async function deployUniswapPairs(wallet, provider, uniswap, tru, tusd, tfi, weth) {
-  const pairArgs = {gasLimit: 4_000_000, gasPrice: txnArgs.gasPrice}
-  const uniswapTruEth = await wait(uniswap.createPair(weth.address, tru.address, pairArgs))
-  const uniswapTusdTfi = await wait(uniswap.createPair(tusd.address, tfi.address, pairArgs))
-  console.log('uniswap TRU/ETH', uniswapTruEth)
-  console.log('uniswap TUSD/TFI', uniswapTusdTfi)
-  return [uniswapTruEth, uniswapTusdTfi]
+  // const pairArgs = {gasLimit: 4_000_000, gasPrice: txnArgs.gasPrice}
+  // const uniswapEthTru = await wait(uniswap.createPair(weth.address, tru.address, pairArgs))
+  // const uniswapTusdTfi = await wait(uniswap.createPair(tusd.address, tfi.address, pairArgs))
+  const uniswapEthTru = await(await new MockErc20Factory(wallet).deploy("ETH/TRU", "Uniswap Bal/TRU", txnArgs)).deployed()
+  const uniswapTusdTfi = await(await new MockErc20Factory(wallet).deploy("TUSD/TFI", "Uniswap TUSD/TFI", txnArgs)).deployed()
+
+  console.log('uniswap TRU/ETH', uniswapEthTru.address)
+  console.log('uniswap TUSD/TFI', uniswapTusdTfi.address)
+  return [uniswapEthTru, uniswapTusdTfi]
 }
 
 async function deployBalancer(wallet, provider) {
+  console.log("deployed balancer: ", zeroAddress)
   return {address: zeroAddress}
+}
+
+async function deployMockBalancerPair(wallet, provider) {
+    const balancerbalTru = await(await new MockErc20Factory(wallet).deploy("BAL/TRU", "Balancer Bal/TRU", txnArgs)).deployed()
+    return balancerbalTru
 }
 
 // mock curve
@@ -241,66 +247,78 @@ async function deployWeth(wallet, provider) {
   return weth
 }
 
-// farms
-async function deployFarms (wallet, provider, tru) {
-  // deploy distributor implementations
-  const uniswapTfiDistributorImpl = await (await new LinearTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
-  console.log('uniswapTfiDistributorImpl', uniswapTfiDistributorImpl.address)
-  
-  const uniswapEthDistributorImpl = await (await new LinearTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
-  console.log('uniswapEthDistributorImpl', uniswapEthDistributorImpl.address)
-  
-  const balancerDistributorImpl = await (await new LinearTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
-  console.log('balancerDistributorImpl', balancerDistributorImpl.address)
+async function deployFarm(
+  wallet, 
+  provider, 
+  tru,
+  lpToken,
+  name : string,
+  amount: BigNumber,
+  start: BigNumber,
+  length: BigNumber
+) {
+  // deploy distributor implementation
+  const distributorImpl = await (await new LinearTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
+  console.log(name, 'Impl', distributorImpl.address)
 
-  // put distributors behind proxy
-  const uniswapTfiDistributor = await behindProxy(wallet, uniswapTfiDistributorImpl)
-  console.log('uniswapTfiDistributor', uniswapTfiDistributor.address)
+  // put distributor behind proxy
+  const distributor = await behindProxy(wallet, distributorImpl)
+  console.log(name, 'distributor', distributor.address)
 
-  const uniswapEthDistributor = await behindProxy(wallet, uniswapEthDistributorImpl)
-  console.log('uniswapEthDistributor', uniswapEthDistributor.address)
-
-  const balancerDistributor = await behindProxy(wallet, balancerDistributorImpl)
-  console.log('balancerDistributorProxy', balancerDistributor.address)
-    
   // deploy farm implemention
-  const uniswapTfiFarmImpl = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
-  console.log('uniswapTfiFarmImpl', uniswapTfiFarmImpl.address)
+  const farmImpl = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
+  console.log(name, 'farmImpl', farmImpl.address)
 
-  const uniswapEthFarmImpl = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
-  console.log('uniswapEthFarmImpl', uniswapEthFarmImpl.address)
+  // put farm behind proxy
+  const farm = await behindProxy(wallet, farmImpl)
+  console.log(name, 'farm', farm.address)
 
-  const balancerFarmImpl = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
-  console.log('balancerFarmImpl', balancerFarmImpl.address)
+  // transfer tru to distributor (assumes wallet has enough tru)
+  await wait(tru.transfer(farm.address, uniswapTfiAmount, txnArgs))
+  console.log('transferred', amount.toString(), 'to', name, 'distributor')
 
-  // Put Distributors behind proxy
-  const uniswapTfiFarm = await behindProxy(wallet, uniswapTfiFarmImpl)
-  console.log('uniswapTfiFarm', uniswapTfiFarm.address)
+  // init distributor
+  await wait(distributor.initialize(start.toString(), length.toString(), amount.toString(), tru.address, txnArgs))
+  console.log('init', name, 'distributor')
 
-  const uniswapEthFarm = await behindProxy(wallet, uniswapEthFarmImpl)
-  console.log('uniswapEthFarm', uniswapEthFarm.address)
+  // init farm
+  await wait(farm.initialize(lpToken.address, distributor.address, name, txnArgs))
+  console.log('init', name, 'farm')
 
-  const balancerFarm = await behindProxy(wallet, balancerFarmImpl)
-  console.log('balancerFarmProxy', balancerFarm.address)
+  return farm
+}
 
-  // init distributors
-  await wait (uniswapTfiDistributor.initialize(distributionStart, uniswapTfiLength, uniswapTfiAmount, tru.address))
-  console.log('init uniswapTfiDistributor')
-  await wait (uniswapEthDistributor.initialize(distributionStart, uniswapEthLength, uniswapEthAmount, tru.address))
-  console.log('init uniswapEthDistributor')
-  await wait (balancerDistributor.initialize(distributionStart, balancerLength, balancerAmount, tru.address))
-  console.log('init balancerDistributor')
+// farms
+async function deployFarms (
+  wallet, 
+  provider, 
+  tru,
+  tfi,
+  uniswapTusdTfi,
+  uniswapEthTru,
+  balancerBalTru
+) {
+  const tfiFarm = await deployFarm(
+    wallet, provider, tru, tfi, "TFI-LP", 
+    tfiAmount, distributionStart, tfiLength
+  )
 
-  // Transfer TRU to Distributors (assumes wallet has enough TRU)
-  await wait(tru.transfer(uniswapTfiFarm.address, uniswapTfiAmount, txnArgs))
-  console.log('transferred', uniswapTfiAmount.toString(), 'to', 'uniswapTfiDistributor')
-  
-  await wait(tru.transfer(uniswapEthFarm.address, uniswapEthAmount, txnArgs))
-  console.log('transferred', uniswapEthAmount.toString(), 'to', 'uniswapEthDistributor')
-  
-  await wait(tru.transfer(balancerFarm.address, balancerAmount, txnArgs))
-  console.log('transferred', balancerAmount.toString(), 'to', 'balancerDistributor')
-  return [uniswapTfiFarm, uniswapEthFarm, balancerFarm]
+  const uniswapTfiFarm = await deployFarm(
+    wallet, provider, tru, uniswapTusdTfi, "Uniswap TUSD/TFI-LP", 
+    uniswapTfiAmount, distributionStart, uniswapTfiLength
+  )
+
+  const uniswapEthTruFarm = await deployFarm(
+    wallet, provider, tru, uniswapEthTru, "Uniswap ETH/TRU", 
+    uniswapEthAmount, distributionStart, uniswapEthLength
+  )
+
+  const balancerBalTruFarm = await deployFarm(
+    wallet, provider, tru, balancerBalTru, "Balancer BAL/TRU", 
+    balancerAmount, distributionStart, balancerLength
+  )
+
+  return [tfiFarm, uniswapTfiFarm, uniswapEthTruFarm, balancerBalTruFarm]
 }
 
 // deploy contract implementation behind proxy

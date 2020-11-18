@@ -35,7 +35,28 @@
 
         "uniswapEthTru": "0x6d3dCFdE9462e5Fe857e2C238c08a51ad7235ccE",
         "uniswapTusdTfi": "0xd6294E136Dc35B95219603e2dCd16039AA5bb3d8",
-        "balancerBalTru": "0x103B94b04800908d25F68F55f6f30e21CCdaC863"
+        "balancerBalTru": "0x103B94b04800908d25F68F55f6f30e21CCdaC863",
+
+        "tfiFarm": "0xbc10fb92137fE89494Ebe2a5D29DeCC01CDb608C",
+        "uniswapTusdTfiFarm": "0xCfF41229684AF4A6dc3777D9570A2C605a53Cb4F",
+        "uniswapEthTruFarm": "0x2c2f559b45Cc908b277024980f957B2e1abED662",
+        "balancerBalTrufarm": "0x31Bf9464BEf50E927A5d7f4A8336Dd32c2556dd2",
+
+        "tfiDistributor": "0xA7267e268F1282cA1589Ae59A4043c09dbe350e5",
+        "uniswapTusdTfiDistributor": "0x9cFE4F5EcbD6D161c10aA8aF4644be4113423c06",
+        "uniswapEthTruDistributor": "0x0774EBa5e750A01305E0e7c64f399743849A04F7",
+        "balancerBalTruDistributor": "0x22216f065Cdf9247eee8ADefFFA47DB9327b76e8",
+
+        "tfiDistributorImpl": "0xeC35E9516af83BAcb0B760F31Fd78c56F7c77Ef9",
+        "uniswapTusdTfiDistributorImpl": "0x07Fbb51dBaCb741125c23D7E7667e24bC91191D8",
+        "uniswapEthTruDistributorImpl": "0x57050f87aB75Eb717d7cE7A94796611fE814a3c2",
+        "balancerBalTruDistributorImpl": "0x20FaAF0B53Ff036587430fDBB289D6bdaF341F3F",
+
+        "tfiFarmImpl": "0x5d5140A0DF4e526D08d2ef40530C73E032DAEFeC",
+        "uniswapTusdTfiFarmImpl": "0xDDCf0858367c3783185800d60B14981E801cBb40",
+        "uniswapEthTruFarmImpl": "0x07fce1cbE9d89D90aDf69Dd2d1cf2A2f660F6BB1",
+        "balancerBalTrufarmImpl": "0x8Bb778b7106688E5c7bA96b64434F656c3c95912",
+        
     },
 
     "mainnet": {
