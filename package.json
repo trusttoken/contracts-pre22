@@ -49,6 +49,7 @@
     "ganache-cli": "6.8.1",
     "ganache-time-traveler": "^1.0.14",
     "openzeppelin-solidity": "^2.4.0",
+    "truffle-flattener": "^1.5.0",
     "web3": "1.2.4"
   },
   "resolutions": {

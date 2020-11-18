@@ -115,8 +115,8 @@ async function deploy () {
     const uniswapTusdTfi = await new Contract(ropsten.uniswapTusdTfi, IERC20Json.abi, wallet)
     const balancerBalTru = await new Contract(ropsten.balancerBalTru, IERC20Json.abi, wallet)
     // const bal = await TrustTokenFactory.connect(ropsten.tru, wallet)
-    const [tfiFarm, uniswapTfiFarm, uniswapEthFarm, balancerFarm] = await deployFarms(
-      wallet, provider, tru, tfi, uniswapEthTru, uniswapTusdTfi, balancerBalTru)
+    // const [tfiFarm, uniswapTfiFarm, uniswapEthFarm, balancerFarm] = await deployFarms(
+    //   wallet, provider, tru, tfi, uniswapEthTru, uniswapTusdTfi, balancerBalTru)
     // const curve = MockCurvePoolFactory.connect(ropsten.curve, wallet)
     // const crv = MockErc20TokenFactory.connect(ropsten.crv, wallet)
     // const curveGauge = MockCurveGaugeFactory.connect(ropsten.curveGauge, wallet)
@@ -374,7 +374,7 @@ async function deployTestTokens(wallet, provider) {
   console.log('transfer tusd')
   await wait(controller.issueClaimOwnership(tusd.address, testArgs))
   console.log('claim tusd')
-  await wait(tru.ownerFaucet(wallet.address, '100000000000000000', testArgs)) // mint 1 billion tru
+  await wait(tru.ownerFaucet(wallet.address, '1 000 000 000 00000000', testArgs)) // mint 1 billion tru
   console.log('minted tru')
   await wait(controller.faucet('1000000000000000000000000', testArgs)) // mint 1 billion tru
   console.log('minted tusd')

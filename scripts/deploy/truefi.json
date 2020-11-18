@@ -25,8 +25,8 @@
         "creditMarketDistributor": "0x685BeD3Be782a1af0AC1fb14b24E600ea82551aC",
         "creditMarketDistributorImpl": "0xBeb68a3acA12b00B10FC8de1Dd38E6D948B8284E",
 
-        "MockCurve": "0x8F2E795761ADd2F038bFe11b6248D93C2397eedB",
-        "MockCRV": "0x0000000000000000000000000000000000000000",
+        "mockCurve": "0x8F2E795761ADd2F038bFe11b6248D93C2397eedB",
+        "mockCRV": "0x0000000000000000000000000000000000000000",
         "mockCurveGauge": "0xcfa73181B8f4010d9E3d519Bab1D55D1f30c0562",
 
         "weth": "0xb603cEa165119701B58D56d10D2060fBFB3efad8",
@@ -55,8 +55,7 @@
         "tfiFarmImpl": "0x5d5140A0DF4e526D08d2ef40530C73E032DAEFeC",
         "uniswapTusdTfiFarmImpl": "0xDDCf0858367c3783185800d60B14981E801cBb40",
         "uniswapEthTruFarmImpl": "0x07fce1cbE9d89D90aDf69Dd2d1cf2A2f660F6BB1",
-        "balancerBalTrufarmImpl": "0x8Bb778b7106688E5c7bA96b64434F656c3c95912",
-        
+        "balancerBalTrufarmImpl": "0x8Bb778b7106688E5c7bA96b64434F656c3c95912"
     },
 
     "mainnet": {
