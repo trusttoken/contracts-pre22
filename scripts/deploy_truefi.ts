@@ -54,8 +54,8 @@ let uniswapTfiLength = BigNumber.from(365 * 24 * 60 * 60)
 let uniswapEthLength = BigNumber.from(120 * 24 * 60 * 60)
 let balancerLength = BigNumber.from(30 * 24 * 60 * 60)
 let tfiLength = BigNumber.from(1140 * 24 * 60 * 60)
-let uniswapTfiAmount = BigNumber.from(84_825_000).mul(BigNumber.from(10**8))
-let uniswapEthAmount = BigNumber.from(42_412_500).mul(BigNumber.from(10**8))
+let uniswapTfiAmount = BigNumber.from(33_930_000).mul(BigNumber.from(10**8))
+let uniswapEthAmount = BigNumber.from(50_895_000).mul(BigNumber.from(10**8))
 let balancerAmount = BigNumber.from(11_310_000).mul(BigNumber.from(10**8))
 let creditMarketAmount = BigNumber.from(254_475_000).mul(BigNumber.from(10**8))
 let tfiAmount = BigNumber.from(169_650_000).mul(BigNumber.from(10**8))
@@ -132,13 +132,16 @@ async function deploy () {
     const tru = await TrustTokenFactory.connect(mainnet.truAddress, wallet)
     const tusd = await MockTrueCurrencyFactory.connect(mainnet.tusdAddress, wallet)
     const weth = await MockErc20TokenFactory.connect(mainnet.wethAddress, wallet)
-    const uniswap = await new Contract(mainnet.uniswapFactoryAddress, UniswapV2Factory.abi, wallet)
+    const uniswapRouter = {address: mainnet.uniswapRouter}
+    const curve = {address: mainnet.curve}
+    const curveGauge = {address: mainnet.curveGauge}
+    const [tfi, lender, creditMarket] = await deployTrueFi(wallet, provider, tru, tusd, curve, curveGauge, uniswapRouter)
   }
 
   console.log('\nTrueFi Deployment Completed')
 }
 
-async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uniswap) {
+async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uniswapRouter) {
   const deployArgs = {gasLimit: 4_000_000, gasPrice: txnArgs.gasPrice}
 
   // deploy implementations
@@ -167,6 +170,9 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
   const tfi = await behindProxy(wallet, tfiImpl)
   console.log('tfi', tfi.address)
 
+  const creditMarketDistributorImpl = await (await new ArbitraryDistributorFactory(wallet).deploy(deployArgs)).deployed()
+  console.log('creditMarketDistributorImpl', creditMarketDistributorImpl.address)
+
   const creditMarketDistributor = await behindProxy(wallet, creditMarketDistributorImpl)
   console.log('creditMarketDistributor', creditMarketDistributor.address)
 
@@ -180,15 +186,15 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
   await wait(creditMarket.initialize(tru.address, creditMarketDistributor.address, loanFactory.address, txnArgs))
   console.log("init creditMarket")
 
-  await wait(tfi.initialize(curve.address, curveGauge.address, tusd.address, lender.address, zeroAddress, txnArgs))
+  await wait(tfi.initialize(curve.address, curveGauge.address, tusd.address, lender.address, uniswapRouter.address, txnArgs))
   console.log("init tfi")
 
   await wait(lender.initialize(tfi.address, creditMarket.address, txnArgs))
   console.log("init lender")
 
   // Transfer TRU to Distributors (assumes wallet has enough TRU)
-  await wait(tru.transfer(creditMarketDistributor.address, creditMarketAmount, txnArgs))
-  console.log('transferred', creditMarketAmount.toString(), 'to', 'creditMarketDistributor')
+  // await wait(tru.transfer(creditMarketDistributor.address, creditMarketAmount, txnArgs))
+  // console.log('transferred', creditMarketAmount.toString(), 'to', 'creditMarketDistributor')
 
   return [tfi, lender, creditMarket]
 }
@@ -371,7 +377,7 @@ async function deployTestTokens(wallet, provider) {
   console.log('transfer tusd')
   await wait(controller.issueClaimOwnership(tusd.address, testArgs))
   console.log('claim tusd')
-  await wait(tru.ownerFaucet(wallet.address, '1 000 000 000 00000000', testArgs)) // mint 1 billion tru
+  await wait(tru.ownerFaucet(wallet.address, '100000000000000000', testArgs)) // mint 1 billion tru
   console.log('minted tru')
   await wait(controller.faucet('1000000000000000000000000', testArgs)) // mint 1 billion tru
   console.log('minted tusd')
