@@ -59,6 +59,10 @@
     },
 
     "mainnet": {
+        "tfi": "0xa1e72267084192db7387c8cc1328fade470e4149",
+        "lender": "0x16d02Dc67EB237C387023339356b25d1D54b0922",
+        "creditMarket": "0x43A4F930F2cC35948d3a6dcd47CD0E50761f9B88",
+        "loanFactory": "0x4ACE6dE67E9a9EDFf5c2d0a584390Fb5394119e7",
         "tru": "0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784",
         "tusd": "0x0000000000085d4780B73119b644AE5ecd22b376",
         "balancerFactory": "0x9424B1412450D0f8Fc2255FAf6046b98213B76Bd",
@@ -66,7 +70,7 @@
         "uniswapFactory": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
         "uniswapRouter": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
         "curve": "0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3",
-        "curveGauge": "0x0001FB050Fe7312791bF6475b96569D83F695C9f",
+        "curveGauge": "0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1",
         "crv": "0xD533a949740bb3306d119CC777fa900bA034cd52",
         "uniswapTruEth": "0xeC6a6b7dB761A5c9910bA8fcaB98116d384b1B85"
     }

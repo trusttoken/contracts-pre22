@@ -22,6 +22,7 @@ import {
   OwnedUpgradeabilityProxyFactory,
   LoanFactoryFactory,
   TrustTokenFactory,
+  TrueUsdFactory,
   TrueFiPoolFactory,
   TrueLenderFactory,
   TrueRatingAgencyFactory,
@@ -40,7 +41,7 @@ import {
 } from '../build'
 
 // default txn args
-const txnArgs = { gasLimit: 2_500_000, gasPrice: 0_001_000_000 }
+const txnArgs = { gasLimit: 1_500_000, gasPrice: 70_000_000_000 }
 
 const zeroAddress = '0x0000000000000000000000000000000000000000'
 
@@ -129,16 +130,29 @@ async function deploy () {
 
   // mainnet deploy
   if (network == 'mainnet') {
-    const tru = await TrustTokenFactory.connect(mainnet.truAddress, wallet)
-    const tusd = await MockTrueCurrencyFactory.connect(mainnet.tusdAddress, wallet)
-    const weth = await MockErc20TokenFactory.connect(mainnet.wethAddress, wallet)
+    const tru = await TrustTokenFactory.connect(mainnet.tru, wallet)
+    const tusd = await TrueUsdFactory.connect(mainnet.tusd, wallet)
+    const weth = {address: mainnet.weth}
     const uniswapRouter = {address: mainnet.uniswapRouter}
     const curve = {address: mainnet.curve}
     const curveGauge = {address: mainnet.curveGauge}
-    const [tfi, lender, creditMarket] = await deployTrueFi(wallet, provider, tru, tusd, curve, curveGauge, uniswapRouter)
+    const lender = await TrueLenderFactory.connect(mainnet.lender, wallet)
+    const creditMarket = TrueRatingAgencyFactory.connect(mainnet.creditMarket, wallet)
+    const tfi = await TrueFiPoolFactory.connect(mainnet.tfi, wallet)
+    const loanFactory = await LoanFactoryFactory.connect(mainnet.loanFactory, wallet)
+    await initTrueFi(wallet, provider, tfi, tusd, lender, creditMarket, uniswapRouter, curve, curveGauge)
+    // const [tfi, lender, creditMarket] = await deployTrueFi(wallet, provider, tru, tusd, curve, curveGauge, uniswapRouter)
   }
 
   console.log('\nTrueFi Deployment Completed')
+}
+
+async function initTrueFi(wallet, provider, tfi, tusd, lender, creditMarket, uniswapRouter, curve, curveGauge) {
+  await wait(tfi.initialize(curve.address, curveGauge.address, tusd.address, lender.address, uniswapRouter.address, txnArgs))
+  console.log("init tfi")
+
+  await wait(lender.initialize(tfi.address, creditMarket.address, txnArgs))
+  console.log("init lender")
 }
 
 async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uniswapRouter) {
@@ -177,10 +191,10 @@ async function deployTrueFi (wallet, provider, tru, tusd, curve, curveGauge, uni
   console.log('creditMarketDistributor', creditMarketDistributor.address)
 
   // initalize contracts
-  await wait(creditMarketDistributor.initialize(creditMarket.address, tru.address, creditMarketAmount.toString()))
+  await wait(creditMarketDistributor.initialize(creditMarket.address, tru.address, creditMarketAmount.toString(), txnArgs))
   console.log("init creditMarketDistributor")
 
-  await wait(loanFactory.initialize(tusd.address))
+  await wait(loanFactory.initialize(tusd.address, txnArgs))
   console.log("init loanFactory")
 
   await wait(creditMarket.initialize(tru.address, creditMarketDistributor.address, loanFactory.address, txnArgs))
