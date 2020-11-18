@@ -121,7 +121,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         ITrueLender __lender,
         IUniswapRouter __uniRouter
     ) public initializer {
-        ERC20.__ERC20_initialize("CurveTUSDPool", "crvTUSD");
+        ERC20.__ERC20_initialize("TrueFi LP", "TFI-LP");
         Ownable.initialize();
 
         _curvePool = __curvePool;
