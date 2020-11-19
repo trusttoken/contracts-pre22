@@ -54,25 +54,25 @@ contract TrueLender is ITrueLender, Ownable {
     // ===== Pool parameters =====
 
     // bound on APY
-    uint256 public minApy = 1000;
-    uint256 public maxApy = 3000;
+    uint256 public minApy;
+    uint256 public maxApy;
 
     // How many votes in predction market
-    uint256 public participationFactor = 10000;
+    uint256 public participationFactor;
 
     // How much worse is it to lose $1 TUSD than it is to gain $1 TUSD
-    uint256 public riskAversion = 15000;
+    uint256 public riskAversion;
 
     // bound on min & max loan sizes
-    uint256 public minSize = 1000000 ether;
-    uint256 public maxSize = 10000000 ether;
+    uint256 public minSize;
+    uint256 public maxSize;
 
     // bound on min & max loan terms
-    uint256 public minTerm = 180 days;
-    uint256 public maxTerm = 3600 days;
+    uint256 public minTerm;
+    uint256 public maxTerm;
 
     // minimum prediction market voting period
-    uint256 public votingPeriod = 7 days;
+    uint256 public votingPeriod;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -164,6 +164,16 @@ contract TrueLender is ITrueLender, Ownable {
         currencyToken = _pool.currencyToken();
         currencyToken.approve(address(_pool), uint256(-1));
         ratingAgency = _ratingAgency;
+
+        minApy = 1000;
+        maxApy = 3000;
+        participationFactor = 10000;
+        riskAversion = 15000;
+        minSize = 1000000 ether;
+        maxSize = 10000000 ether;
+        minTerm = 180 days;
+        maxTerm = 3600 days;
+        votingPeriod = 7 days;
     }
 
     /**
