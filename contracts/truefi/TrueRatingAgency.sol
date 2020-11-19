@@ -73,10 +73,8 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     /**
      * @dev % multiplied by 100. e.g. 10.5% = 1050
      */
-    uint256 constant DEFAULT_LOSS_FACTOR = 2500;
-    uint256 public lossFactor = DEFAULT_LOSS_FACTOR;
-    uint256 constant DEFAULT_BURN_FACTOR = 2500;
-    uint256 public burnFactor = DEFAULT_BURN_FACTOR;
+    uint256 public lossFactor;
+    uint256 public burnFactor;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -154,8 +152,8 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         distributor = _distributor;
         factory = _factory;
 
-        lossFactor = DEFAULT_LOSS_FACTOR;
-        burnFactor = DEFAULT_BURN_FACTOR;
+        lossFactor = 2500;
+        burnFactor = 2500;
     }
 
     /**
