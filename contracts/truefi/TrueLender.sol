@@ -54,25 +54,34 @@ contract TrueLender is ITrueLender, Ownable {
     // ===== Pool parameters =====
 
     // bound on APY
-    uint256 public minApy = 1000;
-    uint256 public maxApy = 3000;
+    uint256 constant DEFAULT_MIN_APY = 1000;
+    uint256 public minApy = DEFAULT_MIN_APY;
+    uint256 constant DEFAULT_MAX_APY = 3000;
+    uint256 public maxApy = DEFAULT_MAX_APY;
 
     // How many votes in predction market
-    uint256 public participationFactor = 10000;
+    uint256 constant DEFAULT_PARTICIPATION_FACTOR = 10000;
+    uint256 public participationFactor = DEFAULT_PARTICIPATION_FACTOR;
 
     // How much worse is it to lose $1 TUSD than it is to gain $1 TUSD
-    uint256 public riskAversion = 15000;
+    uint256 constant DEFAULT_RISK_AVERSION = 15000;
+    uint256 public riskAversion = DEFAULT_RISK_AVERSION;
 
     // bound on min & max loan sizes
-    uint256 public minSize = 1000000 ether;
-    uint256 public maxSize = 10000000 ether;
+    uint256 constant DEFAULT_MIN_SIZE = 1000000 ether;
+    uint256 public minSize = DEFAULT_MIN_SIZE;
+    uint256 constant DEFAULT_MAX_SIZE = 10000000 ether;
+    uint256 public maxSize = DEFAULT_MAX_SIZE;
 
     // bound on min & max loan terms
-    uint256 public minTerm = 180 days;
-    uint256 public maxTerm = 3600 days;
+    uint256 constant DEFAULT_MIN_TERM = 180 days;
+    uint256 public minTerm = DEFAULT_MIN_TERM;
+    uint256 constant DEFAULT_MAX_TERM = 3600 days;
+    uint256 public maxTerm = DEFAULT_MAX_TERM;
 
     // minimum prediction market voting period
-    uint256 public votingPeriod = 7 days;
+    uint256 constant DEFAULT_VOTING_PERIOD = 7 days;
+    uint256 public votingPeriod = DEFAULT_VOTING_PERIOD;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -164,6 +173,16 @@ contract TrueLender is ITrueLender, Ownable {
         currencyToken = _pool.currencyToken();
         currencyToken.approve(address(_pool), uint256(-1));
         ratingAgency = _ratingAgency;
+
+        minApy = DEFAULT_MIN_APY;
+        maxApy = DEFAULT_MAX_APY;
+        participationFactor = DEFAULT_PARTICIPATION_FACTOR;
+        riskAversion = DEFAULT_RISK_AVERSION;
+        minSize = DEFAULT_MIN_SIZE;
+        maxSize = DEFAULT_MAX_SIZE;
+        minTerm = DEFAULT_MIN_TERM;
+        maxTerm = DEFAULT_MAX_TERM;
+        votingPeriod = DEFAULT_VOTING_PERIOD;
     }
 
     /**
