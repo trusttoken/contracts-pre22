@@ -72,9 +72,11 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
 
     /**
      * @dev Set contract to receive distributions
+     * Will distribute to previous contract if farm already exists
      * @param newFarm New farm for distribution
      */
     function setFarm(address newFarm) external onlyOwner {
+        distribute();
         farm = newFarm;
         emit FarmChanged(newFarm);
     }
@@ -103,7 +105,8 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
      * @return amount of tokens for next distribution
      */
     function nextDistribution() public override view returns (uint256) {
-        if (block.timestamp < distributionStart) {
+        // return 0 if before distribution or farm is not set
+        if (block.timestamp < distributionStart || farm == address(0)) {
             return 0;
         }
 

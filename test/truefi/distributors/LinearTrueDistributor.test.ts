@@ -50,7 +50,7 @@ describe('LinearTrueDistributor', () => {
       await expect(distributor.connect(farm).setFarm(farm.address)).to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('emits event', async () => {
+    it('emits event when farm is set', async () => {
       await expect(distributor.setFarm(farm.address)).to.emit(distributor, 'FarmChanged').withArgs(farm.address)
     })
   })

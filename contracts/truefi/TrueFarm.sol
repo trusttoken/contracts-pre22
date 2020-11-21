@@ -84,7 +84,7 @@ contract TrueFarm is ITrueFarm, Initializable {
         trueDistributor = _trueDistributor;
         trustToken = _trueDistributor.trustToken();
         name = _name;
-        require(trueDistributor.farm() == address(this));
+        require(trueDistributor.farm() == address(this), "distributor farm not set");
     }
 
     /**
@@ -169,7 +169,8 @@ contract TrueFarm is ITrueFarm, Initializable {
      */
     modifier update() {
         // pull TRU from distributor
-        if (trueDistributor.nextDistribution() > 0) {
+        // only pull if there is distribution and distributor farm is set to this farm
+        if (trueDistributor.nextDistribution() > 0 && trueDistributor.farm() == address(this)) {
             trueDistributor.distribute();
         }
         // calculate total rewards

@@ -32,6 +32,7 @@ describe('TrueFarm', () => {
   let stakingToken: MockErc20Token
   let provider: MockProvider
   let farm: TrueFarm
+  let farm2: TrueFarm
   let start: number
   const REWARD_DAYS = 10
   const DURATION = REWARD_DAYS * DAY
@@ -51,6 +52,8 @@ describe('TrueFarm', () => {
     await distributor.initialize(start, DURATION, amount, trustToken.address)
 
     farm = await new TrueFarmFactory(owner).deploy()
+    farm2 = await new TrueFarmFactory(owner).deploy()
+
     await distributor.setFarm(farm.address)
     await farm.initialize(stakingToken.address, distributor.address, 'Test farm')
 
@@ -63,12 +66,6 @@ describe('TrueFarm', () => {
   })
 
   describe('initializer', () => {
-    let farm2: TrueFarm
-
-    beforeEach(async () => {
-      farm2 = await new TrueFarmFactory(owner).deploy()
-    })
-
     it('name is correct', async () => {
       expect(await farm.name()).to.equal('Test farm')
     })
@@ -81,6 +78,11 @@ describe('TrueFarm', () => {
     it('owner can change farm with event', async () => {
       await expect(distributor.setFarm(farm2.address)).to.emit(distributor, 'FarmChanged')
         .withArgs(farm2.address)
+    })
+
+    it('cannot init farm unless distributor is set to farm', async () => {
+      await expect(farm2.initialize(stakingToken.address, distributor.address, 'Test farm'))
+        .to.be.revertedWith('distributor farm not set')
     })
   })
 
@@ -204,7 +206,38 @@ describe('TrueFarm', () => {
       // await distributor.transfer(farm.address, owner.address, (await distributor.TOTAL_SHARES()).div(2))
       await timeTravel(provider, DAY)
       await farm.connect(staker1).claim()
-      expect(await trustToken.balanceOf(staker1.address)).to.equal(fromTru(200))
+      expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
+    })
+
+    it('owner withdrawing distributes funds', async () => {
+      await farm.connect(staker1).stake(parseEther('500'))
+      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0)))
+      await timeTravel(provider, DAY)
+      await distributor.connect(owner).empty()
+      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(100)))
+      await farm.connect(staker1).claim()
+      expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0)))
+    })
+
+    it('changing farm distributes funds', async () => {
+      await farm.connect(staker1).stake(parseEther('500'))
+      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0)))
+      await timeTravel(provider, DAY)
+      await distributor.connect(owner).setFarm(farm2.address)
+      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(100)))
+      await farm.connect(staker1).claim()
+      expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0)))
+    })
+
+    it('can withdraw liquidity after all TRU is distributed', async () => {
+      await farm.connect(staker1).stake(parseEther('500'))
+      await timeTravel(provider, DAY * REWARD_DAYS)
+      await farm.connect(staker1).claim()
+      expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), amount))
+      await timeTravel(provider, DAY)
+      await farm.connect(staker1).unstake('500')
     })
   })
 
