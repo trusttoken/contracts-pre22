@@ -41,7 +41,7 @@ import {
 } from '../build'
 
 // default txn args
-const txnArgs = { gasLimit: 2_000_000, gasPrice: 40_000_000_000 }
+const txnArgs = { gasLimit: 2_000_000, gasPrice: 50_000_000_000 }
 
 const zeroAddress = '0x0000000000000000000000000000000000000000'
 
@@ -81,15 +81,7 @@ async function deploy () {
   else {
     provider = new providers.InfuraProvider(network, 'e33335b99d78415b82f8b9bc5fdc44c0')
   }
-  
-/* eslint-disable */ 
-/**
- * ts-node scripts/deploy_truefi.ts "{private_key}" "{network}"
- */
 
-async function deploy () {
-  const txnArgs = { gasLimit: 2_500_000, gasPrice: 100_000_000_000 }
-  const provider = new providers.InfuraProvider(process.argv[3], '81447a33c1cd4eb09efb1e8c388fb28e')
   const wallet = new ethers.Wallet(process.argv[2], provider)
 
   let blockNumber = await provider.getBlockNumber()
@@ -99,7 +91,7 @@ async function deploy () {
   
   // fresh deploy for local testing
   if (network == 'local') {
-    distributionStart = timestamp
+    distributionStart = BigNumber.from(timestamp)
     const weth = await deployWeth(wallet, provider)
     const [tru, tusd] = await deployTestTokens(wallet, provider)
     const uniswap = await deployUniswap(wallet, provider)
@@ -114,8 +106,8 @@ async function deploy () {
   }
 
   // ropsten deploy
-  if (network == 'mainnet') {
-    distributionStart = BigNumber.from(1605977911)
+  if (network == 'ropsten') {
+    distributionStart = BigNumber.from(timestamp)
     const tru = await TrustTokenFactory.connect(ropsten.tru, wallet)
     const tusd = await MockTrueCurrencyFactory.connect(ropsten.tusd, wallet)
     const weth = await new Contract(ropsten.weth, IERC20Json.abi, wallet)
@@ -138,7 +130,8 @@ async function deploy () {
   }
 
   // mainnet deploy
-  if (network == 'ropsten') {
+  if (network == 'mainnet') {
+    distributionStart = BigNumber.from(1605977911)
     const tru = await TrustTokenFactory.connect(mainnet.tru, wallet)
     const tusd = await TrueUsdFactory.connect(mainnet.tusd, wallet)
     const weth = {address: mainnet.weth}
@@ -287,11 +280,11 @@ async function deployFarm(
   start: BigNumber,
   length: BigNumber
 ) {
-  console.log('\nDeploying', name)
+  console.log('\nDeploying', name, 'Farm')
   console.log('amount', amount.toString())
   console.log('start', start.toString())
   console.log('length', length.toString())
-  console.log('\n')
+  console.log('end', start.add(length).toString(), '\n')
 
   const deployArgs = {gasLimit: 3_500_000, gasPrice: txnArgs.gasPrice}
 

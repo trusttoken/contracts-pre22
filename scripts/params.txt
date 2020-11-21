@@ -1,0 +1,5 @@
+token = '0x0000000000085d4780B73119b644AE5ecd22b376'
+borrower = '0xf6E2Da7D82ee49f76CE652bc0BeB546Cbe0Ea521'
+amount = '10000'
+term = '10000'
+apy = '1000'
