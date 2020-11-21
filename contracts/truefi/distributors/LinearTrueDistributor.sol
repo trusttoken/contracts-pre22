@@ -33,7 +33,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
     uint256 public distributed;
 
     // contract which claim tokens from distributor
-    address public farm;
+    address public override farm;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -76,7 +76,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
      */
     function setFarm(address newFarm) external onlyOwner {
         farm = newFarm;
-        FarmChanged(newFarm);
+        emit FarmChanged(newFarm);
     }
 
     /**
