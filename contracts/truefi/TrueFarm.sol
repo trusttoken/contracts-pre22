@@ -149,7 +149,7 @@ contract TrueFarm is ITrueFarm, Initializable {
      */
     modifier update() {
         // pull TRU from distributor
-        trueDistributor.distribute(address(this));
+        trueDistributor.distribute();
         // calculate total rewards
         uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(totalClaimedRewards).mul(PRECISION);
         // calculate block reward

@@ -82,26 +82,37 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
     /**
      * @dev Distribute tokens to farm in linear fashion based on time
      */
-    function distribute(address) public override {
+    function distribute() public override {
         // cannot distribute until distribution start
-        if (block.timestamp < distributionStart) {
+        uint256 amount = nextDistribution();
+
+        if (amount == 0) {
             return;
         }
+
+        // transfer tokens & update state
+        lastDistribution = block.timestamp;
+        distributed = distributed.add(amount);
+        require(trustToken.transfer(farm, amount));
+
+        emit Distributed(amount);
+    }
+
+    /**
+     * @dev Calculate next distribution amount
+     * @return amount of tokens for next distribution
+     */
+    function nextDistribution() public override view returns (uint256) {
+        if (block.timestamp < distributionStart) {
+            return 0;
+        }
+
         // calculate distribution amount
         uint256 amount = totalAmount.sub(distributed);
         if (block.timestamp < distributionStart.add(duration)) {
             amount = block.timestamp.sub(lastDistribution).mul(totalAmount).div(duration);
         }
-        // store last distribution
-        lastDistribution = block.timestamp;
-        if (amount == 0) {
-            return;
-        }
-        // transfer tokens & update distributed amount
-        distributed = distributed.add(amount);
-        require(trustToken.transfer(farm, amount));
-
-        emit Distributed(amount);
+        return amount;
     }
 
     /**
