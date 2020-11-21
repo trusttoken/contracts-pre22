@@ -82,6 +82,14 @@ async function deploy () {
     provider = new providers.InfuraProvider(network, 'e33335b99d78415b82f8b9bc5fdc44c0')
   }
   
+/* eslint-disable */ 
+/**
+ * ts-node scripts/deploy_truefi.ts "{private_key}" "{network}"
+ */
+
+async function deploy () {
+  const txnArgs = { gasLimit: 2_500_000, gasPrice: 100_000_000_000 }
+  const provider = new providers.InfuraProvider(process.argv[3], '81447a33c1cd4eb09efb1e8c388fb28e')
   const wallet = new ethers.Wallet(process.argv[2], provider)
 
   let blockNumber = await provider.getBlockNumber()
