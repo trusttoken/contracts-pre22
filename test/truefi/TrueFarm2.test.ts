@@ -34,9 +34,11 @@ describe('TrueFarm', () => {
   let farm: TrueFarm
   let farm2: TrueFarm
   let start: number
+
   const REWARD_DAYS = 10
   const DURATION = REWARD_DAYS * DAY
   const amount = BigNumber.from('100000000000') // 1000 TRU = 100/day
+  const txArgs = { gasLimit: 6_000_000 }
 
   const fromTru = (amount: BigNumberish) => BigNumber.from(amount).mul(BigNumber.from('100000000'))
 
@@ -82,7 +84,7 @@ describe('TrueFarm', () => {
 
     it('cannot init farm unless distributor is set to farm', async () => {
       await expect(farm2.initialize(stakingToken.address, distributor.address, 'Test farm'))
-        .to.be.revertedWith('distributor farm not set')
+        .to.be.revertedWith('TrueFarm: Distributor farm is not set')
     })
   })
 
@@ -92,13 +94,12 @@ describe('TrueFarm', () => {
     })
 
     it('correct events emitted', async () => {
-      const asStaker = await farm.connect(staker1)
-      await expect(asStaker.stake(parseEther('500'))).to.emit(farm, 'Stake')
+      await expect(farm.connect(staker1).stake(parseEther('500'))).to.emit(farm, 'Stake')
         .withArgs(staker1.address, parseEther('500'))
       await timeTravel(provider, DAY)
-      await expect(asStaker.claim()).to.emit(farm, 'Claim')
-      await expect(asStaker.unstake(parseEther('500'))).to.emit(farm, 'Unstake')
-        .withArgs(staker1.address, parseEther('500'))
+      await expect(farm.connect(staker1).claim()).to.emit(farm, 'Claim')
+      await expect(farm.connect(staker1).unstake(parseEther('500'))).to.emit(farm, 'Unstake')
+      .withArgs(staker1.address, parseEther('500'))
     })
 
     it('staking changes stake balance', async () => {
@@ -119,8 +120,8 @@ describe('TrueFarm', () => {
     })
 
     it('exiting changes stake balance', async () => {
-      await farm.connect(staker1).stake(parseEther('1000'))
-      await farm.connect(staker1).exit(parseEther('500'))
+      await farm.connect(staker1).stake(parseEther('1000'), txArgs)
+      await farm.connect(staker1).exit(parseEther('500'), txArgs)
       expect(await farm.staked(staker1.address)).to.equal(parseEther('500'))
       expect(await farm.totalStaked()).to.equal(parseEther('500'))
     })
@@ -136,35 +137,35 @@ describe('TrueFarm', () => {
     })
 
     it('yields rewards per staked tokens (using claim)', async () => {
-      await farm.connect(staker1).stake(parseEther('1000'))
+      await farm.connect(staker1).stake(parseEther('1000'), txArgs)
       await timeTravel(provider, DAY)
       await farm.connect(staker1).claim()
       expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
     })
 
     it('yields rewards per staked tokens (using exit)', async () => {
-      await farm.connect(staker1).stake(parseEther('1000'))
+      await farm.connect(staker1).stake(parseEther('1000'), txArgs)
       await timeTravel(provider, DAY)
-      await farm.connect(staker1).exit(parseEther('1000'))
+      await farm.connect(staker1).exit(parseEther('1000'), txArgs)
       expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
     })
 
     it('estimate rewards correctly', async () => {
-      await farm.connect(staker1).stake(parseEther('1000'))
+      await farm.connect(staker1).stake(parseEther('1000'), txArgs)
       await timeTravel(provider, DAY)
       expect(expectCloseTo((await farm.claimable(staker1.address)), fromTru(100)))
       await timeTravel(provider, DAY)
       expect(expectCloseTo((await farm.claimable(staker1.address)), fromTru(200)))
-      await farm.connect(staker1).unstake('100')
+      await farm.connect(staker1).unstake('100', txArgs)
       expect(expectCloseTo((await farm.claimable(staker1.address)), fromTru(200)))
-      await farm.connect(staker1).claim()
+      await farm.connect(staker1).claim(txArgs)
       expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
     })
 
     it('rewards when stake increases', async () => {
-      await farm.connect(staker1).stake(parseEther('500'))
+      await farm.connect(staker1).stake(parseEther('500'), txArgs)
       await timeTravel(provider, DAY)
-      await farm.connect(staker1).stake(parseEther('500'))
+      await farm.connect(staker1).stake(parseEther('500'), txArgs)
       await timeTravel(provider, DAY)
       await farm.connect(staker1).claim()
 
@@ -181,9 +182,9 @@ describe('TrueFarm', () => {
     })
 
     it('claiming clears claimableRewards', async () => {
-      await farm.connect(staker1).stake(parseEther('500'))
+      await farm.connect(staker1).stake(parseEther('500'), txArgs)
       await timeTravel(provider, DAY)
-      await farm.connect(staker1).stake(parseEther('500'))
+      await farm.connect(staker1).stake(parseEther('500'), txArgs)
       expect(await farm.claimableReward(staker1.address)).to.be.gt(0)
 
       await farm.connect(staker1).claim()
@@ -192,11 +193,11 @@ describe('TrueFarm', () => {
     })
 
     it('calling distribute does not break reward calculations', async () => {
-      await farm.connect(staker1).stake(parseEther('500'))
+      await farm.connect(staker1).stake(parseEther('500'), txArgs)
       await timeTravel(provider, DAY)
-      await distributor.distribute()
+      await distributor.distribute(txArgs)
       await timeTravel(provider, DAY)
-      await farm.connect(staker1).claim()
+      await farm.connect(staker1).claim(txArgs)
       expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
     })
 
