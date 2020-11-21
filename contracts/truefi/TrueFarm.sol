@@ -84,7 +84,7 @@ contract TrueFarm is ITrueFarm, Initializable {
         trueDistributor = _trueDistributor;
         trustToken = _trueDistributor.trustToken();
         name = _name;
-        require(trueDistributor.farm() == address(this), "distributor farm not set");
+        require(trueDistributor.farm() == address(this), "TrueFarm: Distributor farm is not set");
     }
 
     /**
