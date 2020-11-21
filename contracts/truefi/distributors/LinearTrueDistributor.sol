@@ -117,8 +117,10 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
 
     /**
      * @dev Withdraw funds (for instance if owner decides to create a new distribution)
+     * Distributes remaining funds before withdrwaing
      */
     function empty() public override onlyOwner {
+        distribute();
         require(trustToken.transfer(msg.sender, trustToken.balanceOf(address(this))));
     }
 }
