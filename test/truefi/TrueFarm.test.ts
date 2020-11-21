@@ -201,15 +201,6 @@ describe('TrueFarm', () => {
       expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
     })
 
-    it('splitting distributor shares does not break reward calculations', async () => {
-      await farm.connect(staker1).stake(parseEther('500'), txArgs)
-      await timeTravel(provider, DAY)
-      await distributor.transfer(farm.address, owner.address, (await distributor.TOTAL_SHARES()).div(2))
-      await timeTravel(provider, DAY)
-      await farm.connect(staker1).claim(txArgs)
-      expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
-    })
-
     it('owner withdrawing distributes funds', async () => {
       await farm.connect(staker1).stake(parseEther('500'), txArgs)
       expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0)))
