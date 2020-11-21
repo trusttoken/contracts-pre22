@@ -68,6 +68,7 @@ describe('LinearTrueDistributor', () => {
 
     it('distributes everything if called after distribution is over', async () => {
       await timeTravel(provider, DAY * 35)
+      expect(await distributor.nextDistribution()).to.equal(distributionAmount)
       await distributor.distribute(farm.address)
       expect(await trustToken.balanceOf(farm.address)).to.equal(distributionAmount)
     })
