@@ -72,6 +72,8 @@ describe('New TrueFarm', () => {
   })
 
   describe('initializer', () => {
+    let farm2: TrueFarm
+    
     beforeEach(async() => {
       const farm2 = await new TrueFarmFactory(owner).deploy()
     })
