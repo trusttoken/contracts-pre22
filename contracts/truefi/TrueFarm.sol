@@ -146,6 +146,24 @@ contract TrueFarm is ITrueFarm, Initializable {
     }
 
     /**
+     * @dev View to estimate the claimable reward for an account
+     * @return claimable rewards for account
+     */
+    function claimable(address account) external view returns (uint256) {
+        // estimate pending reward from distributor
+        uint256 pending = trueDistributor.nextDistribution();
+        // calculate total rewards (including pending)
+        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(pending).add(totalClaimedRewards).mul(PRECISION);
+        // calculate block reward
+        uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards);
+        // calculate next cumulative reward per token
+        uint256 nextcumulativeRewardPerToken = cumulativeRewardPerToken.add(totalBlockReward.div(totalStaked));
+        // return claimable reward for this account
+        return claimableReward[account].add(
+            staked[account].mul(nextcumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[account])).div(PRECISION));
+    }
+
+    /**
      * @dev Update state and get TRU from distributor
      */
     modifier update() {

@@ -19,7 +19,7 @@ import {
 } from 'contracts'
 
 describe('LinearTrueDistributor', () => {
-  const DAY = 24 * 3600
+  const DAY = 24 * 60 * 60
 
   let owner: Wallet
   let farm: Wallet
@@ -62,14 +62,14 @@ describe('LinearTrueDistributor', () => {
 
     it('does not distribute anything if called before distribution start', async () => {
       await timeTravel(provider, DAY / 2)
-      await distributor.distribute(farm.address)
+      await distributor.distribute()
       expect(await trustToken.balanceOf(farm.address)).to.equal(0)
     })
 
     it('distributes everything if called after distribution is over', async () => {
       await timeTravel(provider, DAY * 35)
       expect(await distributor.nextDistribution()).to.equal(distributionAmount)
-      await distributor.distribute(farm.address)
+      await distributor.distribute()
       expect(await trustToken.balanceOf(farm.address)).to.equal(distributionAmount)
     })
 
@@ -82,7 +82,7 @@ describe('LinearTrueDistributor', () => {
         for (let i = 0; i < 30; i++) {
           await timeTravel(provider, DAY)
           const balanceBefore = await trustToken.balanceOf(farm.address)
-          await distributor.distribute(farm.address)
+          await distributor.distribute()
           const balanceAfter = await trustToken.balanceOf(farm.address)
           expect(expectCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(30)))
         }
@@ -91,7 +91,7 @@ describe('LinearTrueDistributor', () => {
       it('distributions sum up to total amount', async () => {
         for (let i = 0; i < 30; i++) {
           await timeTravel(provider, DAY)
-          await distributor.distribute(farm.address)
+          await distributor.distribute()
         }
         expect(await trustToken.balanceOf(farm.address)).to.equal(distributionAmount)
       })
