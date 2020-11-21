@@ -41,7 +41,7 @@ import {
 } from '../build'
 
 // default txn args
-const txnArgs = { gasLimit: 1_500_000, gasPrice: 70_000_000_000 }
+const txnArgs = { gasLimit: 2_000_000, gasPrice: 40_000_000_000 }
 
 const zeroAddress = '0x0000000000000000000000000000000000000000'
 
@@ -51,15 +51,16 @@ let tusdAddress: string
 
 // distribution config
 let distributionStart: BigNumber
-let uniswapTfiLength = BigNumber.from(365 * 24 * 60 * 60)
+let uniswapTfiLength = BigNumber.from(180 * 24 * 60 * 60)
 let uniswapEthLength = BigNumber.from(120 * 24 * 60 * 60)
 let balancerLength = BigNumber.from(30 * 24 * 60 * 60)
 let tfiLength = BigNumber.from(1140 * 24 * 60 * 60)
-let uniswapTfiAmount = BigNumber.from(33_930_000).mul(BigNumber.from(10**8))
-let uniswapEthAmount = BigNumber.from(50_895_000).mul(BigNumber.from(10**8))
+
+let uniswapTfiAmount = BigNumber.from(39_585_000).mul(BigNumber.from(10**8))
+let uniswapEthAmount = BigNumber.from(62_205_000).mul(BigNumber.from(10**8))
 let balancerAmount = BigNumber.from(11_310_000).mul(BigNumber.from(10**8))
 let creditMarketAmount = BigNumber.from(254_475_000).mul(BigNumber.from(10**8))
-let tfiAmount = BigNumber.from(169_650_000).mul(BigNumber.from(10**8))
+let tfiAmount = BigNumber.from(195_097_500).mul(BigNumber.from(10**8))
 
 // mainnet uniswap addresses
 let uniswapEthTruAddress: string
@@ -105,8 +106,8 @@ async function deploy () {
   }
 
   // ropsten deploy
-  if (network == 'ropsten') {
-    distributionStart = timestamp
+  if (network == 'mainnet') {
+    distributionStart = BigNumber.from(1605977911)
     const tru = await TrustTokenFactory.connect(ropsten.tru, wallet)
     const tusd = await MockTrueCurrencyFactory.connect(ropsten.tusd, wallet)
     const weth = await new Contract(ropsten.weth, IERC20Json.abi, wallet)
@@ -129,7 +130,7 @@ async function deploy () {
   }
 
   // mainnet deploy
-  if (network == 'mainnet') {
+  if (network == 'ropsten') {
     const tru = await TrustTokenFactory.connect(mainnet.tru, wallet)
     const tusd = await TrueUsdFactory.connect(mainnet.tusd, wallet)
     const weth = {address: mainnet.weth}
@@ -140,6 +141,10 @@ async function deploy () {
     const creditMarket = TrueRatingAgencyFactory.connect(mainnet.creditMarket, wallet)
     const tfi = await TrueFiPoolFactory.connect(mainnet.tfi, wallet)
     const loanFactory = await LoanFactoryFactory.connect(mainnet.loanFactory, wallet)
+    const uniswapEthTru = { address: mainnet.uniswapEthTru }
+    const uniswapTusdTfi = { address: mainnet.uniswapTusdTfi }
+    const balancerBalTru = { address: mainnet.balancerBalTru }
+    const [tfiFarm, uniswapTfiFarm, uniswapEthTruFarm, balancerBalTruFarm] = await deployFarms(wallet, provider, tru, tfi, uniswapTusdTfi, uniswapEthTru, balancerBalTru)
     // await initTrueFi(wallet, provider, tfi, tusd, lender, creditMarket, uniswapRouter, curve, curveGauge)
     // const [tfi, lender, creditMarket] = await deployTrueFi(wallet, provider, tru, tusd, curve, curveGauge, uniswapRouter)
   }
@@ -274,16 +279,24 @@ async function deployFarm(
   start: BigNumber,
   length: BigNumber
 ) {
+  console.log('\nDeploying', name)
+  console.log('amount', amount.toString())
+  console.log('start', start.toString())
+  console.log('length', length.toString())
+  console.log('\n')
+
+  const deployArgs = {gasLimit: 3_500_000, gasPrice: txnArgs.gasPrice}
+
   // deploy distributor implementation
-  const distributorImpl = await (await new LinearTrueDistributorFactory(wallet).deploy(txnArgs)).deployed()
-  console.log(name, 'Impl', distributorImpl.address)
+  const distributorImpl = await (await new LinearTrueDistributorFactory(wallet).deploy(deployArgs)).deployed()
+  console.log(name, 'distributorImpl', distributorImpl.address)
 
   // put distributor behind proxy
   const distributor = await behindProxy(wallet, distributorImpl)
   console.log(name, 'distributor', distributor.address)
 
   // deploy farm implemention
-  const farmImpl = await (await new TrueFarmFactory(wallet).deploy(txnArgs)).deployed()
+  const farmImpl = await (await new TrueFarmFactory(wallet).deploy(deployArgs)).deployed()
   console.log(name, 'farmImpl', farmImpl.address)
 
   // put farm behind proxy
@@ -291,12 +304,18 @@ async function deployFarm(
   console.log(name, 'farm', farm.address)
 
   // transfer tru to distributor (assumes wallet has enough tru)
+  /*
   await wait(tru.transfer(farm.address, uniswapTfiAmount, txnArgs))
   console.log('transferred', amount.toString(), 'to', name, 'distributor')
+  */
 
   // init distributor
   await wait(distributor.initialize(start.toString(), length.toString(), amount.toString(), tru.address, txnArgs))
   console.log('init', name, 'distributor')
+
+  // set farm
+  await wait(distributor.setFarm(farm.address, txnArgs));
+  console.log('set farm')
 
   // init farm
   await wait(farm.initialize(lpToken.address, distributor.address, name, txnArgs))
@@ -307,8 +326,8 @@ async function deployFarm(
 
 // farms
 async function deployFarms (
-  wallet, 
-  provider, 
+  wallet,
+  provider,
   tru,
   tfi,
   uniswapTusdTfi,
