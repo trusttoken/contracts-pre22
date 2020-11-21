@@ -19,7 +19,7 @@ import {
 } from 'contracts'
 
 describe('LinearTrueDistributor', () => {
-  const DAY = 24 * 60 * 60
+  const DAY = 24 * 3600
 
   let owner: Wallet
   let farm: Wallet

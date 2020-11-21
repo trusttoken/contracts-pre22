@@ -159,6 +159,7 @@ contract TrueFarm is ITrueFarm, Initializable {
         // calculate next cumulative reward per token
         uint256 nextcumulativeRewardPerToken = cumulativeRewardPerToken.add(totalBlockReward.div(totalStaked));
         // return claimable reward for this account
+        // prettier-ignore
         return claimableReward[account].add(
             staked[account].mul(nextcumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[account])).div(PRECISION));
     }

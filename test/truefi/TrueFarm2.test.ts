@@ -1,13 +1,11 @@
 import { expect, use } from 'chai'
 import { parseEther } from '@ethersproject/units'
 import { MaxUint256 } from '@ethersproject/constants'
-import { ContractTransaction, Wallet, BigNumber, BigNumberish } from 'ethers'
+import { Wallet, BigNumber, BigNumberish } from 'ethers'
 import { MockProvider, solidity } from 'ethereum-waffle'
 
 import {
   beforeEachWithFixture,
-  skipBlocksWithProvider,
-  skipToBlockWithProvider,
   timeTravel,
   timeTravelTo,
   expectCloseTo,
@@ -24,7 +22,7 @@ import {
 
 use(solidity)
 
-describe('New TrueFarm', () => {
+describe('TrueFarm', () => {
   const DAY = 24 * 3600
   let owner: Wallet
   let staker1: Wallet
@@ -39,14 +37,7 @@ describe('New TrueFarm', () => {
   const DURATION = REWARD_DAYS * DAY
   const amount = BigNumber.from('100000000000') // 1000 TRU = 100/day
 
-  async function getBlock (tx: Promise<ContractTransaction>) {
-    const receipt = await (await tx).wait()
-    return receipt.blockNumber
-  }
-
   const fromTru = (amount: BigNumberish) => BigNumber.from(amount).mul(BigNumber.from('100000000'))
-  const fromBigNumber = (amount: BigNumberish) => BigNumber.from(amount)
-  const skipToBlock = async (targetBlock: number) => skipToBlockWithProvider(provider, targetBlock)
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, staker1, staker2] = wallets
@@ -73,18 +64,21 @@ describe('New TrueFarm', () => {
 
   describe('initializer', () => {
     let farm2: TrueFarm
-    
-    beforeEach(async() => {
-      const farm2 = await new TrueFarmFactory(owner).deploy()
+
+    beforeEach(async () => {
+      farm2 = await new TrueFarmFactory(owner).deploy()
     })
+
     it('name is correct', async () => {
       expect(await farm.name()).to.equal('Test farm')
     })
+
     it('owner can withdraw funds', async () => {
       await distributor.empty()
       expect(await trustToken.balanceOf(owner.address)).to.equal(amount)
     })
-    it('owner can change farm with event', async() => {
+
+    it('owner can change farm with event', async () => {
       await expect(distributor.setFarm(farm2.address)).to.emit(distributor, 'FarmChanged')
         .withArgs(farm2.address)
     })
@@ -205,7 +199,7 @@ describe('New TrueFarm', () => {
     })
 
     it('splitting distributor shares does not break reward calculations', async () => {
-      const stakeBlock = await getBlock(farm.connect(staker1).stake(parseEther('500')))
+      await farm.connect(staker1).stake(parseEther('500'))
       await timeTravel(provider, DAY)
       // await distributor.transfer(farm.address, owner.address, (await distributor.TOTAL_SHARES()).div(2))
       await timeTravel(provider, DAY)
@@ -215,7 +209,7 @@ describe('New TrueFarm', () => {
   })
 
   describe('with two stakers', function () {
-    let dailyReward = amount.div(REWARD_DAYS)
+    const dailyReward = amount.div(REWARD_DAYS)
 
     beforeEach(async () => {
       // staker1 with 4/5 of stake
@@ -231,9 +225,9 @@ describe('New TrueFarm', () => {
       await farm.connect(staker1).claim()
       await farm.connect(staker2).claim()
 
-      expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), 
+      expect(expectCloseTo((await trustToken.balanceOf(staker1.address)),
         dailyReward.mul(days).mul(4).div(5)))
-      expect(expectCloseTo((await trustToken.balanceOf(staker2.address)), 
+      expect(expectCloseTo((await trustToken.balanceOf(staker2.address)),
         dailyReward.mul(days).mul(1).div(5)))
     })
 
@@ -246,9 +240,9 @@ describe('New TrueFarm', () => {
       await farm.connect(staker1).claim()
       await farm.connect(staker2).claim()
 
-      expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), 
+      expect(expectCloseTo((await trustToken.balanceOf(staker1.address)),
         totalReward.mul(days).mul(4).div(5)))
-      expect(expectCloseTo((await trustToken.balanceOf(staker2.address)), 
+      expect(expectCloseTo((await trustToken.balanceOf(staker2.address)),
         totalReward.mul(days).mul(1).div(5)))
     })
 
