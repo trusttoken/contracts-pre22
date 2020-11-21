@@ -72,6 +72,7 @@
         "curve": "0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3",
         "curveGauge": "0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1",
         "crv": "0xD533a949740bb3306d119CC777fa900bA034cd52",
-        "uniswapTruEth": "0xeC6a6b7dB761A5c9910bA8fcaB98116d384b1B85"
+        "uniswapTruEth": "0xeC6a6b7dB761A5c9910bA8fcaB98116d384b1B85",
+        "uniswapTusdTfi": "0xAC08f19b13548d55294BCEfCf751d81EA65845d5"
     }
 }
