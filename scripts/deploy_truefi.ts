@@ -140,7 +140,7 @@ async function deploy () {
     const creditMarket = TrueRatingAgencyFactory.connect(mainnet.creditMarket, wallet)
     const tfi = await TrueFiPoolFactory.connect(mainnet.tfi, wallet)
     const loanFactory = await LoanFactoryFactory.connect(mainnet.loanFactory, wallet)
-    await initTrueFi(wallet, provider, tfi, tusd, lender, creditMarket, uniswapRouter, curve, curveGauge)
+    // await initTrueFi(wallet, provider, tfi, tusd, lender, creditMarket, uniswapRouter, curve, curveGauge)
     // const [tfi, lender, creditMarket] = await deployTrueFi(wallet, provider, tru, tusd, curve, curveGauge, uniswapRouter)
   }
 
