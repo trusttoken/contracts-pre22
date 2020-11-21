@@ -132,8 +132,8 @@ describe('TrueFarm', () => {
     })
 
     it('cannot exit more than is staked', async () => {
-      await farm.connect(staker1).stake(parseEther('1000'))
-      await expect(farm.connect(staker1).exit(parseEther('1001'))).to.be.revertedWith('TrueFarm: Cannot withdraw amount bigger than available balance')
+      await farm.connect(staker1).stake(parseEther('1000'), txArgs)
+      await expect(farm.connect(staker1).exit(parseEther('1001'), txArgs)).to.be.revertedWith('TrueFarm: Cannot withdraw amount bigger than available balance')
     })
 
     it('yields rewards per staked tokens (using claim)', async () => {
