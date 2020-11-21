@@ -99,7 +99,7 @@ describe('TrueFarm', () => {
       await timeTravel(provider, DAY)
       await expect(farm.connect(staker1).claim()).to.emit(farm, 'Claim')
       await expect(farm.connect(staker1).unstake(parseEther('500'))).to.emit(farm, 'Unstake')
-      .withArgs(staker1.address, parseEther('500'))
+        .withArgs(staker1.address, parseEther('500'))
     })
 
     it('staking changes stake balance', async () => {
