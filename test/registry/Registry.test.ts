@@ -221,17 +221,17 @@ describe('Registry', () => {
     })
 
     it('syncs multiple prior writes', async () => {
-      await registry.setAttributeValue(thirdWallet.address, prop1, 3)
-      await registry.setAttributeValue(anotherWallet.address, prop1, 5)
-      await registry.setAttributeValue(owner.address, prop1, 6)
+      await registry.setAttributeValue(thirdWallet.address, prop1, 3, { gasLimit: 2_000_000 })
+      await registry.setAttributeValue(anotherWallet.address, prop1, 5, { gasLimit: 2_000_000 })
+      await registry.setAttributeValue(owner.address, prop1, 6, { gasLimit: 2_000_000 })
 
       const token2 = await new MockRegistrySubscriberFactory(owner).deploy()
-      await registry.subscribe(prop1, token2.address)
-      await registry.syncAttribute(prop1, 2, [thirdWallet.address, anotherWallet.address, owner.address])
+      await registry.subscribe(prop1, token2.address, { gasLimit: 2_000_000 })
+      await registry.syncAttribute(prop1, 2, [thirdWallet.address, anotherWallet.address, owner.address], { gasLimit: 2_000_000 })
       expect(await registryToken.getAttributeValue(thirdWallet.address, prop1)).to.equal(3)
       expect(await token2.getAttributeValue(thirdWallet.address, prop1)).to.equal(0)
 
-      await registry.syncAttribute(prop1, 1, [thirdWallet.address, anotherWallet.address, owner.address])
+      await registry.syncAttribute(prop1, 1, [thirdWallet.address, anotherWallet.address, owner.address], { gasLimit: 2_000_000 })
       expect(await token2.getAttributeValue(thirdWallet.address, prop1)).to.equal(3)
       expect(await token2.getAttributeValue(anotherWallet.address, prop1)).to.equal(5)
       expect(await token2.getAttributeValue(owner.address, prop1)).to.equal(6)
