@@ -73,12 +73,12 @@ describe('TrueRatingAgency', () => {
     rater = await new TrueRatingAgencyFactory(owner).deploy()
 
     await mockFactory.mock.isLoanToken.returns(true)
-    await distributor.initialize(rater.address, trustToken.address, parseTT(100000000))
+    await distributor.initialize(rater.address, trustToken.address, parseTT(10000000))
     await rater.initialize(trustToken.address, distributor.address, mockFactory.address)
 
-    await trustToken.mint(owner.address, parseTT(100000000))
-    await trustToken.mint(distributor.address, parseTT(100000000))
-    await trustToken.approve(rater.address, parseTT(100000000))
+    await trustToken.mint(owner.address, parseTT(10000000))
+    await trustToken.mint(distributor.address, parseTT(10000000))
+    await trustToken.approve(rater.address, parseTT(10000000))
 
     timeTravel = (time: number) => _timeTravel(_provider, time)
   })
@@ -89,7 +89,7 @@ describe('TrueRatingAgency', () => {
   describe('Initializer', () => {
     it('sets trust token address', async () => {
       expect(await rater.trustToken()).to.equal(trustToken.address)
-    })
+    }) 
   })
 
   describe('Parameters set up', () => {
@@ -125,6 +125,24 @@ describe('TrueRatingAgency', () => {
 
       it('must be called by owner', async () => {
         await expect(rater.connect(otherWallet).setBurnFactor(1234))
+          .to.be.revertedWith('caller is not the owner')
+      })
+    })
+
+    describe('setRewardMultiplier', () => {
+      it('changes rewardMultiplier', async () => {
+        await rater.setRewardMultiplier(1234)
+        expect(await rater.rewardMultiplier())
+          .to.equal(1234)
+      })
+
+      it('emits RewardMultiplierChanged', async () => {
+        await expect(rater.setRewardMultiplier(1234))
+          .to.emit(rater, 'RewardMultiplierChanged').withArgs(1234)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(rater.connect(otherWallet).setRewardMultiplier(1234))
           .to.be.revertedWith('caller is not the owner')
       })
     })
@@ -668,14 +686,16 @@ describe('TrueRatingAgency', () => {
   })
 
   describe('Claim', () => {
+    let rewardMultiplier = 50
     beforeEach(async () => {
       loanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
         owner.address,
-        parseEther('5000000'),
+        parseEther('500000'),
         monthInSeconds * 24,
         1000,
       )
+      await rater.setRewardMultiplier(rewardMultiplier)
       await tusd.approve(loanToken.address, parseEther('5000000'))
       await rater.allow(owner.address, true)
       await submit(loanToken.address)
@@ -697,9 +717,8 @@ describe('TrueRatingAgency', () => {
     it('when called for the first time, moves funds from distributor to rater', async () => {
       await rater.yes(loanToken.address, 1000)
       await loanToken.fund()
-
       await expect(() => rater.claim(loanToken.address, owner.address, txArgs))
-        .to.changeTokenBalance(trustToken, rater, '100000000000000')
+        .to.changeTokenBalance(trustToken, rater, '500000000000000')
     })
 
     it('when called for the second time, does not interact with distributor anymore', async () => {
@@ -715,52 +734,59 @@ describe('TrueRatingAgency', () => {
       it('properly saves claimed amount and moves funds (1 voter, called once)', async () => {
         await rater.yes(loanToken.address, 1000)
         await loanToken.fund()
-
+        let expectedReward = BigNumber.from('50000000000').mul(rewardMultiplier)
         await timeTravel(monthInSeconds * 12)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('50000000000000')
+        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
       })
 
       it('properly saves claimed amount and moves funds (1 voter, called multiple times)', async () => {
         await rater.yes(loanToken.address, 1000)
         await loanToken.fund()
-
+        let expectedReward
         await timeTravel(monthInSeconds * 6)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('25000000000000')
+        expectedReward = BigNumber.from('25000000000').mul(rewardMultiplier)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
         await timeTravel(monthInSeconds * 12)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('50000000000000')
+        expectedReward = BigNumber.from('50000000000').mul(rewardMultiplier)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
         await timeTravel(monthInSeconds * 3)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('12500000000000')
+        expectedReward = BigNumber.from('12500000000').mul(rewardMultiplier)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
         await timeTravel(monthInSeconds * 10)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('12500000000000')
+        expectedReward = BigNumber.from('12500000000').mul(rewardMultiplier)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
       })
 
       it('properly saves claimed amount and moves funds (multiple voters, called once)', async () => {
+        let totalReward = BigNumber.from('25000000000000').mul(rewardMultiplier)
         await rater.yes(loanToken.address, 2000)
         await trustToken.mint(otherWallet.address, parseTT(100000000))
         await trustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address, 3000)
         await loanToken.fund()
-
+        
         await timeTravel(monthInSeconds * 12)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('20000000000000', owner)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('30000000000000', otherWallet)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(totalReward.mul(2).div(5), owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(totalReward.mul(3).div(5), otherWallet)
       })
 
       it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
+        let totalReward = BigNumber.from('25000000000000').mul(rewardMultiplier)
         await rater.yes(loanToken.address, 2000)
         await trustToken.mint(otherWallet.address, parseTT(100000000))
         await trustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address, 3000)
         await loanToken.fund()
 
+
         await timeTravel(monthInSeconds * 12)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('20000000000000', owner)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('30000000000000', otherWallet)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('2000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('3000000000000', otherWallet)
         await timeTravel(monthInSeconds * 6)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('10000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('1000000000000', owner)
         await timeTravel(monthInSeconds * 6)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('10000000000000', owner)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('30000000000000', otherWallet)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('1000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('3000000000000', otherWallet)
       })
     })
 
@@ -770,18 +796,18 @@ describe('TrueRatingAgency', () => {
       })
 
       it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
-        await trustToken.mint(otherWallet.address, parseTT(100000000))
+        await trustToken.mint(otherWallet.address, parseTT(10000000))
         await trustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address, 3000)
         await loanToken.fund()
 
         await timeTravel(monthInSeconds * 12)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('20000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('2000000000000', owner)
         await timeTravel(monthInSeconds * 30)
         await loanToken.close()
-        await expectRoughTrustTokenBalanceChangeAfterClaim('20000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('2000000000000', owner)
         await rater.withdraw(loanToken.address, await rater.getYesVote(loanToken.address, owner.address), txArgs)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('60000000000000', otherWallet)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('6000000000000', otherWallet)
       })
 
       it('does not do anything when called multiple times', async () => {
@@ -789,7 +815,7 @@ describe('TrueRatingAgency', () => {
         await timeTravel(monthInSeconds * 24)
         await loanToken.close()
 
-        await expectRoughTrustTokenBalanceChangeAfterClaim('100000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim('10000000000000', owner)
         await expectRoughTrustTokenBalanceChangeAfterClaim(0, owner)
       })
 
@@ -801,7 +827,7 @@ describe('TrueRatingAgency', () => {
         const staked = await rater.getYesVote(loanToken.address, owner.address)
 
         await expect(async () => rater.withdraw(loanToken.address, staked, txArgs))
-          .to.changeTokenBalance(trustToken, owner, staked.add('100000000000000'))
+          .to.changeTokenBalance(trustToken, owner, staked.add('10000000000000'))
       })
     })
   })
