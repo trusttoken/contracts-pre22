@@ -76,6 +76,9 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     uint256 public lossFactor;
     uint256 public burnFactor;
 
+    // reward multiplier for voters
+    uint256 public rewardMultiplier;
+
     // ======= STORAGE DECLARATION END ============
 
     event Allowed(address indexed who, bool status);
@@ -85,6 +88,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     event LoanRetracted(address id);
     event Voted(address loanToken, address voter, bool choice, uint256 stake);
     event Withdrawn(address loanToken, address voter, uint256 stake, uint256 received, uint256 burned);
+    event RewardMultiplierChanged(uint256 newRewardMultiplier);
 
     /**
      * @dev Only whitelisted borrwers can submit for credit ratings
@@ -173,6 +177,15 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     function setBurnFactor(uint256 newBurnFactor) external onlyOwner {
         burnFactor = newBurnFactor;
         emit BurnFactorChanged(newBurnFactor);
+    }
+
+    /**
+     * @dev Set reward multiplier.
+     * Reward multiplier increases reward for TRU stakers
+     */
+    function setRewardMultiplier(uint256 newRewardMultiplier) external onlyOwner {
+        rewardMultiplier = newRewardMultiplier;
+        emit RewardMultiplierChanged(newRewardMultiplier);
     }
 
     /**
@@ -383,7 +396,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * Reward is divided proportionally based on # TRU staked
      * chi = (TRU remaining in distributor) / (Total TRU allocated for distribution)
      * interest = (loan APY * term * principal)
-     * R = Total Reward = (interest * chi)
+     * R = Total Reward = (interest * chi * rewardFactor)
      * @param id Loan ID
      */
     modifier calculateTotalReward(address id) {
@@ -393,7 +406,8 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
             // calculate reward
             // prettier-ignore
             uint256 reward = toTrustToken(interest.mul(
-                distributor.remaining()).div(distributor.amount()));
+                distributor.remaining()).div(distributor.amount()))
+                .mul(rewardMultiplier);
 
             loans[id].reward = reward;
             if (loans[id].reward > 0) {
