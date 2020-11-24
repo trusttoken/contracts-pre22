@@ -1,17 +1,10 @@
+/* eslint-disable */ 
 /**
  * ts-node scripts/deploy_truefi.ts "{private_key}" "{network}"
  */
-import { ethers, providers } from 'ethers'
-
-import { ask } from './utils'
-
-import {
-  TrueFarmFactory,
-  SlowTrueDistributorFactory,
-  FastTrueDistributorFactory,
-} from 'contracts'
 
 async function deployTrueFi () {
+  /*
   const txnArgs = { gasLimit: 2_500_000, gasPrice: 100_000_000_000 }
   const provider = new providers.InfuraProvider(process.argv[3], '81447a33c1cd4eb09efb1e8c388fb28e')
   const wallet = new ethers.Wallet(process.argv[2], provider)
@@ -45,6 +38,7 @@ async function deployTrueFi () {
   await (await fastDistributor.transfer(wallet.address, uniswapEthFarm.address, 5000000, txnArgs)).wait()
   await (await slowDistributor.transfer(wallet.address, uniswapTusdFarm.address, 10000000, txnArgs)).wait()
   console.log('TrueFi deployment completed')
+  */
 }
 
 deployTrueFi().catch(console.error)

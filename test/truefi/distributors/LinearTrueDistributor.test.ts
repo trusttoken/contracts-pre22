@@ -50,7 +50,7 @@ describe('LinearTrueDistributor', () => {
       await expect(distributor.connect(farm).setFarm(farm.address)).to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('emits event', async () => {
+    it('emits event when farm is set', async () => {
       await expect(distributor.setFarm(farm.address)).to.emit(distributor, 'FarmChanged').withArgs(farm.address)
     })
   })
@@ -62,13 +62,14 @@ describe('LinearTrueDistributor', () => {
 
     it('does not distribute anything if called before distribution start', async () => {
       await timeTravel(provider, DAY / 2)
-      await distributor.distribute(farm.address)
+      await distributor.distribute()
       expect(await trustToken.balanceOf(farm.address)).to.equal(0)
     })
 
     it('distributes everything if called after distribution is over', async () => {
       await timeTravel(provider, DAY * 35)
-      await distributor.distribute(farm.address)
+      expect(await distributor.nextDistribution()).to.equal(distributionAmount)
+      await distributor.distribute()
       expect(await trustToken.balanceOf(farm.address)).to.equal(distributionAmount)
     })
 
@@ -81,7 +82,7 @@ describe('LinearTrueDistributor', () => {
         for (let i = 0; i < 30; i++) {
           await timeTravel(provider, DAY)
           const balanceBefore = await trustToken.balanceOf(farm.address)
-          await distributor.distribute(farm.address)
+          await distributor.distribute()
           const balanceAfter = await trustToken.balanceOf(farm.address)
           expect(expectCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(30)))
         }
@@ -90,7 +91,7 @@ describe('LinearTrueDistributor', () => {
       it('distributions sum up to total amount', async () => {
         for (let i = 0; i < 30; i++) {
           await timeTravel(provider, DAY)
-          await distributor.distribute(farm.address)
+          await distributor.distribute()
         }
         expect(await trustToken.balanceOf(farm.address)).to.equal(distributionAmount)
       })

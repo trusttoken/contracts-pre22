@@ -73,8 +73,8 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     /**
      * @dev % multiplied by 100. e.g. 10.5% = 1050
      */
-    uint256 public lossFactor = 2500;
-    uint256 public burnFactor = 2500;
+    uint256 public lossFactor;
+    uint256 public burnFactor;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -147,9 +147,13 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         ILoanFactory _factory
     ) public initializer {
         Ownable.initialize();
+
         trustToken = _trustToken;
         distributor = _distributor;
         factory = _factory;
+
+        lossFactor = 2500;
+        burnFactor = 2500;
     }
 
     /**

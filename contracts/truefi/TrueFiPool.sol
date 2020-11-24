@@ -41,7 +41,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     IUniswapRouter public _uniRouter;
 
     // fee for deposits
-    uint256 public joiningFee = 25;
+    uint256 public joiningFee;
     // track claimable fees
     uint256 public claimableFees;
 
@@ -121,7 +121,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         ITrueLender __lender,
         IUniswapRouter __uniRouter
     ) public initializer {
-        ERC20.__ERC20_initialize("CurveTUSDPool", "crvTUSD");
+        ERC20.__ERC20_initialize("TrueFi LP", "TFI-LP");
         Ownable.initialize();
 
         _curvePool = __curvePool;
@@ -130,6 +130,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _lender = __lender;
         _minter = _curveGauge.minter();
         _uniRouter = __uniRouter;
+
+        joiningFee = 25;
 
         _currencyToken.approve(address(_curvePool), uint256(-1));
         _curvePool.token().approve(address(_curvePool), uint256(-1));
