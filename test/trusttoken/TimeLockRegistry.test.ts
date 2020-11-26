@@ -133,7 +133,6 @@ describe('TimeLockRegistry', () => {
       expect(await trustToken.balanceOf(owner.address)).to.equal(toTrustToken(990))
       expect(await trustToken.balanceOf(registry.address)).to.equal(0)
       expect(await trustToken.balanceOf(holder.address)).to.equal(toTrustToken(10))
-      expect(await trustToken.lockedBalance(holder.address)).to.equal(toTrustToken(10))
     })
 
     it('cannot claim twice', async () => {
