@@ -138,7 +138,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
      */
     function setDailyDistribution(uint256 dailyDistribution) public onlyOwner {
         distribute();
-        uint256 timeLeft = distributionStart.add(duration) - block.timestamp;
+        uint256 timeLeft = distributionStart.add(duration).sub(block.timestamp);
         if (timeLeft > duration) {
             timeLeft = duration;
         } else {
