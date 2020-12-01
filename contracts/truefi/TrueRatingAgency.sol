@@ -87,7 +87,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     event Withdrawn(address loanToken, address voter, uint256 stake, uint256 received, uint256 burned);
 
     /**
-     * @dev Only whitelisted borrwers can submit for credit ratings
+     * @dev Only whitelisted borrowers can submit for credit ratings
      */
     modifier onlyAllowedSubmitters() {
         require(allowedSubmitters[msg.sender], "TrueRatingAgency: Sender is not allowed to submit");
@@ -103,7 +103,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
-     * @dev Cannot submit the same loan muliple times
+     * @dev Cannot submit the same loan multiple times
      */
     modifier onlyNotExistingLoans(address id) {
         require(status(id) == LoanStatus.Void, "TrueRatingAgency: Loan was already created");
@@ -236,7 +236,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
-     * @dev Whitelist borrwers to submit loans for rating
+     * @dev Whitelist borrowers to submit loans for rating
      * @param who Account to whitelist
      * @param status Flag to whitelist accounts
      */
