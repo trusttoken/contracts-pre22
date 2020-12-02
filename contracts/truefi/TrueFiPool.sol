@@ -351,18 +351,17 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * - Need to pass path of exact pairs to go through while executing exchange
      * For example, CRV -> WETH -> TUSD
      *
+     * @param amountIn see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      * @param amountOutMin see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      * @param path see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      */
-    function sellAllCrv(uint256 amountOutMin, address[] calldata path) external onlyOwner {
-        _minter.token().approve(address(_uniRouter), _minter.token().balanceOf(address(this)));
-        _uniRouter.swapExactTokensForTokens(
-            _minter.token().balanceOf(address(this)),
-            amountOutMin,
-            path,
-            address(this),
-            block.timestamp + 1 days
-        );
+    function sellCrv(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path
+    ) public onlyOwner {
+        _minter.token().approve(address(_uniRouter), amountIn);
+        _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 days);
     }
 
     /**
@@ -372,17 +371,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * - Need to pass path of exact pairs to go through while executing exchange
      * For example, CRV -> WETH -> TUSD
      *
-     * @param amountIn see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      * @param amountOutMin see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      * @param path see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      */
-    function sellCrv(
-        uint256 amountIn,
-        uint256 amountOutMin,
-        address[] calldata path
-    ) external onlyOwner {
-        _minter.token().approve(address(_uniRouter), amountIn);
-        _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 days);
+    function sellAllCrv(uint256 amountOutMin, address[] calldata path) external onlyOwner {
+        uint256 availableBalance = _minter.token().balanceOf(address(this));
+        sellCrv(availableBalance, amountOutMin, path);
     }
 
     /**
