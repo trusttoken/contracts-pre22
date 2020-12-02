@@ -365,21 +365,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev Sell collected CRV on Uniswap
-     * - Selling CRV is managed by the contract owner
-     * - Calculations can be made off-chain and called based on market conditions
-     * - Need to pass path of exact pairs to go through while executing exchange
-     * For example, CRV -> WETH -> TUSD
-     *
-     * @param amountOutMin see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
-     * @param path see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
-     */
-    function sellAllCrv(uint256 amountOutMin, address[] calldata path) external onlyOwner {
-        uint256 availableBalance = _minter.token().balanceOf(address(this));
-        sellCrv(availableBalance, amountOutMin, path);
-    }
-
-    /**
      * @dev Claim fees from the pool
      * @param beneficiary account to send funds to
      */
