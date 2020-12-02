@@ -361,7 +361,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         address[] calldata path
     ) public onlyOwner {
         _minter.token().approve(address(_uniRouter), amountIn);
-        _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 days);
+        _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
 
     /**
