@@ -338,7 +338,14 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev Collect CRV tokens minted by staking at gauge and sell them on Uniswap
+     * @dev Collect CRV tokens minted by staking at gauge
+     */
+    function collectCrv() external onlyOwner {
+        _minter.mint(address(_curveGauge));
+    }
+
+    /**
+     * @dev Sell collected CRV on Uniswap
      * - Selling CRV is managed by the contract owner
      * - Calculations can be made off-chain and called based on market conditions
      * - Need to pass path of exact pairs to go through while executing exchange
@@ -347,8 +354,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param amountOutMin see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      * @param path see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      */
-    function collectCrv(uint256 amountOutMin, address[] calldata path) external onlyOwner {
-        _minter.mint(address(_curveGauge));
+    function sellAllCrv(uint256 amountOutMin, address[] calldata path) external onlyOwner {
+        _minter.token().approve(address(_uniRouter), _minter.token().balanceOf(address(this)));
         _uniRouter.swapExactTokensForTokens(
             _minter.token().balanceOf(address(this)),
             amountOutMin,
@@ -356,6 +363,26 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
             address(this),
             block.timestamp + 1 days
         );
+    }
+
+    /**
+     * @dev Sell collected CRV on Uniswap
+     * - Selling CRV is managed by the contract owner
+     * - Calculations can be made off-chain and called based on market conditions
+     * - Need to pass path of exact pairs to go through while executing exchange
+     * For example, CRV -> WETH -> TUSD
+     *
+     * @param amountIn see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
+     * @param amountOutMin see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
+     * @param path see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
+     */
+    function sellCrv(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path
+    ) external onlyOwner {
+        _minter.token().approve(address(_uniRouter), amountIn);
+        _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 days);
     }
 
     /**
