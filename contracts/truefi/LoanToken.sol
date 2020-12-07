@@ -90,7 +90,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @param repayer Sender of currencyTokens
      * @param repayedAmound Amount of currencyToken repaid
      */
-    event Repaid(address repayer, uint256 repayedAmound);
+    event Repaid(address repayer, uint256 repaidAmound);
 
     /**
      * @dev Create a Loan
