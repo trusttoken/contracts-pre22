@@ -119,7 +119,7 @@ describe('TrueRatingAgency', () => {
       })
 
       it('must be less than or equal 100%', async () => {
-        await expect(rater.setLossFactor(100*101))
+        await expect(rater.setLossFactor(100 * 101))
           .to.be.revertedWith('TrueRatingAgency: Loss factor cannot be greater than 100%')
       })
     })
@@ -142,7 +142,7 @@ describe('TrueRatingAgency', () => {
       })
 
       it('must be less than or equal 100%', async () => {
-        await expect(rater.setBurnFactor(100*101))
+        await expect(rater.setBurnFactor(100 * 101))
           .to.be.revertedWith('TrueRatingAgency: Burn factor cannot be greater than 100%')
       })
     })
