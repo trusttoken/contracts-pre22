@@ -23,6 +23,7 @@ import {
   ArbitraryDistributorFactory,
   ArbitraryDistributor,
   ILoanFactoryJson,
+  ArbitraryDistributorJson,
 } from 'contracts'
 
 describe('TrueRatingAgency', () => {
@@ -89,6 +90,13 @@ describe('TrueRatingAgency', () => {
   describe('Initializer', () => {
     it('sets trust token address', async () => {
       expect(await rater.trustToken()).to.equal(trustToken.address)
+    })
+
+    it('checks distributor beneficiary address', async () => {
+      const mockDistributor = await deployMockContract(owner, ArbitraryDistributorJson.abi)
+      await mockDistributor.mock.beneficiary.returns(owner.address)
+      const newRater = await new TrueRatingAgencyFactory(owner).deploy()
+      await expect(newRater.initialize(trustToken.address, mockDistributor.address, mockFactory.address)).to.be.revertedWith('TrueRatingAgency: Invalid distributor beneficiary')
     })
   })
 

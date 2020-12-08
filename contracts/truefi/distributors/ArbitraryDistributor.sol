@@ -26,7 +26,7 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
     // ========= IN STORAGE CORRUPTION ===========
 
     IERC20 public trustToken;
-    address public beneficiary;
+    address public override beneficiary;
     uint256 public override amount;
     uint256 public override remaining;
 
