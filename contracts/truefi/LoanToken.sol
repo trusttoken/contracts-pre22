@@ -86,6 +86,13 @@ contract LoanToken is ILoanToken, ERC20 {
     event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound);
 
     /**
+     * @dev Emitted when a LoanToken is repaid by the borrower in underlying currencyTokens
+     * @param repayer Sender of currencyTokens
+     * @param repaidAmound Amount of currencyToken repaid
+     */
+    event Repaid(address repayer, uint256 repaidAmound);
+
+    /**
      * @dev Create a Loan
      * @param _currencyToken Token to lend
      * @param _borrower Borrwer addresss
@@ -295,6 +302,7 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function repay(address _sender, uint256 _amount) external override onlyAfterWithdraw {
         require(currencyToken.transferFrom(_sender, address(this), _amount));
+        emit Repaid(_sender, _amount);
     }
 
     /**

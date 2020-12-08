@@ -239,6 +239,15 @@ describe('LoanToken', () => {
       expect(await tusd.balanceOf(borrower.address)).to.equal(removeFee(parseEther('1000')).sub(parseEther('100')))
       expect(await tusd.balanceOf(loanToken.address)).to.equal(parseEther('100'))
     })
+
+    it('emits proper event', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await tusd.connect(borrower).approve(loanToken.address, parseEther('100'))
+      await expect(loanToken.repay(borrower.address, parseEther('100')))
+        .to.emit(loanToken, 'Repaid')
+        .withArgs(borrower.address, parseEther('100'))
+    })
   })
 
   describe('Redeem', () => {
