@@ -327,4 +327,61 @@ describe('TrueFiPool', () => {
       await expect(pool.connect(borrower).setJoiningFee(50)).to.be.revertedWith('Ownable: caller is not the owner')
     })
   })
+
+  describe('integrateAtPoint', () => {
+    const calcOffchain = (x: number) => Math.floor(Math.log(x + 50) * 50000)
+    it('calculates integral * 1e9', async () => {
+      for (let i = 0; i < 100; i++) {
+        expect(await pool.integrateAtPoint(i)).to.equal(calcOffchain(i))
+      }
+    })
+  })
+
+  describe('averageExitPenalty', () => {
+    it('correctly calculates penalty when from = to', async () => {
+      expect(await pool.averageExitPenalty(0, 0)).to.equal(1000)
+      expect(await pool.averageExitPenalty(1, 1)).to.equal(980)
+      expect(await pool.averageExitPenalty(100, 100)).to.equal(333)
+      expect(await pool.averageExitPenalty(10000, 10000)).to.equal(0)
+    })
+
+    it('correctly calculates penalty when from < to', async () => {
+      expect(await pool.averageExitPenalty(0, 1)).to.equal(990)
+      expect(await pool.averageExitPenalty(1, 100)).to.equal(544)
+      expect(await pool.averageExitPenalty(100, 1000)).to.equal(108)
+      expect(await pool.averageExitPenalty(1000, 10000)).to.equal(12)
+    })
+  })
+
+  describe('liquidExit', () => {
+    const amount = parseEther('10000000')
+    beforeEach(async () => {
+      await token.approve(pool.address, amount)
+      await pool.join(amount)
+    })
+
+    it('all funds are liquid: transfers TUSD without penalty', async () => {
+      await pool.liquidExit(await pool.balanceOf(owner.address))
+      expect(await token.balanceOf(owner.address)).to.equal(excludeFee(amount))
+    })
+
+    it('all funds are liquid: transfers TUSD without penalty (half of stake)', async () => {
+      await pool.liquidExit(amount.div(2))
+      expect(await token.balanceOf(owner.address)).to.equal(amount.div(2))
+    })
+
+    it('after loan approved, applies a penalty', async () => {
+      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, amount.div(3), dayInSeconds * 360, 1000)
+      await lender.allow(owner.address, true)
+      await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10000000))
+      await lender.fund(loan1.address)
+      expect(await pool.liquidExitPenalty(amount.div(2))).to.equal(9990)
+      await pool.liquidExit(amount.div(2), { gasLimit: 5000000 })
+      expectCloseTo(await token.balanceOf(owner.address), (amount.div(2).mul(9990).div(10000)))
+    })
+
+    it('emits event', async () => {
+      await expect(pool.liquidExit(amount.div(2))).to.emit(pool, 'Exited').withArgs(owner.address, amount.div(2))
+    });
+  })
 })
