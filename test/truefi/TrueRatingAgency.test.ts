@@ -23,7 +23,7 @@ import {
   ArbitraryDistributorFactory,
   ArbitraryDistributor,
   ILoanFactoryJson,
-  ArbitraryDistributorJson
+  ArbitraryDistributorJson,
 } from 'contracts'
 
 describe('TrueRatingAgency', () => {
