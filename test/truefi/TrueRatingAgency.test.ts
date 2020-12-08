@@ -96,7 +96,7 @@ describe('TrueRatingAgency', () => {
       const mockDistributor = await deployMockContract(owner, ArbitraryDistributorJson.abi)
       await mockDistributor.mock.beneficiary.returns(owner.address)
       const newRater = await new TrueRatingAgencyFactory(owner).deploy()
-      await expect(newRater.initialize(trustToken.address, mockDistributor.address, mockFactory.address)).to.be.revertedWith('TrueRatingAgency: invalid distributor beneficiary')
+      await expect(newRater.initialize(trustToken.address, mockDistributor.address, mockFactory.address)).to.be.revertedWith('TrueRatingAgency: Invalid distributor beneficiary')
     })
   })
 

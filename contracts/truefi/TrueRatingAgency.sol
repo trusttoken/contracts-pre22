@@ -146,7 +146,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         IArbitraryDistributor _distributor,
         ILoanFactory _factory
     ) public initializer {
-        require(address(this) == _distributor.beneficiary(), "TrueRatingAgency: invalid distributor beneficiary");
+        require(address(this) == _distributor.beneficiary(), "TrueRatingAgency: Invalid distributor beneficiary");
         Ownable.initialize();
 
         trustToken = _trustToken;
