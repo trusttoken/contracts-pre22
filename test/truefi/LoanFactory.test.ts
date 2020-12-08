@@ -39,6 +39,6 @@ describe('LoanFactory', () => {
 
   it('prevents 0 loans', async () => {
     await expect(factory.createLoanToken(borrower.address, 0, 100, 200))
-      .to.be.revertedWith('LoanFactory: loans of amount 0, will not be approved')
+      .to.be.revertedWith('LoanFactory: Loans of amount 0, will not be approved')
   })
 })
