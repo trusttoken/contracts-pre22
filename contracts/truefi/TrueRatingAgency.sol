@@ -360,7 +360,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @dev Total amount of funds given to correct voters
      * @param id Loan ID
      * @param incorrectChoice Vote which was incorrect
-     * @return TRU amount remaining for incorrect voters
+     * @return TRU amount given to correct voters
      */
     function bounty(address id, bool incorrectChoice) internal view returns (uint256) {
         // reward = (incorrect_tokens_staked) * (loss_factor) * (1 - burn_factor)
