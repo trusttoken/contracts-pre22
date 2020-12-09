@@ -67,7 +67,7 @@ describe('ArbitraryDistributor', () => {
 
     it('emits event', async () => {
       await expect(distributor.distribute(distributedAmount)).to.emit(distributor, 'Distributed').withArgs(distributedAmount)
-    });
+    })
   })
 
   describe('empty', () => {
