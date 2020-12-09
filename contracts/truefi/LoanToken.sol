@@ -315,7 +315,7 @@ contract LoanToken is ILoanToken, ERC20 {
     /**
      * @dev Function for borrower to reclaim stuck currencyToken
      * Can only call this function after the loan is Closed
-     * and all of LoanToken holders have fully redeemed
+     * and all of LoanToken holders have been burnt
      */
     function reclaim() external override onlyClosed onlyBorrower {
         require(totalSupply() == 0, "LoanToken: Cannot reclaim when LoanTokens in circulation");
