@@ -240,6 +240,17 @@ describe('LoanToken', () => {
       expect(await tusd.balanceOf(loanToken.address)).to.equal(parseEther('100'))
     })
 
+    it('repays at most debt value, surplus is not transferred', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await tusd.mint(borrower.address, parseEther('300'))
+      await tusd.connect(borrower).approve(loanToken.address, parseEther('1200'))
+      await loanToken.repay(borrower.address, parseEther('1200'))
+
+      expect(await tusd.balanceOf(borrower.address)).to.equal(removeFee(parseEther('1000')).sub(parseEther('800')))
+      expect(await tusd.balanceOf(loanToken.address)).to.equal(parseEther('1100'))
+    })
+
     it('emits proper event', async () => {
       await loanToken.fund()
       await withdraw(borrower)
