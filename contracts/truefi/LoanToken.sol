@@ -318,9 +318,9 @@ contract LoanToken is ILoanToken, ERC20 {
      * and all of LoanToken holders have fully redeemed
      */
     function reclaim() external override onlyClosed onlyBorrower {
-        require(totalSupply() == 0, "LoanToken: Cannot reclaim when loan tokens in circulation");
-        uint balanceRemaining = _balance();
-        require(balanceRemaining > 0, "LoanToken: Cannot reclaim when there is nothing to reclaim");
+        require(totalSupply() == 0, "LoanToken: Cannot reclaim when LoanTokens in circulation");
+        uint256 balanceRemaining = _balance();
+        require(balanceRemaining > 0, "LoanToken: Cannot reclaim when balance 0");
 
         require(currencyToken.transfer(borrower, balanceRemaining));
         emit Reclaimed(borrower, balanceRemaining);
