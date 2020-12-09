@@ -329,7 +329,7 @@ describe('TrueFiPool', () => {
 
     it('reverts when JoiningFee set to more than 100%', async () => {
       await expect(pool.setJoiningFee(10100))
-        .to.be.revertedWith('TrueFiPool: Fee cannot exceed transaction value')
+        .to.be.revertedWith('CurvePool: Fee cannot exceed transaction value')
     })
   })
 })
