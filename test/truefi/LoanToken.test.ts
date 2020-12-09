@@ -392,6 +392,12 @@ describe('LoanToken', () => {
       await tusd.connect(borrower).approve(loanToken.address, parseEther('100'))
     })
 
+    const paybackRedeemPayback = async () => {
+      await payback(borrower, parseEther('900'))
+      await loanToken.redeem(parseEther('1100'))
+      await payback(borrower, parseEther('200'))
+    }
+
     it('reverts when loan not closed', async () => {
       await expect(loanToken.connect(borrower).reclaim())
         .to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
@@ -416,12 +422,6 @@ describe('LoanToken', () => {
       await expect(loanToken.connect(borrower).reclaim())
         .to.be.revertedWith('LoanToken: Cannot reclaim when balance 0')
     })
-
-    const paybackRedeemPayback = async () => {
-      await payback(borrower, parseEther('900'))
-      await loanToken.redeem(parseEther('1100'))
-      await payback(borrower, parseEther('200'))
-    }
 
     it('reclaims surplus when conditions met', async () => {
       await loanToken.close()
