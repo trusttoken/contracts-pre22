@@ -406,7 +406,7 @@ describe('LoanToken', () => {
     it('reverts when total supply is greater than 0', async () => {
       await loanToken.close()
       await expect(loanToken.connect(borrower).reclaim())
-        .to.be.revertedWith('LoanToken: Cannot reclaim when LoanTokens in circulation')
+        .to.be.revertedWith('LoanToken: Cannot reclaim when LoanTokens are in circulation')
     })
 
     it('reverts when balance is 0', async () => {
