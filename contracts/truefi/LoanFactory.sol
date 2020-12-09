@@ -54,6 +54,7 @@ contract LoanFactory is ILoanFactory, Initializable {
         uint256 _apy
     ) external override {
         require(_amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
+        require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
 
         address newToken = address(new LoanToken(currencyToken, _borrower, _amount, _term, _apy));
         isLoanToken[newToken] = true;
