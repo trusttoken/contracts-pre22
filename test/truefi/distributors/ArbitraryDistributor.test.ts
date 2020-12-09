@@ -64,6 +64,10 @@ describe('ArbitraryDistributor', () => {
       await distributor.distribute(distributedAmount)
       expect(await distributor.remaining()).to.equal(totalAmount.sub(distributedAmount))
     })
+
+    it('emits event', async () => {
+      await expect(distributor.distribute(distributedAmount)).to.emit(distributor, 'Distributed').withArgs(distributedAmount)
+    });
   })
 
   describe('empty', () => {
@@ -76,6 +80,11 @@ describe('ArbitraryDistributor', () => {
       const totalBalance = await trustToken.balanceOf(distributor.address)
       await expect(() => distributor.empty())
         .to.changeTokenBalance(trustToken, owner, totalBalance)
+    })
+
+    it('sets remaining to 0', async () => {
+      await distributor.empty()
+      expect(await distributor.remaining()).to.equal(0)
     })
   })
 })
