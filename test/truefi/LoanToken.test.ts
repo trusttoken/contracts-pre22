@@ -385,7 +385,6 @@ describe('LoanToken', () => {
   })
 
   describe('Reclaim', () => {
-    //= ==========================IN PROGRESS==================================
     beforeEach(async () => {
       await loanToken.fund()
       await withdraw(borrower)
@@ -427,10 +426,8 @@ describe('LoanToken', () => {
     it('reclaims surplus when conditions met', async () => {
       await loanToken.close()
       await paybackRedeemPayback()
-      const borrowerBalance = await tusd.balanceOf(borrower.address)
-      await loanToken.connect(borrower).reclaim()
-      expect(await tusd.balanceOf(borrower.address))
-        .eq(borrowerBalance.add(parseEther('200')))
+      await expect(() => loanToken.connect(borrower).reclaim())
+        .to.changeTokenBalance(tusd, borrower, parseEther('200'))
     })
 
     it('reverts when reclaims twice', async () => {
@@ -446,12 +443,11 @@ describe('LoanToken', () => {
       await payback(borrower, parseEther('900'))
       await loanToken.redeem(parseEther('1100'))
       await payback(borrower, parseEther('100'))
-      const borrowerBalance = await tusd.balanceOf(borrower.address)
-      await loanToken.connect(borrower).reclaim()
+      await expect(() => loanToken.connect(borrower).reclaim())
+        .to.changeTokenBalance(tusd, borrower, parseEther('100'))
       await payback(borrower, parseEther('100'))
-      await loanToken.connect(borrower).reclaim()
-      expect(await tusd.balanceOf(borrower.address))
-        .eq(borrowerBalance.add(parseEther('200')))
+      await expect(() => loanToken.connect(borrower).reclaim())
+        .to.changeTokenBalance(tusd, borrower, parseEther('100'))
     })
 
     it('emits event', async () => {
