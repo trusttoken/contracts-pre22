@@ -271,7 +271,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param amount amount of pool tokens to redeem for underlying tokens
      */
     function liquidExit(uint256 amount) external nonReentrant {
-        require(amount <= balanceOf(msg.sender), "CurvePool: insufficient funds");
+        require(amount <= balanceOf(msg.sender), "CurvePool: Insufficient funds");
 
         uint256 amountToWithdraw = poolValue().mul(amount).div(totalSupply());
         require(amountToWithdraw <= liquidValue(), "CurvePool: Not enough liquidity in pool");
