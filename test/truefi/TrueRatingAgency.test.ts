@@ -719,6 +719,16 @@ describe('TrueRatingAgency', () => {
         .to.changeTokenBalance(trustToken, rater, '0')
     })
 
+    it('emits event', async () => {
+      await rater.yes(loanToken.address, 1000)
+      await loanToken.fund()
+      await timeTravel(monthInSeconds * 6)
+      
+      await expect(rater.claim(loanToken.address, owner.address, txArgs))
+        .to.emit(rater, 'Claimed')
+        .withArgs(loanToken.address, owner.address, BigNumber.from(25000000000000))
+    })
+
     describe('Running', () => {
       it('properly saves claimed amount and moves funds (1 voter, called once)', async () => {
         await rater.yes(loanToken.address, 1000)
