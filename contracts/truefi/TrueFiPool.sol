@@ -186,7 +186,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param fee new fee
      */
     function setJoiningFee(uint256 fee) external onlyOwner {
-        require(fee <= 10000, "CurvePool: Fee cannot exceed transaction value");
+        require(fee <= 10000, "TrueFiPool: Fee cannot exceed transaction value");
         joiningFee = fee;
         emit JoiningFeeChanged(fee);
     }
@@ -227,7 +227,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param amount amount of pool tokens to redeem for underlying tokens
      */
     function exit(uint256 amount) external override nonReentrant {
-        require(amount <= balanceOf(msg.sender), "CurvePool: insufficient funds");
+        require(amount <= balanceOf(msg.sender), "TrueFiPool: insufficient funds");
 
         uint256 _totalSupply = totalSupply();
 
@@ -265,7 +265,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param minMintAmount Minimum amount to mint
      */
     function flush(uint256 currencyAmount, uint256 minMintAmount) external onlyOwner {
-        require(currencyAmount <= currencyBalance(), "CurvePool: Insufficient currency balance");
+        require(currencyAmount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
 
@@ -284,7 +284,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param minCurrencyAmount minimum amount of tokens to withdraw
      */
     function pull(uint256 yAmount, uint256 minCurrencyAmount) external onlyOwner {
-        require(yAmount <= yTokenBalance(), "CurvePool: Insufficient Curve liquidity balance");
+        require(yAmount <= yTokenBalance(), "TrueFiPool: Insufficient Curve liquidity balance");
 
         // unstake in gauge
         ensureEnoughTokensAreAvailable(yAmount);
@@ -301,9 +301,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param expectedAmount expected amount to borrow
      */
     function borrow(uint256 expectedAmount, uint256 amountWithoutFee) external override nonReentrant {
-        require(expectedAmount >= amountWithoutFee, "CurvePool: Fee cannot be negative");
+        require(expectedAmount >= amountWithoutFee, "TrueFiPool: Fee cannot be negative");
         // TODO: create modifier for onlyLender
-        require(msg.sender == address(_lender), "CurvePool: Only lender can borrow");
+        require(msg.sender == address(_lender), "TrueFiPool: Only lender can borrow");
 
         // if there is not enough TUSD, withdraw from curve
         if (expectedAmount > currencyBalance()) {
@@ -312,13 +312,13 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
             uint256 roughCurveTokenAmount = calcTokenAmount(amountToWithdraw).mul(1005).div(1000);
             require(
                 roughCurveTokenAmount <= yTokenBalance(),
-                "CurvePool: Not enough Curve y tokens in pool to cover borrow"
+                "TrueFiPool: Not enough Curve y tokens in pool to cover borrow"
             );
             // pull tokens from gauge
             ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
             // remove TUSD from curve
             _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
-            require(expectedAmount <= currencyBalance(), "CurvePool: Not enough funds in pool to cover borrow");
+            require(expectedAmount <= currencyBalance(), "TrueFiPool: Not enough funds in pool to cover borrow");
         }
 
         // calculate fees and transfer remainder
