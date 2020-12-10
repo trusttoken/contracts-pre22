@@ -139,7 +139,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev only lender can perform borrowing or repaying
-    */
+     */
     modifier onlyLender() {
         require(msg.sender == address(_lender), "TrueFiPool: Only lender can borrow or repay");
         _;
