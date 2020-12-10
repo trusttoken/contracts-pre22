@@ -1,29 +1,25 @@
 import { expect } from 'chai'
-import { constants, Wallet, BigNumber } from 'ethers'
+import { BigNumber, constants, Wallet } from 'ethers'
 import { parseEther } from '@ethersproject/units'
 import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 
 import { toTrustToken } from 'scripts/utils'
 
-import {
-  beforeEachWithFixture,
-  expectCloseTo,
-  timeTravel,
-} from 'utils'
+import { beforeEachWithFixture, expectCloseTo, timeTravel } from 'utils'
 
 import {
-  MockErc20TokenFactory,
-  MockErc20Token,
-  TrueFiPoolFactory,
-  TrueFiPool,
+  ICurveGaugeJson,
+  LoanToken,
+  LoanTokenFactory,
   MockCurvePool,
   MockCurvePoolFactory,
+  MockErc20Token,
+  MockErc20TokenFactory,
+  TrueFiPool,
+  TrueFiPoolFactory,
   TrueLender,
   TrueLenderFactory,
-  LoanTokenFactory,
-  LoanToken,
   TrueRatingAgencyJson,
-  ICurveGaugeJson,
 } from 'contracts'
 
 describe('TrueFiPool', () => {
@@ -338,18 +334,48 @@ describe('TrueFiPool', () => {
   })
 
   describe('averageExitPenalty', () => {
+    const testPenalty = async (from: number, to: number, result: number) => expect(await pool.averageExitPenalty(from, to)).to.equal(result)
+
+    it('throws if from > to', async () => {
+      expect(await pool.averageExitPenalty(10, 9)).to.be.revertedWith('CurvePool: To precedes from')
+    });
+
     it('correctly calculates penalty when from = to', async () => {
-      expect(await pool.averageExitPenalty(0, 0)).to.equal(1000)
-      expect(await pool.averageExitPenalty(1, 1)).to.equal(980)
-      expect(await pool.averageExitPenalty(100, 100)).to.equal(333)
-      expect(await pool.averageExitPenalty(10000, 10000)).to.equal(0)
+      await testPenalty(0, 0, 1000)
+      await testPenalty(1, 1, 990)
+      await testPenalty(100, 100, 333)
+      await testPenalty(10000, 10000, 0)
+    })
+
+    it('correctly calculates penalty when from+1=to', async () => {
+      const testWithStep1 = async (from: number) => {
+        const penalty = await pool.averageExitPenalty(from, from + 1)
+        const expected = (await pool.averageExitPenalty(from, from)).add(await pool.averageExitPenalty(from + 1, from + 1)).div(2)
+        expect(penalty.sub(expected).abs()).to.be.lte(1)
+      }
+
+      await testWithStep1(0)
+      await testWithStep1(1)
+      await testWithStep1(2)
+      await testWithStep1(3)
+      await testWithStep1(5)
+      await testWithStep1(10)
+      await testWithStep1(42)
+      await testWithStep1(150)
+      await testWithStep1(1000)
+      await testWithStep1(10000 - 2)
     })
 
     it('correctly calculates penalty when from < to', async () => {
-      expect(await pool.averageExitPenalty(0, 1)).to.equal(990)
-      expect(await pool.averageExitPenalty(1, 100)).to.equal(544)
-      expect(await pool.averageExitPenalty(100, 1000)).to.equal(108)
-      expect(await pool.averageExitPenalty(1000, 10000)).to.equal(12)
+      // Checked with Wolfram Alpha
+      await testPenalty(0, 12, 896)
+      await testPenalty(1, 100, 544)
+      await testPenalty(5, 10, 870)
+      await testPenalty(15, 55, 599)
+      await testPenalty(42, 420, 215)
+      await testPenalty(100, 1000, 108)
+      await testPenalty(9100, 10000, 5)
+      await testPenalty(1000, 10000, 12)
     })
   })
 
@@ -358,6 +384,14 @@ describe('TrueFiPool', () => {
     beforeEach(async () => {
       await token.approve(pool.address, amount)
       await pool.join(amount)
+    })
+
+    it('burns pool tokens on exit', async () => {
+      const supply = await pool.totalSupply()
+      await pool.liquidExit(supply.div(2))
+      expect(await pool.totalSupply()).to.equal(supply.div(2))
+      await pool.liquidExit(supply.div(3))
+      expect(await pool.totalSupply()).to.equal(supply.div(6))
     })
 
     it('all funds are liquid: transfers TUSD without penalty', async () => {

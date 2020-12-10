@@ -274,12 +274,16 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         require(amount <= balanceOf(msg.sender), "CurvePool: Insufficient funds");
 
         uint256 amountToWithdraw = poolValue().mul(amount).div(totalSupply());
-        require(amountToWithdraw <= liquidValue(), "CurvePool: Not enough liquidity in pool");
         amountToWithdraw = amountToWithdraw.mul(liquidExitPenalty(amountToWithdraw)).div(10000);
+        require(amountToWithdraw <= liquidValue(), "CurvePool: Not enough liquidity in pool");
+
+        // burn tokens sent
+        _burn(msg.sender, amount);
+
         if (amountToWithdraw > currencyBalance()) {
             removeLiquidityFromCurve(amountToWithdraw.sub(currencyBalance()));
+            require(amountToWithdraw <= currencyBalance(), "CurvePool: Not enough funds were withdrawn from Curve");
         }
-        require(amountToWithdraw <= currencyBalance(), "CurvePool: Not enough funds in pool to cover borrow");
 
         require(_currencyToken.transfer(msg.sender, amountToWithdraw));
 
@@ -309,10 +313,10 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev Calculates average penalty on interfal [from; to]
+     * @dev Calculates average penalty on interval [from; to]
      */
     function averageExitPenalty(uint256 from, uint256 to) public pure returns (uint256) {
-        require(from <= to, "CurvePool: to is before from");
+        require(from <= to, "CurvePool: To precedes from");
         if (from == 10000) {
             // When all liquid, dont penalize
             return 0;
@@ -386,7 +390,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     function removeLiquidityFromCurve(uint256 amountToWithdraw) internal {
         // get rough estimate of how much yCRV we should sell
         uint256 roughCurveTokenAmount = calcTokenAmount(amountToWithdraw).mul(1005).div(1000);
-        require(roughCurveTokenAmount <= yTokenBalance(), "CurvePool: Not enough Curve y tokens in pool to cover borrow");
+        require(roughCurveTokenAmount <= yTokenBalance(), "CurvePool: Not enough Curve liquidity tokens in pool to cover borrow");
         // pull tokens from gauge
         ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
         // remove TUSD from curve
