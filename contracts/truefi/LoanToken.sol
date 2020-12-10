@@ -302,7 +302,6 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function repay(address _sender, uint256 _amount) external override onlyAfterWithdraw {
         require(_amount <= debt.sub(_balance()), "LoanToken: Cannot repay over the debt");
-        
         require(currencyToken.transferFrom(_sender, address(this), _amount));
         emit Repaid(_sender, _amount);
     }
