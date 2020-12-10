@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
 import { parseEther } from 'ethers/lib/utils'
 import { MockContract, deployMockContract } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
@@ -24,6 +24,7 @@ import {
   ArbitraryDistributor,
   ILoanFactoryJson,
   ArbitraryDistributorJson,
+  TrueRatingAgencyJson,
 } from 'contracts'
 
 describe('TrueRatingAgency', () => {
@@ -727,6 +728,20 @@ describe('TrueRatingAgency', () => {
       await rater.claim(loanToken.address, owner.address, txArgs)
       await expect(() => rater.claim(loanToken.address, owner.address, txArgs))
         .to.changeTokenBalance(trustToken, rater, '0')
+    })
+
+    it('emits event', async () => {
+      await rater.yes(loanToken.address, 1000)
+      await loanToken.fund()
+      await timeTravel(monthInSeconds * 6)
+
+      const tx = await rater.claim(loanToken.address, owner.address, txArgs)
+      const receipt = await tx.wait()
+      const event = new utils.Interface(TrueRatingAgencyJson.abi).parseLog(receipt.events[2])
+
+      expect(event.args[0]).eq(loanToken.address)
+      expect(event.args[1]).eq(owner.address)
+      expectCloseTo(BigNumber.from(event.args[2]), parseTT(250000))
     })
 
     describe('Running', () => {

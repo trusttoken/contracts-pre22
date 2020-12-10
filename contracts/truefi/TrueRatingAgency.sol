@@ -85,6 +85,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     event LoanRetracted(address id);
     event Voted(address loanToken, address voter, bool choice, uint256 stake);
     event Withdrawn(address loanToken, address voter, uint256 stake, uint256 received, uint256 burned);
+    event Claimed(address loanToken, address voter, uint256 claimedReward);
 
     /**
      * @dev Only whitelisted borrowers can submit for credit ratings
@@ -443,9 +444,10 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         // track amount of claimed tokens
         loans[id].claimed[voter] = loans[id].claimed[voter].add(claimable);
 
-        // transfer tokens
+        // transfer tokens and emits event
         if (claimable > 0) {
             require(trustToken.transfer(voter, claimable));
+            emit Claimed(id, voter, claimable);
         }
     }
 
