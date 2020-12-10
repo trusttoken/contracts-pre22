@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
 import { parseEther } from 'ethers/lib/utils'
 import { MockContract, deployMockContract } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
@@ -23,6 +23,8 @@ import {
   ArbitraryDistributorFactory,
   ArbitraryDistributor,
   ILoanFactoryJson,
+  ArbitraryDistributorJson,
+  TrueRatingAgencyJson,
 } from 'contracts'
 
 describe('TrueRatingAgency', () => {
@@ -90,6 +92,13 @@ describe('TrueRatingAgency', () => {
     it('sets trust token address', async () => {
       expect(await rater.trustToken()).to.equal(trustToken.address)
     })
+
+    it('checks distributor beneficiary address', async () => {
+      const mockDistributor = await deployMockContract(owner, ArbitraryDistributorJson.abi)
+      await mockDistributor.mock.beneficiary.returns(owner.address)
+      const newRater = await new TrueRatingAgencyFactory(owner).deploy()
+      await expect(newRater.initialize(trustToken.address, mockDistributor.address, mockFactory.address)).to.be.revertedWith('TrueRatingAgency: Invalid distributor beneficiary')
+    })
   })
 
   describe('Parameters set up', () => {
@@ -109,6 +118,11 @@ describe('TrueRatingAgency', () => {
         await expect(rater.connect(otherWallet).setLossFactor(1234))
           .to.be.revertedWith('caller is not the owner')
       })
+
+      it('must be less than or equal 100%', async () => {
+        await expect(rater.setLossFactor(100 * 101))
+          .to.be.revertedWith('TrueRatingAgency: Loss factor cannot be greater than 100%')
+      })
     })
 
     describe('setBurnFactor', () => {
@@ -126,6 +140,11 @@ describe('TrueRatingAgency', () => {
       it('must be called by owner', async () => {
         await expect(rater.connect(otherWallet).setBurnFactor(1234))
           .to.be.revertedWith('caller is not the owner')
+      })
+
+      it('must be less than or equal 100%', async () => {
+        await expect(rater.setBurnFactor(100 * 101))
+          .to.be.revertedWith('TrueRatingAgency: Burn factor cannot be greater than 100%')
       })
     })
   })
@@ -697,9 +716,10 @@ describe('TrueRatingAgency', () => {
     it('when called for the first time, moves funds from distributor to rater', async () => {
       await rater.yes(loanToken.address, 1000)
       await loanToken.fund()
-
-      await expect(() => rater.claim(loanToken.address, owner.address, txArgs))
-        .to.changeTokenBalance(trustToken, rater, '100000000000000')
+      const balanceBefore = await trustToken.balanceOf(rater.address)
+      await rater.claim(loanToken.address, owner.address, txArgs)
+      const balanceAfter = await trustToken.balanceOf(rater.address)
+      expectCloseTo(balanceAfter.sub(balanceBefore), parseTT('1000000'))
     })
 
     it('when called for the second time, does not interact with distributor anymore', async () => {
@@ -709,6 +729,20 @@ describe('TrueRatingAgency', () => {
       await rater.claim(loanToken.address, owner.address, txArgs)
       await expect(() => rater.claim(loanToken.address, owner.address, txArgs))
         .to.changeTokenBalance(trustToken, rater, '0')
+    })
+
+    it('emits event', async () => {
+      await rater.yes(loanToken.address, 1000)
+      await loanToken.fund()
+      await timeTravel(monthInSeconds * 6)
+
+      const tx = await rater.claim(loanToken.address, owner.address, txArgs)
+      const receipt = await tx.wait()
+      const event = new utils.Interface(TrueRatingAgencyJson.abi).parseLog(receipt.events[2])
+
+      expect(event.args[0]).eq(loanToken.address)
+      expect(event.args[1]).eq(owner.address)
+      expectCloseTo(BigNumber.from(event.args[2]), parseTT(250000))
     })
 
     describe('Running', () => {
@@ -761,6 +795,18 @@ describe('TrueRatingAgency', () => {
         await timeTravel(monthInSeconds * 6)
         await expectRoughTrustTokenBalanceChangeAfterClaim('10000000000000', owner)
         await expectRoughTrustTokenBalanceChangeAfterClaim('30000000000000', otherWallet)
+      })
+
+      it('works after distribution ended', async () => {
+        await rater.yes(loanToken.address, 2000)
+        await trustToken.mint(otherWallet.address, parseTT(100000000))
+        await trustToken.connect(otherWallet).approve(rater.address, 3000)
+        await rater.connect(otherWallet).yes(loanToken.address, 3000)
+        await loanToken.fund()
+
+        await timeTravel(monthInSeconds * 12)
+        await distributor.empty()
+        await expectRoughTrustTokenBalanceChangeAfterClaim('0', owner)
       })
     })
 

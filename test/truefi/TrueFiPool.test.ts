@@ -213,7 +213,7 @@ describe('TrueFiPool', () => {
     })
 
     it('reverts if flushing more than tUSD balance', async () => {
-      await expect(pool.flush(parseEther('10000001'), 0)).to.be.revertedWith('CurvePool: Insufficient currency balance')
+      await expect(pool.flush(parseEther('10000001'), 0)).to.be.revertedWith('TrueFiPool: Insufficient currency balance')
     })
 
     it('deposits liquidity tokens in curve gauge', async () => {
@@ -237,7 +237,7 @@ describe('TrueFiPool', () => {
     })
 
     it('reverts if flushing more than curve balance', async () => {
-      await expect(pool.pull(parseEther('1001'), 0)).to.be.revertedWith('CurvePool: Insufficient Curve liquidity balance')
+      await expect(pool.pull(parseEther('1001'), 0)).to.be.revertedWith('TrueFiPool: Insufficient Curve liquidity balance')
     })
   })
 
@@ -253,7 +253,13 @@ describe('TrueFiPool', () => {
     })
 
     it('reverts if borrower is not a lender', async () => {
-      await expect(pool2.borrow(parseEther('1001'), parseEther('1001'))).to.be.revertedWith('CurvePool: Only lender can borrow')
+      await expect(pool2.borrow(parseEther('1001'), parseEther('1001'))).to.be.revertedWith('TrueFiPool: Only lender can borrow or repay')
+    })
+
+    it('reverts if repayer is not a lender', async () => {
+      await pool2.connect(borrower).borrow(parseEther('1001'), parseEther('1001'))
+      await expect(pool2.repay(parseEther('1001')))
+        .to.be.revertedWith('TrueFiPool: Only lender can borrow or repay')
     })
 
     it('when borrowing less than trueCurrency balance, uses the balance', async () => {
@@ -321,6 +327,11 @@ describe('TrueFiPool', () => {
 
     it('reverts when called not by owner', async () => {
       await expect(pool.connect(borrower).setJoiningFee(50)).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('reverts when JoiningFee set to more than 100%', async () => {
+      await expect(pool.setJoiningFee(10100))
+        .to.be.revertedWith('TrueFiPool: Fee cannot exceed transaction value')
     })
   })
 

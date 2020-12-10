@@ -85,6 +85,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     event LoanRetracted(address id);
     event Voted(address loanToken, address voter, bool choice, uint256 stake);
     event Withdrawn(address loanToken, address voter, uint256 stake, uint256 received, uint256 burned);
+    event Claimed(address loanToken, address voter, uint256 claimedReward);
 
     /**
      * @dev Only whitelisted borrowers can submit for credit ratings
@@ -146,6 +147,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         IArbitraryDistributor _distributor,
         ILoanFactory _factory
     ) public initializer {
+        require(address(this) == _distributor.beneficiary(), "TrueRatingAgency: Invalid distributor beneficiary");
         Ownable.initialize();
 
         trustToken = _trustToken;
@@ -162,6 +164,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param newLossFactor New loss factor
      */
     function setLossFactor(uint256 newLossFactor) external onlyOwner {
+        require(newLossFactor <= 10000, "TrueRatingAgency: Loss factor cannot be greater than 100%");
         lossFactor = newLossFactor;
         emit LossFactorChanged(newLossFactor);
     }
@@ -171,6 +174,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * Burn factor decides what percentage of lost TRU is burned
      */
     function setBurnFactor(uint256 newBurnFactor) external onlyOwner {
+        require(newBurnFactor <= 10000, "TrueRatingAgency: Burn factor cannot be greater than 100%");
         burnFactor = newBurnFactor;
         emit BurnFactorChanged(newBurnFactor);
     }
@@ -360,7 +364,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @dev Total amount of funds given to correct voters
      * @param id Loan ID
      * @param incorrectChoice Vote which was incorrect
-     * @return TRU amount remaining for incorrect voters
+     * @return TRU amount given to correct voters
      */
     function bounty(address id, bool incorrectChoice) internal view returns (uint256) {
         // reward = (incorrect_tokens_staked) * (loss_factor) * (1 - burn_factor)
@@ -440,9 +444,10 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         // track amount of claimed tokens
         loans[id].claimed[voter] = loans[id].claimed[voter].add(claimable);
 
-        // transfer tokens
+        // transfer tokens and emits event
         if (claimable > 0) {
             require(trustToken.transfer(voter, claimable));
+            emit Claimed(id, voter, claimable);
         }
     }
 
