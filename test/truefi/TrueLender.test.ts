@@ -469,6 +469,7 @@ describe('TrueLender', () => {
       firstLoanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
         owner.address,
+        lender.address,
         parseEther('1000000'),
         monthInSeconds * 12,
         2000,
@@ -476,6 +477,7 @@ describe('TrueLender', () => {
       secondLoanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
         owner.address,
+        lender.address,
         parseEther('2000000'),
         monthInSeconds * 36,
         1000,

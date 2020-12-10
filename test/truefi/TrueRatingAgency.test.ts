@@ -63,6 +63,7 @@ describe('TrueRatingAgency', () => {
     loanToken = await new LoanTokenFactory(owner).deploy(
       tusd.address,
       owner.address,
+      owner.address,
       5_000_000,
       monthInSeconds * 24,
       1000,
@@ -689,6 +690,7 @@ describe('TrueRatingAgency', () => {
     beforeEach(async () => {
       loanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
+        owner.address,
         owner.address,
         parseEther('5000000'),
         monthInSeconds * 24,
