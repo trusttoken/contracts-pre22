@@ -716,9 +716,10 @@ describe('TrueRatingAgency', () => {
     it('when called for the first time, moves funds from distributor to rater', async () => {
       await rater.yes(loanToken.address, 1000)
       await loanToken.fund()
-
-      await expect(() => rater.claim(loanToken.address, owner.address, txArgs))
-        .to.changeTokenBalance(trustToken, rater, '100000000000000')
+      const balanceBefore = await trustToken.balanceOf(rater.address)
+      await rater.claim(loanToken.address, owner.address, txArgs)
+      const balanceAfter = await trustToken.balanceOf(rater.address)
+      expectCloseTo(balanceAfter.sub(balanceBefore), parseTT('1000000'))
     })
 
     it('when called for the second time, does not interact with distributor anymore', async () => {
