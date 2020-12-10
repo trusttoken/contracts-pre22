@@ -163,6 +163,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param newLossFactor New loss factor
      */
     function setLossFactor(uint256 newLossFactor) external onlyOwner {
+        require(newLossFactor <= 10000, "TrueRatingAgency: Loss factor cannot be greater than 100%");
         lossFactor = newLossFactor;
         emit LossFactorChanged(newLossFactor);
     }
@@ -172,6 +173,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * Burn factor decides what percentage of lost TRU is burned
      */
     function setBurnFactor(uint256 newBurnFactor) external onlyOwner {
+        require(newBurnFactor <= 10000, "TrueRatingAgency: Burn factor cannot be greater than 100%");
         burnFactor = newBurnFactor;
         emit BurnFactorChanged(newBurnFactor);
     }

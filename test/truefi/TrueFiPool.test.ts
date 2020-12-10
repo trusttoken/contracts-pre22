@@ -326,5 +326,10 @@ describe('TrueFiPool', () => {
     it('reverts when called not by owner', async () => {
       await expect(pool.connect(borrower).setJoiningFee(50)).to.be.revertedWith('Ownable: caller is not the owner')
     })
+
+    it('reverts when JoiningFee set to more than 100%', async () => {
+      await expect(pool.setJoiningFee(10100))
+        .to.be.revertedWith('CurvePool: Fee cannot exceed transaction value')
+    })
   })
 })

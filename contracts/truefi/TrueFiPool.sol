@@ -186,6 +186,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param fee new fee
      */
     function setJoiningFee(uint256 fee) external onlyOwner {
+        require(fee <= 10000, "CurvePool: Fee cannot exceed transaction value");
         joiningFee = fee;
         emit JoiningFeeChanged(fee);
     }
