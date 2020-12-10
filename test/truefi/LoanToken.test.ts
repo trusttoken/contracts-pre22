@@ -239,6 +239,15 @@ describe('LoanToken', () => {
       expect(await tusd.balanceOf(borrower.address)).to.equal(removeFee(parseEther('1000')).sub(parseEther('100')))
       expect(await tusd.balanceOf(loanToken.address)).to.equal(parseEther('100'))
     })
+
+    it('emits proper event', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await tusd.connect(borrower).approve(loanToken.address, parseEther('100'))
+      await expect(loanToken.repay(borrower.address, parseEther('100')))
+        .to.emit(loanToken, 'Repaid')
+        .withArgs(borrower.address, parseEther('100'))
+    })
   })
 
   describe('Redeem', () => {
@@ -372,6 +381,80 @@ describe('LoanToken', () => {
       it('status is still DEFAULTED', async () => {
         expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
       })
+    })
+  })
+
+  describe('Reclaim', () => {
+    beforeEach(async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      timeTravel(provider, monthInSeconds * 12)
+      await tusd.connect(borrower).approve(loanToken.address, parseEther('100'))
+    })
+
+    const paybackRedeemPayback = async () => {
+      await payback(borrower, parseEther('900'))
+      await loanToken.redeem(parseEther('1100'))
+      await payback(borrower, parseEther('200'))
+    }
+
+    it('reverts when loan not closed', async () => {
+      await expect(loanToken.connect(borrower).reclaim())
+        .to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
+    })
+
+    it('reverts when not borrower tries access', async () => {
+      await loanToken.close()
+      await expect(loanToken.reclaim())
+        .to.be.revertedWith('LoanToken: Caller is not the borrower')
+    })
+
+    it('reverts when total supply is greater than 0', async () => {
+      await loanToken.close()
+      await expect(loanToken.connect(borrower).reclaim())
+        .to.be.revertedWith('LoanToken: Cannot reclaim when LoanTokens are in circulation')
+    })
+
+    it('reverts when balance is 0', async () => {
+      await loanToken.close()
+      await payback(borrower, parseEther('1100'))
+      await loanToken.redeem(parseEther('1100'))
+      await expect(loanToken.connect(borrower).reclaim())
+        .to.be.revertedWith('LoanToken: Cannot reclaim when balance 0')
+    })
+
+    it('reclaims surplus when conditions met', async () => {
+      await loanToken.close()
+      await paybackRedeemPayback()
+      await expect(() => loanToken.connect(borrower).reclaim())
+        .to.changeTokenBalance(tusd, borrower, parseEther('200'))
+    })
+
+    it('reverts when reclaims twice', async () => {
+      await loanToken.close()
+      await paybackRedeemPayback()
+      await loanToken.connect(borrower).reclaim()
+      await expect(loanToken.connect(borrower).reclaim())
+        .to.be.revertedWith('LoanToken: Cannot reclaim when balance 0')
+    })
+
+    it('reclaims, pays some more and reclaims again', async () => {
+      await loanToken.close()
+      await payback(borrower, parseEther('900'))
+      await loanToken.redeem(parseEther('1100'))
+      await payback(borrower, parseEther('100'))
+      await expect(() => loanToken.connect(borrower).reclaim())
+        .to.changeTokenBalance(tusd, borrower, parseEther('100'))
+      await payback(borrower, parseEther('100'))
+      await expect(() => loanToken.connect(borrower).reclaim())
+        .to.changeTokenBalance(tusd, borrower, parseEther('100'))
+    })
+
+    it('emits event', async () => {
+      await loanToken.close()
+      await paybackRedeemPayback()
+      await expect(loanToken.connect(borrower).reclaim()).to.emit(loanToken, 'Reclaimed')
+        .withArgs(borrower.address, parseEther('200'))
     })
   })
 

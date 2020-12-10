@@ -23,6 +23,7 @@ import {
   ArbitraryDistributorFactory,
   ArbitraryDistributor,
   ILoanFactoryJson,
+  ArbitraryDistributorJson,
 } from 'contracts'
 
 describe('TrueRatingAgency', () => {
@@ -90,6 +91,13 @@ describe('TrueRatingAgency', () => {
     it('sets trust token address', async () => {
       expect(await rater.trustToken()).to.equal(trustToken.address)
     })
+
+    it('checks distributor beneficiary address', async () => {
+      const mockDistributor = await deployMockContract(owner, ArbitraryDistributorJson.abi)
+      await mockDistributor.mock.beneficiary.returns(owner.address)
+      const newRater = await new TrueRatingAgencyFactory(owner).deploy()
+      await expect(newRater.initialize(trustToken.address, mockDistributor.address, mockFactory.address)).to.be.revertedWith('TrueRatingAgency: Invalid distributor beneficiary')
+    })
   })
 
   describe('Parameters set up', () => {
@@ -109,6 +117,11 @@ describe('TrueRatingAgency', () => {
         await expect(rater.connect(otherWallet).setLossFactor(1234))
           .to.be.revertedWith('caller is not the owner')
       })
+
+      it('must be less than or equal 100%', async () => {
+        await expect(rater.setLossFactor(100 * 101))
+          .to.be.revertedWith('TrueRatingAgency: Loss factor cannot be greater than 100%')
+      })
     })
 
     describe('setBurnFactor', () => {
@@ -126,6 +139,11 @@ describe('TrueRatingAgency', () => {
       it('must be called by owner', async () => {
         await expect(rater.connect(otherWallet).setBurnFactor(1234))
           .to.be.revertedWith('caller is not the owner')
+      })
+
+      it('must be less than or equal 100%', async () => {
+        await expect(rater.setBurnFactor(100 * 101))
+          .to.be.revertedWith('TrueRatingAgency: Burn factor cannot be greater than 100%')
       })
     })
   })

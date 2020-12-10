@@ -186,6 +186,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param fee new fee
      */
     function setJoiningFee(uint256 fee) external onlyOwner {
+        require(fee <= 10000, "CurvePool: Fee cannot exceed transaction value");
         joiningFee = fee;
         emit JoiningFeeChanged(fee);
     }
@@ -338,24 +339,30 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev Collect CRV tokens minted by staking at gauge and sell them on Uniswap
+     * @dev Collect CRV tokens minted by staking at gauge
+     */
+    function collectCrv() external onlyOwner {
+        _minter.mint(address(_curveGauge));
+    }
+
+    /**
+     * @dev Sell collected CRV on Uniswap
      * - Selling CRV is managed by the contract owner
      * - Calculations can be made off-chain and called based on market conditions
      * - Need to pass path of exact pairs to go through while executing exchange
      * For example, CRV -> WETH -> TUSD
      *
+     * @param amountIn see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      * @param amountOutMin see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      * @param path see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
      */
-    function collectCrv(uint256 amountOutMin, address[] calldata path) external onlyOwner {
-        _minter.mint(address(_curveGauge));
-        _uniRouter.swapExactTokensForTokens(
-            _minter.token().balanceOf(address(this)),
-            amountOutMin,
-            path,
-            address(this),
-            block.timestamp + 1 days
-        );
+    function sellCrv(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path
+    ) public onlyOwner {
+        _minter.token().approve(address(_uniRouter), amountIn);
+        _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
 
     /**

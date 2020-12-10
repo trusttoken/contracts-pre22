@@ -86,6 +86,20 @@ contract LoanToken is ILoanToken, ERC20 {
     event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound);
 
     /**
+     * @dev Emitted when a LoanToken is repaid by the borrower in underlying currencyTokens
+     * @param repayer Sender of currencyTokens
+     * @param repaidAmound Amount of currencyToken repaid
+     */
+    event Repaid(address repayer, uint256 repaidAmound);
+
+    /**
+     * @dev Emitted when borrower reclaims remaining currencyTokens
+     * @param borrower Reveiver of remaining currencyTokens
+     * @param reclaimedAmount Amount of currencyTokens repaid
+     */
+    event Reclaimed(address borrower, uint256 reclaimedAmount);
+
+    /**
      * @dev Create a Loan
      * @param _currencyToken Token to lend
      * @param _borrower Borrwer addresss
@@ -295,6 +309,21 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function repay(address _sender, uint256 _amount) external override onlyAfterWithdraw {
         require(currencyToken.transferFrom(_sender, address(this), _amount));
+        emit Repaid(_sender, _amount);
+    }
+
+    /**
+     * @dev Function for borrower to reclaim stuck currencyToken
+     * Can only call this function after the loan is Closed
+     * and all of LoanToken holders have been burnt
+     */
+    function reclaim() external override onlyClosed onlyBorrower {
+        require(totalSupply() == 0, "LoanToken: Cannot reclaim when LoanTokens are in circulation");
+        uint256 balanceRemaining = _balance();
+        require(balanceRemaining > 0, "LoanToken: Cannot reclaim when balance 0");
+
+        require(currencyToken.transfer(borrower, balanceRemaining));
+        emit Reclaimed(borrower, balanceRemaining);
     }
 
     /**
