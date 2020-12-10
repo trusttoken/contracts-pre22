@@ -519,18 +519,22 @@ describe('LoanToken', () => {
 
     it('returns proper value at the beginning of the loan', async () => {
       expectCloseTo(await loanToken.value(loanTokenBalance), parseEther('1000'))
+      expectCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEther('1000').div(2))
     })
 
     it('returns proper value in the middle of the loan', async () => {
       await timeTravel(provider, monthInSeconds * 6)
       expectCloseTo(await loanToken.value(loanTokenBalance), parseEther('1050'))
+      expectCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEther('1050').div(2))
       await timeTravel(provider, monthInSeconds * 3)
       expectCloseTo(await loanToken.value(loanTokenBalance), parseEther('1075'))
+      expectCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEther('1075').div(2))
     })
 
     it('returns proper value at the end of the loan', async () => {
       await timeTravel(provider, monthInSeconds * 12)
       expectCloseTo(await loanToken.value(loanTokenBalance), parseEther('1100'))
+      expectCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEther('1100').div(2))
     })
   })
 })

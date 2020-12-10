@@ -517,6 +517,33 @@ describe('TrueLender', () => {
       await timeTravel(provider, monthInSeconds * 18)
       expectCloseTo(await lender.value(), parseEther('3500000'))
     })
+
+    it('returns correct value after some loans were distributed', async () => {
+      await lender.fund(firstLoanToken.address)
+      await lender.fund(secondLoanToken.address)
+      await lender.setPool(owner.address)
+      await timeTravel(provider, monthInSeconds * 18)
+      await lender.distribute(otherWallet.address, 4, 5)
+      expectCloseTo(await lender.value(), parseEther('700000'))
+    })
+
+    it('returns correct value after some loans were distributed 2', async () => {
+      await lender.fund(firstLoanToken.address)
+      await lender.fund(secondLoanToken.address)
+      await lender.setPool(owner.address)
+      await timeTravel(provider, monthInSeconds * 18)
+      await lender.distribute(otherWallet.address, 1, 2)
+      expectCloseTo(await lender.value(), parseEther('1750000'))
+    })
+
+    it('returns 0 after all were distributed', async () => {
+      await lender.fund(firstLoanToken.address)
+      await lender.fund(secondLoanToken.address)
+      await lender.setPool(owner.address)
+      await timeTravel(provider, monthInSeconds * 18)
+      await lender.distribute(otherWallet.address, 2, 2)
+      expect(await lender.value()).to.equal(0)
+    })
   })
 
   describe('Distribute', () => {
