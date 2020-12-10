@@ -65,6 +65,7 @@ describe('TrueLender', () => {
 
     mockLoanToken = await deployMockLoanToken()
     await mockLoanToken.mock.borrowerFee.returns(25)
+    await mockLoanToken.mock.currencyToken.returns(tusd.address)
 
     mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
