@@ -731,7 +731,7 @@ describe('TrueRatingAgency', () => {
 
       expect(event.args[0]).eq(loanToken.address)
       expect(event.args[1]).eq(owner.address)
-      expectCloseTo(BigNumber.from(event.args[2]?._hex), BigNumber.from(25000000000000))
+      expectCloseTo(BigNumber.from(event.args[2]), BigNumber.from(25000000000000))
     })
 
     describe('Running', () => {
