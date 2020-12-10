@@ -738,7 +738,7 @@ describe('TrueRatingAgency', () => {
 
       const tx = await rater.claim(loanToken.address, owner.address, txArgs)
       const receipt = await tx.wait()
-      const event = new utils.Interface(TrueRatingAgencyJson.abi).parseLog(receipt.events[2])
+      const event = new utils.Interface(TrueRatingAgencyJson.abi).parseLog(receipt.events[3])
 
       expect(event.args[0]).eq(loanToken.address)
       expect(event.args[1]).eq(owner.address)
