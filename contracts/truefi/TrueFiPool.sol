@@ -138,6 +138,14 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
+     * @dev only lender can perform borrowing or repaying
+     */
+    modifier onlyLender() {
+        require(msg.sender == address(_lender), "TrueFiPool: Only lender can borrow or repay");
+        _;
+    }
+
+    /**
      * @dev get currency token address
      * @return currency token address
      */
@@ -300,10 +308,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev Remove liquidity from curve and transfer to borrower
      * @param expectedAmount expected amount to borrow
      */
-    function borrow(uint256 expectedAmount, uint256 amountWithoutFee) external override nonReentrant {
+    function borrow(uint256 expectedAmount, uint256 amountWithoutFee) external override nonReentrant onlyLender {
         require(expectedAmount >= amountWithoutFee, "TrueFiPool: Fee cannot be negative");
-        // TODO: create modifier for onlyLender
-        require(msg.sender == address(_lender), "TrueFiPool: Only lender can borrow");
 
         // if there is not enough TUSD, withdraw from curve
         if (expectedAmount > currencyBalance()) {
@@ -333,7 +339,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev repay debt by transferring tokens to the contract
      * @param currencyAmount amount to repay
      */
-    function repay(uint256 currencyAmount) external override {
+    function repay(uint256 currencyAmount) external override onlyLender {
         require(_currencyToken.transferFrom(msg.sender, address(this), currencyAmount));
         emit Repaid(msg.sender, currencyAmount);
     }
