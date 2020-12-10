@@ -348,8 +348,8 @@ describe('TrueFiPool', () => {
     const testPenalty = async (from: number, to: number, result: number) => expect(await pool.averageExitPenalty(from, to)).to.equal(result)
 
     it('throws if from > to', async () => {
-      expect(await pool.averageExitPenalty(10, 9)).to.be.revertedWith('CurvePool: To precedes from')
-    });
+      expect(await pool.averageExitPenalty(10, 9)).to.be.revertedWith('TrueFiPool: To precedes from')
+    })
 
     it('correctly calculates penalty when from = to', async () => {
       await testPenalty(0, 0, 1000)
