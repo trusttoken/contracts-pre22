@@ -49,7 +49,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     Status public override status;
 
-    IERC20 public currencyToken;
+    IERC20 public override currencyToken;
 
     /**
      * @dev Emitted when the loan is funded

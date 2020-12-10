@@ -264,6 +264,7 @@ contract TrueLender is ITrueLender, Ownable {
      */
     function fund(ILoanToken loanToken) external onlyAllowedBorrowers {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be funded");
+        require(loanToken.currencyToken() == currencyToken, "TrueLender: Only the same currency LoanTokens can be funded");
 
         (uint256 amount, uint256 apy, uint256 term) = loanToken.getParameters();
         uint256 receivedAmount = loanToken.receivedAmount();

@@ -65,6 +65,7 @@ describe('TrueLender', () => {
 
     mockLoanToken = await deployMockLoanToken()
     await mockLoanToken.mock.borrowerFee.returns(25)
+    await mockLoanToken.mock.currencyToken.returns(tusd.address)
 
     mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
@@ -530,6 +531,7 @@ describe('TrueLender', () => {
         await loanTokens[i].mock.balanceOf.returns(parseEther(((i + 1) * 10).toString()))
         await loanTokens[i].mock.getParameters.returns(amount, apy, term)
         await loanTokens[i].mock.borrowerFee.returns(25)
+        await loanTokens[i].mock.currencyToken.returns(tusd.address)
         await lender.fund(loanTokens[i].address)
       }
       await lender.setPool(owner.address)
