@@ -796,6 +796,18 @@ describe('TrueRatingAgency', () => {
         await expectRoughTrustTokenBalanceChangeAfterClaim('10000000000000', owner)
         await expectRoughTrustTokenBalanceChangeAfterClaim('30000000000000', otherWallet)
       })
+
+      it('works after distribution ended', async () => {
+        await rater.yes(loanToken.address, 2000)
+        await trustToken.mint(otherWallet.address, parseTT(100000000))
+        await trustToken.connect(otherWallet).approve(rater.address, 3000)
+        await rater.connect(otherWallet).yes(loanToken.address, 3000)
+        await loanToken.fund()
+
+        await timeTravel(monthInSeconds * 12)
+        await distributor.empty()
+        await expectRoughTrustTokenBalanceChangeAfterClaim('0', owner)
+      })
     })
 
     describe('Closed', () => {

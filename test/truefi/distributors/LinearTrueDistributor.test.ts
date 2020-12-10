@@ -157,5 +157,15 @@ describe('LinearTrueDistributor', () => {
       await expect(() => distributor.empty())
         .to.changeTokenBalance(trustToken, owner, totalBalance)
     })
+
+    it('ends distribution', async () => {
+      await timeTravelTo(provider, startDate + DAY)
+      await distributor.distribute()
+      await timeTravel(provider, DAY)
+      await distributor.empty()
+      await timeTravel(provider, DAY)
+      expect(await distributor.nextDistribution()).to.equal(0)
+      await expect(distributor.distribute()).to.be.not.reverted
+    })
   })
 })
