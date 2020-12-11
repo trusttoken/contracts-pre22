@@ -704,8 +704,8 @@ describe('TrueRatingAgency', () => {
     })
   })
 
-  describe('Claim', () => {
-    const rewardMultiplier = 50
+  describe.only('Claim', () => {
+    const rewardMultiplier = 1
     beforeEach(async () => {
       loanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
@@ -739,6 +739,16 @@ describe('TrueRatingAgency', () => {
       const balanceBefore = await trustToken.balanceOf(rater.address)
       await rater.claim(loanToken.address, owner.address, txArgs)
       const balanceAfter = await trustToken.balanceOf(rater.address)
+      expectCloseTo(balanceAfter.sub(balanceBefore), parseTT('100000'))
+    })
+
+    it('when called for the first time, moves funds from distributor to rater (different reward multiplier)', async () => {
+      await rater.setRewardMultiplier(50)
+      await rater.yes(loanToken.address, 1000)
+      await loanToken.fund()
+      const balanceBefore = await trustToken.balanceOf(rater.address)
+      await rater.claim(loanToken.address, owner.address, txArgs)
+      const balanceAfter = await trustToken.balanceOf(rater.address)
       expectCloseTo(balanceAfter.sub(balanceBefore), parseTT('5000000'))
     })
 
@@ -758,18 +768,25 @@ describe('TrueRatingAgency', () => {
 
       const tx = await rater.claim(loanToken.address, owner.address, txArgs)
       const receipt = await tx.wait()
-      const event = new utils.Interface(TrueRatingAgencyJson.abi).parseLog(receipt.events[2])
+      
+      const event = new utils.Interface(TrueRatingAgencyJson.abi).parseLog(receipt.events[3])
 
       expect(event.args[0]).eq(loanToken.address)
       expect(event.args[1]).eq(owner.address)
-      expectCloseTo(BigNumber.from(event.args[2]), parseTT(250000))
+      expectCloseTo(BigNumber.from(event.args[2]), parseTT(25000))
     })
 
     describe('Running', () => {
+      const newRewardMultiplier = 50
+
+      beforeEach(async () => {
+        await rater.setRewardMultiplier(newRewardMultiplier)
+      })
+
       it('properly saves claimed amount and moves funds (1 voter, called once)', async () => {
         await rater.yes(loanToken.address, 1000)
         await loanToken.fund()
-        const expectedReward = BigNumber.from('50000000000').mul(rewardMultiplier)
+        const expectedReward = parseTT('50000').mul(newRewardMultiplier)
         await timeTravel(monthInSeconds * 12)
         await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
       })
@@ -779,21 +796,21 @@ describe('TrueRatingAgency', () => {
         await loanToken.fund()
         let expectedReward
         await timeTravel(monthInSeconds * 6)
-        expectedReward = BigNumber.from('25000000000').mul(rewardMultiplier)
+        expectedReward = parseTT('25000').mul(newRewardMultiplier)
         await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
         await timeTravel(monthInSeconds * 12)
-        expectedReward = BigNumber.from('50000000000').mul(rewardMultiplier)
+        expectedReward = parseTT('50000').mul(newRewardMultiplier)
         await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
         await timeTravel(monthInSeconds * 3)
-        expectedReward = BigNumber.from('12500000000').mul(rewardMultiplier)
+        expectedReward = parseTT('12500').mul(newRewardMultiplier)
         await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
         await timeTravel(monthInSeconds * 10)
-        expectedReward = BigNumber.from('12500000000').mul(rewardMultiplier)
+        expectedReward = parseTT('12500').mul(newRewardMultiplier)
         await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
       })
 
       it('properly saves claimed amount and moves funds (multiple voters, called once)', async () => {
-        const totalReward = BigNumber.from('25000000000000').mul(rewardMultiplier)
+        const totalReward = parseTT('50000').mul(newRewardMultiplier)
         await rater.yes(loanToken.address, 2000)
         await trustToken.mint(otherWallet.address, parseTT(100000000))
         await trustToken.connect(otherWallet).approve(rater.address, 3000)
@@ -813,13 +830,13 @@ describe('TrueRatingAgency', () => {
         await loanToken.fund()
 
         await timeTravel(monthInSeconds * 12)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('2000000000000', owner)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('3000000000000', otherWallet)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTT('20000').mul(newRewardMultiplier), owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTT('30000').mul(newRewardMultiplier), otherWallet)
         await timeTravel(monthInSeconds * 6)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('1000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTT('10000').mul(newRewardMultiplier), owner)
         await timeTravel(monthInSeconds * 6)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('1000000000000', owner)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('3000000000000', otherWallet)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTT('10000').mul(newRewardMultiplier), owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTT('30000').mul(newRewardMultiplier), otherWallet)
       })
 
       it('works after distribution ended', async () => {
