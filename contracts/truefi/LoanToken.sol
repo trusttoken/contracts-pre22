@@ -110,20 +110,24 @@ contract LoanToken is ILoanToken, ERC20 {
     constructor(
         IERC20 _currencyToken,
         address _borrower,
+        address _lender,
         uint256 _amount,
         uint256 _term,
         uint256 _apy
     ) public ERC20("Loan Token", "LOAN") {
+        require(_lender != address(0), "LoanToken: Lender is not set");
+
         currencyToken = _currencyToken;
         borrower = _borrower;
         amount = _amount;
         term = _term;
         apy = _apy;
+        lender = _lender;
         debt = interest(amount);
     }
 
     /**
-     * @dev Only borrwer can withdraw & repay loan
+     * @dev Only borrower can withdraw & repay loan
      */
     modifier onlyBorrower() {
         require(msg.sender == borrower, "LoanToken: Caller is not the borrower");
@@ -240,10 +244,9 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Fund a loan
      * Set status, start time, lender
      */
-    function fund() external override onlyAwaiting {
+    function fund() external override onlyAwaiting onlyLender {
         status = Status.Funded;
         start = block.timestamp;
-        lender = msg.sender;
         _mint(msg.sender, debt);
         require(currencyToken.transferFrom(msg.sender, address(this), receivedAmount()));
 
@@ -307,6 +310,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @param _amount amount of currencyToken to repay
      */
     function repay(address _sender, uint256 _amount) external override onlyAfterWithdraw {
+        require(_amount <= debt.sub(_balance()), "LoanToken: Cannot repay over the debt");
         require(currencyToken.transferFrom(_sender, address(this), _amount));
         emit Repaid(_sender, _amount);
     }
@@ -326,8 +330,9 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
-     * @dev Check if loan has been repaid
-     * @return Boolean representing whether the loan has been repaid or not
+     * @dev Check how much was already repaid
+     * Funds stored on the contract's addres plus funds already redeemed by lenders
+     * @return Uint256 representing what value was already repaid
      */
     function repaid() external override view onlyAfterWithdraw returns (uint256) {
         return _balance().add(redeemed);
@@ -358,8 +363,8 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
-     * @dev Calculate interest that will be paid by this loan for an amount
-     * (amount * apy * term) / (360 days / precision)
+     * @dev Calculate interest that will be paid by this loan for an amount (returned funds included)
+     * amount + ((amount * apy * term) / (360 days / precision))
      * @param _amount amount
      * @return uint256 Amount of interest paid for _amount
      */

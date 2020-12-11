@@ -28,7 +28,7 @@ import {
 } from 'contracts'
 
 describe('TrueRatingAgency', () => {
-  enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
+  enum LoanStatus { Void, Pending, Retracted, Running, Settled, Defaulted }
 
   let owner: Wallet
   let otherWallet: Wallet
@@ -63,6 +63,7 @@ describe('TrueRatingAgency', () => {
 
     loanToken = await new LoanTokenFactory(owner).deploy(
       tusd.address,
+      owner.address,
       owner.address,
       5_000_000,
       monthInSeconds * 24,
@@ -704,16 +705,18 @@ describe('TrueRatingAgency', () => {
     })
   })
 
-  describe('Claim', () => {
+  describe.only('Claim', () => {
     const rewardMultiplier = 1
     beforeEach(async () => {
       loanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
         owner.address,
-        parseEther('500000'),
+        owner.address,
+        parseEther('5000000'),
         monthInSeconds * 24,
-        1000,
+        100
       )
+
       await rater.setRewardMultiplier(rewardMultiplier)
       await tusd.approve(loanToken.address, parseEther('5000000'))
       await rater.allow(owner.address, true)
