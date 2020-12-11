@@ -75,12 +75,12 @@ describe('TrueRatingAgency', () => {
     rater = await new TrueRatingAgencyFactory(owner).deploy()
 
     await mockFactory.mock.isLoanToken.returns(true)
-    await distributor.initialize(rater.address, trustToken.address, parseTT(10000000))
+    await distributor.initialize(rater.address, trustToken.address, parseTT('10000000'))
     await rater.initialize(trustToken.address, distributor.address, mockFactory.address)
 
-    await trustToken.mint(owner.address, parseTT(10000000))
-    await trustToken.mint(distributor.address, parseTT(10000000))
-    await trustToken.approve(rater.address, parseTT(10000000))
+    await trustToken.mint(owner.address, parseTT('10000000'))
+    await trustToken.mint(distributor.address, parseTT('10000000'))
+    await trustToken.approve(rater.address, parseTT('10000000'))
 
     timeTravel = (time: number) => _timeTravel(_provider, time)
   })
@@ -773,7 +773,7 @@ describe('TrueRatingAgency', () => {
 
       expect(event.args[0]).eq(loanToken.address)
       expect(event.args[1]).eq(owner.address)
-      expectCloseTo(BigNumber.from(event.args[2]), parseTT(25000))
+      expectCloseTo(BigNumber.from(event.args[2]), parseTT('25000'))
     })
 
     describe('Running', () => {
@@ -824,7 +824,7 @@ describe('TrueRatingAgency', () => {
 
       it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
         await rater.yes(loanToken.address, 2000)
-        await trustToken.mint(otherWallet.address, parseTT(100000000))
+        await trustToken.mint(otherWallet.address, parseTT('100000000'))
         await trustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address, 3000)
         await loanToken.fund()
@@ -841,7 +841,7 @@ describe('TrueRatingAgency', () => {
 
       it('works after distribution ended', async () => {
         await rater.yes(loanToken.address, 2000)
-        await trustToken.mint(otherWallet.address, parseTT(100000000))
+        await trustToken.mint(otherWallet.address, parseTT('100000000'))
         await trustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address, 3000)
         await loanToken.fund()
@@ -858,18 +858,18 @@ describe('TrueRatingAgency', () => {
       })
 
       it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
-        await trustToken.mint(otherWallet.address, parseTT(10000000))
+        await trustToken.mint(otherWallet.address, parseTT('10000000'))
         await trustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address, 3000)
         await loanToken.fund()
 
         await timeTravel(monthInSeconds * 12)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('2000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTT('20000'), owner)
         await timeTravel(monthInSeconds * 30)
         await loanToken.close()
-        await expectRoughTrustTokenBalanceChangeAfterClaim('2000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTT('20000'), owner)
         await rater.withdraw(loanToken.address, await rater.getYesVote(loanToken.address, owner.address), txArgs)
-        await expectRoughTrustTokenBalanceChangeAfterClaim('6000000000000', otherWallet)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTT('60000'), otherWallet)
       })
 
       it('does not do anything when called multiple times', async () => {
@@ -877,7 +877,7 @@ describe('TrueRatingAgency', () => {
         await timeTravel(monthInSeconds * 24)
         await loanToken.close()
 
-        await expectRoughTrustTokenBalanceChangeAfterClaim('10000000000000', owner)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTT('100000'), owner)
         await expectRoughTrustTokenBalanceChangeAfterClaim(0, owner)
       })
 
@@ -889,7 +889,7 @@ describe('TrueRatingAgency', () => {
         const staked = await rater.getYesVote(loanToken.address, owner.address)
 
         await expect(async () => rater.withdraw(loanToken.address, staked, txArgs))
-          .to.changeTokenBalance(trustToken, owner, staked.add('10000000000000'))
+          .to.changeTokenBalance(trustToken, owner, staked.add(parseTT('100000')))
       })
     })
   })
