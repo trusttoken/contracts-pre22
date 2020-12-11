@@ -110,20 +110,24 @@ contract LoanToken is ILoanToken, ERC20 {
     constructor(
         IERC20 _currencyToken,
         address _borrower,
+        address _lender,
         uint256 _amount,
         uint256 _term,
         uint256 _apy
     ) public ERC20("Loan Token", "LOAN") {
+        require(_lender != address(0), "LoanToken: Lender is not set");
+
         currencyToken = _currencyToken;
         borrower = _borrower;
         amount = _amount;
         term = _term;
         apy = _apy;
+        lender = _lender;
         debt = interest(amount);
     }
 
     /**
-     * @dev Only borrwer can withdraw & repay loan
+     * @dev Only borrower can withdraw & repay loan
      */
     modifier onlyBorrower() {
         require(msg.sender == borrower, "LoanToken: Caller is not the borrower");
@@ -240,10 +244,9 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Fund a loan
      * Set status, start time, lender
      */
-    function fund() external override onlyAwaiting {
+    function fund() external override onlyAwaiting onlyLender {
         status = Status.Funded;
         start = block.timestamp;
-        lender = msg.sender;
         _mint(msg.sender, debt);
         require(currencyToken.transferFrom(msg.sender, address(this), receivedAmount()));
 

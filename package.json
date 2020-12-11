@@ -11,7 +11,7 @@
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:js": "eslint '{test,scripts}/**/*.js'",
     "lint:ts": "eslint '{test,scripts}/**/*.ts' -c .eslintrc.typescript.js",
-    "build:sol": "waffle .waffle.json && mars",
+    "build:sol": "waffle .waffle.json",
     "build:types": "typechain --target ethers-v5 --outDir build/types 'build/*.json'",
     "build": "yarn clean && yarn build:sol && yarn build:types && bash ./indexBuild.sh",
     "test": "mocha",
