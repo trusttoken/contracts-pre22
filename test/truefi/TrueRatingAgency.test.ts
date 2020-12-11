@@ -714,7 +714,7 @@ describe('TrueRatingAgency', () => {
         owner.address,
         parseEther('5000000'),
         monthInSeconds * 24,
-        100
+        100,
       )
 
       await rater.setRewardMultiplier(rewardMultiplier)
