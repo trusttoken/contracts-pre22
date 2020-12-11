@@ -409,9 +409,10 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
             // calculate reward
             // prettier-ignore
-            uint256 reward = toTrustToken(interest.mul(
-                distributor.remaining()).div(distributor.amount()))
-                .mul(rewardMultiplier);
+            uint256 reward = toTrustToken(interest
+                .mul(distributor.remaining())
+                .mul(rewardMultiplier)
+                .div(distributor.amount()));
 
             loans[id].reward = reward;
             if (loans[id].reward > 0) {
