@@ -416,7 +416,7 @@ describe('TrueFiPool', () => {
     })
 
     it('after loan approved, applies a penalty', async () => {
-      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, borrower.address, amount.div(3), dayInSeconds * 360, 1000)
+      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, amount.div(3), dayInSeconds * 360, 1000)
       await lender.allow(owner.address, true)
       await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10000000))
       await lender.fund(loan1.address)
