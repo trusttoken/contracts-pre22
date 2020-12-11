@@ -326,8 +326,9 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
-     * @dev Check if loan has been repaid
-     * @return Boolean representing whether the loan has been repaid or not
+     * @dev Check how much was already repaid
+     * Funds stored on the contract's addres plus funds already redeemed by lenders
+     * @return Uint256 representing what value was already repaid
      */
     function repaid() external override view onlyAfterWithdraw returns (uint256) {
         return _balance().add(redeemed);
@@ -358,8 +359,8 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
-     * @dev Calculate interest that will be paid by this loan for an amount
-     * (amount * apy * term) / (360 days / precision)
+     * @dev Calculate interest that will be paid by this loan for an amount (returned funds included)
+     * amount + ((amount * apy * term) / (360 days / precision))
      * @param _amount amount
      * @return uint256 Amount of interest paid for _amount
      */
