@@ -442,6 +442,22 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param voter Voter account
      */
     function claim(address id, address voter) public override onlyFundedLoans(id) calculateTotalReward(id) {
+        uint256 claimableRewards = claimable(id, voter);
+
+        if (claimableRewards > 0) {
+            // track amount of claimed tokens
+            loans[id].claimed[voter] = loans[id].claimed[voter].add(claimableRewards);
+            // transfer tokens
+            require(trustToken.transfer(voter, claimableRewards));
+            emit Claimed(id, voter, claimableRewards);
+        }
+    }
+
+    function claimed(address id, address voter) external view returns (uint256) {
+        return loans[id].claimed[voter];
+    }
+
+    function claimable(address id, address voter) public view returns (uint256) {
         uint256 totalTime = ILoanToken(id).term();
         uint256 passedTime = block.timestamp.sub(ILoanToken(id).start());
 
@@ -456,16 +472,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
         // calculate claimable rewards at current time
         uint256 helper = loans[id].reward.mul(passedTime).mul(stakedByVoter);
-        uint256 claimable = helper.div(totalTime).div(totalStaked).sub(loans[id].claimed[voter]);
-
-        // track amount of claimed tokens
-        loans[id].claimed[voter] = loans[id].claimed[voter].add(claimable);
-
-        // transfer tokens and emits event
-        if (claimable > 0) {
-            require(trustToken.transfer(voter, claimable));
-            emit Claimed(id, voter, claimable);
-        }
+        return helper.div(totalTime).div(totalStaked).sub(loans[id].claimed[voter]);
     }
 
     /**

@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, constants, utils, Wallet } from 'ethers'
 import { parseEther } from 'ethers/lib/utils'
 import { MockContract, deployMockContract } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
@@ -8,7 +8,7 @@ import {
   beforeEachWithFixture,
   parseTRU,
   timeTravel as _timeTravel,
-  expectCloseTo,
+  expectCloseTo, expectBalanceChangeCloseTo,
 } from 'utils'
 
 import {
@@ -760,8 +760,7 @@ describe('TrueRatingAgency', () => {
       await loanToken.fund()
 
       await rater.claim(loanToken.address, owner.address, txArgs)
-      await expect(() => rater.claim(loanToken.address, owner.address, txArgs))
-        .to.changeTokenBalance(trustToken, rater, '0')
+      await expectBalanceChangeCloseTo(() => rater.claim(loanToken.address, owner.address, txArgs), trustToken, rater, 0)
     })
 
     it('emits event', async () => {
@@ -797,19 +796,22 @@ describe('TrueRatingAgency', () => {
       it('properly saves claimed amount and moves funds (1 voter, called multiple times)', async () => {
         await rater.yes(loanToken.address, 1000)
         await loanToken.fund()
-        let expectedReward
+        let totalReward = constants.Zero
+
+        const testNext = async (expectedReward: BigNumber) => {
+          totalReward = totalReward.add(expectedReward)
+          await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
+          expectCloseTo(await rater.claimed(loanToken.address, owner.address), totalReward)
+        }
+
         await timeTravel(monthInSeconds * 6)
-        expectedReward = parseTRU('25000').mul(newRewardMultiplier)
-        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
+        await testNext(parseTRU('25000').mul(newRewardMultiplier))
         await timeTravel(monthInSeconds * 12)
-        expectedReward = parseTRU('50000').mul(newRewardMultiplier)
-        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
+        await testNext(parseTRU('50000').mul(newRewardMultiplier))
         await timeTravel(monthInSeconds * 3)
-        expectedReward = parseTRU('12500').mul(newRewardMultiplier)
-        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
+        await testNext(parseTRU('12500').mul(newRewardMultiplier))
         await timeTravel(monthInSeconds * 10)
-        expectedReward = parseTRU('12500').mul(newRewardMultiplier)
-        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
+        await testNext(parseTRU('12500').mul(newRewardMultiplier))
       })
 
       it('properly saves claimed amount and moves funds (multiple voters, called once)', async () => {
