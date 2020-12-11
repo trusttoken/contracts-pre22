@@ -705,7 +705,7 @@ describe('TrueRatingAgency', () => {
     })
   })
 
-  describe.only('Claim', () => {
+  describe('Claim', () => {
     const rewardMultiplier = 1
     beforeEach(async () => {
       loanToken = await new LoanTokenFactory(owner).deploy(
