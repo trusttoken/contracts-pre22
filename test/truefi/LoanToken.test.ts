@@ -240,6 +240,21 @@ describe('LoanToken', () => {
       expect(await tusd.balanceOf(loanToken.address)).to.equal(parseEther('100'))
     })
 
+    it('reverts if borrower tries to repay more than remaining debt', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await tusd.mint(borrower.address, parseEther('300'))
+      await tusd.connect(borrower).approve(loanToken.address, parseEther('1200'))
+
+      await expect(loanToken.repay(borrower.address, parseEther('1200')))
+        .to.be.revertedWith('LoanToken: Cannot repay over the debt')
+
+      await loanToken.repay(borrower.address, parseEther('500'))
+
+      await expect(loanToken.repay(borrower.address, parseEther('1000')))
+        .to.be.revertedWith('LoanToken: Cannot repay over the debt')
+    })
+
     it('emits proper event', async () => {
       await loanToken.fund()
       await withdraw(borrower)
