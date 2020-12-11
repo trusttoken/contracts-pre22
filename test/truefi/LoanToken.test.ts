@@ -48,6 +48,7 @@ describe('LoanToken', () => {
     loanToken = await new LoanTokenFactory(lender).deploy(
       tusd.address,
       borrower.address,
+      lender.address,
       parseEther('1000'),
       monthInSeconds * 12,
       1000,
@@ -118,6 +119,11 @@ describe('LoanToken', () => {
 
     it('emits event', async () => {
       await expect(Promise.resolve(tx)).to.emit(loanToken, 'Funded').withArgs(lender.address)
+    })
+
+    it('reverts if not called by lender', async () => {
+      await expect(loanToken.connect(borrower).fund())
+        .to.be.revertedWith('LoanToken: Current status should be Awaiting')
     })
   })
 
@@ -238,6 +244,21 @@ describe('LoanToken', () => {
 
       expect(await tusd.balanceOf(borrower.address)).to.equal(removeFee(parseEther('1000')).sub(parseEther('100')))
       expect(await tusd.balanceOf(loanToken.address)).to.equal(parseEther('100'))
+    })
+
+    it('reverts if borrower tries to repay more than remaining debt', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await tusd.mint(borrower.address, parseEther('300'))
+      await tusd.connect(borrower).approve(loanToken.address, parseEther('1200'))
+
+      await expect(loanToken.repay(borrower.address, parseEther('1200')))
+        .to.be.revertedWith('LoanToken: Cannot repay over the debt')
+
+      await loanToken.repay(borrower.address, parseEther('500'))
+
+      await expect(loanToken.repay(borrower.address, parseEther('1000')))
+        .to.be.revertedWith('LoanToken: Cannot repay over the debt')
     })
 
     it('emits proper event', async () => {
@@ -388,7 +409,7 @@ describe('LoanToken', () => {
     beforeEach(async () => {
       await loanToken.fund()
       await withdraw(borrower)
-      timeTravel(provider, monthInSeconds * 12)
+      await timeTravel(provider, monthInSeconds * 12)
       await tusd.connect(borrower).approve(loanToken.address, parseEther('100'))
     })
 
@@ -460,7 +481,7 @@ describe('LoanToken', () => {
 
   describe('Whitelisting', () => {
     it('reverts when not whitelisted before funding', async () => {
-      await expect(loanToken.allowTransfer(other.address, true)).to.be.revertedWith('LoanToken: This can be performed only by lender')
+      await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken: This can be performed only by lender')
     })
 
     it('reverts when not whitelisted not by a lender', async () => {
@@ -484,7 +505,7 @@ describe('LoanToken', () => {
 
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
-      const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, borrower.address, parseEther(amount.toString()), termInMonths * monthInSeconds, apy)
+      const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, borrower.address, lender.address, parseEther(amount.toString()), termInMonths * monthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 
