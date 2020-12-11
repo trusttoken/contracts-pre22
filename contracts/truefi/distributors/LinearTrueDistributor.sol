@@ -44,6 +44,12 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
     event FarmChanged(address newFarm);
 
     /**
+     * @dev Emitted when the total distributed amount is changed
+     * @param newTotalAmount new totalAmount value
+     */
+    event TotalAmountChanged(uint256 newTotalAmount);
+
+    /**
      * @dev Emitted when a distribution occurs
      * @param amount Amount of TRU distributed to farm
      */
@@ -120,10 +126,30 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
 
     /**
      * @dev Withdraw funds (for instance if owner decides to create a new distribution)
-     * Distributes remaining funds before withdrwaing
+     * Distributes remaining funds before withdrawing
+     * Ends current distribution
      */
     function empty() public override onlyOwner {
         distribute();
+        distributed = 0;
+        totalAmount = 0;
         require(trustToken.transfer(msg.sender, trustToken.balanceOf(address(this))));
+    }
+
+    /**
+     * @dev Change amount of tokens distributed daily by changing total distributed amount
+     */
+    function setDailyDistribution(uint256 dailyDistribution) public onlyOwner {
+        distribute();
+        uint256 timeLeft = distributionStart.add(duration).sub(block.timestamp);
+        if (timeLeft > duration) {
+            timeLeft = duration;
+        } else {
+            distributionStart = block.timestamp;
+            duration = timeLeft;
+        }
+        totalAmount = dailyDistribution.mul(timeLeft).div(1 days);
+        distributed = 0;
+        emit TotalAmountChanged(totalAmount);
     }
 }

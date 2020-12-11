@@ -90,12 +90,12 @@ describe('TrueFiPool', () => {
     it('price of loan tokens is added to pool value after loans were given', async () => {
       await token.approve(pool.address, parseEther('10000000'))
       await pool.join(parseEther('10000000'))
-      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 1000)
+      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther('1000000'), dayInSeconds * 360, 1000)
       await lender.allow(owner.address, true)
       await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(1000000))
       await lender.fund(loan1.address)
       await timeTravel(provider, dayInSeconds * 180)
-      const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 1000)
+      const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther('1000000'), dayInSeconds * 360, 1000)
       await lender.fund(loan2.address)
       expectCloseTo(await pool.poolValue(), excludeFee(parseEther('9000000').add(parseEther('1050000'))))
     })
@@ -103,12 +103,12 @@ describe('TrueFiPool', () => {
     it('loan tokens + tusd + curve liquidity tokens', async () => {
       await token.approve(pool.address, parseEther('10000000'))
       await pool.join(parseEther('10000000'))
-      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 1000)
+      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther('1000000'), dayInSeconds * 360, 1000)
       await lender.allow(owner.address, true)
       await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(1000000))
       await lender.fund(loan1.address)
       await timeTravel(provider, dayInSeconds * 180)
-      const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 1000)
+      const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther('1000000'), dayInSeconds * 360, 1000)
       await lender.fund(loan2.address)
       await pool.flush(excludeFee(parseEther('5000000')), 0)
       await curvePool.set_withdraw_price(parseEther('2'))
@@ -133,7 +133,7 @@ describe('TrueFiPool', () => {
     })
 
     it('mints liquidity tokens proportionally to stake for next users', async () => {
-      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 1000)
+      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther('1000000'), dayInSeconds * 360, 1000)
       await lender.allow(owner.address, true)
       await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(1000000))
       await lender.fund(loan1.address)
@@ -145,12 +145,12 @@ describe('TrueFiPool', () => {
     })
 
     it('returns a basket of tokens on exit', async () => {
-      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 1000)
+      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther('1000000'), dayInSeconds * 360, 1000)
       await lender.allow(owner.address, true)
       await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(1000000))
       await lender.fund(loan1.address)
       await timeTravel(provider, dayInSeconds * 180)
-      const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 2500)
+      const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther('1000000'), dayInSeconds * 360, 2500)
       await lender.fund(loan2.address)
 
       await pool.exit(excludeFee(parseEther('5000000')))
@@ -162,7 +162,7 @@ describe('TrueFiPool', () => {
     describe('two stakers', () => {
       let loan1: LoanToken, loan2: LoanToken
       beforeEach(async () => {
-        loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 1000)
+        loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther('1000000'), dayInSeconds * 360, 1000)
         await lender.allow(owner.address, true)
         await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(1000000))
         await lender.fund(loan1.address)
@@ -170,7 +170,7 @@ describe('TrueFiPool', () => {
         // PoolValue is 10.05M USD at the moment
         // After join, owner has around 91% of shares
         await pool.connect(borrower).join(parseEther('1000000'))
-        loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, parseEther('1000000'), dayInSeconds * 360, 2500)
+        loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther('1000000'), dayInSeconds * 360, 2500)
         await lender.fund(loan2.address)
       })
 
@@ -217,7 +217,7 @@ describe('TrueFiPool', () => {
     })
 
     it('reverts if flushing more than tUSD balance', async () => {
-      await expect(pool.flush(parseEther('10000001'), 0)).to.be.revertedWith('CurvePool: Insufficient currency balance')
+      await expect(pool.flush(parseEther('10000001'), 0)).to.be.revertedWith('TrueFiPool: Insufficient currency balance')
     })
 
     it('deposits liquidity tokens in curve gauge', async () => {
@@ -241,7 +241,7 @@ describe('TrueFiPool', () => {
     })
 
     it('reverts if flushing more than curve balance', async () => {
-      await expect(pool.pull(parseEther('1001'), 0)).to.be.revertedWith('CurvePool: Insufficient Curve liquidity balance')
+      await expect(pool.pull(parseEther('1001'), 0)).to.be.revertedWith('TrueFiPool: Insufficient Curve liquidity balance')
     })
   })
 
@@ -257,7 +257,13 @@ describe('TrueFiPool', () => {
     })
 
     it('reverts if borrower is not a lender', async () => {
-      await expect(pool2.borrow(parseEther('1001'), parseEther('1001'))).to.be.revertedWith('CurvePool: Only lender can borrow')
+      await expect(pool2.borrow(parseEther('1001'), parseEther('1001'))).to.be.revertedWith('TrueFiPool: Only lender can borrow or repay')
+    })
+
+    it('reverts if repayer is not a lender', async () => {
+      await pool2.connect(borrower).borrow(parseEther('1001'), parseEther('1001'))
+      await expect(pool2.repay(parseEther('1001')))
+        .to.be.revertedWith('TrueFiPool: Only lender can borrow or repay')
     })
 
     it('when borrowing less than trueCurrency balance, uses the balance', async () => {
@@ -325,6 +331,11 @@ describe('TrueFiPool', () => {
 
     it('reverts when called not by owner', async () => {
       await expect(pool.connect(borrower).setJoiningFee(50)).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('reverts when JoiningFee set to more than 100%', async () => {
+      await expect(pool.setJoiningFee(10100))
+        .to.be.revertedWith('TrueFiPool: Fee cannot exceed transaction value')
     })
   })
 })
