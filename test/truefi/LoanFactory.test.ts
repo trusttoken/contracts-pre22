@@ -36,4 +36,14 @@ describe('LoanFactory', () => {
   it('marks deployed contract as loan token', async () => {
     expect(await factory.isLoanToken(contractAddress)).to.be.true
   })
+
+  it('prevents 0 loans', async () => {
+    await expect(factory.createLoanToken(borrower.address, 0, 100, 200))
+      .to.be.revertedWith('LoanFactory: Loans of amount 0, will not be approved')
+  })
+
+  it('prevents 0 time loans', async () => {
+    await expect(factory.createLoanToken(borrower.address, parseEther('123'), 0, 200))
+      .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
+  })
 })

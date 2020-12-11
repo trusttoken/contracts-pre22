@@ -55,6 +55,54 @@ describe('LinearTrueDistributor', () => {
     })
   })
 
+  describe('setDailyDistribution', () => {
+    it('only owner can call it', async () => {
+      await expect(distributor.connect(farm).setDailyDistribution('1'))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets new total amount properly for whole duration', async () => {
+      await distributor.setDailyDistribution('1')
+      expect(await distributor.totalAmount()).to.equal('30')
+    })
+
+    it('sets new total amount properly for half of the duration', async () => {
+      await distributor.setFarm(farm.address)
+      await timeTravel(provider, DAY * 16)
+
+      const balanceBefore = await trustToken.balanceOf(farm.address)
+      await distributor.setDailyDistribution(toTrustToken('1'))
+      const balanceAfter = await trustToken.balanceOf(farm.address)
+
+      expectCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(2))
+      expectCloseTo(
+        await distributor.totalAmount(),
+        toTrustToken('1').mul(15),
+      )
+    })
+
+    it('after changing total amount distribution is conducted properly', async () => {
+      await distributor.setFarm(farm.address)
+      await timeTravel(provider, DAY * 16)
+
+      await distributor.setDailyDistribution(toTrustToken('1'))
+
+      await timeTravel(provider, DAY)
+
+      let balanceBefore = await trustToken.balanceOf(farm.address)
+      await distributor.distribute()
+      let balanceAfter = await trustToken.balanceOf(farm.address)
+      expectCloseTo(balanceAfter.sub(balanceBefore), toTrustToken('1'))
+
+      await timeTravel(provider, DAY * 2)
+
+      balanceBefore = await trustToken.balanceOf(farm.address)
+      await distributor.distribute()
+      balanceAfter = await trustToken.balanceOf(farm.address)
+      expectCloseTo(balanceAfter.sub(balanceBefore), toTrustToken('1').mul(2))
+    })
+  })
+
   describe('distribute', () => {
     beforeEach(async () => {
       await distributor.setFarm(farm.address)
@@ -84,7 +132,7 @@ describe('LinearTrueDistributor', () => {
           const balanceBefore = await trustToken.balanceOf(farm.address)
           await distributor.distribute()
           const balanceAfter = await trustToken.balanceOf(farm.address)
-          expect(expectCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(30)))
+          expectCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(30))
         }
       })
 
@@ -108,6 +156,16 @@ describe('LinearTrueDistributor', () => {
       const totalBalance = await trustToken.balanceOf(distributor.address)
       await expect(() => distributor.empty())
         .to.changeTokenBalance(trustToken, owner, totalBalance)
+    })
+
+    it('ends distribution', async () => {
+      await timeTravelTo(provider, startDate + DAY)
+      await distributor.distribute()
+      await timeTravel(provider, DAY)
+      await distributor.empty()
+      await timeTravel(provider, DAY)
+      expect(await distributor.nextDistribution()).to.equal(0)
+      await expect(distributor.distribute()).to.be.not.reverted
     })
   })
 })

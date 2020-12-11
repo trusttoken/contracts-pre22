@@ -49,7 +49,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     Status public override status;
 
-    IERC20 public currencyToken;
+    IERC20 public override currencyToken;
 
     /**
      * @dev Emitted when the loan is funded
@@ -84,6 +84,20 @@ contract LoanToken is ILoanToken, ERC20 {
      * @param redeemedAmound Amount of currencyToken received
      */
     event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound);
+
+    /**
+     * @dev Emitted when a LoanToken is repaid by the borrower in underlying currencyTokens
+     * @param repayer Sender of currencyTokens
+     * @param repaidAmound Amount of currencyToken repaid
+     */
+    event Repaid(address repayer, uint256 repaidAmound);
+
+    /**
+     * @dev Emitted when borrower reclaims remaining currencyTokens
+     * @param borrower Reveiver of remaining currencyTokens
+     * @param reclaimedAmount Amount of currencyTokens repaid
+     */
+    event Reclaimed(address borrower, uint256 reclaimedAmount);
 
     /**
      * @dev Create a Loan
@@ -216,11 +230,10 @@ contract LoanToken is ILoanToken, ERC20 {
             passed = term;
         }
 
-        uint256 helper = amount.mul(apy).mul(passed).mul(_balance);
         // assume month is 30 days
-        uint256 interest = helper.div(360 days).div(10000).div(totalSupply());
+        uint256 interest = amount.mul(apy).mul(passed).div(360 days).div(10000);
 
-        return amount.add(interest);
+        return amount.add(interest).mul(_balance).div(totalSupply());
     }
 
     /**
@@ -295,6 +308,21 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function repay(address _sender, uint256 _amount) external override onlyAfterWithdraw {
         require(currencyToken.transferFrom(_sender, address(this), _amount));
+        emit Repaid(_sender, _amount);
+    }
+
+    /**
+     * @dev Function for borrower to reclaim stuck currencyToken
+     * Can only call this function after the loan is Closed
+     * and all of LoanToken holders have been burnt
+     */
+    function reclaim() external override onlyClosed onlyBorrower {
+        require(totalSupply() == 0, "LoanToken: Cannot reclaim when LoanTokens are in circulation");
+        uint256 balanceRemaining = _balance();
+        require(balanceRemaining > 0, "LoanToken: Cannot reclaim when balance 0");
+
+        require(currencyToken.transfer(borrower, balanceRemaining));
+        emit Reclaimed(borrower, balanceRemaining);
     }
 
     /**
