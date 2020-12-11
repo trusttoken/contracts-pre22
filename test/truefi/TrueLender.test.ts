@@ -221,6 +221,30 @@ describe('TrueLender', () => {
         await expect(lender.setTermLimits(2, 2)).to.be.not.reverted
       })
     })
+
+    describe('Setting loans limit', () => {
+      it('reverts when performed by non-owner', async () => {
+        await expect(lender.connect(otherWallet).setLoansLimit(0))
+          .to.be.revertedWith('caller is not the owner')
+      })
+
+      it('cannot set maximum loans amount to less than currently open', async () => {
+        await lender.allow(owner.address, true)
+        await mockLoanToken.mock.getParameters.returns(amount, apy, term)
+        await mockLoanToken.mock.receivedAmount.returns(amount.sub(10))
+        await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
+        await lender.fund(mockLoanToken.address)
+
+        await expect(lender.setLoansLimit(0))
+          .to.be.revertedWith('TrueLender: Cannot set loans amount to less than active loans')
+      })
+
+      it('emits event', async () => {
+        await expect(lender.setLoansLimit(2))
+          .to.emit(lender, 'LoansLimitChanged')
+          .withArgs(2)
+      })
+    })
   })
 
   describe('Whitelisting', () => {
@@ -260,6 +284,12 @@ describe('TrueLender', () => {
     it('reverts if sender is not an allowed borrower', async () => {
       await expect(lender.connect(otherWallet).fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Sender is not allowed to borrow')
+    })
+
+    it('reverts if loan amount would exceed the limit', async () => {
+      await lender.setLoansLimit(0)
+      await expect(lender.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Loans amount has reached the limit')
     })
 
     it('reverts if loan size is out of bounds (too small)', async () => {
