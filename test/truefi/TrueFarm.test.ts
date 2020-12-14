@@ -35,12 +35,14 @@ describe('TrueFarm', () => {
   let farm2: TrueFarm
   let start: number
 
+  const toBigNumberString = (base: number, magnitude: number) => base.toString() + '0'.repeat(magnitude)
+
   const REWARD_DAYS = 10
   const DURATION = REWARD_DAYS * DAY
-  const amount = BigNumber.from('100000000000') // 1000 TRU = 100/day
+  const amount = BigNumber.from(toBigNumberString(1, 11)) // 1000 TRU = 100/day
   const txArgs = { gasLimit: 6_000_000 }
 
-  const fromTru = (amount: BigNumberish) => BigNumber.from(amount).mul(BigNumber.from('100000000'))
+  const fromTru = (amount: BigNumberish) => BigNumber.from(amount).mul(BigNumber.from(toBigNumberString(1, 8)))
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, staker1, staker2] = wallets

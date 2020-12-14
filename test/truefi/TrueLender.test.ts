@@ -41,6 +41,8 @@ describe('TrueLender', () => {
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
 
+  const toBigNumberString = (base: number, magnitude: number) => base.toString() + '0'.repeat(magnitude)
+
   const deployMockLoanToken = async () => {
     const mock = await deployMockContract(owner, ILoanTokenJson.abi)
     await mock.mock.isLoanToken.returns(true)
@@ -89,8 +91,8 @@ describe('TrueLender', () => {
     })
 
     it('default params', async () => {
-      expect(await lender.minSize()).to.equal(parseEther('1000000'))
-      expect(await lender.maxSize()).to.equal(parseEther('10000000'))
+      expect(await lender.minSize()).to.equal(parseEther(toBigNumberString(1, 6)))
+      expect(await lender.maxSize()).to.equal(parseEther(toBigNumberString(1, 7)))
       expect(await lender.minTerm()).to.equal(monthInSeconds * 6)
       expect(await lender.maxTerm()).to.equal(monthInSeconds * 120)
       expect(await lender.minApy()).to.equal('1000')
@@ -269,7 +271,7 @@ describe('TrueLender', () => {
     })
 
     it('reverts if loan size is out of bounds (too big)', async () => {
-      await mockLoanToken.mock.getParameters.returns(amount.mul(10000), apy, term)
+      await mockLoanToken.mock.getParameters.returns(amount.mul(10**4), apy, term)
       await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Loan size is out of bounds')
     })
@@ -471,7 +473,7 @@ describe('TrueLender', () => {
         tusd.address,
         owner.address,
         lender.address,
-        parseEther('1000000'),
+        parseEther(toBigNumberString(1, 6)),
         monthInSeconds * 12,
         2000,
       )
@@ -479,45 +481,45 @@ describe('TrueLender', () => {
         tusd.address,
         owner.address,
         lender.address,
-        parseEther('2000000'),
+        parseEther(toBigNumberString(2, 6)),
         monthInSeconds * 36,
         1000,
       )
       await lender.allow(owner.address, true)
-      await tusd.mint(lender.address, parseEther('3000000'))
-      await mockRatingAgency.mock.getResults.returns(0, 0, parseEther('10000000'))
+      await tusd.mint(lender.address, parseEther(toBigNumberString(3, 6)))
+      await mockRatingAgency.mock.getResults.returns(0, 0, parseEther(toBigNumberString(1, 7)))
     })
     it('returns correct value for one closed loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, (monthInSeconds * 12) + 1)
-      expectCloseTo(await lender.value(), parseEther('1200000'))
+      expectCloseTo(await lender.value(), parseEther(toBigNumberString(12, 5)))
     })
 
     it('returns correct value for one running loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-      expectCloseTo(await lender.value(), parseEther('1100000'))
+      expectCloseTo(await lender.value(), parseEther(toBigNumberString(11, 5)))
     })
 
     it('returns correct value for multiple closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, (monthInSeconds * 36) + 1)
-      expectCloseTo(await lender.value(), parseEther('3800000'))
+      expectCloseTo(await lender.value(), parseEther(toBigNumberString(38, 5)))
     })
 
     it('returns correct value for multiple opened loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-      expectCloseTo(await lender.value(), parseEther('3200000'))
+      expectCloseTo(await lender.value(), parseEther(toBigNumberString(32, 5)))
     })
 
     it('returns correct value for multiple opened and closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 18)
-      expectCloseTo(await lender.value(), parseEther('3500000'))
+      expectCloseTo(await lender.value(), parseEther(toBigNumberString(35, 5)))
     })
 
     it('returns correct value after some loans were distributed', async () => {
@@ -526,7 +528,7 @@ describe('TrueLender', () => {
       await lender.setPool(owner.address)
       await timeTravel(provider, monthInSeconds * 18)
       await lender.distribute(otherWallet.address, 4, 5)
-      expectCloseTo(await lender.value(), parseEther('700000'))
+      expectCloseTo(await lender.value(), parseEther(toBigNumberString(7, 5)))
     })
 
     it('returns correct value after some loans were distributed 2', async () => {
@@ -535,7 +537,7 @@ describe('TrueLender', () => {
       await lender.setPool(owner.address)
       await timeTravel(provider, monthInSeconds * 18)
       await lender.distribute(otherWallet.address, 1, 2)
-      expectCloseTo(await lender.value(), parseEther('1750000'))
+      expectCloseTo(await lender.value(), parseEther(toBigNumberString(175, 4)))
     })
 
     it('returns 0 after all were distributed', async () => {
