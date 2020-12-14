@@ -1,29 +1,25 @@
 import { expect } from 'chai'
-import { constants, Wallet, BigNumber } from 'ethers'
+import { BigNumber, constants, Wallet } from 'ethers'
 import { parseEther } from '@ethersproject/units'
 import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 
 import { toTrustToken } from 'scripts/utils'
 
-import {
-  beforeEachWithFixture,
-  expectCloseTo,
-  timeTravel,
-} from 'utils'
+import { beforeEachWithFixture, expectCloseTo, timeTravel } from 'utils'
 
 import {
-  MockErc20TokenFactory,
-  MockErc20Token,
-  TrueFiPoolFactory,
-  TrueFiPool,
+  ICurveGaugeJson,
+  LoanToken,
+  LoanTokenFactory,
   MockCurvePool,
   MockCurvePoolFactory,
+  MockErc20Token,
+  MockErc20TokenFactory,
+  TrueFiPool,
+  TrueFiPoolFactory,
   TrueLender,
   TrueLenderFactory,
-  LoanTokenFactory,
-  LoanToken,
   TrueRatingAgencyJson,
-  ICurveGaugeJson,
 } from 'contracts'
 
 describe('TrueFiPool', () => {
@@ -336,6 +332,101 @@ describe('TrueFiPool', () => {
     it('reverts when JoiningFee set to more than 100%', async () => {
       await expect(pool.setJoiningFee(10100))
         .to.be.revertedWith('TrueFiPool: Fee cannot exceed transaction value')
+    })
+  })
+
+  describe('integrateAtPoint', () => {
+    const calcOffchain = (x: number) => Math.floor(Math.log(x + 50) * 50000)
+    it('calculates integral * 1e9', async () => {
+      for (let i = 0; i < 100; i++) {
+        expect(await pool.integrateAtPoint(i)).to.equal(calcOffchain(i))
+      }
+    })
+  })
+
+  describe('averageExitPenalty', () => {
+    const testPenalty = async (from: number, to: number, result: number) => expect(await pool.averageExitPenalty(from, to)).to.equal(result)
+
+    it('throws if from > to', async () => {
+      await expect(pool.averageExitPenalty(10, 9)).to.be.revertedWith('TrueFiPool: To precedes from')
+    })
+
+    it('correctly calculates penalty when from = to', async () => {
+      await testPenalty(0, 0, 1000)
+      await testPenalty(1, 1, 980)
+      await testPenalty(100, 100, 333)
+      await testPenalty(10000, 10000, 0)
+    })
+
+    it('correctly calculates penalty when from+1=to', async () => {
+      const testWithStep1 = async (from: number) => {
+        const penalty = await pool.averageExitPenalty(from, from + 1)
+        const expected = (await pool.averageExitPenalty(from, from)).add(await pool.averageExitPenalty(from + 1, from + 1)).div(2)
+        expect(penalty.sub(expected).abs()).to.be.lte(1)
+      }
+
+      await testWithStep1(0)
+      await testWithStep1(1)
+      await testWithStep1(2)
+      await testWithStep1(3)
+      await testWithStep1(5)
+      await testWithStep1(10)
+      await testWithStep1(42)
+      await testWithStep1(150)
+      await testWithStep1(1000)
+      await testWithStep1(10000 - 2)
+    })
+
+    it('correctly calculates penalty when from < to', async () => {
+      // Checked with Wolfram Alpha
+      await testPenalty(0, 12, 896)
+      await testPenalty(1, 100, 544)
+      await testPenalty(5, 10, 870)
+      await testPenalty(15, 55, 599)
+      await testPenalty(42, 420, 215)
+      await testPenalty(100, 1000, 108)
+      await testPenalty(9100, 10000, 5)
+      await testPenalty(1000, 10000, 12)
+    })
+  })
+
+  describe('liquidExit', () => {
+    const amount = parseEther('10000000')
+    beforeEach(async () => {
+      await token.approve(pool.address, amount)
+      await pool.join(amount)
+    })
+
+    it('burns pool tokens on exit', async () => {
+      const supply = await pool.totalSupply()
+      await pool.liquidExit(supply.div(2))
+      expect(await pool.totalSupply()).to.equal(supply.div(2))
+      await pool.liquidExit(supply.div(3))
+      expect(await pool.totalSupply()).to.equal(supply.div(6))
+    })
+
+    it('all funds are liquid: transfers TUSD without penalty', async () => {
+      await pool.liquidExit(await pool.balanceOf(owner.address))
+      expect(await token.balanceOf(owner.address)).to.equal(excludeFee(amount))
+    })
+
+    it('all funds are liquid: transfers TUSD without penalty (half of stake)', async () => {
+      await pool.liquidExit(amount.div(2))
+      expect(await token.balanceOf(owner.address)).to.equal(amount.div(2))
+    })
+
+    it('after loan approved, applies a penalty', async () => {
+      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, amount.div(3), dayInSeconds * 360, 1000)
+      await lender.allow(owner.address, true)
+      await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10000000))
+      await lender.fund(loan1.address)
+      expect(await pool.liquidExitPenalty(amount.div(2))).to.equal(9990)
+      await pool.liquidExit(amount.div(2), { gasLimit: 5000000 })
+      expectCloseTo(await token.balanceOf(owner.address), (amount.div(2).mul(9990).div(10000)))
+    })
+
+    it('emits event', async () => {
+      await expect(pool.liquidExit(amount.div(2))).to.emit(pool, 'Exited').withArgs(owner.address, amount.div(2))
     })
   })
 })
