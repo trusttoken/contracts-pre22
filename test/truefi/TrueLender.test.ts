@@ -271,7 +271,7 @@ describe('TrueLender', () => {
     })
 
     it('reverts if loan size is out of bounds (too big)', async () => {
-      await mockLoanToken.mock.getParameters.returns(amount.mul(10**4), apy, term)
+      await mockLoanToken.mock.getParameters.returns(amount.mul(10 ** 4), apy, term)
       await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Loan size is out of bounds')
     })

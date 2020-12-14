@@ -94,7 +94,7 @@ describe('TrueFiPool', () => {
       await pool.join(parseEther(toBigNumberString(1, 7)))
       const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther(toBigNumberString(1, 6)), dayInSeconds * 360, 1000)
       await lender.allow(owner.address, true)
-      await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10**6))
+      await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10 ** 6))
       await lender.fund(loan1.address)
       await timeTravel(provider, dayInSeconds * 180)
       const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther(toBigNumberString(1, 6)), dayInSeconds * 360, 1000)
@@ -107,7 +107,7 @@ describe('TrueFiPool', () => {
       await pool.join(parseEther(toBigNumberString(1, 7)))
       const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther(toBigNumberString(1, 6)), dayInSeconds * 360, 1000)
       await lender.allow(owner.address, true)
-      await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10**6))
+      await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10 ** 6))
       await lender.fund(loan1.address)
       await timeTravel(provider, dayInSeconds * 180)
       const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther(toBigNumberString(1, 6)), dayInSeconds * 360, 1000)
@@ -137,7 +137,7 @@ describe('TrueFiPool', () => {
     it('mints liquidity tokens proportionally to stake for next users', async () => {
       const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther(toBigNumberString(1, 6)), dayInSeconds * 360, 1000)
       await lender.allow(owner.address, true)
-      await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10**6))
+      await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10 ** 6))
       await lender.fund(loan1.address)
       await timeTravel(provider, dayInSeconds * 180)
       const totalSupply = await pool.totalSupply()
@@ -149,7 +149,7 @@ describe('TrueFiPool', () => {
     it('returns a basket of tokens on exit', async () => {
       const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther(toBigNumberString(1, 6)), dayInSeconds * 360, 1000)
       await lender.allow(owner.address, true)
-      await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10**6))
+      await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10 ** 6))
       await lender.fund(loan1.address)
       await timeTravel(provider, dayInSeconds * 180)
       const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther(toBigNumberString(1, 6)), dayInSeconds * 360, 2500)
@@ -166,7 +166,7 @@ describe('TrueFiPool', () => {
       beforeEach(async () => {
         loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEther(toBigNumberString(1, 6)), dayInSeconds * 360, 1000)
         await lender.allow(owner.address, true)
-        await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10**6))
+        await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(10 ** 6))
         await lender.fund(loan1.address)
         await timeTravel(provider, dayInSeconds * 180)
         // PoolValue is 10.05M USD at the moment
@@ -292,7 +292,7 @@ describe('TrueFiPool', () => {
     it('adds fee to claimableFees and borrows less if fee is not 0', async () => {
       const borrowedAmount = excludeFee(parseEther(toBigNumberString(5, 6)))
       const claimableFeesBefore = await pool2.claimableFees()
-      const fee = borrowedAmount.mul(25).div(10**4)
+      const fee = borrowedAmount.mul(25).div(10 ** 4)
       await pool2.connect(borrower).borrow(borrowedAmount, borrowedAmount.sub(fee))
       const claimableFeesAfter = await pool2.claimableFees()
       expect(await token.balanceOf(borrower.address)).to.equal(borrowedAmount.sub(fee))

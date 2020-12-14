@@ -42,7 +42,7 @@ describe('TrueRatingAgency', () => {
   let mockFactory: MockContract
 
   const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
-  const stake = 10**6
+  const stake = 10 ** 6
 
   const dayInSeconds = 60 * 60 * 24
   const monthInSeconds = dayInSeconds * 30
@@ -817,7 +817,7 @@ describe('TrueRatingAgency', () => {
       it('properly saves claimed amount and moves funds (multiple voters, called once)', async () => {
         const totalReward = parseTRU(toBigNumberString(5, 4)).mul(newRewardMultiplier)
         await rater.yes(loanToken.address, 2000)
-        await trustToken.mint(otherWallet.address, parseTRU(10**8))
+        await trustToken.mint(otherWallet.address, parseTRU(10 ** 8))
         await trustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address, 3000)
         await loanToken.fund()

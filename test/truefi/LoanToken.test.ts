@@ -34,8 +34,8 @@ describe('LoanToken', () => {
 
   const payback = async (wallet: Wallet, amount: BigNumberish) => tusd.mint(loanToken.address, amount)
 
-  const removeFee = (amount: BigNumber) => amount.mul(9975).div(10**4)
-  const addFee = async (amount: BigNumber) => amount.add((await loanToken.amount()).mul(25).div(10**4))
+  const removeFee = (amount: BigNumber) => amount.mul(9975).div(10 ** 4)
+  const addFee = async (amount: BigNumber) => amount.add((await loanToken.amount()).mul(25).div(10 ** 4))
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [lender, borrower, other] = wallets
@@ -81,7 +81,7 @@ describe('LoanToken', () => {
     })
 
     it('received amount if total amount minus fee', async () => {
-      expect(await loanToken.receivedAmount()).to.equal(parseEther('1000').mul(9975).div(10**4))
+      expect(await loanToken.receivedAmount()).to.equal(parseEther('1000').mul(9975).div(10 ** 4))
     })
   })
 
