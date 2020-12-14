@@ -45,6 +45,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     // track claimable fees
     uint256 public claimableFees;
 
+    mapping(address => uint256) latestJoinBlock;
+
     // ======= STORAGE DECLARATION END ============
 
     // curve.fi data
@@ -223,6 +225,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _mint(msg.sender, amountToMint);
         claimableFees = claimableFees.add(fee);
 
+        latestJoinBlock[msg.sender] = block.number;
         require(_currencyToken.transferFrom(msg.sender, address(this), amount));
 
         emit Joined(msg.sender, amount, amountToMint);
@@ -235,6 +238,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param amount amount of pool tokens to redeem for underlying tokens
      */
     function exit(uint256 amount) external override nonReentrant {
+        require(block.number != latestJoinBlock[msg.sender], "TrueFiPool: Cannot join and exit in same block");
         require(amount <= balanceOf(msg.sender), "TrueFiPool: insufficient funds");
 
         uint256 _totalSupply = totalSupply();
