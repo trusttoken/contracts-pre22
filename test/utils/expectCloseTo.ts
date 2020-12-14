@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { BigNumber } from 'ethers'
 
-export const expectCloseTo = (a: BigNumber, b: BigNumber) => {
+export const expectCloseTo = (a: BigNumber, b: BigNumber, eps = 10000) => {
   if (b.eq(a)) {
     return true
   }
@@ -9,7 +9,7 @@ export const expectCloseTo = (a: BigNumber, b: BigNumber) => {
     [a, b] = [b, a]
   }
   try {
-    expect(a.div(a.sub(b))).to.be.gt(10000)
+    expect(a.div(a.sub(b))).to.be.gt(eps)
   } catch (e) {
     throw new Error(`Expected ${a.toString()} to be close to ${b.toString()}. But it wasn't.`)
   }
