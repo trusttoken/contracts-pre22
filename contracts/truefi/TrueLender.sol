@@ -74,6 +74,9 @@ contract TrueLender is ITrueLender, Ownable {
     // minimum prediction market voting period
     uint256 public votingPeriod;
 
+    // maximum amount of loans lender can handle at once
+    uint256 public maxLoans;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -121,6 +124,12 @@ contract TrueLender is ITrueLender, Ownable {
      * @param maxTerm New minimum loan term
      */
     event TermLimitsChanged(uint256 minTerm, uint256 maxTerm);
+
+    /**
+     * @dev Emitted when loans limit is change
+     * @param maxLoans new maximum amount of loans
+     */
+    event LoansLimitChanged(uint256 maxLoans);
 
     /**
      * @dev Emitted when a loan is funded
@@ -174,6 +183,8 @@ contract TrueLender is ITrueLender, Ownable {
         minTerm = 180 days;
         maxTerm = 3600 days;
         votingPeriod = 7 days;
+
+        maxLoans = 100;
     }
 
     /**
@@ -241,6 +252,15 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     /**
+     * @dev Set new loans limit. Only owner can change parameters.
+     * @param newLoansLimit New loans limit
+     */
+    function setLoansLimit(uint256 newLoansLimit) external onlyOwner {
+        maxLoans = newLoansLimit;
+        emit LoansLimitChanged(maxLoans);
+    }
+
+    /**
      * @dev Get currently funded loans
      * @return result Array of loans currently funded
      */
@@ -265,6 +285,7 @@ contract TrueLender is ITrueLender, Ownable {
     function fund(ILoanToken loanToken) external onlyAllowedBorrowers {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be funded");
         require(loanToken.currencyToken() == currencyToken, "TrueLender: Only the same currency LoanTokens can be funded");
+        require(_loans.length < maxLoans, "TrueLender: Loans number has reached the limit");
 
         (uint256 amount, uint256 apy, uint256 term) = loanToken.getParameters();
         uint256 receivedAmount = loanToken.receivedAmount();
