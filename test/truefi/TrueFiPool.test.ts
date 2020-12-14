@@ -19,8 +19,6 @@ import {
   TrueFiPoolFactory,
   TrueLender,
   TrueLenderFactory,
-  LoanTokenFactory,
-  LoanToken,
   PoolArbitrageTestFactory,
   TrueRatingAgencyJson,
 } from 'contracts'
