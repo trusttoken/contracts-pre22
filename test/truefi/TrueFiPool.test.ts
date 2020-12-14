@@ -391,7 +391,7 @@ describe('TrueFiPool', () => {
   })
 
   describe('liquidExit', () => {
-    const amount = parseEther('10000000')
+    const amount = parseEth(1e7)
     beforeEach(async () => {
       await token.approve(pool.address, amount)
       await pool.join(amount)

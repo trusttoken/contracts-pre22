@@ -533,7 +533,7 @@ describe('TrueLender', () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-      expectCloseTo(await lender.value(), parseEth(32e6))
+      expectCloseTo(await lender.value(), parseEth(32e5))
     })
 
     it('returns correct value for multiple opened and closed loans', async () => {
