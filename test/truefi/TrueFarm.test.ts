@@ -209,7 +209,7 @@ describe('TrueFarm', () => {
       expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(100)))
       await farm.connect(staker1).claim(txArgs)
       expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
-      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e4))
+      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
     })
 
     it('changing farm distributes funds', async () => {
