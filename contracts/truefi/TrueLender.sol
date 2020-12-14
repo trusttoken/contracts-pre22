@@ -74,8 +74,6 @@ contract TrueLender is ITrueLender, Ownable {
     // minimum prediction market voting period
     uint256 public votingPeriod;
 
-    // ===== End of pool parameters =====
-
     // maximum amount of loans lender can handle at once
     uint256 public maxLoans;
 
@@ -258,7 +256,6 @@ contract TrueLender is ITrueLender, Ownable {
      * @param newLoansLimit New loans limit
      */
     function setLoansLimit(uint256 newLoansLimit) external onlyOwner {
-        require(newLoansLimit >= _loans.length, "TrueLender: Cannot set loans amount to less than active loans");
         maxLoans = newLoansLimit;
         emit LoansLimitChanged(maxLoans);
     }
@@ -288,7 +285,7 @@ contract TrueLender is ITrueLender, Ownable {
     function fund(ILoanToken loanToken) external onlyAllowedBorrowers {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be funded");
         require(loanToken.currencyToken() == currencyToken, "TrueLender: Only the same currency LoanTokens can be funded");
-        require(_loans.length < maxLoans, "TrueLender: Loans amount has reached the limit");
+        require(_loans.length < maxLoans, "TrueLender: Loans number has reached the limit");
 
         (uint256 amount, uint256 apy, uint256 term) = loanToken.getParameters();
         uint256 receivedAmount = loanToken.receivedAmount();
