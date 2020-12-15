@@ -2,11 +2,11 @@ import { expect } from 'chai'
 import { deployMockContract, MockContract } from 'ethereum-waffle'
 import { Contract, Wallet, BigNumber, providers } from 'ethers'
 import { AddressZero, MaxUint256 } from '@ethersproject/constants'
-import { parseEth } from 'utils/parseEth'
 import {
   beforeEachWithFixture,
   timeTravel,
   expectCloseTo,
+  parseEth,
 } from 'utils'
 
 import {

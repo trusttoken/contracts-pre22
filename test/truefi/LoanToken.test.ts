@@ -2,12 +2,12 @@ import { expect } from 'chai'
 import { MockProvider } from 'ethereum-waffle'
 import { BigNumber, ContractTransaction, Wallet, BigNumberish } from 'ethers'
 import { formatEther } from '@ethersproject/units'
-import { parseEth } from 'utils/parseEth'
 
 import {
   beforeEachWithFixture,
   timeTravel,
   expectCloseTo,
+  parseEth,
 } from 'utils'
 
 import {
