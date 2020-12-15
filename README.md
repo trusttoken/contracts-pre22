@@ -29,7 +29,7 @@ ts-node scripts/deploy_testnet.ts
 ## Generate Documentation
 ```
 yarn add -D solc-0.6@npm:solc@0.6.10
-npx solidity-docgen --solc-module solc-0.6 -i contracts/ -o docs
+yarn docs
 ```
 # Deployments
 For all of our deployments, the address is the same between mainnet and testnet.

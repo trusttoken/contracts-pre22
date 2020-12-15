@@ -15,7 +15,8 @@
     "build:types": "typechain --target ethers-v5 --outDir build/types 'build/*.json'",
     "build": "yarn clean && yarn build:sol && yarn build:types && bash ./indexBuild.sh",
     "test": "mocha",
-    "checks": "yarn lint && yarn typecheck && yarn test"
+    "checks": "yarn lint && yarn typecheck && yarn test",
+    "docs": "npx solidity-docgen --solc-module solc-0.6 -i contracts -o docs"
   },
   "author": "",
   "license": "SEE LICENSE IN LICENSE.md",
