@@ -1,5 +1,4 @@
 import { expect, use } from 'chai'
-import { parseEth } from 'utils/parseEth'
 import { MaxUint256 } from '@ethersproject/constants'
 import { Wallet, BigNumber, BigNumberish } from 'ethers'
 import { MockProvider, solidity } from 'ethereum-waffle'
@@ -9,6 +8,7 @@ import {
   timeTravel,
   timeTravelTo,
   expectCloseTo,
+  parseEth,
 } from 'utils'
 
 import {

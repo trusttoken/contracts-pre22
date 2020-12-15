@@ -1,8 +1,7 @@
 import { expect } from 'chai'
 import { Wallet } from 'ethers'
-import { parseEth } from 'utils/parseEth'
 
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture, parseEth } from 'utils'
 
 import {
   MockLoanFactory,

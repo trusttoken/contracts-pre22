@@ -1,11 +1,10 @@
 import { expect } from 'chai'
 import { constants, Wallet, BigNumber } from 'ethers'
-import { parseEth } from 'utils/parseEth'
 import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 
 import { toTrustToken } from 'scripts/utils'
 
-import { beforeEachWithFixture, expectCloseTo, timeTravel } from 'utils'
+import { beforeEachWithFixture, expectCloseTo, timeTravel, parseEth } from 'utils'
 
 import {
   ICurveGaugeJson,
@@ -77,7 +76,7 @@ describe('TrueFiPool', () => {
 
   it('cannot exit and join on same transaction', async () => {
     const arbitrage = await new PoolArbitrageTestFactory(owner).deploy()
-    await token.transfer(arbitrage.address, parseEther('1'))
+    await token.transfer(arbitrage.address, parseEth(1))
     await expect(arbitrage.joinExit(pool.address)).to.be.revertedWith('TrueFiPool: Cannot join and exit in same block')
   })
 
