@@ -1,6 +1,5 @@
 import { expect } from 'chai'
 import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
-import { parseEth } from 'utils/parseEth'
 import { MockContract, deployMockContract } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -9,6 +8,7 @@ import {
   parseTRU,
   timeTravel as _timeTravel,
   expectCloseTo,
+  parseEth,
 } from 'utils'
 
 import {
