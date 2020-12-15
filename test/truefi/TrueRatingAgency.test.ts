@@ -760,8 +760,11 @@ describe('TrueRatingAgency', () => {
       await loanToken.fund()
 
       await rater.claim(loanToken.address, owner.address, txArgs)
-      await expect(() => rater.claim(loanToken.address, owner.address, txArgs))
-        .to.changeTokenBalance(trustToken, rater, '0')
+
+      const balanceBefore = await trustToken.balanceOf(rater.address)
+      await rater.claim(loanToken.address, owner.address, txArgs)
+      const balanceAfter = await trustToken.balanceOf(rater.address)
+      expectCloseTo(balanceAfter.sub(balanceBefore), BigNumber.from(0), 2e6)
     })
 
     it('emits event', async () => {
