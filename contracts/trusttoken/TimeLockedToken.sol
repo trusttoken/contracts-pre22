@@ -66,7 +66,7 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
         address _from,
         address _to,
         uint256 _value
-    ) internal override {
+    ) internal override virtual {
         require(balanceOf[_from] >= _value, "insufficient balance");
         require(unlockedBalance(_from) >= _value, "attempting to transfer locked funds");
 

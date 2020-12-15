@@ -2,7 +2,8 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {TimeLockedToken} from "./TimeLockedToken.sol";
+import {VoteToken} from "./VoteToken.sol";
+
 
 /**
  * @title TrustToken
@@ -11,7 +12,7 @@ import {TimeLockedToken} from "./TimeLockedToken.sol";
  * in order to prevent rewards from getting stuck in the remainder on division.
  * Tolerates dilution to slash stake and accept rewards.
  */
-contract TrustToken is TimeLockedToken {
+contract TrustToken is VoteToken{
     using SafeMath for uint256;
 
     uint256 constant MAX_SUPPLY = 145000000000000000;
