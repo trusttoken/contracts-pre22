@@ -2,6 +2,13 @@
 pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
+/**
+ * @title GovernorAlpha
+ * @notice GovernorAlpha
+ * @author Yubo Ruan, Harold Hyatt
+ * @dev 
+ */
+
 contract GovernorAlpha {
     /// @notice The name of this contract
     string public constant name = "TrustToken Governor Alpha";

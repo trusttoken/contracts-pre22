@@ -3,6 +3,13 @@ pragma solidity 0.6.10;
 
 import {TimeLockedToken} from "../TimeLockedToken.sol";
 
+/**
+ * @title VoteToken
+ * @notice VoteToken
+ * @author Yubo Ruan, Harold Hyatt
+ * @dev Contract which gives the ability to vote
+ */
+
 abstract contract VoteToken is TimeLockedToken {
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
     bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
@@ -66,7 +73,7 @@ abstract contract VoteToken is TimeLockedToken {
 
     function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = delegates[delegator];
-        uint96 delegatorBalance = uint96(balanceOf[delegator]);
+        uint96 delegatorBalance = uint96(unlockedBalance(delegator));
         delegates[delegator] = delegatee;
 
         emit DelegateChanged(delegator, currentDelegate, delegatee);
