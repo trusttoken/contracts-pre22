@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TimeLockedToken} from "./TimeLockedToken.sol";
+import {TimeLockedToken} from "../TimeLockedToken.sol";
 
 abstract contract VoteToken is TimeLockedToken {
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
