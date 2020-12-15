@@ -24,6 +24,8 @@ contract LoanFactory is ILoanFactory, Initializable {
     // @dev Track Valid LoanTokens
     mapping(address => bool) public override isLoanToken;
 
+    address public lender;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -40,6 +42,10 @@ contract LoanFactory is ILoanFactory, Initializable {
         currencyToken = _currencyToken;
     }
 
+    function setLender() external {
+        lender = 0x16d02Dc67EB237C387023339356b25d1D54b0922;
+    }
+
     /**
      * @dev Deploy LoanToken with parameters
      * @param _borrower Borrower address
@@ -53,7 +59,10 @@ contract LoanFactory is ILoanFactory, Initializable {
         uint256 _term,
         uint256 _apy
     ) external override {
-        address newToken = address(new LoanToken(currencyToken, _borrower, _amount, _term, _apy));
+        require(_amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
+        require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
+
+        address newToken = address(new LoanToken(currencyToken, _borrower, lender, _amount, _term, _apy));
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);
