@@ -76,7 +76,7 @@ describe('TrueFiPool', () => {
 
   it('cannot exit and join on same transaction', async () => {
     const arbitrage = await new PoolArbitrageTestFactory(owner).deploy()
-    await token.transfer(arbitrage.address, parseEth('1'))
+    await token.transfer(arbitrage.address, parseEth(1))
     await expect(arbitrage.joinExit(pool.address)).to.be.revertedWith('TrueFiPool: Cannot join and exit in same block')
   })
 
