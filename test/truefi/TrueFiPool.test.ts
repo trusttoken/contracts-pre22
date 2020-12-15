@@ -19,6 +19,7 @@ import {
   TrueFiPoolFactory,
   TrueLender,
   TrueLenderFactory,
+  PoolArbitrageTestFactory,
   TrueRatingAgencyJson,
 } from 'contracts'
 
@@ -72,6 +73,12 @@ describe('TrueFiPool', () => {
     it('approves curve gauge', async () => {
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(constants.MaxUint256)
     })
+  })
+
+  it('cannot exit and join on same transaction', async () => {
+    const arbitrage = await new PoolArbitrageTestFactory(owner).deploy()
+    await token.transfer(arbitrage.address, parseEther('1'))
+    await expect(arbitrage.joinExit(pool.address)).to.be.revertedWith('TrueFiPool: Cannot join and exit in same block')
   })
 
   const excludeFee = (amount: BigNumber) => amount.sub(amount.mul(25).div(10000))
