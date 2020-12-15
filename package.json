@@ -34,6 +34,7 @@
     "prettier": "2.0.5",
     "prettier-plugin-solidity": "1.0.0-alpha.54",
     "prettylint": "^1.0.0",
+    "solc": "0.6.10",
     "solhint": "^3.0.0",
     "ts-node": "^9.0.0",
     "tsconfig-paths": "^3.9.0",
