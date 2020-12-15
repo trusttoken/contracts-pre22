@@ -26,7 +26,6 @@ contract ProxyStorage {
     mapping (address => uint32) public numCheckpoints;                          // The number of checkpoints for each account
     mapping (address => uint) public nonces;                                    // A record of states for signing / validating signatures
 
-
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
      * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.

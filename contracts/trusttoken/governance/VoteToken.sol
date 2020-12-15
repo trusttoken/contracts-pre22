@@ -10,7 +10,6 @@ abstract contract VoteToken is TimeLockedToken {
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
     event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
 
-
     function delegate(address delegatee) public {
         return _delegate(msg.sender, delegatee);
     }
