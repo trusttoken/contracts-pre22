@@ -11,6 +11,7 @@ import {ICurveGauge, ICurveMinter, ICurvePool} from "./interface/ICurve.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
+import {ABDKMath64x64} from "./Log.sol";
 
 /**
  * @title TrueFi Pool
@@ -44,6 +45,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     uint256 public joiningFee;
     // track claimable fees
     uint256 public claimableFees;
+
+    mapping(address => uint256) latestJoinBlock;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -161,19 +164,26 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
+     * @dev Virtual value of yCRV tokens in the pool
+     */
+    function yTokenValue() public view returns (uint256) {
+        return yTokenBalance().mul(_curvePool.curve().get_virtual_price()).div(1 ether);
+    }
+
+    /**
+     * @dev Virtual value of liquid assets in the pool
+     */
+    function liquidValue() public view returns (uint256) {
+        return currencyBalance().add(yTokenValue());
+    }
+
+    /**
      * @dev Calculate pool value in TUSD
      * "virtual price" of entire pool - LoanTokens, TUSD, curve y pool tokens
      * @return pool value in TUSD
      */
     function poolValue() public view returns (uint256) {
-        // prettier-ignore
-        return
-            currencyBalance()
-            .add(_lender.value())
-            .add(
-                yTokenBalance()
-                .mul(_curvePool.curve().get_virtual_price())
-                .div(1 ether));
+        return liquidValue().add(_lender.value());
     }
 
     /**
@@ -223,6 +233,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _mint(msg.sender, amountToMint);
         claimableFees = claimableFees.add(fee);
 
+        latestJoinBlock[msg.sender] = block.number;
         require(_currencyToken.transferFrom(msg.sender, address(this), amount));
 
         emit Joined(msg.sender, amount, amountToMint);
@@ -235,6 +246,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param amount amount of pool tokens to redeem for underlying tokens
      */
     function exit(uint256 amount) external override nonReentrant {
+        require(block.number != latestJoinBlock[msg.sender], "TrueFiPool: Cannot join and exit in same block");
         require(amount <= balanceOf(msg.sender), "TrueFiPool: insufficient funds");
 
         uint256 _totalSupply = totalSupply();
@@ -264,6 +276,68 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         }
 
         emit Exited(msg.sender, amount);
+    }
+
+    /**
+     * @dev Exit pool only with liquid tokens
+     * This function will withdraw TUSD but with a small penalty
+     * @param amount amount of pool tokens to redeem for underlying tokens
+     */
+    function liquidExit(uint256 amount) external nonReentrant {
+        require(amount <= balanceOf(msg.sender), "TrueFiPool: Insufficient funds");
+
+        uint256 amountToWithdraw = poolValue().mul(amount).div(totalSupply());
+        amountToWithdraw = amountToWithdraw.mul(liquidExitPenalty(amountToWithdraw)).div(10000);
+        require(amountToWithdraw <= liquidValue(), "TrueFiPool: Not enough liquidity in pool");
+
+        // burn tokens sent
+        _burn(msg.sender, amount);
+
+        if (amountToWithdraw > currencyBalance()) {
+            removeLiquidityFromCurve(amountToWithdraw.sub(currencyBalance()));
+            require(amountToWithdraw <= currencyBalance(), "TrueFiPool: Not enough funds were withdrawn from Curve");
+        }
+
+        require(_currencyToken.transfer(msg.sender, amountToWithdraw));
+
+        emit Exited(msg.sender, amountToWithdraw);
+    }
+
+    /**
+     * @dev Penalty (in % * 100) applied if liquid exit is performed with this amount
+     * returns 10000 if no penalty
+     */
+    function liquidExitPenalty(uint256 amount) public view returns (uint256) {
+        uint256 lv = liquidValue();
+        uint256 pv = poolValue();
+        if (amount == pv) {
+            return 10000;
+        }
+        uint256 liquidRatioBefore = lv.mul(10000).div(pv);
+        uint256 liquidRatioAfter = lv.sub(amount).mul(10000).div(pv.sub(amount));
+        return uint256(10000).sub(averageExitPenalty(liquidRatioAfter, liquidRatioBefore));
+    }
+
+    /**
+     * @dev Calculates integral of 5/(x+50)dx times 10000
+     */
+    function integrateAtPoint(uint256 x) public pure returns (uint256) {
+        return uint256(ABDKMath64x64.ln(ABDKMath64x64.fromUInt(x.add(50)))).mul(50000).div(2**64);
+    }
+
+    /**
+     * @dev Calculates average penalty on interval [from; to]
+     */
+    function averageExitPenalty(uint256 from, uint256 to) public pure returns (uint256) {
+        require(from <= to, "TrueFiPool: To precedes from");
+        if (from == 10000) {
+            // When all liquid, dont penalize
+            return 0;
+        }
+        if (from == to) {
+            return uint256(50000).div(from.add(50));
+        }
+        return integrateAtPoint(to).sub(integrateAtPoint(from)).div(to.sub(from));
     }
 
     /**
@@ -313,17 +387,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
         // if there is not enough TUSD, withdraw from curve
         if (expectedAmount > currencyBalance()) {
-            // get rough estimate of how much TUSD we'll get back from curve
-            uint256 amountToWithdraw = expectedAmount.sub(currencyBalance());
-            uint256 roughCurveTokenAmount = calcTokenAmount(amountToWithdraw).mul(1005).div(1000);
-            require(
-                roughCurveTokenAmount <= yTokenBalance(),
-                "TrueFiPool: Not enough Curve y tokens in pool to cover borrow"
-            );
-            // pull tokens from gauge
-            ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
-            // remove TUSD from curve
-            _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
+            removeLiquidityFromCurve(expectedAmount.sub(currencyBalance()));
             require(expectedAmount <= currencyBalance(), "TrueFiPool: Not enough funds in pool to cover borrow");
         }
 
@@ -333,6 +397,16 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         require(_currencyToken.transfer(msg.sender, amountWithoutFee));
 
         emit Borrow(msg.sender, expectedAmount, fee);
+    }
+
+    function removeLiquidityFromCurve(uint256 amountToWithdraw) internal {
+        // get rough estimate of how much yCRV we should sell
+        uint256 roughCurveTokenAmount = calcTokenAmount(amountToWithdraw).mul(1005).div(1000);
+        require(roughCurveTokenAmount <= yTokenBalance(), "TrueFiPool: Not enough Curve liquidity tokens in pool to cover borrow");
+        // pull tokens from gauge
+        ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
+        // remove TUSD from curve
+        _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
     }
 
     /**

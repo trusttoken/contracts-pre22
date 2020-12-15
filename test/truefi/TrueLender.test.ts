@@ -2,12 +2,11 @@ import { expect } from 'chai'
 import { deployMockContract, MockContract } from 'ethereum-waffle'
 import { Contract, Wallet, BigNumber, providers } from 'ethers'
 import { AddressZero, MaxUint256 } from '@ethersproject/constants'
-import { parseEther } from '@ethersproject/units'
-
 import {
   beforeEachWithFixture,
   timeTravel,
   expectCloseTo,
+  parseEth,
 } from 'utils'
 
 import {
@@ -89,11 +88,11 @@ describe('TrueLender', () => {
     })
 
     it('default params', async () => {
-      expect(await lender.minSize()).to.equal(parseEther('1000000'))
-      expect(await lender.maxSize()).to.equal(parseEther('10000000'))
+      expect(await lender.minSize()).to.equal(parseEth(1e6))
+      expect(await lender.maxSize()).to.equal(parseEth(1e7))
       expect(await lender.minTerm()).to.equal(monthInSeconds * 6)
       expect(await lender.maxTerm()).to.equal(monthInSeconds * 120)
-      expect(await lender.minApy()).to.equal('1000')
+      expect(await lender.minApy()).to.equal(1000)
       expect(await lender.votingPeriod()).to.equal(dayInSeconds * 7)
     })
   })
@@ -221,6 +220,24 @@ describe('TrueLender', () => {
         await expect(lender.setTermLimits(2, 2)).to.be.not.reverted
       })
     })
+
+    describe('Setting loans limit', () => {
+      it('reverts when performed by non-owner', async () => {
+        await expect(lender.connect(otherWallet).setLoansLimit(0))
+          .to.be.revertedWith('caller is not the owner')
+      })
+
+      it('changes loans limit', async () => {
+        await lender.setLoansLimit(3)
+        expect(await lender.maxLoans()).eq(3)
+      })
+
+      it('emits event', async () => {
+        await expect(lender.setLoansLimit(2))
+          .to.emit(lender, 'LoansLimitChanged')
+          .withArgs(2)
+      })
+    })
   })
 
   describe('Whitelisting', () => {
@@ -262,6 +279,12 @@ describe('TrueLender', () => {
         .to.be.revertedWith('TrueLender: Sender is not allowed to borrow')
     })
 
+    it('reverts if loan amount would exceed the limit', async () => {
+      await lender.setLoansLimit(0)
+      await expect(lender.fund(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Loans number has reached the limit')
+    })
+
     it('reverts if loan size is out of bounds (too small)', async () => {
       await mockLoanToken.mock.getParameters.returns(amount.div(10), apy, term)
       await expect(lender.fund(mockLoanToken.address))
@@ -269,7 +292,7 @@ describe('TrueLender', () => {
     })
 
     it('reverts if loan size is out of bounds (too big)', async () => {
-      await mockLoanToken.mock.getParameters.returns(amount.mul(10000), apy, term)
+      await mockLoanToken.mock.getParameters.returns(amount.mul(1e4), apy, term)
       await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Loan size is out of bounds')
     })
@@ -471,7 +494,7 @@ describe('TrueLender', () => {
         tusd.address,
         owner.address,
         lender.address,
-        parseEther('1000000'),
+        parseEth(1e6),
         monthInSeconds * 12,
         2000,
       )
@@ -479,45 +502,45 @@ describe('TrueLender', () => {
         tusd.address,
         owner.address,
         lender.address,
-        parseEther('2000000'),
+        parseEth(2e6),
         monthInSeconds * 36,
         1000,
       )
       await lender.allow(owner.address, true)
-      await tusd.mint(lender.address, parseEther('3000000'))
-      await mockRatingAgency.mock.getResults.returns(0, 0, parseEther('10000000'))
+      await tusd.mint(lender.address, parseEth(3e6))
+      await mockRatingAgency.mock.getResults.returns(0, 0, parseEth(1e7))
     })
     it('returns correct value for one closed loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, (monthInSeconds * 12) + 1)
-      expectCloseTo(await lender.value(), parseEther('1200000'))
+      expectCloseTo(await lender.value(), parseEth(12e5))
     })
 
     it('returns correct value for one running loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-      expectCloseTo(await lender.value(), parseEther('1100000'))
+      expectCloseTo(await lender.value(), parseEth(11e5))
     })
 
     it('returns correct value for multiple closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, (monthInSeconds * 36) + 1)
-      expectCloseTo(await lender.value(), parseEther('3800000'))
+      expectCloseTo(await lender.value(), parseEth(38e5))
     })
 
     it('returns correct value for multiple opened loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 6)
-      expectCloseTo(await lender.value(), parseEther('3200000'))
+      expectCloseTo(await lender.value(), parseEth(32e5))
     })
 
     it('returns correct value for multiple opened and closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, monthInSeconds * 18)
-      expectCloseTo(await lender.value(), parseEther('3500000'))
+      expectCloseTo(await lender.value(), parseEth(35e5))
     })
 
     it('returns correct value after some loans were distributed', async () => {
@@ -526,7 +549,7 @@ describe('TrueLender', () => {
       await lender.setPool(owner.address)
       await timeTravel(provider, monthInSeconds * 18)
       await lender.distribute(otherWallet.address, 4, 5)
-      expectCloseTo(await lender.value(), parseEther('700000'))
+      expectCloseTo(await lender.value(), parseEth(7e5))
     })
 
     it('returns correct value after some loans were distributed 2', async () => {
@@ -535,7 +558,7 @@ describe('TrueLender', () => {
       await lender.setPool(owner.address)
       await timeTravel(provider, monthInSeconds * 18)
       await lender.distribute(otherWallet.address, 1, 2)
-      expectCloseTo(await lender.value(), parseEther('1750000'))
+      expectCloseTo(await lender.value(), parseEth(175e4))
     })
 
     it('returns 0 after all were distributed', async () => {
@@ -557,7 +580,7 @@ describe('TrueLender', () => {
 
       for (let i = 0; i < 5; i++) {
         loanTokens.push(await deployMockLoanToken())
-        await loanTokens[i].mock.balanceOf.returns(parseEther(((i + 1) * 10).toString()))
+        await loanTokens[i].mock.balanceOf.returns(parseEth(((i + 1) * 10).toString()))
         await loanTokens[i].mock.getParameters.returns(amount, apy, term)
         await loanTokens[i].mock.borrowerFee.returns(25)
         await loanTokens[i].mock.currencyToken.returns(tusd.address)
@@ -569,7 +592,7 @@ describe('TrueLender', () => {
     it('sends all loan tokens in the same proportion as numerator/denominator', async () => {
       await lender.distribute(otherWallet.address, 2, 5)
       for (let i = 0; i < 5; i++) {
-        expect('transfer').to.be.calledOnContractWith(loanTokens[i], [otherWallet.address, parseEther(((i + 1) * 10).toString()).mul(2).div(5)])
+        expect('transfer').to.be.calledOnContractWith(loanTokens[i], [otherWallet.address, parseEth(((i + 1) * 10).toString()).mul(2).div(5)])
       }
     })
 
