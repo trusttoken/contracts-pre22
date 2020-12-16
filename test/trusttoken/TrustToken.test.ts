@@ -685,7 +685,7 @@ describe('TrustToken', () => {
       it('cannot transfer more than unlocked funds', async () => {
         await timeTravel(provider, DAY * 120)
 
-        await expect(trustToken.connect(saftHolder).transfer(owner.address, parseTRU(100).div(8).add(1))).to.be.revertedWith('attempting to transfer locked funds')
+        await expect(trustToken.connect(saftHolder).transfer(fourthAccount.address, parseTRU(100).div(8).add(1))).to.be.revertedWith('attempting to transfer locked funds')
       })
 
       it('if account has received tokens in normal way, they are transferable', async () => {
@@ -737,7 +737,7 @@ describe('TrustToken', () => {
         it('cannot transfer more than unlocked funds', async () => {
           await timeTravel(provider, DAY * 120)
 
-          await expect(trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, owner.address, parseTRU(100).div(8).add(1))).to.be.revertedWith('attempting to transfer locked funds')
+          await expect(trustToken.connect(timeLockRegistry).transferFrom(saftHolder.address, fourthAccount.address, parseTRU(100).div(8).add(1))).to.be.revertedWith('attempting to transfer locked funds')
         })
 
         it('if account has received tokens in normal way, they are transferable', async () => {
