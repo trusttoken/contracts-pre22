@@ -1,22 +1,28 @@
-// SPDX-License-Identifier: MIT
+// COPIED FROM https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/GovernorAlpha.sol
+// Copyright 2020 Compound Labs, Inc.
+// Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+// 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+// 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Ctrl+f for XXX to see all the modifications.
+
+// XXX: pragma solidity ^0.5.16;
 pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
-/**
- * @title GovernorAlpha
- * @notice GovernorAlpha
- * @author Yubo Ruan, Harold Hyatt
- * @dev 
- */
-
 contract GovernorAlpha {
     /// @notice The name of this contract
+    // XXX: string public constant name = "Compound Governor Alpha";
     string public constant name = "TrustToken Governor Alpha";
 
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
+    // XXX: function quorumVotes() public pure returns (uint) { return 400000e18; } // 400,000 = 4% of Comp
     function quorumVotes() public pure returns (uint) { return 58000000e8; } // 58,000,000 = 4% of Tru
 
     /// @notice The number of votes required in order for a voter to become a proposer
+    // function proposalThreshold() public pure returns (uint) { return 100000e18; } // 100,000 = 1% of Comp
     function proposalThreshold() public pure returns (uint) { return 14500000e8; } // 14,500,000 = 1% of TRU
 
     /// @notice The maximum number of actions that can be included in a proposal
@@ -32,6 +38,7 @@ contract GovernorAlpha {
     TimelockInterface public timelock;
 
     /// @notice The address of the TrustToken governance token
+    // XXX: CompInterface public comp;
     TrustTokenInterface public trustToken;
 
     /// @notice The address of the Governor Guardian
