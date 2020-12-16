@@ -15,7 +15,8 @@
     "build:types": "typechain --target ethers-v5 --outDir build/types 'build/*.json'",
     "build": "yarn clean && yarn build:sol && yarn build:types && bash ./indexBuild.sh",
     "test": "mocha",
-    "checks": "yarn lint && yarn typecheck && yarn test"
+    "checks": "yarn lint && yarn typecheck && yarn test",
+    "docs": "npx solidity-docgen --solc-module solc-0.6 -i contracts -o docs"
   },
   "author": "",
   "license": "SEE LICENSE IN LICENSE.md",
@@ -34,6 +35,7 @@
     "prettier": "2.0.5",
     "prettier-plugin-solidity": "1.0.0-alpha.54",
     "prettylint": "^1.0.0",
+    "solc-0.6": "npm:solc@0.6.10",
     "solc": "0.6.10",
     "solhint": "^3.0.0",
     "ts-node": "^9.0.0",

@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {IHasOwner} from "./IHasOwner.sol";
 import {IRegistryClone} from "./IRegistryClone.sol";
 
-import {IReclaimerToken} from "../true-currencies/interface/IReclaimerToken.sol";
+import {IReclaimerToken} from "../../true-currencies/interface/IReclaimerToken.sol";
 
 interface IRegistry is IHasOwner, IReclaimerToken {
     function setAttribute(

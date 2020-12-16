@@ -25,6 +25,12 @@ For more efficient compilation and deployment, we use waffle (https://getwaffle.
 npm run-script build
 ts-node scripts/deploy_testnet.ts
 ```
+
+## Generate Documentation
+```
+yarn add -D solc-0.6@npm:solc@0.6.10
+yarn docs
+```
 # Deployments
 For all of our deployments, the address is the same between mainnet and testnet.
 Our source code is verified on Etherscan.
