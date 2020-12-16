@@ -19,6 +19,12 @@ import {ITrueDistributor, IERC20} from "../interface/ITrueDistributor.sol";
 contract LinearTrueDistributor is ITrueDistributor, Ownable {
     using SafeMath for uint256;
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     IERC20 public override trustToken;
     uint256 public distributionStart;
     uint256 public duration;
@@ -27,13 +33,21 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
     uint256 public distributed;
 
     // contract which claim tokens from distributor
-    address public farm;
+    address public override farm;
+
+    // ======= STORAGE DECLARATION END ============
 
     /**
      * @dev Emitted when the farm address is changed
      * @param newFarm new farm contract
      */
     event FarmChanged(address newFarm);
+
+    /**
+     * @dev Emitted when the total distributed amount is changed
+     * @param newTotalAmount new totalAmount value
+     */
+    event TotalAmountChanged(uint256 newTotalAmount);
 
     /**
      * @dev Emitted when a distribution occurs
@@ -64,32 +78,28 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
 
     /**
      * @dev Set contract to receive distributions
+     * Will distribute to previous contract if farm already exists
      * @param newFarm New farm for distribution
      */
     function setFarm(address newFarm) external onlyOwner {
+        distribute();
         farm = newFarm;
-        FarmChanged(newFarm);
+        emit FarmChanged(newFarm);
     }
 
     /**
      * @dev Distribute tokens to farm in linear fashion based on time
      */
-    function distribute(address) public override {
+    function distribute() public override {
         // cannot distribute until distribution start
-        if (block.timestamp < distributionStart) {
-            return;
-        }
-        // calculate distribution amount
-        uint256 amount = totalAmount.sub(distributed);
-        if (block.timestamp < distributionStart.add(duration)) {
-            amount = block.timestamp.sub(lastDistribution).mul(totalAmount).div(duration);
-        }
-        // store last distribution
-        lastDistribution = block.timestamp;
+        uint256 amount = nextDistribution();
+
         if (amount == 0) {
             return;
         }
-        // transfer tokens & update distributed amount
+
+        // transfer tokens & update state
+        lastDistribution = block.timestamp;
         distributed = distributed.add(amount);
         require(trustToken.transfer(farm, amount));
 
@@ -97,9 +107,49 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
     }
 
     /**
+     * @dev Calculate next distribution amount
+     * @return amount of tokens for next distribution
+     */
+    function nextDistribution() public override view returns (uint256) {
+        // return 0 if before distribution or farm is not set
+        if (block.timestamp < distributionStart || farm == address(0)) {
+            return 0;
+        }
+
+        // calculate distribution amount
+        uint256 amount = totalAmount.sub(distributed);
+        if (block.timestamp < distributionStart.add(duration)) {
+            amount = block.timestamp.sub(lastDistribution).mul(totalAmount).div(duration);
+        }
+        return amount;
+    }
+
+    /**
      * @dev Withdraw funds (for instance if owner decides to create a new distribution)
+     * Distributes remaining funds before withdrawing
+     * Ends current distribution
      */
     function empty() public override onlyOwner {
+        distribute();
+        distributed = 0;
+        totalAmount = 0;
         require(trustToken.transfer(msg.sender, trustToken.balanceOf(address(this))));
+    }
+
+    /**
+     * @dev Change amount of tokens distributed daily by changing total distributed amount
+     */
+    function setDailyDistribution(uint256 dailyDistribution) public onlyOwner {
+        distribute();
+        uint256 timeLeft = distributionStart.add(duration).sub(block.timestamp);
+        if (timeLeft > duration) {
+            timeLeft = duration;
+        } else {
+            distributionStart = block.timestamp;
+            duration = timeLeft;
+        }
+        totalAmount = dailyDistribution.mul(timeLeft).div(1 days);
+        distributed = 0;
+        emit TotalAmountChanged(totalAmount);
     }
 }

@@ -18,6 +18,12 @@ contract TrueFarm is ITrueFarm, Initializable {
     using SafeMath for uint256;
     uint256 constant PRECISION = 1e30;
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     IERC20 public override stakingToken;
     IERC20 public override trustToken;
     ITrueDistributor public override trueDistributor;
@@ -37,6 +43,8 @@ contract TrueFarm is ITrueFarm, Initializable {
     // track total rewards
     uint256 public totalClaimedRewards;
     uint256 public totalFarmRewards;
+
+    // ======= STORAGE DECLARATION END ============
 
     /**
      * @dev Emitted when an account stakes
@@ -76,6 +84,7 @@ contract TrueFarm is ITrueFarm, Initializable {
         trueDistributor = _trueDistributor;
         trustToken = _trueDistributor.trustToken();
         name = _name;
+        require(trueDistributor.farm() == address(this), "TrueFarm: Distributor farm is not set");
     }
 
     /**
@@ -137,11 +146,33 @@ contract TrueFarm is ITrueFarm, Initializable {
     }
 
     /**
+     * @dev View to estimate the claimable reward for an account
+     * @return claimable rewards for account
+     */
+    function claimable(address account) external view returns (uint256) {
+        // estimate pending reward from distributor
+        uint256 pending = trueDistributor.nextDistribution();
+        // calculate total rewards (including pending)
+        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(pending).add(totalClaimedRewards).mul(PRECISION);
+        // calculate block reward
+        uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards);
+        // calculate next cumulative reward per token
+        uint256 nextcumulativeRewardPerToken = cumulativeRewardPerToken.add(totalBlockReward.div(totalStaked));
+        // return claimable reward for this account
+        // prettier-ignore
+        return claimableReward[account].add(
+            staked[account].mul(nextcumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[account])).div(PRECISION));
+    }
+
+    /**
      * @dev Update state and get TRU from distributor
      */
     modifier update() {
         // pull TRU from distributor
-        trueDistributor.distribute(address(this));
+        // only pull if there is distribution and distributor farm is set to this farm
+        if (trueDistributor.nextDistribution() > 0 && trueDistributor.farm() == address(this)) {
+            trueDistributor.distribute();
+        }
         // calculate total rewards
         uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(totalClaimedRewards).mul(PRECISION);
         // calculate block reward

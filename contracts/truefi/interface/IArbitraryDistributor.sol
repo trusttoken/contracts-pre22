@@ -6,6 +6,8 @@ interface IArbitraryDistributor {
 
     function remaining() external returns (uint256);
 
+    function beneficiary() external returns (address);
+
     function distribute(uint256 _amount) external;
 
     function empty() external;

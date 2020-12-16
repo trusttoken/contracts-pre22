@@ -19,10 +19,20 @@ import {IArbitraryDistributor} from "../interface/IArbitraryDistributor.sol";
 contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
     using SafeMath for uint256;
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     IERC20 public trustToken;
-    address public beneficiary;
+    address public override beneficiary;
     uint256 public override amount;
     uint256 public override remaining;
+
+    // ======= STORAGE DECLARATION END ============
+
+    event Distributed(uint256 amount);
 
     /**
      * @dev Initialize distributor
@@ -47,7 +57,7 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
      */
     modifier onlyBeneficiary {
         // prettier-ignore
-        require(msg.sender == beneficiary, 
+        require(msg.sender == beneficiary,
             "ArbitraryDistributor: Only beneficiary can receive tokens");
         _;
     }
@@ -59,12 +69,15 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
     function distribute(uint256 _amount) public override onlyBeneficiary {
         remaining = remaining.sub(_amount);
         require(trustToken.transfer(msg.sender, _amount));
+
+        emit Distributed(_amount);
     }
 
     /**
-     * @dev Withdraw funds (for instance if owner decides to create a new distribution)
+     * @dev Withdraw funds (for instance if owner decides to create a new distribution) and end distribution cycle
      */
     function empty() public override onlyOwner {
+        remaining = 0;
         require(trustToken.transfer(msg.sender, trustToken.balanceOf(address(this))));
     }
 }
