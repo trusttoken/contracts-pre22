@@ -909,7 +909,7 @@ describe('TrueRatingAgency', () => {
           .to.changeTokenBalance(trustToken, owner, staked.div(2).add(parseTRU(1e5)))
         await expect(async () => rater.withdraw(loanToken.address, staked.div(2), txArgs))
           .to.changeTokenBalance(trustToken, owner, staked.div(2))
-      });
+      })
     })
   })
 })
