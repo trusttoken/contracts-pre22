@@ -458,6 +458,10 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     function claimable(address id, address voter) public view returns (uint256) {
+        if (status(id) < LoanStatus.Running) {
+            return 0;
+        }
+
         uint256 totalTime = ILoanToken(id).term();
         uint256 passedTime = block.timestamp.sub(ILoanToken(id).start());
 

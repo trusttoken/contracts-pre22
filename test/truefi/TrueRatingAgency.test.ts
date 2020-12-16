@@ -208,6 +208,7 @@ describe('TrueRatingAgency', () => {
       expect(loan.timestamp).to.be.gt(0)
       expect(loan.reward).to.be.equal(0)
       expect(loan.creator).to.equal(owner.address)
+      expect(await rater.claimable(loanToken.address, owner.address)).to.equal(0)
       expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
       expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
     })
