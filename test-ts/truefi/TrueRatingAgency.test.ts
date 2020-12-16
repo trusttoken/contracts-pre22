@@ -6,7 +6,7 @@ import { AddressZero } from '@ethersproject/constants'
 
 import {
   beforeEachWithFixture,
-  parseTT,
+  parseTRU,
   timeTravel as _timeTravel,
   expectCloseTo,
 } from 'utils'
@@ -73,12 +73,12 @@ describe('TrueRatingAgency', () => {
     rater = await new TrueRatingAgencyFactory(owner).deploy()
 
     await mockFactory.mock.isLoanToken.returns(true)
-    await distributor.initialize(rater.address, trustToken.address, parseTT(100000000))
+    await distributor.initialize(rater.address, trustToken.address, parseTRU(100000000))
     await rater.initialize(trustToken.address, distributor.address, mockFactory.address)
 
-    await trustToken.mint(owner.address, parseTT(100000000))
-    await trustToken.mint(distributor.address, parseTT(100000000))
-    await trustToken.approve(rater.address, parseTT(100000000))
+    await trustToken.mint(owner.address, parseTRU(100000000))
+    await trustToken.mint(distributor.address, parseTRU(100000000))
+    await trustToken.approve(rater.address, parseTRU(100000000))
 
     timeTravel = (time: number) => _timeTravel(_provider, time)
   })
@@ -736,7 +736,7 @@ describe('TrueRatingAgency', () => {
 
       it('properly saves claimed amount and moves funds (multiple voters, called once)', async () => {
         await rater.yes(loanToken.address, 2000)
-        await trustToken.mint(otherWallet.address, parseTT(100000000))
+        await trustToken.mint(otherWallet.address, parseTRU(100000000))
         await trustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address, 3000)
         await loanToken.fund()
@@ -748,7 +748,7 @@ describe('TrueRatingAgency', () => {
 
       it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
         await rater.yes(loanToken.address, 2000)
-        await trustToken.mint(otherWallet.address, parseTT(100000000))
+        await trustToken.mint(otherWallet.address, parseTRU(100000000))
         await trustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address, 3000)
         await loanToken.fund()
@@ -770,7 +770,7 @@ describe('TrueRatingAgency', () => {
       })
 
       it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
-        await trustToken.mint(otherWallet.address, parseTT(100000000))
+        await trustToken.mint(otherWallet.address, parseTRU(100000000))
         await trustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address, 3000)
         await loanToken.fund()
