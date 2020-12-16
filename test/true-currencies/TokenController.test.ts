@@ -185,13 +185,13 @@ describe('TokenController', () => {
       await controller.refillInstantMintPool()
     })
 
-    it.skip('have enough approvals for mints', async () => {
-      expect(await controller.hasEnoughApproval(1, parseEther('50'))).to.be.true
-      expect(await controller.hasEnoughApproval(1, parseEther('200'))).to.be.false
-      expect(await controller.hasEnoughApproval(3, parseEther('200'))).to.be.true
-      expect(await controller.hasEnoughApproval(3, parseEther('2000'))).to.be.false
-      expect(await controller.hasEnoughApproval(2, parseEther('500'))).to.be.false
-      expect(await controller.hasEnoughApproval(0, parseEther('50'))).to.be.false
+    it('have enough approvals for mints', async () => {
+      expect(await controller.connect(otherWallet).hasEnoughApproval(1, parseEther('50'))).to.be.true
+      expect(await controller.connect(otherWallet).hasEnoughApproval(1, parseEther('200'))).to.be.false
+      expect(await controller.connect(otherWallet).hasEnoughApproval(3, parseEther('200'))).to.be.true
+      expect(await controller.connect(otherWallet).hasEnoughApproval(3, parseEther('2000'))).to.be.false
+      expect(await controller.connect(otherWallet).hasEnoughApproval(2, parseEther('500'))).to.be.false
+      expect(await controller.connect(otherWallet).hasEnoughApproval(0, parseEther('50'))).to.be.false
     })
 
     it('owner can finalize before without approvals', async () => {
