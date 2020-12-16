@@ -379,7 +379,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param incorrectChoice Vote which was incorrect
      * @return TRU amount given to correct voters
      */
-    function bounty(address id, bool incorrectChoice) internal view returns (uint256) {
+    function bounty(address id, bool incorrectChoice) public view returns (uint256) {
         // reward = (incorrect_tokens_staked) * (loss_factor) * (1 - burn_factor)
         // prettier-ignore
         return loans[id].prediction[incorrectChoice].mul(
