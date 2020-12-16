@@ -897,6 +897,19 @@ describe('TrueRatingAgency', () => {
         await expect(async () => rater.withdraw(loanToken.address, staked, txArgs))
           .to.changeTokenBalance(trustToken, owner, staked.add(parseTRU(1e5)))
       })
+
+      it('does claim with partial withdraws', async () => {
+        await loanToken.fund()
+        await timeTravel(monthInSeconds * 24)
+        await tusd.mint(loanToken.address, parseEth(1312312312321))
+        await loanToken.close()
+        const staked = await rater.getYesVote(loanToken.address, owner.address)
+
+        await expect(async () => rater.withdraw(loanToken.address, staked.div(2), txArgs))
+          .to.changeTokenBalance(trustToken, owner, staked.div(2).add(parseTRU(1e5)))
+        await expect(async () => rater.withdraw(loanToken.address, staked.div(2), txArgs))
+          .to.changeTokenBalance(trustToken, owner, staked.div(2))
+      });
     })
   })
 })

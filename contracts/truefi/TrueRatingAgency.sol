@@ -476,7 +476,12 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
         // calculate claimable rewards at current time
         uint256 helper = loans[id].reward.mul(passedTime).mul(stakedByVoter);
-        return helper.div(totalTime).div(totalStaked).sub(loans[id].claimed[voter]);
+        uint256 totalClaimable = helper.div(totalTime).div(totalStaked);
+        if (totalClaimable < loans[id].claimed[voter]) {
+            // This happens only in one case: voter withdrew part of stake after loan has ended and claimed all possible rewards
+            return 0;
+        }
+        return totalClaimable.sub(loans[id].claimed[voter]);
     }
 
     /**
