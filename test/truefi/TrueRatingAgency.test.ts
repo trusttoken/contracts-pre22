@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, constants, utils, Wallet } from 'ethers'
 import { MockContract, deployMockContract } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -8,6 +8,7 @@ import {
   parseTRU,
   timeTravel as _timeTravel,
   expectCloseTo,
+  expectBalanceChangeCloseTo,
   parseEth,
 } from 'utils'
 
@@ -207,6 +208,7 @@ describe('TrueRatingAgency', () => {
       expect(loan.timestamp).to.be.gt(0)
       expect(loan.reward).to.be.equal(0)
       expect(loan.creator).to.equal(owner.address)
+      expect(await rater.claimable(loanToken.address, owner.address)).to.equal(0)
       expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
       expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
     })
@@ -760,11 +762,7 @@ describe('TrueRatingAgency', () => {
       await loanToken.fund()
 
       await rater.claim(loanToken.address, owner.address, txArgs)
-
-      const balanceBefore = await trustToken.balanceOf(rater.address)
-      await rater.claim(loanToken.address, owner.address, txArgs)
-      const balanceAfter = await trustToken.balanceOf(rater.address)
-      expectCloseTo(balanceAfter.sub(balanceBefore), BigNumber.from(0), 2e6)
+      await expectBalanceChangeCloseTo(() => rater.claim(loanToken.address, owner.address, txArgs), trustToken, rater, 0)
     })
 
     it('emits event', async () => {
@@ -799,19 +797,22 @@ describe('TrueRatingAgency', () => {
       it('properly saves claimed amount and moves funds (1 voter, called multiple times)', async () => {
         await rater.yes(loanToken.address, 1000)
         await loanToken.fund()
-        let expectedReward
+        let totalReward = constants.Zero
+
+        const testNext = async (expectedReward: BigNumber) => {
+          totalReward = totalReward.add(expectedReward)
+          await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
+          expectCloseTo(await rater.claimed(loanToken.address, owner.address), totalReward)
+        }
+
         await timeTravel(monthInSeconds * 6)
-        expectedReward = parseTRU(25000).mul(newRewardMultiplier)
-        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
+        await testNext(parseTRU('25000').mul(newRewardMultiplier))
         await timeTravel(monthInSeconds * 12)
-        expectedReward = parseTRU(50000).mul(newRewardMultiplier)
-        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
+        await testNext(parseTRU('50000').mul(newRewardMultiplier))
         await timeTravel(monthInSeconds * 3)
-        expectedReward = parseTRU(12500).mul(newRewardMultiplier)
-        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
+        await testNext(parseTRU('12500').mul(newRewardMultiplier))
         await timeTravel(monthInSeconds * 10)
-        expectedReward = parseTRU(12500).mul(newRewardMultiplier)
-        await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
+        await testNext(parseTRU('12500').mul(newRewardMultiplier))
       })
 
       it('properly saves claimed amount and moves funds (multiple voters, called once)', async () => {
@@ -895,6 +896,19 @@ describe('TrueRatingAgency', () => {
 
         await expect(async () => rater.withdraw(loanToken.address, staked, txArgs))
           .to.changeTokenBalance(trustToken, owner, staked.add(parseTRU(1e5)))
+      })
+
+      it('does claim with partial withdraws', async () => {
+        await loanToken.fund()
+        await timeTravel(monthInSeconds * 24)
+        await tusd.mint(loanToken.address, parseEth(1312312312321))
+        await loanToken.close()
+        const staked = await rater.getYesVote(loanToken.address, owner.address)
+
+        await expect(async () => rater.withdraw(loanToken.address, staked.div(2), txArgs))
+          .to.changeTokenBalance(trustToken, owner, staked.div(2).add(parseTRU(1e5)))
+        await expect(async () => rater.withdraw(loanToken.address, staked.div(2), txArgs))
+          .to.changeTokenBalance(trustToken, owner, staked.div(2))
       })
     })
   })
