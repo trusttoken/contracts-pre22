@@ -41,6 +41,8 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
     uint256 constant TOTAL_EPOCHS = 8;
     // registry of locked addresses
     address public timeLockRegistry;
+    // allow unlocked transfers to special account
+    bool public returnsLocked;
 
     modifier onlyTimeLockRegistry() {
         require(msg.sender == timeLockRegistry, "only TimeLockRegistry");
@@ -58,7 +60,18 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
     }
 
     /**
+     * @dev Permanently lock transfers to return address
+     * Lock returns so there isn't always a way to send locked tokens
+     */
+    function lockReturns() external onlyOwner {
+        returnsLocked = true;
+    }
+
+    /**
      * @dev Transfer function which includes unlocked tokens
+     * Locked tokens can always be transfered back to the returns address
+     * Transferring to owner allows re-issuance of funds through registry
+     *
      * @param _from The address to send tokens from
      * @param _to The address that will receive the tokens
      * @param _value The amount of tokens to be transferred
@@ -69,9 +82,32 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
         uint256 _value
     ) internal override {
         require(balanceOf[_from] >= _value, "insufficient balance");
-        require(unlockedBalance(_from) >= _value, "attempting to transfer locked funds");
 
+        // transfers to owner proceed as normal when returns allowed
+        if (!returnsLocked && _to == owner_) {
+            transferToOwner(_from, _value);
+            return;
+        }
+        // check if enough unlocked balance to transfer
+        require(unlockedBalance(_from) >= _value, "attempting to transfer locked funds");
         super._transfer(_from, _to, _value);
+    }
+
+    /**
+     * @dev Transfer tokens to owner. Used only when returns allowed.
+     * @param _from The address to send tokens from
+     * @param _value The amount of tokens to be transferred
+     */
+    function transferToOwner(address _from, uint256 _value) internal {
+        uint256 unlocked = unlockedBalance(_from);
+
+        if (unlocked < _value) {
+            // We want to have unlocked = value, i.e.
+            // value = balance - distribution * epochsLeft / totalEpochs
+            // distribution = (balance - value) * totalEpochs / epochsLeft
+            distribution[_from] = balanceOf[_from].sub(_value).mul(TOTAL_EPOCHS).div(epochsLeft());
+        }
+        super._transfer(_from, owner_, _value);
     }
 
     /**
@@ -110,8 +146,7 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
      */
     function lockedBalance(address account) public view returns (uint256) {
         // distribution * (epochsLeft / totalEpochs)
-        uint256 epochsLeft = TOTAL_EPOCHS.sub(epochsPassed());
-        return distribution[account].mul(epochsLeft).div(TOTAL_EPOCHS);
+        return distribution[account].mul(epochsLeft()).div(TOTAL_EPOCHS);
     }
 
     /**
@@ -151,6 +186,10 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
         }
 
         return totalEpochsPassed;
+    }
+
+    function epochsLeft() public view returns (uint256) {
+        return TOTAL_EPOCHS.sub(epochsPassed());
     }
 
     /**
