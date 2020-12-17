@@ -50,7 +50,6 @@ describe('VoteToken', () => {
     })
     describe('when saftHolder token is locked', () =>{
       const DAY = 24 * 3600
-      const TOTAL_LOCK_TIME = DAY * (120 + 7 * 90)
       const initializationTimestamp = 1595609911
       beforeEach(async () => {
         await timeTravelTo(provider,initializationTimestamp)
@@ -89,7 +88,6 @@ describe('VoteToken', () => {
         expect(await trustToken.getCurrentVotes(initialHolder.address)).to.eq(parseTRU(1000))        
       })
     })
-
     describe('delegate to other account', () => {
       it('return 0 vote for initial account and 1000 for second account', async () => {
         await trustToken.connect(initialHolder).delegate(secondAccount.address)
@@ -99,8 +97,21 @@ describe('VoteToken', () => {
     })
   })
 
-  describe('delegateBySig', () => {
-    //TODO
+  describe('getPriorVotes', () => {
+    let curBlockNumber = 0
+    beforeEach(async() => {
+      await trustToken.connect(initialHolder).delegate(initialHolder.address)      
+      curBlockNumber = await provider.getBlockNumber()
+      timeTravel(provider,50) //skip for 10sec
+    })
+    describe('when trying to get prior votes', async() => {
+      it('return 1000 votes at block 6', async() => {
+        expect(await trustToken.getPriorVotes(initialHolder.address,curBlockNumber)).to.eq(parseTRU(1000))
+      }) 
+      it('return 0 votes at block 5', async() => {
+        expect(await trustToken.getPriorVotes(initialHolder.address,curBlockNumber-1)).to.eq(parseTRU(0))
+      }) 
+    })
   })
 
   describe('transfer', () => {
