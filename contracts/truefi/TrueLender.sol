@@ -180,8 +180,8 @@ contract TrueLender is ITrueLender, Ownable {
         riskAversion = 15000;
         minSize = 1000000 ether;
         maxSize = 10000000 ether;
-        minTerm = 180 days;
-        maxTerm = 3600 days;
+        minTerm = 182 days;
+        maxTerm = 3650 days;
         votingPeriod = 7 days;
 
         maxLoans = 100;
@@ -454,6 +454,6 @@ contract TrueLender is ITrueLender, Ownable {
         uint256 yesVotes,
         uint256 noVotes
     ) public view returns (bool) {
-        return apy.mul(term).mul(yesVotes).div(360 days) >= noVotes.mul(riskAversion);
+        return apy.mul(term).mul(yesVotes).div(365 days) >= noVotes.mul(riskAversion);
     }
 }
