@@ -306,6 +306,27 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     /**
+     * @dev Temporary fix for old LoanTokens with incorrect value calculation
+     */
+    function loanValue(ILoanToken loan) public view returns (uint256) {
+        uint256 _balance = loan.balanceOf(address(this));
+        if (_balance == 0) {
+            return 0;
+        }
+
+        uint256 passed = block.timestamp.sub(loan.start());
+        if (passed > loan.term()) {
+            passed = loan.term();
+        }
+
+        uint256 helper = loan.amount().mul(loan.apy()).mul(passed).mul(_balance);
+        // assume month is 30 days
+        uint256 interest = helper.div(360 days).div(10000).div(loan.totalSupply());
+
+        return loan.amount().mul(_balance).div(loan.totalSupply()).add(interest);
+    }
+
+    /**
      * @dev Loop through loan tokens and calculate theoretical value of all loans
      * There should never be too many loans in the pool to run out of gas
      * @return Theoretical value of all the loans funded by this strategy
@@ -313,7 +334,7 @@ contract TrueLender is ITrueLender, Ownable {
     function value() external override view returns (uint256) {
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
-            totalValue = totalValue.add(_loans[index].value(_loans[index].balanceOf(address(this))));
+            totalValue = totalValue.add(loanValue(_loans[index]));
         }
         return totalValue;
     }
