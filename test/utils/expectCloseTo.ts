@@ -8,10 +8,6 @@ export const expectCloseTo = (a: BigNumber, b: BigNumber, eps = 10000) => {
   if (b.gt(a)) {
     [a, b] = [b, a]
   }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Split expectCloseTo into 2 functions
   try {
     expect(a.sub(b)).to.be.lt(eps)
   } catch (e) {
@@ -31,23 +27,6 @@ export const expectScaledCloseTo = (a: BigNumber, b: BigNumber, eps = 10000) => 
     expect(a.div(a.sub(b))).to.be.gt(eps)
   } catch (e) {
     throw new Error(`Expected ${a.toString()} to be close to ${b.toString()}. But it wasn't.`)
-<<<<<<< HEAD
-=======
-  if (b.eq(0) || a.eq(0)) {
-    try {
-      expect(a.sub(b)).to.be.lt(eps)
-    } catch (e) {
-      throw new Error(`Expected ${a.toString()} to be close to ${b.toString()}. But it wasn't.`)
-    }
-  } else {
-    try {
-      expect(a.div(a.sub(b))).to.be.gt(eps)
-    } catch (e) {
-      throw new Error(`Expected ${a.toString()} to be close to ${b.toString()}. But it wasn't.`)
-    }
->>>>>>> Fix for rarely failing tests
-=======
->>>>>>> Split expectCloseTo into 2 functions
   }
 }
 
