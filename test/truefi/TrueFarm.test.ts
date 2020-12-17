@@ -203,7 +203,7 @@ describe('TrueFarm', () => {
 
     it('owner withdrawing distributes funds', async () => {
       await farm.connect(staker1).stake(parseEth(500), txArgs)
-      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0)))
+      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
       await timeTravel(provider, DAY)
       await distributor.connect(owner).empty(txArgs)
       expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(100)))
@@ -214,13 +214,13 @@ describe('TrueFarm', () => {
 
     it('changing farm distributes funds', async () => {
       await farm.connect(staker1).stake(parseEth(500), txArgs)
-      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0)))
+      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
       await timeTravel(provider, DAY)
       await distributor.connect(owner).setFarm(farm2.address, txArgs)
       expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(100)))
       await farm.connect(staker1).claim(txArgs)
       expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
-      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0)))
+      expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
     })
 
     it('can withdraw liquidity after all TRU is distributed', async () => {
