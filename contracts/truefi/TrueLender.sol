@@ -433,6 +433,6 @@ contract TrueLender is ITrueLender, Ownable {
         uint256 yesVotes,
         uint256 noVotes
     ) public view returns (bool) {
-        return apy.mul(term).mul(yesVotes).div(360 days) >= noVotes.mul(riskAversion);
+        return apy.mul(term).mul(yesVotes).div(365 days) >= noVotes.mul(riskAversion);
     }
 }
