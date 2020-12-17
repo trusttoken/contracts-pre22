@@ -180,7 +180,7 @@ contract TrueLender is ITrueLender, Ownable {
         riskAversion = 15000;
         minSize = 1000000 ether;
         maxSize = 10000000 ether;
-        minTerm = (365 days).div(2);
+        minTerm = 182 days;
         maxTerm = 3650 days;
         votingPeriod = 7 days;
 

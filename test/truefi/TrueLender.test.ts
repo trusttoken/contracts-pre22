@@ -91,7 +91,7 @@ describe('TrueLender', () => {
     it('default params', async () => {
       expect(await lender.minSize()).to.equal(parseEth(1e6))
       expect(await lender.maxSize()).to.equal(parseEth(1e7))
-      expect(await lender.minTerm()).to.equal(averageMonthInSeconds * 6)
+      expect(await lender.minTerm()).to.equal(dayInSeconds * 182)
       expect(await lender.maxTerm()).to.equal(averageMonthInSeconds * 120)
       expect(await lender.minApy()).to.equal(1000)
       expect(await lender.votingPeriod()).to.equal(dayInSeconds * 7)
