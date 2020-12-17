@@ -7,6 +7,8 @@ import { setupDeploy } from 'scripts/utils'
 import {
   beforeEachWithFixture,
   parseTRU,
+  timeTravelTo,
+  timeTravel,
 } from 'utils'
 
 import {
@@ -28,6 +30,8 @@ describe('VoteToken', () => {
     trustToken = await deployContract(TrustTokenFactory)
     await trustToken.initialize()
     await trustToken.mint(initialHolder.address, parseTRU(1000))
+    await trustToken.mint(timeLockRegistry.address, parseTRU(1000))
+    await trustToken.setTimeLockRegistry(timeLockRegistry.address)
   })
 
   describe('unlockedBalance', () => {
@@ -44,12 +48,38 @@ describe('VoteToken', () => {
         expect(await trustToken.getCurrentVotes(initialHolder.address)).to.eq(parseTRU(0))        
       })
     })
-    describe('when TRU token is partially locked', () =>{
-      it('return only unlocked votes', async() => {
-        //TODO
+    describe('when saftHolder token is locked', () =>{
+      const DAY = 24 * 3600
+      const TOTAL_LOCK_TIME = DAY * (120 + 7 * 90)
+      const initializationTimestamp = 1595609911
+      beforeEach(async () => {
+        await timeTravelTo(provider,initializationTimestamp)
+        await trustToken.connect(timeLockRegistry).registerLockup(saftHolder.address,parseTRU(100))
+      })
+      it('return 0 for unlocked balance and 100 for balance', async() => {
+        expect(await trustToken.balanceOf(saftHolder.address)).to.eq(parseTRU(100))
+        expect(await trustToken.unlockedBalance(saftHolder.address)).to.eq(parseTRU(0))
+      })
+      describe('when saftHolder delegate to itself', () => {
+        it('return 0 for current vote', async() => {
+          await trustToken.delegate(saftHolder.address)
+          expect(await trustToken.getCurrentVotes(saftHolder.address)).to.eq(parseTRU(0))
+        })
+      })
+      describe('when time travel 210 days -> 2 epochs', () => {
+        beforeEach(async () => {
+          await timeTravel(provider, DAY *  210)
+        })
+        it('return 25 for unlocked balance and 100 for balance', async() => {
+          expect(await trustToken.balanceOf(saftHolder.address)).to.eq(parseTRU(100))
+          expect(await trustToken.unlockedBalance(saftHolder.address)).to.eq(parseTRU(25))
+        })
+        it('return 25 vote when delegate to itself', async () => {
+          await trustToken.connect(saftHolder).delegate(saftHolder.address)
+          expect(await trustToken.getCurrentVotes(saftHolder.address)).to.eq(parseTRU(25))
+        })
       })
     })
-
   })
 
   describe('delegate', () => {
