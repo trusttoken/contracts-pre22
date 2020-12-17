@@ -33,32 +33,48 @@ describe('GovernorAlpha', () => {
     provider = _provider
     const deployContract = setupDeploy(owner)
     
-    timelock = await deployContract(TimelockFactory,owner.address,10*24*60*60) //set delay = 10days 
+    timelock = await deployContract(TimelockFactory,owner.address,2*24*60*60) //set delay = 2days 
     trustToken = await deployContract(TrustTokenFactory)
 
     governorAlpha = await deployContract(GovernorAlphaFactory,timelock.address,trustToken.address,owner.address)
 
-    await trustToken.mint(initialHolder.address,parseTRU(14500000*4)) // 4% of tru
+    await trustToken.mint(initialHolder.address,parseTRU(14500000*5)) // 5% of tru
     await trustToken.connect(initialHolder).delegate(initialHolder.address) // delegate itself
-    
-    
+
+    target = [secondAccount.address]
+    values = ['0']
+    signatures = ['getBalanceOf(address)']
+    callDatas = [encodeParameters(['address'],[thirdAccount.address])]
+    description = 'test proposal'
   })
 
 
   describe('propose', () => {
     describe('get proposal ID', () => {
       it('returns id equals to 1', async () => {
-        target = [secondAccount.address]
-        values = ['0']
-        signatures = ['getBalanceOf(address)']
-        callDatas = [encodeParameters(['address'],[thirdAccount.address])]
-        description = 'test proposal'
         await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
         expect(await governorAlpha.latestProposalIds(initialHolder.address)).to.eq(1)
       })
     })
   })
-
+  describe('cancel', () => {
+    describe('cancel a proposal', () => {
+      it('returns proposalCount equals to 0', async () => {
+        // await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
+        // await governorAlpha.connect(owner).cancel(1) //gudian can cancel a proposal
+        // expect(await governorAlpha.proposalCount()).to.eq(0)
+      })
+    })
+  })
+  describe('queue', () => {
+    describe('send to queue', () => {
+      it('returns id equals to 1', async () => {
+        // await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
+        // await governorAlpha.queue(1)
+        // console.log(await governorAlpha.state(1))
+      })
+    })
+  })
 
 
 })
