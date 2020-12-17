@@ -1,11 +1,12 @@
 import { expect, use } from 'chai'
-import { constants, providers, BigNumberish, BigNumber, Wallet, ethers } from 'ethers'
+import { providers, Wallet, ethers } from 'ethers'
 import { solidity } from 'ethereum-waffle'
 
 import { setupDeploy } from 'scripts/utils'
 
 import {
   beforeEachWithFixture,
+  expectEvent,
   parseTRU,
 } from 'utils'
 
@@ -33,19 +34,28 @@ describe('GovernorAlpha', () => {
     provider = _provider
     const deployContract = setupDeploy(owner)
     
-    timelock = await deployContract(TimelockFactory,owner.address,2*24*60*60) //set delay = 2days 
+    timelock = await deployContract(TimelockFactory,owner.address,2*24*3600) //set delay = 2days 
     trustToken = await deployContract(TrustTokenFactory)
-
     governorAlpha = await deployContract(GovernorAlphaFactory,timelock.address,trustToken.address,owner.address)
 
     await trustToken.mint(initialHolder.address,parseTRU(14500000*5)) // 5% of tru
     await trustToken.connect(initialHolder).delegate(initialHolder.address) // delegate itself
+
+    await timelock.connect(owner).setPendingAdmin(governorAlpha.address) // set governorAlpha as the newAdmin    
 
     target = [secondAccount.address]
     values = ['0']
     signatures = ['getBalanceOf(address)']
     callDatas = [encodeParameters(['address'],[thirdAccount.address])]
     description = 'test proposal'
+  })
+
+  describe('__acceptAdmin', () => {
+    it('returns governorAlpha as the new admin', async() => {
+      expect(await timelock.admin()).to.eq(owner.address)
+      await governorAlpha.connect(owner).__acceptAdmin()
+      expect(await timelock.admin()).to.eq(governorAlpha.address)
+    })
   })
 
 
@@ -59,9 +69,13 @@ describe('GovernorAlpha', () => {
   })
   describe('cancel', () => {
     describe('cancel a proposal', () => {
+      it('return the right admin address', async() => {
+        expect(await timelock.admin()).to.eq(owner.address)
+      })
       it('returns proposalCount equals to 0', async () => {
-        // await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
-        // await governorAlpha.connect(owner).cancel(1) //gudian can cancel a proposal
+        await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
+        expect(await governorAlpha.latestProposalIds(initialHolder.address)).to.eq(1)
+        await governorAlpha.connect(owner).cancel(1) //gudian can cancel a proposal
         // expect(await governorAlpha.proposalCount()).to.eq(0)
       })
     })
