@@ -6,9 +6,9 @@
 // 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Ctrl+f for XXX to see all the modifications.
+// Ctrl+f for OLD to see all the modifications.
 
-// XXX: pragma solidity ^0.5.16;
+// OLD: pragma solidity ^0.5.16;
 pragma solidity 0.6.10;
 
 import {TimeLockedToken} from "../trusttoken/TimeLockedToken.sol";
@@ -25,7 +25,7 @@ abstract contract VoteToken is TimeLockedToken {
     }
 
     function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) public {
-        //xxx: bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
+        //OLD: bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH,keccak256(bytes(name())),getChainId(),address(this)));
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
@@ -77,6 +77,7 @@ abstract contract VoteToken is TimeLockedToken {
 
     function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = delegates[delegator];
+        // OLD: uint96 delegatorBalance = balanceOf(delegator);
         uint96 delegatorBalance = uint96(unlockedBalance(delegator));
         delegates[delegator] = delegatee;
 
