@@ -220,7 +220,11 @@ describe('TrueFarm', () => {
       await distributor.connect(owner).setFarm(farm2.address, txArgs)
       expect(expectScaledCloseTo((await trustToken.balanceOf(farm.address)), fromTru(100)))
       await farm.connect(staker1).claim(txArgs)
+<<<<<<< HEAD
       expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+=======
+      expect(expectCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+>>>>>>> Fix for rarely failing tests
       expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
     })
 
