@@ -6,7 +6,7 @@ import { formatEther } from '@ethersproject/units'
 import {
   beforeEachWithFixture,
   timeTravel,
-  expectCloseTo,
+  expectScaledCloseTo,
   parseEth,
 } from 'utils'
 
@@ -541,23 +541,23 @@ describe('LoanToken', () => {
     })
 
     it('returns proper value at the beginning of the loan', async () => {
-      expectCloseTo(await loanToken.value(loanTokenBalance), parseEth(1000))
-      expectCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1000).div(2))
+      expectScaledCloseTo(await loanToken.value(loanTokenBalance), parseEth(1000))
+      expectScaledCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1000).div(2))
     })
 
     it('returns proper value in the middle of the loan', async () => {
       await timeTravel(provider, averageMonthInSeconds * 6)
-      expectCloseTo(await loanToken.value(loanTokenBalance), parseEth(1050))
-      expectCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1050).div(2))
+      expectScaledCloseTo(await loanToken.value(loanTokenBalance), parseEth(1050))
+      expectScaledCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1050).div(2))
       await timeTravel(provider, averageMonthInSeconds * 3)
-      expectCloseTo(await loanToken.value(loanTokenBalance), parseEth(1075))
-      expectCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1075).div(2))
+      expectScaledCloseTo(await loanToken.value(loanTokenBalance), parseEth(1075))
+      expectScaledCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1075).div(2))
     })
 
     it('returns proper value at the end of the loan', async () => {
       await timeTravel(provider, yearInSeconds)
-      expectCloseTo(await loanToken.value(loanTokenBalance), parseEth(1100))
-      expectCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1100).div(2))
+      expectScaledCloseTo(await loanToken.value(loanTokenBalance), parseEth(1100))
+      expectScaledCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1100).div(2))
     })
   })
 })

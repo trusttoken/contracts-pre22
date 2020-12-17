@@ -5,7 +5,7 @@ import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 import {
   beforeEachWithFixture,
   timeTravel,
-  expectCloseTo,
+  expectScaledCloseTo,
   parseEth,
 } from 'utils'
 
@@ -514,34 +514,34 @@ describe('TrueLender', () => {
     it('returns correct value for one closed loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, (yearInSeconds) + 1)
-      expectCloseTo(await lender.value(), parseEth(12e5))
+      expectScaledCloseTo(await lender.value(), parseEth(12e5))
     })
 
     it('returns correct value for one running loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, averageMonthInSeconds * 6)
-      expectCloseTo(await lender.value(), parseEth(11e5))
+      expectScaledCloseTo(await lender.value(), parseEth(11e5))
     })
 
     it('returns correct value for multiple closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, (yearInSeconds * 3) + 1)
-      expectCloseTo(await lender.value(), parseEth(38e5))
+      expectScaledCloseTo(await lender.value(), parseEth(38e5))
     })
 
     it('returns correct value for multiple opened loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, averageMonthInSeconds * 6)
-      expectCloseTo(await lender.value(), parseEth(32e5))
+      expectScaledCloseTo(await lender.value(), parseEth(32e5))
     })
 
     it('returns correct value for multiple opened and closed loans', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, yearInSeconds * 1.5)
-      expectCloseTo(await lender.value(), parseEth(35e5))
+      expectScaledCloseTo(await lender.value(), parseEth(35e5))
     })
 
     it('returns correct value after some loans were distributed', async () => {
@@ -550,7 +550,7 @@ describe('TrueLender', () => {
       await lender.setPool(owner.address)
       await timeTravel(provider, yearInSeconds * 1.5)
       await lender.distribute(otherWallet.address, 4, 5)
-      expectCloseTo(await lender.value(), parseEth(7e5))
+      expectScaledCloseTo(await lender.value(), parseEth(7e5))
     })
 
     it('returns correct value after some loans were distributed 2', async () => {
@@ -559,7 +559,7 @@ describe('TrueLender', () => {
       await lender.setPool(owner.address)
       await timeTravel(provider, yearInSeconds * 1.5)
       await lender.distribute(otherWallet.address, 1, 2)
-      expectCloseTo(await lender.value(), parseEth(175e4))
+      expectScaledCloseTo(await lender.value(), parseEth(175e4))
     })
 
     it('returns 0 after all were distributed', async () => {
