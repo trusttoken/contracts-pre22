@@ -61,8 +61,14 @@ describe('VoteToken', () => {
       })
       describe('when saftHolder delegate to itself', () => {
         it('return 0 for current vote', async() => {
-          await trustToken.delegate(saftHolder.address)
+          await trustToken.connect(saftHolder).delegate(saftHolder.address)
           expect(await trustToken.getCurrentVotes(saftHolder.address)).to.eq(parseTRU(0))
+        })
+      })
+      describe('when saftHolder delegate to others', () => {
+        it('return 0 for current vote', async() => {
+          await trustToken.connect(saftHolder).delegate(secondAccount.address)
+          expect(await trustToken.getCurrentVotes(secondAccount.address)).to.eq(parseTRU(0))
         })
       })
       describe('when time travel 210 days -> 2 epochs', () => {
@@ -102,7 +108,7 @@ describe('VoteToken', () => {
     beforeEach(async() => {
       await trustToken.connect(initialHolder).delegate(initialHolder.address)      
       curBlockNumber = await provider.getBlockNumber()
-      timeTravel(provider,50) //skip for 10sec
+      timeTravel(provider,60) //mine one block
     })
     describe('when trying to get prior votes', async() => {
       it('return 1000 votes at block 6', async() => {
