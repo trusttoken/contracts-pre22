@@ -14,7 +14,7 @@ pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
 contract GovernorAlpha {
-    /// @notice The name of this contract
+    // @notice The name of this contract
     // OLD: string public constant name = "Compound Governor Alpha";
     string public constant name = "TrustToken Governor Alpha";
 
@@ -344,5 +344,9 @@ interface TimelockInterface {
 }
 
 interface TrustTokenInterface {
+    function getPriorVotes(address account, uint blockNumber) external view returns (uint96);
+}
+
+interface VeTokenInterface {
     function getPriorVotes(address account, uint blockNumber) external view returns (uint96);
 }
