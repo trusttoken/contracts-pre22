@@ -33,7 +33,8 @@ contract GovernorAlpha {
     function votingDelay() public pure returns (uint) { return 1; } // 1 block
 
     // @notice The duration of voting on a proposal, in blocks
-    function votingPeriod() public pure returns (uint) { return 17280; } // ~3 days in blocks (assuming 15s blocks)
+    // OLD: function votingPeriod() public pure returns (uint) { return 17280; } // ~3 days in blocks (assuming 15s blocks)
+    uint public votingPeriod;
 
     // @notice The address of the TrustToken Protocol Timelock
     TimelockInterface public timelock;
@@ -143,12 +144,25 @@ contract GovernorAlpha {
     // @notice An event emitted when a proposal has been executed in the Timelock
     event ProposalExecuted(uint id);
 
-    constructor(address timelock_, address trustToken_, address guardian_) public {
+    /**
+     * @dev Constructor sets the addresses of timelock contract, trusttoken contract, and guardian
+     */
+    constructor(address timelock_, address trustToken_, address guardian_, uint _votingPeriod) public {
         timelock = TimelockInterface(timelock_);
         trustToken = TrustTokenInterface(trustToken_);
         guardian = guardian_;
+        votingPeriod = _votingPeriod;
     }
 
+    /**
+     * @dev Create a proposal to change the protocol
+     * @param targets The ordered list of target addresses for calls to be made during proposal execution
+     * @param values The ordered list of values to be passed to the calls made during proposal execution
+     * @param signatures The ordered list of function signatures to be passed during execution
+     * @param calldatas The ordered list of data to be passed to each individual function call
+     * @param description A human readable description of the proposal and changes it will enact
+     * @return The ID of the newly created proposal
+     */
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
         require(trustToken.getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold(), "GovernorAlpha::propose: proposer votes below proposal threshold");
         require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "GovernorAlpha::propose: proposal function information arity mismatch");
@@ -163,7 +177,8 @@ contract GovernorAlpha {
         }
 
         uint startBlock = add256(block.number, votingDelay());
-        uint endBlock = add256(startBlock, votingPeriod());
+        // OLD: uint endBlock = add256(startBlock, votingPeriod());
+        uint endBlock = add256(startBlock, votingPeriod);
 
         proposalCount++;
         Proposal memory newProposal = Proposal({
@@ -189,6 +204,10 @@ contract GovernorAlpha {
         return newProposal.id;
     }
 
+    /**
+     * @dev Queue a proposal after a proposal has succeeded 
+     * @param proposalId ID of a proposal that has succeeded
+     */
     function queue(uint proposalId) public {
         require(state(proposalId) == ProposalState.Succeeded, "GovernorAlpha::queue: proposal can only be queued if it is succeeded");
         Proposal storage proposal = proposals[proposalId];
@@ -200,11 +219,23 @@ contract GovernorAlpha {
         emit ProposalQueued(proposalId, eta);
     }
 
+    /**
+     * @dev Queue one single proposal transaction to timelock contract
+     * @param target The target address for call to be made during proposal execution
+     * @param value The value to be passed to the calls made during proposal execution
+     * @param signature The function signature to be passed during execution
+     * @param data The data to be passed to the individual function call
+     * @param eta The current timestamp plus the timelock delay
+     */
     function _queueOrRevert(address target, uint value, string memory signature, bytes memory data, uint eta) internal {
         require(!timelock.queuedTransactions(keccak256(abi.encode(target, value, signature, data, eta))), "GovernorAlpha::_queueOrRevert: proposal action already queued at eta");
         timelock.queueTransaction(target, value, signature, data, eta);
     }
 
+    /**
+     * @dev Execute a proposal after a proposal has queued and invoke each of the actions in the proposal 
+     * @param proposalId ID of a proposal that has queued
+     */
     function execute(uint proposalId) public payable {
         require(state(proposalId) == ProposalState.Queued, "GovernorAlpha::execute: proposal can only be executed if it is queued");
         Proposal storage proposal = proposals[proposalId];
@@ -216,6 +247,10 @@ contract GovernorAlpha {
         emit ProposalExecuted(proposalId);
     }
 
+    /**
+     * @dev Cancel a proposal that has not yet been executed
+     * @param proposalId ID of a proposal that wished to be canceled
+     */
     function cancel(uint proposalId) public {
         ProposalState state = state(proposalId);
         require(state != ProposalState.Executed, "GovernorAlpha::cancel: cannot cancel executed proposal");
@@ -231,15 +266,30 @@ contract GovernorAlpha {
         emit ProposalCanceled(proposalId);
     }
 
+    /**
+     * @dev Get the actions of a selected proposal
+     * @param proposalId ID of a proposal
+     * return An array of target addresses, an array of proposal values, an array of proposal singatures, and an array of calldata
+     */
     function getActions(uint proposalId) public view returns (address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas) {
         Proposal storage p = proposals[proposalId];
         return (p.targets, p.values, p.signatures, p.calldatas);
     }
 
+    /**
+     * @dev Get a proposal ballot receipt of the indicated voter
+     * @param proposalId ID of a proposal in which to get voter's ballot receipt
+     * @return the Ballot receipt record for a voter
+     */
     function getReceipt(uint proposalId, address voter) public view returns (Receipt memory) {
         return proposals[proposalId].receipts[voter];
     }
 
+    /**
+     * @dev Get the proposal state for the specified proposal
+     * @param proposalId ID of a proposal in which to get its state
+     * @return Enumerated type of ProposalState
+     */
     function state(uint proposalId) public view returns (ProposalState) {
         require(proposalCount >= proposalId && proposalId > 0, "GovernorAlpha::state: invalid proposal id");
         Proposal storage proposal = proposals[proposalId];
@@ -262,10 +312,23 @@ contract GovernorAlpha {
         }
     }
 
+    /**
+     * @dev Cast a vote on a proposal 
+     * @param proposalId ID of a proposal in which to cast a vote
+     * @param support A boolean of true for 'for' or false for 'against' vote
+     */
     function castVote(uint proposalId, bool support) public {
         return _castVote(msg.sender, proposalId, support);
     }
 
+    /**
+     * @dev Cast a vote on a proposal by offline signatures
+     * @param proposalId ID of a proposal in which to cast a vote
+     * @param support A boolean of true for 'for' or false for 'against' vote
+     * @param v The recovery byte of the signature
+     * @param r Half of the ECDSA signature pair
+     * @param s Half of the ECDSA signature pair
+     */
     function castVoteBySig(uint proposalId, bool support, uint8 v, bytes32 r, bytes32 s) public {
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
         bytes32 structHash = keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support));
@@ -275,6 +338,12 @@ contract GovernorAlpha {
         return _castVote(signatory, proposalId, support);
     }
 
+    /**
+     * @dev Cast a vote on a proposal internal function
+     * @param voter The address of the voter
+     * @param proposalId ID of a proposal in which to cast a vote
+     * @param support A boolean of true for 'for' or false for 'against' vote
+     */
     function _castVote(address voter, uint proposalId, bool support) internal {
         require(state(proposalId) == ProposalState.Active, "GovernorAlpha::_castVote: voting is closed");
         Proposal storage proposal = proposals[proposalId];
@@ -295,37 +364,63 @@ contract GovernorAlpha {
         emit VoteCast(voter, proposalId, support, votes);
     }
 
+    /**
+     * @dev Accept the pending admin as the admin in timelock contract
+     */
     function __acceptAdmin() public {
         require(msg.sender == guardian, "GovernorAlpha::__acceptAdmin: sender must be gov guardian");
         timelock.acceptAdmin();
     }
 
+    /**
+     * @dev Abdicate the guardian address to address(0)
+     */
     function __abdicate() public {
         require(msg.sender == guardian, "GovernorAlpha::__abdicate: sender must be gov guardian");
         guardian = address(0);
     }
 
+    /**
+     * @dev Queue a setTimeLockPendingAdmin transaction to timelock contract
+     * @param newPendingAdmin The address of desired pending admin
+     * @param eta The current block timestamp plus the timelock.delay() timestamp
+     */
     function __queueSetTimelockPendingAdmin(address newPendingAdmin, uint eta) public {
         require(msg.sender == guardian, "GovernorAlpha::__queueSetTimelockPendingAdmin: sender must be gov guardian");
         timelock.queueTransaction(address(timelock), 0, "setPendingAdmin(address)", abi.encode(newPendingAdmin), eta);
     }
 
+    /**
+     * @dev Execute a setTimeLockPendingAdmin transaction to timelock contract
+     * @param newPendingAdmin The address of desired pending admin
+     * @param eta The current block timestamp plus the timelock.delay() timestamp
+     */
     function __executeSetTimelockPendingAdmin(address newPendingAdmin, uint eta) public {
         require(msg.sender == guardian, "GovernorAlpha::__executeSetTimelockPendingAdmin: sender must be gov guardian");
         timelock.executeTransaction(address(timelock), 0, "setPendingAdmin(address)", abi.encode(newPendingAdmin), eta);
     }
 
+    /**
+     * @dev safe addition function for uint256
+     */
     function add256(uint256 a, uint256 b) internal pure returns (uint) {
         uint c = a + b;
         require(c >= a, "addition overflow");
         return c;
     }
 
+    /**
+     * @dev safe subtraction function for uint256
+     */
     function sub256(uint256 a, uint256 b) internal pure returns (uint) {
         require(b <= a, "subtraction underflow");
         return a - b;
     }
 
+    /**
+     * @dev Get the chain ID 
+     * @return The ID of chain
+     */
     function getChainId() internal pure returns (uint) {
         uint chainId;
         assembly { chainId := chainid() }
@@ -344,9 +439,5 @@ interface TimelockInterface {
 }
 
 interface TrustTokenInterface {
-    function getPriorVotes(address account, uint blockNumber) external view returns (uint96);
-}
-
-interface VeTokenInterface {
     function getPriorVotes(address account, uint blockNumber) external view returns (uint96);
 }

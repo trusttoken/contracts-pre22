@@ -38,18 +38,18 @@ describe('GovernorAlpha', () => {
     
     timelock = await deployContract(TimelockFactory,owner.address,2*24*3600) //set delay = 2days 
     trustToken = await deployContract(TrustTokenFactory)
-    governorAlpha = await deployContract(GovernorAlphaFactory,timelock.address,trustToken.address,owner.address)
+    governorAlpha = await deployContract(GovernorAlphaFactory,timelock.address,trustToken.address,owner.address,1) //votingPeriod = 1 blocks
 
     await trustToken.mint(initialHolder.address,parseTRU(votesAmount)) // 5% of tru
     await trustToken.connect(initialHolder).delegate(initialHolder.address) // delegate itself
 
     await timelock.connect(owner).setPendingAdmin(governorAlpha.address) // set governorAlpha as the pending admin
 
-    target = [secondAccount.address]
+    target = [timelock.address]
     values = ['0']
-    signatures = ['getBalanceOf(address)']
-    callDatas = [encodeParameters(['address'],[thirdAccount.address])]
-    description = 'test proposal'
+    signatures = ['setPendingAdmin(address)']
+    callDatas = [encodeParameters(['address'],[initialHolder.address])]
+    description = 'this proposal set a new pending admin'
   })
 
   describe('__acceptAdmin', () => {
@@ -93,12 +93,11 @@ describe('GovernorAlpha', () => {
   describe('castVote', () => {
     beforeEach(async() => {
       await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
-      await provider.send('evm_mine', []) //mine one block
+      await timeTravel(provider,1)
       await governorAlpha.connect(initialHolder).castVote(1,true)
     })
     describe('after initialHolder casts vote', () => {
       it('proposal state becomes active', async() => {
-        await provider.send('evm_mine', []) //mine one block
         expect(await governorAlpha.state(1)).to.eq(1)
       })
       it('return the right for votes', async () => {
@@ -106,48 +105,51 @@ describe('GovernorAlpha', () => {
       })
     })
   })
-  // IMPORTANT: Change votingPeriod to 1 (in GovernorAlpha.sol), otherwise it would take too long and cause timeout to run the queue and execute tests
 
-  // describe('queue', () => {
-  //   beforeEach(async() => {
-  //     await governorAlpha.connect(owner).__acceptAdmin()
-  //     await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
-  //     await provider.send('evm_mine', []) //mine one block
-  //     await governorAlpha.connect(initialHolder).castVote(1,true) //castVote
-  //     const endBlockRequired = (await governorAlpha.proposals(1)).endBlock.toNumber()
-  //     await skipBlocksWithProvider(provider,endBlockRequired) 
-  //   })
-  //   describe('when past the voting period', () =>{
-  //     it('proposal state becomes succeed', async() => {
-  //       expect(await governorAlpha.state(1)).to.eq(4)
-  //     })
-  //   })
-  //   describe('when governorAlpha queue a proposal', () => {
-  //     it('returns proposal state equals to queue', async () => {
-  //       await governorAlpha.connect(owner).queue(1)
-  //       expect(await governorAlpha.state(1)).to.eq(5)
-  //     })
-  //   })
-  // })
+  describe('queue', () => {
+    beforeEach(async() => {
+      await governorAlpha.connect(owner).__acceptAdmin()
+      await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
+      await timeTravel(provider,1) //mine one block
+      await governorAlpha.connect(initialHolder).castVote(1,true) //castVote
+      const endBlockRequired = (await governorAlpha.proposals(1)).endBlock.toNumber()
+      await skipBlocksWithProvider(provider,endBlockRequired) 
+    })
+    describe('when past the voting period', () =>{
+      it('proposal state becomes succeed', async() => {
+        expect(await governorAlpha.state(1)).to.eq(4)
+      })
+    })
+    describe('when governorAlpha queue a proposal', () => {
+      it('returns proposal state equals to queue', async () => {
+        await governorAlpha.connect(owner).queue(1)
+        expect(await governorAlpha.state(1)).to.eq(5)
+      })
+    })
+  })
 
-  // describe('execute', () => {
-  //   beforeEach(async() => {
-  //     await governorAlpha.connect(owner).__acceptAdmin()
-  //     await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
-  //     await provider.send('evm_mine', []) //mine one block
-  //     await governorAlpha.connect(initialHolder).castVote(1,true) //castVote
-  //     const endBlockRequired = (await governorAlpha.proposals(1)).endBlock.toNumber()
-  //     await skipBlocksWithProvider(provider,endBlockRequired) 
-  //     await governorAlpha.connect(owner).queue(1) //queue the proposal
-  //   })
-  //   describe('when governorAlpha execute a proposal', () => {
-  //     it('returns proposal state equals to executed', async () => {
-  //       await timeTravel(provider,3*24*3600) // delay 3 days
-  //       await governorAlpha.connect(owner).execute(1)
-  //       expect(await governorAlpha.state(1)).to.eq(7)
-  //     })
-  //   })
-  // })
+  describe('execute', () => {
+    beforeEach(async() => {
+      await governorAlpha.connect(owner).__acceptAdmin()
+      await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
+      await timeTravel(provider,1) //mine one block
+      await governorAlpha.connect(initialHolder).castVote(1,true) //castVote
+      const endBlockRequired = (await governorAlpha.proposals(1)).endBlock.toNumber()
+      await skipBlocksWithProvider(provider,endBlockRequired) 
+      await governorAlpha.connect(owner).queue(1) //queue the proposal
+      await timeTravel(provider,3*24*3600) // delay 3 days
+      expect(await timelock.pendingAdmin()).to.eq('0x0000000000000000000000000000000000000000')
+      await governorAlpha.connect(owner).execute(1) //execute
+    })
+    describe('when governorAlpha execute a proposal', () => {
+      it('returns proposal state equals to executed', async () => {
+        expect(await governorAlpha.state(1)).to.eq(7)
+      })
+      it('returns initialHolder as the new pendingAdmin', async () => {
+        expect(await timelock.pendingAdmin()).to.eq(initialHolder.address)
+      })
+    })
+  })
 
 })
 
