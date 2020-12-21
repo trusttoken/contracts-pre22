@@ -170,36 +170,10 @@ describe('TrueRatingAgency', () => {
     })
   })
 
-  describe('Whitelisting', () => {
-    it('changes whitelist status', async () => {
-      expect(await rater.allowedSubmitters(otherWallet.address)).to.be.false
-      await rater.allow(otherWallet.address, true)
-      expect(await rater.allowedSubmitters(otherWallet.address)).to.be.true
-      await rater.allow(otherWallet.address, false)
-      expect(await rater.allowedSubmitters(otherWallet.address)).to.be.false
-    })
-
-    it('emits event', async () => {
-      await expect(rater.allow(otherWallet.address, true))
-        .to.emit(rater, 'Allowed').withArgs(otherWallet.address, true)
-      await expect(rater.allow(otherWallet.address, false))
-        .to.emit(rater, 'Allowed').withArgs(otherWallet.address, false)
-    })
-
-    it('reverts when performed by non-owner', async () => {
-      await expect(rater.connect(otherWallet).allow(otherWallet.address, true))
-        .to.be.revertedWith('caller is not the owner')
-    })
-  })
-
-  describe('Submiting/Retracting loan', () => {
-    beforeEach(async () => {
-      await rater.allow(owner.address, true)
-    })
-
-    it('reverts when creator is not whitelisted', async () => {
+  describe('Submitting/Retracting loan', () => {
+    it('reverts when submitter is not creator', async () => {
       await expect(submit(loanToken.address, otherWallet))
-        .to.be.revertedWith('TrueRatingAgency: Sender is not allowed to submit')
+        .to.be.revertedWith('TrueRatingAgency: Not sender\'s loan')
     })
 
     it('creates loan', async () => {
@@ -282,17 +256,15 @@ describe('TrueRatingAgency', () => {
     })
 
     it('cannot remove loan created by someone else', async () => {
-      await rater.allow(otherWallet.address, true)
-      await submit(loanToken.address, otherWallet)
+      await submit(loanToken.address)
 
-      await expect(rater.retract(loanToken.address))
+      await expect(rater.connect(otherWallet).retract(loanToken.address))
         .to.be.revertedWith('TrueRatingAgency: Not sender\'s loan')
     })
   })
 
   describe('Voting', () => {
     beforeEach(async () => {
-      await rater.allow(owner.address, true)
       await submit(loanToken.address)
     })
 
@@ -722,7 +694,6 @@ describe('TrueRatingAgency', () => {
 
       await rater.setRewardMultiplier(rewardMultiplier)
       await tusd.approve(loanToken.address, parseEth(5e6))
-      await rater.allow(owner.address, true)
       await submit(loanToken.address)
     })
 

@@ -81,7 +81,6 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
     // ======= STORAGE DECLARATION END ============
 
-    event Allowed(address indexed who, bool status);
     event LossFactorChanged(uint256 lossFactor);
     event BurnFactorChanged(uint256 burnFactor);
     event LoanSubmitted(address id);
@@ -92,18 +91,10 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     event Claimed(address loanToken, address voter, uint256 claimedReward);
 
     /**
-     * @dev Only whitelisted borrowers can submit for credit ratings
-     */
-    modifier onlyAllowedSubmitters() {
-        require(allowedSubmitters[msg.sender], "TrueRatingAgency: Sender is not allowed to submit");
-        _;
-    }
-
-    /**
      * @dev Only loan submitter can perform certain actions
      */
     modifier onlyCreator(address id) {
-        require(loans[id].creator == msg.sender, "TrueRatingAgency: Not sender's loan");
+        require(ILoanToken(id).borrower() == msg.sender, "TrueRatingAgency: Not sender's loan");
         _;
     }
 
@@ -124,7 +115,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
-     * @dev Only loans in Running state
+     * @dev Only loans not in Running state
      */
     modifier onlyNotRunningLoans(address id) {
         require(status(id) != LoanStatus.Running, "TrueRatingAgency: Loan is currently running");
@@ -253,21 +244,11 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
-     * @dev Whitelist borrowers to submit loans for rating
-     * @param who Account to whitelist
-     * @param status Flag to whitelist accounts
-     */
-    function allow(address who, bool status) external onlyOwner {
-        allowedSubmitters[who] = status;
-        emit Allowed(who, status);
-    }
-
-    /**
      * @dev Submit a loan for rating
      * Cannot submit the same loan twice
      * @param id Loan ID
      */
-    function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
+    function submit(address id) external override onlyNotExistingLoans(id) onlyCreator(id) {
         require(factory.isLoanToken(id), "TrueRatingAgency: Only LoanTokens created via LoanFactory are supported");
         loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0});
         emit LoanSubmitted(id);
