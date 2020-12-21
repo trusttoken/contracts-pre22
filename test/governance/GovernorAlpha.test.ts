@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { providers, Wallet, ethers } from 'ethers'
+import { providers, Wallet, ethers, utils } from 'ethers'
 import { solidity } from 'ethereum-waffle'
 
 import { setupDeploy } from 'scripts/utils'
@@ -18,6 +18,8 @@ import {
   Timelock,
   GovernorAlphaFactory,
   GovernorAlpha,
+  OwnedUpgradeabilityProxyFactory,
+  OwnedUpgradeabilityProxy
 } from 'contracts'
 
 use(solidity)
@@ -28,34 +30,52 @@ describe('GovernorAlpha', () => {
   let governorAlpha: GovernorAlpha
   let trustToken: TrustToken
   let provider: providers.JsonRpcProvider
+  let tokenProxy: OwnedUpgradeabilityProxy
   let target, values, signatures, callDatas, description
-  let votesAmount = 14500000*5
+  let votesAmount = 14500000*5 // 5% of TRU
 
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, timeLockRegistry, saftHolder, initialHolder, secondAccount, thirdAccount, fourthAccount] = wallets)
     provider = _provider
     const deployContract = setupDeploy(owner)
     
-    timelock = await deployContract(TimelockFactory,owner.address,2*24*3600) //set delay = 2days 
-    trustToken = await deployContract(TrustTokenFactory)
-    governorAlpha = await deployContract(GovernorAlphaFactory,timelock.address,trustToken.address,owner.address,1) //votingPeriod = 1 blocks
+    //deploy timelock and proxy contract
+    tokenProxy = await new OwnedUpgradeabilityProxyFactory(owner).deploy()
+    await tokenProxy.upgradeTo((await new TimelockFactory(owner).deploy()).address)
+    timelock = new TimelockFactory(owner).attach(tokenProxy.address)
+    await timelock.connect(owner).initialize(owner.address,2*24*3600)
 
-    await trustToken.mint(initialHolder.address,parseTRU(votesAmount)) // 5% of tru
-    await trustToken.connect(initialHolder).delegate(initialHolder.address) // delegate itself
+    //deploy tursttoken and proxy contract
+    tokenProxy = await new OwnedUpgradeabilityProxyFactory(owner).deploy()
+    await tokenProxy.upgradeTo((await new TrustTokenFactory(owner).deploy()).address)
+    trustToken = new TrustTokenFactory(owner).attach(tokenProxy.address)
+    await trustToken.connect(owner).initialize()
 
-    await timelock.connect(owner).setPendingAdmin(governorAlpha.address) // set governorAlpha as the pending admin
+    //deploy governorAlpha and proxy contract
+    tokenProxy = await new OwnedUpgradeabilityProxyFactory(owner).deploy()
+    await tokenProxy.upgradeTo((await new GovernorAlphaFactory(owner).deploy()).address)
+    governorAlpha = new GovernorAlphaFactory(owner).attach(tokenProxy.address)
+    await governorAlpha.connect(owner).initialize(timelock.address,trustToken.address,owner.address,1) //votingPeriod = 1 blocks
 
+    // mint votesAmount(5%) of tru
+    await trustToken.mint(initialHolder.address,parseTRU(votesAmount)) 
+    // delegate all votes to itself
+    await trustToken.connect(initialHolder).delegate(initialHolder.address) 
+    // set governorAlpha as the pending admin
+    await timelock.connect(owner).setPendingAdmin(governorAlpha.address) 
+    // set governorAlpha as the new admin
+    await governorAlpha.connect(owner).__acceptAdmin()
+
+    // assign values to a test proposal 
     target = [timelock.address]
     values = ['0']
     signatures = ['setPendingAdmin(address)']
-    callDatas = [encodeParameters(['address'],[initialHolder.address])]
+    callDatas = [(new utils.AbiCoder()).encode(['address'],[initialHolder.address])]
     description = 'this proposal set a new pending admin'
   })
 
   describe('__acceptAdmin', () => {
-    it('returns governorAlpha as the new admin', async() => {
-      expect(await timelock.admin()).to.eq(owner.address)
-      await governorAlpha.connect(owner).__acceptAdmin()
+    it('returns governorAlpha as the new admin', async() => {      
       expect(await timelock.admin()).to.eq(governorAlpha.address)
     })
   })
@@ -66,7 +86,6 @@ describe('GovernorAlpha', () => {
       expect(await governorAlpha.guardian()).to.eq('0x0000000000000000000000000000000000000000')
     })
   })
-
 
   describe('propose', () => {
     describe('get proposal ID', () => {
@@ -79,11 +98,10 @@ describe('GovernorAlpha', () => {
 
   describe('cancel', () => {
     beforeEach(async () => {
-      await governorAlpha.connect(owner).__acceptAdmin()
+      await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
     })
     describe('cancel a proposal', () => {
       it('returns the cancel state of 2', async () => {
-        await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
         expect(await governorAlpha.latestProposalIds(initialHolder.address)).to.eq(1)
         await governorAlpha.connect(owner).cancel(1) //gudian can cancel a proposal
         expect(await governorAlpha.state(1)).to.eq(2)
@@ -108,7 +126,6 @@ describe('GovernorAlpha', () => {
 
   describe('queue', () => {
     beforeEach(async() => {
-      await governorAlpha.connect(owner).__acceptAdmin()
       await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
       await timeTravel(provider,1) //mine one block
       await governorAlpha.connect(initialHolder).castVote(1,true) //castVote
@@ -130,7 +147,6 @@ describe('GovernorAlpha', () => {
 
   describe('execute', () => {
     beforeEach(async() => {
-      await governorAlpha.connect(owner).__acceptAdmin()
       await governorAlpha.connect(initialHolder).propose(target,values,signatures,callDatas,description)
       await timeTravel(provider,1) //mine one block
       await governorAlpha.connect(initialHolder).castVote(1,true) //castVote

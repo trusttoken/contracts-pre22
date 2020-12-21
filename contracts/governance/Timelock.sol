@@ -13,8 +13,9 @@
 pragma solidity ^0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./common/ClaimableContract.sol";
 
-contract Timelock {
+contract Timelock is ClaimableContract{
     using SafeMath for uint;
 
     event NewAdmin(address indexed newAdmin);
@@ -37,16 +38,20 @@ contract Timelock {
     mapping (bytes32 => bool) public queuedTransactions;
 
     /**
-     * @dev Constructor sets the addresses of admin and the delay timestamp
+     * @dev Initialize sets the addresses of admin and the delay timestamp
      * @param admin_ The address of admin
      * @param delay_ The timestamp of delay for timelock contract
      */
-    constructor(address admin_, uint delay_) public {
+    function initialize(address admin_, uint delay_) external {
+        require(!initalized, "Already initialized");
         require(delay_ >= MINIMUM_DELAY, "Timelock::constructor: Delay must exceed minimum delay.");
         require(delay_ <= MAXIMUM_DELAY, "Timelock::setDelay: Delay must not exceed maximum delay.");
 
         admin = admin_;
         delay = delay_;
+
+        owner_ = msg.sender;
+        initalized = true;
         // OLD: N/A
         admin_initialized = false;
     }

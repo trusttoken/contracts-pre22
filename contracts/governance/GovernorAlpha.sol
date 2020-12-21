@@ -13,7 +13,9 @@
 pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
-contract GovernorAlpha {
+import "./common/ClaimableContract.sol";
+
+contract GovernorAlpha is ClaimableContract {
     // @notice The name of this contract
     // OLD: string public constant name = "Compound Governor Alpha";
     string public constant name = "TrustToken Governor Alpha";
@@ -145,13 +147,16 @@ contract GovernorAlpha {
     event ProposalExecuted(uint id);
 
     /**
-     * @dev Constructor sets the addresses of timelock contract, trusttoken contract, and guardian
+     * @dev Initialize sets the addresses of timelock contract, trusttoken contract, and guardian
      */
-    constructor(address timelock_, address trustToken_, address guardian_, uint _votingPeriod) public {
+    function initialize(address timelock_, address trustToken_, address guardian_, uint _votingPeriod) external {
         timelock = TimelockInterface(timelock_);
         trustToken = TrustTokenInterface(trustToken_);
         guardian = guardian_;
         votingPeriod = _votingPeriod;
+        
+        owner_ = msg.sender;
+        initalized = true;
     }
 
     /**
