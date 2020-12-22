@@ -268,6 +268,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param id Loan ID
      */
     function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
+        require(ILoanToken(id).borrower() == msg.sender, "TrueRatingAgency: Sender is not borrower");
         require(factory.isLoanToken(id), "TrueRatingAgency: Only LoanTokens created via LoanFactory are supported");
         loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0});
         emit LoanSubmitted(id);

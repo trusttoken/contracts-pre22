@@ -192,7 +192,7 @@ describe('TrueRatingAgency', () => {
     })
   })
 
-  describe('Submiting/Retracting loan', () => {
+  describe('Submitting/Retracting loan', () => {
     beforeEach(async () => {
       await rater.allow(owner.address, true)
     })
@@ -200,6 +200,12 @@ describe('TrueRatingAgency', () => {
     it('reverts when creator is not whitelisted', async () => {
       await expect(submit(loanToken.address, otherWallet))
         .to.be.revertedWith('TrueRatingAgency: Sender is not allowed to submit')
+    })
+
+    it('reverts when creator is not a borrower', async () => {
+      await rater.allow(otherWallet.address, true)
+      await expect(submit(loanToken.address, otherWallet))
+        .to.be.revertedWith('TrueRatingAgency: Sender is not borrower')
     })
 
     it('creates loan', async () => {
