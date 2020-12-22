@@ -289,9 +289,9 @@ describe('TrueRatingAgency', () => {
 
     it('cannot remove loan created by someone else', async () => {
       await rater.allow(otherWallet.address, true)
-      await submit(loanToken.address, otherWallet)
+      await submit(loanToken.address)
 
-      await expect(rater.retract(loanToken.address))
+      await expect(rater.connect(otherWallet).retract(loanToken.address))
         .to.be.revertedWith('TrueRatingAgency: Not sender\'s loan')
     })
   })
