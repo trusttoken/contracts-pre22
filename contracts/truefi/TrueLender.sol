@@ -146,14 +146,6 @@ contract TrueLender is ITrueLender, Ownable {
     event Reclaimed(address indexed loanToken, uint256 amount);
 
     /**
-     * @dev Modifier for only whitelisted borrowers
-     */
-    modifier onlyAllowedBorrowers() {
-        require(allowedBorrowers[msg.sender], "TrueLender: Sender is not allowed to borrow");
-        _;
-    }
-
-    /**
      * @dev Modifier for only lending pool
      */
     modifier onlyPool() {
@@ -269,20 +261,11 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     /**
-     * @dev Called by owner to change whitelist status for accounts
-     * @param who Account to change whitelist status for
-     * @param status New whitelist status for account
-     */
-    function allow(address who, bool status) external onlyOwner {
-        allowedBorrowers[who] = status;
-        emit Allowed(who, status);
-    }
-
-    /**
      * @dev Fund a loan which meets the strategy requirements
      * @param loanToken LoanToken to fund
      */
-    function fund(ILoanToken loanToken) external onlyAllowedBorrowers {
+    function fund(ILoanToken loanToken) external {
+        require(loanToken.borrower() == msg.sender, "TrueLender: Sender is not borrower");
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be funded");
         require(loanToken.currencyToken() == currencyToken, "TrueLender: Only the same currency LoanTokens can be funded");
         require(_loans.length < maxLoans, "TrueLender: Loans number has reached the limit");
