@@ -250,7 +250,7 @@ describe('TrueLender', () => {
         .to.be.reverted
     })
 
-    it('reverts if sender is borrower', async () => {
+    it('reverts if sender is not borrower', async () => {
       await expect(lender.connect(otherWallet).fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Sender is not borrower')
     })
