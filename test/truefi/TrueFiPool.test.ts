@@ -4,7 +4,7 @@ import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 
 import { toTrustToken } from 'scripts/utils'
 
-import { beforeEachWithFixture, expectCloseTo, timeTravel, parseEth } from 'utils'
+import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth } from 'utils'
 
 import {
   ICurveGaugeJson,
@@ -99,7 +99,7 @@ describe('TrueFiPool', () => {
       await timeTravel(provider, dayInSeconds * 182.5)
       const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
       await lender.fund(loan2.address)
-      expectCloseTo(await pool.poolValue(), excludeFee(parseEth(9e6).add(parseEth(105e4))))
+      expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(9e6).add(parseEth(105e4))))
     })
 
     it('loan tokens + tusd + curve liquidity tokens', async () => {
@@ -114,7 +114,7 @@ describe('TrueFiPool', () => {
       await lender.fund(loan2.address)
       await pool.flush(excludeFee(parseEth(5e6)), 0)
       await curvePool.set_withdraw_price(parseEth(2))
-      expectCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7)))))
+      expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7)))))
     })
   })
 
@@ -143,7 +143,7 @@ describe('TrueFiPool', () => {
       const totalSupply = await pool.totalSupply()
       const poolValue = await pool.poolValue()
       await pool.connect(borrower).join(parseEth(1e6))
-      expectCloseTo(await pool.balanceOf(borrower.address), totalSupply.mul(excludeFee(parseEth(1e6))).div(poolValue))
+      expectScaledCloseTo(await pool.balanceOf(borrower.address), totalSupply.mul(excludeFee(parseEth(1e6))).div(poolValue))
     })
 
     it('returns a basket of tokens on exit', async () => {
@@ -178,9 +178,9 @@ describe('TrueFiPool', () => {
 
       it('returns a basket of tokens on exit, two stakers', async () => {
         await pool.exit(excludeFee(parseEth(5e6)))
-        expectCloseTo(await token.balanceOf(owner.address), parseEth(4080259)) // 91% of 1/2(9M - fee)
-        expectCloseTo(await loan1.balanceOf(owner.address), parseEth(500226)) // 91% of 550K
-        expectCloseTo(await loan2.balanceOf(owner.address), parseEth(568439)) // 91% of 625K
+        expectScaledCloseTo(await token.balanceOf(owner.address), parseEth(4080259)) // 91% of 1/2(9M - fee)
+        expectScaledCloseTo(await loan1.balanceOf(owner.address), parseEth(500226)) // 91% of 550K
+        expectScaledCloseTo(await loan2.balanceOf(owner.address), parseEth(568439)) // 91% of 625K
       })
 
       it('erases all tokens after all stakers exit', async () => {
@@ -192,13 +192,13 @@ describe('TrueFiPool', () => {
         expect(await loan1.balanceOf(pool.address)).to.equal(0)
         expect(await loan2.balanceOf(pool.address)).to.equal(0)
 
-        expectCloseTo(await token.balanceOf(owner.address), parseEth(8160518)) // 91% of 9M - fee
-        expectCloseTo(await loan1.balanceOf(owner.address), parseEth(1000452)) // 91% of 1.1M
-        expectCloseTo(await loan2.balanceOf(owner.address), parseEth(1136878)) // 91% of 1.25M
+        expectScaledCloseTo(await token.balanceOf(owner.address), parseEth(8160518)) // 91% of 9M - fee
+        expectScaledCloseTo(await loan1.balanceOf(owner.address), parseEth(1000452)) // 91% of 1.1M
+        expectScaledCloseTo(await loan2.balanceOf(owner.address), parseEth(1136878)) // 91% of 1.25M
 
-        expectCloseTo(await token.balanceOf(borrower.address), parseEth(811981)) // 9% of 9M - fee
-        expectCloseTo(await loan1.balanceOf(borrower.address), parseEth(99548)) // 9% of 1.1M
-        expectCloseTo(await loan2.balanceOf(borrower.address), parseEth(113122)) // 9% of 1.25M
+        expectScaledCloseTo(await token.balanceOf(borrower.address), parseEth(811981)) // 9% of 9M - fee
+        expectScaledCloseTo(await loan1.balanceOf(borrower.address), parseEth(99548)) // 9% of 1.1M
+        expectScaledCloseTo(await loan2.balanceOf(borrower.address), parseEth(113122)) // 9% of 1.25M
       })
     })
   })
@@ -428,7 +428,7 @@ describe('TrueFiPool', () => {
       await lender.fund(loan1.address)
       expect(await pool.liquidExitPenalty(amount.div(2))).to.equal(9990)
       await pool.liquidExit(amount.div(2), { gasLimit: 5000000 })
-      expectCloseTo(await token.balanceOf(owner.address), (amount.div(2).mul(9990).div(10000)))
+      expectScaledCloseTo(await token.balanceOf(owner.address), (amount.div(2).mul(9990).div(10000)))
     })
 
     it('emits event', async () => {

@@ -5,7 +5,7 @@ import { Wallet } from 'ethers'
 import { toTrustToken } from 'scripts/utils'
 
 import {
-  expectCloseTo,
+  expectScaledCloseTo,
   beforeEachWithFixture,
   timeTravel,
   timeTravelTo,
@@ -74,8 +74,8 @@ describe('LinearTrueDistributor', () => {
       await distributor.setDailyDistribution(toTrustToken('1'))
       const balanceAfter = await trustToken.balanceOf(farm.address)
 
-      expectCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(2))
-      expectCloseTo(
+      expectScaledCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(2))
+      expectScaledCloseTo(
         await distributor.totalAmount(),
         toTrustToken('1').mul(15),
       )
@@ -92,14 +92,14 @@ describe('LinearTrueDistributor', () => {
       let balanceBefore = await trustToken.balanceOf(farm.address)
       await distributor.distribute()
       let balanceAfter = await trustToken.balanceOf(farm.address)
-      expectCloseTo(balanceAfter.sub(balanceBefore), toTrustToken('1'))
+      expectScaledCloseTo(balanceAfter.sub(balanceBefore), toTrustToken('1'))
 
       await timeTravel(provider, DAY * 2)
 
       balanceBefore = await trustToken.balanceOf(farm.address)
       await distributor.distribute()
       balanceAfter = await trustToken.balanceOf(farm.address)
-      expectCloseTo(balanceAfter.sub(balanceBefore), toTrustToken('1').mul(2))
+      expectScaledCloseTo(balanceAfter.sub(balanceBefore), toTrustToken('1').mul(2))
     })
   })
 
@@ -132,7 +132,7 @@ describe('LinearTrueDistributor', () => {
           const balanceBefore = await trustToken.balanceOf(farm.address)
           await distributor.distribute()
           const balanceAfter = await trustToken.balanceOf(farm.address)
-          expectCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(30))
+          expectScaledCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(30))
         }
       })
 

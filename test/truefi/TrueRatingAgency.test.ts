@@ -7,7 +7,7 @@ import {
   beforeEachWithFixture,
   parseTRU,
   timeTravel as _timeTravel,
-  expectCloseTo,
+  expectScaledCloseTo,
   expectBalanceChangeCloseTo,
   parseEth,
 } from 'utils'
@@ -730,7 +730,7 @@ describe('TrueRatingAgency', () => {
       const balanceBefore = await trustToken.balanceOf(wallet.address)
       await rater.claim(loanToken.address, wallet.address, txArgs)
       const balanceAfter = await trustToken.balanceOf(wallet.address)
-      expectCloseTo(balanceAfter.sub(balanceBefore), BigNumber.from(expectedChange))
+      expectScaledCloseTo(balanceAfter.sub(balanceBefore), BigNumber.from(expectedChange))
     }
 
     it('can only be called after loan is funded', async () => {
@@ -745,7 +745,7 @@ describe('TrueRatingAgency', () => {
       const balanceBefore = await trustToken.balanceOf(rater.address)
       await rater.claim(loanToken.address, owner.address, txArgs)
       const balanceAfter = await trustToken.balanceOf(rater.address)
-      expectCloseTo(balanceAfter.sub(balanceBefore), parseTRU(1e5))
+      expectScaledCloseTo(balanceAfter.sub(balanceBefore), parseTRU(1e5))
     })
 
     it('when called for the first time, moves funds from distributor to rater (different reward multiplier)', async () => {
@@ -755,7 +755,7 @@ describe('TrueRatingAgency', () => {
       const balanceBefore = await trustToken.balanceOf(rater.address)
       await rater.claim(loanToken.address, owner.address, txArgs)
       const balanceAfter = await trustToken.balanceOf(rater.address)
-      expectCloseTo(balanceAfter.sub(balanceBefore), parseTRU(5e6))
+      expectScaledCloseTo(balanceAfter.sub(balanceBefore), parseTRU(5e6))
     })
 
     it('when called for the second time, does not interact with distributor anymore', async () => {
@@ -777,7 +777,7 @@ describe('TrueRatingAgency', () => {
 
       expect(event.args[0]).eq(loanToken.address)
       expect(event.args[1]).eq(owner.address)
-      expectCloseTo(BigNumber.from(event.args[2]), parseTRU(25000))
+      expectScaledCloseTo(BigNumber.from(event.args[2]), parseTRU(25000))
     })
 
     describe('Running', () => {
@@ -803,7 +803,7 @@ describe('TrueRatingAgency', () => {
         const testNext = async (expectedReward: BigNumber) => {
           totalReward = totalReward.add(expectedReward)
           await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
-          expectCloseTo(await rater.claimed(loanToken.address, owner.address), totalReward)
+          expectScaledCloseTo(await rater.claimed(loanToken.address, owner.address), totalReward)
         }
 
         await timeTravel(averageMonthInSeconds * 6)
