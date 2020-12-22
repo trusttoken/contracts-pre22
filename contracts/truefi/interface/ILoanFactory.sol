@@ -3,7 +3,6 @@ pragma solidity 0.6.10;
 
 interface ILoanFactory {
     function createLoanToken(
-        address _borrower,
         uint256 _amount,
         uint256 _term,
         uint256 _apy
