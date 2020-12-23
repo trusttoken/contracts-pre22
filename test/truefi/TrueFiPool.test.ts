@@ -52,7 +52,7 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
     lender = await new TrueLenderFactory(owner).deploy()
     await pool.initialize(curvePool.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
-    await pool.approveCurve()
+    // await pool.approveCurve()
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
   })
@@ -224,6 +224,11 @@ describe('TrueFiPool', () => {
 
     it('deposits liquidity tokens in curve gauge', async () => {
       await expect('deposit').to.be.calledOnContractWith(mockCurveGauge, [parseEth(100)])
+    })
+
+    it('curvePool allowance is 0 after flushing', async () => {
+      await pool.flush(parseEth(100), 123)
+      expect(await token.allowance(owner.address, curvePool.address)).to.eq(0)
     })
   })
 
