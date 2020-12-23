@@ -52,7 +52,6 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
     lender = await new TrueLenderFactory(owner).deploy()
     await pool.initialize(curvePool.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
-    // await pool.approveCurve()
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
   })
