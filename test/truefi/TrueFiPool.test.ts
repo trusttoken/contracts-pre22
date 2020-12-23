@@ -450,7 +450,6 @@ describe('TrueFiPool', () => {
     it('half funds are liquid: transfers TUSD without penalty and leaves 0 allowance to curve', async () => {
       await pool.flush(excludeFee(parseEth(5e6)), 0)
       await pool.liquidExit(parseEth(6e6))
-      expect(await token.balanceOf(pool.address)).eq(2)
       expect(await token.balanceOf(owner.address)).to.equal(parseEth(6e6))
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
