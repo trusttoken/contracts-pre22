@@ -136,8 +136,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
         joiningFee = 25;
 
-        _currencyToken.approve(address(_curvePool), uint256(-1));
-        _curvePool.token().approve(address(_curvePool), uint256(-1));
+        _currencyToken.approve(address(_curvePool), 0);
+        _curvePool.token().approve(address(_curvePool), 0);
     }
 
     /**
@@ -211,7 +211,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Function to approve curve gauge to spend y pool tokens
-     * @param amount Amount to approve curvePool for
+     * @param amount Amount to approve curveGauge for
      */
     function approveCurve(uint256 amount) internal {
         _curvePool.token().approve(address(_curveGauge), amount);
@@ -353,8 +353,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
 
-        approveCurve(currencyAmount);
         // add TUSD to curve
+        _currencyToken.approve(address(_curvePool), currencyAmount);
         _curvePool.add_liquidity(amounts, minMintAmount);
 
         // stake yCurve tokens in gauge
@@ -375,6 +375,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         ensureEnoughTokensAreAvailable(yAmount);
 
         // remove TUSD from curve
+        _curvePool.token().approve(address(_curvePool), yAmount);
         _curvePool.remove_liquidity_one_coin(yAmount, TUSD_INDEX, minCurrencyAmount, false);
 
         emit Pulled(yAmount);
@@ -409,6 +410,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         // pull tokens from gauge
         ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
         // remove TUSD from curve
+        _curvePool.token().approve(address(_curvePool), roughCurveTokenAmount);
         _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
     }
 
