@@ -211,10 +211,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Function to approve curve gauge to spend y pool tokens
-     * @param amount Amount to approve curveGauge for
      */
-    function approveCurve(uint256 amount) internal {
-        _curvePool.token().approve(address(_curveGauge), amount);
+    function approveCurve() external onlyOwner {
+        _curvePool.token().approve(address(_curveGauge), uint256(-1));
     }
 
     /**

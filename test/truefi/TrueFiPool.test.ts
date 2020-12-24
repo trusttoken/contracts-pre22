@@ -52,6 +52,7 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
     lender = await new TrueLenderFactory(owner).deploy()
     await pool.initialize(curvePool.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
+    await pool.approveCurve()
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
   })
@@ -445,9 +446,10 @@ describe('TrueFiPool', () => {
       expect(await pool.liquidExitPenalty(amount.div(2))).to.equal(9990)
       await pool.liquidExit(amount.div(2), { gasLimit: 5000000 })
       expectScaledCloseTo(await token.balanceOf(owner.address), (amount.div(2).mul(9990).div(10000)))
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
 
-    it('half funds are liquid: transfers TUSD without penalty and leaves 0 allowance to curve', async () => {
+    it('half funds are in curve: transfers TUSD without penalty and leaves curve with 0 allowance', async () => {
       await pool.flush(excludeFee(parseEth(5e6)), 0)
       await pool.liquidExit(parseEth(6e6))
       expect(await token.balanceOf(owner.address)).to.equal(parseEth(6e6))
