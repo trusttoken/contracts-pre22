@@ -52,13 +52,12 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
     lender = await new TrueLenderFactory(owner).deploy()
     await pool.initialize(curvePool.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
-    await pool.approveCurve()
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
   })
 
   describe('initializer', () => {
-    it('sets infinite allowances to curve', async () => {
+    it('no initial allowances to curve', async () => {
       expect(await token.allowance(pool.address, curvePool.address)).to.equal(0)
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
@@ -69,9 +68,9 @@ describe('TrueFiPool', () => {
       expect(await pool.decimals()).to.equal(18)
     })
 
-    // it('approves curve gauge', async () => {
-    //   expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(constants.MaxUint256)
-    // })
+    it('no initial allowance to curve gauge', async () => {
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
+    })
   })
 
   it('cannot exit and join on same transaction', async () => {
@@ -230,6 +229,11 @@ describe('TrueFiPool', () => {
       await pool.flush(parseEth(100), 123)
       expect(await token.allowance(pool.address, curvePool.address)).to.eq(0)
     })
+
+    it('curveGauge allowance remains (Mock)', async() => {
+      await pool.flush(parseEth(100), 123)
+      expect(await curveToken.allowance(pool.address, mockCurveGauge.address)).to.eq(parseEth(100))
+    })
   })
 
   describe('pull', () => {
@@ -355,6 +359,19 @@ describe('TrueFiPool', () => {
     it('reverts when JoiningFee set to more than 100%', async () => {
       await expect(pool.setJoiningFee(10100))
         .to.be.revertedWith('TrueFiPool: Fee cannot exceed transaction value')
+    })
+  })
+
+  describe('resetApprovals', () => {
+    it('can only be called by the owner', async () => {
+      await expect(pool.connect(borrower).resetApprovals()).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets allowances to 0', async () => {
+      await pool.resetApprovals()
+      expect(await token.allowance(pool.address, curvePool.address)).to.equal(0)
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
   })
 

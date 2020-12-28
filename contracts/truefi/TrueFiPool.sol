@@ -136,8 +136,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
         joiningFee = 25;
 
-        _currencyToken.approve(address(_curvePool), 0);
-        _curvePool.token().approve(address(_curvePool), 0);
+        _currencyToken.approve(address(_curvePool), uint256(-1));
+        _curvePool.token().approve(address(_curvePool), uint256(-1));
     }
 
     /**
@@ -210,10 +210,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev Function to approve curve gauge to spend y pool tokens
+     * @dev sets all token allowances used to 0
      */
-    function approveCurve() external onlyOwner {
-        _curvePool.token().approve(address(_curveGauge), uint256(-1));
+    function resetApprovals() external onlyOwner {
+        _currencyToken.approve(address(_curvePool), 0);
+        _curvePool.token().approve(address(_curvePool), 0);
+        _curvePool.token().approve(address(_curveGauge), 0);
     }
 
     /**
@@ -357,7 +359,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _curvePool.add_liquidity(amounts, minMintAmount);
 
         // stake yCurve tokens in gauge
-        _curveGauge.deposit(_curvePool.token().balanceOf(address(this)));
+        uint256 yBalance = _curvePool.token().balanceOf(address(this));
+        _curvePool.token().approve(address(_curveGauge), yBalance);
+        _curveGauge.deposit(yBalance);
 
         emit Flushed(currencyAmount);
     }
