@@ -230,7 +230,7 @@ describe('TrueFiPool', () => {
       expect(await token.allowance(pool.address, curvePool.address)).to.eq(0)
     })
 
-    it('curveGauge allowance remains (Mock)', async() => {
+    it('curveGauge allowance remains (Mock)', async () => {
       await pool.flush(parseEth(100), 123)
       expect(await curveToken.allowance(pool.address, mockCurveGauge.address)).to.eq(parseEth(100))
     })
