@@ -511,6 +511,7 @@ describe('TrueLender', () => {
       await tusd.mint(lender.address, parseEth(3e6))
       await mockRatingAgency.mock.getResults.returns(0, 0, parseEth(1e7))
     })
+
     it('returns correct value for one closed loan', async () => {
       await lender.fund(firstLoanToken.address)
       await timeTravel(provider, (yearInSeconds) + 1)
@@ -561,6 +562,18 @@ describe('TrueLender', () => {
       await lender.distribute(otherWallet.address, 1, 2)
       expectScaledCloseTo(await lender.value(), parseEth(175e4))
     })
+
+    it('returns correct value after loan was closed and some tokens were redeemed', async () => {
+      await lender.fund(firstLoanToken.address)
+      await lender.fund(secondLoanToken.address)
+      await lender.setPool(owner.address)
+      await timeTravel(provider, yearInSeconds * 1.5)
+      await lender.distribute(otherWallet.address, 1, 2)
+      await tusd.mint(firstLoanToken.address, await firstLoanToken.debt())
+      await firstLoanToken.close()
+      await firstLoanToken.connect(otherWallet).redeem(await firstLoanToken.balanceOf(otherWallet.address))
+      expectScaledCloseTo(await lender.value(), parseEth(175e4))
+    });
 
     it('returns 0 after all were distributed', async () => {
       await lender.fund(firstLoanToken.address)
