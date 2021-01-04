@@ -474,6 +474,14 @@ describe('TrueFiPool', () => {
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
 
+    it('half funds are in curve and curve earns: transfers TUSD without penalty and leaves curve with 0 allowance', async () => {
+      await pool.flush(excludeFee(parseEth(5e6)), 0)
+      await curvePool.set_withdraw_price(parseEth(2))
+      await pool.liquidExit(parseEth(6e6))
+      expect(await token.balanceOf(owner.address)).to.equal(parseEth(9e6))
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
+    })
+
     it('emits event', async () => {
       await expect(pool.liquidExit(amount.div(2))).to.emit(pool, 'Exited').withArgs(owner.address, amount.div(2))
     })
