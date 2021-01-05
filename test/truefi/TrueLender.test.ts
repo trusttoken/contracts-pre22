@@ -48,6 +48,7 @@ describe('TrueLender', () => {
     await mock.mock.redeem.returns()
     await mock.mock.transfer.returns(true)
     await mock.mock.receivedAmount.returns(0)
+    await mock.mock.borrower.returns(owner.address)
     return mock
   }
 
@@ -241,33 +242,7 @@ describe('TrueLender', () => {
     })
   })
 
-  describe('Whitelisting', () => {
-    it('changes whitelist status', async () => {
-      expect(await lender.allowedBorrowers(otherWallet.address)).to.be.false
-      await lender.allow(otherWallet.address, true)
-      expect(await lender.allowedBorrowers(otherWallet.address)).to.be.true
-      await lender.allow(otherWallet.address, false)
-      expect(await lender.allowedBorrowers(otherWallet.address)).to.be.false
-    })
-
-    it('emits event', async () => {
-      await expect(lender.allow(otherWallet.address, true))
-        .to.emit(lender, 'Allowed').withArgs(otherWallet.address, true)
-      await expect(lender.allow(otherWallet.address, false))
-        .to.emit(lender, 'Allowed').withArgs(otherWallet.address, false)
-    })
-
-    it('reverts when performed by non-owner', async () => {
-      await expect(lender.connect(otherWallet).allow(otherWallet.address, true))
-        .to.be.revertedWith('caller is not the owner')
-    })
-  })
-
   describe('Funding', () => {
-    beforeEach(async () => {
-      await lender.allow(owner.address, true)
-    })
-
     it('reverts if passed address is not a LoanToken', async () => {
       await expect(lender.fund(AddressZero))
         .to.be.reverted
@@ -275,9 +250,9 @@ describe('TrueLender', () => {
         .to.be.reverted
     })
 
-    it('reverts if sender is not an allowed borrower', async () => {
+    it('reverts if sender is not borrower', async () => {
       await expect(lender.connect(otherWallet).fund(mockLoanToken.address))
-        .to.be.revertedWith('TrueLender: Sender is not allowed to borrow')
+        .to.be.revertedWith('TrueLender: Sender is not borrower')
     })
 
     it('reverts if loan amount would exceed the limit', async () => {
@@ -474,7 +449,6 @@ describe('TrueLender', () => {
     })
 
     it('removes loan from the array', async () => {
-      await lender.allow(owner.address, true)
       await mockLoanToken.mock.getParameters.returns(amount, apy, term)
       await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
 
@@ -507,7 +481,6 @@ describe('TrueLender', () => {
         yearInSeconds * 3,
         1000,
       )
-      await lender.allow(owner.address, true)
       await tusd.mint(lender.address, parseEth(3e6))
       await mockRatingAgency.mock.getResults.returns(0, 0, parseEth(1e7))
     })
@@ -589,7 +562,6 @@ describe('TrueLender', () => {
     const loanTokens: MockContract[] = []
 
     beforeEach(async () => {
-      await lender.allow(owner.address, true)
       await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
 
       for (let i = 0; i < 5; i++) {
