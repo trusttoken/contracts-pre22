@@ -19,16 +19,18 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
  *
  * Loan progresses through the following states:
  * Awaiting:    Waiting for funding to meet capital requirements
- * Funded:      Capital requireme`nts met, borrower can withdraw
+ * Funded:      Capital requirements met, borrower can withdraw
  * Withdrawn:   Borrower withdraws money, loan waiting to be repaid
  * Settled:     Loan has been paid back in full with interest
  * Defaulted:   Loan has not been paid back in full
  *
- * - LoanTokens are non-transferrable except for whitelisted addresses
+ * - LoanTokens are non-transferable except for whitelisted addresses
  * - This version of LoanToken only supports a single funder
  */
 contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
+
+    uint8 public constant override version = 2;
 
     address public override borrower;
     uint256 public override amount;
