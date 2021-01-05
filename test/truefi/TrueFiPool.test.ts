@@ -52,15 +52,15 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
     lender = await new TrueLenderFactory(owner).deploy()
     await pool.initialize(curvePool.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
-    await pool.approveCurve()
+    await pool.resetApprovals()
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
   })
 
   describe('initializer', () => {
-    it('sets infinite allowances to curve', async () => {
-      expect(await token.allowance(pool.address, curvePool.address)).to.equal(constants.MaxUint256)
-      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(constants.MaxUint256)
+    it('no initial allowances to curve', async () => {
+      expect(await token.allowance(pool.address, curvePool.address)).to.equal(0)
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
 
     it('sets erc20 params', async () => {
@@ -69,8 +69,8 @@ describe('TrueFiPool', () => {
       expect(await pool.decimals()).to.equal(18)
     })
 
-    it('approves curve gauge', async () => {
-      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(constants.MaxUint256)
+    it('no initial allowance to curve gauge', async () => {
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
   })
 
@@ -220,6 +220,16 @@ describe('TrueFiPool', () => {
     it('deposits liquidity tokens in curve gauge', async () => {
       await expect('deposit').to.be.calledOnContractWith(mockCurveGauge, [parseEth(100)])
     })
+
+    it('curvePool allowance is 0 after flushing', async () => {
+      await pool.flush(parseEth(100), 123)
+      expect(await token.allowance(pool.address, curvePool.address)).to.eq(0)
+    })
+
+    it('curveGauge allowance remains (Mock)', async () => {
+      await pool.flush(parseEth(100), 123)
+      expect(await curveToken.allowance(pool.address, mockCurveGauge.address)).to.eq(parseEth(100))
+    })
   })
 
   describe('pull', () => {
@@ -231,6 +241,11 @@ describe('TrueFiPool', () => {
     it('withdraws given amount from curve', async () => {
       await pool.pull(parseEth(100), 123)
       expect('remove_liquidity_one_coin').to.be.calledOnContractWith(curvePool, [parseEth(100), 3, 123, false])
+    })
+
+    it('curvePool allowance is 0 after pull', async () => {
+      await pool.pull(parseEth(100), 123)
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.eq(0)
     })
 
     it('reverts if not called by owner', async () => {
@@ -294,6 +309,13 @@ describe('TrueFiPool', () => {
       expect(claimableFeesAfter.sub(claimableFeesBefore)).to.equal(fee)
       expect(await token.balanceOf(pool2.address)).to.equal(claimableFeesAfter)
     })
+
+    it('curvePool allowance is 0 after borrow', async () => {
+      await token.mint(curvePool.address, parseEth(2e6))
+      await curvePool.set_withdraw_price(parseEth(1.5))
+      await pool2.connect(borrower).borrow(parseEth(6e6), parseEth(6e6))
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.eq(0)
+    })
   })
 
   describe('collectFees', () => {
@@ -333,6 +355,19 @@ describe('TrueFiPool', () => {
     it('reverts when JoiningFee set to more than 100%', async () => {
       await expect(pool.setJoiningFee(10100))
         .to.be.revertedWith('TrueFiPool: Fee cannot exceed transaction value')
+    })
+  })
+
+  describe('resetApprovals', () => {
+    it('can only be called by the owner', async () => {
+      await expect(pool.connect(borrower).resetApprovals()).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets allowances to 0', async () => {
+      await pool.resetApprovals()
+      expect(await token.allowance(pool.address, curvePool.address)).to.equal(0)
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
   })
 
@@ -423,6 +458,22 @@ describe('TrueFiPool', () => {
       expect(await pool.liquidExitPenalty(amount.div(2))).to.equal(9990)
       await pool.liquidExit(amount.div(2), { gasLimit: 5000000 })
       expectScaledCloseTo(await token.balanceOf(owner.address), (amount.div(2).mul(9990).div(10000)))
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
+    })
+
+    it('half funds are in curve: transfers TUSD without penalty and leaves curve with 0 allowance', async () => {
+      await pool.flush(excludeFee(parseEth(5e6)), 0)
+      await pool.liquidExit(parseEth(6e6))
+      expect(await token.balanceOf(owner.address)).to.equal(parseEth(6e6))
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
+    })
+
+    it('half funds are in curve and curve earns: transfers TUSD without penalty and leaves curve with 0 allowance', async () => {
+      await pool.flush(excludeFee(parseEth(5e6)), 0)
+      await curvePool.set_withdraw_price(parseEth(2))
+      await pool.liquidExit(parseEth(6e6))
+      expect(await token.balanceOf(owner.address)).to.equal(parseEth(9e6))
+      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
 
     it('emits event', async () => {

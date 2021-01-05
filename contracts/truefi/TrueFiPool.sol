@@ -210,10 +210,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev Function to approve curve gauge to spend y pool tokens
+     * @dev sets all token allowances used to 0
      */
-    function approveCurve() external onlyOwner {
-        _curvePool.token().approve(address(_curveGauge), uint256(-1));
+    function resetApprovals() external onlyOwner {
+        _currencyToken.approve(address(_curvePool), 0);
+        _curvePool.token().approve(address(_curvePool), 0);
+        _curvePool.token().approve(address(_curveGauge), 0);
     }
 
     /**
@@ -353,10 +355,13 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
 
         // add TUSD to curve
+        _currencyToken.approve(address(_curvePool), currencyAmount);
         _curvePool.add_liquidity(amounts, minMintAmount);
 
         // stake yCurve tokens in gauge
-        _curveGauge.deposit(_curvePool.token().balanceOf(address(this)));
+        uint256 yBalance = _curvePool.token().balanceOf(address(this));
+        _curvePool.token().approve(address(_curveGauge), yBalance);
+        _curveGauge.deposit(yBalance);
 
         emit Flushed(currencyAmount);
     }
@@ -373,6 +378,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         ensureEnoughTokensAreAvailable(yAmount);
 
         // remove TUSD from curve
+        _curvePool.token().approve(address(_curvePool), yAmount);
         _curvePool.remove_liquidity_one_coin(yAmount, TUSD_INDEX, minCurrencyAmount, false);
 
         emit Pulled(yAmount);
@@ -407,6 +413,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         // pull tokens from gauge
         ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
         // remove TUSD from curve
+        _curvePool.token().approve(address(_curvePool), roughCurveTokenAmount);
         _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
     }
 
