@@ -30,6 +30,7 @@ describe('LoanToken', () => {
   const dayInSeconds = 60 * 60 * 24
   const yearInSeconds = dayInSeconds * 365
   const averageMonthInSeconds = yearInSeconds / 12
+  const defaultedLoanCloseTime = yearInSeconds + dayInSeconds
 
   const withdraw = async (wallet: Wallet, beneficiary = wallet.address) =>
     loanToken.connect(wallet).withdraw(beneficiary)
@@ -161,7 +162,7 @@ describe('LoanToken', () => {
 
     it('reverts when withdrawing from not closed loan', async () => {
       await loanToken.fund()
-      await timeTravel(provider, yearInSeconds)
+      await timeTravel(provider, defaultedLoanCloseTime)
       await loanToken.close()
       await expect(withdraw(borrower)).to.be.revertedWith('LoanToken: Current status should be Funded')
     })
@@ -181,7 +182,7 @@ describe('LoanToken', () => {
     it('sets status to Defaulted if no debt has been returned', async () => {
       await loanToken.fund()
       await withdraw(borrower)
-      await timeTravel(provider, yearInSeconds)
+      await timeTravel(provider, defaultedLoanCloseTime)
       await loanToken.close()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
     })
@@ -189,7 +190,7 @@ describe('LoanToken', () => {
     it('sets status to Defaulted if not whole debt has been returned', async () => {
       await loanToken.fund()
       await withdraw(borrower)
-      await timeTravel(provider, yearInSeconds)
+      await timeTravel(provider, defaultedLoanCloseTime)
       await tusd.mint(loanToken.address, parseEth(1099))
       await loanToken.close()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
@@ -199,6 +200,16 @@ describe('LoanToken', () => {
       await loanToken.fund()
       await withdraw(borrower)
       await timeTravel(provider, yearInSeconds)
+      await tusd.mint(loanToken.address, parseEth(1100))
+      await loanToken.close()
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
+    })
+
+    it('loan can be payed back 1 day after term has ended', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await timeTravel(provider, yearInSeconds + dayInSeconds / 2)
+      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Borrower can still pay the loan back')
       await tusd.mint(loanToken.address, parseEth(1100))
       await loanToken.close()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
@@ -217,7 +228,7 @@ describe('LoanToken', () => {
 
     it('reverts when trying to close already closed loan', async () => {
       await loanToken.fund()
-      await timeTravel(provider, yearInSeconds)
+      await timeTravel(provider, defaultedLoanCloseTime)
       await loanToken.close()
       await expect(loanToken.close()).to.be.revertedWith('LoanToken: Current status should be Funded')
     })
@@ -226,7 +237,7 @@ describe('LoanToken', () => {
       await loanToken.fund()
       await withdraw(borrower)
       await tusd.mint(loanToken.address, parseEth(1099))
-      await timeTravel(provider, yearInSeconds)
+      await timeTravel(provider, defaultedLoanCloseTime)
       await expect(loanToken.close()).to.emit(loanToken, 'Closed').withArgs(LoanTokenStatus.Defaulted, parseEth(1099))
     })
   })
@@ -295,7 +306,7 @@ describe('LoanToken', () => {
 
     it('emits event', async () => {
       await loanToken.fund()
-      await timeTravel(provider, yearInSeconds)
+      await timeTravel(provider, defaultedLoanCloseTime)
       await loanToken.close()
       await expect(loanToken.redeem(parseEth(1100))).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEth(1100), removeFee(parseEth(1000)))
     })
@@ -322,7 +333,7 @@ describe('LoanToken', () => {
     describe('loan defaulted (3/4 paid back), redeem all', () => {
       beforeEach(async () => {
         await loanToken.fund()
-        await timeTravel(provider, yearInSeconds)
+        await timeTravel(provider, defaultedLoanCloseTime)
         await withdraw(borrower)
         await payback(borrower, parseEth(825))
         await loanToken.close()
@@ -342,7 +353,7 @@ describe('LoanToken', () => {
     describe('loan defaulted (1/2 paid back), redeem half, then rest is paid back, redeem rest', () => {
       beforeEach(async () => {
         await loanToken.fund()
-        await timeTravel(provider, yearInSeconds)
+        await timeTravel(provider, defaultedLoanCloseTime)
         await withdraw(borrower)
         await payback(borrower, parseEth(550))
         await loanToken.close()
@@ -376,7 +387,7 @@ describe('LoanToken', () => {
         // burn excessive tokens
         await tusd.transfer(Wallet.createRandom().address, await tusd.balanceOf(lender.address))
         await loanToken.transfer(other.address, parseEth(550))
-        await timeTravel(provider, yearInSeconds)
+        await timeTravel(provider, defaultedLoanCloseTime)
         await withdraw(borrower)
         await payback(borrower, parseEth(550))
         await loanToken.close()
@@ -411,7 +422,7 @@ describe('LoanToken', () => {
     beforeEach(async () => {
       await loanToken.fund()
       await withdraw(borrower)
-      await timeTravel(provider, yearInSeconds)
+      await timeTravel(provider, defaultedLoanCloseTime)
       await tusd.connect(borrower).approve(loanToken.address, parseEth(100))
     })
 
