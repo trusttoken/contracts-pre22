@@ -160,7 +160,7 @@ describe('LoanToken', () => {
       await expect(withdraw(borrower)).to.be.revertedWith('LoanToken: Current status should be Funded')
     })
 
-    it('reverts when withdrawing from not closed loan', async () => {
+    it('reverts when withdrawing from closed loan', async () => {
       await loanToken.fund()
       await timeTravel(provider, defaultedLoanCloseTime)
       await loanToken.close()
