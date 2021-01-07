@@ -30,6 +30,7 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
 contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
 
+    uint128 public constant lastMinutePaybackDuration = 1 days;
     uint8 public constant override version = 2;
 
     address public override borrower;
@@ -43,7 +44,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     uint256 public redeemed;
 
-    // borrow fee -> 100 = 1%
+    // borrow fee -> 25 = 0.25%
     uint256 public override borrowerFee = 25;
 
     // whitelist for transfers
@@ -285,6 +286,10 @@ contract LoanToken is ILoanToken, ERC20 {
         if (_balance() >= debt) {
             status = Status.Settled;
         } else {
+            require(
+                start.add(term).add(lastMinutePaybackDuration) <= block.timestamp,
+                "LoanToken: Borrower can still pay the loan back"
+            );
             status = Status.Defaulted;
         }
 

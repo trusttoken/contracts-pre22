@@ -615,7 +615,7 @@ describe('TrueRatingAgency', () => {
         const defaultLoan = async () => {
           await loanToken.fund()
           await loanToken.withdraw(owner.address, txArgs)
-          await timeTravel(yearInSeconds * 2)
+          await timeTravel(yearInSeconds * 2 + dayInSeconds)
           await loanToken.close()
           expect(await rater.status(loanToken.address)).to.equal(LoanStatus.Defaulted)
         }
@@ -887,7 +887,7 @@ describe('TrueRatingAgency', () => {
 
       it('does not do anything when called multiple times', async () => {
         await loanToken.fund()
-        await timeTravel(yearInSeconds * 2)
+        await timeTravel(yearInSeconds * 2 + dayInSeconds)
         await loanToken.close()
 
         await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5), owner)
