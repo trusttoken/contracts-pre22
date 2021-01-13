@@ -42,6 +42,12 @@ describe('TrustToken', () => {
       return asTokenOwner.approve(toAddress(spender), amount)
     }
 
+    describe('name', () => {
+      it('token returns correct name', async () => {
+        expect(await trustToken.name()).to.eq('TrueFi')
+      })
+    })
+
     describe('totalSupply', () => {
       it('returns the total amount of tokens', async () => {
         expect(await trustToken.totalSupply()).to.eq(parseTRU(2000))
