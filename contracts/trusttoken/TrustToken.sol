@@ -4,7 +4,6 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {VoteToken} from "../governance/VoteToken.sol";
-//import {TimeLockedToken} from "./TimeLockedToken.sol";
 
 /**
  * @title TrustToken

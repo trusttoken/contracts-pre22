@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT 
+// SPDX-License-Identifier: MIT
 // AND COPIED FROM https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/GovernorAlpha.sol
 // Copyright 2020 Compound Labs, Inc.
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -33,7 +33,7 @@ contract Timelock is ClaimableContract{
     address public pendingAdmin;
     uint public delay;
     // OLD: N/A
-    bool public admin_initialized; 
+    bool public admin_initialized;
 
     mapping (bytes32 => bool) public queuedTransactions;
 
@@ -162,8 +162,8 @@ contract Timelock is ClaimableContract{
             callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
         }
 
-        // solium-disable-next-line security/no-call-value
         // OLD: (bool success, bytes memory returnData) = target.call.value(value)(callData);
+        // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returnData) = target.call{value:value}(callData);
         require(success, "Timelock::executeTransaction: Transaction execution reverted.");
 
