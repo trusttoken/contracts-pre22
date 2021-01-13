@@ -476,6 +476,19 @@ describe('TrueFiPool', () => {
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
 
+    it('calls remove_liquidity_one_coin with correct arguments', async () => {
+      await curvePool.set_withdraw_price(parseEth(2))
+      const amount = excludeFee(parseEth(5e6))
+      await pool.flush(amount, 0)
+      provider.clearCallHistory()
+      await pool.liquidExit(parseEth(6e6))
+
+      const withdrawalCrvAmount = parseEth(6e6).sub(excludeFee(parseEth(5e6))).div(2).mul(1005).div(1000)
+      const minTusdWithdrawn = withdrawalCrvAmount.mul(2).mul(999).div(1000)
+      expect('remove_liquidity_one_coin')
+        .to.be.calledOnContractWith(curvePool, [withdrawalCrvAmount, 3, minTusdWithdrawn, false])
+    })
+
     it('emits event', async () => {
       await expect(pool.liquidExit(amount.div(2))).to.emit(pool, 'Exited').withArgs(owner.address, amount.div(2))
     })
