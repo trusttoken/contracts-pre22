@@ -1,145 +1,8 @@
-/**
- *  :::==== :::====  :::  === :::===== :::  === :::===  :::==== 
- *  :::==== :::  === :::  === :::      :::  === :::     :::  ===
- *    ===   =======  ===  === ======   ===  ===  =====  ===  ===
- *    ===   === ===  ===  === ===      ===  ===     === ===  ===
- *    ===   ===  ===  ======  ========  ======  ======  ======= 
- */
+// Dependency file: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-pragma solidity 0.6.10;
+// SPDX-License-Identifier: MIT
 
-/**
- * Defines the storage layout of the token implementation contract. Any
- * newly declared state variables in future upgrades should be appended
- * to the bottom. Never remove state variables from this list, however variables
- * can be renamed. Please add _Deprecated to deprecated variables.
- */
-contract ProxyStorage {
-    address public owner;
-    address public pendingOwner;
-
-    bool initialized;
-
-    address balances_Deprecated;
-    address allowances_Deprecated;
-
-    uint256 _totalSupply;
-
-    bool private paused_Deprecated = false;
-    address private globalPause_Deprecated;
-
-    uint256 public burnMin = 0;
-    uint256 public burnMax = 0;
-
-    address registry_Deprecated;
-
-    string name_Deprecated;
-    string symbol_Deprecated;
-
-    uint256[] gasRefundPool_Deprecated;
-    uint256 private redemptionAddressCount_Deprecated;
-    uint256 minimumGasPriceForFutureRefunds_Deprecated;
-
-    mapping(address => uint256) _balances;
-    mapping(address => mapping(address => uint256)) _allowances;
-    mapping(bytes32 => mapping(address => uint256)) attributes_Deprecated;
-
-    // reward token storage
-    mapping(address => address) finOps_Deprecated;
-    mapping(address => mapping(address => uint256)) finOpBalances_Deprecated;
-    mapping(address => uint256) finOpSupply_Deprecated;
-
-    // true reward allocation
-    // proportion: 1000 = 100%
-    struct RewardAllocation {
-        uint256 proportion;
-        address finOp;
-    }
-    mapping(address => RewardAllocation[]) _rewardDistribution_Deprecated;
-    uint256 maxRewardProportion_Deprecated = 1000;
-
-    mapping(address => bool) isBlacklisted;
-    mapping(address => bool) public canBurn;
-
-    /* Additionally, we have several keccak-based storage locations.
-     * If you add more keccak-based storage mappings, such as mappings, you must document them here.
-     * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.
-     * A preimage collision can be used to attack the contract by treating one storage location as another,
-     * which would always be a critical issue.
-     * Carefully examine future keccak-based storage to ensure there can be no preimage collisions.
-     *******************************************************************************************************
-     ** length     input                                                         usage
-     *******************************************************************************************************
-     ** 19         "trueXXX.proxy.owner"                                         Proxy Owner
-     ** 27         "trueXXX.pending.proxy.owner"                                 Pending Proxy Owner
-     ** 28         "trueXXX.proxy.implementation"                                Proxy Implementation
-     ** 32         uint256(11)                                                   gasRefundPool_Deprecated
-     ** 64         uint256(address),uint256(14)                                  balanceOf
-     ** 64         uint256(address),keccak256(uint256(address),uint256(15))      allowance
-     ** 64         uint256(address),keccak256(bytes32,uint256(16))               attributes
-     **/
-}
-
-pragma solidity 0.6.10;
-
-/**
- * @title ClamableOwnable
- * @dev The ClamableOwnable contract is a copy of Claimable Contract by Zeppelin.
- * and provides basic authorization control functions. Inherits storage layout of
- * ProxyStorage.
- */
-contract ClaimableOwnable is ProxyStorage {
-    /**
-     * @dev emitted when ownership is transferred
-     * @param previousOwner previous owner of this contract
-     * @param newOwner new owner of this contract
-     */
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev sets the original `owner` of the contract to the sender
-     * at construction. Must then be reinitialized
-     */
-    constructor() public {
-        owner = msg.sender;
-        emit OwnershipTransferred(address(0), owner);
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(msg.sender == owner, "only Owner");
-        _;
-    }
-
-    /**
-     * @dev Modifier throws if called by any account other than the pendingOwner.
-     */
-    modifier onlyPendingOwner() {
-        require(msg.sender == pendingOwner, "only pending owner");
-        _;
-    }
-
-    /**
-     * @dev Allows the current owner to set the pendingOwner address.
-     * @param newOwner The address to transfer ownership to.
-     */
-    function transferOwnership(address newOwner) public onlyOwner {
-        pendingOwner = newOwner;
-    }
-
-    /**
-     * @dev Allows the pendingOwner address to finalize the transfer.
-     */
-    function claimOwnership() public onlyPendingOwner {
-        emit OwnershipTransferred(owner, pendingOwner);
-        owner = pendingOwner;
-        pendingOwner = address(0);
-    }
-}
-
-pragma solidity ^0.6.0;
+// pragma solidity ^0.6.0;
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -178,7 +41,7 @@ interface IERC20 {
      *
      * Returns a boolean value indicating whether the operation succeeded.
      *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * // importANT: Beware that changing an allowance with this method brings the risk
      * that someone may use both the old and the new allowance by unfortunate
      * transaction ordering. One possible solution to mitigate this race
      * condition is to first reduce the spender's allowance to 0 and set the
@@ -215,7 +78,11 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-pragma solidity ^0.6.0;
+
+// Dependency file: @openzeppelin/contracts/GSN/Context.sol
+
+
+// pragma solidity ^0.6.0;
 
 /*
  * @dev Provides information about the current execution context, including the
@@ -238,7 +105,11 @@ abstract contract Context {
     }
 }
 
-pragma solidity ^0.6.0;
+
+// Dependency file: @openzeppelin/contracts/math/SafeMath.sol
+
+
+// pragma solidity ^0.6.0;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -396,7 +267,11 @@ library SafeMath {
     }
 }
 
-pragma solidity ^0.6.2;
+
+// Dependency file: @openzeppelin/contracts/utils/Address.sol
+
+
+// pragma solidity ^0.6.2;
 
 /**
  * @dev Collection of functions related to the address type
@@ -405,7 +280,7 @@ library Address {
     /**
      * @dev Returns true if `account` is a contract.
      *
-     * [IMPORTANT]
+     * [// importANT]
      * ====
      * It is unsafe to assume that an address for which this function returns
      * false is an externally-owned account (EOA) and not a contract.
@@ -420,14 +295,14 @@ library Address {
      * ====
      */
     function isContract(address account) internal view returns (bool) {
-        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
-        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
-        // for accounts without code, i.e. `keccak256('')`
-        bytes32 codehash;
-        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+        // This method relies in extcodesize, which returns 0 for contracts in
+        // construction, since the code is only stored at the end of the
+        // constructor execution.
+
+        uint256 size;
         // solhint-disable-next-line no-inline-assembly
-        assembly { codehash := extcodehash(account) }
-        return (codehash != accountHash && codehash != 0x0);
+        assembly { size := extcodesize(account) }
+        return size > 0;
     }
 
     /**
@@ -441,7 +316,7 @@ library Address {
      *
      * https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/[Learn more].
      *
-     * IMPORTANT: because control is transferred to `recipient`, care must be
+     * // importANT: because control is transferred to `recipient`, care must be
      * taken to not create reentrancy vulnerabilities. Consider using
      * {ReentrancyGuard} or the
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
@@ -536,6 +411,152 @@ library Address {
     }
 }
 
+
+// Dependency file: contracts/true-currencies/common/ProxyStorage.sol
+
+// pragma solidity 0.6.10;
+
+// solhint-disable max-states-count, var-name-mixedcase
+
+/**
+ * Defines the storage layout of the token implementation contract. Any
+ * newly declared state variables in future upgrades should be appended
+ * to the bottom. Never remove state variables from this list, however variables
+ * can be renamed. Please add _Deprecated to deprecated variables.
+ */
+contract ProxyStorage {
+    address public owner;
+    address public pendingOwner;
+
+    bool initialized;
+
+    address balances_Deprecated;
+    address allowances_Deprecated;
+
+    uint256 _totalSupply;
+
+    bool private paused_Deprecated = false;
+    address private globalPause_Deprecated;
+
+    uint256 public burnMin = 0;
+    uint256 public burnMax = 0;
+
+    address registry_Deprecated;
+
+    string name_Deprecated;
+    string symbol_Deprecated;
+
+    uint256[] gasRefundPool_Deprecated;
+    uint256 private redemptionAddressCount_Deprecated;
+    uint256 minimumGasPriceForFutureRefunds_Deprecated;
+
+    mapping(address => uint256) _balances;
+    mapping(address => mapping(address => uint256)) _allowances;
+    mapping(bytes32 => mapping(address => uint256)) attributes_Deprecated;
+
+    // reward token storage
+    mapping(address => address) finOps_Deprecated;
+    mapping(address => mapping(address => uint256)) finOpBalances_Deprecated;
+    mapping(address => uint256) finOpSupply_Deprecated;
+
+    // true reward allocation
+    // proportion: 1000 = 100%
+    struct RewardAllocation {
+        uint256 proportion;
+        address finOp;
+    }
+    mapping(address => RewardAllocation[]) _rewardDistribution_Deprecated;
+    uint256 maxRewardProportion_Deprecated = 1000;
+
+    mapping(address => bool) isBlacklisted;
+    mapping(address => bool) public canBurn;
+
+    /* Additionally, we have several keccak-based storage locations.
+     * If you add more keccak-based storage mappings, such as mappings, you must document them here.
+     * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.
+     * A preimage collision can be used to attack the contract by treating one storage location as another,
+     * which would always be a critical issue.
+     * Carefully examine future keccak-based storage to ensure there can be no preimage collisions.
+     *******************************************************************************************************
+     ** length     input                                                         usage
+     *******************************************************************************************************
+     ** 19         "trueXXX.proxy.owner"                                         Proxy Owner
+     ** 27         "trueXXX.pending.proxy.owner"                                 Pending Proxy Owner
+     ** 28         "trueXXX.proxy.implementation"                                Proxy Implementation
+     ** 32         uint256(11)                                                   gasRefundPool_Deprecated
+     ** 64         uint256(address),uint256(14)                                  balanceOf
+     ** 64         uint256(address),keccak256(uint256(address),uint256(15))      allowance
+     ** 64         uint256(address),keccak256(bytes32,uint256(16))               attributes
+     **/
+}
+
+
+// Dependency file: contracts/true-currencies/common/ClaimableOwnable.sol
+
+// pragma solidity 0.6.10;
+
+// import {ProxyStorage} from "contracts/true-currencies/common/ProxyStorage.sol";
+
+/**
+ * @title ClamableOwnable
+ * @dev The ClamableOwnable contract is a copy of Claimable Contract by Zeppelin.
+ * and provides basic authorization control functions. Inherits storage layout of
+ * ProxyStorage.
+ */
+contract ClaimableOwnable is ProxyStorage {
+    /**
+     * @dev emitted when ownership is transferred
+     * @param previousOwner previous owner of this contract
+     * @param newOwner new owner of this contract
+     */
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev sets the original `owner` of the contract to the sender
+     * at construction. Must then be reinitialized
+     */
+    constructor() public {
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(msg.sender == owner, "only Owner");
+        _;
+    }
+
+    /**
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
+    modifier onlyPendingOwner() {
+        require(msg.sender == pendingOwner, "only pending owner");
+        _;
+    }
+
+    /**
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        pendingOwner = newOwner;
+    }
+
+    /**
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
+    function claimOwnership() public onlyPendingOwner {
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
+    }
+}
+
+
+// Dependency file: contracts/true-currencies/common/ERC20.sol
+
 /**
  * @notice This is a copy of openzeppelin ERC20 contract with removed state variables.
  * Removing state variables has been necessary due to proxy pattern usage.
@@ -549,8 +570,17 @@ library Address {
  * See also: ClaimableOwnable.sol and ProxyStorage.sol
  */
 
-pragma solidity 0.6.10;
 
+// pragma solidity 0.6.10;
+
+// import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
+// import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+// import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+
+// import {ClaimableOwnable} from "contracts/true-currencies/common/ClaimableOwnable.sol";
+
+// prettier-ignore
 /**
  * @dev Implementation of the {IERC20} interface.
  *
@@ -811,7 +841,14 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
 }
 
-pragma solidity 0.6.10;
+
+// Dependency file: contracts/true-currencies/common/ReclaimerToken.sol
+
+// pragma solidity 0.6.10;
+
+// import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+// import {ERC20} from "contracts/true-currencies/common/ERC20.sol";
 
 /**
  * @title ReclaimerToken
@@ -839,7 +876,12 @@ abstract contract ReclaimerToken is ERC20 {
     }
 }
 
-pragma solidity 0.6.10;
+
+// Dependency file: contracts/true-currencies/common/BurnableTokenWithBounds.sol
+
+// pragma solidity 0.6.10;
+
+// import {ReclaimerToken} from "contracts/true-currencies/common/ReclaimerToken.sol";
 
 /**
  * @title BurnableTokenWithBounds
@@ -915,7 +957,12 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
     }
 }
 
-pragma solidity 0.6.10;
+
+// Dependency file: contracts/true-currencies/TrueCurrency.sol
+
+// pragma solidity 0.6.10;
+
+// import {BurnableTokenWithBounds} from "contracts/true-currencies/common/BurnableTokenWithBounds.sol";
 
 /**
  * @title TrueCurrency
@@ -1084,12 +1131,17 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
     }
 }
 
-pragma solidity 0.6.10;
 
-/** 
+// Dependency file: contracts/true-currencies/DelegateERC20.sol
+
+// pragma solidity 0.6.10;
+
+// import {TrueCurrency} from "contracts/true-currencies/TrueCurrency.sol";
+
+/**
  * @title DelegateERC20
- * Accept forwarding delegation calls from the old TrueUSD (V1) contract. 
- * This way the all the ERC20 functions in the old contract still works 
+ * Accept forwarding delegation calls from the old TrueUSD (V1) contract.
+ * This way the all the ERC20 functions in the old contract still works
  * (except Burn).
  *
  * The original contract is at 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E.
@@ -1104,7 +1156,7 @@ abstract contract DelegateERC20 is TrueCurrency {
     address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
 
     // require msg.sender is the delegate smart contract
-    modifier onlyDelegateFrom() virtual {
+    modifier onlyDelegateFrom() {
         require(msg.sender == DELEGATE_FROM);
         _;
     }
@@ -1127,7 +1179,7 @@ abstract contract DelegateERC20 is TrueCurrency {
     }
 
     /**
-     * @dev Delegate call to
+     * @dev Delegate call to transfer
      * @param to address to transfer to
      * @param value amount to transfer
      * @param origSender original msg.sender on delegate contract
@@ -1139,15 +1191,14 @@ abstract contract DelegateERC20 is TrueCurrency {
         address origSender
     ) public onlyDelegateFrom returns (bool) {
         _transfer(origSender, to, value);
-        emit Transfer(origSender, to, value);
         return true;
     }
 
     /**
      * @dev Delegate call to get allowance
-     * @param owner acconut owner
+     * @param owner account owner
      * @param spender account to check allowance for
-     * @return success
+     * @return allowance
      */
     function delegateAllowance(address owner, address spender) public view returns (uint256) {
         return allowance(owner, spender);
@@ -1167,7 +1218,7 @@ abstract contract DelegateERC20 is TrueCurrency {
         uint256 value,
         address origSender
     ) public onlyDelegateFrom returns (bool) {
-        // copied from ERC20.sol with _msgSender() replaced by origSender
+        // ERC20 transferFrom with _msgSender() replaced by origSender
         _transfer(from, to, value);
         _approve(from, origSender, _allowances[from][origSender].sub(value, "ERC20: transfer amount exceeds allowance"));
         return true;
@@ -1201,7 +1252,7 @@ abstract contract DelegateERC20 is TrueCurrency {
         uint256 addedValue,
         address origSender
     ) public onlyDelegateFrom returns (bool) {
-        // copied from increaseAllowance() with _msgSender() replaced by origSender
+        // ERC20 increaseAllowance() with _msgSender() replaced by origSender
         _approve(origSender, spender, _allowances[origSender][spender].add(addedValue));
         return true;
     }
@@ -1218,13 +1269,18 @@ abstract contract DelegateERC20 is TrueCurrency {
         uint256 subtractedValue,
         address origSender
     ) public onlyDelegateFrom returns (bool) {
-        // copied from decreaseAllowance with _msgSender() replaced by origSender
+        // ERC20 decreaseAllowance() with _msgSender() replaced by origSender
         _approve(origSender, spender, _allowances[origSender][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
         return true;
     }
 }
 
+
+// Root file: contracts/true-currencies/TrueCurrencyWithLegacyAutosweep.sol
+
 pragma solidity 0.6.10;
+
+// import {DelegateERC20} from "contracts/true-currencies/DelegateERC20.sol";
 
 /**
  * @dev Contract that prevents addresses that were previously using autosweep addresses from
@@ -1259,33 +1315,5 @@ abstract contract TrueCurrencyWithLegacyAutosweep is DelegateERC20 {
     function requireNotAutosweepAddress(address recipient, address depositAddress) internal pure {
         return
             require(uint256(recipient) >> 20 != uint256(depositAddress) >> 20 || recipient == depositAddress, "Autosweep is disabled");
-    }
-}
-
-pragma solidity 0.6.10;
-
-/**
- * @title TrueUSD
- * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
- * inherited - see the documentation on the corresponding contracts.
- */
-contract TrueUSD is TrueCurrencyWithLegacyAutosweep {
-    uint8 constant DECIMALS = 18;
-    uint8 constant ROUNDING = 2;
-
-    function decimals() public override pure returns (uint8) {
-        return DECIMALS;
-    }
-
-    function rounding() public pure returns (uint8) {
-        return ROUNDING;
-    }
-
-    function name() public override pure returns (string memory) {
-        return "TrueUSD";
-    }
-
-    function symbol() public override pure returns (string memory) {
-        return "TUSD";
     }
 }
