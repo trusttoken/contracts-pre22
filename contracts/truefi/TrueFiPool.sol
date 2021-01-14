@@ -414,7 +414,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
         // remove TUSD from curve
         _curvePool.token().approve(address(_curvePool), roughCurveTokenAmount);
-        _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
+        uint256 minAmount = roughCurveTokenAmount.mul(_curvePool.curve().get_virtual_price()).mul(999).div(1000).div(1 ether);
+        _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, minAmount, false);
     }
 
     /**
