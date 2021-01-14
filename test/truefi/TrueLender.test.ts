@@ -196,6 +196,10 @@ describe('TrueLender', () => {
       it('can set minSize to same value as maxSize', async () => {
         await expect(lender.setSizeLimits(2, 2)).to.be.not.reverted
       })
+
+      it('cannot set minSize to 0', async () => {
+        await expect(lender.setSizeLimits(0, 1)).to.be.revertedWith('TrueLender: Minimal loan size cannot be 0')
+      })
     })
 
     describe('setTermLimits', () => {

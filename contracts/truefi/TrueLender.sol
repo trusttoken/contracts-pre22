@@ -185,6 +185,7 @@ contract TrueLender is ITrueLender, Ownable {
      * @param max New maximum loan size
      */
     function setSizeLimits(uint256 min, uint256 max) external onlyOwner {
+        require(min > 0, "TrueLender: Minimal loan size cannot be 0");
         require(max >= min, "TrueLender: Maximal loan size is smaller than minimal");
         minSize = min;
         maxSize = max;
