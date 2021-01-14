@@ -87,7 +87,11 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
@@ -104,9 +108,7 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-
 // Dependency file: @openzeppelin/contracts/utils/ReentrancyGuard.sol
-
 
 // pragma solidity ^0.6.0;
 
@@ -143,7 +145,7 @@ contract ReentrancyGuard {
 
     uint256 private _status;
 
-    constructor () internal {
+    constructor() internal {
         _status = _NOT_ENTERED;
     }
 
@@ -169,9 +171,7 @@ contract ReentrancyGuard {
     }
 }
 
-
 // Dependency file: @openzeppelin/contracts/math/SafeMath.sol
-
 
 // pragma solidity ^0.6.0;
 
@@ -230,7 +230,11 @@ library SafeMath {
      *
      * - Subtraction cannot overflow.
      */
-    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b <= a, errorMessage);
         uint256 c = a - b;
 
@@ -289,7 +293,11 @@ library SafeMath {
      *
      * - The divisor cannot be zero.
      */
-    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b > 0, errorMessage);
         uint256 c = a / b;
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
@@ -325,15 +333,17 @@ library SafeMath {
      *
      * - The divisor cannot be zero.
      */
-    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function mod(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b != 0, errorMessage);
         return a % b;
     }
 }
 
-
 // Dependency file: @openzeppelin/contracts/utils/Address.sol
-
 
 // pragma solidity ^0.6.2;
 
@@ -365,7 +375,9 @@ library Address {
 
         uint256 size;
         // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(account) }
+        assembly {
+            size := extcodesize(account)
+        }
         return size > 0;
     }
 
@@ -389,7 +401,7 @@ library Address {
         require(address(this).balance >= amount, "Address: insufficient balance");
 
         // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
-        (bool success, ) = recipient.call{ value: amount }("");
+        (bool success, ) = recipient.call{value: amount}("");
         require(success, "Address: unable to send value, recipient may have reverted");
     }
 
@@ -412,7 +424,7 @@ library Address {
      * _Available since v3.1._
      */
     function functionCall(address target, bytes memory data) internal returns (bytes memory) {
-      return functionCall(target, data, "Address: low-level call failed");
+        return functionCall(target, data, "Address: low-level call failed");
     }
 
     /**
@@ -421,7 +433,11 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
+    function functionCall(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
         return _functionCallWithValue(target, data, 0, errorMessage);
     }
 
@@ -436,7 +452,11 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {
+    function functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 value
+    ) internal returns (bytes memory) {
         return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
     }
 
@@ -446,16 +466,26 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
+    function functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 value,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
         require(address(this).balance >= value, "Address: insufficient balance for call");
         return _functionCallWithValue(target, data, value, errorMessage);
     }
 
-    function _functionCallWithValue(address target, bytes memory data, uint256 weiValue, string memory errorMessage) private returns (bytes memory) {
+    function _functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 weiValue,
+        string memory errorMessage
+    ) private returns (bytes memory) {
         require(isContract(target), "Address: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.call{ value: weiValue }(data);
+        (bool success, bytes memory returndata) = target.call{value: weiValue}(data);
         if (success) {
             return returndata;
         } else {
@@ -475,9 +505,7 @@ library Address {
     }
 }
 
-
 // Dependency file: @openzeppelin/contracts/GSN/Context.sol
-
 
 // pragma solidity ^0.6.0;
 
@@ -492,16 +520,15 @@ library Address {
  * This contract is only required for intermediate, library-like contracts.
  */
 abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
+    function _msgSender() internal virtual view returns (address payable) {
         return msg.sender;
     }
 
-    function _msgData() internal view virtual returns (bytes memory) {
+    function _msgData() internal virtual view returns (bytes memory) {
         this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
         return msg.data;
     }
 }
-
 
 // Dependency file: contracts/truefi/common/Initializable.sol
 
@@ -569,7 +596,6 @@ contract Initializable {
     // Reserved storage space to allow for layout changes in the future.
     uint256[50] private ______gap;
 }
-
 
 // Dependency file: contracts/truefi/common/UpgradeableERC20.sol
 
@@ -901,7 +927,6 @@ contract ERC20 is Initializable, Context, IERC20 {
     ) internal virtual {}
 }
 
-
 // Dependency file: contracts/truefi/common/UpgradeableOwnable.sol
 
 // pragma solidity 0.6.10;
@@ -974,7 +999,6 @@ contract Ownable is Initializable, Context {
     }
 }
 
-
 // Dependency file: contracts/truefi/interface/IYToken.sol
 
 // pragma solidity 0.6.10;
@@ -984,7 +1008,6 @@ contract Ownable is Initializable, Context {
 interface IYToken is IERC20 {
     function getPricePerFullShare() external view returns (uint256);
 }
-
 
 // Dependency file: contracts/truefi/interface/ICurve.sol
 
@@ -1035,7 +1058,6 @@ interface ICurvePool {
     function coins(int128 id) external view returns (IYToken);
 }
 
-
 // Dependency file: contracts/truefi/interface/ITrueFiPool.sol
 
 // pragma solidity 0.6.10;
@@ -1084,7 +1106,6 @@ interface ITrueFiPool is IERC20 {
     function repay(uint256 amount) external;
 }
 
-
 // Dependency file: contracts/truefi/interface/ITrueLender.sol
 
 // pragma solidity 0.6.10;
@@ -1099,7 +1120,6 @@ interface ITrueLender {
     ) external;
 }
 
-
 // Dependency file: contracts/truefi/interface/IUniswapRouter.sol
 
 // pragma solidity 0.6.10;
@@ -1113,7 +1133,6 @@ interface IUniswapRouter {
         uint256 deadline
     ) external returns (uint256[] memory amounts);
 }
-
 
 // Dependency file: contracts/truefi/Log.sol
 
@@ -1205,7 +1224,6 @@ library ABDKMath64x64 {
         return int128((uint256(log_2(x)) * 0xB17217F7D1CF79ABC9E3B39803F2F6AF) >> 128);
     }
 }
-
 
 // Root file: contracts/truefi/TrueFiPool.sol
 
@@ -1624,7 +1642,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
         // remove TUSD from curve
         _curvePool.token().approve(address(_curvePool), roughCurveTokenAmount);
-        _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
+        uint256 minAmount = roughCurveTokenAmount.mul(_curvePool.curve().get_virtual_price()).mul(999).div(1000).div(1 ether);
+        _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, minAmount, false);
     }
 
     /**
