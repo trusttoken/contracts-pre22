@@ -2,6 +2,7 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+
 import {TimeLockedToken} from "./TimeLockedToken.sol";
 
 /**
@@ -51,7 +52,7 @@ contract TrustToken is TimeLockedToken {
     }
 
     function name() public override pure returns (string memory) {
-        return "TrustToken";
+        return "TrueFi";
     }
 
     function symbol() public override pure returns (string memory) {

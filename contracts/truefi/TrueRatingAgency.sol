@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {IBurnableERC20} from "../trusttoken/IBurnableERC20.sol";
+import {IBurnableERC20} from "../trusttoken/interface/IBurnableERC20.sol";
+
+import {Ownable} from "./common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
+import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
-import {ILoanFactory} from "./interface/ILoanFactory.sol";
-import {Ownable} from "./upgradeability/UpgradeableOwnable.sol";
 
 /**
  * @title TrueRatingAgency
@@ -54,6 +55,14 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         uint256 reward;
     }
 
+    uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
+
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     mapping(address => bool) public allowedSubmitters;
     mapping(address => Loan) public loans;
 
@@ -61,13 +70,16 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     IArbitraryDistributor public distributor;
     ILoanFactory public factory;
 
-    uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
-
     /**
      * @dev % multiplied by 100. e.g. 10.5% = 1050
      */
-    uint256 public lossFactor = 2500;
-    uint256 public burnFactor = 2500;
+    uint256 public lossFactor;
+    uint256 public burnFactor;
+
+    // reward multiplier for voters
+    uint256 public rewardMultiplier;
+
+    // ======= STORAGE DECLARATION END ============
 
     event Allowed(address indexed who, bool status);
     event LossFactorChanged(uint256 lossFactor);
@@ -76,9 +88,11 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     event LoanRetracted(address id);
     event Voted(address loanToken, address voter, bool choice, uint256 stake);
     event Withdrawn(address loanToken, address voter, uint256 stake, uint256 received, uint256 burned);
+    event RewardMultiplierChanged(uint256 newRewardMultiplier);
+    event Claimed(address loanToken, address voter, uint256 claimedReward);
 
     /**
-     * @dev Only whitelisted borrwers can submit for credit ratings
+     * @dev Only whitelisted borrowers can submit for credit ratings
      */
     modifier onlyAllowedSubmitters() {
         require(allowedSubmitters[msg.sender], "TrueRatingAgency: Sender is not allowed to submit");
@@ -94,7 +108,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
-     * @dev Cannot submit the same loan muliple times
+     * @dev Cannot submit the same loan multiple times
      */
     modifier onlyNotExistingLoans(address id) {
         require(status(id) == LoanStatus.Void, "TrueRatingAgency: Loan was already created");
@@ -137,10 +151,15 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         IArbitraryDistributor _distributor,
         ILoanFactory _factory
     ) public initializer {
+        require(address(this) == _distributor.beneficiary(), "TrueRatingAgency: Invalid distributor beneficiary");
         Ownable.initialize();
+
         trustToken = _trustToken;
         distributor = _distributor;
         factory = _factory;
+
+        lossFactor = 2500;
+        burnFactor = 2500;
     }
 
     /**
@@ -149,6 +168,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param newLossFactor New loss factor
      */
     function setLossFactor(uint256 newLossFactor) external onlyOwner {
+        require(newLossFactor <= 10000, "TrueRatingAgency: Loss factor cannot be greater than 100%");
         lossFactor = newLossFactor;
         emit LossFactorChanged(newLossFactor);
     }
@@ -158,8 +178,18 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * Burn factor decides what percentage of lost TRU is burned
      */
     function setBurnFactor(uint256 newBurnFactor) external onlyOwner {
+        require(newBurnFactor <= 10000, "TrueRatingAgency: Burn factor cannot be greater than 100%");
         burnFactor = newBurnFactor;
         emit BurnFactorChanged(newBurnFactor);
+    }
+
+    /**
+     * @dev Set reward multiplier.
+     * Reward multiplier increases reward for TRU stakers
+     */
+    function setRewardMultiplier(uint256 newRewardMultiplier) external onlyOwner {
+        rewardMultiplier = newRewardMultiplier;
+        emit RewardMultiplierChanged(newRewardMultiplier);
     }
 
     /**
@@ -223,7 +253,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
-     * @dev Whitelist borrwers to submit loans for rating
+     * @dev Whitelist borrowers to submit loans for rating
      * @param who Account to whitelist
      * @param status Flag to whitelist accounts
      */
@@ -238,6 +268,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param id Loan ID
      */
     function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
+        require(ILoanToken(id).borrower() == msg.sender, "TrueRatingAgency: Sender is not borrower");
         require(factory.isLoanToken(id), "TrueRatingAgency: Only LoanTokens created via LoanFactory are supported");
         loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0});
         emit LoanSubmitted(id);
@@ -305,7 +336,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         bool choice = loans[id].votes[msg.sender][true] > 0;
         LoanStatus loanStatus = status(id);
 
-        require(loans[id].votes[msg.sender][choice] >= stake, 
+        require(loans[id].votes[msg.sender][choice] >= stake,
             "TrueRatingAgency: Cannot withdraw more than was staked");
 
         uint256 amountToTransfer = stake;
@@ -347,9 +378,9 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @dev Total amount of funds given to correct voters
      * @param id Loan ID
      * @param incorrectChoice Vote which was incorrect
-     * @return TRU amount remaining for incorrect voters
+     * @return TRU amount given to correct voters
      */
-    function bounty(address id, bool incorrectChoice) internal view returns (uint256) {
+    function bounty(address id, bool incorrectChoice) public view returns (uint256) {
         // reward = (incorrect_tokens_staked) * (loss_factor) * (1 - burn_factor)
         // prettier-ignore
         return loans[id].prediction[incorrectChoice].mul(
@@ -370,7 +401,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * Reward is divided proportionally based on # TRU staked
      * chi = (TRU remaining in distributor) / (Total TRU allocated for distribution)
      * interest = (loan APY * term * principal)
-     * R = Total Reward = (interest * chi)
+     * R = Total Reward = (interest * chi * rewardFactor)
      * @param id Loan ID
      */
     modifier calculateTotalReward(address id) {
@@ -379,8 +410,12 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
             // calculate reward
             // prettier-ignore
-            uint256 reward = toTrustToken(interest.mul(
-                distributor.remaining()).div(distributor.amount()));
+            uint256 reward = toTrustToken(
+                interest
+                    .mul(distributor.remaining())
+                    .mul(rewardMultiplier)
+                    .div(distributor.amount())
+            );
 
             loans[id].reward = reward;
             if (loans[id].reward > 0) {
@@ -408,6 +443,26 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param voter Voter account
      */
     function claim(address id, address voter) public override onlyFundedLoans(id) calculateTotalReward(id) {
+        uint256 claimableRewards = claimable(id, voter);
+
+        if (claimableRewards > 0) {
+            // track amount of claimed tokens
+            loans[id].claimed[voter] = loans[id].claimed[voter].add(claimableRewards);
+            // transfer tokens
+            require(trustToken.transfer(voter, claimableRewards));
+            emit Claimed(id, voter, claimableRewards);
+        }
+    }
+
+    function claimed(address id, address voter) external view returns (uint256) {
+        return loans[id].claimed[voter];
+    }
+
+    function claimable(address id, address voter) public view returns (uint256) {
+        if (status(id) < LoanStatus.Running) {
+            return 0;
+        }
+
         uint256 totalTime = ILoanToken(id).term();
         uint256 passedTime = block.timestamp.sub(ILoanToken(id).start());
 
@@ -422,15 +477,12 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
         // calculate claimable rewards at current time
         uint256 helper = loans[id].reward.mul(passedTime).mul(stakedByVoter);
-        uint256 claimable = helper.div(totalTime).div(totalStaked).sub(loans[id].claimed[voter]);
-
-        // track amount of claimed tokens
-        loans[id].claimed[voter] = loans[id].claimed[voter].add(claimable);
-
-        // transfer tokens
-        if (claimable > 0) {
-            require(trustToken.transfer(voter, claimable));
+        uint256 totalClaimable = helper.div(totalTime).div(totalStaked);
+        if (totalClaimable < loans[id].claimed[voter]) {
+            // This happens only in one case: voter withdrew part of stake after loan has ended and claimed all possible rewards
+            return 0;
         }
+        return totalClaimable.sub(loans[id].claimed[voter]);
     }
 
     /**

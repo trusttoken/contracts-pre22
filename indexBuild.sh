@@ -7,8 +7,8 @@ regex=': \"(.+)\"'
 [[ $ODline =~ $regex ]]
 outputDir=${BASH_REMATCH[1]}
 
-touch $outputDir/index.js
-> $outputDir/index.js
+touch $outputDir/index.ts
+> $outputDir/index.ts
 
 for file in $outputDir/*.json
 do
@@ -16,10 +16,10 @@ do
     regex='\/([a-zA-Z0-9_]+)\.'
     [[ $file =~ $regex ]]
     name=${BASH_REMATCH[1]}
-	  echo "const $name = require(\"./$name.json\")" >> $outputDir/index.js
+	  echo "const ${name}Json = require(\"./$name.json\")" >> $outputDir/index.ts
 done
 
-echo "module.exports = {" >> $outputDir/index.js
+echo "export {" >> $outputDir/index.ts
 
 for file in $outputDir/*.json
 do
@@ -27,7 +27,9 @@ do
     regex='\/([a-zA-Z0-9_]+)\.'
     [[ $file =~ $regex ]]
     name=${BASH_REMATCH[1]}
-	  echo "  $name," >> $outputDir/index.js
+	  echo "  ${name}Json," >> $outputDir/index.ts
 done
 
-echo "}" >> $outputDir/index.js
+echo "}" >> $outputDir/index.ts
+
+echo "export * from './types'" >> $outputDir/index.ts

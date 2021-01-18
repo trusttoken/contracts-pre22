@@ -5,9 +5,12 @@
 
 import fs from 'fs'
 import { providers, Wallet } from 'ethers'
-import { TokenController } from '../build/types/TokenController'
-import { TokenControllerFactory } from '../build/types/TokenControllerFactory'
-import { TrueCurrencyFactory } from '../build/types/TrueCurrencyFactory'
+
+import { TrueCurrencyFactory } from 'contracts/types/TrueCurrencyFactory'
+import {
+  TokenController,
+  TokenControllerFactory,
+} from 'contracts'
 
 export const txnArgs = { gasLimit: 60_000, gasPrice: 90_000_000_000 }
 

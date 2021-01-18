@@ -49,6 +49,8 @@ interface ILoanToken is IERC20 {
 
     function repay(address _sender, uint256 _amount) external;
 
+    function reclaim() external;
+
     function allowTransfer(address account, bool _status) external;
 
     function repaid() external view returns (uint256);
@@ -56,4 +58,8 @@ interface ILoanToken is IERC20 {
     function balance() external view returns (uint256);
 
     function value(uint256 _balance) external view returns (uint256);
+
+    function currencyToken() external view returns (IERC20);
+
+    function version() external pure returns (uint8);
 }

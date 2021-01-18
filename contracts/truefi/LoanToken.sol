@@ -19,16 +19,19 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
  *
  * Loan progresses through the following states:
  * Awaiting:    Waiting for funding to meet capital requirements
- * Funded:      Capital requireme`nts met, borrower can withdraw
+ * Funded:      Capital requirements met, borrower can withdraw
  * Withdrawn:   Borrower withdraws money, loan waiting to be repaid
  * Settled:     Loan has been paid back in full with interest
  * Defaulted:   Loan has not been paid back in full
  *
- * - LoanTokens are non-transferrable except for whitelisted addresses
+ * - LoanTokens are non-transferable except for whitelisted addresses
  * - This version of LoanToken only supports a single funder
  */
 contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
+
+    uint128 public constant lastMinutePaybackDuration = 1 days;
+    uint8 public constant override version = 2;
 
     address public override borrower;
     uint256 public override amount;
@@ -41,7 +44,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     uint256 public redeemed;
 
-    // borrow fee -> 100 = 1%
+    // borrow fee -> 25 = 0.25%
     uint256 public override borrowerFee = 25;
 
     // whitelist for transfers
@@ -49,7 +52,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     Status public override status;
 
-    IERC20 public currencyToken;
+    IERC20 public override currencyToken;
 
     /**
      * @dev Emitted when the loan is funded
@@ -86,6 +89,20 @@ contract LoanToken is ILoanToken, ERC20 {
     event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound);
 
     /**
+     * @dev Emitted when a LoanToken is repaid by the borrower in underlying currencyTokens
+     * @param repayer Sender of currencyTokens
+     * @param repaidAmound Amount of currencyToken repaid
+     */
+    event Repaid(address repayer, uint256 repaidAmound);
+
+    /**
+     * @dev Emitted when borrower reclaims remaining currencyTokens
+     * @param borrower Reveiver of remaining currencyTokens
+     * @param reclaimedAmount Amount of currencyTokens repaid
+     */
+    event Reclaimed(address borrower, uint256 reclaimedAmount);
+
+    /**
      * @dev Create a Loan
      * @param _currencyToken Token to lend
      * @param _borrower Borrwer addresss
@@ -96,20 +113,24 @@ contract LoanToken is ILoanToken, ERC20 {
     constructor(
         IERC20 _currencyToken,
         address _borrower,
+        address _lender,
         uint256 _amount,
         uint256 _term,
         uint256 _apy
     ) public ERC20("Loan Token", "LOAN") {
+        require(_lender != address(0), "LoanToken: Lender is not set");
+
         currencyToken = _currencyToken;
         borrower = _borrower;
         amount = _amount;
         term = _term;
         apy = _apy;
+        lender = _lender;
         debt = interest(amount);
     }
 
     /**
-     * @dev Only borrwer can withdraw & repay loan
+     * @dev Only borrower can withdraw & repay loan
      */
     modifier onlyBorrower() {
         require(msg.sender == borrower, "LoanToken: Caller is not the borrower");
@@ -216,21 +237,19 @@ contract LoanToken is ILoanToken, ERC20 {
             passed = term;
         }
 
-        uint256 helper = amount.mul(apy).mul(passed).mul(_balance);
-        // assume month is 30 days
-        uint256 interest = helper.div(360 days).div(10000).div(totalSupply());
+        // assume year is 365 days
+        uint256 interest = amount.mul(apy).mul(passed).div(365 days).div(10000);
 
-        return amount.add(interest);
+        return amount.add(interest).mul(_balance).div(debt);
     }
 
     /**
      * @dev Fund a loan
      * Set status, start time, lender
      */
-    function fund() external override onlyAwaiting {
+    function fund() external override onlyAwaiting onlyLender {
         status = Status.Funded;
         start = block.timestamp;
-        lender = msg.sender;
         _mint(msg.sender, debt);
         require(currencyToken.transferFrom(msg.sender, address(this), receivedAmount()));
 
@@ -267,6 +286,10 @@ contract LoanToken is ILoanToken, ERC20 {
         if (_balance() >= debt) {
             status = Status.Settled;
         } else {
+            require(
+                start.add(term).add(lastMinutePaybackDuration) <= block.timestamp,
+                "LoanToken: Borrower can still pay the loan back"
+            );
             status = Status.Defaulted;
         }
 
@@ -294,12 +317,29 @@ contract LoanToken is ILoanToken, ERC20 {
      * @param _amount amount of currencyToken to repay
      */
     function repay(address _sender, uint256 _amount) external override onlyAfterWithdraw {
+        require(_amount <= debt.sub(_balance()), "LoanToken: Cannot repay over the debt");
         require(currencyToken.transferFrom(_sender, address(this), _amount));
+        emit Repaid(_sender, _amount);
     }
 
     /**
-     * @dev Check if loan has been repaid
-     * @return Boolean representing whether the loan has been repaid or not
+     * @dev Function for borrower to reclaim stuck currencyToken
+     * Can only call this function after the loan is Closed
+     * and all of LoanToken holders have been burnt
+     */
+    function reclaim() external override onlyClosed onlyBorrower {
+        require(totalSupply() == 0, "LoanToken: Cannot reclaim when LoanTokens are in circulation");
+        uint256 balanceRemaining = _balance();
+        require(balanceRemaining > 0, "LoanToken: Cannot reclaim when balance 0");
+
+        require(currencyToken.transfer(borrower, balanceRemaining));
+        emit Reclaimed(borrower, balanceRemaining);
+    }
+
+    /**
+     * @dev Check how much was already repaid
+     * Funds stored on the contract's addres plus funds already redeemed by lenders
+     * @return Uint256 representing what value was already repaid
      */
     function repaid() external override view onlyAfterWithdraw returns (uint256) {
         return _balance().add(redeemed);
@@ -330,13 +370,13 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
-     * @dev Calculate interest that will be paid by this loan for an amount
-     * (amount * apy * term) / (360 days / precision)
+     * @dev Calculate interest that will be paid by this loan for an amount (returned funds included)
+     * amount + ((amount * apy * term) / (365 days / precision))
      * @param _amount amount
      * @return uint256 Amount of interest paid for _amount
      */
     function interest(uint256 _amount) internal view returns (uint256) {
-        return _amount.add(_amount.mul(apy).mul(term).div(360 days).div(10000));
+        return _amount.add(_amount.mul(apy).mul(term).div(365 days).div(10000));
     }
 
     /**
