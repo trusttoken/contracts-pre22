@@ -308,13 +308,12 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Close the loan and check if it has been repaid
      */
     function close() external override onlyOngoing {
-        require(start.add(term) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
         if (_balance() >= debt) {
             status = Status.Settled;
         } else {
             require(
                 start.add(term).add(lastMinutePaybackDuration) <= block.timestamp,
-                "LoanToken: Borrower can still pay the loan back"
+                "LoanToken: Loan cannot be closed yet"
             );
             status = Status.Defaulted;
         }
