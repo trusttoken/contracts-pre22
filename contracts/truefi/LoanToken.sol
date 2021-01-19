@@ -311,10 +311,7 @@ contract LoanToken is ILoanToken, ERC20 {
         if (_balance() >= debt) {
             status = Status.Settled;
         } else {
-            require(
-                start.add(term).add(lastMinutePaybackDuration) <= block.timestamp,
-                "LoanToken: Loan cannot be closed yet"
-            );
+            require(start.add(term).add(lastMinutePaybackDuration) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
             status = Status.Defaulted;
         }
 
