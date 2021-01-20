@@ -48,11 +48,19 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     mapping(address => uint256) latestJoinBlock;
 
+    IERC20 public _stakeToken;
+
     // ======= STORAGE DECLARATION END ============
 
     // curve.fi data
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
+
+    /**
+     * @dev Emitted when stake token address
+     * @param token New stake token address
+     */
+    event StakeTokenChanged(IERC20 token);
 
     /**
      * @dev Emitted when fee is changed
@@ -154,6 +162,23 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      */
     function currencyToken() public override view returns (IERC20) {
         return _currencyToken;
+    }
+
+    /**
+     * @dev get stake token address
+     * @return stake token address
+     */
+    function stakeToken() public override view returns (IERC20) {
+        return _stakeToken;
+    }
+
+    /**
+     * @dev set stake token address
+     * @param token stake token address
+     */
+    function setStakeToken(IERC20 token) public onlyOwner {
+        _stakeToken = token;
+        emit StakeTokenChanged(token);
     }
 
     /**

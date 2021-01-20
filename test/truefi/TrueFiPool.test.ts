@@ -20,6 +20,7 @@ import {
   TrueLenderFactory,
   PoolArbitrageTestFactory,
   TrueRatingAgencyJson,
+  TrustToken,
 } from 'contracts'
 
 describe('TrueFiPool', () => {
@@ -27,6 +28,7 @@ describe('TrueFiPool', () => {
   let owner: Wallet
   let borrower: Wallet
   let token: MockErc20Token
+  let trustToken: MockErc20Token
   let curveToken: MockErc20Token
   let curvePool: MockCurvePool
   let pool: TrueFiPool
@@ -40,6 +42,7 @@ describe('TrueFiPool', () => {
     [owner, borrower] = wallets
     token = await new MockErc20TokenFactory(owner).deploy()
     await token.mint(owner.address, parseEth(1e7))
+    trustToken = await new MockErc20TokenFactory(owner).deploy()
     curvePool = await new MockCurvePoolFactory(owner).deploy()
     await curvePool.initialize(token.address)
     curveToken = MockErc20TokenFactory.connect(await curvePool.token(), owner)
@@ -53,6 +56,7 @@ describe('TrueFiPool', () => {
     lender = await new TrueLenderFactory(owner).deploy()
     await pool.initialize(curvePool.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
     await pool.resetApprovals()
+    await pool.setStakeToken(trustToken.address)
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
   })
@@ -81,6 +85,24 @@ describe('TrueFiPool', () => {
   })
 
   const excludeFee = (amount: BigNumber) => amount.sub(amount.mul(25).div(10000))
+
+  describe('TRU integration', () => {
+    it('allows only owner to call setStakeToken', async () => {
+      await expect(pool.connect(borrower).setStakeToken(trustToken.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('emits event on being set', async () => {
+      await expect(pool.setStakeToken(trustToken.address))
+        .to.emit(pool, 'StakeTokenChanged')
+        .withArgs(trustToken.address)
+    })
+
+    it('TrustToken address was set correctly', async () => {
+      expect(await pool._stakeToken()).to.eq(trustToken.address)
+    })
+  })
+
 
   describe('poolValue', () => {
     it('equals balance of tusd when no other tokens on balance', async () => {
