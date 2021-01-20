@@ -231,6 +231,11 @@ describe('LoanToken', () => {
       await expect(loanToken.close()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
     })
 
+    it('reverts when closing right after funding', async () => {
+      await loanToken.fund()
+      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
+    })
+
     it('reverts when closing ongoing loan', async () => {
       await loanToken.fund()
       await expect(loanToken.close()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
