@@ -12,9 +12,10 @@
 // OLD: pragma solidity ^0.5.16;
 pragma solidity 0.6.10;
 
-import {TimeLockedToken} from "../trusttoken/TimeLockedToken.sol";
+import {ClaimableContract} from "../trusttoken/common/ClaimableContract.sol";
+import {ERC20} from "../trusttoken/common/ERC20.sol";
 
-abstract contract VoteToken is TimeLockedToken {
+abstract contract VoteToken is ERC20, ClaimableContract {
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
     bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
     
@@ -79,7 +80,7 @@ abstract contract VoteToken is TimeLockedToken {
     function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = delegates[delegator];
         // OLD: uint96 delegatorBalance = balanceOf(delegator);
-        uint96 delegatorBalance = uint96(unlockedBalance(delegator));
+        uint96 delegatorBalance = uint96(_balanceOf(delegator));
         delegates[delegator] = delegatee;
 
         emit DelegateChanged(delegator, currentDelegate, delegatee);
@@ -87,7 +88,11 @@ abstract contract VoteToken is TimeLockedToken {
         _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
-    function _transfer( address _from, address _to, uint256 _value) internal override {
+    function _balanceOf(address account) internal virtual returns(uint256) {
+        return balanceOf[account];
+    }
+
+    function _transfer( address _from, address _to, uint256 _value) internal override virtual {
         super._transfer(_from, _to, _value);
         _moveDelegates(delegates[_from], delegates[_to], uint96(_value));
     }

@@ -112,6 +112,8 @@ describe('VoteToken', () => {
     })
     describe('when trying to get prior votes', async () => {
       it('return 1000 votes at block 6', async () => {
+        const vote = await trustToken.getPriorVotes(initialHolder.address, curBlockNumber)
+        console.log("block 6: " + vote)
         expect(await trustToken.getPriorVotes(initialHolder.address, curBlockNumber)).to.eq(parseTRU(1000))
       })
       it('return 0 votes at block 5', async () => {

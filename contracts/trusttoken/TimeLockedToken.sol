@@ -3,8 +3,8 @@ pragma solidity 0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {ClaimableContract} from "./common/ClaimableContract.sol";
-import {ERC20} from "./common/ERC20.sol";
+
+import {VoteToken} from "../governance/VoteToken.sol";
 
 /**
  * @title TimeLockedToken
@@ -24,7 +24,7 @@ import {ERC20} from "./common/ERC20.sol";
  * are allowed to be transferred, and after all epochs have passed, the full
  * account balance is unlocked
  */
-abstract contract TimeLockedToken is ERC20, ClaimableContract {
+abstract contract TimeLockedToken is VoteToken {
     using SafeMath for uint256;
 
     // represents total distribution for locked balances
@@ -157,6 +157,10 @@ abstract contract TimeLockedToken is ERC20, ClaimableContract {
     function unlockedBalance(address account) public view returns (uint256) {
         // totalBalance - lockedBalance
         return balanceOf[account].sub(lockedBalance(account));
+    }
+
+    function _balanceOf(address account) internal override returns(uint256) {
+        return unlockedBalance(account);
     }
 
     /*
