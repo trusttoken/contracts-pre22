@@ -1,40 +1,58 @@
-# Setup
-Our development environment uses Truffle and Solidity. We require vyper as a dependency for uniswap.
+# 💰 TrueFi Smart Contracts
 
-## Develop
-```bash
-git submodule update --init --recursive
-yarn install
+## 🗂 Table of Contents
+- [💡 Intro](#-💡-Intro)
+- [🚉 Addresses](#-🚉-Addresses)
+- [📎 Projects](#-📎-Projects)
+- [🧰 Installation](#-🧰-Installation)
+- [✅ Testing](#-✅-Testing)
+- [☎️ Contact](#-☎️-Contact)
 
-## The following lines are required to run vyper compiler natively.
-## They can be skipped, in which case vyper will be compiled using docker (running docker daemon will be required) 
-brew install python3
-brew install gmp leveldb
-pip3 install virtualenv
-python3 -m venv ~/vyper-env
-source ~/vyper-env/bin/activate
-pip install vyper
-## Vyper setup end
+# 💡 Intro
+This repository contains all smart contracts used across TrueFi ecosystem. Contracts are written in Solidity. All key functionalities are tested with attached TypeScript test suite. Apart from contracts and tests repository contains scripts used for deployment and maintenance of existing infrastructure.
 
-./test.sh
-```
+# 🚉 Addresses
+## Mainnet
+| Contract | Proxy Address | Implementation Address |
+|:-------:|:-------:|:-----:|
+| TrueUSD | `0x0000000000085d4780B73119b644AE5ecd22b376` | `0x7a9701453249e84fd0d5afe5951e9cbe9ed2e90f` |
+| TrueGBP | `0x00000000441378008EA67F4284A57932B1c000a5` | `0xAA912F203DcC1f5b6F862c0e0dA3254Cfc08A1d9` |
+| TrueAUD | `0x00006100f7090010005f1bd7ae6122c3c2cf0090` | `0xc40750744f075fdC4a0A4c75b7af9380bC59Befb` |
+| TrueCAD | `0x00000100F2A2bd000715001920eB70D229700085` | `0x0fe124A7666F63ba8E0A460c64E3bf739bC259d8` |
+| TrueHKD | `0x0000852600CEB001E08e00bC008be620d60031F2` | `0x9c1A48a8A9bd4345DCc16d65F96f20417a7DAacE` |
+| Registry | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| TrustToken | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| TrueFI Pool | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| TrueLender | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| TrueRatingAgency | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| LoanFactory | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| Farms... | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| ... | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| ... | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| Distributors... | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| ... | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| ... | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| Uniswap | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| ... | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
+| ... | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` | `0xTHAT_IS_JUST_A_MOCK_ADDRESS_FILL_THE_GAP` |
 
-## Build
-For more efficient compilation and deployment, we use waffle (https://getwaffle.io/).
-```
-npm run-script build
-ts-node scripts/deploy_testnet.ts
-```
 
-## Generate Documentation
-```
-yarn add -D solc-0.6@npm:solc@0.6.10
-yarn docs
-```
-# Deployments
-For all of our deployments, the address is the same between mainnet and testnet.
-Our source code is verified on Etherscan.
+# 📎 Projects
+Smart contract sub-projects are briefly described here.
 
+# 🧰 Installation
+Cloning repo, installing dependencies, compiling.
+
+# ✅ Testing
+Running scripts, running tests, linting, etc.
+
+# ☎️ Contact
+Websites, twitter handles, etc. Maybe exchanges where key assets are listed.
+
+
+
+
+### 🚫 Deprecated docs 🚫
 ## Tokens
 | Contract | Token Address | Controller Address | Mainnet | Rinkeby | Kovan |
 | ---------|:-------------:|:------------------:|:-------:|:-------:|:-----:|
@@ -188,6 +206,8 @@ yarn flatten # runs ./flatten-all
 | Etherscan: TCAD | https://etherscan.io/token/0x00000100F2A2bd000715001920eB70D229700085 |
 | Etherscan: THKD | https://etherscan.io/token/0x0000852600CEB001E08e00bC008be620d60031F2 |
 | CoinMarketCap: TUSD  | https://coinmarketcap.com/currencies/trueusd/  |
+
+# ☎️ Contact
 
 ## Social
 
