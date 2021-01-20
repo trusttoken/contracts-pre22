@@ -12,6 +12,7 @@ import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 import {ABDKMath64x64} from "./Log.sol";
+import {IUniswapPair} from "./interface/IUniswapPair.sol";
 
 /**
  * @title TrueFi Pool
@@ -49,6 +50,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     mapping(address => uint256) latestJoinBlock;
 
     IERC20 public _stakeToken;
+    IUniswapPair public _uniswapPair;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -57,10 +59,16 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     uint8 constant TUSD_INDEX = 3;
 
     /**
-     * @dev Emitted when stake token address
+     * @dev Emitted when stake token address changed
      * @param token New stake token address
      */
     event StakeTokenChanged(IERC20 token);
+
+    /**
+     * @dev Emitted when uniswap pair address changed
+     * @param pair New uniswap pair address
+     */
+    event UniswapPairChanged(IUniswapPair pair);
 
     /**
      * @dev Emitted when fee is changed
@@ -179,6 +187,23 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     function setStakeToken(IERC20 token) public onlyOwner {
         _stakeToken = token;
         emit StakeTokenChanged(token);
+    }
+
+    /**
+     * @dev get uniswap pair address
+     * @return uniswap pair address
+     */
+    function uniswapPair() public view returns (IUniswapPair) {
+        return _uniswapPair;
+    }
+
+    /**
+     * @dev set uniswap pair address
+     * @param pair uniswap pair address
+     */
+    function setUniswapPair(IUniswapPair pair) public onlyOwner {
+        _uniswapPair = pair;
+        emit UniswapPairChanged(pair);
     }
 
     /**

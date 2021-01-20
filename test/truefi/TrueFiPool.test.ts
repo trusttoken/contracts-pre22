@@ -20,8 +20,9 @@ import {
   TrueLenderFactory,
   PoolArbitrageTestFactory,
   TrueRatingAgencyJson,
-  TrustToken,
 } from 'contracts'
+import { MockUniswapPair } from 'contracts/types/MockUniswapPair'
+import { MockUniswapPairFactory } from 'contracts/types/MockUniswapPairFactory'
 
 describe('TrueFiPool', () => {
   let provider: MockProvider
@@ -35,6 +36,7 @@ describe('TrueFiPool', () => {
   let lender: TrueLender
   let mockRatingAgency: MockContract
   let mockCurveGauge: MockContract
+  let mockUniswapPair: MockUniswapPair
 
   const dayInSeconds = 60 * 60 * 24
 
@@ -53,10 +55,12 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.withdraw.returns()
     await mockCurveGauge.mock.balanceOf.returns(0)
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
+    mockUniswapPair = await new MockUniswapPairFactory(owner).deploy()
     lender = await new TrueLenderFactory(owner).deploy()
     await pool.initialize(curvePool.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
     await pool.resetApprovals()
     await pool.setStakeToken(trustToken.address)
+    await pool.setUniswapPair(mockUniswapPair.address)
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
   })
@@ -99,7 +103,7 @@ describe('TrueFiPool', () => {
     })
 
     it('TrustToken address was set correctly', async () => {
-      expect(await pool._stakeToken()).to.equal(trustToken.address)
+      expect(await pool.stakeToken()).to.equal(trustToken.address)
     })
 
     it('shows pool\'s balance of stake tokens correctly', async () => {
@@ -107,6 +111,23 @@ describe('TrueFiPool', () => {
 
       await trustToken.mint(pool.address, parseEth(1))
       expect(await pool.stakeTokenBalance()).to.equal(parseEth(1))
+    })
+  })
+
+  describe('UniswapPair', () => {
+    it('allows only owner to call setUniswapPair', async () => {
+      await expect(pool.connect(borrower).setUniswapPair(mockUniswapPair.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('emits event on being set', async () => {
+      await expect(pool.setUniswapPair(mockUniswapPair.address))
+        .to.emit(pool, 'UniswapPairChanged')
+        .withArgs(mockUniswapPair.address)
+    })
+
+    it('UniswapPair address was set correctly', async () => {
+      expect(await pool.uniswapPair()).to.equal(mockUniswapPair.address)
     })
   })
 
