@@ -182,6 +182,13 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
+     * @dev Get total balance of stake tokens
+     */
+    function stakeTokenBalance() public view returns (uint256) {
+        return _stakeToken.balanceOf(address(this));
+    }
+
+    /**
      * @dev Get total balance of curve.fi pool tokens
      */
     function yTokenBalance() public view returns (uint256) {

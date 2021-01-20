@@ -99,10 +99,16 @@ describe('TrueFiPool', () => {
     })
 
     it('TrustToken address was set correctly', async () => {
-      expect(await pool._stakeToken()).to.eq(trustToken.address)
+      expect(await pool._stakeToken()).to.equal(trustToken.address)
+    })
+
+    it('shows pool\'s balance of stake tokens correctly', async () => {
+      expect(await pool.stakeTokenBalance()).to.equal(0)
+
+      await trustToken.mint(pool.address, parseEth(1))
+      expect(await pool.stakeTokenBalance()).to.equal(parseEth(1))
     })
   })
-
 
   describe('poolValue', () => {
     it('equals balance of tusd when no other tokens on balance', async () => {
