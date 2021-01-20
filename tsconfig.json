@@ -17,5 +17,8 @@
       "fixtures/*": ["test/fixtures/*"],
       "fixtures": ["test/fixtures"]
     }
-  }
+  },
+  "exclude": [
+    "deploy"
+  ]
 }
