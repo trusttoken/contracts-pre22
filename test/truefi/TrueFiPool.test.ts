@@ -129,6 +129,15 @@ describe('TrueFiPool', () => {
     it('UniswapPair address was set correctly', async () => {
       expect(await pool.uniswapPair()).to.equal(mockUniswapPair.address)
     })
+
+    it('get correct price from pair', async () => {
+      expect(await mockUniswapPair.price0CumulativeLast()).to.equal(parseEth(1))
+    })
+
+    it('sets pair price correctly', async () => {
+      await mockUniswapPair.setPrice(parseEth(2))
+      expect(await mockUniswapPair.price0CumulativeLast()).to.equal(parseEth(2))
+    })
   })
 
   describe('poolValue', () => {
