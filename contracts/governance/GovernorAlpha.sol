@@ -13,7 +13,7 @@
 pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
-import {ClaimableContract} from "./common/ClaimableContract.sol";
+import "./common/ClaimableContract.sol";
 
 contract GovernorAlpha is ClaimableContract {
     // @notice The name of this contract
@@ -22,11 +22,11 @@ contract GovernorAlpha is ClaimableContract {
 
     // @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
     // OLD: function quorumVotes() public pure returns (uint) { return 400000e18; } // 400,000 = 4% of Comp
-    function quorumVotes() public pure returns (uint) { return 10000000e8; } // 10,000,000 Tru
+    function quorumVotes() public pure returns (uint) { return 58000000e8; } // 58,000,000 = 4% of Tru
 
     // @notice The number of votes required in order for a voter to become a proposer
     // OLD: function proposalThreshold() public pure returns (uint) { return 100000e18; } // 100,000 = 1% of Comp
-    function proposalThreshold() public pure returns (uint) { return 100000e8; } // 100,000 TRU
+    function proposalThreshold() public pure returns (uint) { return 14500000e8; } // 14,500,000 = 1% of TRU
 
     // @notice The maximum number of actions that can be included in a proposal
     function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions
@@ -44,9 +44,6 @@ contract GovernorAlpha is ClaimableContract {
     // @notice The address of the TrustToken governance token
     // OLD: CompInterface public comp;
     TrustTokenInterface public trustToken;
-
-    // @notice The address of the stkTRU voting token
-    TrustTokenInterface public stkTRU;
 
     // @notice The address of the Governor Guardian
     address public guardian;
@@ -152,12 +149,11 @@ contract GovernorAlpha is ClaimableContract {
     /**
      * @dev Initialize sets the addresses of timelock contract, trusttoken contract, and guardian
      */
-    function initialize(address timelock_, address trustToken_, address guardian_, address stkTRU_, uint256 votingPeriod_) external {
+    function initialize(address timelock_, address trustToken_, address guardian_, uint _votingPeriod) external {
         timelock = TimelockInterface(timelock_);
         trustToken = TrustTokenInterface(trustToken_);
-        stkTRU = TrustTokenInterface(stkTRU_);
         guardian = guardian_;
-        votingPeriod = votingPeriod_;
+        votingPeriod = _votingPeriod;
         
         owner_ = msg.sender;
         initalized = true;
@@ -173,7 +169,7 @@ contract GovernorAlpha is ClaimableContract {
      * @return The ID of the newly created proposal
      */
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
-        require(countVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold(), "GovernorAlpha::propose: proposer votes below proposal threshold");
+        require(trustToken.getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold(), "GovernorAlpha::propose: proposer votes below proposal threshold");
         require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "GovernorAlpha::propose: proposal function information arity mismatch");
         require(targets.length != 0, "GovernorAlpha::propose: must provide actions");
         require(targets.length <= proposalMaxOperations(), "GovernorAlpha::propose: too many actions");
@@ -265,7 +261,7 @@ contract GovernorAlpha is ClaimableContract {
         require(state != ProposalState.Executed, "GovernorAlpha::cancel: cannot cancel executed proposal");
 
         Proposal storage proposal = proposals[proposalId];
-        require(msg.sender == guardian || countVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "GovernorAlpha::cancel: proposer above threshold");
+        require(msg.sender == guardian || trustToken.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "GovernorAlpha::cancel: proposer above threshold");
 
         proposal.canceled = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
@@ -348,6 +344,20 @@ contract GovernorAlpha is ClaimableContract {
     }
 
     /**
+     * @dev Count the total PriorVotes from TRU and stkTRU
+     * @param account The address to check the total votes
+     * @param blockNumber The block number at which the getPriorVotes() check
+     * @return The sum of PriorVotes from TRU and stkTRU
+     */
+    function countVotes(address account, uint blockNumber) internal view returns (uint96) {
+        uint96 truVote = trustToken.getPriorVotes(account, blockNumber);
+        uint96 stkTRUVote = stkTRU.getPriorVotes(account, blockNumber);
+        uint96 totalVote = add96(truVote,stkTRUVote,"countVotes addition overflow");
+        return totalVote;
+    }
+
+
+    /**
      * @dev Cast a vote on a proposal internal function
      * @param voter The address of the voter
      * @param proposalId ID of a proposal in which to cast a vote
@@ -358,7 +368,7 @@ contract GovernorAlpha is ClaimableContract {
         Proposal storage proposal = proposals[proposalId];
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "GovernorAlpha::_castVote: voter already voted");
-        uint96 votes = countVotes(voter, proposal.startBlock);
+        uint96 votes = trustToken.getPriorVotes(voter, proposal.startBlock);
 
         if (support) {
             proposal.forVotes = add256(proposal.forVotes, votes);
@@ -434,25 +444,6 @@ contract GovernorAlpha is ClaimableContract {
         uint chainId;
         assembly { chainId := chainid() }
         return chainId;
-    }
-
-    /**
-     * @dev Count the total PriorVotes from TRU and stkTRU
-     * @param account The address to check the total votes
-     * @param blockNumber The block number at which the getPriorVotes() check
-     * @return The sum of PriorVotes from TRU and stkTRU
-     */
-    function countVotes(address account, uint blockNumber) internal view returns (uint96) {
-        uint96 truVote = trustToken.getPriorVotes(account, blockNumber);
-        uint96 stkTRUVote = stkTRU.getPriorVotes(account, blockNumber);
-        uint96 totalVote = add96(truVote,stkTRUVote,"countVotes addition overflow");
-        return totalVote;
-    }
-
-    function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
-        uint96 c = a + b;
-        require(c >= a, errorMessage);
-        return c;
     }
 }
 
