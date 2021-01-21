@@ -14,8 +14,8 @@ pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
 import {ClaimableContract} from "./common/ClaimableContract.sol";
-import {TimelockInterface} from "./interface/ITimelock.sol";
-import {TrustTokenInterface} from "./interface/ITrustToken.sol";
+import {ITimelock} from "./interface/ITimelock.sol";
+import {IVoteToken} from "./interface/IVoteToken.sol";
 
 contract GovernorAlpha is ClaimableContract {
     // @notice The name of this contract
@@ -41,14 +41,14 @@ contract GovernorAlpha is ClaimableContract {
     uint public votingPeriod;
 
     // @notice The address of the TrustToken Protocol Timelock
-    TimelockInterface public timelock;
+    ITimelock public timelock;
 
     // @notice The address of the TrustToken governance token
     // OLD: CompInterface public comp;
-    TrustTokenInterface public trustToken;
+    IVoteToken public trustToken;
 
     // @notice The address of the stkTRU voting token
-    TrustTokenInterface public stkTRU;
+    IVoteToken public stkTRU;
 
     // @notice The address of the Governor Guardian
     address public guardian;
@@ -154,12 +154,12 @@ contract GovernorAlpha is ClaimableContract {
     /**
      * @dev Initialize sets the addresses of timelock contract, trusttoken contract, and guardian
      */
-    function initialize(address timelock_, address trustToken_, address guardian_, address stkTRU_, uint256 votingPeriod_) external {
-        timelock = TimelockInterface(timelock_);
-        trustToken = TrustTokenInterface(trustToken_);
-        stkTRU = TrustTokenInterface(stkTRU_);
-        guardian = guardian_;
-        votingPeriod = votingPeriod_;
+    function initialize(address _timelock, address _trustToken, address _guardian, address _stkTRU, uint256 _votingPeriod) external {
+        timelock = ITimelock(_timelock);
+        trustToken = IVoteToken(_trustToken);
+        stkTRU = IVoteToken(_stkTRU);
+        guardian = _guardian;
+        votingPeriod = _votingPeriod;
         
         owner_ = msg.sender;
         initalized = true;

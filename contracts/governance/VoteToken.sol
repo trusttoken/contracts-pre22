@@ -14,19 +14,20 @@ pragma solidity 0.6.10;
 
 import {ClaimableContract} from "../trusttoken/common/ClaimableContract.sol";
 import {ERC20} from "../trusttoken/common/ERC20.sol";
+import {IVoteToken} from "./interface/IVoteToken.sol";
 
-abstract contract VoteToken is ERC20, ClaimableContract {
+abstract contract VoteToken is ERC20, ClaimableContract, IVoteToken {
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
     bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
     
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
     event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
 
-    function delegate(address delegatee) public {
+    function delegate(address delegatee) public override {
         return _delegate(msg.sender, delegatee);
     }
 
-    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) public {
+    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) public override {
         //OLD: bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH,keccak256(bytes(name())),getChainId(),address(this)));
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
@@ -38,12 +39,12 @@ abstract contract VoteToken is ERC20, ClaimableContract {
         return _delegate(signatory, delegatee);
     }
 
-    function getCurrentVotes(address account) external view returns (uint96) {
+    function getCurrentVotes(address account) external view override returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
 
-    function getPriorVotes(address account, uint blockNumber) public view returns (uint96) {
+    function getPriorVotes(address account, uint blockNumber) public view override returns (uint96) {
         require(blockNumber < block.number, "TrustToken::getPriorVotes: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];
