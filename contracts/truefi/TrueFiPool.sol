@@ -210,10 +210,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev Function to approve curve gauge to spend y pool tokens
+     * @dev sets all token allowances used to 0
      */
-    function approveCurve() external onlyOwner {
-        _curvePool.token().approve(address(_curveGauge), uint256(-1));
+    function resetApprovals() external onlyOwner {
+        _currencyToken.approve(address(_curvePool), 0);
+        _curvePool.token().approve(address(_curvePool), 0);
+        _curvePool.token().approve(address(_curveGauge), 0);
     }
 
     /**
@@ -233,7 +235,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _mint(msg.sender, amountToMint);
         claimableFees = claimableFees.add(fee);
 
-        latestJoinBlock[msg.sender] = block.number;
+        latestJoinBlock[tx.origin] = block.number;
         require(_currencyToken.transferFrom(msg.sender, address(this), amount));
 
         emit Joined(msg.sender, amount, amountToMint);
@@ -246,7 +248,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param amount amount of pool tokens to redeem for underlying tokens
      */
     function exit(uint256 amount) external override nonReentrant {
-        require(block.number != latestJoinBlock[msg.sender], "TrueFiPool: Cannot join and exit in same block");
+        require(block.number != latestJoinBlock[tx.origin], "TrueFiPool: Cannot join and exit in same block");
         require(amount <= balanceOf(msg.sender), "TrueFiPool: insufficient funds");
 
         uint256 _totalSupply = totalSupply();
@@ -284,6 +286,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param amount amount of pool tokens to redeem for underlying tokens
      */
     function liquidExit(uint256 amount) external nonReentrant {
+        require(block.number != latestJoinBlock[tx.origin], "TrueFiPool: Cannot join and exit in same block");
         require(amount <= balanceOf(msg.sender), "TrueFiPool: Insufficient funds");
 
         uint256 amountToWithdraw = poolValue().mul(amount).div(totalSupply());
@@ -352,10 +355,13 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
 
         // add TUSD to curve
+        _currencyToken.approve(address(_curvePool), currencyAmount);
         _curvePool.add_liquidity(amounts, minMintAmount);
 
         // stake yCurve tokens in gauge
-        _curveGauge.deposit(_curvePool.token().balanceOf(address(this)));
+        uint256 yBalance = _curvePool.token().balanceOf(address(this));
+        _curvePool.token().approve(address(_curveGauge), yBalance);
+        _curveGauge.deposit(yBalance);
 
         emit Flushed(currencyAmount);
     }
@@ -372,6 +378,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         ensureEnoughTokensAreAvailable(yAmount);
 
         // remove TUSD from curve
+        _curvePool.token().approve(address(_curvePool), yAmount);
         _curvePool.remove_liquidity_one_coin(yAmount, TUSD_INDEX, minCurrencyAmount, false);
 
         emit Pulled(yAmount);
@@ -406,7 +413,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         // pull tokens from gauge
         ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
         // remove TUSD from curve
-        _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, 0, false);
+        _curvePool.token().approve(address(_curvePool), roughCurveTokenAmount);
+        uint256 minAmount = roughCurveTokenAmount.mul(_curvePool.curve().get_virtual_price()).mul(999).div(1000).div(1 ether);
+        _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, minAmount, false);
     }
 
     /**

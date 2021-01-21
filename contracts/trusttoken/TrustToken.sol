@@ -11,7 +11,7 @@ import {TimeLockedToken} from "./TimeLockedToken.sol";
  * in order to prevent rewards from getting stuck in the remainder on division.
  * Tolerates dilution to slash stake and accept rewards.
  */
-contract TrustToken is TimeLockedToken {
+contract TrustToken is VoteToken {
     using SafeMath for uint256;
 
     uint256 constant MAX_SUPPLY = 145000000000000000;
@@ -51,7 +51,7 @@ contract TrustToken is TimeLockedToken {
     }
 
     function name() public override pure returns (string memory) {
-        return "TrustToken";
+        return "TrueFi";
     }
 
     function symbol() public override pure returns (string memory) {

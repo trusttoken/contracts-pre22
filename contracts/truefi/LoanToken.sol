@@ -19,16 +19,19 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
  *
  * Loan progresses through the following states:
  * Awaiting:    Waiting for funding to meet capital requirements
- * Funded:      Capital requireme`nts met, borrower can withdraw
+ * Funded:      Capital requirements met, borrower can withdraw
  * Withdrawn:   Borrower withdraws money, loan waiting to be repaid
  * Settled:     Loan has been paid back in full with interest
  * Defaulted:   Loan has not been paid back in full
  *
- * - LoanTokens are non-transferrable except for whitelisted addresses
+ * - LoanTokens are non-transferable except for whitelisted addresses
  * - This version of LoanToken only supports a single funder
  */
 contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
+
+    uint128 public constant lastMinutePaybackDuration = 1 days;
+    uint8 public constant override version = 2;
 
     address public override borrower;
     uint256 public override amount;
@@ -41,7 +44,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     uint256 public redeemed;
 
-    // borrow fee -> 100 = 1%
+    // borrow fee -> 25 = 0.25%
     uint256 public override borrowerFee = 25;
 
     // whitelist for transfers
@@ -234,10 +237,10 @@ contract LoanToken is ILoanToken, ERC20 {
             passed = term;
         }
 
-        // assume month is 30 days
-        uint256 interest = amount.mul(apy).mul(passed).div(360 days).div(10000);
+        // assume year is 365 days
+        uint256 interest = amount.mul(apy).mul(passed).div(365 days).div(10000);
 
-        return amount.add(interest).mul(_balance).div(totalSupply());
+        return amount.add(interest).mul(_balance).div(debt);
     }
 
     /**
@@ -283,6 +286,10 @@ contract LoanToken is ILoanToken, ERC20 {
         if (_balance() >= debt) {
             status = Status.Settled;
         } else {
+            require(
+                start.add(term).add(lastMinutePaybackDuration) <= block.timestamp,
+                "LoanToken: Borrower can still pay the loan back"
+            );
             status = Status.Defaulted;
         }
 
@@ -364,12 +371,12 @@ contract LoanToken is ILoanToken, ERC20 {
 
     /**
      * @dev Calculate interest that will be paid by this loan for an amount (returned funds included)
-     * amount + ((amount * apy * term) / (360 days / precision))
+     * amount + ((amount * apy * term) / (365 days / precision))
      * @param _amount amount
      * @return uint256 Amount of interest paid for _amount
      */
     function interest(uint256 _amount) internal view returns (uint256) {
-        return _amount.add(_amount.mul(apy).mul(term).div(360 days).div(10000));
+        return _amount.add(_amount.mul(apy).mul(term).div(365 days).div(10000));
     }
 
     /**
