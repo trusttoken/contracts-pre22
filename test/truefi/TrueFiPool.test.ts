@@ -605,6 +605,14 @@ describe('TrueFiPool', () => {
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
 
+    it('half funds are in TRU: transfers TUSD with penalty and leaves TRU untouched', async () => {
+      await trustToken.mint(pool.address, excludeFee(amount)) // both ratios are 1 as default
+      expect(await pool.liquidExitPenalty(amount.div(4))).to.equal(9990)
+      await pool.liquidExit(amount.div(4), { gasLimit: 5000000 })
+      expectScaledCloseTo(await token.balanceOf(owner.address), (amount.div(2).mul(9990).div(10000)), 1000)
+      expect(await trustToken.balanceOf(pool.address)).to.equal(excludeFee(amount))
+    })
+
     it('calls remove_liquidity_one_coin with correct arguments', async () => {
       await curvePool.set_withdraw_price(parseEth(2))
       const amount = excludeFee(parseEth(5e6))
