@@ -16,7 +16,7 @@ import {ClaimableContract} from "../trusttoken/common/ClaimableContract.sol";
 import {ERC20} from "../trusttoken/common/ERC20.sol";
 import {IVoteToken} from "./interface/IVoteToken.sol";
 
-abstract contract VoteToken is ERC20, ClaimableContract, IVoteToken {
+abstract contract VoteToken is ERC20, IVoteToken {
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
     bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
     

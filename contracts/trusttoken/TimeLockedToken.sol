@@ -4,6 +4,7 @@ pragma solidity 0.6.10;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {VoteToken} from "../governance/VoteToken.sol";
+import {ClaimableContract} from "./common/ClaimableContract.sol";
 
 /**
  * @title TimeLockedToken
@@ -23,7 +24,7 @@ import {VoteToken} from "../governance/VoteToken.sol";
  * are allowed to be transferred, and after all epochs have passed, the full
  * account balance is unlocked
  */
-abstract contract TimeLockedToken is VoteToken {
+abstract contract TimeLockedToken is VoteToken, ClaimableContract {
     using SafeMath for uint256;
 
     // represents total distribution for locked balances
