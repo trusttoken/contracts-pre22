@@ -36,7 +36,8 @@ describe('TrueFiPool', () => {
   let lender: TrueLender
   let mockRatingAgency: MockContract
   let mockCurveGauge: MockContract
-  let mockUniswapPair: MockUniswapPair
+  let mockStakeTokenToEthUniswapPair: MockUniswapPair
+  let mockEthToCurrencyTokenUniswapPair: MockUniswapPair
 
   const dayInSeconds = 60 * 60 * 24
 
@@ -55,12 +56,20 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.withdraw.returns()
     await mockCurveGauge.mock.balanceOf.returns(0)
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
-    mockUniswapPair = await new MockUniswapPairFactory(owner).deploy()
+    mockStakeTokenToEthUniswapPair = await new MockUniswapPairFactory(owner).deploy()
+    mockEthToCurrencyTokenUniswapPair = await new MockUniswapPairFactory(owner).deploy()
     lender = await new TrueLenderFactory(owner).deploy()
-    await pool.initialize(curvePool.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
+    await pool.initialize(
+      curvePool.address,
+      mockCurveGauge.address,
+      token.address,
+      lender.address,
+      constants.AddressZero,
+      trustToken.address,
+      mockStakeTokenToEthUniswapPair.address,
+      mockEthToCurrencyTokenUniswapPair.address,
+    )
     await pool.resetApprovals()
-    await pool.setStakeToken(trustToken.address)
-    await pool.setUniswapPair(mockUniswapPair.address)
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
   })
@@ -116,33 +125,38 @@ describe('TrueFiPool', () => {
   })
 
   describe('UniswapPair', () => {
-    it('allows only owner to call setUniswapPair', async () => {
-      await expect(pool.connect(borrower).setUniswapPair(mockUniswapPair.address))
+    it('allows only owner to set uniswap pairs', async () => {
+      await expect(pool.connect(borrower).setUniswapPairs(mockStakeTokenToEthUniswapPair.address, mockEthToCurrencyTokenUniswapPair.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('emits event on being set', async () => {
-      await expect(pool.setUniswapPair(mockUniswapPair.address))
-        .to.emit(pool, 'UniswapPairChanged')
-        .withArgs(mockUniswapPair.address)
+      await expect(pool.setUniswapPairs(mockStakeTokenToEthUniswapPair.address, mockEthToCurrencyTokenUniswapPair.address))
+        .to.emit(pool, 'UniswapPairsChanged')
+        .withArgs(mockStakeTokenToEthUniswapPair.address, mockEthToCurrencyTokenUniswapPair.address)
     })
 
-    it('UniswapPair address was set correctly', async () => {
-      expect(await pool.uniswapPair()).to.equal(mockUniswapPair.address)
+    it('uniswap pairs addresses were set correctly', async () => {
+      expect(await pool._stakeTokenToEthUniswapPair()).to.equal(mockStakeTokenToEthUniswapPair.address)
+      expect(await pool._ethToCurrencyTokenUniswapPair()).to.equal(mockEthToCurrencyTokenUniswapPair.address)
     })
 
-    it('get correct price from pair', async () => {
-      expect(await mockUniswapPair.price0CumulativeLast()).to.equal(parseEth(1))
+    it('get correct prices from pairs', async () => {
+      expect(await mockStakeTokenToEthUniswapPair.price0CumulativeLast()).to.equal(parseEth(1))
+      expect(await mockEthToCurrencyTokenUniswapPair.price0CumulativeLast()).to.equal(parseEth(1))
     })
 
-    it('sets pair price correctly', async () => {
-      await mockUniswapPair.setPrice(parseEth(2))
-      expect(await mockUniswapPair.price0CumulativeLast()).to.equal(parseEth(2))
+    it('sets pairs prices correctly', async () => {
+      await mockStakeTokenToEthUniswapPair.setPrice(parseEth(2))
+      expect(await mockStakeTokenToEthUniswapPair.price0CumulativeLast()).to.equal(parseEth(2))
+      await mockEthToCurrencyTokenUniswapPair.setPrice(parseEth(2))
+      expect(await mockEthToCurrencyTokenUniswapPair.price0CumulativeLast()).to.equal(parseEth(2))
     })
 
     it('calculates stakeTokenValue correctly', async () => {
       await trustToken.mint(pool.address, parseEth(10))
-      await mockUniswapPair.setPrice(parseEth(0.3))
+      await mockStakeTokenToEthUniswapPair.setPrice(parseEth(0.3))
+      await mockEthToCurrencyTokenUniswapPair.setPrice(parseEth(1))
       expect(await pool.stakeTokenValue()).to.equal(parseEth(3))
     })
   })
@@ -170,7 +184,7 @@ describe('TrueFiPool', () => {
       await token.approve(pool.address, parseEth(1))
       await pool.join(parseEth(1))
       await trustToken.mint(pool.address, parseEth(1))
-      await mockUniswapPair.setPrice(parseEth(0.3))
+      await mockStakeTokenToEthUniswapPair.setPrice(parseEth(0.3))
       expect(await pool.poolValue()).to.equal(excludeFee(parseEth(1)).add(parseEth(0.3)))
     })
 
@@ -193,7 +207,7 @@ describe('TrueFiPool', () => {
       await token.approve(pool.address, includeFee(parseEth(1e7)))
       await pool.join(includeFee(parseEth(1e7)))
       await trustToken.mint(pool.address, parseEth(1e7))
-      await mockUniswapPair.setPrice(parseEth(0.3))
+      await mockStakeTokenToEthUniswapPair.setPrice(parseEth(0.3))
       const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
       await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(1e6))
       await lender.connect(borrower).fund(loan1.address)
@@ -235,7 +249,7 @@ describe('TrueFiPool', () => {
 
     it('mints liquidity tokens proportionally to TRU in pool for next users', async () => {
       await trustToken.mint(pool.address, parseEth(1e7))
-      await mockUniswapPair.setPrice(parseEth(0.3))
+      await mockStakeTokenToEthUniswapPair.setPrice(parseEth(0.3))
       const totalSupply = await pool.totalSupply()
       const poolValue = await pool.poolValue()
       await pool.connect(borrower).join(parseEth(1e6))
@@ -250,7 +264,7 @@ describe('TrueFiPool', () => {
       const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEth(1e6), dayInSeconds * 365, 2500)
       await lender.connect(borrower).fund(loan2.address)
       await trustToken.mint(pool.address, parseEth(1e7))
-      await mockUniswapPair.setPrice(parseEth(1))
+      await mockStakeTokenToEthUniswapPair.setPrice(parseEth(1))
 
       await pool.exit(excludeFee(parseEth(5e6)))
       expect(await token.balanceOf(owner.address)).to.equal(excludeFee(parseEth(1e7)).sub(parseEth(2e6)).div(2))
@@ -275,7 +289,7 @@ describe('TrueFiPool', () => {
 
       it('returns a basket of tokens on exit, two stakers', async () => {
         await trustToken.mint(pool.address, parseEth(1e7))
-        await mockUniswapPair.setPrice(parseEth(1))
+        await mockStakeTokenToEthUniswapPair.setPrice(parseEth(1))
 
         await pool.exit(excludeFee(parseEth(5e6)))
         expectScaledCloseTo(await token.balanceOf(owner.address), parseEth(4080259)) // 91% of 1/2(9M - fee)
@@ -368,7 +382,16 @@ describe('TrueFiPool', () => {
 
     beforeEach(async () => {
       pool2 = await new TrueFiPoolFactory(owner).deploy()
-      await pool2.initialize(curvePool.address, mockCurveGauge.address, token.address, borrower.address, constants.AddressZero)
+      await pool2.initialize(
+        curvePool.address,
+        mockCurveGauge.address,
+        token.address,
+        borrower.address,
+        constants.AddressZero,
+        trustToken.address,
+        mockStakeTokenToEthUniswapPair.address,
+        mockEthToCurrencyTokenUniswapPair.address,
+      )
       await token.approve(pool2.address, parseEth(1e7))
       await pool2.join(parseEth(1e7))
       await pool2.flush(excludeFee(parseEth(5e6)), 0)

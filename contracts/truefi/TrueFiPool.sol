@@ -50,7 +50,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     mapping(address => uint256) latestJoinBlock;
 
     IERC20 public _stakeToken;
-    IUniswapPair public _uniswapPair;
+    IUniswapPair public _stakeTokenToEthUniswapPair;
+    IUniswapPair public _ethToCurrencyTokenUniswapPair;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -66,9 +67,10 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Emitted when uniswap pair address changed
-     * @param pair New uniswap pair address
+     * @param stakeTokenToEthPair New stakeToken and Ether uniswap pair address
+     * @param ethToCurrencyTokenPair New Ether and currencyToken uniswap pair address
      */
-    event UniswapPairChanged(IUniswapPair pair);
+    event UniswapPairsChanged(IUniswapPair stakeTokenToEthPair, IUniswapPair ethToCurrencyTokenPair);
 
     /**
      * @dev Emitted when fee is changed
@@ -132,13 +134,19 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param __currencyToken curve pool underlying token
      * @param __lender TrueLender address
      * @param __uniRouter Uniswap router
+     * @param __stakeToken stake token
+     * @param __stakeTokenToEthUniswapPair stakeToken and Ether uniswap pair
+     * @param __ethToCurrencyTokenUniswapPair Ether and currencyToken uniswap router
      */
     function initialize(
         ICurvePool __curvePool,
         ICurveGauge __curveGauge,
         IERC20 __currencyToken,
         ITrueLender __lender,
-        IUniswapRouter __uniRouter
+        IUniswapRouter __uniRouter,
+        IERC20 __stakeToken,
+        IUniswapPair __stakeTokenToEthUniswapPair,
+        IUniswapPair __ethToCurrencyTokenUniswapPair
     ) public initializer {
         ERC20.__ERC20_initialize("TrueFi LP", "TFI-LP");
         Ownable.initialize();
@@ -149,6 +157,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _lender = __lender;
         _minter = _curveGauge.minter();
         _uniRouter = __uniRouter;
+        _stakeToken = __stakeToken;
+        _stakeTokenToEthUniswapPair = __stakeTokenToEthUniswapPair;
+        _ethToCurrencyTokenUniswapPair = __ethToCurrencyTokenUniswapPair;
 
         joiningFee = 25;
 
@@ -190,20 +201,14 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev get uniswap pair address
-     * @return uniswap pair address
-     */
-    function uniswapPair() public view returns (IUniswapPair) {
-        return _uniswapPair;
-    }
-
-    /**
      * @dev set uniswap pair address
-     * @param pair uniswap pair address
+     * @param stakeTokenToEthPair uniswap stakeToken and Ether pair address
+     * @param ethToCurrencyTokenPair uniswap Ether and currencyToken pair address
      */
-    function setUniswapPair(IUniswapPair pair) public onlyOwner {
-        _uniswapPair = pair;
-        emit UniswapPairChanged(pair);
+    function setUniswapPairs(IUniswapPair stakeTokenToEthPair, IUniswapPair ethToCurrencyTokenPair) public onlyOwner {
+        _stakeTokenToEthUniswapPair = stakeTokenToEthPair;
+        _ethToCurrencyTokenUniswapPair = ethToCurrencyTokenPair;
+        emit UniswapPairsChanged(stakeTokenToEthPair, ethToCurrencyTokenPair);
     }
 
     /**
@@ -217,7 +222,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev Virtual value of stake tokens in the pool
      */
     function stakeTokenValue() public view returns (uint256) {
-        return stakeTokenBalance().mul(_uniswapPair.price0CumulativeLast()).div(1 ether);
+        return stakeTokenBalance().mul(_stakeTokenToEthUniswapPair.price0CumulativeLast())
+            .mul(_ethToCurrencyTokenUniswapPair.price0CumulativeLast()).div(1 ether).div(1 ether);
     }
 
     /**
