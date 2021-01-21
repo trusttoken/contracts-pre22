@@ -304,7 +304,7 @@ contract TrueLender is ITrueLender, Ownable {
         }
 
         uint256 helper = loan.amount().mul(loan.apy()).mul(passed).mul(_balance);
-        // assume month is 30 days
+        // assume year is 365 days
         uint256 interest = helper.div(365 days).div(10000).div(loan.debt());
 
         return loan.amount().mul(_balance).div(loan.debt()).add(interest);

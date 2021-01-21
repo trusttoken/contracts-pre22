@@ -89,6 +89,7 @@ describe('TrueFiPool', () => {
   })
 
   const excludeFee = (amount: BigNumber) => amount.sub(amount.mul(25).div(10000))
+  const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
 
   describe('TRU integration', () => {
     it('allows only owner to call setStakeToken', async () => {
@@ -138,6 +139,12 @@ describe('TrueFiPool', () => {
       await mockUniswapPair.setPrice(parseEth(2))
       expect(await mockUniswapPair.price0CumulativeLast()).to.equal(parseEth(2))
     })
+
+    it('calculates stakeTokenValue correctly', async () => {
+      await trustToken.mint(pool.address, parseEth(10))
+      await mockUniswapPair.setPrice(parseEth(0.3))
+      expect(await pool.stakeTokenValue()).to.equal(parseEth(3))
+    })
   })
 
   describe('poolValue', () => {
@@ -159,6 +166,14 @@ describe('TrueFiPool', () => {
       expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(9e6).add(parseEth(105e4))))
     })
 
+    it('price of stake tokens is added to pool value', async () => {
+      await token.approve(pool.address, parseEth(1))
+      await pool.join(parseEth(1))
+      await trustToken.mint(pool.address, parseEth(1))
+      await mockUniswapPair.setPrice(parseEth(0.3))
+      expect(await pool.poolValue()).to.equal(excludeFee(parseEth(1)).add(parseEth(0.3)))
+    })
+
     it('loan tokens + tusd + curve liquidity tokens', async () => {
       await token.approve(pool.address, parseEth(1e7))
       await pool.join(parseEth(1e7))
@@ -171,6 +186,23 @@ describe('TrueFiPool', () => {
       await pool.flush(excludeFee(parseEth(5e6)), 0)
       await curvePool.set_withdraw_price(parseEth(2))
       expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7)))))
+    })
+
+    it('loan tokens + tusd + curve liquidity tokens + stake tokens', async () => {
+      await token.mint(owner.address, parseEth(1e7))
+      await token.approve(pool.address, includeFee(parseEth(1e7)))
+      await pool.join(includeFee(parseEth(1e7)))
+      await trustToken.mint(pool.address, parseEth(1e7))
+      await mockUniswapPair.setPrice(parseEth(0.3))
+      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
+      await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(1e6))
+      await lender.connect(borrower).fund(loan1.address)
+      await timeTravel(provider, dayInSeconds * 182.5)
+      const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
+      await lender.connect(borrower).fund(loan2.address)
+      await pool.flush(parseEth(5e6), 0)
+      await curvePool.set_withdraw_price(parseEth(2))
+      expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7)).add(parseEth(3e6))))
     })
   })
 
