@@ -57,11 +57,11 @@ describe('GovernorAlpha', () => {
     await governorAlpha.connect(owner).initialize(timelock.address, trustToken.address, owner.address, stkTru.address, 1) // votingPeriod = 1 blocks
 
     // mint votesAmount/2 of tru
-    await trustToken.mint(initialHolder.address, parseTRU(votesAmount/2))
+    await trustToken.mint(initialHolder.address, parseTRU(votesAmount / 2))
     // delegate all votes to itself
     await trustToken.connect(initialHolder).delegate(initialHolder.address)
     // mint votesAmount/2 of tru
-    await stkTru.mint(initialHolder.address, parseTRU(votesAmount/2))
+    await stkTru.mint(initialHolder.address, parseTRU(votesAmount / 2))
     // delegate all votes to itself
     await stkTru.connect(initialHolder).delegate(initialHolder.address)
 

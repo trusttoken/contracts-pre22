@@ -3,7 +3,6 @@ pragma solidity 0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-
 import {VoteToken} from "../governance/VoteToken.sol";
 
 /**
@@ -159,7 +158,7 @@ abstract contract TimeLockedToken is VoteToken {
         return balanceOf[account].sub(lockedBalance(account));
     }
 
-    function _balanceOf(address account) internal override returns(uint256) {
+    function _balanceOf(address account) internal override returns (uint256) {
         return unlockedBalance(account);
     }
 
