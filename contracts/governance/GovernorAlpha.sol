@@ -14,6 +14,8 @@ pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
 import {ClaimableContract} from "./common/ClaimableContract.sol";
+import {TimelockInterface} from "./interface/ITimelock.sol";
+import {TrustTokenInterface} from "./interface/ITrustToken.sol";
 
 contract GovernorAlpha is ClaimableContract {
     // @notice The name of this contract
@@ -454,18 +456,4 @@ contract GovernorAlpha is ClaimableContract {
         require(c >= a, errorMessage);
         return c;
     }
-}
-
-interface TimelockInterface {
-    function delay() external view returns (uint);
-    function GRACE_PERIOD() external view returns (uint);
-    function acceptAdmin() external;
-    function queuedTransactions(bytes32 hash) external view returns (bool);
-    function queueTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external returns (bytes32);
-    function cancelTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external;
-    function executeTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external payable returns (bytes memory);
-}
-
-interface TrustTokenInterface {
-    function getPriorVotes(address account, uint blockNumber) external view returns (uint96);
 }
