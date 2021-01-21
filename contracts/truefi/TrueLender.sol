@@ -146,14 +146,6 @@ contract TrueLender is ITrueLender, Ownable {
     event Reclaimed(address indexed loanToken, uint256 amount);
 
     /**
-     * @dev Modifier for only whitelisted borrowers
-     */
-    modifier onlyAllowedBorrowers() {
-        require(allowedBorrowers[msg.sender], "TrueLender: Sender is not allowed to borrow");
-        _;
-    }
-
-    /**
      * @dev Modifier for only lending pool
      */
     modifier onlyPool() {
@@ -180,8 +172,8 @@ contract TrueLender is ITrueLender, Ownable {
         riskAversion = 15000;
         minSize = 1000000 ether;
         maxSize = 10000000 ether;
-        minTerm = 180 days;
-        maxTerm = 3600 days;
+        minTerm = 182 days;
+        maxTerm = 3650 days;
         votingPeriod = 7 days;
 
         maxLoans = 100;
@@ -193,6 +185,7 @@ contract TrueLender is ITrueLender, Ownable {
      * @param max New maximum loan size
      */
     function setSizeLimits(uint256 min, uint256 max) external onlyOwner {
+        require(min > 0, "TrueLender: Minimal loan size cannot be 0");
         require(max >= min, "TrueLender: Maximal loan size is smaller than minimal");
         minSize = min;
         maxSize = max;
@@ -269,20 +262,11 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     /**
-     * @dev Called by owner to change whitelist status for accounts
-     * @param who Account to change whitelist status for
-     * @param status New whitelist status for account
-     */
-    function allow(address who, bool status) external onlyOwner {
-        allowedBorrowers[who] = status;
-        emit Allowed(who, status);
-    }
-
-    /**
      * @dev Fund a loan which meets the strategy requirements
      * @param loanToken LoanToken to fund
      */
-    function fund(ILoanToken loanToken) external onlyAllowedBorrowers {
+    function fund(ILoanToken loanToken) external {
+        require(loanToken.borrower() == msg.sender, "TrueLender: Sender is not borrower");
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be funded");
         require(loanToken.currencyToken() == currencyToken, "TrueLender: Only the same currency LoanTokens can be funded");
         require(_loans.length < maxLoans, "TrueLender: Loans number has reached the limit");
@@ -306,6 +290,27 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     /**
+     * @dev Temporary fix for old LoanTokens with incorrect value calculation
+     */
+    function loanValue(ILoanToken loan) public view returns (uint256) {
+        uint256 _balance = loan.balanceOf(address(this));
+        if (_balance == 0) {
+            return 0;
+        }
+
+        uint256 passed = block.timestamp.sub(loan.start());
+        if (passed > loan.term()) {
+            passed = loan.term();
+        }
+
+        uint256 helper = loan.amount().mul(loan.apy()).mul(passed).mul(_balance);
+        // assume month is 30 days
+        uint256 interest = helper.div(365 days).div(10000).div(loan.debt());
+
+        return loan.amount().mul(_balance).div(loan.debt()).add(interest);
+    }
+
+    /**
      * @dev Loop through loan tokens and calculate theoretical value of all loans
      * There should never be too many loans in the pool to run out of gas
      * @return Theoretical value of all the loans funded by this strategy
@@ -313,7 +318,7 @@ contract TrueLender is ITrueLender, Ownable {
     function value() external override view returns (uint256) {
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
-            totalValue = totalValue.add(_loans[index].value(_loans[index].balanceOf(address(this))));
+            totalValue = totalValue.add(loanValue(_loans[index]));
         }
         return totalValue;
     }
@@ -433,6 +438,6 @@ contract TrueLender is ITrueLender, Ownable {
         uint256 yesVotes,
         uint256 noVotes
     ) public view returns (bool) {
-        return apy.mul(term).mul(yesVotes).div(360 days) >= noVotes.mul(riskAversion);
+        return apy.mul(term).mul(yesVotes).div(365 days) >= noVotes.mul(riskAversion);
     }
 }

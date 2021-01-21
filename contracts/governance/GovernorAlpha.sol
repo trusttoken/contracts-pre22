@@ -22,11 +22,11 @@ contract GovernorAlpha is ClaimableContract {
 
     // @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
     // OLD: function quorumVotes() public pure returns (uint) { return 400000e18; } // 400,000 = 4% of Comp
-    function quorumVotes() public pure returns (uint) { return 58000000e8; } // 58,000,000 = 4% of Tru
+    function quorumVotes() public pure returns (uint) { return 1000000e8; } // 10,000,000 TRU
 
     // @notice The number of votes required in order for a voter to become a proposer
     // OLD: function proposalThreshold() public pure returns (uint) { return 100000e18; } // 100,000 = 1% of Comp
-    function proposalThreshold() public pure returns (uint) { return 14500000e8; } // 14,500,000 = 1% of TRU
+    function proposalThreshold() public pure returns (uint) { return 100000e8; } // 100,000 TRU
 
     // @notice The maximum number of actions that can be included in a proposal
     function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions

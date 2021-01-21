@@ -60,4 +60,6 @@ interface ILoanToken is IERC20 {
     function value(uint256 _balance) external view returns (uint256);
 
     function currencyToken() external view returns (IERC20);
+
+    function version() external pure returns (uint8);
 }

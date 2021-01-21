@@ -48,13 +48,11 @@ contract LoanFactory is ILoanFactory, Initializable {
 
     /**
      * @dev Deploy LoanToken with parameters
-     * @param _borrower Borrower address
      * @param _amount Amount to borrow
      * @param _term Length of loan
      * @param _apy Loan yield
      */
     function createLoanToken(
-        address _borrower,
         uint256 _amount,
         uint256 _term,
         uint256 _apy
@@ -62,7 +60,7 @@ contract LoanFactory is ILoanFactory, Initializable {
         require(_amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
         require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
 
-        address newToken = address(new LoanToken(currencyToken, _borrower, lender, _amount, _term, _apy));
+        address newToken = address(new LoanToken(currencyToken, msg.sender, lender, _amount, _term, _apy));
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);

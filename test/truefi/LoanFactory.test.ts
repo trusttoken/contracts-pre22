@@ -21,7 +21,7 @@ describe('LoanFactory', () => {
     factory = await new MockLoanFactoryFactory(owner).deploy()
     await factory.initialize(token.address)
     await factory['setLender(address)'](owner.address)
-    const tx = await factory.createLoanToken(borrower.address, parseEth(123), 100, 200)
+    const tx = await factory.connect(borrower).createLoanToken(parseEth(123), 100, 200)
     const creationEvent = (await tx.wait()).events[0]
     ;({ contractAddress } = creationEvent.args)
   })
@@ -39,12 +39,12 @@ describe('LoanFactory', () => {
   })
 
   it('prevents 0 loans', async () => {
-    await expect(factory.createLoanToken(borrower.address, 0, 100, 200))
+    await expect(factory.connect(borrower).createLoanToken(0, 100, 200))
       .to.be.revertedWith('LoanFactory: Loans of amount 0, will not be approved')
   })
 
   it('prevents 0 time loans', async () => {
-    await expect(factory.createLoanToken(borrower.address, parseEth(123), 0, 200))
+    await expect(factory.connect(borrower).createLoanToken(parseEth(123), 0, 200))
       .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
   })
 })
