@@ -276,7 +276,7 @@ describe('TrueFiPool', () => {
       it('returns a basket of tokens on exit, two stakers', async () => {
         await trustToken.mint(pool.address, parseEth(1e7))
         await mockUniswapPair.setPrice(parseEth(1))
-        
+
         await pool.exit(excludeFee(parseEth(5e6)))
         expectScaledCloseTo(await token.balanceOf(owner.address), parseEth(4080259)) // 91% of 1/2(9M - fee)
         expectScaledCloseTo(await trustToken.balanceOf(owner.address), parseEth(455e4), 1000) // 91% of 1/2 1e7
