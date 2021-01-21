@@ -222,8 +222,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev Virtual value of stake tokens in the pool
      */
     function stakeTokenValue() public view returns (uint256) {
-        return stakeTokenBalance().mul(_stakeTokenToEthUniswapPair.price0CumulativeLast())
-            .mul(_ethToCurrencyTokenUniswapPair.price0CumulativeLast()).div(1 ether).div(1 ether);
+        return
+            stakeTokenBalance()
+                .mul(_stakeTokenToEthUniswapPair.price0CumulativeLast())
+                .mul(_ethToCurrencyTokenUniswapPair.price0CumulativeLast())
+                .div(1 ether)
+                .div(1 ether);
     }
 
     /**
