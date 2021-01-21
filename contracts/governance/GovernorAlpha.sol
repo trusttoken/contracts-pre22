@@ -45,6 +45,9 @@ contract GovernorAlpha is ClaimableContract {
     // OLD: CompInterface public comp;
     TrustTokenInterface public trustToken;
 
+    // @notice The address of the stkTRU voting token
+    TrustTokenInterface public stkTRU;
+
     // @notice The address of the Governor Guardian
     address public guardian;
 
@@ -149,11 +152,12 @@ contract GovernorAlpha is ClaimableContract {
     /**
      * @dev Initialize sets the addresses of timelock contract, trusttoken contract, and guardian
      */
-    function initialize(address timelock_, address trustToken_, address guardian_, uint _votingPeriod) external {
+    function initialize(address timelock_, address trustToken_, address guardian_, address stkTRU_, uint256 votingPeriod_) external {
         timelock = TimelockInterface(timelock_);
         trustToken = TrustTokenInterface(trustToken_);
+        stkTRU = TrustTokenInterface(stkTRU_);
         guardian = guardian_;
-        votingPeriod = _votingPeriod;
+        votingPeriod = votingPeriod_;
         
         owner_ = msg.sender;
         initalized = true;
@@ -434,6 +438,12 @@ contract GovernorAlpha is ClaimableContract {
     function sub256(uint256 a, uint256 b) internal pure returns (uint) {
         require(b <= a, "subtraction underflow");
         return a - b;
+    }
+
+    function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
+        uint96 c = a + b;
+        require(c >= a, errorMessage);
+        return c;
     }
 
     /**
