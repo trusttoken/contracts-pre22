@@ -19,6 +19,16 @@ contract ProxyStorage {
     address owner_;
     address pendingOwner_;
 
+    mapping(address => address) public delegates; // A record of votes checkpoints for each account, by index
+    struct Checkpoint {
+        // A checkpoint for marking number of votes from a given block
+        uint32 fromBlock;
+        uint96 votes;
+    }
+    mapping(address => mapping(uint32 => Checkpoint)) public checkpoints; // A record of votes checkpoints for each account, by index
+    mapping(address => uint32) public numCheckpoints; // The number of checkpoints for each account
+    mapping(address => uint256) public nonces;
+
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
      * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.

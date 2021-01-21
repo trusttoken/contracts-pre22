@@ -10,7 +10,7 @@ export const timeTravelTo = async (provider: providers.JsonRpcProvider, timestam
   await provider.send('evm_mine', [timestamp])
 }
 
-export const skipBlocksWithProvider = async (provider: Web3Provider, numberOfBlocks: number) => {
+export const skipBlocksWithProvider = async (provider: providers.JsonRpcProvider, numberOfBlocks: number) => {
   for (let i = 0; i < numberOfBlocks; i++) {
     await provider.send('evm_mine', [])
   }
