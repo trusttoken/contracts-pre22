@@ -325,6 +325,10 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         uint256 curveLiquidityAmountToTransfer = amount.mul(
             yTokenBalance()).div(_totalSupply);
 
+        // calculate amount of stake tokens
+        uint256 stakeTokenAmountToTransfer = amount.mul(
+            stakeTokenBalance()).div(_totalSupply);
+
         // burn tokens sent
         _burn(msg.sender, amount);
 
@@ -339,6 +343,11 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         if (curveLiquidityAmountToTransfer > 0) {
             ensureEnoughTokensAreAvailable(curveLiquidityAmountToTransfer);
             require(_curvePool.token().transfer(msg.sender, curveLiquidityAmountToTransfer));
+        }
+
+        // if stake token remaining, transfer
+        if (stakeTokenAmountToTransfer > 0) {
+            require(_stakeToken.transfer(msg.sender, stakeTokenAmountToTransfer));
         }
 
         emit Exited(msg.sender, amount);
