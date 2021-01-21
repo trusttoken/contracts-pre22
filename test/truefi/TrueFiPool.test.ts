@@ -171,6 +171,15 @@ describe('TrueFiPool', () => {
       expectScaledCloseTo(await pool.balanceOf(borrower.address), totalSupply.mul(excludeFee(parseEth(1e6))).div(poolValue))
     })
 
+    it('mints liquidity tokens proportionally to TRU in pool for next users', async () => {
+      await trustToken.mint(pool.address, parseEth(1e7))
+      await mockUniswapPair.setPrice(parseEth(0.3))
+      const totalSupply = await pool.totalSupply()
+      const poolValue = await pool.poolValue()
+      await pool.connect(borrower).join(parseEth(1e6))
+      expectScaledCloseTo(await pool.balanceOf(borrower.address), totalSupply.mul(excludeFee(parseEth(1e6))).div(poolValue))
+    })
+
     it('returns a basket of tokens on exit', async () => {
       const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
       await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(1e6))
@@ -178,9 +187,12 @@ describe('TrueFiPool', () => {
       await timeTravel(provider, dayInSeconds * 182.5)
       const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEth(1e6), dayInSeconds * 365, 2500)
       await lender.connect(borrower).fund(loan2.address)
+      await trustToken.mint(pool.address, parseEth(1e7))
+      await mockUniswapPair.setPrice(parseEth(1))
 
       await pool.exit(excludeFee(parseEth(5e6)))
       expect(await token.balanceOf(owner.address)).to.equal(excludeFee(parseEth(1e7)).sub(parseEth(2e6)).div(2))
+      expect(await trustToken.balanceOf(owner.address)).to.equal(parseEth(5e6))
       expect(await loan1.balanceOf(owner.address)).to.equal(parseEth(55e4))
       expect(await loan2.balanceOf(owner.address)).to.equal(parseEth(625e3))
     })
@@ -200,8 +212,12 @@ describe('TrueFiPool', () => {
       })
 
       it('returns a basket of tokens on exit, two stakers', async () => {
+        await trustToken.mint(pool.address, parseEth(1e7))
+        await mockUniswapPair.setPrice(parseEth(1))
+        
         await pool.exit(excludeFee(parseEth(5e6)))
         expectScaledCloseTo(await token.balanceOf(owner.address), parseEth(4080259)) // 91% of 1/2(9M - fee)
+        expectScaledCloseTo(await trustToken.balanceOf(owner.address), parseEth(455e4), 1000) // 91% of 1/2 1e7
         expectScaledCloseTo(await loan1.balanceOf(owner.address), parseEth(500226)) // 91% of 550K
         expectScaledCloseTo(await loan2.balanceOf(owner.address), parseEth(568439)) // 91% of 625K
       })
