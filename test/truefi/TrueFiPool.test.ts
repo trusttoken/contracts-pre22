@@ -161,6 +161,30 @@ describe('TrueFiPool', () => {
     })
   })
 
+  describe('TRU integration', () => {
+    it('allows only owner to call setStakeToken', async () => {
+      await expect(pool.connect(borrower).setStakeToken(trustToken.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('emits event on being set', async () => {
+      await expect(pool.setStakeToken(trustToken.address))
+        .to.emit(pool, 'StakeTokenChanged')
+        .withArgs(trustToken.address)
+    })
+
+    it('TrustToken address was set correctly', async () => {
+      expect(await pool._stakeToken()).to.equal(trustToken.address)
+    })
+
+    it('shows pool\'s balance of stake tokens correctly', async () => {
+      expect(await pool.stakeTokenBalance()).to.equal(0)
+
+      await trustToken.mint(pool.address, parseEth(1))
+      expect(await pool.stakeTokenBalance()).to.equal(parseEth(1))
+    })
+  })
+
   describe('poolValue', () => {
     it('equals balance of tusd when no other tokens on balance', async () => {
       await token.approve(pool.address, parseEth(1))
