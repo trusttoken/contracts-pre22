@@ -20,7 +20,6 @@ import {
   TrueLenderFactory,
   PoolArbitrageTestFactory,
   TrueRatingAgencyJson,
-  TrustToken,
 } from 'contracts'
 
 describe('TrueFiPool', () => {
@@ -54,9 +53,15 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.balanceOf.returns(0)
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
     lender = await new TrueLenderFactory(owner).deploy()
-    await pool.initialize(curvePool.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
+    await pool.initialize(
+      curvePool.address,
+      mockCurveGauge.address,
+      token.address,
+      lender.address,
+      constants.AddressZero,
+      trustToken.address,
+    )
     await pool.resetApprovals()
-    await pool.setStakeToken(trustToken.address)
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
   })
@@ -171,15 +176,6 @@ describe('TrueFiPool', () => {
       expectScaledCloseTo(await pool.balanceOf(borrower.address), totalSupply.mul(excludeFee(parseEth(1e6))).div(poolValue))
     })
 
-    it('mints liquidity tokens proportionally to TRU in pool for next users', async () => {
-      await trustToken.mint(pool.address, parseEth(1e7))
-      await mockUniswapPair.setPrice(parseEth(0.3))
-      const totalSupply = await pool.totalSupply()
-      const poolValue = await pool.poolValue()
-      await pool.connect(borrower).join(parseEth(1e6))
-      expectScaledCloseTo(await pool.balanceOf(borrower.address), totalSupply.mul(excludeFee(parseEth(1e6))).div(poolValue))
-    })
-
     it('returns a basket of tokens on exit', async () => {
       const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
       await mockRatingAgency.mock.getResults.returns(0, 0, toTrustToken(1e6))
@@ -188,7 +184,6 @@ describe('TrueFiPool', () => {
       const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEth(1e6), dayInSeconds * 365, 2500)
       await lender.connect(borrower).fund(loan2.address)
       await trustToken.mint(pool.address, parseEth(1e7))
-      await mockUniswapPair.setPrice(parseEth(1))
 
       await pool.exit(excludeFee(parseEth(5e6)))
       expect(await token.balanceOf(owner.address)).to.equal(excludeFee(parseEth(1e7)).sub(parseEth(2e6)).div(2))
@@ -213,8 +208,7 @@ describe('TrueFiPool', () => {
 
       it('returns a basket of tokens on exit, two stakers', async () => {
         await trustToken.mint(pool.address, parseEth(1e7))
-        await mockUniswapPair.setPrice(parseEth(1))
-        
+
         await pool.exit(excludeFee(parseEth(5e6)))
         expectScaledCloseTo(await token.balanceOf(owner.address), parseEth(4080259)) // 91% of 1/2(9M - fee)
         expectScaledCloseTo(await trustToken.balanceOf(owner.address), parseEth(455e4), 1000) // 91% of 1/2 1e7
@@ -306,7 +300,14 @@ describe('TrueFiPool', () => {
 
     beforeEach(async () => {
       pool2 = await new TrueFiPoolFactory(owner).deploy()
-      await pool2.initialize(curvePool.address, mockCurveGauge.address, token.address, borrower.address, constants.AddressZero)
+      await pool2.initialize(
+        curvePool.address,
+        mockCurveGauge.address,
+        token.address,
+        borrower.address,
+        constants.AddressZero,
+        trustToken.address,
+      )
       await token.approve(pool2.address, parseEth(1e7))
       await pool2.join(parseEth(1e7))
       await pool2.flush(excludeFee(parseEth(5e6)), 0)

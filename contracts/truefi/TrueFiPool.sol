@@ -130,7 +130,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         ICurveGauge __curveGauge,
         IERC20 __currencyToken,
         ITrueLender __lender,
-        IUniswapRouter __uniRouter
+        IUniswapRouter __uniRouter,
+        IERC20 __stakeToken
     ) public initializer {
         ERC20.__ERC20_initialize("TrueFi LP", "TFI-LP");
         Ownable.initialize();
@@ -141,6 +142,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _lender = __lender;
         _minter = _curveGauge.minter();
         _uniRouter = __uniRouter;
+        _stakeToken = __stakeToken;
 
         joiningFee = 25;
 
