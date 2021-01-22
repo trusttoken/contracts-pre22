@@ -27,6 +27,7 @@ describe('TrueFiPool', () => {
   let owner: Wallet
   let borrower: Wallet
   let token: MockErc20Token
+  let trustToken: MockErc20Token
   let curveToken: MockErc20Token
   let curvePool: MockCurvePool
   let pool: TrueFiPool
@@ -40,6 +41,7 @@ describe('TrueFiPool', () => {
     [owner, borrower] = wallets
     token = await new MockErc20TokenFactory(owner).deploy()
     await token.mint(owner.address, parseEth(1e7))
+    trustToken = await new MockErc20TokenFactory(owner).deploy()
     curvePool = await new MockCurvePoolFactory(owner).deploy()
     await curvePool.initialize(token.address)
     curveToken = MockErc20TokenFactory.connect(await curvePool.token(), owner)
@@ -51,7 +53,14 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.balanceOf.returns(0)
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
     lender = await new TrueLenderFactory(owner).deploy()
-    await pool.initialize(curvePool.address, mockCurveGauge.address, token.address, lender.address, constants.AddressZero)
+    await pool.initialize(
+      curvePool.address,
+      mockCurveGauge.address,
+      token.address,
+      lender.address,
+      constants.AddressZero,
+      trustToken.address,
+    )
     await pool.resetApprovals()
     await lender.initialize(pool.address, mockRatingAgency.address)
     provider = _provider
@@ -81,6 +90,30 @@ describe('TrueFiPool', () => {
   })
 
   const excludeFee = (amount: BigNumber) => amount.sub(amount.mul(25).div(10000))
+
+  describe('TRU integration', () => {
+    it('allows only owner to call setStakeToken', async () => {
+      await expect(pool.connect(borrower).setStakeToken(trustToken.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('emits event on being set', async () => {
+      await expect(pool.setStakeToken(trustToken.address))
+        .to.emit(pool, 'StakeTokenChanged')
+        .withArgs(trustToken.address)
+    })
+
+    it('TrustToken address was set correctly', async () => {
+      expect(await pool._stakeToken()).to.equal(trustToken.address)
+    })
+
+    it('shows pool\'s balance of stake tokens correctly', async () => {
+      expect(await pool.stakeTokenBalance()).to.equal(0)
+
+      await trustToken.mint(pool.address, parseEth(1))
+      expect(await pool.stakeTokenBalance()).to.equal(parseEth(1))
+    })
+  })
 
   describe('poolValue', () => {
     it('equals balance of tusd when no other tokens on balance', async () => {
@@ -150,9 +183,11 @@ describe('TrueFiPool', () => {
       await timeTravel(provider, dayInSeconds * 182.5)
       const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, parseEth(1e6), dayInSeconds * 365, 2500)
       await lender.connect(borrower).fund(loan2.address)
+      await trustToken.mint(pool.address, parseEth(1e7))
 
       await pool.exit(excludeFee(parseEth(5e6)))
       expect(await token.balanceOf(owner.address)).to.equal(excludeFee(parseEth(1e7)).sub(parseEth(2e6)).div(2))
+      expect(await trustToken.balanceOf(owner.address)).to.equal(parseEth(5e6))
       expect(await loan1.balanceOf(owner.address)).to.equal(parseEth(55e4))
       expect(await loan2.balanceOf(owner.address)).to.equal(parseEth(625e3))
     })
@@ -172,8 +207,11 @@ describe('TrueFiPool', () => {
       })
 
       it('returns a basket of tokens on exit, two stakers', async () => {
+        await trustToken.mint(pool.address, parseEth(1e7))
+
         await pool.exit(excludeFee(parseEth(5e6)))
         expectScaledCloseTo(await token.balanceOf(owner.address), parseEth(4080259)) // 91% of 1/2(9M - fee)
+        expectScaledCloseTo(await trustToken.balanceOf(owner.address), parseEth(455e4), 1000) // 91% of 1/2 1e7
         expectScaledCloseTo(await loan1.balanceOf(owner.address), parseEth(500226)) // 91% of 550K
         expectScaledCloseTo(await loan2.balanceOf(owner.address), parseEth(568439)) // 91% of 625K
       })
@@ -262,7 +300,14 @@ describe('TrueFiPool', () => {
 
     beforeEach(async () => {
       pool2 = await new TrueFiPoolFactory(owner).deploy()
-      await pool2.initialize(curvePool.address, mockCurveGauge.address, token.address, borrower.address, constants.AddressZero)
+      await pool2.initialize(
+        curvePool.address,
+        mockCurveGauge.address,
+        token.address,
+        borrower.address,
+        constants.AddressZero,
+        trustToken.address,
+      )
       await token.approve(pool2.address, parseEth(1e7))
       await pool2.join(parseEth(1e7))
       await pool2.flush(excludeFee(parseEth(5e6)), 0)
