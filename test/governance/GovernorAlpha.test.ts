@@ -22,10 +22,11 @@ describe('GovernorAlpha', () => {
   let timelock: Timelock
   let governorAlpha: GovernorAlpha
   let trustToken: TrustToken
+  let stkTru: TrustToken
   let provider: providers.JsonRpcProvider
   let tokenProxy: OwnedUpgradeabilityProxy
   let target, values, signatures, callDatas, description
-  const votesAmount = 14500000 * 5 // 5% of TRU
+  const votesAmount = 10000000 // 10m of TRU
 
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, initialHolder] = wallets)
@@ -43,16 +44,27 @@ describe('GovernorAlpha', () => {
     trustToken = new TrustTokenFactory(owner).attach(tokenProxy.address)
     await trustToken.connect(owner).initialize()
 
+    // deploy mockTru and proxy contract
+    tokenProxy = await new OwnedUpgradeabilityProxyFactory(owner).deploy()
+    await tokenProxy.upgradeTo((await new TrustTokenFactory(owner).deploy()).address)
+    stkTru = new TrustTokenFactory(owner).attach(tokenProxy.address)
+    await stkTru.connect(owner).initialize()
+
     // deploy governorAlpha and proxy contract
     tokenProxy = await new OwnedUpgradeabilityProxyFactory(owner).deploy()
     await tokenProxy.upgradeTo((await new GovernorAlphaFactory(owner).deploy()).address)
     governorAlpha = new GovernorAlphaFactory(owner).attach(tokenProxy.address)
-    await governorAlpha.connect(owner).initialize(timelock.address, trustToken.address, owner.address, 1) // votingPeriod = 1 blocks
+    await governorAlpha.connect(owner).initialize(timelock.address, trustToken.address, owner.address, stkTru.address, 1) // votingPeriod = 1 blocks
 
-    // mint votesAmount(5%) of tru
-    await trustToken.mint(initialHolder.address, parseTRU(votesAmount))
+    // mint votesAmount/2 of tru
+    await trustToken.mint(initialHolder.address, parseTRU(votesAmount / 2))
     // delegate all votes to itself
     await trustToken.connect(initialHolder).delegate(initialHolder.address)
+    // mint votesAmount/2 of tru
+    await stkTru.mint(initialHolder.address, parseTRU(votesAmount / 2))
+    // delegate all votes to itself
+    await stkTru.connect(initialHolder).delegate(initialHolder.address)
+
     // set governorAlpha as the pending admin
     await timelock.connect(owner).setPendingAdmin(governorAlpha.address)
     // set governorAlpha as the new admin

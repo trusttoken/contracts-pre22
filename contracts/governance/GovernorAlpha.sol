@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT 
+// SPDX-License-Identifier: MIT
 // AND COPIED FROM https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/GovernorAlpha.sol
 // Copyright 2020 Compound Labs, Inc.
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -13,7 +13,9 @@
 pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
-import "./common/ClaimableContract.sol";
+import {ClaimableContract} from "./common/ClaimableContract.sol";
+import {ITimelock} from "./interface/ITimelock.sol";
+import {IVoteToken} from "./interface/IVoteToken.sol";
 
 contract GovernorAlpha is ClaimableContract {
     // @notice The name of this contract
@@ -22,11 +24,11 @@ contract GovernorAlpha is ClaimableContract {
 
     // @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
     // OLD: function quorumVotes() public pure returns (uint) { return 400000e18; } // 400,000 = 4% of Comp
-    function quorumVotes() public pure returns (uint) { return 58000000e8; } // 58,000,000 = 4% of Tru
+    function quorumVotes() public pure returns (uint) { return 10000000e8; } // 10,000,000 Tru
 
     // @notice The number of votes required in order for a voter to become a proposer
     // OLD: function proposalThreshold() public pure returns (uint) { return 100000e18; } // 100,000 = 1% of Comp
-    function proposalThreshold() public pure returns (uint) { return 14500000e8; } // 14,500,000 = 1% of TRU
+    function proposalThreshold() public pure returns (uint) { return 100000e8; } // 100,000 TRU
 
     // @notice The maximum number of actions that can be included in a proposal
     function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions
@@ -39,11 +41,14 @@ contract GovernorAlpha is ClaimableContract {
     uint public votingPeriod;
 
     // @notice The address of the TrustToken Protocol Timelock
-    TimelockInterface public timelock;
+    ITimelock public timelock;
 
     // @notice The address of the TrustToken governance token
     // OLD: CompInterface public comp;
-    TrustTokenInterface public trustToken;
+    IVoteToken public trustToken;
+
+    // @notice The address of the stkTRU voting token
+    IVoteToken public stkTRU;
 
     // @notice The address of the Governor Guardian
     address public guardian;
@@ -149,12 +154,13 @@ contract GovernorAlpha is ClaimableContract {
     /**
      * @dev Initialize sets the addresses of timelock contract, trusttoken contract, and guardian
      */
-    function initialize(address timelock_, address trustToken_, address guardian_, uint _votingPeriod) external {
-        timelock = TimelockInterface(timelock_);
-        trustToken = TrustTokenInterface(trustToken_);
-        guardian = guardian_;
+    function initialize(ITimelock _timelock, IVoteToken _trustToken, address _guardian, IVoteToken _stkTRU, uint256 _votingPeriod) external {
+        timelock = _timelock;
+        trustToken = _trustToken;
+        stkTRU = _stkTRU;
+        guardian = _guardian;
         votingPeriod = _votingPeriod;
-        
+
         owner_ = msg.sender;
         initalized = true;
     }
@@ -169,7 +175,7 @@ contract GovernorAlpha is ClaimableContract {
      * @return The ID of the newly created proposal
      */
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
-        require(trustToken.getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold(), "GovernorAlpha::propose: proposer votes below proposal threshold");
+        require(countVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold(), "GovernorAlpha::propose: proposer votes below proposal threshold");
         require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "GovernorAlpha::propose: proposal function information arity mismatch");
         require(targets.length != 0, "GovernorAlpha::propose: must provide actions");
         require(targets.length <= proposalMaxOperations(), "GovernorAlpha::propose: too many actions");
@@ -210,7 +216,7 @@ contract GovernorAlpha is ClaimableContract {
     }
 
     /**
-     * @dev Queue a proposal after a proposal has succeeded 
+     * @dev Queue a proposal after a proposal has succeeded
      * @param proposalId ID of a proposal that has succeeded
      */
     function queue(uint proposalId) public {
@@ -238,7 +244,7 @@ contract GovernorAlpha is ClaimableContract {
     }
 
     /**
-     * @dev Execute a proposal after a proposal has queued and invoke each of the actions in the proposal 
+     * @dev Execute a proposal after a proposal has queued and invoke each of the actions in the proposal
      * @param proposalId ID of a proposal that has queued
      */
     function execute(uint proposalId) public payable {
@@ -261,7 +267,7 @@ contract GovernorAlpha is ClaimableContract {
         require(state != ProposalState.Executed, "GovernorAlpha::cancel: cannot cancel executed proposal");
 
         Proposal storage proposal = proposals[proposalId];
-        require(msg.sender == guardian || trustToken.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "GovernorAlpha::cancel: proposer above threshold");
+        require(msg.sender == guardian || countVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "GovernorAlpha::cancel: proposer above threshold");
 
         proposal.canceled = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
@@ -318,7 +324,7 @@ contract GovernorAlpha is ClaimableContract {
     }
 
     /**
-     * @dev Cast a vote on a proposal 
+     * @dev Cast a vote on a proposal
      * @param proposalId ID of a proposal in which to cast a vote
      * @param support A boolean of true for 'for' or false for 'against' vote
      */
@@ -354,7 +360,7 @@ contract GovernorAlpha is ClaimableContract {
         Proposal storage proposal = proposals[proposalId];
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "GovernorAlpha::_castVote: voter already voted");
-        uint96 votes = trustToken.getPriorVotes(voter, proposal.startBlock);
+        uint96 votes = countVotes(voter, proposal.startBlock);
 
         if (support) {
             proposal.forVotes = add256(proposal.forVotes, votes);
@@ -423,7 +429,7 @@ contract GovernorAlpha is ClaimableContract {
     }
 
     /**
-     * @dev Get the chain ID 
+     * @dev Get the chain ID
      * @return The ID of chain
      */
     function getChainId() internal pure returns (uint) {
@@ -431,18 +437,23 @@ contract GovernorAlpha is ClaimableContract {
         assembly { chainId := chainid() }
         return chainId;
     }
-}
 
-interface TimelockInterface {
-    function delay() external view returns (uint);
-    function GRACE_PERIOD() external view returns (uint);
-    function acceptAdmin() external;
-    function queuedTransactions(bytes32 hash) external view returns (bool);
-    function queueTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external returns (bytes32);
-    function cancelTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external;
-    function executeTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external payable returns (bytes memory);
-}
+    /**
+     * @dev Count the total PriorVotes from TRU and stkTRU
+     * @param account The address to check the total votes
+     * @param blockNumber The block number at which the getPriorVotes() check
+     * @return The sum of PriorVotes from TRU and stkTRU
+     */
+    function countVotes(address account, uint blockNumber) internal view returns (uint96) {
+        uint96 truVote = trustToken.getPriorVotes(account, blockNumber);
+        uint96 stkTRUVote = stkTRU.getPriorVotes(account, blockNumber);
+        uint96 totalVote = add96(truVote, stkTRUVote, "GovernorAlpha: countVotes addition overflow");
+        return totalVote;
+    }
 
-interface TrustTokenInterface {
-    function getPriorVotes(address account, uint blockNumber) external view returns (uint96);
+    function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
+        uint96 c = a + b;
+        require(c >= a, errorMessage);
+        return c;
+    }
 }
