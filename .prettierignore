@@ -1,1 +1,1 @@
-contracts/governance
+contracts/governance/{GovernorAlpha, Timelock, VoteToken}.sol
