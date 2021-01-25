@@ -1,8 +1,4 @@
-#!/usr/bin/env bash
-
-yarn waffle flatten
-
-header="/*
+/*
     .'''''''''''..     ..''''''''''''''''..       ..'''''''''''''''..
     .;;;;;;;;;;;'.   .';;;;;;;;;;;;;;;;;;,.     .,;;;;;;;;;;;;;;;;;,.
     .;;;;;;;;;;,.   .,;;;;;;;;;;;;;;;;;;;,.    .,;;;;;;;;;;;;;;;;;;,.
@@ -28,8 +24,22 @@ header="/*
 */
 
 // https://github.com/trusttoken/smart-contracts
-"
+// Root file: contracts/true-currencies/mocks/ForceEther.sol
 
-for filename in ./flatten/*.sol; do
-  echo -e "$header$(cat $filename)" > $filename
-done
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
+
+// Source: @openzeppelin/contracts/mocks/ForceEther.sol
+// @title Force Ether into a contract.
+// @notice  even
+// if the contract is not payable.
+// @notice To use, construct the contract with the target as argument.
+// @author Remco Bloemen <remco@neufund.org>
+contract ForceEther {
+    // solhint-disable-next-line no-empty-blocks
+    constructor() public payable {}
+
+    function destroyAndSend(address _recipient) public {
+        selfdestruct(address(uint160(_recipient)));
+    }
+}
