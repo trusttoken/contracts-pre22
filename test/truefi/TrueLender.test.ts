@@ -34,7 +34,7 @@ describe('TrueLender', () => {
   let mockPool: Contract
   let mockLoanToken: Contract
   let mockRatingAgency: Contract
-  let mockStakePool: MockErc20Token
+  let mockStakingPool: MockErc20Token
 
   let amount: BigNumber
   let apy: BigNumber
@@ -72,13 +72,13 @@ describe('TrueLender', () => {
     await mockLoanToken.mock.borrowerFee.returns(25)
     await mockLoanToken.mock.currencyToken.returns(tusd.address)
 
-    mockStakePool = await new MockErc20TokenFactory(owner).deploy()
+    mockStakingPool = await new MockErc20TokenFactory(owner).deploy()
 
     mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
 
     lender = await new MockTrueLenderFactory(owner).deploy()
-    await lender.initialize(mockPool.address, mockRatingAgency.address, mockStakePool.address)
+    await lender.initialize(mockPool.address, mockRatingAgency.address, mockStakingPool.address)
 
     amount = (await lender.minSize()).mul(2)
     apy = (await lender.minApy()).mul(2)
@@ -96,8 +96,8 @@ describe('TrueLender', () => {
       expect(await tusd.allowance(lender.address, mockPool.address)).to.equal(MaxUint256)
     })
 
-    it('sets the stake pool address', async () => {
-      expect(await lender.stakePool()).to.equal(mockStakePool.address)
+    it('sets the staking pool address', async () => {
+      expect(await lender.stakingPool()).to.equal(mockStakingPool.address)
     })
 
     it('default params', async () => {
@@ -110,20 +110,20 @@ describe('TrueLender', () => {
     })
   })
 
-  describe('Stake pool', () => {
-    it('allows only owner to call setStakePool', async () => {
-      await expect(lender.connect(otherWallet).setStakePool(mockStakePool.address))
+  describe('Staking pool', () => {
+    it('allows only owner to call setStakingPool', async () => {
+      await expect(lender.connect(otherWallet).setStakingPool(mockStakingPool.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('emits event on being set', async () => {
-      await expect(lender.setStakePool(mockStakePool.address))
-        .to.emit(lender, 'StakePoolChanged')
-        .withArgs(mockStakePool.address)
+      await expect(lender.setStakingPool(mockStakingPool.address))
+        .to.emit(lender, 'StakingPoolChanged')
+        .withArgs(mockStakingPool.address)
     })
 
-    it('StakePool address was set correctly', async () => {
-      expect(await lender.stakePool()).to.equal(mockStakePool.address)
+    it('StakingPool address was set correctly', async () => {
+      expect(await lender.stakingPool()).to.equal(mockStakingPool.address)
     })
   })
 
@@ -374,10 +374,10 @@ describe('TrueLender', () => {
         expect('fund').to.be.calledOnContractWith(mockLoanToken, [])
       })
 
-      it('transfers origination fee to stake pool', async () => {
-        expect(await tusd.balanceOf(mockStakePool.address)).to.equal(0)
+      it('transfers origination fee to staking pool', async () => {
+        expect(await tusd.balanceOf(mockStakingPool.address)).to.equal(0)
         await lender.fund(mockLoanToken.address)
-        expect(await tusd.balanceOf(mockStakePool.address)).to.equal(10)
+        expect(await tusd.balanceOf(mockStakingPool.address)).to.equal(10)
       })
 
       it('emits proper event', async () => {

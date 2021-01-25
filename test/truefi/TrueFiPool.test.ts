@@ -28,7 +28,7 @@ describe('TrueFiPool', () => {
   let borrower: Wallet
   let token: MockErc20Token
   let trustToken: MockErc20Token
-  let mockStakePool: MockErc20Token
+  let mockStakingPool: MockErc20Token
   let curveToken: MockErc20Token
   let curvePool: MockCurvePool
   let pool: TrueFiPool
@@ -43,7 +43,7 @@ describe('TrueFiPool', () => {
     token = await new MockErc20TokenFactory(owner).deploy()
     await token.mint(owner.address, parseEth(1e7))
     trustToken = await new MockErc20TokenFactory(owner).deploy()
-    mockStakePool = await new MockErc20TokenFactory(owner).deploy()
+    mockStakingPool = await new MockErc20TokenFactory(owner).deploy()
     curvePool = await new MockCurvePoolFactory(owner).deploy()
     await curvePool.initialize(token.address)
     curveToken = MockErc20TokenFactory.connect(await curvePool.token(), owner)
@@ -64,7 +64,7 @@ describe('TrueFiPool', () => {
       trustToken.address,
     )
     await pool.resetApprovals()
-    await lender.initialize(pool.address, mockRatingAgency.address, mockStakePool.address)
+    await lender.initialize(pool.address, mockRatingAgency.address, mockStakingPool.address)
     provider = _provider
   })
 

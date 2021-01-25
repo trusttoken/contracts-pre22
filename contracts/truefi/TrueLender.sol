@@ -78,7 +78,7 @@ contract TrueLender is ITrueLender, Ownable {
     uint256 public maxLoans;
 
     // implemented as an ERC20, will change after implementing stkPool
-    IERC20 public stakePool;
+    IERC20 public stakingPool;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -135,10 +135,10 @@ contract TrueLender is ITrueLender, Ownable {
     event LoansLimitChanged(uint256 maxLoans);
 
     /**
-     * @dev Emitted when stakePool address is changed
-     * @param pool new stakePool address
+     * @dev Emitted when stakingPool address is changed
+     * @param pool new stakingPool address
      */
-    event StakePoolChanged(IERC20 pool);
+    event StakingPoolChanged(IERC20 pool);
 
     /**
      * @dev Emitted when a loan is funded
@@ -170,7 +170,7 @@ contract TrueLender is ITrueLender, Ownable {
     function initialize(
         ITrueFiPool _pool,
         ITrueRatingAgency _ratingAgency,
-        IERC20 _stakePool
+        IERC20 _stakingPool
     ) public initializer {
         Ownable.initialize();
 
@@ -178,7 +178,7 @@ contract TrueLender is ITrueLender, Ownable {
         currencyToken = _pool.currencyToken();
         currencyToken.approve(address(_pool), uint256(-1));
         ratingAgency = _ratingAgency;
-        stakePool = _stakePool;
+        stakingPool = _stakingPool;
 
         minApy = 1000;
         maxApy = 3000;
@@ -197,9 +197,9 @@ contract TrueLender is ITrueLender, Ownable {
      * @dev set stake pool address
      * @param newPool stake pool address to be set
      */
-    function setStakePool(IERC20 newPool) public onlyOwner {
-        stakePool = newPool;
-        emit StakePoolChanged(newPool);
+    function setStakingPool(IERC20 newPool) public onlyOwner {
+        stakingPool = newPool;
+        emit StakingPoolChanged(newPool);
     }
 
     /**
@@ -309,7 +309,7 @@ contract TrueLender is ITrueLender, Ownable {
         pool.borrow(amount);
         currencyToken.approve(address(loanToken), receivedAmount);
         loanToken.fund();
-        require(currencyToken.transfer(address(stakePool), amount.sub(receivedAmount)));
+        require(currencyToken.transfer(address(stakingPool), amount.sub(receivedAmount)));
         emit Funded(address(loanToken), receivedAmount);
     }
 
