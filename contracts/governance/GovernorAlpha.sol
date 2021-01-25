@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT 
+// SPDX-License-Identifier: MIT
 // AND COPIED FROM https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/GovernorAlpha.sol
 // Copyright 2020 Compound Labs, Inc.
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -154,13 +154,13 @@ contract GovernorAlpha is ClaimableContract {
     /**
      * @dev Initialize sets the addresses of timelock contract, trusttoken contract, and guardian
      */
-    function initialize(address _timelock, address _trustToken, address _guardian, address _stkTRU, uint256 _votingPeriod) external {
-        timelock = ITimelock(_timelock);
-        trustToken = IVoteToken(_trustToken);
-        stkTRU = IVoteToken(_stkTRU);
+    function initialize(ITimelock _timelock, IVoteToken _trustToken, address _guardian, IVoteToken _stkTRU, uint256 _votingPeriod) external {
+        timelock = _timelock;
+        trustToken = _trustToken;
+        stkTRU = _stkTRU;
         guardian = _guardian;
         votingPeriod = _votingPeriod;
-        
+
         owner_ = msg.sender;
         initalized = true;
     }
@@ -216,7 +216,7 @@ contract GovernorAlpha is ClaimableContract {
     }
 
     /**
-     * @dev Queue a proposal after a proposal has succeeded 
+     * @dev Queue a proposal after a proposal has succeeded
      * @param proposalId ID of a proposal that has succeeded
      */
     function queue(uint proposalId) public {
@@ -244,7 +244,7 @@ contract GovernorAlpha is ClaimableContract {
     }
 
     /**
-     * @dev Execute a proposal after a proposal has queued and invoke each of the actions in the proposal 
+     * @dev Execute a proposal after a proposal has queued and invoke each of the actions in the proposal
      * @param proposalId ID of a proposal that has queued
      */
     function execute(uint proposalId) public payable {
@@ -324,7 +324,7 @@ contract GovernorAlpha is ClaimableContract {
     }
 
     /**
-     * @dev Cast a vote on a proposal 
+     * @dev Cast a vote on a proposal
      * @param proposalId ID of a proposal in which to cast a vote
      * @param support A boolean of true for 'for' or false for 'against' vote
      */
@@ -429,7 +429,7 @@ contract GovernorAlpha is ClaimableContract {
     }
 
     /**
-     * @dev Get the chain ID 
+     * @dev Get the chain ID
      * @return The ID of chain
      */
     function getChainId() internal pure returns (uint) {
