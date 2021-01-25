@@ -19,6 +19,8 @@ import {
   ITrueFiPoolJson,
   ILoanTokenJson,
   ITrueRatingAgencyJson,
+  MockErc20Token,
+  MockErc20TokenFactory,
 } from 'contracts'
 
 describe('TrueLender', () => {
@@ -32,6 +34,7 @@ describe('TrueLender', () => {
   let mockPool: Contract
   let mockLoanToken: Contract
   let mockRatingAgency: Contract
+  let mockStakePool: MockErc20Token
 
   let amount: BigNumber
   let apy: BigNumber
@@ -68,11 +71,13 @@ describe('TrueLender', () => {
     await mockLoanToken.mock.borrowerFee.returns(25)
     await mockLoanToken.mock.currencyToken.returns(tusd.address)
 
+    mockStakePool = await new MockErc20TokenFactory(owner).deploy()
+
     mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
 
     lender = await new MockTrueLenderFactory(owner).deploy()
-    await lender.initialize(mockPool.address, mockRatingAgency.address)
+    await lender.initialize(mockPool.address, mockRatingAgency.address, mockStakePool.address)
 
     amount = (await lender.minSize()).mul(2)
     apy = (await lender.minApy()).mul(2)
@@ -89,6 +94,10 @@ describe('TrueLender', () => {
       expect(await tusd.allowance(lender.address, mockPool.address)).to.equal(MaxUint256)
     })
 
+    it('sets the stake pool address', async () => {
+      expect(await lender.stakePool()).to.equal(mockStakePool.address)
+    })
+
     it('default params', async () => {
       expect(await lender.minSize()).to.equal(parseEth(1e6))
       expect(await lender.maxSize()).to.equal(parseEth(1e7))
@@ -99,6 +108,23 @@ describe('TrueLender', () => {
     })
   })
 
+  describe('Stake pool', () => {
+    it('allows only owner to call setStakePool', async () => {
+      await expect(lender.connect(otherWallet).setStakePool(mockStakePool.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('emits event on being set', async () => {
+      await expect(lender.setStakePool(mockStakePool.address))
+        .to.emit(lender, 'StakePoolChanged')
+        .withArgs(mockStakePool.address)
+    })
+
+    it('StakePool address was set correctly', async () => {
+      expect(await lender.stakePool()).to.equal(mockStakePool.address)
+    })
+  })
+ 
   describe('Parameters set up', () => {
     describe('setApyLimits', () => {
       it('changes minApy', async () => {
