@@ -447,7 +447,7 @@ contract GovernorAlpha is ClaimableContract {
     function countVotes(address account, uint blockNumber) internal view returns (uint96) {
         uint96 truVote = trustToken.getPriorVotes(account, blockNumber);
         uint96 stkTRUVote = stkTRU.getPriorVotes(account, blockNumber);
-        uint96 totalVote = add96(truVote,stkTRUVote,"countVotes addition overflow");
+        uint96 totalVote = add96(truVote, stkTRUVote, "GovernorAlpha: countVotes addition overflow");
         return totalVote;
     }
 
