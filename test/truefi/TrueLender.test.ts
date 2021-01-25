@@ -39,6 +39,7 @@ describe('TrueLender', () => {
   let amount: BigNumber
   let apy: BigNumber
   let term: BigNumber
+  let fee: BigNumber
 
   const dayInSeconds = 60 * 60 * 24
   const yearInSeconds = dayInSeconds * 365
@@ -82,6 +83,7 @@ describe('TrueLender', () => {
     amount = (await lender.minSize()).mul(2)
     apy = (await lender.minApy()).mul(2)
     term = (await lender.minTerm()).mul(2)
+    fee = amount.sub(amount.mul(25).div(10000))
     await mockLoanToken.mock.getParameters.returns(amount, apy, term)
   })
 
@@ -124,7 +126,7 @@ describe('TrueLender', () => {
       expect(await lender.stakePool()).to.equal(mockStakePool.address)
     })
   })
- 
+
   describe('Parameters set up', () => {
     describe('setApyLimits', () => {
       it('changes minApy', async () => {
@@ -351,14 +353,17 @@ describe('TrueLender', () => {
         await mockLoanToken.mock.getParameters.returns(amount, apy, term)
         await mockLoanToken.mock.receivedAmount.returns(amount.sub(10))
         await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
+        await tusd.mint(lender.address, 10) // mockPool won't do it
       })
 
       it('borrows tokens from pool', async () => {
         await lender.fund(mockLoanToken.address)
-        expect('borrow').to.be.calledOnContractWith(mockPool, [amount, amount.sub(10)])
+        expect('borrow').to.be.calledOnContractWith(mockPool, [amount])
       })
 
       it('approves LoanToken to spend funds borrowed from pool', async () => {
+        expect(await tusd.allowance(lender.address, mockLoanToken.address))
+          .to.equal(0)
         await lender.fund(mockLoanToken.address)
         expect(await tusd.allowance(lender.address, mockLoanToken.address))
           .to.equal(amount.sub(10))
@@ -369,6 +374,12 @@ describe('TrueLender', () => {
         expect('fund').to.be.calledOnContractWith(mockLoanToken, [])
       })
 
+      it('transfers origination fee to stake pool', async () => {
+        expect(await tusd.balanceOf(mockStakePool.address)).to.equal(0)
+        await lender.fund(mockLoanToken.address)
+        expect(await tusd.balanceOf(mockStakePool.address)).to.equal(10)
+      })
+
       it('emits proper event', async () => {
         await expect(lender.fund(mockLoanToken.address))
           .to.emit(lender, 'Funded')
@@ -376,6 +387,7 @@ describe('TrueLender', () => {
       })
 
       it('adds funded loan to an array', async () => {
+        await tusd.mint(lender.address, 10) // mockPool won't do it
         await lender.fund(mockLoanToken.address)
         expect(await lender.loans()).to.deep.equal([mockLoanToken.address])
         await lender.fund(mockLoanToken.address)
@@ -447,6 +459,7 @@ describe('TrueLender', () => {
     beforeEach(async () => {
       await mockLoanToken.mock.status.returns(3)
       await mockLoanToken.mock.balanceOf.returns(availableLoanTokens)
+      await tusd.mint(lender.address, fee) // mockPool won't do it
     })
 
     it('works only for loan tokens', async () => {
@@ -481,6 +494,7 @@ describe('TrueLender', () => {
     it('removes loan from the array', async () => {
       await mockLoanToken.mock.getParameters.returns(amount, apy, term)
       await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
+      await tusd.mint(lender.address, fee.mul(2)) // mockPool won't do it
 
       await lender.fund(mockLoanToken.address)
       await lender.fund(mockLoanToken.address)
@@ -593,6 +607,7 @@ describe('TrueLender', () => {
 
     beforeEach(async () => {
       await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
+      await tusd.mint(lender.address, fee.mul(50)) // mockPool won't do it
 
       for (let i = 0; i < 5; i++) {
         loanTokens.push(await deployMockLoanToken())

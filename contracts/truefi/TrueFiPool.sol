@@ -99,9 +99,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev Emitted when funds are borrowed from pool
      * @param borrower Borrower address
      * @param amount Amount of funds borrowed from pool
-     * @param fee Fees collected from this transaction
      */
-    event Borrow(address borrower, uint256 amount, uint256 fee);
+    event Borrow(address borrower, uint256 amount);
 
     /**
      * @dev Emitted when borrower repays the pool
@@ -429,24 +428,19 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     // prettier-ignore
     /**
-     * @dev Remove liquidity from curve and transfer to borrower
-     * @param expectedAmount expected amount to borrow
+     * @dev Remove liquidity from curve if necessary and transfer to lender
+     * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 expectedAmount, uint256 amountWithoutFee) external override nonReentrant onlyLender {
-        require(expectedAmount >= amountWithoutFee, "TrueFiPool: Fee cannot be negative");
-
+    function borrow(uint256 amount) external override nonReentrant onlyLender {
         // if there is not enough TUSD, withdraw from curve
-        if (expectedAmount > currencyBalance()) {
-            removeLiquidityFromCurve(expectedAmount.sub(currencyBalance()));
-            require(expectedAmount <= currencyBalance(), "TrueFiPool: Not enough funds in pool to cover borrow");
+        if (amount > currencyBalance()) {
+            removeLiquidityFromCurve(amount.sub(currencyBalance()));
+            require(amount <= currencyBalance(), "TrueFiPool: Not enough funds in pool to cover borrow");
         }
 
-        // calculate fees and transfer remainder
-        uint256 fee = expectedAmount.sub(amountWithoutFee);
-        claimableFees = claimableFees.add(fee);
-        require(_currencyToken.transfer(msg.sender, amountWithoutFee));
+        require(_currencyToken.transfer(msg.sender, amount));
 
-        emit Borrow(msg.sender, expectedAmount, fee);
+        emit Borrow(msg.sender, amount);
     }
 
     function removeLiquidityFromCurve(uint256 amountToWithdraw) internal {

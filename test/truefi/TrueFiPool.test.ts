@@ -28,6 +28,7 @@ describe('TrueFiPool', () => {
   let borrower: Wallet
   let token: MockErc20Token
   let trustToken: MockErc20Token
+  let mockStakePool: MockErc20Token
   let curveToken: MockErc20Token
   let curvePool: MockCurvePool
   let pool: TrueFiPool
@@ -42,6 +43,7 @@ describe('TrueFiPool', () => {
     token = await new MockErc20TokenFactory(owner).deploy()
     await token.mint(owner.address, parseEth(1e7))
     trustToken = await new MockErc20TokenFactory(owner).deploy()
+    mockStakePool = await new MockErc20TokenFactory(owner).deploy()
     curvePool = await new MockCurvePoolFactory(owner).deploy()
     await curvePool.initialize(token.address)
     curveToken = MockErc20TokenFactory.connect(await curvePool.token(), owner)
@@ -62,7 +64,7 @@ describe('TrueFiPool', () => {
       trustToken.address,
     )
     await pool.resetApprovals()
-    await lender.initialize(pool.address, mockRatingAgency.address)
+    await lender.initialize(pool.address, mockRatingAgency.address, mockStakePool.address)
     provider = _provider
   })
 
@@ -314,11 +316,11 @@ describe('TrueFiPool', () => {
     })
 
     it('reverts if borrower is not a lender', async () => {
-      await expect(pool2.borrow(parseEth(1001), parseEth(1001))).to.be.revertedWith('TrueFiPool: Only lender can borrow or repay')
+      await expect(pool2.borrow(parseEth(1001))).to.be.revertedWith('TrueFiPool: Only lender can borrow or repay')
     })
 
     it('reverts if repayer is not a lender', async () => {
-      await pool2.connect(borrower).borrow(parseEth(1001), parseEth(1001))
+      await pool2.connect(borrower).borrow(parseEth(1001))
       await expect(pool2.repay(parseEth(1001)))
         .to.be.revertedWith('TrueFiPool: Only lender can borrow or repay')
     })
@@ -326,7 +328,7 @@ describe('TrueFiPool', () => {
     it('when borrowing less than trueCurrency balance, uses the balance', async () => {
       provider.clearCallHistory()
       const borrowedAmount = excludeFee(parseEth(5e6))
-      await pool2.connect(borrower).borrow(borrowedAmount, borrowedAmount)
+      await pool2.connect(borrower).borrow(borrowedAmount)
       expect(await token.balanceOf(borrower.address)).to.equal(borrowedAmount)
       expect(await token.balanceOf(pool2.address)).to.equal(await pool2.claimableFees())
       expect('remove_liquidity_one_coin').to.be.not.calledOnContract(curvePool)
@@ -340,25 +342,14 @@ describe('TrueFiPool', () => {
     it('when trueCurrency balance is not enough, withdraws from curve', async () => {
       await token.mint(curvePool.address, parseEth(2e6))
       await curvePool.set_withdraw_price(parseEth(1.5))
-      await pool2.connect(borrower).borrow(parseEth(6e6), parseEth(6e6))
+      await pool2.connect(borrower).borrow(parseEth(6e6))
       expect(await token.balanceOf(borrower.address)).to.equal(parseEth(6e6))
-    })
-
-    it('adds fee to claimableFees and borrows less if fee is not 0', async () => {
-      const borrowedAmount = excludeFee(parseEth(5e6))
-      const claimableFeesBefore = await pool2.claimableFees()
-      const fee = borrowedAmount.mul(25).div(10000)
-      await pool2.connect(borrower).borrow(borrowedAmount, borrowedAmount.sub(fee))
-      const claimableFeesAfter = await pool2.claimableFees()
-      expect(await token.balanceOf(borrower.address)).to.equal(borrowedAmount.sub(fee))
-      expect(claimableFeesAfter.sub(claimableFeesBefore)).to.equal(fee)
-      expect(await token.balanceOf(pool2.address)).to.equal(claimableFeesAfter)
     })
 
     it('curvePool allowance is 0 after borrow', async () => {
       await token.mint(curvePool.address, parseEth(2e6))
       await curvePool.set_withdraw_price(parseEth(1.5))
-      await pool2.connect(borrower).borrow(parseEth(6e6), parseEth(6e6))
+      await pool2.connect(borrower).borrow(parseEth(6e6))
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.eq(0)
     })
   })

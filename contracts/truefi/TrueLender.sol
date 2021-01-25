@@ -167,7 +167,11 @@ contract TrueLender is ITrueLender, Ownable {
      * @param _pool Lending pool address
      * @param _ratingAgency Prediction market address
      */
-    function initialize(ITrueFiPool _pool, ITrueRatingAgency _ratingAgency, IERC20 _stakePool) public initializer {
+    function initialize(
+        ITrueFiPool _pool,
+        ITrueRatingAgency _ratingAgency,
+        IERC20 _stakePool
+    ) public initializer {
         Ownable.initialize();
 
         pool = _pool;
@@ -302,9 +306,10 @@ contract TrueLender is ITrueLender, Ownable {
         require(loanIsCredible(apy, term, yes, no), "TrueLender: Loan risk is too high");
 
         _loans.push(loanToken);
-        pool.borrow(amount, receivedAmount);
+        pool.borrow(amount);
         currencyToken.approve(address(loanToken), receivedAmount);
         loanToken.fund();
+        require(currencyToken.transfer(address(stakePool), amount.sub(receivedAmount)));
         emit Funded(address(loanToken), receivedAmount);
     }
 
