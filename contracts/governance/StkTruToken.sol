@@ -7,6 +7,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {VoteToken} from "./VoteToken.sol";
 import {ClaimableContract} from "../trusttoken/common/ClaimableContract.sol";
+import {ITruPriceOracle} from "./interface/ITruPriceOracle.sol";
 
 contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     using SafeMath for uint256;
@@ -15,32 +16,34 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
 
     IERC20 public trustToken;
     IERC20 public tusd;
-    uint256 public stakeApy;
+    ITruPriceOracle public oracle;
     mapping(address => uint256) public unlockTime;
 
-    event StakeApyChanged(uint256 newValue);
+    event Stake(address indexed staker, uint256 amount, uint256 minted);
+    event Unstake(address indexed staker, uint256 burntAmount, uint256 truAmount, uint256 tusdAmount);
 
-    function initialize(IERC20 _trustToken, IERC20 _tusd) public {
+    function initialize(
+        IERC20 _trustToken,
+        IERC20 _tusd,
+        ITruPriceOracle _oracle
+    ) public {
         require(!initalized, "StkTruToken: Already initialized");
         trustToken = _trustToken;
         tusd = _tusd;
+        oracle = _oracle;
         owner_ = msg.sender;
         initalized = true;
     }
 
-    function setStakeApy(uint256 newStakeApy) external onlyOwner {
-        stakeApy = newStakeApy;
+    function stake(uint256 amount) external {
+        unlockTime[msg.sender] = block.timestamp + MIN_STAKE_TIME;
 
-        emit StakeApyChanged(newStakeApy);
-    }
+        uint256 amountToMint = totalSupply == 0 ? amount : totalSupply.mul(amount).div(value());
+        _mint(msg.sender, amountToMint);
 
-    function stake(uint256 amount, uint256 stakeTime) external {
-        require(stakeTime >= MIN_STAKE_TIME, "StkTruToken: Stake time is too short");
-
-        unlockTime[msg.sender] = block.timestamp + stakeTime;
-
-        _mint(msg.sender, amount.mul(stakeApy.add(10000)).mul(stakeTime).div(365 days));
         require(trustToken.transferFrom(msg.sender, address(this), amount));
+
+        emit Stake(msg.sender, amount, amountToMint);
     }
 
     function unstake(uint256 amount) external nonReentrant {
@@ -54,6 +57,12 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
 
         require(trustToken.transfer(msg.sender, truAmount));
         require(tusd.transfer(msg.sender, tusdAmount));
+
+        emit Unstake(msg.sender, amount, truAmount, tusdAmount);
+    }
+
+    function value() public view returns (uint256) {
+        return trustToken.balanceOf(address(this)).add(oracle.usdToTru(tusd.balanceOf(address(this))));
     }
 
     function decimals() public override pure returns (uint8) {
