@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {Registry} from "../../registry/Registry.sol";
-
 /**
  * All storage must be declared here
  * New storage must be appended to the end
@@ -14,7 +12,7 @@ contract ProxyStorage {
 
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
-    mapping(uint144 => uint256) attributes; // see RegistrySubscriber
+    mapping(uint144 => uint256) attributes_Depricated;
 
     address owner_;
     address pendingOwner_;
