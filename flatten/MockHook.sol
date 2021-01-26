@@ -1,8 +1,4 @@
-#!/usr/bin/env bash
-
-yarn waffle flatten
-
-header="/*
+/*
     .'''''''''''..     ..''''''''''''''''..       ..'''''''''''''''..
     .;;;;;;;;;;;'.   .';;;;;;;;;;;;;;;;;;,.     .,;;;;;;;;;;;;;;;;;,.
     .;;;;;;;;;;,.   .,;;;;;;;;;;;;;;;;;;;,.    .,;;;;;;;;;;;;;;;;;;,.
@@ -28,8 +24,17 @@ header="/*
 */
 
 // https://github.com/trusttoken/smart-contracts
-"
+// Root file: contracts/true-currencies/mocks/MockHook.sol
 
-for filename in ./flatten/*.sol; do
-  echo -e "$header$(cat $filename)" > $filename
-done
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
+
+contract MockHook {
+    uint256[] t;
+
+    function hook() external {
+        for (uint256 i = 0; i < 100; i++) {
+            t.push(i + 1);
+        }
+    }
+}

@@ -1,8 +1,4 @@
-#!/usr/bin/env bash
-
-yarn waffle flatten
-
-header="/*
+/*
     .'''''''''''..     ..''''''''''''''''..       ..'''''''''''''''..
     .;;;;;;;;;;;'.   .';;;;;;;;;;;;;;;;;;,.     .,;;;;;;;;;;;;;;;;;,.
     .;;;;;;;;;;,.   .,;;;;;;;;;;;;;;;;;;;,.    .,;;;;;;;;;;;;;;;;;;,.
@@ -28,8 +24,17 @@ header="/*
 */
 
 // https://github.com/trusttoken/smart-contracts
-"
+// Root file: contracts/truefi/interface/ILoanFactory.sol
 
-for filename in ./flatten/*.sol; do
-  echo -e "$header$(cat $filename)" > $filename
-done
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
+
+interface ILoanFactory {
+    function createLoanToken(
+        uint256 _amount,
+        uint256 _term,
+        uint256 _apy
+    ) external;
+
+    function isLoanToken(address) external view returns (bool);
+}
