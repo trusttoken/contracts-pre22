@@ -75,18 +75,16 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
     /**
      * @dev % multiplied by 100. e.g. 10.5% = 1050
      */
-    uint256 public lossFactor;
-    uint256 public burnFactor;
     uint256 public ratersRewardFactor;
 
     // reward multiplier for voters
     uint256 public rewardMultiplier;
 
+    bool public submissionPauseStatus;
+
     // ======= STORAGE DECLARATION END ============
 
     event Allowed(address indexed who, bool status);
-    event LossFactorChanged(uint256 lossFactor);
-    event BurnFactorChanged(uint256 burnFactor);
     event RatersRewardFactorChanged(uint256 ratersRewardFactor);
     event LoanSubmitted(address id);
     event LoanRetracted(address id);
@@ -94,6 +92,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
     event Withdrawn(address loanToken, address voter, uint256 stake, uint256 received, uint256 burned);
     event RewardMultiplierChanged(uint256 newRewardMultiplier);
     event Claimed(address loanToken, address voter, uint256 claimedReward);
+    event SubmissionPauseStatusChanged(bool status);
 
     /**
      * @dev Only whitelisted borrowers can submit for credit ratings
@@ -155,30 +154,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
         stakedTrustToken = _stakedTrustToken;
         distributor = _distributor;
         factory = _factory;
-
-        lossFactor = 2500;
-        burnFactor = 2500;
-    }
-
-    /**
-     * @dev Set loss factor.
-     * Loss factor decides what percentage of TRU is lost for incorrect votes
-     * @param newLossFactor New loss factor
-     */
-    function setLossFactor(uint256 newLossFactor) external onlyOwner {
-        require(newLossFactor <= 10000, "TrueRatingAgencyV2: Loss factor cannot be greater than 100%");
-        lossFactor = newLossFactor;
-        emit LossFactorChanged(newLossFactor);
-    }
-
-    /**
-     * @dev Set burn factor.
-     * Burn factor decides what percentage of lost TRU is burned
-     */
-    function setBurnFactor(uint256 newBurnFactor) external onlyOwner {
-        require(newBurnFactor <= 10000, "TrueRatingAgencyV2: Burn factor cannot be greater than 100%");
-        burnFactor = newBurnFactor;
-        emit BurnFactorChanged(newBurnFactor);
     }
 
     /**
@@ -186,8 +161,8 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
      * Reward factor decides what percentage of rewarded TRU is goes to raters
      */
     function setRatersRewardFactor(uint256 newRatersRewardFactor) external onlyOwner {
-        require(newRatersRewardFactor <= 10000, "TrueRatingAgencyV2: RatersReward factor cannot be greater than 100%");
-        burnFactor = newRatersRewardFactor;
+        require(newRatersRewardFactor <= 10000, "TrueRatingAgencyV2: Raters reward factor cannot be greater than 100%");
+        ratersRewardFactor = newRatersRewardFactor;
         emit RatersRewardFactorChanged(newRatersRewardFactor);
     }
 
@@ -270,12 +245,23 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
         emit Allowed(who, status);
     }
 
+
+    /**
+     * @dev Pause submitting loans for rating
+     * @param status Flag of the status
+     */
+    function pauseSubmissions(bool status) public onlyOwner {
+        submissionPauseStatus = status;
+        emit SubmissionPauseStatusChanged(status);
+    }
+
     /**
      * @dev Submit a loan for rating
      * Cannot submit the same loan twice
      * @param id Loan ID
      */
     function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
+        require(!submissionPauseStatus, "TrueRatingAgencyV2: New submissions are paused");
         require(ILoanToken(id).borrower() == msg.sender, "TrueRatingAgencyV2: Sender is not borrower");
         require(factory.isLoanToken(id), "TrueRatingAgencyV2: Only LoanTokens created via LoanFactory are supported");
         loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0});
@@ -356,7 +342,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
         }
 
         // if loan status passed pending state claim TRU reward
-        if (loanStatus > LoanStatus.Pending) {
+        if (loanStatus >= LoanStatus.Running) {
             claim(id, msg.sender);
         }
 
@@ -366,19 +352,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
         // transfer tokens to sender and emit event
         require(stakedTrustToken.transfer(msg.sender, amountToTransfer));
         emit Withdrawn(id, msg.sender, stake, amountToTransfer, burned);
-    }
-
-    /**
-     * @dev Total amount of funds given to correct voters
-     * @param id Loan ID
-     * @param incorrectChoice Vote which was incorrect
-     * @return TRU amount given to correct voters
-     */
-    function bounty(address id, bool incorrectChoice) public view returns (uint256) {
-        // reward = (incorrect_tokens_staked) * (loss_factor) * (1 - burn_factor)
-        // prettier-ignore
-        return loans[id].prediction[incorrectChoice].mul(
-            lossFactor).mul(uint256(10000).sub(burnFactor)).div(10000**2);
     }
 
     /**
@@ -445,7 +418,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
             // track amount of claimed tokens
             loans[id].claimed[voter] = loans[id].claimed[voter].add(claimableRewards);
             // transfer tokens
-            require(stakedTrustToken.transfer(voter, claimableRewards));
+            require(trustToken.transfer(voter, claimableRewards));
             emit Claimed(id, voter, claimableRewards);
         }
     }
