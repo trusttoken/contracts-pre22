@@ -92,7 +92,9 @@ contract TrueFarm is ITrueFarm, Initializable {
      * @param amount Amount of tokens to stake
      */
     function stake(uint256 amount) external override update {
-        _claim();
+        if (claimableReward[msg.sender] > 0) {
+            _claim();
+        }
         staked[msg.sender] = staked[msg.sender].add(amount);
         totalStaked = totalStaked.add(amount);
         require(stakingToken.transferFrom(msg.sender, address(this), amount));
