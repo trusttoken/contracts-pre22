@@ -68,7 +68,7 @@ contract TrueFarm is ITrueFarm, Initializable {
     event Claim(address indexed who, uint256 amountClaimed);
 
     /**
-     * @dev Initalize staking pool with a Distributor contraxct
+     * @dev Initalize staking pool with a Distributor contract
      * The distributor contract calculates how much TRU rewards this contract
      * gets, and stores TRU for distribution.
      * @param _stakingToken Token to stake
@@ -89,6 +89,7 @@ contract TrueFarm is ITrueFarm, Initializable {
 
     /**
      * @dev Stake tokens for TRU rewards.
+     * Also claims any existing rewards.
      * @param amount Amount of tokens to stake
      */
     function stake(uint256 amount) external override update {
