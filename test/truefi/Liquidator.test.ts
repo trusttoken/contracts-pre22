@@ -1,93 +1,98 @@
-import { expect } from "chai"
-import { ITrueFiPoolJson, Liquidator, LiquidatorFactory, LoanFactory, LoanFactoryFactory, LoanToken, LoanTokenFactory, MockErc20Token, MockErc20TokenFactory, MockTrueCurrency, MockTrueCurrencyFactory } from "contracts"
-import { deployMockContract, MockProvider } from "ethereum-waffle"
-import { Contract, Wallet } from "ethers"
-import { beforeEachWithFixture, parseEth, timeTravel } from "utils"
-
+import { expect } from 'chai'
+import { ITrueFiPoolJson, Liquidator, LiquidatorFactory, LoanToken, LoanTokenFactory, MockErc20Token, MockErc20TokenFactory, MockTrueCurrency, MockTrueCurrencyFactory } from 'contracts'
+import { deployMockContract, MockProvider } from 'ethereum-waffle'
+import { Contract, Wallet } from 'ethers'
+import { beforeEachWithFixture, parseEth, timeTravel } from 'utils'
 
 describe('Liquidator', () => {
-    enum LoanTokenStatus { Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated }
+  enum LoanTokenStatus { Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated }
 
-    let provider: MockProvider
-    let owner: Wallet
-    let borrower: Wallet
-    let otherWallet: Wallet
-    let liquidator: Liquidator
+  let provider: MockProvider
+  let owner: Wallet
+  let borrower: Wallet
+  let otherWallet: Wallet
+  let liquidator: Liquidator
 
-    let tusd: MockTrueCurrency
-    let loanToken: LoanToken
-    let pool: Contract
-    let stakingPool: MockErc20Token
+  let tusd: MockTrueCurrency
+  let loanToken: LoanToken
+  let pool: Contract
+  let stakingPool: MockErc20Token
 
-    const dayInSeconds = 60 * 60 * 24
-    const yearInSeconds = dayInSeconds * 365
-    const averageMonthInSeconds = yearInSeconds / 12
-    const defaultedLoanCloseTime = yearInSeconds + dayInSeconds
+  const dayInSeconds = 60 * 60 * 24
+  const yearInSeconds = dayInSeconds * 365
+  const defaultedLoanCloseTime = yearInSeconds + dayInSeconds
 
-    const withdraw = async (wallet: Wallet, beneficiary = wallet.address) =>
-        loanToken.connect(wallet).withdraw(beneficiary)
+  const withdraw = async (wallet: Wallet, beneficiary = wallet.address) =>
+    loanToken.connect(wallet).withdraw(beneficiary)
 
-    beforeEachWithFixture(async (wallets, _provider) => {
-        [owner, borrower, otherWallet] = wallets
-        provider = _provider
+  beforeEachWithFixture(async (wallets, _provider) => {
+    [owner, borrower, otherWallet] = wallets
+    provider = _provider
 
-        liquidator = await new LiquidatorFactory(owner).deploy()
-        tusd = await new MockTrueCurrencyFactory(owner).deploy()
-        pool = await deployMockContract(owner, ITrueFiPoolJson.abi)
-        await tusd.initialize()
-        stakingPool = await new MockErc20TokenFactory(owner).deploy()
+    liquidator = await new LiquidatorFactory(owner).deploy()
+    tusd = await new MockTrueCurrencyFactory(owner).deploy()
+    pool = await deployMockContract(owner, ITrueFiPoolJson.abi)
+    await tusd.initialize()
+    stakingPool = await new MockErc20TokenFactory(owner).deploy()
 
+    await liquidator.initialize(
+      pool.address,
+      stakingPool.address,
+    )
 
-        await liquidator.initialize(
-            pool.address,
-            stakingPool.address,
-        )
+    loanToken = await new LoanTokenFactory(owner).deploy(
+      tusd.address,
+      borrower.address,
+      owner.address,
+      liquidator.address,
+      parseEth(1000),
+      yearInSeconds,
+      1000,
+    )
 
-        loanToken = await new LoanTokenFactory(owner).deploy(
-            tusd.address,
-            borrower.address,
-            owner.address,
-            liquidator.address,
-            parseEth(1000),
-            yearInSeconds,
-            1000,
-          )
+    await tusd.mint(owner.address, parseEth(1e7))
+    await tusd.approve(loanToken.address, parseEth(1e7))
+  })
 
-        await tusd.mint(owner.address, parseEth(1e7))
-        await tusd.approve(loanToken.address, parseEth(1e7))
+  describe('Initializer', () => {
+    it('trueFiPool set correctly', async () => {
+      expect(await liquidator._pool()).to.equal(pool.address)
     })
 
-    describe('Initializer', () => {
-        it('trueFiPool set correctly', async () => {
-            expect(await liquidator._pool()).to.equal(pool.address)
-        })
-        
-        it('staking pool set correctly', async () => {
-            expect(await liquidator._stakingPool()).to.equal(stakingPool.address)
-        })
+    it('staking pool set correctly', async () => {
+      expect(await liquidator._stakingPool()).to.equal(stakingPool.address)
+    })
+  })
+
+  describe('liquidate', () => {
+    beforeEach(async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
     })
 
-    describe('liquidate', () => {
-        beforeEach(async () => {
-            await loanToken.fund()
-            await withdraw(borrower)
-        })
+    it('anyone can call it', async () => {
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await loanToken.close()
 
-        it('anyone can call it', async () => {
-            await timeTravel(provider, defaultedLoanCloseTime)
-            await loanToken.close()
-            
-            await expect(liquidator.connect(otherWallet).liquidate(loanToken.address))
-                .to.not.be.reverted
-        })
-
-        it('reverts if loan is not defaulted', async () => {
-            await expect(liquidator.liquidate(loanToken.address))
-                .to.be.revertedWith('LoanToken: Current status should be Defaulted')
-            
-            await timeTravel(provider, defaultedLoanCloseTime)
-            await expect(liquidator.liquidate(loanToken.address))
-                .to.be.revertedWith('LoanToken: Current status should be Defaulted')
-        })
+      await expect(liquidator.connect(otherWallet).liquidate(loanToken.address))
+        .to.not.be.reverted
     })
+
+    it('reverts if loan is not defaulted', async () => {
+      await expect(liquidator.liquidate(loanToken.address))
+        .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await expect(liquidator.liquidate(loanToken.address))
+        .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+    })
+
+    it('changes loanToken status', async () => {
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await loanToken.close()
+
+      await liquidator.connect(otherWallet).liquidate(loanToken.address)
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Liquidated)
+    })
+  })
 })

@@ -28,10 +28,7 @@ contract Liquidator is Ownable {
     /**
      * @dev Initialize this contract
      */
-    function initialize(
-        ITrueFiPool __pool,
-        IERC20 __stakingPool
-    ) public initializer {
+    function initialize(ITrueFiPool __pool, IERC20 __stakingPool) public initializer {
         Ownable.initialize();
 
         _pool = __pool;

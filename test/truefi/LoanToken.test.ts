@@ -55,7 +55,7 @@ describe('LoanToken', () => {
       tusd.address,
       borrower.address,
       lender.address,
-      lender.address, //easier testing purposes
+      lender.address, // easier testing purposes
       parseEth(1000),
       yearInSeconds,
       1000,
@@ -250,15 +250,15 @@ describe('LoanToken', () => {
     it('reverts when status is not defaulted', async () => {
       await expect(loanToken.liquidate())
         .to.be.revertedWith('LoanToken: Current status should be Defaulted')
-      
+
       await loanToken.fund()
       await expect(loanToken.liquidate())
         .to.be.revertedWith('LoanToken: Current status should be Defaulted')
-      
+
       await withdraw(borrower)
       await expect(loanToken.liquidate())
         .to.be.revertedWith('LoanToken: Current status should be Defaulted')
-      
+
       await timeTravel(provider, defaultedLoanCloseTime)
       await expect(loanToken.liquidate())
         .to.be.revertedWith('LoanToken: Current status should be Defaulted')
@@ -271,7 +271,7 @@ describe('LoanToken', () => {
       await loanToken.close()
 
       await expect(loanToken.connect(borrower).liquidate())
-          .to.be.revertedWith('LoanToken: Caller is not the liquidator')
+        .to.be.revertedWith('LoanToken: Caller is not the liquidator')
     })
 
     it('sets status to liquidated', async () => {
@@ -279,7 +279,7 @@ describe('LoanToken', () => {
       await withdraw(borrower)
       await timeTravel(provider, defaultedLoanCloseTime)
       await loanToken.close()
-      
+
       await loanToken.liquidate()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Liquidated)
     })
