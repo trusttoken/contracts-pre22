@@ -75,11 +75,9 @@ describe('Liquidator', () => {
         it('anyone can call it', async () => {
             await timeTravel(provider, defaultedLoanCloseTime)
             await loanToken.close()
-
-            await expect(liquidator.liquidate(loanToken.address))
-                .not.to.be.reverted
+            
             await expect(liquidator.connect(otherWallet).liquidate(loanToken.address))
-                .not.to.be.reverted
+                .to.not.be.reverted
         })
 
         it('reverts if loan is not defaulted', async () => {
