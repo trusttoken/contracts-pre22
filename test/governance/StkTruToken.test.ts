@@ -47,6 +47,18 @@ describe('StkTruToken', () => {
     await trustToken.approve(stkToken.address, amount)
   })
 
+  describe('Oracle', () => {
+    it('only owner can change oracle', async () => {
+      await expect(stkToken.connect(staker).setOracle(staker.address)).to.be.revertedWith('only owner')
+    })
+
+    it('emits event', async () => {
+      await expect(stkToken.setOracle(staker.address)).to.emit(stkToken, 'OracleChanged')
+        .withArgs(staker.address)
+      expect(await stkToken.oracle()).to.equal(staker.address)
+    })
+  })
+
   describe('Staking-Unstaking', () => {
     it('stake emits event', async () => {
       await expect(stkToken.stake(amount)).to.emit(stkToken, 'Stake').withArgs(owner.address, amount, amount)

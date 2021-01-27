@@ -95,7 +95,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
         _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
-    function _balanceOf(address account) internal virtual returns (uint256) {
+    function _balanceOf(address account) internal view virtual returns (uint256) {
         return balanceOf[account];
     }
 

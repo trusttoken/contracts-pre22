@@ -19,6 +19,7 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     ITruPriceOracle public oracle;
     mapping(address => uint256) public unlockTime;
 
+    event OracleChanged(ITruPriceOracle newOracle);
     event Stake(address indexed staker, uint256 amount, uint256 minted);
     event Unstake(address indexed staker, uint256 burntAmount, uint256 truAmount, uint256 tusdAmount);
 
@@ -33,6 +34,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         oracle = _oracle;
         owner_ = msg.sender;
         initalized = true;
+    }
+
+    function setOracle(ITruPriceOracle _oracle) external onlyOwner {
+        oracle = _oracle;
+        emit OracleChanged(_oracle);
     }
 
     function stake(uint256 amount) external {
