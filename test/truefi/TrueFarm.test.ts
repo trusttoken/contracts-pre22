@@ -185,7 +185,8 @@ describe('TrueFarm', () => {
     it('claiming clears claimableRewards', async () => {
       await farm.connect(staker1).stake(parseEth(500), txArgs)
       await timeTravel(provider, DAY)
-      await farm.connect(staker1).stake(parseEth(500), txArgs)
+      // force an update to claimableReward:
+      await farm.connect(staker1).unstake(parseEth(1), txArgs)
       expect(await farm.claimableReward(staker1.address)).to.be.gt(0)
 
       await farm.connect(staker1).claim(txArgs)
