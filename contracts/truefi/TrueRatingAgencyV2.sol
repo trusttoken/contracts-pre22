@@ -5,13 +5,14 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {IBurnableERC20} from "../trusttoken/interface/IBurnableERC20.sol";
+import {IVoteTokenWithERC20} from "../governance/interface/IVoteToken.sol";
 
 import {Ownable} from "./common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
-import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
+import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
 
 /**
  * @title TrueRatingAgencyV2
@@ -41,7 +42,7 @@ import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
  * Settled:     Rated loan has been paid back in full
  * Defaulted:   Rated loan has not been paid back in full
  */
-contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
+contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
     using SafeMath for uint256;
 
     enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
@@ -67,6 +68,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     mapping(address => Loan) public loans;
 
     IBurnableERC20 public trustToken;
+    IVoteTokenWithERC20 public stakedTrustToken;
     IArbitraryDistributor public distributor;
     ILoanFactory public factory;
 
@@ -75,6 +77,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      */
     uint256 public lossFactor;
     uint256 public burnFactor;
+    uint256 public ratersRewardFactor;
 
     // reward multiplier for voters
     uint256 public rewardMultiplier;
@@ -84,6 +87,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     event Allowed(address indexed who, bool status);
     event LossFactorChanged(uint256 lossFactor);
     event BurnFactorChanged(uint256 burnFactor);
+    event RatersRewardFactorChanged(uint256 ratersRewardFactor);
     event LoanSubmitted(address id);
     event LoanRetracted(address id);
     event Voted(address loanToken, address voter, bool choice, uint256 stake);
@@ -140,6 +144,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      */
     function initialize(
         IBurnableERC20 _trustToken,
+        IVoteTokenWithERC20 _stakedTrustToken,
         IArbitraryDistributor _distributor,
         ILoanFactory _factory
     ) public initializer {
@@ -147,6 +152,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         Ownable.initialize();
 
         trustToken = _trustToken;
+        stakedTrustToken = _stakedTrustToken;
         distributor = _distributor;
         factory = _factory;
 
@@ -173,6 +179,16 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         require(newBurnFactor <= 10000, "TrueRatingAgencyV2: Burn factor cannot be greater than 100%");
         burnFactor = newBurnFactor;
         emit BurnFactorChanged(newBurnFactor);
+    }
+
+    /**
+     * @dev Set rater reward factor.
+     * Reward factor decides what percentage of rewarded TRU is goes to raters
+     */
+    function setRatersRewardFactor(uint256 newRatersRewardFactor) external onlyOwner {
+        require(newRatersRewardFactor <= 10000, "TrueRatingAgencyV2: RatersReward factor cannot be greater than 100%");
+        burnFactor = newRatersRewardFactor;
+        emit RatersRewardFactorChanged(newRatersRewardFactor);
     }
 
     /**
@@ -295,7 +311,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].add(stake);
 
-        require(trustToken.transferFrom(msg.sender, address(this), stake));
+        require(stakedTrustToken.transferFrom(msg.sender, address(this), stake));
         emit Voted(id, msg.sender, choice, stake);
     }
 
@@ -324,7 +340,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @param id Loan ID
      * @param stake Amount of TRU to unstake
      */
-    function withdraw(address id, uint256 stake) external override  {
+    function withdraw(address id, uint256 stake) external override {
         bool choice = loans[id].votes[msg.sender][true] > 0;
         LoanStatus loanStatus = status(id);
 
@@ -348,7 +364,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
 
         // transfer tokens to sender and emit event
-        require(trustToken.transfer(msg.sender, amountToTransfer));
+        require(stakedTrustToken.transfer(msg.sender, amountToTransfer));
         emit Withdrawn(id, msg.sender, stake, amountToTransfer, burned);
     }
 
@@ -388,16 +404,18 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
 
             // calculate reward
             // prettier-ignore
-            uint256 reward = toTrustToken(
+            uint256 totalReward = toTrustToken(
                 interest
                     .mul(distributor.remaining())
                     .mul(rewardMultiplier)
                     .div(distributor.amount())
             );
 
-            loans[id].reward = reward;
+            uint256 ratersReward = totalReward.mul(ratersRewardFactor).div(10000);
+            loans[id].reward = ratersReward;
             if (loans[id].reward > 0) {
-                distributor.distribute(reward);
+                distributor.distribute(totalReward);
+                trustToken.transfer(address(stakedTrustToken), totalReward.sub(ratersReward));
             }
         }
         _;
@@ -427,7 +445,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
             // track amount of claimed tokens
             loans[id].claimed[voter] = loans[id].claimed[voter].add(claimableRewards);
             // transfer tokens
-            require(trustToken.transfer(voter, claimableRewards));
+            require(stakedTrustToken.transfer(voter, claimableRewards));
             emit Claimed(id, voter, claimableRewards);
         }
     }
@@ -441,21 +459,13 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
             return 0;
         }
 
-        uint256 totalTime = ILoanToken(id).term();
-        uint256 passedTime = block.timestamp.sub(ILoanToken(id).start());
-
-        // check time of loan
-        if (passedTime > totalTime) {
-            passedTime = totalTime;
-        }
         // calculate how many tokens user can claim
         // claimable = stakedByVoter / totalStaked
         uint256 stakedByVoter = loans[id].votes[voter][false].add(loans[id].votes[voter][true]);
         uint256 totalStaked = loans[id].prediction[false].add(loans[id].prediction[true]);
 
         // calculate claimable rewards at current time
-        uint256 helper = loans[id].reward.mul(passedTime).mul(stakedByVoter);
-        uint256 totalClaimable = helper.div(totalTime).div(totalStaked);
+        uint256 totalClaimable = loans[id].reward.mul(stakedByVoter).div(totalStaked);
         if (totalClaimable < loans[id].claimed[voter]) {
             // This happens only in one case: voter withdrew part of stake after loan has ended and claimed all possible rewards
             return 0;
