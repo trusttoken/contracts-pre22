@@ -2,9 +2,10 @@
 pragma solidity 0.6.10;
 
 import {Ownable} from "./common/UpgradeableOwnable.sol";
+import {LoanToken, IERC20} from "./LoanToken.sol";
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ILoanFactory} from "./interface/ILoanFactory.sol";
+import {ILoanToken} from "./interface/ILoanToken.sol";
+import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 
 /**
  * @title Liquidator
@@ -19,7 +20,7 @@ contract Liquidator is Ownable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    ILoanFactory public _factory;
+    ITrueFiPool public _pool;
     IERC20 public _stakingPool;
 
     // ======= STORAGE DECLARATION END ============
@@ -28,12 +29,16 @@ contract Liquidator is Ownable {
      * @dev Initialize this contract
      */
     function initialize(
-        ILoanFactory __factory,
+        ITrueFiPool __pool,
         IERC20 __stakingPool
     ) public initializer {
         Ownable.initialize();
 
-        _factory = __factory;
+        _pool = __pool;
         _stakingPool = __stakingPool;
+    }
+
+    function liquidate(ILoanToken loan) public {
+        loan.liquidate();
     }
 }

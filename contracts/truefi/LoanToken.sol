@@ -103,6 +103,12 @@ contract LoanToken is ILoanToken, ERC20 {
     event Reclaimed(address borrower, uint256 reclaimedAmount);
 
     /**
+     * @dev Emitted when loan gets liquidated
+     * @param status Final loan status
+     */
+    event Liquidated(Status status);
+
+    /**
      * @dev Create a Loan
      * @param _currencyToken Token to lend
      * @param _borrower Borrwer addresss
@@ -174,6 +180,14 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     modifier onlyAwaiting() {
         require(status == Status.Awaiting, "LoanToken: Current status should be Awaiting");
+        _;
+    }
+
+    /**
+     * @dev Only when loan is Defaulted
+     */
+    modifier onlyDefaulted() {
+        require(status == Status.Defaulted, "LoanToken: Current status should be Defaulted");
         _;
     }
 
@@ -294,6 +308,15 @@ contract LoanToken is ILoanToken, ERC20 {
         }
 
         emit Closed(status, _balance());
+    }
+
+    /**
+     * @dev Liquidate the loan if it has defaulted
+     */
+    function liquidate() external override onlyDefaulted {
+        status = Status.Liquidated;
+
+        emit Liquidated(status);
     }
 
     /**

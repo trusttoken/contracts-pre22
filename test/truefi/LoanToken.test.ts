@@ -242,6 +242,25 @@ describe('LoanToken', () => {
     })
   })
 
+  describe('liquidate', () => {
+    it('reverts when status is not defaulted', async () => {
+      await expect(loanToken.liquidate())
+        .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+      
+      await loanToken.fund()
+      await expect(loanToken.liquidate())
+        .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+      
+      await withdraw(borrower)
+      await expect(loanToken.liquidate())
+        .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+      
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await expect(loanToken.liquidate())
+        .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+    })
+  })
+
   describe('Repay', () => {
     it('reverts if called before withdraw', async () => {
       await expect(loanToken.repay(lender.address, 1)).to.be.revertedWith('LoanToken: Only after loan has been withdrawn')
