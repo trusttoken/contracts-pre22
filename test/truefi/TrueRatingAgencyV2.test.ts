@@ -399,7 +399,11 @@ describe('TrueRatingAgencyV2', () => {
       })
     })
 
-    describe('Withdraw', () => {
+    describe.only('Withdraw', () => {
+      beforeEach(async () => {
+        await rater.setRewardMultiplier(1)
+      })
+
       it('reverts if no vote was placed at all', async () => {
         await expect(rater.withdraw(loanToken.address, stake, txArgs))
           .to.be.revertedWith(' TrueRatingAgencyV2: Cannot withdraw more than was staked')
@@ -477,13 +481,107 @@ describe('TrueRatingAgencyV2', () => {
         })
       })
 
-      describe('Running', () => { })
+      describe.only('Running', () => {
+        let newLoanToken
+        const rewardMultiplier = 1
+        beforeEach(async () => {
+          newLoanToken = await new LoanTokenFactory(owner).deploy(
+            tusd.address,
+            owner.address,
+            owner.address,
+            parseEth(5e6),
+            yearInSeconds * 2,
+            100,
+          )
+    
+          await rater.setRewardMultiplier(rewardMultiplier)
+          await tusd.approve(newLoanToken.address, parseEth(5e6))
+          await rater.allow(owner.address, true)
+          await submit(newLoanToken.address)
+          await rater.yes(newLoanToken.address, stake)
+          await newLoanToken.fund()
+        })
 
-      describe('Closed', () => { })
+        it('properly sends unchanged amount of tokens', async () => {
+          await expect(() => rater.withdraw(newLoanToken.address, stake, txArgs))
+            .to.changeTokenBalance(stakedTrustToken, owner, stake)
+        })
+
+        it('does not reduce total loan votes', async () => {
+          const totalVotedBefore = await rater.getTotalYesVotes(newLoanToken.address)
+          await rater.withdraw(newLoanToken.address, stake, txArgs)
+          const totalVotedAfter = await rater.getTotalYesVotes(newLoanToken.address)
+
+          expect(totalVotedBefore).to.equal(stake)
+          expect(totalVotedAfter).to.equal(stake)
+        })
+
+        it('emits proper event', async () => {
+          await expect(rater.withdraw(newLoanToken.address, stake, txArgs))
+            .to.emit(rater, 'Withdrawn')
+            .withArgs(newLoanToken.address, owner.address, stake, stake, 0)
+        })
+
+        it('claims raters reward', async () => {
+          await expect(rater.withdraw(newLoanToken.address, stake, txArgs))
+            .to.emit(rater, 'Claimed')
+            .withArgs(newLoanToken.address, owner.address, parseTRU(100000))
+        })
+      })
+
+      describe.only('Closed', () => {
+        let newLoanToken
+        const rewardMultiplier = 1
+        beforeEach(async () => {
+          newLoanToken = await new LoanTokenFactory(owner).deploy(
+            tusd.address,
+            owner.address,
+            owner.address,
+            parseEth(5e6),
+            yearInSeconds * 2,
+            100,
+          )
+    
+          await rater.setRewardMultiplier(rewardMultiplier)
+          await tusd.approve(newLoanToken.address, parseEth(5e6))
+          await rater.allow(owner.address, true)
+          await submit(newLoanToken.address)
+          await rater.yes(newLoanToken.address, stake)
+          await newLoanToken.fund()
+          await tusd.mint(newLoanToken.address, parseEth(5e5))
+          await timeTravel(yearInSeconds * 3)
+          await newLoanToken.close()
+        })
+
+        it('properly sends unchanged amount of tokens', async () => {
+          await expect(() => rater.withdraw(newLoanToken.address, stake, txArgs))
+            .to.changeTokenBalance(stakedTrustToken, owner, stake)
+        })
+
+        it('does not reduce total loan votes', async () => {
+          const totalVotedBefore = await rater.getTotalYesVotes(newLoanToken.address)
+          await rater.withdraw(newLoanToken.address, stake, txArgs)
+          const totalVotedAfter = await rater.getTotalYesVotes(newLoanToken.address)
+
+          expect(totalVotedBefore).to.equal(stake)
+          expect(totalVotedAfter).to.equal(stake)
+        })
+
+        it('emits proper event', async () => {
+          await expect(rater.withdraw(newLoanToken.address, stake, txArgs))
+            .to.emit(rater, 'Withdrawn')
+            .withArgs(newLoanToken.address, owner.address, stake, stake, 0)
+        })
+
+        it('claims raters reward', async () => {
+          await expect(rater.withdraw(newLoanToken.address, stake, txArgs))
+            .to.emit(rater, 'Claimed')
+            .withArgs(newLoanToken.address, owner.address, parseTRU(100000))
+        })})
     })
   })
 
-  describe.only('Claim', () => {
+  describe('Claim', () => {
     const rewardMultiplier = 1
     beforeEach(async () => {
       loanToken = await new LoanTokenFactory(owner).deploy(
