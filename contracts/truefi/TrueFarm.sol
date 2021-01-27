@@ -150,6 +150,9 @@ contract TrueFarm is ITrueFarm, Initializable {
      * @return claimable rewards for account
      */
     function claimable(address account) external view returns (uint256) {
+        if (staked[account] == 0) {
+            return claimableReward[account];
+        }
         // estimate pending reward from distributor
         uint256 pending = trueDistributor.nextDistribution();
         // calculate total rewards (including pending)
