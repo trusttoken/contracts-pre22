@@ -248,7 +248,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
         emit Allowed(who, status);
     }
 
-
     /**
      * @dev Pause submitting loans for rating
      * @param status Flag of the status
