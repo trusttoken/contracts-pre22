@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { BigNumber, BigNumberish, constants, utils, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import { MockContract, deployMockContract } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -25,15 +25,11 @@ import {
   ArbitraryDistributor,
   ILoanFactoryJson,
   ArbitraryDistributorJson,
-  TrueRatingAgencyV2Json,
 } from 'contracts'
 
 describe('TrueRatingAgencyV2', () => {
-  enum LoanStatus { Void, Pending, Retracted, Running, Settled, Defaulted }
-
   let owner: Wallet
   let otherWallet: Wallet
-  let wallets: Wallet[]
 
   let rater: TrueRatingAgencyV2
   let trustToken: TrustToken
@@ -57,7 +53,7 @@ describe('TrueRatingAgencyV2', () => {
   let timeTravel: (time: number) => void
 
   beforeEachWithFixture(async (_wallets, _provider) => {
-    [owner, otherWallet, ...wallets] = _wallets
+    [owner, otherWallet] = _wallets
 
     trustToken = await new TrustTokenFactory(owner).deploy()
     await trustToken.initialize()
@@ -493,7 +489,7 @@ describe('TrueRatingAgencyV2', () => {
             yearInSeconds * 2,
             100,
           )
-    
+
           await rater.setRewardMultiplier(rewardMultiplier)
           await tusd.approve(newLoanToken.address, parseEth(5e6))
           await rater.allow(owner.address, true)
@@ -541,7 +537,7 @@ describe('TrueRatingAgencyV2', () => {
             yearInSeconds * 2,
             100,
           )
-    
+
           await rater.setRewardMultiplier(rewardMultiplier)
           await tusd.approve(newLoanToken.address, parseEth(5e6))
           await rater.allow(owner.address, true)
@@ -577,7 +573,8 @@ describe('TrueRatingAgencyV2', () => {
           await expect(rater.withdraw(newLoanToken.address, stake, txArgs))
             .to.emit(rater, 'Claimed')
             .withArgs(newLoanToken.address, owner.address, parseTRU(100000))
-        })})
+        })
+      })
     })
   })
 
@@ -668,7 +665,6 @@ describe('TrueRatingAgencyV2', () => {
         await rater.claim(loanToken.address, owner.address, txArgs)
         const balanceAfter = await trustToken.balanceOf(stakedTrustToken.address)
         expectScaledCloseTo(balanceAfter.sub(balanceBefore), parseTRU(6e4))
-
       })
 
       it('less funds are available for direct claiming', async () => {
