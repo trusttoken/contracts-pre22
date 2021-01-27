@@ -10,8 +10,8 @@ import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 /**
  * @title Liquidator
  * @notice Liquidate LoanTokens with this Contract
- * @dev When a Loan becomes defaulted, Liquidator allows to 
- * compensate pool participants, by transfering some of TRU to the pool 
+ * @dev When a Loan becomes defaulted, Liquidator allows to
+ * compensate pool participants, by transfering some of TRU to the pool
  */
 contract Liquidator is Ownable {
     // ================ WARNING ==================
