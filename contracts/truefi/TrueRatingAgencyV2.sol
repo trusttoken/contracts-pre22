@@ -80,6 +80,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
     // reward multiplier for voters
     uint256 public rewardMultiplier;
 
+    // are submissions paused?
     bool public submissionPauseStatus;
 
     // ======= STORAGE DECLARATION END ============
@@ -154,6 +155,8 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
         stakedTrustToken = _stakedTrustToken;
         distributor = _distributor;
         factory = _factory;
+
+        ratersRewardFactor = 10000;
     }
 
     /**
@@ -444,21 +447,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
             return 0;
         }
         return totalClaimable.sub(loans[id].claimed[voter]);
-    }
-
-    /**
-     * @dev Check if a prediction was correct for a specific loan and vote
-     * @param id Loan ID
-     * @param choice Outcome prediction
-     */
-    function wasPredictionCorrect(address id, bool choice) internal view returns (bool) {
-        if (status(id) == LoanStatus.Settled && choice) {
-            return true;
-        }
-        if (status(id) == LoanStatus.Defaulted && !choice) {
-            return true;
-        }
-        return false;
     }
 
     /**

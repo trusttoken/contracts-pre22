@@ -549,6 +549,14 @@ describe('TrueRatingAgencyV2', () => {
         .withArgs(loanToken.address, owner.address, parseTRU(100000))
     })
 
+    describe('with different ratersRewardFactor value', () => {
+      it('moves proper amount of funds from distributor')
+
+      it('moves proper amount of funds from to staking contract')
+
+      it('less funds are available for direct claiming')
+    })
+
     describe('Running', () => {
       const newRewardMultiplier = 50
 
