@@ -208,6 +208,15 @@ describe('TrueRatingAgency', () => {
         .to.be.revertedWith('TrueRatingAgency: Sender is not borrower')
     })
 
+    it('reverts when submissions are paused', async () => {
+      await rater.pauseSubmissions(true)
+      await expect(submit(loanToken.address, owner))
+        .to.be.revertedWith('TrueRatingAgency: New submissions are paused')
+      await rater.pauseSubmissions(false)
+      await expect(submit(loanToken.address, owner))
+        .not.to.be.reverted
+    })
+
     it('creates loan', async () => {
       await submit(loanToken.address)
 
