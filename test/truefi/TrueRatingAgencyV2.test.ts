@@ -13,8 +13,8 @@ import {
 } from 'utils'
 
 import {
-   TrueRatingAgencyV2Factory,
-   TrueRatingAgencyV2,
+  TrueRatingAgencyV2Factory,
+  TrueRatingAgencyV2,
   TrustTokenFactory,
   TrustToken,
   LoanTokenFactory,
@@ -25,7 +25,7 @@ import {
   ArbitraryDistributor,
   ILoanFactoryJson,
   ArbitraryDistributorJson,
-   TrueRatingAgencyV2Json,
+  TrueRatingAgencyV2Json,
 } from 'contracts'
 
 describe('TrueRatingAgencyV2', () => {
@@ -35,7 +35,7 @@ describe('TrueRatingAgencyV2', () => {
   let otherWallet: Wallet
   let wallets: Wallet[]
 
-  let rater:  TrueRatingAgencyV2
+  let rater: TrueRatingAgencyV2
   let trustToken: TrustToken
   let stakedTrustToken: TrustToken
   let loanToken: LoanToken
@@ -78,7 +78,7 @@ describe('TrueRatingAgencyV2', () => {
 
     distributor = await new ArbitraryDistributorFactory(owner).deploy()
     mockFactory = await deployMockContract(owner, ILoanFactoryJson.abi)
-    rater = await new  TrueRatingAgencyV2Factory(owner).deploy()
+    rater = await new TrueRatingAgencyV2Factory(owner).deploy()
 
     await mockFactory.mock.isLoanToken.returns(true)
     await distributor.initialize(rater.address, trustToken.address, parseTRU(1e7))
@@ -87,7 +87,7 @@ describe('TrueRatingAgencyV2', () => {
 
     await stakedTrustToken.mint(owner.address, parseTRU(1e7))
     await stakedTrustToken.approve(rater.address, parseTRU(1e7))
-    
+
     await trustToken.mint(owner.address, parseTRU(1e7))
     await trustToken.mint(distributor.address, parseTRU(1e7))
     await trustToken.approve(rater.address, parseTRU(1e7))
@@ -106,7 +106,7 @@ describe('TrueRatingAgencyV2', () => {
     it('checks distributor beneficiary address', async () => {
       const mockDistributor = await deployMockContract(owner, ArbitraryDistributorJson.abi)
       await mockDistributor.mock.beneficiary.returns(owner.address)
-      const newRater = await new  TrueRatingAgencyV2Factory(owner).deploy()
+      const newRater = await new TrueRatingAgencyV2Factory(owner).deploy()
       await expect(newRater.initialize(trustToken.address, stakedTrustToken.address, mockDistributor.address, mockFactory.address)).to.be.revertedWith(' TrueRatingAgencyV2: Invalid distributor beneficiary')
     })
   })
@@ -477,9 +477,9 @@ describe('TrueRatingAgencyV2', () => {
         })
       })
 
-      describe('Running', () => {})
+      describe('Running', () => { })
 
-      describe('Closed', () => {})
+      describe('Closed', () => { })
     })
   })
 
@@ -550,11 +550,37 @@ describe('TrueRatingAgencyV2', () => {
     })
 
     describe('with different ratersRewardFactor value', () => {
-      it('moves proper amount of funds from distributor')
+      beforeEach(async () => {
+        await rater.setRatersRewardFactor(4000)
+      })
 
-      it('moves proper amount of funds from to staking contract')
+      it('moves proper amount of funds from distributor', async () => {
+        await rater.yes(loanToken.address, 1000)
+        await loanToken.fund()
+        const balanceBefore = await trustToken.balanceOf(distributor.address)
+        await rater.claim(loanToken.address, owner.address, txArgs)
+        const balanceAfter = await trustToken.balanceOf(distributor.address)
+        expectScaledCloseTo(balanceBefore.sub(balanceAfter), parseTRU(1e5))
+      })
 
-      it('less funds are available for direct claiming')
+      it('moves proper amount of funds from to staking contract', async () => {
+        await rater.yes(loanToken.address, 1000)
+        await loanToken.fund()
+        const balanceBefore = await trustToken.balanceOf(stakedTrustToken.address)
+        await rater.claim(loanToken.address, owner.address, txArgs)
+        const balanceAfter = await trustToken.balanceOf(stakedTrustToken.address)
+        expectScaledCloseTo(balanceAfter.sub(balanceBefore), parseTRU(6e4))
+
+      })
+
+      it('less funds are available for direct claiming', async () => {
+        await rater.yes(loanToken.address, 1000)
+        await loanToken.fund()
+        const balanceBefore = await trustToken.balanceOf(owner.address)
+        await rater.claim(loanToken.address, owner.address, txArgs)
+        const balanceAfter = await trustToken.balanceOf(owner.address)
+        expectScaledCloseTo(balanceAfter.sub(balanceBefore), parseTRU(4e4))
+      })
     })
 
     describe('Running', () => {
