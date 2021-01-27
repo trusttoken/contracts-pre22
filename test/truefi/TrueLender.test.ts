@@ -473,6 +473,7 @@ describe('TrueLender', () => {
         tusd.address,
         owner.address,
         lender.address,
+        lender.address,
         parseEth(1e6),
         yearInSeconds,
         2000,
@@ -480,6 +481,7 @@ describe('TrueLender', () => {
       secondLoanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
         owner.address,
+        lender.address,
         lender.address,
         parseEth(2e6),
         yearInSeconds * 3,

@@ -34,6 +34,7 @@ contract LoanToken is ILoanToken, ERC20 {
     uint8 public constant override version = 2;
 
     address public override borrower;
+    address public liquidator;
     uint256 public override amount;
     uint256 public override term;
     uint256 public override apy;
@@ -120,6 +121,7 @@ contract LoanToken is ILoanToken, ERC20 {
         IERC20 _currencyToken,
         address _borrower,
         address _lender,
+        address _liquidator,
         uint256 _amount,
         uint256 _term,
         uint256 _apy
@@ -128,6 +130,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
         currencyToken = _currencyToken;
         borrower = _borrower;
+        liquidator = _liquidator;
         amount = _amount;
         term = _term;
         apy = _apy;

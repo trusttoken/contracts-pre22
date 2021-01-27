@@ -47,6 +47,7 @@ describe('Liquidator', () => {
             tusd.address,
             borrower.address,
             owner.address,
+            liquidator.address,
             parseEth(1000),
             yearInSeconds,
             1000,

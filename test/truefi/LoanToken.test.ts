@@ -52,6 +52,7 @@ describe('LoanToken', () => {
       tusd.address,
       borrower.address,
       lender.address,
+      lender.address, //easier testing purposes
       parseEth(1000),
       yearInSeconds,
       1000,
@@ -537,7 +538,7 @@ describe('LoanToken', () => {
 
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
-      const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, borrower.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
+      const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 
