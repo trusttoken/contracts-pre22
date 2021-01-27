@@ -18,7 +18,10 @@ import {
 } from 'contracts'
 
 describe('LoanToken', () => {
-  enum LoanTokenStatus { Awaiting, Funded, Withdrawn, Settled, Defaulted }
+  enum LoanTokenStatus {
+    Awaiting, Funded, Withdrawn, Settled, Defaulted,
+    Liquidated
+  }
 
   let provider: MockProvider
   let lender: Wallet
@@ -259,6 +262,26 @@ describe('LoanToken', () => {
       await timeTravel(provider, defaultedLoanCloseTime)
       await expect(loanToken.liquidate())
         .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+    })
+
+    it('reverts if not called by liquidator', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await loanToken.close()
+
+      await expect(loanToken.connect(borrower).liquidate())
+          .to.be.revertedWith('LoanToken: Caller is not the liquidator')
+    })
+
+    it('sets status to liquidated', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await loanToken.close()
+      
+      await loanToken.liquidate()
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Liquidated)
     })
   })
 

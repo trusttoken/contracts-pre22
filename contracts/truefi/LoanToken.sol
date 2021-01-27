@@ -147,6 +147,14 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
+     * @dev Only liquidator can liquidate
+     */
+    modifier onlyLiquidator() {
+        require(msg.sender == liquidator, "LoanToken: Caller is not the liquidator");
+        _;
+    }
+
+    /**
      * @dev Only when loan is Settled
      */
     modifier onlyClosed() {
@@ -316,7 +324,7 @@ contract LoanToken is ILoanToken, ERC20 {
     /**
      * @dev Liquidate the loan if it has defaulted
      */
-    function liquidate() external override onlyDefaulted {
+    function liquidate() external override onlyDefaulted onlyLiquidator {
         status = Status.Liquidated;
 
         emit Liquidated(status);
