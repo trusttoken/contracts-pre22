@@ -28,11 +28,13 @@ contract MockCurve is ICurve {
         return sharePrice;
     }
 
-    // hack to burn 300,038 gas using assembly
+    // prettier-ignore
+    // hack to burn 300,633 gas using assembly
     function burn300kGas() public view {
-        
         assembly {
-            for { let i := 0 } lt(i, 5882) { i := add(i, 1) } { let y:= balance(0) }
+            let y := 0
+            for { let i := 0 } lt(i, 396) { i := add(i, 1) } { y:= extcodesize(0) }
+            y := 0
         }
     }
 }

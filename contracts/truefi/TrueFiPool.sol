@@ -222,7 +222,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @return yTokenValue in USD.
      */
     function yTokenValue() public view returns (uint256) {
-        if (inSync) { return yTokenValueCache; }
+        if (inSync) {
+            return yTokenValueCache;
+        }
         return yTokenBalance().mul(_curvePool.curve().get_virtual_price()).div(1 ether);
     }
 
@@ -248,7 +250,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @return Value of loans in pool
      */
     function loansValue() public view returns (uint256) {
-        if (inSync) { return loansValueCache; }
+        if (inSync) {
+            return loansValueCache;
+        }
         return _lender.value();
     }
 
