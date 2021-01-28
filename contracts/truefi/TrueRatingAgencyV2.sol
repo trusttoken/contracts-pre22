@@ -67,8 +67,8 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
     mapping(address => bool) public allowedSubmitters;
     mapping(address => Loan) public loans;
 
-    IBurnableERC20 public trustToken;
-    IVoteTokenWithERC20 public stakedTrustToken;
+    IBurnableERC20 public TRU;
+    IVoteTokenWithERC20 public stkTRU;
     IArbitraryDistributor public distributor;
     ILoanFactory public factory;
 
@@ -138,21 +138,21 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
     /**
      * @dev Initalize Rating Agenct
      * Distributor contract decides how much TRU is rewarded to stakers
-     * @param _trustToken TRU contract
+     * @param _TRU TRU contract
      * @param _distributor Distributor contract
      * @param _factory Factory contract for deploying tokens
      */
     function initialize(
-        IBurnableERC20 _trustToken,
-        IVoteTokenWithERC20 _stakedTrustToken,
+        IBurnableERC20 _TRU,
+        IVoteTokenWithERC20 _stkTRU,
         IArbitraryDistributor _distributor,
         ILoanFactory _factory
     ) public initializer {
         require(address(this) == _distributor.beneficiary(), "TrueRatingAgencyV2: Invalid distributor beneficiary");
         Ownable.initialize();
 
-        trustToken = _trustToken;
-        stakedTrustToken = _stakedTrustToken;
+        TRU = _TRU;
+        stkTRU = _stkTRU;
         distributor = _distributor;
         factory = _factory;
 
@@ -299,7 +299,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
         loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].add(stake);
 
-        require(stakedTrustToken.transferFrom(msg.sender, address(this), stake));
+        require(stkTRU.transferFrom(msg.sender, address(this), stake));
         emit Voted(id, msg.sender, choice, stake);
     }
 
@@ -352,7 +352,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
 
         // transfer tokens to sender and emit event
-        require(stakedTrustToken.transfer(msg.sender, amountToTransfer));
+        require(stkTRU.transfer(msg.sender, amountToTransfer));
         emit Withdrawn(id, msg.sender, stake, amountToTransfer, burned);
     }
 
@@ -361,7 +361,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
      * @param input Value to convert to TRU precision
      * @return output TRU amount
      */
-    function toTrustToken(uint256 input) internal pure returns (uint256 output) {
+    function toTRU(uint256 input) internal pure returns (uint256 output) {
         output = input.div(TOKEN_PRECISION_DIFFERENCE);
     }
 
@@ -379,7 +379,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
 
             // calculate reward
             // prettier-ignore
-            uint256 totalReward = toTrustToken(
+            uint256 totalReward = toTRU(
                 interest
                     .mul(distributor.remaining())
                     .mul(rewardMultiplier)
@@ -390,7 +390,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
             loans[id].reward = ratersReward;
             if (loans[id].reward > 0) {
                 distributor.distribute(totalReward);
-                trustToken.transfer(address(stakedTrustToken), totalReward.sub(ratersReward));
+                TRU.transfer(address(stkTRU), totalReward.sub(ratersReward));
             }
         }
         _;
@@ -420,7 +420,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
             // track amount of claimed tokens
             loans[id].claimed[voter] = loans[id].claimed[voter].add(claimableRewards);
             // transfer tokens
-            require(trustToken.transfer(voter, claimableRewards));
+            require(TRU.transfer(voter, claimableRewards));
             emit Claimed(id, voter, claimableRewards);
         }
     }
