@@ -7,6 +7,7 @@ import { setupDeploy } from 'scripts/utils'
 import { beforeEachWithFixture, DAY, parseEth, parseTRU, timeTravel } from 'utils'
 
 import {
+  LinearTrueDistributor, LinearTrueDistributorFactory,
   MockOracle,
   MockOracleFactory,
   MockTrueCurrency,
@@ -24,8 +25,9 @@ describe('StkTruToken', () => {
   let staker: Wallet
   let trustToken: TrustToken
   let stkToken: StkTruToken
-  let tusd: MockTrueCurrency
+  let tfusd: MockTrueCurrency
   let oracle: MockOracle
+  let distributor: LinearTrueDistributor
   let provider: providers.JsonRpcProvider
 
   const amount = parseTRU(100)
@@ -37,11 +39,12 @@ describe('StkTruToken', () => {
     const deployContract = setupDeploy(owner)
     trustToken = await deployContract(TrustTokenFactory)
     await trustToken.initialize()
-    tusd = await deployContract(MockTrueCurrencyFactory)
+    tfusd = await deployContract(MockTrueCurrencyFactory)
     oracle = await deployContract(MockOracleFactory)
+    distributor = await deployContract(LinearTrueDistributorFactory)
 
     stkToken = await deployContract(StkTruTokenFactory)
-    await stkToken.initialize(trustToken.address, tusd.address, oracle.address)
+    await stkToken.initialize(trustToken.address, tfusd.address, oracle.address, distributor.address)
 
     await trustToken.mint(owner.address, amount)
     await trustToken.approve(stkToken.address, amount)
@@ -94,21 +97,21 @@ describe('StkTruToken', () => {
       it('stakes, then some TRU and TUSD are transferred to stake, then unstake', async () => {
         await stkToken.stake(amount)
         await trustToken.mint(stkToken.address, parseTRU(10))
-        await tusd.mint(stkToken.address, parseEth(10))
+        await tfusd.mint(stkToken.address, parseEth(10))
         await timeTravel(provider, stakeCooldown)
         await stkToken.unstake(amount)
         expect(await trustToken.balanceOf(owner.address)).to.equal(amount.add(parseTRU(10)))
-        expect(await tusd.balanceOf(owner.address)).to.equal(parseEth(10))
+        expect(await tfusd.balanceOf(owner.address)).to.equal(parseEth(10))
       })
 
       it('some TRU and TUSD are transferred to stake, then stake & unstake', async () => {
         await trustToken.mint(stkToken.address, parseTRU(10))
-        await tusd.mint(stkToken.address, parseEth(10))
+        await tfusd.mint(stkToken.address, parseEth(10))
         await stkToken.stake(amount)
         await timeTravel(provider, stakeCooldown)
         await stkToken.unstake(amount)
         expect(await trustToken.balanceOf(owner.address)).to.equal(amount.add(parseTRU(10)))
-        expect(await tusd.balanceOf(owner.address)).to.equal(parseEth(10))
+        expect(await tfusd.balanceOf(owner.address)).to.equal(parseEth(10))
       })
     })
 
@@ -154,15 +157,15 @@ describe('StkTruToken', () => {
 
       it('rewards of TRU and TUSD', async () => {
         const totalWalletValue = async (wallet: Wallet) => (await trustToken.balanceOf(wallet.address))
-          .add((await tusd.balanceOf(wallet.address)).div(5e10))
+          .add((await tfusd.balanceOf(wallet.address)).div(5e10))
 
         await stkToken.stake(amount)
         await trustToken.mint(stkToken.address, parseTRU(10))
-        await tusd.mint(stkToken.address, parseEth(50)) // same as 10 TRU
+        await tfusd.mint(stkToken.address, parseEth(50)) // same as 10 TRU
         await stkToken.connect(staker).stake(amount.div(2))
         // owner holds 12/17 of stake at the moment
         await trustToken.mint(stkToken.address, parseTRU(10))
-        await tusd.mint(stkToken.address, parseEth(50)) // same as 10 TRU
+        await tfusd.mint(stkToken.address, parseEth(50)) // same as 10 TRU
         await timeTravel(provider, stakeCooldown)
         await stkToken.unstake(amount)
         await stkToken.connect(staker).unstake(await stkToken.balanceOf(staker.address))

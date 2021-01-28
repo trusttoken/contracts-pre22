@@ -8,30 +8,35 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {VoteToken} from "./VoteToken.sol";
 import {ClaimableContract} from "../trusttoken/common/ClaimableContract.sol";
 import {ITruPriceOracle} from "./interface/ITruPriceOracle.sol";
+import {ITrueDistributor} from "../truefi/interface/ITrueDistributor.sol";
 
 contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     using SafeMath for uint256;
 
     uint256 public constant MIN_STAKE_TIME = 14 days;
 
-    IERC20 public trustToken;
-    IERC20 public tusd;
+    IERC20 public tru;
+    IERC20 public tfusd;
     ITruPriceOracle public oracle;
+    ITrueDistributor public distributor;
+
     mapping(address => uint256) public unlockTime;
 
     event OracleChanged(ITruPriceOracle newOracle);
     event Stake(address indexed staker, uint256 amount, uint256 minted);
-    event Unstake(address indexed staker, uint256 burntAmount, uint256 truAmount, uint256 tusdAmount);
+    event Unstake(address indexed staker, uint256 burntAmount, uint256 truAmount, uint256 tfusdAmount);
 
     function initialize(
-        IERC20 _trustToken,
-        IERC20 _tusd,
-        ITruPriceOracle _oracle
+        IERC20 _tru,
+        IERC20 _tfusd,
+        ITruPriceOracle _oracle,
+        ITrueDistributor _distributor
     ) public {
         require(!initalized, "StkTruToken: Already initialized");
-        trustToken = _trustToken;
-        tusd = _tusd;
+        tru = _tru;
+        tfusd = _tfusd;
         oracle = _oracle;
+        distributor = _distributor;
         owner_ = msg.sender;
         initalized = true;
     }
@@ -42,12 +47,14 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     }
 
     function stake(uint256 amount) external {
-        unlockTime[msg.sender] = block.timestamp + MIN_STAKE_TIME;
+        unlockTime[msg.sender] = nextUnlockTime();
+
+        distributor.distribute();
 
         uint256 amountToMint = totalSupply == 0 ? amount : totalSupply.mul(amount).div(value());
         _mint(msg.sender, amountToMint);
 
-        require(trustToken.transferFrom(msg.sender, address(this), amount));
+        require(tru.transferFrom(msg.sender, address(this), amount));
 
         emit Stake(msg.sender, amount, amountToMint);
     }
@@ -56,19 +63,30 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         require(balanceOf[msg.sender] >= amount, "StkTruToken: Insufficient balance");
         require(unlockTime[msg.sender] <= block.timestamp, "StkTruToken: Stake is locked");
 
-        uint256 truAmount = trustToken.balanceOf(address(this)).mul(amount).div(totalSupply);
-        uint256 tusdAmount = tusd.balanceOf(address(this)).mul(amount).div(totalSupply);
+        distributor.distribute();
+
+        uint256 truAmount = tru.balanceOf(address(this)).mul(amount).div(totalSupply);
+        uint256 tfusdAmount = tfusd.balanceOf(address(this)).mul(amount).div(totalSupply);
 
         _burn(msg.sender, amount);
 
-        require(trustToken.transfer(msg.sender, truAmount));
-        require(tusd.transfer(msg.sender, tusdAmount));
+        require(tru.transfer(msg.sender, truAmount));
+        require(tfusd.transfer(msg.sender, tfusdAmount));
 
-        emit Unstake(msg.sender, amount, truAmount, tusdAmount);
+        emit Unstake(msg.sender, amount, truAmount, tfusdAmount);
+    }
+
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal override {
+        unlockTime[recipient] = nextUnlockTime();
+        _transfer(sender, recipient, amount);
     }
 
     function value() public view returns (uint256) {
-        return trustToken.balanceOf(address(this)).add(oracle.usdToTru(tusd.balanceOf(address(this))));
+        return tru.balanceOf(address(this)).add(oracle.usdToTru(tfusd.balanceOf(address(this))));
     }
 
     function decimals() public override pure returns (uint8) {
@@ -84,6 +102,10 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     }
 
     function symbol() public override pure returns (string memory) {
-        return "StkTRU";
+        return "stkTRU";
+    }
+
+    function nextUnlockTime() internal view returns (uint256) {
+        return block.timestamp + MIN_STAKE_TIME;
     }
 }
