@@ -14,6 +14,7 @@ describe('Liquidator', () => {
   let liquidator: Liquidator
 
   let tusd: MockTrueCurrency
+  let tru: MockErc20Token
   let loanToken: LoanToken
   let pool: Contract
   let stakingPool: MockStakingPool
@@ -31,13 +32,16 @@ describe('Liquidator', () => {
 
     liquidator = await new LiquidatorFactory(owner).deploy()
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
+    tru = await new MockErc20TokenFactory(owner).deploy()
     pool = await deployMockContract(owner, ITrueFiPoolJson.abi)
     await tusd.initialize()
     stakingPool = await new MockStakingPoolFactory(owner).deploy()
+    await stakingPool.setTrustToken(tru.address)
 
     await liquidator.initialize(
       pool.address,
       stakingPool.address,
+      tru.address,
     )
 
     loanToken = await new LoanTokenFactory(owner).deploy(
@@ -52,6 +56,7 @@ describe('Liquidator', () => {
 
     await tusd.mint(owner.address, parseEth(1e7))
     await tusd.approve(loanToken.address, parseEth(1e7))
+    await tru.mint(stakingPool.address, parseEth(1e3))
   })
 
   describe('Initializer', () => {
@@ -65,6 +70,10 @@ describe('Liquidator', () => {
 
     it('sets fetchMaxShare correctly', async () => {
       expect(await liquidator.fetchMaxShare()).to.equal(1000)
+    })
+
+    it('sets tru address correctly', async () => {
+      expect(await liquidator._trustToken()).to.equal(tru.address)
     })
   })
 
@@ -120,6 +129,57 @@ describe('Liquidator', () => {
 
       await liquidator.connect(otherWallet).liquidate(loanToken.address)
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Liquidated)
+    })
+
+    describe('transfers correct amount of tru to trueFiPool', () => {
+      beforeEach(async () => {
+        await timeTravel(provider, defaultedLoanCloseTime)
+        await loanToken.close()
+      })
+
+      it('0 tru in staking pool balance', async () => {
+        await stakingPool.withdraw(parseEth(1e3))
+
+        await liquidator.liquidate(loanToken.address)
+        expect(await tru.balanceOf(pool.address)).to.equal(parseEth(0))
+      })
+
+      it('returns max fetch share to pool', async () => {
+        await liquidator.liquidate(loanToken.address)
+        expect(await tru.balanceOf(pool.address)).to.equal(parseEth(1e2))
+      })
+
+      it('returns defaulted value', async () => {
+        await tru.mint(stakingPool.address, parseEth(1e7))
+
+        await liquidator.liquidate(loanToken.address)
+        expect(await tru.balanceOf(pool.address)).to.equal(parseEth(22e2))
+      })
+
+      describe('only half of loan value has defaulted', () => {
+        beforeEach(async () => {
+          await tusd.mint(loanToken.address, parseEth(550))
+        })
+
+        it('0 tru in staking pool balance', async () => {
+          await stakingPool.withdraw(parseEth(1e3))
+
+          await liquidator.liquidate(loanToken.address)
+          expect(await tru.balanceOf(pool.address)).to.equal(parseEth(0))
+        })
+
+        it('returns max fetch share to pool', async () => {
+          await liquidator.liquidate(loanToken.address)
+          expect(await tru.balanceOf(pool.address)).to.equal(parseEth(1e2))
+        })
+
+        it('returns defaulted value', async () => {
+          await tru.mint(stakingPool.address, parseEth(1e7))
+
+          await liquidator.liquidate(loanToken.address)
+          expect(await tru.balanceOf(pool.address)).to.equal(parseEth(11e2))
+        })
+      })
     })
   })
 })
