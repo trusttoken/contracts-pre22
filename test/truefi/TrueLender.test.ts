@@ -67,6 +67,8 @@ describe('TrueLender', () => {
     await mockPool.mock.currencyToken.returns(tusd.address)
     await mockPool.mock.borrow.returns()
     await mockPool.mock.repay.returns()
+    await mockPool.mock.balanceOf.returns(0)
+    await mockPool.mock.transfer.returns(true)
 
     mockLoanToken = await deployMockLoanToken()
     await mockLoanToken.mock.borrowerFee.returns(25)
@@ -351,22 +353,19 @@ describe('TrueLender', () => {
     describe('all requirements are met', () => {
       beforeEach(async () => {
         await mockLoanToken.mock.getParameters.returns(amount, apy, term)
-        await mockLoanToken.mock.receivedAmount.returns(amount.sub(10))
+        await mockLoanToken.mock.receivedAmount.returns(amount.sub(fee))
         await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
-        await tusd.mint(lender.address, 10) // mockPool won't do it
+        await mockPool.mock.balanceOf.returns(fee)
       })
 
       it('borrows tokens from pool', async () => {
         await lender.fund(mockLoanToken.address)
-        expect('borrow').to.be.calledOnContractWith(mockPool, [amount])
+        expect('borrow').to.be.calledOnContractWith(mockPool, [amount, fee])
       })
 
-      it('approves LoanToken to spend funds borrowed from pool', async () => {
-        expect(await tusd.allowance(lender.address, mockLoanToken.address))
-          .to.equal(0)
+      it('calls transfer on pool', async () => {
         await lender.fund(mockLoanToken.address)
-        expect(await tusd.allowance(lender.address, mockLoanToken.address))
-          .to.equal(amount.sub(10))
+        expect('transfer').to.be.calledOnContractWith(mockPool, [mockStakingPool.address, fee])
       })
 
       it('calls fund function', async () => {
@@ -374,20 +373,13 @@ describe('TrueLender', () => {
         expect('fund').to.be.calledOnContractWith(mockLoanToken, [])
       })
 
-      it('transfers origination fee to staking pool', async () => {
-        expect(await tusd.balanceOf(mockStakingPool.address)).to.equal(0)
-        await lender.fund(mockLoanToken.address)
-        expect(await tusd.balanceOf(mockStakingPool.address)).to.equal(10)
-      })
-
       it('emits proper event', async () => {
         await expect(lender.fund(mockLoanToken.address))
           .to.emit(lender, 'Funded')
-          .withArgs(mockLoanToken.address, amount.sub(10))
+          .withArgs(mockLoanToken.address, amount.sub(fee))
       })
 
       it('adds funded loan to an array', async () => {
-        await tusd.mint(lender.address, 10) // mockPool won't do it
         await lender.fund(mockLoanToken.address)
         expect(await lender.loans()).to.deep.equal([mockLoanToken.address])
         await lender.fund(mockLoanToken.address)

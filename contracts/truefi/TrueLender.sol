@@ -306,10 +306,12 @@ contract TrueLender is ITrueLender, Ownable {
         require(loanIsCredible(apy, term, yes, no), "TrueLender: Loan risk is too high");
 
         _loans.push(loanToken);
-        pool.borrow(amount);
+        pool.borrow(amount, amount.sub(receivedAmount));
         currencyToken.approve(address(loanToken), receivedAmount);
         loanToken.fund();
-        require(currencyToken.transfer(address(stakingPool), amount.sub(receivedAmount)));
+
+        require(pool.transfer(address(stakingPool), pool.balanceOf(address(this))));
+
         emit Funded(address(loanToken), receivedAmount);
     }
 
