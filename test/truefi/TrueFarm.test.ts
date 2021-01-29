@@ -182,6 +182,14 @@ describe('TrueFarm', () => {
       expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
     })
 
+    it('staking claims pending rewards', async () => {
+      await farm.connect(staker1).stake(parseEth(500), txArgs)
+      await timeTravel(provider, DAY)
+      await farm.connect(staker1).stake(parseEth(500), txArgs)
+
+      expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+    })
+
     it('claiming clears claimableRewards', async () => {
       await farm.connect(staker1).stake(parseEth(500), txArgs)
       await timeTravel(provider, DAY)
