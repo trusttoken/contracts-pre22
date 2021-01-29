@@ -181,5 +181,14 @@ describe('Liquidator', () => {
         })
       })
     })
+
+    it('emits event', async () => {
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await loanToken.close()
+
+      await expect(liquidator.liquidate(loanToken.address))
+        .to.emit(liquidator, 'Liquidated')
+        .withArgs(loanToken.address)
+    })
   })
 })

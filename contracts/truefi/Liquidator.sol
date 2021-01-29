@@ -82,6 +82,7 @@ contract Liquidator is Ownable {
         _stakingPool.withdraw(defaultedValue);
         loan.liquidate();
         require(_trustToken.transfer(address(_pool), defaultedValue));
+        emit Liquidated(loan);
     }
 
     /**
