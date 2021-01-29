@@ -23,7 +23,17 @@ contract Liquidator is Ownable {
     ITrueFiPool public _pool;
     IERC20 public _stakingPool;
 
+    // max share of tru to be taken from staking pool during liquidation
+    // 1000 -> 10%
+    uint256 public fetchMaxShare;
+
     // ======= STORAGE DECLARATION END ============
+
+    /**
+     * @dev Emitted fetch max share is changed
+     * @param newShare New share set
+     */
+    event FetchMaxShareChanged(uint256 newShare);
 
     /**
      * @dev Initialize this contract
@@ -33,9 +43,25 @@ contract Liquidator is Ownable {
 
         _pool = __pool;
         _stakingPool = __stakingPool;
+        fetchMaxShare = 1000;
     }
 
-    function liquidate(ILoanToken loan) public {
+    /**
+     * @dev Set new max fetch share
+     * @param newShare New share to be set
+     */
+    function setFetchMaxShare(uint256 newShare) external onlyOwner {
+        require(newShare > 0, "Liquidator: Share cannot be set to 0");
+        fetchMaxShare = newShare;
+        emit FetchMaxShareChanged(newShare);
+    }
+
+    /**
+     * @dev Liquidates a defaulted Loan, withdraws a portion of tru from staking pool
+     * then transfers tru to TrueFiPool as compensation
+     * @param loan Loan to be liquidated
+     */
+    function liquidate(ILoanToken loan) external {
         loan.liquidate();
     }
 }

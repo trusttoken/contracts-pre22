@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { ITrueFiPoolJson, Liquidator, LiquidatorFactory, LoanToken, LoanTokenFactory, MockErc20Token, MockErc20TokenFactory, MockTrueCurrency, MockTrueCurrencyFactory } from 'contracts'
+import { ITrueFiPoolJson, Liquidator, LiquidatorFactory, LoanToken, LoanTokenFactory, MockErc20Token, MockErc20TokenFactory, MockStakingPool, MockStakingPoolFactory, MockTrueCurrency, MockTrueCurrencyFactory } from 'contracts'
 import { deployMockContract, MockProvider } from 'ethereum-waffle'
 import { Contract, Wallet } from 'ethers'
 import { beforeEachWithFixture, parseEth, timeTravel } from 'utils'
@@ -16,7 +16,7 @@ describe('Liquidator', () => {
   let tusd: MockTrueCurrency
   let loanToken: LoanToken
   let pool: Contract
-  let stakingPool: MockErc20Token
+  let stakingPool: MockStakingPool
 
   const dayInSeconds = 60 * 60 * 24
   const yearInSeconds = dayInSeconds * 365
@@ -33,7 +33,7 @@ describe('Liquidator', () => {
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
     pool = await deployMockContract(owner, ITrueFiPoolJson.abi)
     await tusd.initialize()
-    stakingPool = await new MockErc20TokenFactory(owner).deploy()
+    stakingPool = await new MockStakingPoolFactory(owner).deploy()
 
     await liquidator.initialize(
       pool.address,
@@ -61,6 +61,33 @@ describe('Liquidator', () => {
 
     it('staking pool set correctly', async () => {
       expect(await liquidator._stakingPool()).to.equal(stakingPool.address)
+    })
+
+    it('sets fetchMaxShare correctly', async () => {
+      expect(await liquidator.fetchMaxShare()).to.equal(1000)
+    })
+  })
+
+  describe('fetchMaxShare', () => {
+    it('only owner can set new share', async () => {
+      await expect(liquidator.connect(otherWallet).setFetchMaxShare(500))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot set share to 0', async () => {
+      await expect(liquidator.setFetchMaxShare(0))
+        .to.be.revertedWith('Liquidator: Share cannot be set to 0')
+    })
+
+    it('is changed properly', async () => {
+      await liquidator.setFetchMaxShare(500)
+      expect(await liquidator.fetchMaxShare()).to.equal(500)
+    })
+
+    it('emits event', async () => {
+      await expect(liquidator.setFetchMaxShare(500))
+        .to.emit(liquidator, 'FetchMaxShareChanged')
+        .withArgs(500)
     })
   })
 
