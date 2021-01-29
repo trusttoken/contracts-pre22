@@ -1,3 +1,4 @@
-import { BigNumberish, BigNumber } from 'ethers'
+import { BigNumberish } from 'ethers'
+import { parseEth } from './parseEth'
 
-export const parseTRU = (amount: BigNumberish) => BigNumber.from(amount).mul(10 ** 8)
+export const parseTRU = (amount: BigNumberish) => parseEth(amount).div(10 ** 10)

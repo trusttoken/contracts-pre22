@@ -4,12 +4,10 @@ import { solidity } from 'ethereum-waffle'
 
 import { setupDeploy } from 'scripts/utils'
 
-import { beforeEachWithFixture, DAY, parseEth, parseTRU, timeTravel } from 'utils'
+import { beforeEachWithFixture, DAY, expectScaledCloseTo, parseEth, parseTRU, timeTravel, timeTravelTo } from 'utils'
 
 import {
   LinearTrueDistributor, LinearTrueDistributorFactory,
-  MockOracle,
-  MockOracleFactory,
   MockTrueCurrency,
   MockTrueCurrencyFactory,
   StkTruToken,
@@ -23,10 +21,9 @@ use(solidity)
 describe('StkTruToken', () => {
   let owner: Wallet
   let staker: Wallet
-  let trustToken: TrustToken
+  let tru: TrustToken
   let stkToken: StkTruToken
   let tfusd: MockTrueCurrency
-  let oracle: MockOracle
   let distributor: LinearTrueDistributor
   let provider: providers.JsonRpcProvider
 
@@ -37,142 +34,153 @@ describe('StkTruToken', () => {
     ([owner, staker] = wallets)
     provider = _provider
     const deployContract = setupDeploy(owner)
-    trustToken = await deployContract(TrustTokenFactory)
-    await trustToken.initialize()
+    tru = await deployContract(TrustTokenFactory)
+    await tru.initialize()
     tfusd = await deployContract(MockTrueCurrencyFactory)
-    oracle = await deployContract(MockOracleFactory)
     distributor = await deployContract(LinearTrueDistributorFactory)
 
     stkToken = await deployContract(StkTruTokenFactory)
-    await stkToken.initialize(trustToken.address, tfusd.address, oracle.address, distributor.address)
+    await stkToken.initialize(tru.address, tfusd.address, distributor.address)
 
-    await trustToken.mint(owner.address, amount)
-    await trustToken.approve(stkToken.address, amount)
-  })
-
-  describe('Oracle', () => {
-    it('only owner can change oracle', async () => {
-      await expect(stkToken.connect(staker).setOracle(staker.address)).to.be.revertedWith('only owner')
-    })
-
-    it('emits event', async () => {
-      await expect(stkToken.setOracle(staker.address)).to.emit(stkToken, 'OracleChanged')
-        .withArgs(staker.address)
-      expect(await stkToken.oracle()).to.equal(staker.address)
-    })
+    await tru.mint(owner.address, amount)
+    await tru.approve(stkToken.address, amount)
   })
 
   describe('Staking-Unstaking', () => {
     it('stake emits event', async () => {
-      await expect(stkToken.stake(amount)).to.emit(stkToken, 'Stake').withArgs(owner.address, amount, amount)
+      await expect(stkToken.stake(amount)).to.emit(stkToken, 'Stake').withArgs(owner.address, amount)
     })
 
     it('unstake emits event', async () => {
       await stkToken.stake(amount)
+      await stkToken.cooldown()
       await timeTravel(provider, stakeCooldown)
-      await expect(stkToken.unstake(amount)).to.emit(stkToken, 'Unstake').withArgs(owner.address, amount, amount, 0)
+      await expect(stkToken.unstake(amount)).to.emit(stkToken, 'Unstake').withArgs(owner.address, amount)
     })
 
     it('tokens are burnt on unstake', async () => {
       await stkToken.stake(amount)
+      await stkToken.cooldown()
       await timeTravel(provider, stakeCooldown)
       await stkToken.unstake(amount)
       expect(await stkToken.totalSupply()).to.equal(0)
     })
 
-    it('cannot unstake before cooldown has passed', async () => {
+    it('single user stakes, unstakes, gets same amount of TRU', async () => {
       await stkToken.stake(amount)
+      await stkToken.cooldown()
+      await timeTravel(provider, stakeCooldown)
+      await stkToken.unstake(amount)
+      expect(await tru.balanceOf(owner.address)).to.equal(amount)
+    })
+
+    it('multiple users get proportional amounts of TRU', async () => {
+      await stkToken.stake(amount)
+      await tru.mint(staker.address, amount.div(2))
+      await tru.connect(staker).approve(stkToken.address, amount.div(2))
+      await stkToken.connect(staker).stake(amount.div(2))
+
+      expect(await stkToken.balanceOf(owner.address)).to.equal(amount)
+      expect(await stkToken.balanceOf(staker.address)).to.equal(amount.div(2))
+
+      await stkToken.connect(staker).cooldown()
+      await stkToken.cooldown()
+
+      await timeTravel(provider, stakeCooldown)
+      await stkToken.unstake(amount)
+      await stkToken.connect(staker).unstake(amount.div(2))
+      expect(await tru.balanceOf(owner.address)).to.equal(amount)
+      expect(await tru.balanceOf(staker.address)).to.equal(amount.div(2))
+    })
+  })
+
+  describe('Claim', () => {
+    const distributionStart = 1700000000
+
+    beforeEach(async () => {
+      await tru.mint(staker.address, amount.div(2))
+      await tru.connect(staker).approve(stkToken.address, amount.div(2))
+      await distributor.initialize(distributionStart, 10 * DAY, parseTRU(100), tru.address)
+      await tru.mint(distributor.address, parseTRU(100))
+      await distributor.setFarm(stkToken.address)
+      await timeTravelTo(provider, distributionStart)
+    })
+
+    it('complex scenario', async () => {
+      await stkToken.stake(amount)
+      await timeTravel(provider, DAY)
+
+      await tfusd.mint(stkToken.address, parseEth(1))
+
+      expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(10))
+      expect(await stkToken.claimable(owner.address, tfusd.address)).to.equal(parseEth(1))
+
+      await stkToken.connect(staker).stake(amount.div(2))
+      await timeTravel(provider, DAY)
+
+      expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(16.66666))
+      expectScaledCloseTo(await stkToken.claimable(staker.address, tru.address), parseTRU(3.333333))
+
+      await tru.mint(stkToken.address, parseTRU(30))
+
+      expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(36.66666))
+      expectScaledCloseTo(await stkToken.claimable(staker.address, tru.address), parseTRU(13.333333))
+
+      expect(await stkToken.claimable(owner.address, tfusd.address)).to.equal(parseEth(1))
+      expect(await stkToken.claimable(staker.address, tfusd.address)).to.equal(0)
+
+      await tfusd.mint(stkToken.address, parseEth(3))
+
+      expect(await stkToken.claimable(owner.address, tfusd.address)).to.equal(parseEth(3))
+      expect(await stkToken.claimable(staker.address, tfusd.address)).to.equal(parseEth(1))
+
+      await stkToken.claim()
+      await stkToken.connect(staker).claim()
+
+      expectScaledCloseTo(await tru.balanceOf(owner.address), parseTRU(36.66666))
+      expectScaledCloseTo(await tru.balanceOf(staker.address), parseTRU(13.333333))
+      expect(await tfusd.balanceOf(owner.address)).to.equal(parseEth(3))
+      expect(await tfusd.balanceOf(staker.address)).to.equal(parseEth(1))
+    })
+  })
+
+  describe('Cooldown', () => {
+    it('cannot unstake without starting cooldown timer', async () => {
+      await stkToken.stake(amount)
+      await timeTravel(provider, stakeCooldown)
+      await expect(stkToken.unstake(amount)).to.be.revertedWith('StkTruToken: Stake on cooldown')
+    })
+
+    it('cannot unstake on cooldown', async () => {
+      await stkToken.stake(amount)
+      await stkToken.cooldown()
       await timeTravel(provider, stakeCooldown - DAY)
-      await expect(stkToken.unstake(amount)).to.be.revertedWith('StkTruToken: Stake is locked')
+      await expect(stkToken.unstake(amount)).to.be.revertedWith('StkTruToken: Stake on cooldown')
     })
 
-    describe('single user', () => {
-      it('stakes, unstakes, gets same amount of TRU', async () => {
-        await stkToken.stake(amount)
-        await timeTravel(provider, stakeCooldown)
-        await stkToken.unstake(amount)
-        expect(await trustToken.balanceOf(owner.address)).to.equal(amount)
-      })
-
-      it('stakes, then some TRU and TUSD are transferred to stake, then unstake', async () => {
-        await stkToken.stake(amount)
-        await trustToken.mint(stkToken.address, parseTRU(10))
-        await tfusd.mint(stkToken.address, parseEth(10))
-        await timeTravel(provider, stakeCooldown)
-        await stkToken.unstake(amount)
-        expect(await trustToken.balanceOf(owner.address)).to.equal(amount.add(parseTRU(10)))
-        expect(await tfusd.balanceOf(owner.address)).to.equal(parseEth(10))
-      })
-
-      it('some TRU and TUSD are transferred to stake, then stake & unstake', async () => {
-        await trustToken.mint(stkToken.address, parseTRU(10))
-        await tfusd.mint(stkToken.address, parseEth(10))
-        await stkToken.stake(amount)
-        await timeTravel(provider, stakeCooldown)
-        await stkToken.unstake(amount)
-        expect(await trustToken.balanceOf(owner.address)).to.equal(amount.add(parseTRU(10)))
-        expect(await tfusd.balanceOf(owner.address)).to.equal(parseEth(10))
-      })
+    it('cannot unstake after unstake window has passed', async () => {
+      await stkToken.stake(amount)
+      await stkToken.cooldown()
+      await timeTravel(provider, stakeCooldown + 7 * DAY + 1)
+      await expect(stkToken.unstake(amount)).to.be.revertedWith('StkTruToken: Stake on cooldown')
     })
 
-    describe('multiple users', () => {
-      beforeEach(async () => {
-        await trustToken.mint(staker.address, amount.div(2))
-        await trustToken.connect(staker).approve(stkToken.address, amount.div(2))
-      })
+    it('calling cooldown twice does not restart cooldown', async () => {
+      await stkToken.stake(amount)
+      await stkToken.cooldown()
+      const unlockTimeBefore = await stkToken.unlockTime(owner.address)
+      await timeTravel(provider, DAY)
+      await expect(await stkToken.unlockTime(owner.address)).to.equal(unlockTimeBefore)
+    })
 
-      it('no external rewards', async () => {
-        await stkToken.stake(amount)
-        await stkToken.connect(staker).stake(amount.div(2))
-        await timeTravel(provider, stakeCooldown)
-        await stkToken.unstake(amount)
-        await stkToken.connect(staker).unstake(amount.div(2))
-        expect(await trustToken.balanceOf(owner.address)).to.equal(amount)
-        expect(await trustToken.balanceOf(staker.address)).to.equal(amount.div(2))
-      })
+    it('staking more resets cooldown', async () => {
+      await stkToken.stake(amount.div(2))
+      await stkToken.cooldown()
+      await timeTravel(provider, DAY)
+      const tx = await stkToken.stake(amount.div(2))
+      const block = await provider.getBlock(tx.blockNumber)
 
-      it('with external TRU reward', async () => {
-        await stkToken.stake(amount)
-        await trustToken.mint(stkToken.address, parseTRU(10))
-        await stkToken.connect(staker).stake(amount.div(2))
-        await timeTravel(provider, stakeCooldown)
-        await stkToken.unstake(amount)
-        await stkToken.connect(staker).unstake(await stkToken.balanceOf(staker.address))
-        expect(await trustToken.balanceOf(owner.address)).to.equal(amount.add(parseTRU(10)))
-        expect(await trustToken.balanceOf(staker.address)).to.equal(amount.div(2))
-      })
-
-      it('with external TRU added after both users joined', async () => {
-        await stkToken.stake(amount)
-        await trustToken.mint(stkToken.address, parseTRU(10))
-        await stkToken.connect(staker).stake(amount.div(2))
-        // owner holds 11/16 of stake at the moment and will get 10*11/16 TRU from the following reward
-        await trustToken.mint(stkToken.address, parseTRU(10))
-        await timeTravel(provider, stakeCooldown)
-        await stkToken.unstake(amount)
-        await stkToken.connect(staker).unstake(await stkToken.balanceOf(staker.address))
-        expect(await trustToken.balanceOf(owner.address)).to.equal(amount.add(parseTRU(10)).add(parseTRU(10).mul(11).div(16)))
-        expect(await trustToken.balanceOf(staker.address)).to.equal(amount.div(2).add(parseTRU(10).mul(5).div(16)))
-      })
-
-      it('rewards of TRU and TUSD', async () => {
-        const totalWalletValue = async (wallet: Wallet) => (await trustToken.balanceOf(wallet.address))
-          .add((await tfusd.balanceOf(wallet.address)).div(5e10))
-
-        await stkToken.stake(amount)
-        await trustToken.mint(stkToken.address, parseTRU(10))
-        await tfusd.mint(stkToken.address, parseEth(50)) // same as 10 TRU
-        await stkToken.connect(staker).stake(amount.div(2))
-        // owner holds 12/17 of stake at the moment
-        await trustToken.mint(stkToken.address, parseTRU(10))
-        await tfusd.mint(stkToken.address, parseEth(50)) // same as 10 TRU
-        await timeTravel(provider, stakeCooldown)
-        await stkToken.unstake(amount)
-        await stkToken.connect(staker).unstake(await stkToken.balanceOf(staker.address))
-
-        expect(await totalWalletValue(owner)).to.equal(amount.add(parseTRU(20)).add(parseTRU(20).mul(12).div(17)))
-        expect(await totalWalletValue(staker)).to.equal(amount.div(2).add(parseTRU(20).mul(5).div(17)))
-      })
+      await expect(await stkToken.unlockTime(owner.address)).to.equal(block.timestamp + 14 * DAY)
     })
   })
 })
