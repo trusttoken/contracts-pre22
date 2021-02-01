@@ -26,7 +26,7 @@ contract Liquidator is Ownable {
 
     ITrueFiPool public pool;
     IStakingPool public stkTru;
-    IERC20 public _trustToken;
+    IERC20 public tru;
 
     // max share of tru to be taken from staking pool during liquidation
     // 1000 -> 10%
@@ -52,13 +52,13 @@ contract Liquidator is Ownable {
     function initialize(
         ITrueFiPool _pool,
         IStakingPool _stkTru,
-        IERC20 __trustToken
+        IERC20 _tru
     ) public initializer {
         Ownable.initialize();
 
         pool = _pool;
         stkTru = _stkTru;
-        _trustToken = __trustToken;
+        tru = _tru;
         fetchMaxShare = 1000;
     }
 
@@ -81,7 +81,7 @@ contract Liquidator is Ownable {
         uint256 defaultedValue = getAmountToWithdraw(loan.debt().sub(loan.balance()));
         stkTru.withdraw(defaultedValue);
         loan.liquidate();
-        require(_trustToken.transfer(address(pool), defaultedValue));
+        require(tru.transfer(address(pool), defaultedValue));
         emit Liquidated(loan);
     }
 
@@ -92,7 +92,7 @@ contract Liquidator is Ownable {
     function getAmountToWithdraw(uint256 defaultedValue) internal returns (uint256) {
         uint256 stakingPoolValue = stkTru.value();
         uint256 maxWithdrawValue = stakingPoolValue.mul(fetchMaxShare).div(10000);
-        uint256 stakingPoolTruBalance = _trustToken.balanceOf(address(stkTru));
+        uint256 stakingPoolTruBalance = tru.balanceOf(address(stkTru));
         uint256 maxWithdrawAmount;
 
         if (defaultedValue > maxWithdrawValue) {

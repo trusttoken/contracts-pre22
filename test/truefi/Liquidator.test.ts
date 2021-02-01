@@ -73,7 +73,7 @@ describe('Liquidator', () => {
     })
 
     it('sets tru address correctly', async () => {
-      expect(await liquidator._trustToken()).to.equal(tru.address)
+      expect(await liquidator.tru()).to.equal(tru.address)
     })
   })
 
