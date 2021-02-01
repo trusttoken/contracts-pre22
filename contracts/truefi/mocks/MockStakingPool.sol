@@ -7,7 +7,7 @@ import {ITrueFiPool} from "./../interface/ITrueFiPool.sol";
 contract MockStakingPool is ERC20 {
     ITrueFiPool pool;
 
-    function setPool(ITrueFiPool _pool) public {
+    constructor(ITrueFiPool _pool) public {
         pool = _pool;
     }
 

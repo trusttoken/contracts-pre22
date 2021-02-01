@@ -45,11 +45,11 @@ describe('TrueFiPool', () => {
     token = await new MockErc20TokenFactory(owner).deploy()
     await token.mint(owner.address, parseEth(1e7))
     trustToken = await new MockErc20TokenFactory(owner).deploy()
-    mockStakingPool = await new MockStakingPoolFactory(owner).deploy()
     curvePool = await new MockCurvePoolFactory(owner).deploy()
     await curvePool.initialize(token.address)
     curveToken = MockErc20TokenFactory.connect(await curvePool.token(), owner)
     pool = await new TrueFiPoolFactory(owner).deploy()
+    mockStakingPool = await new MockStakingPoolFactory(owner).deploy(pool.address)
     mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyJson.abi)
     mockCurveGauge = await deployMockContract(owner, ICurveGaugeJson.abi)
     await mockCurveGauge.mock.deposit.returns()
@@ -67,7 +67,6 @@ describe('TrueFiPool', () => {
     )
     await pool.resetApprovals()
     await lender.initialize(pool.address, mockRatingAgency.address, mockStakingPool.address)
-    await mockStakingPool.setPool(pool.address)
     provider = _provider
   })
 
