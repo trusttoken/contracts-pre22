@@ -31,7 +31,7 @@ contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
 
     uint128 public constant lastMinutePaybackDuration = 1 days;
-    uint8 public constant override version = 2;
+    uint8 public constant override version = 3;
 
     address public override borrower;
     address public liquidator;
