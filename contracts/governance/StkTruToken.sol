@@ -26,6 +26,12 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         uint256 totalFarmRewards;
     }
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     IERC20 public tru;
     IERC20 public tfusd;
     ITrueDistributor public distributor;
@@ -37,6 +43,8 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     uint256 public unstakePeriodDuration;
 
     mapping(IERC20 => FarmRewards) public farmRewards;
+
+    // ======= STORAGE DECLARATION END ============
 
     event Stake(address indexed staker, uint256 amount);
     event Unstake(address indexed staker, uint256 burntAmount);
