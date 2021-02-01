@@ -65,7 +65,7 @@ describe('Liquidator', () => {
     })
 
     it('staking pool set correctly', async () => {
-      expect(await liquidator._stakingPool()).to.equal(stakingPool.address)
+      expect(await liquidator.stkTru()).to.equal(stakingPool.address)
     })
 
     it('sets fetchMaxShare correctly', async () => {
