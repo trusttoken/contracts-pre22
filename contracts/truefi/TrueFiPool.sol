@@ -258,13 +258,13 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      */
     function join(uint256 amount) external override {
         uint256 fee = amount.mul(joiningFee).div(10000);
-        uint256 amountToMint = mint(amount.sub(fee));
+        uint256 mintedAmount = mint(amount.sub(fee));
         claimableFees = claimableFees.add(fee);
 
         latestJoinBlock[tx.origin] = block.number;
         require(_currencyToken.transferFrom(msg.sender, address(this), amount));
 
-        emit Joined(msg.sender, amount, amountToMint);
+        emit Joined(msg.sender, amount, mintedAmount);
     }
 
     // prettier-ignore
@@ -532,19 +532,18 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     function mint(uint256 depositedAmount) internal returns (uint256) {
-        uint256 amountToMint = depositedAmount;
-
-        if (amountToMint == 0) {
-            return amountToMint;
+        uint256 mintedAmount = depositedAmount;
+        if (mintedAmount == 0) {
+            return mintedAmount;
         }
 
         // first staker mints same amount deposited
         if (totalSupply() > 0) {
-            amountToMint = totalSupply().mul(depositedAmount).div(poolValue());
+            mintedAmount = totalSupply().mul(depositedAmount).div(poolValue());
         }
         // mint pool tokens
-        _mint(msg.sender, amountToMint);
+        _mint(msg.sender, mintedAmount);
 
-        return amountToMint;
+        return mintedAmount;
     }
 }
