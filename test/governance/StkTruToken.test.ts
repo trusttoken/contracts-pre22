@@ -1,6 +1,7 @@
 import { expect, use } from 'chai'
 import { providers, Wallet } from 'ethers'
 import { solidity } from 'ethereum-waffle'
+import { MaxUint256 } from '@ethersproject/constants'
 
 import { setupDeploy } from 'scripts/utils'
 
@@ -46,6 +47,40 @@ describe('StkTruToken', () => {
     await tru.approve(stkToken.address, amount)
   })
 
+  describe('setCooldownTime', () => {
+    it('changes value', async () => {
+      await stkToken.setCooldownTime(100)
+      expect(await stkToken.cooldownTime()).to.equal(100)
+    })
+
+    it('only owner', async () => {
+      await expect(stkToken.connect(staker).setCooldownTime(100)).to.be.revertedWith('only owner')
+    })
+
+    it('cannot be infinite', async () => {
+      await expect(stkToken.setCooldownTime(MaxUint256)).to.be.revertedWith('StkTruToken: Cooldown too large')
+    })
+  })
+
+  describe('setUnstakePeriodDuration', () => {
+    it('changes value', async () => {
+      await stkToken.setUnstakePeriodDuration(100)
+      expect(await stkToken.unstakePeriodDuration()).to.equal(100)
+    })
+
+    it('only owner', async () => {
+      await expect(stkToken.connect(staker).setUnstakePeriodDuration(100)).to.be.revertedWith('only owner')
+    })
+
+    it('cannot be infinite', async () => {
+      await expect(stkToken.setUnstakePeriodDuration(MaxUint256)).to.be.revertedWith('StkTruToken: Unstake period too large')
+    })
+
+    it('cannot be 0', async () => {
+      await expect(stkToken.setUnstakePeriodDuration(0)).to.be.revertedWith('StkTruToken: Unstake period cannot be 0')
+    })
+  })
+
   describe('Staking-Unstaking', () => {
     it('stake emits event', async () => {
       await expect(stkToken.stake(amount)).to.emit(stkToken, 'Stake').withArgs(owner.address, amount)
@@ -64,6 +99,15 @@ describe('StkTruToken', () => {
       await timeTravel(provider, stakeCooldown)
       await stkToken.unstake(amount)
       expect(await stkToken.totalSupply()).to.equal(0)
+    })
+
+    it('changes stake supply', async () => {
+      await stkToken.stake(amount)
+      expect(await stkToken.stakeSupply()).to.equal(amount)
+      await stkToken.cooldown()
+      await timeTravel(provider, stakeCooldown)
+      await stkToken.unstake(amount)
+      expect(await stkToken.stakeSupply()).to.equal(0)
     })
 
     it('single user stakes, unstakes, gets same amount of TRU', async () => {
@@ -170,6 +214,7 @@ describe('StkTruToken', () => {
       await stkToken.cooldown()
       const unlockTimeBefore = await stkToken.unlockTime(owner.address)
       await timeTravel(provider, DAY)
+      await stkToken.cooldown()
       await expect(await stkToken.unlockTime(owner.address)).to.equal(unlockTimeBefore)
     })
 
@@ -181,6 +226,23 @@ describe('StkTruToken', () => {
       const block = await provider.getBlock(tx.blockNumber)
 
       await expect(await stkToken.unlockTime(owner.address)).to.equal(block.timestamp + 14 * DAY)
+    })
+
+    it('staking on expired cooldown does not reset cooldown', async () => {
+      await stkToken.stake(amount.div(2))
+      await stkToken.cooldown()
+      await timeTravel(provider, stakeCooldown + 7 * DAY + 1)
+
+      await expect(await stkToken.unlockTime(owner.address)).to.equal(MaxUint256)
+    })
+
+    it('when unstake is off cooldown, staking does not reset cooldown', async () => {
+      await stkToken.stake(amount.div(2))
+      await stkToken.cooldown()
+      const unlockTimeBefore = await stkToken.unlockTime(owner.address)
+      await timeTravel(provider, stakeCooldown)
+      await stkToken.stake(amount.div(2))
+      await expect(await stkToken.unlockTime(owner.address)).to.equal(unlockTimeBefore)
     })
   })
 })

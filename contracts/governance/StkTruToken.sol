@@ -30,9 +30,9 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     IERC20 public tfusd;
     ITrueDistributor public distributor;
 
-    uint256 stakeSupply;
+    uint256 public stakeSupply;
 
-    mapping(address => uint256) public cooldowns;
+    mapping(address => uint256) cooldowns;
     uint256 public cooldownTime;
     uint256 public unstakePeriodDuration;
 
@@ -62,17 +62,26 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     }
 
     function setCooldownTime(uint256 newCooldownTime) external onlyOwner {
+        // Avoid overflow
+        require(newCooldownTime <= 100 * 365 days, "StkTruToken: Cooldown too large");
+
         cooldownTime = newCooldownTime;
         emit CooldownTimeChanged(newCooldownTime);
     }
 
     function setUnstakePeriodDuration(uint256 newUnstakePeriodDuration) external onlyOwner {
+        require(newUnstakePeriodDuration > 0, "StkTruToken: Unstake period cannot be 0");
+        // Avoid overflow
+        require(newUnstakePeriodDuration <= 100 * 365 days, "StkTruToken: Unstake period too large");
+
         unstakePeriodDuration = newUnstakePeriodDuration;
         emit UnstakePeriodDurationChanged(newUnstakePeriodDuration);
     }
 
     function stake(uint256 amount) external distribute update(tru) update(tfusd) {
-        if (cooldowns[msg.sender].add(cooldownTime) >= block.timestamp) {
+        require(amount > 0, "StkTruToken: Cannot stake 0");
+
+        if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime) > block.timestamp) {
             cooldowns[msg.sender] = block.timestamp;
         }
 
@@ -85,6 +94,8 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     }
 
     function unstake(uint256 amount) external distribute update(tru) update(tfusd) nonReentrant {
+        require(amount > 0, "StkTruToken: Cannot unstake 0");
+
         require(balanceOf[msg.sender] >= amount, "StkTruToken: Insufficient balance");
         require(unlockTime(msg.sender) <= block.timestamp, "StkTruToken: Stake on cooldown");
 
