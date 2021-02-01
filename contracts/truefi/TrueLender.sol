@@ -78,7 +78,7 @@ contract TrueLender is ITrueLender, Ownable {
     uint256 public maxLoans;
 
     // implemented as an ERC20, will change after implementing stkPool
-    IERC20 public stakingPool;
+    address public stakingPool;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -138,7 +138,7 @@ contract TrueLender is ITrueLender, Ownable {
      * @dev Emitted when stakingPool address is changed
      * @param pool new stakingPool address
      */
-    event StakingPoolChanged(IERC20 pool);
+    event StakingPoolChanged(address pool);
 
     /**
      * @dev Emitted when a loan is funded
@@ -170,7 +170,7 @@ contract TrueLender is ITrueLender, Ownable {
     function initialize(
         ITrueFiPool _pool,
         ITrueRatingAgency _ratingAgency,
-        IERC20 _stakingPool
+        address _stakingPool
     ) public initializer {
         Ownable.initialize();
 
@@ -197,7 +197,7 @@ contract TrueLender is ITrueLender, Ownable {
      * @dev set stake pool address
      * @param newPool stake pool address to be set
      */
-    function setStakingPool(IERC20 newPool) public onlyOwner {
+    function setStakingPool(address newPool) public onlyOwner {
         stakingPool = newPool;
         emit StakingPoolChanged(newPool);
     }
@@ -310,7 +310,7 @@ contract TrueLender is ITrueLender, Ownable {
         currencyToken.approve(address(loanToken), receivedAmount);
         loanToken.fund();
 
-        require(pool.transfer(address(stakingPool), pool.balanceOf(address(this))));
+        require(pool.transfer(stakingPool, pool.balanceOf(address(this))));
 
         emit Funded(address(loanToken), receivedAmount);
     }
