@@ -61,7 +61,7 @@ describe('Liquidator', () => {
 
   describe('Initializer', () => {
     it('trueFiPool set correctly', async () => {
-      expect(await liquidator._pool()).to.equal(pool.address)
+      expect(await liquidator.pool()).to.equal(pool.address)
     })
 
     it('staking pool set correctly', async () => {

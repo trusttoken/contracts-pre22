@@ -24,7 +24,7 @@ contract Liquidator is Ownable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    ITrueFiPool public _pool;
+    ITrueFiPool public pool;
     IStakingPool public _stakingPool;
     IERC20 public _trustToken;
 
@@ -50,13 +50,13 @@ contract Liquidator is Ownable {
      * @dev Initialize this contract
      */
     function initialize(
-        ITrueFiPool __pool,
+        ITrueFiPool _pool,
         IStakingPool __stakingPool,
         IERC20 __trustToken
     ) public initializer {
         Ownable.initialize();
 
-        _pool = __pool;
+        pool = _pool;
         _stakingPool = __stakingPool;
         _trustToken = __trustToken;
         fetchMaxShare = 1000;
@@ -81,7 +81,7 @@ contract Liquidator is Ownable {
         uint256 defaultedValue = getAmountToWithdraw(loan.debt().sub(loan.balance()));
         _stakingPool.withdraw(defaultedValue);
         loan.liquidate();
-        require(_trustToken.transfer(address(_pool), defaultedValue));
+        require(_trustToken.transfer(address(pool), defaultedValue));
         emit Liquidated(loan);
     }
 
