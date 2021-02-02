@@ -22,6 +22,7 @@ use(solidity)
 describe('StkTruToken', () => {
   let owner: Wallet
   let staker: Wallet
+  let liquidator: Wallet
   let tru: TrustToken
   let stkToken: StkTruToken
   let tfusd: MockTrueCurrency
@@ -32,7 +33,7 @@ describe('StkTruToken', () => {
   const stakeCooldown = DAY * 14
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    ([owner, staker] = wallets)
+    ([owner, staker, liquidator] = wallets)
     provider = _provider
     const deployContract = setupDeploy(owner)
     tru = await deployContract(TrustTokenFactory)
@@ -41,10 +42,13 @@ describe('StkTruToken', () => {
     distributor = await deployContract(LinearTrueDistributorFactory)
 
     stkToken = await deployContract(StkTruTokenFactory)
-    await stkToken.initialize(tru.address, tfusd.address, distributor.address)
+    await stkToken.initialize(tru.address, tfusd.address, distributor.address, liquidator.address)
 
     await tru.mint(owner.address, amount)
     await tru.approve(stkToken.address, amount)
+
+    await tru.mint(staker.address, amount.div(2))
+    await tru.connect(staker).approve(stkToken.address, amount.div(2))
   })
 
   describe('setCooldownTime', () => {
@@ -120,8 +124,6 @@ describe('StkTruToken', () => {
 
     it('multiple users get proportional amounts of TRU', async () => {
       await stkToken.stake(amount)
-      await tru.mint(staker.address, amount.div(2))
-      await tru.connect(staker).approve(stkToken.address, amount.div(2))
       await stkToken.connect(staker).stake(amount.div(2))
 
       expect(await stkToken.balanceOf(owner.address)).to.equal(amount)
@@ -138,12 +140,53 @@ describe('StkTruToken', () => {
     })
   })
 
+  describe('Withdraw', () => {
+    const liquidationAmount = parseTRU(1)
+
+    it('can be called only by the liquidator', async () => {
+      await expect(stkToken.withdraw(1)).to.be.revertedWith('StkTruToken: Can be called only by the liquidator')
+    })
+
+    it('transfers amount to liquidator', async () => {
+      await stkToken.stake(amount)
+      await stkToken.connect(liquidator).withdraw(liquidationAmount)
+      expect(await tru.balanceOf(liquidator.address)).to.equal(liquidationAmount)
+    })
+
+    it('reduces stake supply', async () => {
+      await stkToken.stake(amount)
+      await stkToken.connect(liquidator).withdraw(liquidationAmount)
+      expect(await stkToken.stakeSupply()).to.equal(amount.sub(liquidationAmount))
+    })
+
+    it('emits event', async () => {
+      await stkToken.stake(amount)
+      await expect(stkToken.connect(liquidator).withdraw(liquidationAmount)).to.emit(stkToken, 'Withdraw')
+        .withArgs(liquidationAmount)
+    })
+
+    it('staking post withdraw works correctly', async () => {
+      await stkToken.stake(amount)
+      await stkToken.connect(liquidator).withdraw(liquidationAmount)
+      await stkToken.connect(staker).stake(amount.div(2))
+      expect(await stkToken.balanceOf(staker.address)).to.equal(amount.div(2).mul(100).div(99))
+
+      await stkToken.cooldown()
+      await stkToken.connect(staker).cooldown()
+      await timeTravel(provider, stakeCooldown)
+
+      await stkToken.connect(staker).unstake(await stkToken.balanceOf(staker.address))
+      await stkToken.unstake(amount)
+
+      expect(await tru.balanceOf(owner.address)).to.equal(parseTRU(99).add(1))
+      expect(await tru.balanceOf(staker.address)).to.equal(amount.div(2).sub(1))
+    })
+  })
+
   describe('Claim', () => {
     const distributionStart = 1700000000
 
     beforeEach(async () => {
-      await tru.mint(staker.address, amount.div(2))
-      await tru.connect(staker).approve(stkToken.address, amount.div(2))
       await distributor.initialize(distributionStart, 10 * DAY, parseTRU(100), tru.address)
       await tru.mint(distributor.address, parseTRU(100))
       await distributor.setFarm(stkToken.address)
@@ -189,6 +232,14 @@ describe('StkTruToken', () => {
   })
 
   describe('Cooldown', () => {
+    it('emits event', async () => {
+      const tx = await stkToken.cooldown()
+      const block = await provider.getBlock(tx.blockNumber)
+
+      await expect(Promise.resolve(tx)).to.emit(stkToken, 'Cooldown')
+        .withArgs(owner.address, block.timestamp + stakeCooldown)
+    })
+
     it('cannot unstake without starting cooldown timer', async () => {
       await stkToken.stake(amount)
       await timeTravel(provider, stakeCooldown)
@@ -205,7 +256,7 @@ describe('StkTruToken', () => {
     it('cannot unstake after unstake window has passed', async () => {
       await stkToken.stake(amount)
       await stkToken.cooldown()
-      await timeTravel(provider, stakeCooldown + 7 * DAY + 1)
+      await timeTravel(provider, stakeCooldown + 2 * DAY + 1)
       await expect(stkToken.unstake(amount)).to.be.revertedWith('StkTruToken: Stake on cooldown')
     })
 
@@ -231,7 +282,7 @@ describe('StkTruToken', () => {
     it('staking on expired cooldown does not reset cooldown', async () => {
       await stkToken.stake(amount.div(2))
       await stkToken.cooldown()
-      await timeTravel(provider, stakeCooldown + 7 * DAY + 1)
+      await timeTravel(provider, stakeCooldown + 2 * DAY + 1)
 
       await expect(await stkToken.unlockTime(owner.address)).to.equal(MaxUint256)
     })

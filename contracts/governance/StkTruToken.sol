@@ -35,6 +35,7 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     IERC20 public tru;
     IERC20 public tfusd;
     ITrueDistributor public distributor;
+    address public liquidator;
 
     uint256 public stakeSupply;
 
@@ -49,21 +50,30 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     event Stake(address indexed staker, uint256 amount);
     event Unstake(address indexed staker, uint256 burntAmount);
     event Claim(address indexed who, IERC20 indexed token, uint256 amountClaimed);
+    event Withdraw(uint256 amount);
+    event Cooldown(address indexed who, uint256 endTime);
     event CooldownTimeChanged(uint256 newUnstakePeriodDuration);
     event UnstakePeriodDurationChanged(uint256 newUnstakePeriodDuration);
+
+    modifier onlyLiquidator() {
+        require(msg.sender == liquidator, "StkTruToken: Can be called only by the liquidator");
+        _;
+    }
 
     function initialize(
         IERC20 _tru,
         IERC20 _tfusd,
-        ITrueDistributor _distributor
+        ITrueDistributor _distributor,
+        address _liquidator
     ) public {
         require(!initalized, "StkTruToken: Already initialized");
         tru = _tru;
         tfusd = _tfusd;
         distributor = _distributor;
+        liquidator = _liquidator;
 
         cooldownTime = 14 days;
-        unstakePeriodDuration = 7 days;
+        unstakePeriodDuration = 2 days;
 
         owner_ = msg.sender;
         initalized = true;
@@ -93,7 +103,8 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
             cooldowns[msg.sender] = block.timestamp;
         }
 
-        _mint(msg.sender, amount);
+        uint256 amountToMint = stakeSupply == 0 ? amount : amount.mul(totalSupply).div(stakeSupply);
+        _mint(msg.sender, amountToMint);
         stakeSupply = stakeSupply.add(amount);
 
         require(tru.transferFrom(msg.sender, address(this), amount));
@@ -123,7 +134,16 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     function cooldown() external {
         if (unlockTime(msg.sender) == type(uint256).max) {
             cooldowns[msg.sender] = block.timestamp;
+
+            emit Cooldown(msg.sender, block.timestamp.add(cooldownTime));
         }
+    }
+
+    function withdraw(uint256 amount) external onlyLiquidator {
+        stakeSupply = stakeSupply.sub(amount);
+        tru.transfer(liquidator, amount);
+
+        emit Withdraw(amount);
     }
 
     function unlockTime(address account) public view returns (uint256) {
