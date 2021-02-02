@@ -7,6 +7,7 @@ import {LoanToken, IERC20} from "./LoanToken.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {IStakingPool} from "./interface/IStakingPool.sol";
+import {IMockTruPriceOracle} from "./../interface/IMockTruPriceOracle.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
@@ -27,6 +28,7 @@ contract Liquidator is Ownable {
     ITrueFiPool public pool;
     IStakingPool public stkTru;
     IERC20 public tru;
+    IMockTruPriceOracle public oracle;
 
     // max share of tru to be taken from staking pool during liquidation
     // 1000 -> 10%
@@ -52,13 +54,15 @@ contract Liquidator is Ownable {
     function initialize(
         ITrueFiPool _pool,
         IStakingPool _stkTru,
-        IERC20 _tru
+        IERC20 _tru,
+        IMockTruPriceOracle _oracle
     ) public initializer {
         Ownable.initialize();
 
         pool = _pool;
         stkTru = _stkTru;
         tru = _tru;
+        oracle = _oracle;
         fetchMaxShare = 1000;
     }
 
@@ -87,19 +91,12 @@ contract Liquidator is Ownable {
 
     /**
      * @dev Calculate amount of tru to be withdrawn from staking pool (not more than preset share)
-     * @param defaultedValue Amount of tusd lost on defaulted loan
+     * @param deficite Amount of tusd lost on defaulted loan
      */
-    function getAmountToWithdraw(uint256 defaultedValue) internal returns (uint256) {
-        uint256 stakingPoolValue = stkTru.value();
-        uint256 maxWithdrawValue = stakingPoolValue.mul(fetchMaxShare).div(10000);
-        uint256 stakingPoolTruBalance = tru.balanceOf(address(stkTru));
-        uint256 maxWithdrawAmount;
-
-        if (defaultedValue > maxWithdrawValue) {
-            maxWithdrawAmount = stakingPoolTruBalance.mul(fetchMaxShare).div(10000);
-        } else {
-            maxWithdrawAmount = stakingPoolTruBalance.mul(defaultedValue).div(stakingPoolValue);
-        }
-        return maxWithdrawAmount;
+    function getAmountToWithdraw(uint256 deficite) internal returns (uint256) {
+        uint256 stakingPoolSupply = stkTru.stakeSupply();
+        uint256 maxWithdrawValue = stakingPoolSupply.mul(fetchMaxShare).div(10000);
+        uint deficiteInTru = oracle.toTru(deficite);
+        return maxWithdrawValue > deficiteInTru ? deficiteInTru : maxWithdrawValue;
     }
 }

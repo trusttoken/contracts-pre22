@@ -1,8 +1,8 @@
 import { expect } from 'chai'
-import { ITrueFiPoolJson, Liquidator, LiquidatorFactory, LoanToken, LoanTokenFactory, MockErc20Token, MockErc20TokenFactory, MockStakingPool, MockStakingPoolFactory, MockTrueCurrency, MockTrueCurrencyFactory } from 'contracts'
+import { ITrueDistributorJson, ITrueFiPoolJson, Liquidator, LiquidatorFactory, LoanToken, LoanTokenFactory, MockErc20Token, MockErc20TokenFactory, MockTrueCurrency, MockTrueCurrencyFactory, MockTruPriceOracle, MockTruPriceOracleFactory, StkTruToken, StkTruTokenFactory } from 'contracts'
 import { deployMockContract, MockProvider } from 'ethereum-waffle'
-import { Contract, Wallet } from 'ethers'
-import { beforeEachWithFixture, parseEth, timeTravel } from 'utils'
+import { constants, Contract, Wallet } from 'ethers'
+import { beforeEachWithFixture, parseEth, parseTRU, timeTravel } from 'utils'
 
 describe('Liquidator', () => {
   enum LoanTokenStatus { Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated }
@@ -16,8 +16,10 @@ describe('Liquidator', () => {
   let tusd: MockTrueCurrency
   let tru: MockErc20Token
   let loanToken: LoanToken
-  let pool: Contract
-  let stakingPool: MockStakingPool
+  let pool: MockErc20Token
+  let stakingPool: StkTruToken
+  let oracle: MockTruPriceOracle
+  let distributor: Contract
 
   const dayInSeconds = 60 * 60 * 24
   const yearInSeconds = dayInSeconds * 365
@@ -33,15 +35,25 @@ describe('Liquidator', () => {
     liquidator = await new LiquidatorFactory(owner).deploy()
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
     tru = await new MockErc20TokenFactory(owner).deploy()
-    pool = await deployMockContract(owner, ITrueFiPoolJson.abi)
+    pool = await new MockErc20TokenFactory(owner).deploy()
     await tusd.initialize()
-    stakingPool = await new MockStakingPoolFactory(owner).deploy()
-    await stakingPool.setTrustToken(tru.address)
+    distributor = await deployMockContract(owner, ITrueDistributorJson.abi)
+    await distributor.mock.nextDistribution.returns(0)
+    stakingPool = await new StkTruTokenFactory(owner).deploy()
+    oracle = await new MockTruPriceOracleFactory(owner).deploy()
 
+    await stakingPool.initialize(
+      tru.address,
+      pool.address,
+      distributor.address,
+      liquidator.address,
+    )
+    
     await liquidator.initialize(
       pool.address,
       stakingPool.address,
       tru.address,
+      oracle.address,
     )
 
     loanToken = await new LoanTokenFactory(owner).deploy(
@@ -56,7 +68,8 @@ describe('Liquidator', () => {
 
     await tusd.mint(owner.address, parseEth(1e7))
     await tusd.approve(loanToken.address, parseEth(1e7))
-    await tru.mint(stakingPool.address, parseEth(1e3))
+    await tru.mint(owner.address, parseEth(1e7))
+    await tru.approve(stakingPool.address, parseEth(1e7))
   })
 
   describe('Initializer', () => {
@@ -138,22 +151,21 @@ describe('Liquidator', () => {
       })
 
       it('0 tru in staking pool balance', async () => {
-        await stakingPool.withdraw(parseEth(1e3))
-
         await liquidator.liquidate(loanToken.address)
-        expect(await tru.balanceOf(pool.address)).to.equal(parseEth(0))
+        expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(0))
       })
 
       it('returns max fetch share to pool', async () => {
+        await stakingPool.stake(parseTRU(1e3))
         await liquidator.liquidate(loanToken.address)
-        expect(await tru.balanceOf(pool.address)).to.equal(parseEth(1e2))
+        expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(1e2))
       })
 
       it('returns defaulted value', async () => {
-        await tru.mint(stakingPool.address, parseEth(1e7))
+        await stakingPool.stake(parseTRU(1e7))
 
         await liquidator.liquidate(loanToken.address)
-        expect(await tru.balanceOf(pool.address)).to.equal(parseEth(22e2))
+        expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(4400))
       })
 
       describe('only half of loan value has defaulted', () => {
@@ -162,22 +174,21 @@ describe('Liquidator', () => {
         })
 
         it('0 tru in staking pool balance', async () => {
-          await stakingPool.withdraw(parseEth(1e3))
-
           await liquidator.liquidate(loanToken.address)
-          expect(await tru.balanceOf(pool.address)).to.equal(parseEth(0))
+          expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(0))
         })
 
         it('returns max fetch share to pool', async () => {
+          await stakingPool.stake(parseTRU(1e3))
           await liquidator.liquidate(loanToken.address)
-          expect(await tru.balanceOf(pool.address)).to.equal(parseEth(1e2))
+          expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(100))
         })
 
         it('returns defaulted value', async () => {
-          await tru.mint(stakingPool.address, parseEth(1e7))
+          await stakingPool.stake(parseTRU(1e7))
 
           await liquidator.liquidate(loanToken.address)
-          expect(await tru.balanceOf(pool.address)).to.equal(parseEth(11e2))
+          expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(22e2))
         })
       })
     })
