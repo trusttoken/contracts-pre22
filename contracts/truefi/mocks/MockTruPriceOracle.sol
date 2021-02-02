@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {IMockTruPriceOracle} from "./../interface/IMockTruPriceOracle.sol";
+import "../interface/ITruPriceOracle.sol";
 
-contract MockTruPriceOracle is IMockTruPriceOracle {
+contract MockTruPriceOracle is ITruPriceOracle {
     //from tusd to tru
-    function toTru(uint256 amount) public override returns (uint256) {
+    function usdToTru(uint256 amount) external override view returns (uint256) {
         return (amount * 4) / 1e10;
     }
 }

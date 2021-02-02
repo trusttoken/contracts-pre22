@@ -7,7 +7,7 @@ import {LoanToken, IERC20} from "./LoanToken.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {IStakingPool} from "./interface/IStakingPool.sol";
-import {IMockTruPriceOracle} from "./../interface/IMockTruPriceOracle.sol";
+import {ITruPriceOracle} from "./interface/ITruPriceOracle.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
@@ -28,7 +28,7 @@ contract Liquidator is Ownable {
     ITrueFiPool public pool;
     IStakingPool public stkTru;
     IERC20 public tru;
-    IMockTruPriceOracle public oracle;
+    ITruPriceOracle public oracle;
 
     // max share of tru to be taken from staking pool during liquidation
     // 1000 -> 10%
@@ -43,6 +43,12 @@ contract Liquidator is Ownable {
     event FetchMaxShareChanged(uint256 newShare);
 
     /**
+     * @dev Emitted when oracle is changed
+     * @param newOracle New oracle address
+     */
+    event OracleChanged(ITruPriceOracle newOracle);
+
+    /**
      * @dev Emitted when a loan gets liquidated
      * @param loan Loan that has been liquidated
      */
@@ -55,7 +61,7 @@ contract Liquidator is Ownable {
         ITrueFiPool _pool,
         IStakingPool _stkTru,
         IERC20 _tru,
-        IMockTruPriceOracle _oracle
+        ITruPriceOracle _oracle
     ) public initializer {
         Ownable.initialize();
 
@@ -77,6 +83,18 @@ contract Liquidator is Ownable {
     }
 
     /**
+     * @dev Change oracle
+     */
+    function setOracle(ITruPriceOracle newOracle) external onlyOwner {
+        // Check if new oracle implements method
+        require(newOracle.usdToTru(1 ether) > 0, "Liquidator: Oracle lacks usdToTru method");
+
+        oracle = newOracle;
+
+        emit OracleChanged(newOracle);
+    }
+
+    /**
      * @dev Liquidates a defaulted Loan, withdraws a portion of tru from staking pool
      * then transfers tru to TrueFiPool as compensation
      * @param loan Loan to be liquidated
@@ -91,12 +109,12 @@ contract Liquidator is Ownable {
 
     /**
      * @dev Calculate amount of tru to be withdrawn from staking pool (not more than preset share)
-     * @param deficite Amount of tusd lost on defaulted loan
+     * @param deficit Amount of tusd lost on defaulted loan
      */
-    function getAmountToWithdraw(uint256 deficite) internal returns (uint256) {
+    function getAmountToWithdraw(uint256 deficit) internal view returns (uint256) {
         uint256 stakingPoolSupply = stkTru.stakeSupply();
         uint256 maxWithdrawValue = stakingPoolSupply.mul(fetchMaxShare).div(10000);
-        uint256 deficiteInTru = oracle.toTru(deficite);
-        return maxWithdrawValue > deficiteInTru ? deficiteInTru : maxWithdrawValue;
+        uint256 deficitInTru = oracle.usdToTru(deficit);
+        return maxWithdrawValue > deficitInTru ? deficitInTru : maxWithdrawValue;
     }
 }
