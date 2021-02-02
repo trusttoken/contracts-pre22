@@ -1,7 +1,7 @@
 import { expect } from 'chai'
-import { ITrueDistributorJson, ITrueFiPoolJson, Liquidator, LiquidatorFactory, LoanToken, LoanTokenFactory, MockErc20Token, MockErc20TokenFactory, MockTrueCurrency, MockTrueCurrencyFactory, MockTruPriceOracle, MockTruPriceOracleFactory, StkTruToken, StkTruTokenFactory } from 'contracts'
+import { ITrueDistributorJson, Liquidator, LiquidatorFactory, LoanToken, LoanTokenFactory, MockErc20Token, MockErc20TokenFactory, MockTrueCurrency, MockTrueCurrencyFactory, MockTruPriceOracle, MockTruPriceOracleFactory, StkTruToken, StkTruTokenFactory } from 'contracts'
 import { deployMockContract, MockProvider } from 'ethereum-waffle'
-import { constants, Contract, Wallet } from 'ethers'
+import { Contract, Wallet } from 'ethers'
 import { beforeEachWithFixture, parseEth, parseTRU, timeTravel } from 'utils'
 
 describe('Liquidator', () => {
@@ -48,7 +48,7 @@ describe('Liquidator', () => {
       distributor.address,
       liquidator.address,
     )
-    
+
     await liquidator.initialize(
       pool.address,
       stakingPool.address,

@@ -96,7 +96,7 @@ contract Liquidator is Ownable {
     function getAmountToWithdraw(uint256 deficite) internal returns (uint256) {
         uint256 stakingPoolSupply = stkTru.stakeSupply();
         uint256 maxWithdrawValue = stakingPoolSupply.mul(fetchMaxShare).div(10000);
-        uint deficiteInTru = oracle.toTru(deficite);
+        uint256 deficiteInTru = oracle.toTru(deficite);
         return maxWithdrawValue > deficiteInTru ? deficiteInTru : maxWithdrawValue;
     }
 }
