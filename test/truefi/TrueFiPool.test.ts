@@ -537,5 +537,12 @@ describe('TrueFiPool', () => {
     it('emits event', async () => {
       await expect(pool.liquidExit(amount.div(2))).to.emit(pool, 'Exited').withArgs(owner.address, amount.div(2))
     })
+
+    it('liquid exit costs less than 400,000 gas', async () => {
+      // previous cost ~1178466 gas
+      // expect around ~365006 gas
+      const txn = await (await pool.liquidExit(await pool.balanceOf(owner.address))).wait()
+      expect(txn.gasUsed.toNumber()).to.be.lt(400000)
+    })
   })
 })
