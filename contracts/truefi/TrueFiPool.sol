@@ -156,7 +156,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev only lender can perform borrowing or repaying
      */
     modifier onlyLender() {
-        require(msg.sender == address(_lender), "TrueFiPool: Only lender can borrow or repay");
+        require(msg.sender == address(_lender), "TrueFiPool: Caller is not the lender");
         _;
     }
 
@@ -294,21 +294,13 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      */
     function join(uint256 amount) external override {
         uint256 fee = amount.mul(joiningFee).div(10000);
-        uint256 amountToDeposit = amount.sub(fee);
-        uint256 amountToMint = amountToDeposit;
-
-        // first staker mints same amount deposited
-        if (totalSupply() > 0) {
-            amountToMint = totalSupply().mul(amountToDeposit).div(poolValue());
-        }
-        // mint pool tokens
-        _mint(msg.sender, amountToMint);
+        uint256 mintedAmount = mint(amount.sub(fee));
         claimableFees = claimableFees.add(fee);
 
         latestJoinBlock[tx.origin] = block.number;
         require(_currencyToken.transferFrom(msg.sender, address(this), amount));
 
-        emit Joined(msg.sender, amount, amountToMint);
+        emit Joined(msg.sender, amount, mintedAmount);
     }
 
     // prettier-ignore
@@ -466,24 +458,20 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     // prettier-ignore
     /**
-     * @dev Remove liquidity from curve and transfer to borrower
-     * @param expectedAmount expected amount to borrow
+     * @dev Remove liquidity from curve if necessary and transfer to lender
+     * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 expectedAmount, uint256 amountWithoutFee) external override nonReentrant onlyLender {
-        require(expectedAmount >= amountWithoutFee, "TrueFiPool: Fee cannot be negative");
-
+    function borrow(uint256 amount, uint256 fee) external override nonReentrant onlyLender {
         // if there is not enough TUSD, withdraw from curve
-        if (expectedAmount > currencyBalance()) {
-            removeLiquidityFromCurve(expectedAmount.sub(currencyBalance()));
-            require(expectedAmount <= currencyBalance(), "TrueFiPool: Not enough funds in pool to cover borrow");
+        if (amount > currencyBalance()) {
+            removeLiquidityFromCurve(amount.sub(currencyBalance()));
+            require(amount <= currencyBalance(), "TrueFiPool: Not enough funds in pool to cover borrow");
         }
 
-        // calculate fees and transfer remainder
-        uint256 fee = expectedAmount.sub(amountWithoutFee);
-        claimableFees = claimableFees.add(fee);
-        require(_currencyToken.transfer(msg.sender, amountWithoutFee));
+        mint(fee);
+        require(_currencyToken.transfer(msg.sender, amount.sub(fee)));
 
-        emit Borrow(msg.sender, expectedAmount, fee);
+        emit Borrow(msg.sender, amount, fee);
     }
 
     function removeLiquidityFromCurve(uint256 amountToWithdraw) internal {
@@ -578,5 +566,21 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      */
     function currencyBalance() internal view returns (uint256) {
         return _currencyToken.balanceOf(address(this)).sub(claimableFees);
+    }
+
+    function mint(uint256 depositedAmount) internal returns (uint256) {
+        uint256 mintedAmount = depositedAmount;
+        if (mintedAmount == 0) {
+            return mintedAmount;
+        }
+
+        // first staker mints same amount deposited
+        if (totalSupply() > 0) {
+            mintedAmount = totalSupply().mul(depositedAmount).div(poolValue());
+        }
+        // mint pool tokens
+        _mint(msg.sender, mintedAmount);
+
+        return mintedAmount;
     }
 }
