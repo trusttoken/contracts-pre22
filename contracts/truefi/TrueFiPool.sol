@@ -50,6 +50,11 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     IERC20 public _stakeToken;
 
+    // cache values during sync for gas optimization
+    bool private inSync;
+    uint256 private yTokenValueCache;
+    uint256 private loansValueCache;
+
     // ======= STORAGE DECLARATION END ============
 
     // curve.fi data
@@ -145,9 +150,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _stakeToken = __stakeToken;
 
         joiningFee = 25;
-
-        _currencyToken.approve(address(_curvePool), uint256(-1));
-        _curvePool.token().approve(address(_curvePool), uint256(-1));
     }
 
     /**
@@ -156,6 +158,23 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     modifier onlyLender() {
         require(msg.sender == address(_lender), "TrueFiPool: Only lender can borrow or repay");
         _;
+    }
+
+    /**
+     * Sync values to avoid making expensive calls multiple times
+     * Will set inSync to true, allowing getter functions to return cached values
+     * Wipes cached values to save gas
+     */
+    modifier sync() {
+        // sync
+        yTokenValueCache = yTokenValue();
+        loansValueCache = loansValue();
+        inSync = true;
+        _;
+        // wipe
+        inSync = false;
+        yTokenValueCache = 0;
+        loansValueCache = 0;
     }
 
     /**
@@ -199,8 +218,13 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Virtual value of yCRV tokens in the pool
+     * Will return sync value if inSync
+     * @return yTokenValue in USD.
      */
     function yTokenValue() public view returns (uint256) {
+        if (inSync) {
+            return yTokenValueCache;
+        }
         return yTokenBalance().mul(_curvePool.curve().get_virtual_price()).div(1 ether);
     }
 
@@ -217,7 +241,19 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @return pool value in TUSD
      */
     function poolValue() public view returns (uint256) {
-        return liquidValue().add(_lender.value());
+        return liquidValue().add(loansValue());
+    }
+
+    /**
+     * @dev Virtual value of loan assets in the pool
+     * Will return cached value if inSync
+     * @return Value of loans in pool
+     */
+    function loansValue() public view returns (uint256) {
+        if (inSync) {
+            return loansValueCache;
+        }
+        return _lender.value();
     }
 
     /**
@@ -326,9 +362,10 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     /**
      * @dev Exit pool only with liquid tokens
      * This function will withdraw TUSD but with a small penalty
+     * Uses the sync() modifer to reduce gas costs of using curve
      * @param amount amount of pool tokens to redeem for underlying tokens
      */
-    function liquidExit(uint256 amount) external nonReentrant {
+    function liquidExit(uint256 amount) external nonReentrant sync {
         require(block.number != latestJoinBlock[tx.origin], "TrueFiPool: Cannot join and exit in same block");
         require(amount <= balanceOf(msg.sender), "TrueFiPool: Insufficient funds");
 
