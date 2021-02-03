@@ -31,8 +31,6 @@ import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
  * - Borrowers can apply for loans at any time by deploying a LoanToken
  * - LoanTokens are registered with the prediction market contract
  * - Once registered, TRU holders can vote at any time
- * - If a loan is funded, TRU is locked for the term of the loan
- * - At the end of the term, payouts are determined based on the loan outcome
  *
  * States:
  * Void:        Rated loan is invalid
@@ -227,8 +225,8 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
      */
     function getResults(address id)
         external
-        override
         view
+        override
         returns (
             uint256,
             uint256,
@@ -324,7 +322,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
     // prettier-ignore
     /**
      * @dev Withdraw stake on a loan and remove votes.
-     * Unstaking only allowed for loans that are not Running
      * @param id Loan ID
      * @param stake Amount of TRU to unstake
      */
