@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "postinstall": "patch-package",
-    "flatten": "./flatten-all",
+    "flatten": "./flatten.sh",
     "clean": "rm -rf ./build",
     "typecheck": "tsc --noEmit",
     "lint:sol": "solhint 'contracts/**/*.sol' && prettylint 'contracts/**/*.sol'",

@@ -1,8 +1,4 @@
-#!/usr/bin/env bash
-
-yarn waffle flatten
-
-header="/*
+/*
     .'''''''''''..     ..''''''''''''''''..       ..'''''''''''''''..
     .;;;;;;;;;;;'.   .';;;;;;;;;;;;;;;;;;,.     .,;;;;;;;;;;;;;;;;;,.
     .;;;;;;;;;;,.   .,;;;;;;;;;;;;;;;;;;;,.    .,;;;;;;;;;;;;;;;;;;,.
@@ -28,8 +24,15 @@ header="/*
 */
 
 // https://github.com/trusttoken/smart-contracts
-"
+// Root file: contracts/registry/interface/IRegistryClone.sol
 
-for filename in ./flatten/*.sol; do
-  echo -e "$header$(cat $filename)" > $filename
-done
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
+
+interface IRegistryClone {
+    function syncAttributeValue(
+        address _who,
+        bytes32 _attribute,
+        uint256 _value
+    ) external;
+}
