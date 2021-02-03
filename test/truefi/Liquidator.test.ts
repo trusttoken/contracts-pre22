@@ -191,6 +191,31 @@ describe('Liquidator', () => {
           expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(22e2))
         })
       })
+
+      describe('half of loan has defaulted and half redeemed', () => {
+        beforeEach(async () => {
+          await tusd.mint(loanToken.address, parseEth(550))
+          await loanToken.redeem(parseEth(500))
+        })
+
+        it('0 tru in staking pool balance', async () => {
+          await liquidator.liquidate(loanToken.address)
+          expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(0))
+        })
+
+        it('returns max fetch share to pool', async () => {
+          await stakingPool.stake(parseTRU(1e3))
+          await liquidator.liquidate(loanToken.address)
+          expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(100))
+        })
+
+        it('returns defaulted value', async () => {
+          await stakingPool.stake(parseTRU(1e7))
+
+          await liquidator.liquidate(loanToken.address)
+          expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(22e2))
+        })
+      })
     })
 
     it('emits event', async () => {

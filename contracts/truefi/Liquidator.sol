@@ -100,7 +100,7 @@ contract Liquidator is Ownable {
      * @param loan Loan to be liquidated
      */
     function liquidate(ILoanToken loan) external {
-        uint256 defaultedValue = getAmountToWithdraw(loan.debt().sub(loan.balance()));
+        uint256 defaultedValue = getAmountToWithdraw(loan.debt().sub(loan.repaid()));
         stkTru.withdraw(defaultedValue);
         loan.liquidate();
         require(tru.transfer(address(pool), defaultedValue));
