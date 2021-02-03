@@ -395,7 +395,7 @@ describe('TrueRatingAgencyV2', () => {
       })
     })
 
-    describe.only('Withdraw', () => {
+    describe('Withdraw', () => {
       beforeEach(async () => {
         await rater.setRewardMultiplier(1)
       })
@@ -477,7 +477,7 @@ describe('TrueRatingAgencyV2', () => {
         })
       })
 
-      describe.only('Running', () => {
+      describe('Running', () => {
         let newLoanToken
         const rewardMultiplier = 1
         beforeEach(async () => {
@@ -525,7 +525,7 @@ describe('TrueRatingAgencyV2', () => {
         })
       })
 
-      describe.only('Closed', () => {
+      describe('Closed', () => {
         let newLoanToken
         const rewardMultiplier = 1
         beforeEach(async () => {
