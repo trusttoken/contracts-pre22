@@ -183,6 +183,16 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
             );
     }
 
+    function getPriorVotes(address account, uint256 blockNumber) public override view returns (uint96) {
+        uint96 votes = super.getPriorVotes(account, blockNumber);
+        return safe96(stakeSupply.mul(votes).div(totalSupply), "StkTruToken: uint96 overflow");
+    }
+
+    function getCurrentVotes(address account) public override view returns (uint96) {
+        uint96 votes = super.getCurrentVotes(account);
+        return safe96(stakeSupply.mul(votes).div(totalSupply), "StkTruToken: uint96 overflow");
+    }
+
     function decimals() public override pure returns (uint8) {
         return 8;
     }

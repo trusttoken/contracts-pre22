@@ -44,12 +44,12 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return _delegate(signatory, delegatee);
     }
 
-    function getCurrentVotes(address account) external override view returns (uint96) {
+    function getCurrentVotes(address account) public virtual override view returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
 
-    function getPriorVotes(address account, uint256 blockNumber) public override view returns (uint96) {
+    function getPriorVotes(address account, uint256 blockNumber) public virtual override view returns (uint96) {
         require(blockNumber < block.number, "TrustToken::getPriorVotes: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];
