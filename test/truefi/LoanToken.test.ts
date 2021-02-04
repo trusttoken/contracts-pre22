@@ -13,6 +13,8 @@ import {
 import {
   LoanToken,
   LoanTokenFactory,
+  MockErc20Token,
+  MockErc20TokenFactory,
   MockTrueCurrency,
   MockTrueCurrencyFactory,
 } from 'contracts'
@@ -29,6 +31,7 @@ describe('LoanToken', () => {
   let other: Wallet
   let loanToken: LoanToken
   let tusd: MockTrueCurrency
+  let tru: MockErc20Token
 
   const dayInSeconds = 60 * 60 * 24
   const yearInSeconds = dayInSeconds * 365
@@ -51,8 +54,11 @@ describe('LoanToken', () => {
     await tusd.initialize()
     await tusd.mint(lender.address, parseEth(1000))
 
+    tru = await new MockErc20TokenFactory(lender).deploy()
+
     loanToken = await new LoanTokenFactory(lender).deploy(
       tusd.address,
+      tru.address,
       borrower.address,
       lender.address,
       lender.address, // easier testing purposes
@@ -89,6 +95,10 @@ describe('LoanToken', () => {
 
     it('received amount if total amount minus fee', async () => {
       expect(await loanToken.receivedAmount()).to.equal(parseEth(1000).mul(9975).div(10000))
+    })
+
+    it('sets tru address', async () => {
+      expect(await loanToken.tru()).to.equal(tru.address)
     })
   })
 
@@ -459,6 +469,10 @@ describe('LoanToken', () => {
         expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
       })
     })
+
+    describe('tru included', () => {
+
+    })
   })
 
   describe('Reclaim', () => {
@@ -561,7 +575,7 @@ describe('LoanToken', () => {
 
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
-      const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
+      const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, tru.address, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 
