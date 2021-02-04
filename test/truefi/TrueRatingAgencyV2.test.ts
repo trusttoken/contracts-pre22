@@ -96,7 +96,7 @@ describe('TrueRatingAgencyV2', () => {
 
   describe('Initializer', () => {
     it('sets trust token address', async () => {
-      expect(await rater.trustToken()).to.equal(trustToken.address)
+      expect(await rater.TRU()).to.equal(trustToken.address)
     })
 
     it('checks distributor beneficiary address', async () => {
