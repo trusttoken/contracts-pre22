@@ -362,7 +362,7 @@ describe('LoanToken', () => {
       await loanToken.fund()
       await timeTravel(provider, defaultedLoanCloseTime)
       await loanToken.close()
-      await expect(loanToken.redeem(parseEth(1100))).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEth(1100), removeFee(parseEth(1000)))
+      await expect(loanToken.redeem(parseEth(1100))).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEth(1100), removeFee(parseEth(1000)), parseTRU(0))
     })
 
     describe('Simple case: loan settled, redeem all', () => {
@@ -496,6 +496,15 @@ describe('LoanToken', () => {
         await payback(borrower, parseEth(550))
         await tru.mint(loanToken.address, parseTRU(2))
         await expect(() => loanToken.redeem(parseEth(1100))).to.changeTokenBalance(tru, lender, parseTRU(2))
+      })
+
+      it('emits event', async () => {
+        await loanToken.close()
+        await tru.mint(loanToken.address, parseTRU(2))
+        await payback(borrower, parseEth(1100))
+        await expect(loanToken.redeem(parseEth(1100)))
+          .to.emit(loanToken, 'Redeemed')
+          .withArgs(lender.address, parseEth(1100), parseEth(1100), parseTRU(2))
       })
     })
   })

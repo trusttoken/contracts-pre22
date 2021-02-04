@@ -87,8 +87,9 @@ contract LoanToken is ILoanToken, ERC20 {
      * @param receiver Receiver of currencyTokens
      * @param burnedAmount Amount of LoanTokens burned
      * @param redeemedAmound Amount of currencyToken received
+     * @param redeemedTru Amount of tru received
      */
-    event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound);
+    event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound, uint256 redeemedTru);
 
     /**
      * @dev Emitted when a LoanToken is repaid by the borrower in underlying currencyTokens
@@ -228,7 +229,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Return true if this contract is a LoanToken
      * @return True if this contract is a LoanToken
      */
-    function isLoanToken() external pure override returns (bool) {
+    function isLoanToken() external override pure returns (bool) {
         return true;
     }
 
@@ -238,8 +239,8 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function getParameters()
         external
-        view
         override
+        view
         returns (
             uint256,
             uint256,
@@ -255,7 +256,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @param _balance number of LoanTokens to get value for
      * @return coupon value of _balance LoanTokens in currencyTokens
      */
-    function value(uint256 _balance) external view override returns (uint256) {
+    function value(uint256 _balance) external override view returns (uint256) {
         if (_balance == 0) {
             return 0;
         }
@@ -346,7 +347,7 @@ contract LoanToken is ILoanToken, ERC20 {
         require(currencyToken.transfer(msg.sender, amountToReturn));
         require(tru.transfer(msg.sender, truToReturn));
 
-        emit Redeemed(msg.sender, _amount, amountToReturn);
+        emit Redeemed(msg.sender, _amount, amountToReturn, truToReturn);
     }
 
     /**
@@ -380,7 +381,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * Funds stored on the contract's addres plus funds already redeemed by lenders
      * @return Uint256 representing what value was already repaid
      */
-    function repaid() external view override onlyAfterWithdraw returns (uint256) {
+    function repaid() external override view onlyAfterWithdraw returns (uint256) {
         return _balance().add(redeemed);
     }
 
@@ -388,7 +389,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Public currency token balance function
      * @return currencyToken balance of this contract
      */
-    function balance() external view override returns (uint256) {
+    function balance() external override view returns (uint256) {
         return _balance();
     }
 
@@ -404,7 +405,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Calculate amount borrowed minus fee
      * @return Amount minus fees
      */
-    function receivedAmount() public view override returns (uint256) {
+    function receivedAmount() public override view returns (uint256) {
         return amount.sub(amount.mul(borrowerFee).div(10000));
     }
 
@@ -422,7 +423,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev get profit for this loan
      * @return profit for this loan
      */
-    function profit() external view override returns (uint256) {
+    function profit() external override view returns (uint256) {
         return debt.sub(amount);
     }
 
