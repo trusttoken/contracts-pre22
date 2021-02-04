@@ -82,7 +82,6 @@ describe('ArbitraryDistributor', () => {
       await distributor.setBeneficiaryStatus(otherWallet.address, false)
       await expect(distributor.connect(otherWallet).distribute(distributedAmount))
         .to.be.revertedWith('ArbitraryDistributor: Only beneficiary can receive tokens')
-
     })
 
     it('properly sends tokens', async () => {
