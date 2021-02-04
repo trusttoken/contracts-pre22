@@ -31,6 +31,7 @@ describe('TrueLender', () => {
   let lender: MockTrueLender
 
   let tusd: MockTrueCurrency
+  let tru: MockErc20Token
   let mockPool: Contract
   let mockLoanToken: Contract
   let mockRatingAgency: Contract
@@ -62,6 +63,8 @@ describe('TrueLender', () => {
 
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
     await tusd.initialize()
+
+    tru = await new MockErc20TokenFactory(owner).deploy()
 
     mockPool = await deployMockContract(owner, ITrueFiPoolJson.abi)
     await mockPool.mock.currencyToken.returns(tusd.address)
@@ -503,6 +506,7 @@ describe('TrueLender', () => {
     beforeEach(async () => {
       firstLoanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
+        tru.address,
         owner.address,
         lender.address,
         lender.address,
@@ -512,6 +516,7 @@ describe('TrueLender', () => {
       )
       secondLoanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
+        tru.address,
         owner.address,
         lender.address,
         lender.address,
