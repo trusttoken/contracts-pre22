@@ -341,9 +341,11 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function redeem(uint256 _amount) external override onlyClosed {
         uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
+        uint256 truToReturn = _amount.mul(tru.balanceOf(address(this))).div(totalSupply());
         redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
         require(currencyToken.transfer(msg.sender, amountToReturn));
+        require(tru.transfer(msg.sender, truToReturn));
 
         emit Redeemed(msg.sender, _amount, amountToReturn);
     }

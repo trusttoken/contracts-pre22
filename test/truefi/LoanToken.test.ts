@@ -8,6 +8,7 @@ import {
   timeTravel,
   expectScaledCloseTo,
   parseEth,
+  parseTRU,
 } from 'utils'
 
 import {
@@ -471,7 +472,31 @@ describe('LoanToken', () => {
     })
 
     describe('tru included', () => {
+      beforeEach(async () => {
+        await loanToken.fund()
+        await withdraw(borrower)
+        await timeTravel(provider, defaultedLoanCloseTime)
+      })
 
+      it('loan defaulted (nothing payed back)', async () => {
+        await loanToken.close()
+        await tru.mint(loanToken.address, parseTRU(2))
+        await expect(() => loanToken.redeem(parseEth(1100))).to.changeTokenBalance(tru, lender, parseTRU(2))
+      })
+
+      it('loan defaulted (nothing payed back) (half redeem)', async () => {
+        await loanToken.close()
+        await tru.mint(loanToken.address, parseTRU(2))
+        await expect(() => loanToken.redeem(parseEth(550))).to.changeTokenBalance(tru, lender, parseTRU(1))
+      })
+
+      it('loan defaulted (half payed back)', async () => {
+        await loanToken.close()
+        await tusd.approve(loanToken.address, parseEth(550))
+        await payback(borrower, parseEth(550))
+        await tru.mint(loanToken.address, parseTRU(2))
+        await expect(() => loanToken.redeem(parseEth(1100))).to.changeTokenBalance(tru, lender, parseTRU(2))
+      })
     })
   })
 
