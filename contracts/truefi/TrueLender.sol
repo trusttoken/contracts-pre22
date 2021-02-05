@@ -353,12 +353,18 @@ contract TrueLender is ITrueLender, Ownable {
      * @dev For settled loans, redeem LoanTokens for underlying funds
      * @param loanToken Loan to reclaim capital from
      */
-    function reclaim(ILoanToken loanToken) external onlyOwner {
+    function reclaim(ILoanToken loanToken) external {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be used to reclaimed");
+
+        ILoanToken.Status status = loanToken.status();
         require(
-            loanToken.status() == ILoanToken.Status.Settled || loanToken.status() == ILoanToken.Status.Defaulted,
+            status == ILoanToken.Status.Settled || status == ILoanToken.Status.Defaulted,
             "TrueLender: LoanToken is not closed yet"
         );
+
+        if (status == ILoanToken.Status.Defaulted) {
+            require(msg.sender == owner(), "TrueLender: Only owner can reclaim from defaulted loan");
+        }
 
         // call redeem function on LoanToken
         uint256 balanceBefore = currencyToken.balanceOf(address(this));
