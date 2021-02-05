@@ -124,17 +124,55 @@ describe('VoteToken', () => {
     describe('transfer TRU before delegation', () => {
       it('return 0 vote initialHolder and 1000 for secondAccount', async () => {
         await trustToken.connect(initialHolder).transfer(secondAccount.address, parseTRU(1000))
+        await trustToken.connect(secondAccount).delegate(secondAccount.address)
         expect(await trustToken.balanceOf(secondAccount.address)).to.eq(parseTRU(1000))
         expect(await trustToken.getCurrentVotes(initialHolder.address)).to.eq(parseTRU(0))
+        expect(await trustToken.getCurrentVotes(secondAccount.address)).to.eq(parseTRU(1000))
       })
     })
     describe('transfer TRU after delegation', () => {
       it('return 0 vote initialHolder and 1000 for secondAccount', async () => {
-        await trustToken.connect(initialHolder).delegate(initialHolder.address)
+        await trustToken.connect(secondAccount).delegate(secondAccount.address)
         await trustToken.connect(initialHolder).transfer(secondAccount.address, parseTRU(1000))
         expect(await trustToken.balanceOf(secondAccount.address)).to.eq(parseTRU(1000))
         expect(await trustToken.getCurrentVotes(initialHolder.address)).to.eq(parseTRU(0))
-        expect(await trustToken.getCurrentVotes(secondAccount.address)).to.eq(parseTRU(0))
+        expect(await trustToken.getCurrentVotes(secondAccount.address)).to.eq(parseTRU(1000))
+      })
+    })
+  })
+
+  describe('mint', () => {
+    describe('mints TRU before delegation', () => {
+      it('add votes on mint', async () => {
+        await trustToken.mint(initialHolder.address, parseTRU(1000))
+        await trustToken.connect(initialHolder).delegate(initialHolder.address)
+        expect(await trustToken.getCurrentVotes(initialHolder.address)).to.eq(parseTRU(2000))
+      })
+    })
+
+    describe('mints TRU after delegation', () => {
+      it('add votes on mint', async () => {
+        await trustToken.connect(initialHolder).delegate(initialHolder.address)
+        await trustToken.mint(initialHolder.address, parseTRU(1000))
+        expect(await trustToken.getCurrentVotes(initialHolder.address)).to.eq(parseTRU(2000))
+      })
+    })
+  })
+
+  describe('burn', () => {
+    describe('mints TRU before delegation', () => {
+      it('add votes on mint', async () => {
+        await trustToken.connect(initialHolder).burn(parseTRU(500))
+        await trustToken.connect(initialHolder).delegate(initialHolder.address)
+        expect(await trustToken.getCurrentVotes(initialHolder.address)).to.eq(parseTRU(500))
+      })
+    })
+
+    describe('mints TRU after delegation', () => {
+      it('add votes on mint', async () => {
+        await trustToken.connect(initialHolder).delegate(initialHolder.address)
+        await trustToken.connect(initialHolder).burn(parseTRU(500))
+        expect(await trustToken.getCurrentVotes(initialHolder.address)).to.eq(parseTRU(500))
       })
     })
   })

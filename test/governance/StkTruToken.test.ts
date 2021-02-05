@@ -296,4 +296,28 @@ describe('StkTruToken', () => {
       await expect(await stkToken.unlockTime(owner.address)).to.equal(unlockTimeBefore)
     })
   })
+
+  describe('Voting power decreases after liquidation', () => {
+    let withdrawBlockNumber: number
+
+    beforeEach(async () => {
+      await stkToken.delegate(owner.address)
+      await stkToken.stake(amount)
+      ;({ blockNumber: withdrawBlockNumber } = await (await stkToken.connect(liquidator).withdraw(parseTRU(1))).wait())
+    })
+
+    it('getCurrentVotes has decreased', async () => {
+      expect(await stkToken.getCurrentVotes(owner.address)).to.equal(parseTRU(99))
+    })
+
+    it('getCurrentVotes after delegation', async () => {
+      await stkToken.delegate(staker.address)
+      expect(await stkToken.getCurrentVotes(owner.address)).to.equal(0)
+      expect(await stkToken.getCurrentVotes(staker.address)).to.equal(parseTRU(99))
+    })
+
+    it('getPriorVotes has decreased', async () => {
+      expect(await stkToken.getPriorVotes(owner.address, withdrawBlockNumber - 1)).to.equal(parseTRU(99))
+    })
+  })
 })
