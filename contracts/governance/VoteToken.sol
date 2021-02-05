@@ -44,12 +44,12 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return _delegate(signatory, delegatee);
     }
 
-    function getCurrentVotes(address account) external override view returns (uint96) {
+    function getCurrentVotes(address account) public virtual override view returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
 
-    function getPriorVotes(address account, uint256 blockNumber) public override view returns (uint96) {
+    function getPriorVotes(address account, uint256 blockNumber) public virtual override view returns (uint96) {
         require(blockNumber < block.number, "TrustToken::getPriorVotes: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];
@@ -105,6 +105,16 @@ abstract contract VoteToken is ERC20, IVoteToken {
     ) internal virtual override {
         super._transfer(_from, _to, _value);
         _moveDelegates(delegates[_from], delegates[_to], uint96(_value));
+    }
+
+    function _mint(address account, uint256 amount) internal virtual override {
+        super._mint(account, amount);
+        _moveDelegates(address(0), delegates[account], safe96(amount, "StkTruToken: uint96 overflow"));
+    }
+
+    function _burn(address account, uint256 amount) internal virtual override {
+        super._burn(account, amount);
+        _moveDelegates(delegates[account], address(0), safe96(amount, "StkTruToken: uint96 overflow"));
     }
 
     function _moveDelegates(
