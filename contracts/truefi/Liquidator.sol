@@ -8,6 +8,7 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {IStakingPool} from "./interface/IStakingPool.sol";
 import {ITruPriceOracle} from "./interface/ITruPriceOracle.sol";
+import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
@@ -29,6 +30,7 @@ contract Liquidator is Ownable {
     IStakingPool public stkTru;
     IERC20 public tru;
     ITruPriceOracle public oracle;
+    ILoanFactory public factory;
 
     // max share of tru to be taken from staking pool during liquidation
     // 1000 -> 10%
@@ -61,7 +63,8 @@ contract Liquidator is Ownable {
         ITrueFiPool _pool,
         IStakingPool _stkTru,
         IERC20 _tru,
-        ITruPriceOracle _oracle
+        ITruPriceOracle _oracle,
+        ILoanFactory _factory
     ) public initializer {
         Ownable.initialize();
 
@@ -69,6 +72,7 @@ contract Liquidator is Ownable {
         stkTru = _stkTru;
         tru = _tru;
         oracle = _oracle;
+        factory = _factory;
         fetchMaxShare = 1000;
     }
 
@@ -100,6 +104,7 @@ contract Liquidator is Ownable {
      * @param loan Loan to be liquidated
      */
     function liquidate(ILoanToken loan) external {
+        require(factory.isLoanToken(address(loan)), "Liquidator: Unknown loan");
         uint256 defaultedValue = getAmountToWithdraw(loan.debt().sub(loan.repaid()));
         stkTru.withdraw(defaultedValue);
         loan.liquidate();
