@@ -359,7 +359,7 @@ describe('StkTruToken', () => {
     })
 
     it('gas cost', async () => {
-      const tx = await (await stkToken.transfer(staker.address, amount.div(2))).wait()
+      const tx = await (await stkToken.transfer(staker.address, amount.div(2), { gasLimit: 300000 })).wait()
       expect(tx.gasUsed).to.be.lt(120000)
     })
   })
