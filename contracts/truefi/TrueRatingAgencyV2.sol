@@ -20,17 +20,15 @@ import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
  *
  * TrueFi uses use a prediction market to signal how risky a loan is.
  * The Credit Prediction Market estimates the likelihood of a loan defaulting.
- * Any TRU holder can vote YES or NO and stake TRU as collateral on their vote.
- * If a loan is funded, TRU is locked into the market until expiry.
- * Locking TRU into the prediction market allows voters to earn and claim
- * incentive TRU throughout the course of the loan. After the loan's term,
- * if the voter is correct, they earn a TRU reward plus a portion of the
- * losing side's vote. A portion of the losing side's TRU is burned.
+ * Any stkTRU holder can vote YES or NO and stake TRU as collateral on their vote.
+ * If a loan is funded, TRU is rewarded as incentive for participation
+ * Rating stkTRU in the prediction market allows voters to earn and claim TRU
+ * incentive when the loan is passed
  *
  * Voting Lifecycle:
  * - Borrowers can apply for loans at any time by deploying a LoanToken
  * - LoanTokens are registered with the prediction market contract
- * - Once registered, TRU holders can vote at any time
+ * - Once registered, stkTRU holders can vote at any time
  *
  * States:
  * Void:        Rated loan is invalid
@@ -54,6 +52,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
         uint256 reward;
     }
 
+    // TRU is 1e8 decimals
     uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
 
     // ================ WARNING ==================
@@ -396,7 +395,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
     /**
      * @dev Claim TRU rewards for voters
      * - Only can claim TRU rewards for funded loans
-     * - Voters can claim a portion of their total rewards over time
      * - Claimed automatically when a user withdraws stake
      *
      * chi = (TRU remaining in distributor) / (Total TRU allocated for distribution)
@@ -422,10 +420,22 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
         }
     }
 
+    /**
+     * @dev Get amount claimed for loan ID and voter address
+     * @param id Loan ID
+     * @param voter Voter address
+     * @return Amount claimed for id and address
+     */
     function claimed(address id, address voter) external view returns (uint256) {
         return loans[id].claimed[voter];
     }
 
+    /**
+     * @dev Get amount claimable for loan ID and voter address
+     * @param id Loan ID
+     * @param voter Voter address
+     * @return Amount claimable for id and address
+     */
     function claimable(address id, address voter) public view returns (uint256) {
         if (status(id) < LoanStatus.Running) {
             return 0;
