@@ -9,6 +9,16 @@ import {VoteToken} from "./VoteToken.sol";
 import {ClaimableContract} from "../trusttoken/common/ClaimableContract.sol";
 import {ITrueDistributor} from "../truefi/interface/ITrueDistributor.sol";
 
+/**
+ * @title stkTRU
+ * @dev Staking contract for TrueFi
+ * TRU is staked and stored in the contract
+ * stkTRU is minted when staking
+ * Holders of stkTRU accrue rewards over time
+ * Rewards are paid in TRU and tfUSD
+ * stkTRU can be used to vote in governance
+ * stkTRU can be used to rate and approve loans
+ */
 contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     using SafeMath for uint256;
     uint256 constant PRECISION = 1e30;
@@ -54,11 +64,21 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     event CooldownTimeChanged(uint256 newUnstakePeriodDuration);
     event UnstakePeriodDurationChanged(uint256 newUnstakePeriodDuration);
 
+    /**
+     * @dev Only Liquidator contract can perform TRU liquidations
+     */
     modifier onlyLiquidator() {
         require(msg.sender == liquidator, "StkTruToken: Can be called only by the liquidator");
         _;
     }
 
+    /**
+     * @dev Initialize contract and set default values
+     * @param _tru TRU token
+     * @param _tfusd tfUSD token
+     * @param _distributor Distributor for this contract
+     * @param _liquidator Liquidator for staked TRU
+     */
     function initialize(
         IERC20 _tru,
         IERC20 _tfusd,
@@ -78,6 +98,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         initalized = true;
     }
 
+    /**
+     * @dev Owner can use this function to set cooldown time
+     * Cooldown time defines how long a staker waits to unstake TRU
+     * @param newCooldownTime New cooldown time for stakers
+     */
     function setCooldownTime(uint256 newCooldownTime) external onlyOwner {
         // Avoid overflow
         require(newCooldownTime <= 100 * 365 days, "StkTruToken: Cooldown too large");
@@ -86,6 +111,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         emit CooldownTimeChanged(newCooldownTime);
     }
 
+    /**
+     * @dev Owner can set unstake period duration
+     * Unstake period defines how long after cooldown a user has to withdraw stake
+     * @param newUnstakePeriodDuration New unstake period
+     */
     function setUnstakePeriodDuration(uint256 newUnstakePeriodDuration) external onlyOwner {
         require(newUnstakePeriodDuration > 0, "StkTruToken: Unstake period cannot be 0");
         // Avoid overflow
@@ -95,6 +125,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         emit UnstakePeriodDurationChanged(newUnstakePeriodDuration);
     }
 
+    /**
+     * @dev Stake TRU for stkTRU
+     * Updates rewards when staking
+     * @param amount Amount of TRU to stake for stkTRU
+     */
     function stake(uint256 amount) external distribute update(tru) update(tfusd) {
         require(amount > 0, "StkTruToken: Cannot stake 0");
 
@@ -111,6 +146,12 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         emit Stake(msg.sender, amount);
     }
 
+    /**
+     * @dev Unstake stkTRU for TRU
+     * Can only unstake when cooldown complete and within unstake period
+     * Claims rewards when unstaking
+     * @param amount Amount of stkTRU to unstake for TRU
+     */
     function unstake(uint256 amount) external distribute update(tru) update(tfusd) nonReentrant {
         require(amount > 0, "StkTruToken: Cannot unstake 0");
 
@@ -130,6 +171,9 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         emit Unstake(msg.sender, amount);
     }
 
+    /**
+     * @dev Initiate cooldown period
+     */
     function cooldown() external {
         if (unlockTime(msg.sender) == type(uint256).max) {
             cooldowns[msg.sender] = block.timestamp;
@@ -138,6 +182,10 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         }
     }
 
+    /**
+     * @dev Withdraw TRU from the contract for liquidation
+     * @param amount Amount to withdraw for liquidation
+     */
     function withdraw(uint256 amount) external onlyLiquidator {
         stakeSupply = stakeSupply.sub(amount);
         tru.transfer(liquidator, amount);
@@ -145,6 +193,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         emit Withdraw(amount);
     }
 
+    /**
+     * @dev View function to get unlock time for an account
+     * @param account Account to get unlock time for
+     * @return Unlock time for account
+     */
     function unlockTime(address account) public view returns (uint256) {
         if (cooldowns[account] == 0 || cooldowns[account].add(cooldownTime).add(unstakePeriodDuration) < block.timestamp) {
             return type(uint256).max;
@@ -153,7 +206,7 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     }
 
     /**
-     * @dev Claim TRU rewards
+     * @dev Claim all rewards
      */
     function claim() external distribute update(tru) update(tfusd) {
         _claim(tru);
@@ -162,6 +215,8 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
 
     /**
      * @dev View to estimate the claimable reward for an account
+     * @param account Account to get claimable reward for
+     * @param token Token to get rewards for
      * @return claimable rewards for account
      */
     function claimable(address account, IERC20 token) external view returns (uint256) {
@@ -182,11 +237,24 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
             );
     }
 
+    /**
+     * @dev Prior votes votes are calculated as priorVotes * stakedSupply / totalSupply
+     * This dilutes voting power when TRU is liquidated
+     * @param account Account to get current voting power for
+     * @param blockNumber Block to get prior votes at
+     * @return prior voting power for account and block
+     */
     function getPriorVotes(address account, uint256 blockNumber) public override view returns (uint96) {
         uint96 votes = super.getPriorVotes(account, blockNumber);
         return safe96(stakeSupply.mul(votes).div(totalSupply), "StkTruToken: uint96 overflow");
     }
 
+    /**
+     * @dev Current votes are calculated as votes * stakedSupply / totalSupply
+     * This dilutes voting power when TRU is liquidated
+     * @param account Account to get current voting power for
+     * @return voting power for account
+     */
     function getCurrentVotes(address account) public override view returns (uint96) {
         uint96 votes = super.getCurrentVotes(account);
         return safe96(stakeSupply.mul(votes).div(totalSupply), "StkTruToken: uint96 overflow");
@@ -210,6 +278,8 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
 
     /**
      * @dev Internal claim function
+     * Claim rewards for a specific ERC20 token
+     * @param token Token to claim rewards for
      */
     function _claim(IERC20 token) internal {
         farmRewards[token].totalClaimedRewards = farmRewards[token].totalClaimedRewards.add(
@@ -221,6 +291,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         emit Claim(msg.sender, token, rewardToClaim);
     }
 
+    /**
+     * @dev Get reward balance of this contract for a token
+     * @param token Token to get reward balance for
+     * @return Reward balance for token
+     */
     function rewardBalance(IERC20 token) internal view returns (uint256) {
         if (token == tru) {
             return token.balanceOf(address(this)).sub(stakeSupply);
