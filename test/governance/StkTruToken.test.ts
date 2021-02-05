@@ -5,7 +5,16 @@ import { MaxUint256 } from '@ethersproject/constants'
 
 import { setupDeploy } from 'scripts/utils'
 
-import { beforeEachWithFixture, DAY, expectScaledCloseTo, parseEth, parseTRU, timeTravel, timeTravelTo } from 'utils'
+import {
+  beforeEachWithFixture,
+  DAY,
+  expectCloseTo,
+  expectScaledCloseTo,
+  parseEth,
+  parseTRU,
+  timeTravel,
+  timeTravelTo,
+} from 'utils'
 
 import {
   LinearTrueDistributor, LinearTrueDistributorFactory,
@@ -187,8 +196,8 @@ describe('StkTruToken', () => {
     const distributionStart = 1700000000
 
     beforeEach(async () => {
-      await distributor.initialize(distributionStart, 10 * DAY, parseTRU(100), tru.address)
-      await tru.mint(distributor.address, parseTRU(100))
+      await distributor.initialize(distributionStart, 10 * DAY, parseTRU(10000), tru.address)
+      await tru.mint(distributor.address, parseTRU(10000))
       await distributor.setFarm(stkToken.address)
       await timeTravelTo(provider, distributionStart)
     })
@@ -199,19 +208,19 @@ describe('StkTruToken', () => {
 
       await tfusd.mint(stkToken.address, parseEth(1))
 
-      expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(10))
+      expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(1000))
       expect(await stkToken.claimable(owner.address, tfusd.address)).to.equal(parseEth(1))
 
       await stkToken.connect(staker).stake(amount.div(2))
       await timeTravel(provider, DAY)
 
-      expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(16.66666))
-      expectScaledCloseTo(await stkToken.claimable(staker.address, tru.address), parseTRU(3.333333))
+      expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(1666.666))
+      expectScaledCloseTo(await stkToken.claimable(staker.address, tru.address), parseTRU(333.3333))
 
-      await tru.mint(stkToken.address, parseTRU(30))
+      await tru.mint(stkToken.address, parseTRU(3000))
 
-      expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(36.66666))
-      expectScaledCloseTo(await stkToken.claimable(staker.address, tru.address), parseTRU(13.333333))
+      expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(3666.666))
+      expectScaledCloseTo(await stkToken.claimable(staker.address, tru.address), parseTRU(1333.3333))
 
       expect(await stkToken.claimable(owner.address, tfusd.address)).to.equal(parseEth(1))
       expect(await stkToken.claimable(staker.address, tfusd.address)).to.equal(0)
@@ -224,8 +233,8 @@ describe('StkTruToken', () => {
       await stkToken.claim()
       await stkToken.connect(staker).claim()
 
-      expectScaledCloseTo(await tru.balanceOf(owner.address), parseTRU(36.66666))
-      expectScaledCloseTo(await tru.balanceOf(staker.address), parseTRU(13.333333))
+      expectScaledCloseTo(await tru.balanceOf(owner.address), parseTRU(3666.666))
+      expectScaledCloseTo(await tru.balanceOf(staker.address), parseTRU(1333.3333))
       expect(await tfusd.balanceOf(owner.address)).to.equal(parseEth(3))
       expect(await tfusd.balanceOf(staker.address)).to.equal(parseEth(1))
     })
@@ -318,6 +327,40 @@ describe('StkTruToken', () => {
 
     it('getPriorVotes has decreased', async () => {
       expect(await stkToken.getPriorVotes(owner.address, withdrawBlockNumber - 1)).to.equal(parseTRU(99))
+    })
+  })
+
+  describe('Transfer', () => {
+    const distributionStart = 1700000000
+
+    beforeEach(async () => {
+      await distributor.initialize(distributionStart, 10 * DAY, parseTRU(10000), tru.address)
+      await tru.mint(distributor.address, parseTRU(10000))
+      await distributor.setFarm(stkToken.address)
+      await timeTravelTo(provider, distributionStart)
+      await stkToken.stake(amount, { gasLimit: 300000 })
+    })
+
+    it('updates claim state on transfer', async () => {
+      await timeTravel(provider, DAY)
+      await tfusd.mint(stkToken.address, parseEth(1))
+
+      expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(1000))
+      expect(await stkToken.claimable(owner.address, tfusd.address)).to.equal(parseEth(1))
+
+      await stkToken.transfer(staker.address, amount.div(2))
+      await stkToken.claim({ gasLimit: 300000 })
+
+      expectScaledCloseTo(await tru.balanceOf(owner.address), parseTRU(1000))
+      expect(await tfusd.balanceOf(owner.address)).to.equal(parseEth(1))
+
+      expectCloseTo(await stkToken.claimable(staker.address, tru.address), parseTRU(0))
+      expect(await stkToken.claimable(staker.address, tfusd.address)).to.equal(0)
+    })
+
+    it('gas cost', async () => {
+      const tx = await (await stkToken.transfer(staker.address, amount.div(2))).wait()
+      expect(tx.gasUsed).to.be.lt(120000)
     })
   })
 })
