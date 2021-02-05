@@ -18,10 +18,12 @@ import {ABDKMath64x64} from "./Log.sol";
  * @dev Lending pool which uses curve.fi to store idle funds
  * Earn high interest rates on currency deposits through uncollateralized loans
  *
- * Funds deposited in this pool are NOT LIQUID!
- * Exiting the pool will withdraw a basket of LoanTokens backing the pool
+ * Funds deposited in this pool are not fully liquid. Luqidity
+ * Exiting the pool has 2 options:
+ * - withdraw a basket of LoanTokens backing the pool
+ * - take an exit penallty depending on pool liquidity
  * After exiting, an account will need to wait for LoanTokens to expire and burn them
- * It is recommended to perform a zap or swap tokens on Uniswap for liquidity
+ * It is recommended to perform a zap or swap tokens on Uniswap for increased liquidity
  *
  * Funds are managed through an external function to save gas on deposits
  */
@@ -402,6 +404,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Calculates average penalty on interval [from; to]
+     * @return average exit penalty
      */
     function averageExitPenalty(uint256 from, uint256 to) public pure returns (uint256) {
         require(from <= to, "TrueFiPool: To precedes from");
@@ -542,6 +545,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * Can be used to control slippage
      * Called in flush() function
      * @param currencyAmount amount to calculate for
+     * @return expected amount minted given currency amount
      */
     function calcTokenAmount(uint256 currencyAmount) public view returns (uint256) {
         // prettier-ignore
@@ -568,6 +572,10 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         return _currencyToken.balanceOf(address(this)).sub(claimableFees);
     }
 
+    /**
+     * @param depositedAmount Amount of currency deposited
+     * @return amount minted from this transaction
+     */
     function mint(uint256 depositedAmount) internal returns (uint256) {
         uint256 mintedAmount = depositedAmount;
         if (mintedAmount == 0) {
