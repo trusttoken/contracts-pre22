@@ -249,18 +249,8 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         undistributedTfusdRewards = undistributedTfusdRewards.add(amount.div(2));
         scheduledRewards.push(ScheduledTfUsdRewards({amount: uint96(amount.div(2)), timestamp: uint64(endTime)}));
 
-        uint32 i;
-        for (i = nextDistributionIndex; i < sortedScheduledRewardIndices.length; i++) {
-            if (scheduledRewards[sortedScheduledRewardIndices[i]].timestamp > endTime) {
-                break;
-            }
-        }
-        sortedScheduledRewardIndices.push(0);
-
-        for (uint32 j = uint32(sortedScheduledRewardIndices.length) - 1; j > i; j--) {
-            sortedScheduledRewardIndices[j] = sortedScheduledRewardIndices[j - 1];
-        }
-        sortedScheduledRewardIndices[i] = uint32(scheduledRewards.length) - 1;
+        uint32 newIndex = findPositionForTimestamp(endTime);
+        insertAt(newIndex, uint32(scheduledRewards.length) - 1);
     }
 
     /**
@@ -423,5 +413,21 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         }
         // update previous cumulative for sender
         farmRewards[token].previousCumulatedRewardPerToken[user] = farmRewards[token].cumulativeRewardPerToken;
+    }
+
+    function findPositionForTimestamp(uint256 timestamp) internal view returns (uint32 i) {
+        for (i = nextDistributionIndex; i < sortedScheduledRewardIndices.length; i++) {
+            if (scheduledRewards[sortedScheduledRewardIndices[i]].timestamp > timestamp) {
+                break;
+            }
+        }
+    }
+
+    function insertAt(uint32 index, uint32 value) internal {
+        sortedScheduledRewardIndices.push(0);
+        for (uint32 j = uint32(sortedScheduledRewardIndices.length) - 1; j > index; j--) {
+            sortedScheduledRewardIndices[j] = sortedScheduledRewardIndices[j - 1];
+        }
+        sortedScheduledRewardIndices[index] = value;
     }
 }
