@@ -64,6 +64,8 @@ describe('TrueRatingAgencyV2', () => {
 
     loanToken = await new LoanTokenFactory(owner).deploy(
       tusd.address,
+      trustToken.address,
+      owner.address,
       owner.address,
       owner.address,
       5_000_000,
@@ -483,6 +485,8 @@ describe('TrueRatingAgencyV2', () => {
         beforeEach(async () => {
           newLoanToken = await new LoanTokenFactory(owner).deploy(
             tusd.address,
+            trustToken.address,
+            owner.address,
             owner.address,
             owner.address,
             parseEth(5e6),
@@ -531,6 +535,8 @@ describe('TrueRatingAgencyV2', () => {
         beforeEach(async () => {
           newLoanToken = await new LoanTokenFactory(owner).deploy(
             tusd.address,
+            trustToken.address,
+            owner.address,
             owner.address,
             owner.address,
             parseEth(5e6),
@@ -583,6 +589,8 @@ describe('TrueRatingAgencyV2', () => {
     beforeEach(async () => {
       loanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
+        trustToken.address,
+        owner.address,
         owner.address,
         owner.address,
         parseEth(5e6),

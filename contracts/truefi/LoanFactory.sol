@@ -25,7 +25,7 @@ contract LoanFactory is ILoanFactory, Initializable {
     mapping(address => bool) public override isLoanToken;
 
     address public lender;
-    
+
     address public liquidator;
 
     // ======= STORAGE DECLARATION END ============
@@ -51,7 +51,7 @@ contract LoanFactory is ILoanFactory, Initializable {
     function setLiquidator() external {
         liquidator = address(0); // to be changed for deployment
     }
-    
+
     function tru() public view returns (address) {
         return address(0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784);
     }

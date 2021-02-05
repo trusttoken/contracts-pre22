@@ -58,6 +58,7 @@ describe('Liquidator', () => {
 
     loanToken = await new LoanTokenFactory(owner).deploy(
       tusd.address,
+      tru.address,
       borrower.address,
       owner.address,
       liquidator.address,
