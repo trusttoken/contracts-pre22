@@ -357,12 +357,9 @@ contract TrueLender is ITrueLender, Ownable {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be used to reclaimed");
 
         ILoanToken.Status status = loanToken.status();
-        require(
-            status == ILoanToken.Status.Settled || status == ILoanToken.Status.Defaulted,
-            "TrueLender: LoanToken is not closed yet"
-        );
+        require(status >= ILoanToken.Status.Settled, "TrueLender: LoanToken is not closed yet");
 
-        if (status == ILoanToken.Status.Defaulted) {
+        if (status != ILoanToken.Status.Settled) {
             require(msg.sender == owner(), "TrueLender: Only owner can reclaim from defaulted loan");
         }
 
