@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.6.10;
+
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IVoteToken {
     function delegate(address delegatee) external;
@@ -18,3 +19,5 @@ interface IVoteToken {
 
     function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
 }
+
+interface IVoteTokenWithERC20 is IVoteToken, IERC20 {}
