@@ -37,11 +37,12 @@ import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
  * Running:     Rated loan has been funded
  * Settled:     Rated loan has been paid back in full
  * Defaulted:   Rated loan has not been paid back in full
+ * Liquidated:  Rated loan has defaulted and stakers have been liquidated
  */
 contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
     using SafeMath for uint256;
 
-    enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
+    enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted, Liquidated}
 
     struct Loan {
         address creator;
@@ -485,6 +486,10 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
         // Defaulted has not been paid back in full and past term
         if (loanInternalStatus == ILoanToken.Status.Defaulted) {
             return LoanStatus.Defaulted;
+        }
+        // Liquidated is same as defaulted and stakers have been liquidated
+        if (loanInternalStatus == ILoanToken.Status.Liquidated) {
+            return LoanStatus.Liquidated;
         }
         // otherwise return Pending
         return LoanStatus.Pending;
