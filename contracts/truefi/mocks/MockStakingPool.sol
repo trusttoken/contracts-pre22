@@ -14,4 +14,8 @@ contract MockStakingPool is ERC20 {
     function unstake() public {
         require(pool.transfer(msg.sender, pool.balanceOf(address(this))));
     }
+
+    function payFee(uint256 amount, uint256) external {
+        pool.transferFrom(msg.sender, address(this), amount);
+    }
 }
