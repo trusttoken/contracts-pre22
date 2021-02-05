@@ -36,6 +36,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         uint256 totalFarmRewards;
     }
 
+    struct ScheduledTfUsdRewards {
+        uint64 timestamp;
+        uint96 amount;
+    }
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -54,6 +59,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     uint256 public unstakePeriodDuration;
 
     mapping(IERC20 => FarmRewards) public farmRewards;
+
+    uint32[] public sortedScheduledRewardIndices;
+    ScheduledTfUsdRewards[] public scheduledRewards;
+    uint256 public undistributedTfusdRewards;
+    uint32 public nextDistributionIndex;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -228,6 +238,32 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     }
 
     /**
+     * @dev Give tfUSD as origination fee to stake.this
+     * 50% are given immediately and 50% after `endTime` passes
+     */
+    function payFee(uint256 amount, uint256 endTime) external {
+        require(endTime < type(uint64).max, "StkTruToken: time overflow");
+        require(amount < type(uint96).max, "StkTruToken: amount overflow");
+
+        require(tfusd.transferFrom(msg.sender, address(this), amount));
+        undistributedTfusdRewards = undistributedTfusdRewards.add(amount.div(2));
+        scheduledRewards.push(ScheduledTfUsdRewards({amount: uint96(amount.div(2)), timestamp: uint64(endTime)}));
+
+        uint32 i;
+        for (i = nextDistributionIndex; i < sortedScheduledRewardIndices.length; i++) {
+            if (scheduledRewards[sortedScheduledRewardIndices[i]].timestamp > endTime) {
+                break;
+            }
+        }
+        sortedScheduledRewardIndices.push(0);
+
+        for (uint32 j = uint32(sortedScheduledRewardIndices.length) - 1; j > i; j--) {
+            sortedScheduledRewardIndices[j] = sortedScheduledRewardIndices[j - 1];
+        }
+        sortedScheduledRewardIndices[i] = uint32(scheduledRewards.length) - 1;
+    }
+
+    /**
      * @dev Claim all rewards
      */
     function claim() external distribute update(msg.sender) {
@@ -335,13 +371,30 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         if (token == tru) {
             return token.balanceOf(address(this)).sub(stakeSupply);
         }
-        return token.balanceOf(address(this));
+        return token.balanceOf(address(this)).sub(undistributedTfusdRewards);
+    }
+
+    /**
+     * @dev Check if any scheduled rewards should be distributed
+     */
+    function distributeScheduledRewards() internal {
+        uint32 index = nextDistributionIndex;
+        while (index < scheduledRewards.length && scheduledRewards[sortedScheduledRewardIndices[index]].timestamp < block.timestamp) {
+            undistributedTfusdRewards = undistributedTfusdRewards.sub(scheduledRewards[sortedScheduledRewardIndices[index]].amount);
+            index++;
+        }
+        if (nextDistributionIndex != index) {
+            nextDistributionIndex = index;
+        }
     }
 
     /**
      * @dev Update rewards state for `token`
      */
     function updateTotalRewards(IERC20 token) internal {
+        if (token == tfusd) {
+            distributeScheduledRewards();
+        }
         // calculate total rewards
         uint256 newTotalFarmRewards = rewardBalance(token).add(farmRewards[token].totalClaimedRewards).mul(PRECISION);
         if (newTotalFarmRewards == farmRewards[token].totalFarmRewards) {

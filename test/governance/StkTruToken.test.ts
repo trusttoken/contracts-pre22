@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { providers, Wallet } from 'ethers'
+import { providers, utils, Wallet } from 'ethers'
 import { solidity } from 'ethereum-waffle'
 import { MaxUint256 } from '@ethersproject/constants'
 
@@ -361,6 +361,94 @@ describe('StkTruToken', () => {
     it('gas cost', async () => {
       const tx = await (await stkToken.transfer(staker.address, amount.div(2))).wait()
       expect(tx.gasUsed).to.be.lt(120000)
+    })
+  })
+
+  describe('Pay fee', async () => {
+    const futureTimestamp = 1700000000
+
+    const getSortedTimestamps = async () => {
+      const result = []
+      for (let i = 0; ; i++) {
+        try {
+          const index = await stkToken.sortedScheduledRewardIndices(i)
+          result.push((await stkToken.scheduledRewards(index)).timestamp.toNumber())
+        } catch (e) {
+          break
+        }
+      }
+      return result
+    }
+
+    beforeEach(async () => {
+      await tfusd.mint(owner.address, MaxUint256)
+      await tfusd.approve(stkToken.address, MaxUint256)
+    })
+
+    it('keeps list sorted', async () => {
+      expect(await getSortedTimestamps()).to.deep.equal([])
+      await stkToken.payFee(1, 100)
+      expect(await getSortedTimestamps()).to.deep.equal([100])
+      await stkToken.payFee(1, 200)
+      expect(await getSortedTimestamps()).to.deep.equal([100, 200])
+      await stkToken.payFee(1, 50)
+      expect(await getSortedTimestamps()).to.deep.equal([50, 100, 200])
+      await stkToken.payFee(1, 150)
+      expect(await getSortedTimestamps()).to.deep.equal([50, 100, 150, 200])
+      await stkToken.payFee(1, 25)
+      expect(await getSortedTimestamps()).to.deep.equal([25, 50, 100, 150, 200])
+      await stkToken.payFee(1, 400)
+      expect(await getSortedTimestamps()).to.deep.equal([25, 50, 100, 150, 200, 400])
+      await stkToken.payFee(1, 75)
+      expect(await getSortedTimestamps()).to.deep.equal([25, 50, 75, 100, 150, 200, 400])
+    })
+
+    it('splits fee in half and pays out when time comes', async () => {
+      await stkToken.payFee(parseEth(2), futureTimestamp - 100)
+      await stkToken.payFee(parseEth(2), futureTimestamp + 100)
+      await stkToken.payFee(parseEth(2), futureTimestamp + 200)
+
+      expect(await stkToken.undistributedTfusdRewards()).to.equal(parseEth(3))
+      expect(await stkToken.nextDistributionIndex()).to.equal(0)
+
+      // call claim on non-staker to update staking info
+      await stkToken.claim()
+      expect((await stkToken.farmRewards(tfusd.address)).totalFarmRewards).to.equal(utils.parseUnits('3', 48))
+
+      await timeTravelTo(provider, futureTimestamp)
+      await stkToken.claim()
+
+      expect(await stkToken.undistributedTfusdRewards()).to.equal(parseEth(2))
+      expect(await stkToken.nextDistributionIndex()).to.equal(1)
+      expect((await stkToken.farmRewards(tfusd.address)).totalFarmRewards).to.equal(utils.parseUnits('4', 48))
+
+      await timeTravelTo(provider, futureTimestamp + 300)
+      await stkToken.claim()
+
+      expect(await stkToken.undistributedTfusdRewards()).to.equal(0)
+      expect(await stkToken.nextDistributionIndex()).to.equal(3)
+      expect((await stkToken.farmRewards(tfusd.address)).totalFarmRewards).to.equal(utils.parseUnits('6', 48))
+    })
+
+    it('correctly inserts fee with end time in the past', async () => {
+      await stkToken.payFee(parseEth(2), futureTimestamp - 100)
+      await stkToken.payFee(parseEth(2), futureTimestamp + 100)
+      await stkToken.payFee(parseEth(2), futureTimestamp + 200)
+      await timeTravelTo(provider, futureTimestamp)
+      await stkToken.claim()
+
+      await stkToken.payFee(parseEth(2), futureTimestamp - 300)
+      expect(await getSortedTimestamps()).to.deep.equal([-100, -300, 100, 200].map(x => x + futureTimestamp))
+    })
+
+    it('correctly inserts fee when all past timestamps passed', async () => {
+      await stkToken.payFee(parseEth(2), futureTimestamp - 100)
+
+      await timeTravelTo(provider, futureTimestamp)
+      await stkToken.claim()
+
+      await stkToken.payFee(parseEth(2), futureTimestamp + 100)
+      expect(await getSortedTimestamps()).to.deep.equal([-100, 100].map(x => x + futureTimestamp))
     })
   })
 })
