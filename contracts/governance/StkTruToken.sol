@@ -22,6 +22,7 @@ import {ITrueDistributor} from "../truefi/interface/ITrueDistributor.sol";
 contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     using SafeMath for uint256;
     uint256 constant PRECISION = 1e30;
+    uint256 constant MIN_DISTRIBUTED_AMOUNT = 100e8;
 
     struct FarmRewards {
         // track overall cumulative rewards
@@ -33,6 +34,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         // track total rewards
         uint256 totalClaimedRewards;
         uint256 totalFarmRewards;
+    }
+
+    struct ScheduledTfUsdRewards {
+        uint64 timestamp;
+        uint96 amount;
     }
 
     // ================ WARNING ==================
@@ -54,6 +60,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
 
     mapping(IERC20 => FarmRewards) public farmRewards;
 
+    uint32[] public sortedScheduledRewardIndices;
+    ScheduledTfUsdRewards[] public scheduledRewards;
+    uint256 public undistributedTfusdRewards;
+    uint32 public nextDistributionIndex;
+
     // ======= STORAGE DECLARATION END ============
 
     event Stake(address indexed staker, uint256 amount);
@@ -69,6 +80,27 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
      */
     modifier onlyLiquidator() {
         require(msg.sender == liquidator, "StkTruToken: Can be called only by the liquidator");
+        _;
+    }
+
+    /**
+     * Get TRU from distributor
+     */
+    modifier distribute() {
+        // pull TRU from distributor
+        // do not pull small amounts to save some gas
+        // only pull if there is distribution and distributor farm is set to this farm
+        if (distributor.nextDistribution() > MIN_DISTRIBUTED_AMOUNT && distributor.farm() == address(this)) {
+            distributor.distribute();
+        }
+        _;
+    }
+
+    modifier update(address account) {
+        updateTotalRewards(tru);
+        updateClaimableRewards(tru, account);
+        updateTotalRewards(tfusd);
+        updateClaimableRewards(tfusd, account);
         _;
     }
 
@@ -130,7 +162,7 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
      * Updates rewards when staking
      * @param amount Amount of TRU to stake for stkTRU
      */
-    function stake(uint256 amount) external distribute update(tru) update(tfusd) {
+    function stake(uint256 amount) external distribute update(msg.sender) {
         require(amount > 0, "StkTruToken: Cannot stake 0");
 
         if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime) > block.timestamp) {
@@ -152,7 +184,7 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
      * Claims rewards when unstaking
      * @param amount Amount of stkTRU to unstake for TRU
      */
-    function unstake(uint256 amount) external distribute update(tru) update(tfusd) nonReentrant {
+    function unstake(uint256 amount) external distribute update(msg.sender) nonReentrant {
         require(amount > 0, "StkTruToken: Cannot unstake 0");
 
         require(balanceOf[msg.sender] >= amount, "StkTruToken: Insufficient balance");
@@ -206,9 +238,25 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     }
 
     /**
+     * @dev Give tfUSD as origination fee to stake.this
+     * 50% are given immediately and 50% after `endTime` passes
+     */
+    function payFee(uint256 amount, uint256 endTime) external {
+        require(endTime < type(uint64).max, "StkTruToken: time overflow");
+        require(amount < type(uint96).max, "StkTruToken: amount overflow");
+
+        require(tfusd.transferFrom(msg.sender, address(this), amount));
+        undistributedTfusdRewards = undistributedTfusdRewards.add(amount.div(2));
+        scheduledRewards.push(ScheduledTfUsdRewards({amount: uint96(amount.div(2)), timestamp: uint64(endTime)}));
+
+        uint32 newIndex = findPositionForTimestamp(endTime);
+        insertAt(newIndex, uint32(scheduledRewards.length) - 1);
+    }
+
+    /**
      * @dev Claim all rewards
      */
-    function claim() external distribute update(tru) update(tfusd) {
+    function claim() external distribute update(msg.sender) {
         _claim(tru);
         _claim(tfusd);
     }
@@ -223,7 +271,10 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         // estimate pending reward from distributor
         uint256 pending = token == tru ? distributor.nextDistribution() : 0;
         // calculate total rewards (including pending)
-        uint256 newTotalFarmRewards = rewardBalance(token).add(pending).add(farmRewards[token].totalClaimedRewards).mul(PRECISION);
+        uint256 newTotalFarmRewards = rewardBalance(token)
+            .add(pending > MIN_DISTRIBUTED_AMOUNT ? pending : 0)
+            .add(farmRewards[token].totalClaimedRewards)
+            .mul(PRECISION);
         // calculate block reward
         uint256 totalBlockReward = newTotalFarmRewards.sub(farmRewards[token].totalFarmRewards);
         // calculate next cumulative reward per token
@@ -276,6 +327,16 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         return "stkTRU";
     }
 
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal override distribute update(sender) {
+        updateClaimableRewards(tru, recipient);
+        updateClaimableRewards(tfusd, recipient);
+        super._transfer(sender, recipient, amount);
+    }
+
     /**
      * @dev Internal claim function
      * Claim rewards for a specific ERC20 token
@@ -300,27 +361,35 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         if (token == tru) {
             return token.balanceOf(address(this)).sub(stakeSupply);
         }
-        return token.balanceOf(address(this));
+        return token.balanceOf(address(this)).sub(undistributedTfusdRewards);
     }
 
     /**
-     * Get TRU from distributor
+     * @dev Check if any scheduled rewards should be distributed
      */
-    modifier distribute() {
-        // pull TRU from distributor
-        // only pull if there is distribution and distributor farm is set to this farm
-        if (distributor.nextDistribution() > 0 && distributor.farm() == address(this)) {
-            distributor.distribute();
+    function distributeScheduledRewards() internal {
+        uint32 index = nextDistributionIndex;
+        while (index < scheduledRewards.length && scheduledRewards[sortedScheduledRewardIndices[index]].timestamp < block.timestamp) {
+            undistributedTfusdRewards = undistributedTfusdRewards.sub(scheduledRewards[sortedScheduledRewardIndices[index]].amount);
+            index++;
         }
-        _;
+        if (nextDistributionIndex != index) {
+            nextDistributionIndex = index;
+        }
     }
 
     /**
      * @dev Update rewards state for `token`
      */
-    modifier update(IERC20 token) {
+    function updateTotalRewards(IERC20 token) internal {
+        if (token == tfusd) {
+            distributeScheduledRewards();
+        }
         // calculate total rewards
         uint256 newTotalFarmRewards = rewardBalance(token).add(farmRewards[token].totalClaimedRewards).mul(PRECISION);
+        if (newTotalFarmRewards == farmRewards[token].totalFarmRewards) {
+            return;
+        }
         // calculate block reward
         uint256 totalBlockReward = newTotalFarmRewards.sub(farmRewards[token].totalFarmRewards);
         // update farm rewards
@@ -331,14 +400,34 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
                 totalBlockReward.div(totalSupply)
             );
         }
+    }
+
+    function updateClaimableRewards(IERC20 token, address user) internal {
         // update claimable reward for sender
-        farmRewards[token].claimableReward[msg.sender] = farmRewards[token].claimableReward[msg.sender].add(
-            balanceOf[msg.sender]
-                .mul(farmRewards[token].cumulativeRewardPerToken.sub(farmRewards[token].previousCumulatedRewardPerToken[msg.sender]))
-                .div(PRECISION)
-        );
+        if (balanceOf[user] > 0) {
+            farmRewards[token].claimableReward[user] = farmRewards[token].claimableReward[user].add(
+                balanceOf[user]
+                    .mul(farmRewards[token].cumulativeRewardPerToken.sub(farmRewards[token].previousCumulatedRewardPerToken[user]))
+                    .div(PRECISION)
+            );
+        }
         // update previous cumulative for sender
-        farmRewards[token].previousCumulatedRewardPerToken[msg.sender] = farmRewards[token].cumulativeRewardPerToken;
-        _;
+        farmRewards[token].previousCumulatedRewardPerToken[user] = farmRewards[token].cumulativeRewardPerToken;
+    }
+
+    function findPositionForTimestamp(uint256 timestamp) internal view returns (uint32 i) {
+        for (i = nextDistributionIndex; i < sortedScheduledRewardIndices.length; i++) {
+            if (scheduledRewards[sortedScheduledRewardIndices[i]].timestamp > timestamp) {
+                break;
+            }
+        }
+    }
+
+    function insertAt(uint32 index, uint32 value) internal {
+        sortedScheduledRewardIndices.push(0);
+        for (uint32 j = uint32(sortedScheduledRewardIndices.length) - 1; j > index; j--) {
+            sortedScheduledRewardIndices[j] = sortedScheduledRewardIndices[j - 1];
+        }
+        sortedScheduledRewardIndices[index] = value;
     }
 }
