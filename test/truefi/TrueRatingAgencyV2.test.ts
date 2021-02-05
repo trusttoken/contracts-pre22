@@ -72,6 +72,7 @@ describe('TrueRatingAgencyV2', () => {
 
     loanToken = await new LoanTokenFactory(owner).deploy(
       tusd.address,
+      trustToken.address,
       owner.address,
       owner.address,
       AddressZero,
@@ -477,6 +478,7 @@ describe('TrueRatingAgencyV2', () => {
     beforeEach(async () => {
       loanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
+        trustToken.address,
         owner.address,
         owner.address,
         AddressZero,
