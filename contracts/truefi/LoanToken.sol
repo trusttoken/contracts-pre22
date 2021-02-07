@@ -54,7 +54,6 @@ contract LoanToken is ILoanToken, ERC20 {
     Status public override status;
 
     IERC20 public override currencyToken;
-    IERC20 public override tru;
 
     /**
      * @dev Emitted when the loan is funded
@@ -87,9 +86,8 @@ contract LoanToken is ILoanToken, ERC20 {
      * @param receiver Receiver of currencyTokens
      * @param burnedAmount Amount of LoanTokens burned
      * @param redeemedAmound Amount of currencyToken received
-     * @param redeemedTru Amount of tru received
      */
-    event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound, uint256 redeemedTru);
+    event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound);
 
     /**
      * @dev Emitted when a LoanToken is repaid by the borrower in underlying currencyTokens
@@ -121,7 +119,6 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     constructor(
         IERC20 _currencyToken,
-        IERC20 _tru,
         address _borrower,
         address _lender,
         address _liquidator,
@@ -132,7 +129,6 @@ contract LoanToken is ILoanToken, ERC20 {
         require(_lender != address(0), "LoanToken: Lender is not set");
 
         currencyToken = _currencyToken;
-        tru = _tru;
         borrower = _borrower;
         liquidator = _liquidator;
         amount = _amount;
@@ -341,15 +337,11 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function redeem(uint256 _amount) external override onlyClosed {
         uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
-        uint256 truToReturn = _amount.mul(tru.balanceOf(address(this))).div(totalSupply());
         redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
         require(currencyToken.transfer(msg.sender, amountToReturn));
-        if (truToReturn > 0) {
-            require(tru.transfer(msg.sender, truToReturn));
-        }
 
-        emit Redeemed(msg.sender, _amount, amountToReturn, truToReturn);
+        emit Redeemed(msg.sender, _amount, amountToReturn);
     }
 
     /**
