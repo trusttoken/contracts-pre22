@@ -838,7 +838,7 @@ contract ERC20 is Context, IERC20 {
 // import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ILoanToken is IERC20 {
-    enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted}
+    enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated}
 
     function borrower() external view returns (address);
 
@@ -878,6 +878,8 @@ interface ILoanToken is IERC20 {
     function withdraw(address _beneficiary) external;
 
     function close() external;
+
+    function liquidate() external;
 
     function redeem(uint256 _amount) external;
 
@@ -933,9 +935,10 @@ contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
 
     uint128 public constant lastMinutePaybackDuration = 1 days;
-    uint8 public constant override version = 2;
+    uint8 public constant override version = 3;
 
     address public override borrower;
+    address public liquidator;
     uint256 public override amount;
     uint256 public override term;
     uint256 public override apy;
@@ -1005,6 +1008,12 @@ contract LoanToken is ILoanToken, ERC20 {
     event Reclaimed(address borrower, uint256 reclaimedAmount);
 
     /**
+     * @dev Emitted when loan gets liquidated
+     * @param status Final loan status
+     */
+    event Liquidated(Status status);
+
+    /**
      * @dev Create a Loan
      * @param _currencyToken Token to lend
      * @param _borrower Borrwer addresss
@@ -1016,6 +1025,7 @@ contract LoanToken is ILoanToken, ERC20 {
         IERC20 _currencyToken,
         address _borrower,
         address _lender,
+        address _liquidator,
         uint256 _amount,
         uint256 _term,
         uint256 _apy
@@ -1024,6 +1034,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
         currencyToken = _currencyToken;
         borrower = _borrower;
+        liquidator = _liquidator;
         amount = _amount;
         term = _term;
         apy = _apy;
@@ -1040,10 +1051,18 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
+     * @dev Only liquidator can liquidate
+     */
+    modifier onlyLiquidator() {
+        require(msg.sender == liquidator, "LoanToken: Caller is not the liquidator");
+        _;
+    }
+
+    /**
      * @dev Only when loan is Settled
      */
     modifier onlyClosed() {
-        require(status == Status.Settled || status == Status.Defaulted, "LoanToken: Current status should be Settled or Defaulted");
+        require(status >= Status.Settled, "LoanToken: Current status should be Settled or Defaulted");
         _;
     }
 
@@ -1076,6 +1095,14 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     modifier onlyAwaiting() {
         require(status == Status.Awaiting, "LoanToken: Current status should be Awaiting");
+        _;
+    }
+
+    /**
+     * @dev Only when loan is Defaulted
+     */
+    modifier onlyDefaulted() {
+        require(status == Status.Defaulted, "LoanToken: Current status should be Defaulted");
         _;
     }
 
@@ -1196,6 +1223,15 @@ contract LoanToken is ILoanToken, ERC20 {
         }
 
         emit Closed(status, _balance());
+    }
+
+    /**
+     * @dev Liquidate the loan if it has defaulted
+     */
+    function liquidate() external override onlyDefaulted onlyLiquidator {
+        status = Status.Liquidated;
+
+        emit Liquidated(status);
     }
 
     /**
@@ -1333,6 +1369,7 @@ contract LoanFactory is ILoanFactory, Initializable {
     mapping(address => bool) public override isLoanToken;
 
     address public lender;
+    address public liquidator;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -1354,6 +1391,10 @@ contract LoanFactory is ILoanFactory, Initializable {
         lender = 0x16d02Dc67EB237C387023339356b25d1D54b0922;
     }
 
+    function setLiquidator() external {
+        liquidator = address(0); // to be changed for deployment
+    }
+
     /**
      * @dev Deploy LoanToken with parameters
      * @param _amount Amount to borrow
@@ -1368,7 +1409,7 @@ contract LoanFactory is ILoanFactory, Initializable {
         require(_amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
         require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
 
-        address newToken = address(new LoanToken(currencyToken, msg.sender, lender, _amount, _term, _apy));
+        address newToken = address(new LoanToken(currencyToken, msg.sender, lender, liquidator, _amount, _term, _apy));
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);

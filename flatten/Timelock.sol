@@ -197,11 +197,10 @@ library SafeMath {
  and provides basic authorization control functions. Inherits storage layout of
  ProxyStorage.
  */
-contract ClaimableContract  {
+contract ClaimableContract {
     address owner_;
     address pendingOwner_;
     bool initalized;
-
 
     function owner() public view returns (address) {
         return owner_;
@@ -276,7 +275,7 @@ pragma solidity ^0.6.10;
 // import "@openzeppelin/contracts/math/SafeMath.sol";
 // import "contracts/governance/common/ClaimableContract.sol";
 
-contract Timelock is ClaimableContract{
+contract Timelock is ClaimableContract {
     using SafeMath for uint;
 
     event NewAdmin(address indexed newAdmin);

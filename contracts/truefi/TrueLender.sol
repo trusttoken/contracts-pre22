@@ -9,6 +9,7 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
+import {IStakingPool} from "./interface/IStakingPool.sol";
 
 /**
  * @title TrueLender v1.0
@@ -77,6 +78,9 @@ contract TrueLender is ITrueLender, Ownable {
     // maximum amount of loans lender can handle at once
     uint256 public maxLoans;
 
+    // implemented as an ERC20, will change after implementing stkPool
+    IStakingPool public stakingPool;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -126,10 +130,16 @@ contract TrueLender is ITrueLender, Ownable {
     event TermLimitsChanged(uint256 minTerm, uint256 maxTerm);
 
     /**
-     * @dev Emitted when loans limit is change
+     * @dev Emitted when loans limit is changed
      * @param maxLoans new maximum amount of loans
      */
     event LoansLimitChanged(uint256 maxLoans);
+
+    /**
+     * @dev Emitted when stakingPool address is changed
+     * @param pool new stakingPool address
+     */
+    event StakingPoolChanged(IStakingPool pool);
 
     /**
      * @dev Emitted when a loan is funded
@@ -158,13 +168,18 @@ contract TrueLender is ITrueLender, Ownable {
      * @param _pool Lending pool address
      * @param _ratingAgency Prediction market address
      */
-    function initialize(ITrueFiPool _pool, ITrueRatingAgency _ratingAgency) public initializer {
+    function initialize(
+        ITrueFiPool _pool,
+        ITrueRatingAgency _ratingAgency,
+        IStakingPool _stakingPool
+    ) public initializer {
         Ownable.initialize();
 
         pool = _pool;
         currencyToken = _pool.currencyToken();
         currencyToken.approve(address(_pool), uint256(-1));
         ratingAgency = _ratingAgency;
+        stakingPool = _stakingPool;
 
         minApy = 1000;
         maxApy = 3000;
@@ -177,6 +192,15 @@ contract TrueLender is ITrueLender, Ownable {
         votingPeriod = 7 days;
 
         maxLoans = 100;
+    }
+
+    /**
+     * @dev set stake pool address
+     * @param newPool stake pool address to be set
+     */
+    function setStakingPool(IStakingPool newPool) public onlyOwner {
+        stakingPool = newPool;
+        emit StakingPoolChanged(newPool);
     }
 
     /**
@@ -283,9 +307,13 @@ contract TrueLender is ITrueLender, Ownable {
         require(loanIsCredible(apy, term, yes, no), "TrueLender: Loan risk is too high");
 
         _loans.push(loanToken);
-        pool.borrow(amount, receivedAmount);
+        pool.borrow(amount, amount.sub(receivedAmount));
         currencyToken.approve(address(loanToken), receivedAmount);
         loanToken.fund();
+
+        pool.approve(address(stakingPool), pool.balanceOf(address(this)));
+        stakingPool.payFee(pool.balanceOf(address(this)), block.timestamp.add(term));
+
         emit Funded(address(loanToken), receivedAmount);
     }
 
@@ -327,12 +355,15 @@ contract TrueLender is ITrueLender, Ownable {
      * @dev For settled loans, redeem LoanTokens for underlying funds
      * @param loanToken Loan to reclaim capital from
      */
-    function reclaim(ILoanToken loanToken) external onlyOwner {
+    function reclaim(ILoanToken loanToken) external {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be used to reclaimed");
-        require(
-            loanToken.status() == ILoanToken.Status.Settled || loanToken.status() == ILoanToken.Status.Defaulted,
-            "TrueLender: LoanToken is not closed yet"
-        );
+
+        ILoanToken.Status status = loanToken.status();
+        require(status >= ILoanToken.Status.Settled, "TrueLender: LoanToken is not closed yet");
+
+        if (status != ILoanToken.Status.Settled) {
+            require(msg.sender == owner(), "TrueLender: Only owner can reclaim from defaulted loan");
+        }
 
         // call redeem function on LoanToken
         uint256 balanceBefore = currencyToken.balanceOf(address(this));

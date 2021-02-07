@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT 
+// SPDX-License-Identifier: MIT
 // AND COPIED FROM https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/GovernorAlpha.sol
 // Copyright 2020 Compound Labs, Inc.
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -12,24 +12,29 @@
 // OLD: pragma solidity ^0.5.16;
 pragma solidity 0.6.10;
 
-import {ClaimableContract} from "../trusttoken/common/ClaimableContract.sol";
 import {ERC20} from "../trusttoken/common/ERC20.sol";
 import {IVoteToken} from "./interface/IVoteToken.sol";
 
 abstract contract VoteToken is ERC20, IVoteToken {
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
     bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
-    
+
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
-    event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
+    event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
 
     function delegate(address delegatee) public override {
         return _delegate(msg.sender, delegatee);
     }
 
-    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) public override {
-        //OLD: bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
-        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH,keccak256(bytes(name())),getChainId(),address(this)));
+    function delegateBySig(
+        address delegatee,
+        uint256 nonce,
+        uint256 expiry,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public override {
+        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name())), getChainId(), address(this)));
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
@@ -39,12 +44,12 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return _delegate(signatory, delegatee);
     }
 
-    function getCurrentVotes(address account) external view override returns (uint96) {
+    function getCurrentVotes(address account) public virtual override view returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
 
-    function getPriorVotes(address account, uint blockNumber) public view override returns (uint96) {
+    function getPriorVotes(address account, uint256 blockNumber) public virtual override view returns (uint96) {
         require(blockNumber < block.number, "TrustToken::getPriorVotes: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];
@@ -89,16 +94,34 @@ abstract contract VoteToken is ERC20, IVoteToken {
         _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
-    function _balanceOf(address account) internal virtual returns(uint256) {
+    function _balanceOf(address account) internal view virtual returns (uint256) {
         return balanceOf[account];
     }
 
-    function _transfer( address _from, address _to, uint256 _value) internal override virtual {
+    function _transfer(
+        address _from,
+        address _to,
+        uint256 _value
+    ) internal virtual override {
         super._transfer(_from, _to, _value);
         _moveDelegates(delegates[_from], delegates[_to], uint96(_value));
     }
 
-    function _moveDelegates(address srcRep, address dstRep, uint96 amount) internal {
+    function _mint(address account, uint256 amount) internal virtual override {
+        super._mint(account, amount);
+        _moveDelegates(address(0), delegates[account], safe96(amount, "StkTruToken: uint96 overflow"));
+    }
+
+    function _burn(address account, uint256 amount) internal virtual override {
+        super._burn(account, amount);
+        _moveDelegates(delegates[account], address(0), safe96(amount, "StkTruToken: uint96 overflow"));
+    }
+
+    function _moveDelegates(
+        address srcRep,
+        address dstRep,
+        uint96 amount
+    ) internal {
         if (srcRep != dstRep && amount > 0) {
             if (srcRep != address(0)) {
                 uint32 srcRepNum = numCheckpoints[srcRep];
@@ -116,7 +139,12 @@ abstract contract VoteToken is ERC20, IVoteToken {
         }
     }
 
-    function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint96 oldVotes, uint96 newVotes) internal {
+    function _writeCheckpoint(
+        address delegatee,
+        uint32 nCheckpoints,
+        uint96 oldVotes,
+        uint96 newVotes
+    ) internal {
         uint32 blockNumber = safe32(block.number, "TrustToken::_writeCheckpoint: block number exceeds 32 bits");
 
         if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
@@ -129,32 +157,40 @@ abstract contract VoteToken is ERC20, IVoteToken {
         emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
     }
 
-    function safe32(uint n, string memory errorMessage) internal pure returns (uint32) {
+    function safe32(uint256 n, string memory errorMessage) internal pure returns (uint32) {
         require(n < 2**32, errorMessage);
         return uint32(n);
     }
 
-    function safe96(uint n, string memory errorMessage) internal pure returns (uint96) {
+    function safe96(uint256 n, string memory errorMessage) internal pure returns (uint96) {
         require(n < 2**96, errorMessage);
         return uint96(n);
     }
 
-    function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
+    function add96(
+        uint96 a,
+        uint96 b,
+        string memory errorMessage
+    ) internal pure returns (uint96) {
         uint96 c = a + b;
         require(c >= a, errorMessage);
         return c;
     }
 
-    function sub96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
+    function sub96(
+        uint96 a,
+        uint96 b,
+        string memory errorMessage
+    ) internal pure returns (uint96) {
         require(b <= a, errorMessage);
         return a - b;
     }
 
-    function getChainId() internal pure returns (uint) {
+    function getChainId() internal pure returns (uint256) {
         uint256 chainId;
-        assembly { chainId := chainid() }
+        assembly {
+            chainId := chainid()
+        }
         return chainId;
     }
 }
-
-

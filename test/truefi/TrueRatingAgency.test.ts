@@ -67,6 +67,7 @@ describe('TrueRatingAgency', () => {
       tusd.address,
       owner.address,
       owner.address,
+      owner.address,
       5_000_000,
       yearInSeconds * 2,
       1000,
@@ -206,6 +207,15 @@ describe('TrueRatingAgency', () => {
       await rater.allow(otherWallet.address, true)
       await expect(submit(loanToken.address, otherWallet))
         .to.be.revertedWith('TrueRatingAgency: Sender is not borrower')
+    })
+
+    it('reverts when submissions are paused', async () => {
+      await rater.pauseSubmissions(true)
+      await expect(submit(loanToken.address, owner))
+        .to.be.revertedWith('TrueRatingAgency: New submissions are paused')
+      await rater.pauseSubmissions(false)
+      await expect(submit(loanToken.address, owner))
+        .not.to.be.reverted
     })
 
     it('creates loan', async () => {
@@ -719,6 +729,7 @@ describe('TrueRatingAgency', () => {
     beforeEach(async () => {
       loanToken = await new LoanTokenFactory(owner).deploy(
         tusd.address,
+        owner.address,
         owner.address,
         owner.address,
         parseEth(5e6),
