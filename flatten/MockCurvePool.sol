@@ -1157,9 +1157,11 @@ pragma solidity 0.6.10;
 // import {Initializable} from "contracts/truefi/common/Initializable.sol";
 // import {ICurve, ICurvePool} from "contracts/truefi/interface/ICurve.sol";
 // import {IYToken} from "contracts/truefi/interface/IYToken.sol";
+// import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract MockCurve is ICurve {
     uint256 public sharePrice = 1e18;
+    using SafeMath for uint256;
 
     function calc_token_amount(uint256[4] memory amounts, bool) external override view returns (uint256) {
         return (amounts[3] * 1e18) / sharePrice;
@@ -1170,7 +1172,19 @@ contract MockCurve is ICurve {
     }
 
     function get_virtual_price() external override view returns (uint256) {
+        // burn ~300,000 of gas for testing
+        burn300kGas();
         return sharePrice;
+    }
+
+    // prettier-ignore
+    // hack to burn 300,633 gas using assembly
+    function burn300kGas() public view {
+        assembly {
+            let y := 0
+            for { let i := 0 } lt(i, 396) { i := add(i, 1) } { y:= extcodesize(0) }
+            y := 0
+        }
     }
 }
 

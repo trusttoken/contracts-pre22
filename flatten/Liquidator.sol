@@ -24,11 +24,38 @@
 */
 
 // https://github.com/trusttoken/smart-contracts
+// Dependency file: @openzeppelin/contracts/GSN/Context.sol
+
+// SPDX-License-Identifier: MIT
+
+// pragma solidity ^0.6.0;
+
+/*
+ * @dev Provides information about the current execution context, including the
+ * sender of the transaction and its data. While these are generally available
+ * via msg.sender and msg.data, they should not be accessed in such a direct
+ * manner, since when dealing with GSN meta-transactions the account sending and
+ * paying for execution may not be the actual sender (as far as an application
+ * is concerned).
+ *
+ * This contract is only required for intermediate, library-like contracts.
+ */
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
+
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
+}
+
+
 // Dependency file: contracts/truefi/common/Initializable.sol
 
 // Copied from https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/v3.0.0/contracts/Initializable.sol
 
-// SPDX-License-Identifier: MIT
 // pragma solidity 0.6.10;
 
 /**
@@ -93,44 +120,75 @@ contract Initializable {
 }
 
 
-// Dependency file: contracts/truefi/interface/ILoanFactory.sol
+// Dependency file: contracts/truefi/common/UpgradeableOwnable.sol
 
 // pragma solidity 0.6.10;
 
-interface ILoanFactory {
-    function createLoanToken(
-        uint256 _amount,
-        uint256 _term,
-        uint256 _apy
-    ) external;
+// import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
 
-    function isLoanToken(address) external view returns (bool);
-}
+// import {Initializable} from "contracts/truefi/common/Initializable.sol";
 
-
-// Dependency file: @openzeppelin/contracts/GSN/Context.sol
-
-
-// pragma solidity ^0.6.0;
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
+/**
+ * @dev Contract module which provides a basic access control mechanism, where
+ * there is an account (an owner) that can be granted exclusive access to
+ * specific functions.
  *
- * This contract is only required for intermediate, library-like contracts.
+ * By default, the owner account will be the one that deploys the contract. This
+ * can later be changed with {transferOwnership}.
+ *
+ * This module is used through inheritance. It will make available the modifier
+ * `onlyOwner`, which can be applied to your functions to restrict their use to
+ * the owner.
  */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
+contract Ownable is Initializable, Context {
+    address private _owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    function initialize() internal initializer {
+        address msgSender = _msgSender();
+        _owner = msgSender;
+        emit OwnershipTransferred(address(0), msgSender);
     }
 
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
     }
 }
 
@@ -1341,90 +1399,220 @@ contract LoanToken is ILoanToken, ERC20 {
 }
 
 
-// Dependency file: contracts/truefi/LoanFactory.sol
+// Dependency file: contracts/truefi/interface/ITrueFiPool.sol
 
 // pragma solidity 0.6.10;
 
-// import {Initializable} from "contracts/truefi/common/Initializable.sol";
-// import {ILoanFactory} from "contracts/truefi/interface/ILoanFactory.sol";
-
-// import {LoanToken, IERC20} from "contracts/truefi/LoanToken.sol";
+// import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * @title LoanFactory
- * @notice Deploy LoanTokens with this Contract
- * @dev LoanTokens are deployed through a factory to ensure that all
- * LoanTokens adhere to the same contract code, rather than using an interface.
+ * TruePool is an ERC20 which represents a share of a pool
+ *
+ * This contract can be used to wrap opportunities to be compatible
+ * with TrueFi and allow users to directly opt-in through the TUSD contract
+ *
+ * Each TruePool is also a staking opportunity for TRU
  */
-contract LoanFactory is ILoanFactory, Initializable {
+interface ITrueFiPool is IERC20 {
+    /// @dev pool token (TUSD)
+    function currencyToken() external view returns (IERC20);
+
+    /// @dev stake token (TRU)
+    function stakeToken() external view returns (IERC20);
+
+    /**
+     * @dev join pool
+     * 1. Transfer TUSD from sender
+     * 2. Mint pool tokens based on value to sender
+     */
+    function join(uint256 amount) external;
+
+    /**
+     * @dev exit pool
+     * 1. Transfer pool tokens from sender
+     * 2. Burn pool tokens
+     * 3. Transfer value of pool tokens in TUSD to sender
+     */
+    function exit(uint256 amount) external;
+
+    /**
+     * @dev borrow from pool
+     * 1. Transfer TUSD to sender
+     * 2. Only lending pool should be allowed to call this
+     */
+    function borrow(uint256 amount, uint256 fee) external;
+
+    /**
+     * @dev join pool
+     * 1. Transfer TUSD from sender
+     * 2. Only lending pool should be allowed to call this
+     */
+    function repay(uint256 amount) external;
+}
+
+
+// Dependency file: contracts/truefi/interface/IStakingPool.sol
+
+// pragma solidity 0.6.10;
+
+// import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface IStakingPool is IERC20 {
+    function stakeSupply() external view returns (uint256);
+
+    function withdraw(uint256 amount) external;
+
+    function payFee(uint256 amount, uint256 endTime) external;
+}
+
+
+// Dependency file: contracts/truefi/interface/ITruPriceOracle.sol
+
+// pragma solidity 0.6.10;
+
+interface ITruPriceOracle {
+    function usdToTru(uint256 amount) external view returns (uint256);
+}
+
+
+// Dependency file: contracts/truefi/interface/ILoanFactory.sol
+
+// pragma solidity 0.6.10;
+
+interface ILoanFactory {
+    function createLoanToken(
+        uint256 _amount,
+        uint256 _term,
+        uint256 _apy
+    ) external;
+
+    function isLoanToken(address) external view returns (bool);
+}
+
+
+// Root file: contracts/truefi/Liquidator.sol
+
+pragma solidity 0.6.10;
+
+// import {Ownable} from "contracts/truefi/common/UpgradeableOwnable.sol";
+// import {LoanToken, IERC20} from "contracts/truefi/LoanToken.sol";
+
+// import {ILoanToken} from "contracts/truefi/interface/ILoanToken.sol";
+// import {ITrueFiPool} from "contracts/truefi/interface/ITrueFiPool.sol";
+// import {IStakingPool} from "contracts/truefi/interface/IStakingPool.sol";
+// import {ITruPriceOracle} from "contracts/truefi/interface/ITruPriceOracle.sol";
+// import {ILoanFactory} from "contracts/truefi/interface/ILoanFactory.sol";
+// import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+
+/**
+ * @title Liquidator
+ * @notice Liquidate LoanTokens with this Contract
+ * @dev When a Loan becomes defaulted, Liquidator allows to
+ * compensate pool participants, by transfering some of TRU to the pool
+ */
+contract Liquidator is Ownable {
+    using SafeMath for uint256;
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    IERC20 public currencyToken;
+    ITrueFiPool public pool;
+    IStakingPool public stkTru;
+    IERC20 public tru;
+    ITruPriceOracle public oracle;
+    ILoanFactory public factory;
 
-    // @dev Track Valid LoanTokens
-    mapping(address => bool) public override isLoanToken;
-
-    address public lender;
-    address public liquidator;
+    // max share of tru to be taken from staking pool during liquidation
+    // 1000 -> 10%
+    uint256 public fetchMaxShare;
 
     // ======= STORAGE DECLARATION END ============
 
     /**
-     * @dev Emitted when a LoanToken is created
-     * @param contractAddress LoanToken contract address
+     * @dev Emitted fetch max share is changed
+     * @param newShare New share set
      */
-    event LoanTokenCreated(address contractAddress);
+    event FetchMaxShareChanged(uint256 newShare);
 
     /**
-     * @dev Initialize this contract and set currency token
-     * @param _currencyToken Currency token to lend
+     * @dev Emitted when oracle is changed
+     * @param newOracle New oracle address
      */
-    function initialize(IERC20 _currencyToken) external initializer {
-        currencyToken = _currencyToken;
-    }
+    event OracleChanged(ITruPriceOracle newOracle);
 
-    function setLender() external {
-        lender = 0x16d02Dc67EB237C387023339356b25d1D54b0922;
-    }
+    /**
+     * @dev Emitted when a loan gets liquidated
+     * @param loan Loan that has been liquidated
+     */
+    event Liquidated(ILoanToken loan);
 
-    function setLiquidator() external {
-        liquidator = address(0); // to be changed for deployment
+    /**
+     * @dev Initialize this contract
+     */
+    function initialize(
+        ITrueFiPool _pool,
+        IStakingPool _stkTru,
+        IERC20 _tru,
+        ITruPriceOracle _oracle,
+        ILoanFactory _factory
+    ) public initializer {
+        Ownable.initialize();
+
+        pool = _pool;
+        stkTru = _stkTru;
+        tru = _tru;
+        oracle = _oracle;
+        factory = _factory;
+        fetchMaxShare = 1000;
     }
 
     /**
-     * @dev Deploy LoanToken with parameters
-     * @param _amount Amount to borrow
-     * @param _term Length of loan
-     * @param _apy Loan yield
+     * @dev Set new max fetch share
+     * @param newShare New share to be set
      */
-    function createLoanToken(
-        uint256 _amount,
-        uint256 _term,
-        uint256 _apy
-    ) external override {
-        require(_amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
-        require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
-
-        address newToken = address(new LoanToken(currencyToken, msg.sender, lender, liquidator, _amount, _term, _apy));
-        isLoanToken[newToken] = true;
-
-        emit LoanTokenCreated(newToken);
+    function setFetchMaxShare(uint256 newShare) external onlyOwner {
+        require(newShare > 0, "Liquidator: Share cannot be set to 0");
+        fetchMaxShare = newShare;
+        emit FetchMaxShareChanged(newShare);
     }
-}
 
+    /**
+     * @dev Change oracle
+     */
+    function setOracle(ITruPriceOracle newOracle) external onlyOwner {
+        // Check if new oracle implements method
+        require(newOracle.usdToTru(1 ether) > 0, "Liquidator: Oracle lacks usdToTru method");
 
-// Root file: contracts/truefi/mocks/MockLoanFactory.sol
+        oracle = newOracle;
 
-pragma solidity 0.6.10;
+        emit OracleChanged(newOracle);
+    }
 
-// import {LoanFactory} from "contracts/truefi/LoanFactory.sol";
+    /**
+     * @dev Liquidates a defaulted Loan, withdraws a portion of tru from staking pool
+     * then transfers tru to TrueFiPool as compensation
+     * @param loan Loan to be liquidated
+     */
+    function liquidate(ILoanToken loan) external {
+        require(factory.isLoanToken(address(loan)), "Liquidator: Unknown loan");
+        uint256 defaultedValue = getAmountToWithdraw(loan.debt().sub(loan.repaid()));
+        stkTru.withdraw(defaultedValue);
+        loan.liquidate();
+        require(tru.transfer(address(pool), defaultedValue));
+        emit Liquidated(loan);
+    }
 
-contract MockLoanFactory is LoanFactory {
-    function setLender(address newLender) external {
-        lender = newLender;
+    /**
+     * @dev Calculate amount of tru to be withdrawn from staking pool (not more than preset share)
+     * @param deficit Amount of tusd lost on defaulted loan
+     */
+    function getAmountToWithdraw(uint256 deficit) internal view returns (uint256) {
+        uint256 stakingPoolSupply = stkTru.stakeSupply();
+        uint256 maxWithdrawValue = stakingPoolSupply.mul(fetchMaxShare).div(10000);
+        uint256 deficitInTru = oracle.usdToTru(deficit);
+        return maxWithdrawValue > deficitInTru ? deficitInTru : maxWithdrawValue;
     }
 }
