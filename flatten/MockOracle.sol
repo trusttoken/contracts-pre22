@@ -24,42 +24,24 @@
 */
 
 // https://github.com/trusttoken/smart-contracts
-// Root file: contracts/governance/interface/ITimelock.sol
+// Dependency file: contracts/governance/interface/ITruPriceOracle.sol
 
 // SPDX-License-Identifier: MIT
+// pragma solidity 0.6.10;
 
-pragma solidity ^0.6.10;
+interface ITruPriceOracle {
+    function usdToTru(uint256 amount) external view returns (uint256);
+}
 
-interface ITimelock {
-    function delay() external view returns (uint256);
 
-    function GRACE_PERIOD() external view returns (uint256);
+// Root file: contracts/governance/mocks/MockOracle.sol
 
-    function acceptAdmin() external;
+pragma solidity 0.6.10;
 
-    function queuedTransactions(bytes32 hash) external view returns (bool);
+// import {ITruPriceOracle} from "contracts/governance/interface/ITruPriceOracle.sol";
 
-    function queueTransaction(
-        address target,
-        uint256 value,
-        string calldata signature,
-        bytes calldata data,
-        uint256 eta
-    ) external returns (bytes32);
-
-    function cancelTransaction(
-        address target,
-        uint256 value,
-        string calldata signature,
-        bytes calldata data,
-        uint256 eta
-    ) external;
-
-    function executeTransaction(
-        address target,
-        uint256 value,
-        string calldata signature,
-        bytes calldata data,
-        uint256 eta
-    ) external payable returns (bytes memory);
+contract MockOracle is ITruPriceOracle {
+    function usdToTru(uint256 amount) external override view returns (uint256) {
+        return amount / 5e10;
+    }
 }
