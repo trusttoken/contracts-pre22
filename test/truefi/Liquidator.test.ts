@@ -1,6 +1,21 @@
 import { expect } from 'chai'
-import { ITrueDistributorJson, Liquidator, LiquidatorFactory, LoanToken, LoanTokenFactory, MockErc20Token, MockErc20TokenFactory, MockTrueCurrency, MockTrueCurrencyFactory, MockTruPriceOracle, MockTruPriceOracleFactory, StkTruToken, StkTruTokenFactory } from 'contracts'
-import { deployMockContract, MockProvider } from 'ethereum-waffle'
+import {
+  ITrueDistributorJson,
+  ILoanFactoryJson,
+  Liquidator,
+  LiquidatorFactory,
+  LoanToken,
+  LoanTokenFactory,
+  MockErc20Token,
+  MockErc20TokenFactory,
+  MockTrueCurrency,
+  MockTrueCurrencyFactory,
+  MockTruPriceOracle,
+  MockTruPriceOracleFactory,
+  StkTruToken,
+  StkTruTokenFactory,
+} from 'contracts'
+import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 import { Contract, Wallet } from 'ethers'
 import { beforeEachWithFixture, parseEth, parseTRU, timeTravel } from 'utils'
 
@@ -20,6 +35,7 @@ describe('Liquidator', () => {
   let stakingPool: StkTruToken
   let oracle: MockTruPriceOracle
   let distributor: Contract
+  let factory: MockContract
 
   const dayInSeconds = 60 * 60 * 24
   const yearInSeconds = dayInSeconds * 365
@@ -41,6 +57,8 @@ describe('Liquidator', () => {
     await distributor.mock.nextDistribution.returns(0)
     stakingPool = await new StkTruTokenFactory(owner).deploy()
     oracle = await new MockTruPriceOracleFactory(owner).deploy()
+    factory = await deployMockContract(owner, ILoanFactoryJson.abi)
+    await factory.mock.isLoanToken.returns(true)
 
     await stakingPool.initialize(
       tru.address,
@@ -54,6 +72,7 @@ describe('Liquidator', () => {
       stakingPool.address,
       tru.address,
       oracle.address,
+      factory.address,
     )
 
     loanToken = await new LoanTokenFactory(owner).deploy(
@@ -134,6 +153,15 @@ describe('Liquidator', () => {
       await timeTravel(provider, defaultedLoanCloseTime)
       await expect(liquidator.liquidate(loanToken.address))
         .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+    })
+
+    it('reverts if loan was not created via factory', async () => {
+      await factory.mock.isLoanToken.returns(false)
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await loanToken.close()
+
+      await expect(liquidator.liquidate(loanToken.address))
+        .to.be.revertedWith('Liquidator: Unknown loan')
     })
 
     it('changes loanToken status', async () => {

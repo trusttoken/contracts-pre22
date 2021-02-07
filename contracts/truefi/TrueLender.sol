@@ -9,6 +9,7 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
+import {IStakingPool} from "./interface/IStakingPool.sol";
 
 /**
  * @title TrueLender v1.0
@@ -78,7 +79,7 @@ contract TrueLender is ITrueLender, Ownable {
     uint256 public maxLoans;
 
     // implemented as an ERC20, will change after implementing stkPool
-    address public stakingPool;
+    IStakingPool public stakingPool;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -138,7 +139,7 @@ contract TrueLender is ITrueLender, Ownable {
      * @dev Emitted when stakingPool address is changed
      * @param pool new stakingPool address
      */
-    event StakingPoolChanged(address pool);
+    event StakingPoolChanged(IStakingPool pool);
 
     /**
      * @dev Emitted when a loan is funded
@@ -170,7 +171,7 @@ contract TrueLender is ITrueLender, Ownable {
     function initialize(
         ITrueFiPool _pool,
         ITrueRatingAgency _ratingAgency,
-        address _stakingPool
+        IStakingPool _stakingPool
     ) public initializer {
         Ownable.initialize();
 
@@ -197,7 +198,7 @@ contract TrueLender is ITrueLender, Ownable {
      * @dev set stake pool address
      * @param newPool stake pool address to be set
      */
-    function setStakingPool(address newPool) public onlyOwner {
+    function setStakingPool(IStakingPool newPool) public onlyOwner {
         stakingPool = newPool;
         emit StakingPoolChanged(newPool);
     }
@@ -310,7 +311,8 @@ contract TrueLender is ITrueLender, Ownable {
         currencyToken.approve(address(loanToken), receivedAmount);
         loanToken.fund();
 
-        require(pool.transfer(stakingPool, pool.balanceOf(address(this))));
+        pool.approve(address(stakingPool), pool.balanceOf(address(this)));
+        stakingPool.payFee(pool.balanceOf(address(this)), block.timestamp.add(term));
 
         emit Funded(address(loanToken), receivedAmount);
     }
@@ -353,12 +355,15 @@ contract TrueLender is ITrueLender, Ownable {
      * @dev For settled loans, redeem LoanTokens for underlying funds
      * @param loanToken Loan to reclaim capital from
      */
-    function reclaim(ILoanToken loanToken) external onlyOwner {
+    function reclaim(ILoanToken loanToken) external {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be used to reclaimed");
-        require(
-            loanToken.status() == ILoanToken.Status.Settled || loanToken.status() == ILoanToken.Status.Defaulted,
-            "TrueLender: LoanToken is not closed yet"
-        );
+
+        ILoanToken.Status status = loanToken.status();
+        require(status >= ILoanToken.Status.Settled, "TrueLender: LoanToken is not closed yet");
+
+        if (status != ILoanToken.Status.Settled) {
+            require(msg.sender == owner(), "TrueLender: Only owner can reclaim from defaulted loan");
+        }
 
         // call redeem function on LoanToken
         uint256 balanceBefore = currencyToken.balanceOf(address(this));

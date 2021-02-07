@@ -19,8 +19,7 @@ import {
   ITrueFiPoolJson,
   ILoanTokenJson,
   ITrueRatingAgencyJson,
-  MockErc20Token,
-  MockErc20TokenFactory,
+  IStakingPoolJson,
 } from 'contracts'
 
 describe('TrueLender', () => {
@@ -34,7 +33,7 @@ describe('TrueLender', () => {
   let mockPool: Contract
   let mockLoanToken: Contract
   let mockRatingAgency: Contract
-  let mockStakingPool: MockErc20Token
+  let mockStakingPool: MockContract
 
   let amount: BigNumber
   let apy: BigNumber
@@ -67,6 +66,7 @@ describe('TrueLender', () => {
     await mockPool.mock.currencyToken.returns(tusd.address)
     await mockPool.mock.borrow.returns()
     await mockPool.mock.repay.returns()
+    await mockPool.mock.approve.returns(true)
     await mockPool.mock.balanceOf.returns(0)
     await mockPool.mock.transfer.returns(true)
 
@@ -74,7 +74,8 @@ describe('TrueLender', () => {
     await mockLoanToken.mock.borrowerFee.returns(25)
     await mockLoanToken.mock.currencyToken.returns(tusd.address)
 
-    mockStakingPool = await new MockErc20TokenFactory(owner).deploy()
+    mockStakingPool = await deployMockContract(owner, IStakingPoolJson.abi)
+    await mockStakingPool.mock.payFee.returns()
 
     mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
@@ -363,9 +364,10 @@ describe('TrueLender', () => {
         expect('borrow').to.be.calledOnContractWith(mockPool, [amount, fee])
       })
 
-      it('calls transfer on pool', async () => {
+      it('calls approve and pays fee', async () => {
         await lender.fund(mockLoanToken.address)
-        expect('transfer').to.be.calledOnContractWith(mockPool, [mockStakingPool.address, fee])
+        expect('approve').to.be.calledOnContractWith(mockPool, [mockStakingPool.address, fee])
+        expect('payFee').to.be.calledOnContract(mockStakingPool)
       })
 
       it('calls fund function', async () => {
@@ -476,6 +478,12 @@ describe('TrueLender', () => {
     it('repays funds from the pool', async () => {
       await lender.reclaim(mockLoanToken.address)
       await expect('repay').to.be.calledOnContract(mockPool)
+    })
+
+    it('defaulted loans can only be reclaimed by owner', async () => {
+      await mockLoanToken.mock.status.returns(4)
+      await expect(lender.connect(otherWallet).reclaim(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Only owner can reclaim from defaulted loan')
     })
 
     it('emits a proper event', async () => {

@@ -7,4 +7,6 @@ interface IStakingPool is IERC20 {
     function stakeSupply() external view returns (uint256);
 
     function withdraw(uint256 amount) external;
+
+    function payFee(uint256 amount, uint256 endTime) external;
 }
