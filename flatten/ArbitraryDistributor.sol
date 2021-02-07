@@ -484,10 +484,12 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
     address public override beneficiary;
     uint256 public override amount;
     uint256 public override remaining;
+    mapping(address => bool) public beneficiaries;
 
     // ======= STORAGE DECLARATION END ============
 
     event Distributed(uint256 amount);
+    event BeneficiaryStatusChanged(address beneficiary, bool status);
 
     /**
      * @dev Initialize distributor
@@ -512,9 +514,14 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
      */
     modifier onlyBeneficiary {
         // prettier-ignore
-        require(msg.sender == beneficiary,
+        require(msg.sender == beneficiary || beneficiaries[msg.sender],
             "ArbitraryDistributor: Only beneficiary can receive tokens");
         _;
+    }
+
+    function setBeneficiaryStatus(address _beneficiary, bool _status) public {
+        beneficiaries[_beneficiary] = _status;
+        emit BeneficiaryStatusChanged(_beneficiary, _status);
     }
 
     /**

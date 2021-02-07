@@ -187,123 +187,6 @@ library SafeMath {
 }
 
 
-// Dependency file: contracts/trusttoken/common/ProxyStorage.sol
-
-// pragma solidity 0.6.10;
-
-/**
- * All storage must be declared here
- * New storage must be appended to the end
- * Never remove items from this list
- */
-contract ProxyStorage {
-    bool initalized;
-    uint256 public totalSupply;
-
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
-    mapping(uint144 => uint256) attributes_Depricated;
-
-    address owner_;
-    address pendingOwner_;
-
-    mapping(address => address) public delegates; // A record of votes checkpoints for each account, by index
-    struct Checkpoint {
-        // A checkpoint for marking number of votes from a given block
-        uint32 fromBlock;
-        uint96 votes;
-    }
-    mapping(address => mapping(uint32 => Checkpoint)) public checkpoints; // A record of votes checkpoints for each account, by index
-    mapping(address => uint32) public numCheckpoints; // The number of checkpoints for each account
-    mapping(address => uint256) public nonces;
-
-    /* Additionally, we have several keccak-based storage locations.
-     * If you add more keccak-based storage mappings, such as mappings, you must document them here.
-     * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.
-     * A preimage collision can be used to attack the contract by treating one storage location as another,
-     * which would always be a critical issue.
-     * Carefully examine future keccak-based storage to ensure there can be no preimage collisions.
-     *******************************************************************************************************
-     ** length     input                                                         usage
-     *******************************************************************************************************
-     ** 19         "trueXXX.proxy.owner"                                         Proxy Owner
-     ** 27         "trueXXX.pending.proxy.owner"                                 Pending Proxy Owner
-     ** 28         "trueXXX.proxy.implementation"                                Proxy Implementation
-     ** 64         uint256(address),uint256(1)                                   balanceOf
-     ** 64         uint256(address),keccak256(uint256(address),uint256(2))       allowance
-     ** 64         uint256(address),keccak256(bytes32,uint256(3))                attributes
-     **/
-}
-
-
-// Dependency file: contracts/trusttoken/common/ClaimableContract.sol
-
-// pragma solidity 0.6.10;
-
-// import {ProxyStorage} from "contracts/trusttoken/common/ProxyStorage.sol";
-
-/**
- * @title ClaimableContract
- * @dev The ClaimableContract contract is a copy of Claimable Contract by Zeppelin.
- and provides basic authorization control functions. Inherits storage layout of
- ProxyStorage.
- */
-contract ClaimableContract is ProxyStorage {
-    function owner() public view returns (address) {
-        return owner_;
-    }
-
-    function pendingOwner() public view returns (address) {
-        return pendingOwner_;
-    }
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev sets the original `owner` of the contract to the sender
-     * at construction. Must then be reinitialized
-     */
-    constructor() public {
-        owner_ = msg.sender;
-        emit OwnershipTransferred(address(0), msg.sender);
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(msg.sender == owner_, "only owner");
-        _;
-    }
-
-    /**
-     * @dev Modifier throws if called by any account other than the pendingOwner.
-     */
-    modifier onlyPendingOwner() {
-        require(msg.sender == pendingOwner_);
-        _;
-    }
-
-    /**
-     * @dev Allows the current owner to set the pendingOwner address.
-     * @param newOwner The address to transfer ownership to.
-     */
-    function transferOwnership(address newOwner) public onlyOwner {
-        pendingOwner_ = newOwner;
-    }
-
-    /**
-     * @dev Allows the pendingOwner address to finalize the transfer.
-     */
-    function claimOwnership() public onlyPendingOwner {
-        address _pendingOwner = pendingOwner_;
-        emit OwnershipTransferred(owner_, _pendingOwner);
-        owner_ = _pendingOwner;
-        pendingOwner_ = address(0);
-    }
-}
-
-
 // Dependency file: @openzeppelin/contracts/GSN/Context.sol
 
 
@@ -472,6 +355,55 @@ library Address {
             }
         }
     }
+}
+
+
+// Dependency file: contracts/trusttoken/common/ProxyStorage.sol
+
+// pragma solidity 0.6.10;
+
+/**
+ * All storage must be declared here
+ * New storage must be appended to the end
+ * Never remove items from this list
+ */
+contract ProxyStorage {
+    bool initalized;
+    uint256 public totalSupply;
+
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+    mapping(uint144 => uint256) attributes_Depricated;
+
+    address owner_;
+    address pendingOwner_;
+
+    mapping(address => address) public delegates; // A record of votes checkpoints for each account, by index
+    struct Checkpoint {
+        // A checkpoint for marking number of votes from a given block
+        uint32 fromBlock;
+        uint96 votes;
+    }
+    mapping(address => mapping(uint32 => Checkpoint)) public checkpoints; // A record of votes checkpoints for each account, by index
+    mapping(address => uint32) public numCheckpoints; // The number of checkpoints for each account
+    mapping(address => uint256) public nonces;
+
+    /* Additionally, we have several keccak-based storage locations.
+     * If you add more keccak-based storage mappings, such as mappings, you must document them here.
+     * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.
+     * A preimage collision can be used to attack the contract by treating one storage location as another,
+     * which would always be a critical issue.
+     * Carefully examine future keccak-based storage to ensure there can be no preimage collisions.
+     *******************************************************************************************************
+     ** length     input                                                         usage
+     *******************************************************************************************************
+     ** 19         "trueXXX.proxy.owner"                                         Proxy Owner
+     ** 27         "trueXXX.pending.proxy.owner"                                 Pending Proxy Owner
+     ** 28         "trueXXX.proxy.implementation"                                Proxy Implementation
+     ** 64         uint256(address),uint256(1)                                   balanceOf
+     ** 64         uint256(address),keccak256(uint256(address),uint256(2))       allowance
+     ** 64         uint256(address),keccak256(bytes32,uint256(3))                attributes
+     **/
 }
 
 
@@ -756,17 +688,111 @@ abstract contract ERC20 is ProxyStorage, Context {
 }
 
 
-// Dependency file: contracts/governance/interface/IVoteToken.sol
+// Dependency file: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
+
+// pragma solidity ^0.6.0;
+
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP.
+ */
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * // importANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+
+// Dependency file: contracts/governance/interface/IVoteToken.sol
 
 // pragma solidity ^0.6.10;
 
+// import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 interface IVoteToken {
     function delegate(address delegatee) external;
-    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) external;
+
+    function delegateBySig(
+        address delegatee,
+        uint256 nonce,
+        uint256 expiry,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
+
     function getCurrentVotes(address account) external view returns (uint96);
-    function getPriorVotes(address account, uint blockNumber) external view returns (uint96);
+
+    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
 }
+
+interface IVoteTokenWithERC20 is IVoteToken, IERC20 {}
+
 
 // Dependency file: contracts/governance/VoteToken.sol
 
@@ -783,24 +809,29 @@ interface IVoteToken {
 // OLD: // pragma solidity ^0.5.16;
 // pragma solidity 0.6.10;
 
-// import {ClaimableContract} from "contracts/trusttoken/common/ClaimableContract.sol";
 // import {ERC20} from "contracts/trusttoken/common/ERC20.sol";
 // import {IVoteToken} from "contracts/governance/interface/IVoteToken.sol";
 
 abstract contract VoteToken is ERC20, IVoteToken {
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
     bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
-    
+
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
-    event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
+    event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
 
     function delegate(address delegatee) public override {
         return _delegate(msg.sender, delegatee);
     }
 
-    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) public override {
-        //OLD: bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
-        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH,keccak256(bytes(name())),getChainId(),address(this)));
+    function delegateBySig(
+        address delegatee,
+        uint256 nonce,
+        uint256 expiry,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public override {
+        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name())), getChainId(), address(this)));
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked("", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
@@ -810,12 +841,12 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return _delegate(signatory, delegatee);
     }
 
-    function getCurrentVotes(address account) external view override returns (uint96) {
+    function getCurrentVotes(address account) public virtual override view returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
 
-    function getPriorVotes(address account, uint blockNumber) public view override returns (uint96) {
+    function getPriorVotes(address account, uint256 blockNumber) public virtual override view returns (uint96) {
         require(blockNumber < block.number, "TrustToken::getPriorVotes: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];
@@ -860,16 +891,34 @@ abstract contract VoteToken is ERC20, IVoteToken {
         _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
-    function _balanceOf(address account) internal virtual returns(uint256) {
+    function _balanceOf(address account) internal view virtual returns (uint256) {
         return balanceOf[account];
     }
 
-    function _transfer( address _from, address _to, uint256 _value) internal override virtual {
+    function _transfer(
+        address _from,
+        address _to,
+        uint256 _value
+    ) internal virtual override {
         super._transfer(_from, _to, _value);
         _moveDelegates(delegates[_from], delegates[_to], uint96(_value));
     }
 
-    function _moveDelegates(address srcRep, address dstRep, uint96 amount) internal {
+    function _mint(address account, uint256 amount) internal virtual override {
+        super._mint(account, amount);
+        _moveDelegates(address(0), delegates[account], safe96(amount, "StkTruToken: uint96 overflow"));
+    }
+
+    function _burn(address account, uint256 amount) internal virtual override {
+        super._burn(account, amount);
+        _moveDelegates(delegates[account], address(0), safe96(amount, "StkTruToken: uint96 overflow"));
+    }
+
+    function _moveDelegates(
+        address srcRep,
+        address dstRep,
+        uint96 amount
+    ) internal {
         if (srcRep != dstRep && amount > 0) {
             if (srcRep != address(0)) {
                 uint32 srcRepNum = numCheckpoints[srcRep];
@@ -887,7 +936,12 @@ abstract contract VoteToken is ERC20, IVoteToken {
         }
     }
 
-    function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint96 oldVotes, uint96 newVotes) internal {
+    function _writeCheckpoint(
+        address delegatee,
+        uint32 nCheckpoints,
+        uint96 oldVotes,
+        uint96 newVotes
+    ) internal {
         uint32 blockNumber = safe32(block.number, "TrustToken::_writeCheckpoint: block number exceeds 32 bits");
 
         if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
@@ -900,35 +954,111 @@ abstract contract VoteToken is ERC20, IVoteToken {
         emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
     }
 
-    function safe32(uint n, string memory errorMessage) internal pure returns (uint32) {
+    function safe32(uint256 n, string memory errorMessage) internal pure returns (uint32) {
         require(n < 2**32, errorMessage);
         return uint32(n);
     }
 
-    function safe96(uint n, string memory errorMessage) internal pure returns (uint96) {
+    function safe96(uint256 n, string memory errorMessage) internal pure returns (uint96) {
         require(n < 2**96, errorMessage);
         return uint96(n);
     }
 
-    function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
+    function add96(
+        uint96 a,
+        uint96 b,
+        string memory errorMessage
+    ) internal pure returns (uint96) {
         uint96 c = a + b;
         require(c >= a, errorMessage);
         return c;
     }
 
-    function sub96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
+    function sub96(
+        uint96 a,
+        uint96 b,
+        string memory errorMessage
+    ) internal pure returns (uint96) {
         require(b <= a, errorMessage);
         return a - b;
     }
 
-    function getChainId() internal pure returns (uint) {
+    function getChainId() internal pure returns (uint256) {
         uint256 chainId;
-        assembly { chainId := chainid() }
+        assembly {
+            chainId := chainid()
+        }
         return chainId;
     }
 }
 
 
+// Dependency file: contracts/trusttoken/common/ClaimableContract.sol
+
+// pragma solidity 0.6.10;
+
+// import {ProxyStorage} from "contracts/trusttoken/common/ProxyStorage.sol";
+
+/**
+ * @title ClaimableContract
+ * @dev The ClaimableContract contract is a copy of Claimable Contract by Zeppelin.
+ and provides basic authorization control functions. Inherits storage layout of
+ ProxyStorage.
+ */
+contract ClaimableContract is ProxyStorage {
+    function owner() public view returns (address) {
+        return owner_;
+    }
+
+    function pendingOwner() public view returns (address) {
+        return pendingOwner_;
+    }
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev sets the original `owner` of the contract to the sender
+     * at construction. Must then be reinitialized
+     */
+    constructor() public {
+        owner_ = msg.sender;
+        emit OwnershipTransferred(address(0), msg.sender);
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(msg.sender == owner_, "only owner");
+        _;
+    }
+
+    /**
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
+    modifier onlyPendingOwner() {
+        require(msg.sender == pendingOwner_);
+        _;
+    }
+
+    /**
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        pendingOwner_ = newOwner;
+    }
+
+    /**
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
+    function claimOwnership() public onlyPendingOwner {
+        address _pendingOwner = pendingOwner_;
+        emit OwnershipTransferred(owner_, _pendingOwner);
+        owner_ = _pendingOwner;
+        pendingOwner_ = address(0);
+    }
+}
 
 
 // Root file: contracts/trusttoken/TimeLockedToken.sol
@@ -1093,7 +1223,7 @@ abstract contract TimeLockedToken is VoteToken, ClaimableContract {
         return balanceOf[account].sub(lockedBalance(account));
     }
 
-    function _balanceOf(address account) internal override returns (uint256) {
+    function _balanceOf(address account) internal override view returns (uint256) {
         return unlockedBalance(account);
     }
 
