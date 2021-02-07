@@ -480,6 +480,12 @@ describe('TrueLender', () => {
       await expect('repay').to.be.calledOnContract(mockPool)
     })
 
+    it('defaulted loans can only be reclaimed by owner', async () => {
+      await mockLoanToken.mock.status.returns(4)
+      await expect(lender.connect(otherWallet).reclaim(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: Only owner can reclaim from defaulted loan')
+    })
+
     it('emits a proper event', async () => {
       await expect(lender.reclaim(mockLoanToken.address))
         .to.emit(lender, 'Reclaimed')
