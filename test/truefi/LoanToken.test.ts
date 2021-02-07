@@ -8,11 +8,14 @@ import {
   timeTravel,
   expectScaledCloseTo,
   parseEth,
+  parseTRU,
 } from 'utils'
 
 import {
   LoanToken,
   LoanTokenFactory,
+  MockErc20Token,
+  MockErc20TokenFactory,
   MockTrueCurrency,
   MockTrueCurrencyFactory,
 } from 'contracts'
@@ -29,6 +32,7 @@ describe('LoanToken', () => {
   let other: Wallet
   let loanToken: LoanToken
   let tusd: MockTrueCurrency
+  let tru: MockErc20Token
 
   const dayInSeconds = 60 * 60 * 24
   const yearInSeconds = dayInSeconds * 365
@@ -51,8 +55,11 @@ describe('LoanToken', () => {
     await tusd.initialize()
     await tusd.mint(lender.address, parseEth(1000))
 
+    tru = await new MockErc20TokenFactory(lender).deploy()
+
     loanToken = await new LoanTokenFactory(lender).deploy(
       tusd.address,
+      tru.address,
       borrower.address,
       lender.address,
       lender.address, // easier testing purposes
@@ -89,6 +96,10 @@ describe('LoanToken', () => {
 
     it('received amount if total amount minus fee', async () => {
       expect(await loanToken.receivedAmount()).to.equal(parseEth(1000).mul(9975).div(10000))
+    })
+
+    it('sets tru address', async () => {
+      expect(await loanToken.tru()).to.equal(tru.address)
     })
   })
 
@@ -351,7 +362,7 @@ describe('LoanToken', () => {
       await loanToken.fund()
       await timeTravel(provider, defaultedLoanCloseTime)
       await loanToken.close()
-      await expect(loanToken.redeem(parseEth(1100))).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEth(1100), removeFee(parseEth(1000)))
+      await expect(loanToken.redeem(parseEth(1100))).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEth(1100), removeFee(parseEth(1000)), parseTRU(0))
     })
 
     describe('Simple case: loan settled, redeem all', () => {
@@ -459,6 +470,43 @@ describe('LoanToken', () => {
         expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
       })
     })
+
+    describe('tru included', () => {
+      beforeEach(async () => {
+        await loanToken.fund()
+        await withdraw(borrower)
+        await timeTravel(provider, defaultedLoanCloseTime)
+      })
+
+      it('loan defaulted (nothing payed back)', async () => {
+        await loanToken.close()
+        await tru.mint(loanToken.address, parseTRU(2))
+        await expect(() => loanToken.redeem(parseEth(1100))).to.changeTokenBalance(tru, lender, parseTRU(2))
+      })
+
+      it('loan defaulted (nothing payed back) (half redeem)', async () => {
+        await loanToken.close()
+        await tru.mint(loanToken.address, parseTRU(2))
+        await expect(() => loanToken.redeem(parseEth(550))).to.changeTokenBalance(tru, lender, parseTRU(1))
+      })
+
+      it('loan defaulted (half payed back)', async () => {
+        await loanToken.close()
+        await tusd.approve(loanToken.address, parseEth(550))
+        await payback(borrower, parseEth(550))
+        await tru.mint(loanToken.address, parseTRU(2))
+        await expect(() => loanToken.redeem(parseEth(1100))).to.changeTokenBalance(tru, lender, parseTRU(2))
+      })
+
+      it('emits event', async () => {
+        await loanToken.close()
+        await tru.mint(loanToken.address, parseTRU(2))
+        await payback(borrower, parseEth(1100))
+        await expect(loanToken.redeem(parseEth(1100)))
+          .to.emit(loanToken, 'Redeemed')
+          .withArgs(lender.address, parseEth(1100), parseEth(1100), parseTRU(2))
+      })
+    })
   })
 
   describe('Reclaim', () => {
@@ -561,7 +609,7 @@ describe('LoanToken', () => {
 
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
-      const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
+      const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, tru.address, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 
