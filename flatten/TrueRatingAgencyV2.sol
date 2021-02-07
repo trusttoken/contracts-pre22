@@ -278,6 +278,32 @@ interface IBurnableERC20 is IERC20 {
 }
 
 
+// Dependency file: contracts/governance/interface/IVoteToken.sol
+
+// pragma solidity ^0.6.10;
+
+// import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface IVoteToken {
+    function delegate(address delegatee) external;
+
+    function delegateBySig(
+        address delegatee,
+        uint256 nonce,
+        uint256 expiry,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
+
+    function getCurrentVotes(address account) external view returns (uint96);
+
+    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
+}
+
+interface IVoteTokenWithERC20 is IVoteToken, IERC20 {}
+
+
 // Dependency file: @openzeppelin/contracts/GSN/Context.sol
 
 
@@ -628,7 +654,7 @@ interface ITrueRatingAgency {
 }
 
 
-// Root file: contracts/truefi/TrueRatingAgency.sol
+// Root file: contracts/truefi/TrueRatingAgencyV2.sol
 
 pragma solidity 0.6.10;
 
@@ -636,6 +662,7 @@ pragma solidity 0.6.10;
 // import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 // import {IBurnableERC20} from "contracts/trusttoken/interface/IBurnableERC20.sol";
+// import {IVoteTokenWithERC20} from "contracts/governance/interface/IVoteToken.sol";
 
 // import {Ownable} from "contracts/truefi/common/UpgradeableOwnable.sol";
 // import {IArbitraryDistributor} from "contracts/truefi/interface/IArbitraryDistributor.sol";
@@ -645,24 +672,20 @@ pragma solidity 0.6.10;
 // import {ITrueRatingAgency} from "contracts/truefi/interface/ITrueRatingAgency.sol";
 
 /**
- * @title TrueRatingAgency
+ * @title TrueRatingAgencyV2
  * @dev Credit prediction market for LoanTokens
  *
  * TrueFi uses use a prediction market to signal how risky a loan is.
  * The Credit Prediction Market estimates the likelihood of a loan defaulting.
- * Any TRU holder can vote YES or NO and stake TRU as collateral on their vote.
- * If a loan is funded, TRU is locked into the market until expiry.
- * Locking TRU into the prediction market allows voters to earn and claim
- * incentive TRU throughout the course of the loan. After the loan's term,
- * if the voter is correct, they earn a TRU reward plus a portion of the
- * losing side's vote. A portion of the losing side's TRU is burned.
+ * Any stkTRU holder can vote YES or NO and stake TRU as collateral on their vote.
+ * If a loan is funded, TRU is rewarded as incentive for participation
+ * Rating stkTRU in the prediction market allows voters to earn and claim TRU
+ * incentive when the loan is passed
  *
  * Voting Lifecycle:
  * - Borrowers can apply for loans at any time by deploying a LoanToken
  * - LoanTokens are registered with the prediction market contract
- * - Once registered, TRU holders can vote at any time
- * - If a loan is funded, TRU is locked for the term of the loan
- * - At the end of the term, payouts are determined based on the loan outcome
+ * - Once registered, stkTRU holders can vote at any time
  *
  * States:
  * Void:        Rated loan is invalid
@@ -672,7 +695,7 @@ pragma solidity 0.6.10;
  * Settled:     Rated loan has been paid back in full
  * Defaulted:   Rated loan has not been paid back in full
  */
-contract TrueRatingAgency is ITrueRatingAgency, Ownable {
+contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
     using SafeMath for uint256;
 
     enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted}
@@ -686,6 +709,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         uint256 reward;
     }
 
+    // TRU is 1e8 decimals
     uint256 private constant TOKEN_PRECISION_DIFFERENCE = 10**10;
 
     // ================ WARNING ==================
@@ -697,26 +721,26 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     mapping(address => bool) public allowedSubmitters;
     mapping(address => Loan) public loans;
 
-    IBurnableERC20 public trustToken;
+    IBurnableERC20 public TRU;
+    IVoteTokenWithERC20 public stkTRU;
     IArbitraryDistributor public distributor;
     ILoanFactory public factory;
 
     /**
      * @dev % multiplied by 100. e.g. 10.5% = 1050
      */
-    uint256 public lossFactor;
-    uint256 public burnFactor;
+    uint256 public ratersRewardFactor;
 
     // reward multiplier for voters
     uint256 public rewardMultiplier;
 
+    // are submissions paused?
     bool public submissionPauseStatus;
 
     // ======= STORAGE DECLARATION END ============
 
     event Allowed(address indexed who, bool status);
-    event LossFactorChanged(uint256 lossFactor);
-    event BurnFactorChanged(uint256 burnFactor);
+    event RatersRewardFactorChanged(uint256 ratersRewardFactor);
     event LoanSubmitted(address id);
     event LoanRetracted(address id);
     event Voted(address loanToken, address voter, bool choice, uint256 stake);
@@ -729,7 +753,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @dev Only whitelisted borrowers can submit for credit ratings
      */
     modifier onlyAllowedSubmitters() {
-        require(allowedSubmitters[msg.sender], "TrueRatingAgency: Sender is not allowed to submit");
+        require(allowedSubmitters[msg.sender], "TrueRatingAgencyV2: Sender is not allowed to submit");
         _;
     }
 
@@ -737,7 +761,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @dev Only loan submitter can perform certain actions
      */
     modifier onlyCreator(address id) {
-        require(loans[id].creator == msg.sender, "TrueRatingAgency: Not sender's loan");
+        require(loans[id].creator == msg.sender, "TrueRatingAgencyV2: Not sender's loan");
         _;
     }
 
@@ -745,7 +769,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @dev Cannot submit the same loan multiple times
      */
     modifier onlyNotExistingLoans(address id) {
-        require(status(id) == LoanStatus.Void, "TrueRatingAgency: Loan was already created");
+        require(status(id) == LoanStatus.Void, "TrueRatingAgencyV2: Loan was already created");
         _;
     }
 
@@ -753,15 +777,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @dev Only loans in Pending state
      */
     modifier onlyPendingLoans(address id) {
-        require(status(id) == LoanStatus.Pending, "TrueRatingAgency: Loan is not currently pending");
-        _;
-    }
-
-    /**
-     * @dev Only loans in Running state
-     */
-    modifier onlyNotRunningLoans(address id) {
-        require(status(id) != LoanStatus.Running, "TrueRatingAgency: Loan is currently running");
+        require(status(id) == LoanStatus.Pending, "TrueRatingAgencyV2: Loan is not currently pending");
         _;
     }
 
@@ -769,52 +785,42 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @dev Only loans that have been funded
      */
     modifier onlyFundedLoans(address id) {
-        require(status(id) >= LoanStatus.Running, "TrueRatingAgency: Loan was not funded");
+        require(status(id) >= LoanStatus.Running, "TrueRatingAgencyV2: Loan was not funded");
         _;
     }
 
     /**
      * @dev Initalize Rating Agenct
      * Distributor contract decides how much TRU is rewarded to stakers
-     * @param _trustToken TRU contract
+     * @param _TRU TRU contract
      * @param _distributor Distributor contract
      * @param _factory Factory contract for deploying tokens
      */
     function initialize(
-        IBurnableERC20 _trustToken,
+        IBurnableERC20 _TRU,
+        IVoteTokenWithERC20 _stkTRU,
         IArbitraryDistributor _distributor,
         ILoanFactory _factory
     ) public initializer {
-        require(address(this) == _distributor.beneficiary(), "TrueRatingAgency: Invalid distributor beneficiary");
+        require(address(this) == _distributor.beneficiary(), "TrueRatingAgencyV2: Invalid distributor beneficiary");
         Ownable.initialize();
 
-        trustToken = _trustToken;
+        TRU = _TRU;
+        stkTRU = _stkTRU;
         distributor = _distributor;
         factory = _factory;
 
-        lossFactor = 2500;
-        burnFactor = 2500;
+        ratersRewardFactor = 10000;
     }
 
     /**
-     * @dev Set loss factor.
-     * Loss factor decides what percentage of TRU is lost for incorrect votes
-     * @param newLossFactor New loss factor
+     * @dev Set rater reward factor.
+     * Reward factor decides what percentage of rewarded TRU is goes to raters
      */
-    function setLossFactor(uint256 newLossFactor) external onlyOwner {
-        require(newLossFactor <= 10000, "TrueRatingAgency: Loss factor cannot be greater than 100%");
-        lossFactor = newLossFactor;
-        emit LossFactorChanged(newLossFactor);
-    }
-
-    /**
-     * @dev Set burn factor.
-     * Burn factor decides what percentage of lost TRU is burned
-     */
-    function setBurnFactor(uint256 newBurnFactor) external onlyOwner {
-        require(newBurnFactor <= 10000, "TrueRatingAgency: Burn factor cannot be greater than 100%");
-        burnFactor = newBurnFactor;
-        emit BurnFactorChanged(newBurnFactor);
+    function setRatersRewardFactor(uint256 newRatersRewardFactor) external onlyOwner {
+        require(newRatersRewardFactor <= 10000, "TrueRatingAgencyV2: Raters reward factor cannot be greater than 100%");
+        ratersRewardFactor = newRatersRewardFactor;
+        emit RatersRewardFactorChanged(newRatersRewardFactor);
     }
 
     /**
@@ -911,9 +917,9 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param id Loan ID
      */
     function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
-        require(!submissionPauseStatus, "TrueRatingAgency: New submissions are paused");
-        require(ILoanToken(id).borrower() == msg.sender, "TrueRatingAgency: Sender is not borrower");
-        require(factory.isLoanToken(id), "TrueRatingAgency: Only LoanTokens created via LoanFactory are supported");
+        require(!submissionPauseStatus, "TrueRatingAgencyV2: New submissions are paused");
+        require(ILoanToken(id).borrower() == msg.sender, "TrueRatingAgencyV2: Sender is not borrower");
+        require(factory.isLoanToken(id), "TrueRatingAgencyV2: Only LoanTokens created via LoanFactory are supported");
         loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0});
         emit LoanSubmitted(id);
     }
@@ -942,12 +948,12 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         uint256 stake,
         bool choice
     ) internal {
-        require(loans[id].votes[msg.sender][!choice] == 0, "TrueRatingAgency: Cannot vote both yes and no");
+        require(loans[id].votes[msg.sender][!choice] == 0, "TrueRatingAgencyV2: Cannot vote both yes and no");
 
         loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].add(stake);
 
-        require(trustToken.transferFrom(msg.sender, address(this), stake));
+        require(stkTRU.transferFrom(msg.sender, address(this), stake));
         emit Voted(id, msg.sender, choice, stake);
     }
 
@@ -972,63 +978,35 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     // prettier-ignore
     /**
      * @dev Withdraw stake on a loan and remove votes.
-     * Unstaking only allowed for loans that are not Running
      * @param id Loan ID
      * @param stake Amount of TRU to unstake
      */
-    function withdraw(address id, uint256 stake) external override onlyNotRunningLoans(id) {
+    function withdraw(address id, uint256 stake) external override {
         bool choice = loans[id].votes[msg.sender][true] > 0;
         LoanStatus loanStatus = status(id);
 
         require(loans[id].votes[msg.sender][choice] >= stake,
-            "TrueRatingAgency: Cannot withdraw more than was staked");
+            "TrueRatingAgencyV2: Cannot withdraw more than was staked");
 
         uint256 amountToTransfer = stake;
         uint256 burned = 0;
-        if (loanStatus > LoanStatus.Running) {
-            // claim TRU reward
-            claim(id, msg.sender);
-            // check if prediction correct
-            bool correct = wasPredictionCorrect(id, choice);
-            if (correct) {
-                // if correct, take some from incorrect side's stake
-                // amount taken from incorrect side but not burned
-                amountToTransfer = amountToTransfer.add(
-                    bounty(id, !choice).mul(stake).div(loans[id].prediction[choice]));
-            } else {
-                // if incorrect, calculate loss & burn stake
-                // stake - (stake * lossFactor)
-                uint256 lostAmount = amountToTransfer.mul(lossFactor).div(10000);
-                amountToTransfer = amountToTransfer.sub(lostAmount);
-                burned = lostAmount.mul(burnFactor).div(10000);
-                trustToken.burn(burned);
-            }
-        }
 
         // if loan still pending, update total votes
         if (loanStatus == LoanStatus.Pending) {
             loans[id].prediction[choice] = loans[id].prediction[choice].sub(stake);
         }
 
+        // if loan status passed pending state claim TRU reward
+        if (loanStatus >= LoanStatus.Running) {
+            claim(id, msg.sender);
+        }
+
         // update account votes
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
 
         // transfer tokens to sender and emit event
-        require(trustToken.transfer(msg.sender, amountToTransfer));
+        require(stkTRU.transfer(msg.sender, amountToTransfer));
         emit Withdrawn(id, msg.sender, stake, amountToTransfer, burned);
-    }
-
-    /**
-     * @dev Total amount of funds given to correct voters
-     * @param id Loan ID
-     * @param incorrectChoice Vote which was incorrect
-     * @return TRU amount given to correct voters
-     */
-    function bounty(address id, bool incorrectChoice) public view returns (uint256) {
-        // reward = (incorrect_tokens_staked) * (loss_factor) * (1 - burn_factor)
-        // prettier-ignore
-        return loans[id].prediction[incorrectChoice].mul(
-            lossFactor).mul(uint256(10000).sub(burnFactor)).div(10000**2);
     }
 
     /**
@@ -1036,7 +1014,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param input Value to convert to TRU precision
      * @return output TRU amount
      */
-    function toTrustToken(uint256 input) internal pure returns (uint256 output) {
+    function toTRU(uint256 input) internal pure returns (uint256 output) {
         output = input.div(TOKEN_PRECISION_DIFFERENCE);
     }
 
@@ -1054,16 +1032,18 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
 
             // calculate reward
             // prettier-ignore
-            uint256 reward = toTrustToken(
+            uint256 totalReward = toTRU(
                 interest
                     .mul(distributor.remaining())
                     .mul(rewardMultiplier)
                     .div(distributor.amount())
             );
 
-            loans[id].reward = reward;
+            uint256 ratersReward = totalReward.mul(ratersRewardFactor).div(10000);
+            loans[id].reward = ratersReward;
             if (loans[id].reward > 0) {
-                distributor.distribute(reward);
+                distributor.distribute(totalReward);
+                TRU.transfer(address(stkTRU), totalReward.sub(ratersReward));
             }
         }
         _;
@@ -1072,7 +1052,6 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     /**
      * @dev Claim TRU rewards for voters
      * - Only can claim TRU rewards for funded loans
-     * - Voters can claim a portion of their total rewards over time
      * - Claimed automatically when a user withdraws stake
      *
      * chi = (TRU remaining in distributor) / (Total TRU allocated for distribution)
@@ -1093,55 +1072,44 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
             // track amount of claimed tokens
             loans[id].claimed[voter] = loans[id].claimed[voter].add(claimableRewards);
             // transfer tokens
-            require(trustToken.transfer(voter, claimableRewards));
+            require(TRU.transfer(voter, claimableRewards));
             emit Claimed(id, voter, claimableRewards);
         }
     }
 
+    /**
+     * @dev Get amount claimed for loan ID and voter address
+     * @param id Loan ID
+     * @param voter Voter address
+     * @return Amount claimed for id and address
+     */
     function claimed(address id, address voter) external view returns (uint256) {
         return loans[id].claimed[voter];
     }
 
+    /**
+     * @dev Get amount claimable for loan ID and voter address
+     * @param id Loan ID
+     * @param voter Voter address
+     * @return Amount claimable for id and address
+     */
     function claimable(address id, address voter) public view returns (uint256) {
         if (status(id) < LoanStatus.Running) {
             return 0;
         }
 
-        uint256 totalTime = ILoanToken(id).term();
-        uint256 passedTime = block.timestamp.sub(ILoanToken(id).start());
-
-        // check time of loan
-        if (passedTime > totalTime) {
-            passedTime = totalTime;
-        }
         // calculate how many tokens user can claim
         // claimable = stakedByVoter / totalStaked
         uint256 stakedByVoter = loans[id].votes[voter][false].add(loans[id].votes[voter][true]);
         uint256 totalStaked = loans[id].prediction[false].add(loans[id].prediction[true]);
 
         // calculate claimable rewards at current time
-        uint256 helper = loans[id].reward.mul(passedTime).mul(stakedByVoter);
-        uint256 totalClaimable = helper.div(totalTime).div(totalStaked);
+        uint256 totalClaimable = loans[id].reward.mul(stakedByVoter).div(totalStaked);
         if (totalClaimable < loans[id].claimed[voter]) {
             // This happens only in one case: voter withdrew part of stake after loan has ended and claimed all possible rewards
             return 0;
         }
         return totalClaimable.sub(loans[id].claimed[voter]);
-    }
-
-    /**
-     * @dev Check if a prediction was correct for a specific loan and vote
-     * @param id Loan ID
-     * @param choice Outcome prediction
-     */
-    function wasPredictionCorrect(address id, bool choice) internal view returns (bool) {
-        if (status(id) == LoanStatus.Settled && choice) {
-            return true;
-        }
-        if (status(id) == LoanStatus.Defaulted && !choice) {
-            return true;
-        }
-        return false;
     }
 
     /**

@@ -24,30 +24,148 @@
 */
 
 // https://github.com/trusttoken/smart-contracts
-// Dependency file: @openzeppelin/contracts/GSN/Context.sol
+// Dependency file: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
 // SPDX-License-Identifier: MIT
 
 // pragma solidity ^0.6.0;
 
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP.
  */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * // importANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+
+// Dependency file: @openzeppelin/contracts/utils/ReentrancyGuard.sol
+
+
+// pragma solidity ^0.6.0;
+
+/**
+ * @dev Contract module that helps prevent reentrant calls to a function.
+ *
+ * Inheriting from `ReentrancyGuard` will make the {nonReentrant} modifier
+ * available, which can be applied to functions to make sure there are no nested
+ * (reentrant) calls to them.
+ *
+ * Note that because there is a single `nonReentrant` guard, functions marked as
+ * `nonReentrant` may not call one another. This can be worked around by making
+ * those functions `private`, and then adding `external` `nonReentrant` entry
+ * points to them.
+ *
+ * TIP: If you would like to learn more about reentrancy and alternative ways
+ * to protect against it, check out our blog post
+ * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].
+ */
+contract ReentrancyGuard {
+    // Booleans are more expensive than uint256 or any type that takes up a full
+    // word because each write operation emits an extra SLOAD to first read the
+    // slot's contents, replace the bits taken up by the boolean, and then write
+    // back. This is the compiler's defense against contract upgrades and
+    // pointer aliasing, and it cannot be disabled.
+
+    // The values being non-zero value makes deployment a bit more expensive,
+    // but in exchange the refund on every call to nonReentrant will be lower in
+    // amount. Since refunds are capped to a percentage of the total
+    // transaction's gas, it is best to keep them low in cases like this one, to
+    // increase the likelihood of the full refund coming into effect.
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
+
+    uint256 private _status;
+
+    constructor () internal {
+        _status = _NOT_ENTERED;
     }
 
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
+    /**
+     * @dev Prevents a contract from calling itself, directly or indirectly.
+     * Calling a `nonReentrant` function from another `nonReentrant`
+     * function is not supported. It is possible to prevent this from happening
+     * by making the `nonReentrant` function external, and make it call a
+     * `private` function that does the actual work.
+     */
+    modifier nonReentrant() {
+        // On the first call to nonReentrant, _notEntered will be true
+        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
+
+        // Any calls to nonReentrant after this point will fail
+        _status = _ENTERED;
+
+        _;
+
+        // By storing the original value once again, a refund is triggered (see
+        // https://eips.ethereum.org/EIPS/eip-2200)
+        _status = _NOT_ENTERED;
     }
 }
 
@@ -210,6 +328,33 @@ library SafeMath {
     function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b != 0, errorMessage);
         return a % b;
+    }
+}
+
+
+// Dependency file: @openzeppelin/contracts/GSN/Context.sol
+
+
+// pragma solidity ^0.6.0;
+
+/*
+ * @dev Provides information about the current execution context, including the
+ * sender of the transaction and its data. While these are generally available
+ * via msg.sender and msg.data, they should not be accessed in such a direct
+ * manner, since when dealing with GSN meta-transactions the account sending and
+ * paying for execution may not be the actual sender (as far as an application
+ * is concerned).
+ *
+ * This contract is only required for intermediate, library-like contracts.
+ */
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
+
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
     }
 }
 
@@ -688,86 +833,6 @@ abstract contract ERC20 is ProxyStorage, Context {
 }
 
 
-// Dependency file: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-
-// pragma solidity ^0.6.0;
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * // importANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-
 // Dependency file: contracts/governance/interface/IVoteToken.sol
 
 // pragma solidity ^0.6.10;
@@ -794,7 +859,7 @@ interface IVoteToken {
 interface IVoteTokenWithERC20 is IVoteToken, IERC20 {}
 
 
-// Root file: contracts/governance/VoteToken.sol
+// Dependency file: contracts/governance/VoteToken.sol
 
 // AND COPIED FROM https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/GovernorAlpha.sol
 // Copyright 2020 Compound Labs, Inc.
@@ -806,8 +871,8 @@ interface IVoteTokenWithERC20 is IVoteToken, IERC20 {}
 //
 // Ctrl+f for OLD to see all the modifications.
 
-// OLD: pragma solidity ^0.5.16;
-pragma solidity 0.6.10;
+// OLD: // pragma solidity ^0.5.16;
+// pragma solidity 0.6.10;
 
 // import {ERC20} from "contracts/trusttoken/common/ERC20.sol";
 // import {IVoteToken} from "contracts/governance/interface/IVoteToken.sol";
@@ -989,5 +1054,528 @@ abstract contract VoteToken is ERC20, IVoteToken {
             chainId := chainid()
         }
         return chainId;
+    }
+}
+
+
+// Dependency file: contracts/trusttoken/common/ClaimableContract.sol
+
+// pragma solidity 0.6.10;
+
+// import {ProxyStorage} from "contracts/trusttoken/common/ProxyStorage.sol";
+
+/**
+ * @title ClaimableContract
+ * @dev The ClaimableContract contract is a copy of Claimable Contract by Zeppelin.
+ and provides basic authorization control functions. Inherits storage layout of
+ ProxyStorage.
+ */
+contract ClaimableContract is ProxyStorage {
+    function owner() public view returns (address) {
+        return owner_;
+    }
+
+    function pendingOwner() public view returns (address) {
+        return pendingOwner_;
+    }
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev sets the original `owner` of the contract to the sender
+     * at construction. Must then be reinitialized
+     */
+    constructor() public {
+        owner_ = msg.sender;
+        emit OwnershipTransferred(address(0), msg.sender);
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(msg.sender == owner_, "only owner");
+        _;
+    }
+
+    /**
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
+    modifier onlyPendingOwner() {
+        require(msg.sender == pendingOwner_);
+        _;
+    }
+
+    /**
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        pendingOwner_ = newOwner;
+    }
+
+    /**
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
+    function claimOwnership() public onlyPendingOwner {
+        address _pendingOwner = pendingOwner_;
+        emit OwnershipTransferred(owner_, _pendingOwner);
+        owner_ = _pendingOwner;
+        pendingOwner_ = address(0);
+    }
+}
+
+
+// Dependency file: contracts/truefi/interface/ITrueDistributor.sol
+
+// pragma solidity 0.6.10;
+
+// import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface ITrueDistributor {
+    function trustToken() external view returns (IERC20);
+
+    function farm() external view returns (address);
+
+    function distribute() external;
+
+    function nextDistribution() external view returns (uint256);
+
+    function empty() external;
+}
+
+
+// Root file: contracts/governance/StkTruToken.sol
+
+pragma solidity 0.6.10;
+
+// import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+// import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+
+// import {VoteToken} from "contracts/governance/VoteToken.sol";
+// import {ClaimableContract} from "contracts/trusttoken/common/ClaimableContract.sol";
+// import {ITrueDistributor} from "contracts/truefi/interface/ITrueDistributor.sol";
+
+/**
+ * @title stkTRU
+ * @dev Staking contract for TrueFi
+ * TRU is staked and stored in the contract
+ * stkTRU is minted when staking
+ * Holders of stkTRU accrue rewards over time
+ * Rewards are paid in TRU and tfUSD
+ * stkTRU can be used to vote in governance
+ * stkTRU can be used to rate and approve loans
+ */
+contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
+    using SafeMath for uint256;
+    uint256 constant PRECISION = 1e30;
+    uint256 constant MIN_DISTRIBUTED_AMOUNT = 100e8;
+
+    struct FarmRewards {
+        // track overall cumulative rewards
+        uint256 cumulativeRewardPerToken;
+        // track previous cumulate rewards for accounts
+        mapping(address => uint256) previousCumulatedRewardPerToken;
+        // track claimable rewards for accounts
+        mapping(address => uint256) claimableReward;
+        // track total rewards
+        uint256 totalClaimedRewards;
+        uint256 totalFarmRewards;
+    }
+
+    struct ScheduledTfUsdRewards {
+        uint64 timestamp;
+        uint96 amount;
+    }
+
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
+    IERC20 public tru;
+    IERC20 public tfusd;
+    ITrueDistributor public distributor;
+    address public liquidator;
+
+    uint256 public stakeSupply;
+
+    mapping(address => uint256) cooldowns;
+    uint256 public cooldownTime;
+    uint256 public unstakePeriodDuration;
+
+    mapping(IERC20 => FarmRewards) public farmRewards;
+
+    uint32[] public sortedScheduledRewardIndices;
+    ScheduledTfUsdRewards[] public scheduledRewards;
+    uint256 public undistributedTfusdRewards;
+    uint32 public nextDistributionIndex;
+
+    // ======= STORAGE DECLARATION END ============
+
+    event Stake(address indexed staker, uint256 amount);
+    event Unstake(address indexed staker, uint256 burntAmount);
+    event Claim(address indexed who, IERC20 indexed token, uint256 amountClaimed);
+    event Withdraw(uint256 amount);
+    event Cooldown(address indexed who, uint256 endTime);
+    event CooldownTimeChanged(uint256 newUnstakePeriodDuration);
+    event UnstakePeriodDurationChanged(uint256 newUnstakePeriodDuration);
+
+    /**
+     * @dev Only Liquidator contract can perform TRU liquidations
+     */
+    modifier onlyLiquidator() {
+        require(msg.sender == liquidator, "StkTruToken: Can be called only by the liquidator");
+        _;
+    }
+
+    /**
+     * Get TRU from distributor
+     */
+    modifier distribute() {
+        // pull TRU from distributor
+        // do not pull small amounts to save some gas
+        // only pull if there is distribution and distributor farm is set to this farm
+        if (distributor.nextDistribution() > MIN_DISTRIBUTED_AMOUNT && distributor.farm() == address(this)) {
+            distributor.distribute();
+        }
+        _;
+    }
+
+    modifier update(address account) {
+        updateTotalRewards(tru);
+        updateClaimableRewards(tru, account);
+        updateTotalRewards(tfusd);
+        updateClaimableRewards(tfusd, account);
+        _;
+    }
+
+    /**
+     * @dev Initialize contract and set default values
+     * @param _tru TRU token
+     * @param _tfusd tfUSD token
+     * @param _distributor Distributor for this contract
+     * @param _liquidator Liquidator for staked TRU
+     */
+    function initialize(
+        IERC20 _tru,
+        IERC20 _tfusd,
+        ITrueDistributor _distributor,
+        address _liquidator
+    ) public {
+        require(!initalized, "StkTruToken: Already initialized");
+        tru = _tru;
+        tfusd = _tfusd;
+        distributor = _distributor;
+        liquidator = _liquidator;
+
+        cooldownTime = 14 days;
+        unstakePeriodDuration = 2 days;
+
+        owner_ = msg.sender;
+        initalized = true;
+    }
+
+    /**
+     * @dev Owner can use this function to set cooldown time
+     * Cooldown time defines how long a staker waits to unstake TRU
+     * @param newCooldownTime New cooldown time for stakers
+     */
+    function setCooldownTime(uint256 newCooldownTime) external onlyOwner {
+        // Avoid overflow
+        require(newCooldownTime <= 100 * 365 days, "StkTruToken: Cooldown too large");
+
+        cooldownTime = newCooldownTime;
+        emit CooldownTimeChanged(newCooldownTime);
+    }
+
+    /**
+     * @dev Owner can set unstake period duration
+     * Unstake period defines how long after cooldown a user has to withdraw stake
+     * @param newUnstakePeriodDuration New unstake period
+     */
+    function setUnstakePeriodDuration(uint256 newUnstakePeriodDuration) external onlyOwner {
+        require(newUnstakePeriodDuration > 0, "StkTruToken: Unstake period cannot be 0");
+        // Avoid overflow
+        require(newUnstakePeriodDuration <= 100 * 365 days, "StkTruToken: Unstake period too large");
+
+        unstakePeriodDuration = newUnstakePeriodDuration;
+        emit UnstakePeriodDurationChanged(newUnstakePeriodDuration);
+    }
+
+    /**
+     * @dev Stake TRU for stkTRU
+     * Updates rewards when staking
+     * @param amount Amount of TRU to stake for stkTRU
+     */
+    function stake(uint256 amount) external distribute update(msg.sender) {
+        require(amount > 0, "StkTruToken: Cannot stake 0");
+
+        if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime) > block.timestamp) {
+            cooldowns[msg.sender] = block.timestamp;
+        }
+
+        uint256 amountToMint = stakeSupply == 0 ? amount : amount.mul(totalSupply).div(stakeSupply);
+        _mint(msg.sender, amountToMint);
+        stakeSupply = stakeSupply.add(amount);
+
+        require(tru.transferFrom(msg.sender, address(this), amount));
+
+        emit Stake(msg.sender, amount);
+    }
+
+    /**
+     * @dev Unstake stkTRU for TRU
+     * Can only unstake when cooldown complete and within unstake period
+     * Claims rewards when unstaking
+     * @param amount Amount of stkTRU to unstake for TRU
+     */
+    function unstake(uint256 amount) external distribute update(msg.sender) nonReentrant {
+        require(amount > 0, "StkTruToken: Cannot unstake 0");
+
+        require(balanceOf[msg.sender] >= amount, "StkTruToken: Insufficient balance");
+        require(unlockTime(msg.sender) <= block.timestamp, "StkTruToken: Stake on cooldown");
+
+        _claim(tru);
+        _claim(tfusd);
+
+        uint256 amountToTransfer = amount.mul(stakeSupply).div(totalSupply);
+
+        _burn(msg.sender, amount);
+        stakeSupply = stakeSupply.sub(amountToTransfer);
+
+        tru.transfer(msg.sender, amountToTransfer);
+
+        emit Unstake(msg.sender, amount);
+    }
+
+    /**
+     * @dev Initiate cooldown period
+     */
+    function cooldown() external {
+        if (unlockTime(msg.sender) == type(uint256).max) {
+            cooldowns[msg.sender] = block.timestamp;
+
+            emit Cooldown(msg.sender, block.timestamp.add(cooldownTime));
+        }
+    }
+
+    /**
+     * @dev Withdraw TRU from the contract for liquidation
+     * @param amount Amount to withdraw for liquidation
+     */
+    function withdraw(uint256 amount) external onlyLiquidator {
+        stakeSupply = stakeSupply.sub(amount);
+        tru.transfer(liquidator, amount);
+
+        emit Withdraw(amount);
+    }
+
+    /**
+     * @dev View function to get unlock time for an account
+     * @param account Account to get unlock time for
+     * @return Unlock time for account
+     */
+    function unlockTime(address account) public view returns (uint256) {
+        if (cooldowns[account] == 0 || cooldowns[account].add(cooldownTime).add(unstakePeriodDuration) < block.timestamp) {
+            return type(uint256).max;
+        }
+        return cooldowns[account].add(cooldownTime);
+    }
+
+    /**
+     * @dev Give tfUSD as origination fee to stake.this
+     * 50% are given immediately and 50% after `endTime` passes
+     */
+    function payFee(uint256 amount, uint256 endTime) external {
+        require(endTime < type(uint64).max, "StkTruToken: time overflow");
+        require(amount < type(uint96).max, "StkTruToken: amount overflow");
+
+        require(tfusd.transferFrom(msg.sender, address(this), amount));
+        undistributedTfusdRewards = undistributedTfusdRewards.add(amount.div(2));
+        scheduledRewards.push(ScheduledTfUsdRewards({amount: uint96(amount.div(2)), timestamp: uint64(endTime)}));
+
+        uint32 newIndex = findPositionForTimestamp(endTime);
+        insertAt(newIndex, uint32(scheduledRewards.length) - 1);
+    }
+
+    /**
+     * @dev Claim all rewards
+     */
+    function claim() external distribute update(msg.sender) {
+        _claim(tru);
+        _claim(tfusd);
+    }
+
+    /**
+     * @dev View to estimate the claimable reward for an account
+     * @param account Account to get claimable reward for
+     * @param token Token to get rewards for
+     * @return claimable rewards for account
+     */
+    function claimable(address account, IERC20 token) external view returns (uint256) {
+        // estimate pending reward from distributor
+        uint256 pending = token == tru ? distributor.nextDistribution() : 0;
+        // calculate total rewards (including pending)
+        uint256 newTotalFarmRewards = rewardBalance(token)
+            .add(pending > MIN_DISTRIBUTED_AMOUNT ? pending : 0)
+            .add(farmRewards[token].totalClaimedRewards)
+            .mul(PRECISION);
+        // calculate block reward
+        uint256 totalBlockReward = newTotalFarmRewards.sub(farmRewards[token].totalFarmRewards);
+        // calculate next cumulative reward per token
+        uint256 nextCumulativeRewardPerToken = farmRewards[token].cumulativeRewardPerToken.add(totalBlockReward.div(totalSupply));
+        // return claimable reward for this account
+        return
+            farmRewards[token].claimableReward[account].add(
+                balanceOf[account]
+                    .mul(nextCumulativeRewardPerToken.sub(farmRewards[token].previousCumulatedRewardPerToken[account]))
+                    .div(PRECISION)
+            );
+    }
+
+    /**
+     * @dev Prior votes votes are calculated as priorVotes * stakedSupply / totalSupply
+     * This dilutes voting power when TRU is liquidated
+     * @param account Account to get current voting power for
+     * @param blockNumber Block to get prior votes at
+     * @return prior voting power for account and block
+     */
+    function getPriorVotes(address account, uint256 blockNumber) public override view returns (uint96) {
+        uint96 votes = super.getPriorVotes(account, blockNumber);
+        return safe96(stakeSupply.mul(votes).div(totalSupply), "StkTruToken: uint96 overflow");
+    }
+
+    /**
+     * @dev Current votes are calculated as votes * stakedSupply / totalSupply
+     * This dilutes voting power when TRU is liquidated
+     * @param account Account to get current voting power for
+     * @return voting power for account
+     */
+    function getCurrentVotes(address account) public override view returns (uint96) {
+        uint96 votes = super.getCurrentVotes(account);
+        return safe96(stakeSupply.mul(votes).div(totalSupply), "StkTruToken: uint96 overflow");
+    }
+
+    function decimals() public override pure returns (uint8) {
+        return 8;
+    }
+
+    function rounding() public pure returns (uint8) {
+        return 8;
+    }
+
+    function name() public override pure returns (string memory) {
+        return "Staked TrueFi";
+    }
+
+    function symbol() public override pure returns (string memory) {
+        return "stkTRU";
+    }
+
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal override distribute update(sender) {
+        updateClaimableRewards(tru, recipient);
+        updateClaimableRewards(tfusd, recipient);
+        super._transfer(sender, recipient, amount);
+    }
+
+    /**
+     * @dev Internal claim function
+     * Claim rewards for a specific ERC20 token
+     * @param token Token to claim rewards for
+     */
+    function _claim(IERC20 token) internal {
+        farmRewards[token].totalClaimedRewards = farmRewards[token].totalClaimedRewards.add(
+            farmRewards[token].claimableReward[msg.sender]
+        );
+        uint256 rewardToClaim = farmRewards[token].claimableReward[msg.sender];
+        farmRewards[token].claimableReward[msg.sender] = 0;
+        require(token.transfer(msg.sender, rewardToClaim));
+        emit Claim(msg.sender, token, rewardToClaim);
+    }
+
+    /**
+     * @dev Get reward balance of this contract for a token
+     * @param token Token to get reward balance for
+     * @return Reward balance for token
+     */
+    function rewardBalance(IERC20 token) internal view returns (uint256) {
+        if (token == tru) {
+            return token.balanceOf(address(this)).sub(stakeSupply);
+        }
+        return token.balanceOf(address(this)).sub(undistributedTfusdRewards);
+    }
+
+    /**
+     * @dev Check if any scheduled rewards should be distributed
+     */
+    function distributeScheduledRewards() internal {
+        uint32 index = nextDistributionIndex;
+        while (index < scheduledRewards.length && scheduledRewards[sortedScheduledRewardIndices[index]].timestamp < block.timestamp) {
+            undistributedTfusdRewards = undistributedTfusdRewards.sub(scheduledRewards[sortedScheduledRewardIndices[index]].amount);
+            index++;
+        }
+        if (nextDistributionIndex != index) {
+            nextDistributionIndex = index;
+        }
+    }
+
+    /**
+     * @dev Update rewards state for `token`
+     */
+    function updateTotalRewards(IERC20 token) internal {
+        if (token == tfusd) {
+            distributeScheduledRewards();
+        }
+        // calculate total rewards
+        uint256 newTotalFarmRewards = rewardBalance(token).add(farmRewards[token].totalClaimedRewards).mul(PRECISION);
+        if (newTotalFarmRewards == farmRewards[token].totalFarmRewards) {
+            return;
+        }
+        // calculate block reward
+        uint256 totalBlockReward = newTotalFarmRewards.sub(farmRewards[token].totalFarmRewards);
+        // update farm rewards
+        farmRewards[token].totalFarmRewards = newTotalFarmRewards;
+        // if there are stakers
+        if (totalSupply > 0) {
+            farmRewards[token].cumulativeRewardPerToken = farmRewards[token].cumulativeRewardPerToken.add(
+                totalBlockReward.div(totalSupply)
+            );
+        }
+    }
+
+    function updateClaimableRewards(IERC20 token, address user) internal {
+        // update claimable reward for sender
+        if (balanceOf[user] > 0) {
+            farmRewards[token].claimableReward[user] = farmRewards[token].claimableReward[user].add(
+                balanceOf[user]
+                    .mul(farmRewards[token].cumulativeRewardPerToken.sub(farmRewards[token].previousCumulatedRewardPerToken[user]))
+                    .div(PRECISION)
+            );
+        }
+        // update previous cumulative for sender
+        farmRewards[token].previousCumulatedRewardPerToken[user] = farmRewards[token].cumulativeRewardPerToken;
+    }
+
+    function findPositionForTimestamp(uint256 timestamp) internal view returns (uint32 i) {
+        for (i = nextDistributionIndex; i < sortedScheduledRewardIndices.length; i++) {
+            if (scheduledRewards[sortedScheduledRewardIndices[i]].timestamp > timestamp) {
+                break;
+            }
+        }
+    }
+
+    function insertAt(uint32 index, uint32 value) internal {
+        sortedScheduledRewardIndices.push(0);
+        for (uint32 j = uint32(sortedScheduledRewardIndices.length) - 1; j > index; j--) {
+            sortedScheduledRewardIndices[j] = sortedScheduledRewardIndices[j - 1];
+        }
+        sortedScheduledRewardIndices[index] = value;
     }
 }
