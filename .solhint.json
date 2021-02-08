@@ -10,6 +10,8 @@
     "no-inline-assembly": "off",
     "not-rely-on-time": "off",
     "max-states-count": "off",
-    "reason-string": "off"
+    "reason-string": "off",
+    "const-name-snakecase": "off",
+    "avoid-tx-origin": "off"
   }
 }

@@ -79,6 +79,8 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     // reward multiplier for voters
     uint256 public rewardMultiplier;
 
+    bool public submissionPauseStatus;
+
     // ======= STORAGE DECLARATION END ============
 
     event Allowed(address indexed who, bool status);
@@ -90,6 +92,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     event Withdrawn(address loanToken, address voter, uint256 stake, uint256 received, uint256 burned);
     event RewardMultiplierChanged(uint256 newRewardMultiplier);
     event Claimed(address loanToken, address voter, uint256 claimedReward);
+    event SubmissionPauseStatusChanged(bool status);
 
     /**
      * @dev Only whitelisted borrowers can submit for credit ratings
@@ -263,11 +266,21 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
+     * @dev Pause submitting loans for rating
+     * @param status Flag of the status
+     */
+    function pauseSubmissions(bool status) public onlyOwner {
+        submissionPauseStatus = status;
+        emit SubmissionPauseStatusChanged(status);
+    }
+
+    /**
      * @dev Submit a loan for rating
      * Cannot submit the same loan twice
      * @param id Loan ID
      */
     function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
+        require(!submissionPauseStatus, "TrueRatingAgency: New submissions are paused");
         require(ILoanToken(id).borrower() == msg.sender, "TrueRatingAgency: Sender is not borrower");
         require(factory.isLoanToken(id), "TrueRatingAgency: Only LoanTokens created via LoanFactory are supported");
         loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0});

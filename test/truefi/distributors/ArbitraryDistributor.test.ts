@@ -46,10 +46,40 @@ describe('ArbitraryDistributor', () => {
     })
   })
 
+  describe('setBeneficiaryStatus', () => {
+    it('properly changes status', async () => {
+      expect(await distributor.beneficiaries(otherWallet.address)).to.be.false
+      await distributor.setBeneficiaryStatus(otherWallet.address, true)
+      expect(await distributor.beneficiaries(otherWallet.address)).to.be.true
+      await distributor.setBeneficiaryStatus(otherWallet.address, false)
+      expect(await distributor.beneficiaries(otherWallet.address)).to.be.false
+    })
+
+    it('emits proper event', async () => {
+      await expect(distributor.setBeneficiaryStatus(otherWallet.address, true))
+        .to.emit(distributor, 'BeneficiaryStatusChanged')
+        .withArgs(otherWallet.address, true)
+      await expect(distributor.setBeneficiaryStatus(otherWallet.address, false))
+        .to.emit(distributor, 'BeneficiaryStatusChanged')
+        .withArgs(otherWallet.address, false)
+    })
+  })
+
   describe('distribute', () => {
     const distributedAmount = 100
 
     it('only predefined beneficiary can call it', async () => {
+      await expect(distributor.connect(otherWallet).distribute(distributedAmount))
+        .to.be.revertedWith('ArbitraryDistributor: Only beneficiary can receive tokens')
+    })
+
+    it('beneficiary whitelist allows other wallets to distribute', async () => {
+      await expect(distributor.connect(otherWallet).distribute(distributedAmount))
+        .to.be.revertedWith('ArbitraryDistributor: Only beneficiary can receive tokens')
+      await distributor.setBeneficiaryStatus(otherWallet.address, true)
+      await expect(distributor.connect(otherWallet).distribute(distributedAmount))
+        .not.to.be.reverted
+      await distributor.setBeneficiaryStatus(otherWallet.address, false)
       await expect(distributor.connect(otherWallet).distribute(distributedAmount))
         .to.be.revertedWith('ArbitraryDistributor: Only beneficiary can receive tokens')
     })

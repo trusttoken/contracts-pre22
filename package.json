@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "postinstall": "patch-package",
-    "flatten": "./flatten-all",
+    "flatten": "./flatten.sh",
     "clean": "rm -rf ./build",
     "typecheck": "tsc --noEmit",
     "lint:sol": "solhint 'contracts/**/*.sol' && prettylint 'contracts/**/*.sol'",
@@ -12,7 +12,7 @@
     "lint:js": "eslint '{test,scripts}/**/*.js'",
     "lint:ts": "eslint '{test,scripts}/**/*.ts' -c .eslintrc.typescript.js",
     "build:sol": "waffle .waffle.json",
-    "build:types": "typechain --target ethers-v5 --outDir build/types 'build/*.json'",
+    "build:types": "typechain --target ethers-v5 --outDir build/types 'build/*.json' > /dev/null && echo 'Typechain generated'",
     "build": "yarn clean && yarn build:sol && yarn build:types && bash ./indexBuild.sh",
     "test": "mocha",
     "checks": "yarn lint && yarn typecheck && yarn test",

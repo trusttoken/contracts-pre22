@@ -31,9 +31,10 @@ contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
 
     uint128 public constant lastMinutePaybackDuration = 1 days;
-    uint8 public constant override version = 2;
+    uint8 public constant override version = 3;
 
     address public override borrower;
+    address public liquidator;
     uint256 public override amount;
     uint256 public override term;
     uint256 public override apy;
@@ -76,7 +77,7 @@ contract LoanToken is ILoanToken, ERC20 {
     /**
      * @dev Emitted when term is over
      * @param status Final loan status
-     * @param returnedAmount Amount that was retured before expiry
+     * @param returnedAmount Amount that was returned before expiry
      */
     event Closed(Status status, uint256 returnedAmount);
 
@@ -84,28 +85,34 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Emitted when a LoanToken is redeemed for underlying currencyTokens
      * @param receiver Receiver of currencyTokens
      * @param burnedAmount Amount of LoanTokens burned
-     * @param redeemedAmound Amount of currencyToken received
+     * @param redeemedAmount Amount of currencyToken received
      */
-    event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound);
+    event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmount);
 
     /**
      * @dev Emitted when a LoanToken is repaid by the borrower in underlying currencyTokens
      * @param repayer Sender of currencyTokens
-     * @param repaidAmound Amount of currencyToken repaid
+     * @param repaidAmount Amount of currencyToken repaid
      */
-    event Repaid(address repayer, uint256 repaidAmound);
+    event Repaid(address repayer, uint256 repaidAmount);
 
     /**
      * @dev Emitted when borrower reclaims remaining currencyTokens
-     * @param borrower Reveiver of remaining currencyTokens
+     * @param borrower Receiver of remaining currencyTokens
      * @param reclaimedAmount Amount of currencyTokens repaid
      */
     event Reclaimed(address borrower, uint256 reclaimedAmount);
 
     /**
+     * @dev Emitted when loan gets liquidated
+     * @param status Final loan status
+     */
+    event Liquidated(Status status);
+
+    /**
      * @dev Create a Loan
      * @param _currencyToken Token to lend
-     * @param _borrower Borrwer addresss
+     * @param _borrower Borrower address
      * @param _amount Borrow amount of currency tokens
      * @param _term Loan length
      * @param _apy Loan APY
@@ -114,6 +121,7 @@ contract LoanToken is ILoanToken, ERC20 {
         IERC20 _currencyToken,
         address _borrower,
         address _lender,
+        address _liquidator,
         uint256 _amount,
         uint256 _term,
         uint256 _apy
@@ -122,6 +130,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
         currencyToken = _currencyToken;
         borrower = _borrower;
+        liquidator = _liquidator;
         amount = _amount;
         term = _term;
         apy = _apy;
@@ -138,10 +147,18 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
+     * @dev Only liquidator can liquidate
+     */
+    modifier onlyLiquidator() {
+        require(msg.sender == liquidator, "LoanToken: Caller is not the liquidator");
+        _;
+    }
+
+    /**
      * @dev Only when loan is Settled
      */
     modifier onlyClosed() {
-        require(status == Status.Settled || status == Status.Defaulted, "LoanToken: Current status should be Settled or Defaulted");
+        require(status >= Status.Settled, "LoanToken: Current status should be Settled or Defaulted");
         _;
     }
 
@@ -174,6 +191,14 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     modifier onlyAwaiting() {
         require(status == Status.Awaiting, "LoanToken: Current status should be Awaiting");
+        _;
+    }
+
+    /**
+     * @dev Only when loan is Defaulted
+     */
+    modifier onlyDefaulted() {
+        require(status == Status.Defaulted, "LoanToken: Current status should be Defaulted");
         _;
     }
 
@@ -297,6 +322,15 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
+     * @dev Liquidate the loan if it has defaulted
+     */
+    function liquidate() external override onlyDefaulted onlyLiquidator {
+        status = Status.Liquidated;
+
+        emit Liquidated(status);
+    }
+
+    /**
      * @dev Redeem LoanToken balances for underlying currencyToken
      * Can only call this function after the loan is Closed
      * @param _amount amount to redeem
@@ -338,7 +372,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     /**
      * @dev Check how much was already repaid
-     * Funds stored on the contract's addres plus funds already redeemed by lenders
+     * Funds stored on the contract's address plus funds already redeemed by lenders
      * @return Uint256 representing what value was already repaid
      */
     function repaid() external override view onlyAfterWithdraw returns (uint256) {

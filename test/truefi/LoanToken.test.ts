@@ -18,7 +18,10 @@ import {
 } from 'contracts'
 
 describe('LoanToken', () => {
-  enum LoanTokenStatus { Awaiting, Funded, Withdrawn, Settled, Defaulted }
+  enum LoanTokenStatus {
+    Awaiting, Funded, Withdrawn, Settled, Defaulted,
+    Liquidated
+  }
 
   let provider: MockProvider
   let lender: Wallet
@@ -52,6 +55,7 @@ describe('LoanToken', () => {
       tusd.address,
       borrower.address,
       lender.address,
+      lender.address, // easier testing purposes
       parseEth(1000),
       yearInSeconds,
       1000,
@@ -239,6 +243,45 @@ describe('LoanToken', () => {
       await tusd.mint(loanToken.address, parseEth(1099))
       await timeTravel(provider, defaultedLoanCloseTime)
       await expect(loanToken.close()).to.emit(loanToken, 'Closed').withArgs(LoanTokenStatus.Defaulted, parseEth(1099))
+    })
+  })
+
+  describe('liquidate', () => {
+    it('reverts when status is not defaulted', async () => {
+      await expect(loanToken.liquidate())
+        .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+
+      await loanToken.fund()
+      await expect(loanToken.liquidate())
+        .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+
+      await withdraw(borrower)
+      await expect(loanToken.liquidate())
+        .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await expect(loanToken.liquidate())
+        .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+    })
+
+    it('reverts if not called by liquidator', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await loanToken.close()
+
+      await expect(loanToken.connect(borrower).liquidate())
+        .to.be.revertedWith('LoanToken: Caller is not the liquidator')
+    })
+
+    it('sets status to liquidated', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await loanToken.close()
+
+      await loanToken.liquidate()
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Liquidated)
     })
   })
 
@@ -518,7 +561,7 @@ describe('LoanToken', () => {
 
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
-      const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, borrower.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
+      const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 
