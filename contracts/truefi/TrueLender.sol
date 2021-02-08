@@ -379,11 +379,13 @@ contract TrueLender is ITrueLender, Ownable {
             if (_loans[index] == loanToken) {
                 _loans[index] = _loans[_loans.length - 1];
                 _loans.pop();
-                break;
+
+                emit Reclaimed(address(loanToken), fundsReclaimed);
+                return;
             }
         }
 
-        emit Reclaimed(address(loanToken), fundsReclaimed);
+        revert("TrueLender: This loan has not been funded by the lender");
     }
 
     /**

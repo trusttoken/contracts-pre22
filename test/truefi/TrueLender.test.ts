@@ -453,7 +453,12 @@ describe('TrueLender', () => {
     beforeEach(async () => {
       await mockLoanToken.mock.status.returns(3)
       await mockLoanToken.mock.balanceOf.returns(availableLoanTokens)
-      await tusd.mint(lender.address, fee) // mockPool won't do it
+      await tusd.mint(lender.address, fee)
+
+      await mockLoanToken.mock.getParameters.returns(amount, apy, term)
+      await mockLoanToken.mock.receivedAmount.returns(amount.sub(fee))
+      await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
+      await mockPool.mock.balanceOf.returns(fee)
     })
 
     it('works only for loan tokens', async () => {
@@ -470,12 +475,19 @@ describe('TrueLender', () => {
         .to.be.revertedWith('TrueLender: LoanToken is not closed yet')
     })
 
+    it('reverts if loan has not been previously funded', async () => {
+      await expect(lender.reclaim(mockLoanToken.address))
+        .to.be.revertedWith('TrueLender: This loan has not been funded by the lender')
+    })
+
     it('redeems funds from loan token', async () => {
+      await lender.fund(mockLoanToken.address)
       await lender.reclaim(mockLoanToken.address)
       await expect('redeem').to.be.calledOnContractWith(mockLoanToken, [availableLoanTokens])
     })
 
     it('repays funds from the pool', async () => {
+      await lender.fund(mockLoanToken.address)
       await lender.reclaim(mockLoanToken.address)
       await expect('repay').to.be.calledOnContract(mockPool)
     })
@@ -487,13 +499,12 @@ describe('TrueLender', () => {
     })
 
     it('emits a proper event', async () => {
+      await lender.fund(mockLoanToken.address)
       await expect(lender.reclaim(mockLoanToken.address))
         .to.emit(lender, 'Reclaimed')
     })
 
     it('removes loan from the array', async () => {
-      await mockLoanToken.mock.getParameters.returns(amount, apy, term)
-      await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
       await tusd.mint(lender.address, fee.mul(2)) // mockPool won't do it
 
       await lender.fund(mockLoanToken.address)
