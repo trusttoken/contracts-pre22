@@ -77,7 +77,7 @@ contract LoanToken is ILoanToken, ERC20 {
     /**
      * @dev Emitted when term is over
      * @param status Final loan status
-     * @param returnedAmount Amount that was retured before expiry
+     * @param returnedAmount Amount that was returned before expiry
      */
     event Closed(Status status, uint256 returnedAmount);
 
@@ -85,20 +85,20 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Emitted when a LoanToken is redeemed for underlying currencyTokens
      * @param receiver Receiver of currencyTokens
      * @param burnedAmount Amount of LoanTokens burned
-     * @param redeemedAmound Amount of currencyToken received
+     * @param redeemedAmount Amount of currencyToken received
      */
-    event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmound);
+    event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmount);
 
     /**
      * @dev Emitted when a LoanToken is repaid by the borrower in underlying currencyTokens
      * @param repayer Sender of currencyTokens
-     * @param repaidAmound Amount of currencyToken repaid
+     * @param repaidAmount Amount of currencyToken repaid
      */
-    event Repaid(address repayer, uint256 repaidAmound);
+    event Repaid(address repayer, uint256 repaidAmount);
 
     /**
      * @dev Emitted when borrower reclaims remaining currencyTokens
-     * @param borrower Reveiver of remaining currencyTokens
+     * @param borrower Receiver of remaining currencyTokens
      * @param reclaimedAmount Amount of currencyTokens repaid
      */
     event Reclaimed(address borrower, uint256 reclaimedAmount);
@@ -112,7 +112,7 @@ contract LoanToken is ILoanToken, ERC20 {
     /**
      * @dev Create a Loan
      * @param _currencyToken Token to lend
-     * @param _borrower Borrwer addresss
+     * @param _borrower Borrower address
      * @param _amount Borrow amount of currency tokens
      * @param _term Loan length
      * @param _apy Loan APY
@@ -372,7 +372,7 @@ contract LoanToken is ILoanToken, ERC20 {
 
     /**
      * @dev Check how much was already repaid
-     * Funds stored on the contract's addres plus funds already redeemed by lenders
+     * Funds stored on the contract's address plus funds already redeemed by lenders
      * @return Uint256 representing what value was already repaid
      */
     function repaid() external override view onlyAfterWithdraw returns (uint256) {
