@@ -328,13 +328,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     }
 
     function _transfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) internal override distribute update(sender) {
-        updateClaimableRewards(tru, recipient);
-        updateClaimableRewards(tfusd, recipient);
-        super._transfer(sender, recipient, amount);
+        address,
+        address,
+        uint256
+    ) internal override {
+        revert("StkTruToken: transfers are disabled");
     }
 
     /**

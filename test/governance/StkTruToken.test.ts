@@ -341,7 +341,11 @@ describe('StkTruToken', () => {
       await stkToken.stake(amount, { gasLimit: 3000000 })
     })
 
-    it('updates claim state on transfer', async () => {
+    it('transfers are disabled', async () => {
+      await expect(stkToken.transfer(staker.address, amount, { gasLimit: 3000000 })).to.be.revertedWith('StkTruToken: transfers are disabled')
+    });
+
+    it.skip('updates claim state on transfer', async () => {
       await timeTravel(provider, DAY)
       await tfusd.mint(stkToken.address, parseEth(1), { gasLimit: 3000000 })
 
@@ -358,7 +362,7 @@ describe('StkTruToken', () => {
       expect(await stkToken.claimable(staker.address, tfusd.address)).to.equal(0)
     })
 
-    it('gas cost', async () => {
+    it.skip('gas cost', async () => {
       const tx = await (await stkToken.transfer(staker.address, amount.div(2), { gasLimit: 300000 })).wait()
       expect(tx.gasUsed).to.be.lt(120000)
     })
