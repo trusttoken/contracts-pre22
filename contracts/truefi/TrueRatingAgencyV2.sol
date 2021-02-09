@@ -12,7 +12,7 @@ import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
-import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
+import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
 
 /**
  * @title TrueRatingAgencyV2
@@ -39,7 +39,7 @@ import {ITrueRatingAgency} from "./interface/ITrueRatingAgency.sol";
  * Defaulted:   Rated loan has not been paid back in full
  * Liquidated:  Rated loan has defaulted and stakers have been liquidated
  */
-contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
+contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     using SafeMath for uint256;
 
     enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted, Liquidated}
@@ -284,73 +284,50 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
     /**
      * @dev Vote on a loan by staking TRU
      * @param id Loan ID
-     * @param stake Amount of TRU to stake
      * @param choice Voter choice. false = NO, true = YES
      */
-    function vote(
-        address id,
-        uint256 stake,
-        bool choice
-    ) internal {
-        require(loans[id].votes[msg.sender][!choice] == 0, "TrueRatingAgencyV2: Cannot vote both yes and no");
+    function vote(address id, bool choice) internal {
+        uint256 stake = stkTRU.balanceOf(msg.sender);
+        require(stake > 0, "TrueRatingAgencyV2: Cannot vote with empty balance");
+
+        cancel(id);
 
         loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
         loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].add(stake);
 
-        require(stkTRU.transferFrom(msg.sender, address(this), stake));
         emit Voted(id, msg.sender, choice, stake);
+    }
+
+    function _cancel(address id, bool choice) internal {
+        loans[id].prediction[choice] = loans[id].prediction[choice].sub(loans[id].votes[msg.sender][choice]);
+        loans[id].votes[msg.sender][choice] = 0;
+    }
+
+    /**
+     * @dev Cancel votes of msg.sender
+     */
+    function cancel(address id) public onlyPendingLoans(id) {
+        if (getYesVote(id, msg.sender) > 0) {
+            _cancel(id, true);
+        } else if (getNoVote(id, msg.sender) > 0) {
+            _cancel(id, false);
+        }
     }
 
     /**
      * @dev Vote YES on a loan by staking TRU
      * @param id Loan ID
-     * @param stake Amount of TRU to stake
      */
-    function yes(address id, uint256 stake) external override onlyPendingLoans(id) {
-        vote(id, stake, true);
+    function yes(address id) external override onlyPendingLoans(id) {
+        vote(id, true);
     }
 
     /**
      * @dev Vote NO on a loan by staking TRU
      * @param id Loan ID
-     * @param stake Amount of TRU to stake
      */
-    function no(address id, uint256 stake) external override onlyPendingLoans(id) {
-        vote(id, stake, false);
-    }
-
-    // prettier-ignore
-    /**
-     * @dev Withdraw stake on a loan and remove votes.
-     * @param id Loan ID
-     * @param stake Amount of TRU to unstake
-     */
-    function withdraw(address id, uint256 stake) external override {
-        bool choice = loans[id].votes[msg.sender][true] > 0;
-        LoanStatus loanStatus = status(id);
-
-        require(loans[id].votes[msg.sender][choice] >= stake,
-            "TrueRatingAgencyV2: Cannot withdraw more than was staked");
-
-        uint256 amountToTransfer = stake;
-        uint256 burned = 0;
-
-        // if loan still pending, update total votes
-        if (loanStatus == LoanStatus.Pending) {
-            loans[id].prediction[choice] = loans[id].prediction[choice].sub(stake);
-        }
-
-        // if loan status passed pending state claim TRU reward
-        if (loanStatus >= LoanStatus.Running) {
-            claim(id, msg.sender);
-        }
-
-        // update account votes
-        loans[id].votes[msg.sender][choice] = loans[id].votes[msg.sender][choice].sub(stake);
-
-        // transfer tokens to sender and emit event
-        require(stkTRU.transfer(msg.sender, amountToTransfer));
-        emit Withdrawn(id, msg.sender, stake, amountToTransfer, burned);
+    function no(address id) external override onlyPendingLoans(id) {
+        vote(id, false);
     }
 
     /**
@@ -409,7 +386,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgency, Ownable {
      * @param id Loan ID
      * @param voter Voter account
      */
-    function claim(address id, address voter) public override onlyFundedLoans(id) calculateTotalReward(id) {
+    function claim(address id, address voter) external override onlyFundedLoans(id) calculateTotalReward(id) {
         uint256 claimableRewards = claimable(id, voter);
 
         if (claimableRewards > 0) {
