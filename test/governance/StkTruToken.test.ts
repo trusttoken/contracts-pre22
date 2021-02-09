@@ -343,7 +343,7 @@ describe('StkTruToken', () => {
 
     it('transfers are disabled', async () => {
       await expect(stkToken.transfer(staker.address, amount, { gasLimit: 3000000 })).to.be.revertedWith('StkTruToken: transfers are disabled')
-    });
+    })
 
     it.skip('updates claim state on transfer', async () => {
       await timeTravel(provider, DAY)
