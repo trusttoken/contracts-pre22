@@ -47,6 +47,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     struct Loan {
         address creator;
         uint256 timestamp;
+        uint256 blockNumber;
         mapping(bool => uint256) prediction;
         mapping(address => mapping(bool => uint256)) votes;
         mapping(address => uint256) claimed;
@@ -134,7 +135,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     }
 
     /**
-     * @dev Initalize Rating Agenct
+     * @dev Initialize Rating Agency
      * Distributor contract decides how much TRU is rewarded to stakers
      * @param _TRU TRU contract
      * @param _distributor Distributor contract
@@ -264,7 +265,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         require(!submissionPauseStatus, "TrueRatingAgencyV2: New submissions are paused");
         require(ILoanToken(id).borrower() == msg.sender, "TrueRatingAgencyV2: Sender is not borrower");
         require(factory.isLoanToken(id), "TrueRatingAgencyV2: Only LoanTokens created via LoanFactory are supported");
-        loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, reward: 0});
+        loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, blockNumber: block.number, reward: 0});
         emit LoanSubmitted(id);
     }
 
@@ -287,7 +288,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @param choice Voter choice. false = NO, true = YES
      */
     function vote(address id, bool choice) internal {
-        uint256 stake = stkTRU.balanceOf(msg.sender);
+        uint256 stake = stkTRU.getPriorVotes(msg.sender, loans[id].blockNumber);
         require(stake > 0, "TrueRatingAgencyV2: Cannot vote with empty balance");
 
         cancel(id);

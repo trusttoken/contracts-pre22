@@ -94,9 +94,11 @@ describe('TrueRatingAgencyV2', () => {
     await trustToken.mint(arbitraryDistributor.address, stake)
     await trustToken.approve(stakedTrustToken.address, stake)
 
-    await stakedTrustToken.stake(stake)
-
     timeTravel = (time: number) => _timeTravel(_provider, time)
+    
+    await stakedTrustToken.delegate(owner.address)
+    await stakedTrustToken.connect(otherWallet).delegate(otherWallet.address)
+    await stakedTrustToken.stake(stake)
   })
 
   const submit = async (loanTokenAddress: string, wallet = owner) =>
@@ -460,6 +462,11 @@ describe('TrueRatingAgencyV2', () => {
         100,
       )
 
+      await trustToken.mint(otherWallet.address, parseTRU(1e8))
+      await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(1e8))
+      await stakedTrustToken.connect(otherWallet).stake(parseTRU(1e8))
+      timeTravel(1)
+
       await rater.setRewardMultiplier(rewardMultiplier)
       await tusd.approve(loanToken.address, parseEth(5e6))
       await rater.allow(owner.address, true)
@@ -565,9 +572,6 @@ describe('TrueRatingAgencyV2', () => {
         const totalReward = parseTRU(100000).mul(newRewardMultiplier)
         await rater.yes(loanToken.address)
 
-        await trustToken.mint(otherWallet.address, parseTRU(1e8))
-        await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(1e8))
-        await stakedTrustToken.connect(otherWallet).stake(parseTRU(1e8))
         await rater.connect(otherWallet).yes(loanToken.address)
         await loanToken.fund()
 
@@ -577,9 +581,7 @@ describe('TrueRatingAgencyV2', () => {
 
       it('works after distribution ended', async () => {
         await rater.yes(loanToken.address)
-        await trustToken.mint(otherWallet.address, parseTRU(1e8))
-        await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(1e8))
-        await stakedTrustToken.connect(otherWallet).stake(parseTRU(1e8))
+        
         await stakedTrustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address)
         await loanToken.fund()
@@ -595,19 +597,16 @@ describe('TrueRatingAgencyV2', () => {
       })
 
       it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
-        await trustToken.mint(otherWallet.address, stake.mul(3).div(2))
-        await trustToken.connect(otherWallet).approve(stakedTrustToken.address, stake.mul(3).div(2))
-        await stakedTrustToken.connect(otherWallet).stake(stake.mul(3).div(2))
-        await stakedTrustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address)
         await loanToken.fund()
-
+        
         await timeTravel(yearInSeconds)
-        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(4e4), owner)
+        
+        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5).div(11), owner)
         await timeTravel(averageMonthInSeconds * 30)
         await loanToken.close()
         await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(0), owner)
-        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(6e4), otherWallet)
+        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5).mul(10).div(11), otherWallet)
       })
 
       it('does not do anything when called multiple times', async () => {
