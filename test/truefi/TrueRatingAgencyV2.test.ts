@@ -95,7 +95,7 @@ describe('TrueRatingAgencyV2', () => {
     await trustToken.approve(stakedTrustToken.address, stake)
 
     timeTravel = (time: number) => _timeTravel(_provider, time)
-    
+
     await stakedTrustToken.delegate(owner.address)
     await stakedTrustToken.connect(otherWallet).delegate(otherWallet.address)
     await stakedTrustToken.stake(stake)
@@ -581,7 +581,7 @@ describe('TrueRatingAgencyV2', () => {
 
       it('works after distribution ended', async () => {
         await rater.yes(loanToken.address)
-        
+
         await stakedTrustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address)
         await loanToken.fund()
@@ -599,9 +599,9 @@ describe('TrueRatingAgencyV2', () => {
       it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
         await rater.connect(otherWallet).yes(loanToken.address)
         await loanToken.fund()
-        
+
         await timeTravel(yearInSeconds)
-        
+
         await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5).div(11), owner)
         await timeTravel(averageMonthInSeconds * 30)
         await loanToken.close()
