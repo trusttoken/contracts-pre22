@@ -280,7 +280,7 @@ contract GovernorAlpha is ClaimableContract {
     /**
      * @dev Get the actions of a selected proposal
      * @param proposalId ID of a proposal
-     * return An array of target addresses, an array of proposal values, an array of proposal singatures, and an array of calldata
+     * return An array of target addresses, an array of proposal values, an array of proposal signatures, and an array of calldata
      */
     function getActions(uint proposalId) public view returns (address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas) {
         Proposal storage p = proposals[proposalId];

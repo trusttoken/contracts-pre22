@@ -19,21 +19,27 @@ import { TrueRatingAgencyV2Factory, TrueRatingAgencyV2,
   LoanToken,
   MockTrueCurrencyFactory,
   MockTrueCurrency,
-  ArbitraryDistributorFactory,
-  ArbitraryDistributor,
   ILoanFactoryJson,
   ArbitraryDistributorJson,
+  StkTruToken,
+  StkTruTokenFactory,
+  LinearTrueDistributorFactory,
+  LinearTrueDistributor,
+  ArbitraryDistributorFactory,
+  ArbitraryDistributor,
 } from 'contracts'
 
 describe('TrueRatingAgencyV2', () => {
   let owner: Wallet
   let otherWallet: Wallet
+  let liquidator: Wallet
 
   let rater:TrueRatingAgencyV2
   let trustToken: TrustToken
-  let stakedTrustToken: TrustToken
+  let stakedTrustToken: StkTruToken
   let loanToken: LoanToken
-  let distributor: ArbitraryDistributor
+  let arbitraryDistributor: ArbitraryDistributor
+  let linearDistributor: LinearTrueDistributor
   let tusd: MockTrueCurrency
   let mockFactory: MockContract
 
@@ -51,14 +57,17 @@ describe('TrueRatingAgencyV2', () => {
   let timeTravel: (time: number) => void
 
   beforeEachWithFixture(async (_wallets, _provider) => {
-    [owner, otherWallet] = _wallets
+    [owner, otherWallet, liquidator] = _wallets
 
     trustToken = await new TrustTokenFactory(owner).deploy()
     await trustToken.initialize()
-    stakedTrustToken = await new TrustTokenFactory(owner).deploy()
-    await stakedTrustToken.initialize()
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
-    await tusd.mint(owner.address, parseEth(1e7))
+
+    arbitraryDistributor = await new ArbitraryDistributorFactory(owner).deploy()
+    linearDistributor = await new LinearTrueDistributorFactory(owner).deploy()
+
+    stakedTrustToken = await new StkTruTokenFactory(owner).deploy()
+    await stakedTrustToken.initialize(trustToken.address, tusd.address, linearDistributor.address, liquidator.address)
 
     loanToken = await new LoanTokenFactory(owner).deploy(
       tusd.address,
@@ -71,19 +80,21 @@ describe('TrueRatingAgencyV2', () => {
     )
     await tusd.approve(loanToken.address, 5_000_000)
 
-    distributor = await new ArbitraryDistributorFactory(owner).deploy()
     mockFactory = await deployMockContract(owner, ILoanFactoryJson.abi)
     rater = await new TrueRatingAgencyV2Factory(owner).deploy()
+    await arbitraryDistributor.initialize(rater.address, trustToken.address, stake)
 
     await mockFactory.mock.isLoanToken.returns(true)
-    await distributor.initialize(rater.address, trustToken.address, stake)
-    await rater.initialize(trustToken.address, stakedTrustToken.address, distributor.address, mockFactory.address)
+    await rater.initialize(trustToken.address, stakedTrustToken.address, arbitraryDistributor.address, mockFactory.address)
     await rater.setRatersRewardFactor(10000)
 
-    await stakedTrustToken.mint(owner.address, stake)
+    await tusd.mint(owner.address, parseEth(1e7))
 
-    await trustToken.mint(owner.address, stake)
-    await trustToken.mint(distributor.address, stake)
+    await trustToken.mint(owner.address, stake.mul(2))
+    await trustToken.mint(arbitraryDistributor.address, stake)
+    await trustToken.approve(stakedTrustToken.address, stake)
+
+    await stakedTrustToken.stake(stake)
 
     timeTravel = (time: number) => _timeTravel(_provider, time)
   })
@@ -511,9 +522,9 @@ describe('TrueRatingAgencyV2', () => {
       it('moves proper amount of funds from distributor', async () => {
         await rater.yes(loanToken.address)
         await loanToken.fund()
-        const balanceBefore = await trustToken.balanceOf(distributor.address)
+        const balanceBefore = await trustToken.balanceOf(arbitraryDistributor.address)
         await rater.claim(loanToken.address, owner.address, txArgs)
-        const balanceAfter = await trustToken.balanceOf(distributor.address)
+        const balanceAfter = await trustToken.balanceOf(arbitraryDistributor.address)
         expectScaledCloseTo(balanceBefore.sub(balanceAfter), parseTRU(1e5))
       })
 
@@ -553,7 +564,10 @@ describe('TrueRatingAgencyV2', () => {
       it('properly saves claimed amount and moves funds (multiple voters)', async () => {
         const totalReward = parseTRU(100000).mul(newRewardMultiplier)
         await rater.yes(loanToken.address)
-        await stakedTrustToken.mint(otherWallet.address, parseTRU(1e8))
+
+        await trustToken.mint(otherWallet.address, parseTRU(1e8))
+        await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(1e8))
+        await stakedTrustToken.connect(otherWallet).stake(parseTRU(1e8))
         await rater.connect(otherWallet).yes(loanToken.address)
         await loanToken.fund()
 
@@ -563,12 +577,14 @@ describe('TrueRatingAgencyV2', () => {
 
       it('works after distribution ended', async () => {
         await rater.yes(loanToken.address)
-        await stakedTrustToken.mint(otherWallet.address, parseTRU(1e8))
+        await trustToken.mint(otherWallet.address, parseTRU(1e8))
+        await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(1e8))
+        await stakedTrustToken.connect(otherWallet).stake(parseTRU(1e8))
         await stakedTrustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address)
         await loanToken.fund()
 
-        await distributor.empty()
+        await arbitraryDistributor.empty()
         await expectRoughTrustTokenBalanceChangeAfterClaim('0', owner)
       })
     })
@@ -579,7 +595,9 @@ describe('TrueRatingAgencyV2', () => {
       })
 
       it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
-        await stakedTrustToken.mint(otherWallet.address, stake.mul(3).div(2))
+        await trustToken.mint(otherWallet.address, stake.mul(3).div(2))
+        await trustToken.connect(otherWallet).approve(stakedTrustToken.address, stake.mul(3).div(2))
+        await stakedTrustToken.connect(otherWallet).stake(stake.mul(3).div(2))
         await stakedTrustToken.connect(otherWallet).approve(rater.address, 3000)
         await rater.connect(otherWallet).yes(loanToken.address)
         await loanToken.fund()
