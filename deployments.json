@@ -30,6 +30,10 @@
       "txHash": "0x3439bdd66e0396ebaa12e4acee9ccf49d3cea6ed4b01bf8b5a915e86784b8f66",
       "address": "0xd943D9CB0904bB2a057f2e6AdE738daCA3e5d405"
     },
+    "ratingAgency_proxy": {
+      "txHash": "0x01affeea8141c88291caf718ccee1799ed7ebc4d3a4e1266bf100111c58a15ae",
+      "address": "0xBaf182DDCBE010F764bcC1e1FE25a71Fe6FdA6F7"
+    },
     "tru": {
       "txHash": "0xe54a2a7163c860b3afc2ee411434e38b0c795534a8536116dfeba5568adb1d5d",
       "address": "0x281cFD0918C3C0f534C5d30c8E1E4280C84355b4"
@@ -105,6 +109,10 @@
     "mockOracle": {
       "txHash": "0xff1f3e31712e9f15e38ab999ee7439ed5daa3caa54f22c571fc70d3c300cc3e3",
       "address": "0xE3A4359045CF14C4466c3E80Fc279527cbD754cD"
+    },
+    "ratingAgency": {
+      "txHash": "0x9e0a5c58c369ec6b5499d05f9f4f127dcf9e52436c1e601a2c1700b9de86898d",
+      "address": "0x3a877100BA78198a0cb7269C65bf7313D8A8Fa82"
     }
   },
   "mainnet": {

@@ -9,7 +9,7 @@ import {
   StkTruToken,
   Timelock,
   TimeOwnedUpgradeabilityProxy,
-  TrueFiPool,
+  TrueFiPool, TrueRatingAgency,
   TrueRatingAgencyV2,
   TruPriceUniswapOracle,
   TrustToken,
@@ -29,11 +29,14 @@ deploy({}, (deployer) => {
   const GOV_GUARDIAN = deployer
 
   const proxy = createProxy(OwnedUpgradeabilityProxy)
+
+
   const timeOwnedProxy = createProxy(TimeOwnedUpgradeabilityProxy)
   // Existing contracts
   const tru = timeOwnedProxy(contract('tru', TrustToken), () => {})
   const pool = proxy(contract('pool', TrueFiPool), () => {})
   const factory = proxy(contract('factory', LoanFactory), () => {})
+  proxy(contract('ratingAgency', TrueRatingAgency), () => {})
 
   // New contracts
   const distributionStart = Date.parse(DISTRIBUTION_START) / 1000
