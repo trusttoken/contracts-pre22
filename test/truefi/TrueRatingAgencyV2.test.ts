@@ -418,20 +418,20 @@ describe('TrueRatingAgencyV2', () => {
       it('reverts when Loan status is greater than pending', async () => {
         await rater.yes(loanToken.address)
         await loanToken.fund()
-        await expect(rater.cancel(loanToken.address))
+        await expect(rater.resetCastRatings(loanToken.address))
           .to.be.revertedWith('TrueRatingAgencyV2: Loan is not currently pending')
       })
 
       it('cancels yes ratings', async () => {
         await rater.yes(loanToken.address)
-        await rater.cancel(loanToken.address)
+        await rater.resetCastRatings(loanToken.address)
         expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
         expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(0)
       })
 
       it('cancels no ratings', async () => {
         await rater.no(loanToken.address)
-        await rater.cancel(loanToken.address)
+        await rater.resetCastRatings(loanToken.address)
         expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
         expect(await rater.getNoRate(loanToken.address, owner.address)).to.be.equal(0)
       })
@@ -441,7 +441,7 @@ describe('TrueRatingAgencyV2', () => {
         expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(0)
         expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
         expect(await rater.getNoRate(loanToken.address, owner.address)).to.be.equal(0)
-        await rater.cancel(loanToken.address)
+        await rater.resetCastRatings(loanToken.address)
         expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
         expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(0)
         expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
