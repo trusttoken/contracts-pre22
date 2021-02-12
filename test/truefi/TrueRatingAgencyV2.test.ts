@@ -92,7 +92,7 @@ describe('TrueRatingAgencyV2', () => {
 
     await trustToken.mint(owner.address, stake.mul(2))
     await trustToken.mint(arbitraryDistributor.address, stake)
-    await trustToken.approve(stakedTrustToken.address, stake)
+    await trustToken.approve(stakedTrustToken.address, stake.mul(2))
 
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
@@ -445,6 +445,26 @@ describe('TrueRatingAgencyV2', () => {
         expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(0)
         expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
         expect(await rater.getNoVote(loanToken.address, owner.address)).to.be.equal(0)
+      })
+    })
+
+    describe('Calculate votes before Loan submission', () => {
+      it('stakes some more, voting power does not change', async () => {
+        await stakedTrustToken.stake(stake)
+        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
+        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(0)
+        await rater.yes(loanToken.address)
+        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(stake)
+        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(stake)
+      })
+
+      it('transfer to other wallet, other wallet has no voting power', async () => {
+        await stakedTrustToken.transfer(otherWallet.address, stake)
+        await stakedTrustToken.connect(otherWallet).approve(rater.address, stake)
+        await expect(rater.connect(otherWallet).yes(loanToken.address))
+          .to.be.revertedWith('TrueRatingAgencyV2: Cannot vote with empty balance')
+        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
+        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(0)
       })
     })
   })
