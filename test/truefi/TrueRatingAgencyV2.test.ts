@@ -12,7 +12,8 @@ import {
   parseEth,
 } from 'utils'
 
-import { TrueRatingAgencyV2Factory, TrueRatingAgencyV2,
+import {
+  TrueRatingAgencyV2Factory, TrueRatingAgencyV2,
   TrustTokenFactory,
   TrustToken,
   LoanTokenFactory,
@@ -34,7 +35,7 @@ describe('TrueRatingAgencyV2', () => {
   let otherWallet: Wallet
   let liquidator: Wallet
 
-  let rater:TrueRatingAgencyV2
+  let rater: TrueRatingAgencyV2
   let trustToken: TrustToken
   let stakedTrustToken: StkTruToken
   let loanToken: LoanToken
@@ -215,8 +216,8 @@ describe('TrueRatingAgencyV2', () => {
       expect(loan.reward).to.be.equal(0)
       expect(loan.creator).to.equal(owner.address)
       expect(await rater.claimable(loanToken.address, owner.address)).to.equal(0)
-      expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
-      expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
+      expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
+      expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
     })
 
     it('emits event on creation', async () => {
@@ -238,23 +239,23 @@ describe('TrueRatingAgencyV2', () => {
       const loan = await rater.loans(loanToken.address)
       expect(loan.timestamp).to.gt(0)
       expect(loan.creator).to.equal(AddressZero)
-      expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
-      expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
+      expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
+      expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
     })
 
-    it('retracting does not remove information about votes', async () => {
+    it('retracting does not remove information about ratings', async () => {
       await submit(loanToken.address)
       await rater.yes(loanToken.address)
       await rater.retract(loanToken.address)
-      expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(stake)
+      expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(stake)
     })
 
-    it('if loan is retracted, stakers total vote-based prediction is lost', async () => {
+    it('if loan is retracted, stakers total rate-based prediction is lost', async () => {
       await submit(loanToken.address)
       await rater.yes(loanToken.address)
       await rater.retract(loanToken.address)
-      expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
-      expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
+      expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
+      expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
     })
 
     it('reverts if token was not created with LoanFactory', async () => {
@@ -307,37 +308,37 @@ describe('TrueRatingAgencyV2', () => {
           .to.changeTokenBalance(stakedTrustToken, owner, 0)
       })
 
-      it('keeps track of votes', async () => {
+      it('keeps track of ratings', async () => {
         await rater.yes(loanToken.address)
         await rater.loans(loanToken.address)
-        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(stake)
-        expect(await rater.getNoVote(loanToken.address, owner.address)).to.be.equal(0)
+        expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(stake)
+        expect(await rater.getNoRate(loanToken.address, owner.address)).to.be.equal(0)
       })
 
       it('increases loans yes value', async () => {
         await rater.yes(loanToken.address)
-        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(stake)
+        expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(stake)
       })
 
-      it('does not change yes value when voted multiple times', async () => {
+      it('does not change yes value when rated multiple times', async () => {
         await rater.yes(loanToken.address)
-        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(stake)
-        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(stake)
+        expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(stake)
+        expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(stake)
 
         await rater.yes(loanToken.address)
-        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(stake)
-        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(stake)
+        expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(stake)
+        expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(stake)
       })
 
       it('voting yes, after voting no changes choice', async () => {
         await rater.no(loanToken.address)
         await rater.yes(loanToken.address)
 
-        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(stake)
-        expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
+        expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(stake)
+        expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
 
-        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(stake)
-        expect(await rater.getNoVote(loanToken.address, owner.address)).to.be.equal(0)
+        expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(stake)
+        expect(await rater.getNoRate(loanToken.address, owner.address)).to.be.equal(0)
       })
 
       it('is only possible until loan is funded (only pending phase)', async () => {
@@ -353,7 +354,7 @@ describe('TrueRatingAgencyV2', () => {
 
       it('emits proper event', async () => {
         await expect(rater.yes(loanToken.address))
-          .to.emit(rater, 'Voted').withArgs(loanToken.address, owner.address, true, stake)
+          .to.emit(rater, 'Rated').withArgs(loanToken.address, owner.address, true, stake)
       })
     })
 
@@ -363,37 +364,37 @@ describe('TrueRatingAgencyV2', () => {
           .to.changeTokenBalance(stakedTrustToken, owner, 0)
       })
 
-      it('keeps track of votes', async () => {
+      it('keeps track of ratings', async () => {
         await rater.no(loanToken.address)
         await rater.loans(loanToken.address)
-        expect(await rater.getNoVote(loanToken.address, owner.address)).to.be.equal(stake)
-        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(0)
+        expect(await rater.getNoRate(loanToken.address, owner.address)).to.be.equal(stake)
+        expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(0)
       })
 
       it('increases loans no value', async () => {
         await rater.no(loanToken.address)
-        expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(stake)
+        expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(stake)
       })
 
-      it('does not change no value when voted multiple times', async () => {
+      it('does not change no value when rated multiple times', async () => {
         await rater.no(loanToken.address)
-        expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(stake)
-        expect(await rater.getNoVote(loanToken.address, owner.address)).to.be.equal(stake)
+        expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(stake)
+        expect(await rater.getNoRate(loanToken.address, owner.address)).to.be.equal(stake)
 
         await rater.no(loanToken.address)
-        expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(stake)
-        expect(await rater.getNoVote(loanToken.address, owner.address)).to.be.equal(stake)
+        expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(stake)
+        expect(await rater.getNoRate(loanToken.address, owner.address)).to.be.equal(stake)
       })
 
       it('voting no, after voting yes changes choice', async () => {
         await rater.yes(loanToken.address)
         await rater.no(loanToken.address)
 
-        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
-        expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(stake)
+        expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
+        expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(stake)
 
-        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(0)
-        expect(await rater.getNoVote(loanToken.address, owner.address)).to.be.equal(stake)
+        expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(0)
+        expect(await rater.getNoRate(loanToken.address, owner.address)).to.be.equal(stake)
       })
 
       it('is only possible until loan is funded (only pending phase)', async () => {
@@ -409,7 +410,7 @@ describe('TrueRatingAgencyV2', () => {
 
       it('emits proper event', async () => {
         await expect(rater.no(loanToken.address))
-          .to.emit(rater, 'Voted').withArgs(loanToken.address, owner.address, false, stake)
+          .to.emit(rater, 'Rated').withArgs(loanToken.address, owner.address, false, stake)
       })
     })
 
@@ -421,50 +422,50 @@ describe('TrueRatingAgencyV2', () => {
           .to.be.revertedWith('TrueRatingAgencyV2: Loan is not currently pending')
       })
 
-      it('cancels yes votes', async () => {
+      it('cancels yes ratings', async () => {
         await rater.yes(loanToken.address)
         await rater.cancel(loanToken.address)
-        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
-        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(0)
+        expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
+        expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(0)
       })
 
-      it('cancels no votes', async () => {
+      it('cancels no ratings', async () => {
         await rater.no(loanToken.address)
         await rater.cancel(loanToken.address)
-        expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
-        expect(await rater.getNoVote(loanToken.address, owner.address)).to.be.equal(0)
+        expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
+        expect(await rater.getNoRate(loanToken.address, owner.address)).to.be.equal(0)
       })
 
       it('does not change anything when nothing staked', async () => {
-        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
-        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(0)
-        expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
-        expect(await rater.getNoVote(loanToken.address, owner.address)).to.be.equal(0)
+        expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
+        expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(0)
+        expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
+        expect(await rater.getNoRate(loanToken.address, owner.address)).to.be.equal(0)
         await rater.cancel(loanToken.address)
-        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
-        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(0)
-        expect(await rater.getTotalNoVotes(loanToken.address)).to.be.equal(0)
-        expect(await rater.getNoVote(loanToken.address, owner.address)).to.be.equal(0)
+        expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
+        expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(0)
+        expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
+        expect(await rater.getNoRate(loanToken.address, owner.address)).to.be.equal(0)
       })
     })
 
-    describe('Calculate votes before Loan submission', () => {
+    describe('Calculate ratings before Loan submission', () => {
       it('stakes some more, voting power does not change', async () => {
         await stakedTrustToken.stake(stake)
-        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
-        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(0)
+        expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
+        expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(0)
         await rater.yes(loanToken.address)
-        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(stake)
-        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(stake)
+        expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(stake)
+        expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(stake)
       })
 
       it('transfer to other wallet, other wallet has no voting power', async () => {
         await stakedTrustToken.transfer(otherWallet.address, stake)
         await stakedTrustToken.connect(otherWallet).approve(rater.address, stake)
         await expect(rater.connect(otherWallet).yes(loanToken.address))
-          .to.be.revertedWith('TrueRatingAgencyV2: Cannot vote with empty balance')
-        expect(await rater.getTotalYesVotes(loanToken.address)).to.be.equal(0)
-        expect(await rater.getYesVote(loanToken.address, owner.address)).to.be.equal(0)
+          .to.be.revertedWith('TrueRatingAgencyV2: Cannot rate with empty balance')
+        expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
+        expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(0)
       })
     })
   })
@@ -581,14 +582,14 @@ describe('TrueRatingAgencyV2', () => {
         await rater.setRewardMultiplier(newRewardMultiplier)
       })
 
-      it('properly saves claimed amount and moves funds (1 voter)', async () => {
+      it('properly saves claimed amount and moves funds (1 rater)', async () => {
         await rater.yes(loanToken.address)
         await loanToken.fund()
         const expectedReward = parseTRU(100000).mul(newRewardMultiplier)
         await expectRoughTrustTokenBalanceChangeAfterClaim(expectedReward)
       })
 
-      it('properly saves claimed amount and moves funds (multiple voters)', async () => {
+      it('properly saves claimed amount and moves funds (multiple raters)', async () => {
         const totalReward = parseTRU(100000).mul(newRewardMultiplier)
         await rater.yes(loanToken.address)
 
@@ -616,7 +617,7 @@ describe('TrueRatingAgencyV2', () => {
         await rater.yes(loanToken.address)
       })
 
-      it('properly saves claimed amount and moves funds (multiple voters, called multiple times)', async () => {
+      it('properly saves claimed amount and moves funds (multiple raters, called multiple times)', async () => {
         await rater.connect(otherWallet).yes(loanToken.address)
         await loanToken.fund()
 
