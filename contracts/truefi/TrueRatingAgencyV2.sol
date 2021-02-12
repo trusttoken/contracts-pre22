@@ -226,8 +226,8 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      */
     function getResults(address id)
         external
-        view
         override
+        view
         returns (
             uint256,
             uint256,
