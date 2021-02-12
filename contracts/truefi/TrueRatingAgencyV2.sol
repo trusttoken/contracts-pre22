@@ -291,7 +291,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         uint256 stake = stkTRU.getPriorVotes(msg.sender, loans[id].blockNumber);
         require(stake > 0, "TrueRatingAgencyV2: Cannot rate with empty balance");
 
-        cancel(id);
+        resetCastRatings(id);
 
         loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
         loans[id].ratings[msg.sender][choice] = loans[id].ratings[msg.sender][choice].add(stake);
@@ -299,7 +299,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         emit Rated(id, msg.sender, choice, stake);
     }
 
-    function _cancel(address id, bool choice) internal {
+    function _resetCastRatings(address id, bool choice) internal {
         loans[id].prediction[choice] = loans[id].prediction[choice].sub(loans[id].ratings[msg.sender][choice]);
         loans[id].ratings[msg.sender][choice] = 0;
     }
@@ -307,11 +307,11 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     /**
      * @dev Cancel ratings of msg.sender
      */
-    function cancel(address id) public onlyPendingLoans(id) {
+    function resetCastRatings(address id) public onlyPendingLoans(id) {
         if (getYesRate(id, msg.sender) > 0) {
-            _cancel(id, true);
+            _resetCastRatings(id, true);
         } else if (getNoRate(id, msg.sender) > 0) {
-            _cancel(id, false);
+            _resetCastRatings(id, false);
         }
     }
 
