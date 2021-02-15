@@ -104,7 +104,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
         uint256 _value
     ) internal virtual override {
         super._transfer(_from, _to, _value);
-        _moveDelegates(delegates[_from], delegates[_to], uint96(_value));
+        _moveDelegates(delegates[_from], delegates[_to], safe96(_value, "StkTruToken: uint96 overflow"));
     }
 
     function _mint(address account, uint256 amount) internal virtual override {
