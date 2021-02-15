@@ -1,0 +1,6 @@
+{
+    "exclude_informational": true,
+    "exclude_low": false,
+    "solc_disable_warnings": true,
+    "detectors_to_exclude": ""
+}
