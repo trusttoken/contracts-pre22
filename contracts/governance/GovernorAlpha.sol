@@ -444,7 +444,7 @@ contract GovernorAlpha is ClaimableContract {
      * @param blockNumber The block number at which the getPriorVotes() check
      * @return The sum of PriorVotes from TRU and stkTRU
      */
-    function countVotes(address account, uint blockNumber) internal view returns (uint96) {
+    function countVotes(address account, uint blockNumber) public view returns (uint96) {
         uint96 truVote = trustToken.getPriorVotes(account, blockNumber);
         uint96 stkTRUVote = stkTRU.getPriorVotes(account, blockNumber);
         uint96 totalVote = add96(truVote, stkTRUVote, "GovernorAlpha: countVotes addition overflow");
