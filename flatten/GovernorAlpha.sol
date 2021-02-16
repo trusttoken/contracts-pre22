@@ -524,7 +524,7 @@ contract GovernorAlpha is ClaimableContract {
     /**
      * @dev Get the actions of a selected proposal
      * @param proposalId ID of a proposal
-     * return An array of target addresses, an array of proposal values, an array of proposal singatures, and an array of calldata
+     * return An array of target addresses, an array of proposal values, an array of proposal signatures, and an array of calldata
      */
     function getActions(uint proposalId) public view returns (address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas) {
         Proposal storage p = proposals[proposalId];
@@ -688,7 +688,7 @@ contract GovernorAlpha is ClaimableContract {
      * @param blockNumber The block number at which the getPriorVotes() check
      * @return The sum of PriorVotes from TRU and stkTRU
      */
-    function countVotes(address account, uint blockNumber) internal view returns (uint96) {
+    function countVotes(address account, uint blockNumber) public view returns (uint96) {
         uint96 truVote = trustToken.getPriorVotes(account, blockNumber);
         uint96 stkTRUVote = stkTRU.getPriorVotes(account, blockNumber);
         uint96 totalVote = add96(truVote, stkTRUVote, "GovernorAlpha: countVotes addition overflow");

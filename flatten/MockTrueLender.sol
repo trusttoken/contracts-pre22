@@ -971,7 +971,7 @@ contract TrueLender is ITrueLender, Ownable {
 
     /**
      * @dev For settled loans, redeem LoanTokens for underlying funds
-     * @param loanToken Loan to reclaim capital from
+     * @param loanToken Loan to reclaim capital from (must be previously funded)
      */
     function reclaim(ILoanToken loanToken) external {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be used to reclaimed");
@@ -997,11 +997,13 @@ contract TrueLender is ITrueLender, Ownable {
             if (_loans[index] == loanToken) {
                 _loans[index] = _loans[_loans.length - 1];
                 _loans.pop();
-                break;
+
+                emit Reclaimed(address(loanToken), fundsReclaimed);
+                return;
             }
         }
-
-        emit Reclaimed(address(loanToken), fundsReclaimed);
+        // If we reach this, it means loanToken was not present in _loans array
+        revert("TrueLender: This loan has not been funded by the lender");
     }
 
     /**
