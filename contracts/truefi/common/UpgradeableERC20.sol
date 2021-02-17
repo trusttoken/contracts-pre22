@@ -325,4 +325,9 @@ contract ERC20 is Initializable, Context, IERC20 {
         address to,
         uint256 amount
     ) internal virtual {}
+
+    function updateNameAndSymbol(string memory name, string memory symbol) internal {
+        _name = name;
+        _symbol = symbol;
+    }
 }
