@@ -87,6 +87,21 @@ describe('TrueFiPool', () => {
     })
   })
 
+  describe('update name and symbol', () => {
+    it('updates name and symbol', async () => {
+      await pool.updateNameAndSymbol()
+      expect(await pool.name()).to.equal('TrueFi TrueUSD')
+      expect(await pool.symbol()).to.equal('tfTUSD')
+    })
+
+    it('multiple calls do not change the effect', async () => {
+      await pool.updateNameAndSymbol()
+      await pool.updateNameAndSymbol()
+      expect(await pool.name()).to.equal('TrueFi TrueUSD')
+      expect(await pool.symbol()).to.equal('tfTUSD')
+    })
+  })
+
   it('cannot exit and join on same transaction', async () => {
     const arbitrage = await new PoolArbitrageTestFactory(owner).deploy()
     await token.transfer(arbitrage.address, parseEth(1))
