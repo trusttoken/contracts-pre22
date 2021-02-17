@@ -86,7 +86,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
     function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = delegates[delegator];
         // OLD: uint96 delegatorBalance = balanceOf(delegator);
-        uint96 delegatorBalance = uint96(_balanceOf(delegator));
+        uint96 delegatorBalance = safe96(_balanceOf(delegator), "StkTruToken: uint96 overflow");
         delegates[delegator] = delegatee;
 
         emit DelegateChanged(delegator, currentDelegate, delegatee);
