@@ -305,15 +305,6 @@ describe('StkTruToken', () => {
 
       await expect(await stkToken.unlockTime(owner.address)).to.equal(MaxUint256)
     })
-
-    it('when unstake is off cooldown, staking does not reset cooldown', async () => {
-      await stkToken.stake(amount.div(2))
-      await stkToken.cooldown()
-      const unlockTimeBefore = await stkToken.unlockTime(owner.address)
-      await timeTravel(provider, stakeCooldown)
-      await stkToken.stake(amount.div(2))
-      await expect(await stkToken.unlockTime(owner.address)).to.equal(unlockTimeBefore)
-    })
   })
 
   describe('Voting power decreases after liquidation', () => {
