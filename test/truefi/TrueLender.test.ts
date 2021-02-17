@@ -154,6 +154,12 @@ describe('TrueLender', () => {
       it('can set minApy to same value as maxApy', async () => {
         await expect(lender.setApyLimits(2, 2)).to.be.not.reverted
       })
+
+      it('sets the rating agency address', async () => {
+        const newMockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
+        await expect(lender.setRatingAgency(newMockRatingAgency.address)).to.emit(lender, 'RatingAgencyChanged').withArgs(newMockRatingAgency.address)
+        expect(await lender.ratingAgency()).to.equal(newMockRatingAgency.address)
+      })
     })
 
     describe('setParticipationFactor', () => {
