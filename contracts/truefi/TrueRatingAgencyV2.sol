@@ -427,10 +427,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
 
         // calculate claimable rewards at current time
         uint256 totalClaimable = loans[id].reward.mul(stakedByRater).div(totalStaked);
-        if (totalClaimable < loans[id].claimed[rater]) {
-            // This happens only in one case: rater withdrew part of stake after loan has ended and claimed all possible rewards
-            return 0;
-        }
+
         return totalClaimable.sub(loans[id].claimed[rater]);
     }
 
