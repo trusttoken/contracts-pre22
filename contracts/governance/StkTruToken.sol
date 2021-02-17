@@ -165,7 +165,7 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     function stake(uint256 amount) external distribute update(msg.sender) {
         require(amount > 0, "StkTruToken: Cannot stake 0");
 
-        if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime) > block.timestamp) {
+        if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime).add(unstakePeriodDuration) > block.timestamp) {
             cooldowns[msg.sender] = block.timestamp;
         }
 
