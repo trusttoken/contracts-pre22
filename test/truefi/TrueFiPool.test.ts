@@ -4,7 +4,7 @@ import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 
 import { toTrustToken } from 'scripts/utils'
 
-import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo } from 'utils'
+import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo, parseTRU } from 'utils'
 
 import {
   ICurveGaugeJson,
@@ -21,7 +21,7 @@ import {
   PoolArbitrageTestFactory,
   TrueRatingAgencyJson,
   MockStakingPool,
-  MockStakingPoolFactory,
+  MockStakingPoolFactory, MockTruPriceOracleFactory,
 } from 'contracts'
 
 describe('TrueFiPool', () => {
@@ -57,6 +57,7 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.balanceOf.returns(0)
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
     lender = await new TrueLenderFactory(owner).deploy()
+    const oracle = await new MockTruPriceOracleFactory(owner).deploy()
     await pool.initialize(
       curvePool.address,
       mockCurveGauge.address,
@@ -64,6 +65,7 @@ describe('TrueFiPool', () => {
       lender.address,
       constants.AddressZero,
       trustToken.address,
+      oracle.address,
     )
     await pool.resetApprovals()
     await lender.initialize(pool.address, mockRatingAgency.address, mockStakingPool.address)
@@ -140,7 +142,7 @@ describe('TrueFiPool', () => {
       expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(9e6).add(parseEth(105e4)).add(calcBorrowerFee(parseEth(2e6)))))
     })
 
-    it('loan tokens + tusd + curve liquidity tokens', async () => {
+    it('loan tokens + tusd + curve liquidity + tru tokens', async () => {
       await token.approve(pool.address, parseEth(1e7))
       await pool.join(parseEth(1e7))
       const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
@@ -152,6 +154,8 @@ describe('TrueFiPool', () => {
       await pool.flush(excludeFee(parseEth(5e6)), 0)
       await curvePool.set_withdraw_price(parseEth(2))
       expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(calcBorrowerFee(parseEth(2e6)))))
+      await trustToken.mint(pool.address, parseTRU(4e5))
+      expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7)).add(parseEth(1e5))).add(calcBorrowerFee(parseEth(2e6)))))
     })
   })
 
