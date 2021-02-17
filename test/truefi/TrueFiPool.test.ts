@@ -23,6 +23,7 @@ import {
   MockStakingPool,
   MockStakingPoolFactory, MockTruPriceOracleFactory,
 } from 'contracts'
+import { AddressZero } from '@ethersproject/constants'
 
 describe('TrueFiPool', () => {
   let provider: MockProvider
@@ -333,6 +334,7 @@ describe('TrueFiPool', () => {
         borrower.address,
         constants.AddressZero,
         trustToken.address,
+        AddressZero,
       )
       await token.approve(pool2.address, parseEth(1e7))
       await pool2.join(parseEth(1e7))
