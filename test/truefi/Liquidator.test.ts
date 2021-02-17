@@ -120,6 +120,11 @@ describe('Liquidator', () => {
         .to.be.revertedWith('Liquidator: Share cannot be set to 0')
     })
 
+    it('cannot set share to number larger than 10000', async () => {
+      await expect(liquidator.setFetchMaxShare(10001))
+        .to.be.revertedWith('Liquidator: Share cannot be larger than 10000')
+    })
+
     it('is changed properly', async () => {
       await liquidator.setFetchMaxShare(500)
       expect(await liquidator.fetchMaxShare()).to.equal(500)
