@@ -285,7 +285,7 @@ contract TrueLender is ITrueLender, Ownable {
 
     /**
      * @dev Set new rating agency. Only owner can change parameters.
-     * @param newRatingAgency New loans limit
+     * @param newRatingAgency New rating agency.
      */
     function setRatingAgency(ITrueRatingAgency newRatingAgency) external onlyOwner {
         ratingAgency = newRatingAgency;
