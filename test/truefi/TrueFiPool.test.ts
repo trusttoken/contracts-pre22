@@ -274,8 +274,13 @@ describe('TrueFiPool', () => {
       expect('add_liquidity').to.be.calledOnContractWith(curvePool, [[0, 0, 0, parseEth(100)], 123])
     })
 
-    it('reverts if not called by owner', async () => {
-      await expect(pool.connect(borrower).flush(1, 0)).to.be.revertedWith('Ownable: caller is not the owner')
+    it('can be called by funds manager', async () => {
+      await pool.setFundsManager(borrower.address)
+      await expect(pool.flush(parseEth(100), 123)).to.be.not.reverted
+    })
+
+    it('reverts if not called by owner or funds manager', async () => {
+      await expect(pool.connect(borrower).flush(1, 0)).to.be.revertedWith('TrueFiPool: Caller is neither owner nor funds manager')
     })
 
     it('reverts if flushing more than tUSD balance', async () => {
@@ -313,8 +318,8 @@ describe('TrueFiPool', () => {
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.eq(0)
     })
 
-    it('reverts if not called by owner', async () => {
-      await expect(pool.connect(borrower).pull(1, 0)).to.be.revertedWith('Ownable: caller is not the owner')
+    it('reverts if not called by owner or funds manager', async () => {
+      await expect(pool.connect(borrower).pull(1, 0)).to.be.revertedWith('TrueFiPool: Caller is neither owner nor funds manager')
     })
 
     it('reverts if flushing more than curve balance', async () => {
@@ -399,8 +404,8 @@ describe('TrueFiPool', () => {
       await expect(pool.collectFees(beneficiary)).to.not.emit(token, 'Transfer')
     })
 
-    it('reverts when called not by owner', async () => {
-      await expect(pool.connect(borrower).collectFees(beneficiary)).to.be.revertedWith('Ownable: caller is not the owner')
+    it('reverts when called not by owner or funds manager', async () => {
+      await expect(pool.connect(borrower).collectFees(beneficiary)).to.be.revertedWith('TrueFiPool: Caller is neither owner nor funds manager')
     })
   })
 
