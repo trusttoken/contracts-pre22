@@ -82,6 +82,7 @@ contract Liquidator is Ownable {
      */
     function setFetchMaxShare(uint256 newShare) external onlyOwner {
         require(newShare > 0, "Liquidator: Share cannot be set to 0");
+        require(newShare <= 10000, "Liquidator: Share cannot be larger than 10000");
         fetchMaxShare = newShare;
         emit FetchMaxShareChanged(newShare);
     }
