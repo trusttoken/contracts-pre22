@@ -183,7 +183,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev get currency token address
      * @return currency token address
      */
-    function currencyToken() public view override returns (IERC20) {
+    function currencyToken() public override view returns (IERC20) {
         return _currencyToken;
     }
 
@@ -191,7 +191,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev get stake token address
      * @return stake token address
      */
-    function stakeToken() public view override returns (IERC20) {
+    function stakeToken() public override view returns (IERC20) {
         return _stakeToken;
     }
 
