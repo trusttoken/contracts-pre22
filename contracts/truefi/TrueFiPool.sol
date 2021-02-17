@@ -591,4 +591,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
         return mintedAmount;
     }
+
+    function updateNameAndSymbol() public {
+        super.updateNameAndSymbol("TrueFi TrueUSD", "tfTUSD");
+    }
 }
