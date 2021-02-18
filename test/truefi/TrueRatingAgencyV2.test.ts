@@ -100,6 +100,8 @@ describe('TrueRatingAgencyV2', () => {
     await stakedTrustToken.delegate(owner.address)
     await stakedTrustToken.connect(otherWallet).delegate(otherWallet.address)
     await stakedTrustToken.stake(stake)
+
+    await rater.allowChangingAllowances(owner.address, true)
   })
 
   const submit = async (loanTokenAddress: string, wallet = owner) =>
@@ -177,9 +179,9 @@ describe('TrueRatingAgencyV2', () => {
         .to.emit(rater, 'Allowed').withArgs(otherWallet.address, false)
     })
 
-    it('reverts when performed by non-owner', async () => {
+    it('reverts when performed by not allowed account', async () => {
       await expect(rater.connect(otherWallet).allow(otherWallet.address, true))
-        .to.be.revertedWith('caller is not the owner')
+        .to.be.revertedWith('TrueFiPool: Cannot change allowances')
     })
   })
 
