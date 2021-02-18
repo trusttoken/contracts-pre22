@@ -65,6 +65,8 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     uint256 public undistributedTfusdRewards;
     uint32 public nextDistributionIndex;
 
+    mapping(address => bool) public whitelistedFeePayers;
+
     // ======= STORAGE DECLARATION END ============
 
     event Stake(address indexed staker, uint256 amount);
@@ -74,12 +76,21 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     event Cooldown(address indexed who, uint256 endTime);
     event CooldownTimeChanged(uint256 newUnstakePeriodDuration);
     event UnstakePeriodDurationChanged(uint256 newUnstakePeriodDuration);
+    event FeePayerWhitelistingStatusChanged(address payer, bool status);
 
     /**
      * @dev Only Liquidator contract can perform TRU liquidations
      */
     modifier onlyLiquidator() {
         require(msg.sender == liquidator, "StkTruToken: Can be called only by the liquidator");
+        _;
+    }
+
+    /**
+     * @dev Only whitelisted payers can pay fees
+     */
+    modifier onlyWhitelistedPayers() {
+        require(whitelistedFeePayers[msg.sender], "StkTruToken: Can be called only by whitelisted payers");
         _;
     }
 
@@ -148,6 +159,17 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
 
         owner_ = msg.sender;
         initalized = true;
+    }
+
+    /**
+     * @dev Owner can use this function to add new addresses to payers whitelist
+     * Only whitelisted payers can call payFee method
+     * @param payer Address that is being added to or removed from whitelist
+     * @param status New whitelisting status
+     */
+    function setPayerWhitelistingStatus(address payer, bool status) external onlyOwner {
+        whitelistedFeePayers[payer] = status;
+        emit FeePayerWhitelistingStatusChanged(payer, status);
     }
 
     /**
@@ -263,7 +285,7 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
      * @dev Give tfUSD as origination fee to stake.this
      * 50% are given immediately and 50% after `endTime` passes
      */
-    function payFee(uint256 amount, uint256 endTime) external {
+    function payFee(uint256 amount, uint256 endTime) external onlyWhitelistedPayers {
         require(endTime < type(uint64).max, "StkTruToken: time overflow");
         require(amount < type(uint96).max, "StkTruToken: amount overflow");
 
