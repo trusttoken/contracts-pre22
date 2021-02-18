@@ -278,10 +278,21 @@ describe('StkTruToken', () => {
       await expect(await stkToken.unlockTime(owner.address)).to.equal(unlockTimeBefore)
     })
 
-    it('staking more resets cooldown', async () => {
+    it('staking more resets cooldown and emits event', async () => {
       await stkToken.stake(amount.div(2))
       await stkToken.cooldown()
       await timeTravel(provider, DAY)
+      const tx = await stkToken.stake(amount.div(2))
+      const block = await provider.getBlock(tx.blockNumber)
+
+      await expect(await stkToken.unlockTime(owner.address)).to.equal(block.timestamp + 14 * DAY)
+      await expect(Promise.resolve(tx)).to.emit(stkToken, 'Cooldown')
+    })
+
+    it('staking more while on unstake period resets cooldown', async () => {
+      await stkToken.stake(amount.div(2))
+      await stkToken.cooldown()
+      await timeTravel(provider, stakeCooldown + DAY)
       const tx = await stkToken.stake(amount.div(2))
       const block = await provider.getBlock(tx.blockNumber)
 
@@ -294,15 +305,6 @@ describe('StkTruToken', () => {
       await timeTravel(provider, stakeCooldown + 2 * DAY + 1)
 
       await expect(await stkToken.unlockTime(owner.address)).to.equal(MaxUint256)
-    })
-
-    it('when unstake is off cooldown, staking does not reset cooldown', async () => {
-      await stkToken.stake(amount.div(2))
-      await stkToken.cooldown()
-      const unlockTimeBefore = await stkToken.unlockTime(owner.address)
-      await timeTravel(provider, stakeCooldown)
-      await stkToken.stake(amount.div(2))
-      await expect(await stkToken.unlockTime(owner.address)).to.equal(unlockTimeBefore)
     })
   })
 
