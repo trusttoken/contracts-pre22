@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {Ownable} from "./common/UpgradeableOwnable.sol";
-import {LoanToken, IERC20} from "./LoanToken.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {ILoanToken} from "./interface/ILoanToken.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
@@ -108,6 +108,7 @@ contract Liquidator is Ownable {
         require(factory.isLoanToken(address(loan)), "Liquidator: Unknown loan");
         uint256 defaultedValue = getAmountToWithdraw(loan.debt().sub(loan.repaid()));
         stkTru.withdraw(defaultedValue);
+        require(loan.status() == ILoanToken.Status.Defaulted, "Liquidator: Loan must be defaulted");
         loan.liquidate();
         require(tru.transfer(address(pool), defaultedValue));
         emit Liquidated(loan);
