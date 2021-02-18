@@ -312,7 +312,7 @@ describe('StkTruToken', () => {
     beforeEach(async () => {
       await stkToken.delegate(owner.address)
       await stkToken.stake(amount)
-      ; ({ blockNumber: withdrawBlockNumber } = await (await stkToken.connect(liquidator).withdraw(parseTRU(1))).wait())
+      ;({ blockNumber: withdrawBlockNumber } = await (await stkToken.connect(liquidator).withdraw(parseTRU(1))).wait())
     })
 
     it('getCurrentVotes has decreased', async () => {
