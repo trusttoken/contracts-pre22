@@ -141,6 +141,12 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         initalized = true;
     }
 
+    /**
+     * @dev Owner can use this function to add new addresses to payers whitelist
+     * Only whitelisted payers can call payFee method
+     * @param payer Address that is being added to or removed from whitelist
+     * @param status New whitelisting status
+     */
     function setPayerWhitelistingStatus(address payer, bool status) external onlyOwner {
         whitelistedFeePayers[payer] = status;
         emit FeePayerWhitelistingStatusChanged(payer, status);
