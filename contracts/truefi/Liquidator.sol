@@ -108,6 +108,7 @@ contract Liquidator is Ownable {
         require(factory.isLoanToken(address(loan)), "Liquidator: Unknown loan");
         uint256 defaultedValue = getAmountToWithdraw(loan.debt().sub(loan.repaid()));
         stkTru.withdraw(defaultedValue);
+        require(loan.status == Status.Defaulted, "Liquidator: Loan must be defaulted");
         loan.liquidate();
         require(tru.transfer(address(pool), defaultedValue));
         emit Liquidated(loan);
