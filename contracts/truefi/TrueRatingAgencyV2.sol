@@ -21,9 +21,10 @@ import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
  * TrueFi uses use a prediction market to signal how risky a loan is.
  * The Credit Prediction Market estimates the likelihood of a loan defaulting.
  * Any stkTRU holder can rate YES or NO and stake TRU as collateral on their rate.
+ * Voting weight is equal to delegated governance power (see VoteToken.sol)
  * If a loan is funded, TRU is rewarded as incentive for participation
  * Rating stkTRU in the prediction market allows raters to earn and claim TRU
- * incentive when the loan is passed
+ * incentive when the loan is approved
  *
  * Voting Lifecycle:
  * - Borrowers can apply for loans at any time by deploying a LoanToken

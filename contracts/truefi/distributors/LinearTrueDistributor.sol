@@ -138,6 +138,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
 
     /**
      * @dev Change amount of tokens distributed daily by changing total distributed amount
+     * @param dailyDistribution New daily distribution
      */
     function setDailyDistribution(uint256 dailyDistribution) public onlyOwner {
         distribute();

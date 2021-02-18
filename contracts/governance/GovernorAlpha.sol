@@ -19,15 +19,12 @@ import {IVoteToken} from "./interface/IVoteToken.sol";
 
 contract GovernorAlpha is ClaimableContract {
     // @notice The name of this contract
-    // OLD: string public constant name = "Compound Governor Alpha";
     string public constant name = "TrustToken Governor Alpha";
 
     // @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
-    // OLD: function quorumVotes() public pure returns (uint) { return 400000e18; } // 400,000 = 4% of Comp
     function quorumVotes() public pure returns (uint) { return 10000000e8; } // 10,000,000 Tru
 
     // @notice The number of votes required in order for a voter to become a proposer
-    // OLD: function proposalThreshold() public pure returns (uint) { return 100000e18; } // 100,000 = 1% of Comp
     function proposalThreshold() public pure returns (uint) { return 100000e8; } // 100,000 TRU
 
     // @notice The maximum number of actions that can be included in a proposal
@@ -37,14 +34,12 @@ contract GovernorAlpha is ClaimableContract {
     function votingDelay() public pure returns (uint) { return 1; } // 1 block
 
     // @notice The duration of voting on a proposal, in blocks
-    // OLD: function votingPeriod() public pure returns (uint) { return 17280; } // ~3 days in blocks (assuming 15s blocks)
     uint public votingPeriod;
 
     // @notice The address of the TrustToken Protocol Timelock
     ITimelock public timelock;
 
     // @notice The address of the TrustToken governance token
-    // OLD: CompInterface public comp;
     IVoteToken public trustToken;
 
     // @notice The address of the stkTRU voting token

@@ -89,6 +89,7 @@ contract Liquidator is Ownable {
 
     /**
      * @dev Change oracle
+     * @param newOracle New oracle for liquidator
      */
     function setOracle(ITruPriceOracle newOracle) external onlyOwner {
         // Check if new oracle implements method
@@ -117,6 +118,7 @@ contract Liquidator is Ownable {
     /**
      * @dev Calculate amount of tru to be withdrawn from staking pool (not more than preset share)
      * @param deficit Amount of tusd lost on defaulted loan
+     * @return amount of TRU to be withdrawn on liquidation
      */
     function getAmountToWithdraw(uint256 deficit) internal view returns (uint256) {
         uint256 stakingPoolSupply = stkTru.stakeSupply();
