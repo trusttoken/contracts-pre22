@@ -312,7 +312,7 @@ describe('StkTruToken', () => {
     beforeEach(async () => {
       await stkToken.delegate(owner.address)
       await stkToken.stake(amount)
-      ;({ blockNumber: withdrawBlockNumber } = await (await stkToken.connect(liquidator).withdraw(parseTRU(1))).wait())
+        ; ({ blockNumber: withdrawBlockNumber } = await (await stkToken.connect(liquidator).withdraw(parseTRU(1))).wait())
     })
 
     it('getCurrentVotes has decreased', async () => {
@@ -381,8 +381,27 @@ describe('StkTruToken', () => {
     }
 
     beforeEach(async () => {
-      await tfusd.mint(owner.address, MaxUint256)
-      await tfusd.approve(stkToken.address, MaxUint256)
+      await tfusd.mint(owner.address, MaxUint256.div(2))
+      await tfusd.approve(stkToken.address, MaxUint256.div(2))
+      await stkToken.setPayerWhitelistingStatus(owner.address, true)
+    })
+
+    it('is not possible without whitelisting', async () => {
+      await stkToken.setPayerWhitelistingStatus(owner.address, false)
+      await expect(stkToken.payFee(1, 100))
+        .to.be.revertedWith('StkTruToken: Can be called only by whitelisted payers')
+      await stkToken.setPayerWhitelistingStatus(owner.address, true)
+      await expect(stkToken.payFee(1, 100))
+        .not.to.be.reverted
+
+
+      await tfusd.mint(staker.address, MaxUint256.div(2))
+      await tfusd.connect(staker).approve(stkToken.address, MaxUint256.div(2))
+      await expect(stkToken.connect(staker).payFee(1, 100))
+        .to.be.revertedWith('StkTruToken: Can be called only by whitelisted payers')
+      await stkToken.setPayerWhitelistingStatus(staker.address, true)
+      await expect(stkToken.connect(staker).payFee(1, 100))
+        .not.to.be.reverted
     })
 
     it('keeps list sorted', async () => {
