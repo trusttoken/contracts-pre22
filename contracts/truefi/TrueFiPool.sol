@@ -318,7 +318,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @return pool value in TUSD
      */
     function poolValue() public view returns (uint256) {
-        return liquidValue().add(loansValue()).add(truValue());
+        // this assumes defaulted loans are worth their full value
+        return liquidValue().add(loansValue());
     }
 
     /**

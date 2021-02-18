@@ -23,6 +23,7 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
  * Withdrawn:   Borrower withdraws money, loan waiting to be repaid
  * Settled:     Loan has been paid back in full with interest
  * Defaulted:   Loan has not been paid back in full
+ * Liquidated:  Loan has Defaulted and stakers have been Liquidated
  *
  * - LoanTokens are non-transferable except for whitelisted addresses
  * - This version of LoanToken only supports a single funder
