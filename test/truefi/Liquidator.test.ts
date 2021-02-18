@@ -153,11 +153,11 @@ describe('Liquidator', () => {
 
     it('reverts if loan is not defaulted', async () => {
       await expect(liquidator.liquidate(loanToken.address))
-        .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+        .to.be.revertedWith('Liquidator: Loan must be defaulted')
 
       await timeTravel(provider, defaultedLoanCloseTime)
       await expect(liquidator.liquidate(loanToken.address))
-        .to.be.revertedWith('LoanToken: Current status should be Defaulted')
+        .to.be.revertedWith('Liquidator: Loan must be defaulted')
     })
 
     it('reverts if loan was not created via factory', async () => {

@@ -4,7 +4,7 @@ import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 
 import { toTrustToken } from 'scripts/utils'
 
-import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo, parseTRU } from 'utils'
+import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo } from 'utils'
 
 import {
   ICurveGaugeJson,
@@ -170,8 +170,8 @@ describe('TrueFiPool', () => {
       await pool.flush(excludeFee(parseEth(5e6)), 0)
       await curvePool.set_withdraw_price(parseEth(2))
       expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(calcBorrowerFee(parseEth(2e6)))))
-      await trustToken.mint(pool.address, parseTRU(4e5))
-      expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7)).add(parseEth(1e5))).add(calcBorrowerFee(parseEth(2e6)))))
+      // await trustToken.mint(pool.address, parseTRU(4e5))
+      // expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7)).add(parseEth(1e5))).add(calcBorrowerFee(parseEth(2e6)))))
     })
   })
 
