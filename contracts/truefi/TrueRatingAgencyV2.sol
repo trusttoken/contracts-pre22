@@ -82,8 +82,11 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     // are submissions paused?
     bool public submissionPauseStatus;
 
+    mapping(address => bool) public canChangeAllowance;
+
     // ======= STORAGE DECLARATION END ============
 
+    event CanChangeAllowanceChanged(address indexed who, bool status);
     event Allowed(address indexed who, bool status);
     event RatersRewardFactorChanged(uint256 ratersRewardFactor);
     event LoanSubmitted(address id);
@@ -238,11 +241,20 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     }
 
     /**
+     * @dev Allows addresses to whitelist borrowers
+     */
+    function allowChangingAllowances(address who, bool status) external onlyOwner {
+        canChangeAllowance[who] = status;
+        emit CanChangeAllowanceChanged(who, status);
+    }
+
+    /**
      * @dev Whitelist borrowers to submit loans for rating
      * @param who Account to whitelist
      * @param status Flag to whitelist accounts
      */
-    function allow(address who, bool status) external onlyOwner {
+    function allow(address who, bool status) external {
+        require(canChangeAllowance[msg.sender], "TrueFiPool: Cannot change allowances");
         allowedSubmitters[who] = status;
         emit Allowed(who, status);
     }
@@ -427,10 +439,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
 
         // calculate claimable rewards at current time
         uint256 totalClaimable = loans[id].reward.mul(stakedByRater).div(totalStaked);
-        if (totalClaimable < loans[id].claimed[rater]) {
-            // This happens only in one case: rater withdrew part of stake after loan has ended and claimed all possible rewards
-            return 0;
-        }
+
         return totalClaimable.sub(loans[id].claimed[rater]);
     }
 

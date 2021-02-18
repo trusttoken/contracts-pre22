@@ -156,6 +156,12 @@ contract TrueLender is ITrueLender, Ownable {
     event Reclaimed(address indexed loanToken, uint256 amount);
 
     /**
+     * @dev Emitted when rating agency contract is changed
+     * @param newRatingAgency Address of new rating agency
+     */
+    event RatingAgencyChanged(address newRatingAgency);
+
+    /**
      * @dev Modifier for only lending pool
      */
     modifier onlyPool() {
@@ -275,6 +281,15 @@ contract TrueLender is ITrueLender, Ownable {
     function setLoansLimit(uint256 newLoansLimit) external onlyOwner {
         maxLoans = newLoansLimit;
         emit LoansLimitChanged(maxLoans);
+    }
+
+    /**
+     * @dev Set new rating agency. Only owner can change parameters.
+     * @param newRatingAgency New rating agency.
+     */
+    function setRatingAgency(ITrueRatingAgency newRatingAgency) external onlyOwner {
+        ratingAgency = newRatingAgency;
+        emit RatingAgencyChanged(address(newRatingAgency));
     }
 
     /**

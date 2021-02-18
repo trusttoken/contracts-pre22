@@ -60,6 +60,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     ITruPriceOracle public _oracle;
 
+    address public fundsManager;
+
     // ======= STORAGE DECLARATION END ============
 
     // curve.fi data
@@ -77,6 +79,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param newOracle New oracle address
      */
     event OracleChanged(ITruPriceOracle newOracle);
+
+    /**
+     * @dev Emitted when funds manager is changed
+     * @param newManager New manager address
+     */
+    event FundsManagerChanged(address newManager);
 
     /**
      * @dev Emitted when fee is changed
@@ -174,6 +182,14 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
+     * @dev only lender can perform borrowing or repaying
+     */
+    modifier onlyOwnerOrManager() {
+        require(msg.sender == owner() || msg.sender == fundsManager, "TrueFiPool: Caller is neither owner nor funds manager");
+        _;
+    }
+
+    /**
      * Sync values to avoid making expensive calls multiple times
      * Will set inSync to true, allowing getter functions to return cached values
      * Wipes cached values to save gas
@@ -213,6 +229,14 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     function setStakeToken(IERC20 token) public onlyOwner {
         _stakeToken = token;
         emit StakeTokenChanged(token);
+    }
+
+    /**
+     * @dev set funds manager address
+     */
+    function setFundsManager(address newFundsManager) public onlyOwner {
+        fundsManager = newFundsManager;
+        emit FundsManagerChanged(newFundsManager);
     }
 
     /**
@@ -455,7 +479,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param currencyAmount Amount of funds to deposit into curve
      * @param minMintAmount Minimum amount to mint
      */
-    function flush(uint256 currencyAmount, uint256 minMintAmount) external onlyOwner {
+    function flush(uint256 currencyAmount, uint256 minMintAmount) external onlyOwnerOrManager {
         require(currencyAmount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
@@ -477,7 +501,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param yAmount amount of curve pool tokens
      * @param minCurrencyAmount minimum amount of tokens to withdraw
      */
-    function pull(uint256 yAmount, uint256 minCurrencyAmount) external onlyOwner {
+    function pull(uint256 yAmount, uint256 minCurrencyAmount) external onlyOwnerOrManager {
         require(yAmount <= yTokenBalance(), "TrueFiPool: Insufficient Curve liquidity balance");
 
         // unstake in gauge
@@ -532,7 +556,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     /**
      * @dev Collect CRV tokens minted by staking at gauge
      */
-    function collectCrv() external onlyOwner {
+    function collectCrv() external onlyOwnerOrManager {
         _minter.mint(address(_curveGauge));
     }
 
@@ -551,7 +575,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         uint256 amountIn,
         uint256 amountOutMin,
         address[] calldata path
-    ) public onlyOwner {
+    ) public onlyOwnerOrManager {
         _minter.token().approve(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
@@ -571,7 +595,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         uint256 amountIn,
         uint256 amountOutMin,
         address[] calldata path
-    ) public onlyOwner {
+    ) public onlyOwnerOrManager {
         _stakeToken.approve(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
@@ -580,7 +604,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev Claim fees from the pool
      * @param beneficiary account to send funds to
      */
-    function collectFees(address beneficiary) external onlyOwner {
+    function collectFees(address beneficiary) external onlyOwnerOrManager {
         uint256 amount = claimableFees;
         claimableFees = 0;
 
@@ -641,5 +665,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _mint(msg.sender, mintedAmount);
 
         return mintedAmount;
+    }
+
+    function updateNameAndSymbol() public {
+        super.updateNameAndSymbol("TrueFi TrueUSD", "tfTUSD");
     }
 }
