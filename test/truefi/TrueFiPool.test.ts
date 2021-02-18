@@ -4,7 +4,7 @@ import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 
 import { toTrustToken } from 'scripts/utils'
 
-import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo } from 'utils'
+import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo, parseTRU } from 'utils'
 
 import {
   ICurveGaugeJson,
@@ -21,8 +21,9 @@ import {
   PoolArbitrageTestFactory,
   TrueRatingAgencyJson,
   MockStakingPool,
-  MockStakingPoolFactory,
+  MockStakingPoolFactory, MockTruPriceOracleFactory,
 } from 'contracts'
+import { AddressZero } from '@ethersproject/constants'
 
 describe('TrueFiPool', () => {
   let provider: MockProvider
@@ -57,6 +58,7 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.balanceOf.returns(0)
     await mockCurveGauge.mock.minter.returns(constants.AddressZero)
     lender = await new TrueLenderFactory(owner).deploy()
+    const oracle = await new MockTruPriceOracleFactory(owner).deploy()
     await pool.initialize(
       curvePool.address,
       mockCurveGauge.address,
@@ -64,6 +66,7 @@ describe('TrueFiPool', () => {
       lender.address,
       constants.AddressZero,
       trustToken.address,
+      oracle.address,
     )
     await pool.resetApprovals()
     await lender.initialize(pool.address, mockRatingAgency.address, mockStakingPool.address)
@@ -155,7 +158,7 @@ describe('TrueFiPool', () => {
       expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(9e6).add(parseEth(105e4)).add(calcBorrowerFee(parseEth(2e6)))))
     })
 
-    it('loan tokens + tusd + curve liquidity tokens', async () => {
+    it('loan tokens + tusd + curve liquidity + tru tokens', async () => {
       await token.approve(pool.address, parseEth(1e7))
       await pool.join(parseEth(1e7))
       const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
@@ -167,6 +170,8 @@ describe('TrueFiPool', () => {
       await pool.flush(excludeFee(parseEth(5e6)), 0)
       await curvePool.set_withdraw_price(parseEth(2))
       expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(calcBorrowerFee(parseEth(2e6)))))
+      await trustToken.mint(pool.address, parseTRU(4e5))
+      expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7)).add(parseEth(1e5))).add(calcBorrowerFee(parseEth(2e6)))))
     })
   })
 
@@ -284,8 +289,13 @@ describe('TrueFiPool', () => {
       expect('add_liquidity').to.be.calledOnContractWith(curvePool, [[0, 0, 0, parseEth(100)], 123])
     })
 
-    it('reverts if not called by owner', async () => {
-      await expect(pool.connect(borrower).flush(1, 0)).to.be.revertedWith('Ownable: caller is not the owner')
+    it('can be called by funds manager', async () => {
+      await pool.setFundsManager(borrower.address)
+      await expect(pool.flush(parseEth(100), 123)).to.be.not.reverted
+    })
+
+    it('reverts if not called by owner or funds manager', async () => {
+      await expect(pool.connect(borrower).flush(1, 0)).to.be.revertedWith('TrueFiPool: Caller is neither owner nor funds manager')
     })
 
     it('reverts if flushing more than tUSD balance', async () => {
@@ -323,8 +333,8 @@ describe('TrueFiPool', () => {
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.eq(0)
     })
 
-    it('reverts if not called by owner', async () => {
-      await expect(pool.connect(borrower).pull(1, 0)).to.be.revertedWith('Ownable: caller is not the owner')
+    it('reverts if not called by owner or funds manager', async () => {
+      await expect(pool.connect(borrower).pull(1, 0)).to.be.revertedWith('TrueFiPool: Caller is neither owner nor funds manager')
     })
 
     it('reverts if flushing more than curve balance', async () => {
@@ -344,6 +354,7 @@ describe('TrueFiPool', () => {
         borrower.address,
         constants.AddressZero,
         trustToken.address,
+        AddressZero,
       )
       await token.approve(pool2.address, parseEth(1e7))
       await pool2.join(parseEth(1e7))
@@ -408,8 +419,8 @@ describe('TrueFiPool', () => {
       await expect(pool.collectFees(beneficiary)).to.not.emit(token, 'Transfer')
     })
 
-    it('reverts when called not by owner', async () => {
-      await expect(pool.connect(borrower).collectFees(beneficiary)).to.be.revertedWith('Ownable: caller is not the owner')
+    it('reverts when called not by owner or funds manager', async () => {
+      await expect(pool.connect(borrower).collectFees(beneficiary)).to.be.revertedWith('TrueFiPool: Caller is neither owner nor funds manager')
     })
   })
 
