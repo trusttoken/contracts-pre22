@@ -334,6 +334,8 @@ contract TrueLender is ITrueLender, Ownable {
 
     /**
      * @dev Temporary fix for old LoanTokens with incorrect value calculation
+     * @param loan Loan to calculate value for
+     * @return value of a given loan
      */
     function loanValue(ILoanToken loan) public view returns (uint256) {
         uint256 _balance = loan.balanceOf(address(this));
@@ -347,7 +349,7 @@ contract TrueLender is ITrueLender, Ownable {
         }
 
         uint256 helper = loan.amount().mul(loan.apy()).mul(passed).mul(_balance);
-        // assume month is 30 days
+        // assume year is 365 days
         uint256 interest = helper.div(365 days).div(10000).div(loan.debt());
 
         return loan.amount().mul(_balance).div(loan.debt()).add(interest);
@@ -400,6 +402,7 @@ contract TrueLender is ITrueLender, Ownable {
             }
         }
         // If we reach this, it means loanToken was not present in _loans array
+        // This prevents invalid loans from being reclaimed
         revert("TrueLender: This loan has not been funded by the lender");
     }
 
