@@ -169,6 +169,10 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
             cooldowns[msg.sender] = block.timestamp;
         }
 
+        if (delegates[msg.sender] == address(0)) {
+            delegates[msg.sender] = msg.sender;
+        }
+
         uint256 amountToMint = stakeSupply == 0 ? amount : amount.mul(totalSupply).div(stakeSupply);
         _mint(msg.sender, amountToMint);
         stakeSupply = stakeSupply.add(amount);
