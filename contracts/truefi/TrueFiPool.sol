@@ -60,6 +60,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     ITruPriceOracle public _oracle;
     address public fundsManager;
+
+    bool public isJoiningPaused;
+
     // ======= STORAGE DECLARATION END ============
 
     // curve.fi data
@@ -140,6 +143,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     event Collected(address indexed beneficiary, uint256 amount);
 
     /**
+     * @dev Emitted when joining is paused or unpaused
+     * @param isJoiningPaused New pausing status
+     */
+    event JoiningPauseStatusChanged(bool isJoiningPaused);
+
+    /**
      * @dev Initialize pool
      * @param __curvePool curve pool address
      * @param __curveGauge curve gauge address
@@ -176,6 +185,14 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      */
     modifier onlyLender() {
         require(msg.sender == address(_lender), "TrueFiPool: Caller is not the lender");
+        _;
+    }
+
+    /**
+     * @dev pool can only be joined when it's unpaused
+     */
+    modifier joiningNotPaused() {
+        require(!isJoiningPaused, "TrueFiPool: Joining the pool is paused");
         _;
     }
 
@@ -244,6 +261,11 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     function setOracle(ITruPriceOracle newOracle) public onlyOwner {
         _oracle = newOracle;
         emit OracleChanged(newOracle);
+    }
+
+    function changeJoiningPauseStatus(bool status) external onlyOwnerOrManager {
+        isJoiningPaused = status;
+        emit JoiningPauseStatusChanged(status);
     }
 
     /**
@@ -347,7 +369,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev Join the pool by depositing currency tokens
      * @param amount amount of currency token to deposit
      */
-    function join(uint256 amount) external override {
+    function join(uint256 amount) external override joiningNotPaused {
         uint256 fee = amount.mul(joiningFee).div(10000);
         uint256 mintedAmount = mint(amount.sub(fee));
         claimableFees = claimableFees.add(fee);
