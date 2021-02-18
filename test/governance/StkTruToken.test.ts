@@ -312,7 +312,7 @@ describe('StkTruToken', () => {
     beforeEach(async () => {
       await stkToken.delegate(owner.address)
       await stkToken.stake(amount)
-        ; ({ blockNumber: withdrawBlockNumber } = await (await stkToken.connect(liquidator).withdraw(parseTRU(1))).wait())
+      ; ({ blockNumber: withdrawBlockNumber } = await (await stkToken.connect(liquidator).withdraw(parseTRU(1))).wait())
     })
 
     it('getCurrentVotes has decreased', async () => {
@@ -393,7 +393,6 @@ describe('StkTruToken', () => {
       await stkToken.setPayerWhitelistingStatus(owner.address, true)
       await expect(stkToken.payFee(1, 100))
         .not.to.be.reverted
-
 
       await tfusd.mint(staker.address, MaxUint256.div(2))
       await tfusd.connect(staker).approve(stkToken.address, MaxUint256.div(2))
