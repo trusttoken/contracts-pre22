@@ -334,6 +334,8 @@ contract TrueLender is ITrueLender, Ownable {
 
     /**
      * @dev Temporary fix for old LoanTokens with incorrect value calculation
+     * @param loan Loan to calculate value for
+     * @return value of a given loan
      */
     function loanValue(ILoanToken loan) public view returns (uint256) {
         uint256 _balance = loan.balanceOf(address(this));
@@ -400,6 +402,7 @@ contract TrueLender is ITrueLender, Ownable {
             }
         }
         // If we reach this, it means loanToken was not present in _loans array
+        // This prevents invalid loans from being reclaimed
         revert("TrueLender: This loan has not been funded by the lender");
     }
 
