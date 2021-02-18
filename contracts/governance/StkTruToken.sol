@@ -463,6 +463,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         }
     }
 
+    /**
+     * @dev Update claimable rewards for a token and account
+     * @param token Token to update claimable rewards for
+     * @param user Account to update claimable rewards for
+     */
     function updateClaimableRewards(IERC20 token, address user) internal {
         // update claimable reward for sender
         if (balanceOf[user] > 0) {
@@ -476,6 +481,10 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         farmRewards[token].previousCumulatedRewardPerToken[user] = farmRewards[token].cumulativeRewardPerToken;
     }
 
+    /**
+     * @dev Find next distribution index given a timestamp
+     * @param timestamp Timestamp to find next distribution index for
+     */
     function findPositionForTimestamp(uint256 timestamp) internal view returns (uint32 i) {
         for (i = nextDistributionIndex; i < sortedScheduledRewardIndices.length; i++) {
             if (scheduledRewards[sortedScheduledRewardIndices[i]].timestamp > timestamp) {
@@ -484,6 +493,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         }
     }
 
+    /**
+     * @dev internal function to insert distribution index in a sorted list
+     * @param index Index to insert at
+     * @param value Value at index
+     */
     function insertAt(uint32 index, uint32 value) internal {
         sortedScheduledRewardIndices.push(0);
         for (uint32 j = uint32(sortedScheduledRewardIndices.length) - 1; j > index; j--) {

@@ -9,12 +9,19 @@
 //
 // Ctrl+f for OLD to see all the modifications.
 
-// OLD: pragma solidity ^0.5.16;
 pragma solidity 0.6.10;
 
 import {ERC20} from "../trusttoken/common/ERC20.sol";
 import {IVoteToken} from "./interface/IVoteToken.sol";
 
+/**
+ * @title VoteToken
+ * @notice Custom token which tracks voting power for governance
+ * @dev This is an abstraction of a fork of the Compound governance contract
+ * VoteToken is used by TRU and stkTRU to allow tracking voting power
+ * Checkpoints are created every time state is changed which record voting power
+ * Inherits standard ERC20 behavior
+ */
 abstract contract VoteToken is ERC20, IVoteToken {
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
     bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
@@ -26,6 +33,9 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return _delegate(msg.sender, delegatee);
     }
 
+    /** 
+     * @dev Delegate votes using signature
+     */
     function delegateBySig(
         address delegatee,
         uint256 nonce,
@@ -44,11 +54,22 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return _delegate(signatory, delegatee);
     }
 
+    /**
+     * @dev Get current voting power for an account
+     * @param account Account to get voting power for
+     * @return Voting power for an account
+     */
     function getCurrentVotes(address account) public virtual override view returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
 
+    /**
+     * @dev Get voting power at a specific block for an account
+     * @param account Account to get voting power for
+     * @param blockNumber Block to get voting power at
+     * @return Voting power for an account at specific block
+     */
     function getPriorVotes(address account, uint256 blockNumber) public virtual override view returns (uint96) {
         require(blockNumber < block.number, "TrustToken::getPriorVotes: not yet determined");
 
@@ -83,6 +104,11 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return checkpoints[account][lower].votes;
     }
 
+    /**
+     * @dev Internal function to delegate voting power to an account
+     * @param delegator Account to delegate votes from
+     * @param delegatee Account to delegate votes to
+     */
     function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = delegates[delegator];
         // OLD: uint96 delegatorBalance = balanceOf(delegator);
@@ -117,6 +143,9 @@ abstract contract VoteToken is ERC20, IVoteToken {
         _moveDelegates(delegates[account], address(0), safe96(amount, "StkTruToken: uint96 overflow"));
     }
 
+    /**
+     * @dev internal function to move delegates between accounts
+     */
     function _moveDelegates(
         address srcRep,
         address dstRep,
@@ -139,6 +168,9 @@ abstract contract VoteToken is ERC20, IVoteToken {
         }
     }
 
+    /** 
+     * @dev internal function to write a checkpoint for voting power
+     */
     function _writeCheckpoint(
         address delegatee,
         uint32 nCheckpoints,
@@ -157,16 +189,25 @@ abstract contract VoteToken is ERC20, IVoteToken {
         emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
     }
 
+    /**
+     * @dev internal function to convert from uint256 to uint32
+     */
     function safe32(uint256 n, string memory errorMessage) internal pure returns (uint32) {
         require(n < 2**32, errorMessage);
         return uint32(n);
     }
 
+    /**
+     * @dev internal function to convert from uint256 to uint96
+     */
     function safe96(uint256 n, string memory errorMessage) internal pure returns (uint96) {
         require(n < 2**96, errorMessage);
         return uint96(n);
     }
 
+    /**
+     * @dev internal safe math function to add two uint96 numbers
+     */
     function add96(
         uint96 a,
         uint96 b,
@@ -177,6 +218,9 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return c;
     }
 
+    /**
+     * @dev internal safe math function to subtract two uint96 numbers
+     */
     function sub96(
         uint96 a,
         uint96 b,
@@ -186,6 +230,9 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return a - b;
     }
 
+    /** 
+     * @dev internal function to get chain ID
+     */
     function getChainId() internal pure returns (uint256) {
         uint256 chainId;
         assembly {
