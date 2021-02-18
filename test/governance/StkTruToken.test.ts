@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { providers, utils, Wallet } from 'ethers'
+import { providers, utils, Wallet, constants } from 'ethers'
 import { solidity } from 'ethereum-waffle'
 import { MaxUint256 } from '@ethersproject/constants'
 
@@ -238,6 +238,36 @@ describe('StkTruToken', () => {
       expect(await tfusd.balanceOf(owner.address)).to.equal(parseEth(3))
       expect(await tfusd.balanceOf(staker.address)).to.equal(parseEth(1))
     })
+
+    describe('Individual Token Claims', () => {
+      beforeEach(async () => {
+        await stkToken.stake(amount, { gasLimit: 3000000 })
+        await timeTravel(provider, DAY)
+        await tfusd.mint(stkToken.address, parseEth(1), { gasLimit: 3000000 })
+      })
+
+      it('claim only TRU', async () => {
+        const balanceBefore = await tru.balanceOf(owner.address)
+        expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(1000))
+        await stkToken.claimRewards(tru.address, { gasLimit: 3000000 })
+        expect(await tru.balanceOf(owner.address)).to.equal(balanceBefore.add(parseTRU(1000)))
+      })
+
+      it('claim only tfUSD', async () => {
+        const balanceBefore = await tfusd.balanceOf(owner.address)
+        expect(await stkToken.claimable(owner.address, tfusd.address)).to.equal(parseEth(1))
+        await stkToken.claimRewards(tfusd.address, { gasLimit: 3000000 })
+        expect(await tfusd.balanceOf(owner.address)).to.equal(balanceBefore.add(parseEth(1)))
+      })
+
+      it('claimable returns 0 for non-rewards tokens', async () => {
+        expect(await stkToken.claimable(owner.address, constants.AddressZero)).to.equal(0)
+      })
+
+      it('cannot claim non-reward tokens revert', async () => {
+        expect(stkToken.claimRewards(constants.AddressZero, { gasLimit: 3000000 })).to.be.revertedWith('Token not supported for rewards')
+      })
+    })
   })
 
   describe('Cooldown', () => {
@@ -278,10 +308,21 @@ describe('StkTruToken', () => {
       await expect(await stkToken.unlockTime(owner.address)).to.equal(unlockTimeBefore)
     })
 
-    it('staking more resets cooldown', async () => {
+    it('staking more resets cooldown and emits event', async () => {
       await stkToken.stake(amount.div(2))
       await stkToken.cooldown()
       await timeTravel(provider, DAY)
+      const tx = await stkToken.stake(amount.div(2))
+      const block = await provider.getBlock(tx.blockNumber)
+
+      await expect(await stkToken.unlockTime(owner.address)).to.equal(block.timestamp + 14 * DAY)
+      await expect(Promise.resolve(tx)).to.emit(stkToken, 'Cooldown')
+    })
+
+    it('staking more while on unstake period resets cooldown', async () => {
+      await stkToken.stake(amount.div(2))
+      await stkToken.cooldown()
+      await timeTravel(provider, stakeCooldown + DAY)
       const tx = await stkToken.stake(amount.div(2))
       const block = await provider.getBlock(tx.blockNumber)
 
@@ -295,22 +336,12 @@ describe('StkTruToken', () => {
 
       await expect(await stkToken.unlockTime(owner.address)).to.equal(MaxUint256)
     })
-
-    it('when unstake is off cooldown, staking does not reset cooldown', async () => {
-      await stkToken.stake(amount.div(2))
-      await stkToken.cooldown()
-      const unlockTimeBefore = await stkToken.unlockTime(owner.address)
-      await timeTravel(provider, stakeCooldown)
-      await stkToken.stake(amount.div(2))
-      await expect(await stkToken.unlockTime(owner.address)).to.equal(unlockTimeBefore)
-    })
   })
 
   describe('Voting power decreases after liquidation', () => {
     let withdrawBlockNumber: number
 
     beforeEach(async () => {
-      await stkToken.delegate(owner.address)
       await stkToken.stake(amount)
       ;({ blockNumber: withdrawBlockNumber } = await (await stkToken.connect(liquidator).withdraw(parseTRU(1))).wait())
     })
@@ -360,7 +391,7 @@ describe('StkTruToken', () => {
 
     it('gas cost', async () => {
       const tx = await (await stkToken.transfer(staker.address, amount.div(2), { gasLimit: 300000 })).wait()
-      expect(tx.gasUsed).to.be.lt(120000)
+      expect(tx.gasUsed).to.be.lt(150000)
     })
   })
 
@@ -381,8 +412,26 @@ describe('StkTruToken', () => {
     }
 
     beforeEach(async () => {
-      await tfusd.mint(owner.address, MaxUint256)
-      await tfusd.approve(stkToken.address, MaxUint256)
+      await tfusd.mint(owner.address, MaxUint256.div(2))
+      await tfusd.approve(stkToken.address, MaxUint256.div(2))
+      await stkToken.setPayerWhitelistingStatus(owner.address, true)
+    })
+
+    it('is not possible without whitelisting', async () => {
+      await stkToken.setPayerWhitelistingStatus(owner.address, false)
+      await expect(stkToken.payFee(1, 100))
+        .to.be.revertedWith('StkTruToken: Can be called only by whitelisted payers')
+      await stkToken.setPayerWhitelistingStatus(owner.address, true)
+      await expect(stkToken.payFee(1, 100))
+        .not.to.be.reverted
+
+      await tfusd.mint(staker.address, MaxUint256.div(2))
+      await tfusd.connect(staker).approve(stkToken.address, MaxUint256.div(2))
+      await expect(stkToken.connect(staker).payFee(1, 100))
+        .to.be.revertedWith('StkTruToken: Can be called only by whitelisted payers')
+      await stkToken.setPayerWhitelistingStatus(staker.address, true)
+      await expect(stkToken.connect(staker).payFee(1, 100))
+        .not.to.be.reverted
     })
 
     it('keeps list sorted', async () => {

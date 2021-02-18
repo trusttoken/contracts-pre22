@@ -58,9 +58,15 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     uint256 private yTokenValueCache;
     uint256 private loansValueCache;
 
+    // TRU price oracle
     ITruPriceOracle public _oracle;
 
+    // fund manager can call functions to help manage pool funds
+    // fund manager can be set to 0 or governance
     address public fundsManager;
+
+    // allow pausing of deposits
+    bool public isJoiningPaused;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -142,6 +148,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     event Collected(address indexed beneficiary, uint256 amount);
 
     /**
+     * @dev Emitted when joining is paused or unpaused
+     * @param isJoiningPaused New pausing status
+     */
+    event JoiningPauseStatusChanged(bool isJoiningPaused);
+
+    /**
      * @dev Initialize pool
      * @param __curvePool curve pool address
      * @param __curveGauge curve gauge address
@@ -178,6 +190,14 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      */
     modifier onlyLender() {
         require(msg.sender == address(_lender), "TrueFiPool: Caller is not the lender");
+        _;
+    }
+
+    /**
+     * @dev pool can only be joined when it's unpaused
+     */
+    modifier joiningNotPaused() {
+        require(!isJoiningPaused, "TrueFiPool: Joining the pool is paused");
         _;
     }
 
@@ -249,7 +269,17 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
+     * @dev Allow pausing of deposits in case of emergency
+     * @param status New deposit status
+     */
+    function changeJoiningPauseStatus(bool status) external onlyOwnerOrManager {
+        isJoiningPaused = status;
+        emit JoiningPauseStatusChanged(status);
+    }
+
+    /**
      * @dev Get total balance of stake tokens
+     * @return Balance of stake tokens in this contract
      */
     function stakeTokenBalance() public view returns (uint256) {
         return _stakeToken.balanceOf(address(this));
@@ -257,6 +287,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Get total balance of curve.fi pool tokens
+     * @return Balance of y pool tokens in this contract
      */
     function yTokenBalance() public view returns (uint256) {
         return _curvePool.token().balanceOf(address(this)).add(_curveGauge.balanceOf(address(this)));
@@ -276,6 +307,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Price of TRU in USD
+     * @return Oracle price of TRU in USD
      */
     function truValue() public view returns (uint256) {
         uint256 balance = stakeTokenBalance();
@@ -287,6 +319,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Virtual value of liquid assets in the pool
+     * @return Virtual liquid value of pool assets
      */
     function liquidValue() public view returns (uint256) {
         return currencyBalance().add(yTokenValue());
@@ -295,10 +328,11 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     /**
      * @dev Calculate pool value in TUSD
      * "virtual price" of entire pool - LoanTokens, TUSD, curve y pool tokens
-     * @return pool value in TUSD
+     * @return pool value in USD
      */
     function poolValue() public view returns (uint256) {
-        return liquidValue().add(loansValue()).add(truValue());
+        // this assumes defaulted loans are worth their full value
+        return liquidValue().add(loansValue());
     }
 
     /**
@@ -349,7 +383,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev Join the pool by depositing currency tokens
      * @param amount amount of currency token to deposit
      */
-    function join(uint256 amount) external override {
+    function join(uint256 amount) external override joiningNotPaused {
         uint256 fee = amount.mul(joiningFee).div(10000);
         uint256 mintedAmount = mint(amount.sub(fee));
         claimableFees = claimableFees.add(fee);
@@ -667,6 +701,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         return mintedAmount;
     }
 
+    /**
+     * @dev Update name and symbol of this contract
+     */
     function updateNameAndSymbol() public {
         super.updateNameAndSymbol("TrueFi TrueUSD", "tfTUSD");
     }

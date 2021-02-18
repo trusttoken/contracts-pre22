@@ -4,7 +4,7 @@ import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 
 import { toTrustToken } from 'scripts/utils'
 
-import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo, parseTRU } from 'utils'
+import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo } from 'utils'
 
 import {
   ICurveGaugeJson,
@@ -170,8 +170,49 @@ describe('TrueFiPool', () => {
       await pool.flush(excludeFee(parseEth(5e6)), 0)
       await curvePool.set_withdraw_price(parseEth(2))
       expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(calcBorrowerFee(parseEth(2e6)))))
-      await trustToken.mint(pool.address, parseTRU(4e5))
-      expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7)).add(parseEth(1e5))).add(calcBorrowerFee(parseEth(2e6)))))
+      // await trustToken.mint(pool.address, parseTRU(4e5))
+      // expectScaledCloseTo(await pool.poolValue(), excludeFee(parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7)).add(parseEth(1e5))).add(calcBorrowerFee(parseEth(2e6)))))
+    })
+  })
+
+  describe('changeJoiningPauseStatus', () => {
+    it('can be called by owner', async () => {
+      await expect(pool.changeJoiningPauseStatus(true))
+        .not.to.be.reverted
+      await expect(pool.changeJoiningPauseStatus(false))
+        .not.to.be.reverted
+    })
+
+    it('can be called by manager', async () => {
+      await pool.setFundsManager(borrower.address)
+      await expect(pool.connect(borrower).changeJoiningPauseStatus(true))
+        .not.to.be.reverted
+      await expect(pool.connect(borrower).changeJoiningPauseStatus(false))
+        .not.to.be.reverted
+    })
+
+    it('cannot be called by unauthorized address', async () => {
+      await expect(pool.connect(borrower).changeJoiningPauseStatus(true))
+        .to.be.revertedWith('TrueFiPool: Caller is neither owner nor funds manager')
+      await expect(pool.connect(borrower).changeJoiningPauseStatus(false))
+        .to.be.revertedWith('TrueFiPool: Caller is neither owner nor funds manager')
+    })
+
+    it('properly changes pausing status', async () => {
+      expect(await pool.isJoiningPaused()).to.be.false
+      await pool.changeJoiningPauseStatus(true)
+      expect(await pool.isJoiningPaused()).to.be.true
+      await pool.changeJoiningPauseStatus(false)
+      expect(await pool.isJoiningPaused()).to.be.false
+    })
+
+    it('emits proper event', async () => {
+      await expect(pool.changeJoiningPauseStatus(true))
+        .to.emit(pool, 'JoiningPauseStatusChanged')
+        .withArgs(true)
+      await expect(pool.changeJoiningPauseStatus(false))
+        .to.emit(pool, 'JoiningPauseStatusChanged')
+        .withArgs(false)
     })
   })
 
@@ -181,6 +222,13 @@ describe('TrueFiPool', () => {
       await pool.join(parseEth(1e7))
       await token.mint(borrower.address, parseEth(1e6))
       await token.connect(borrower).approve(pool.address, parseEth(1e6))
+    })
+
+    it('does not allow to join when joining is paused', async () => {
+      await token.approve(pool.address, parseEth(1e6))
+      await pool.changeJoiningPauseStatus(true)
+      await expect(pool.join(parseEth(1e6)))
+        .to.be.revertedWith('TrueFiPool: Joining the pool is paused')
     })
 
     it('adds fee to claimable fees', async () => {

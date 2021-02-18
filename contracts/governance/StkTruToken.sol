@@ -65,6 +65,8 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     uint256 public undistributedTfusdRewards;
     uint32 public nextDistributionIndex;
 
+    mapping(address => bool) public whitelistedFeePayers;
+
     // ======= STORAGE DECLARATION END ============
 
     event Stake(address indexed staker, uint256 amount);
@@ -74,12 +76,21 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     event Cooldown(address indexed who, uint256 endTime);
     event CooldownTimeChanged(uint256 newUnstakePeriodDuration);
     event UnstakePeriodDurationChanged(uint256 newUnstakePeriodDuration);
+    event FeePayerWhitelistingStatusChanged(address payer, bool status);
 
     /**
      * @dev Only Liquidator contract can perform TRU liquidations
      */
     modifier onlyLiquidator() {
         require(msg.sender == liquidator, "StkTruToken: Can be called only by the liquidator");
+        _;
+    }
+
+    /**
+     * @dev Only whitelisted payers can pay fees
+     */
+    modifier onlyWhitelistedPayers() {
+        require(whitelistedFeePayers[msg.sender], "StkTruToken: Can be called only by whitelisted payers");
         _;
     }
 
@@ -96,11 +107,31 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         _;
     }
 
+    /**
+     * Update all rewards when an account changes state
+     * @param account Account to update rewards for
+     */
     modifier update(address account) {
         updateTotalRewards(tru);
         updateClaimableRewards(tru, account);
         updateTotalRewards(tfusd);
         updateClaimableRewards(tfusd, account);
+        _;
+    }
+
+    /**
+     * Update rewards for a specific token when an account changes state
+     * @param account Account to update rewards for
+     * @param token Token to update rewards for
+     */
+    modifier updateRewards(address account, IERC20 token) {
+        if (token == tru) {
+            updateTotalRewards(tru);
+            updateClaimableRewards(tru, account);
+        } else if (token == tfusd) {
+            updateTotalRewards(tfusd);
+            updateClaimableRewards(tfusd, account);
+        }
         _;
     }
 
@@ -128,6 +159,17 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
 
         owner_ = msg.sender;
         initalized = true;
+    }
+
+    /**
+     * @dev Owner can use this function to add new addresses to payers whitelist
+     * Only whitelisted payers can call payFee method
+     * @param payer Address that is being added to or removed from whitelist
+     * @param status New whitelisting status
+     */
+    function setPayerWhitelistingStatus(address payer, bool status) external onlyOwner {
+        whitelistedFeePayers[payer] = status;
+        emit FeePayerWhitelistingStatusChanged(payer, status);
     }
 
     /**
@@ -165,8 +207,14 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     function stake(uint256 amount) external distribute update(msg.sender) {
         require(amount > 0, "StkTruToken: Cannot stake 0");
 
-        if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime) > block.timestamp) {
+        if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime).add(unstakePeriodDuration) > block.timestamp) {
             cooldowns[msg.sender] = block.timestamp;
+
+            emit Cooldown(msg.sender, block.timestamp.add(cooldownTime));
+        }
+
+        if (delegates[msg.sender] == address(0)) {
+            delegates[msg.sender] = msg.sender;
         }
 
         uint256 amountToMint = stakeSupply == 0 ? amount : amount.mul(totalSupply).div(stakeSupply);
@@ -241,7 +289,7 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
      * @dev Give tfUSD as origination fee to stake.this
      * 50% are given immediately and 50% after `endTime` passes
      */
-    function payFee(uint256 amount, uint256 endTime) external {
+    function payFee(uint256 amount, uint256 endTime) external onlyWhitelistedPayers {
         require(endTime < type(uint64).max, "StkTruToken: time overflow");
         require(amount < type(uint96).max, "StkTruToken: amount overflow");
 
@@ -259,6 +307,16 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     function claim() external distribute update(msg.sender) {
         _claim(tru);
         _claim(tfusd);
+    }
+
+    /**
+     * @dev Claim rewards for specific token
+     * Allows account to claim specific token to save gas
+     * @param token Token to claim rewards for
+     */
+    function claimRewards(IERC20 token) external distribute updateRewards(msg.sender, token) {
+        require(token == tfusd || token == tru, "Token not supported for rewards");
+        _claim(token);
     }
 
     /**
@@ -361,7 +419,10 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         if (token == tru) {
             return token.balanceOf(address(this)).sub(stakeSupply);
         }
-        return token.balanceOf(address(this)).sub(undistributedTfusdRewards);
+        if (token == tfusd) {
+            return token.balanceOf(address(this)).sub(undistributedTfusdRewards);
+        }
+        return 0;
     }
 
     /**
