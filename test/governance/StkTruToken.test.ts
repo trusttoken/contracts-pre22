@@ -265,7 +265,7 @@ describe('StkTruToken', () => {
       })
 
       it('cannot claim non-reward tokens revert', async () => {
-        expect(stkToken.claimRewards(constants.AddressZero, { gasLimit: 3000000 })).to.be.revertedWith('Token not supported for rewards')
+        await expect(stkToken.claimRewards(constants.AddressZero, { gasLimit: 3000000 })).to.be.revertedWith('Token not supported for rewards')
       })
     })
   })
