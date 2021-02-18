@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// AND COPIED FROM https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/GovernorAlpha.sol
+// AND COPIED FROM https://github.com/compound-finance/compound-protocol/blob/c5fcc34222693ad5f547b14ed01ce719b5f4b000/contracts/Timelock.sol
 // Copyright 2020 Compound Labs, Inc.
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 // 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
