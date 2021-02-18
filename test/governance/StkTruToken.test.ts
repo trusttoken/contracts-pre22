@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { providers, utils, Wallet } from 'ethers'
+import { providers, utils, Wallet, constants } from 'ethers'
 import { solidity } from 'ethereum-waffle'
 import { MaxUint256 } from '@ethersproject/constants'
 
@@ -237,6 +237,36 @@ describe('StkTruToken', () => {
       expectScaledCloseTo(await tru.balanceOf(staker.address), parseTRU(1333.3333))
       expect(await tfusd.balanceOf(owner.address)).to.equal(parseEth(3))
       expect(await tfusd.balanceOf(staker.address)).to.equal(parseEth(1))
+    })
+
+    describe('Individual Token Claims', () => {
+      beforeEach(async () => {
+        await stkToken.stake(amount, { gasLimit: 3000000 })
+        await timeTravel(provider, DAY)
+        await tfusd.mint(stkToken.address, parseEth(1), { gasLimit: 3000000 })
+      })
+
+      it('claim only TRU', async () => {
+        const balanceBefore = await tru.balanceOf(owner.address)
+        expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(1000))
+        await stkToken.claimRewards(tru.address, { gasLimit: 3000000 })
+        expect(await tru.balanceOf(owner.address)).to.equal(balanceBefore.add(parseTRU(1000)))
+      })
+
+      it('claim only tfUSD', async () => {
+        const balanceBefore = await tfusd.balanceOf(owner.address)
+        expect(await stkToken.claimable(owner.address, tfusd.address)).to.equal(parseEth(1))
+        await stkToken.claimRewards(tfusd.address, { gasLimit: 3000000 })
+        expect(await tfusd.balanceOf(owner.address)).to.equal(balanceBefore.add(parseEth(1)))
+      })
+
+      it('claimable returns 0 for non-rewards tokens', async () => {
+        expect(await stkToken.claimable(owner.address, constants.AddressZero)).to.equal(0)
+      })
+
+      it('cannot claim non-reward tokens revert', async () => {
+        expect(stkToken.claimRewards(constants.AddressZero, { gasLimit: 3000000 })).to.be.revertedWith('Token not supported for rewards')
+      })
     })
   })
 

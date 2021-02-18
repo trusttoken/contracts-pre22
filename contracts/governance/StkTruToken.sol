@@ -96,11 +96,31 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         _;
     }
 
+    /**
+     * Update all rewards when an account changes state
+     * @param account Account to update rewards for
+     */
     modifier update(address account) {
         updateTotalRewards(tru);
         updateClaimableRewards(tru, account);
         updateTotalRewards(tfusd);
         updateClaimableRewards(tfusd, account);
+        _;
+    }
+
+    /**
+     * Update rewards for a specific token when an account changes state
+     * @param account Account to update rewards for
+     * @param token Token to update rewards for
+     */
+    modifier updateRewards(address account, IERC20 token) {
+        if (token == tru) {
+            updateTotalRewards(tru);
+            updateClaimableRewards(tru, account);
+        } else if (token == tfusd) {
+            updateTotalRewards(tfusd);
+            updateClaimableRewards(tfusd, account);
+        }
         _;
     }
 
@@ -262,6 +282,16 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     }
 
     /**
+     * @dev Claim rewards for specific token
+     * Allows account to claim specific token to save gas
+     * @param token Token to claim rewards for
+     */
+    function claimRewards(IERC20 token) external distribute updateRewards(msg.sender, token) {
+        require(token == tfusd || token == tru, "Token not supported for rewards");
+        _claim(token);
+    }
+
+    /**
      * @dev View to estimate the claimable reward for an account
      * @param account Account to get claimable reward for
      * @param token Token to get rewards for
@@ -361,7 +391,10 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         if (token == tru) {
             return token.balanceOf(address(this)).sub(stakeSupply);
         }
-        return token.balanceOf(address(this)).sub(undistributedTfusdRewards);
+        if (token == tfusd) {
+            return token.balanceOf(address(this)).sub(undistributedTfusdRewards);
+        }
+        return 0;
     }
 
     /**
