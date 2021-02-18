@@ -162,7 +162,6 @@ contract Timelock is ClaimableContract {
             callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
         }
 
-        // OLD: (bool success, bytes memory returnData) = target.call.value(value)(callData);
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returnData) = target.call{value:value}(callData);
         require(success, "Timelock::executeTransaction: Transaction execution reverted.");
