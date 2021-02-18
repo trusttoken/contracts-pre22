@@ -20,8 +20,6 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 contract Liquidator is Ownable {
     using SafeMath for uint256;
 
-    enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted, Liquidated}
-
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
