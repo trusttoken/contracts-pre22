@@ -774,6 +774,12 @@ contract TrueLender is ITrueLender, Ownable {
     event Reclaimed(address indexed loanToken, uint256 amount);
 
     /**
+     * @dev Emitted when rating agency contract is changed
+     * @param newRatingAgency Address of new rating agency
+     */
+    event RatingAgencyChanged(address newRatingAgency);
+
+    /**
      * @dev Modifier for only lending pool
      */
     modifier onlyPool() {
@@ -896,6 +902,15 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     /**
+     * @dev Set new rating agency. Only owner can change parameters.
+     * @param newRatingAgency New rating agency.
+     */
+    function setRatingAgency(ITrueRatingAgency newRatingAgency) external onlyOwner {
+        ratingAgency = newRatingAgency;
+        emit RatingAgencyChanged(address(newRatingAgency));
+    }
+
+    /**
      * @dev Get currently funded loans
      * @return result Array of loans currently funded
      */
@@ -937,6 +952,8 @@ contract TrueLender is ITrueLender, Ownable {
 
     /**
      * @dev Temporary fix for old LoanTokens with incorrect value calculation
+     * @param loan Loan to calculate value for
+     * @return value of a given loan
      */
     function loanValue(ILoanToken loan) public view returns (uint256) {
         uint256 _balance = loan.balanceOf(address(this));
@@ -950,7 +967,7 @@ contract TrueLender is ITrueLender, Ownable {
         }
 
         uint256 helper = loan.amount().mul(loan.apy()).mul(passed).mul(_balance);
-        // assume month is 30 days
+        // assume year is 365 days
         uint256 interest = helper.div(365 days).div(10000).div(loan.debt());
 
         return loan.amount().mul(_balance).div(loan.debt()).add(interest);
@@ -971,7 +988,7 @@ contract TrueLender is ITrueLender, Ownable {
 
     /**
      * @dev For settled loans, redeem LoanTokens for underlying funds
-     * @param loanToken Loan to reclaim capital from
+     * @param loanToken Loan to reclaim capital from (must be previously funded)
      */
     function reclaim(ILoanToken loanToken) external {
         require(loanToken.isLoanToken(), "TrueLender: Only LoanTokens can be used to reclaimed");
@@ -997,11 +1014,14 @@ contract TrueLender is ITrueLender, Ownable {
             if (_loans[index] == loanToken) {
                 _loans[index] = _loans[_loans.length - 1];
                 _loans.pop();
-                break;
+
+                emit Reclaimed(address(loanToken), fundsReclaimed);
+                return;
             }
         }
-
-        emit Reclaimed(address(loanToken), fundsReclaimed);
+        // If we reach this, it means loanToken was not present in _loans array
+        // This prevents invalid loans from being reclaimed
+        revert("TrueLender: This loan has not been funded by the lender");
     }
 
     /**

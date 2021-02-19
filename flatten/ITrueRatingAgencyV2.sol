@@ -24,30 +24,28 @@
 */
 
 // https://github.com/trusttoken/smart-contracts
-// Dependency file: contracts/truefi/interface/ITruPriceOracle.sol
+// Root file: contracts/truefi/interface/ITrueRatingAgencyV2.sol
 
 // SPDX-License-Identifier: MIT
-// pragma solidity 0.6.10;
-
-interface ITruPriceOracle {
-    function usdToTru(uint256 amount) external view returns (uint256);
-
-    function truToUsd(uint256 amount) external view returns (uint256);
-}
-
-
-// Root file: contracts/truefi/mocks/MockTruPriceOracle.sol
-
 pragma solidity 0.6.10;
 
-// import "contracts/truefi/interface/ITruPriceOracle.sol";
+interface ITrueRatingAgencyV2 {
+    function getResults(address id)
+        external
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256
+        );
 
-contract MockTruPriceOracle is ITruPriceOracle {
-    function usdToTru(uint256 amount) external override view returns (uint256) {
-        return (amount * 4) / 1e10;
-    }
+    function submit(address id) external;
 
-    function truToUsd(uint256 amount) external override view returns (uint256) {
-        return (amount * 1e10) / 4;
-    }
+    function retract(address id) external;
+
+    function yes(address id) external;
+
+    function no(address id) external;
+
+    function claim(address id, address voter) external;
 }

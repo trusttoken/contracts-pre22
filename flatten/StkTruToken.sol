@@ -861,7 +861,7 @@ interface IVoteTokenWithERC20 is IVoteToken, IERC20 {}
 
 // Dependency file: contracts/governance/VoteToken.sol
 
-// AND COPIED FROM https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/GovernorAlpha.sol
+// AND COPIED FROM https://github.com/compound-finance/compound-protocol/blob/c5fcc34222693ad5f547b14ed01ce719b5f4b000/contracts/Governance/Comp.sol
 // Copyright 2020 Compound Labs, Inc.
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 // 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -871,12 +871,19 @@ interface IVoteTokenWithERC20 is IVoteToken, IERC20 {}
 //
 // Ctrl+f for OLD to see all the modifications.
 
-// OLD: // pragma solidity ^0.5.16;
 // pragma solidity 0.6.10;
 
 // import {ERC20} from "contracts/trusttoken/common/ERC20.sol";
 // import {IVoteToken} from "contracts/governance/interface/IVoteToken.sol";
 
+/**
+ * @title VoteToken
+ * @notice Custom token which tracks voting power for governance
+ * @dev This is an abstraction of a fork of the Compound governance contract
+ * VoteToken is used by TRU and stkTRU to allow tracking voting power
+ * Checkpoints are created every time state is changed which record voting power
+ * Inherits standard ERC20 behavior
+ */
 abstract contract VoteToken is ERC20, IVoteToken {
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
     bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
@@ -888,6 +895,9 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return _delegate(msg.sender, delegatee);
     }
 
+    /** 
+     * @dev Delegate votes using signature
+     */
     function delegateBySig(
         address delegatee,
         uint256 nonce,
@@ -906,11 +916,22 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return _delegate(signatory, delegatee);
     }
 
+    /**
+     * @dev Get current voting power for an account
+     * @param account Account to get voting power for
+     * @return Voting power for an account
+     */
     function getCurrentVotes(address account) public virtual override view returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
 
+    /**
+     * @dev Get voting power at a specific block for an account
+     * @param account Account to get voting power for
+     * @param blockNumber Block to get voting power at
+     * @return Voting power for an account at specific block
+     */
     function getPriorVotes(address account, uint256 blockNumber) public virtual override view returns (uint96) {
         require(blockNumber < block.number, "TrustToken::getPriorVotes: not yet determined");
 
@@ -945,10 +966,15 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return checkpoints[account][lower].votes;
     }
 
+    /**
+     * @dev Internal function to delegate voting power to an account
+     * @param delegator Account to delegate votes from
+     * @param delegatee Account to delegate votes to
+     */
     function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = delegates[delegator];
         // OLD: uint96 delegatorBalance = balanceOf(delegator);
-        uint96 delegatorBalance = uint96(_balanceOf(delegator));
+        uint96 delegatorBalance = safe96(_balanceOf(delegator), "StkTruToken: uint96 overflow");
         delegates[delegator] = delegatee;
 
         emit DelegateChanged(delegator, currentDelegate, delegatee);
@@ -966,7 +992,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
         uint256 _value
     ) internal virtual override {
         super._transfer(_from, _to, _value);
-        _moveDelegates(delegates[_from], delegates[_to], uint96(_value));
+        _moveDelegates(delegates[_from], delegates[_to], safe96(_value, "StkTruToken: uint96 overflow"));
     }
 
     function _mint(address account, uint256 amount) internal virtual override {
@@ -979,6 +1005,9 @@ abstract contract VoteToken is ERC20, IVoteToken {
         _moveDelegates(delegates[account], address(0), safe96(amount, "StkTruToken: uint96 overflow"));
     }
 
+    /**
+     * @dev internal function to move delegates between accounts
+     */
     function _moveDelegates(
         address srcRep,
         address dstRep,
@@ -1001,6 +1030,9 @@ abstract contract VoteToken is ERC20, IVoteToken {
         }
     }
 
+    /** 
+     * @dev internal function to write a checkpoint for voting power
+     */
     function _writeCheckpoint(
         address delegatee,
         uint32 nCheckpoints,
@@ -1019,16 +1051,25 @@ abstract contract VoteToken is ERC20, IVoteToken {
         emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
     }
 
+    /**
+     * @dev internal function to convert from uint256 to uint32
+     */
     function safe32(uint256 n, string memory errorMessage) internal pure returns (uint32) {
         require(n < 2**32, errorMessage);
         return uint32(n);
     }
 
+    /**
+     * @dev internal function to convert from uint256 to uint96
+     */
     function safe96(uint256 n, string memory errorMessage) internal pure returns (uint96) {
         require(n < 2**96, errorMessage);
         return uint96(n);
     }
 
+    /**
+     * @dev internal safe math function to add two uint96 numbers
+     */
     function add96(
         uint96 a,
         uint96 b,
@@ -1039,6 +1080,9 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return c;
     }
 
+    /**
+     * @dev internal safe math function to subtract two uint96 numbers
+     */
     function sub96(
         uint96 a,
         uint96 b,
@@ -1048,6 +1092,9 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return a - b;
     }
 
+    /** 
+     * @dev internal function to get chain ID
+     */
     function getChainId() internal pure returns (uint256) {
         uint256 chainId;
         assembly {
@@ -1213,6 +1260,8 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     uint256 public undistributedTfusdRewards;
     uint32 public nextDistributionIndex;
 
+    mapping(address => bool) public whitelistedFeePayers;
+
     // ======= STORAGE DECLARATION END ============
 
     event Stake(address indexed staker, uint256 amount);
@@ -1222,12 +1271,21 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     event Cooldown(address indexed who, uint256 endTime);
     event CooldownTimeChanged(uint256 newUnstakePeriodDuration);
     event UnstakePeriodDurationChanged(uint256 newUnstakePeriodDuration);
+    event FeePayerWhitelistingStatusChanged(address payer, bool status);
 
     /**
      * @dev Only Liquidator contract can perform TRU liquidations
      */
     modifier onlyLiquidator() {
         require(msg.sender == liquidator, "StkTruToken: Can be called only by the liquidator");
+        _;
+    }
+
+    /**
+     * @dev Only whitelisted payers can pay fees
+     */
+    modifier onlyWhitelistedPayers() {
+        require(whitelistedFeePayers[msg.sender], "StkTruToken: Can be called only by whitelisted payers");
         _;
     }
 
@@ -1244,11 +1302,31 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         _;
     }
 
+    /**
+     * Update all rewards when an account changes state
+     * @param account Account to update rewards for
+     */
     modifier update(address account) {
         updateTotalRewards(tru);
         updateClaimableRewards(tru, account);
         updateTotalRewards(tfusd);
         updateClaimableRewards(tfusd, account);
+        _;
+    }
+
+    /**
+     * Update rewards for a specific token when an account changes state
+     * @param account Account to update rewards for
+     * @param token Token to update rewards for
+     */
+    modifier updateRewards(address account, IERC20 token) {
+        if (token == tru) {
+            updateTotalRewards(tru);
+            updateClaimableRewards(tru, account);
+        } else if (token == tfusd) {
+            updateTotalRewards(tfusd);
+            updateClaimableRewards(tfusd, account);
+        }
         _;
     }
 
@@ -1276,6 +1354,17 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
 
         owner_ = msg.sender;
         initalized = true;
+    }
+
+    /**
+     * @dev Owner can use this function to add new addresses to payers whitelist
+     * Only whitelisted payers can call payFee method
+     * @param payer Address that is being added to or removed from whitelist
+     * @param status New whitelisting status
+     */
+    function setPayerWhitelistingStatus(address payer, bool status) external onlyOwner {
+        whitelistedFeePayers[payer] = status;
+        emit FeePayerWhitelistingStatusChanged(payer, status);
     }
 
     /**
@@ -1313,8 +1402,14 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     function stake(uint256 amount) external distribute update(msg.sender) {
         require(amount > 0, "StkTruToken: Cannot stake 0");
 
-        if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime) > block.timestamp) {
+        if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime).add(unstakePeriodDuration) > block.timestamp) {
             cooldowns[msg.sender] = block.timestamp;
+
+            emit Cooldown(msg.sender, block.timestamp.add(cooldownTime));
+        }
+
+        if (delegates[msg.sender] == address(0)) {
+            delegates[msg.sender] = msg.sender;
         }
 
         uint256 amountToMint = stakeSupply == 0 ? amount : amount.mul(totalSupply).div(stakeSupply);
@@ -1389,7 +1484,7 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
      * @dev Give tfUSD as origination fee to stake.this
      * 50% are given immediately and 50% after `endTime` passes
      */
-    function payFee(uint256 amount, uint256 endTime) external {
+    function payFee(uint256 amount, uint256 endTime) external onlyWhitelistedPayers {
         require(endTime < type(uint64).max, "StkTruToken: time overflow");
         require(amount < type(uint96).max, "StkTruToken: amount overflow");
 
@@ -1407,6 +1502,16 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     function claim() external distribute update(msg.sender) {
         _claim(tru);
         _claim(tfusd);
+    }
+
+    /**
+     * @dev Claim rewards for specific token
+     * Allows account to claim specific token to save gas
+     * @param token Token to claim rewards for
+     */
+    function claimRewards(IERC20 token) external distribute updateRewards(msg.sender, token) {
+        require(token == tfusd || token == tru, "Token not supported for rewards");
+        _claim(token);
     }
 
     /**
@@ -1509,7 +1614,10 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         if (token == tru) {
             return token.balanceOf(address(this)).sub(stakeSupply);
         }
-        return token.balanceOf(address(this)).sub(undistributedTfusdRewards);
+        if (token == tfusd) {
+            return token.balanceOf(address(this)).sub(undistributedTfusdRewards);
+        }
+        return 0;
     }
 
     /**
@@ -1550,6 +1658,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         }
     }
 
+    /**
+     * @dev Update claimable rewards for a token and account
+     * @param token Token to update claimable rewards for
+     * @param user Account to update claimable rewards for
+     */
     function updateClaimableRewards(IERC20 token, address user) internal {
         // update claimable reward for sender
         if (balanceOf[user] > 0) {
@@ -1563,6 +1676,10 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         farmRewards[token].previousCumulatedRewardPerToken[user] = farmRewards[token].cumulativeRewardPerToken;
     }
 
+    /**
+     * @dev Find next distribution index given a timestamp
+     * @param timestamp Timestamp to find next distribution index for
+     */
     function findPositionForTimestamp(uint256 timestamp) internal view returns (uint32 i) {
         for (i = nextDistributionIndex; i < sortedScheduledRewardIndices.length; i++) {
             if (scheduledRewards[sortedScheduledRewardIndices[i]].timestamp > timestamp) {
@@ -1571,6 +1688,11 @@ contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
         }
     }
 
+    /**
+     * @dev internal function to insert distribution index in a sorted list
+     * @param index Index to insert at
+     * @param value Value at index
+     */
     function insertAt(uint32 index, uint32 value) internal {
         sortedScheduledRewardIndices.push(0);
         for (uint32 j = uint32(sortedScheduledRewardIndices.length) - 1; j > index; j--) {

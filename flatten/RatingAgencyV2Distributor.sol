@@ -452,7 +452,7 @@ interface IArbitraryDistributor {
 }
 
 
-// Root file: contracts/truefi/distributors/ArbitraryDistributor.sol
+// Root file: contracts/truefi/distributors/RatingAgencyV2Distributor.sol
 
 pragma solidity 0.6.10;
 
@@ -471,7 +471,7 @@ pragma solidity 0.6.10;
  * a farm contract can claim TRU from the distributor.
  * - Owner can withdraw funds in case distribution need to be re-allocated
  */
-contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
+contract RatingAgencyV2Distributor is IArbitraryDistributor, Ownable {
     using SafeMath for uint256;
 
     // ================ WARNING ==================
@@ -495,18 +495,16 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
      * @dev Initialize distributor
      * @param _beneficiary Address for distribution
      * @param _trustToken TRU address
-     * @param _amount Amount to distribute
      */
     function initialize(
         address _beneficiary,
-        IERC20 _trustToken,
-        uint256 _amount
+        IERC20 _trustToken
     ) public initializer {
         Ownable.initialize();
         trustToken = _trustToken;
         beneficiary = _beneficiary;
-        amount = _amount;
-        remaining = _amount;
+        amount = 500000000000000; // 5M
+        remaining = 30000000000000000; // 300M
     }
 
     /**
@@ -520,9 +518,9 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
     }
 
     /**
-     * @dev Set beneficiary status
+     * @dev Owner can set beneficiary status
      * @param _beneficiary Contract which can claim TRU
-     * @param _status Boolean to set whether beneficiary can claim TRU
+     * @param _status Boolean to set whether contract can claim TRU
      */
     function setBeneficiaryStatus(address _beneficiary, bool _status) public onlyOwner {
         beneficiaries[_beneficiary] = _status;
