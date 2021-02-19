@@ -55,6 +55,10 @@ describe('ArbitraryDistributor', () => {
       expect(await distributor.beneficiaries(otherWallet.address)).to.be.false
     })
 
+    it('only owner can set beneficiary status', async () => {
+      await expect(distributor.connect(otherWallet).setBeneficiaryStatus(otherWallet.address, true)).to.be.reverted
+    })
+
     it('emits proper event', async () => {
       await expect(distributor.setBeneficiaryStatus(otherWallet.address, true))
         .to.emit(distributor, 'BeneficiaryStatusChanged')

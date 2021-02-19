@@ -250,14 +250,14 @@ describe('StkTruToken', () => {
         const balanceBefore = await tru.balanceOf(owner.address)
         expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(1000))
         await stkToken.claimRewards(tru.address, { gasLimit: 3000000 })
-        expect(await tru.balanceOf(owner.address)).to.equal(balanceBefore.add(parseTRU(1000)))
+        expectScaledCloseTo(await tru.balanceOf(owner.address), balanceBefore.add(parseTRU(1000)))
       })
 
       it('claim only tfUSD', async () => {
         const balanceBefore = await tfusd.balanceOf(owner.address)
         expect(await stkToken.claimable(owner.address, tfusd.address)).to.equal(parseEth(1))
         await stkToken.claimRewards(tfusd.address, { gasLimit: 3000000 })
-        expect(await tfusd.balanceOf(owner.address)).to.equal(balanceBefore.add(parseEth(1)))
+        expectScaledCloseTo(await tfusd.balanceOf(owner.address), (balanceBefore.add(parseEth(1))))
       })
 
       it('claimable returns 0 for non-rewards tokens', async () => {

@@ -43,12 +43,14 @@ contract LoanFactory is ILoanFactory, Initializable {
         currencyToken = _currencyToken;
     }
 
+    /** @dev sets lender address **/
     function setLender() external {
         lender = 0x16d02Dc67EB237C387023339356b25d1D54b0922;
     }
 
+    /** @dev sets liquidator address **/
     function setLiquidator() external {
-        liquidator = address(0); // to be changed for deployment
+        liquidator = 0x76dd4921C99AC6b61b3a98f9fa6f181cA6D70c77;
     }
 
     /**

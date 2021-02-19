@@ -1,0 +1,14 @@
+## `MockHook`
+
+
+
+
+
+
+### `hook()` (external)
+
+
+
+
+
+
