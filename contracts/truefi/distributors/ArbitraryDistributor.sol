@@ -64,7 +64,12 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
         _;
     }
 
-    function setBeneficiaryStatus(address _beneficiary, bool _status) public {
+    /**
+     * @dev Set beneficiary status
+     * @param _beneficiary Contract which can claim TRU
+     * @param _status Boolean to set whether beneficiary can claim TRU
+     */
+    function setBeneficiaryStatus(address _beneficiary, bool _status) public onlyOwner {
         beneficiaries[_beneficiary] = _status;
         emit BeneficiaryStatusChanged(_beneficiary, _status);
     }

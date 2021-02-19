@@ -40,13 +40,8 @@ contract RatingAgencyV2Distributor is IArbitraryDistributor, Ownable {
      * @dev Initialize distributor
      * @param _beneficiary Address for distribution
      * @param _trustToken TRU address
-     * @param _amount Amount to distribute
      */
-    function initialize(
-        address _beneficiary,
-        IERC20 _trustToken,
-        uint256 _amount
-    ) public initializer {
+    function initialize(address _beneficiary, IERC20 _trustToken) public initializer {
         Ownable.initialize();
         trustToken = _trustToken;
         beneficiary = _beneficiary;
@@ -64,7 +59,12 @@ contract RatingAgencyV2Distributor is IArbitraryDistributor, Ownable {
         _;
     }
 
-    function setBeneficiaryStatus(address _beneficiary, bool _status) public {
+    /**
+     * @dev Owner can set beneficiary status
+     * @param _beneficiary Contract which can claim TRU
+     * @param _status Boolean to set whether contract can claim TRU
+     */
+    function setBeneficiaryStatus(address _beneficiary, bool _status) public onlyOwner {
         beneficiaries[_beneficiary] = _status;
         emit BeneficiaryStatusChanged(_beneficiary, _status);
     }
