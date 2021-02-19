@@ -1,3 +1,4 @@
+/* eslint-disable */ 
 /**
  * PRIVATE_KEY={private_key} ts-node scripts/deploy_truefi.ts "{network}"
  */
@@ -5,7 +6,6 @@ import { ethers, providers } from 'ethers'
 
 import {
   OwnedUpgradeabilityProxyFactory,
-  // new
   RatingAgencyV2DistributorFactory,
   LinearTrueDistributorFactory,
   TrueRatingAgencyV2Factory,
@@ -15,14 +15,13 @@ import {
   LoanFactoryFactory,
   LiquidatorFactory,
   TruPriceChainLinkOracleFactory,
-  // originals
   TrueRatingAgencyFactory,
   TrueLenderFactory,
   TrueFiPoolFactory,
-  TrustTokenFactory
+  TrustTokenFactory,
 } from '../build'
 
-const txnArgs = { gasLimit: 1_500_000, gasPrice: 225_000_000_000 }
+const txnArgs = { gasLimit: 1_500_000, gasPrice: 1_000_000_000 }
 const contractArgs = { gasLimit: 5_500_000, gasPrice: txnArgs.gasPrice }
 
 async function deployTruefi () {

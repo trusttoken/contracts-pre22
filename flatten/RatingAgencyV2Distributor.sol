@@ -496,10 +496,7 @@ contract RatingAgencyV2Distributor is IArbitraryDistributor, Ownable {
      * @param _beneficiary Address for distribution
      * @param _trustToken TRU address
      */
-    function initialize(
-        address _beneficiary,
-        IERC20 _trustToken
-    ) public initializer {
+    function initialize(address _beneficiary, IERC20 _trustToken) public initializer {
         Ownable.initialize();
         trustToken = _trustToken;
         beneficiary = _beneficiary;
