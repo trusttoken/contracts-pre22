@@ -1,0 +1,8 @@
+## `IVoteTokenWithERC20`
+
+
+
+
+
+
+
