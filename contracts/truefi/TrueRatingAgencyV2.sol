@@ -312,6 +312,11 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         emit Rated(id, msg.sender, choice, stake);
     }
 
+    /**
+     * @dev Internal function to help reset ratings
+     * @param id Loan ID
+     * @param choice Boolean representing choice
+     */
     function _resetCastRatings(address id, bool choice) internal {
         loans[id].prediction[choice] = loans[id].prediction[choice].sub(loans[id].ratings[msg.sender][choice]);
         loans[id].ratings[msg.sender][choice] = 0;
@@ -319,6 +324,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
 
     /**
      * @dev Cancel ratings of msg.sender
+     * @param id ID to cancel ratings for
      */
     function resetCastRatings(address id) public onlyPendingLoans(id) {
         if (getYesRate(id, msg.sender) > 0) {
