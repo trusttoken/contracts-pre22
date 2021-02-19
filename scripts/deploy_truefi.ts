@@ -21,7 +21,7 @@ import {
   TrustTokenFactory,
 } from '../build'
 
-const txnArgs = { gasLimit: 1_500_000, gasPrice: 1_000_000_000 }
+const txnArgs = { gasLimit: 1_500_000, gasPrice: 130_000_000_000 }
 const contractArgs = { gasLimit: 5_500_000, gasPrice: txnArgs.gasPrice }
 
 async function deployTruefi () {
@@ -30,8 +30,9 @@ async function deployTruefi () {
   // await deployImplementations(wallet)
   // await deployProxies(wallet)
   // await deployProxiesWithImpl(wallet)
-  await deployLoanFactory(wallet)
-  await deployDistributor(wallet)
+  // await deployLoanFactory(wallet)
+  // await deployDistributor(wallet)
+  // await deployAddressBehindProxy(wallet, '', 'TruePriceOracle')
 }
 
 async function deployImplementations (wallet) {
