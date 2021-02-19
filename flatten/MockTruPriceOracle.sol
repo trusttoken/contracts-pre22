@@ -31,6 +31,8 @@
 
 interface ITruPriceOracle {
     function usdToTru(uint256 amount) external view returns (uint256);
+
+    function truToUsd(uint256 amount) external view returns (uint256);
 }
 
 
@@ -41,8 +43,11 @@ pragma solidity 0.6.10;
 // import "contracts/truefi/interface/ITruPriceOracle.sol";
 
 contract MockTruPriceOracle is ITruPriceOracle {
-    //from tusd to tru
     function usdToTru(uint256 amount) external override view returns (uint256) {
         return (amount * 4) / 1e10;
+    }
+
+    function truToUsd(uint256 amount) external override view returns (uint256) {
+        return (amount * 1e10) / 4;
     }
 }
