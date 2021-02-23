@@ -5,9 +5,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {ITruPriceOracle} from "./interface/ITruPriceOracle.sol";
 import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
 
-
 contract TruPriceOracle is ITruPriceOracle {
-
     AggregatorV3Interface internal priceFeed;
     using SafeMath for uint256;
 
@@ -21,14 +19,14 @@ contract TruPriceOracle is ITruPriceOracle {
     }
 
     /**
-     * @dev return the lastest price for TRU/USD with 8 decimals places 
+     * @dev return the lastest price for TRU/USD with 8 decimals places
      * @return TRU/USD price
      */
-    function getLatestPrice() public view returns (int) {
-        (, int price , , , ) = priceFeed.latestRoundData();
+    function getLatestPrice() public view returns (uint256) {
+        (, uint256 price, , , ) = priceFeed.latestRoundData();
         return price;
     }
-    
+
     /**
      * @dev converts from USD with 18 decimals to TRU with 8 decimals
      * Divide by 100 since Chainlink returns 10 decimals and TRU is 8 decimals
