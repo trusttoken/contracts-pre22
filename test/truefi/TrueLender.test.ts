@@ -20,6 +20,8 @@ import {
   ILoanTokenJson,
   ITrueRatingAgencyJson,
   IStakingPoolJson,
+  MockErc20Token,
+  MockErc20TokenFactory,
 } from 'contracts'
 
 describe('TrueLender', () => {
