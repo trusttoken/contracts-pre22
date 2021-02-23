@@ -22,8 +22,8 @@ contract TruPriceOracle is ITruPriceOracle {
      * @dev return the lastest price for TRU/USD with 8 decimals places
      * @return TRU/USD price
      */
-    function getLatestPrice() public view returns (uint256) {
-        (, uint256 price, , , ) = priceFeed.latestRoundData();
+    function getLatestPrice() public view returns (int256) {
+        (, int256 price, , , ) = priceFeed.latestRoundData();
         return price;
     }
 
