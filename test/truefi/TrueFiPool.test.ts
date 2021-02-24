@@ -246,7 +246,7 @@ describe('TrueFiPool', () => {
       await timeTravel(provider, dayInSeconds * 182.5)
       const totalSupply = await pool.totalSupply()
       const poolValue = await pool.poolValue()
-      
+
       await pool.connect(borrower).join(includeFee(parseEth(1e6)))
       expectScaledCloseTo(await pool.balanceOf(borrower.address), totalSupply.mul(parseEth(1e6)).div(poolValue))
     })
