@@ -6,7 +6,7 @@ interface ContractFactory<C extends Contract> {
 }
 
 export interface ContractFactoryConstructor<C extends Contract> {
-  new(signer?: Signer): ContractFactory<C>
+  new(signer?: Signer): ContractFactory<C>,
 }
 
 export async function deployContract<C extends Contract> (

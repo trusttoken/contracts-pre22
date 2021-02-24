@@ -1,7 +1,7 @@
-import { Contract, providers, Signer, VoidSigner, Wallet } from 'ethers'
-import { ContractFactoryConstructor, deployContract } from '../../scripts/utils/deployContract'
+import { Contract, providers } from 'ethers'
+import { ContractFactoryConstructor, deployContract } from 'scripts/utils/deployContract'
 import ganache from 'ganache-core'
-import { OwnedUpgradeabilityProxyFactory } from '../../build'
+import { OwnedUpgradeabilityProxyFactory } from 'contracts'
 import { expect } from 'chai'
 
 export const CONTRACTS_OWNER = '0x16cEa306506c387713C70b9C1205fd5aC997E78E'
