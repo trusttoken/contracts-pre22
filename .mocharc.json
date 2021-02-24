@@ -5,6 +5,6 @@
   "recursive": true,
   "timeout": 20000,
   "spec": "test/**/*.test.ts",
-  "exclude": "test/integration",
+  "exclude": "test/integration/**/*.ts",
   "watch-files": ["test"]
 }
