@@ -1,7 +1,7 @@
 import { upgradeSuite } from './suite'
 import {
   TrustTokenFactory,
-} from '../../build'
+} from 'contracts'
 import { expect } from 'chai'
 import { Wallet } from 'ethers'
 
@@ -41,6 +41,6 @@ describe('Upgrade', () => {
     expect(await contract.lockedBalance(addressWithLockedFunds)).to.be.gt(0)
     expect(await contract.lockedBalance(addressWithoutLockedFunds)).to.equal(0)
     expect(await contract.unlockedBalance(addressWithLockedFunds)).to.be.gt(0)
-    expect(await contract.unlockedBalance(addressWithoutLockedFunds)).to.gt(0)
+    expect(await contract.unlockedBalance(addressWithoutLockedFunds)).to.be.gt(0)
   })
 })
