@@ -36,16 +36,19 @@ jobs:
     docker:
       - image: circleci/node:12.19.0
     steps:
+      - checkout
       - run: yarn lint
   test:
     docker:
       - image: circleci/node:12.19.0
     steps:
+      - checkout
       - run: yarn test
   upgrade:
     docker:
       - image: circleci/node:12.19.0
     steps:
+      - checkout
       - run: yarn test:upgrade
 
 workflows:
