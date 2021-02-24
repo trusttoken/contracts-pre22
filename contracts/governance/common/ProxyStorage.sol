@@ -7,7 +7,7 @@ pragma solidity 0.6.10;
  * Never remove items from this list
  */
 contract ProxyStorage {
-    bool initalized;
+    bool public initalized;
     uint256 public totalSupply;
 
     mapping(address => uint256) public balanceOf;
@@ -16,14 +16,6 @@ contract ProxyStorage {
 
     address owner_;
     address pendingOwner_;
-
-    // represents total distribution for locked balances
-    mapping(address => uint256) distribution;
-
-    // registry of locked addresses
-    address public timeLockRegistry;
-    // allow unlocked transfers to special account
-    bool public returnsLocked;
 
     mapping(address => address) public delegates; // A record of votes checkpoints for each account, by index
     struct Checkpoint {

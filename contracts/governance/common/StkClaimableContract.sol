@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {ProxyStorage} from "./ProxyStorage.sol";
+
 /**
  * @title ClaimableContract
  * @dev The ClaimableContract contract is a copy of Claimable Contract by Zeppelin.
  and provides basic authorization control functions. Inherits storage layout of
  ProxyStorage.
  */
-contract ClaimableContract {
-    address owner_;
-    address pendingOwner_;
-    bool initalized;
-
+contract StkClaimableContract is ProxyStorage {
     function owner() public view returns (address) {
         return owner_;
     }
