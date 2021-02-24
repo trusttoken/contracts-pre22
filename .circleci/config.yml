@@ -30,8 +30,8 @@ jobs:
       - setup_remote_docker
       - pull_submodules
       - install_dependencies
-      - run: yarn typecheck
       - run: yarn build
+      - run: yarn typecheck
   lint:
     docker:
       - image: circleci/node:12.19.0
