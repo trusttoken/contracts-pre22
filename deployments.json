@@ -16,5 +16,117 @@
       "txHash": "0xb8a69fb68b07c1e72ac3adb9c6973b888f885eb6891488a6783227a9d7902f28",
       "address": "0x08031B53f15F7E5aADDCdF6da3382f8483dB4323"
     }
+  },
+  "ropsten": {
+    "tru_proxy": {
+      "txHash": "0x1ee3afd0267fc83eed4499e2b6b804c86d9dca61523a3571c582e41476e08fa5",
+      "address": "0x12b2f909D9eA91C86DC7FBba272D8aBbcDDfd72C"
+    },
+    "factory_proxy": {
+      "txHash": "0x551b5d6d778a6bc02eda9615606116bb90acea6b55716bbddee38feb0d03794b",
+      "address": "0xF2F9604c1eC79833b36bC8f494828C87C0983c96"
+    },
+    "pool_proxy": {
+      "txHash": "0x3439bdd66e0396ebaa12e4acee9ccf49d3cea6ed4b01bf8b5a915e86784b8f66",
+      "address": "0xd943D9CB0904bB2a057f2e6AdE738daCA3e5d405"
+    },
+    "ratingAgency_proxy": {
+      "txHash": "0x01affeea8141c88291caf718ccee1799ed7ebc4d3a4e1266bf100111c58a15ae",
+      "address": "0xBaf182DDCBE010F764bcC1e1FE25a71Fe6FdA6F7"
+    },
+    "tru": {
+      "txHash": "0xe54a2a7163c860b3afc2ee411434e38b0c795534a8536116dfeba5568adb1d5d",
+      "address": "0x281cFD0918C3C0f534C5d30c8E1E4280C84355b4"
+    },
+    "pool": {
+      "txHash": "0x7234f8b3fe55c0f269350fd364f4e86df3ac6c7a64c0fc32b712bd5298b486a2",
+      "address": "0x9C0b3C16F62d3c1CaDeD9f9088f925b4eb40adbA"
+    },
+    "factory": {
+      "txHash": "0xb5bb26a5fdd37af79fc7438b6057b4b00bd818bc70c98fe453deda02008cd91b",
+      "address": "0x6cfd71c324413BE57de75824D8BcfE68948c6572"
+    },
+    "stkTruDistributor": {
+      "txHash": "0x94477f02f3aeb1c0299480b68e5ee04d495856b23308ab91e4f7faf621872edf",
+      "address": "0xea3ae0fb787058722A4750805cE2cA502Fdb5cf6"
+    },
+    "stkTruDistributor_proxy": {
+      "txHash": "0x14be1a69e1865f0de83c7c918727311469d2925ad774bd161de2fc656da1f0ba",
+      "address": "0x591F55835e2514a58eA430B253db783115dad789"
+    },
+    "stkTru": {
+      "txHash": "0x97121f41f7e870642d8496b47953804a88b65e05a8dee4225ab7ce93438ae6b2",
+      "address": "0xb899FB2116fAD3f624C093015A7356840d07DfD2"
+    },
+    "stkTru_proxy": {
+      "txHash": "0x7c2d5b7e423c800a906c6877ecab38cdd39cba5f8419276287479d484c96471f",
+      "address": "0xccf081F684b3481503080Ca4240F76d8381A7eF5"
+    },
+    "timelock": {
+      "txHash": "0xf4f66294c91f0a33c2b7ed2a9c9e3c5369e2ef933e74b47d7720347a49fd5796",
+      "address": "0xc89405a3f8A9b7C55F554d6fF4A43BC8486A9214"
+    },
+    "timelock_proxy": {
+      "txHash": "0xfed3f603aa74e82343cee41b545275d4aecc01183f24d707333125a5d1f4a2ca",
+      "address": "0x418Daf88CCfe083324f8c91e6FE8da3e86d9a182"
+    },
+    "governorAlpha": {
+      "txHash": "0x82a52b075bf5f29749895cd4c6370a3e6112ee2a67216f1c1a4d437a44f9af06",
+      "address": "0xc223F61FD8d9AC4b730B280B0e9B0f7F47c88537"
+    },
+    "governorAlpha_proxy": {
+      "txHash": "0xd55e5ecfbed2510096f237603d7ee96edb58df905f833d7453b006faa7f1c78d",
+      "address": "0x01cACF74540154B7c759657A73f74a578CFEA69b"
+    },
+    "ratingAgency2": {
+      "txHash": "0x383a2546eabac6085851d9893cb1063eee1bc9197772c3b2605343e557eb9be4",
+      "address": "0xEd7eb3f757b9b63d214298Ceb9dF909BB4708A10"
+    },
+    "ratingAgency2_proxy": {
+      "txHash": "0x2f8463c6e93d6a2ba407d8e84b9630f44fd577a3815cc65beeaf5efbfce816bc",
+      "address": "0x6854E91dEB5D7Ec35b556711c5ED6c702C67eefC"
+    },
+    "arbitraryDistributor2": {
+      "txHash": "0x8b4721c25637f612af9380b400d6ff4bcebb1bf76380465a5976b35dbbdfee7d",
+      "address": "0xbbf17a827B051d4d638374bE8e8A2Ab21194fcaf"
+    },
+    "arbitraryDistributor2_proxy": {
+      "txHash": "0xa3642c7ee0fd46743fbac38a9c2e13a09b840e3e1b6dcd44a8a2ebf34d5df020",
+      "address": "0x149a201b7A1e8Be075a5431e9595B07e8FFD04BF"
+    },
+    "uniswapOracle": {
+      "txHash": "0x0f022023960451b25541481d353fd31c0a1321561834f14200ecd30188658658",
+      "address": "0x1e2Be8E9A30871FD65aa2DAB48f294849576e886"
+    },
+    "liquidator": {
+      "txHash": "0x6e0e9ca8b427b34ca00f81935650ce935dc4836543393d41a447b1abae3325ab",
+      "address": "0x15e69636Ca83e3284230d60345A86461b9d913CC"
+    },
+    "liquidator_proxy": {
+      "txHash": "0x8222bc558e9d20b244e2310307d6f211fe10f8c1d594543bf907755c9b47bdea",
+      "address": "0xAab6eC654d502a4efF6dcb85832C690858A691d5"
+    },
+    "mockOracle": {
+      "txHash": "0xff1f3e31712e9f15e38ab999ee7439ed5daa3caa54f22c571fc70d3c300cc3e3",
+      "address": "0xE3A4359045CF14C4466c3E80Fc279527cbD754cD"
+    },
+    "ratingAgency": {
+      "txHash": "0x9e0a5c58c369ec6b5499d05f9f4f127dcf9e52436c1e601a2c1700b9de86898d",
+      "address": "0x3a877100BA78198a0cb7269C65bf7313D8A8Fa82"
+    }
+  },
+  "mainnet": {
+    "tru_proxy": {
+      "txHash": "0x68d1ec67192bd1ba51b277f10c8fbda91317ecb61563365d7ed1d4fe98993a8a",
+      "address": "0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784"
+    },
+    "factory_proxy": {
+      "txHash": "0x40eb8b4627c9335138ef57c1fca17fed1dd4455dcc6cdb117ba81a065d1e7955",
+      "address": "0x4ACE6dE67E9a9EDFf5c2d0a584390Fb5394119e7"
+    },
+    "pool_proxy": {
+      "txHash": "0xe2420b341397151bf2790d3b7e7c77f511830c882393ed81d8b4ffcd9f8f6541",
+      "address": "0xa1e72267084192Db7387c8CC1328fadE470e4149"
+    }
   }
 }
