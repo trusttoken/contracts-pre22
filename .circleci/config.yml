@@ -32,23 +32,31 @@ jobs:
       - install_dependencies
       - run: yarn build
       - run: yarn typecheck
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
   lint:
     docker:
       - image: circleci/node:12.19.0
     steps:
-      - checkout
+      - attach_workspace:
+          at: .
       - run: yarn lint
   test:
     docker:
       - image: circleci/node:12.19.0
     steps:
-      - checkout
+      - attach_workspace:
+          at: .
       - run: yarn test
   upgrade:
     docker:
       - image: circleci/node:12.19.0
     steps:
-      - checkout
+      - attach_workspace:
+          at: .
       - run: yarn test:upgrade
 
 workflows:
