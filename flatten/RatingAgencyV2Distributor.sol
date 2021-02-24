@@ -500,8 +500,18 @@ contract RatingAgencyV2Distributor is IArbitraryDistributor, Ownable {
         Ownable.initialize();
         trustToken = _trustToken;
         beneficiary = _beneficiary;
-        amount = 500000000000000; // 5M
-        remaining = 30000000000000000; // 300M
+        remaining = 500000000000000; // 5M
+        amount = 30000000000000000; // 300M
+    }
+
+    /**
+     * @dev reset remaining & amount to be correct values
+     */
+    function reset() public onlyOwner {
+        // chi = amount / remaining
+        // chi = 500000000000000 / 5000000000000000 = 0.1
+        amount = 5000000000000000; // 50M
+        remaining = 500000000000000; // 5M
     }
 
     /**
