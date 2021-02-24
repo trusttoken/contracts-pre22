@@ -967,7 +967,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         emit Rated(id, msg.sender, choice, stake);
     }
 
-    /** 
+    /**
      * @dev Internal function to help reset ratings
      * @param id Loan ID
      * @param choice Boolean representing choice
