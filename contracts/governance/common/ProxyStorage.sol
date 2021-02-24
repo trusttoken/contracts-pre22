@@ -17,6 +17,14 @@ contract ProxyStorage {
     address owner_;
     address pendingOwner_;
 
+    // represents total distribution for locked balances
+    mapping(address => uint256) distribution;
+
+    // registry of locked addresses
+    address public timeLockRegistry;
+    // allow unlocked transfers to special account
+    bool public returnsLocked;
+
     mapping(address => address) public delegates; // A record of votes checkpoints for each account, by index
     struct Checkpoint {
         // A checkpoint for marking number of votes from a given block

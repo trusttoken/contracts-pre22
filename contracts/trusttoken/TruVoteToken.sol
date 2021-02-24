@@ -11,8 +11,8 @@
 
 pragma solidity 0.6.10;
 
-import {ERC20} from "./common/ERC20.sol";
-import {IVoteToken} from "./interface/IVoteToken.sol";
+import {ERC20} from "../trusttoken/common/ERC20.sol";
+import {IVoteToken} from "../governance/interface/IVoteToken.sol";
 
 /**
  * @title VoteToken
@@ -22,7 +22,7 @@ import {IVoteToken} from "./interface/IVoteToken.sol";
  * Checkpoints are created every time state is changed which record voting power
  * Inherits standard ERC20 behavior
  */
-abstract contract VoteToken is ERC20, IVoteToken {
+abstract contract TruVoteToken is ERC20, IVoteToken {
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
     bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
 
@@ -120,7 +120,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
         _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
-    function _balanceOf(address account) internal view virtual returns (uint256) {
+    function _balanceOf(address account) internal virtual view returns (uint256) {
         return balanceOf[account];
     }
 

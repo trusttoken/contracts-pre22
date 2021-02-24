@@ -6,7 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {VoteToken} from "./VoteToken.sol";
-import {ClaimableContract} from "../trusttoken/common/ClaimableContract.sol";
+import {ClaimableContract} from "./common/ClaimableContract.sol";
 import {ITrueDistributor} from "../truefi/interface/ITrueDistributor.sol";
 
 /**
