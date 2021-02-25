@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TruProxyStorage} from "./TruProxyStorage.sol";
+import {ProxyStorage} from "./ProxyStorage.sol";
 
 /**
  * @title ClaimableContract
@@ -9,7 +9,7 @@ import {TruProxyStorage} from "./TruProxyStorage.sol";
  and provides basic authorization control functions. Inherits storage layout of
  ProxyStorage.
  */
-contract ClaimableContract is TruProxyStorage {
+contract StkClaimableContract is ProxyStorage {
     function owner() public view returns (address) {
         return owner_;
     }

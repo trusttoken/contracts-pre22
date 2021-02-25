@@ -39,7 +39,7 @@ export async function upgradeSuite<T extends Contract> (
     expect(oldValues[i], `Possible corrupted storage:
 Getter: ${getters[i]}
 Current: ${oldValues[i].toString()}
-Post upgrade: ${newValues[i].toString()}`).to.deep.equal(newValues[i])
+Post upgrade: ${newValues[i].toString()}\n`).to.deep.equal(newValues[i])
   }
   return existingContract
 }

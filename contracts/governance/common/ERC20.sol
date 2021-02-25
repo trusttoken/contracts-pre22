@@ -20,7 +20,7 @@ import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-import {TruProxyStorage} from "./TruProxyStorage.sol";
+import {ProxyStorage} from "./ProxyStorage.sol";
 
 // prettier-ignore
 /**
@@ -47,7 +47,7 @@ import {TruProxyStorage} from "./TruProxyStorage.sol";
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-abstract contract ERC20 is TruProxyStorage, Context {
+abstract contract ERC20 is ProxyStorage, Context {
     using SafeMath for uint256;
     using Address for address;
 
