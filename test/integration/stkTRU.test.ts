@@ -31,7 +31,7 @@ it('stkTRU', async () => {
     'liquidator',
     'stakeSupply',
     'undistributedTfusdRewards',
-    'nextDistributionIndex'
+    'nextDistributionIndex',
   ])
   expect(await contract.initalized()).to.be.true
   expect(await contract.balanceOf(holder)).to.be.gt(0)
