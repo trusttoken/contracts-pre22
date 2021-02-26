@@ -9,7 +9,7 @@ import { solidity } from 'ethereum-waffle'
 use(solidity)
 
 const addressWithLockedFunds = '0xf10b99017a1e5d26b05fa91d923c150e701b05a8'
-const addressWithoutLockedFunds = '0xf0db95a3c4791eff8b934da8d7ea495632f05d9d'
+const addressWithoutLockedFunds = '0x3f5ce5fbfe3e9af3971dd833d26ba9b5c936f0be'
 
 it('TRU', async () => {
   const emptyAddress = Wallet.createRandom().address
