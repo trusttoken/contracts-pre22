@@ -544,6 +544,17 @@ describe('TrueRatingAgencyV2', () => {
         .withArgs(loanToken.address, owner.address, parseTRU(100000))
     })
 
+    it('works when ratersRewardFactor is 0', async () => {
+      await rater.setRatersRewardFactor(0)
+
+      await rater.yes(loanToken.address)
+      await loanToken.fund()
+      const balanceBefore = await trustToken.balanceOf(arbitraryDistributor.address)
+      await rater.claim(loanToken.address, owner.address, txArgs)
+      const balanceAfter = await trustToken.balanceOf(arbitraryDistributor.address)
+      expectScaledCloseTo(balanceBefore.sub(balanceAfter), parseTRU(1e5))
+    })
+
     describe('with different ratersRewardFactor value', () => {
       beforeEach(async () => {
         await rater.setRatersRewardFactor(4000)
