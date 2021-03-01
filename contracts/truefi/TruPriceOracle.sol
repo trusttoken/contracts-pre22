@@ -50,6 +50,7 @@ contract TruPriceOracle is ITruPriceOracle {
     /**
      * @dev convert int256 to uint256
      * @param value to convert to uint
+     * @return the converted uint256 value 
      */
     function safeUint(int256 value) internal pure returns (uint256) {
         require(value >= 0, "TruPriceChainLinkOracle: uint underflow");

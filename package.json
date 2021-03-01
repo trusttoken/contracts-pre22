@@ -47,7 +47,7 @@
   "dependencies": {
     "@chainlink/contracts": "^0.1.6",
     "@openzeppelin/contracts": "^3.1.0",
-    "ethereum-mars": "^0.1.3-beta",
+    "ethereum-mars": "^0.1.3",
     "ethers": "5.0.12",
     "ganache-cli": "6.8.1",
     "ganache-time-traveler": "^1.0.14",
