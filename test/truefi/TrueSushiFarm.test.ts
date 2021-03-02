@@ -156,11 +156,11 @@ describe('TrueSushiFarm', () => {
     it('estimate rewards correctly', async () => {
       await farm.connect(staker1).stake(parseEth(1000), txArgs)
       await timeTravel(provider, DAY)
-      expect(expectScaledCloseTo((await farm.claimable(staker1.address)), fromTru(100)))
+      expect(expectScaledCloseTo((await farm.claimable(staker1.address, trustToken.address)), fromTru(100)))
       await timeTravel(provider, DAY)
-      expect(expectScaledCloseTo((await farm.claimable(staker1.address)), fromTru(200)))
+      expect(expectScaledCloseTo((await farm.claimable(staker1.address, trustToken.address)), fromTru(200)))
       await farm.connect(staker1).unstake(100, txArgs)
-      expect(expectScaledCloseTo((await farm.claimable(staker1.address)), fromTru(200)))
+      expect(expectScaledCloseTo((await farm.claimable(staker1.address, trustToken.address)), fromTru(200)))
       await farm.connect(staker1).claim(txArgs)
       expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
     })
@@ -201,18 +201,18 @@ describe('TrueSushiFarm', () => {
 
       await farm.connect(staker1).claim(txArgs)
       expect(await farm.claimableReward(trustToken.address, staker1.address)).to.equal(0)
-      expect(await farm.claimable(staker1.address)).to.equal(0)
+      expect(await farm.claimable(staker1.address, trustToken.address)).to.equal(0)
     })
 
     it('claimable is zero from the start', async () => {
-      expect(await farm.claimable(staker1.address)).to.equal(0)
+      expect(await farm.claimable(staker1.address, trustToken.address)).to.equal(0)
     })
 
     it('claimable is callable after unstake', async () => {
       await farm.connect(staker1).stake(parseEth(500), txArgs)
       await timeTravel(provider, DAY)
       await farm.connect(staker1).unstake(parseEth(500), txArgs)
-      expect(await farm.claimable(staker1.address)).to.be.gt(0)
+      expect(await farm.claimable(staker1.address, trustToken.address)).to.be.gt(0)
     })
 
     it('calling distribute does not break reward calculations', async () => {

@@ -122,11 +122,11 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     /**
      * @dev Internal claim function
      */
-    function _claim() internal {
-        totalClaimedRewards[trustToken] = totalClaimedRewards[trustToken].add(claimableReward[trustToken][msg.sender]);
-        uint256 rewardToClaim = claimableReward[trustToken][msg.sender];
-        claimableReward[trustToken][msg.sender] = 0;
-        require(trustToken.transfer(msg.sender, rewardToClaim));
+    function _claim(IERC20 token) internal {
+        totalClaimedRewards[token] = totalClaimedRewards[token].add(claimableReward[token][msg.sender]);
+        uint256 rewardToClaim = claimableReward[token][msg.sender];
+        claimableReward[token][msg.sender] = 0;
+        require(token.transfer(msg.sender, rewardToClaim));
         emit Claim(msg.sender, rewardToClaim);
     }
 
@@ -146,7 +146,7 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     function stake(uint256 amount) external override {
         _updateTru();
         _stake(amount);
-        _claim();
+        _claim(trustToken);
     }
 
     /**
@@ -163,7 +163,7 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      */
     function claim() external override {
         _updateTru();
-        _claim();
+        _claim(trustToken);
     }
 
     /**
@@ -173,29 +173,29 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     function exit(uint256 amount) external override {
         _updateTru();
         _unstake(amount);
-        _claim();
+        _claim(trustToken);
     }
 
     /**
      * @dev View to estimate the claimable reward for an account
      * @return claimable rewards for account
      */
-    function claimable(address account) external view returns (uint256) {
+    function claimable(address account, IERC20 token) external view returns (uint256) {
         if (staked[account] == 0) {
-            return claimableReward[trustToken][account];
+            return claimableReward[token][account];
         }
         // estimate pending reward from distributor
         uint256 pending = trueDistributor.nextDistribution();
         // calculate total rewards (including pending)
-        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(pending).add(totalClaimedRewards[trustToken]).mul(PRECISION);
+        uint256 newTotalFarmRewards = token.balanceOf(address(this)).add(pending).add(totalClaimedRewards[token]).mul(PRECISION);
         // calculate block reward
-        uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards[trustToken]);
+        uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards[token]);
         // calculate next cumulative reward per token
-        uint256 nextCumulativeRewardPerToken = cumulativeRewardPerToken[trustToken].add(totalBlockReward.div(totalStaked));
+        uint256 nextCumulativeRewardPerToken = cumulativeRewardPerToken[token].add(totalBlockReward.div(totalStaked));
         // return claimable reward for this account
         // prettier-ignore
-        return claimableReward[trustToken][account].add(
-            staked[account].mul(nextCumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[trustToken][account])).div(PRECISION));
+        return claimableReward[token][account].add(
+            staked[account].mul(nextCumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[token][account])).div(PRECISION));
     }
 
     /**
