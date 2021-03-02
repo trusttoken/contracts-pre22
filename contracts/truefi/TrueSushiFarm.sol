@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {Initializable} from "./common/Initializable.sol";
+import {IMasterChef} from "./interface/IMasterChef.sol";
 import {ITrueDistributor} from "./interface/ITrueDistributor.sol";
 import {ITrueFarm} from "./interface/ITrueFarm.sol";
 
@@ -44,6 +45,9 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     uint256 public totalClaimedRewards;
     uint256 public totalFarmRewards;
 
+    IMasterChef public masterChef;
+    uint256 public sushiPoolId;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -78,11 +82,15 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     function initialize(
         IERC20 _stakingToken,
         ITrueDistributor _trueDistributor,
+        IMasterChef _masterChef,
+        uint256 _sushiPoolId,
         string memory _name
     ) public initializer {
         stakingToken = _stakingToken;
         trueDistributor = _trueDistributor;
         trustToken = _trueDistributor.trustToken();
+        masterChef = _masterChef;
+        sushiPoolId = _sushiPoolId;
         name = _name;
         require(trueDistributor.farm() == address(this), "TrueSushiFarm: Distributor farm is not set");
     }
@@ -122,7 +130,14 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
         emit Claim(msg.sender, rewardToClaim);
     }
 
-    
+    function _deposit(uint256 amount) internal {
+        stakingToken.approve(address(masterChef), amount);
+        masterChef.deposit(sushiPoolId, amount);
+    }
+
+    function _withdraw(uint256 amount) internal {
+        masterChef.withdraw(sushiPoolId, amount);
+    }
 
     /**
      * @dev Stake tokens

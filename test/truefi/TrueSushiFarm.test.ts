@@ -40,6 +40,8 @@ describe('TrueSushiFarm', () => {
   const DURATION = REWARD_DAYS * DAY
   const amount = BigNumber.from(1e11) // 1000 TRU = 100/day
   const txArgs = { gasLimit: 6_000_000 }
+  const mockMasterChefAddress = Wallet.createRandom().address
+  const mockSushiPoolId = 0
 
   const fromTru = (amount: BigNumberish) => BigNumber.from(amount).mul(BigNumber.from(1e8))
 
@@ -58,7 +60,7 @@ describe('TrueSushiFarm', () => {
     farm2 = await new TrueSushiFarmFactory(owner).deploy()
 
     await distributor.setFarm(farm.address)
-    await farm.initialize(stakingToken.address, distributor.address, 'Test farm')
+    await farm.initialize(stakingToken.address, distributor.address, mockMasterChefAddress, mockSushiPoolId, 'Test farm')
 
     await trustToken.mint(distributor.address, amount)
     // await distributor.transfer(owner.address, farm.address, amount)
@@ -84,7 +86,7 @@ describe('TrueSushiFarm', () => {
     })
 
     it('cannot init farm unless distributor is set to farm', async () => {
-      await expect(farm2.initialize(stakingToken.address, distributor.address, 'Test farm'))
+      await expect(farm2.initialize(stakingToken.address, distributor.address, mockMasterChefAddress, mockSushiPoolId, 'Test farm'))
         .to.be.revertedWith('TrueSushiFarm: Distributor farm is not set')
     })
   })
