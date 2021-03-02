@@ -93,9 +93,6 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      * @param amount Amount of tokens to stake
      */
     function _stake(uint256 amount) internal {
-        if (claimableReward[msg.sender] > 0) {
-            _claim();
-        }
         staked[msg.sender] = staked[msg.sender].add(amount);
         totalStaked = totalStaked.add(amount);
         require(stakingToken.transferFrom(msg.sender, address(this), amount));
@@ -134,6 +131,7 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     function stake(uint256 amount) external override {
         _updateTru();
         _stake(amount);
+        _claim();
     }
 
 
