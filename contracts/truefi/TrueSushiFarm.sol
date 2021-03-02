@@ -35,15 +35,15 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     mapping(address => uint256) public staked;
 
     // track overall cumulative rewards
-    uint256 public cumulativeRewardPerToken;
+    mapping(IERC20 => uint256) public cumulativeRewardPerToken;
     // track previous cumulate rewards for accounts
-    mapping(address => uint256) public previousCumulatedRewardPerToken;
+    mapping(IERC20 => mapping(address => uint256)) public previousCumulatedRewardPerToken;
     // track claimable rewards for accounts
-    mapping(address => uint256) public claimableReward;
+    mapping(IERC20 => mapping(address => uint256)) public claimableReward;
 
     // track total rewards
-    uint256 public totalClaimedRewards;
-    uint256 public totalFarmRewards;
+    mapping(IERC20 => uint256) public totalClaimedRewards;
+    mapping(IERC20 => uint256) public totalFarmRewards;
 
     IMasterChef public masterChef;
     uint256 public sushiPoolId;
@@ -123,9 +123,9 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      * @dev Internal claim function
      */
     function _claim() internal {
-        totalClaimedRewards = totalClaimedRewards.add(claimableReward[msg.sender]);
-        uint256 rewardToClaim = claimableReward[msg.sender];
-        claimableReward[msg.sender] = 0;
+        totalClaimedRewards[trustToken] = totalClaimedRewards[trustToken].add(claimableReward[trustToken][msg.sender]);
+        uint256 rewardToClaim = claimableReward[trustToken][msg.sender];
+        claimableReward[trustToken][msg.sender] = 0;
         require(trustToken.transfer(msg.sender, rewardToClaim));
         emit Claim(msg.sender, rewardToClaim);
     }
@@ -182,20 +182,20 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      */
     function claimable(address account) external view returns (uint256) {
         if (staked[account] == 0) {
-            return claimableReward[account];
+            return claimableReward[trustToken][account];
         }
         // estimate pending reward from distributor
         uint256 pending = trueDistributor.nextDistribution();
         // calculate total rewards (including pending)
-        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(pending).add(totalClaimedRewards).mul(PRECISION);
+        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(pending).add(totalClaimedRewards[trustToken]).mul(PRECISION);
         // calculate block reward
-        uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards);
+        uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards[trustToken]);
         // calculate next cumulative reward per token
-        uint256 nextcumulativeRewardPerToken = cumulativeRewardPerToken.add(totalBlockReward.div(totalStaked));
+        uint256 nextCumulativeRewardPerToken = cumulativeRewardPerToken[trustToken].add(totalBlockReward.div(totalStaked));
         // return claimable reward for this account
         // prettier-ignore
-        return claimableReward[account].add(
-            staked[account].mul(nextcumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[account])).div(PRECISION));
+        return claimableReward[trustToken][account].add(
+            staked[account].mul(nextCumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[trustToken][account])).div(PRECISION));
     }
 
     /**
@@ -208,20 +208,20 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
             trueDistributor.distribute();
         }
         // calculate total rewards
-        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(totalClaimedRewards).mul(PRECISION);
+        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(totalClaimedRewards[trustToken]).mul(PRECISION);
         // calculate block reward
-        uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards);
+        uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards[trustToken]);
         // update farm rewards
-        totalFarmRewards = newTotalFarmRewards;
+        totalFarmRewards[trustToken] = newTotalFarmRewards;
         // if there are stakers
         if (totalStaked > 0) {
-            cumulativeRewardPerToken = cumulativeRewardPerToken.add(totalBlockReward.div(totalStaked));
+            cumulativeRewardPerToken[trustToken] = cumulativeRewardPerToken[trustToken].add(totalBlockReward.div(totalStaked));
         }
         // update claimable reward for sender
-        claimableReward[msg.sender] = claimableReward[msg.sender].add(
-            staked[msg.sender].mul(cumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[msg.sender])).div(PRECISION)
+        claimableReward[trustToken][msg.sender] = claimableReward[trustToken][msg.sender].add(
+            staked[msg.sender].mul(cumulativeRewardPerToken[trustToken].sub(previousCumulatedRewardPerToken[trustToken][msg.sender])).div(PRECISION)
         );
         // update previous cumulative for sender
-        previousCumulatedRewardPerToken[msg.sender] = cumulativeRewardPerToken;
+        previousCumulatedRewardPerToken[trustToken][msg.sender] = cumulativeRewardPerToken[trustToken];
     }
 }

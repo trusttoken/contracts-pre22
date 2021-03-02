@@ -197,10 +197,10 @@ describe('TrueSushiFarm', () => {
       await timeTravel(provider, DAY)
       // force an update to claimableReward:
       await farm.connect(staker1).unstake(parseEth(1), txArgs)
-      expect(await farm.claimableReward(staker1.address)).to.be.gt(0)
+      expect(await farm.claimableReward(trustToken.address, staker1.address)).to.be.gt(0)
 
       await farm.connect(staker1).claim(txArgs)
-      expect(await farm.claimableReward(staker1.address)).to.equal(0)
+      expect(await farm.claimableReward(trustToken.address, staker1.address)).to.equal(0)
       expect(await farm.claimable(staker1.address)).to.equal(0)
     })
 
