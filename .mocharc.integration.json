@@ -3,8 +3,7 @@
   "extension": ["ts"],
   "target": "esnext",
   "recursive": true,
-  "timeout": 20000,
-  "spec": "test/**/*.test.ts",
-  "exclude": "test/integration/**/*.ts",
+  "timeout": 200000,
+  "spec": "test/integration/*.test.ts",
   "watch-files": ["test"]
 }

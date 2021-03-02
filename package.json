@@ -15,6 +15,7 @@
     "build:types": "typechain --target ethers-v5 --outDir build/types 'build/*.json' > /dev/null && echo 'Typechain generated'",
     "build": "yarn clean && yarn build:sol && yarn build:types && bash ./indexBuild.sh",
     "test": "mocha",
+    "test:upgrade": "mocha --config .mocharc.integration.json",
     "checks": "yarn lint && yarn typecheck && yarn test",
     "docs": "npx solidity-docgen --solc-module solc-0.6 -i contracts -o docs",
     "slither": "./slither.sh"

@@ -6,8 +6,8 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {VoteToken} from "./VoteToken.sol";
-import {ClaimableContract} from "../trusttoken/common/ClaimableContract.sol";
 import {ITrueDistributor} from "../truefi/interface/ITrueDistributor.sol";
+import {StkClaimableContract} from "./common/StkClaimableContract.sol";
 
 /**
  * @title stkTRU
@@ -19,7 +19,7 @@ import {ITrueDistributor} from "../truefi/interface/ITrueDistributor.sol";
  * stkTRU can be used to vote in governance
  * stkTRU can be used to rate and approve loans
  */
-contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
+contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
     using SafeMath for uint256;
     uint256 constant PRECISION = 1e30;
     uint256 constant MIN_DISTRIBUTED_AMOUNT = 100e8;
