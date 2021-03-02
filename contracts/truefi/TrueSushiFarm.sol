@@ -92,7 +92,7 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      * Also claims any existing rewards.
      * @param amount Amount of tokens to stake
      */
-    function stake(uint256 amount) external override update {
+    function _stake(uint256 amount) internal {
         if (claimableReward[msg.sender] > 0) {
             _claim();
         }
@@ -125,18 +125,33 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
         emit Claim(msg.sender, rewardToClaim);
     }
 
+    
+
+    /**
+     * @dev Stake tokens
+     * @param amount Amount of tokens to stake
+     */
+    function stake(uint256 amount) external override {
+        _updateTru();
+        _stake(amount);
+    }
+
+
+
     /**
      * @dev Remove staked tokens
      * @param amount Amount of tokens to unstake
      */
-    function unstake(uint256 amount) external override update {
+    function unstake(uint256 amount) external override {
+        _updateTru();
         _unstake(amount);
     }
 
     /**
      * @dev Claim TRU rewards
      */
-    function claim() external override update {
+    function claim() external override {
+        _updateTru();
         _claim();
     }
 
@@ -144,7 +159,8 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      * @dev Unstake amount and claim rewards
      * @param amount Amount of tokens to unstake
      */
-    function exit(uint256 amount) external override update {
+    function exit(uint256 amount) external override {
+        _updateTru();
         _unstake(amount);
         _claim();
     }
@@ -174,7 +190,7 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     /**
      * @dev Update state and get TRU from distributor
      */
-    modifier update() {
+    function _updateTru() internal {
         // pull TRU from distributor
         // only pull if there is distribution and distributor farm is set to this farm
         if (trueDistributor.nextDistribution() > 0 && trueDistributor.farm() == address(this)) {
@@ -196,6 +212,5 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
         );
         // update previous cumulative for sender
         previousCumulatedRewardPerToken[msg.sender] = cumulativeRewardPerToken;
-        _;
     }
 }
