@@ -13,7 +13,7 @@
 pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
-import {ClaimableContract} from "./common/ClaimableContract.sol";
+import {ClaimableContract} from "../trusttoken/common/ClaimableContract.sol";
 import {ITimelock} from "./interface/ITimelock.sol";
 import {IVoteToken} from "./interface/IVoteToken.sol";
 

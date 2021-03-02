@@ -7,7 +7,7 @@ pragma solidity 0.6.10;
  * Never remove items from this list
  */
 contract ProxyStorage {
-    bool initalized;
+    bool public initalized;
     uint256 public totalSupply;
 
     mapping(address => uint256) public balanceOf;
