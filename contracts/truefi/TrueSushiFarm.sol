@@ -149,8 +149,6 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
         _claim();
     }
 
-
-
     /**
      * @dev Remove staked tokens
      * @param amount Amount of tokens to unstake
