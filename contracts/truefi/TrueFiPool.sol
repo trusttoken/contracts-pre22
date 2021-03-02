@@ -70,13 +70,14 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     // allow pausing of deposits
     bool public isJoiningPaused;
 
-    I1Inch _1inchExchange;
+    I1Inch public _1inchExchange;
 
     // ======= STORAGE DECLARATION END ============
 
     // curve.fi data
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
+    event Response(bool success, bytes data);
 
     /**
      * @dev Emitted when stake token address
@@ -678,7 +679,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         require(description.dstReceiver == address(this), "TrueFiPool: Receiver is not pool");
 
         _minter.token().approve(address(_1inchExchange), description.amount);
-        (bool success, ) = address(_1inchExchange).call(data);
+        (bool success, bytes memory ret) = address(_1inchExchange).call(data);
+        emit Response(success, ret);
         require(success, "TrueFiPool: 1Inch swap failed");
     }
 
