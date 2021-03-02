@@ -3,7 +3,7 @@ pragma solidity 0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {VoteToken} from "../governance/VoteToken.sol";
+import {TruVoteToken} from "./TruVoteToken.sol";
 import {ClaimableContract} from "./common/ClaimableContract.sol";
 
 /**
@@ -24,11 +24,8 @@ import {ClaimableContract} from "./common/ClaimableContract.sol";
  * are allowed to be transferred, and after all epochs have passed, the full
  * account balance is unlocked
  */
-abstract contract TimeLockedToken is VoteToken, ClaimableContract {
+abstract contract TimeLockedToken is TruVoteToken, ClaimableContract {
     using SafeMath for uint256;
-
-    // represents total distribution for locked balances
-    mapping(address => uint256) distribution;
 
     // start of the lockup period
     // Friday, July 24, 2020 4:58:31 PM GMT
@@ -39,10 +36,6 @@ abstract contract TimeLockedToken is VoteToken, ClaimableContract {
     uint256 constant EPOCH_DURATION = 90 days;
     // number of epochs
     uint256 constant TOTAL_EPOCHS = 8;
-    // registry of locked addresses
-    address public timeLockRegistry;
-    // allow unlocked transfers to special account
-    bool public returnsLocked;
 
     modifier onlyTimeLockRegistry() {
         require(msg.sender == timeLockRegistry, "only TimeLockRegistry");

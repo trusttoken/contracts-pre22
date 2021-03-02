@@ -1,15 +1,16 @@
-import { Contract, Signer, Wallet } from 'ethers'
+import { Contract, Signer } from 'ethers'
 
 interface ContractFactory<C extends Contract> {
   deploy(): Promise<C>,
+  attach(address: string): C,
 }
 
-interface ContractFactoryConstructor<C extends Contract> {
+export interface ContractFactoryConstructor<C extends Contract> {
   new(signer?: Signer): ContractFactory<C>,
 }
 
 export async function deployContract<C extends Contract> (
-  deployer: Wallet,
+  deployer: Signer,
   Factory: ContractFactoryConstructor<C>,
 ): Promise<C> {
   const factory = new Factory(deployer)
