@@ -146,6 +146,7 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     function stake(uint256 amount) external override {
         _updateTru();
         _stake(amount);
+        _deposit(amount);
         _claim(trustToken);
     }
 
@@ -155,6 +156,7 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      */
     function unstake(uint256 amount) external override {
         _updateTru();
+        _withdraw(amount);
         _unstake(amount);
     }
 
