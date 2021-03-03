@@ -251,9 +251,9 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
         }
         // update claimable reward for sender
         claimableReward[token][msg.sender] = claimableReward[token][msg.sender].add(
-            staked[msg.sender]
-                .mul(cumulativeRewardPerToken[token].sub(previousCumulatedRewardPerToken[token][msg.sender]))
-                .div(PRECISION)
+            staked[msg.sender].mul(cumulativeRewardPerToken[token].sub(previousCumulatedRewardPerToken[token][msg.sender])).div(
+                PRECISION
+            )
         );
         // update previous cumulative for sender
         previousCumulatedRewardPerToken[token][msg.sender] = cumulativeRewardPerToken[token];
