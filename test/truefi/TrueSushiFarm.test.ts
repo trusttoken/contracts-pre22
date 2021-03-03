@@ -19,29 +19,35 @@ import {
   TrueSushiFarmFactory,
   TrueSushiFarm,
   LinearTrueDistributorFactory,
+  MasterChef,
+  MasterChefFactory,
 } from 'contracts'
 
 use(solidity)
 
 describe('TrueSushiFarm', () => {
   const DAY = 24 * 3600
+  let start: number
+  
+  let provider: MockProvider
   let owner: Wallet
   let staker1: Wallet
   let staker2: Wallet
+
   let distributor: LinearTrueDistributor
   let trustToken: MockErc20Token
   let stakingToken: MockErc20Token
-  let provider: MockProvider
+  let sushi: MockErc20Token
+  let masterChef: MasterChef
   let farm: TrueSushiFarm
   let farm2: TrueSushiFarm
-  let start: number
 
   const REWARD_DAYS = 10
   const DURATION = REWARD_DAYS * DAY
   const amount = BigNumber.from(1e11) // 1000 TRU = 100/day
   const txArgs = { gasLimit: 6_000_000 }
   const mockMasterChefAddress = Wallet.createRandom().address
-  const mockSushiPoolId = 0
+  const sushiPoolId = 0
 
   const fromTru = (amount: BigNumberish) => BigNumber.from(amount).mul(BigNumber.from(1e8))
 
@@ -50,7 +56,10 @@ describe('TrueSushiFarm', () => {
     provider = _provider
     trustToken = await new MockErc20TokenFactory(owner).deploy()
     stakingToken = await new MockErc20TokenFactory(owner).deploy()
+    sushi = await new MockErc20TokenFactory(owner).deploy()
     distributor = await new LinearTrueDistributorFactory(owner).deploy()
+    masterChef = await new MasterChefFactory(owner).deploy(sushi.address, owner.address, 100, 0, 0)
+    await masterChef.add(100, stakingToken.address, true)
     const now = Math.floor(Date.now() / 1000)
     start = now + DAY
 
@@ -60,7 +69,7 @@ describe('TrueSushiFarm', () => {
     farm2 = await new TrueSushiFarmFactory(owner).deploy()
 
     await distributor.setFarm(farm.address)
-    await farm.initialize(stakingToken.address, distributor.address, mockMasterChefAddress, mockSushiPoolId, 'Test farm')
+    await farm.initialize(stakingToken.address, distributor.address, masterChef.address, sushiPoolId, 'Sushi Farm')
 
     await trustToken.mint(distributor.address, amount)
     // await distributor.transfer(owner.address, farm.address, amount)
@@ -72,7 +81,7 @@ describe('TrueSushiFarm', () => {
 
   describe('initializer', () => {
     it('name is correct', async () => {
-      expect(await farm.name()).to.equal('Test farm')
+      expect(await farm.name()).to.equal('Sushi Farm')
     })
 
     it('owner can withdraw funds', async () => {
@@ -86,7 +95,7 @@ describe('TrueSushiFarm', () => {
     })
 
     it('cannot init farm unless distributor is set to farm', async () => {
-      await expect(farm2.initialize(stakingToken.address, distributor.address, mockMasterChefAddress, mockSushiPoolId, 'Test farm'))
+      await expect(farm2.initialize(stakingToken.address, distributor.address, masterChef.address, sushiPoolId, 'Test farm'))
         .to.be.revertedWith('TrueSushiFarm: Distributor farm is not set')
     })
   })

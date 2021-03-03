@@ -114,7 +114,6 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      * @param amount Amount of tokens to unstake
      */
     function _unstake(uint256 amount) internal {
-        require(amount <= staked[msg.sender], "TrueSushiFarm: Cannot withdraw amount bigger than available balance");
         staked[msg.sender] = staked[msg.sender].sub(amount);
         totalStaked = totalStaked.sub(amount);
         emit Unstake(msg.sender, amount);
@@ -158,6 +157,7 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      * @param amount Amount of tokens to unstake
      */
     function unstake(uint256 amount) external override {
+        require(amount <= staked[msg.sender], "TrueSushiFarm: Cannot withdraw amount bigger than available balance");
         _withdraw(amount);
         _updateTru();
         _updateSushi();
@@ -178,6 +178,7 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      * @param amount Amount of tokens to unstake
      */
     function exit(uint256 amount) external override {
+        require(amount <= staked[msg.sender], "TrueSushiFarm: Cannot withdraw amount bigger than available balance");
         _withdraw(amount);
         _updateTru();
         _updateSushi();
