@@ -169,16 +169,17 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      * @dev Claim all rewards
      */
     function claim() external override {
-        _update(trustToken);
-        _claim(trustToken);
-        _update(sushi);
-        _claim(sushi);
+        claimToken(trustToken);
+        claimToken(sushi);
     }
 
     /**
      * @dev Claim picked rewards
      */
-    function claim(IERC20 token) external {
+    function claimToken(IERC20 token) public {
+        if (token == sushi) {
+            _withdraw(0);
+        }
         _update(token);
         _claim(token);
     }

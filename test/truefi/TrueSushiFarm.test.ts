@@ -180,8 +180,12 @@ describe('TrueSushiFarm', () => {
       
       await farm.connect(staker1).claim(txArgs)
       expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
-      expect(expectScaledCloseTo(await farm.claimable(staker1.address, sushi.address), totalSushiRewardPerBlock.mul(4)))
+      expect(expectScaledCloseTo((await sushi.balanceOf(staker1.address)), totalSushiRewardPerBlock.mul(4)))
+      expect(expectScaledCloseTo(await farm.claimable(staker1.address, sushi.address), totalSushiRewardPerBlock.mul(0)))
       
+      await farm.connect(staker1).claim(txArgs)
+      expect(expectScaledCloseTo((await sushi.balanceOf(staker1.address)), totalSushiRewardPerBlock.mul(5)))
+      expect(expectScaledCloseTo(await farm.claimable(staker1.address, sushi.address), totalSushiRewardPerBlock.mul(0)))
     })
 
     it('rewards when stake increases', async () => {
