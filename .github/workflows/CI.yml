@@ -1,0 +1,21 @@
+name: CI
+on: [push]
+jobs:
+  node:
+    name: Set up node
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      - name: Use Node.js
+        use: actions/setup-node@v2
+        with:
+          node-version: 12.9.0
+      - name: Cache node modules
+        id: cache-node
+        uses: actions/cache@v2
+        with:
+          path: ./node_modules
+          key: node_modules-{{ checksum "yarn.lock" }}
+      - run:
+        if: steps.cache-node.outputs.cache-hit != 'true'
