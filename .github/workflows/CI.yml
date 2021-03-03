@@ -20,3 +20,10 @@ jobs:
           key: node_modules-${{ hashFiles('yarn.lock') }}
       - run: yarn install --frozen-lockfile
         if: steps.cache-node.outputs.cache-hit != 'true'
+  build:
+    name: Build contracts
+    needs: node
+    runs-on: ubuntu-latest
+
+    steps:
+      -run: yarn build
