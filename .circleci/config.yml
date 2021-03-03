@@ -95,7 +95,19 @@ workflows:
       - lint:
           requires:
             - build
-      - test:
+      - test-group1:
+          requires:
+            - build
+      - test-group2:
+          requires:
+            - build
+      - test-group3:
+          requires:
+            - build
+      - test-group4:
+          requires:
+            - build
+      - test-group5:
           requires:
             - build
       - upgrade:
