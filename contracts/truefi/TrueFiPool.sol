@@ -77,7 +77,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     // curve.fi data
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
-    event Response(bool success, bytes data);
 
     /**
      * @dev Emitted when stake token address
@@ -680,8 +679,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
         _minter.token().approve(address(_1inchExchange), description.amount);
         (bool success, bytes memory ret) = address(_1inchExchange).call(data);
-        emit Response(success, ret);
         require(success, "TrueFiPool: 1Inch swap failed");
+        // TODO add post sell slippage check
     }
 
     /**
