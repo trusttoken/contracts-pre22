@@ -45,7 +45,9 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     mapping(IERC20 => uint256) public totalClaimedRewards;
     mapping(IERC20 => uint256) public totalFarmRewards;
 
+    // pointers to sushi contracts
     IMasterChef public masterChef;
+    IERC20 public sushi;
     uint256 public sushiPoolId;
 
     // ======= STORAGE DECLARATION END ============
@@ -91,6 +93,7 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
         trustToken = _trueDistributor.trustToken();
         masterChef = _masterChef;
         sushiPoolId = _sushiPoolId;
+        sushi = masterChef.sushi();
         name = _name;
         require(trueDistributor.farm() == address(this), "TrueSushiFarm: Distributor farm is not set");
     }
@@ -103,7 +106,6 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     function _stake(uint256 amount) internal {
         staked[msg.sender] = staked[msg.sender].add(amount);
         totalStaked = totalStaked.add(amount);
-        require(stakingToken.transferFrom(msg.sender, address(this), amount));
         emit Stake(msg.sender, amount);
     }
 
@@ -115,7 +117,6 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
         require(amount <= staked[msg.sender], "TrueSushiFarm: Cannot withdraw amount bigger than available balance");
         staked[msg.sender] = staked[msg.sender].sub(amount);
         totalStaked = totalStaked.sub(amount);
-        require(stakingToken.transfer(msg.sender, amount));
         emit Unstake(msg.sender, amount);
     }
 
@@ -144,9 +145,11 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      * @param amount Amount of tokens to stake
      */
     function stake(uint256 amount) external override {
-        _updateTru();
-        _stake(amount);
+        require(stakingToken.transferFrom(msg.sender, address(this), amount));
         _deposit(amount);
+        _updateTru();
+        _updateSushi();
+        _stake(amount);
         _claim(trustToken);
     }
 
@@ -155,9 +158,11 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      * @param amount Amount of tokens to unstake
      */
     function unstake(uint256 amount) external override {
-        _updateTru();
         _withdraw(amount);
+        _updateTru();
+        _updateSushi();
         _unstake(amount);
+        require(stakingToken.transfer(msg.sender, amount));
     }
 
     /**
@@ -173,9 +178,12 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
      * @param amount Amount of tokens to unstake
      */
     function exit(uint256 amount) external override {
+        _withdraw(amount);
         _updateTru();
+        _updateSushi();
         _unstake(amount);
         _claim(trustToken);
+        require(stakingToken.transfer(msg.sender, amount));
     }
 
     /**
@@ -186,8 +194,17 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
         if (staked[account] == 0) {
             return claimableReward[token][account];
         }
-        // estimate pending reward from distributor
-        uint256 pending = trueDistributor.nextDistribution();
+
+        // estimate pending rewards
+        uint256 pending;
+        if (token == sushi) {
+            pending = masterChef.pendingSushi(sushiPoolId, address(this));
+        } else if (token == trustToken) {
+            pending = trueDistributor.nextDistribution();
+        } else {
+            revert("TrueSushiFarm: Token not supported");
+        }
+
         // calculate total rewards (including pending)
         uint256 newTotalFarmRewards = token.balanceOf(address(this)).add(pending).add(totalClaimedRewards[token]).mul(PRECISION);
         // calculate block reward
@@ -221,9 +238,35 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
         }
         // update claimable reward for sender
         claimableReward[trustToken][msg.sender] = claimableReward[trustToken][msg.sender].add(
-            staked[msg.sender].mul(cumulativeRewardPerToken[trustToken].sub(previousCumulatedRewardPerToken[trustToken][msg.sender])).div(PRECISION)
+            staked[msg.sender]
+                .mul(cumulativeRewardPerToken[trustToken].sub(previousCumulatedRewardPerToken[trustToken][msg.sender]))
+                .div(PRECISION)
         );
         // update previous cumulative for sender
         previousCumulatedRewardPerToken[trustToken][msg.sender] = cumulativeRewardPerToken[trustToken];
+    }
+
+    /**
+     * @dev Update state of SUSHI rewards
+     */
+    function _updateSushi() internal {
+        // calculate total rewards
+        uint256 newTotalFarmRewards = sushi.balanceOf(address(this)).add(totalClaimedRewards[sushi]).mul(PRECISION);
+        // calculate block reward
+        uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards[sushi]);
+        // update farm rewards
+        totalFarmRewards[sushi] = newTotalFarmRewards;
+        // if there are stakers
+        if (totalStaked > 0) {
+            cumulativeRewardPerToken[sushi] = cumulativeRewardPerToken[sushi].add(totalBlockReward.div(totalStaked));
+        }
+        // update claimable reward for sender
+        claimableReward[sushi][msg.sender] = claimableReward[sushi][msg.sender].add(
+            staked[msg.sender].mul(cumulativeRewardPerToken[sushi].sub(previousCumulatedRewardPerToken[sushi][msg.sender])).div(
+                PRECISION
+            )
+        );
+        // update previous cumulative for sender
+        previousCumulatedRewardPerToken[sushi][msg.sender] = cumulativeRewardPerToken[sushi];
     }
 }
