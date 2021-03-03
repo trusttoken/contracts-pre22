@@ -28,7 +28,7 @@ use(solidity)
 describe('TrueSushiFarm', () => {
   const DAY = 24 * 3600
   let start: number
-  
+
   let provider: MockProvider
   let owner: Wallet
   let staker1: Wallet
@@ -159,30 +159,30 @@ describe('TrueSushiFarm', () => {
       await farm.connect(staker1).stake(parseEth(1000), txArgs)
       await timeTravel(provider, DAY)
       await farm.connect(staker1).exit(parseEth(1000), txArgs)
-      
+
       expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
       expect(await sushi.balanceOf(staker1.address)).to.equal(totalSushiRewardPerBlock.mul(2))
     })
-    
+
     it('estimate rewards correctly', async () => {
       await farm.connect(staker1).stake(parseEth(1000), txArgs)
       await timeTravel(provider, DAY)
       expect(expectScaledCloseTo((await farm.claimable(staker1.address, trustToken.address)), fromTru(100)))
       expect(expectScaledCloseTo(await farm.claimable(staker1.address, sushi.address), totalSushiRewardPerBlock.mul(1)))
-      
+
       await timeTravel(provider, DAY)
       expect(expectScaledCloseTo((await farm.claimable(staker1.address, trustToken.address)), fromTru(200)))
       expect(expectScaledCloseTo(await farm.claimable(staker1.address, sushi.address), totalSushiRewardPerBlock.mul(2)))
-      
+
       await farm.connect(staker1).unstake(100, txArgs)
       expect(expectScaledCloseTo((await farm.claimable(staker1.address, trustToken.address)), fromTru(200)))
       expect(expectScaledCloseTo(await farm.claimable(staker1.address, sushi.address), totalSushiRewardPerBlock.mul(3)))
-      
+
       await farm.connect(staker1).claim(txArgs)
       expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
       expect(expectScaledCloseTo((await sushi.balanceOf(staker1.address)), totalSushiRewardPerBlock.mul(4)))
       expect(expectScaledCloseTo(await farm.claimable(staker1.address, sushi.address), totalSushiRewardPerBlock.mul(0)))
-      
+
       await farm.connect(staker1).claim(txArgs)
       expect(expectScaledCloseTo((await sushi.balanceOf(staker1.address)), totalSushiRewardPerBlock.mul(5)))
       expect(expectScaledCloseTo(await farm.claimable(staker1.address, sushi.address), totalSushiRewardPerBlock.mul(0)))
