@@ -175,4 +175,4 @@ jobs:
           key: node_modules-${{ hashFiles('yarn.lock') }}
       - name: Download build
         uses: actions/download-artifact@v2
-      - run: yarn test:trust-token
+      - run: yarn test:trusttoken
