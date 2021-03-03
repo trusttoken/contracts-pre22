@@ -14,7 +14,7 @@ import { timeTravel } from 'utils'
 
 use(solidity)
 
-describe.only('Integration: TrueSushiFarm', () => {
+describe('Integration: TrueSushiFarm', () => {
   const STARTING_BLOCK_NUMBER = '11959269'
   const SUSHI_WHALE = '0x62cB1071882E70AE9C608053C1b69469302A1890'
   const SUSHI_LP_TOKEN = '0xfceaaf9792139bf714a694f868a215493461446d'

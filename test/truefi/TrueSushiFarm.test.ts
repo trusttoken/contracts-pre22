@@ -360,7 +360,7 @@ describe('TrueSushiFarm', () => {
       expect(await sushi.balanceOf(staker2.address)).to.equal(totalSushiRewardPerBlock.mul(4).div(5).add(totalReward.mul(1).div(5)))
     })
 
-    it.only('handles reward calculation after unstaking (SUSHI)', async () => {
+    it('handles reward calculation after unstaking (SUSHI)', async () => {
       await provider.send('evm_mine', [])
       // 4 blocks after stake
       // full reward for 1 block and 4/5 for 3 = 17/5 block rewards
