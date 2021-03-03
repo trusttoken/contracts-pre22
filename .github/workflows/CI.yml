@@ -157,7 +157,7 @@ jobs:
       - run: yarn test:truefi:service
 
   tests-group5:
-    name: Trust token
+    name: Trust token and Tru Farm
     needs: [node, build]
     runs-on: ubuntu-latest
 
