@@ -1,7 +1,9 @@
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import { beforeEachWithFixture, parseEth, parseTRU } from 'utils'
-import { deployMockContract } from 'ethereum-waffle'
+import { deployMockContract, solidity } from 'ethereum-waffle'
 import { IChainLinkJson, TruPriceChainLinkOracle, TruPriceChainLinkOracleFactory } from 'contracts'
+
+use(solidity)
 
 describe('TruPriceChainLinkOracle', () => {
   let oracle: TruPriceChainLinkOracle

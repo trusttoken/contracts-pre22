@@ -1,5 +1,5 @@
-import { expect } from 'chai'
-import { MockProvider } from 'ethereum-waffle'
+import { expect, use } from 'chai'
+import { MockProvider, solidity } from 'ethereum-waffle'
 
 import { beforeEachWithFixture } from 'utils'
 
@@ -7,6 +7,8 @@ import {
   MockTrueCurrencyWithAutosweepFactory,
   MockTrueCurrencyWithAutosweep,
 } from 'contracts'
+
+use(solidity)
 
 describe('TrueCurrency - Legacy autosweep', () => {
   let token: MockTrueCurrencyWithAutosweep

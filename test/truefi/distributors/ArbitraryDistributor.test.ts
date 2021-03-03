@@ -1,4 +1,4 @@
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 
 import { beforeEachWithFixture, parseEth } from 'utils'
@@ -9,6 +9,9 @@ import {
   ArbitraryDistributor,
   ArbitraryDistributorFactory,
 } from 'contracts'
+import { solidity } from 'ethereum-waffle'
+
+use(solidity)
 
 describe('ArbitraryDistributor', () => {
   let trustToken: MockErc20Token

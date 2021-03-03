@@ -1,6 +1,6 @@
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import { constants, Wallet, BigNumber } from 'ethers'
-import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
+import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 
 import { toTrustToken } from 'scripts/utils'
 
@@ -24,6 +24,8 @@ import {
   MockStakingPoolFactory, MockTruPriceOracleFactory,
 } from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
+
+use(solidity)
 
 describe('TrueFiPool', () => {
   let provider: MockProvider

@@ -1,6 +1,6 @@
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import { BigNumber, BigNumberish, constants, utils, Wallet } from 'ethers'
-import { MockContract, deployMockContract } from 'ethereum-waffle'
+import { MockContract, deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
 import {
@@ -27,6 +27,8 @@ import {
   ArbitraryDistributorJson,
   TrueRatingAgencyJson,
 } from 'contracts'
+
+use(solidity)
 
 describe('TrueRatingAgency', () => {
   enum LoanStatus { Void, Pending, Retracted, Running, Settled, Defaulted }

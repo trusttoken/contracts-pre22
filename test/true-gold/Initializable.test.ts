@@ -1,6 +1,6 @@
 import { BigNumberish, Wallet } from 'ethers'
-import { loadFixture } from 'ethereum-waffle'
-import { expect } from 'chai'
+import { loadFixture, solidity } from 'ethereum-waffle'
+import { expect, use } from 'chai'
 
 import { MAX_BURN_BOUND } from 'utils'
 
@@ -8,6 +8,8 @@ import {
   TrueGold,
   TrueGoldFactory,
 } from 'contracts'
+
+use(solidity)
 
 describe('TrueGold - Initializable', () => {
   let proxy: Wallet

@@ -1,11 +1,13 @@
 import { constants, Wallet } from 'ethers'
-import { loadFixture } from 'ethereum-waffle'
-import { expect } from 'chai'
+import { loadFixture, solidity } from 'ethereum-waffle'
+import { expect, use } from 'chai'
 
 import { setupTrueGold } from 'fixtures/trueGold'
 import { toAddress, WalletOrAddress } from 'utils'
 
 import { TrueGold } from 'contracts'
+
+use(solidity)
 
 describe('TrueGold - Ownable', () => {
   let owner: Wallet
