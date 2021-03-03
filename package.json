@@ -19,7 +19,7 @@
     "test:governance": "mocha 'test/governance/*.ts'",
     "test:proxy": "mocha 'test/proxy/*.ts' ",
     "test:registry": "mocha 'test/registry/*.ts'",
-    "test:scripts": "mocha ''test/scripts/*.ts'",
+    "test:scripts": "mocha 'test/scripts/*.ts'",
     "test:true-currencies": "mocha 'test/true-currencies/*.ts'",
     "test:true-gold": "mocha 'test/true-gold/*.ts'",
     "test:truefi": "mocha 'test/truefi/**/*.ts'",
