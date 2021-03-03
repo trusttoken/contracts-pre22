@@ -146,8 +146,8 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     function stake(uint256 amount) external override {
         require(stakingToken.transferFrom(msg.sender, address(this), amount));
         _deposit(amount);
-        _updateTru();
-        _updateSushi();
+        _update(trustToken);
+        _update(sushi);
         _stake(amount);
         _claim(trustToken);
     }
@@ -159,18 +159,28 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     function unstake(uint256 amount) external override {
         require(amount <= staked[msg.sender], "TrueSushiFarm: Cannot withdraw amount bigger than available balance");
         _withdraw(amount);
-        _updateTru();
-        _updateSushi();
+        _update(trustToken);
+        _update(sushi);
         _unstake(amount);
         require(stakingToken.transfer(msg.sender, amount));
     }
 
     /**
-     * @dev Claim TRU rewards
+     * @dev Claim all rewards
      */
     function claim() external override {
-        _updateTru();
+        _update(trustToken);
         _claim(trustToken);
+        _update(sushi);
+        _claim(sushi);
+    }
+
+    /**
+     * @dev Claim picked rewards
+     */
+    function claim(IERC20 token) external {
+        _update(token);
+        _claim(token);
     }
 
     /**
@@ -180,10 +190,11 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     function exit(uint256 amount) external override {
         require(amount <= staked[msg.sender], "TrueSushiFarm: Cannot withdraw amount bigger than available balance");
         _withdraw(amount);
-        _updateTru();
-        _updateSushi();
+        _update(trustToken);
+        _update(sushi);
         _unstake(amount);
         _claim(trustToken);
+        _claim(sushi);
         require(stakingToken.transfer(msg.sender, amount));
     }
 
@@ -221,53 +232,29 @@ contract TrueSushiFarm is ITrueFarm, Initializable {
     /**
      * @dev Update state and get TRU from distributor
      */
-    function _updateTru() internal {
+    function _update(IERC20 token) internal {
         // pull TRU from distributor
         // only pull if there is distribution and distributor farm is set to this farm
-        if (trueDistributor.nextDistribution() > 0 && trueDistributor.farm() == address(this)) {
+        if (token == trustToken && trueDistributor.nextDistribution() > 0 && trueDistributor.farm() == address(this)) {
             trueDistributor.distribute();
         }
         // calculate total rewards
-        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(totalClaimedRewards[trustToken]).mul(PRECISION);
+        uint256 newTotalFarmRewards = token.balanceOf(address(this)).add(totalClaimedRewards[token]).mul(PRECISION);
         // calculate block reward
-        uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards[trustToken]);
+        uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards[token]);
         // update farm rewards
-        totalFarmRewards[trustToken] = newTotalFarmRewards;
+        totalFarmRewards[token] = newTotalFarmRewards;
         // if there are stakers
         if (totalStaked > 0) {
-            cumulativeRewardPerToken[trustToken] = cumulativeRewardPerToken[trustToken].add(totalBlockReward.div(totalStaked));
+            cumulativeRewardPerToken[token] = cumulativeRewardPerToken[token].add(totalBlockReward.div(totalStaked));
         }
         // update claimable reward for sender
-        claimableReward[trustToken][msg.sender] = claimableReward[trustToken][msg.sender].add(
+        claimableReward[token][msg.sender] = claimableReward[token][msg.sender].add(
             staked[msg.sender]
-                .mul(cumulativeRewardPerToken[trustToken].sub(previousCumulatedRewardPerToken[trustToken][msg.sender]))
+                .mul(cumulativeRewardPerToken[token].sub(previousCumulatedRewardPerToken[token][msg.sender]))
                 .div(PRECISION)
         );
         // update previous cumulative for sender
-        previousCumulatedRewardPerToken[trustToken][msg.sender] = cumulativeRewardPerToken[trustToken];
-    }
-
-    /**
-     * @dev Update state of SUSHI rewards
-     */
-    function _updateSushi() internal {
-        // calculate total rewards
-        uint256 newTotalFarmRewards = sushi.balanceOf(address(this)).add(totalClaimedRewards[sushi]).mul(PRECISION);
-        // calculate block reward
-        uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards[sushi]);
-        // update farm rewards
-        totalFarmRewards[sushi] = newTotalFarmRewards;
-        // if there are stakers
-        if (totalStaked > 0) {
-            cumulativeRewardPerToken[sushi] = cumulativeRewardPerToken[sushi].add(totalBlockReward.div(totalStaked));
-        }
-        // update claimable reward for sender
-        claimableReward[sushi][msg.sender] = claimableReward[sushi][msg.sender].add(
-            staked[msg.sender].mul(cumulativeRewardPerToken[sushi].sub(previousCumulatedRewardPerToken[sushi][msg.sender])).div(
-                PRECISION
-            )
-        );
-        // update previous cumulative for sender
-        previousCumulatedRewardPerToken[sushi][msg.sender] = cumulativeRewardPerToken[sushi];
+        previousCumulatedRewardPerToken[token][msg.sender] = cumulativeRewardPerToken[token];
     }
 }
