@@ -56,7 +56,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 12.9.0
+          node-version: 15.3.0
       - name: Get the environment
         uses: actions/cache@v2
         with:
@@ -67,8 +67,8 @@ jobs:
       - run: yarn typecheck
       - run: yarn lint
 
-  test:
-    name: Lint and typecheck
+  tests-group1:
+    name: Governance, proxy, registry, scripts
     needs: [node, build]
     runs-on: ubuntu-latest
 
@@ -87,3 +87,92 @@ jobs:
       - name: Download build
         uses: actions/download-artifact@v2
       - run: yarn test:governance
+      - run: yarn test:proxy
+      - run: yarn test:registry
+      - run: yarn test:scripts
+
+  tests-group2:
+    name: True currencies and True gold
+    needs: [node, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 12.9.0
+      - name: Get the environment
+        uses: actions/cache@v2
+        with:
+          path: ./node_modules
+          key: node_modules-${{ hashFiles('yarn.lock') }}
+      - name: Download build
+        uses: actions/download-artifact@v2
+      - run: yarn test:true-currencies
+      - run: yarn test:true-gold
+
+  tests-group3:
+    name: TrueFi loans and others
+    needs: [node, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 12.9.0
+      - name: Get the environment
+        uses: actions/cache@v2
+        with:
+          path: ./node_modules
+          key: node_modules-${{ hashFiles('yarn.lock') }}
+      - name: Download build
+        uses: actions/download-artifact@v2
+      - run: yarn test:truefi:loans
+      - run: yarn test:truefi:others
+
+  tests-group4:
+    name: TrueFi services
+    needs: [node, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 12.9.0
+      - name: Get the environment
+        uses: actions/cache@v2
+        with:
+          path: ./node_modules
+          key: node_modules-${{ hashFiles('yarn.lock') }}
+      - name: Download build
+        uses: actions/download-artifact@v2
+      - run: yarn test:truefi:service
+
+  tests-group5:
+    name: Trust token
+    needs: [node, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 12.9.0
+      - name: Get the environment
+        uses: actions/cache@v2
+        with:
+          path: ./node_modules
+          key: node_modules-${{ hashFiles('yarn.lock') }}
+      - name: Download build
+        uses: actions/download-artifact@v2
+      - run: yarn test:trust-token
