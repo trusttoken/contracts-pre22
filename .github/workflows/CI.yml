@@ -20,11 +20,6 @@ jobs:
           key: node_modules-${{ hashFiles('yarn.lock') }}
       - run: yarn install --frozen-lockfile
         if: steps.cache-node.outputs.cache-hit != 'true'
-      - name: Upload environment
-        uses: actions/upload-artifact@v2
-        with:
-          name: node
-          path: ./.github/workflows/artifacts
 
   build:
     name: Build contracts
@@ -32,6 +27,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get environment
-        uses: actions/download-artifact@v2
+      - name: Get the environment
+        uses: actions/cache@v2
+        with:
+          path: ./node_modules
+          restore-keys: node_modules-${{ hashFiles('yarn.lock') }}
       - run: yarn build
