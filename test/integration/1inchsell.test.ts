@@ -3,8 +3,8 @@ import { TrueFiPoolFactory, TrueUsdFactory } from 'contracts'
 import fetch from 'node-fetch'
 import { expect } from 'chai'
 
-describe('1inchsell.test', () => {
-  it('test', async () => {
+describe('Pool 1Inch integration', () => {
+  it('sells all available CRV', async () => {
     const pool = await upgradeSuite(TrueFiPoolFactory, '0xa1e72267084192Db7387c8CC1328fadE470e4149', [])
     const tusd = TrueUsdFactory.connect('0x0000000000085d4780B73119b644AE5ecd22b376', pool.signer)
     const crv = TrueUsdFactory.connect('0xD533a949740bb3306d119CC777fa900bA034cd52', pool.signer)
