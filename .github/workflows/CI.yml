@@ -4,6 +4,7 @@ jobs:
   node:
     name: Set up node
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v2
@@ -17,5 +18,5 @@ jobs:
         with:
           path: ./node_modules
           key: node_modules-{{ checksum "yarn.lock" }}
-      - run:
+      - run: yarn install --frozen-lockfile
         if: steps.cache-node.outputs.cache-hit != 'true'
