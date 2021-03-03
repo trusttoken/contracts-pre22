@@ -290,7 +290,7 @@ describe('TrueSushiFarm', () => {
       await timeTravelTo(provider, start)
     })
 
-    it('earn rewards in proportion to stake share', async () => {
+    it('earn rewards in proportion to stake share (TRU)', async () => {
       const days = 1
       await timeTravel(provider, DAY * days)
       await farm.connect(staker1).claim(txArgs)
@@ -302,12 +302,12 @@ describe('TrueSushiFarm', () => {
         dailyReward.mul(days).mul(1).div(5)))
     })
 
-    it('if additional funds are transferred to farm, they are also distributed accordingly to shares', async () => {
+    it('if additional funds are transferred to farm, they are also distributed accordingly to shares (TRU)', async () => {
       const days = 1
       const additionalReward = fromTru(100)
       const totalReward = dailyReward.add(additionalReward)
       await timeTravel(provider, DAY * days)
-      trustToken.mint(farm.address, additionalReward, txArgs)
+      await trustToken.mint(farm.address, additionalReward, txArgs)
       await farm.connect(staker1).claim(txArgs)
       await farm.connect(staker2).claim(txArgs)
 
@@ -317,7 +317,7 @@ describe('TrueSushiFarm', () => {
         totalReward.mul(days).mul(1).div(5)))
     })
 
-    it('handles reward calculation after unstaking', async () => {
+    it('handles reward calculation after unstaking (TRU)', async () => {
       const days = 1
       await timeTravel(provider, DAY)
       await farm.connect(staker1).unstake(parseEth(300), txArgs)
@@ -332,6 +332,46 @@ describe('TrueSushiFarm', () => {
 
       expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), staker1Reward))
       expect(expectScaledCloseTo((await trustToken.balanceOf(staker2.address)), staker2Reward))
+    })
+
+    it('earn rewards in proportion to stake share (SUSHI)', async () => {
+      await provider.send('evm_mine', [])
+      // 4 blocks after stake
+      // full reward for 1 block and 4/5 for 3 = 17/5 block rewards
+      await farm.connect(staker1).claim(txArgs)
+      await provider.send('evm_mine', [])
+      await provider.send('evm_mine', [])
+      // 6 blocks after stake
+      await farm.connect(staker2).claim(txArgs)
+
+      expect(await sushi.balanceOf(staker1.address)).to.equal(totalSushiRewardPerBlock.mul(17).div(5))
+      expect(await sushi.balanceOf(staker2.address)).to.equal(totalSushiRewardPerBlock.mul(6).div(5))
+    })
+
+    it('if additional funds are transferred to farm, they are also distributed accordingly to shares (SUSHI)', async () => {
+      const additionalReward = fromTru(100)
+      const totalReward = totalSushiRewardPerBlock.add(additionalReward)
+      await sushi.mint(farm.address, additionalReward, txArgs)
+      await provider.send('evm_mine', [])
+      await farm.connect(staker1).claim(txArgs)
+      await farm.connect(staker2).claim(txArgs)
+
+      expect(await sushi.balanceOf(staker1.address)).to.equal(totalSushiRewardPerBlock.mul(17).div(5).add(totalReward.mul(4).div(5)))
+      expect(await sushi.balanceOf(staker2.address)).to.equal(totalSushiRewardPerBlock.mul(4).div(5).add(totalReward.mul(1).div(5)))
+    })
+
+    it.only('handles reward calculation after unstaking (SUSHI)', async () => {
+      await provider.send('evm_mine', [])
+      // 4 blocks after stake
+      // full reward for 1 block and 4/5 for 3 = 17/5 block rewards
+      await farm.connect(staker1).exit(parseEth(400), txArgs)
+      await provider.send('evm_mine', [])
+      await provider.send('evm_mine', [])
+      // 6 blocks after stake, 3 block for 1/5, 3 blocks for full
+      await farm.connect(staker2).claim(txArgs)
+
+      expect(await sushi.balanceOf(staker1.address)).to.equal(totalSushiRewardPerBlock.mul(17).div(5))
+      expect(await sushi.balanceOf(staker2.address)).to.equal(totalSushiRewardPerBlock.mul(18).div(5))
     })
   })
 })
