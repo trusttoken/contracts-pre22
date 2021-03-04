@@ -14,6 +14,7 @@ import {ITrueLender} from "./interface/ITrueLender.sol";
 import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 import {ABDKMath64x64} from "./Log.sol";
 import {ITruPriceOracle} from "./interface/ITruPriceOracle.sol";
+import {ICrvPriceOracle} from "./interface/ICrvPriceOracle.sol";
 import {I1Inch} from "./interface/I1Inch.sol";
 
 /**
@@ -61,7 +62,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     uint256 private loansValueCache;
 
     // TRU price oracle
-    ITruPriceOracle public _oracle;
+    ITruPriceOracle public _truOracle;
 
     // fund manager can call functions to help manage pool funds
     // fund manager can be set to 0 or governance
@@ -69,6 +70,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     // allow pausing of deposits
     bool public isJoiningPaused;
+
+    // CRV price oracle
+    ICrvPriceOracle public _crvOracle;
 
     I1Inch public _1inchExchange;
 
@@ -78,11 +82,25 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
 
+    uint256 constant MAX_PRICE_SLIPPAGE = 200; // 2%
+
     /**
-     * @dev Emitted oracle was changed
+     * @dev Emitted when stake token address
+     * @param token New stake token address
+     */
+    event StakeTokenChanged(IERC20 token);
+
+    /**
+     * @dev Emitted when TrueFi oracle was changed
      * @param newOracle New oracle address
      */
-    event OracleChanged(ITruPriceOracle newOracle);
+    event TruOracleChanged(ITruPriceOracle newOracle);
+
+    /**
+     * @dev Emitted when CRV oracle was changed
+     * @param newOracle New oracle address
+     */
+    event CrvOracleChanged(ICrvPriceOracle newOracle);
 
     /**
      * @dev Emitted 1Inch address was changed
@@ -182,6 +200,16 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
+     * @dev only lender can perform borrowing or repaying
+     */
+    modifier exchangeProtector(uint256 expectedGain) {
+        uint256 balanceBefore = currencyBalance();
+        _;
+        uint256 balanceDiff = currencyBalance().sub(balanceBefore);
+        require(balanceDiff >= conservativePriceEstimation(expectedGain), "TrueFiPool: Not optimal exchange");
+    }
+
+    /**
      * Sync values to avoid making expensive calls multiple times
      * Will set inSync to true, allowing getter functions to return cached values
      * Wipes cached values to save gas
@@ -223,12 +251,21 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev set oracle token address
+     * @dev set TrueFi price oracle token address
      * @param newOracle new oracle address
      */
-    function setOracle(ITruPriceOracle newOracle) public onlyOwner {
-        _oracle = newOracle;
-        emit OracleChanged(newOracle);
+    function setTruOracle(ITruPriceOracle newOracle) public onlyOwner {
+        _truOracle = newOracle;
+        emit TruOracleChanged(newOracle);
+    }
+
+    /**
+     * @dev set TrueFi price oracle token address
+     * @param newOracle new oracle address
+     */
+    function setCrvOracle(ICrvPriceOracle newOracle) public onlyOwner {
+        _crvOracle = newOracle;
+        emit CrvOracleChanged(newOracle);
     }
 
     /**
@@ -257,6 +294,14 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
+     * @dev Get total balance of stake tokens
+     * @return Balance of stake tokens in this contract
+     */
+    function crvBalance() public view returns (uint256) {
+        return _minter.token().balanceOf(address(this));
+    }
+
+    /**
      * @dev Get total balance of curve.fi pool tokens
      * @return Balance of y pool tokens in this contract
      */
@@ -282,10 +327,22 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      */
     function truValue() public view returns (uint256) {
         uint256 balance = stakeTokenBalance();
-        if (balance == 0) {
+        if (balance == 0 || address(_truOracle) == address(0)) {
             return 0;
         }
-        return _oracle.truToUsd(balance);
+        return conservativePriceEstimation(_truOracle.truToUsd(balance));
+    }
+
+    /**
+     * @dev Price of CRV in USD
+     * @return Oracle price of TRU in USD
+     */
+    function crvValue() public view returns (uint256) {
+        uint256 balance = crvBalance();
+        if (balance == 0 || address(_crvOracle) == address(0)) {
+            return 0;
+        }
+        return conservativePriceEstimation(_crvOracle.crvToUsd(balance));
     }
 
     /**
@@ -303,7 +360,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      */
     function poolValue() public view returns (uint256) {
         // this assumes defaulted loans are worth their full value
-        return liquidValue().add(loansValue());
+        return liquidValue().add(loansValue()).add(truValue()).add(crvValue());
     }
 
     /**
@@ -389,6 +446,10 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         uint256 stakeTokenAmountToTransfer = amount.mul(
             stakeTokenBalance()).div(_totalSupply);
 
+        // calculate amount of CRV
+        uint256 crvTokenAmountToTransfer = amount.mul(
+            crvBalance()).div(_totalSupply);
+
         // burn tokens sent
         _burn(msg.sender, amount);
 
@@ -408,6 +469,11 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         // if stake token remaining, transfer
         if (stakeTokenAmountToTransfer > 0) {
             require(_stakeToken.transfer(msg.sender, stakeTokenAmountToTransfer));
+        }
+
+        // if crv remaining, transfer
+        if (crvTokenAmountToTransfer > 0) {
+            require(_minter.token().transfer(msg.sender, crvTokenAmountToTransfer));
         }
 
         emit Exited(msg.sender, amount);
@@ -580,7 +646,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         uint256 amountIn,
         uint256 amountOutMin,
         address[] calldata path
-    ) public onlyOwnerOrManager {
+    ) public exchangeProtector(_crvOracle.crvToUsd(amountIn)) {
         _minter.token().approve(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
@@ -600,7 +666,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         uint256 amountIn,
         uint256 amountOutMin,
         address[] calldata path
-    ) public onlyOwnerOrManager {
+    ) public exchangeProtector(_truOracle.truToUsd(amountIn)) {
         _stakeToken.approve(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
@@ -676,5 +742,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _mint(msg.sender, mintedAmount);
 
         return mintedAmount;
+    }
+
+    function conservativePriceEstimation(uint256 price) internal pure returns (uint256) {
+        return price.mul(uint256(10000).sub(MAX_PRICE_SLIPPAGE)).div(10000);
     }
 }
