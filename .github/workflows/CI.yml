@@ -68,7 +68,7 @@ jobs:
       - run: yarn lint
 
   tests-group1:
-    name: Governance, proxy, registry, scripts
+    name: Governance, Proxy, Scripts
     needs: [node, build]
     runs-on: ubuntu-latest
 
@@ -88,11 +88,10 @@ jobs:
         uses: actions/download-artifact@v2
       - run: yarn test:governance
       - run: yarn test:proxy
-      - run: yarn test:registry
       - run: yarn test:scripts
 
   tests-group2:
-    name: True currencies
+    name: True Currencies, Registry
     needs: [node, build]
     runs-on: ubuntu-latest
 
@@ -111,9 +110,10 @@ jobs:
       - name: Download build
         uses: actions/download-artifact@v2
       - run: yarn test:true-currencies
+      - run: yarn test:registry
 
   tests-group3:
-    name: TrueFi loans and others
+    name: TrueFi loans
     needs: [node, build]
     runs-on: ubuntu-latest
 
@@ -134,7 +134,7 @@ jobs:
       - run: yarn test:truefi:loans
 
   tests-group4:
-    name: TrueFi raters
+    name: TrueFi service
     needs: [node, build]
     runs-on: ubuntu-latest
 
@@ -152,7 +152,7 @@ jobs:
           key: node_modules-${{ hashFiles('yarn.lock') }}
       - name: Download build
         uses: actions/download-artifact@v2
-      - run: yarn test:truefi:raters
+      - run: yarn test:truefi:service
 
   tests-group5:
     name: Trust Token, Tru Gold, TrueFi others

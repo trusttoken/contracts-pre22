@@ -71,7 +71,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - run: yarn test:truefi:raters
+      - run: yarn test:truefi:service
   test-group5:
     docker:
       - image: circleci/node:12.19.0
