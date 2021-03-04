@@ -57,7 +57,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - run: yarn test:upgrade
+      - run: yarn test:integration
 
 workflows:
   version: 2
