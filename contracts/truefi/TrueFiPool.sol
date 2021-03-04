@@ -85,12 +85,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     uint256 constant MAX_PRICE_SLIPPAGE = 200; // 2%
 
     /**
-     * @dev Emitted when stake token address
-     * @param token New stake token address
-     */
-    event StakeTokenChanged(IERC20 token);
-
-    /**
      * @dev Emitted when TrueFi oracle was changed
      * @param newOracle New oracle address
      */
