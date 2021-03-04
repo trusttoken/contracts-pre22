@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { constants, Wallet, BigNumber, utils } from 'ethers'
+import { constants, Wallet, BigNumber } from 'ethers'
 import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 import fetch from 'node-fetch'
 import { toTrustToken } from 'scripts/utils'
