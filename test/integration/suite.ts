@@ -6,7 +6,7 @@ import { expect } from 'chai'
 
 export const CONTRACTS_OWNER = '0x16cEa306506c387713C70b9C1205fd5aC997E78E'
 
-function forkChain (rpc: string, unlockedAccounts: string[] = []) {
+export function forkChain (rpc: string, unlockedAccounts: string[] = []) {
   return new providers.Web3Provider(ganache.provider({
     fork: rpc,
     unlocked_accounts: unlockedAccounts,
@@ -27,7 +27,7 @@ export async function upgradeSuite<T extends Contract> (
   currentAddress: string,
   getters: Getter<T>[],
 ) {
-  const provider = forkChain('https://mainnet.infura.io/v3/e33335b99d78415b82f8b9bc5fdc44c0', [CONTRACTS_OWNER])
+  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [CONTRACTS_OWNER])
   const owner = provider.getSigner(CONTRACTS_OWNER)
   const newContract = await deployContract(owner, Factory)
   const existingContract = new Factory(owner).attach(currentAddress)
