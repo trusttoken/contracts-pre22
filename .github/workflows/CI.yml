@@ -92,7 +92,7 @@ jobs:
       - run: yarn test:scripts
 
   tests-group2:
-    name: True currencies and True gold
+    name: True currencies
     needs: [node, build]
     runs-on: ubuntu-latest
 
@@ -111,7 +111,6 @@ jobs:
       - name: Download build
         uses: actions/download-artifact@v2
       - run: yarn test:true-currencies
-      - run: yarn test:true-gold
 
   tests-group3:
     name: TrueFi loans and others
@@ -133,10 +132,9 @@ jobs:
       - name: Download build
         uses: actions/download-artifact@v2
       - run: yarn test:truefi:loans
-      - run: yarn test:truefi:others
 
   tests-group4:
-    name: TrueFi services
+    name: TrueFi raters
     needs: [node, build]
     runs-on: ubuntu-latest
 
@@ -154,10 +152,10 @@ jobs:
           key: node_modules-${{ hashFiles('yarn.lock') }}
       - name: Download build
         uses: actions/download-artifact@v2
-      - run: yarn test:truefi:service
+      - run: yarn test:truefi:raters
 
   tests-group5:
-    name: Trust token and Tru Farm
+    name: Trust Token, Tru Gold, TrueFi others
     needs: [node, build]
     runs-on: ubuntu-latest
 
@@ -176,6 +174,8 @@ jobs:
       - name: Download build
         uses: actions/download-artifact@v2
       - run: yarn test:trusttoken
+      - run: yarn test:true-gold
+      - run: yarn test:truefi:others
 
   tests-upgrade:
     name: Storage corruption check
