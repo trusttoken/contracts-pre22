@@ -14,13 +14,16 @@ pragma solidity ^0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./common/ClaimableContract.sol";
+import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
 
 contract Timelock is ClaimableContract {
     using SafeMath for uint;
 
     event NewAdmin(address indexed newAdmin);
+    event NewPauser(address indexed newPauser);
     event NewPendingAdmin(address indexed newPendingAdmin);
     event NewDelay(uint indexed newDelay);
+    event EmergencyPause(OwnedUpgradeabilityProxy proxy);
     event CancelTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
     event ExecuteTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
     event QueueTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature, bytes data, uint eta);
@@ -37,6 +40,8 @@ contract Timelock is ClaimableContract {
 
     mapping (bytes32 => bool) public queuedTransactions;
 
+    address public pauser;
+
     /**
      * @dev Initialize sets the addresses of admin and the delay timestamp
      * @param admin_ The address of admin
@@ -48,6 +53,7 @@ contract Timelock is ClaimableContract {
         require(delay_ <= MAXIMUM_DELAY, "Timelock::setDelay: Delay must not exceed maximum delay.");
 
         admin = admin_;
+        pauser = admin_;
         delay = delay_;
 
         owner_ = msg.sender;
@@ -58,6 +64,24 @@ contract Timelock is ClaimableContract {
 
     // OLD: function() external payable { }
     receive() external payable { }
+
+    function setPauser(address _pauser) external {
+        if (admin_initialized) {
+            require(msg.sender == address(this), "Timelock::setPendingAdmin: Call must come from Timelock.");
+        } else {
+            require(msg.sender == admin, "Timelock::setPendingAdmin: First call must come from admin.");
+        }
+        pauser = _pauser;
+
+        emit NewPauser(_pauser);
+    }
+
+    function emergencyPause(OwnedUpgradeabilityProxy proxy) external {
+        require(msg.sender == admin, "Timelock::emergencyPause: Call must come from admin.");
+        proxy.upgradeTo(address(0));
+
+        emit EmergencyPause(proxy);
+    }
 
     /**
      * @dev Set the timelock delay to a new timestamp
