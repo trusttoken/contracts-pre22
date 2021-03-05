@@ -678,7 +678,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         require(description.dstReceiver == address(this), "TrueFiPool: Receiver is not pool");
 
         _minter.token().approve(address(_1inchExchange), description.amount);
-        (bool success, bytes memory ret) = address(_1inchExchange).call(data);
+        (bool success, ) = address(_1inchExchange).call(data);
         require(success, "TrueFiPool: 1Inch swap failed");
         // TODO add post sell slippage check
     }
