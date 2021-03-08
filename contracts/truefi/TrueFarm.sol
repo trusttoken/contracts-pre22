@@ -141,6 +141,22 @@ contract TrueFarm is ITrueFarm, Initializable {
     }
 
     /**
+     * @dev Claim TRU rewards and immediately restake them without transferring in/out
+     */
+    function claimRestake() external override update {
+        uint256 rewardToClaim = claimableReward[msg.sender];
+
+        claimableReward[msg.sender] = 0;
+        totalClaimedRewards = totalClaimedRewards.add(rewardToClaim);
+
+        staked[msg.sender] = staked[msg.sender].add(rewardToClaim);
+        totalStaked = totalStaked.add(rewardToClaim);
+
+        emit Claim(msg.sender, rewardToClaim);
+        emit Stake(msg.sender, rewardToClaim);
+    }
+
+    /**
      * @dev Unstake amount and claim rewards
      * @param amount Amount of tokens to unstake
      */

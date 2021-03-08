@@ -22,5 +22,7 @@ interface ITrueFarm {
 
     function claim() external;
 
+    function claimRestake() external;
+
     function exit(uint256 amount) external;
 }
