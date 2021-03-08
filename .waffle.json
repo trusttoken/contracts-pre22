@@ -3,7 +3,7 @@
     "compilerOptions": {
         "optimizer": {
           "enabled": true,
-          "runs": 20000
+          "runs": 200
         }
       },
     "sourceDirectory": "./contracts",
