@@ -127,7 +127,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
-     * @dev Only loans in Running state
+     * @dev Only loans not in Running state
      */
     modifier onlyNotRunningLoans(address id) {
         require(status(id) != LoanStatus.Running, "TrueRatingAgency: Loan is currently running");
@@ -143,7 +143,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
-     * @dev Initalize Rating Agenct
+     * @dev Initialize Rating Agency
      * Distributor contract decides how much TRU is rewarded to stakers
      * @param _trustToken TRU contract
      * @param _distributor Distributor contract
@@ -345,7 +345,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param id Loan ID
      * @param stake Amount of TRU to unstake
      */
-    function withdraw(address id, uint256 stake) external override onlyNotRunningLoans(id) {
+    function withdraw(address id, uint256 stake) external override onlyRunningLoans(id) {
         bool choice = loans[id].votes[msg.sender][true] > 0;
         LoanStatus loanStatus = status(id);
 
