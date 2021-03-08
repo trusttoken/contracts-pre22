@@ -345,7 +345,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
      * @param id Loan ID
      * @param stake Amount of TRU to unstake
      */
-    function withdraw(address id, uint256 stake) external override onlyRunningLoans(id) {
+    function withdraw(address id, uint256 stake) external override onlyNotRunningLoans(id) {
         bool choice = loans[id].votes[msg.sender][true] > 0;
         LoanStatus loanStatus = status(id);
 

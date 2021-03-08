@@ -259,7 +259,7 @@ contract LoanToken is ILoanToken, ERC20 {
         }
 
         uint256 passed = block.timestamp.sub(start);
-        if (passed > term) {
+        if (passed > term || status == Status.Settled) {
             passed = term;
         }
 
