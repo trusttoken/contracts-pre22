@@ -8,7 +8,6 @@ import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expec
 
 import {
   ICurveGaugeJson,
-  ICurveMinterJson,
   LoanToken,
   LoanTokenFactory,
   MockCurvePool,
@@ -44,7 +43,6 @@ describe('TrueFiPool', () => {
   let mockRatingAgency: MockContract
   let mockCrv: MockErc20Token
   let mockCurveGauge: MockContract
-  let mockCrv: MockErc20Token
 
   const dayInSeconds = 60 * 60 * 24
   const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
