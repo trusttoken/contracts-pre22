@@ -58,7 +58,7 @@ contract TrueLender is ITrueLender, Ownable {
     uint256 public minApy;
     uint256 public maxApy;
 
-    // How many votes in predction market
+    // How many votes in prediction market
     uint256 public participationFactor;
 
     // How much worse is it to lose $1 TUSD than it is to gain $1 TUSD
@@ -170,7 +170,7 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     /**
-     * @dev Initalize the contract with parameters
+     * @dev Initialize the contract with parameters
      * @param _pool Lending pool address
      * @param _ratingAgency Prediction market address
      */
@@ -344,7 +344,7 @@ contract TrueLender is ITrueLender, Ownable {
         }
 
         uint256 passed = block.timestamp.sub(loan.start());
-        if (passed > loan.term()) {
+        if (passed > loan.term() || loan.status() == ILoanToken.Status.Settled) {
             passed = loan.term();
         }
 
