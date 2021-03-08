@@ -51,7 +51,7 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn test
-  upgrade:
+  integration:
     docker:
       - image: circleci/node:12.19.0
     steps:
