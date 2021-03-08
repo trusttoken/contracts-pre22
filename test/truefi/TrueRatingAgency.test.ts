@@ -928,14 +928,13 @@ describe('TrueRatingAgency', () => {
         await expect(async () => rater.withdraw(loanToken.address, staked.div(2), txArgs))
           .to.changeTokenBalance(trustToken, owner, staked.div(2))
       })
-      
 
-    it('calculates reward properly when closed early', async () => {
-      await loanToken.fund()
-      await tusd.mint(loanToken.address, parseEth(1312312312321))
-      await loanToken.close()
-      await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5), owner)
-    })
+      it('calculates reward properly when closed early', async () => {
+        await loanToken.fund()
+        await tusd.mint(loanToken.address, parseEth(1312312312321))
+        await loanToken.close()
+        await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5), owner)
+      })
     })
   })
 })
