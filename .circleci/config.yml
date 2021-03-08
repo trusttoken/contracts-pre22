@@ -70,6 +70,6 @@ workflows:
       - test:
           requires:
             - build
-      - upgrade:
+      - integration:
           requires:
             - build
