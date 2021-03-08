@@ -480,7 +480,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         uint256 passedTime = block.timestamp.sub(ILoanToken(id).start());
 
         // check time of loan
-        if (passedTime > totalTime) {
+        if (passedTime > totalTime || ILoanToken(id).status() == ILoanToken.Status.Settled) {
             passedTime = totalTime;
         }
         // calculate how many tokens user can claim
