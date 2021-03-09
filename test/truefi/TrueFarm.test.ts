@@ -202,6 +202,28 @@ describe('TrueFarm', () => {
       expect(await farm.claimable(staker1.address)).to.equal(0)
     })
 
+    it('claimRestake clears claimableRewards', async () => {
+      await farm.connect(staker1).stake(parseEth(500), txArgs)
+      await timeTravel(provider, DAY)
+      // force an update to claimableReward:
+      await farm.connect(staker1).unstake(parseEth(1), txArgs)
+      expect(await farm.claimableReward(staker1.address)).to.be.gt(0)
+
+      await farm.connect(staker1).claimRestake(txArgs)
+      expect(await farm.claimableReward(staker1.address)).to.equal(0)
+    })
+
+    it('claimRestake stakes claimableReward', async () => {
+      await farm.connect(staker1).stake(parseEth(500), txArgs)
+      await timeTravel(provider, DAY)
+      // force an update to claimableReward:
+      await farm.connect(staker1).unstake(parseEth(1), txArgs)
+      expect(await farm.staked(staker1.address)).to.equal(parseEth(500 - 1))
+
+      await farm.connect(staker1).claimRestake(txArgs)
+      expect(await farm.staked(staker1.address)).to.be.gt(parseEth(500 - 1))
+    })
+
     it('claimable is zero from the start', async () => {
       expect(await farm.claimable(staker1.address)).to.equal(0)
     })
