@@ -15,8 +15,8 @@ import {
   MockCurvePoolFactory,
   MockErc20Token,
   MockErc20TokenFactory,
-  TrueFiPool,
-  TrueFiPoolFactory,
+  TestTrueFiPool,
+  TestTrueFiPoolFactory,
   TrueLender,
   TrueLenderFactory,
   PoolArbitrageTestFactory,
@@ -35,7 +35,7 @@ describe('TrueFiPool', () => {
   let mockStakingPool: MockStakingPool
   let curveToken: MockErc20Token
   let curvePool: MockCurvePool
-  let pool: TrueFiPool
+  let pool: TestTrueFiPool
   let lender: TrueLender
   let mockRatingAgency: MockContract
   let mockCurveGauge: MockContract
@@ -52,7 +52,7 @@ describe('TrueFiPool', () => {
     curvePool = await new MockCurvePoolFactory(owner).deploy()
     await curvePool.initialize(token.address)
     curveToken = MockErc20TokenFactory.connect(await curvePool.token(), owner)
-    pool = await new TrueFiPoolFactory(owner).deploy()
+    pool = await new TestTrueFiPoolFactory(owner).deploy()
     mockStakingPool = await new MockStakingPoolFactory(owner).deploy(pool.address)
     mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyJson.abi)
     mockCurveGauge = await deployMockContract(owner, ICurveGaugeJson.abi)
@@ -100,49 +100,10 @@ describe('TrueFiPool', () => {
     })
   })
 
-  describe('update name and symbol', () => {
-    it('updates name and symbol', async () => {
-      await pool.updateNameAndSymbol()
-      expect(await pool.name()).to.equal('TrueFi TrueUSD')
-      expect(await pool.symbol()).to.equal('tfTUSD')
-    })
-
-    it('multiple calls do not change the effect', async () => {
-      await pool.updateNameAndSymbol()
-      await pool.updateNameAndSymbol()
-      expect(await pool.name()).to.equal('TrueFi TrueUSD')
-      expect(await pool.symbol()).to.equal('tfTUSD')
-    })
-  })
-
   it('cannot exit and join on same transaction', async () => {
     const arbitrage = await new PoolArbitrageTestFactory(owner).deploy()
     await token.transfer(arbitrage.address, parseEth(1))
     await expect(arbitrage.joinExit(pool.address)).to.be.revertedWith('TrueFiPool: Cannot join and exit in same block')
-  })
-
-  describe('TRU integration', () => {
-    it('allows only owner to call setStakeToken', async () => {
-      await expect(pool.connect(borrower).setStakeToken(trustToken.address))
-        .to.be.revertedWith('Ownable: caller is not the owner')
-    })
-
-    it('emits event on being set', async () => {
-      await expect(pool.setStakeToken(trustToken.address))
-        .to.emit(pool, 'StakeTokenChanged')
-        .withArgs(trustToken.address)
-    })
-
-    it('TrustToken address was set correctly', async () => {
-      expect(await pool._stakeToken()).to.equal(trustToken.address)
-    })
-
-    it('shows pool\'s balance of stake tokens correctly', async () => {
-      expect(await pool.stakeTokenBalance()).to.equal(0)
-
-      await trustToken.mint(pool.address, parseEth(1))
-      expect(await pool.stakeTokenBalance()).to.equal(parseEth(1))
-    })
   })
 
   const calcBorrowerFee = (amount: BigNumber) => amount.mul(25).div(10000)
@@ -401,10 +362,10 @@ describe('TrueFiPool', () => {
   })
 
   describe('borrow-repay', () => {
-    let pool2: TrueFiPool
+    let pool2: TestTrueFiPool
 
     beforeEach(async () => {
-      pool2 = await new TrueFiPoolFactory(owner).deploy()
+      pool2 = await new TestTrueFiPoolFactory(owner).deploy()
       await pool2.initialize(
         curvePool.address,
         mockCurveGauge.address,
