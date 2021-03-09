@@ -404,6 +404,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
     ) internal override distribute update(sender) {
         updateClaimableRewards(tru, recipient);
         updateClaimableRewards(tfusd, recipient);
+        // unlock time returns MAX_UINT256 when there's no ongoing cooldown for the address
         if (unlockTime(recipient) != type(uint256).max) {
             receivedDuringCooldown[recipient] = receivedDuringCooldown[recipient].add(amount);
         }
