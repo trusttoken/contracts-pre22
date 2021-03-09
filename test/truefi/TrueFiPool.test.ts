@@ -363,10 +363,6 @@ describe('TrueFiPool', () => {
       await expect(pool.flush(parseEth(100), 123)).to.be.not.reverted
     })
 
-    it('reverts if not called by owner or funds manager', async () => {
-      await expect(pool.connect(borrower).flush(1, 0)).to.be.revertedWith('TrueFiPool: Caller is neither owner nor funds manager')
-    })
-
     it('reverts if flushing more than tUSD balance', async () => {
       await expect(pool.flush(parseEth(1e7 + 1), 0)).to.be.revertedWith('TrueFiPool: Insufficient currency balance')
     })

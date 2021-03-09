@@ -236,10 +236,10 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     /**
      * @dev only lender can perform borrowing or repaying
      */
-    modifier exchangeProtector(uint256 expectedGain) {
-        uint256 balanceBefore = currencyBalance();
+    modifier exchangeProtector(uint256 expectedGain, IERC20 token) {
+        uint256 balanceBefore = token.balanceOf(address(this));
         _;
-        uint256 balanceDiff = currencyBalance().sub(balanceBefore);
+        uint256 balanceDiff = token.balanceOf(address(this)).sub(balanceBefore);
         require(balanceDiff >= conservativePriceEstimation(expectedGain), "TrueFiPool: Not optimal exchange");
     }
 
@@ -593,14 +593,11 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @param currencyAmount Amount of funds to deposit into curve
      * @param minMintAmount Minimum amount to mint
      */
-    function flush(uint256 currencyAmount, uint256 minMintAmount) external onlyOwnerOrManager {
+    function flush(uint256 currencyAmount, uint256 minMintAmount) external {
         require(currencyAmount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
-        uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
-
         // add TUSD to curve
-        _currencyToken.approve(address(_curvePool), currencyAmount);
-        _curvePool.add_liquidity(amounts, minMintAmount);
+        _flush(currencyAmount, minMintAmount);
 
         // stake yCurve tokens in gauge
         uint256 yBalance = _curvePool.token().balanceOf(address(this));
@@ -608,6 +605,16 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _curveGauge.deposit(yBalance);
 
         emit Flushed(currencyAmount);
+    }
+
+    function _flush(uint256 currencyAmount, uint256 minMintAmount)
+        internal
+        exchangeProtector(calcTokenAmount(currencyAmount), _curvePool.token())
+    {
+        uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
+
+        _currencyToken.approve(address(_curvePool), currencyAmount);
+        _curvePool.add_liquidity(amounts, minMintAmount);
     }
 
     /**
@@ -689,7 +696,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         uint256 amountIn,
         uint256 amountOutMin,
         address[] calldata path
-    ) public exchangeProtector(_crvOracle.crvToUsd(amountIn)) {
+    ) public exchangeProtector(_crvOracle.crvToUsd(amountIn), _currencyToken) {
         _minter.token().approve(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
@@ -709,7 +716,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         uint256 amountIn,
         uint256 amountOutMin,
         address[] calldata path
-    ) public exchangeProtector(_truOracle.truToUsd(amountIn)) {
+    ) public exchangeProtector(_truOracle.truToUsd(amountIn), _currencyToken) {
         _stakeToken.approve(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
@@ -772,7 +779,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev Currency token balance
      * @return Currency token balance
      */
-    function currencyBalance() internal view returns (uint256) {
+    function currencyBalance() public view returns (uint256) {
         return _currencyToken.balanceOf(address(this)).sub(claimableFees);
     }
 
