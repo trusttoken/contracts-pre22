@@ -21,10 +21,10 @@ import {I1Inch} from "./interface/I1Inch.sol";
  * @dev Lending pool which uses curve.fi to store idle funds
  * Earn high interest rates on currency deposits through uncollateralized loans
  *
- * Funds deposited in this pool are not fully liquid. Luqidity
+ * Funds deposited in this pool are not fully liquid. Liquidity
  * Exiting the pool has 2 options:
  * - withdraw a basket of LoanTokens backing the pool
- * - take an exit penallty depending on pool liquidity
+ * - take an exit penalty depending on pool liquidity
  * After exiting, an account will need to wait for LoanTokens to expire and burn them
  * It is recommended to perform a zap or swap tokens on Uniswap for increased liquidity
  *
@@ -516,7 +516,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     function averageExitPenalty(uint256 from, uint256 to) public pure returns (uint256) {
         require(from <= to, "TrueFiPool: To precedes from");
         if (from == 10000) {
-            // When all liquid, dont penalize
+            // When all liquid, don't penalize
             return 0;
         }
         if (from == to) {

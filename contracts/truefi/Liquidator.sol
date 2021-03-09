@@ -15,7 +15,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
  * @title Liquidator
  * @notice Liquidate LoanTokens with this Contract
  * @dev When a Loan becomes defaulted, Liquidator allows to
- * compensate pool participants, by transfering some of TRU to the pool
+ * compensate pool participants, by transferring some of TRU to the pool
  */
 contract Liquidator is Ownable {
     using SafeMath for uint256;
