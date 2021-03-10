@@ -1,4 +1,4 @@
-import { Contract, providers } from 'ethers'
+import { BigNumberish, Contract, providers } from 'ethers'
 import { ContractFactoryConstructor, deployContract } from 'scripts/utils/deployContract'
 import ganache from 'ganache-core'
 import { OwnedUpgradeabilityProxyFactory } from 'contracts'
@@ -8,9 +8,10 @@ import { parseEth } from 'utils'
 export const CONTRACTS_OWNER = '0x16cEa306506c387713C70b9C1205fd5aC997E78E'
 export const ETHER_HOLDER = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
 
-export function forkChain (rpc: string, unlockedAccounts: string[] = []) {
+export function forkChain (rpc: string, unlockedAccounts: string[] = [], blockNumber?: BigNumberish
+) {
   return new providers.Web3Provider(ganache.provider({
-    fork: rpc,
+    fork: blockNumber ? `${rpc}@${blockNumber.toString()}` : rpc,
     unlocked_accounts: unlockedAccounts,
   }))
 }
@@ -30,7 +31,7 @@ export async function upgradeSuite<T extends Contract> (
   getters: Getter<T>[],
   contractsOwner: string = CONTRACTS_OWNER,
 ) {
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [contractsOwner, ETHER_HOLDER])
+  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [contractsOwner, ETHER_HOLDER], 12010725)
   const owner = provider.getSigner(contractsOwner)
   const holder = provider.getSigner(ETHER_HOLDER)
   await holder.sendTransaction({ value: parseEth(100), to: contractsOwner })
