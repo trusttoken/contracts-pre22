@@ -8,7 +8,7 @@ import { parseEth } from 'utils'
 export const CONTRACTS_OWNER = '0x16cEa306506c387713C70b9C1205fd5aC997E78E'
 export const ETHER_HOLDER = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
 
-export function forkChain (rpc: string, unlockedAccounts: string[] = [], blockNumber?: BigNumberish
+export function forkChain (rpc: string, unlockedAccounts: string[] = [], blockNumber?: BigNumberish,
 ) {
   return new providers.Web3Provider(ganache.provider({
     fork: blockNumber ? `${rpc}@${blockNumber.toString()}` : rpc,
