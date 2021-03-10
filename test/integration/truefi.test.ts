@@ -13,7 +13,7 @@ use(solidity)
 describe('TrueFi', () => {
   const emptyAddress = Wallet.createRandom().address
 
-  it('Liquidator',  async () => {
+  it('Liquidator', async () => {
     await upgradeSuite(LiquidatorFactory, '0x76dd4921C99AC6b61b3a98f9fa6f181cA6D70c77', [
       'pool',
       'stkTru',
