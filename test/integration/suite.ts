@@ -28,11 +28,12 @@ export async function upgradeSuite<T extends Contract> (
   Factory: ContractFactoryConstructor<T>,
   currentAddress: string,
   getters: Getter<T>[],
+  contractsOwner: string = CONTRACTS_OWNER,
 ) {
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [CONTRACTS_OWNER, ETHER_HOLDER])
-  const owner = provider.getSigner(CONTRACTS_OWNER)
+  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [contractsOwner, ETHER_HOLDER])
+  const owner = provider.getSigner(contractsOwner)
   const holder = provider.getSigner(ETHER_HOLDER)
-  await holder.sendTransaction({ value: parseEth(100), to: CONTRACTS_OWNER })
+  await holder.sendTransaction({ value: parseEth(100), to: contractsOwner })
   const newContract = await deployContract(owner, Factory)
   const existingContract = new Factory(owner).attach(currentAddress)
   const oldValues = await Promise.all(getters.map(execGetter(existingContract)))

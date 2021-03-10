@@ -6,7 +6,7 @@ import { solidity } from 'ethereum-waffle'
 
 use(solidity)
 
-describe('Governance', () => {  
+describe('Governance', () => {
   it('stkTRU', async () => {
     const emptyAddress = Wallet.createRandom().address
     const holder = '0xfa43e72793535d9059c9b9aa015e3b86e72f4de7'
@@ -39,18 +39,17 @@ describe('Governance', () => {
 
   it('GovernorAlpha', async () => {
     await upgradeSuite(GovernorAlphaFactory, '0x0236c16f06aAFdbea5b5EDC8C326A479DB090eB2', [
-      //add proposals and latestProposalsIds when they are made on chain
-      // (contract) => contract.quorumVotes(),
-      // (contract) => contract.proposalThreshold(),
-      // (contract) => contract.proposalMaxOperations(),
-      // (contract) => contract.votingDelay(),
-      // 'votingPeriod',
-      // 'timelock',
-      // 'trustToken',
-      // 'stkTRU',
-      // 'guardian',
-      // 'totalSupply',
-      // 'proposalCount',
-    ])
+      // add proposals and latestProposalsIds when they are made on chain
+      (contract) => contract.quorumVotes(),
+      (contract) => contract.proposalThreshold(),
+      (contract) => contract.proposalMaxOperations(),
+      (contract) => contract.votingDelay(),
+      'votingPeriod',
+      'timelock',
+      'trustToken',
+      'stkTRU',
+      'guardian',
+      'proposalCount',
+    ], '0xf6E2Da7D82ee49f76CE652bc0BeB546Cbe0Ea521')
   })
 })
