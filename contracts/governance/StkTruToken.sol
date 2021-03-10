@@ -205,22 +205,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
      * @param amount Amount of TRU to stake for stkTRU
      */
     function stake(uint256 amount) external distribute update(msg.sender) {
-        require(amount > 0, "StkTruToken: Cannot stake 0");
-
-        if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime).add(unstakePeriodDuration) > block.timestamp) {
-            cooldowns[msg.sender] = block.timestamp;
-
-            emit Cooldown(msg.sender, block.timestamp.add(cooldownTime));
-        }
-
-        if (delegates[msg.sender] == address(0)) {
-            delegates[msg.sender] = msg.sender;
-        }
-
-        uint256 amountToMint = stakeSupply == 0 ? amount : amount.mul(totalSupply).div(stakeSupply);
-        _mint(msg.sender, amountToMint);
-        stakeSupply = stakeSupply.add(amount);
-
+        _stake_from_uint256(amount);
         require(tru.transferFrom(msg.sender, address(this), amount));
 
         emit Stake(msg.sender, amount);
@@ -320,6 +305,17 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
     }
 
     /**
+     * @dev Claim TRU rewards, then restake without transferring
+     * Allows account to save more gas by avoiding out-and-back transfers
+     */
+    function claimRestakeTRU() external distribute update(msg.sender) {
+        uint256 amount = _claim_to_uint256(tru);
+        _stake_from_uint256(amount);
+        emit Claim(msg.sender, tru, amount);
+        emit Stake(msg.sender, amount);
+    }
+
+    /**
      * @dev View to estimate the claimable reward for an account
      * @param account Account to get claimable reward for
      * @param token Token to get rewards for
@@ -401,13 +397,44 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
      * @param token Token to claim rewards for
      */
     function _claim(IERC20 token) internal {
-        farmRewards[token].totalClaimedRewards = farmRewards[token].totalClaimedRewards.add(
-            farmRewards[token].claimableReward[msg.sender]
-        );
-        uint256 rewardToClaim = farmRewards[token].claimableReward[msg.sender];
-        farmRewards[token].claimableReward[msg.sender] = 0;
+        uint256 rewardToClaim = _claim_to_uint256(token);
         require(token.transfer(msg.sender, rewardToClaim));
         emit Claim(msg.sender, token, rewardToClaim);
+    }
+
+    /**
+     * @dev Internal claim function that returns the transfer value
+     * Claim rewards for a specific ERC20 token to return in a uint256
+     * @param token Token to claim rewards for
+     */
+    function _claim_to_uint256(IERC20 token) internal returns (uint256) {
+        uint256 rewardToClaim = farmRewards[token].claimableReward[msg.sender];
+        farmRewards[token].totalClaimedRewards = farmRewards[token].totalClaimedRewards.add(rewardToClaim);
+        farmRewards[token].claimableReward[msg.sender] = 0;
+        return rewardToClaim;
+    }
+
+    /**
+     * @dev Internal stake of TRU for stkTRU from a uint256
+     * Caller is responsible for ensuring amount is transferred from a valid source
+     * @param amount Amount of TRU to stake for stkTRU
+     */
+    function _stake_from_uint256(uint256 amount) internal {
+        require(amount > 0, "StkTruToken: Cannot stake 0");
+
+        if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime).add(unstakePeriodDuration) > block.timestamp) {
+            cooldowns[msg.sender] = block.timestamp;
+
+            emit Cooldown(msg.sender, block.timestamp.add(cooldownTime));
+        }
+
+        if (delegates[msg.sender] == address(0)) {
+            delegates[msg.sender] = msg.sender;
+        }
+
+        uint256 amountToMint = stakeSupply == 0 ? amount : amount.mul(totalSupply).div(stakeSupply);
+        _mint(msg.sender, amountToMint);
+        stakeSupply = stakeSupply.add(amount);
     }
 
     /**
