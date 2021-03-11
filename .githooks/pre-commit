@@ -16,3 +16,5 @@ EOF
   exit 1;
 fi
 
+yarn lint:fix
+
