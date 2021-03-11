@@ -672,7 +672,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
             data[4:],
             (address, I1Inch.SwapDescription, I1Inch.CallDescription[])
         );
-        require(caller == 0xe069CB01D06bA617bCDf789bf2ff0D5E5ca20C71, "TrueFiPool: Unknown caller");
         require(description.srcToken == address(_minter.token()), "TrueFiPool: Source token is not CRV");
         require(description.dstToken == address(_currencyToken), "TrueFiPool: Destination token is not TUSD");
         require(description.dstReceiver == address(this), "TrueFiPool: Receiver is not pool");
