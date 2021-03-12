@@ -49,10 +49,10 @@ describe('TrueGold', () => {
     })
 
     function shouldRespectBurnRestrictions (burn: (amount: BigNumberish) => Promise<providers.TransactionResponse>) {
-      describe('when burn amount is not a multiple of 12,500,000', () => {
+      describe('when burn amount is not a multiple of 12,441,000', () => {
         function reverts (amount: BigNumberish) {
           it('reverts', async () => {
-            await expect(burn(amount)).to.be.revertedWith('TrueGold: burn amount is not a multiple of 12,500,000')
+            await expect(burn(amount)).to.be.revertedWith('TrueGold: burn amount is not a multiple of 12,441,000')
           })
         }
 
@@ -60,12 +60,12 @@ describe('TrueGold', () => {
           reverts(8_000_000)
         })
 
-        describe('for 12,500,001 amount', () => {
-          reverts(12_500_001)
+        describe('for 12,441,001 amount', () => {
+          reverts(12_441_001)
         })
       })
 
-      describe('when burn amount is a multiple of 12,500,000', () => {
+      describe('when burn amount is a multiple of 12,441,000', () => {
         function successfullyBurns (amount: BigNumberish) {
           it('burns the requested amount', async () => {
             await burn(amount)
@@ -78,12 +78,12 @@ describe('TrueGold', () => {
           successfullyBurns(0)
         })
 
-        describe('for 12,500,000 amount', () => {
-          successfullyBurns(12_500_000)
+        describe('for 12,441,000 amount', () => {
+          successfullyBurns(12_441_000)
         })
 
-        describe('for 37,500,000 amount', () => {
-          successfullyBurns(37_500_000)
+        describe('for 37,323,000 amount', () => {
+          successfullyBurns(37_323_000)
         })
       })
     }
@@ -94,7 +94,7 @@ describe('TrueGold', () => {
 
     describe('burnFrom', () => {
       beforeEach(async () => {
-        await approve(tokenOwner, burner, 37_500_000)
+        await approve(tokenOwner, burner, 37_323_000)
       })
 
       shouldRespectBurnRestrictions(amount => token.connect(burner).burnFrom(tokenOwner.address, amount))
@@ -106,7 +106,7 @@ describe('TrueGold', () => {
 
     describe('transferFrom', () => {
       beforeEach(async () => {
-        await approve(tokenOwner, burner, 37_500_000)
+        await approve(tokenOwner, burner, 37_323_000)
       })
 
       shouldRespectBurnRestrictions(amount =>
@@ -125,25 +125,25 @@ describe('TrueGold', () => {
       owner = deployer
     })
 
-    describe('when given bounds are multiples of 12,500,000', () => {
+    describe('when given bounds are multiples of 12,441,000', () => {
       it('sets the new burn bounds', async () => {
-        await setBurnBounds(owner, 12_500_000, 25_000_000)
-        expect(await token.burnMin()).to.eq(12_500_000)
-        expect(await token.burnMax()).to.eq(25_000_000)
+        await setBurnBounds(owner, 12_441_000, 12_441_000 * 2)
+        expect(await token.burnMin()).to.eq(12_441_000)
+        expect(await token.burnMax()).to.eq(12_441_000 * 2)
       })
     })
 
-    describe('when min amount is not a multiple of 12,500,000', () => {
+    describe('when min amount is not a multiple of 12,441,000', () => {
       it('reverts', async () => {
-        await expect(setBurnBounds(owner, 8_000_000, 12_500_000))
-          .to.be.revertedWith('TrueGold: min amount is not a multiple of 12,500,000')
+        await expect(setBurnBounds(owner, 8_000_000, 12_441_000))
+          .to.be.revertedWith('TrueGold: min amount is not a multiple of 12,441,000')
       })
     })
 
-    describe('when max amount is not a multiple of 12,500,000', () => {
+    describe('when max amount is not a multiple of 12,441,000', () => {
       it('reverts', async () => {
-        await expect(setBurnBounds(owner, 12_500_000, 20_000_000))
-          .to.be.revertedWith('TrueGold: max amount is not a multiple of 12,500,000')
+        await expect(setBurnBounds(owner, 12_441_000, 20_000_000))
+          .to.be.revertedWith('TrueGold: max amount is not a multiple of 12,441,000')
       })
     })
   })
