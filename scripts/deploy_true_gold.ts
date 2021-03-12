@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
-import { BigNumberish, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, providers, Wallet } from 'ethers'
 
-import { Address } from 'scripts/model/Address'
+import { Address, makeAddress } from 'scripts/model/Address'
 import { deployContract } from 'scripts/utils/deployContract'
 import { waitForTx } from 'scripts/utils/waitForTx'
 import { asProxy } from 'scripts/utils/asProxy'
@@ -28,6 +28,10 @@ interface DeploymentResult {
   token: TrueGold,
 }
 
+// TODO change
+const MIN_MINT_BOUND = 0
+const MAX_MINT_BOUND = BigNumber.from(12_441_000).mul(1e8)
+
 export async function deployTrueGold (deployer: Wallet, params: DeploymentParams): Promise<DeploymentResult> {
   const { token, tokenImpl } = await deployTokenBehindProxy(deployer, params.initialBurnBounds)
   const { controller, controllerImpl } = await deployControllerBehindProxy(deployer)
@@ -50,6 +54,7 @@ async function deployControllerBehindProxy (deployer: Wallet) {
   const controller = TrueGoldControllerFactory.connect(proxy.address, deployer)
   await waitForTx(controller.initialize()) // controller.owner = deployer
 
+  console.log(`Controller address: ${proxy.address}`)
   return { controller, controllerImpl }
 }
 
@@ -63,6 +68,7 @@ async function deployTokenBehindProxy (deployer: Wallet, burnBounds: DeploymentP
   const token = TrueGoldFactory.connect(proxy.address, deployer)
   await waitForTx(token.initialize(burnBounds.min, burnBounds.max)) // token._owner = deployer
 
+  console.log(`TrueGold address: ${proxy.address}`)
   return { token, tokenImpl }
 }
 
@@ -80,4 +86,18 @@ async function transferTokenOwnership (token: TrueGold, controller: TrueGoldCont
 async function transferControllerOwnership (controller: TrueGoldController, controllerOwner: Address) {
   await waitForTx(controller.transferOwnership(controllerOwner)) // controller.pendingOwner = controllerOwner
   await waitForTx(asProxy(controller).transferProxyOwnership(controllerOwner)) // controller.pendingProxyOwner = controllerOwner
+}
+
+if (require.main === module) {
+  const provider = new providers.InfuraProvider('ropsten', '81447a33c1cd4eb09efb1e8c388fb28e')
+  const wallet = new Wallet(process.env.PRIVATE_KEY, provider)
+  const owner = makeAddress(process.env.OWNER || wallet.address)
+  deployTrueGold(wallet, {
+    controllerOwner: owner,
+    implContractsOwner: owner,
+    initialBurnBounds: {
+      min: MIN_MINT_BOUND,
+      max: MAX_MINT_BOUND,
+    },
+  })
 }
