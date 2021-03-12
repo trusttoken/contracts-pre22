@@ -24,7 +24,7 @@ describe('TrueGold - Initializable', () => {
     ({ proxy, token } = await loadFixture(fixture))
   })
 
-  function initialize (caller: Wallet, minBurnAmount = 12_500_000, maxBurnAmount: BigNumberish = MAX_BURN_BOUND) {
+  function initialize (caller: Wallet, minBurnAmount = 12_441_000, maxBurnAmount: BigNumberish = MAX_BURN_BOUND) {
     return token.connect(caller).initialize(minBurnAmount, maxBurnAmount)
   }
 
@@ -45,16 +45,16 @@ describe('TrueGold - Initializable', () => {
 
     it('sets burn bounds', async () => {
       await initialize(proxy)
-      expect(await token.burnMin()).to.eq(12_500_000)
+      expect(await token.burnMin()).to.eq(12_441_000)
       expect(await token.burnMax()).to.eq(MAX_BURN_BOUND)
     })
 
     it('validates burn bounds values', async () => {
       await expect(initialize(proxy, 8_000_000, MAX_BURN_BOUND))
-        .to.be.revertedWith('TrueGold: min amount is not a multiple of 12,500,000')
+        .to.be.revertedWith('TrueGold: min amount is not a multiple of 12,441,000')
       await expect(initialize(proxy, 0, 8_000_000))
-        .to.be.revertedWith('TrueGold: max amount is not a multiple of 12,500,000')
-      await expect(initialize(proxy, 25_000_000, 12_500_000))
+        .to.be.revertedWith('TrueGold: max amount is not a multiple of 12,441,000')
+      await expect(initialize(proxy, 12_441_000 * 2, 12_441_000))
         .to.be.revertedWith('TrueMintableBurnable: min is greater then max')
     })
   })

@@ -45,7 +45,7 @@ describe('TrueGold - TrueMintableBurnable', () => {
         })
 
         describe('for a non-zero amount', () => {
-          shouldBurn(12_500_000)
+          shouldBurn(12_441_000)
         })
 
         function shouldBurn (amount: BigNumberish) {
@@ -66,7 +66,7 @@ describe('TrueGold - TrueMintableBurnable', () => {
 
       describe('when the given amount is greater than the balance of the sender', () => {
         it('reverts', async () => {
-          await expect(transfer(tokenOwner, redemptionAddress, initialBalance.add(12_500_000)))
+          await expect(transfer(tokenOwner, redemptionAddress, initialBalance.add(12_441_000)))
             .to.be.revertedWith('ERC20: transfer amount exceeds balance')
         })
       })
@@ -83,7 +83,7 @@ describe('TrueGold - TrueMintableBurnable', () => {
         })
 
         describe('for a non-zero amount', () => {
-          shouldBurnFrom(BigNumber.from(12_500_000))
+          shouldBurnFrom(BigNumber.from(12_441_000))
         })
 
         function shouldBurnFrom (amount: BigNumber) {
@@ -114,7 +114,7 @@ describe('TrueGold - TrueMintableBurnable', () => {
       })
 
       describe('when the given amount is greater than the balance of the sender', () => {
-        const amount = initialBalance.add(12_500_000)
+        const amount = initialBalance.add(12_441_000)
 
         it('reverts', async () => {
           await approve(tokenOwner, burner, amount)
@@ -124,7 +124,7 @@ describe('TrueGold - TrueMintableBurnable', () => {
       })
 
       describe('when the given amount is greater than the allowance', () => {
-        const allowance = BigNumber.from(12_500_000)
+        const allowance = BigNumber.from(12_441_000)
 
         it('reverts', async () => {
           await approve(tokenOwner, burner, allowance)
@@ -143,27 +143,27 @@ describe('TrueGold - TrueMintableBurnable', () => {
     beforeEach(async () => {
       tokenOwner = initialHolder
       burner = secondAccount
-      await token.setBurnBounds(25_000_000, 37_500_000)
+      await token.setBurnBounds(12_441_000 * 2, 12_441_000 * 3)
     })
 
     function shouldRespectBurnBounds (burn: (amount: BigNumberish) => Promise<providers.TransactionResponse>) {
       describe('when the burn amount is below min bound', () => {
         it('reverts', async () => {
-          await expect(burn(12_500_000)).to.be.revertedWith('TrueMintableBurnable: burn amount below min bound')
+          await expect(burn(12_441_000)).to.be.revertedWith('TrueMintableBurnable: burn amount below min bound')
         })
       })
 
       describe('when the burn amount is above max bound', () => {
         it('reverts', async () => {
-          await expect(burn(50_000_000)).to.be.revertedWith('TrueMintableBurnable: burn amount exceeds max bound')
+          await expect(burn(12_441_000 * 4)).to.be.revertedWith('TrueMintableBurnable: burn amount exceeds max bound')
         })
       })
 
       describe('when the burn amount is within bounds', () => {
         it('burns the requested amount', async () => {
-          await burn(25_000_000)
-          expect(await token.balanceOf(tokenOwner.address)).to.eq(initialBalance.sub(25_000_000))
-          expect(await token.totalSupply()).to.eq(initialSupply.sub(25_000_000))
+          await burn(12_441_000 * 2)
+          expect(await token.balanceOf(tokenOwner.address)).to.eq(initialBalance.sub(12_441_000 * 2))
+          expect(await token.totalSupply()).to.eq(initialSupply.sub(12_441_000 * 2))
         })
       })
     }
@@ -174,7 +174,7 @@ describe('TrueGold - TrueMintableBurnable', () => {
 
     describe('burnFrom', () => {
       beforeEach(async () => {
-        await approve(tokenOwner, burner, 50_000_000)
+        await approve(tokenOwner, burner, 12_441_000 * 4)
       })
 
       shouldRespectBurnBounds(amount => token.connect(burner).burnFrom(tokenOwner.address, amount))
@@ -186,7 +186,7 @@ describe('TrueGold - TrueMintableBurnable', () => {
 
     describe('transferFrom', () => {
       beforeEach(async () => {
-        await approve(tokenOwner, burner, 50_000_000)
+        await approve(tokenOwner, burner, 12_441_000 * 4)
       })
 
       shouldRespectBurnBounds(amount =>
@@ -210,20 +210,20 @@ describe('TrueGold - TrueMintableBurnable', () => {
     describe('when the caller is the contract owner', () => {
       describe('when min amount is less or equal to max amount', () => {
         it('sets the new burn bounds', async () => {
-          await setBurnBounds(owner, 12_500_000, 25_000_000)
-          expect(await token.burnMin()).to.eq(12_500_000)
-          expect(await token.burnMax()).to.eq(25_000_000)
+          await setBurnBounds(owner, 12_441_000, 12_441_000 * 2)
+          expect(await token.burnMin()).to.eq(12_441_000)
+          expect(await token.burnMax()).to.eq(12_441_000 * 2)
         })
 
         it('emits set event', async () => {
-          await expect(setBurnBounds(owner, 12_500_000, 25_000_000))
-            .to.emit(token, 'SetBurnBounds').withArgs(12_500_000, 25_000_000)
+          await expect(setBurnBounds(owner, 12_441_000, 12_441_000 * 2))
+            .to.emit(token, 'SetBurnBounds').withArgs(12_441_000, 12_441_000 * 2)
         })
       })
 
       describe('when min amount is greater than max amount', () => {
         it('reverts', async () => {
-          await expect(setBurnBounds(owner, 25_000_000, 0))
+          await expect(setBurnBounds(owner, 12_441_000 * 2, 0))
             .to.be.revertedWith('TrueMintableBurnable: min is greater then max')
         })
       })
@@ -231,7 +231,7 @@ describe('TrueGold - TrueMintableBurnable', () => {
 
     describe('when the caller is not the contract owner', () => {
       it('reverts', async () => {
-        await expect(setBurnBounds(other, 0, 25_000_000))
+        await expect(setBurnBounds(other, 0, 12_441_000 * 2))
           .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
