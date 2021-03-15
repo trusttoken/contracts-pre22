@@ -67,6 +67,8 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
 
     mapping(address => bool) public whitelistedFeePayers;
 
+    mapping(address => uint256) public receivedDuringCooldown;
+
     // ======= STORAGE DECLARATION END ============
 
     event Stake(address indexed staker, uint256 amount);
@@ -218,7 +220,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
     function unstake(uint256 amount) external distribute update(msg.sender) nonReentrant {
         require(amount > 0, "StkTruToken: Cannot unstake 0");
 
-        require(balanceOf[msg.sender] >= amount, "StkTruToken: Insufficient balance");
+        require(unstakable(msg.sender) >= amount, "StkTruToken: Insufficient balance");
         require(unlockTime(msg.sender) <= block.timestamp, "StkTruToken: Stake on cooldown");
 
         _claim(tru);
@@ -237,12 +239,11 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
     /**
      * @dev Initiate cooldown period
      */
-    function cooldown() external {
-        if (unlockTime(msg.sender) == type(uint256).max) {
-            cooldowns[msg.sender] = block.timestamp;
+    function cooldown() public {
+        cooldowns[msg.sender] = block.timestamp;
+        receivedDuringCooldown[msg.sender] = 0;
 
-            emit Cooldown(msg.sender, block.timestamp.add(cooldownTime));
-        }
+        emit Cooldown(msg.sender, block.timestamp.add(cooldownTime));
     }
 
     /**
@@ -339,6 +340,19 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
     }
 
     /**
+     * @dev max amount of stkTRU than can be unstaked after current cooldown period is over
+     */
+    function unstakable(address staker) public view returns (uint256) {
+        if (unlockTime(staker) == type(uint256).max) {
+            return balanceOf[staker];
+        }
+        if (receivedDuringCooldown[staker] > balanceOf[staker]) {
+            return 0;
+        }
+        return balanceOf[staker].sub(receivedDuringCooldown[staker]);
+    }
+
+    /**
      * @dev Prior votes votes are calculated as priorVotes * stakedSupply / totalSupply
      * This dilutes voting power when TRU is liquidated
      * @param account Account to get current voting power for
@@ -384,7 +398,18 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
     ) internal override distribute update(sender) {
         updateClaimableRewards(tru, recipient);
         updateClaimableRewards(tfusd, recipient);
+        // unlockTime returns MAX_UINT256 when there's no ongoing cooldown for the address
+        if (unlockTime(recipient) != type(uint256).max) {
+            receivedDuringCooldown[recipient] = receivedDuringCooldown[recipient].add(amount);
+        }
+        if (unlockTime(sender) != type(uint256).max) {
+            receivedDuringCooldown[sender] = receivedDuringCooldown[sender].sub(min(receivedDuringCooldown[sender], amount));
+        }
         super._transfer(sender, recipient, amount);
+    }
+
+    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? a : b;
     }
 
     /**
@@ -419,9 +444,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
         require(amount > 0, "StkTruToken: Cannot stake 0");
 
         if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime).add(unstakePeriodDuration) > block.timestamp) {
-            cooldowns[msg.sender] = block.timestamp;
-
-            emit Cooldown(msg.sender, block.timestamp.add(cooldownTime));
+            cooldown();
         }
 
         if (delegates[msg.sender] == address(0)) {

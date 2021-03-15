@@ -21,10 +21,10 @@ import {I1Inch} from "./interface/I1Inch.sol";
  * @dev Lending pool which uses curve.fi to store idle funds
  * Earn high interest rates on currency deposits through uncollateralized loans
  *
- * Funds deposited in this pool are not fully liquid. Luqidity
+ * Funds deposited in this pool are not fully liquid. Liquidity
  * Exiting the pool has 2 options:
  * - withdraw a basket of LoanTokens backing the pool
- * - take an exit penallty depending on pool liquidity
+ * - take an exit penalty depending on pool liquidity
  * After exiting, an account will need to wait for LoanTokens to expire and burn them
  * It is recommended to perform a zap or swap tokens on Uniswap for increased liquidity
  *
@@ -77,12 +77,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     // curve.fi data
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
-
-    /**
-     * @dev Emitted when stake token address
-     * @param token New stake token address
-     */
-    event StakeTokenChanged(IERC20 token);
 
     /**
      * @dev Emitted oracle was changed
@@ -164,38 +158,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     event JoiningPauseStatusChanged(bool isJoiningPaused);
 
     /**
-     * @dev Initialize pool
-     * @param __curvePool curve pool address
-     * @param __curveGauge curve gauge address
-     * @param __currencyToken curve pool underlying token
-     * @param __lender TrueLender address
-     * @param __uniRouter Uniswap router
-     */
-    function initialize(
-        ICurvePool __curvePool,
-        ICurveGauge __curveGauge,
-        IERC20 __currencyToken,
-        ITrueLender __lender,
-        IUniswapRouter __uniRouter,
-        IERC20 __stakeToken,
-        ITruPriceOracle __oracle
-    ) public initializer {
-        ERC20.__ERC20_initialize("TrueFi LP", "TFI-LP");
-        Ownable.initialize();
-
-        _curvePool = __curvePool;
-        _curveGauge = __curveGauge;
-        _currencyToken = __currencyToken;
-        _lender = __lender;
-        _minter = _curveGauge.minter();
-        _uniRouter = __uniRouter;
-        _stakeToken = __stakeToken;
-        _oracle = __oracle;
-
-        joiningFee = 25;
-    }
-
-    /**
      * @dev only lender can perform borrowing or repaying
      */
     modifier onlyLender() {
@@ -250,15 +212,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      */
     function stakeToken() public override view returns (IERC20) {
         return _stakeToken;
-    }
-
-    /**
-     * @dev set stake token address
-     * @param token stake token address
-     */
-    function setStakeToken(IERC20 token) public onlyOwner {
-        _stakeToken = token;
-        emit StakeTokenChanged(token);
     }
 
     /**
@@ -516,7 +469,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     function averageExitPenalty(uint256 from, uint256 to) public pure returns (uint256) {
         require(from <= to, "TrueFiPool: To precedes from");
         if (from == 10000) {
-            // When all liquid, dont penalize
+            // When all liquid, don't penalize
             return 0;
         }
         if (from == to) {
@@ -698,15 +651,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev Converts the value of a single yCRV into an underlying asset
-     * @param yAmount amount of curve pool tokens to calculate for
-     * @return Value of one y pool token
-     */
-    function calcWithdrawOneCoin(uint256 yAmount) public view returns (uint256) {
-        return _curvePool.calc_withdraw_one_coin(yAmount, TUSD_INDEX);
-    }
-
-    /**
      * @dev Currency token balance
      * @return Currency token balance
      */
@@ -732,12 +676,5 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _mint(msg.sender, mintedAmount);
 
         return mintedAmount;
-    }
-
-    /**
-     * @dev Update name and symbol of this contract
-     */
-    function updateNameAndSymbol() public {
-        super.updateNameAndSymbol("TrueFi TrueUSD", "tfTUSD");
     }
 }

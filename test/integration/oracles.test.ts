@@ -6,7 +6,7 @@ import { expect } from 'chai'
 import { utils } from 'ethers'
 
 describe('Oracles', () => {
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl@11971336', [CONTRACTS_OWNER])
+  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [CONTRACTS_OWNER], 11971336)
   const owner = provider.getSigner(CONTRACTS_OWNER)
 
   it('TRU oracle', async () => {
