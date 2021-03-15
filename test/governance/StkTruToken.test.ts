@@ -299,15 +299,6 @@ describe('StkTruToken', () => {
       await expect(stkToken.unstake(amount)).to.be.revertedWith('StkTruToken: Stake on cooldown')
     })
 
-    it('calling cooldown twice does not restart cooldown', async () => {
-      await stkToken.stake(amount)
-      await stkToken.cooldown()
-      const unlockTimeBefore = await stkToken.unlockTime(owner.address)
-      await timeTravel(provider, DAY)
-      await stkToken.cooldown()
-      await expect(await stkToken.unlockTime(owner.address)).to.equal(unlockTimeBefore)
-    })
-
     it('staking more resets cooldown and emits event', async () => {
       await stkToken.stake(amount.div(2))
       await stkToken.cooldown()
@@ -335,6 +326,36 @@ describe('StkTruToken', () => {
       await timeTravel(provider, stakeCooldown + 2 * DAY + 1)
 
       await expect(await stkToken.unlockTime(owner.address)).to.equal(MaxUint256)
+    })
+
+    it('tokens received during cooldown cannot be unstaked', async () => {
+      await stkToken.stake(amount)
+      await stkToken.transfer(staker.address, amount.div(2))
+      await stkToken.cooldown()
+      await stkToken.connect(staker).transfer(owner.address, amount.div(2))
+      expect(await stkToken.unstakable(owner.address)).to.equal(amount.div(2))
+      await timeTravel(provider, stakeCooldown + 1)
+      await expect(stkToken.unstake(amount.div(2).add(1))).to.be.revertedWith('StkTruToken: Insufficient balance')
+      await expect(stkToken.unstake(amount.div(2))).to.be.not.reverted
+    })
+
+    it('transferring back received tokens does not reduce unstakable amount', async () => {
+      await stkToken.stake(amount)
+      await stkToken.transfer(staker.address, amount.div(2))
+      await stkToken.cooldown()
+      await stkToken.connect(staker).transfer(owner.address, amount.div(2))
+      await stkToken.transfer(staker.address, amount.div(2))
+      expect(await stkToken.unstakable(owner.address)).to.equal(amount.div(2))
+    })
+
+    it('calling cooldown again allows to unstake received tokens', async () => {
+      await stkToken.stake(amount)
+      await stkToken.transfer(staker.address, amount.div(2))
+      await stkToken.cooldown()
+      await stkToken.connect(staker).transfer(owner.address, amount.div(2))
+      await stkToken.cooldown()
+
+      expect(await stkToken.unstakable(owner.address)).to.equal(amount)
     })
   })
 
