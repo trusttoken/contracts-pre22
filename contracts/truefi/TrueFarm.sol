@@ -68,7 +68,7 @@ contract TrueFarm is ITrueFarm, Initializable {
     event Claim(address indexed who, uint256 amountClaimed);
 
     /**
-     * @dev Initalize staking pool with a Distributor contract
+     * @dev Initialize staking pool with a Distributor contract
      * The distributor contract calculates how much TRU rewards this contract
      * gets, and stores TRU for distribution.
      * @param _stakingToken Token to stake

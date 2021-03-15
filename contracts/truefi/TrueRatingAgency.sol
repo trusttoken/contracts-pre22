@@ -143,7 +143,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
-     * @dev Initalize Rating Agenct
+     * @dev Initialize Rating Agency
      * Distributor contract decides how much TRU is rewarded to stakers
      * @param _trustToken TRU contract
      * @param _distributor Distributor contract
