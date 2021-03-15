@@ -1,0 +1,20 @@
+#!/bin/sh
+
+skipcheckprivatekey=$(git config --bool hooks.skipcheckprivatekey)
+
+if [ "$skipcheckprivatekey" != "true" ] && git --no-pager diff --cached | grep -i -q -E '[a-f0-9]{64}'
+then
+  cat <<EOF
+Error: Attempting to commit private key.
+
+If you know what you are doing you can disable this check using:
+
+  git config hooks.checkprivatekey true
+
+EOF
+  git --no-pager diff --cached | grep --color=always -i -E '[a-f0-9]{64}' -C 3
+  exit 1;
+fi
+
+yarn lint:fix || true
+
