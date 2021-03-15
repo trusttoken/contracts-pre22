@@ -207,8 +207,6 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
     function stake(uint256 amount) external distribute update(msg.sender) {
         _stakeWithoutTransfer(amount);
         require(tru.transferFrom(msg.sender, address(this), amount));
-
-        emit Stake(msg.sender, amount);
     }
 
     /**
@@ -308,11 +306,9 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
      * @dev Claim TRU rewards, then restake without transferring
      * Allows account to save more gas by avoiding out-and-back transfers
      */
-    function claimRestakeTRU() external distribute update(msg.sender) {
+    function claimRestake() external distribute update(msg.sender) {
         uint256 amount = _claimWithoutTransfer(tru);
         _stakeWithoutTransfer(amount);
-        emit Claim(msg.sender, tru, amount);
-        emit Stake(msg.sender, amount);
     }
 
     /**
@@ -399,7 +395,6 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
     function _claim(IERC20 token) internal {
         uint256 rewardToClaim = _claimWithoutTransfer(token);
         require(token.transfer(msg.sender, rewardToClaim));
-        emit Claim(msg.sender, token, rewardToClaim);
     }
 
     /**
@@ -411,6 +406,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
         uint256 rewardToClaim = farmRewards[token].claimableReward[msg.sender];
         farmRewards[token].totalClaimedRewards = farmRewards[token].totalClaimedRewards.add(rewardToClaim);
         farmRewards[token].claimableReward[msg.sender] = 0;
+        emit Claim(msg.sender, tru, rewardToClaim);
         return rewardToClaim;
     }
 
@@ -435,6 +431,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
         uint256 amountToMint = stakeSupply == 0 ? amount : amount.mul(totalSupply).div(stakeSupply);
         _mint(msg.sender, amountToMint);
         stakeSupply = stakeSupply.add(amount);
+        emit Stake(msg.sender, amount);
     }
 
     /**

@@ -277,28 +277,28 @@ describe('StkTruToken', () => {
       })
 
       it('emits Claim event', async () => {
-        await expect(stkToken.claimRestakeTRU()).to.emit(stkToken, 'Claim')
+        await expect(stkToken.claimRestake()).to.emit(stkToken, 'Claim')
       })
 
       it('emits Stake event', async () => {
-        await expect(stkToken.claimRestakeTRU()).to.emit(stkToken, 'Stake')
+        await expect(stkToken.claimRestake()).to.emit(stkToken, 'Stake')
       })
 
       it('clears claimable balance', async () => {
         expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(1000))
-        await stkToken.claimRestakeTRU()
+        await stkToken.claimRestake()
         expect(await stkToken.claimable(owner.address, tru.address)).to.equal(0)
       })
 
       it('stakes claimable balance', async () => {
         expect(await stkToken.stakeSupply()).to.equal(amount)
-        await stkToken.claimRestakeTRU()
+        await stkToken.claimRestake()
         expectScaledCloseTo(await stkToken.stakeSupply(), amount.add(parseTRU(1000)))
       })
 
       it('does not affect owner address balance', async () => {
         const balanceBefore = await tru.balanceOf(owner.address)
-        await stkToken.claimRestakeTRU()
+        await stkToken.claimRestake()
         expect(await tru.balanceOf(owner.address)).to.equal(balanceBefore)
       })
     })
