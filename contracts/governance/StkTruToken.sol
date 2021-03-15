@@ -431,7 +431,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
         uint256 rewardToClaim = farmRewards[token].claimableReward[msg.sender];
         farmRewards[token].totalClaimedRewards = farmRewards[token].totalClaimedRewards.add(rewardToClaim);
         farmRewards[token].claimableReward[msg.sender] = 0;
-        emit Claim(msg.sender, tru, rewardToClaim);
+        emit Claim(msg.sender, token, rewardToClaim);
         return rewardToClaim;
     }
 
