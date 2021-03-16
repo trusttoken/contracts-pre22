@@ -30,8 +30,9 @@ export async function upgradeSuite<T extends Contract> (
   currentAddress: string,
   getters: Getter<T>[],
   contractsOwner: string = CONTRACTS_OWNER,
+  blockNumber: BigNumberish = 12010725,
 ) {
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [contractsOwner, ETHER_HOLDER], 12010725)
+  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [contractsOwner, ETHER_HOLDER], blockNumber)
   const owner = provider.getSigner(contractsOwner)
   const holder = provider.getSigner(ETHER_HOLDER)
   await holder.sendTransaction({ value: parseEth(100), to: contractsOwner })

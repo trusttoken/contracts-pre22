@@ -2,16 +2,24 @@ import { upgradeSuite } from './suite'
 import { TrueFiPoolFactory, TrueUsdFactory } from 'contracts'
 import fetch from 'node-fetch'
 import { expect } from 'chai'
+import { save1InchData } from './1inchScript'
+
+const fs = require('fs')
+
+const BLOCK_NUMBER = 12049173
 
 describe('Pool 1Inch integration', () => {
   it('sells all available CRV', async () => {
-    const pool = await upgradeSuite(TrueFiPoolFactory, '0xa1e72267084192Db7387c8CC1328fadE470e4149', [])
+    const pool = await upgradeSuite(TrueFiPoolFactory, '0xa1e72267084192Db7387c8CC1328fadE470e4149', [], undefined, BLOCK_NUMBER)
     const tusd = TrueUsdFactory.connect('0x0000000000085d4780B73119b644AE5ecd22b376', pool.signer)
     const crv = TrueUsdFactory.connect('0xD533a949740bb3306d119CC777fa900bA034cd52', pool.signer)
-    const crvBalanceBefore = await crv.balanceOf(pool.address)
-    const dataUrl = `https://api.1inch.exchange/v2.0/swap?disableEstimate=true&fromTokenAddress=0xD533a949740bb3306d119CC777fa900bA034cd52&toTokenAddress=0x0000000000085d4780B73119b644AE5ecd22b376&amount=${crvBalanceBefore.toString()}&fromAddress=0xa1e72267084192Db7387c8CC1328fadE470e4149&slippage=1`
-    const body = await (await fetch(dataUrl)).json()
-    const data = body.tx.data
+
+    if (!fs.existsSync(`test/integration/data/1InchCallData-${BLOCK_NUMBER}.json`)) {
+      // block number in json data name, means only that it is compatible with that block number, not that the data comes from said block
+      await save1InchData(pool, crv, BLOCK_NUMBER)
+    }
+    const data = JSON.parse(fs.readFileSync(`test/integration/data/1InchCallData-${BLOCK_NUMBER}.json`))
+
     await (await pool.set1InchAddress('0x111111125434b319222cdbf8c261674adb56f3ae')).wait()
     const balanceBefore = await tusd.balanceOf(pool.address)
     await (await pool.sellCrvWith1Inch(data)).wait()
