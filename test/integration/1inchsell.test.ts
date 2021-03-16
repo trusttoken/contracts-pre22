@@ -1,10 +1,8 @@
 import { upgradeSuite } from './suite'
 import { TrueFiPoolFactory, TrueUsdFactory } from 'contracts'
-import fetch from 'node-fetch'
 import { expect } from 'chai'
 import { save1InchData } from './1inchScript'
-
-const fs = require('fs')
+import fs from 'fs'
 
 const BLOCK_NUMBER = 12049173
 

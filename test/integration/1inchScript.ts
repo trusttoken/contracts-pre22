@@ -1,9 +1,7 @@
-import { TrueFiPool, TrueFiPoolFactory, TrueUsd, TrueUsdFactory } from 'contracts/types'
+import { TrueFiPool, TrueUsd } from 'contracts/types'
 import { BigNumberish } from 'ethers'
 import fetch from 'node-fetch'
-import { upgradeSuite } from './suite'
-
-const fs = require('fs')
+import fs from 'fs'
 
 export const save1InchData = async function (pool: TrueFiPool, crv: TrueUsd, blockNumber: BigNumberish) {
     const crvBalanceBefore = await crv.balanceOf(pool.address)
