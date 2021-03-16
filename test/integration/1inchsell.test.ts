@@ -16,7 +16,8 @@ describe('Pool 1Inch integration', () => {
       // block number in json data name, means only that it is compatible with that block number, not that the data comes from said block
       await save1InchData(pool, crv, BLOCK_NUMBER)
     }
-    const data = JSON.parse(fs.readFileSync(`test/integration/data/1InchCallData-${BLOCK_NUMBER}.json`))
+
+    const data = JSON.parse(fs.readFileSync(`test/integration/data/1InchCallData-${BLOCK_NUMBER}.json`).toString())
 
     await (await pool.set1InchAddress('0x111111125434b319222cdbf8c261674adb56f3ae')).wait()
     const balanceBefore = await tusd.balanceOf(pool.address)
