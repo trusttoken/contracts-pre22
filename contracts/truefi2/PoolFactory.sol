@@ -5,7 +5,7 @@ import {Ownable} from "../truefi/common/UpgradeableOwnable.sol";
 import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
+import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 
 contract PoolFactory is Ownable {
     // ================ WARNING ==================
@@ -34,7 +34,7 @@ contract PoolFactory is Ownable {
     function createPool(address token) public {
         OwnedUpgradeabilityProxy proxy = new OwnedUpgradeabilityProxy();
         proxy.upgradeTo(poolImplementation);
-        ITrueFiPool(address(proxy)).initialize(ERC20(token));
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token));
         correspondingPool[token] = address(proxy);
     }
 }

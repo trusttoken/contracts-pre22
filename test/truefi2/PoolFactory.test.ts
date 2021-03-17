@@ -10,7 +10,7 @@ import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 
 use(solidity)
 
-describe('TrueFiPoolFactory', () => {
+describe('PoolFactory', () => {
   let owner: Wallet
   let poolImplementation: TrueFiPool2
   let factory: PoolFactory

@@ -7,7 +7,7 @@ import {ERC20} from "../common/UpgradeableERC20.sol";
 import {Ownable} from "../common/UpgradeableOwnable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
-import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
+import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ABDKMath64x64} from "../truefi/Log.sol";
 
@@ -25,7 +25,7 @@ import {ABDKMath64x64} from "../truefi/Log.sol";
  *
  * Funds are managed through an external function to save gas on deposits
  */
-contract TrueFiPool2 is ITrueFiPool, UpgradeableERC20, Ownable {
+contract TrueFiPool2 is ITrueFiPool2, UpgradeableERC20, Ownable {
     using SafeMath for uint256;
 
     // ================ WARNING ==================
