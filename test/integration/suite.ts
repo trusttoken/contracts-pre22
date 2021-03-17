@@ -29,13 +29,9 @@ const execGetter = <T extends Contract>(contract: T) => async (getter: Getter<T>
 export const TEST_STATE_BLOCK_NUMBER = 12010725
 
 export function upgradeSuite<T extends Contract>(blockNumber: number, Factory: ContractFactoryConstructor<T>, currentAddress: string,
-  getters: Getter<T>[]): Promise<T>
+  getters: Getter<T>[], contractsOwner?: string): Promise<T>
 export function upgradeSuite<T extends Contract>(Factory: ContractFactoryConstructor<T>, currentAddress: string,
-  getters: Getter<T>[]): Promise<T>
-export function upgradeSuite<T extends Contract>(blockNumber: number, Factory: ContractFactoryConstructor<T>, currentAddress: string,
-  getters: Getter<T>[], contractsOwner: string): Promise<T>
-export function upgradeSuite<T extends Contract>(Factory: ContractFactoryConstructor<T>, currentAddress: string,
-  getters: Getter<T>[], contractsOwner: string): Promise<T>
+  getters: Getter<T>[], contractsOwner?: string): Promise<T>
 export function upgradeSuite (...args: any[]): any {
   if (typeof args[0] === 'number') {
     const [bn, factory, address, getters, owner] = args
