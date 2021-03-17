@@ -21,7 +21,7 @@ describe('OwnedProxyWithReference', () => {
   let thirdWallet: Wallet
 
   let proxy: OwnedProxyWithReference
-  
+
   let implementationReference: ImplementationReference
   let tusd: MockTrueCurrency
 
@@ -77,7 +77,7 @@ describe('OwnedProxyWithReference', () => {
     })
   })
 
-  describe('Referencing', () => { 
+  describe('Referencing', () => {
     it('sets up implementation reference ', async () => {
       await proxy.changeImplementationReference(implementationReference.address)
       expect(await proxy.implementation()).to.equal(tusd.address)
@@ -97,6 +97,7 @@ describe('OwnedProxyWithReference', () => {
 
   it('calls implementation function', async () => {
     await proxy.changeImplementationReference(implementationReference.address)
+    console.log(await tusd.attach(proxy.address).balanceOf(owner.address))
     expect(await tusd.attach(proxy.address).balanceOf(owner.address)).to.eq(0)
   })
 })

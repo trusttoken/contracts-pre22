@@ -9,8 +9,6 @@ import {IImplementationReference} from "./interface/IImplementationReference.sol
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
 contract OwnedProxyWithReference {
-    IImplementationReference implementationReference;
-
     /**
      * @dev Event to show ownership has been transferred
      * @param previousOwner representing the address of the previous owner
@@ -34,6 +32,7 @@ contract OwnedProxyWithReference {
     // Storage position of the owner and pendingOwner of the contract
     bytes32 private constant proxyOwnerPosition = 0x6279e8199720cf3557ecd8b58d667c8edc486bd1cf3ad59ea9ebdfcae0d0dfac; //keccak256("trueUSD.proxy.owner");
     bytes32 private constant pendingProxyOwnerPosition = 0x8ddbac328deee8d986ec3a7b933a196f96986cb4ee030d86cc56431c728b83f4; //keccak256("trueUSD.pending.proxy.owner");
+    bytes32 private constant implementationReferencePosition = keccak256("trueFiPool.implementation.reference"); //keccak256("trueUSD.pending.proxy.owner");
 
     /**
      * @dev the constructor sets the original owner of the contract to the sender account.
@@ -125,7 +124,11 @@ contract OwnedProxyWithReference {
      * @param _implementationReference representing the address contract, which holds implementation.
      */
     function changeImplementationReference(IImplementationReference _implementationReference) public virtual onlyProxyOwner {
-        implementationReference = _implementationReference;
+        bytes32 position = implementationReferencePosition;
+        assembly {
+            sstore(position, _implementationReference)
+        }
+
         emit ImplementationReferenceChanged(address(_implementationReference));
     }
 
@@ -133,7 +136,12 @@ contract OwnedProxyWithReference {
      * @dev Get the address of current implementation.
      */
     function implementation() public view returns (address) {
-        return address(implementationReference.implementation());
+        bytes32 position = implementationReferencePosition;
+        IImplementationReference implementationReference;
+        assembly {
+            implementationReference := sload(position)
+        }
+        return implementationReference.implementation();
     }
 
     /**
@@ -153,8 +161,8 @@ contract OwnedProxyWithReference {
 
         assembly {
             let ptr := mload(0x40)
-            calldatacopy(ptr, returndatasize(), calldatasize())
-            let result := delegatecall(gas(), impl, ptr, calldatasize(), returndatasize(), returndatasize())
+            calldatacopy(ptr, 0, calldatasize())
+            let result := delegatecall(gas(), impl, ptr, calldatasize(), 0, 0)
             returndatacopy(ptr, 0, returndatasize())
 
             switch result
