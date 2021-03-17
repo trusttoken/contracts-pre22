@@ -1,3 +1,4 @@
+/* eslint-disable no-redeclare */
 import { BigNumberish, Contract, providers } from 'ethers'
 import { ContractFactoryConstructor, deployContract } from 'scripts/utils/deployContract'
 import ganache from 'ganache-core'
@@ -25,13 +26,33 @@ const execGetter = <T extends Contract>(contract: T) => async (getter: Getter<T>
   return contract[getter]()
 }
 
-export async function upgradeSuite<T extends Contract> (
+export const TEST_STATE_BLOCK_NUMBER = 12010725
+
+export function upgradeSuite<T extends Contract>(blockNumber: number, Factory: ContractFactoryConstructor<T>, currentAddress: string,
+  getters: Getter<T>[]): Promise<T>
+export function upgradeSuite<T extends Contract>(Factory: ContractFactoryConstructor<T>, currentAddress: string,
+  getters: Getter<T>[]): Promise<T>
+export function upgradeSuite<T extends Contract>(blockNumber: number, Factory: ContractFactoryConstructor<T>, currentAddress: string,
+  getters: Getter<T>[], contractsOwner: string): Promise<T>
+export function upgradeSuite<T extends Contract>(Factory: ContractFactoryConstructor<T>, currentAddress: string,
+  getters: Getter<T>[], contractsOwner: string): Promise<T>
+export function upgradeSuite (...args: any[]): any {
+  if (typeof args[0] === 'number') {
+    const [bn, factory, address, getters, owner] = args
+    return _upgradeSuite(factory, address, getters, owner, bn)
+  }
+  const [factory, address, getters, owner] = args
+  return _upgradeSuite(factory, address, getters, owner)
+}
+
+async function _upgradeSuite<T extends Contract> (
   Factory: ContractFactoryConstructor<T>,
   currentAddress: string,
   getters: Getter<T>[],
   contractsOwner: string = CONTRACTS_OWNER,
+  blockNumber?: number | undefined,
 ) {
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [contractsOwner, ETHER_HOLDER], 12010725)
+  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [contractsOwner, ETHER_HOLDER], blockNumber)
   const owner = provider.getSigner(contractsOwner)
   const holder = provider.getSigner(ETHER_HOLDER)
   await holder.sendTransaction({ value: parseEth(100), to: contractsOwner })
