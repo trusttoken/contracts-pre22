@@ -19,5 +19,5 @@ describe('Pool 1Inch integration', () => {
     const crvBalanceAfter = await crv.balanceOf(pool.address)
     expect(crvBalanceAfter).to.equal(0)
     expect(balanceAfter.sub(balanceBefore)).to.be.gt(0)
-  }).timeout(100000000)
+  })
 })
