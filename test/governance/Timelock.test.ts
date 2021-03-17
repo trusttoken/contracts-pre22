@@ -47,6 +47,16 @@ describe('Timelock', () => {
       const proxy = await deployContract(admin, OwnedUpgradeabilityProxyFactory)
       await expect(timelock.connect(notAdmin).emergencyPause(proxy.address)).to.be.revertedWith('Timelock::emergencyPause: Call must come from admin.')
     })
+
+    it('cannot pause timelock', async () => {
+      const proxy = await deployContract(admin, OwnedUpgradeabilityProxyFactory)
+      await expect(timelock.connect(admin).emergencyPause(timelock.address)).to.be.revertedWith('Timelock::emergencyPause: Cannot pause Timelock.')
+    })
+
+    it('cannot pause admin', async () => {
+      const proxy = await deployContract(admin, OwnedUpgradeabilityProxyFactory)
+      await expect(timelock.connect(admin).emergencyPause(admin.address)).to.be.revertedWith('Timelock:emergencyPause: Cannot pause admin.')
+    })
   })
 
   describe('setPauser', async () => {

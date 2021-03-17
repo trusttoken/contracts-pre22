@@ -78,6 +78,8 @@ contract Timelock is ClaimableContract {
 
     function emergencyPause(OwnedUpgradeabilityProxy proxy) external {
         require(msg.sender == admin, "Timelock::emergencyPause: Call must come from admin.");
+        require(address(proxy) != address(this), "Timelock::emergencyPause: Cannot pause Timelock.");
+        require(address(proxy) != address(admin), "Timelock:emergencyPause: Cannot pause admin.");
         proxy.upgradeTo(address(0));
 
         emit EmergencyPause(proxy);
