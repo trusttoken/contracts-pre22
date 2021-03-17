@@ -200,7 +200,7 @@ contract TrueFiPool2 is ITrueFiPool, UpgradeableERC20, Ownable {
     function ensureEnoughTokensAreAvailable(uint256 neededAmount) internal {
         uint256 currentlyAvailableAmount = currencyBalance();
         if (currentlyAvailableAmount < neededAmount) {
-            strategy.pullOut(neededAmount.sub(currentlyAvailableAmount));
+            strategy.withdraw(neededAmount.sub(currentlyAvailableAmount));
             require(currencyBalance() >= neededAmount, "TrueFiPool: Not enough funds taken from the strategy");
         }
     }
@@ -303,7 +303,7 @@ contract TrueFiPool2 is ITrueFiPool, UpgradeableERC20, Ownable {
     function flush(uint256 amount) external {
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
-        strategy.putIn(amount);
+        strategy.deposit(amount);
 
         emit Flushed(amount);
     }
@@ -316,7 +316,7 @@ contract TrueFiPool2 is ITrueFiPool, UpgradeableERC20, Ownable {
         // unstake in gauge
         ensureEnoughTokensAreAvailable(minTokenAmount);
 
-        strategy.pullOut(minTokenAmount);
+        strategy.withdraw(minTokenAmount);
 
         emit Pulled(minTokenAmount);
     }
