@@ -97,7 +97,7 @@ describe('OwnedProxyWithReference', () => {
 
   it('calls implementation function', async () => {
     await proxy.changeImplementationReference(implementationReference.address)
-    console.log(await tusd.attach(proxy.address).balanceOf(owner.address))
-    expect(await tusd.attach(proxy.address).balanceOf(owner.address)).to.eq(0)
+    await tusd.attach(proxy.address).approve(owner.address, 1)
+    expect(await tusd.attach(proxy.address).allowance(owner.address, owner.address)).to.eq(1)
   })
 })
