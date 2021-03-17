@@ -154,7 +154,7 @@ contract OwnedProxyWithReference {
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, returndatasize(), calldatasize())
-            let result := delegatecall(gas(), mload(impl_slot), ptr, calldatasize(), returndatasize(), returndatasize())
+            let result := delegatecall(gas(), impl, ptr, calldatasize(), returndatasize(), returndatasize())
             returndatacopy(ptr, 0, returndatasize())
 
             switch result
