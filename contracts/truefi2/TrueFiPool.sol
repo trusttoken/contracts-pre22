@@ -3,10 +3,12 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20 as UpgradeableERC20} from "../truefi/common/UpgradeableERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable} from "../truefi/common/UpgradeableOwnable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
+import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ABDKMath64x64} from "../truefi/Log.sol";
 
@@ -15,17 +17,23 @@ import {ABDKMath64x64} from "../truefi/Log.sol";
  * @dev Lending pool which uses curve.fi to store idle funds
  * Earn high interest rates on currency deposits through uncollateralized loans
  *
- * Funds deposited in this pool are not fully liquid. Luqidity
+ * Funds deposited in this pool are not fully liquid. Liquidity
  * Exiting the pool has 2 options:
  * - withdraw a basket of LoanTokens backing the pool
- * - take an exit penallty depending on pool liquidity
+ * - take an exit penalty depending on pool liquidity
  * After exiting, an account will need to wait for LoanTokens to expire and burn them
  * It is recommended to perform a zap or swap tokens on Uniswap for increased liquidity
  *
  * Funds are managed through an external function to save gas on deposits
  */
-contract TrueFiPool2 is ERC20, Ownable {
+contract TrueFiPool2 is ITrueFiPool, UpgradeableERC20, Ownable {
     using SafeMath for uint256;
+
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
 
     uint8 public constant VERSION = 0;
 
@@ -46,11 +54,20 @@ contract TrueFiPool2 is ERC20, Ownable {
     // allow pausing of deposits
     bool public isJoiningPaused;
 
+    // ======= STORAGE DECLARATION END ===========
+
     function concat(string memory a, string memory b) internal pure returns (string memory) {
         return string(abi.encodePacked(a, b));
     }
 
-    constructor(ERC20 _token) public ERC20(concat("TrueFi ", _token.name()), concat("tf", _token.symbol())) {}
+    /**
+     * @dev Initialize this contract with provided parameters
+     * @param _token Currency token for pool to be based on
+     */
+    function initialize(ERC20 _token) external override initializer {
+        UpgradeableERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
+        Ownable.initialize();
+    }
 
     /**
      * @dev Emitted when someone joins the pool
@@ -270,7 +287,7 @@ contract TrueFiPool2 is ERC20, Ownable {
     function averageExitPenalty(uint256 from, uint256 to) public pure returns (uint256) {
         require(from <= to, "TrueFiPool: To precedes from");
         if (from == 10000) {
-            // When all liquid, dont penalize
+            // When all liquid, don't penalize
             return 0;
         }
         if (from == to) {
