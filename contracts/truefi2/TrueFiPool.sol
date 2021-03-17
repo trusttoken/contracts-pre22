@@ -2,10 +2,9 @@
 pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ERC20 as UpgradeableERC20} from "../truefi/common/UpgradeableERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {Ownable} from "../truefi/common/UpgradeableOwnable.sol";
+import {ERC20} from "../common/UpgradeableERC20.sol";
+import {Ownable} from "../common/UpgradeableOwnable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
@@ -60,13 +59,12 @@ contract TrueFiPool2 is ITrueFiPool, UpgradeableERC20, Ownable {
         return string(abi.encodePacked(a, b));
     }
 
-    /**
-     * @dev Initialize this contract with provided parameters
-     * @param _token Currency token for pool to be based on
-     */
-    function initialize(ERC20 _token) external override initializer {
-        UpgradeableERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
+    function initialize(ERC20 _token, address __owner) external initializer {
+        ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
         Ownable.initialize();
+
+        token = _token;
+        transferOwnership(__owner);
     }
 
     /**
