@@ -12,14 +12,13 @@ use(solidity)
 
 describe('PoolFactory', () => {
   let owner: Wallet
-  let governor: Wallet
   let poolImplementation: TrueFiPool2
   let implementationReference: ImplementationReference
   let factory: PoolFactory
   let token: MockErc20Token
 
   beforeEachWithFixture(async (wallets) => {
-    [owner, governor] = wallets
+    [owner] = wallets
     poolImplementation = await new TrueFiPool2Factory(owner).deploy()
     implementationReference = await new ImplementationReferenceFactory(owner).deploy(poolImplementation.address)
 
@@ -69,5 +68,9 @@ describe('PoolFactory', () => {
       expect(creationEventArgs['token']).to.eq(token.address)
       expect(creationEventArgs['pool']).to.eq(proxyAddress)
     })
+  })
+
+  describe('Creating multiple pools', () => {
+    
   })
 })
