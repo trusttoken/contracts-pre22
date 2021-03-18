@@ -17,8 +17,7 @@ contract PoolFactory is Ownable {
 
     // @dev Mapping of ERC20 token's addresses to its pool's addresses
     mapping(address => address) public correspondingPool;
-
-    address public governance;
+    mapping(address => bool) public isPool;
 
     IImplementationReference public poolImplementationReference;
 
@@ -32,23 +31,32 @@ contract PoolFactory is Ownable {
     event PoolCreated(address token, address pool);
 
     /**
+     * @dev Throws if token already has an existing corresponding pool
+     * @param token Token to be checked for existing pool
+     */
+    modifier onlyNotExistingPools(address token) {
+        require(correspondingPool[token] == address(0), "PoolFactory: This token already has a corresponding pool");
+        _;
+    }
+
+    /**
      * @dev Initialize this contract with provided parameters
      * @param _poolImplementationReference First implementation reference of TrueFiPool
-     * @param _governance Governor alpha address
      */
-    function initialize(IImplementationReference _poolImplementationReference, address _governance) external initializer {
+    function initialize(IImplementationReference _poolImplementationReference) external initializer {
         Ownable.initialize();
 
         poolImplementationReference = _poolImplementationReference;
-        governance = _governance;
     }
 
-    function createPool(address token) public {
+    function createPool(address token) external onlyNotExistingPools(token) {
         OwnedProxyWithReference proxy = new OwnedProxyWithReference();
         proxy.changeImplementationReference(poolImplementationReference);
         ITrueFiPool2(address(proxy)).initialize(ERC20(token));
-        proxy.transferProxyOwnership(governance);
+        proxy.transferProxyOwnership(this.owner());
         correspondingPool[token] = address(proxy);
+        isPool[address(proxy)] = true;
+
         emit PoolCreated(token, address(proxy));
     }
 }
