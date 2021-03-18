@@ -2,10 +2,11 @@
 pragma solidity 0.6.10;
 
 import {Ownable} from "../truefi/common/UpgradeableOwnable.sol";
-import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
+import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+import {IImplementationReference} from "../proxy/interface/IImplementationReference.sol";
 
 contract PoolFactory is Ownable {
     // ================ WARNING ==================
@@ -17,24 +18,37 @@ contract PoolFactory is Ownable {
     // @dev Mapping of ERC20 token's addresses to its pool's addresses
     mapping(address => address) public correspondingPool;
 
-    address public poolImplementation;
+    address public governance;
+
+    IImplementationReference public poolImplementationReference;
 
     // ======= STORAGE DECLARATION END ===========
 
     /**
-     * @dev Initialize this contract with provided parameters
-     * @param _poolImplementation First implementation of TrueFiPool
+     * @dev Event to show creation of the new pool
+     * @param token Address of token, for which the pool was created
+     * @param pool Address of new pool's proxy
      */
-    function initialize(address _poolImplementation) external initializer {
+    event PoolCreated(address token, address pool);
+
+    /**
+     * @dev Initialize this contract with provided parameters
+     * @param _poolImplementationReference First implementation reference of TrueFiPool
+     * @param _governance Governor alpha address
+     */
+    function initialize(IImplementationReference _poolImplementationReference, address _governance) external initializer {
         Ownable.initialize();
 
-        poolImplementation = _poolImplementation;
+        poolImplementationReference = _poolImplementationReference;
+        governance = _governance;
     }
 
     function createPool(address token) public {
-        OwnedUpgradeabilityProxy proxy = new OwnedUpgradeabilityProxy();
-        proxy.upgradeTo(poolImplementation);
+        OwnedProxyWithReference proxy = new OwnedProxyWithReference();
+        proxy.changeImplementationReference(poolImplementationReference);
         ITrueFiPool2(address(proxy)).initialize(ERC20(token));
+        proxy.transferProxyOwnership(governance);
         correspondingPool[token] = address(proxy);
+        emit PoolCreated(token, address(proxy));
     }
 }
