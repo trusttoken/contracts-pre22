@@ -93,5 +93,8 @@ yarn checks
 
 
 # ☎️ Contact
-Websites, twitter handles, etc. Maybe exchanges where key assets are listed.
-
+ - [TrueFi main website](https://truefi.io/)
+ - [TrueFi Twitter](https://twitter.com/TrustToken)
+ - [Join TrueFi Discord](https://discord.com/invite/3tMyMqyqDj)
+ - [TrueFi app](https://app.truefi.io/dashboard?utm_source=marketing_site&utm_medium=launch_app)
+ - [FAQ](https://docs.truefi.io/faq/)
