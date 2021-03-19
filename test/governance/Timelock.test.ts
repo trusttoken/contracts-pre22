@@ -127,6 +127,10 @@ describe('Timelock', () => {
     })
   })
 
+  describe('pause and unpause deposits', () => {
+
+  })
+
   describe('acceptAdmin', async () => {
     it('accepts the pending admin as the admin address', async () => {
       await timelock.connect(admin).setPendingAdmin(notAdmin.address)

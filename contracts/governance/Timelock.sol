@@ -12,6 +12,7 @@ pragma solidity ^0.6.10;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./common/ClaimableContract.sol";
 import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
+import {IPauseableContract} from "./interface/IPauseableContract.sol";
 
 contract Timelock is ClaimableContract {
     using SafeMath for uint;
@@ -21,6 +22,7 @@ contract Timelock is ClaimableContract {
     event NewPendingAdmin(address indexed newPendingAdmin);
     event NewDelay(uint indexed newDelay);
     event EmergencyPause(OwnedUpgradeabilityProxy proxy);
+    event PauseStatusChanged(address pauseContract, bool status);
     event CancelTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
     event ExecuteTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
     event QueueTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature, bytes data, uint eta);
@@ -79,15 +81,28 @@ contract Timelock is ClaimableContract {
     /**
      * @dev Emergency pause a proxy owned by this contract
      * Upgrades a proxy to the zero address in order to emergency pause
-     * @param _pauser New pauser address
+     * @param proxy Proxy to upgrade to zero address
      */
     function emergencyPause(OwnedUpgradeabilityProxy proxy) external {
-        require(msg.sender == admin, "Timelock::emergencyPause: Call must come from admin.");
+        require(msg.sender == admin || msg.sender == pauser, "Timelock::emergencyPause: Call must come from admin or pauser.");
         require(address(proxy) != address(this), "Timelock::emergencyPause: Cannot pause Timelock.");
         require(address(proxy) != address(admin), "Timelock:emergencyPause: Cannot pause admin.");
         proxy.upgradeTo(address(0));
 
         emit EmergencyPause(proxy);
+    }
+
+    /**
+     * @dev Pause or unpause Pausable contracts.
+     * Useful to allow/disallow deposits or certain actions in compromised contracts
+     * @param pauseContract New pauser address
+     * @param status Pause status
+     */
+    function setPauseStatus(IPauseableContract pauseContract, bool status) external {
+        require(msg.sender == admin || msg.sender == pauser, "Timelock::emergencyPause: Call must come from admin or pauser.");
+        pauseContract.setPauseStatus(status);
+
+        emit PauseStatusChanged(address(pauseContract), status);
     }
 
     /**
