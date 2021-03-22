@@ -139,7 +139,7 @@ describe('PoolFactory', () => {
     it('only owner can call', async () => {
       await expect(factory.connect(otherWallet).whitelist(token1.address, true))
         .to.be.revertedWith('Ownable: caller is not the owner')
-      
+
       await expect(factory.whitelist(token1.address, true))
         .to.not.be.reverted
     })
