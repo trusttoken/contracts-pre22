@@ -44,41 +44,27 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn lint
-  test-group1:
+  test-governance-proxy-registry-scripts:
     docker:
       - image: circleci/node:12.19.0
     steps:
       - attach_workspace:
           at: .
       - run: yarn test:governance && yarn test:proxy && yarn test:registry && yarn test:scripts
-  test-group2:
+  test-currencies-gold-trusttoken:
     docker:
       - image: circleci/node:12.19.0
     steps:
       - attach_workspace:
           at: .
-      - run: yarn test:true-currencies && yarn test:true-gold
-  test-group3:
+      - run: yarn test:true-currencies && yarn test:true-gold && yarn test:trusttoken
+  test-truefi:
     docker:
       - image: circleci/node:12.19.0
     steps:
       - attach_workspace:
           at: .
-      - run: yarn test:truefi:loans && yarn test:truefi:others
-  test-group4:
-    docker:
-      - image: circleci/node:12.19.0
-    steps:
-      - attach_workspace:
-          at: .
-      - run: yarn test:truefi:service
-  test-group5:
-    docker:
-      - image: circleci/node:12.19.0
-    steps:
-      - attach_workspace:
-          at: .
-      - run: yarn test:trusttoken
+      - run: yarn test:truefi
   upgrade:
     docker:
       - image: circleci/node:12.19.0
@@ -95,19 +81,13 @@ workflows:
       - lint:
           requires:
             - build
-      - test-group1:
+      - test-governance-proxy-registry-scripts:
           requires:
             - build
-      - test-group2:
+      - test-currencies-gold-trusttoken:
           requires:
             - build
-      - test-group3:
-          requires:
-            - build
-      - test-group4:
-          requires:
-            - build
-      - test-group5:
+      - test-truefi:
           requires:
             - build
       - upgrade:
