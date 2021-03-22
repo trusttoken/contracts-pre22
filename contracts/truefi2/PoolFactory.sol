@@ -19,6 +19,9 @@ contract PoolFactory is Ownable {
     mapping(address => address) public correspondingPool;
     mapping(address => bool) public isPool;
 
+    // @dev Whitelist for tokens, which can have pools created
+    mapping(address => bool) public isAllowed;
+
     IImplementationReference public poolImplementationReference;
 
     // ======= STORAGE DECLARATION END ===========
@@ -31,11 +34,23 @@ contract PoolFactory is Ownable {
     event PoolCreated(address token, address pool);
 
     /**
+     * @dev Event to show that token is now allowed/disallowed to have a pool created
+     * @param token Address of token
+     * @param status New status of allowance
+     */
+    event AllowedStatusChanged(address token, bool status);
+
+    /**
      * @dev Throws if token already has an existing corresponding pool
      * @param token Token to be checked for existing pool
      */
     modifier onlyNotExistingPools(address token) {
         require(correspondingPool[token] == address(0), "PoolFactory: This token already has a corresponding pool");
+        _;
+    }
+
+    modifier onlyAllowed(address token) {
+        require(isAllowed[token] == true, "PoolFactory: This token is not allowed to have a pool");
         _;
     }
 
@@ -49,7 +64,12 @@ contract PoolFactory is Ownable {
         poolImplementationReference = _poolImplementationReference;
     }
 
-    function createPool(address token) external onlyNotExistingPools(token) {
+    /**
+     * @dev Create a new pool behind proxy. Update new pool's implementation.
+     * Transfer ownership of created pool to Factory owner.
+     * @param token Address of token which the pool will correspond to.
+     */
+    function createPool(address token) external onlyAllowed(token) onlyNotExistingPools(token) {
         OwnedProxyWithReference proxy = new OwnedProxyWithReference();
         proxy.changeImplementationReference(poolImplementationReference);
         ITrueFiPool2(address(proxy)).initialize(ERC20(token));
@@ -58,5 +78,14 @@ contract PoolFactory is Ownable {
         isPool[address(proxy)] = true;
 
         emit PoolCreated(token, address(proxy));
+    }
+
+    /**
+     * @dev Change token allowed status
+     * @param token Address of token to be allowed or disallowed
+     */
+    function whitelist(address token, bool status) external onlyOwner {
+        isAllowed[token] = status;
+        emit AllowedStatusChanged(token, status);
     }
 }
