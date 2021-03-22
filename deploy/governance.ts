@@ -11,10 +11,10 @@ import {
   TimeOwnedUpgradeabilityProxy,
   TrueFiPool, TrueRatingAgency,
   TrueRatingAgencyV2,
-  TruPriceUniswapOracle,
   TrustToken,
 } from '../build/artifacts'
 import { DAY, parseTRU } from '../test/utils'
+import { AddressZero } from '@ethersproject/constants'
 
 // TODO Fill values
 const DISTRIBUTION_LENGTH_IN_DAYS = 10
@@ -57,6 +57,6 @@ deploy({}, (deployer) => {
   )
   trueRatingAgencyV2.initialize(tru, stkTru, arbitraryDistributor, factory)
 
-  const oracle = contract('uniswapOracle', TruPriceUniswapOracle, ['0xb4d0d9df2738abe81b87b66c80851292492d1404', '0xec6a6b7db761a5c9910ba8fcab98116d384b1b85'])
+  const oracle = contract('uniswapOracle', AddressZero, ['0xb4d0d9df2738abe81b87b66c80851292492d1404', '0xec6a6b7db761a5c9910ba8fcab98116d384b1b85'])
   proxy(contract('liquidator', Liquidator), 'initialize', [pool, stkTru, tru, oracle, factory])
 })

@@ -1,27 +1,28 @@
 import { expect, use } from 'chai'
 import { constants, Wallet, BigNumber } from 'ethers'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
-
+import fetch from 'node-fetch'
 import { toTrustToken } from 'scripts/utils'
 
 import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo } from 'utils'
 
 import {
   ICurveGaugeJson,
+  ICurveMinterJson,
   LoanToken,
   LoanTokenFactory,
   MockCurvePool,
   MockCurvePoolFactory,
   MockErc20Token,
   MockErc20TokenFactory,
-  TrueFiPool,
-  TrueFiPoolFactory,
+  TestTrueFiPool,
+  TestTrueFiPoolFactory,
   TrueLender,
   TrueLenderFactory,
   PoolArbitrageTestFactory,
   TrueRatingAgencyJson,
   MockStakingPool,
-  MockStakingPoolFactory, MockTruPriceOracleFactory,
+  MockStakingPoolFactory, MockTruPriceOracleFactory, Mock1InchFactory,
 } from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -36,10 +37,11 @@ describe('TrueFiPool', () => {
   let mockStakingPool: MockStakingPool
   let curveToken: MockErc20Token
   let curvePool: MockCurvePool
-  let pool: TrueFiPool
+  let pool: TestTrueFiPool
   let lender: TrueLender
   let mockRatingAgency: MockContract
   let mockCurveGauge: MockContract
+  let mockCrv: MockErc20Token
 
   const dayInSeconds = 60 * 60 * 24
   const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
@@ -52,14 +54,17 @@ describe('TrueFiPool', () => {
     curvePool = await new MockCurvePoolFactory(owner).deploy()
     await curvePool.initialize(token.address)
     curveToken = MockErc20TokenFactory.connect(await curvePool.token(), owner)
-    pool = await new TrueFiPoolFactory(owner).deploy()
+    pool = await new TestTrueFiPoolFactory(owner).deploy()
     mockStakingPool = await new MockStakingPoolFactory(owner).deploy(pool.address)
     mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyJson.abi)
     mockCurveGauge = await deployMockContract(owner, ICurveGaugeJson.abi)
+    mockCrv = await new MockErc20TokenFactory(owner).deploy()
+    const mockMinter = await deployMockContract(owner, ICurveMinterJson.abi)
     await mockCurveGauge.mock.deposit.returns()
     await mockCurveGauge.mock.withdraw.returns()
     await mockCurveGauge.mock.balanceOf.returns(0)
-    await mockCurveGauge.mock.minter.returns(constants.AddressZero)
+    await mockCurveGauge.mock.minter.returns(mockMinter.address)
+    await mockMinter.mock.token.returns(mockCrv.address)
     lender = await new TrueLenderFactory(owner).deploy()
     const oracle = await new MockTruPriceOracleFactory(owner).deploy()
     await pool.initialize(
@@ -72,6 +77,10 @@ describe('TrueFiPool', () => {
       oracle.address,
     )
     await pool.resetApprovals()
+
+    const oneInch = await new Mock1InchFactory(owner).deploy()
+    await pool.set1InchAddress(oneInch.address)
+
     await lender.initialize(pool.address, mockRatingAgency.address, mockStakingPool.address)
     provider = _provider
   })
@@ -93,49 +102,10 @@ describe('TrueFiPool', () => {
     })
   })
 
-  describe('update name and symbol', () => {
-    it('updates name and symbol', async () => {
-      await pool.updateNameAndSymbol()
-      expect(await pool.name()).to.equal('TrueFi TrueUSD')
-      expect(await pool.symbol()).to.equal('tfTUSD')
-    })
-
-    it('multiple calls do not change the effect', async () => {
-      await pool.updateNameAndSymbol()
-      await pool.updateNameAndSymbol()
-      expect(await pool.name()).to.equal('TrueFi TrueUSD')
-      expect(await pool.symbol()).to.equal('tfTUSD')
-    })
-  })
-
   it('cannot exit and join on same transaction', async () => {
     const arbitrage = await new PoolArbitrageTestFactory(owner).deploy()
     await token.transfer(arbitrage.address, parseEth(1))
     await expect(arbitrage.joinExit(pool.address)).to.be.revertedWith('TrueFiPool: Cannot join and exit in same block')
-  })
-
-  describe('TRU integration', () => {
-    it('allows only owner to call setStakeToken', async () => {
-      await expect(pool.connect(borrower).setStakeToken(trustToken.address))
-        .to.be.revertedWith('Ownable: caller is not the owner')
-    })
-
-    it('emits event on being set', async () => {
-      await expect(pool.setStakeToken(trustToken.address))
-        .to.emit(pool, 'StakeTokenChanged')
-        .withArgs(trustToken.address)
-    })
-
-    it('TrustToken address was set correctly', async () => {
-      expect(await pool._stakeToken()).to.equal(trustToken.address)
-    })
-
-    it('shows pool\'s balance of stake tokens correctly', async () => {
-      expect(await pool.stakeTokenBalance()).to.equal(0)
-
-      await trustToken.mint(pool.address, parseEth(1))
-      expect(await pool.stakeTokenBalance()).to.equal(parseEth(1))
-    })
   })
 
   const calcBorrowerFee = (amount: BigNumber) => amount.mul(25).div(10000)
@@ -394,10 +364,10 @@ describe('TrueFiPool', () => {
   })
 
   describe('borrow-repay', () => {
-    let pool2: TrueFiPool
+    let pool2: TestTrueFiPool
 
     beforeEach(async () => {
-      pool2 = await new TrueFiPoolFactory(owner).deploy()
+      pool2 = await new TestTrueFiPoolFactory(owner).deploy()
       await pool2.initialize(
         curvePool.address,
         mockCurveGauge.address,
@@ -631,6 +601,42 @@ describe('TrueFiPool', () => {
       // expect around ~365006 gas
       const txn = await (await pool.liquidExit(await pool.balanceOf(owner.address))).wait()
       expect(txn.gasUsed.toNumber()).to.be.lt(400000)
+    })
+  })
+
+  describe('1Inch', () => {
+    const getRequestData = async (fromToken: string, toToken: string, from = pool.address) => {
+      const url = `https://api.1inch.exchange/v2.0/swap?disableEstimate=true&fromTokenAddress=${fromToken}&toTokenAddress=${toToken}&amount=100&fromAddress=${from}&slippage=1`
+      const resp = await (await fetch(url)).json()
+      return (resp.tx.data as string)
+        .replace(/0000000000085d4780b73119b644ae5ecd22b376/g, token.address.slice(2).toLowerCase())
+        .replace(/d533a949740bb3306d119cc777fa900ba034cd52/g, mockCrv.address.slice(2).toLowerCase())
+    }
+
+    it('works for CRV -> TUSD swap', async () => {
+      const data = await getRequestData('0xD533a949740bb3306d119CC777fa900bA034cd52', '0x0000000000085d4780B73119b644AE5ecd22b376', pool.address)
+      await expect(pool.sellCrvWith1Inch(data)).to.not.be.reverted
+    })
+
+    it('reverts for bad source token', async () => {
+      const data = await getRequestData('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', '0x0000000000085d4780B73119b644AE5ecd22b376', pool.address)
+      await expect(pool.sellCrvWith1Inch(data)).to.be.revertedWith('TrueFiPool: Source token is not CRV')
+    })
+
+    it('reverts for bad destination token', async () => {
+      const data = await getRequestData('0xD533a949740bb3306d119CC777fa900bA034cd52', '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', pool.address)
+      await expect(pool.sellCrvWith1Inch(data)).to.be.revertedWith('TrueFiPool: Destination token is not TUSD')
+    })
+
+    it('reverts when receiver is not TrueFIPool', async () => {
+      const data = await getRequestData('0xD533a949740bb3306d119CC777fa900bA034cd52', '0x0000000000085d4780B73119b644AE5ecd22b376', owner.address)
+      await expect(pool.sellCrvWith1Inch(data)).to.be.revertedWith('TrueFiPool: Receiver is not pool')
+    })
+
+    it('reverts when 1inch call fails', async () => {
+      const data = await getRequestData('0xD533a949740bb3306d119CC777fa900bA034cd52', '0x0000000000085d4780B73119b644AE5ecd22b376', pool.address)
+      // corrupt signature hash
+      await expect(pool.sellCrvWith1Inch(`0x123${data.slice(5)}`)).to.be.revertedWith('TrueFiPool: 1Inch swap failed')
     })
   })
 })

@@ -34,7 +34,7 @@ describe('TrueGold - ERC20Burnable', () => {
       })
 
       describe('for a non-zero amount', () => {
-        shouldBurn(12_500_000)
+        shouldBurn(12_441_000)
       })
 
       function shouldBurn (amount: BigNumberish) {
@@ -54,7 +54,7 @@ describe('TrueGold - ERC20Burnable', () => {
 
     describe('when the given amount is greater than the balance of the sender', () => {
       it('reverts', async () => {
-        await expect(burn(initialHolder, initialSupply.add(12_500_000)))
+        await expect(burn(initialHolder, initialSupply.add(12_441_000)))
           .to.be.revertedWith('ERC20: burn amount exceeds balance')
       })
     })
@@ -80,7 +80,7 @@ describe('TrueGold - ERC20Burnable', () => {
       })
 
       describe('for a non-zero amount', () => {
-        shouldBurnFrom(BigNumber.from(12_500_000))
+        shouldBurnFrom(BigNumber.from(12_441_000))
       })
 
       function shouldBurnFrom (amount: BigNumber) {
@@ -110,7 +110,7 @@ describe('TrueGold - ERC20Burnable', () => {
     })
 
     describe('when the given amount is greater than the balance of the sender', () => {
-      const amount = initialBalance.add(12_500_000)
+      const amount = initialBalance.add(12_441_000)
 
       it('reverts', async () => {
         await approve(tokenOwner, burner, amount)
@@ -120,7 +120,7 @@ describe('TrueGold - ERC20Burnable', () => {
     })
 
     describe('when the given amount is greater than the allowance', () => {
-      const allowance = BigNumber.from(12_500_000)
+      const allowance = BigNumber.from(12_441_000)
 
       it('reverts', async () => {
         await approve(tokenOwner, burner, allowance)

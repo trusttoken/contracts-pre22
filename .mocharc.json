@@ -2,7 +2,7 @@
   "require": ["ts-node/register/transpile-only", "tsconfig-paths/register"],
   "extension": ["ts"],
   "target": "esnext",
-  "timeout": 20000,
+  "timeout": 40000,
   "exclude": "test/integration/**/*.ts",
   "watch-files": ["test"]
 }

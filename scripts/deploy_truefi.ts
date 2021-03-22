@@ -1,4 +1,4 @@
-/* eslint-disable */ 
+/* eslint-disable */
 /**
  * PRIVATE_KEY={private_key} ts-node scripts/deploy_truefi.ts "{network}"
  */
@@ -14,7 +14,7 @@ import {
   TimelockFactory,
   LoanFactoryFactory,
   LiquidatorFactory,
-  TruPriceChainLinkOracleFactory,
+  TruPriceOracleFactory,
   TrueRatingAgencyFactory,
   TrueLenderFactory,
   TrueFiPoolFactory,
@@ -72,7 +72,7 @@ async function deployProxies(wallet) {
   const liquidatorImpl = await (await new LiquidatorFactory(wallet).deploy(contractArgs)).deployed()
   console.log(`Liquidator: ${liquidatorImpl.address}`)
 
-  const truPriceChainLinkOracle = await (await new TruPriceChainLinkOracleFactory(wallet).deploy('0xa7becdd46648110112c85dd489a70f1119c81698', contractArgs)).deployed()
+  const truPriceChainLinkOracle = await (await new TruPriceOracleFactory(wallet).deploy(contractArgs)).deployed()
   console.log(`TruPriceChainLinkOracle: ${truPriceChainLinkOracle.address}`)
 
   await deployContractBehindProxy(wallet, ratingAgencyV2DistributorImpl, 'ratingAgencyV2Distributor')

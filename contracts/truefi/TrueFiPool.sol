@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
+pragma experimental ABIEncoderV2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -13,16 +14,17 @@ import {ITrueLender} from "./interface/ITrueLender.sol";
 import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 import {ABDKMath64x64} from "./Log.sol";
 import {ITruPriceOracle} from "./interface/ITruPriceOracle.sol";
+import {I1Inch} from "./interface/I1Inch.sol";
 
 /**
  * @title TrueFi Pool
  * @dev Lending pool which uses curve.fi to store idle funds
  * Earn high interest rates on currency deposits through uncollateralized loans
  *
- * Funds deposited in this pool are not fully liquid. Luqidity
+ * Funds deposited in this pool are not fully liquid. Liquidity
  * Exiting the pool has 2 options:
  * - withdraw a basket of LoanTokens backing the pool
- * - take an exit penallty depending on pool liquidity
+ * - take an exit penalty depending on pool liquidity
  * After exiting, an account will need to wait for LoanTokens to expire and burn them
  * It is recommended to perform a zap or swap tokens on Uniswap for increased liquidity
  *
@@ -68,6 +70,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     // allow pausing of deposits
     bool public isJoiningPaused;
 
+    I1Inch public _1inchExchange;
+
     // ======= STORAGE DECLARATION END ============
 
     // curve.fi data
@@ -75,16 +79,16 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     uint8 constant TUSD_INDEX = 3;
 
     /**
-     * @dev Emitted when stake token address
-     * @param token New stake token address
-     */
-    event StakeTokenChanged(IERC20 token);
-
-    /**
      * @dev Emitted oracle was changed
      * @param newOracle New oracle address
      */
     event OracleChanged(ITruPriceOracle newOracle);
+
+    /**
+     * @dev Emitted 1Inch address was changed
+     * @param new1Inch New 1Inch address
+     */
+    event OneInchChanged(I1Inch new1Inch);
 
     /**
      * @dev Emitted when funds manager is changed
@@ -154,38 +158,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     event JoiningPauseStatusChanged(bool isJoiningPaused);
 
     /**
-     * @dev Initialize pool
-     * @param __curvePool curve pool address
-     * @param __curveGauge curve gauge address
-     * @param __currencyToken curve pool underlying token
-     * @param __lender TrueLender address
-     * @param __uniRouter Uniswap router
-     */
-    function initialize(
-        ICurvePool __curvePool,
-        ICurveGauge __curveGauge,
-        IERC20 __currencyToken,
-        ITrueLender __lender,
-        IUniswapRouter __uniRouter,
-        IERC20 __stakeToken,
-        ITruPriceOracle __oracle
-    ) public initializer {
-        ERC20.__ERC20_initialize("TrueFi LP", "TFI-LP");
-        Ownable.initialize();
-
-        _curvePool = __curvePool;
-        _curveGauge = __curveGauge;
-        _currencyToken = __currencyToken;
-        _lender = __lender;
-        _minter = _curveGauge.minter();
-        _uniRouter = __uniRouter;
-        _stakeToken = __stakeToken;
-        _oracle = __oracle;
-
-        joiningFee = 25;
-    }
-
-    /**
      * @dev only lender can perform borrowing or repaying
      */
     modifier onlyLender() {
@@ -243,15 +215,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev set stake token address
-     * @param token stake token address
-     */
-    function setStakeToken(IERC20 token) public onlyOwner {
-        _stakeToken = token;
-        emit StakeTokenChanged(token);
-    }
-
-    /**
      * @dev set funds manager address
      */
     function setFundsManager(address newFundsManager) public onlyOwner {
@@ -266,6 +229,14 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     function setOracle(ITruPriceOracle newOracle) public onlyOwner {
         _oracle = newOracle;
         emit OracleChanged(newOracle);
+    }
+
+    /**
+     * @dev set 1Inch swap address
+     */
+    function set1InchAddress(I1Inch new1InchAddress) public onlyOwner {
+        _1inchExchange = new1InchAddress;
+        emit OneInchChanged(new1InchAddress);
     }
 
     /**
@@ -498,7 +469,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     function averageExitPenalty(uint256 from, uint256 to) public pure returns (uint256) {
         require(from <= to, "TrueFiPool: To precedes from");
         if (from == 10000) {
-            // When all liquid, dont penalize
+            // When all liquid, don't penalize
             return 0;
         }
         if (from == to) {
@@ -649,6 +620,21 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         emit Collected(beneficiary, amount);
     }
 
+    function sellCrvWith1Inch(bytes calldata data) external onlyOwnerOrManager {
+        (address caller, I1Inch.SwapDescription memory description, ) = abi.decode(
+            data[4:],
+            (address, I1Inch.SwapDescription, I1Inch.CallDescription[])
+        );
+        require(description.srcToken == address(_minter.token()), "TrueFiPool: Source token is not CRV");
+        require(description.dstToken == address(_currencyToken), "TrueFiPool: Destination token is not TUSD");
+        require(description.dstReceiver == address(this), "TrueFiPool: Receiver is not pool");
+
+        _minter.token().approve(address(_1inchExchange), description.amount);
+        (bool success, ) = address(_1inchExchange).call(data);
+        require(success, "TrueFiPool: 1Inch swap failed");
+        // TODO add post sell slippage check
+    }
+
     /**
      * @notice Expected amount of minted Curve.fi yDAI/yUSDC/yUSDT/yTUSD tokens.
      * Can be used to control slippage
@@ -662,15 +648,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
             _curvePool.coins(TUSD_INDEX).getPricePerFullShare());
         uint256[N_TOKENS] memory yAmounts = [0, 0, 0, yTokenAmount];
         return _curvePool.curve().calc_token_amount(yAmounts, true);
-    }
-
-    /**
-     * @dev Converts the value of a single yCRV into an underlying asset
-     * @param yAmount amount of curve pool tokens to calculate for
-     * @return Value of one y pool token
-     */
-    function calcWithdrawOneCoin(uint256 yAmount) public view returns (uint256) {
-        return _curvePool.calc_withdraw_one_coin(yAmount, TUSD_INDEX);
     }
 
     /**
@@ -699,12 +676,5 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         _mint(msg.sender, mintedAmount);
 
         return mintedAmount;
-    }
-
-    /**
-     * @dev Update name and symbol of this contract
-     */
-    function updateNameAndSymbol() public {
-        super.updateNameAndSymbol("TrueFi TrueUSD", "tfTUSD");
     }
 }
