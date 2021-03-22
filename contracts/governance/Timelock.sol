@@ -59,6 +59,7 @@ contract Timelock is ClaimableContract {
         initalized = true;
         admin_initialized = true;
 
+        emit NewDelay(delay);
         emit NewAdmin(admin);
     }
 

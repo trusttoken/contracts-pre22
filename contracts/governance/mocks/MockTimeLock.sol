@@ -1,8 +1,8 @@
 pragma solidity 0.6.10;
 
-import {TimeLock} from "../Timelock.sol";
+import {Timelock} from "../Timelock.sol";
 
-contract MockTimeLock is TimeLock {
+contract MockTimeLock is Timelock {
     /**
      * @dev Initialize sets the addresses of admin and the delay timestamp
      * @param admin_ The address of admin
