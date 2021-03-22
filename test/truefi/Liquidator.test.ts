@@ -1,4 +1,4 @@
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import {
   ITrueDistributorJson,
   ILoanFactoryJson,
@@ -15,9 +15,11 @@ import {
   StkTruToken,
   StkTruTokenFactory,
 } from 'contracts'
-import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
+import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { Contract, Wallet } from 'ethers'
 import { beforeEachWithFixture, parseEth, parseTRU, timeTravel } from 'utils'
+
+use(solidity)
 
 describe('Liquidator', () => {
   enum LoanTokenStatus { Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated }

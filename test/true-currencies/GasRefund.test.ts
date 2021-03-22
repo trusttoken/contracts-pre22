@@ -1,5 +1,5 @@
 import { Wallet } from 'ethers'
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 
 import { setupDeploy } from 'scripts/utils'
 
@@ -13,6 +13,9 @@ import {
   MockGasRefundTokenFactory,
   MockGasRefundToken,
 } from 'contracts'
+import { solidity } from 'ethereum-waffle'
+
+use(solidity)
 
 describe('TrueCurrency - ERC20', () => {
   let deployer: Wallet

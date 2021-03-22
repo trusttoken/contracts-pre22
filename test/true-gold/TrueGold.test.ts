@@ -1,11 +1,13 @@
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import { BigNumberish, providers, Wallet } from 'ethers'
-import { loadFixture } from 'ethereum-waffle'
+import { loadFixture, solidity } from 'ethereum-waffle'
 
 import { initialSupply, setupTrueGold } from 'fixtures/trueGold'
 import { toAddress, WalletOrAddress } from 'utils'
 
 import { TrueGold } from 'contracts'
+
+use(solidity)
 
 describe('TrueGold', () => {
   const redemptionAddress = '0x0000000000000000000000000000000000074D72'
