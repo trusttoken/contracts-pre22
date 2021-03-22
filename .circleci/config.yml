@@ -44,20 +44,13 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn lint
-  test-governance-proxy-registry-scripts:
+  test-others:
     docker:
       - image: circleci/node:12.19.0
     steps:
       - attach_workspace:
           at: .
-      - run: yarn test:governance && yarn test:proxy && yarn test:registry && yarn test:scripts
-  test-currencies-gold-trusttoken:
-    docker:
-      - image: circleci/node:12.19.0
-    steps:
-      - attach_workspace:
-          at: .
-      - run: yarn test:true-currencies && yarn test:true-gold && yarn test:trusttoken
+      - run: yarn test:governance && yarn test:proxy && yarn test:registry && yarn test:scripts && yarn test:true-currencies && yarn test:true-gold && yarn test:trusttoken
   test-truefi:
     docker:
       - image: circleci/node:12.19.0
@@ -81,13 +74,10 @@ workflows:
       - lint:
           requires:
             - build
-      - test-governance-proxy-registry-scripts:
-          requires:
-            - build
-      - test-currencies-gold-trusttoken:
-          requires:
-            - build
       - test-truefi:
+          requires:
+            - build
+      - test-others:
           requires:
             - build
       - upgrade:
