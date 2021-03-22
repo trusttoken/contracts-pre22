@@ -1,6 +1,6 @@
 import { utils, Wallet } from 'ethers'
-import { loadFixture } from 'ethereum-waffle'
-import { expect } from 'chai'
+import { loadFixture, solidity } from 'ethereum-waffle'
+import { expect, use } from 'chai'
 
 import { trueCurrency } from 'fixtures/trueCurrency'
 import { toAddress, WalletOrAddress } from 'utils'
@@ -11,6 +11,8 @@ import {
   ForceEtherFactory,
   MockErc20Token,
 } from 'contracts'
+
+use(solidity)
 
 describe('TrueCurrency - Reclaimable', () => {
   const tokenEthBalance = utils.parseEther('1')

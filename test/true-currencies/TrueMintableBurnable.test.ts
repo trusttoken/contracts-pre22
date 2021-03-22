@@ -1,13 +1,15 @@
 import { constants, Wallet, BigNumber, BigNumberish } from 'ethers'
-import { loadFixture } from 'ethereum-waffle'
+import { loadFixture, solidity } from 'ethereum-waffle'
 import { parseEther } from '@ethersproject/units'
 import { AddressZero, Zero } from '@ethersproject/constants'
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 
 import { initialSupply, trueCurrency } from 'fixtures/trueCurrency'
 import { toAddress, WalletOrAddress } from 'utils'
 
 import { MockTrueCurrency } from 'contracts'
+
+use(solidity)
 
 describe('TrueCurrency - Mint/Burn', () => {
   const redemptionAddress = '0x0000000000000000000000000000000000074D72'

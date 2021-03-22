@@ -1,11 +1,13 @@
 import { BigNumber, BigNumberish, constants, Wallet } from 'ethers'
-import { loadFixture } from 'ethereum-waffle'
-import { expect } from 'chai'
+import { loadFixture, solidity } from 'ethereum-waffle'
+import { expect, use } from 'chai'
 
 import { initialSupply, trueCurrency } from 'fixtures/trueCurrency'
 import { toAddress, WalletOrAddress } from 'utils'
 
 import { TrueCurrency } from 'contracts/types/TrueCurrency'
+
+use(solidity)
 
 describe('TrueCurrency - ERC20', () => {
   let initialHolder: Wallet

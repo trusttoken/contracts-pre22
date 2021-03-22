@@ -1,5 +1,5 @@
-import { expect } from 'chai'
-import { MockProvider } from 'ethereum-waffle'
+import { expect, use } from 'chai'
+import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, ContractTransaction, Wallet, BigNumberish } from 'ethers'
 import { formatEther } from '@ethersproject/units'
 
@@ -16,6 +16,8 @@ import {
   MockTrueCurrency,
   MockTrueCurrencyFactory,
 } from 'contracts'
+
+use(solidity)
 
 describe('LoanToken', () => {
   enum LoanTokenStatus {
