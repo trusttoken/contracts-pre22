@@ -1,6 +1,6 @@
 import { utils, Wallet } from 'ethers'
-import { loadFixture } from 'ethereum-waffle'
-import { expect } from 'chai'
+import { loadFixture, solidity } from 'ethereum-waffle'
+import { expect, use } from 'chai'
 
 import { setupTrueGold } from 'fixtures/trueGold'
 import { toAddress, WalletOrAddress } from 'utils'
@@ -12,6 +12,8 @@ import {
   OwnableMock,
   OwnableMockFactory,
 } from 'contracts'
+
+use(solidity)
 
 describe('TrueGold - Reclaimable', () => {
   const tokenEthBalance = utils.parseEther('1')

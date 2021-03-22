@@ -1,5 +1,5 @@
-import { MockProvider } from 'ethereum-waffle'
-import { expect } from 'chai'
+import { MockProvider, solidity } from 'ethereum-waffle'
+import { expect, use } from 'chai'
 
 import { deployPausedTrueGold } from 'scripts/deploy_paused_true_gold'
 
@@ -9,6 +9,8 @@ import {
   PausedTrueGold,
   PausedTrueGoldJson,
 } from 'contracts'
+
+use(solidity)
 
 describe('deployPausedTrueGold', () => {
   const pausedTokenBytecode = toHex(PausedTrueGoldJson.evm.deployedBytecode.object)

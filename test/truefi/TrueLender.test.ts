@@ -1,5 +1,5 @@
-import { expect } from 'chai'
-import { deployMockContract, MockContract } from 'ethereum-waffle'
+import { expect, use } from 'chai'
+import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
 import { Contract, Wallet, BigNumber, providers } from 'ethers'
 import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 import {
@@ -21,6 +21,8 @@ import {
   ITrueRatingAgencyJson,
   IStakingPoolJson,
 } from 'contracts'
+
+use(solidity)
 
 describe('TrueLender', () => {
   let owner: Wallet

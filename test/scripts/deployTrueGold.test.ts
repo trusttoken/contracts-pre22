@@ -1,5 +1,5 @@
-import { MockProvider } from 'ethereum-waffle'
-import { expect } from 'chai'
+import { MockProvider, solidity } from 'ethereum-waffle'
+import { expect, use } from 'chai'
 
 import { deployTrueGold } from 'scripts/deploy_true_gold'
 import { makeAddress } from 'scripts/model/Address'
@@ -16,6 +16,8 @@ import {
   TrueGoldJson,
   TrueGoldControllerJson,
 } from 'contracts'
+
+use(solidity)
 
 describe('deployTrueGold', () => {
   const proxyBytecode = toHex(OwnedUpgradeabilityProxyJson.evm.deployedBytecode.object)

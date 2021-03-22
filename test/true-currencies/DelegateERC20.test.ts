@@ -1,5 +1,5 @@
 import { BigNumberish, BigNumber, constants, Wallet } from 'ethers'
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 
 import { initialSupply } from 'fixtures/trueCurrency'
 import { setupDeploy } from 'scripts/utils'
@@ -16,6 +16,9 @@ import {
   MockDelegateErc20,
   MockDelegateErc20Factory,
 } from 'contracts'
+import { solidity } from 'ethereum-waffle'
+
+use(solidity)
 
 describe('TrueCurrency - Delegate ERC20', () => {
   let initialHolder: Wallet

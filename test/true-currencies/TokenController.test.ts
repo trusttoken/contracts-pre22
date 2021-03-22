@@ -1,6 +1,6 @@
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import { BigNumberish, Wallet } from 'ethers'
-import { MockProvider } from 'ethereum-waffle'
+import { MockProvider, solidity } from 'ethereum-waffle'
 import { formatBytes32String } from '@ethersproject/strings'
 import { parseEther } from '@ethersproject/units'
 
@@ -19,6 +19,8 @@ import {
   ForceEtherFactory,
   AvalancheTokenControllerFactory, AvalancheTokenController,
 } from 'contracts'
+
+use(solidity)
 
 describe('TokenController', () => {
   let provider: MockProvider

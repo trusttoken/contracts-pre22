@@ -1,5 +1,5 @@
-import { expect } from 'chai'
-import { MockProvider } from 'ethereum-waffle'
+import { expect, use } from 'chai'
+import { MockProvider, solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 
 import { toTrustToken } from 'scripts/utils'
@@ -17,6 +17,8 @@ import {
   MockErc20TokenFactory,
   MockErc20Token,
 } from 'contracts'
+
+use(solidity)
 
 describe('LinearTrueDistributor', () => {
   const DAY = 24 * 3600
