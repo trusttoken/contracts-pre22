@@ -24,7 +24,8 @@ contract TestTrueFiPool is TrueFiPool {
         ITrueLender __lender,
         IUniswapRouter __uniRouter,
         IERC20 __stakeToken,
-        ITruPriceOracle __oracle
+        ITruPriceOracle __truOracle,
+        ICrvPriceOracle __crvOracle
     ) public initializer {
         ERC20.__ERC20_initialize("TrueFi LP", "TFI-LP");
         Ownable.initialize();
@@ -36,7 +37,8 @@ contract TestTrueFiPool is TrueFiPool {
         _minter = _curveGauge.minter();
         _uniRouter = __uniRouter;
         _stakeToken = __stakeToken;
-        _oracle = __oracle;
+        _truOracle = __truOracle;
+        _crvOracle = __crvOracle;
 
         joiningFee = 25;
     }

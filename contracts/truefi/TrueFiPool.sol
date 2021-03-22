@@ -399,15 +399,6 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev sets all token allowances used to 0
-     */
-    function resetApprovals() external onlyOwner {
-        _currencyToken.approve(address(_curvePool), 0);
-        _curvePool.token().approve(address(_curvePool), 0);
-        _curvePool.token().approve(address(_curveGauge), 0);
-    }
-
-    /**
      * @dev Join the pool by depositing currency tokens
      * @param amount amount of currency token to deposit
      */
