@@ -71,7 +71,6 @@ describe('TrueFi', () => {
       'joiningFee',
       'claimableFees',
       '_stakeToken',
-      '_oracle',
       'fundsManager',
       'isJoiningPaused',
       // '_1inchExchange', not yet deployed
