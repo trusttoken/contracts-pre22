@@ -57,8 +57,9 @@ contract Timelock is ClaimableContract {
 
         owner_ = msg.sender;
         initalized = true;
+        admin_initialized = true;
 
-        admin_initialized = false;
+        emit NewAdmin(admin);
     }
 
     receive() external payable { }
