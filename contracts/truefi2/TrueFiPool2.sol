@@ -25,7 +25,7 @@ import {ABDKMath64x64} from "../truefi/Log.sol";
  *
  * Funds are managed through an external function to save gas on deposits
  */
-contract TrueFiPool2 is ITrueFiPool2, UpgradeableERC20, Ownable {
+contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
     using SafeMath for uint256;
 
     // ================ WARNING ==================
