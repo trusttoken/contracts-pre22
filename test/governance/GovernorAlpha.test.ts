@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { ContractTransaction, providers, utils, Wallet } from 'ethers'
+import { ContractTransaction, providers, Signer, utils, Wallet } from 'ethers'
 import { solidity } from 'ethereum-waffle'
 
 import { beforeEachWithFixture, parseTRU, skipBlocksWithProvider, timeTravel } from 'utils'
@@ -11,7 +11,9 @@ import {
   TimelockFactory,
   TrustToken,
   TrustTokenFactory,
+  VoteSignatureHelperFactory,
 } from 'contracts'
+import { deployContract } from 'scripts/utils/deployContract'
 
 use(solidity)
 
@@ -250,6 +252,57 @@ describe('GovernorAlpha', () => {
     })
   })
 
+  describe('castVoteBySig', () => {
+    async function sign (wallet: Signer, proposalId: number, support: boolean, governor: string) {
+      const contract = await deployContract(owner, VoteSignatureHelperFactory)
+      const digest = await contract.digest(proposalId, support, governor)
+      return [await wallet.signMessage(digest), digest]
+    }
+
+    async function castVoteBySig (signer: Signer, proposalId: number, support: boolean, governor = governorAlpha.address) {
+      const [signature, d] = await sign(signer, proposalId, support, governor)
+      const { v, r, s } = utils.splitSignature(signature)
+      console.log(utils.recoverAddress(d, signature), signer.getAddress())
+
+      return governorAlpha.castVoteBySig(proposalId, support, v, r, s)
+    }
+
+    beforeEach(async () => {
+      await trustToken.mint(owner.address, votesAmount.mul(2))
+      await trustToken.delegate(owner.address)
+      await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
+      await timeTravel(provider, 1)
+      const tx = await castVoteBySig(initialHolder, 1, true)
+      console.log(initialHolder.address, owner.address)
+      console.log((await tx.wait()).logs)
+    })
+
+    describe('after initialHolder casts vote', () => {
+      it('proposal state becomes active', async () => {
+        expect(await governorAlpha.state(1)).to.eq(ProposalState.Active)
+      })
+
+      it('return the right for votes', async () => {
+        expect((await governorAlpha.proposals(1)).forVotes).to.eq(votesAmount)
+      })
+
+      it('cant vote again', async () => {
+        await expect(await castVoteBySig(initialHolder, 1, false)).to.be.revertedWith('GovernorAlpha::_castVote: voter already voted')
+      })
+
+      it('cant vote after voting is over', async () => {
+        await endVote()
+        await expect(await castVoteBySig(owner, 1, true)).to.be.revertedWith('GovernorAlpha::_castVote: voting is closed')
+      })
+
+      it('casting a lot of against votes defeats proposal', async () => {
+        await castVoteBySig(owner, 1, false)
+        await endVote()
+        expect(await governorAlpha.state(1)).to.equal(ProposalState.Defeated)
+      })
+    })
+  })
+
   describe('queue', () => {
     beforeEach(async () => {
       await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
@@ -306,33 +359,44 @@ describe('GovernorAlpha', () => {
   })
 
   describe('execute', () => {
+    const newProposalId = 1
     beforeEach(async () => {
       await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
       await timeTravel(provider, 1) // mine one block
       await governorAlpha.connect(initialHolder).castVote(1, true) // castVote
       const endBlockRequired = (await governorAlpha.proposals(1)).endBlock.toNumber()
       await skipBlocksWithProvider(provider, endBlockRequired)
-      await governorAlpha.connect(owner).queue(1) // queue the proposal
-      await timeTravel(provider, 3 * 24 * 3600) // delay 3 days
-      expect(await timelock.pendingAdmin()).to.eq('0x0000000000000000000000000000000000000000')
-      await governorAlpha.connect(owner).execute(1) // execute
     })
 
-    xit('cannot execute not queued proposal', async () => {
-
+    it('cannot execute not queued proposal', async () => {
+      await expect(governorAlpha.connect(owner).execute(newProposalId)).to.be.revertedWith('GovernorAlpha::execute: proposal can only be executed if it is queued')
     })
 
-    xit('cannot execute proposal before it is unlocked', async () => {
-
+    it('cannot execute proposal before it is unlocked', async () => {
+      await governorAlpha.connect(owner).queue(newProposalId)
+      await expect(governorAlpha.connect(owner).execute(newProposalId)).to.be.revertedWith('Timelock::executeTransaction: Transaction hasn\'t surpassed time lock.')
     })
 
     describe('when governorAlpha executes a proposal', () => {
+      let tx: ContractTransaction
+
+      beforeEach(async () => {
+        await governorAlpha.connect(owner).queue(newProposalId) // queue the proposal
+        await timeTravel(provider, 3 * 24 * 3600) // delay 3 days
+        expect(await timelock.pendingAdmin()).to.eq('0x0000000000000000000000000000000000000000')
+        tx = await governorAlpha.connect(owner).execute(newProposalId) // execute
+      })
+
       it('returns proposal state equals to executed', async () => {
         expect(await governorAlpha.state(1)).to.eq(ProposalState.Executed)
       })
 
       it('transaction takes effect (changes pending admin in this case)', async () => {
         expect(await timelock.pendingAdmin()).to.eq(initialHolder.address)
+      })
+
+      it('emits event', async () => {
+        await expect(Promise.resolve(tx)).to.emit(governorAlpha, 'ProposalExecuted').withArgs(newProposalId)
       })
     })
   })
