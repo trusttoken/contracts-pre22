@@ -454,22 +454,6 @@ describe('GovernorAlpha', () => {
       })
 
       it('cant vote again', async () => {
-        await expect(governorAlpha.connect(initialHolder).castVote(1, false)).to.be.revertedWith('GovernorAlpha::_castVote: voter already voted')
-      })
-
-      it('cant vote after voting is over', async () => {
-        await endVote()
-        await expect(governorAlpha.castVote(1, true)).to.be.revertedWith('GovernorAlpha::_castVote: voting is closed')
-      })
-
-      it('casting a lot of against votes defeats proposal', async () => {
-        await governorAlpha.castVote(1, false)
-        await endVote()
-        expect(await governorAlpha.state(1)).to.equal(ProposalState.Defeated)
-        expect((await governorAlpha.proposals(1)).forVotes).to.eq(votesAmount)
-      })
-
-      it('cant vote again', async () => {
         await expect(castVoteBySig(initialHolder, 1, false)).to.be.revertedWith('GovernorAlpha::_castVote: voter already voted')
       })
 
