@@ -27,9 +27,9 @@ describe('OwnedProxyWithReference', () => {
 
   beforeEachWithFixture(async (wallets) => {
     [owner, anotherWallet, thirdWallet] = wallets
-    proxy = await new OwnedProxyWithReferenceFactory(owner).deploy()
     tusd = await new MockTrueCurrencyFactory(owner).deploy()
     implementationReference = await new ImplementationReferenceFactory(owner).deploy(tusd.address)
+    proxy = await new OwnedProxyWithReferenceFactory(owner).deploy(owner.address, implementationReference.address)
   })
 
   describe('Ownership', () => {
@@ -78,9 +78,15 @@ describe('OwnedProxyWithReference', () => {
   })
 
   describe('Referencing', () => {
-    it('sets up implementation reference ', async () => {
-      await proxy.changeImplementationReference(implementationReference.address)
+    it('testName', async () => {
       expect(await proxy.implementation()).to.equal(tusd.address)
+    })
+
+    it('sets up implementation reference ', async () => {
+      const tusd2 = await new MockTrueCurrencyFactory(owner).deploy()
+      const implementationReference2 = await new ImplementationReferenceFactory(owner).deploy(tusd2.address)
+      await proxy.changeImplementationReference(implementationReference2.address)
+      expect(await proxy.implementation()).to.equal(tusd2.address)
     })
 
     it('non owner cannot upgrade implementation contract', async () => {

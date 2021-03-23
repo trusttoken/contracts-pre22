@@ -36,9 +36,12 @@ contract OwnedProxyWithReference {
 
     /**
      * @dev the constructor sets the original owner of the contract to the sender account.
+     * @param _owner Initial owner of the proxy
+     * @param _implementationReference initial ImplementationReference address
      */
-    constructor() public {
-        _setUpgradeabilityOwner(msg.sender);
+    constructor(address _owner, address _implementationReference) public {
+        _setUpgradeabilityOwner(_owner);
+        _changeImplementationReference(_implementationReference);
     }
 
     /**
@@ -123,13 +126,8 @@ contract OwnedProxyWithReference {
      * @dev Allows the proxy owner to change the contract holding address of implementation.
      * @param _implementationReference representing the address contract, which holds implementation.
      */
-    function changeImplementationReference(ImplementationReference _implementationReference) public virtual onlyProxyOwner {
-        bytes32 position = implementationReferencePosition;
-        assembly {
-            sstore(position, _implementationReference)
-        }
-
-        emit ImplementationReferenceChanged(address(_implementationReference));
+    function changeImplementationReference(address _implementationReference) public virtual onlyProxyOwner {
+        _changeImplementationReference(_implementationReference);
     }
 
     /**
@@ -137,11 +135,11 @@ contract OwnedProxyWithReference {
      */
     function implementation() public view returns (address) {
         bytes32 position = implementationReferencePosition;
-        ImplementationReference implementationReference;
+        address implementationReference;
         assembly {
             implementationReference := sload(position)
         }
-        return implementationReference.implementation();
+        return ImplementationReference(implementationReference).implementation();
     }
 
     /**
@@ -173,5 +171,18 @@ contract OwnedProxyWithReference {
                     return(ptr, returndatasize())
                 }
         }
+    }
+
+    /**
+     * @dev Function to internally change the contract holding address of implementation.
+     * @param _implementationReference representing the address contract, which holds implementation.
+     */
+    function _changeImplementationReference(address _implementationReference) internal virtual {
+        bytes32 position = implementationReferencePosition;
+        assembly {
+            sstore(position, _implementationReference)
+        }
+
+        emit ImplementationReferenceChanged(address(_implementationReference));
     }
 }

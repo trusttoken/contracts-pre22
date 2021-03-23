@@ -45,9 +45,8 @@ describe('PoolFactory', () => {
     beforeEach(async () => {
       await factory.whitelist(token1.address, true)
       const tx = await factory.createPool(token1.address)
-      creationEventArgs = (await tx.wait()).events[4].args
+      creationEventArgs = (await tx.wait()).events[3].args
       proxy = OwnedProxyWithReferenceFactory.connect(await factory.pool(token1.address), owner)
-      await proxy.claimProxyOwnership()
     })
 
     it('transfers proxy ownership', async () => {
@@ -89,8 +88,6 @@ describe('PoolFactory', () => {
       await factory.createPool(token2.address)
       proxy1 = OwnedProxyWithReferenceFactory.connect(await factory.pool(token1.address), owner)
       proxy2 = OwnedProxyWithReferenceFactory.connect(await factory.pool(token2.address), owner)
-      await proxy1.claimProxyOwnership()
-      await proxy2.claimProxyOwnership()
     })
 
     it('adds 2 pools for 2 tokens', async () => {

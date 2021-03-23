@@ -70,10 +70,8 @@ contract PoolFactory is Ownable {
      * @param token Address of token which the pool will correspond to.
      */
     function createPool(address token) external onlyAllowed(token) onlyNotExistingPools(token) {
-        OwnedProxyWithReference proxy = new OwnedProxyWithReference();
-        proxy.changeImplementationReference(poolImplementationReference);
+        OwnedProxyWithReference proxy = new OwnedProxyWithReference(this.owner(), address(poolImplementationReference));
         ITrueFiPool2(address(proxy)).initialize(ERC20(token));
-        proxy.transferProxyOwnership(this.owner());
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
