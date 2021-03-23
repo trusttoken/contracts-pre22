@@ -16,7 +16,7 @@ contract PoolFactory is Ownable {
     // ========= IN STORAGE CORRUPTION ===========
 
     // @dev Mapping of ERC20 token's addresses to its pool's addresses
-    mapping(address => address) public correspondingPool;
+    mapping(address => address) public pool;
     mapping(address => bool) public isPool;
 
     // @dev Whitelist for tokens, which can have pools created
@@ -45,7 +45,7 @@ contract PoolFactory is Ownable {
      * @param token Token to be checked for existing pool
      */
     modifier onlyNotExistingPools(address token) {
-        require(correspondingPool[token] == address(0), "PoolFactory: This token already has a corresponding pool");
+        require(pool[token] == address(0), "PoolFactory: This token already has a corresponding pool");
         _;
     }
 
@@ -74,7 +74,7 @@ contract PoolFactory is Ownable {
         proxy.changeImplementationReference(poolImplementationReference);
         ITrueFiPool2(address(proxy)).initialize(ERC20(token));
         proxy.transferProxyOwnership(this.owner());
-        correspondingPool[token] = address(proxy);
+        pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
         emit PoolCreated(token, address(proxy));

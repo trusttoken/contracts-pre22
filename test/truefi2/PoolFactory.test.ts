@@ -46,7 +46,7 @@ describe('PoolFactory', () => {
       await factory.whitelist(token1.address, true)
       const tx = await factory.createPool(token1.address)
       creationEventArgs = (await tx.wait()).events[4].args
-      proxy = OwnedProxyWithReferenceFactory.connect(await factory.correspondingPool(token1.address), owner)
+      proxy = OwnedProxyWithReferenceFactory.connect(await factory.pool(token1.address), owner)
       await proxy.claimProxyOwnership()
     })
 
@@ -55,7 +55,7 @@ describe('PoolFactory', () => {
     })
 
     it('adds pool to token -> pool mapping', async () => {
-      expect(await factory.correspondingPool(token1.address)).to.eq(proxy.address)
+      expect(await factory.pool(token1.address)).to.eq(proxy.address)
     })
 
     it('adds pool to isPool mapping', async () => {
@@ -72,7 +72,7 @@ describe('PoolFactory', () => {
     })
 
     it('emits event', async () => {
-      const proxyAddress = await factory.correspondingPool(token1.address)
+      const proxyAddress = await factory.pool(token1.address)
       expect(creationEventArgs['token']).to.eq(token1.address)
       expect(creationEventArgs['pool']).to.eq(proxyAddress)
     })
@@ -87,8 +87,8 @@ describe('PoolFactory', () => {
       await factory.whitelist(token2.address, true)
       await factory.createPool(token1.address)
       await factory.createPool(token2.address)
-      proxy1 = OwnedProxyWithReferenceFactory.connect(await factory.correspondingPool(token1.address), owner)
-      proxy2 = OwnedProxyWithReferenceFactory.connect(await factory.correspondingPool(token2.address), owner)
+      proxy1 = OwnedProxyWithReferenceFactory.connect(await factory.pool(token1.address), owner)
+      proxy2 = OwnedProxyWithReferenceFactory.connect(await factory.pool(token2.address), owner)
       await proxy1.claimProxyOwnership()
       await proxy2.claimProxyOwnership()
     })
@@ -100,8 +100,8 @@ describe('PoolFactory', () => {
       expect(await factory.isPool(proxy1.address)).to.eq(true)
       expect(await factory.isPool(proxy2.address)).to.eq(true)
 
-      expect(await factory.correspondingPool(token1.address)).to.eq(proxy1.address)
-      expect(await factory.correspondingPool(token2.address)).to.eq(proxy2.address)
+      expect(await factory.pool(token1.address)).to.eq(proxy1.address)
+      expect(await factory.pool(token2.address)).to.eq(proxy2.address)
 
       expect(await proxy1.implementation()).to.eq(poolImplementation.address)
       expect(await proxy2.implementation()).to.eq(poolImplementation.address)
