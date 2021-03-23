@@ -344,7 +344,7 @@ contract TrueLender is ITrueLender, Ownable {
         }
 
         uint256 passed = block.timestamp.sub(loan.start());
-        if (passed > loan.term()) {
+        if (passed > loan.term() || loan.status() == ILoanToken.Status.Settled) {
             passed = loan.term();
         }
 
