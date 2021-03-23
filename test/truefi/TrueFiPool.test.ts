@@ -605,36 +605,40 @@ describe('TrueFiPool', () => {
   })
 
   describe('1Inch', () => {
-    const getRequestData = async (fromToken: string, toToken: string, from = pool.address) => {
-      const url = `https://api.1inch.exchange/v2.0/swap?disableEstimate=true&fromTokenAddress=${fromToken}&toTokenAddress=${toToken}&amount=100&fromAddress=${from}&slippage=1`
+    const getRequestData = async (fromToken: string, toToken: string, from : string) => {
+      const curveAddress = '0xD533a949740bb3306d119CC777fa900bA034cd52'
+      const tusdAddress = '0x0000000000085d4780B73119b644AE5ecd22b376'
+      const poolAddress = '0xa1e72267084192Db7387c8CC1328fadE470e4149'
+      const url = `https://api.1inch.exchange/v2.0/swap?disableEstimate=true&fromTokenAddress=${curveAddress}&toTokenAddress=${tusdAddress}&amount=100&fromAddress=${poolAddress}&slippage=1`
       const resp = await (await fetch(url)).json()
       return (resp.tx.data as string)
-        .replace(/0000000000085d4780b73119b644ae5ecd22b376/g, token.address.slice(2).toLowerCase())
-        .replace(/d533a949740bb3306d119cc777fa900ba034cd52/g, mockCrv.address.slice(2).toLowerCase())
+        .replace(/0000000000085d4780b73119b644ae5ecd22b376/g, fromToken.slice(2).toLowerCase())
+        .replace(/d533a949740bb3306d119cc777fa900ba034cd52/g, toToken.slice(2).toLowerCase())
+        .replace(/a1e72267084192db7387c8cc1328fade470e4149/g, from.slice(2).toLowerCase())
     }
 
     it('works for CRV -> TUSD swap', async () => {
-      const data = await getRequestData('0xD533a949740bb3306d119CC777fa900bA034cd52', '0x0000000000085d4780B73119b644AE5ecd22b376', pool.address)
+      const data = await getRequestData(token.address, mockCrv.address, pool.address)
       await expect(pool.sellCrvWith1Inch(data)).to.not.be.reverted
     })
 
     it('reverts for bad source token', async () => {
-      const data = await getRequestData('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', '0x0000000000085d4780B73119b644AE5ecd22b376', pool.address)
+      const data = await getRequestData(token.address, owner.address, pool.address)
       await expect(pool.sellCrvWith1Inch(data)).to.be.revertedWith('TrueFiPool: Source token is not CRV')
     })
 
     it('reverts for bad destination token', async () => {
-      const data = await getRequestData('0xD533a949740bb3306d119CC777fa900bA034cd52', '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', pool.address)
+      const data = await getRequestData(owner.address, mockCrv.address, pool.address)
       await expect(pool.sellCrvWith1Inch(data)).to.be.revertedWith('TrueFiPool: Destination token is not TUSD')
     })
 
     it('reverts when receiver is not TrueFIPool', async () => {
-      const data = await getRequestData('0xD533a949740bb3306d119CC777fa900bA034cd52', '0x0000000000085d4780B73119b644AE5ecd22b376', owner.address)
+      const data = await getRequestData(token.address, mockCrv.address, owner.address)
       await expect(pool.sellCrvWith1Inch(data)).to.be.revertedWith('TrueFiPool: Receiver is not pool')
     })
 
     it('reverts when 1inch call fails', async () => {
-      const data = await getRequestData('0xD533a949740bb3306d119CC777fa900bA034cd52', '0x0000000000085d4780B73119b644AE5ecd22b376', pool.address)
+      const data = await getRequestData(token.address, mockCrv.address, pool.address)
       // corrupt signature hash
       await expect(pool.sellCrvWith1Inch(`0x123${data.slice(5)}`)).to.be.revertedWith('TrueFiPool: 1Inch swap failed')
     })
