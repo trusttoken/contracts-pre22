@@ -102,6 +102,24 @@ describe('GovernorAlpha', () => {
     })
   })
 
+  describe('SetTimelockPendingAdmin', () => {
+    it('guardian can change timelock pending admin', async () => {
+      const { timestamp } = await provider.getBlock('latest')
+      const eta = (await timelock.delay()).add(timestamp)
+      await governorAlpha.__queueSetTimelockPendingAdmin(initialHolder.address, eta)
+      await timeTravel(provider, 3 * 24 * 3600)
+      await governorAlpha.__executeSetTimelockPendingAdmin(initialHolder.address, eta)
+      expect(await timelock.pendingAdmin()).to.eq(initialHolder.address)
+    })
+
+    it('revert if not called by guardian', async () => {
+      const { timestamp } = await provider.getBlock('latest')
+      const eta = (await timelock.delay()).add(timestamp)
+      await expect(governorAlpha.connect(initialHolder).__queueSetTimelockPendingAdmin(initialHolder.address, eta))
+        .to.be.revertedWith('GovernorAlpha::__queueSetTimelockPendingAdmin: sender must be gov guardian')
+    })
+  })
+
   describe('propose', () => {
     describe('get proposal ID', () => {
       it('returns id equals to 1', async () => {
@@ -253,16 +271,28 @@ describe('GovernorAlpha', () => {
   })
 
   describe('castVoteBySig', () => {
-    async function sign (wallet: Signer, proposalId: number, support: boolean, governor: string) {
-      const contract = await deployContract(owner, VoteSignatureHelperFactory)
-      const digest = await contract.digest(proposalId, support, governor)
-      return [await wallet.signMessage(digest), digest]
+    async function sign (wallet: Wallet, proposalId: number, support: boolean, governor: string) {
+      const domain = {
+        name: 'TrustToken Governor Alpha',
+        chainId: 1,
+        verifyingContract: governor,
+      }
+      const types = {
+        Ballot: [
+          { name: 'proposalId', type: 'uint256' },
+          { name: 'support', type: 'bool' },
+        ],
+      }
+      const value = {
+        proposalId,
+        support,
+      }
+      return wallet._signTypedData(domain, types, value)
     }
 
-    async function castVoteBySig (signer: Signer, proposalId: number, support: boolean, governor = governorAlpha.address) {
-      const [signature, d] = await sign(signer, proposalId, support, governor)
+    async function castVoteBySig (signer: Wallet, proposalId: number, support: boolean, governor = governorAlpha.address) {
+      const signature = await sign(signer, proposalId, support, governor)
       const { v, r, s } = utils.splitSignature(signature)
-      console.log(utils.recoverAddress(d, signature), signer.getAddress())
 
       return governorAlpha.castVoteBySig(proposalId, support, v, r, s)
     }
@@ -272,9 +302,7 @@ describe('GovernorAlpha', () => {
       await trustToken.delegate(owner.address)
       await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
       await timeTravel(provider, 1)
-      const tx = await castVoteBySig(initialHolder, 1, true)
-      console.log(initialHolder.address, owner.address)
-      console.log((await tx.wait()).logs)
+      await castVoteBySig(initialHolder, 1, true)
     })
 
     describe('after initialHolder casts vote', () => {
@@ -287,12 +315,12 @@ describe('GovernorAlpha', () => {
       })
 
       it('cant vote again', async () => {
-        await expect(await castVoteBySig(initialHolder, 1, false)).to.be.revertedWith('GovernorAlpha::_castVote: voter already voted')
+        await expect(castVoteBySig(initialHolder, 1, false)).to.be.revertedWith('GovernorAlpha::_castVote: voter already voted')
       })
 
       it('cant vote after voting is over', async () => {
         await endVote()
-        await expect(await castVoteBySig(owner, 1, true)).to.be.revertedWith('GovernorAlpha::_castVote: voting is closed')
+        await expect(castVoteBySig(owner, 1, true)).to.be.revertedWith('GovernorAlpha::_castVote: voting is closed')
       })
 
       it('casting a lot of against votes defeats proposal', async () => {
