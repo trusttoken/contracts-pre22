@@ -6,7 +6,7 @@ import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {IImplementationReference} from "../proxy/interface/IImplementationReference.sol";
+import {ImplementationReference} from "../proxy/ImplementationReference.sol";
 
 contract PoolFactory is Ownable {
     // ================ WARNING ==================
@@ -22,7 +22,7 @@ contract PoolFactory is Ownable {
     // @dev Whitelist for tokens, which can have pools created
     mapping(address => bool) public isAllowed;
 
-    IImplementationReference public poolImplementationReference;
+    ImplementationReference public poolImplementationReference;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -58,7 +58,7 @@ contract PoolFactory is Ownable {
      * @dev Initialize this contract with provided parameters
      * @param _poolImplementationReference First implementation reference of TrueFiPool
      */
-    function initialize(IImplementationReference _poolImplementationReference) external initializer {
+    function initialize(ImplementationReference _poolImplementationReference) external initializer {
         Ownable.initialize();
 
         poolImplementationReference = _poolImplementationReference;

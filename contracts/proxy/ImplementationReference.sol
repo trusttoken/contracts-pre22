@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {IImplementationReference} from "./interface/IImplementationReference.sol";
-
-contract ImplementationReference is IImplementationReference {
+contract ImplementationReference {
     address public owner;
-    address private currentImplementation;
+    address public implementation;
 
     event ImplementationChanged(address newImplementation);
 
@@ -16,15 +14,11 @@ contract ImplementationReference is IImplementationReference {
 
     constructor(address _implementation) public {
         owner = msg.sender;
-        currentImplementation = _implementation;
+        implementation = _implementation;
     }
 
     function setImplementation(address newImplementation) external onlyOwner {
-        currentImplementation = newImplementation;
+        implementation = newImplementation;
         emit ImplementationChanged(newImplementation);
-    }
-
-    function implementation() external override view returns (address) {
-        return currentImplementation;
     }
 }

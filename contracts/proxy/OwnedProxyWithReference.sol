@@ -2,7 +2,7 @@
 // solhint-disable const-name-snakecase
 pragma solidity 0.6.10;
 
-import {IImplementationReference} from "./interface/IImplementationReference.sol";
+import {ImplementationReference} from "./ImplementationReference.sol";
 
 /**
  * @title OwnedUpgradeabilityProxy
@@ -123,7 +123,7 @@ contract OwnedProxyWithReference {
      * @dev Allows the proxy owner to change the contract holding address of implementation.
      * @param _implementationReference representing the address contract, which holds implementation.
      */
-    function changeImplementationReference(IImplementationReference _implementationReference) public virtual onlyProxyOwner {
+    function changeImplementationReference(ImplementationReference _implementationReference) public virtual onlyProxyOwner {
         bytes32 position = implementationReferencePosition;
         assembly {
             sstore(position, _implementationReference)
@@ -137,7 +137,7 @@ contract OwnedProxyWithReference {
      */
     function implementation() public view returns (address) {
         bytes32 position = implementationReferencePosition;
-        IImplementationReference implementationReference;
+        ImplementationReference implementationReference;
         assembly {
             implementationReference := sload(position)
         }
