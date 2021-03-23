@@ -202,10 +202,18 @@ describe('LoanToken', () => {
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
     })
 
-    it('sets status to Settled if whole debt has been returned', async () => {
+    it('sets status to Settled if whole debt has been returned after term has passed', async () => {
       await loanToken.fund()
       await withdraw(borrower)
       await timeTravel(provider, yearInSeconds)
+      await tusd.mint(loanToken.address, parseEth(1100))
+      await loanToken.close()
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
+    })
+
+    it('sets status to Settled if whole debt has been returned before term has passed', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
       await tusd.mint(loanToken.address, parseEth(1100))
       await loanToken.close()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
@@ -215,14 +223,19 @@ describe('LoanToken', () => {
       await loanToken.fund()
       await withdraw(borrower)
       await timeTravel(provider, yearInSeconds + dayInSeconds / 2)
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Borrower can still pay the loan back')
+      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
       await tusd.mint(loanToken.address, parseEth(1100))
       await loanToken.close()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
     })
 
     it('reverts when closing not funded loan', async () => {
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Current status should be Funded')
+      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
+    })
+
+    it('reverts when closing right after funding', async () => {
+      await loanToken.fund()
+      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
     })
 
     it('reverts when closing ongoing loan', async () => {
@@ -236,7 +249,7 @@ describe('LoanToken', () => {
       await loanToken.fund()
       await timeTravel(provider, defaultedLoanCloseTime)
       await loanToken.close()
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Current status should be Funded')
+      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
     })
 
     it('emits event', async () => {
@@ -596,12 +609,12 @@ describe('LoanToken', () => {
       loanTokenBalance = await loanToken.balanceOf(lender.address)
     })
 
-    it('returns proper value at the beginning of the loan', async () => {
+    it('beginning of the loan', async () => {
       expectScaledCloseTo(await loanToken.value(loanTokenBalance), parseEth(1000))
       expectScaledCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1000).div(2))
     })
 
-    it('returns proper value in the middle of the loan', async () => {
+    it('middle of the loan', async () => {
       await timeTravel(provider, averageMonthInSeconds * 6)
       expectScaledCloseTo(await loanToken.value(loanTokenBalance), parseEth(1050))
       expectScaledCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1050).div(2))
@@ -610,10 +623,16 @@ describe('LoanToken', () => {
       expectScaledCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1075).div(2))
     })
 
-    it('returns proper value at the end of the loan', async () => {
+    it('end of the loan', async () => {
       await timeTravel(provider, yearInSeconds)
       expectScaledCloseTo(await loanToken.value(loanTokenBalance), parseEth(1100))
       expectScaledCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1100).div(2))
+    })
+
+    it('loan fully repaid and closed before term', async () => {
+      await tusd.mint(loanToken.address, parseEth(1100))
+      await loanToken.close()
+      expect(await loanToken.value(loanTokenBalance)).to.be.equal(parseEth(1100))
     })
   })
 })

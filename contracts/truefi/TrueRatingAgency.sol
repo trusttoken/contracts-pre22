@@ -127,7 +127,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
-     * @dev Only loans in Running state
+     * @dev Only loans not in Running state
      */
     modifier onlyNotRunningLoans(address id) {
         require(status(id) != LoanStatus.Running, "TrueRatingAgency: Loan is currently running");
@@ -480,7 +480,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         uint256 passedTime = block.timestamp.sub(ILoanToken(id).start());
 
         // check time of loan
-        if (passedTime > totalTime) {
+        if (passedTime > totalTime || ILoanToken(id).status() == ILoanToken.Status.Settled) {
             passedTime = totalTime;
         }
         // calculate how many tokens user can claim
