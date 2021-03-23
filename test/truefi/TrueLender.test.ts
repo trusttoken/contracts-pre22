@@ -583,6 +583,15 @@ describe('TrueLender', () => {
       expectScaledCloseTo(await lender.value(), parseEth(35e5))
     })
 
+    it('one loan closed early, second running', async () => {
+      await lender.fund(firstLoanToken.address)
+      await lender.fund(secondLoanToken.address)
+      await timeTravel(provider, averageMonthInSeconds * 6)
+      await tusd.mint(firstLoanToken.address, parseEth(12e5))
+      await firstLoanToken.close()
+      expectScaledCloseTo(await lender.value(), parseEth(33e5))
+    })
+
     it('returns correct value after some loans were distributed', async () => {
       await lender.fund(firstLoanToken.address)
       await lender.fund(secondLoanToken.address)
