@@ -59,12 +59,12 @@ jobs:
           at: .
       - run: yarn test:truefi
   test-truefi2:
-  docker:
-    - image: circleci/node:12.19.0
-  steps:
-    - attach_workspace:
-        at: .
-    - run: yarn test:truefi2
+    docker:
+      - image: circleci/node:12.19.0
+    steps:
+      - attach_workspace:
+          at: .
+      - run: yarn test:truefi2
 
   upgrade:
     docker:
