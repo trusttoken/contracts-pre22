@@ -268,6 +268,40 @@ describe('StkTruToken', () => {
         await expect(stkToken.claimRewards(constants.AddressZero, { gasLimit: 3000000 })).to.be.revertedWith('Token not supported for rewards')
       })
     })
+
+    describe('Claim Restake TRU', () => {
+      beforeEach(async () => {
+        await stkToken.stake(amount, { gasLimit: 3000000 })
+        await timeTravel(provider, DAY)
+        await tfusd.mint(stkToken.address, parseEth(1), { gasLimit: 3000000 })
+      })
+
+      it('emits Claim event', async () => {
+        await expect(stkToken.claimRestake()).to.emit(stkToken, 'Claim')
+      })
+
+      it('emits Stake event', async () => {
+        await expect(stkToken.claimRestake()).to.emit(stkToken, 'Stake')
+      })
+
+      it('clears claimable balance', async () => {
+        expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(1000))
+        await stkToken.claimRestake()
+        expect(await stkToken.claimable(owner.address, tru.address)).to.equal(0)
+      })
+
+      it('stakes claimable balance', async () => {
+        expect(await stkToken.stakeSupply()).to.equal(amount)
+        await stkToken.claimRestake()
+        expectScaledCloseTo(await stkToken.stakeSupply(), amount.add(parseTRU(1000)))
+      })
+
+      it('does not affect owner address balance', async () => {
+        const balanceBefore = await tru.balanceOf(owner.address)
+        await stkToken.claimRestake()
+        expect(await tru.balanceOf(owner.address)).to.equal(balanceBefore)
+      })
+    })
   })
 
   describe('Cooldown', () => {
