@@ -32,7 +32,7 @@ describe('TrueGold', () => {
     })
 
     it('symbol', async () => {
-      expect(await token.symbol()).to.eq('TGLD')
+      expect(await token.symbol()).to.eq('TGOLD')
     })
 
     it('decimals', async () => {

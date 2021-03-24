@@ -27,7 +27,7 @@ contract TrueGold is Initializable, Ownable, TrueMintableBurnable, Reclaimable {
     }
 
     function symbol() public override pure returns (string memory) {
-        return "TGLD";
+        return "TGOLD";
     }
 
     function setBurnBounds(uint256 minAmount, uint256 maxAmount) public override onlyOwner {
