@@ -8,7 +8,7 @@ import {Ownable} from "../common/UpgradeableOwnable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueLender} from "./interface/ITrueLender.sol";
+import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ABDKMath64x64} from "../truefi/Log.sol";
 
 /**
@@ -36,10 +36,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
 
     uint8 public constant VERSION = 0;
 
-    IERC20 public token;
+    IERC20 public override token;
 
     ITrueStrategy public strategy;
-    ITrueLender public lender;
+    ITrueLender2 public lender;
 
     // fee for deposits
     uint256 public joiningFee;
@@ -182,7 +182,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @return Value of loans in pool
      */
     function loansValue() public view returns (uint256) {
-        return lender.value();
+        return lender.value(this);
     }
 
     /**
@@ -342,7 +342,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @dev Remove liquidity from curve if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount, uint256 fee) external onlyLender {
+    function borrow(uint256 amount, uint256 fee) override external onlyLender {
         require(amount <= liquidValue(), "");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);
@@ -358,7 +358,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @dev repay debt by transferring tokens to the contract
      * @param currencyAmount amount to repay
      */
-    function repay(uint256 currencyAmount) external onlyLender {
+    function repay(uint256 currencyAmount) external override onlyLender {
         require(token.transferFrom(msg.sender, address(this), currencyAmount));
         emit Repaid(msg.sender, currencyAmount);
     }
