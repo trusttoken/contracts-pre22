@@ -18,6 +18,7 @@ describe('PoolFactory', () => {
   let factory: PoolFactory
   let token1: MockErc20Token
   let token2: MockErc20Token
+  let stakingToken: MockErc20Token
 
   beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet] = wallets
@@ -27,14 +28,19 @@ describe('PoolFactory', () => {
     factory = await new PoolFactoryFactory(owner).deploy()
     token1 = await new MockErc20TokenFactory(owner).deploy()
     token2 = await new MockErc20TokenFactory(owner).deploy()
+    stakingToken = await new MockErc20TokenFactory(owner).deploy()
 
-    await factory.initialize(implementationReference.address)
+    await factory.initialize(implementationReference.address, stakingToken.address)
   })
 
   describe('Initializer', () => {
     it('sets pool implementation address', async () => {
       expect(await factory.poolImplementationReference()).to.eq(implementationReference.address)
       expect(await implementationReference.attach(await factory.poolImplementationReference()).implementation()).to.eq(poolImplementation.address)
+    })
+
+    it('sets staking token address', async () => {
+      expect(await factory.stakingToken()).to.eq(stakingToken.address)
     })
   })
 
