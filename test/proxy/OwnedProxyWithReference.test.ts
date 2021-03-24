@@ -112,7 +112,7 @@ describe('OwnedProxyWithReference', () => {
     const tester = await new StringReturnFactory(owner).deploy()
     await implementationReference.setImplementation(tester.address)
     // 512 byte hexadec
-    const bigString = '8feb3c25debc66af907218820744b46753ce0dae37bc3e9af529957ef77a0065f976897f3ae4559a828d8ee9a45f69c6173664733376f8efbad7e91b2e274e777ec03871fe4f8439c3c5417102d0da45938820e10c727e8e9446e2cf519e8ea673c1b844cddfe35465c34018e30a164c6d8186a51a4000a5d92522920bcd40f0823eec3812706f0c6970fa0d0c3e0e146f034f7c05e68ab061f8842025ea419b772a738415c61fe6e08268c22586364066b9bfcad31e32c6fb335a55f5b27c1d1a758b437c70de955a74b80336c31d5a1f252f1d19be1789920529d99b6abe4e9143f7a89c9313cf16f66a6415f9a18f0fa93e093c99c14bf984cecc21a32f61'
+    const bigString = 'a'.repeat(256) + 'b'.repeat(256)
     expect(await tester.attach(proxy.address).reflect(bigString)).to.eq(bigString)
   })
 })
