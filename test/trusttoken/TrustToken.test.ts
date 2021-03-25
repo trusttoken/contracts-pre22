@@ -141,7 +141,7 @@ describe('TrustToken', () => {
       describe('when the recipient is the TRU contract itself', () => {
         it('reverts', async () => {
           await expect(transfer(initialHolder, trustToken.address, parseTRU(1000)))
-            .to.be.revertedWith('TrustToken: Cant transfer to the TRU contract itself')
+            .to.be.revertedWith('TrustToken: Can\'t transfer to the TRU contract itself')
         })
       })
     })

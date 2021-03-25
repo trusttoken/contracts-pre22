@@ -22,7 +22,7 @@ contract TrustToken is TimeLockedToken {
         uint256 _amount
     ) internal override {
         // check if recipient is not the TRU contract itself
-        require(_to != address(this), "TrustToken: Cant transfer to the TRU contract itself");
+        require(_to != address(this), "TrustToken: Can't transfer to the TRU contract itself");
         super._transfer(_from, _to, _amount);
     }
 
