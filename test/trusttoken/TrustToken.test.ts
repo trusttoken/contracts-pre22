@@ -137,6 +137,13 @@ describe('TrustToken', () => {
             .to.be.revertedWith('insufficient balance')
         })
       })
+
+      describe('when the recipient is the TRU contract itself', () => {
+        it('reverts', async () => {
+          await expect(transfer(initialHolder, trustToken.address, parseTRU(1)))
+            .to.be.revertedWith('cant transfer to the TRU contract itself')
+        })
+      })
     })
 
     describe('transferFrom', () => {

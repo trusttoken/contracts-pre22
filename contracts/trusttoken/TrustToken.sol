@@ -26,6 +26,14 @@ contract TrustToken is TimeLockedToken {
         initalized = true;
     }
 
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        // check if recipient is not the TRU contract itself
+        require(recipient != address(this), "cant transfer to the TRU contract itself");
+
+        super.transfer(recipient, amount);
+        return true;
+    }
+
     /**
      * @dev mint TRU
      * Can never mint more than MAX_SUPPLY = 1.45 billion
