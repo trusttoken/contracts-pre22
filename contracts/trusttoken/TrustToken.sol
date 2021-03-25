@@ -16,6 +16,16 @@ contract TrustToken is TimeLockedToken {
 
     uint256 constant MAX_SUPPLY = 145000000000000000;
 
+    function _transfer(
+        address _from,
+        address _to,
+        uint256 _amount
+    ) internal override {
+        // check if recipient is not the TRU contract itself
+        require(_to != address(this), "TrustToken: Cant transfer to the TRU contract itself");
+        super._transfer(_from, _to, _amount);
+    }
+
     /**
      * @dev initialize trusttoken and give ownership to sender
      * This is necessary to set ownership for proxy
