@@ -103,7 +103,7 @@ describe('Timelock', () => {
         .to.be.eq(notAdmin.address)
     })
 
-    it('reverts if admin initialized and call come not from Timelock', async () => {
+    it('reverts if admin initialized and call does not come from Timelock', async () => {
       const connectedToAdmin = timelock.connect(admin)
       await connectedToAdmin.setPendingAdmin(notAdmin.address)
       expect(await timelock.admin_initialized())
