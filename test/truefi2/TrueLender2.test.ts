@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, DAY } from 'utils'
+import { beforeEachWithFixture, DAY, parseEth } from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
   ImplementationReferenceFactory,
@@ -23,6 +23,8 @@ describe('TrueLender2', () => {
   let borrower: Wallet
   let loan1: LoanToken2
   let loan2: LoanToken2
+  let pool1: TrueFiPool2
+  let pool2: TrueFiPool2
   let lender: TrueLender2
   let counterfeitPool: TrueFiPool2
 
@@ -47,14 +49,22 @@ describe('TrueLender2', () => {
     await poolFactory.createPool(token1.address)
     await poolFactory.createPool(token2.address)
 
-    const pool1Address = await poolFactory.pool(token1.address)
-    const pool2Address = await poolFactory.pool(token2.address)
-
+    const pool1 = TrueFiPool2Factory.connect(await poolFactory.pool(token1.address), owner)
+    const pool2 = TrueFiPool2Factory.connect(await poolFactory.pool(token2.address), owner)
+    await pool1.setLender(lender.address)
+    await pool2.setLender(lender.address)
     counterfeitPool = await deployContract(owner, TrueFiPool2Factory)
     await counterfeitPool.initialize(token1.address, owner.address)
+    await counterfeitPool.setLender(lender.address)
+    await token1.mint(owner.address, parseEth(1e7))
+    await token2.mint(owner.address, parseEth(1e7))
+    await token1.approve(pool1.address, parseEth(1e7))
+    await token2.approve(pool2.address, parseEth(1e7))
+    await pool1.join(parseEth(1e7))
+    await pool2.join(parseEth(1e7))
 
     loan1 = await deployContract(owner, LoanToken2Factory, [
-      pool1Address,
+      pool1.address,
       borrower.address,
       lender.address,
       AddressZero,
@@ -64,7 +74,7 @@ describe('TrueLender2', () => {
     ])
 
     loan2 = await deployContract(owner, LoanToken2Factory, [
-      pool2Address,
+      pool2.address,
       borrower.address,
       lender.address,
       AddressZero,

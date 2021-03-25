@@ -72,6 +72,12 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         stakingToken = _stakingToken;
     }
 
+    /// Temporary function to avoid merge conflicts
+    /// TODO use initializer
+    function setLender(ITrueLender2 _lender) external {
+        lender = _lender;
+    }
+
     /**
      * @dev Emitted when fee is changed
      * @param newFee New fee
@@ -163,6 +169,9 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @return Virtual liquid value of pool assets
      */
     function liquidValue() public view returns (uint256) {
+        if (address(strategy) == address(0)) {
+            return currencyBalance();
+        }
         return currencyBalance().add(strategy.value());
     }
 
@@ -343,7 +352,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param amount amount for lender to withdraw
      */
     function borrow(uint256 amount, uint256 fee) override external onlyLender {
-        require(amount <= liquidValue(), "");
+        require(amount <= liquidValue(), "TrueFiPool: Insufficient liquidity");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);
         }
