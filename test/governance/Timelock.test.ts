@@ -22,7 +22,7 @@ describe('Timelock', () => {
       await proxy.transferProxyOwnership(timelock.address)
       const block = await admin.provider.getBlock('latest')
       await timelock.queueTransaction(proxy.address, 0, 'claimProxyOwnership()', '0x', block.timestamp + 200000)
-      await timeTravel(admin.provider as any, 200000)
+      await timeTravel(admin.provider as any, 200100)
       await timelock.executeTransaction(proxy.address, 0, 'claimProxyOwnership()', '0x', block.timestamp + 200000)
       expect(await proxy.implementation()).to.not.equal(AddressZero)
       await timelock.emergencyPause(proxy.address)
