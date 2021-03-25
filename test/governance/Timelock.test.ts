@@ -22,7 +22,7 @@ describe('Timelock', () => {
     const block = await admin.provider.getBlock('latest')
     await timelock.queueTransaction(timelock.address, 0, signature, data, block.timestamp + 200100)
     await timeTravel(admin.provider as any, 200200)
-    await timelock.executeTransaction(timelock.address, 0, signature, data, block.timestamp + 200100)
+    return timelock.executeTransaction(timelock.address, 0, signature, data, block.timestamp + 200100)
   }
 
   describe('emergency pause', () => {
@@ -47,7 +47,8 @@ describe('Timelock', () => {
 
   describe('setDelay', async () => {
     it('can only be called by itself', async () => {
-      await expect(timelock.setDelay(10)).to.be.revertedWith('Timelock::setDelay: Call must come from Timelock.')
+      await expect(timelock.setDelay(10))
+        .to.be.revertedWith('Timelock::setDelay: Call must come from Timelock.')
     })
 
     it('changes delay', async () => {
@@ -65,6 +66,50 @@ describe('Timelock', () => {
       const tooBigDelay = 31 * 60 * 60 * 24 // 31 day
       await expect(queueAndExecute('setDelay(uint256)', [tooBigDelay]))
         .to.be.revertedWith('Timelock::executeTransaction: Transaction execution reverted.')
+    })
+  })
+
+  describe('setPendingAdmin', async () => {
+    it('sets pending admin', async () => {
+      const connectedToAdmin = timelock.connect(admin)
+      expect(await timelock.admin_initialized())
+        .to.be.eq(false)
+      await expect(connectedToAdmin.setPendingAdmin(notAdmin.address))
+        .to.emit(timelock, 'NewPendingAdmin')
+        .withArgs(notAdmin.address)
+      expect(await timelock.admin_initialized())
+        .to.be.eq(true)
+      expect(await timelock.pendingAdmin())
+        .to.be.eq(notAdmin.address)
+    })
+
+    it('reverts if first call come not from admin', async () => {
+      const connectedToNotAdmin = timelock.connect(notAdmin)
+      await expect(connectedToNotAdmin.setPendingAdmin(notAdmin.address))
+        .to.be.revertedWith('Timelock::setPendingAdmin: First call must come from admin.')
+    })
+
+    it('sets pending admin if was already set before', async () => {
+      const connectedToAdmin = timelock.connect(admin)
+      await connectedToAdmin.setPendingAdmin(admin.address)
+      expect(await timelock.admin_initialized())
+        .to.be.eq(true)
+      await expect(queueAndExecute('setPendingAdmin(address)', [notAdmin.address]))
+        .to.emit(timelock, 'NewPendingAdmin')
+        .withArgs(notAdmin.address)
+      expect(await timelock.admin_initialized())
+        .to.be.eq(true)
+      expect(await timelock.pendingAdmin())
+        .to.be.eq(notAdmin.address)
+    })
+
+    it('reverts if admin initialized and call come not from Timelock', async () => {
+      const connectedToAdmin = timelock.connect(admin)
+      await connectedToAdmin.setPendingAdmin(notAdmin.address)
+      expect(await timelock.admin_initialized())
+        .to.be.eq(true)
+      await expect(connectedToAdmin.setPendingAdmin(notAdmin.address))
+        .to.be.revertedWith('Timelock::setPendingAdmin: Call must come from Timelock.')
     })
   })
 })
