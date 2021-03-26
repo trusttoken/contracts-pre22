@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { ContractTransaction, providers, Signer, utils, Wallet } from 'ethers'
+import { ContractTransaction, providers, utils, Wallet } from 'ethers'
 import { solidity } from 'ethereum-waffle'
 
 import { beforeEachWithFixture, parseTRU, skipBlocksWithProvider, timeTravel } from 'utils'
@@ -11,9 +11,7 @@ import {
   TimelockFactory,
   TrustToken,
   TrustTokenFactory,
-  VoteSignatureHelperFactory,
 } from 'contracts'
-import { deployContract } from 'scripts/utils/deployContract'
 
 use(solidity)
 
