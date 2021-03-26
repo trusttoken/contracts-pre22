@@ -45,6 +45,53 @@ describe('Timelock', () => {
     })
   })
 
+  describe('setPauser', async () => {
+    describe('if admin_initialized is not set', async () => {
+      it('sets pauser once', async () => {
+        const connectedToAdmin = timelock.connect(admin)
+        await expect(connectedToAdmin.setPauser(notAdmin.address))
+          .to.emit(timelock, 'NewPauser')
+          .withArgs(notAdmin.address)
+        expect(await timelock.pauser()).to.be.eq(notAdmin.address)
+      })
+
+      it('sets pauser repeatedly', async () => {
+        const connectedToAdmin = timelock.connect(admin)
+        await connectedToAdmin.setPauser(notAdmin.address)
+        expect(await timelock.pauser()).to.be.eq(notAdmin.address)
+        await connectedToAdmin.setPauser(admin.address)
+        expect(await timelock.pauser()).to.be.eq(admin.address)
+        await connectedToAdmin.setPauser(notAdmin.address)
+        expect(await timelock.pauser()).to.be.eq(notAdmin.address)
+      })
+
+      it('reverts if caller is not admin', async () => {
+        const connectedNotToAdmin = timelock.connect(notAdmin)
+        await expect(connectedNotToAdmin.setPauser(admin.address))
+          .to.be.revertedWith('Timelock::setPauser: First call must come from admin.')
+      })
+    })
+
+    describe('if admin_initialized is set', async () => {
+      it('sets pauser if caller is timelock', async () => {
+        const connectedToAdmin = timelock.connect(admin)
+        await connectedToAdmin.setPendingAdmin(admin.address)
+        expect(await timelock.admin_initialized())
+          .to.be.eq(true)
+        await expect(queueAndExecute('setPauser(address)', [notAdmin.address]))
+          .to.emit(timelock, 'NewPauser')
+          .withArgs(notAdmin.address)
+      })
+
+      it('reverts if caller is not timelock', async () => {
+        const connectedToAdmin = timelock.connect(admin)
+        await connectedToAdmin.setPendingAdmin(admin.address)
+        await expect(connectedToAdmin.setPauser(notAdmin.address))
+          .to.be.revertedWith('Timelock::setPauser: Call must come from Timelock.')
+      })
+    })
+  })
+
   describe('setDelay', async () => {
     it('can only be called by itself', async () => {
       await expect(timelock.setDelay(10))
