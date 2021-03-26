@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { BigNumber, ContractTransaction, providers, Signer, utils, Wallet } from 'ethers'
+import { BigNumber, ContractTransaction, providers, utils, Wallet } from 'ethers'
 import { beforeEachWithFixture, parseTRU, skipBlocksWithProvider, timeTravel } from 'utils'
 import { AddressZero } from '@ethersproject/constants'
 import { solidity } from 'ethereum-waffle'
@@ -11,9 +11,7 @@ import {
   TimelockFactory,
   TrustToken,
   TrustTokenFactory,
-  VoteSignatureHelperFactory,
 } from 'contracts'
-import { deployContract } from 'scripts/utils/deployContract'
 
 use(solidity)
 
