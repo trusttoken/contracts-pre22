@@ -69,6 +69,27 @@ describe('Timelock', () => {
     })
   })
 
+  describe('acceptAdmin', async () => {
+    it('accepts the pending admin as the admin address', async () => {
+      const connectedToAdmin = timelock.connect(admin)
+      await connectedToAdmin.setPendingAdmin(notAdmin.address)
+      const connectedToNotAdmin = timelock.connect(notAdmin)
+      await expect(connectedToNotAdmin.acceptAdmin())
+        .to.emit(timelock, 'NewAdmin')
+        .withArgs(notAdmin.address)
+      expect(await timelock.admin())
+        .to.be.eq(notAdmin.address)
+      expect(await timelock.pendingAdmin())
+        .to.be.eq('0x0000000000000000000000000000000000000000')
+    })
+
+    it('reverts if the caller is not pending admin', async () => {
+      const connectedToAdmin = timelock.connect(admin)
+      await expect(connectedToAdmin.acceptAdmin())
+        .to.be.revertedWith('Timelock::acceptAdmin: Call must come from pendingAdmin')
+    })
+  })
+
   describe('setPendingAdmin', async () => {
     it('sets pending admin', async () => {
       const connectedToAdmin = timelock.connect(admin)
