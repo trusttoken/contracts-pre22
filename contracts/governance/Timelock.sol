@@ -67,9 +67,9 @@ contract Timelock is ClaimableContract {
 
     function setPauser(address _pauser) external {
         if (admin_initialized) {
-            require(msg.sender == address(this), "Timelock::setPendingAdmin: Call must come from Timelock.");
+            require(msg.sender == address(this), "Timelock::setPauser: Call must come from Timelock.");
         } else {
-            require(msg.sender == admin, "Timelock::setPendingAdmin: First call must come from admin.");
+            require(msg.sender == admin, "Timelock::setPauser: First call must come from admin.");
         }
         pauser = _pauser;
 
