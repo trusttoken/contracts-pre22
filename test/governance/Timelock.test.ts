@@ -47,7 +47,7 @@ describe('Timelock', () => {
 
   describe('setDelay', async () => {
     it('can only be called by itself', async () => {
-      expect(await timelock.setDelay(10)).to.be.revertedWith('Timelock::setDelay: Call must come from Timelock.')
+      await expect(timelock.setDelay(10)).to.be.revertedWith('Timelock::setDelay: Call must come from Timelock.')
     })
 
     it('changes delay', async () => {
