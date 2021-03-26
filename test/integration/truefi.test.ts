@@ -70,9 +70,11 @@ describe('TrueFi', () => {
       '_uniRouter',
       'joiningFee',
       'claimableFees',
-      '_stakeToken',
       'fundsManager',
+      '_stakeToken',
       'isJoiningPaused',
+      // '_truOracle',
+      // '_crvOracle',
       // '_1inchExchange', not yet deployed
     ])
   })
