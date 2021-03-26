@@ -9,14 +9,6 @@ import "../TrueFiPool.sol";
  * initializer was removed from TrueFiPool to reduce the contract size
  */
 contract TestTrueFiPool is TrueFiPool {
-    /**
-     * @dev Initialize pool
-     * @param __curvePool curve pool address
-     * @param __curveGauge curve gauge address
-     * @param __currencyToken curve pool underlying token
-     * @param __lender TrueLender address
-     * @param __uniRouter Uniswap router
-     */
     function initialize(
         ICurvePool __curvePool,
         ICurveGauge __curveGauge,
@@ -29,7 +21,6 @@ contract TestTrueFiPool is TrueFiPool {
     ) public initializer {
         ERC20.__ERC20_initialize("TrueFi LP", "TFI-LP");
         Ownable.initialize();
-
         _curvePool = __curvePool;
         _curveGauge = __curveGauge;
         _currencyToken = __currencyToken;
