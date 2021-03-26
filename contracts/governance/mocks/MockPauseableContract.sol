@@ -5,7 +5,6 @@ pragma solidity 0.6.10;
 import {IPauseableContract} from "../interface/IPauseableContract.sol";
 
 contract MockPauseableContract is IPauseableContract {
-
     bool public pauseStatus;
 
     event PauseStatusChanged(bool pauseStatus);

@@ -8,7 +8,7 @@ contract MockTimeLock is Timelock {
      * @param admin_ The address of admin
      * @param delay_ The timestamp of delay for timelock contract
      */
-    function mockInitialize(address admin_, uint delay_) external {
+    function mockInitialize(address admin_, uint256 delay_) external {
         require(!initalized, "Already initialized");
         admin = admin_;
         pauser = admin_;

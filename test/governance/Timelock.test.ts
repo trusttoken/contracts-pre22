@@ -9,7 +9,6 @@ import { solidity } from 'ethereum-waffle'
 
 use(solidity)
 
-
 describe('Timelock', () => {
   let admin: Wallet, notAdmin: Wallet
   let timelock: Timelock
@@ -50,23 +49,17 @@ describe('Timelock', () => {
     })
 
     it('cannot pause timelock', async () => {
-      const proxy = await deployContract(admin, OwnedUpgradeabilityProxyFactory)
       await expect(timelock.connect(admin).emergencyPause(timelock.address)).to.be.revertedWith('Timelock::emergencyPause: Cannot pause Timelock.')
     })
 
     it('cannot pause admin', async () => {
-      const proxy = await deployContract(admin, OwnedUpgradeabilityProxyFactory)
       await expect(timelock.connect(admin).emergencyPause(admin.address)).to.be.revertedWith('Timelock:emergencyPause: Cannot pause admin.')
     })
 
     it('pause and unpause deposits', async () => {
       const pauseable = await deployContract(admin, MockPauseableContractFactory)
-      const block = await admin.provider.getBlock('latest')
-      const one = '0x000000000000000000'
-      await timelock.queueTransaction(pauseable.address, 0, 'setPauseStatus()', '[1]', block.timestamp + 200000)
-      await timeTravel(admin.provider as any, 200000)
-      await timelock.executeTransaction(pauseable.address, 0, 'setPauseStatus()', '[1]', block.timestamp + 200000)
-      expect(await pauseable.pauseStatus()).to.equal(1)
+      await timelock.setPauseStatus(pauseable.address, true)
+      expect(await pauseable.pauseStatus()).to.be.true
     })
   })
 
