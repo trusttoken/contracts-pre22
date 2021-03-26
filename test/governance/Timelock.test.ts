@@ -1,9 +1,12 @@
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import { beforeEachWithFixture, timeTravel } from 'utils'
 import { utils, Wallet } from 'ethers'
 import { deployContract } from 'scripts/utils/deployContract'
 import { OwnedUpgradeabilityProxyFactory, Timelock, TimelockFactory } from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
+import { solidity } from 'ethereum-waffle'
+
+use(solidity)
 
 describe('Timelock', () => {
   let admin: Wallet, notAdmin: Wallet
