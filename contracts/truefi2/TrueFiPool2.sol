@@ -334,9 +334,6 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @param minTokenAmount minimum amount of tokens to withdraw
      */
     function pull(uint256 minTokenAmount) external onlyOwner {
-        // unstake in gauge
-        ensureEnoughTokensAreAvailable(minTokenAmount);
-
         strategy.withdraw(minTokenAmount);
 
         emit Pulled(minTokenAmount);
