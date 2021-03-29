@@ -173,4 +173,47 @@ describe('Timelock', () => {
         .to.be.revertedWith('Timelock::setPendingAdmin: Call must come from Timelock.')
     })
   })
+
+  describe('queueTransaction', async () => {
+    let target: string
+    let value: string
+    let signature: string
+    let data: string
+    let block
+
+    beforeEach(async () => {
+      target = timelock.address
+      value = '0'
+      signature = 'setPendingAdmin(address)'
+      data = (new utils.AbiCoder()).encode(['address'], [notAdmin.address])
+      block = await admin.provider.getBlock('latest')
+    })
+
+    describe('reverts if', async () => {
+      it('caller is not admin', async () => {
+        await expect(timelock.connect(notAdmin).queueTransaction(target, value, signature, data, 0))
+          .to.be.revertedWith('Timelock::queueTransaction: Call must come from admin.')
+      })
+
+      it('delay is not satisfied', async () => {
+        await expect(timelock.connect(admin).queueTransaction(target, value, signature, data, block.timestamp + 199_990))
+          .to.be.revertedWith('Timelock::queueTransaction: Estimated execution block must satisfy delay.')
+      })
+    })
+
+    it('queues transaction successfully', async () => {
+      const eta = block.timestamp + 200_010
+      const txHash = utils.keccak256((new utils.AbiCoder()).encode(
+        ['address', 'uint', 'string', 'bytes', 'uint'],
+        [target, value, signature, data, eta],
+      ))
+      expect(await timelock.queuedTransactions(txHash))
+        .to.be.false
+      await expect(timelock.connect(admin).queueTransaction(target, value, signature, data, eta))
+        .to.emit(timelock, 'QueueTransaction')
+        .withArgs(txHash, target, value, signature, data, eta)
+      expect(await timelock.queuedTransactions(txHash))
+        .to.be.true
+    })
+  })
 })
