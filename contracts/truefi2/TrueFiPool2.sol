@@ -63,7 +63,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
         ERC20 _currencyToken,
         ERC20 _stakingToken,
         address __owner
-    ) external initializer {
+    ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _currencyToken.name()), concat("TFI-", _currencyToken.symbol()));
         Ownable.initialize();
         transferOwnership(__owner);

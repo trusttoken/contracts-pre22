@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {Ownable} from "../truefi/common/UpgradeableOwnable.sol";
+import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
 
