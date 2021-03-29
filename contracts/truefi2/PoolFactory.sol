@@ -51,6 +51,10 @@ contract PoolFactory is Ownable {
         _;
     }
 
+    /**
+     * @dev Throws if token is not whitelisted for creating new pool
+     * @param token Address of token to be checked in whitelist
+     */
     modifier onlyAllowed(address token) {
         require(isAllowed[token] == true, "PoolFactory: This token is not allowed to have a pool");
         _;
