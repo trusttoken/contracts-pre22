@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {ERC20} from "./../common/UpgradeableERC20.sol";
+import {ERC20} from "../../common/UpgradeableERC20.sol";
 import {ITrueFiPool} from "./../interface/ITrueFiPool.sol";
 
 contract MockStakingPool is ERC20 {

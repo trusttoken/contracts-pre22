@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {Initializable} from "./common/Initializable.sol";
+import {Initializable} from "../common/Initializable.sol";
 import {ITrueDistributor} from "./interface/ITrueDistributor.sol";
 import {ITrueFarm} from "./interface/ITrueFarm.sol";
 
