@@ -140,21 +140,14 @@ contract TrueLender2 is ITrueLender2, Ownable {
             require(msg.sender == owner(), "TrueLender: Only owner can reclaim from defaulted loan");
         }
 
-        // call redeem function on LoanToken
-        uint256 balanceBefore = pool.token().balanceOf(address(this));
-        loanToken.redeem(loanToken.balanceOf(address(this)));
-        uint256 balanceAfter = pool.token().balanceOf(address(this));
-
-        // gets reclaimed amount and pays back to pool
-        uint256 fundsReclaimed = balanceAfter.sub(balanceBefore);
-        pool.repay(fundsReclaimed);
-
-        // remove loan from loan array
+        // find the token, repay loan and remove loan from loan array
         ILoanToken2[] storage _loans = loansOnPool[pool];
         for (uint256 index = 0; index < _loans.length; index++) {
             if (_loans[index] == loanToken) {
                 _loans[index] = _loans[_loans.length - 1];
                 _loans.pop();
+
+                uint256 fundsReclaimed = _redeemAndRepay(loanToken, pool);
 
                 emit Reclaimed(address(pool), address(loanToken), fundsReclaimed);
                 return;
@@ -163,6 +156,17 @@ contract TrueLender2 is ITrueLender2, Ownable {
         // If we reach this, it means loanToken was not present in _loans array
         // This prevents invalid loans from being reclaimed
         revert("TrueLender: This loan has not been funded by the lender");
+    }
+
+    function _redeemAndRepay(ILoanToken2 loanToken, ITrueFiPool2 pool) internal returns (uint256 fundsReclaimed) {
+        // call redeem function on LoanToken
+        uint256 balanceBefore = pool.token().balanceOf(address(this));
+        loanToken.redeem(loanToken.balanceOf(address(this)));
+        uint256 balanceAfter = pool.token().balanceOf(address(this));
+
+        // gets reclaimed amount and pays back to pool
+        fundsReclaimed = balanceAfter.sub(balanceBefore);
+        pool.repay(fundsReclaimed);
     }
 
     /**
