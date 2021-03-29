@@ -15,7 +15,7 @@ export async function deployContract<C extends Contract> (
   args?: Parameters<C['deploy']>,
 ): Promise<C> {
   const factory = new Factory(deployer)
-  const contract = await factory.deploy(...(args ?? [] as any))
+  const contract = await factory.deploy(...(args || [] as any))
   await contract.deployed()
   return contract
 }
