@@ -4,17 +4,20 @@ import { deployContract } from 'scripts/utils/deployContract'
 import {
   ImplementationReferenceFactory,
   LoanToken2,
-  LoanToken2Factory, LoanToken2Json, MockErc20Token,
+  LoanToken2Factory,
+  LoanToken2Json,
+  MockErc20Token,
   MockErc20TokenFactory,
   PoolFactoryFactory,
-  StkTruTokenJson, TrueFiPool2,
+  StkTruTokenJson,
+  TrueFiPool2,
   TrueFiPool2Factory,
-  TrueLender2,
-  TrueLender2Factory,
+  TestTrueLender,
+  TestTrueLenderFactory,
 } from 'contracts'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
-import { Contract, Wallet } from 'ethers'
+import { Wallet } from 'ethers'
 
 use(solidity)
 
@@ -26,7 +29,7 @@ describe('TrueLender2', () => {
   let loan2: LoanToken2
   let pool1: TrueFiPool2
   let pool2: TrueFiPool2
-  let lender: TrueLender2
+  let lender: TestTrueLender
   let counterfeitPool: TrueFiPool2
   let token1: MockErc20Token
   let mockStake: MockContract
@@ -36,12 +39,12 @@ describe('TrueLender2', () => {
     const poolFactory = await deployContract(owner, PoolFactoryFactory)
     const poolImplementation = await deployContract(owner, TrueFiPool2Factory)
     const implementationReference = await deployContract(owner, ImplementationReferenceFactory, [poolImplementation.address])
-    await poolFactory.initialize(implementationReference.address)
+    await poolFactory.initialize(implementationReference.address, AddressZero)
 
     mockStake = await deployMockContract(owner, StkTruTokenJson.abi)
     await mockStake.mock.payFee.returns()
 
-    lender = await deployContract(owner, TrueLender2Factory)
+    lender = await deployContract(owner, TestTrueLenderFactory)
     await lender.initialize(mockStake.address, poolFactory.address)
 
     token1 = await deployContract(owner, MockErc20TokenFactory)
@@ -57,7 +60,7 @@ describe('TrueLender2', () => {
     await pool1.setLender(lender.address)
     await pool2.setLender(lender.address)
     counterfeitPool = await deployContract(owner, TrueFiPool2Factory)
-    await counterfeitPool.initialize(token1.address, owner.address)
+    await counterfeitPool.initialize(token1.address, AddressZero, owner.address)
     await counterfeitPool.setLender(lender.address)
     await token1.mint(owner.address, parseEth(1e7))
     await token2.mint(owner.address, parseEth(1e7))
@@ -178,10 +181,10 @@ describe('TrueLender2', () => {
   })
 
   describe('Reclaiming', () => {
-    const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
-    const availableLoanTokens = 1500
-    const payBack = async (token: MockErc20Token, loan: Contract) => {
-      await token.mint(loan.address, parseEth(1))
+    const payBack = async (token: MockErc20Token, loan: LoanToken2) => {
+      const balance = await loan.balance()
+      const debt = await loan.debt()
+      await token.mint(loan.address, debt.sub(balance))
     }
 
     beforeEach(async () => {
@@ -210,31 +213,100 @@ describe('TrueLender2', () => {
     })
 
     it('repays funds from the pool', async () => {
-      await lender.fund(mockLoanToken.address)
-      await lender.reclaim(mockLoanToken.address)
-      await expect('repay').to.be.calledOnContract(mockPool)
+      await payBack(token1, loan1)
+      await loan1.close()
+      await expect(lender.reclaim(loan1.address))
+        .to.emit(token1, 'Transfer')
+        .withArgs(lender.address, pool1.address, 100002)
     })
 
     it('defaulted loans can only be reclaimed by owner', async () => {
-      await mockLoanToken.mock.status.returns(4)
-      await expect(lender.connect(otherWallet).reclaim(mockLoanToken.address))
+      await timeTravel(provider, DAY * 3)
+      await loan1.close()
+      await expect(lender.connect(borrower).reclaim(loan1.address))
         .to.be.revertedWith('TrueLender: Only owner can reclaim from defaulted loan')
     })
 
     it('emits a proper event', async () => {
-      await lender.fund(mockLoanToken.address)
-      await expect(lender.reclaim(mockLoanToken.address))
+      await payBack(token1, loan1)
+      await loan1.close()
+      await expect(lender.reclaim(loan1.address))
         .to.emit(lender, 'Reclaimed')
+        .withArgs(pool1.address, loan1.address, 100002)
     })
 
-    it('removes loan from the array', async () => {
-      await tusd.mint(lender.address, fee.mul(2)) // mockPool won't do it
+    describe('Removes loan from array', () => {
+      let newLoan1: LoanToken2
+      beforeEach(async () => {
+        await payBack(token1, loan1)
+        await loan1.close()
+        newLoan1 = await deployContract(owner, LoanToken2Factory, [
+          pool1.address,
+          borrower.address,
+          lender.address,
+          AddressZero,
+          100000,
+          DAY,
+          100,
+        ])
+        await lender.connect(borrower).fund(newLoan1.address)
+        await lender.connect(borrower).fund(loan2.address)
+      })
 
-      await lender.fund(mockLoanToken.address)
-      await lender.fund(mockLoanToken.address)
-      expect(await lender.loans()).to.deep.equal([mockLoanToken.address, mockLoanToken.address])
-      await lender.reclaim(mockLoanToken.address)
-      expect(await lender.loans()).to.deep.equal([mockLoanToken.address])
+      it('removes oldest loan from the array', async () => {
+        expect(await lender.loans(pool1.address)).to.deep.equal([loan1.address, newLoan1.address])
+        await lender.reclaim(loan1.address)
+        expect(await lender.loans(pool1.address)).to.deep.equal([newLoan1.address])
+      })
+
+      it('removes newest loan from the array', async () => {
+        await payBack(token1, newLoan1)
+        await newLoan1.close()
+
+        expect(await lender.loans(pool1.address)).to.deep.equal([loan1.address, newLoan1.address])
+        await lender.reclaim(newLoan1.address)
+        expect(await lender.loans(pool1.address)).to.deep.equal([loan1.address])
+      })
+
+      it('preserves loans for other pools', async () => {
+        await lender.reclaim(loan1.address)
+        expect(await lender.loans(pool2.address)).to.deep.equal([loan2.address])
+      })
+    })
+  })
+
+  describe('Distribute', () => {
+    const loanTokens: LoanToken2[] = []
+
+    beforeEach(async () => {
+      for (let i = 0; i < 5; i++) {
+        const newLoan1 = await deployContract(owner, LoanToken2Factory, [
+          pool1.address,
+          borrower.address,
+          lender.address,
+          AddressZero,
+          100000,
+          DAY,
+          100,
+        ])
+
+        loanTokens.push(newLoan1)
+        await lender.connect(borrower).fund(newLoan1.address)
+      }
+    })
+
+    it('sends all loan tokens in the same proportion as numerator/denominator', async () => {
+      await expect(lender.testDistribute(borrower.address, 2, 5, pool1.address))
+        .to.emit(loanTokens[0], 'Transfer')
+        .withArgs(lender.address, borrower.address, Math.floor(100002 * 2 / 5))
+        .and.to.emit(loanTokens[1], 'Transfer')
+        .withArgs(lender.address, borrower.address, Math.floor(100002 * 2 / 5))
+        .and.to.emit(loanTokens[2], 'Transfer')
+        .withArgs(lender.address, borrower.address, Math.floor(100002 * 2 / 5))
+        .and.to.emit(loanTokens[3], 'Transfer')
+        .withArgs(lender.address, borrower.address, Math.floor(100002 * 2 / 5))
+        .and.to.emit(loanTokens[4], 'Transfer')
+        .withArgs(lender.address, borrower.address, Math.floor(100002 * 2 / 5))
     })
   })
 })
