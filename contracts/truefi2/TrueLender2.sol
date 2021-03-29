@@ -11,6 +11,12 @@ import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 
+/**
+ * @title TrueLender v2.0
+ * @dev Loans management helper
+ * This contract is a bridge that helps to transfer funds from pool to the loans and back
+ * TrueLender holds all LoanTokens and may distribute them on pool exits
+ */
 contract TrueLender2 is ITrueLender2, Ownable {
     using SafeMath for uint256;
 
@@ -88,10 +94,18 @@ contract TrueLender2 is ITrueLender2, Ownable {
     }
 
     /**
-     * @dev Fund a loan which meets the strategy requirements
+     * @dev Fund a loan
+     * LoanToken should be created by the LoanFactory over the pool
+     * than was also created by the PoolFactory.
+     * Method should be called by the loan borrower
+     *
+     * When called, lender takes funds from the pool, gives it to the loan and holds all LoanTokens
+     * Origination fee is transferred to the stake
+     *
      * @param loanToken LoanToken to fund
      */
     function fund(ILoanToken2 loanToken) external {
+        // TODO add check of
         require(msg.sender == loanToken.borrower(), "TrueLender: Sender is not borrower");
         ITrueFiPool2 pool = loanToken.pool();
 
@@ -114,7 +128,7 @@ contract TrueLender2 is ITrueLender2, Ownable {
     }
 
     /**
-     * @dev Loop through loan tokens and calculate theoretical value of all loans
+     * @dev Loop through loan tokens for the pool and calculate theoretical value of all loans
      * There should never be too many loans in the pool to run out of gas
      * @return Theoretical value of all the loans funded by this strategy
      */
@@ -158,6 +172,7 @@ contract TrueLender2 is ITrueLender2, Ownable {
         revert("TrueLender: This loan has not been funded by the lender");
     }
 
+    /// @dev Helper function to redeem funds from `loanToken` and repay them into the `pool`
     function _redeemAndRepay(ILoanToken2 loanToken, ITrueFiPool2 pool) internal returns (uint256 fundsReclaimed) {
         // call redeem function on LoanToken
         uint256 balanceBefore = pool.token().balanceOf(address(this));
@@ -172,6 +187,7 @@ contract TrueLender2 is ITrueLender2, Ownable {
 
     /**
      * @dev Withdraw a basket of tokens held by the pool
+     * Function is expected to be called by the pool
      * When exiting the pool, the pool contract calls this function
      * to withdraw a fraction of all the loans held by the pool
      * Loop through recipient's share of LoanTokens and calculate versus total per loan.
