@@ -1,5 +1,6 @@
 import { expect, use } from 'chai'
-import { ImplementationReference, ImplementationReferenceFactory, MockErc20Token, MockErc20TokenFactory, PoolArbitrageTestFactory, PoolFactory, PoolFactoryFactory, TrueFiPool2, TrueFiPool2Factory } from 'contracts/types'
+import { ImplementationReference, ImplementationReferenceFactory, MockErc20Token, MockErc20TokenFactory, PoolFactory, PoolFactoryFactory, TrueFiPool2, TrueFiPool2Factory } from 'contracts/types'
+import { Pool2ArbitrageTestFactory } from 'contracts/types/Pool2ArbitrageTestFactory'
 import { solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
@@ -38,7 +39,7 @@ describe('TrueFiPool2', () => {
 
   describe('initializer', () => {
     it('sets corresponding token', async () => {
-      expect(await pool.currencyToken()).to.equal(tusd.address)
+      expect(await pool.token()).to.equal(tusd.address)
     })
 
     it('sets staking token', async () => {
@@ -61,7 +62,7 @@ describe('TrueFiPool2', () => {
   })
 
   it('cannot exit and join on same transaction', async () => {
-    const arbitrage = await new PoolArbitrageTestFactory(owner).deploy()
+    const arbitrage = await new Pool2ArbitrageTestFactory(owner).deploy()
     await tusd.transfer(arbitrage.address, parseEth(1))
     await expect(arbitrage.joinExit(pool.address)).to.be.revertedWith('TrueFiPool: Cannot join and exit in same block')
   })

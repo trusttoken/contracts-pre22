@@ -36,7 +36,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
 
     uint8 public constant VERSION = 0;
 
-    IERC20 public currencyToken;
+    IERC20 public token;
 
     ITrueStrategy public strategy;
     ITrueLender public lender;
@@ -60,15 +60,15 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
     }
 
     function initialize(
-        ERC20 _currencyToken,
+        ERC20 _token,
         ERC20 _stakingToken,
         address __owner
     ) external override initializer {
-        ERC20.__ERC20_initialize(concat("TrueFi ", _currencyToken.name()), concat("tf", _currencyToken.symbol()));
+        ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
         Ownable.initialize();
         transferOwnership(__owner);
 
-        currencyToken = _currencyToken;
+        token = _token;
         stakingToken = _stakingToken;
     }
 
@@ -82,7 +82,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @dev Emitted when someone joins the pool
      * @param staker Account staking
      * @param deposited Amount deposited
-     * @param minted Amount of pool currencyTokens minted
+     * @param minted Amount of pool tokens minted
      */
     event Joined(address indexed staker, uint256 deposited, uint256 minted);
 
@@ -95,7 +95,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
 
     /**
      * @dev Emitted when funds are flushed into curve.fi
-     * @param currencyAmount Amount of currencyTokens deposited
+     * @param currencyAmount Amount of tokens deposited
      */
     event Flushed(uint256 currencyAmount);
 
@@ -186,8 +186,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
     }
 
     /**
-     * @dev Join the pool by depositing currency tokens
-     * @param amount amount of currency token to deposit
+     * @dev Join the pool by depositing tokens
+     * @param amount amount of token to deposit
      */
     function join(uint256 amount) external joiningNotPaused {
         uint256 fee = amount.mul(joiningFee).div(10000);
@@ -195,7 +195,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
         claimableFees = claimableFees.add(fee);
 
         latestJoinBlock[tx.origin] = block.number;
-        require(currencyToken.transferFrom(msg.sender, address(this), amount));
+        require(token.transferFrom(msg.sender, address(this), amount));
 
         emit Joined(msg.sender, amount, mintedAmount);
     }
@@ -235,7 +235,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
 
         uint256 _totalSupply = totalSupply();
 
-        // get share of currency tokens kept in the pool
+        // get share of tokens kept in the pool
         uint256 liquidAmountToTransfer = amount.mul(liquidValue()).div(_totalSupply);
 
         // burn tokens sent
@@ -244,10 +244,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
         // withdraw basket of loan tokens
         lender.distribute(msg.sender, amount, _totalSupply);
 
-        // if currency remaining, transfer
+        // if tokens remaining, transfer
         if (liquidAmountToTransfer > 0) {
             ensureSufficientLiquidity(liquidAmountToTransfer);
-            require(currencyToken.transfer(msg.sender, liquidAmountToTransfer));
+            require(token.transfer(msg.sender, liquidAmountToTransfer));
         }
 
         emit Exited(msg.sender, amount);
@@ -257,7 +257,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @dev Exit pool only with liquid tokens
      * This function will withdraw TUSD but with a small penalty
      * Uses the sync() modifier to reduce gas costs of using curve
-     * @param amount amount of pool tokens to redeem for underlying currencyTokens
+     * @param amount amount of pool tokens to redeem for underlying tokens
      */
     function liquidExit(uint256 amount) external {
         require(block.number != latestJoinBlock[tx.origin], "TrueFiPool: Cannot join and exit in same block");
@@ -272,7 +272,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
 
         ensureSufficientLiquidity(amountToWithdraw);
 
-        require(currencyToken.transfer(msg.sender, amountToWithdraw));
+        require(token.transfer(msg.sender, amountToWithdraw));
 
         emit Exited(msg.sender, amountToWithdraw);
     }
@@ -349,7 +349,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
         }
 
         mint(fee);
-        require(currencyToken.transfer(msg.sender, amount.sub(fee)));
+        require(token.transfer(msg.sender, amount.sub(fee)));
 
         emit Borrow(msg.sender, amount, fee);
     }
@@ -359,7 +359,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @param currencyAmount amount to repay
      */
     function repay(uint256 currencyAmount) external onlyLender {
-        require(currencyToken.transferFrom(msg.sender, address(this), currencyAmount));
+        require(token.transferFrom(msg.sender, address(this), currencyAmount));
         emit Repaid(msg.sender, currencyAmount);
     }
 
@@ -372,7 +372,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
         claimableFees = 0;
 
         if (amount > 0) {
-            require(currencyToken.transfer(beneficiary, amount));
+            require(token.transfer(beneficiary, amount));
         }
 
         emit Collected(beneficiary, amount);
@@ -383,7 +383,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @return Currency token balance
      */
     function currencyBalance() internal view returns (uint256) {
-        return currencyToken.balanceOf(address(this)).sub(claimableFees);
+        return token.balanceOf(address(this)).sub(claimableFees);
     }
 
     /**
