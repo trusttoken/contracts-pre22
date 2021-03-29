@@ -59,6 +59,13 @@ describe('PoolFactory', () => {
       expect(await proxy.proxyOwner()).to.eq(owner.address)
     })
 
+    it('initializes implementation with ownership', async () => {
+      await factory.whitelist(token2.address, true)
+      await factory.connect(otherWallet).createPool(token2.address)
+      proxy = OwnedProxyWithReferenceFactory.connect(await factory.pool(token2.address), owner)
+      expect(await poolImplementation.attach(proxy.address).owner()).to.eq(owner.address)
+    })
+
     it('adds pool to token -> pool mapping', async () => {
       expect(await factory.pool(token1.address)).to.eq(proxy.address)
     })
