@@ -14,7 +14,7 @@ contract ImplementationReference is Ownable {
 
     /**
      * @dev Event to show that implementation address has been changed
-     * @param _implementation New address of the implementation
+     * @param newImplementation New address of the implementation
      */
     event ImplementationChanged(address newImplementation);
 
