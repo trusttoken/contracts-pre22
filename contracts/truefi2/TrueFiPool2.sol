@@ -37,7 +37,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
     uint8 public constant VERSION = 0;
 
-    IERC20 public currencyToken;
+    IERC20 public token;
 
     ITrueStrategy public strategy;
     ITrueLender public lender;
@@ -82,7 +82,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev Emitted when someone joins the pool
      * @param staker Account staking
      * @param deposited Amount deposited
-     * @param minted Amount of pool currencyTokens minted
+     * @param minted Amount of pool tokens minted
      */
     event Joined(address indexed staker, uint256 deposited, uint256 minted);
 
@@ -95,7 +95,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
     /**
      * @dev Emitted when funds are flushed into curve.fi
-     * @param currencyAmount Amount of currencyTokens deposited
+     * @param currencyAmount Amount of tokens deposited
      */
     event Flushed(uint256 currencyAmount);
 
@@ -257,7 +257,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev Exit pool only with liquid tokens
      * This function will withdraw TUSD but with a small penalty
      * Uses the sync() modifier to reduce gas costs of using curve
-     * @param amount amount of pool tokens to redeem for underlying currencyTokens
+     * @param amount amount of pool tokens to redeem for underlying tokens
      */
     function liquidExit(uint256 amount) external {
         require(block.number != latestJoinBlock[tx.origin], "TrueFiPool: Cannot join and exit in same block");
@@ -383,7 +383,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @return Currency token balance
      */
     function currencyBalance() internal view returns (uint256) {
-        return currencyToken.balanceOf(address(this)).sub(claimableFees);
+        return token.balanceOf(address(this)).sub(claimableFees);
     }
 
     /**
