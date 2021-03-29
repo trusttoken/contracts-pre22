@@ -51,7 +51,7 @@ describe('TrueFiPool2', () => {
 
     it('sets erc20 params', async () => {
       expect(await pool.name()).to.equal('TrueFi TrueUSD')
-      expect(await pool.symbol()).to.equal('TFI-TUSD')
+      expect(await pool.symbol()).to.equal('tfTUSD')
       expect(await pool.decimals()).to.equal(18)
     })
 
