@@ -7,7 +7,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IBurnableERC20} from "../trusttoken/interface/IBurnableERC20.sol";
 import {IVoteTokenWithERC20} from "../governance/interface/IVoteToken.sol";
 
-import {Ownable} from "./common/UpgradeableOwnable.sol";
+import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
