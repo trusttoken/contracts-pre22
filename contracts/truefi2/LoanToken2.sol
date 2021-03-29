@@ -253,7 +253,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         }
 
         uint256 passed = block.timestamp.sub(start);
-        if (passed > term) {
+        if (passed > term || status == Status.Settled) {
             passed = term;
         }
 
@@ -302,14 +302,10 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Close the loan and check if it has been repaid
      */
     function close() external override onlyOngoing {
-        require(start.add(term) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
         if (_balance() >= debt) {
             status = Status.Settled;
         } else {
-            require(
-                start.add(term).add(lastMinutePaybackDuration) <= block.timestamp,
-                "LoanToken: Borrower can still pay the loan back"
-            );
+            require(start.add(term).add(lastMinutePaybackDuration) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
             status = Status.Defaulted;
         }
 

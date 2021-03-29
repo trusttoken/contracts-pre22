@@ -166,6 +166,7 @@ contract TrueLender2 is ITrueLender2, Ownable {
 
         // gets reclaimed amount and pays back to pool
         fundsReclaimed = balanceAfter.sub(balanceBefore);
+        pool.token().approve(address(pool), fundsReclaimed);
         pool.repay(fundsReclaimed);
     }
 
@@ -185,7 +186,16 @@ contract TrueLender2 is ITrueLender2, Ownable {
         uint256 numerator,
         uint256 denominator
     ) external override {
-        ILoanToken2[] storage _loans = loansOnPool[ITrueFiPool2(msg.sender)];
+        _distribute(recipient, numerator, denominator, msg.sender);
+    }
+
+    function _distribute(
+        address recipient,
+        uint256 numerator,
+        uint256 denominator,
+        address pool
+    ) internal {
+        ILoanToken2[] storage _loans = loansOnPool[ITrueFiPool2(pool)];
         for (uint256 index = 0; index < _loans.length; index++) {
             _loans[index].transfer(recipient, numerator.mul(_loans[index].balanceOf(address(this))).div(denominator));
         }
