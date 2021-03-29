@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {Ownable} from "./common/UpgradeableOwnable.sol";
+import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {ILoanToken} from "./interface/ILoanToken.sol";

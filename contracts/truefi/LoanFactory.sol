@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {Initializable} from "./common/Initializable.sol";
+import {Initializable} from "../common/Initializable.sol";
 import {ILoanFactory} from "./interface/ILoanFactory.sol";
 
 import {LoanToken, IERC20} from "./LoanToken.sol";

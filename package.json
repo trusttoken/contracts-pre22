@@ -24,6 +24,7 @@
     "test:true-currencies": "mocha 'test/true-currencies/*.ts'",
     "test:true-gold": "mocha 'test/true-gold/*.ts'",
     "test:truefi": "mocha 'test/truefi/**/*.ts'",
+    "test:truefi2": "mocha 'test/truefi2/**/*.ts'",
     "test:trusttoken": "mocha 'test/trusttoken/*.ts'",
     "checks": "yarn lint && yarn typecheck && yarn test",
     "docs": "npx solidity-docgen --solc-module solc-0.6 -i contracts -o docs",
