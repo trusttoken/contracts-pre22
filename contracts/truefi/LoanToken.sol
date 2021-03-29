@@ -308,7 +308,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Close the loan and check if it has been repaid
      */
     function close() external override onlyOngoing {
-        if (_balance() >= debt) {
+        if (_isRepaidInFull()) {
             status = Status.Settled;
         } else {
             require(start.add(term).add(lastMinutePaybackDuration) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
@@ -374,6 +374,14 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function repaid() external override view onlyAfterWithdraw returns (uint256) {
         return _balance().add(redeemed);
+    }
+
+    function isRepaidInFull() external override view returns (bool) {
+        return _isRepaidInFull();
+    }
+
+    function _isRepaidInFull() internal view onlyOngoing returns (bool) {
+        return _balance() >= debt;
     }
 
     /**
