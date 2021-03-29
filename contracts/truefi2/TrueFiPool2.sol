@@ -342,7 +342,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @dev Remove liquidity from curve if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount, uint256 fee) external  onlyLender {
+    function borrow(uint256 amount, uint256 fee) external onlyLender {
         require(amount <= liquidValue(), "");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);
