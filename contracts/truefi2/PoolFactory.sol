@@ -8,6 +8,13 @@ import {ERC20} from "../common/UpgradeableERC20.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ImplementationReference} from "../proxy/ImplementationReference.sol";
 
+/**
+ * @title PoolFactory
+ * @dev Factory used to create pools for a chosen asset
+ * This contract creates a new pool and transfer its ownership to the governance contract
+ * Anyone can create a new pool, however the token has to be whitelisted
+ * Initially created pools hold the same implementation, which can be changed later on individually
+ */
 contract PoolFactory is Ownable {
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -89,6 +96,7 @@ contract PoolFactory is Ownable {
     /**
      * @dev Change token allowed status
      * @param token Address of token to be allowed or disallowed
+     * @param status New status of allowance for token
      */
     function whitelist(address token, bool status) external onlyOwner {
         isAllowed[token] = status;
