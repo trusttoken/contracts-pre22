@@ -11,15 +11,18 @@ import {
 } from 'utils'
 
 import {
+  ImplementationReferenceFactory,
   LoanToken2,
   LoanToken2Factory,
   MockTrueCurrency,
-  MockTrueCurrencyFactory,
+  MockTrueCurrencyFactory, PoolFactoryFactory, TrueFiPool2Factory,
 } from 'contracts'
+import { deployContract } from 'scripts/utils/deployContract'
+import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
-describe('LoanToken', () => {
+describe('LoanToken2', () => {
   enum LoanTokenStatus {
     Awaiting, Funded, Withdrawn, Settled, Defaulted,
     Liquidated
@@ -31,6 +34,7 @@ describe('LoanToken', () => {
   let other: Wallet
   let loanToken: LoanToken2
   let tusd: MockTrueCurrency
+  let poolAddress: string
 
   const dayInSeconds = 60 * 60 * 24
   const yearInSeconds = dayInSeconds * 365
@@ -53,8 +57,16 @@ describe('LoanToken', () => {
     await tusd.initialize()
     await tusd.mint(lender.address, parseEth(1000))
 
+    const poolFactory = await deployContract(lender, PoolFactoryFactory)
+    const poolImplementation = await deployContract(lender, TrueFiPool2Factory)
+    const implementationReference = await deployContract(lender, ImplementationReferenceFactory, [poolImplementation.address])
+    await poolFactory.initialize(implementationReference.address, AddressZero)
+    await poolFactory.whitelist(tusd.address, true)
+    await poolFactory.createPool(tusd.address)
+    poolAddress = await poolFactory.pool(tusd.address)
+
     loanToken = await new LoanToken2Factory(lender).deploy(
-      tusd.address,
+      poolAddress,
       borrower.address,
       lender.address,
       lender.address, // easier testing purposes
@@ -66,13 +78,9 @@ describe('LoanToken', () => {
     await tusd.approve(loanToken.address, parseEth(1000))
   })
 
-  it('isLoanToken', async () => {
-    expect(await loanToken.isLoanToken()).to.be.true
-  })
-
   describe('Constructor', () => {
     it('sets the currency token address', async () => {
-      expect(await loanToken.currencyToken()).to.equal(tusd.address)
+      expect(await loanToken.token()).to.equal(tusd.address)
     })
 
     it('sets loan params', async () => {
@@ -81,7 +89,6 @@ describe('LoanToken', () => {
       expect(await loanToken.term()).to.equal(yearInSeconds)
       expect(await loanToken.apy()).to.equal(1000)
       expect(await loanToken.start()).to.be.equal(0)
-      expect(await loanToken.isLoanToken()).to.be.true
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Awaiting)
     })
 
@@ -215,7 +222,7 @@ describe('LoanToken', () => {
       await loanToken.fund()
       await withdraw(borrower)
       await timeTravel(provider, yearInSeconds + dayInSeconds / 2)
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Borrower can still pay the loan back')
+      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
       await tusd.mint(loanToken.address, parseEth(1100))
       await loanToken.close()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
@@ -563,7 +570,7 @@ describe('LoanToken', () => {
 
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
-      const contract = await new LoanToken2Factory(borrower).deploy(tusd.address, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
+      const contract = await new LoanToken2Factory(borrower).deploy(poolAddress, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 
