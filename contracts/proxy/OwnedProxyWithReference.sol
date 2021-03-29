@@ -5,8 +5,9 @@ pragma solidity 0.6.10;
 import {ImplementationReference} from "./ImplementationReference.sol";
 
 /**
- * @title OwnedUpgradeabilityProxy
+ * @title OwnedProxyWithReference
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
+ * Its structure makes it easy for a group of contracts alike, to share an implementation and to change it easily for all of them at once
  */
 contract OwnedProxyWithReference {
     /**
@@ -29,7 +30,8 @@ contract OwnedProxyWithReference {
      */
     event ImplementationReferenceChanged(address implementationReference);
 
-    // Storage position of the owner and pendingOwner of the contract
+    // Storage position of the owner and pendingOwner and implementationReference of the contract
+    // This is made to ensure, that memory spaces do not interfere with each other
     bytes32 private constant proxyOwnerPosition = 0x6279e8199720cf3557ecd8b58d667c8edc486bd1cf3ad59ea9ebdfcae0d0dfac; //keccak256("trueUSD.proxy.owner");
     bytes32 private constant pendingProxyOwnerPosition = 0x8ddbac328deee8d986ec3a7b933a196f96986cb4ee030d86cc56431c728b83f4; //keccak256("trueUSD.pending.proxy.owner");
     bytes32 private constant implementationReferencePosition = keccak256("trueFiPool.implementation.reference"); //keccak256("trueFiPool.implementation.reference");
@@ -84,6 +86,7 @@ contract OwnedProxyWithReference {
 
     /**
      * @dev Sets the address of the owner
+     * @param newProxyOwner New owner to be set
      */
     function _setUpgradeabilityOwner(address newProxyOwner) internal {
         bytes32 position = proxyOwnerPosition;
@@ -94,6 +97,7 @@ contract OwnedProxyWithReference {
 
     /**
      * @dev Sets the address of the owner
+     * @param newPendingProxyOwner New pending owner address
      */
     function _setPendingUpgradeabilityOwner(address newPendingProxyOwner) internal {
         bytes32 position = pendingProxyOwnerPosition;
@@ -104,7 +108,7 @@ contract OwnedProxyWithReference {
 
     /**
      * @dev Allows the current owner to transfer control of the contract to a newOwner.
-     *changes the pending owner to newOwner. But doesn't actually transfer
+     * changes the pending owner to newOwner. But doesn't actually transfer
      * @param newOwner The address to transfer ownership to.
      */
     function transferProxyOwnership(address newOwner) external onlyProxyOwner {
@@ -132,6 +136,7 @@ contract OwnedProxyWithReference {
 
     /**
      * @dev Get the address of current implementation.
+     * @return Returns address of implementation contract
      */
     function implementation() public view returns (address) {
         bytes32 position = implementationReferencePosition;
@@ -150,10 +155,17 @@ contract OwnedProxyWithReference {
         proxyCall();
     }
 
+    /**
+     * @dev This fallback function gets called only when this contract is called without any calldata e.g. send(), transfer()
+     * This would also trigger receive() function on called implementation
+     */
     receive() external payable {
         proxyCall();
     }
 
+    /**
+     * @dev Performs a low level call, to the contract holding all the logic, changing state on this contract at the same time
+     */
     function proxyCall() internal {
         address impl = implementation();
 
