@@ -70,8 +70,6 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
 
         currencyToken = _currencyToken;
         stakingToken = _stakingToken;
-
-        joiningFee = 25;
     }
 
     /**

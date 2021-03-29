@@ -45,8 +45,8 @@ describe('TrueFiPool2', () => {
       expect(await pool.stakingToken()).to.eq(stakingToken.address)
     })
 
-    it('sets initial joiningFee', async () => {
-      expect(await pool.joiningFee()).to.eq(25)
+    it('sets no initial joiningFee', async () => {
+      expect(await pool.joiningFee()).to.eq(0)
     })
 
     it('sets erc20 params', async () => {
@@ -126,6 +126,7 @@ describe('TrueFiPool2', () => {
 
     beforeEach(async () => {
       await tusd.approve(pool.address, parseEth(1e7))
+      await pool.setJoiningFee(25)
       await pool.join(parseEth(1e7))
     })
 
