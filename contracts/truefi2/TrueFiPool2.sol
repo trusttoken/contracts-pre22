@@ -12,8 +12,8 @@ import {ITrueLender} from "./interface/ITrueLender.sol";
 import {ABDKMath64x64} from "../truefi/Log.sol";
 
 /**
- * @title TrueFi Pool
- * @dev Lending pool which uses curve.fi to store idle funds
+ * @title TrueFiPool2
+ * @dev Lending pool which may use a strategy to store idle funds
  * Earn high interest rates on currency deposits through uncollateralized loans
  *
  * Funds deposited in this pool are not fully liquid. Liquidity
@@ -206,7 +206,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * withdraw remainder from strategy
      * @param neededAmount amount required
      */
-    function ensureEnoughTokensAreAvailable(uint256 neededAmount) internal {
+    function ensureSufficientLiquidity(uint256 neededAmount) internal {
         uint256 currentlyAvailableAmount = currencyBalance();
         if (currentlyAvailableAmount < neededAmount) {
             strategy.withdraw(neededAmount.sub(currentlyAvailableAmount));
@@ -246,7 +246,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
 
         // if currency remaining, transfer
         if (liquidAmountToTransfer > 0) {
-            ensureEnoughTokensAreAvailable(liquidAmountToTransfer);
+            ensureSufficientLiquidity(liquidAmountToTransfer);
             require(currencyToken.transfer(msg.sender, liquidAmountToTransfer));
         }
 
@@ -270,7 +270,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
         // burn tokens sent
         _burn(msg.sender, amount);
 
-        ensureEnoughTokensAreAvailable(amountToWithdraw);
+        ensureSufficientLiquidity(amountToWithdraw);
 
         require(currencyToken.transfer(msg.sender, amountToWithdraw));
 
@@ -345,7 +345,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
     function borrow(uint256 amount, uint256 fee) external  onlyLender {
         require(amount <= liquidValue(), "");
         if (amount > 0) {
-            ensureEnoughTokensAreAvailable(amount);
+            ensureSufficientLiquidity(amount);
         }
 
         mint(fee);
