@@ -28,7 +28,7 @@ import {TrueLender} from "../TrueLender.sol";
     event Reclaimed(address indexed loanToken);
 
     constructor(TrueLender lender) public {
-    	_lender = lender;
+        _lender = lender;
     }
 
     /**
@@ -36,13 +36,13 @@ import {TrueLender} from "../TrueLender.sol";
      * Only uses publicly accessible functions of TrueLender, so this is safe to run by anyone.
      */
     function reclaimAll() public {
-    	ILoanToken[] memory loans = _lender.loans();
-    	for (uint256 index = 0; index < loans.length; index++) {
-    		ILoanToken loanToken = loans[index];
-    		if (loanToken.status() == ILoanToken.Status.Settled) {
-    			_lender.reclaim(loanToken);
-    			emit Reclaimed(address(loanToken));
-			}
-    	}
+        ILoanToken[] memory loans = _lender.loans();
+        for (uint256 index = 0; index < loans.length; index++) {
+            ILoanToken loanToken = loans[index];
+            if (loanToken.status() == ILoanToken.Status.Settled) {
+                _lender.reclaim(loanToken);
+                emit Reclaimed(address(loanToken));
+            }
+        }
     }
  }
