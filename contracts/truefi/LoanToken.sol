@@ -76,11 +76,16 @@ contract LoanToken is ILoanToken, ERC20 {
     event Withdrawn(address beneficiary);
 
     /**
-     * @dev Emitted when term is over
-     * @param status Final loan status
+     * @dev Emitted when loan has been fully repaid
+     * @param returnedAmount Amount that was returned
+     */
+    event Settled(uint256 returnedAmount);
+
+    /**
+     * @dev Emitted when term is over without full repayment
      * @param returnedAmount Amount that was returned before expiry
      */
-    event Closed(Status status, uint256 returnedAmount);
+    event Defaulted(uint256 returnedAmount);
 
     /**
      * @dev Emitted when a LoanToken is redeemed for underlying currencyTokens
@@ -310,7 +315,7 @@ contract LoanToken is ILoanToken, ERC20 {
     function settle() external override onlyOngoing {
         require(_balance() >= debt, "LoanToken: loan must be repaid to settle");
         status = Status.Settled;
-        emit Closed(status, _balance());
+        emit Settled(_balance());
     }
 
     /**
@@ -318,9 +323,9 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function enterDefault() external override onlyOngoing {
         require(_balance() < debt, "LoanToken: cannot default a repaid loan");
-        require(start.add(term).add(lastMinutePaybackDuration) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
+        require(start.add(term).add(lastMinutePaybackDuration) <= block.timestamp, "LoanToken: Loan cannot be defaulted yet");
         status = Status.Defaulted;
-        emit Closed(status, _balance());
+        emit Defaulted(_balance());
     }
 
     /**

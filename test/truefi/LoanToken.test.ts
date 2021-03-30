@@ -206,7 +206,7 @@ describe('LoanToken', () => {
       await loanToken.fund()
       await withdraw(borrower)
       await timeTravel(provider, yearInSeconds + dayInSeconds / 2)
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Loan cannot be defaulted yet')
       await tusd.mint(loanToken.address, parseEth(1100))
       await loanToken.settle()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
@@ -237,14 +237,14 @@ describe('LoanToken', () => {
 
     it('reverts when closing right after funding', async () => {
       await loanToken.fund()
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Loan cannot be defaulted yet')
     })
 
     it('reverts when closing ongoing loan', async () => {
       await loanToken.fund()
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Loan cannot be defaulted yet')
       await timeTravel(provider, yearInSeconds - 10)
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Loan cannot be defaulted yet')
     })
 
     it('reverts when trying to close already closed loan', async () => {
@@ -259,7 +259,7 @@ describe('LoanToken', () => {
       await withdraw(borrower)
       await tusd.mint(loanToken.address, parseEth(1099))
       await timeTravel(provider, defaultedLoanCloseTime)
-      await expect(loanToken.enterDefault()).to.emit(loanToken, 'Closed').withArgs(LoanTokenStatus.Defaulted, parseEth(1099))
+      await expect(loanToken.enterDefault()).to.emit(loanToken, 'Defaulted').withArgs(parseEth(1099))
     })
   })
 
