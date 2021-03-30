@@ -621,7 +621,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     function sellCrvWith1Inch(bytes calldata data) external onlyOwnerOrManager {
-        (address caller, I1Inch.SwapDescription memory description, ) = abi.decode(
+        (, I1Inch.SwapDescription memory description, ) = abi.decode(
             data[4:],
             (address, I1Inch.SwapDescription, I1Inch.CallDescription[])
         );
