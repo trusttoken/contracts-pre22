@@ -1,9 +1,13 @@
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import { beforeEachWithFixture, timeTravel } from 'utils'
 import { utils, Wallet } from 'ethers'
 import { deployContract } from 'scripts/utils/deployContract'
 import { OwnedUpgradeabilityProxyFactory, Timelock, TimelockFactory } from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
+import { formatBytes32String } from '@ethersproject/strings'
+import { solidity } from 'ethereum-waffle'
+
+use(solidity)
 
 describe('Timelock', () => {
   let admin: Wallet, notAdmin: Wallet
@@ -168,6 +172,170 @@ describe('Timelock', () => {
         .to.be.eq(true)
       await expect(timelock.connect(admin).setPendingAdmin(notAdmin.address))
         .to.be.revertedWith('Timelock::setPendingAdmin: Call must come from Timelock.')
+    })
+  })
+
+  describe('Transaction operations', async () => {
+    let target: string
+    let value: string
+    let signature: string
+    let data: string
+    let block
+
+    const encodeAndHash = (_target: string, _value: string, _signature: string, _data: string, _eta: number) => {
+      return utils.keccak256((new utils.AbiCoder()).encode(
+        ['address', 'uint', 'string', 'bytes', 'uint'],
+        [_target, _value, _signature, _data, _eta],
+      ))
+    }
+
+    beforeEach(async () => {
+      target = timelock.address
+      value = '0'
+      signature = 'setPendingAdmin(address)'
+      data = (new utils.AbiCoder()).encode(['address'], [notAdmin.address])
+      block = await admin.provider.getBlock('latest')
+    })
+
+    describe('queueTransaction', async () => {
+      describe('reverts if', async () => {
+        it('caller is not admin', async () => {
+          await expect(timelock.connect(notAdmin).queueTransaction(target, value, signature, data, 0))
+            .to.be.revertedWith('Timelock::queueTransaction: Call must come from admin.')
+        })
+
+        it('delay is not satisfied', async () => {
+          await expect(timelock.connect(admin).queueTransaction(target, value, signature, data, block.timestamp + 199_990))
+            .to.be.revertedWith('Timelock::queueTransaction: Estimated execution block must satisfy delay.')
+        })
+      })
+
+      it('queues transaction successfully', async () => {
+        const eta = block.timestamp + 200_010
+        const txHash = encodeAndHash(target, value, signature, data, eta)
+        expect(await timelock.queuedTransactions(txHash))
+          .to.be.false
+        await expect(timelock.connect(admin).queueTransaction(target, value, signature, data, eta))
+          .to.emit(timelock, 'QueueTransaction')
+          .withArgs(txHash, target, value, signature, data, eta)
+        expect(await timelock.queuedTransactions(txHash))
+          .to.be.true
+      })
+    })
+
+    describe('cancelTransaction', async () => {
+      it('reverts if caller is not admin', async () => {
+        await expect(timelock.connect(notAdmin).cancelTransaction(target, value, signature, data, 0))
+          .to.be.revertedWith('Timelock::cancelTransaction: Call must come from admin.')
+      })
+
+      it('cancels transaction successfully', async () => {
+        const eta = block.timestamp + 200_010
+        const txHash = encodeAndHash(target, value, signature, data, eta)
+        await timelock.connect(admin).queueTransaction(target, value, signature, data, eta)
+        expect(await timelock.queuedTransactions(txHash))
+          .to.be.true
+        await expect(timelock.connect(admin).cancelTransaction(target, value, signature, data, eta))
+          .to.emit(timelock, 'CancelTransaction')
+          .withArgs(txHash, target, value, signature, data, eta)
+        expect(await timelock.queuedTransactions(txHash))
+          .to.be.false
+      })
+    })
+
+    describe('executeTransaction', async () => {
+      describe('reverts if', async () => {
+        it('caller is not admin', async () => {
+          await expect(timelock.connect(notAdmin).executeTransaction(target, value, signature, data, 0))
+            .to.be.revertedWith('Timelock::executeTransaction: Call must come from admin.')
+        })
+
+        it('transaction hasn\'t been queued', async () => {
+          await expect(timelock.connect(admin).executeTransaction(target, value, signature, data, 0))
+            .to.be.revertedWith('Timelock::executeTransaction: Transaction hasn\'t been queued.')
+        })
+
+        it('transaction has stayed in queue less than its eta', async () => {
+          const eta = block.timestamp + 200_100
+          await timelock.connect(admin).queueTransaction(target, value, signature, data, eta)
+
+          // 200_100 - 1 should have sufficed, but
+          // block.timestamp may increase on its own asynchronously
+          await timeTravel(admin.provider as any, 200_100 - 100)
+          await expect(timelock.connect(admin).executeTransaction(target, value, signature, data, eta))
+            .to.be.revertedWith('Timelock::executeTransaction: Transaction hasn\'t surpassed time lock.')
+        })
+
+        it('transaction has stayed in queue longer than the grace period', async () => {
+          const eta = block.timestamp + 200_100
+          await timelock.connect(admin).queueTransaction(target, value, signature, data, eta)
+          await timeTravel(admin.provider as any, 200_100 + 14 * 24 * 3600 + 1) // lockTime + 14 days + a bit longer
+          await expect(timelock.connect(admin).executeTransaction(target, value, signature, data, eta))
+            .to.be.revertedWith('Timelock::executeTransaction: Transaction is stale.')
+        })
+
+        it('signature is not empty and transaction did not succeed', async () => {
+          const eta = block.timestamp + 200_100
+          await timelock.connect(admin).queueTransaction(target, value, signature, data, eta)
+          await timeTravel(admin.provider as any, 200_100)
+
+          // reverted because first setPendingAdmin() call
+          // should come from admin, not from timelock itself;
+          // though would revert the same way in case of another cause
+          await expect(timelock.connect(admin).executeTransaction(target, value, signature, data, eta))
+            .to.be.revertedWith('Timelock::executeTransaction: Transaction execution reverted.')
+        })
+
+        it('signature is empty and transaction did not succeed', async () => {
+          // prepare callData equivalently to solidity code below
+          // bytes callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
+          const encodedSignature = formatBytes32String(signature)
+          const hashedSignature = utils.keccak256(encodedSignature.slice(0, encodedSignature.length - 16))
+          const callData = `0x${hashedSignature.slice(2, 10)}${data.slice(2)}`
+
+          signature = ''
+          const eta = block.timestamp + 200_100
+          await timelock.connect(admin).queueTransaction(target, value, signature, callData, eta)
+          await timeTravel(admin.provider as any, 200_100)
+
+          // reverted because first setPendingAdmin() call
+          // should come from admin, not from timelock itself;
+          // though would revert the same way in case of another cause
+          await expect(timelock.connect(admin).executeTransaction(target, value, signature, callData, eta))
+            .to.be.revertedWith('Timelock::executeTransaction: Transaction execution reverted.')
+        })
+      })
+
+      describe('emits event if', async () => {
+        it('signature is not empty', async () => {
+          const eta = block.timestamp + 200_100
+          const txHash = encodeAndHash(target, value, signature, data, eta)
+          await timelock.connect(admin).queueTransaction(target, value, signature, data, eta)
+          await timeTravel(admin.provider as any, 200_100)
+          await timelock.connect(admin).setPendingAdmin(AddressZero)
+          await expect(timelock.connect(admin).executeTransaction(target, value, signature, data, eta))
+            .to.emit(timelock, 'ExecuteTransaction')
+            .withArgs(txHash, target, value, signature, data, eta)
+        })
+
+        it('signature is empty', async () => {
+          // prepare callData equivalently to solidity code below
+          // bytes callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
+          const encodedSignature = formatBytes32String(signature)
+          const hashedSignature = utils.keccak256(encodedSignature.slice(0, encodedSignature.length - 16))
+          const callData = `0x${hashedSignature.slice(2, 10)}${data.slice(2)}`
+
+          signature = ''
+          const eta = block.timestamp + 200_100
+          await timelock.connect(admin).queueTransaction(target, value, signature, callData, eta)
+          await timeTravel(admin.provider as any, 200_100)
+          await timelock.connect(admin).setPendingAdmin(AddressZero)
+          const txHash = encodeAndHash(target, value, signature, callData, eta)
+          await expect(timelock.connect(admin).executeTransaction(target, value, signature, callData, eta))
+            .to.emit(timelock, 'ExecuteTransaction')
+            .withArgs(txHash, target, value, signature, callData, eta)
+        })
+      })
     })
   })
 })
