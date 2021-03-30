@@ -342,6 +342,37 @@ describe('LoanToken', () => {
     })
   })
 
+  describe('Repay in full', () => {
+    it('reverts if called before withdraw', async () => {
+      await expect(loanToken.repayInFull(lender.address)).to.be.revertedWith('LoanToken: Only after loan has been withdrawn')
+      await loanToken.fund()
+      await expect(loanToken.repayInFull(lender.address)).to.be.revertedWith('LoanToken: Only after loan has been withdrawn')
+    })
+
+    it('transfers trueCurrencies to loanToken', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      const debt = await loanToken.debt()
+      await tusd.connect(borrower).approve(loanToken.address, debt)
+      await tusd.mint(borrower.address, parseEth(300))
+      await loanToken.repayInFull(borrower.address)
+
+      expect(await tusd.balanceOf(borrower.address)).to.equal(removeFee(parseEth(1000)).add(parseEth(300)).sub(debt))
+      expect(await tusd.balanceOf(loanToken.address)).to.equal(debt)
+    })
+
+    it('emits proper event', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      const debt = await loanToken.debt()
+      await tusd.connect(borrower).approve(loanToken.address, debt)
+      await tusd.mint(borrower.address, parseEth(300))
+      await expect(loanToken.repayInFull(borrower.address))
+        .to.emit(loanToken, 'Repaid')
+        .withArgs(borrower.address, debt)
+    })
+  })
+
   describe('Redeem', () => {
     beforeEach(async () => {
       await tusd.mint(borrower.address, parseEth(100))
