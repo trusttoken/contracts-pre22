@@ -59,7 +59,7 @@ interface ILoanToken is IERC20 {
 
     function repaid() external view returns (uint256);
 
-    function isRepaidInFull() external view returns (bool);
+    function isRepaid() external view returns (bool);
 
     function balance() external view returns (uint256);
 
