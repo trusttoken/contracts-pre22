@@ -361,7 +361,7 @@ describe('LoanToken', () => {
       expect(await tusd.balanceOf(loanToken.address)).to.equal(debt)
     })
 
-    it('emits proper event', async () => {
+    it('emits Repaid event', async () => {
       await loanToken.fund()
       await withdraw(borrower)
       const debt = await loanToken.debt()
@@ -369,6 +369,17 @@ describe('LoanToken', () => {
       await tusd.mint(borrower.address, parseEth(300))
       await expect(loanToken.repayInFull(borrower.address))
         .to.emit(loanToken, 'Repaid')
+        .withArgs(borrower.address, debt)
+    })
+
+    it('emits Closed event', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      const debt = await loanToken.debt()
+      await tusd.connect(borrower).approve(loanToken.address, debt)
+      await tusd.mint(borrower.address, parseEth(300))
+      await expect(loanToken.repayInFull(borrower.address))
+        .to.emit(loanToken, 'Closed')
         .withArgs(borrower.address, debt)
     })
   })
