@@ -163,7 +163,7 @@ contract LoanToken is ILoanToken, ERC20 {
     /**
      * @dev Only when loan is Settled
      */
-    modifier onlySettled() {
+    modifier onlyClosed() {
         require(status >= Status.Settled, "LoanToken: Current status should be Settled or Defaulted");
         _;
     }
@@ -339,10 +339,10 @@ contract LoanToken is ILoanToken, ERC20 {
 
     /**
      * @dev Redeem LoanToken balances for underlying currencyToken
-     * Can only call this function after the loan is Settled
+     * Can only call this function after the loan is Closed
      * @param _amount amount to redeem
      */
-    function redeem(uint256 _amount) external override onlySettled {
+    function redeem(uint256 _amount) external override onlyClosed {
         uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
         redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
@@ -383,10 +383,10 @@ contract LoanToken is ILoanToken, ERC20 {
 
     /**
      * @dev Function for borrower to reclaim stuck currencyToken
-     * Can only call this function after the loan is Settled
+     * Can only call this function after the loan is Closed
      * and all of LoanToken holders have been burnt
      */
-    function reclaim() external override onlySettled onlyBorrower {
+    function reclaim() external override onlyClosed onlyBorrower {
         require(totalSupply() == 0, "LoanToken: Cannot reclaim when LoanTokens are in circulation");
         uint256 balanceRemaining = _balance();
         require(balanceRemaining > 0, "LoanToken: Cannot reclaim when balance 0");
