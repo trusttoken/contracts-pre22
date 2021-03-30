@@ -255,6 +255,16 @@ describe('Timelock', () => {
             .to.be.revertedWith('Timelock::executeTransaction: Transaction hasn\'t been queued.')
         })
 
+        it('transaction is no longer in queue', async () => {
+          const eta = block.timestamp + 200_100
+          await timelock.connect(admin).queueTransaction(target, value, signature, data, eta)
+          await timeTravel(admin.provider as any, 200_100)
+          await timelock.connect(admin).setPendingAdmin(AddressZero)
+          await timelock.connect(admin).executeTransaction(target, value, signature, data, eta)
+          await expect(timelock.connect(admin).executeTransaction(target, value, signature, data, eta))
+            .to.be.revertedWith('Timelock::executeTransaction: Transaction hasn\'t been queued.')
+        })
+
         it('transaction has stayed in queue less than its eta', async () => {
           const eta = block.timestamp + 200_100
           await timelock.connect(admin).queueTransaction(target, value, signature, data, eta)
