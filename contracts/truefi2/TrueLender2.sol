@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {Ownable} from "../common/UpgradeableOwnable.sol";
-import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {ILoanToken2, ILoanToken} from "./interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
@@ -110,7 +110,7 @@ contract TrueLender2 is ITrueLender2, Ownable {
         ITrueFiPool2 pool = loanToken.pool();
 
         require(factory.isPool(address(pool)), "TrueLender: Pool not created by the factory");
-        require(loanToken.token() == pool.token(), "TrueLender: Loan and pool token mismatch");
+        require(loanToken.currencyToken() == pool.token(), "TrueLender: Loan and pool token mismatch");
         require(loansOnPool[pool].length < maxLoans, "TrueLender: Loans number has reached the limit");
 
         (uint256 amount, , uint256 term) = loanToken.getParameters();
@@ -147,10 +147,10 @@ contract TrueLender2 is ITrueLender2, Ownable {
      */
     function reclaim(ILoanToken2 loanToken) external {
         ITrueFiPool2 pool = loanToken.pool();
-        ILoanToken2.Status status = loanToken.status();
-        require(status >= ILoanToken2.Status.Settled, "TrueLender: LoanToken is not closed yet");
+        ILoanToken.Status status = loanToken.status();
+        require(status >= ILoanToken.Status.Settled, "TrueLender: LoanToken is not closed yet");
 
-        if (status != ILoanToken2.Status.Settled) {
+        if (status != ILoanToken.Status.Settled) {
             require(msg.sender == owner(), "TrueLender: Only owner can reclaim from defaulted loan");
         }
 

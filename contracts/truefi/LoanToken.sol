@@ -32,7 +32,6 @@ contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
 
     uint128 public constant lastMinutePaybackDuration = 1 days;
-    uint8 public constant override version = 3;
 
     address public override borrower;
     address public liquidator;
@@ -448,5 +447,9 @@ contract LoanToken is ILoanToken, ERC20 {
         uint256 _amount
     ) internal override onlyWhoCanTransfer(sender) {
         return super._transfer(sender, recipient, _amount);
+    }
+
+    function version() external virtual override pure returns (uint8) {
+        return 3;
     }
 }
