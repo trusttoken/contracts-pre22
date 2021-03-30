@@ -1,8 +1,8 @@
 import { expect, use } from 'chai'
-import { ContractTransaction, providers, utils, Wallet } from 'ethers'
-import { solidity } from 'ethereum-waffle'
-
+import { BigNumber, ContractTransaction, providers, utils, Wallet } from 'ethers'
 import { beforeEachWithFixture, parseTRU, skipBlocksWithProvider, timeTravel } from 'utils'
+import { AddressZero } from '@ethersproject/constants'
+import { solidity } from 'ethereum-waffle'
 
 import {
   GovernorAlpha,
@@ -87,37 +87,6 @@ describe('GovernorAlpha', () => {
     description = 'this proposal set a new pending admin'
   })
 
-  describe('__acceptAdmin', () => {
-    it('returns governorAlpha as the new admin', async () => {
-      expect(await timelock.admin()).to.eq(governorAlpha.address)
-    })
-  })
-
-  describe('__abdicate', () => {
-    it('guardian should be address(0)', async () => {
-      await governorAlpha.connect(owner).__abdicate()
-      expect(await governorAlpha.guardian()).to.eq('0x0000000000000000000000000000000000000000')
-    })
-  })
-
-  describe('SetTimelockPendingAdmin', () => {
-    it('guardian can change timelock pending admin', async () => {
-      const { timestamp } = await provider.getBlock('latest')
-      const eta = (await timelock.delay()).add(timestamp).add(100)
-      await governorAlpha.__queueSetTimelockPendingAdmin(initialHolder.address, eta)
-      await timeTravel(provider, 3 * 24 * 3600)
-      await governorAlpha.__executeSetTimelockPendingAdmin(initialHolder.address, eta)
-      expect(await timelock.pendingAdmin()).to.eq(initialHolder.address)
-    })
-
-    it('revert if not called by guardian', async () => {
-      const { timestamp } = await provider.getBlock('latest')
-      const eta = (await timelock.delay()).add(timestamp).add(100)
-      await expect(governorAlpha.connect(initialHolder).__queueSetTimelockPendingAdmin(initialHolder.address, eta))
-        .to.be.revertedWith('GovernorAlpha::__queueSetTimelockPendingAdmin: sender must be gov guardian')
-    })
-  })
-
   describe('propose', () => {
     describe('get proposal ID', () => {
       it('returns id equals to 1', async () => {
@@ -180,6 +149,104 @@ describe('GovernorAlpha', () => {
     })
   })
 
+  describe('queue', () => {
+    beforeEach(async () => {
+      await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
+    })
+
+    describe('Reverts if', () => {
+      it('state is pending', async () => {
+        expect(await governorAlpha.state(1)).to.equal(ProposalState.Pending)
+        await expect(governorAlpha.connect(owner).queue(1)).to.be.revertedWith('GovernorAlpha::queue: proposal can only be queued if it is succeeded')
+      })
+
+      it('state is active', async () => {
+        await timeTravel(provider, 1)
+        await timeTravel(provider, 1)
+        expect(await governorAlpha.state(1)).to.equal(ProposalState.Active)
+        await expect(governorAlpha.connect(owner).queue(1)).to.be.revertedWith('GovernorAlpha::queue: proposal can only be queued if it is succeeded')
+      })
+
+      it('state is defeated', async () => {
+        await endVote()
+        expect(await governorAlpha.state(1)).to.equal(ProposalState.Defeated)
+        await expect(governorAlpha.connect(owner).queue(1)).to.be.revertedWith('GovernorAlpha::queue: proposal can only be queued if it is succeeded')
+      })
+    })
+
+    describe('Succeeds', () => {
+      let tx: ContractTransaction
+      beforeEach(async () => {
+        await timeTravel(provider, 1) // mine one block
+        await governorAlpha.connect(initialHolder).castVote(1, true) // castVote
+        const endBlockRequired = (await governorAlpha.proposals(1)).endBlock.toNumber()
+        await skipBlocksWithProvider(provider, endBlockRequired)
+        expect(await governorAlpha.state(1)).to.eq(ProposalState.Succeeded)
+        tx = await governorAlpha.connect(owner).queue(1)
+      })
+
+      it('proposal state becomes queued', async () => {
+        expect(await governorAlpha.state(1)).to.eq(ProposalState.Queued)
+      })
+
+      it('queues all calls to timelock', async () => {
+        const txId = await getLockedTxId(tx)
+        const eta = (await governorAlpha.proposals(1)).eta
+        await expect(Promise.resolve(tx)).to.emit(timelock, 'QueueTransaction').withArgs(
+          txId,
+          target[0],
+          values[0],
+          signatures[0],
+          callDatas[0],
+          eta,
+        )
+      })
+    })
+  })
+
+  describe('execute', () => {
+    const newProposalId = 1
+    beforeEach(async () => {
+      await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
+      await timeTravel(provider, 1) // mine one block
+      await governorAlpha.connect(initialHolder).castVote(1, true) // castVote
+      const endBlockRequired = (await governorAlpha.proposals(1)).endBlock.toNumber()
+      await skipBlocksWithProvider(provider, endBlockRequired)
+    })
+
+    it('cannot execute not queued proposal', async () => {
+      await expect(governorAlpha.connect(owner).execute(newProposalId)).to.be.revertedWith('GovernorAlpha::execute: proposal can only be executed if it is queued')
+    })
+
+    it('cannot execute proposal before it is unlocked', async () => {
+      await governorAlpha.connect(owner).queue(newProposalId)
+      await expect(governorAlpha.connect(owner).execute(newProposalId)).to.be.revertedWith('Timelock::executeTransaction: Transaction hasn\'t surpassed time lock.')
+    })
+
+    describe('when governorAlpha executes a proposal', () => {
+      let tx: ContractTransaction
+
+      beforeEach(async () => {
+        await governorAlpha.connect(owner).queue(newProposalId) // queue the proposal
+        await timeTravel(provider, 3 * 24 * 3600) // delay 3 days
+        expect(await timelock.pendingAdmin()).to.eq('0x0000000000000000000000000000000000000000')
+        tx = await governorAlpha.connect(owner).execute(newProposalId) // execute
+      })
+
+      it('returns proposal state equals to executed', async () => {
+        expect(await governorAlpha.state(1)).to.eq(ProposalState.Executed)
+      })
+
+      it('transaction takes effect (changes pending admin in this case)', async () => {
+        expect(await timelock.pendingAdmin()).to.eq(initialHolder.address)
+      })
+
+      it('emits event', async () => {
+        await expect(Promise.resolve(tx)).to.emit(governorAlpha, 'ProposalExecuted').withArgs(newProposalId)
+      })
+    })
+  })
+
   describe('cancel', () => {
     beforeEach(async () => {
       await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
@@ -230,6 +297,78 @@ describe('GovernorAlpha', () => {
       await timeTravel(provider, 3 * 24 * 3600)
       await governorAlpha.connect(owner).execute(1)
       await expect(governorAlpha.connect(owner).cancel(1)).to.be.revertedWith('GovernorAlpha::cancel: cannot cancel executed proposal')
+    })
+  })
+
+  describe('getActions', async () => {
+    it('gets no actions from proposal that doesn\'t exist', async () => {
+      const tx = await governorAlpha.getActions(42)
+      for (const k in tx) {
+        expect(tx[k]).to.eql([])
+      }
+    })
+
+    it('gets actions from existing proposal', async () => {
+      await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
+      const tx = await governorAlpha.getActions(1)
+      expect(tx[0]).to.eql(target)
+      expect(tx[1].map(bigNum => bigNum.toString())).to.eql(values)
+      expect(tx[2]).to.eql(signatures)
+      expect(tx[3]).to.eql(callDatas)
+    })
+  })
+
+  describe('getReceipt', async () => {
+    interface Receipt {
+      hasVoted: boolean,
+      support: boolean,
+      votes: BigNumber,
+    }
+
+    describe('gets default receipt if', async () => {
+      it('provided proposalId is invalid', async () => {
+        const tx = await governorAlpha.getReceipt(42, AddressZero)
+        const { hasVoted, support, votes }: Receipt = tx
+        expect(hasVoted).to.be.false
+        expect(support).to.be.false
+        expect(votes.toNumber()).to.be.eq(0)
+      })
+
+      it('provided voter address is invalid', async () => {
+        await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
+        const tx = await governorAlpha.getReceipt(42, AddressZero)
+        const { hasVoted, support, votes }: Receipt = tx
+        expect(hasVoted).to.be.false
+        expect(support).to.be.false
+        expect(votes.toNumber()).to.be.eq(0)
+      })
+    })
+
+    describe('gets a receipt when', async () => {
+      beforeEach(async () => {
+        await trustToken.mint(owner.address, votesAmount.mul(2))
+        await trustToken.delegate(owner.address)
+        await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
+        await timeTravel(provider, 1)
+      })
+
+      it('initialHolder voted for', async () => {
+        await governorAlpha.connect(initialHolder).castVote(1, true)
+        const tx = await governorAlpha.getReceipt(1, initialHolder.address)
+        const { hasVoted, support, votes }: Receipt = tx
+        expect(hasVoted).to.be.true
+        expect(support).to.be.true
+        expect(votes.toNumber()).to.be.eq(votesAmount)
+      })
+
+      it('initialHolder voted against', async () => {
+        await governorAlpha.connect(initialHolder).castVote(1, false)
+        const tx = await governorAlpha.getReceipt(1, initialHolder.address)
+        const { hasVoted, support, votes }: Receipt = tx
+        expect(hasVoted).to.be.true
+        expect(support).to.be.false
+        expect(votes.toNumber()).to.be.eq(votesAmount)
+      })
     })
   })
 
@@ -329,100 +468,44 @@ describe('GovernorAlpha', () => {
     })
   })
 
-  describe('queue', () => {
-    beforeEach(async () => {
-      await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
-    })
-
-    describe('Reverts if', () => {
-      it('state is pending', async () => {
-        expect(await governorAlpha.state(1)).to.equal(ProposalState.Pending)
-        await expect(governorAlpha.connect(owner).queue(1)).to.be.revertedWith('GovernorAlpha::queue: proposal can only be queued if it is succeeded')
-      })
-
-      it('state is active', async () => {
-        await timeTravel(provider, 1)
-        await timeTravel(provider, 1)
-        expect(await governorAlpha.state(1)).to.equal(ProposalState.Active)
-        await expect(governorAlpha.connect(owner).queue(1)).to.be.revertedWith('GovernorAlpha::queue: proposal can only be queued if it is succeeded')
-      })
-
-      it('state is defeated', async () => {
-        await endVote()
-        expect(await governorAlpha.state(1)).to.equal(ProposalState.Defeated)
-        await expect(governorAlpha.connect(owner).queue(1)).to.be.revertedWith('GovernorAlpha::queue: proposal can only be queued if it is succeeded')
-      })
-    })
-
-    describe('Successes', () => {
-      let tx: ContractTransaction
-      beforeEach(async () => {
-        await timeTravel(provider, 1) // mine one block
-        await governorAlpha.connect(initialHolder).castVote(1, true) // castVote
-        const endBlockRequired = (await governorAlpha.proposals(1)).endBlock.toNumber()
-        await skipBlocksWithProvider(provider, endBlockRequired)
-        expect(await governorAlpha.state(1)).to.eq(ProposalState.Succeeded)
-        tx = await governorAlpha.connect(owner).queue(1)
-      })
-
-      it('proposal state becomes queued', async () => {
-        expect(await governorAlpha.state(1)).to.eq(ProposalState.Queued)
-      })
-
-      it('queues all calls to timelock', async () => {
-        const txId = await getLockedTxId(tx)
-        const eta = (await governorAlpha.proposals(1)).eta
-        await expect(Promise.resolve(tx)).to.emit(timelock, 'QueueTransaction').withArgs(
-          txId,
-          target[0],
-          values[0],
-          signatures[0],
-          callDatas[0],
-          eta,
-        )
-      })
+  describe('__acceptAdmin', () => {
+    it('returns governorAlpha as the new admin', async () => {
+      expect(await timelock.admin()).to.eq(governorAlpha.address)
     })
   })
 
-  describe('execute', () => {
-    const newProposalId = 1
-    beforeEach(async () => {
-      await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
-      await timeTravel(provider, 1) // mine one block
-      await governorAlpha.connect(initialHolder).castVote(1, true) // castVote
-      const endBlockRequired = (await governorAlpha.proposals(1)).endBlock.toNumber()
-      await skipBlocksWithProvider(provider, endBlockRequired)
+  describe('__abdicate', () => {
+    it('guardian should be address(0)', async () => {
+      await governorAlpha.connect(owner).__abdicate()
+      expect(await governorAlpha.guardian()).to.eq('0x0000000000000000000000000000000000000000')
+    })
+  })
+
+  describe('SetTimelockPendingAdmin', () => {
+    it('guardian can change timelock pending admin', async () => {
+      const { timestamp } = await provider.getBlock('latest')
+      const eta = (await timelock.delay()).add(timestamp).add(100)
+      await governorAlpha.__queueSetTimelockPendingAdmin(initialHolder.address, eta)
+      await timeTravel(provider, 3 * 24 * 3600)
+      await governorAlpha.__executeSetTimelockPendingAdmin(initialHolder.address, eta)
+      expect(await timelock.pendingAdmin()).to.eq(initialHolder.address)
     })
 
-    it('cannot execute not queued proposal', async () => {
-      await expect(governorAlpha.connect(owner).execute(newProposalId)).to.be.revertedWith('GovernorAlpha::execute: proposal can only be executed if it is queued')
-    })
-
-    it('cannot execute proposal before it is unlocked', async () => {
-      await governorAlpha.connect(owner).queue(newProposalId)
-      await expect(governorAlpha.connect(owner).execute(newProposalId)).to.be.revertedWith('Timelock::executeTransaction: Transaction hasn\'t surpassed time lock.')
-    })
-
-    describe('when governorAlpha executes a proposal', () => {
-      let tx: ContractTransaction
-
-      beforeEach(async () => {
-        await governorAlpha.connect(owner).queue(newProposalId) // queue the proposal
-        await timeTravel(provider, 3 * 24 * 3600) // delay 3 days
-        expect(await timelock.pendingAdmin()).to.eq('0x0000000000000000000000000000000000000000')
-        tx = await governorAlpha.connect(owner).execute(newProposalId) // execute
+    describe('revert if not called by guardian in', async () => {
+      it('__queue', async () => {
+        const { timestamp } = await provider.getBlock('latest')
+        const eta = (await timelock.delay()).add(timestamp).add(100)
+        await expect(governorAlpha.connect(initialHolder).__queueSetTimelockPendingAdmin(initialHolder.address, eta))
+          .to.be.revertedWith('GovernorAlpha::__queueSetTimelockPendingAdmin: sender must be gov guardian')
       })
 
-      it('returns proposal state equals to executed', async () => {
-        expect(await governorAlpha.state(1)).to.eq(ProposalState.Executed)
-      })
-
-      it('transaction takes effect (changes pending admin in this case)', async () => {
-        expect(await timelock.pendingAdmin()).to.eq(initialHolder.address)
-      })
-
-      it('emits event', async () => {
-        await expect(Promise.resolve(tx)).to.emit(governorAlpha, 'ProposalExecuted').withArgs(newProposalId)
+      it('__execute', async () => {
+        const { timestamp } = await provider.getBlock('latest')
+        const eta = (await timelock.delay()).add(timestamp).add(100)
+        await governorAlpha.__queueSetTimelockPendingAdmin(initialHolder.address, eta)
+        await timeTravel(provider, 3 * 24 * 3600)
+        await expect(governorAlpha.connect(initialHolder).__executeSetTimelockPendingAdmin(initialHolder.address, eta))
+          .to.be.revertedWith('GovernorAlpha::__executeSetTimelockPendingAdmin: sender must be gov guardian')
       })
     })
   })
