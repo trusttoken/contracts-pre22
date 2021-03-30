@@ -1,8 +1,8 @@
 import { expect, use } from 'chai'
-import { ContractTransaction, providers, utils, Wallet } from 'ethers'
-import { solidity } from 'ethereum-waffle'
-
+import { BigNumber, ContractTransaction, providers, utils, Wallet } from 'ethers'
 import { beforeEachWithFixture, parseTRU, skipBlocksWithProvider, timeTravel } from 'utils'
+import { AddressZero } from '@ethersproject/constants'
+import { solidity } from 'ethereum-waffle'
 
 import {
   GovernorAlpha,
@@ -315,6 +315,60 @@ describe('GovernorAlpha', () => {
       expect(tx[1].map(bigNum => bigNum.toString())).to.eql(values)
       expect(tx[2]).to.eql(signatures)
       expect(tx[3]).to.eql(callDatas)
+    })
+  })
+
+  describe('getReceipt', async () => {
+    interface Receipt {
+      hasVoted: boolean,
+      support: boolean,
+      votes: BigNumber,
+    }
+
+    describe('gets default receipt if', async () => {
+      it('provided proposalId is invalid', async () => {
+        const tx = await governorAlpha.getReceipt(42, AddressZero)
+        const { hasVoted, support, votes }: Receipt = tx
+        expect(hasVoted).to.be.false
+        expect(support).to.be.false
+        expect(votes.toNumber()).to.be.eq(0)
+      })
+
+      it('provided voter address is invalid', async () => {
+        await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
+        const tx = await governorAlpha.getReceipt(42, AddressZero)
+        const { hasVoted, support, votes }: Receipt = tx
+        expect(hasVoted).to.be.false
+        expect(support).to.be.false
+        expect(votes.toNumber()).to.be.eq(0)
+      })
+    })
+
+    describe('gets a receipt when', async () => {
+      beforeEach(async () => {
+        await trustToken.mint(owner.address, votesAmount.mul(2))
+        await trustToken.delegate(owner.address)
+        await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
+        await timeTravel(provider, 1)
+      })
+
+      it('initialHolder voted for', async () => {
+        await governorAlpha.connect(initialHolder).castVote(1, true)
+        const tx = await governorAlpha.getReceipt(1, initialHolder.address)
+        const { hasVoted, support, votes }: Receipt = tx
+        expect(hasVoted).to.be.true
+        expect(support).to.be.true
+        expect(votes.toNumber()).to.be.eq(votesAmount)
+      })
+
+      it('initialHolder voted against', async () => {
+        await governorAlpha.connect(initialHolder).castVote(1, false)
+        const tx = await governorAlpha.getReceipt(1, initialHolder.address)
+        const { hasVoted, support, votes }: Receipt = tx
+        expect(hasVoted).to.be.true
+        expect(support).to.be.false
+        expect(votes.toNumber()).to.be.eq(votesAmount)
+      })
     })
   })
 
