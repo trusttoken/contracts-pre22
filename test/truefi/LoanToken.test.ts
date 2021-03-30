@@ -637,7 +637,6 @@ describe('LoanToken', () => {
       await expect(loanToken.isRepaid()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
     })
 
-
     it('reverts if called after closing', async () => {
       await loanToken.fund()
       await withdraw(borrower)
