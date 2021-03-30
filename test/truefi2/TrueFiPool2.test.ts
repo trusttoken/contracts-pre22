@@ -33,7 +33,7 @@ describe('TrueFiPool2', () => {
     await poolFactory.initialize(implementationReference.address, stakingToken.address)
     await poolFactory.whitelist(tusd.address, true)
     await poolFactory.createPool(tusd.address)
-    
+
     pool = poolImplementation.attach(await poolFactory.pool(tusd.address))
     await pool.connect(owner).claimOwnership()
 

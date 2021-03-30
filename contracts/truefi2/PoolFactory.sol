@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {Ownable} from "../common/UpgradeableOwnable.sol";
+import {Claimable} from "../common/UpgradeableClaimable.sol";
 import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
 
@@ -15,7 +15,7 @@ import {ImplementationReference} from "../proxy/ImplementationReference.sol";
  * Anyone can create a new pool, however the token has to be whitelisted
  * Initially created pools hold the same implementation, which can be changed later on individually
  */
-contract PoolFactory is Ownable {
+contract PoolFactory is Claimable {
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -72,7 +72,7 @@ contract PoolFactory is Ownable {
      * @param _poolImplementationReference First implementation reference of TrueFiPool
      */
     function initialize(ImplementationReference _poolImplementationReference, ERC20 _stakingToken) external initializer {
-        Ownable.initialize();
+        Claimable.initialize();
 
         stakingToken = _stakingToken;
         poolImplementationReference = _poolImplementationReference;
