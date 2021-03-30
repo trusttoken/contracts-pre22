@@ -300,6 +300,24 @@ describe('GovernorAlpha', () => {
     })
   })
 
+  describe('getActions', async () => {
+    it('gets no actions from proposal that doesn\'t exist', async () => {
+      const tx = await governorAlpha.getActions(42)
+      for (const k in tx) {
+        expect(tx[k]).to.eql([])
+      }
+    })
+
+    it('gets actions from existing proposal', async () => {
+      await governorAlpha.connect(initialHolder).propose(target, values, signatures, callDatas, description)
+      const tx = await governorAlpha.getActions(1)
+      expect(tx[0]).to.eql(target)
+      expect(tx[1].map(bigNum => bigNum.toString())).to.eql(values)
+      expect(tx[2]).to.eql(signatures)
+      expect(tx[3]).to.eql(callDatas)
+    })
+  })
+
   describe('castVote', () => {
     beforeEach(async () => {
       await trustToken.mint(owner.address, votesAmount.mul(2))
