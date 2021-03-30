@@ -161,7 +161,7 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
-     * @dev Only when loan is Settled
+     * @dev Only when loan is Settled, Defaulted, or Liquidated
      */
     modifier onlyClosed() {
         require(status >= Status.Settled, "LoanToken: Current status should be Settled or Defaulted");
