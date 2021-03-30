@@ -380,7 +380,7 @@ describe('LoanToken', () => {
       await tusd.mint(borrower.address, parseEth(300))
       await expect(loanToken.repayInFull(borrower.address))
         .to.emit(loanToken, 'Closed')
-        .withArgs(borrower.address, debt)
+        .withArgs(LoanTokenStatus.Settled, debt)
     })
   })
 
