@@ -491,11 +491,22 @@ describe('GovernorAlpha', () => {
       expect(await timelock.pendingAdmin()).to.eq(initialHolder.address)
     })
 
-    it('revert if not called by guardian', async () => {
-      const { timestamp } = await provider.getBlock('latest')
-      const eta = (await timelock.delay()).add(timestamp).add(100)
-      await expect(governorAlpha.connect(initialHolder).__queueSetTimelockPendingAdmin(initialHolder.address, eta))
-        .to.be.revertedWith('GovernorAlpha::__queueSetTimelockPendingAdmin: sender must be gov guardian')
+    describe('revert if not called by guardian in', async () => {
+      it('__queue', async () => {
+        const { timestamp } = await provider.getBlock('latest')
+        const eta = (await timelock.delay()).add(timestamp).add(100)
+        await expect(governorAlpha.connect(initialHolder).__queueSetTimelockPendingAdmin(initialHolder.address, eta))
+          .to.be.revertedWith('GovernorAlpha::__queueSetTimelockPendingAdmin: sender must be gov guardian')
+      })
+
+      it('__execute', async () => {
+        const { timestamp } = await provider.getBlock('latest')
+        const eta = (await timelock.delay()).add(timestamp).add(100)
+        await governorAlpha.__queueSetTimelockPendingAdmin(initialHolder.address, eta)
+        await timeTravel(provider, 3 * 24 * 3600)
+        await expect(governorAlpha.connect(initialHolder).__executeSetTimelockPendingAdmin(initialHolder.address, eta))
+          .to.be.revertedWith('GovernorAlpha::__executeSetTimelockPendingAdmin: sender must be gov guardian')
+      })
     })
   })
 })
