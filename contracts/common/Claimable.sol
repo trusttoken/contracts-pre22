@@ -7,7 +7,7 @@ pragma solidity 0.6.10;
  and provides basic authorization control functions. Inherits storage layout of
  ProxyStorage.
  */
-contract Claimable{
+contract Claimable {
     address _owner;
     address _pendingOwner;
 
