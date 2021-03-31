@@ -4,6 +4,7 @@ pragma solidity 0.6.10;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {ILoanToken} from "./interface/ILoanToken.sol";
 
@@ -30,6 +31,7 @@ import {ILoanToken} from "./interface/ILoanToken.sol";
  */
 contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     uint128 public constant lastMinutePaybackDuration = 1 days;
     uint8 public constant override version = 3;
@@ -277,7 +279,7 @@ contract LoanToken is ILoanToken, ERC20 {
         status = Status.Funded;
         start = block.timestamp;
         _mint(msg.sender, debt);
-        require(currencyToken.transferFrom(msg.sender, address(this), receivedAmount()));
+        currencyToken.safeTransferFrom(msg.sender, address(this), receivedAmount());
 
         emit Funded(msg.sender);
     }
@@ -299,7 +301,7 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function withdraw(address _beneficiary) external override onlyBorrower onlyFunded {
         status = Status.Withdrawn;
-        require(currencyToken.transfer(_beneficiary, receivedAmount()));
+        currencyToken.safeTransfer(_beneficiary, receivedAmount());
 
         emit Withdrawn(_beneficiary);
     }
@@ -336,7 +338,7 @@ contract LoanToken is ILoanToken, ERC20 {
         uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
         redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
-        require(currencyToken.transfer(msg.sender, amountToReturn));
+        currencyToken.safeTransfer(msg.sender, amountToReturn);
 
         emit Redeemed(msg.sender, _amount, amountToReturn);
     }
@@ -368,7 +370,7 @@ contract LoanToken is ILoanToken, ERC20 {
     function _repay(address _sender, uint256 _amount) internal onlyAfterWithdraw {
         require(_amount <= debt.sub(_balance()), "LoanToken: Cannot repay over the debt");
         emit Repaid(_sender, _amount);
-        require(currencyToken.transferFrom(_sender, address(this), _amount));
+        currencyToken.safeTransferFrom(_sender, address(this), _amount);
     }
 
     /**
@@ -381,7 +383,7 @@ contract LoanToken is ILoanToken, ERC20 {
         uint256 balanceRemaining = _balance();
         require(balanceRemaining > 0, "LoanToken: Cannot reclaim when balance 0");
 
-        require(currencyToken.transfer(borrower, balanceRemaining));
+        currencyToken.safeTransfer(borrower, balanceRemaining);
         emit Reclaimed(borrower, balanceRemaining);
     }
 
