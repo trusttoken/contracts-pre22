@@ -29,9 +29,11 @@ describe('TrueFiPool2', () => {
     poolFactory = await new PoolFactoryFactory(owner).deploy()
     poolImplementation = await new TrueFiPool2Factory(owner).deploy()
     implementationReference = await new ImplementationReferenceFactory(owner).deploy(poolImplementation.address)
+
     await poolFactory.initialize(implementationReference.address, stakingToken.address)
     await poolFactory.whitelist(tusd.address, true)
     await poolFactory.createPool(tusd.address)
+
     pool = poolImplementation.attach(await poolFactory.pool(tusd.address))
 
     await tusd.mint(owner.address, includeFee(parseEth(1e7)))

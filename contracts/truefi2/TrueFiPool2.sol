@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
-import {Ownable} from "../common/UpgradeableOwnable.sol";
+import {Claimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
@@ -25,7 +25,7 @@ import {ABDKMath64x64} from "../truefi/Log.sol";
  *
  * Funds are managed through an external function to save gas on deposits
  */
-contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
+contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     using SafeMath for uint256;
 
     // ================ WARNING ==================
@@ -65,8 +65,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
         address __owner
     ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
-        Ownable.initialize();
-        transferOwnership(__owner);
+        Claimable.initialize(__owner);
 
         token = _token;
         stakingToken = _stakingToken;

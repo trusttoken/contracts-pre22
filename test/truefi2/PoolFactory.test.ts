@@ -34,6 +34,10 @@ describe('PoolFactory', () => {
   })
 
   describe('Initializer', () => {
+    it('sets factory owner', async () => {
+      expect(await factory.owner()).to.eq(owner.address)
+    })
+
     it('sets pool implementation address', async () => {
       expect(await factory.poolImplementationReference()).to.eq(implementationReference.address)
       expect(await implementationReference.attach(await factory.poolImplementationReference()).implementation()).to.eq(poolImplementation.address)
@@ -47,12 +51,15 @@ describe('PoolFactory', () => {
   describe('Creating new pool', () => {
     let creationEventArgs: any
     let proxy: OwnedProxyWithReference
+    let pool: TrueFiPool2
 
     beforeEach(async () => {
       await factory.whitelist(token1.address, true)
       const tx = await factory.createPool(token1.address)
-      creationEventArgs = (await tx.wait()).events[3].args
+      creationEventArgs = (await tx.wait()).events[2].args
       proxy = OwnedProxyWithReferenceFactory.connect(await factory.pool(token1.address), owner)
+
+      pool = poolImplementation.attach(proxy.address)
     })
 
     it('transfers proxy ownership', async () => {
@@ -63,7 +70,7 @@ describe('PoolFactory', () => {
       await factory.whitelist(token2.address, true)
       await factory.connect(otherWallet).createPool(token2.address)
       proxy = OwnedProxyWithReferenceFactory.connect(await factory.pool(token2.address), owner)
-      expect(await poolImplementation.attach(proxy.address).owner()).to.eq(owner.address)
+      expect(await pool.owner()).to.eq(owner.address)
     })
 
     it('adds pool to token -> pool mapping', async () => {
