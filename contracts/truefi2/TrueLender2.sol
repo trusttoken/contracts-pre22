@@ -105,7 +105,7 @@ contract TrueLender2 is ITrueLender2, Ownable {
      * @param loanToken LoanToken to fund
      */
     function fund(ILoanToken2 loanToken) external {
-        // TODO add check of
+        // TODO add check if pool was created by the loan factory
         require(msg.sender == loanToken.borrower(), "TrueLender: Sender is not borrower");
         ITrueFiPool2 pool = loanToken.pool();
 
