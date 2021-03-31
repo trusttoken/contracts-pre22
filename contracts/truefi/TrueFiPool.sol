@@ -194,7 +194,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev only lender can perform borrowing or repaying
+     * @dev ensure than as a result of running a function,
+     * balance of `token` increases by at least `expectedGain`
      */
     modifier exchangeProtector(uint256 expectedGain, IERC20 token) {
         uint256 balanceBefore = token.balanceOf(address(this));
@@ -254,7 +255,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev set TrueFi price oracle token address
+     * @dev set CRV price oracle token address
      * @param newOracle new oracle address
      */
     function setCrvOracle(ICrvPriceOracle newOracle) public onlyOwner {
@@ -288,7 +289,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev Get total balance of stake tokens
+     * @dev Get total balance of CRV tokens
      * @return Balance of stake tokens in this contract
      */
     function crvBalance() public view returns (uint256) {
@@ -736,6 +737,12 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         return mintedAmount;
     }
 
+    /**
+     * @dev Calculate price minus max percentage of slippage during exchange
+     * This will lead to the pool value become a bit undervalued
+     * compared to the oracle price but will ensure that the value doesn't drop
+     * when token exchanges are performed.
+     */
     function conservativePriceEstimation(uint256 price) internal pure returns (uint256) {
         return price.mul(uint256(10000).sub(MAX_PRICE_SLIPPAGE)).div(10000);
     }
