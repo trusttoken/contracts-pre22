@@ -3,6 +3,7 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
 import {Claimable} from "../common/UpgradeableClaimable.sol";
 
@@ -27,7 +28,7 @@ import {ABDKMath64x64} from "../truefi/Log.sol";
  */
 contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     using SafeMath for uint256;
-
+    using SafeERC20 for IERC20;
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -194,7 +195,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         claimableFees = claimableFees.add(fee);
 
         latestJoinBlock[tx.origin] = block.number;
-        require(token.transferFrom(msg.sender, address(this), amount));
+        token.safeTransferFrom(msg.sender, address(this), amount);
 
         emit Joined(msg.sender, amount, mintedAmount);
     }
@@ -246,7 +247,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         // if tokens remaining, transfer
         if (liquidAmountToTransfer > 0) {
             ensureSufficientLiquidity(liquidAmountToTransfer);
-            require(token.transfer(msg.sender, liquidAmountToTransfer));
+            token.safeTransfer(msg.sender, liquidAmountToTransfer);
         }
 
         emit Exited(msg.sender, amount);
@@ -271,7 +272,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
         ensureSufficientLiquidity(amountToWithdraw);
 
-        require(token.transfer(msg.sender, amountToWithdraw));
+        token.safeTransfer(msg.sender, amountToWithdraw);
 
         emit Exited(msg.sender, amountToWithdraw);
     }
@@ -348,7 +349,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         }
 
         mint(fee);
-        require(token.transfer(msg.sender, amount.sub(fee)));
+        token.safeTransfer(msg.sender, amount.sub(fee));
 
         emit Borrow(msg.sender, amount, fee);
     }
@@ -358,7 +359,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param currencyAmount amount to repay
      */
     function repay(uint256 currencyAmount) external onlyLender {
-        require(token.transferFrom(msg.sender, address(this), currencyAmount));
+        token.safeTransferFrom(msg.sender, address(this), currencyAmount);
         emit Repaid(msg.sender, currencyAmount);
     }
 
@@ -371,7 +372,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         claimableFees = 0;
 
         if (amount > 0) {
-            require(token.transfer(beneficiary, amount));
+            token.safeTransfer(beneficiary, amount);
         }
 
         emit Collected(beneficiary, amount);
