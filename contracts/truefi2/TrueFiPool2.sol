@@ -218,6 +218,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     function ensureSufficientLiquidity(uint256 neededAmount) internal {
         uint256 currentlyAvailableAmount = currencyBalance();
         if (currentlyAvailableAmount < neededAmount) {
+            require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy to withdraw from");
             strategy.withdraw(neededAmount.sub(currentlyAvailableAmount));
             require(currencyBalance() >= neededAmount, "TrueFiPool: Not enough funds taken from the strategy");
         }
@@ -329,6 +330,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param amount Amount of funds to deposit into curve
      */
     function flush(uint256 amount) external {
+        require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
         strategy.deposit(amount);
@@ -341,6 +343,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param minTokenAmount minimum amount of tokens to withdraw
      */
     function pull(uint256 minTokenAmount) external onlyOwner {
+        require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
+
         strategy.withdraw(minTokenAmount);
 
         emit Pulled(minTokenAmount);
