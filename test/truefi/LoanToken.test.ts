@@ -634,6 +634,43 @@ describe('LoanToken', () => {
     })
   })
 
+  describe('Is repaid?', () => {
+    it('reverts if called before funding', async () => {
+      await expect(loanToken.isRepaid()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
+    })
+
+    it('reverts if called after closing', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      const debt = await loanToken.debt()
+      await tusd.connect(borrower).approve(loanToken.address, debt)
+      await tusd.mint(borrower.address, parseEth(300))
+      await loanToken.repayInFull(borrower.address)
+      await loanToken.close()
+      await expect(loanToken.isRepaid()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
+    })
+
+    it('returns false before full repayment', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await tusd.connect(borrower).approve(loanToken.address, parseEth(100))
+      await loanToken.repay(borrower.address, parseEth(100))
+
+      expect(await loanToken.isRepaid()).to.be.false
+    })
+
+    it('returns true after full repayment', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      const debt = await loanToken.debt()
+      await tusd.connect(borrower).approve(loanToken.address, debt)
+      await tusd.mint(borrower.address, parseEth(300))
+      await loanToken.repayInFull(borrower.address)
+
+      expect(await loanToken.isRepaid()).to.be.true
+    })
+  })
+
   describe('Value', () => {
     let loanTokenBalance: BigNumber
 

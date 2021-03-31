@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {Ownable} from "../common/UpgradeableOwnable.sol";
+import {Claimable} from "../common/UpgradeableClaimable.sol";
 import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
 
@@ -15,7 +15,7 @@ import {ImplementationReference} from "../proxy/ImplementationReference.sol";
  * Anyone can create a new pool, however the token has to be whitelisted
  * Initially created pools hold the same implementation, which can be changed later on individually
  */
-contract PoolFactory is Ownable {
+contract PoolFactory is Claimable {
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -28,6 +28,7 @@ contract PoolFactory is Ownable {
 
     // @dev Whitelist for tokens, which can have pools created
     mapping(address => bool) public isAllowed;
+    bool public allowAll;
 
     ImplementationReference public poolImplementationReference;
 
@@ -50,6 +51,12 @@ contract PoolFactory is Ownable {
     event AllowedStatusChanged(address token, bool status);
 
     /**
+     * @dev Event to show that allowAll status has been changed
+     * @param status New status of allowAll
+     */
+    event AllowAllStatusChanged(bool status);
+
+    /**
      * @dev Throws if token already has an existing corresponding pool
      * @param token Token to be checked for existing pool
      */
@@ -63,7 +70,7 @@ contract PoolFactory is Ownable {
      * @param token Address of token to be checked in whitelist
      */
     modifier onlyAllowed(address token) {
-        require(isAllowed[token] == true, "PoolFactory: This token is not allowed to have a pool");
+        require(allowAll || isAllowed[token], "PoolFactory: This token is not allowed to have a pool");
         _;
     }
 
@@ -72,7 +79,7 @@ contract PoolFactory is Ownable {
      * @param _poolImplementationReference First implementation reference of TrueFiPool
      */
     function initialize(ImplementationReference _poolImplementationReference, ERC20 _stakingToken) external initializer {
-        Ownable.initialize();
+        Claimable.initialize(msg.sender);
 
         stakingToken = _stakingToken;
         poolImplementationReference = _poolImplementationReference;
@@ -101,5 +108,14 @@ contract PoolFactory is Ownable {
     function whitelist(address token, bool status) external onlyOwner {
         isAllowed[token] = status;
         emit AllowedStatusChanged(token, status);
+    }
+
+    /**
+     * @dev Change allowAll status
+     * @param status New status of allowAll
+     */
+    function setAllowAll(bool status) external onlyOwner {
+        allowAll = status;
+        emit AllowAllStatusChanged(status);
     }
 }
