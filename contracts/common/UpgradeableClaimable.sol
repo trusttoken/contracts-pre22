@@ -26,7 +26,8 @@ contract Claimable is Initializable, Context {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
+     * @dev Initializes the contract setting a custom initial owner of choice.
+     * @param __owner Initial owner of contract to be set.
      */
     function initialize(address __owner) internal initializer {
         _owner = __owner;
