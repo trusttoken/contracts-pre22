@@ -72,7 +72,7 @@ contract PoolFactory is Claimable {
      * @param _poolImplementationReference First implementation reference of TrueFiPool
      */
     function initialize(ImplementationReference _poolImplementationReference, ERC20 _stakingToken) external initializer {
-        Claimable.initialize();
+        Claimable.initialize(msg.sender);
 
         stakingToken = _stakingToken;
         poolImplementationReference = _poolImplementationReference;

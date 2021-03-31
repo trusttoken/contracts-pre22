@@ -60,7 +60,6 @@ describe('PoolFactory', () => {
       proxy = OwnedProxyWithReferenceFactory.connect(await factory.pool(token1.address), owner)
 
       pool = poolImplementation.attach(proxy.address)
-      await pool.claimOwnership()
     })
 
     it('transfers proxy ownership', async () => {

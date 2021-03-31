@@ -28,10 +28,9 @@ contract Claimable is Initializable, Context {
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
-    function initialize() internal initializer {
-        address msgSender = _msgSender();
-        _owner = msgSender;
-        emit OwnershipTransferred(address(0), msgSender);
+    function initialize(address __owner) internal initializer {
+        _owner = __owner;
+        emit OwnershipTransferred(address(0), __owner);
     }
 
     /**
