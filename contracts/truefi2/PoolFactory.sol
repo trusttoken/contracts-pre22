@@ -70,7 +70,7 @@ contract PoolFactory is Ownable {
      * @param token Address of token to be checked in whitelist
      */
     modifier onlyAllowed(address token) {
-        require(allowAll == true || isAllowed[token] == true, "PoolFactory: This token is not allowed to have a pool");
+        require(allowAll || isAllowed[token], "PoolFactory: This token is not allowed to have a pool");
         _;
     }
 
