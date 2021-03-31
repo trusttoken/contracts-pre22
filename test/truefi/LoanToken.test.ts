@@ -381,18 +381,18 @@ describe('LoanToken', () => {
     })
 
     it('reverts if called before loan is closed', async () => {
-      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
+      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Only after loan has been closed')
       await loanToken.fund()
-      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
+      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Only after loan has been closed')
       await withdraw(borrower)
-      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
+      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Only after loan has been closed')
     })
 
     it('reverts if redeeming more than own balance', async () => {
       await loanToken.fund()
       await timeTravel(provider, yearInSeconds)
       await payback(borrower, parseEth(100))
-      await expect(loanToken.redeem(parseEth(1100))).to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
+      await expect(loanToken.redeem(parseEth(1100))).to.be.revertedWith('LoanToken: Only after loan has been closed')
     })
 
     it('emits event', async () => {
@@ -525,7 +525,7 @@ describe('LoanToken', () => {
 
     it('reverts when loan not closed', async () => {
       await expect(loanToken.connect(borrower).reclaim())
-        .to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
+        .to.be.revertedWith('LoanToken: Only after loan has been closed')
     })
 
     it('reverts when not borrower tries access', async () => {
