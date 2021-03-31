@@ -646,7 +646,7 @@ describe('LoanToken', () => {
       await tusd.connect(borrower).approve(loanToken.address, debt)
       await tusd.mint(borrower.address, parseEth(300))
       await loanToken.repayInFull(borrower.address)
-      await loanToken.close()
+      await loanToken.settle()
       await expect(loanToken.isRepaid()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
     })
 
