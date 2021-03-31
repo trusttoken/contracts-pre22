@@ -46,6 +46,10 @@ describe('PoolFactory', () => {
     it('sets staking token address', async () => {
       expect(await factory.stakingToken()).to.eq(stakingToken.address)
     })
+
+    it('sets allowAll to false', async () => {
+      expect(await factory.allowAll()).to.eq(false)
+    })
   })
 
   describe('Creating new pool', () => {
@@ -161,12 +165,22 @@ describe('PoolFactory', () => {
         .to.not.be.reverted
     })
 
-    it('can create only allowed', async () => {
+    it('can create only whitelisted', async () => {
       await expect(factory.createPool(token2.address))
         .to.be.revertedWith('PoolFactory: This token is not allowed to have a pool')
       await factory.whitelist(token2.address, true)
       await expect(factory.createPool(token2.address))
         .to.not.be.reverted
+    })
+
+    it('can create if allowAll is true', async () => {
+      await expect(factory.createPool(token2.address))
+        .to.be.revertedWith('PoolFactory: This token is not allowed to have a pool')
+      await factory.setAllowAll(true)
+      expect(await factory.isAllowed(token2.address))
+        .to.eq(false)
+      await expect(factory.createPool(token2.address))
+        .not.to.be.reverted
     })
 
     it('emits event', async () => {
@@ -177,6 +191,35 @@ describe('PoolFactory', () => {
       await expect(factory.whitelist(token1.address, false))
         .to.emit(factory, 'AllowedStatusChanged')
         .withArgs(token1.address, false)
+    })
+  })
+
+  describe('setAllowAll', () => {
+    it('only owner can set allowAll', async () => {
+      await (expect(factory.connect(otherWallet).setAllowAll(true)))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+      await (expect(factory.connect(owner).setAllowAll(true)))
+        .not.to.be.reverted
+    })
+
+    it('toggles correctly', async () => {
+      expect(await factory.allowAll())
+        .to.eq(false)
+      await factory.setAllowAll(true)
+      expect(await factory.allowAll())
+        .to.eq(true)
+      await factory.setAllowAll(false)
+      expect(await factory.allowAll())
+        .to.eq(false)
+    })
+
+    it('emits events', async () => {
+      await expect(factory.setAllowAll(true))
+        .to.emit(factory, 'AllowAllStatusChanged')
+        .withArgs(true)
+      await expect(factory.setAllowAll(false))
+        .to.emit(factory, 'AllowAllStatusChanged')
+        .withArgs(false)
     })
   })
 })
