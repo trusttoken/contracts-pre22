@@ -621,7 +621,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     }
 
     function sellCrvWith1Inch(bytes calldata data) external onlyOwnerOrManager {
-        (address caller, I1Inch.SwapDescription memory description, ) = abi.decode(
+        (, I1Inch.SwapDescription memory description, ) = abi.decode(
             data[4:],
             (address, I1Inch.SwapDescription, I1Inch.CallDescription[])
         );
@@ -630,6 +630,8 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
         require(description.dstReceiver == address(this), "TrueFiPool: Receiver is not pool");
 
         _minter.token().approve(address(_1inchExchange), description.amount);
+
+        // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = address(_1inchExchange).call(data);
         require(success, "TrueFiPool: 1Inch swap failed");
         // TODO add post sell slippage check
