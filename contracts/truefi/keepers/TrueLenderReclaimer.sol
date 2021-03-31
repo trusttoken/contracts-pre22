@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+
 import {ILoanToken} from "../interface/ILoanToken.sol";
 import {TrueLender} from "../TrueLender.sol";
 
@@ -9,7 +11,8 @@ import {TrueLender} from "../TrueLender.sol";
  * @dev Bot to automate reclamation of settled TrueLender loans.
  * Only accesses public/external functions, hence safe to run by anyone
  */
- contract TrueLenderReclaimer {
+contract TrueLenderReclaimer {
+    using SafeMath for uint256;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -64,6 +67,9 @@ import {TrueLender} from "../TrueLender.sol";
      * @param loanToken LoanToken to check
      */
     function _isRepaidInFull(ILoanToken loanToken) private view returns (bool) {
-        return loanToken.status() == ILoanToken.Status.Withdrawn && loanToken.balance() >= loanToken.debt();
+        return
+            loanToken.status() == ILoanToken.Status.Withdrawn &&
+            loanToken.start().add(loanToken.term()) <= block.timestamp &&
+            loanToken.balance() >= loanToken.debt();
     }
- }
+}
