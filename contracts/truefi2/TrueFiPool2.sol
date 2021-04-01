@@ -140,6 +140,12 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     event JoiningPauseStatusChanged(bool isJoiningPaused);
 
     /**
+     * @dev Emitted when strategy is switched
+     * @param newStrategy Strategy to switch to
+     */
+    event SwitchedStrategy(ITrueStrategy newStrategy);
+
+    /**
      * @dev only lender can perform borrowing or repaying
      */
     modifier onlyLender() {
@@ -389,6 +395,20 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         }
 
         emit Collected(beneficiary, amount);
+    }
+
+    /**
+     * @dev Switches current strategy to a new strategy
+     * @param newStrategy strategy to switch to
+     */
+    function switchStrategy(ITrueStrategy newStrategy) external onlyOwner {
+        require(strategy != newStrategy, "TrueFiPool: cannot switch to the same strategy");
+
+        if (address(strategy) != address(0)) {
+            strategy.withdrawAll();
+        }
+        strategy = newStrategy;
+        emit SwitchedStrategy(newStrategy);
     }
 
     /**
