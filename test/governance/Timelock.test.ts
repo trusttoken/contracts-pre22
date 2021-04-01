@@ -2,7 +2,13 @@ import { expect, use } from 'chai'
 import { beforeEachWithFixture, timeTravel } from 'utils'
 import { utils, Wallet } from 'ethers'
 import { deployContract } from 'scripts/utils/deployContract'
-import { MockPauseableContractFactory, OwnedUpgradeabilityProxyFactory, Timelock, TimelockFactory } from 'contracts'
+import {
+  MockPauseableContract,
+  MockPauseableContractFactory,
+  OwnedUpgradeabilityProxyFactory,
+  Timelock,
+  TimelockFactory,
+} from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
 import { formatBytes32String } from '@ethersproject/strings'
 import { solidity } from 'ethereum-waffle'
@@ -10,11 +16,11 @@ import { solidity } from 'ethereum-waffle'
 use(solidity)
 
 describe('Timelock', () => {
-  let admin: Wallet, notAdmin: Wallet
+  let admin: Wallet, notAdmin: Wallet, pauser: Wallet
   let timelock: Timelock
 
   beforeEachWithFixture(async (wallets) => {
-    ([admin, notAdmin] = wallets)
+    ([admin, notAdmin, pauser] = wallets)
     timelock = await deployContract(admin, TimelockFactory)
     await timelock.initialize(admin.address, 200000)
   })
@@ -30,7 +36,11 @@ describe('Timelock', () => {
   }
 
   describe('emergency pause', () => {
-    it('upgrades proxy implementation to address(0)', async () => {
+    beforeEach(async () => {
+      await timelock.setPauser(pauser.address)
+    })
+
+    async function createProxy () {
       const proxy = await deployContract(admin, OwnedUpgradeabilityProxyFactory)
       await proxy.upgradeTo(Wallet.createRandom().address)
       await proxy.transferProxyOwnership(timelock.address)
@@ -38,27 +48,65 @@ describe('Timelock', () => {
       await timelock.queueTransaction(proxy.address, 0, 'claimProxyOwnership()', '0x', block.timestamp + 200100)
       await timeTravel(admin.provider as any, 200200)
       await timelock.executeTransaction(proxy.address, 0, 'claimProxyOwnership()', '0x', block.timestamp + 200100)
+      return proxy
+    }
+
+    it('upgrades proxy implementation to address(0)', async () => {
+      const proxy = await createProxy()
       expect(await proxy.implementation()).to.not.equal(AddressZero)
-      await timelock.emergencyPause(proxy.address)
+      await timelock.connect(pauser).emergencyPause(proxy.address)
       expect(await proxy.implementation()).to.equal(AddressZero)
     })
 
-    it('is onlyAdmin', async () => {
+    it('can only be called by pauser', async () => {
       const proxy = await deployContract(admin, OwnedUpgradeabilityProxyFactory)
-      await expect(timelock.connect(notAdmin).emergencyPause(proxy.address)).to.be.revertedWith('Timelock::emergencyPause: Call must come from admin.')
+      await expect(timelock.connect(notAdmin).emergencyPause(proxy.address)).to.be.revertedWith('Timelock::emergencyPause: Call must come from Timelock or pauser.')
+      await expect(timelock.connect(admin).emergencyPause(proxy.address)).to.be.revertedWith('Timelock::emergencyPause: Call must come from Timelock or pauser.')
+    })
+
+    it('can be called by queueing transaction to Timelock', async () => {
+      const proxy = await createProxy()
+      await queueAndExecute('emergencyPause(address)', [proxy.address])
+      expect(await proxy.implementation()).to.equal(AddressZero)
+    })
+
+    it('can be called by queueing transaction to Timelock', async () => {
+      const proxy = await createProxy()
+      await queueAndExecute('emergencyPause(address)', [proxy.address])
+      expect(await proxy.implementation()).to.equal(AddressZero)
     })
 
     it('cannot pause timelock', async () => {
-      await expect(timelock.connect(admin).emergencyPause(timelock.address)).to.be.revertedWith('Timelock::emergencyPause: Cannot pause Timelock.')
+      await expect(timelock.connect(pauser).emergencyPause(timelock.address)).to.be.revertedWith('Timelock::emergencyPause: Cannot pause Timelock.')
     })
 
     it('cannot pause admin', async () => {
-      await expect(timelock.connect(admin).emergencyPause(admin.address)).to.be.revertedWith('Timelock:emergencyPause: Cannot pause admin.')
+      await expect(timelock.connect(pauser).emergencyPause(admin.address)).to.be.revertedWith('Timelock:emergencyPause: Cannot pause admin.')
+    })
+  })
+
+  describe('setPauseStatus', () => {
+    let pauseable: MockPauseableContract
+
+    beforeEach(async () => {
+      pauseable = await deployContract(admin, MockPauseableContractFactory)
+      await timelock.setPauser(pauser.address)
     })
 
-    it('pause and unpause deposits', async () => {
-      const pauseable = await deployContract(admin, MockPauseableContractFactory)
-      await timelock.setPauseStatus(pauseable.address, true)
+    it('pause and unpause pausable contract', async () => {
+      await timelock.connect(pauser).setPauseStatus(pauseable.address, true)
+      expect(await pauseable.pauseStatus()).to.be.true
+      await timelock.connect(pauser).setPauseStatus(pauseable.address, false)
+      expect(await pauseable.pauseStatus()).to.be.false
+    })
+
+    it('can only be called by pauser', async () => {
+      await expect(timelock.connect(admin).setPauseStatus(pauseable.address, true))
+        .to.be.revertedWith('Timelock::setPauseStatus: Call must come from Timelock or pauser.')
+    })
+
+    it('can be called by queueing transaction to Timelock', async () => {
+      await queueAndExecute('setPauseStatus(address,bool)', [pauseable.address, true])
       expect(await pauseable.pauseStatus()).to.be.true
     })
   })

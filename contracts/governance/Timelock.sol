@@ -57,7 +57,6 @@ contract Timelock is ClaimableContract {
 
         owner_ = msg.sender;
         initalized = true;
-        admin_initialized = true;
 
         emit NewDelay(delay);
         emit NewAdmin(admin);
@@ -86,7 +85,7 @@ contract Timelock is ClaimableContract {
      * @param proxy Proxy to upgrade to zero address
      */
     function emergencyPause(OwnedUpgradeabilityProxy proxy) external {
-        require(msg.sender == admin || msg.sender == pauser, "Timelock::emergencyPause: Call must come from admin or pauser.");
+        require(msg.sender == address(this) || msg.sender == pauser, "Timelock::emergencyPause: Call must come from Timelock or pauser.");
         require(address(proxy) != address(this), "Timelock::emergencyPause: Cannot pause Timelock.");
         require(address(proxy) != address(admin), "Timelock:emergencyPause: Cannot pause admin.");
         proxy.upgradeTo(address(0));
@@ -101,7 +100,7 @@ contract Timelock is ClaimableContract {
      * @param status Pause status
      */
     function setPauseStatus(IPauseableContract pauseContract, bool status) external {
-        require(msg.sender == admin || msg.sender == pauser, "Timelock::emergencyPause: Call must come from admin or pauser.");
+        require(msg.sender == address(this) || msg.sender == pauser, "Timelock::setPauseStatus: Call must come from Timelock or pauser.");
         pauseContract.setPauseStatus(status);
 
         emit PauseStatusChanged(address(pauseContract), status);

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 import {Timelock} from "../Timelock.sol";
@@ -16,7 +17,5 @@ contract MockTimeLock is Timelock {
 
         owner_ = msg.sender;
         initalized = true;
-
-        admin_initialized = true;
     }
 }
