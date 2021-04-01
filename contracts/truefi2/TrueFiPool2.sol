@@ -339,6 +339,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
+        token.approve(address(strategy), amount);
         strategy.deposit(amount);
 
         emit Flushed(amount);
