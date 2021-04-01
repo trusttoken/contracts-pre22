@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { deployMockContract, solidity } from 'ethereum-waffle'
-import { Contract, Wallet, providers } from 'ethers'
-import { beforeEachWithFixture, timeTravel } from 'utils'
+import { Contract, Wallet } from 'ethers'
+import { beforeEachWithFixture } from 'utils'
 
 import {
   ILoanTokenJson,
@@ -14,16 +14,14 @@ use(solidity)
 
 describe('TrueLenderReclaimer', () => {
   let owner: Wallet
-  let provider: providers.JsonRpcProvider
 
   let mockLoanToken: Contract
   let mockLender: MockTrueLender
 
   let reclaimer: TrueLenderReclaimer
 
-  beforeEachWithFixture(async (wallets, _provider) => {
+  beforeEachWithFixture(async (wallets) => {
     [owner] = wallets
-    provider = _provider
 
     mockLoanToken = await deployMockContract(owner, ILoanTokenJson.abi)
     await mockLoanToken.mock.isLoanToken.returns(true)
