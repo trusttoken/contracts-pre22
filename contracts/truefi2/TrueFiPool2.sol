@@ -3,12 +3,13 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
-import {Ownable} from "../common/UpgradeableOwnable.sol";
+import {Claimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueLender} from "./interface/ITrueLender.sol";
+import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ABDKMath64x64} from "../truefi/Log.sol";
 
 /**
@@ -25,9 +26,9 @@ import {ABDKMath64x64} from "../truefi/Log.sol";
  *
  * Funds are managed through an external function to save gas on deposits
  */
-contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
+contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     using SafeMath for uint256;
-
+    using SafeERC20 for IERC20;
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -36,10 +37,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
 
     uint8 public constant VERSION = 0;
 
-    IERC20 public token;
+    IERC20 public override token;
 
     ITrueStrategy public strategy;
-    ITrueLender public lender;
+    ITrueLender2 public lender;
 
     // fee for deposits
     uint256 public joiningFee;
@@ -65,11 +66,16 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
         address __owner
     ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
-        Ownable.initialize();
-        transferOwnership(__owner);
+        Claimable.initialize(__owner);
 
         token = _token;
         stakingToken = _stakingToken;
+    }
+
+    /// Temporary function to avoid merge conflicts
+    /// TODO use initializer
+    function setLender(ITrueLender2 _lender) external {
+        lender = _lender;
     }
 
     /**
@@ -163,6 +169,9 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @return Virtual liquid value of pool assets
      */
     function liquidValue() public view returns (uint256) {
+        if (address(strategy) == address(0)) {
+            return currencyBalance();
+        }
         return currencyBalance().add(strategy.value());
     }
 
@@ -182,7 +191,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @return Value of loans in pool
      */
     function loansValue() public view returns (uint256) {
-        return lender.value();
+        return lender.value(this);
     }
 
     /**
@@ -195,7 +204,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
         claimableFees = claimableFees.add(fee);
 
         latestJoinBlock[tx.origin] = block.number;
-        require(token.transferFrom(msg.sender, address(this), amount));
+        token.safeTransferFrom(msg.sender, address(this), amount);
 
         emit Joined(msg.sender, amount, mintedAmount);
     }
@@ -209,6 +218,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
     function ensureSufficientLiquidity(uint256 neededAmount) internal {
         uint256 currentlyAvailableAmount = currencyBalance();
         if (currentlyAvailableAmount < neededAmount) {
+            require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy to withdraw from");
             strategy.withdraw(neededAmount.sub(currentlyAvailableAmount));
             require(currencyBalance() >= neededAmount, "TrueFiPool: Not enough funds taken from the strategy");
         }
@@ -247,7 +257,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
         // if tokens remaining, transfer
         if (liquidAmountToTransfer > 0) {
             ensureSufficientLiquidity(liquidAmountToTransfer);
-            require(token.transfer(msg.sender, liquidAmountToTransfer));
+            token.safeTransfer(msg.sender, liquidAmountToTransfer);
         }
 
         emit Exited(msg.sender, amount);
@@ -272,7 +282,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
 
         ensureSufficientLiquidity(amountToWithdraw);
 
-        require(token.transfer(msg.sender, amountToWithdraw));
+        token.safeTransfer(msg.sender, amountToWithdraw);
 
         emit Exited(msg.sender, amountToWithdraw);
     }
@@ -320,6 +330,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @param amount Amount of funds to deposit into curve
      */
     function flush(uint256 amount) external {
+        require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
         strategy.deposit(amount);
@@ -332,6 +343,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @param minTokenAmount minimum amount of tokens to withdraw
      */
     function pull(uint256 minTokenAmount) external onlyOwner {
+        require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
+
         strategy.withdraw(minTokenAmount);
 
         emit Pulled(minTokenAmount);
@@ -342,14 +355,14 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @dev Remove liquidity from curve if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount, uint256 fee) external onlyLender {
-        require(amount <= liquidValue(), "");
+    function borrow(uint256 amount, uint256 fee) override external onlyLender {
+        require(amount <= liquidValue(), "TrueFiPool: Insufficient liquidity");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);
         }
 
         mint(fee);
-        require(token.transfer(msg.sender, amount.sub(fee)));
+        token.safeTransfer(msg.sender, amount.sub(fee));
 
         emit Borrow(msg.sender, amount, fee);
     }
@@ -358,8 +371,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
      * @dev repay debt by transferring tokens to the contract
      * @param currencyAmount amount to repay
      */
-    function repay(uint256 currencyAmount) external onlyLender {
-        require(token.transferFrom(msg.sender, address(this), currencyAmount));
+    function repay(uint256 currencyAmount) external override onlyLender {
+        token.safeTransferFrom(msg.sender, address(this), currencyAmount);
         emit Repaid(msg.sender, currencyAmount);
     }
 
@@ -372,7 +385,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Ownable {
         claimableFees = 0;
 
         if (amount > 0) {
-            require(token.transfer(beneficiary, amount));
+            token.safeTransfer(beneficiary, amount);
         }
 
         emit Collected(beneficiary, amount);

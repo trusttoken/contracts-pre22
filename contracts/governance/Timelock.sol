@@ -6,15 +6,13 @@
 // 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
 // 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Ctrl+f for OLD to see all the modifications.
 
-// OLD: pragma solidity ^0.5.16;
 pragma solidity ^0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./common/ClaimableContract.sol";
 import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
+import {IPauseableContract} from "./interface/IPauseableContract.sol";
 
 contract Timelock is ClaimableContract {
     using SafeMath for uint;
@@ -24,6 +22,7 @@ contract Timelock is ClaimableContract {
     event NewPendingAdmin(address indexed newPendingAdmin);
     event NewDelay(uint indexed newDelay);
     event EmergencyPause(OwnedUpgradeabilityProxy proxy);
+    event PauseStatusChanged(address pauseContract, bool status);
     event CancelTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
     event ExecuteTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
     event QueueTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature, bytes data, uint eta);
@@ -35,7 +34,7 @@ contract Timelock is ClaimableContract {
     address public admin;
     address public pendingAdmin;
     uint public delay;
-    // OLD: N/A
+
     bool public admin_initialized;
 
     mapping (bytes32 => bool) public queuedTransactions;
@@ -58,29 +57,53 @@ contract Timelock is ClaimableContract {
 
         owner_ = msg.sender;
         initalized = true;
-        // OLD: N/A
-        admin_initialized = false;
+
+        emit NewDelay(delay);
+        emit NewAdmin(admin);
     }
 
-    // OLD: function() external payable { }
     receive() external payable { }
 
+    /**
+     * @dev Set new pauser address
+     * @param _pauser New pauser address
+     */
     function setPauser(address _pauser) external {
         if (admin_initialized) {
-            require(msg.sender == address(this), "Timelock::setPendingAdmin: Call must come from Timelock.");
+            require(msg.sender == address(this), "Timelock::setPauser: Call must come from Timelock.");
         } else {
-            require(msg.sender == admin, "Timelock::setPendingAdmin: First call must come from admin.");
+            require(msg.sender == admin, "Timelock::setPauser: First call must come from admin.");
         }
         pauser = _pauser;
 
         emit NewPauser(_pauser);
     }
 
+    /**
+     * @dev Emergency pause a proxy owned by this contract
+     * Upgrades a proxy to the zero address in order to emergency pause
+     * @param proxy Proxy to upgrade to zero address
+     */
     function emergencyPause(OwnedUpgradeabilityProxy proxy) external {
-        require(msg.sender == admin, "Timelock::emergencyPause: Call must come from admin.");
+        require(msg.sender == address(this) || msg.sender == pauser, "Timelock::emergencyPause: Call must come from Timelock or pauser.");
+        require(address(proxy) != address(this), "Timelock::emergencyPause: Cannot pause Timelock.");
+        require(address(proxy) != address(admin), "Timelock:emergencyPause: Cannot pause admin.");
         proxy.upgradeTo(address(0));
 
         emit EmergencyPause(proxy);
+    }
+
+    /**
+     * @dev Pause or unpause Pausable contracts.
+     * Useful to allow/disallow deposits or certain actions in compromised contracts
+     * @param pauseContract New pauser address
+     * @param status Pause status
+     */
+    function setPauseStatus(IPauseableContract pauseContract, bool status) external {
+        require(msg.sender == address(this) || msg.sender == pauser, "Timelock::setPauseStatus: Call must come from Timelock or pauser.");
+        pauseContract.setPauseStatus(status);
+
+        emit PauseStatusChanged(address(pauseContract), status);
     }
 
     /**

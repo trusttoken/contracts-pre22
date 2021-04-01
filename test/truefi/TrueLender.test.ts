@@ -588,7 +588,7 @@ describe('TrueLender', () => {
       await lender.fund(secondLoanToken.address)
       await timeTravel(provider, averageMonthInSeconds * 6)
       await tusd.mint(firstLoanToken.address, parseEth(12e5))
-      await firstLoanToken.close()
+      await firstLoanToken.settle()
       expectScaledCloseTo(await lender.value(), parseEth(33e5))
     })
 
@@ -617,7 +617,7 @@ describe('TrueLender', () => {
       await timeTravel(provider, yearInSeconds * 1.5)
       await lender.distribute(otherWallet.address, 1, 2)
       await tusd.mint(firstLoanToken.address, await firstLoanToken.debt())
-      await firstLoanToken.close()
+      await firstLoanToken.settle()
       await firstLoanToken.connect(otherWallet).redeem(await firstLoanToken.balanceOf(otherWallet.address))
       expectScaledCloseTo(await lender.value(), parseEth(175e4))
     })

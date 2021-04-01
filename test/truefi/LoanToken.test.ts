@@ -169,7 +169,7 @@ describe('LoanToken', () => {
     it('reverts when withdrawing from closed loan', async () => {
       await loanToken.fund()
       await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.close()
+      await loanToken.enterDefault()
       await expect(withdraw(borrower)).to.be.revertedWith('LoanToken: Current status should be Funded')
     })
 
@@ -184,12 +184,45 @@ describe('LoanToken', () => {
     })
   })
 
-  describe('Close', () => {
+  describe('Settle', () => {
+    it('sets status to Settled if whole debt has been returned after term has passed', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await timeTravel(provider, yearInSeconds)
+      await tusd.mint(loanToken.address, parseEth(1100))
+      await loanToken.settle()
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
+    })
+
+    it('sets status to Settled if whole debt has been returned before term has passed', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await tusd.mint(loanToken.address, parseEth(1100))
+      await loanToken.settle()
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
+    })
+
+    it('loan can be payed back 1 day after term has ended', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await timeTravel(provider, yearInSeconds + dayInSeconds / 2)
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Loan cannot be defaulted yet')
+      await tusd.mint(loanToken.address, parseEth(1100))
+      await loanToken.settle()
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
+    })
+
+    it('reverts when closing not funded loan', async () => {
+      await expect(loanToken.settle()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
+    })
+  })
+
+  describe('Enter Default', () => {
     it('sets status to Defaulted if no debt has been returned', async () => {
       await loanToken.fund()
       await withdraw(borrower)
       await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.close()
+      await loanToken.enterDefault()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
     })
 
@@ -198,58 +231,27 @@ describe('LoanToken', () => {
       await withdraw(borrower)
       await timeTravel(provider, defaultedLoanCloseTime)
       await tusd.mint(loanToken.address, parseEth(1099))
-      await loanToken.close()
+      await loanToken.enterDefault()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
-    })
-
-    it('sets status to Settled if whole debt has been returned after term has passed', async () => {
-      await loanToken.fund()
-      await withdraw(borrower)
-      await timeTravel(provider, yearInSeconds)
-      await tusd.mint(loanToken.address, parseEth(1100))
-      await loanToken.close()
-      expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
-    })
-
-    it('sets status to Settled if whole debt has been returned before term has passed', async () => {
-      await loanToken.fund()
-      await withdraw(borrower)
-      await tusd.mint(loanToken.address, parseEth(1100))
-      await loanToken.close()
-      expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
-    })
-
-    it('loan can be payed back 1 day after term has ended', async () => {
-      await loanToken.fund()
-      await withdraw(borrower)
-      await timeTravel(provider, yearInSeconds + dayInSeconds / 2)
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
-      await tusd.mint(loanToken.address, parseEth(1100))
-      await loanToken.close()
-      expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
-    })
-
-    it('reverts when closing not funded loan', async () => {
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
     })
 
     it('reverts when closing right after funding', async () => {
       await loanToken.fund()
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Loan cannot be defaulted yet')
     })
 
     it('reverts when closing ongoing loan', async () => {
       await loanToken.fund()
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Loan cannot be defaulted yet')
       await timeTravel(provider, yearInSeconds - 10)
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Loan cannot be closed yet')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Loan cannot be defaulted yet')
     })
 
     it('reverts when trying to close already closed loan', async () => {
       await loanToken.fund()
       await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.close()
-      await expect(loanToken.close()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
+      await loanToken.enterDefault()
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
     })
 
     it('emits event', async () => {
@@ -257,7 +259,7 @@ describe('LoanToken', () => {
       await withdraw(borrower)
       await tusd.mint(loanToken.address, parseEth(1099))
       await timeTravel(provider, defaultedLoanCloseTime)
-      await expect(loanToken.close()).to.emit(loanToken, 'Closed').withArgs(LoanTokenStatus.Defaulted, parseEth(1099))
+      await expect(loanToken.enterDefault()).to.emit(loanToken, 'Defaulted').withArgs(parseEth(1099))
     })
   })
 
@@ -283,7 +285,7 @@ describe('LoanToken', () => {
       await loanToken.fund()
       await withdraw(borrower)
       await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.close()
+      await loanToken.enterDefault()
 
       await expect(loanToken.connect(borrower).liquidate())
         .to.be.revertedWith('LoanToken: Caller is not the liquidator')
@@ -293,7 +295,7 @@ describe('LoanToken', () => {
       await loanToken.fund()
       await withdraw(borrower)
       await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.close()
+      await loanToken.enterDefault()
 
       await loanToken.liquidate()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Liquidated)
@@ -390,24 +392,24 @@ describe('LoanToken', () => {
     })
 
     it('reverts if called before loan is closed', async () => {
-      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
+      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Only after loan has been closed')
       await loanToken.fund()
-      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
+      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Only after loan has been closed')
       await withdraw(borrower)
-      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
+      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken: Only after loan has been closed')
     })
 
     it('reverts if redeeming more than own balance', async () => {
       await loanToken.fund()
       await timeTravel(provider, yearInSeconds)
       await payback(borrower, parseEth(100))
-      await expect(loanToken.redeem(parseEth(1100))).to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
+      await expect(loanToken.redeem(parseEth(1100))).to.be.revertedWith('LoanToken: Only after loan has been closed')
     })
 
     it('emits event', async () => {
       await loanToken.fund()
       await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.close()
+      await loanToken.enterDefault()
       await expect(loanToken.redeem(parseEth(1100))).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEth(1100), removeFee(parseEth(1000)))
     })
 
@@ -416,7 +418,7 @@ describe('LoanToken', () => {
         await loanToken.fund()
         await timeTravel(provider, yearInSeconds)
         await payback(borrower, await addFee(parseEth(100)))
-        await loanToken.close()
+        await loanToken.settle()
         await expect(() => loanToken.redeem(parseEth(1100))).to.changeTokenBalance(tusd, lender, parseEth(1100))
       })
 
@@ -436,7 +438,7 @@ describe('LoanToken', () => {
         await timeTravel(provider, defaultedLoanCloseTime)
         await withdraw(borrower)
         await payback(borrower, parseEth(825))
-        await loanToken.close()
+        await loanToken.enterDefault()
         await expect(() => loanToken.redeem(parseEth(1100))).to.changeTokenBalance(tusd, lender, parseEth(825))
       })
 
@@ -456,7 +458,7 @@ describe('LoanToken', () => {
         await timeTravel(provider, defaultedLoanCloseTime)
         await withdraw(borrower)
         await payback(borrower, parseEth(550))
-        await loanToken.close()
+        await loanToken.enterDefault()
         await loanToken.redeem(parseEth(550))
         expect(await tusd.balanceOf(lender.address)).to.equal(await addFee(parseEth(275)))
         await payback(borrower, parseEth(550))
@@ -490,7 +492,7 @@ describe('LoanToken', () => {
         await timeTravel(provider, defaultedLoanCloseTime)
         await withdraw(borrower)
         await payback(borrower, parseEth(550))
-        await loanToken.close()
+        await loanToken.enterDefault()
         await loanToken.redeem(parseEth(275))
         expect(await tusd.balanceOf(lender.address)).to.equal(parseEth(275).div(2))
         await payback(borrower, parseEth(550))
@@ -534,23 +536,23 @@ describe('LoanToken', () => {
 
     it('reverts when loan not closed', async () => {
       await expect(loanToken.connect(borrower).reclaim())
-        .to.be.revertedWith('LoanToken: Current status should be Settled or Defaulted')
+        .to.be.revertedWith('LoanToken: Only after loan has been closed')
     })
 
     it('reverts when not borrower tries access', async () => {
-      await loanToken.close()
+      await loanToken.enterDefault()
       await expect(loanToken.reclaim())
         .to.be.revertedWith('LoanToken: Caller is not the borrower')
     })
 
     it('reverts when total supply is greater than 0', async () => {
-      await loanToken.close()
+      await loanToken.enterDefault()
       await expect(loanToken.connect(borrower).reclaim())
         .to.be.revertedWith('LoanToken: Cannot reclaim when LoanTokens are in circulation')
     })
 
     it('reverts when balance is 0', async () => {
-      await loanToken.close()
+      await loanToken.enterDefault()
       await payback(borrower, parseEth(1100))
       await loanToken.redeem(parseEth(1100))
       await expect(loanToken.connect(borrower).reclaim())
@@ -558,14 +560,14 @@ describe('LoanToken', () => {
     })
 
     it('reclaims surplus when conditions met', async () => {
-      await loanToken.close()
+      await loanToken.enterDefault()
       await paybackRedeemPayback()
       await expect(() => loanToken.connect(borrower).reclaim())
         .to.changeTokenBalance(tusd, borrower, parseEth(200))
     })
 
     it('reverts when reclaims twice', async () => {
-      await loanToken.close()
+      await loanToken.enterDefault()
       await paybackRedeemPayback()
       await loanToken.connect(borrower).reclaim()
       await expect(loanToken.connect(borrower).reclaim())
@@ -573,7 +575,7 @@ describe('LoanToken', () => {
     })
 
     it('reclaims, pays some more and reclaims again', async () => {
-      await loanToken.close()
+      await loanToken.enterDefault()
       await payback(borrower, parseEth(900))
       await loanToken.redeem(parseEth(1100))
       await payback(borrower, parseEth(100))
@@ -585,7 +587,7 @@ describe('LoanToken', () => {
     })
 
     it('emits event', async () => {
-      await loanToken.close()
+      await loanToken.enterDefault()
       await paybackRedeemPayback()
       await expect(loanToken.connect(borrower).reclaim()).to.emit(loanToken, 'Reclaimed')
         .withArgs(borrower.address, parseEth(200))
@@ -643,6 +645,43 @@ describe('LoanToken', () => {
     })
   })
 
+  describe('Is repaid?', () => {
+    it('reverts if called before funding', async () => {
+      await expect(loanToken.isRepaid()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
+    })
+
+    it('reverts if called after closing', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      const debt = await loanToken.debt()
+      await tusd.connect(borrower).approve(loanToken.address, debt)
+      await tusd.mint(borrower.address, parseEth(300))
+      await loanToken.repayInFull(borrower.address)
+      await loanToken.settle()
+      await expect(loanToken.isRepaid()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
+    })
+
+    it('returns false before full repayment', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      await tusd.connect(borrower).approve(loanToken.address, parseEth(100))
+      await loanToken.repay(borrower.address, parseEth(100))
+
+      expect(await loanToken.isRepaid()).to.be.false
+    })
+
+    it('returns true after full repayment', async () => {
+      await loanToken.fund()
+      await withdraw(borrower)
+      const debt = await loanToken.debt()
+      await tusd.connect(borrower).approve(loanToken.address, debt)
+      await tusd.mint(borrower.address, parseEth(300))
+      await loanToken.repayInFull(borrower.address)
+
+      expect(await loanToken.isRepaid()).to.be.true
+    })
+  })
+
   describe('Value', () => {
     let loanTokenBalance: BigNumber
 
@@ -673,7 +712,7 @@ describe('LoanToken', () => {
 
     it('loan fully repaid and closed before term', async () => {
       await tusd.mint(loanToken.address, parseEth(1100))
-      await loanToken.close()
+      await loanToken.settle()
       expect(await loanToken.value(loanTokenBalance)).to.be.equal(parseEth(1100))
     })
   })
