@@ -6,6 +6,8 @@ import {
   LoanToken2Factory,
   MockErc20Token,
   MockErc20TokenFactory,
+  MockStrategy,
+  MockStrategyFactory,
   PoolFactory,
   PoolFactoryFactory,
   StkTruTokenFactory,
@@ -13,8 +15,8 @@ import {
   TrueFiPool2Factory,
   TrueLender2,
   TrueLender2Factory,
+  Pool2ArbitrageTestFactory,
 } from 'contracts/types'
-import { Pool2ArbitrageTestFactory } from 'contracts/types/Pool2ArbitrageTestFactory'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
@@ -37,6 +39,8 @@ describe('TrueFiPool2', () => {
   let poolFactory: PoolFactory
   let lender: TrueLender2
   let deployContract: Deployer
+  let poolStrategy1: MockStrategy
+  let poolStrategy2: MockStrategy
 
   // const dayInSeconds = 60 * 60 * 24
   const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
@@ -64,6 +68,9 @@ describe('TrueFiPool2', () => {
     await lender.initialize(stkToken.address, poolFactory.address)
     await pool.setLender(lender.address)
     await stkToken.setPayerWhitelistingStatus(lender.address, true)
+
+    poolStrategy1 = await deployContract(MockStrategyFactory, tusd.address, pool.address)
+    poolStrategy2 = await deployContract(MockStrategyFactory, tusd.address, pool.address)
 
     await tusd.mint(owner.address, includeFee(parseEth(1e7)))
 
@@ -222,6 +229,52 @@ describe('TrueFiPool2', () => {
 
     it('reverts when called not by owner or funds manager', async () => {
       await expect(pool.connect(borrower).collectFees(beneficiary)).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+  })
+
+  describe('switchStrategy', () => {
+    beforeEach(async () => {
+      await tusd.approve(pool.address, includeFee(parseEth(100)))
+      await pool.join(includeFee(parseEth(100)))
+    })
+
+    it('only owner can switch strategy', async () => {
+      await expect(pool.connect(borrower).switchStrategy(poolStrategy1.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
+        .not.to.be.reverted
+    })
+
+    it('cannot switch to the same strategy', async () => {
+      await pool.connect(owner).switchStrategy(poolStrategy1.address)
+      await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
+        .to.be.revertedWith('TrueFiPool: cannot switch to the same strategy')
+      await expect(pool.connect(owner).switchStrategy(poolStrategy2.address))
+        .not.to.be.reverted
+    })
+
+    it('switches strategy', async () => {
+      expect(await pool.strategy()).to.eq(AddressZero)
+      await pool.connect(owner).switchStrategy(poolStrategy1.address)
+      expect(await pool.strategy()).to.eq(poolStrategy1.address)
+      await pool.connect(owner).switchStrategy(poolStrategy2.address)
+      expect(await pool.strategy()).to.eq(poolStrategy2.address)
+    })
+
+    it('withdraws all if something was deposited', async () => {
+      await pool.connect(owner).switchStrategy(poolStrategy1.address)
+      await pool.flush(parseEth(100))
+      expect(await tusd.balanceOf(poolStrategy1.address))
+        .to.eq(parseEth(100))
+      await pool.connect(owner).switchStrategy(poolStrategy2.address)
+      expect(await tusd.balanceOf(poolStrategy1.address))
+        .to.eq(0)
+    })
+
+    it('emits event', async () => {
+      await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
+        .to.emit(pool, 'SwitchedStrategy')
+        .withArgs(poolStrategy1.address)
     })
   })
 
