@@ -8,6 +8,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {VoteToken} from "./VoteToken.sol";
 import {ITrueDistributor} from "../truefi/interface/ITrueDistributor.sol";
 import {StkClaimableContract} from "./common/StkClaimableContract.sol";
+import {IPauseableContract} from "../governance/interface/IPauseableContract.sol";
 
 /**
  * @title stkTRU
@@ -19,7 +20,7 @@ import {StkClaimableContract} from "./common/StkClaimableContract.sol";
  * stkTRU can be used to vote in governance
  * stkTRU can be used to rate and approve loans
  */
-contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
+contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, ReentrancyGuard {
     using SafeMath for uint256;
     uint256 constant PRECISION = 1e30;
     uint256 constant MIN_DISTRIBUTED_AMOUNT = 100e8;
@@ -69,6 +70,9 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
 
     mapping(address => uint256) public receivedDuringCooldown;
 
+    // allow pausing of deposits
+    bool public pauseStatus;
+
     // ======= STORAGE DECLARATION END ============
 
     event Stake(address indexed staker, uint256 amount);
@@ -79,6 +83,15 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
     event CooldownTimeChanged(uint256 newUnstakePeriodDuration);
     event UnstakePeriodDurationChanged(uint256 newUnstakePeriodDuration);
     event FeePayerWhitelistingStatusChanged(address payer, bool status);
+    event PauseStatusChanged(bool pauseStatus);
+
+    /**
+     * @dev pool can only be joined when it's unpaused
+     */
+    modifier joiningNotPaused() {
+        require(!pauseStatus, "StkTruToken: Joining the pool is paused");
+        _;
+    }
 
     /**
      * @dev Only Liquidator contract can perform TRU liquidations
@@ -188,6 +201,15 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
     }
 
     /**
+     * @dev Allow pausing of deposits in case of emergency
+     * @param status New deposit status
+     */
+    function setPauseStatus(bool status) external override onlyOwner {
+        pauseStatus = status;
+        emit PauseStatusChanged(status);
+    }
+
+    /**
      * @dev Owner can set unstake period duration
      * Unstake period defines how long after cooldown a user has to withdraw stake
      * @param newUnstakePeriodDuration New unstake period
@@ -206,7 +228,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, ReentrancyGuard {
      * Updates rewards when staking
      * @param amount Amount of TRU to stake for stkTRU
      */
-    function stake(uint256 amount) external distribute update(msg.sender) {
+    function stake(uint256 amount) external distribute update(msg.sender) joiningNotPaused {
         _stakeWithoutTransfer(amount);
         require(tru.transferFrom(msg.sender, address(this), amount));
     }
