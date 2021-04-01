@@ -374,15 +374,15 @@ describe('LoanToken', () => {
         .withArgs(borrower.address, debt)
     })
 
-    it('emits Closed event', async () => {
+    it('emits Settled event', async () => {
       await loanToken.fund()
       await withdraw(borrower)
       const debt = await loanToken.debt()
       await tusd.connect(borrower).approve(loanToken.address, debt)
       await tusd.mint(borrower.address, parseEth(300))
       await expect(loanToken.repayInFull(borrower.address))
-        .to.emit(loanToken, 'Closed')
-        .withArgs(LoanTokenStatus.Settled, debt)
+        .to.emit(loanToken, 'Settled')
+        .withArgs(debt)
     })
   })
 
@@ -650,14 +650,13 @@ describe('LoanToken', () => {
       await expect(loanToken.isRepaid()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
     })
 
-    it('reverts if called after closing', async () => {
+    it('reverts if called after settling', async () => {
       await loanToken.fund()
       await withdraw(borrower)
       const debt = await loanToken.debt()
       await tusd.connect(borrower).approve(loanToken.address, debt)
       await tusd.mint(borrower.address, parseEth(300))
       await loanToken.repayInFull(borrower.address)
-      await loanToken.settle()
       await expect(loanToken.isRepaid()).to.be.revertedWith('LoanToken: Current status should be Funded or Withdrawn')
     })
 
@@ -670,13 +669,13 @@ describe('LoanToken', () => {
       expect(await loanToken.isRepaid()).to.be.false
     })
 
-    it('returns true after full repayment', async () => {
+    it('returns true after transfer repayment', async () => {
       await loanToken.fund()
       await withdraw(borrower)
       const debt = await loanToken.debt()
-      await tusd.connect(borrower).approve(loanToken.address, debt)
-      await tusd.mint(borrower.address, parseEth(300))
-      await loanToken.repayInFull(borrower.address)
+      await tusd.connect(borrower).approve(loanToken.address, parseEth(900))
+      await loanToken.repay(borrower.address, parseEth(900))
+      await tusd.mint(loanToken.address, parseEth(300))
 
       expect(await loanToken.isRepaid()).to.be.true
     })
