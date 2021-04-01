@@ -672,7 +672,6 @@ describe('LoanToken', () => {
     it('returns true after transfer repayment', async () => {
       await loanToken.fund()
       await withdraw(borrower)
-      const debt = await loanToken.debt()
       await tusd.connect(borrower).approve(loanToken.address, parseEth(900))
       await loanToken.repay(borrower.address, parseEth(900))
       await tusd.mint(loanToken.address, parseEth(300))
