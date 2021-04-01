@@ -1,14 +1,32 @@
 import { expect, use } from 'chai'
-import { ImplementationReference, ImplementationReferenceFactory, MockErc20Token, MockErc20TokenFactory, PoolFactory, PoolFactoryFactory, TrueFiPool2, TrueFiPool2Factory } from 'contracts/types'
+import {
+  ImplementationReference,
+  ImplementationReferenceFactory,
+  LinearTrueDistributorFactory,
+  LoanToken2Factory,
+  MockErc20Token,
+  MockErc20TokenFactory,
+  PoolFactory,
+  PoolFactoryFactory,
+  StkTruTokenFactory,
+  TrueFiPool2,
+  TrueFiPool2Factory,
+  TrueLender2,
+  TrueLender2Factory,
+} from 'contracts/types'
 import { Pool2ArbitrageTestFactory } from 'contracts/types/Pool2ArbitrageTestFactory'
-import { solidity } from 'ethereum-waffle'
+import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 import { parseEth } from 'utils/parseEth'
+import { AddressZero } from '@ethersproject/constants'
+import { DAY, timeTravel } from 'utils'
+import { Deployer, setupDeploy } from 'scripts/utils'
 
 use(solidity)
 
 describe('TrueFiPool2', () => {
+  let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
   let tusd: MockErc20Token
@@ -17,26 +35,39 @@ describe('TrueFiPool2', () => {
   let poolImplementation: TrueFiPool2
   let pool: TrueFiPool2
   let poolFactory: PoolFactory
+  let lender: TrueLender2
+  let deployContract: Deployer
 
   // const dayInSeconds = 60 * 60 * 24
   const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
 
-  beforeEachWithFixture(async (wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower] = wallets
+    deployContract = setupDeploy(owner)
 
-    stakingToken = await new MockErc20TokenFactory(owner).deploy()
-    tusd = await new MockErc20TokenFactory(owner).deploy()
-    poolFactory = await new PoolFactoryFactory(owner).deploy()
-    poolImplementation = await new TrueFiPool2Factory(owner).deploy()
-    implementationReference = await new ImplementationReferenceFactory(owner).deploy(poolImplementation.address)
-
+    stakingToken = await deployContract(MockErc20TokenFactory)
+    tusd = await deployContract(MockErc20TokenFactory)
+    poolFactory = await deployContract(PoolFactoryFactory)
+    poolImplementation = await deployContract(TrueFiPool2Factory)
+    implementationReference = await deployContract(ImplementationReferenceFactory, poolImplementation.address)
     await poolFactory.initialize(implementationReference.address, stakingToken.address)
     await poolFactory.whitelist(tusd.address, true)
     await poolFactory.createPool(tusd.address)
 
     pool = poolImplementation.attach(await poolFactory.pool(tusd.address))
 
+    const distributor = await deployContract(LinearTrueDistributorFactory)
+    const stkToken = await deployContract(StkTruTokenFactory)
+    await stkToken.initialize(stakingToken.address, pool.address, distributor.address, AddressZero)
+
+    lender = await deployContract(TrueLender2Factory)
+    await lender.initialize(stkToken.address, poolFactory.address)
+    await pool.setLender(lender.address)
+    await stkToken.setPayerWhitelistingStatus(lender.address, true)
+
     await tusd.mint(owner.address, includeFee(parseEth(1e7)))
+
+    provider = _provider
   })
 
   describe('initializer', () => {
@@ -70,7 +101,44 @@ describe('TrueFiPool2', () => {
   })
 
   describe('poolValue', () => {
-    // requires strategy
+    const joinAmount = parseEth(1e7)
+
+    beforeEach(async () => {
+      await tusd.approve(pool.address, joinAmount)
+      await pool.join(joinAmount)
+    })
+
+    describe('When pool has no strategy', () => {
+      it('liquid value equals deposited amount', async () => {
+        expect(await pool.liquidValue()).to.equal(joinAmount)
+      })
+
+      it('when no ongoing loans, pool value equals liquidValue', async () => {
+        expect(await pool.poolValue()).to.equal(joinAmount)
+      })
+
+      it('when there are ongoing loans, pool value equals liquidValue + loanValue', async () => {
+        const loan = await deployContract(
+          LoanToken2Factory,
+          pool.address,
+          borrower.address,
+          lender.address,
+          AddressZero,
+          500000,
+          DAY,
+          1000,
+        )
+        const fee = 1250
+        await lender.connect(borrower).fund(loan.address)
+        expect(await pool.liquidValue()).to.equal(joinAmount.sub(500000).add(fee))
+        expect(await pool.loansValue()).to.equal(500000)
+        expect(await pool.poolValue()).to.equal(joinAmount.add(fee))
+
+        await timeTravel(provider, DAY * 2)
+        expect(await pool.loansValue()).to.equal(500136)
+        expect(await pool.poolValue()).to.equal(joinAmount.add(136).add(fee))
+      })
+    })
     // requires lender
   })
 
@@ -113,10 +181,18 @@ describe('TrueFiPool2', () => {
   })
 
   describe('flush', () => {
+    it('throws when strategy is not set', async () => {
+      await expect(pool.flush(100))
+        .to.be.revertedWith('TrueFiPool: Pool has no strategy set up')
+    })
     // requires strategy
   })
 
   describe('pull', () => {
+    it('throws when strategy is not set', async () => {
+      await expect(pool.pull(100))
+        .to.be.revertedWith('TrueFiPool: Pool has no strategy set up')
+    })
     // requires strategy
   })
 
