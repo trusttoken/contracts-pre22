@@ -9,7 +9,7 @@ import {Claimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueLender} from "./interface/ITrueLender.sol";
+import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ABDKMath64x64} from "../truefi/Log.sol";
 
 /**
@@ -37,10 +37,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
     uint8 public constant VERSION = 0;
 
-    IERC20 public token;
+    IERC20 public override token;
 
     ITrueStrategy public strategy;
-    ITrueLender public lender;
+    ITrueLender2 public lender;
 
     // fee for deposits
     uint256 public joiningFee;
@@ -70,6 +70,12 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
         token = _token;
         stakingToken = _stakingToken;
+    }
+
+    /// Temporary function to avoid merge conflicts
+    /// TODO use initializer
+    function setLender(ITrueLender2 _lender) external {
+        lender = _lender;
     }
 
     /**
@@ -163,6 +169,9 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @return Virtual liquid value of pool assets
      */
     function liquidValue() public view returns (uint256) {
+        if (address(strategy) == address(0)) {
+            return currencyBalance();
+        }
         return currencyBalance().add(strategy.value());
     }
 
@@ -182,7 +191,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @return Value of loans in pool
      */
     function loansValue() public view returns (uint256) {
-        return lender.value();
+        return lender.value(this);
     }
 
     /**
@@ -209,6 +218,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     function ensureSufficientLiquidity(uint256 neededAmount) internal {
         uint256 currentlyAvailableAmount = currencyBalance();
         if (currentlyAvailableAmount < neededAmount) {
+            require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy to withdraw from");
             strategy.withdraw(neededAmount.sub(currentlyAvailableAmount));
             require(currencyBalance() >= neededAmount, "TrueFiPool: Not enough funds taken from the strategy");
         }
@@ -320,6 +330,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param amount Amount of funds to deposit into curve
      */
     function flush(uint256 amount) external {
+        require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
         strategy.deposit(amount);
@@ -332,6 +343,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param minTokenAmount minimum amount of tokens to withdraw
      */
     function pull(uint256 minTokenAmount) external onlyOwner {
+        require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
+
         strategy.withdraw(minTokenAmount);
 
         emit Pulled(minTokenAmount);
@@ -342,8 +355,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev Remove liquidity from curve if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount, uint256 fee) external onlyLender {
-        require(amount <= liquidValue(), "");
+    function borrow(uint256 amount, uint256 fee) override external onlyLender {
+        require(amount <= liquidValue(), "TrueFiPool: Insufficient liquidity");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);
         }
@@ -358,7 +371,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev repay debt by transferring tokens to the contract
      * @param currencyAmount amount to repay
      */
-    function repay(uint256 currencyAmount) external onlyLender {
+    function repay(uint256 currencyAmount) external override onlyLender {
         token.safeTransferFrom(msg.sender, address(this), currencyAmount);
         emit Repaid(msg.sender, currencyAmount);
     }

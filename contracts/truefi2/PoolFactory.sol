@@ -5,6 +5,7 @@ import {Claimable} from "../common/UpgradeableClaimable.sol";
 import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
 
+import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ImplementationReference} from "../proxy/ImplementationReference.sol";
 
@@ -15,7 +16,7 @@ import {ImplementationReference} from "../proxy/ImplementationReference.sol";
  * Anyone can create a new pool, however the token has to be whitelisted
  * Initially created pools hold the same implementation, which can be changed later on individually
  */
-contract PoolFactory is Claimable {
+contract PoolFactory is IPoolFactory, Claimable {
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -24,7 +25,7 @@ contract PoolFactory is Claimable {
 
     // @dev Mapping of ERC20 token's addresses to its pool's addresses
     mapping(address => address) public pool;
-    mapping(address => bool) public isPool;
+    mapping(address => bool) public override isPool;
 
     // @dev Whitelist for tokens, which can have pools created
     mapping(address => bool) public isAllowed;

@@ -75,6 +75,8 @@ export const setupDeploy = (wallet: Wallet) => async <T extends ContractFactory>
   return contract
 }
 
+export type Deployer = ReturnType<typeof setupDeploy>
+
 export const saveDeployResult = (fileName: string) => async (result: unknown) => {
   console.log('saving results...')
   if (!fs.existsSync('./scripts/deploy')) {
