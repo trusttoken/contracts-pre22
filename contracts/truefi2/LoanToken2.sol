@@ -38,6 +38,8 @@ contract LoanToken2 is LoanToken, IContractWithPool {
      * @dev Create a Loan
      * @param _pool Pool to lend from
      * @param _borrower Borrower address
+     * @param _lender TrueLender address
+     * @param _liquidator Liquidator address
      * @param _amount Borrow amount of currency tokens
      * @param _term Loan length
      * @param _apy Loan APY
