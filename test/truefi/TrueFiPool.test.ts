@@ -154,43 +154,43 @@ describe('TrueFiPool', () => {
     })
   })
 
-  describe('changeJoiningPauseStatus', () => {
+  describe('setPauseStatus', () => {
     it('can be called by owner', async () => {
-      await expect(pool.changeJoiningPauseStatus(true))
+      await expect(pool.setPauseStatus(true))
         .not.to.be.reverted
-      await expect(pool.changeJoiningPauseStatus(false))
+      await expect(pool.setPauseStatus(false))
         .not.to.be.reverted
     })
 
     it('can be called by manager', async () => {
       await pool.setFundsManager(borrower.address)
-      await expect(pool.connect(borrower).changeJoiningPauseStatus(true))
+      await expect(pool.connect(borrower).setPauseStatus(true))
         .not.to.be.reverted
-      await expect(pool.connect(borrower).changeJoiningPauseStatus(false))
+      await expect(pool.connect(borrower).setPauseStatus(false))
         .not.to.be.reverted
     })
 
     it('cannot be called by unauthorized address', async () => {
-      await expect(pool.connect(borrower).changeJoiningPauseStatus(true))
+      await expect(pool.connect(borrower).setPauseStatus(true))
         .to.be.revertedWith('TrueFiPool: Caller is neither owner nor funds manager')
-      await expect(pool.connect(borrower).changeJoiningPauseStatus(false))
+      await expect(pool.connect(borrower).setPauseStatus(false))
         .to.be.revertedWith('TrueFiPool: Caller is neither owner nor funds manager')
     })
 
     it('properly changes pausing status', async () => {
-      expect(await pool.isJoiningPaused()).to.be.false
-      await pool.changeJoiningPauseStatus(true)
-      expect(await pool.isJoiningPaused()).to.be.true
-      await pool.changeJoiningPauseStatus(false)
-      expect(await pool.isJoiningPaused()).to.be.false
+      expect(await pool.pauseStatus()).to.be.false
+      await pool.setPauseStatus(true)
+      expect(await pool.pauseStatus()).to.be.true
+      await pool.setPauseStatus(false)
+      expect(await pool.pauseStatus()).to.be.false
     })
 
     it('emits proper event', async () => {
-      await expect(pool.changeJoiningPauseStatus(true))
-        .to.emit(pool, 'JoiningPauseStatusChanged')
+      await expect(pool.setPauseStatus(true))
+        .to.emit(pool, 'PauseStatusChanged')
         .withArgs(true)
-      await expect(pool.changeJoiningPauseStatus(false))
-        .to.emit(pool, 'JoiningPauseStatusChanged')
+      await expect(pool.setPauseStatus(false))
+        .to.emit(pool, 'PauseStatusChanged')
         .withArgs(false)
     })
   })
@@ -205,7 +205,7 @@ describe('TrueFiPool', () => {
 
     it('does not allow to join when joining is paused', async () => {
       await token.approve(pool.address, parseEth(1e6))
-      await pool.changeJoiningPauseStatus(true)
+      await pool.setPauseStatus(true)
       await expect(pool.join(parseEth(1e6)))
         .to.be.revertedWith('TrueFiPool: Joining the pool is paused')
     })

@@ -16,6 +16,7 @@ import {ABDKMath64x64} from "./Log.sol";
 import {ITruPriceOracle} from "./interface/ITruPriceOracle.sol";
 import {ICrvPriceOracle} from "./interface/ICrvPriceOracle.sol";
 import {I1Inch} from "./interface/I1Inch.sol";
+import {IPauseableContract} from "../governance/interface/IPauseableContract.sol";
 
 /**
  * @title TrueFi Pool
@@ -31,7 +32,7 @@ import {I1Inch} from "./interface/I1Inch.sol";
  *
  * Funds are managed through an external function to save gas on deposits
  */
-contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
+contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
 
     // ================ WARNING ==================
@@ -69,7 +70,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
     address public fundsManager;
 
     // allow pausing of deposits
-    bool public isJoiningPaused;
+    bool public pauseStatus;
 
     // CRV price oracle
     ICrvPriceOracle public _crvOracle;
@@ -165,9 +166,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
 
     /**
      * @dev Emitted when joining is paused or unpaused
-     * @param isJoiningPaused New pausing status
+     * @param pauseStatus New pausing status
      */
-    event JoiningPauseStatusChanged(bool isJoiningPaused);
+    event PauseStatusChanged(bool pauseStatus);
 
     /**
      * @dev only lender can perform borrowing or repaying
@@ -181,7 +182,7 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev pool can only be joined when it's unpaused
      */
     modifier joiningNotPaused() {
-        require(!isJoiningPaused, "TrueFiPool: Joining the pool is paused");
+        require(!pauseStatus, "TrueFiPool: Joining the pool is paused");
         _;
     }
 
@@ -275,9 +276,9 @@ contract TrueFiPool is ITrueFiPool, ERC20, ReentrancyGuard, Ownable {
      * @dev Allow pausing of deposits in case of emergency
      * @param status New deposit status
      */
-    function changeJoiningPauseStatus(bool status) external onlyOwnerOrManager {
-        isJoiningPaused = status;
-        emit JoiningPauseStatusChanged(status);
+    function setPauseStatus(bool status) external override onlyOwnerOrManager {
+        pauseStatus = status;
+        emit PauseStatusChanged(status);
     }
 
     /**
