@@ -16,7 +16,7 @@ describe('TrueLenderReclaimer', () => {
   let owner: Wallet
 
   let mockLoanToken: Contract
-  let mockLender: MockTrueLender
+  let mockLender: Contract
 
   let reclaimer: TrueLenderReclaimer
 
