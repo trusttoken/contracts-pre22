@@ -527,7 +527,7 @@ describe('TrueRatingAgency', () => {
           await loanToken.withdraw(owner.address, txArgs)
           await tusd.transfer(loanToken.address, await loanToken.debt())
           await timeTravel(yearInSeconds * 2)
-          await loanToken.close()
+          await loanToken.settle()
           expect(await rater.status(loanToken.address)).to.equal(LoanStatus.Settled)
         }
 
@@ -628,7 +628,7 @@ describe('TrueRatingAgency', () => {
           await loanToken.fund()
           await loanToken.withdraw(owner.address, txArgs)
           await timeTravel(yearInSeconds * 2 + dayInSeconds)
-          await loanToken.close()
+          await loanToken.enterDefault()
           expect(await rater.status(loanToken.address)).to.equal(LoanStatus.Defaulted)
         }
 
@@ -892,7 +892,7 @@ describe('TrueRatingAgency', () => {
         await timeTravel(yearInSeconds)
         await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(2e4), owner)
         await timeTravel(averageMonthInSeconds * 30)
-        await loanToken.close()
+        await loanToken.enterDefault()
         await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(2e4), owner)
         await rater.withdraw(loanToken.address, await rater.getYesVote(loanToken.address, owner.address), txArgs)
         await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(6e4), otherWallet)
@@ -901,7 +901,7 @@ describe('TrueRatingAgency', () => {
       it('does not do anything when called multiple times', async () => {
         await loanToken.fund()
         await timeTravel(yearInSeconds * 2 + dayInSeconds)
-        await loanToken.close()
+        await loanToken.enterDefault()
 
         await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5), owner)
         await expectRoughTrustTokenBalanceChangeAfterClaim(0, owner)
@@ -911,7 +911,7 @@ describe('TrueRatingAgency', () => {
         await loanToken.fund()
         await timeTravel(yearInSeconds * 2)
         await tusd.mint(loanToken.address, parseEth(1312312312321))
-        await loanToken.close()
+        await loanToken.settle()
         const staked = await rater.getYesVote(loanToken.address, owner.address)
 
         await expect(async () => rater.withdraw(loanToken.address, staked, txArgs))
@@ -922,7 +922,7 @@ describe('TrueRatingAgency', () => {
         await loanToken.fund()
         await timeTravel(yearInSeconds * 2)
         await tusd.mint(loanToken.address, parseEth(1312312312321))
-        await loanToken.close()
+        await loanToken.settle()
         const staked = await rater.getYesVote(loanToken.address, owner.address)
 
         await expect(async () => rater.withdraw(loanToken.address, staked.div(2), txArgs))
@@ -934,7 +934,7 @@ describe('TrueRatingAgency', () => {
       it('calculates reward properly when closed early', async () => {
         await loanToken.fund()
         await tusd.mint(loanToken.address, parseEth(1312312312321))
-        await loanToken.close()
+        await loanToken.settle()
         await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5), owner)
       })
     })
