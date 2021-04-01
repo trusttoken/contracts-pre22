@@ -49,7 +49,7 @@ contract TrueLenderReclaimer {
         // TODO avoid iterating through an unbounded array
         for (uint256 index = 0; index < loans.length; index++) {
             ILoanToken loanToken = loans[index];
-            require(loanToken.isLoanToken(), "Only LoanTokens can be reclaimed");
+            require(loanToken.isLoanToken(), "TrueLenderReclaimer: Only LoanTokens can be reclaimed");
             if (_isRepaidInFull(loanToken)) {
                 emit Closed(address(loanToken));
                 loanToken.close();
