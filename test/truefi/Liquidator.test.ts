@@ -147,7 +147,7 @@ describe('Liquidator', () => {
 
     it('anyone can call it', async () => {
       await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.close()
+      await loanToken.enterDefault()
 
       await expect(liquidator.connect(otherWallet).liquidate(loanToken.address))
         .to.not.be.reverted
@@ -165,7 +165,7 @@ describe('Liquidator', () => {
     it('reverts if loan was not created via factory', async () => {
       await factory.mock.isLoanToken.returns(false)
       await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.close()
+      await loanToken.enterDefault()
 
       await expect(liquidator.liquidate(loanToken.address))
         .to.be.revertedWith('Liquidator: Unknown loan')
@@ -173,7 +173,7 @@ describe('Liquidator', () => {
 
     it('changes loanToken status', async () => {
       await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.close()
+      await loanToken.enterDefault()
 
       await liquidator.connect(otherWallet).liquidate(loanToken.address)
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Liquidated)
@@ -182,7 +182,7 @@ describe('Liquidator', () => {
     describe('transfers correct amount of tru to trueFiPool', () => {
       beforeEach(async () => {
         await timeTravel(provider, defaultedLoanCloseTime)
-        await loanToken.close()
+        await loanToken.enterDefault()
       })
 
       it('0 tru in staking pool balance', async () => {
@@ -255,7 +255,7 @@ describe('Liquidator', () => {
 
     it('emits event', async () => {
       await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.close()
+      await loanToken.enterDefault()
 
       await expect(liquidator.liquidate(loanToken.address))
         .to.emit(liquidator, 'Liquidated')

@@ -77,11 +77,16 @@ contract LoanToken is ILoanToken, ERC20 {
     event Withdrawn(address beneficiary);
 
     /**
-     * @dev Emitted when term is over
-     * @param status Final loan status
+     * @dev Emitted when loan has been fully repaid
+     * @param returnedAmount Amount that was returned
+     */
+    event Settled(uint256 returnedAmount);
+
+    /**
+     * @dev Emitted when term is over without full repayment
      * @param returnedAmount Amount that was returned before expiry
      */
-    event Closed(Status status, uint256 returnedAmount);
+    event Defaulted(uint256 returnedAmount);
 
     /**
      * @dev Emitted when a LoanToken is redeemed for underlying currencyTokens
@@ -157,10 +162,10 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
-     * @dev Only when loan is Settled
+     * @dev Only after loan has been closed: Settled, Defaulted, or Liquidated
      */
-    modifier onlyClosed() {
-        require(status >= Status.Settled, "LoanToken: Current status should be Settled or Defaulted");
+    modifier onlyAfterClose() {
+        require(status >= Status.Settled, "LoanToken: Only after loan has been closed");
         _;
     }
 
@@ -306,17 +311,22 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
-     * @dev Close the loan and check if it has been repaid
+     * @dev Settle the loan after checking it has been repaid
      */
-    function close() external override onlyOngoing {
-        if (isRepaid()) {
-            status = Status.Settled;
-        } else {
-            require(start.add(term).add(lastMinutePaybackDuration) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
-            status = Status.Defaulted;
-        }
+    function settle() external override onlyOngoing {
+        require(isRepaid(), "LoanToken: loan must be repaid to settle");
+        status = Status.Settled;
+        emit Settled(_balance());
+    }
 
-        emit Closed(status, _balance());
+    /**
+     * @dev Default the loan if it has not been repaid by the end of term
+     */
+    function enterDefault() external override onlyOngoing {
+        require(!isRepaid(), "LoanToken: cannot default a repaid loan");
+        require(start.add(term).add(lastMinutePaybackDuration) <= block.timestamp, "LoanToken: Loan cannot be defaulted yet");
+        status = Status.Defaulted;
+        emit Defaulted(_balance());
     }
 
     /**
@@ -333,7 +343,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * Can only call this function after the loan is Closed
      * @param _amount amount to redeem
      */
-    function redeem(uint256 _amount) external override onlyClosed {
+    function redeem(uint256 _amount) external override onlyAfterClose {
         uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
         redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
@@ -377,7 +387,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * Can only call this function after the loan is Closed
      * and all of LoanToken holders have been burnt
      */
-    function reclaim() external override onlyClosed onlyBorrower {
+    function reclaim() external override onlyAfterClose onlyBorrower {
         require(totalSupply() == 0, "LoanToken: Cannot reclaim when LoanTokens are in circulation");
         uint256 balanceRemaining = _balance();
         require(balanceRemaining > 0, "LoanToken: Cannot reclaim when balance 0");
