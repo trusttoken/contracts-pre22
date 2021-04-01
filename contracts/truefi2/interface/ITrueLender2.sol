@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-interface ITrueLender {
+import {ITrueFiPool2} from "./ITrueFiPool2.sol";
+
+interface ITrueLender2 {
     // @dev calculate overall value of the pools
-    function value() external view returns (uint256);
+    function value(ITrueFiPool2 pool) external view returns (uint256);
 
     // @dev distribute a basket of tokens for exiting user
     function distribute(
