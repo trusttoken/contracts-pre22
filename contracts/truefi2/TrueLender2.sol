@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {Ownable} from "../common/UpgradeableOwnable.sol";
+import {Claimable} from "../common/UpgradeableClaimable.sol";
 import {ILoanToken2, ILoanToken} from "./interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
@@ -17,7 +17,7 @@ import {IPoolFactory} from "./interface/IPoolFactory.sol";
  * This contract is a bridge that helps to transfer funds from pool to the loans and back
  * TrueLender holds all LoanTokens and may distribute them on pool exits
  */
-contract TrueLender2 is ITrueLender2, Ownable {
+contract TrueLender2 is ITrueLender2, Claimable {
     using SafeMath for uint256;
 
     // ================ WARNING ==================
@@ -26,7 +26,7 @@ contract TrueLender2 is ITrueLender2, Ownable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    mapping(ITrueFiPool2 => ILoanToken2[]) loansOnPool;
+    mapping(ITrueFiPool2 => ILoanToken2[]) poolLoans;
 
     // maximum amount of loans lender can handle at once
     uint256 public maxLoans;
@@ -66,9 +66,10 @@ contract TrueLender2 is ITrueLender2, Ownable {
     /**
      * @dev Initialize the contract with parameters
      * @param _stakingPool stkTRU address
+     * @param _factory PoolFactory address
      */
     function initialize(IStakingPool _stakingPool, IPoolFactory _factory) public initializer {
-        Ownable.initialize();
+        Claimable.initialize(msg.sender);
 
         stakingPool = _stakingPool;
         factory = _factory;
@@ -86,11 +87,12 @@ contract TrueLender2 is ITrueLender2, Ownable {
     }
 
     /**
-     * @dev Get currently funded loans
+     * @dev Get currently funded loans for a pool
+     * @param pool pool address
      * @return result Array of loans currently funded
      */
     function loans(ITrueFiPool2 pool) public view returns (ILoanToken2[] memory result) {
-        result = loansOnPool[pool];
+        result = poolLoans[pool];
     }
 
     /**
@@ -111,12 +113,12 @@ contract TrueLender2 is ITrueLender2, Ownable {
 
         require(factory.isPool(address(pool)), "TrueLender: Pool not created by the factory");
         require(loanToken.currencyToken() == pool.token(), "TrueLender: Loan and pool token mismatch");
-        require(loansOnPool[pool].length < maxLoans, "TrueLender: Loans number has reached the limit");
+        require(poolLoans[pool].length < maxLoans, "TrueLender: Loans number has reached the limit");
 
         (uint256 amount, , uint256 term) = loanToken.getParameters();
         uint256 receivedAmount = loanToken.receivedAmount();
 
-        loansOnPool[pool].push(loanToken);
+        poolLoans[pool].push(loanToken);
         pool.borrow(amount, amount.sub(receivedAmount));
         pool.token().approve(address(loanToken), receivedAmount);
         loanToken.fund();
@@ -130,10 +132,11 @@ contract TrueLender2 is ITrueLender2, Ownable {
     /**
      * @dev Loop through loan tokens for the pool and calculate theoretical value of all loans
      * There should never be too many loans in the pool to run out of gas
+     * @param pool pool address
      * @return Theoretical value of all the loans funded by this strategy
      */
     function value(ITrueFiPool2 pool) external override view returns (uint256) {
-        ILoanToken2[] storage _loans = loansOnPool[pool];
+        ILoanToken2[] storage _loans = poolLoans[pool];
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
             totalValue = totalValue.add(_loans[index].value(_loans[index].balanceOf(address(this))));
@@ -155,7 +158,7 @@ contract TrueLender2 is ITrueLender2, Ownable {
         }
 
         // find the token, repay loan and remove loan from loan array
-        ILoanToken2[] storage _loans = loansOnPool[pool];
+        ILoanToken2[] storage _loans = poolLoans[pool];
         for (uint256 index = 0; index < _loans.length; index++) {
             if (_loans[index] == loanToken) {
                 _loans[index] = _loans[_loans.length - 1];
@@ -172,7 +175,11 @@ contract TrueLender2 is ITrueLender2, Ownable {
         revert("TrueLender: This loan has not been funded by the lender");
     }
 
-    /// @dev Helper function to redeem funds from `loanToken` and repay them into the `pool`
+    /**
+     * @dev Helper function to redeem funds from `loanToken` and repay them into the `pool`
+     * @param loanToken Loan to reclaim capital from
+     * @param pool Pool from which the loan was funded
+     */
     function _redeemAndRepay(ILoanToken2 loanToken, ITrueFiPool2 pool) internal returns (uint256 fundsReclaimed) {
         // call redeem function on LoanToken
         uint256 balanceBefore = pool.token().balanceOf(address(this));
@@ -205,13 +212,14 @@ contract TrueLender2 is ITrueLender2, Ownable {
         _distribute(recipient, numerator, denominator, msg.sender);
     }
 
+    /// @dev Helper used in tests
     function _distribute(
         address recipient,
         uint256 numerator,
         uint256 denominator,
         address pool
     ) internal {
-        ILoanToken2[] storage _loans = loansOnPool[ITrueFiPool2(pool)];
+        ILoanToken2[] storage _loans = poolLoans[ITrueFiPool2(pool)];
         for (uint256 index = 0; index < _loans.length; index++) {
             _loans[index].transfer(recipient, numerator.mul(_loans[index].balanceOf(address(this))).div(denominator));
         }
