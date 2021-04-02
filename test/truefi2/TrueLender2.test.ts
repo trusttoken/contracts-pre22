@@ -206,7 +206,7 @@ describe('TrueLender2', () => {
 
     it('redeems funds from loan token', async () => {
       await payBack(token1, loan1)
-      await loan1.close()
+      await loan1.settle()
       await expect(lender.reclaim(loan1.address))
         .to.emit(token1, 'Transfer')
         .withArgs(loan1.address, lender.address, 100002)
@@ -214,7 +214,7 @@ describe('TrueLender2', () => {
 
     it('repays funds from the pool', async () => {
       await payBack(token1, loan1)
-      await loan1.close()
+      await loan1.settle()
       await expect(lender.reclaim(loan1.address))
         .to.emit(token1, 'Transfer')
         .withArgs(lender.address, pool1.address, 100002)
@@ -222,14 +222,14 @@ describe('TrueLender2', () => {
 
     it('defaulted loans can only be reclaimed by owner', async () => {
       await timeTravel(provider, DAY * 3)
-      await loan1.close()
+      await loan1.enterDefault()
       await expect(lender.connect(borrower).reclaim(loan1.address))
         .to.be.revertedWith('TrueLender: Only owner can reclaim from defaulted loan')
     })
 
     it('emits a proper event', async () => {
       await payBack(token1, loan1)
-      await loan1.close()
+      await loan1.settle()
       await expect(lender.reclaim(loan1.address))
         .to.emit(lender, 'Reclaimed')
         .withArgs(pool1.address, loan1.address, 100002)
@@ -239,7 +239,7 @@ describe('TrueLender2', () => {
       let newLoan1: LoanToken2
       beforeEach(async () => {
         await payBack(token1, loan1)
-        await loan1.close()
+        await loan1.settle()
         newLoan1 = await deployContract(owner, LoanToken2Factory, [
           pool1.address,
           borrower.address,
@@ -261,7 +261,7 @@ describe('TrueLender2', () => {
 
       it('removes newest loan from the array', async () => {
         await payBack(token1, newLoan1)
-        await newLoan1.close()
+        await newLoan1.settle()
 
         expect(await lender.loans(pool1.address)).to.deep.equal([loan1.address, newLoan1.address])
         await lender.reclaim(newLoan1.address)
