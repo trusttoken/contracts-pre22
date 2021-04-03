@@ -26,9 +26,9 @@ contract TrueLenderReclaimer {
 
     /**
      * @dev Emitted when a LoanToken contract is settled
-     * @param loanToken LoanToken which has been closed
+     * @param loanToken LoanToken which has been settled
      */
-    event Closed(address indexed loanToken);
+    event Settled(address indexed loanToken);
 
     /**
      * @dev Emitted when funds are reclaimed from a LoanToken contract
@@ -50,26 +50,14 @@ contract TrueLenderReclaimer {
         for (uint256 index = 0; index < loans.length; index++) {
             ILoanToken loanToken = loans[index];
             require(loanToken.isLoanToken(), "TrueLenderReclaimer: Only LoanTokens can be reclaimed");
-            if (_isRepaidInFull(loanToken)) {
-                emit Closed(address(loanToken));
-                loanToken.close();
+            if (loanToken.status() == ILoanToken.Status.Withdrawn && loanToken.isRepaid()) {
+                emit Settled(address(loanToken));
+                loanToken.settle();
             }
             if (loanToken.status() == ILoanToken.Status.Settled) {
                 emit Reclaimed(address(loanToken));
                 _lender.reclaim(loanToken);
             }
         }
-    }
-
-    /**
-     * @dev Check whether this loan has been repaid in full
-     * Only uses public functions
-     * @param loanToken LoanToken to check
-     */
-    function _isRepaidInFull(ILoanToken loanToken) private view returns (bool) {
-        return
-            loanToken.status() == ILoanToken.Status.Withdrawn &&
-            loanToken.start().add(loanToken.term()) <= block.timestamp &&
-            loanToken.balance() >= loanToken.debt();
     }
 }
