@@ -378,12 +378,11 @@ contract LoanToken is ILoanToken, ERC20 {
      * @param _amount amount of currencyToken to repay
      */
     function _repay(address _sender, uint256 _amount) internal onlyAfterWithdraw {
-        uint256 outstandingDebt = debt.sub(_balance());
-        require(_amount <= outstandingDebt, "LoanToken: Cannot repay over the debt");
+        require(_amount <= debt.sub(_balance()), "LoanToken: Cannot repay over the debt");
         emit Repaid(_sender, _amount);
 
         currencyToken.safeTransferFrom(_sender, address(this), _amount);
-        if (_amount >= outstandingDebt) {
+        if (isRepaid()) {
             settle();
         }
     }
