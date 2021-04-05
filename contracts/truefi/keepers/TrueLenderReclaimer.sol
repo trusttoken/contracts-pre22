@@ -46,7 +46,6 @@ contract TrueLenderReclaimer {
      */
     function hasSettleableLoans() public view returns (bool) {
         ILoanToken[] memory loans = _lender.loans();
-        // TODO avoid iterating through an unbounded array
         for (uint256 index = 0; index < loans.length; index++) {
             if (_isSettleable(loans[index])) {
                 return true;
@@ -61,7 +60,6 @@ contract TrueLenderReclaimer {
      */
     function settleAll() public {
         ILoanToken[] memory loans = _lender.loans();
-        // TODO avoid iterating through an unbounded array
         for (uint256 index = 0; index < loans.length; index++) {
             ILoanToken loanToken = loans[index];
             if (_isSettleable(loanToken)) {
@@ -82,7 +80,6 @@ contract TrueLenderReclaimer {
      */
     function hasReclaimableLoans() public view returns (bool) {
         ILoanToken[] memory loans = _lender.loans();
-        // TODO avoid iterating through an unbounded array
         for (uint256 index = 0; index < loans.length; index++) {
             if (_isReclaimable(loans[index])) {
                 return true;
@@ -97,7 +94,6 @@ contract TrueLenderReclaimer {
      */
     function reclaimAll() public {
         ILoanToken[] memory loans = _lender.loans();
-        // TODO avoid iterating through an unbounded array
         for (uint256 index = 0; index < loans.length; index++) {
             ILoanToken loanToken = loans[index];
             if (_isReclaimable(loanToken)) {
