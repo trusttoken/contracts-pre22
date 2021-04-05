@@ -48,9 +48,7 @@ contract TrueLenderReclaimer {
         ILoanToken[] memory loans = _lender.loans();
         // TODO avoid iterating through an unbounded array
         for (uint256 index = 0; index < loans.length; index++) {
-            ILoanToken loanToken = loans[index];
-            require(loanToken.isLoanToken(), "TrueLenderReclaimer: Only LoanTokens can be settled");
-            if (loanToken.status() == ILoanToken.Status.Withdrawn && loanToken.isRepaid()) {
+            if (_isSettleable(loans[index])) {
                 return true;
             }
         }
@@ -66,12 +64,16 @@ contract TrueLenderReclaimer {
         // TODO avoid iterating through an unbounded array
         for (uint256 index = 0; index < loans.length; index++) {
             ILoanToken loanToken = loans[index];
-            require(loanToken.isLoanToken(), "TrueLenderReclaimer: Only LoanTokens can be settled");
-            if (loanToken.status() == ILoanToken.Status.Withdrawn && loanToken.isRepaid()) {
+            if (_isSettleable(loanToken)) {
                 emit Settled(address(loanToken));
                 loanToken.settle();
             }
         }
+    }
+
+    function _isSettleable(ILoanToken loanToken) private view returns (bool) {
+        require(loanToken.isLoanToken(), "TrueLenderReclaimer: Only LoanTokens can be settled");
+        return loanToken.status() == ILoanToken.Status.Withdrawn && loanToken.isRepaid();
     }
 
     /**
@@ -82,9 +84,7 @@ contract TrueLenderReclaimer {
         ILoanToken[] memory loans = _lender.loans();
         // TODO avoid iterating through an unbounded array
         for (uint256 index = 0; index < loans.length; index++) {
-            ILoanToken loanToken = loans[index];
-            require(loanToken.isLoanToken(), "TrueLenderReclaimer: Only LoanTokens can be reclaimed");
-            if (loanToken.status() == ILoanToken.Status.Settled) {
+            if (_isReclaimable(loans[index])) {
                 return true;
             }
         }
@@ -100,11 +100,15 @@ contract TrueLenderReclaimer {
         // TODO avoid iterating through an unbounded array
         for (uint256 index = 0; index < loans.length; index++) {
             ILoanToken loanToken = loans[index];
-            require(loanToken.isLoanToken(), "TrueLenderReclaimer: Only LoanTokens can be reclaimed");
-            if (loanToken.status() == ILoanToken.Status.Settled) {
+            if (_isReclaimable(loanToken)) {
                 emit Reclaimed(address(loanToken));
                 _lender.reclaim(loanToken);
             }
         }
+    }
+
+    function _isReclaimable(ILoanToken loanToken) private view returns (bool) {
+        require(loanToken.isLoanToken(), "TrueLenderReclaimer: Only LoanTokens can be reclaimed");
+        return loanToken.status() == ILoanToken.Status.Settled;
     }
 }
