@@ -28,8 +28,8 @@ import {IStakingPool} from "./interface/IStakingPool.sol";
  *
  * 2. Only approve loans which have been rated in the prediction market under the conditions:
  * - timeInMarket >= votingPeriod
- * - stakedTRU > (participationFactor * loanSize)
- * - 1 < ( interest * P(loan_repaid) - (loanSize * riskAversion * P(loan_defaults))
+ * - stakedTRU > minVotes
+ * - yesVotes > noVotes * minYesToNoRatio
  *
  * Once a loan meets these requirements, fund() can be called to transfer
  * funds from the pool to the LoanToken contract
@@ -58,11 +58,11 @@ contract TrueLender is ITrueLender, Ownable {
     uint256 public minApy;
     uint256 public maxApy;
 
-    // How many votes in prediction market
-    uint256 public participationFactor;
+    // How many votes are needed for a loan to be approved
+    uint256 public minVotes;
 
-    // How much worse is it to lose $1 TUSD than it is to gain $1 TUSD
-    uint256 public riskAversion;
+    // Minimum ratio of yes votes to note votes for a loan to be approved
+    uint256 public minYesToNoRatio;
 
     // bound on min & max loan sizes
     uint256 public minSize;
@@ -98,16 +98,16 @@ contract TrueLender is ITrueLender, Ownable {
     event ApyLimitsChanged(uint256 minApy, uint256 maxApy);
 
     /**
-     * @dev Emitted when participation factor changed
-     * @param participationFactor New participation factor
+     * @dev Emitted when minVotes changed
+     * @param minVotes New minVotes
      */
-    event ParticipationFactorChanged(uint256 participationFactor);
+    event MinVotesChanged(uint256 minVotes);
 
     /**
      * @dev Emitted when risk aversion changed
-     * @param riskAversion New risk aversion factor
+     * @param minYesToNoRatio New risk aversion factor
      */
-    event RiskAversionChanged(uint256 riskAversion);
+    event MinYesToNoRatioChanged(uint256 minYesToNoRatio);
 
     /**
      * @dev Emitted when the minimum voting period is changed
@@ -189,8 +189,8 @@ contract TrueLender is ITrueLender, Ownable {
 
         minApy = 1000;
         maxApy = 3000;
-        participationFactor = 10000;
-        riskAversion = 15000;
+        minVotes = 15 * (10**6) * (10**8);
+        minYesToNoRatio = 4;
         minSize = 1000000 ether;
         maxSize = 10000000 ether;
         minTerm = 182 days;
@@ -257,21 +257,21 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     /**
-     * @dev Set new participation factor. Only owner can change parameters.
-     * @param newParticipationFactor New participation factor.
+     * @dev Set new minimal amount of votes for loan to be approved. Only owner can change parameters.
+     * @param newMinVotes New minVotes.
      */
-    function setParticipationFactor(uint256 newParticipationFactor) external onlyOwner {
-        participationFactor = newParticipationFactor;
-        emit ParticipationFactorChanged(newParticipationFactor);
+    function setMinVotes(uint256 newMinVotes) external onlyOwner {
+        minVotes = newMinVotes;
+        emit MinVotesChanged(newMinVotes);
     }
 
     /**
-     * @dev Set new risk aversion factor. Only owner can change parameters.
-     * @param newRiskAversion New risk aversion factor
+     * @dev Set new yes to no votes ratio. Only owner can change parameters.
+     * @param newMinYesToNoRatio New yes to no votes ratio
      */
-    function setRiskAversion(uint256 newRiskAversion) external onlyOwner {
-        riskAversion = newRiskAversion;
-        emit RiskAversionChanged(newRiskAversion);
+    function setMinYesToNoRatio(uint256 newMinYesToNoRatio) external onlyOwner {
+        minYesToNoRatio = newMinYesToNoRatio;
+        emit MinYesToNoRatioChanged(newMinYesToNoRatio);
     }
 
     /**
@@ -318,8 +318,8 @@ contract TrueLender is ITrueLender, Ownable {
         require(loanTermWithinBounds(term), "TrueLender: Loan term is out of bounds");
         require(loanIsAttractiveEnough(apy), "TrueLender: APY is out of bounds");
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
-        require(votesThresholdReached(amount, yes), "TrueLender: Not enough votes given for the loan");
-        require(loanIsCredible(apy, term, yes, no), "TrueLender: Loan risk is too high");
+        require(votesThresholdReached(yes.add(no)), "TrueLender: Not enough votes given for the loan");
+        require(loanIsCredible(yes, no), "TrueLender: Loan risk is too high");
 
         _loans.push(loanToken);
         pool.borrow(amount, amount.sub(receivedAmount));
@@ -464,31 +464,20 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     /**
-     * @dev Check if a loan is within APY bounds
-     * Minimum absolute value of yes votes, rather than ratio of yes to no
-     * @param amount Size of loan
-     * @param yesVotes Number of yes votes
+     * @dev Check if a loan has enough votes to be approved
+     * @param votes Total number of votes
      * @return Whether a loan has reached the required voting threshold
      */
-    function votesThresholdReached(uint256 amount, uint256 yesVotes) public view returns (bool) {
-        return amount.mul(participationFactor) <= yesVotes.mul(10000).mul(TOKEN_PRECISION_DIFFERENCE);
+    function votesThresholdReached(uint256 votes) public view returns (bool) {
+        return votes >= minVotes;
     }
 
     /**
-     * @dev Use APY and term of loan to check expected value of a loan
-     * Expected value = profit - (default_loss * (no / yes))
-     * e.g. riskAversion = 10,000 => expected value of 1
-     * @param apy APY of loan
-     * @param term Term length of loan
+     * @dev Check if yes to no votes ratio reached the minimum rate
      * @param yesVotes Number of YES votes in credit market
      * @param noVotes Number of NO votes in credit market
      */
-    function loanIsCredible(
-        uint256 apy,
-        uint256 term,
-        uint256 yesVotes,
-        uint256 noVotes
-    ) public view returns (bool) {
-        return apy.mul(term).mul(yesVotes).div(365 days) >= noVotes.mul(riskAversion);
+    function loanIsCredible(uint256 yesVotes, uint256 noVotes) public view returns (bool) {
+        return yesVotes >= noVotes.mul(minYesToNoRatio);
     }
 }
