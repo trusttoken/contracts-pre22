@@ -52,7 +52,7 @@ contract TrueLenderReclaimer {
             require(loanToken.isLoanToken(), "TrueLenderReclaimer: Only LoanTokens can be reclaimed");
             if (_isRepaidInFull(loanToken)) {
                 emit Closed(address(loanToken));
-                loanToken.close();
+                loanToken.settle();
             }
             if (loanToken.status() == ILoanToken.Status.Settled) {
                 emit Reclaimed(address(loanToken));
