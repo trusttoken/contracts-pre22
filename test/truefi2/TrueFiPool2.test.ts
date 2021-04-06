@@ -273,7 +273,7 @@ describe('TrueFiPool2', () => {
 
     it('emits event', async () => {
       await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
-        .to.emit(pool, 'SwitchedStrategy')
+        .to.emit(pool, 'StrategySwitched')
         .withArgs(poolStrategy1.address)
     })
   })
