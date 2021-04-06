@@ -45,8 +45,7 @@ describe('TrueLenderReclaimer', () => {
 
     it('settles fully repaid Withdrawn loans', async () => {
       await mockLoanToken.mock.status.returns(2) // ILoanToken.Status.Withdrawn
-      await mockLoanToken.mock.balance.returns(1_000)
-      await mockLoanToken.mock.debt.returns(1_000)
+      await mockLoanToken.mock.isRepaid.returns(true)
       await reclaimer.reclaimAll()
       expect('settle').to.be.calledOnContract(mockLoanToken)
     })
@@ -59,8 +58,7 @@ describe('TrueLenderReclaimer', () => {
 
     it('skips non-repaid loans', async () => {
       await mockLoanToken.mock.status.returns(2) // ILoanToken.Status.Withdrawn
-      await mockLoanToken.mock.balance.returns(999)
-      await mockLoanToken.mock.debt.returns(1_000)
+      await mockLoanToken.mock.isRepaid.returns(false)
 
       await mockLoanToken.mock.settle.reverts()
       await mockLender.mock.reclaim.reverts()
@@ -99,11 +97,10 @@ describe('TrueLenderReclaimer', () => {
       await reclaimer.reclaimAll()
     })
 
-    it('emits Closed event', async () => {
+    it('emits Settled event', async () => {
       await mockLoanToken.mock.status.returns(2) // ILoanToken.Status.Withdrawn
-      await mockLoanToken.mock.balance.returns(1_000)
-      await mockLoanToken.mock.debt.returns(1_000)
-      await expect(reclaimer.reclaimAll()).to.emit(reclaimer, 'Closed')
+      await mockLoanToken.mock.isRepaid.returns(true)
+      await expect(reclaimer.reclaimAll()).to.emit(reclaimer, 'Settled')
     })
 
     it('emits Reclaimed event', async () => {
