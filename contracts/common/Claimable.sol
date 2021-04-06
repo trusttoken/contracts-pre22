@@ -34,7 +34,7 @@ contract Claimable {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(msg.sender == _owner, "Claimable: caller is not the owner");
+        require(msg.sender == _owner, "Ownable: caller is not the owner");
         _;
     }
 
@@ -42,7 +42,7 @@ contract Claimable {
      * @dev Modifier throws if called by any account other than the pendingOwner.
      */
     modifier onlyPendingOwner() {
-        require(msg.sender == _pendingOwner, "Claimable: caller is not the pending owner");
+        require(msg.sender == _pendingOwner, "Ownable: caller is not the pending owner");
         _;
     }
 

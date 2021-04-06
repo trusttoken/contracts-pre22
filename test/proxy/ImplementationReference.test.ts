@@ -39,14 +39,14 @@ describe('ImplementationReference', () => {
   describe('ownership', () => {
     it('only owner can transfer ownership', async () => {
       await expect(implementationReference.connect(notOwner).transferOwnership(notOwner.address))
-        .to.be.revertedWith('Claimable: caller is not the owner')
+        .to.be.revertedWith('Ownable: caller is not the owner')
       await expect(implementationReference.connect(owner).transferOwnership(notOwner.address))
         .not.to.be.reverted
     })
 
     it('only pending owner can claim ownership', async () => {
       await expect(implementationReference.connect(owner).claimOwnership())
-        .to.be.revertedWith('Claimable: caller is not the pending owner')
+        .to.be.revertedWith('Ownable: caller is not the pending owner')
       await implementationReference.connect(owner).transferOwnership(notOwner.address)
       await expect(implementationReference.connect(notOwner).claimOwnership())
         .not.to.be.reverted
