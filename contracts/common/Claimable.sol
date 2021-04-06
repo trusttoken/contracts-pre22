@@ -3,9 +3,16 @@ pragma solidity 0.6.10;
 
 /**
  * @title Claimable
- * @dev The Claimable contract is a copy of Claimable Contract by Zeppelin.
- and provides basic authorization control functions. Inherits storage layout of
- ProxyStorage.
+ * @dev Contract module which provides a basic access control mechanism, where
+ * there is an account (an owner) that can be granted exclusive access to
+ * specific functions.
+ *
+ * By default, the owner account will be the one that deploys the contract. Ownership
+ * can be changed via 2 step method {transferOwnership} and {claimOwnership}
+ *
+ * This module is used through inheritance. It will make available the modifier
+ * `onlyOwner`, which can be applied to your functions to restrict their use to
+ * the owner.
  */
 contract Claimable {
     address _owner;
