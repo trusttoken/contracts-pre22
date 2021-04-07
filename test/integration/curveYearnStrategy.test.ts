@@ -29,7 +29,7 @@ describe('Curve Yearn Pool Strategy', () => {
   const owner = provider.getSigner(CONTRACTS_OWNER)
   const holder = provider.getSigner(USDC_HOLDER)
   const deployContract = setupDeploy(owner)
-  const amount = utils.parseUnits('1000000', 8)
+  const amount = utils.parseUnits('10000', 8)
 
   const GAUGE = '0xfa712ee4788c042e2b7bb55e6cb8ec569c4530c1'
   const CURVE_POOL = '0xbbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'
@@ -62,7 +62,7 @@ describe('Curve Yearn Pool Strategy', () => {
     const libFactory = new ContractFactory(OneInchExchangeJson.abi, OneInchExchangeJson.bytecode, owner)
     const lib = await libFactory.deploy()
     strategy = await new CurveYearnStrategyFactory({
-      'contracts/truefi2/strategies/CurveYearnStrategy.sol:OneInchExchange': lib.address,
+      'contracts/truefi2/libraries/OneInchExchange.sol:OneInchExchange': lib.address,
     }, owner).deploy()
     const oracle = await deployContract(CrvPriceOracleFactory)
 
@@ -73,13 +73,13 @@ describe('Curve Yearn Pool Strategy', () => {
   it('Flush and pool', async () => {
     await pool.flush(amount)
     await pool.pull(amount.div(2))
-  })
+  }).timeout(1000000000)
 
   it('Withdraw all by switching strategy', async () => {
     await pool.flush(amount)
     await pool.switchStrategy(AddressZero)
     expect(await usdc.balanceOf(pool.address)).to.be.gte(amount.mul(999).div(1000)) // Curve fees
-  })
+  }).timeout(1000000000)
 
   it('Mine CRV on Curve gauge and sell on 1Inch', async () => {
     await pool.flush(amount)
@@ -92,5 +92,5 @@ describe('Curve Yearn Pool Strategy', () => {
     await strategy.sellCrv(data)
     expect(await usdc.balanceOf(pool.address)).to.be.gt(0)
     expect(await strategy.crvBalance()).to.equal(0)
-  })
+  }).timeout(1000000000)
 })
