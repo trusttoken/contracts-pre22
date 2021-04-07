@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Claimable} from "../common/UpgradeableClaimable.sol";
 
 /**
  * @title ImplementationReference
@@ -9,7 +9,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * To hold the address of the implementation contract to be used by proxy.
  * The implementation address, is changeable anytime by the owner of this contract.
  */
-contract ImplementationReference is Ownable {
+contract ImplementationReference is Claimable {
     address public implementation;
 
     /**
@@ -22,7 +22,8 @@ contract ImplementationReference is Ownable {
      * @dev Set initial ownership and implementation address
      * @param _implementation Initial address of the implementation
      */
-    constructor(address _implementation) public Ownable() {
+    constructor(address _implementation) public {
+        Claimable.initialize(msg.sender);
         implementation = _implementation;
     }
 
