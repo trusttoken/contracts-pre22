@@ -19,7 +19,7 @@ import {Initializable} from "./Initializable.sol";
  * `onlyOwner`, which can be applied to your functions to restrict their use to
  * the owner.
  */
-contract Claimable is Initializable, Context {
+contract UpgradeableClaimable is Initializable, Context {
     address private _owner;
     address private _pendingOwner;
 
