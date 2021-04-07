@@ -41,23 +41,70 @@ contract TrueLenderReclaimer {
     }
 
     /**
+     * @dev Determine whether lender has fully repaid loans
+     * If called outside of a contract, this view should not cost gas
+     */
+    function hasSettleableLoans() public view returns (bool) {
+        ILoanToken[] memory loans = _lender.loans();
+        for (uint256 index = 0; index < loans.length; index++) {
+            if (_isSettleable(loans[index])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @dev Settle all loans that have been fully repaid
+     * Only uses public functions, so this is safe to run by anyone.
+     */
+    function settleAll() public {
+        ILoanToken[] memory loans = _lender.loans();
+        for (uint256 index = 0; index < loans.length; index++) {
+            ILoanToken loanToken = loans[index];
+            if (_isSettleable(loanToken)) {
+                emit Settled(address(loanToken));
+                loanToken.settle();
+            }
+        }
+    }
+
+    function _isSettleable(ILoanToken loanToken) private view returns (bool) {
+        require(loanToken.isLoanToken(), "TrueLenderReclaimer: Only LoanTokens can be settled");
+        return loanToken.status() == ILoanToken.Status.Withdrawn && loanToken.isRepaid();
+    }
+
+    /**
+     * @dev Determine whether lender has settled loans
+     * If called outside of a contract, this view should not cost gas
+     */
+    function hasReclaimableLoans() public view returns (bool) {
+        ILoanToken[] memory loans = _lender.loans();
+        for (uint256 index = 0; index < loans.length; index++) {
+            if (_isReclaimable(loans[index])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * @dev Reclaim funds from all settled loans in lender
      * Only uses public functions, so this is safe to run by anyone.
      */
     function reclaimAll() public {
         ILoanToken[] memory loans = _lender.loans();
-        // TODO avoid iterating through an unbounded array
         for (uint256 index = 0; index < loans.length; index++) {
             ILoanToken loanToken = loans[index];
-            require(loanToken.isLoanToken(), "TrueLenderReclaimer: Only LoanTokens can be reclaimed");
-            if (loanToken.status() == ILoanToken.Status.Withdrawn && loanToken.isRepaid()) {
-                emit Settled(address(loanToken));
-                loanToken.settle();
-            }
-            if (loanToken.status() == ILoanToken.Status.Settled) {
+            if (_isReclaimable(loanToken)) {
                 emit Reclaimed(address(loanToken));
                 _lender.reclaim(loanToken);
             }
         }
+    }
+
+    function _isReclaimable(ILoanToken loanToken) private view returns (bool) {
+        require(loanToken.isLoanToken(), "TrueLenderReclaimer: Only LoanTokens can be reclaimed");
+        return loanToken.status() == ILoanToken.Status.Settled;
     }
 }
