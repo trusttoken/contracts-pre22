@@ -87,7 +87,7 @@ describe('TrueFi', () => {
       'minApy',
       'maxApy',
       // 'participationFactor', Renamed to minVotes
-      // 'riskAversion', Renamed to minYesToNoRatio
+      // 'riskAversion', Renamed to minRatio
       'minSize',
       'maxSize',
       'minTerm',
@@ -98,7 +98,7 @@ describe('TrueFi', () => {
       'loans',
     ])
     expect(await contract.minVotes()).to.eq(5000)
-    expect(await contract.minYesToNoRatio()).to.eq(15000)
+    expect(await contract.minRatio()).to.eq(15000)
   })
 
   it('TrueRatingAgency', async () => {
