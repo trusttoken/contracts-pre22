@@ -7,6 +7,7 @@ import {
   timeTravel,
   expectScaledCloseTo,
   parseEth,
+  parseTRU,
 } from 'utils'
 
 import {
@@ -164,35 +165,40 @@ describe('TrueLender', () => {
       })
     })
 
-    describe('setParticipationFactor', () => {
-      it('changes participationFactor', async () => {
-        await lender.setParticipationFactor(1234)
-        expect(await lender.participationFactor()).to.equal(1234)
+    describe('setMinVotes', () => {
+      it('changes minVotes', async () => {
+        await lender.setMinVotes(1234)
+        expect(await lender.minVotes()).to.equal(1234)
       })
 
-      it('emits ParticipationFactorChanged', async () => {
-        await expect(lender.setParticipationFactor(1234))
-          .to.emit(lender, 'ParticipationFactorChanged').withArgs(1234)
+      it('emits MinVotesChanged', async () => {
+        await expect(lender.setMinVotes(1234))
+          .to.emit(lender, 'MinVotesChanged').withArgs(1234)
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(otherWallet).setParticipationFactor(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(otherWallet).setMinVotes(1234)).to.be.revertedWith('caller is not the owner')
       })
     })
 
-    describe('setRiskAversion', () => {
-      it('changes riskAversion', async () => {
-        await lender.setRiskAversion(1234)
-        expect(await lender.riskAversion()).to.equal(1234)
+    describe('setMinRatio', () => {
+      it('changes minRatio', async () => {
+        await lender.setMinRatio(1234)
+        expect(await lender.minRatio()).to.equal(1234)
       })
 
-      it('emits RiskAversionChanged', async () => {
-        await expect(lender.setRiskAversion(1234))
-          .to.emit(lender, 'RiskAversionChanged').withArgs(1234)
+      it('forbids setting above 100%', async () => {
+        await expect(lender.setMinRatio(10001))
+          .to.be.revertedWith('TrueLender: minRatio cannot be more than 100%')
+      })
+
+      it('emits MinRatioChanged', async () => {
+        await expect(lender.setMinRatio(1234))
+          .to.emit(lender, 'MinRatioChanged').withArgs(1234)
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(otherWallet).setRiskAversion(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(otherWallet).setMinRatio(1234)).to.be.revertedWith('caller is not the owner')
       })
     })
 
@@ -342,19 +348,19 @@ describe('TrueLender', () => {
 
     it('reverts if loan was not long enough under voting', async () => {
       const { timestamp } = (await owner.provider.getBlock('latest'))
-      await mockRatingAgency.mock.getResults.returns(timestamp, 0, amount.mul(100))
+      await mockRatingAgency.mock.getResults.returns(timestamp, 0, parseTRU(15e6))
       await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Voting time is below minimum')
     })
 
-    it('reverts if absolute amount out yes votes is not enough in relation to loan size', async () => {
-      await mockRatingAgency.mock.getResults.returns(0, 0, 10)
+    it('reverts if votes threshold has not been reached', async () => {
+      await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(14e6))
       await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Not enough votes given for the loan')
     })
 
     it('reverts if loan is predicted to be too risky', async () => {
-      await mockRatingAgency.mock.getResults.returns(0, amount.mul(10), amount.div(10))
+      await mockRatingAgency.mock.getResults.returns(0, parseTRU(15e6), parseTRU(15e6))
       await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Loan risk is too high')
     })
@@ -363,7 +369,7 @@ describe('TrueLender', () => {
       beforeEach(async () => {
         await mockLoanToken.mock.getParameters.returns(amount, apy, term)
         await mockLoanToken.mock.receivedAmount.returns(amount.sub(fee))
-        await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
+        await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, parseTRU(15e6))
         await mockPool.mock.balanceOf.returns(fee)
       })
 
@@ -399,35 +405,28 @@ describe('TrueLender', () => {
 
     describe('complex credibility cases', () => {
       interface LoanScenario {
-        APY: number,
-        term: number,
-        riskAversion: number,
-        yesPercentage: number,
+        yesVotes: BigNumber,
+        noVotes: BigNumber,
       }
 
-      const scenario = (APY: number, months: number, riskAversion: number, yesPercentage: number) => ({
-        APY: APY * 100,
-        term: averageMonthInSeconds * months,
-        riskAversion: riskAversion * 100,
-        yesPercentage,
+      const scenario = (yes: number, no: number) => ({
+        yesVotes: parseTRU(BigNumber.from(yes)),
+        noVotes: parseTRU(BigNumber.from(no)),
       })
 
       const loanIsCredible = async (loanScenario: LoanScenario) => {
-        await lender.setRiskAversion(loanScenario.riskAversion)
-        return lender.loanIsCredible(
-          loanScenario.APY,
-          loanScenario.term,
-          (loanScenario.yesPercentage) * 1000,
-          (100 - loanScenario.yesPercentage) * 1000,
+        return await lender.loanIsCredible(
+          loanScenario.yesVotes,
+          loanScenario.noVotes,
+        ) && lender.votesThresholdReached(
+          loanScenario.yesVotes.add(loanScenario.noVotes),
         )
       }
 
       describe('approvals', () => {
         const approvedLoanScenarios = [
-          scenario(10, 12, 100, 95),
-          scenario(25, 12, 100, 80),
-          scenario(10, 12, 50, 85),
-          scenario(10, 36, 100, 80),
+          scenario(40e6, 10e6),
+          scenario(12e6, 3e6),
         ]
 
         approvedLoanScenarios.forEach((loanScenario, index) => {
@@ -439,10 +438,8 @@ describe('TrueLender', () => {
 
       describe('rejections', () => {
         const rejectedLoanScenarios = [
-          scenario(10, 12, 100, 85),
-          scenario(25, 12, 100, 60),
-          scenario(10, 12, 50, 75),
-          scenario(10, 36, 100, 70),
+          scenario(40e6, 11e6),
+          scenario(14e6, 9e5),
         ]
 
         rejectedLoanScenarios.forEach((loanScenario, index) => {
@@ -465,7 +462,7 @@ describe('TrueLender', () => {
 
       await mockLoanToken.mock.getParameters.returns(amount, apy, term)
       await mockLoanToken.mock.receivedAmount.returns(amount.sub(fee))
-      await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, amount.mul(10))
+      await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, parseTRU(15e6))
       await mockPool.mock.balanceOf.returns(fee)
     })
 
