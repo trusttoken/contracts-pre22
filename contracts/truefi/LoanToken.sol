@@ -313,7 +313,7 @@ contract LoanToken is ILoanToken, ERC20 {
     /**
      * @dev Settle the loan after checking it has been repaid
      */
-    function settle() external override onlyOngoing {
+    function settle() public override onlyOngoing {
         require(isRepaid(), "LoanToken: loan must be repaid to settle");
         status = Status.Settled;
         emit Settled(_balance());
@@ -373,13 +373,18 @@ contract LoanToken is ILoanToken, ERC20 {
 
     /**
      * @dev Internal function for loan repayment
+     * If _amount is sufficient, then this also settles the loan
      * @param _sender account sending currencyToken to repay
      * @param _amount amount of currencyToken to repay
      */
     function _repay(address _sender, uint256 _amount) internal onlyAfterWithdraw {
         require(_amount <= debt.sub(_balance()), "LoanToken: Cannot repay over the debt");
         emit Repaid(_sender, _amount);
+
         currencyToken.safeTransferFrom(_sender, address(this), _amount);
+        if (isRepaid()) {
+            settle();
+        }
     }
 
     /**
