@@ -80,14 +80,14 @@ describe('TrueFi', () => {
   })
 
   it('TrueLender', async () => {
-    await upgradeSuite(TEST_STATE_BLOCK_NUMBER, TrueLenderFactory, '0x16d02Dc67EB237C387023339356b25d1D54b0922', [
+    const contract = await upgradeSuite(TEST_STATE_BLOCK_NUMBER, TrueLenderFactory, '0x16d02Dc67EB237C387023339356b25d1D54b0922', [
       'pool',
       'currencyToken',
       'ratingAgency',
       'minApy',
       'maxApy',
-      'participationFactor',
-      'riskAversion',
+      // 'participationFactor', Renamed to minVotes
+      // 'riskAversion', Renamed to minRatio
       'minSize',
       'maxSize',
       'minTerm',
@@ -97,6 +97,8 @@ describe('TrueFi', () => {
       'stakingPool',
       'loans',
     ])
+    expect(await contract.minVotes()).to.eq(5000)
+    expect(await contract.minRatio()).to.eq(15000)
   })
 
   it('TrueRatingAgency', async () => {
