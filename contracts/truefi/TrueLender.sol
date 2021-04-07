@@ -29,7 +29,7 @@ import {IStakingPool} from "./interface/IStakingPool.sol";
  * 2. Only approve loans which have been rated in the prediction market under the conditions:
  * - timeInMarket >= votingPeriod
  * - stakedTRU > minVotes
- * - yesVotes > noVotes * minYesToNoRatio
+ * - yesVotes > minRatio * totalVotes
  *
  * Once a loan meets these requirements, fund() can be called to transfer
  * funds from the pool to the LoanToken contract
@@ -61,8 +61,9 @@ contract TrueLender is ITrueLender, Ownable {
     // How many votes are needed for a loan to be approved
     uint256 public minVotes;
 
-    // Minimum ratio of yes votes to note votes for a loan to be approved
-    uint256 public minYesToNoRatio;
+    // Minimum ratio of yes votes to total votes for a loan to be approved
+    // basis precision: 10000 = 100%
+    uint256 public minRatio;
 
     // bound on min & max loan sizes
     uint256 public minSize;
@@ -80,6 +81,9 @@ contract TrueLender is ITrueLender, Ownable {
 
     // implemented as an ERC20, will change after implementing stkPool
     IStakingPool public stakingPool;
+
+    // basis point for ratio
+    uint256 private constant BASIS_RATIO = 10000;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -105,9 +109,9 @@ contract TrueLender is ITrueLender, Ownable {
 
     /**
      * @dev Emitted when risk aversion changed
-     * @param minYesToNoRatio New risk aversion factor
+     * @param minRatio New risk aversion factor
      */
-    event MinYesToNoRatioChanged(uint256 minYesToNoRatio);
+    event MinRatioChanged(uint256 minRatio);
 
     /**
      * @dev Emitted when the minimum voting period is changed
@@ -190,7 +194,7 @@ contract TrueLender is ITrueLender, Ownable {
         minApy = 1000;
         maxApy = 3000;
         minVotes = 15 * (10**6) * (10**8);
-        minYesToNoRatio = 4;
+        minRatio = 8000;
         minSize = 1000000 ether;
         maxSize = 10000000 ether;
         minTerm = 182 days;
@@ -267,11 +271,12 @@ contract TrueLender is ITrueLender, Ownable {
 
     /**
      * @dev Set new yes to no votes ratio. Only owner can change parameters.
-     * @param newMinYesToNoRatio New yes to no votes ratio
+     * @param newMinRatio New yes to no votes ratio
      */
-    function setMinYesToNoRatio(uint256 newMinYesToNoRatio) external onlyOwner {
-        minYesToNoRatio = newMinYesToNoRatio;
-        emit MinYesToNoRatioChanged(newMinYesToNoRatio);
+    function setMinRatio(uint256 newMinRatio) external onlyOwner {
+        require(newMinRatio <= BASIS_RATIO, "TrueLender: minRatio cannot be more than 100%");
+        minRatio = newMinRatio;
+        emit MinRatioChanged(newMinRatio);
     }
 
     /**
@@ -478,6 +483,7 @@ contract TrueLender is ITrueLender, Ownable {
      * @param noVotes Number of NO votes in credit market
      */
     function loanIsCredible(uint256 yesVotes, uint256 noVotes) public view returns (bool) {
-        return yesVotes >= noVotes.mul(minYesToNoRatio);
+        uint256 totalVotes = yesVotes.add(noVotes);
+        return yesVotes >= totalVotes.mul(minRatio).div(BASIS_RATIO);
     }
 }

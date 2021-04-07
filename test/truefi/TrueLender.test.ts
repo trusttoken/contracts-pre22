@@ -181,19 +181,24 @@ describe('TrueLender', () => {
       })
     })
 
-    describe('setMinYesToNoRatio', () => {
-      it('changes minYesToNoRatio', async () => {
-        await lender.setMinYesToNoRatio(1234)
-        expect(await lender.minYesToNoRatio()).to.equal(1234)
+    describe('setMinRatio', () => {
+      it('changes minRatio', async () => {
+        await lender.setMinRatio(1234)
+        expect(await lender.minRatio()).to.equal(1234)
       })
 
-      it('emits MinYesToNoRatioChanged', async () => {
-        await expect(lender.setMinYesToNoRatio(1234))
-          .to.emit(lender, 'MinYesToNoRatioChanged').withArgs(1234)
+      it('forbids setting above 100%', async () => {
+        await expect(lender.setMinRatio(10001))
+          .to.be.revertedWith('TrueLender: minRatio cannot be more than 100%')
+      })
+
+      it('emits MinRatioChanged', async () => {
+        await expect(lender.setMinRatio(1234))
+          .to.emit(lender, 'MinRatioChanged').withArgs(1234)
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(otherWallet).setMinYesToNoRatio(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(otherWallet).setMinRatio(1234)).to.be.revertedWith('caller is not the owner')
       })
     })
 
