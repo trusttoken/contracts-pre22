@@ -18,6 +18,11 @@ interface IERC20WithDecimals is IERC20 {
     function decimals() external view returns (uint256);
 }
 
+/**
+ * @dev TrueFi pool strategy that allows depositing stablecoins into Curve Yearn pool (0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51)
+ * Supports DAI, USDC, USDT and TUSD
+ * Curve LP tokens are being deposited into Curve Gauge and CRV rewards can be sold on 1Inch exchange and transferred to the pool
+ */
 contract CurveYearnStrategy is Claimable, ITrueStrategy {
     using SafeMath for uint256;
     using SafeERC20 for IERC20WithDecimals;
@@ -124,11 +129,10 @@ contract CurveYearnStrategy is Claimable, ITrueStrategy {
 
     /**
      * @dev Total pool value in USD
-     * @notice CRV balance can not be automatically withdrawn and should be sold on uniswap by calling `sellCrv()` method.
-     * This fact means that `withdrawAll` might return less than strategy's value
+     * @notice Balance of CRV is not included into value of strategy, because it cannot be converted to pool tokens automatically
      */
     function value() external override view returns (uint256) {
-        return yTokenValue().add(crvValue());
+        return yTokenValue();
     }
 
     /**

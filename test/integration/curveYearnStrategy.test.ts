@@ -16,7 +16,7 @@ import { ContractFactory, utils } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
-import { DAY, timeTravel } from 'utils'
+import { DAY, expectScaledCloseTo, timeTravel } from 'utils'
 import fetch from 'node-fetch'
 
 use(solidity)
@@ -73,18 +73,25 @@ describe('Curve Yearn Pool Strategy', () => {
   it('Flush and pool', async () => {
     await pool.flush(amount)
     await pool.pull(amount.div(2))
-  }).timeout(1000000000)
+  })
 
   it('Withdraw all by switching strategy', async () => {
     await pool.flush(amount)
     await pool.switchStrategy(AddressZero)
     expect(await usdc.balanceOf(pool.address)).to.be.gte(amount.mul(999).div(1000)) // Curve fees
-  }).timeout(1000000000)
+  })
 
-  it('Mine CRV on Curve gauge and sell on 1Inch', async () => {
+  it('Mine CRV on Curve gauge and sell on 1Inch, CRV is not part of value', async () => {
     await pool.flush(amount)
     await timeTravel(provider, DAY * 10)
+
+    const valueBefore = await strategy.value()
+    expect(await strategy.crvValue()).to.equal(0)
     await strategy.collectCrv()
+    expect((await strategy.value()).sub(valueBefore)).to.be.lt(await strategy.crvValue())
+    expectScaledCloseTo(await strategy.value(), valueBefore)
+    expect(await strategy.crvValue()).to.be.gt(0)
+
     const crvBalance = await strategy.crvBalance()
     const dataUrl = `https://api.1inch.exchange/v3.0/1/swap?disableEstimate=true&protocols=WETH,CURVE,BALANCER,UNISWAP_V2,SUSHI,ZRX&allowPartialFill=false&fromTokenAddress=${CRV}&toTokenAddress=${USDC_ADDRESS}&amount=${crvBalance.toString()}&fromAddress=${strategy.address}&destReceiver=${pool.address}&slippage=2`
     const body = await (await fetch(dataUrl)).json()
@@ -92,5 +99,12 @@ describe('Curve Yearn Pool Strategy', () => {
     await strategy.sellCrv(data)
     expect(await usdc.balanceOf(pool.address)).to.be.gt(0)
     expect(await strategy.crvBalance()).to.equal(0)
-  }).timeout(1000000000)
+  })
+
+  it('value grows with time', async () => {
+    await pool.flush(amount)
+    const valueBefore = await strategy.value()
+    await timeTravel(provider, DAY * 10)
+    expect(await strategy.value()).to.be.gt(valueBefore)
+  })
 })
