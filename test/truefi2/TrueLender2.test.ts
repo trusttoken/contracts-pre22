@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, DAY, parseEth, timeTravel } from 'utils'
+import { beforeEachWithFixture, DAY, parseEth, parseTRU, timeTravel } from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
   ImplementationReferenceFactory,
@@ -14,6 +14,9 @@ import {
   TrueFiPool2Factory,
   TestTrueLender,
   TestTrueLenderFactory,
+  TrueRatingAgencyV2,
+  TrueRatingAgencyV2Factory,
+  PoolFactory,
 } from 'contracts'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
@@ -25,27 +28,41 @@ describe('TrueLender2', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
+
   let loan1: LoanToken2
   let loan2: LoanToken2
   let pool1: TrueFiPool2
   let pool2: TrueFiPool2
+
+  let rater: TrueRatingAgencyV2
   let lender: TestTrueLender
+
   let counterfeitPool: TrueFiPool2
   let token1: MockErc20Token
+
+  let poolFactory: PoolFactory
+
   let mockStake: MockContract
+  let tru: MockErc20Token
+
+  const dayInSeconds = 60 * 60 * 24
 
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, borrower] = wallets)
-    const poolFactory = await deployContract(owner, PoolFactoryFactory)
+    poolFactory = await deployContract(owner, PoolFactoryFactory)
     const poolImplementation = await deployContract(owner, TrueFiPool2Factory)
     const implementationReference = await deployContract(owner, ImplementationReferenceFactory, [poolImplementation.address])
 
     mockStake = await deployMockContract(owner, StkTruTokenJson.abi)
     await mockStake.mock.payFee.returns()
 
+    tru = await deployContract(owner, MockErc20TokenFactory)
+
     lender = await deployContract(owner, TestTrueLenderFactory)
-    await lender.initialize(mockStake.address, poolFactory.address)
     await poolFactory.initialize(implementationReference.address, AddressZero, lender.address)
+    rater = await deployContract(owner, TrueRatingAgencyV2Factory)
+    await lender.initialize(mockStake.address, poolFactory.address, rater.address)
+    //initialize rater
 
     token1 = await deployContract(owner, MockErc20TokenFactory)
     const token2 = await deployContract(owner, MockErc20TokenFactory)
@@ -89,12 +106,84 @@ describe('TrueLender2', () => {
     provider = _provider
   })
 
-  describe('Funding', () => {
-    describe('reverts if', () => {
-      xit('loan not created by the factory', async () => {
-        // TODO add test when loan factory is updated
+  describe('Initializer', () => {
+    it('sets the staking pool address', async () => {
+      expect(await lender.stakingPool()).to.equal(mockStake.address)
+    })
+
+    it('sets the pool factory address', async () => {
+      expect(await lender.factory()).to.equal(poolFactory.address)
+    })
+
+    it('sets the rating agency address', async () => {
+      expect(await lender.ratingAgency()).to.equal(rater.address)
+    })
+
+    it('default params', async () => {
+      expect(await lender.minVotes()).to.equal(parseTRU(15e6))
+      expect(await lender.minRatio()).to.equal(8000)
+      expect(await lender.votingPeriod()).to.equal(dayInSeconds * 7)
+      expect(await lender.maxLoans()).to.equal(100)
+    })
+  })
+
+  describe('Parameters set up', () => {
+    describe('setMinVotes', () => {
+      it('changes minVotes', async () => {
+        await lender.setMinVotes(1234)
+        expect(await lender.minVotes()).to.equal(1234)
       })
 
+      it('emits MinVotesChanged', async () => {
+        await expect(lender.setMinVotes(1234))
+          .to.emit(lender, 'MinVotesChanged').withArgs(1234)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setMinVotes(1234)).to.be.revertedWith('caller is not the owner')
+      })
+    })
+
+    describe('setMinRatio', () => {
+      it('changes minRatio', async () => {
+        await lender.setMinRatio(1234)
+        expect(await lender.minRatio()).to.equal(1234)
+      })
+
+      it('forbids setting above 100%', async () => {
+        await expect(lender.setMinRatio(10001))
+          .to.be.revertedWith('TrueLender: minRatio cannot be more than 100%')
+      })
+
+      it('emits MinRatioChanged', async () => {
+        await expect(lender.setMinRatio(1234))
+          .to.emit(lender, 'MinRatioChanged').withArgs(1234)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setMinRatio(1234)).to.be.revertedWith('caller is not the owner')
+      })
+    })
+
+    describe('setVotingPeriod', () => {
+      it('changes votingPeriod', async () => {
+        await lender.setVotingPeriod(dayInSeconds * 3)
+        expect(await lender.votingPeriod()).to.equal(dayInSeconds * 3)
+      })
+
+      it('emits VotingPeriodChanged', async () => {
+        await expect(lender.setVotingPeriod(dayInSeconds * 3))
+          .to.emit(lender, 'VotingPeriodChanged').withArgs(dayInSeconds * 3)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setVotingPeriod(dayInSeconds * 3)).to.be.revertedWith('caller is not the owner')
+      })
+    })
+  })
+
+  describe('Funding', () => {
+    describe('reverts if', () => {
       it('transaction not called by the borrower', async () => {
         await expect(lender.fund(loan1.address)).to.be.revertedWith('TrueLender: Sender is not borrower')
       })

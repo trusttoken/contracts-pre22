@@ -10,6 +10,7 @@ import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
+import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 
 /**
  * @title TrueLender v2.0
@@ -19,6 +20,9 @@ import {IPoolFactory} from "./interface/IPoolFactory.sol";
  */
 contract TrueLender2 is ITrueLender2, Claimable {
     using SafeMath for uint256;
+
+    // basis point for ratio
+    uint256 private constant BASIS_RATIO = 10000;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -34,20 +38,46 @@ contract TrueLender2 is ITrueLender2, Claimable {
     IStakingPool public stakingPool;
 
     IPoolFactory public factory;
-    // ======= STORAGE DECLARATION END ============
 
-    /**
-     * @dev Emitted when a borrower's whitelist status changes
-     * @param who Address for which whitelist status has changed
-     * @param status New whitelist status
-     */
-    event Allowed(address indexed who, bool status);
+    ITrueRatingAgency public ratingAgency;
+
+    // ===== Voting parameters =====
+
+    // How many votes are needed for a loan to be approved
+    uint256 public minVotes;
+
+    // Minimum ratio of yes votes to total votes for a loan to be approved
+    // basis precision: 10000 = 100%
+    uint256 public minRatio;
+
+    // minimum prediction market voting period
+    uint256 public votingPeriod;
+
+    // ======= STORAGE DECLARATION END ============
 
     /**
      * @dev Emitted when loans limit is changed
      * @param maxLoans new maximum amount of loans
      */
     event LoansLimitChanged(uint256 maxLoans);
+
+    /**
+     * @dev Emitted when minVotes changed
+     * @param minVotes New minVotes
+     */
+    event MinVotesChanged(uint256 minVotes);
+
+    /**
+     * @dev Emitted when risk aversion changed
+     * @param minRatio New risk aversion factor
+     */
+    event MinRatioChanged(uint256 minRatio);
+
+    /**
+     * @dev Emitted when the minimum voting period is changed
+     * @param votingPeriod New voting period
+     */
+    event VotingPeriodChanged(uint256 votingPeriod);
 
     /**
      * @dev Emitted when a loan is funded
@@ -68,13 +98,51 @@ contract TrueLender2 is ITrueLender2, Claimable {
      * @param _stakingPool stkTRU address
      * @param _factory PoolFactory address
      */
-    function initialize(IStakingPool _stakingPool, IPoolFactory _factory) public initializer {
+    function initialize(
+        IStakingPool _stakingPool,
+        IPoolFactory _factory,
+        ITrueRatingAgency _ratingAgency
+    ) public initializer {
         Claimable.initialize(msg.sender);
 
         stakingPool = _stakingPool;
         factory = _factory;
+        ratingAgency = _ratingAgency;
+
+        minVotes = 15 * (10**6) * (10**8);
+        minRatio = 8000;
+        votingPeriod = 7 days;
 
         maxLoans = 100;
+    }
+
+    /**
+     * @dev Set new minimum voting period in credit rating market.
+     * Only owner can change parameters
+     * @param newVotingPeriod new minimum voting period
+     */
+    function setVotingPeriod(uint256 newVotingPeriod) external onlyOwner {
+        votingPeriod = newVotingPeriod;
+        emit VotingPeriodChanged(newVotingPeriod);
+    }
+
+    /**
+     * @dev Set new minimal amount of votes for loan to be approved. Only owner can change parameters.
+     * @param newMinVotes New minVotes.
+     */
+    function setMinVotes(uint256 newMinVotes) external onlyOwner {
+        minVotes = newMinVotes;
+        emit MinVotesChanged(newMinVotes);
+    }
+
+    /**
+     * @dev Set new yes to no votes ratio. Only owner can change parameters.
+     * @param newMinRatio New yes to no votes ratio
+     */
+    function setMinRatio(uint256 newMinRatio) external onlyOwner {
+        require(newMinRatio <= BASIS_RATIO, "TrueLender: minRatio cannot be more than 100%");
+        minRatio = newMinRatio;
+        emit MinRatioChanged(newMinRatio);
     }
 
     /**
