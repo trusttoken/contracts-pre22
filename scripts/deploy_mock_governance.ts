@@ -7,11 +7,10 @@ import {
   MockTrustTokenFactory,
   MockTimeLockFactory,
   GovernorAlphaFactory,
-  OwnedUpgradeabilityProxyFactory
-
+  OwnedUpgradeabilityProxyFactory,
 } from '../build'
 
-async function deployTru () {
+async function deployMockGovernance () {
   const txnArgs = { gasLimit: 4_500_000, gasPrice: 1_000_000_000 }
   const provider = new providers.InfuraProvider(process.argv[2], 'e33335b99d78415b82f8b9bc5fdc44c0')
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
@@ -34,4 +33,4 @@ async function deployTru () {
   await governance.upgradeTo(governanceImpl.address)
 }
 
-deployTru().catch(console.error)
+deployMockGovernance().catch(console.error)
