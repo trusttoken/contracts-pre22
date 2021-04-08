@@ -54,19 +54,18 @@ describe('TrueFiPool2', () => {
     poolFactory = await deployContract(PoolFactoryFactory)
     poolImplementation = await deployContract(TrueFiPool2Factory)
     implementationReference = await deployContract(ImplementationReferenceFactory, poolImplementation.address)
-    await poolFactory.initialize(implementationReference.address, stakingToken.address)
+    lender = await deployContract(TrueLender2Factory)
+    const stkToken = await deployContract(StkTruTokenFactory)
+    await lender.initialize(stkToken.address, poolFactory.address)
+    await poolFactory.initialize(implementationReference.address, stakingToken.address, lender.address)
     await poolFactory.whitelist(tusd.address, true)
     await poolFactory.createPool(tusd.address)
 
     pool = poolImplementation.attach(await poolFactory.pool(tusd.address))
 
     const distributor = await deployContract(LinearTrueDistributorFactory)
-    const stkToken = await deployContract(StkTruTokenFactory)
     await stkToken.initialize(stakingToken.address, pool.address, distributor.address, AddressZero)
 
-    lender = await deployContract(TrueLender2Factory)
-    await lender.initialize(stkToken.address, poolFactory.address)
-    await pool.setLender(lender.address)
     await stkToken.setPayerWhitelistingStatus(lender.address, true)
 
     poolStrategy1 = await deployContract(MockStrategyFactory, tusd.address, pool.address)

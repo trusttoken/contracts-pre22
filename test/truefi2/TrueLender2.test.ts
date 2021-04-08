@@ -39,13 +39,13 @@ describe('TrueLender2', () => {
     const poolFactory = await deployContract(owner, PoolFactoryFactory)
     const poolImplementation = await deployContract(owner, TrueFiPool2Factory)
     const implementationReference = await deployContract(owner, ImplementationReferenceFactory, [poolImplementation.address])
-    await poolFactory.initialize(implementationReference.address, AddressZero)
 
     mockStake = await deployMockContract(owner, StkTruTokenJson.abi)
     await mockStake.mock.payFee.returns()
 
     lender = await deployContract(owner, TestTrueLenderFactory)
     await lender.initialize(mockStake.address, poolFactory.address)
+    await poolFactory.initialize(implementationReference.address, AddressZero, lender.address)
 
     token1 = await deployContract(owner, MockErc20TokenFactory)
     const token2 = await deployContract(owner, MockErc20TokenFactory)
@@ -57,11 +57,8 @@ describe('TrueLender2', () => {
 
     pool1 = TrueFiPool2Factory.connect(await poolFactory.pool(token1.address), owner)
     pool2 = TrueFiPool2Factory.connect(await poolFactory.pool(token2.address), owner)
-    await pool1.setLender(lender.address)
-    await pool2.setLender(lender.address)
     counterfeitPool = await deployContract(owner, TrueFiPool2Factory)
-    await counterfeitPool.initialize(token1.address, AddressZero, owner.address)
-    await counterfeitPool.setLender(lender.address)
+    await counterfeitPool.initialize(token1.address, AddressZero, lender.address, owner.address)
     await token1.mint(owner.address, parseEth(1e7))
     await token2.mint(owner.address, parseEth(1e7))
     await token1.approve(pool1.address, parseEth(1e7))

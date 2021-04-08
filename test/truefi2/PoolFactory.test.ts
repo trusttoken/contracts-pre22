@@ -7,6 +7,7 @@ import { TrueFiPool2Factory } from 'contracts/types/TrueFiPool2Factory'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
+import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
@@ -30,7 +31,7 @@ describe('PoolFactory', () => {
     token2 = await new MockErc20TokenFactory(owner).deploy()
     stakingToken = await new MockErc20TokenFactory(owner).deploy()
 
-    await factory.initialize(implementationReference.address, stakingToken.address)
+    await factory.initialize(implementationReference.address, stakingToken.address, AddressZero)
   })
 
   describe('Initializer', () => {
