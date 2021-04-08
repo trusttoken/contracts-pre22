@@ -1,5 +1,14 @@
 import { expect, use } from 'chai'
-import { ImplementationReference, ImplementationReferenceFactory, MockErc20Token, MockErc20TokenFactory, OwnedProxyWithReference, OwnedProxyWithReferenceFactory } from 'contracts/types'
+import {
+  ImplementationReference,
+  ImplementationReferenceFactory,
+  MockErc20Token,
+  MockErc20TokenFactory,
+  OwnedProxyWithReference,
+  OwnedProxyWithReferenceFactory,
+  TestTrueLender,
+  TestTrueLenderFactory,
+} from 'contracts/types'
 import { PoolFactory } from 'contracts/types/PoolFactory'
 import { PoolFactoryFactory } from 'contracts/types/PoolFactoryFactory'
 import { TrueFiPool2 } from 'contracts/types/TrueFiPool2'
@@ -7,7 +16,6 @@ import { TrueFiPool2Factory } from 'contracts/types/TrueFiPool2Factory'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
-import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
@@ -20,6 +28,7 @@ describe('PoolFactory', () => {
   let token1: MockErc20Token
   let token2: MockErc20Token
   let stakingToken: MockErc20Token
+  let trueLender: TestTrueLender
 
   beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet] = wallets
@@ -30,8 +39,9 @@ describe('PoolFactory', () => {
     token1 = await new MockErc20TokenFactory(owner).deploy()
     token2 = await new MockErc20TokenFactory(owner).deploy()
     stakingToken = await new MockErc20TokenFactory(owner).deploy()
+    trueLender = await new TestTrueLenderFactory(owner).deploy()
 
-    await factory.initialize(implementationReference.address, stakingToken.address, AddressZero)
+    await factory.initialize(implementationReference.address, stakingToken.address, trueLender.address)
   })
 
   describe('Initializer', () => {
@@ -88,6 +98,10 @@ describe('PoolFactory', () => {
 
     it('proxy gets correct implementation', async () => {
       expect(await proxy.implementation()).to.eq(poolImplementation.address)
+    })
+
+    it('true lender is set correctly', async () => {
+      expect(await pool.lender()).to.eq(trueLender.address)
     })
 
     it('cannot create pool for token that already has a pool', async () => {
