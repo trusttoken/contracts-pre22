@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {Claimable} from "../common/UpgradeableClaimable.sol";
+import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
 
 /**
  * @title ImplementationReference
