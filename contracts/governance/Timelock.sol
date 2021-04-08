@@ -10,26 +10,18 @@
 pragma solidity ^0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./common/ClaimableContract.sol";
+import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
 import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
 import {IPauseableContract} from "./interface/IPauseableContract.sol";
 
-contract Timelock is ClaimableContract {
+contract Timelock is Claimable {
     using SafeMath for uint;
 
-    event NewAdmin(address indexed newAdmin);
-    event NewPauser(address indexed newPauser);
-    event NewPendingAdmin(address indexed newPendingAdmin);
-    event NewDelay(uint indexed newDelay);
-    event EmergencyPause(OwnedUpgradeabilityProxy proxy);
-    event PauseStatusChanged(address pauseContract, bool status);
-    event CancelTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
-    event ExecuteTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
-    event QueueTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature, bytes data, uint eta);
-
-    uint public constant GRACE_PERIOD = 14 days;
-    uint public constant MINIMUM_DELAY = 2 days;
-    uint public constant MAXIMUM_DELAY = 30 days;
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
 
     address public admin;
     address public pendingAdmin;
@@ -41,22 +33,35 @@ contract Timelock is ClaimableContract {
 
     address public pauser;
 
+    // ======= STORAGE DECLARATION END ============
+
+    uint public constant GRACE_PERIOD = 14 days;
+    uint public constant MINIMUM_DELAY = 2 days;
+    uint public constant MAXIMUM_DELAY = 30 days;
+
+    event NewAdmin(address indexed newAdmin);
+    event NewPauser(address indexed newPauser);
+    event NewPendingAdmin(address indexed newPendingAdmin);
+    event NewDelay(uint indexed newDelay);
+    event EmergencyPause(OwnedUpgradeabilityProxy proxy);
+    event PauseStatusChanged(address pauseContract, bool status);
+    event CancelTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
+    event ExecuteTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
+    event QueueTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature, bytes data, uint eta);
+
     /**
      * @dev Initialize sets the addresses of admin and the delay timestamp
      * @param admin_ The address of admin
      * @param delay_ The timestamp of delay for timelock contract
      */
     function initialize(address admin_, uint delay_) external {
-        require(!initalized, "Already initialized");
+        Claimable.initialize(msg.sender);
         require(delay_ >= MINIMUM_DELAY, "Timelock::constructor: Delay must exceed minimum delay.");
         require(delay_ <= MAXIMUM_DELAY, "Timelock::setDelay: Delay must not exceed maximum delay.");
 
         admin = admin_;
         pauser = admin_;
         delay = delay_;
-
-        owner_ = msg.sender;
-        initalized = true;
 
         emit NewDelay(delay);
         emit NewAdmin(admin);

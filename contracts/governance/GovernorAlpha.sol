@@ -13,25 +13,17 @@
 pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
-import {ClaimableContract} from "../trusttoken/common/ClaimableContract.sol";
+import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
 import {ITimelock} from "./interface/ITimelock.sol";
 import {IVoteToken} from "./interface/IVoteToken.sol";
 
-contract GovernorAlpha is ClaimableContract {
-    // @notice The name of this contract
-    string public constant name = "TrustToken Governor Alpha";
+contract GovernorAlpha is Claimable {
 
-    // @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
-    function quorumVotes() public pure returns (uint) { return 10000000e8; } // 10,000,000 Tru
-
-    // @notice The number of votes required in order for a voter to become a proposer
-    function proposalThreshold() public pure returns (uint) { return 100000e8; } // 100,000 TRU
-
-    // @notice The maximum number of actions that can be included in a proposal
-    function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions
-
-    // @notice The delay before voting on a proposal may take place, once proposed
-    function votingDelay() public pure returns (uint) { return 1; } // 1 block
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
 
     // @notice The duration of voting on a proposal, in blocks
     uint public votingPeriod;
@@ -50,6 +42,17 @@ contract GovernorAlpha is ClaimableContract {
 
     // @notice The total number of proposals
     uint public proposalCount;
+
+    // @notice The official record of all proposals ever proposed
+    mapping (uint => Proposal) public proposals;
+
+    // @notice The latest proposal for each proposer
+    mapping (address => uint) public latestProposalIds;
+
+    // ======= STORAGE DECLARATION END ============
+
+    // @notice The name of this contract
+    string public constant name = "TrueFi Governance";
 
     struct Proposal {
         // @notice Unique id for looking up a proposal
@@ -119,12 +122,6 @@ contract GovernorAlpha is ClaimableContract {
         Executed
     }
 
-    // @notice The official record of all proposals ever proposed
-    mapping (uint => Proposal) public proposals;
-
-    // @notice The latest proposal for each proposer
-    mapping (address => uint) public latestProposalIds;
-
     // @notice The EIP-712 typehash for the contract's domain
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
 
@@ -146,18 +143,28 @@ contract GovernorAlpha is ClaimableContract {
     // @notice An event emitted when a proposal has been executed in the Timelock
     event ProposalExecuted(uint id);
 
+    // @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
+    function quorumVotes() public pure returns (uint) { return 10000000e8; } // 10,000,000 Tru
+
+    // @notice The number of votes required in order for a voter to become a proposer
+    function proposalThreshold() public pure returns (uint) { return 100000e8; } // 100,000 TRU
+
+    // @notice The maximum number of actions that can be included in a proposal
+    function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions
+
+    // @notice The delay before voting on a proposal may take place, once proposed
+    function votingDelay() public pure returns (uint) { return 1; } // 1 block
+
     /**
      * @dev Initialize sets the addresses of timelock contract, trusttoken contract, and guardian
      */
     function initialize(ITimelock _timelock, IVoteToken _trustToken, address _guardian, IVoteToken _stkTRU, uint256 _votingPeriod) external {
+        Claimable.initialize(msg.sender);
         timelock = _timelock;
         trustToken = _trustToken;
         stkTRU = _stkTRU;
         guardian = _guardian;
         votingPeriod = _votingPeriod;
-
-        owner_ = msg.sender;
-        initalized = true;
     }
 
     /**

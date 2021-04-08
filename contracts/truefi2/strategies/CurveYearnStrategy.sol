@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {Claimable} from "../../common/UpgradeableClaimable.sol";
+import {UpgradeableClaimable as Claimable} from "../../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "../interface/ITrueStrategy.sol";
 import {ICurveGauge, ICurveMinter, ICurvePool, IERC20} from "../../truefi/interface/ICurve.sol";
