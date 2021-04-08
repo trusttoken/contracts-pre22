@@ -1,4 +1,4 @@
-import { Wallet, ethers, ContractFactory } from 'ethers'
+import { Wallet, ethers, ContractFactory, Signer } from 'ethers'
 import { deployContract } from 'ethereum-waffle'
 import fs from 'fs'
 import readline from 'readline'
@@ -69,7 +69,7 @@ export const validateAddress = (subject: string) => {
 
 export type Newable<T> = { new (...args: any[]): T };
 
-export const setupDeploy = (wallet: Wallet) => async <T extends ContractFactory>(Factory: Newable<T>, ...args: Parameters<T['deploy']>): Promise<ReturnType<T['deploy']>> => {
+export const setupDeploy = (wallet: Signer) => async <T extends ContractFactory>(Factory: Newable<T>, ...args: Parameters<T['deploy']>): Promise<ReturnType<T['deploy']>> => {
   const contract = await new Factory(wallet).deploy(...args)
   await contract.deployed()
   return contract
