@@ -63,6 +63,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     function initialize(
         ERC20 _token,
         ERC20 _stakingToken,
+        ITrueLender2 _lender,
         address __owner
     ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
@@ -70,6 +71,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
         token = _token;
         stakingToken = _stakingToken;
+        lender = _lender;
     }
 
     /// Temporary function to avoid merge conflicts
