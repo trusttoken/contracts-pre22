@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {Claimable} from "../common/UpgradeableClaimable.sol";
+import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
 import {ILoanToken2, ILoanToken} from "./interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
