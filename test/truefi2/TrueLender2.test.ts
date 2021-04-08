@@ -62,7 +62,7 @@ describe('TrueLender2', () => {
     await poolFactory.initialize(implementationReference.address, AddressZero, lender.address)
     rater = await deployContract(owner, TrueRatingAgencyV2Factory)
     await lender.initialize(mockStake.address, poolFactory.address, rater.address)
-    //initialize rater
+    // initialize rater
 
     token1 = await deployContract(owner, MockErc20TokenFactory)
     const token2 = await deployContract(owner, MockErc20TokenFactory)
