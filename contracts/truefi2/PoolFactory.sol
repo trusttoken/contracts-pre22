@@ -36,7 +36,7 @@ contract PoolFactory is IPoolFactory, Claimable {
 
     ERC20 public stakingToken;
 
-    ITrueLender2 public trueLender;
+    ITrueLender2 public trueLender2;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -59,6 +59,12 @@ contract PoolFactory is IPoolFactory, Claimable {
      * @param status New status of allowAll
      */
     event AllowAllStatusChanged(bool status);
+
+    /**
+     * @dev Event to show that trueLender was changed
+     * @param trueLender2 New instance of ITrueLender2
+     */
+    event TrueLenderChanged(ITrueLender2 trueLender2);
 
     /**
      * @dev Throws if token already has an existing corresponding pool
@@ -85,13 +91,13 @@ contract PoolFactory is IPoolFactory, Claimable {
     function initialize(
         ImplementationReference _poolImplementationReference,
         ERC20 _stakingToken,
-        ITrueLender2 _trueLender
+        ITrueLender2 _trueLender2
     ) external initializer {
         Claimable.initialize(msg.sender);
 
         stakingToken = _stakingToken;
         poolImplementationReference = _poolImplementationReference;
-        trueLender = _trueLender;
+        trueLender2 = _trueLender2;
     }
 
     /**
@@ -104,7 +110,7 @@ contract PoolFactory is IPoolFactory, Claimable {
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), stakingToken, trueLender, this.owner());
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), stakingToken, trueLender2, this.owner());
 
         emit PoolCreated(token, address(proxy));
     }
@@ -126,5 +132,10 @@ contract PoolFactory is IPoolFactory, Claimable {
     function setAllowAll(bool status) external onlyOwner {
         allowAll = status;
         emit AllowAllStatusChanged(status);
+    }
+
+    function setTrueLender(ITrueLender2 _trueLender2) external onlyOwner {
+        trueLender2 = _trueLender2;
+        emit TrueLenderChanged(trueLender2);
     }
 }
