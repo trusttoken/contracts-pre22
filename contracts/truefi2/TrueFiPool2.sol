@@ -339,8 +339,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
+        uint256 expectedStrategyValue = strategy.value().add(amount);
         token.approve(address(strategy), amount);
         strategy.deposit(amount);
+        require(strategy.value() >= withToleratedError(expectedStrategyValue), "TrueFiPool: Strategy value expected to be higher");
 
         emit Flushed(amount);
     }
@@ -352,7 +354,9 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     function pull(uint256 minTokenAmount) external onlyOwner {
         require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
 
+        uint256 expectedCurrencyBalance = currencyBalance().add(minTokenAmount);
         strategy.withdraw(minTokenAmount);
+        require(currencyBalance() >= expectedCurrencyBalance, "TrueFiPool: currency balance expected to be higher");
 
         emit Pulled(minTokenAmount);
     }
@@ -411,7 +415,13 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         emit StrategySwitched(newStrategy);
 
         if (address(previousStrategy) != address(0)) {
+            uint256 expectedCurrencyBalance = currencyBalance().add(previousStrategy.value());
             previousStrategy.withdrawAll();
+            require(
+                currencyBalance() >= withToleratedError(expectedCurrencyBalance),
+                "TrueFiPool: all funds should be withdrawn to pool"
+            );
+            require(previousStrategy.value() == 0, "TrueFiPool: switched strategy should be depleted");
         }
     }
 
@@ -441,5 +451,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         _mint(msg.sender, mintedAmount);
 
         return mintedAmount;
+    }
+
+    function withToleratedError(uint256 amount) internal pure returns (uint256) {
+        uint256 error = 2; // percents
+        return amount.mul(100 - error).div(100);
     }
 }
