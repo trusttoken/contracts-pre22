@@ -107,6 +107,39 @@ describe('TrueFiPool2', () => {
     await expect(arbitrage.joinExit(pool.address)).to.be.revertedWith('TrueFiPool: Cannot join and exit in same block')
   })
 
+  describe('changeJoiningPauseStatus', () => {
+    it('can be called by owner', async () => {
+      await expect(pool.changeJoiningPauseStatus(true))
+        .not.to.be.reverted
+      await expect(pool.changeJoiningPauseStatus(false))
+        .not.to.be.reverted
+    })
+
+    it('cannot be called by unauthorized address', async () => {
+      await expect(pool.connect(borrower).changeJoiningPauseStatus(true))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(pool.connect(borrower).changeJoiningPauseStatus(false))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('properly changes pausing status', async () => {
+      expect(await pool.isJoiningPaused()).to.be.false
+      await pool.changeJoiningPauseStatus(true)
+      expect(await pool.isJoiningPaused()).to.be.true
+      await pool.changeJoiningPauseStatus(false)
+      expect(await pool.isJoiningPaused()).to.be.false
+    })
+
+    it('emits proper event', async () => {
+      await expect(pool.changeJoiningPauseStatus(true))
+        .to.emit(pool, 'JoiningPauseStatusChanged')
+        .withArgs(true)
+      await expect(pool.changeJoiningPauseStatus(false))
+        .to.emit(pool, 'JoiningPauseStatusChanged')
+        .withArgs(false)
+    })
+  })
+
   describe('poolValue', () => {
     const joinAmount = parseEth(1e7)
 
@@ -149,42 +182,85 @@ describe('TrueFiPool2', () => {
     // requires lender
   })
 
-  describe('changeJoiningPauseStatus', () => {
-    it('can be called by owner', async () => {
-      await expect(pool.changeJoiningPauseStatus(true))
-        .not.to.be.reverted
-      await expect(pool.changeJoiningPauseStatus(false))
-        .not.to.be.reverted
+  describe('setJoiningFee', () => {
+    it('sets fee value', async () => {
+      await pool.setJoiningFee(50)
+      expect(await pool.joiningFee()).to.equal(50)
     })
 
-    it('cannot be called by unauthorized address', async () => {
-      await expect(pool.connect(borrower).changeJoiningPauseStatus(true))
-        .to.be.revertedWith('Ownable: caller is not the owner')
-      await expect(pool.connect(borrower).changeJoiningPauseStatus(false))
-        .to.be.revertedWith('Ownable: caller is not the owner')
+    it('reverts when called not by owner', async () => {
+      await expect(pool.connect(borrower).setJoiningFee(50)).to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('properly changes pausing status', async () => {
-      expect(await pool.isJoiningPaused()).to.be.false
-      await pool.changeJoiningPauseStatus(true)
-      expect(await pool.isJoiningPaused()).to.be.true
-      await pool.changeJoiningPauseStatus(false)
-      expect(await pool.isJoiningPaused()).to.be.false
-    })
-
-    it('emits proper event', async () => {
-      await expect(pool.changeJoiningPauseStatus(true))
-        .to.emit(pool, 'JoiningPauseStatusChanged')
-        .withArgs(true)
-      await expect(pool.changeJoiningPauseStatus(false))
-        .to.emit(pool, 'JoiningPauseStatusChanged')
-        .withArgs(false)
+    it('reverts when JoiningFee set to more than 100%', async () => {
+      await expect(pool.setJoiningFee(10100))
+        .to.be.revertedWith('TrueFiPool: Fee cannot exceed transaction value')
     })
   })
 
   describe('join-exit', () => {
     // requires strategy
     // requires lender
+  })
+
+  describe('liquidExit', () => {
+    // requires strategy
+    // requires lender
+  })
+
+  describe('integrateAtPoint', () => {
+    const calcOffchain = (x: number) => Math.floor(Math.log(x + 50) * 50000)
+    it('calculates integral * 1e9', async () => {
+      for (let i = 0; i < 100; i++) {
+        expect(await pool.integrateAtPoint(i)).to.equal(calcOffchain(i))
+      }
+    })
+  })
+
+  describe('averageExitPenalty', () => {
+    const testPenalty = async (from: number, to: number, result: number) => expect(await pool.averageExitPenalty(from, to)).to.equal(result)
+
+    it('throws if from > to', async () => {
+      await expect(pool.averageExitPenalty(10, 9)).to.be.revertedWith('TrueFiPool: To precedes from')
+    })
+
+    it('correctly calculates penalty when from = to', async () => {
+      await testPenalty(0, 0, 1000)
+      await testPenalty(1, 1, 980)
+      await testPenalty(100, 100, 333)
+      await testPenalty(10000, 10000, 0)
+    })
+
+    it('correctly calculates penalty when from+1=to', async () => {
+      const testWithStep1 = async (from: number) => {
+        const penalty = await pool.averageExitPenalty(from, from + 1)
+        const expected = (await pool.averageExitPenalty(from, from)).add(await pool.averageExitPenalty(from + 1, from + 1)).div(2)
+        expect(penalty.sub(expected).abs()).to.be.lte(1)
+      }
+
+      await testWithStep1(0)
+      await testWithStep1(1)
+      await testWithStep1(2)
+      await testWithStep1(3)
+      await testWithStep1(5)
+      await testWithStep1(10)
+      await testWithStep1(42)
+      await testWithStep1(150)
+      await testWithStep1(1000)
+      await testWithStep1(10000 - 2)
+    })
+
+    it('correctly calculates penalty when from < to', async () => {
+      // Checked with Wolfram Alpha
+      await testPenalty(0, 12, 896)
+      await testPenalty(1, 100, 544)
+      await testPenalty(5, 10, 870)
+      await testPenalty(15, 55, 599)
+      await testPenalty(42, 420, 215)
+      await testPenalty(100, 1000, 108)
+      await testPenalty(9100, 10000, 5)
+      await testPenalty(1000, 10000, 12)
+    })
   })
 
   describe('flush', () => {
@@ -276,81 +352,5 @@ describe('TrueFiPool2', () => {
         .to.emit(pool, 'StrategySwitched')
         .withArgs(poolStrategy1.address)
     })
-  })
-
-  describe('setJoiningFee', () => {
-    it('sets fee value', async () => {
-      await pool.setJoiningFee(50)
-      expect(await pool.joiningFee()).to.equal(50)
-    })
-
-    it('reverts when called not by owner', async () => {
-      await expect(pool.connect(borrower).setJoiningFee(50)).to.be.revertedWith('Ownable: caller is not the owner')
-    })
-
-    it('reverts when JoiningFee set to more than 100%', async () => {
-      await expect(pool.setJoiningFee(10100))
-        .to.be.revertedWith('TrueFiPool: Fee cannot exceed transaction value')
-    })
-  })
-
-  describe('integrateAtPoint', () => {
-    const calcOffchain = (x: number) => Math.floor(Math.log(x + 50) * 50000)
-    it('calculates integral * 1e9', async () => {
-      for (let i = 0; i < 100; i++) {
-        expect(await pool.integrateAtPoint(i)).to.equal(calcOffchain(i))
-      }
-    })
-  })
-
-  describe('averageExitPenalty', () => {
-    const testPenalty = async (from: number, to: number, result: number) => expect(await pool.averageExitPenalty(from, to)).to.equal(result)
-
-    it('throws if from > to', async () => {
-      await expect(pool.averageExitPenalty(10, 9)).to.be.revertedWith('TrueFiPool: To precedes from')
-    })
-
-    it('correctly calculates penalty when from = to', async () => {
-      await testPenalty(0, 0, 1000)
-      await testPenalty(1, 1, 980)
-      await testPenalty(100, 100, 333)
-      await testPenalty(10000, 10000, 0)
-    })
-
-    it('correctly calculates penalty when from+1=to', async () => {
-      const testWithStep1 = async (from: number) => {
-        const penalty = await pool.averageExitPenalty(from, from + 1)
-        const expected = (await pool.averageExitPenalty(from, from)).add(await pool.averageExitPenalty(from + 1, from + 1)).div(2)
-        expect(penalty.sub(expected).abs()).to.be.lte(1)
-      }
-
-      await testWithStep1(0)
-      await testWithStep1(1)
-      await testWithStep1(2)
-      await testWithStep1(3)
-      await testWithStep1(5)
-      await testWithStep1(10)
-      await testWithStep1(42)
-      await testWithStep1(150)
-      await testWithStep1(1000)
-      await testWithStep1(10000 - 2)
-    })
-
-    it('correctly calculates penalty when from < to', async () => {
-      // Checked with Wolfram Alpha
-      await testPenalty(0, 12, 896)
-      await testPenalty(1, 100, 544)
-      await testPenalty(5, 10, 870)
-      await testPenalty(15, 55, 599)
-      await testPenalty(42, 420, 215)
-      await testPenalty(100, 1000, 108)
-      await testPenalty(9100, 10000, 5)
-      await testPenalty(1000, 10000, 12)
-    })
-  })
-
-  describe('liquidExit', () => {
-    // requires strategy
-    // requires lender
   })
 })
