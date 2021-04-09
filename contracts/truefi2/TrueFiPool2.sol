@@ -201,21 +201,6 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     }
 
     /**
-     * @dev Join the pool by depositing tokens
-     * @param amount amount of token to deposit
-     */
-    function join(uint256 amount) external joiningNotPaused {
-        uint256 fee = amount.mul(joiningFee).div(10000);
-        uint256 mintedAmount = mint(amount.sub(fee));
-        claimableFees = claimableFees.add(fee);
-
-        latestJoinBlock[tx.origin] = block.number;
-        token.safeTransferFrom(msg.sender, address(this), amount);
-
-        emit Joined(msg.sender, amount, mintedAmount);
-    }
-
-    /**
      * @dev ensure enough tokens are available
      * Check if current available amount of TUSD is enough and
      * withdraw remainder from strategy
@@ -238,6 +223,21 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         require(fee <= 10000, "TrueFiPool: Fee cannot exceed transaction value");
         joiningFee = fee;
         emit JoiningFeeChanged(fee);
+    }
+
+    /**
+     * @dev Join the pool by depositing tokens
+     * @param amount amount of token to deposit
+     */
+    function join(uint256 amount) external joiningNotPaused {
+        uint256 fee = amount.mul(joiningFee).div(10000);
+        uint256 mintedAmount = mint(amount.sub(fee));
+        claimableFees = claimableFees.add(fee);
+
+        latestJoinBlock[tx.origin] = block.number;
+        token.safeTransferFrom(msg.sender, address(this), amount);
+
+        emit Joined(msg.sender, amount, mintedAmount);
     }
 
     /**
