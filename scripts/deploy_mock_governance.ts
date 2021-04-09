@@ -4,7 +4,7 @@
 import { ethers, providers } from 'ethers'
 
 import {
-  MockTrustTokenFactory,
+  TestTrustTokenFactory,
   MockTimeLockFactory,
   GovernorAlphaFactory,
   OwnedUpgradeabilityProxyFactory,
@@ -15,7 +15,7 @@ async function deployMockGovernance () {
   const provider = new providers.InfuraProvider(process.argv[2], 'e33335b99d78415b82f8b9bc5fdc44c0')
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
 
-  const trustTokenImpl = await (await new MockTrustTokenFactory(wallet).deploy(txnArgs)).deployed()
+  const trustTokenImpl = await (await new TestTrustTokenFactory(wallet).deploy(txnArgs)).deployed()
   console.log(`TRU: ${trustTokenImpl.address}`)
 
   const timelockImpl = await (await new MockTimeLockFactory(wallet).deploy(txnArgs)).deployed()
