@@ -175,7 +175,6 @@ contract TrueLender2 is ITrueLender2, Claimable {
      * @param loanToken LoanToken to fund
      */
     function fund(ILoanToken2 loanToken) external {
-        // TODO add check if pool was created by the loan factory
         require(msg.sender == loanToken.borrower(), "TrueLender: Sender is not borrower");
         ITrueFiPool2 pool = loanToken.pool();
 
@@ -185,14 +184,20 @@ contract TrueLender2 is ITrueLender2, Claimable {
 
         (uint256 amount, , uint256 term) = loanToken.getParameters();
         uint256 receivedAmount = loanToken.receivedAmount();
+        (uint256 start, uint256 no, uint256 yes) = ratingAgency.getResults(address(loanToken));
+
+        require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
+        require(votesThresholdReached(yes.add(no)), "TrueLender: Not enough votes given for the loan");
+        require(loanIsCredible(yes, no), "TrueLender: Loan risk is too high");
 
         poolLoans[pool].push(loanToken);
         pool.borrow(amount, amount.sub(receivedAmount));
         pool.token().approve(address(loanToken), receivedAmount);
         loanToken.fund();
 
-        pool.approve(address(stakingPool), pool.balanceOf(address(this)));
-        stakingPool.payFee(pool.balanceOf(address(this)), block.timestamp.add(term));
+        // temporary on hold while developing new transaction fees
+        // pool.approve(address(stakingPool), pool.balanceOf(address(this)));
+        // stakingPool.payFee(pool.balanceOf(address(this)), block.timestamp.add(term));
 
         emit Funded(address(pool), address(loanToken), receivedAmount);
     }
@@ -278,6 +283,34 @@ contract TrueLender2 is ITrueLender2, Claimable {
         uint256 denominator
     ) external override {
         _distribute(recipient, numerator, denominator, msg.sender);
+    }
+
+    /**
+     * @dev Check if a loan has been in the credit market long enough
+     * @param start Timestamp at which rating began
+     * @return Whether a loan has been rated for long enough
+     */
+    function votingLastedLongEnough(uint256 start) public view returns (bool) {
+        return start.add(votingPeriod) <= block.timestamp;
+    }
+
+    /**
+     * @dev Check if a loan has enough votes to be approved
+     * @param votes Total number of votes
+     * @return Whether a loan has reached the required voting threshold
+     */
+    function votesThresholdReached(uint256 votes) public view returns (bool) {
+        return votes >= minVotes;
+    }
+
+    /**
+     * @dev Check if yes to no votes ratio reached the minimum rate
+     * @param yesVotes Number of YES votes in credit market
+     * @param noVotes Number of NO votes in credit market
+     */
+    function loanIsCredible(uint256 yesVotes, uint256 noVotes) public view returns (bool) {
+        uint256 totalVotes = yesVotes.add(noVotes);
+        return yesVotes >= totalVotes.mul(minRatio).div(BASIS_RATIO);
     }
 
     /// @dev Helper used in tests

@@ -17,13 +17,14 @@ import {
   TrueLender2Factory,
   Pool2ArbitrageTestFactory,
 } from 'contracts/types'
-import { MockProvider, solidity } from 'ethereum-waffle'
+import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 import { parseEth } from 'utils/parseEth'
 import { AddressZero } from '@ethersproject/constants'
-import { DAY, timeTravel } from 'utils'
+import { DAY, parseTRU, timeTravel } from 'utils'
 import { Deployer, setupDeploy } from 'scripts/utils'
+import { TrueRatingAgencyV2Json } from 'build/'
 
 use(solidity)
 
@@ -38,6 +39,7 @@ describe('TrueFiPool2', () => {
   let pool: TrueFiPool2
   let poolFactory: PoolFactory
   let lender: TrueLender2
+  let rater: MockContract
   let deployContract: Deployer
   let poolStrategy1: MockStrategy
   let poolStrategy2: MockStrategy
@@ -64,8 +66,9 @@ describe('TrueFiPool2', () => {
     const distributor = await deployContract(LinearTrueDistributorFactory)
     await stkToken.initialize(stakingToken.address, pool.address, distributor.address, AddressZero)
 
+    rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
     lender = await deployContract(TrueLender2Factory)
-    await lender.initialize(stkToken.address, poolFactory.address, AddressZero)
+    await lender.initialize(stkToken.address, poolFactory.address, rater.address)
     await pool.setLender(lender.address)
     await stkToken.setPayerWhitelistingStatus(lender.address, true)
 
@@ -135,6 +138,8 @@ describe('TrueFiPool2', () => {
           DAY,
           1000,
         )
+        await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
+
         const fee = 1250
         await lender.connect(borrower).fund(loan.address)
         expect(await pool.liquidValue()).to.equal(joinAmount.sub(500000).add(fee))
