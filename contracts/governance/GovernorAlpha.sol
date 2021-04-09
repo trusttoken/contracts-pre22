@@ -13,11 +13,11 @@
 pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
-import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITimelock} from "./interface/ITimelock.sol";
 import {IVoteToken} from "./interface/IVoteToken.sol";
 
-contract GovernorAlpha is Claimable {
+contract GovernorAlpha is UpgradeableClaimable {
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -159,7 +159,7 @@ contract GovernorAlpha is Claimable {
      * @dev Initialize sets the addresses of timelock contract, trusttoken contract, and guardian
      */
     function initialize(ITimelock _timelock, IVoteToken _trustToken, address _guardian, IVoteToken _stkTRU, uint256 _votingPeriod) external {
-        Claimable.initialize(msg.sender);
+        UpgradeableClaimable.initialize(msg.sender);
         timelock = _timelock;
         trustToken = _trustToken;
         stkTRU = _stkTRU;

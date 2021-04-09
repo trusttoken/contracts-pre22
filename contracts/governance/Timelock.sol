@@ -10,11 +10,11 @@
 pragma solidity ^0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
 import {IPauseableContract} from "./interface/IPauseableContract.sol";
 
-contract Timelock is Claimable {
+contract Timelock is UpgradeableClaimable {
     using SafeMath for uint;
 
     // ================ WARNING ==================
@@ -55,7 +55,7 @@ contract Timelock is Claimable {
      * @param delay_ The timestamp of delay for timelock contract
      */
     function initialize(address admin_, uint delay_) external {
-        Claimable.initialize(msg.sender);
+        UpgradeableClaimable.initialize(msg.sender);
         require(delay_ >= MINIMUM_DELAY, "Timelock::constructor: Delay must exceed minimum delay.");
         require(delay_ <= MAXIMUM_DELAY, "Timelock::setDelay: Delay must not exceed maximum delay.");
 

@@ -5,14 +5,10 @@ import {TrustToken} from "../TrustToken.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
- * @title MockTrustToken
- * @dev The TrustToken contract is a claimable contract where the
- * owner can only mint or transfer ownership. TrustTokens use 8 decimals
- * in order to prevent rewards from getting stuck in the remainder on division.
- * Tolerates dilution to slash stake and accept rewards.
+ * @title TestTrustToken
+ * @dev Adds faucet feature to the TRU, aimed to be used on testnets
  */
-// prettier-ignore
-contract MockTrustToken is TrustToken {
+contract TestTrustToken is TrustToken {
     using SafeMath for uint256;
 
     // last time faucet was called
@@ -21,35 +17,31 @@ contract MockTrustToken is TrustToken {
     uint256 constant DURATION = 1 minutes;
 
     /**
-     * @dev facuet for testnet TRU
+     * @dev faucet for testnet TRU
      * Can never mint more than MAX_SUPPLY = 1.45 billion
      * Set duration above 0 for block delays
      * @param to address to mint tokens for
      * @param amount amount of tokens to mint
      */
     function faucet(address to, uint256 amount) public {
-        require(getStamp().add(DURATION) <= block.timestamp,
-            "can only call faucet once per minute");
-        require(amount <= MAX_FAUCET, 
-            "amount exceeds max faucet amount per transaction");
+        require(getStamp().add(DURATION) <= block.timestamp, "TestTrustToken: Can only call faucet once per minute");
+        require(amount <= MAX_FAUCET, "TestTrustToken: Amount exceeds max faucet amount per transaction");
+        require(totalSupply.add(amount) <= MAX_SUPPLY, "TestTrustToken: Max Supply Exceeded");
 
         setStamp(block.timestamp);
-        require(totalSupply.add(amount) <= MAX_SUPPLY,
-            "Max Supply Exceeded");
-            _mint(to, amount);
+        _mint(to, amount);
     }
 
     /**
-     * @dev facuet for testnet TRU owner
+     * @dev faucet for testnet TRU owner
      * Can never mint more than MAX_SUPPLY = 1.45 billion
      * Set duration above 0 for block delays
      * @param to address to mint tokens for
      * @param amount amount of tokens to mint
      */
     function ownerFaucet(address to, uint256 amount) public onlyOwner {
-        require(totalSupply.add(amount) <= MAX_SUPPLY,
-            "Max Supply Exceeded");
-            _mint(to, amount);
+        require(totalSupply.add(amount) <= MAX_SUPPLY, "TestTrustToken: Max Supply Exceeded");
+        _mint(to, amount);
     }
 
     /**

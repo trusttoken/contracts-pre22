@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {UpgradeableClaimable as Claimable} from "../../common/UpgradeableClaimable.sol";
+import {UpgradeableClaimable} from "../../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "../interface/ITrueStrategy.sol";
 import {ICurveGauge, ICurveMinter, ICurvePool, IERC20} from "../../truefi/interface/ICurve.sol";
@@ -23,7 +23,7 @@ interface IERC20WithDecimals is IERC20 {
  * Supports DAI, USDC, USDT and TUSD
  * Curve LP tokens are being deposited into Curve Gauge and CRV rewards can be sold on 1Inch exchange and transferred to the pool
  */
-contract CurveYearnStrategy is Claimable, ITrueStrategy {
+contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     using SafeMath for uint256;
     using SafeERC20 for IERC20WithDecimals;
     using OneInchExchange for I1Inch3;
@@ -32,6 +32,12 @@ contract CurveYearnStrategy is Claimable, ITrueStrategy {
     uint8 constant N_TOKENS = 4;
     // Max slippage during uniswap sell
     uint256 constant MAX_PRICE_SLIPPAGE = 200; // 2%
+
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
 
     // Index of token in Curve pool
     // 0 - DAI
@@ -51,6 +57,8 @@ contract CurveYearnStrategy is Claimable, ITrueStrategy {
     // CRV price oracle
     ICrvPriceOracle public crvOracle;
 
+    // ======= STORAGE DECLARATION END ============
+
     modifier onlyPool() {
         require(msg.sender == pool, "CurveYearnStrategy: Can only be called by pool");
         _;
@@ -65,7 +73,7 @@ contract CurveYearnStrategy is Claimable, ITrueStrategy {
         ICrvPriceOracle _crvOracle,
         uint8 _tokenIndex
     ) external initializer {
-        Claimable.initialize(msg.sender);
+        UpgradeableClaimable.initialize(msg.sender);
 
         token = IERC20WithDecimals(address(_pool.token()));
         pool = address(_pool);
