@@ -8,11 +8,11 @@ import {
   OwnedProxyWithReferenceFactory,
   TestTrueLender,
   TestTrueLenderFactory,
+  PoolFactory,
+  PoolFactoryFactory,
+  TrueFiPool2,
+  TrueFiPool2Factory,
 } from 'contracts/types'
-import { PoolFactory } from 'contracts/types/PoolFactory'
-import { PoolFactoryFactory } from 'contracts/types/PoolFactoryFactory'
-import { TrueFiPool2 } from 'contracts/types/TrueFiPool2'
-import { TrueFiPool2Factory } from 'contracts/types/TrueFiPool2Factory'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
@@ -28,7 +28,8 @@ describe('PoolFactory', () => {
   let token1: MockErc20Token
   let token2: MockErc20Token
   let stakingToken: MockErc20Token
-  let trueLender: TestTrueLender
+  let trueLenderInstance1: TestTrueLender
+  let trueLenderInstance2: TestTrueLender
 
   beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet] = wallets
@@ -39,9 +40,14 @@ describe('PoolFactory', () => {
     token1 = await new MockErc20TokenFactory(owner).deploy()
     token2 = await new MockErc20TokenFactory(owner).deploy()
     stakingToken = await new MockErc20TokenFactory(owner).deploy()
-    trueLender = await new TestTrueLenderFactory(owner).deploy()
+    trueLenderInstance1 = await new TestTrueLenderFactory(owner).deploy()
+    trueLenderInstance2 = await new TestTrueLenderFactory(owner).deploy()
 
-    await factory.initialize(implementationReference.address, stakingToken.address, trueLender.address)
+    await factory.initialize(
+      implementationReference.address,
+      stakingToken.address,
+      trueLenderInstance1.address,
+    )
   })
 
   describe('Initializer', () => {
@@ -101,7 +107,7 @@ describe('PoolFactory', () => {
     })
 
     it('true lender is set correctly', async () => {
-      expect(await pool.lender()).to.eq(trueLender.address)
+      expect(await pool.lender()).to.eq(trueLenderInstance1.address)
     })
 
     it('cannot create pool for token that already has a pool', async () => {
@@ -235,6 +241,21 @@ describe('PoolFactory', () => {
       await expect(factory.setAllowAll(false))
         .to.emit(factory, 'AllowAllStatusChanged')
         .withArgs(false)
+    })
+  })
+
+  describe('setTrueLender', () => {
+    it('only owner can set trueLender', async () => {
+      await expect(factory.connect(otherWallet).setTrueLender(trueLenderInstance2.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(factory.connect(owner).setTrueLender(trueLenderInstance2.address))
+        .not.to.be.reverted
+    })
+
+    it('sets new true lender contract', async () => {
+      expect(await factory.trueLender2()).to.eq(trueLenderInstance1.address)
+      await factory.connect(owner).setTrueLender(trueLenderInstance2.address)
+      expect(await factory.trueLender2()).to.eq(trueLenderInstance2.address)
     })
   })
 })
