@@ -74,12 +74,6 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         lender = _lender;
     }
 
-    /// Temporary function to avoid merge conflicts
-    /// TODO use initializer
-    function setLender(ITrueLender2 _lender) external {
-        lender = _lender;
-    }
-
     /**
      * @dev Emitted when fee is changed
      * @param newFee New fee
