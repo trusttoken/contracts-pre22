@@ -8,12 +8,11 @@ import {
   MockCurvePoolFactory,
   MockErc20Token,
   MockErc20TokenFactory,
-  OneInchExchangeJson,
   TestCurveStrategy,
   TestCurveStrategyFactory,
 } from 'contracts'
 import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
-import { ContractFactory, Wallet } from 'ethers'
+import { Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -41,12 +40,8 @@ describe('CurveYearnStrategy', () => {
     await mockCurveGauge.mock.minter.returns(mockMinter.address)
     await mockMinter.mock.token.returns(mockCrv.address)
     const crvOracle = await new MockCrvPriceOracleFactory(owner).deploy()
-    const libFactory = new ContractFactory(OneInchExchangeJson.abi, OneInchExchangeJson.bytecode, owner)
-    const lib = await libFactory.deploy()
 
-    strategy = await new TestCurveStrategyFactory({
-      'contracts/truefi2/libraries/OneInchExchange.sol:OneInchExchange': lib.address,
-    }, owner).deploy()
+    strategy = await new TestCurveStrategyFactory(owner).deploy()
     await strategy.testInitialize(
       token.address,
       pool.address,
