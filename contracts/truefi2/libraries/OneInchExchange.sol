@@ -14,7 +14,7 @@ library OneInchExchange {
      *
      * @return description - description of the swap
      */
-    function exchange(I1Inch3 _1inchExchange, bytes calldata data) external returns (I1Inch3.SwapDescription memory description) {
+    function exchange(I1Inch3 _1inchExchange, bytes calldata data) internal returns (I1Inch3.SwapDescription memory description) {
         (, description, ) = abi.decode(data[4:], (address, I1Inch3.SwapDescription, bytes));
 
         IERC20(description.srcToken).approve(address(_1inchExchange), description.amount);

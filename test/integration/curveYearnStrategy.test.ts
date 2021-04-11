@@ -4,7 +4,6 @@ import {
   CurveYearnStrategy,
   CurveYearnStrategyFactory,
   ImplementationReferenceFactory,
-  OneInchExchangeJson,
   PoolFactoryFactory,
   TrueFiPool2,
   TrueFiPool2Factory,
@@ -12,7 +11,7 @@ import {
 import { setupDeploy } from 'scripts/utils'
 import { Erc20Factory } from 'contracts/types/Erc20Factory'
 import { Erc20 } from 'contracts/types/Erc20'
-import { ContractFactory, utils } from 'ethers'
+import { utils } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
@@ -59,11 +58,7 @@ describe('Curve Yearn Pool Strategy', () => {
     await usdc.connect(holder).approve(pool.address, amount)
     await pool.connect(holder).join(amount)
 
-    const libFactory = new ContractFactory(OneInchExchangeJson.abi, OneInchExchangeJson.bytecode, owner)
-    const lib = await libFactory.deploy()
-    strategy = await new CurveYearnStrategyFactory({
-      'contracts/truefi2/libraries/OneInchExchange.sol:OneInchExchange': lib.address,
-    }, owner).deploy()
+    strategy = await new CurveYearnStrategyFactory(owner).deploy()
     const oracle = await deployContract(CrvPriceOracleFactory)
 
     await strategy.initialize(pool.address, CURVE_POOL, GAUGE, MINTER, ONE_INCH, oracle.address, 1)

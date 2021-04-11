@@ -16,7 +16,7 @@ contract TestCurveStrategy is CurveYearnStrategy {
         ICrvPriceOracle _crvOracle,
         uint8 _tokenIndex
     ) external initializer {
-        Claimable.initialize(msg.sender);
+        UpgradeableClaimable.initialize(msg.sender);
 
         token = _token;
         pool = _pool;
