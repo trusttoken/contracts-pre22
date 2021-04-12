@@ -33,30 +33,30 @@ deploy({}, (deployer) => {
 
   const timeOwnedProxy = createProxy(TimeOwnedUpgradeabilityProxy)
   // Existing contracts
-  const tru = timeOwnedProxy(contract('tru', TrustToken), () => {})
-  const pool = proxy(contract('pool', TrueFiPool), () => {})
-  const factory = proxy(contract('factory', LoanFactory), () => {})
-  proxy(contract('ratingAgency', TrueRatingAgency), () => {})
+  const trustToken = timeOwnedProxy(contract('trustToken', TrustToken), () => {})
+  const trueFiPool = proxy(contract('trueFiPool', TrueFiPool), () => {})
+  const loanFactory = proxy(contract('loanFactory', LoanFactory), () => {})
+  proxy(contract('trueRatingAgency', TrueRatingAgency), () => {})
 
   // New contracts
   const distributionStart = Date.parse(DISTRIBUTION_START) / 1000
   const length = DISTRIBUTION_LENGTH_IN_DAYS * DAY
-  const distributor = proxy(contract('stkTruDistributor', LinearTrueDistributor), 'initialize',
-    [distributionStart, length, parseTRU(STAKE_DISTRIBUTION_AMOUNT_IN_TRU), tru],
+  const stkTruToken_LinearTrueDistributor = proxy(contract('stkTruToken_LinearTrueDistributor', LinearTrueDistributor), 'initialize',
+    [distributionStart, length, parseTRU(STAKE_DISTRIBUTION_AMOUNT_IN_TRU), trustToken],
   )
-  const stkTru = proxy(contract('stkTru', StkTruToken), 'initialize', [tru, pool, distributor, tru])
-  distributor.setFarm(stkTru)
-  pool.setStakeToken(stkTru)
+  const stkTruToken = proxy(contract('stkTruToken', StkTruToken), 'initialize', [trustToken, trueFiPool, stkTruToken_LinearTrueDistributor, trustToken])
+  stkTruToken_LinearTrueDistributor.setFarm(stkTruToken)
+  trueFiPool.setStakeToken(stkTruToken)
 
   const timelock = proxy(contract(Timelock), 'initialize', [TIMELOCK_ADMIN, TIMELOCK_DELAY])
-  proxy(contract(GovernorAlpha), 'initialize', [timelock, tru, GOV_GUARDIAN, stkTru, VOTING_PERIOD])
+  proxy(contract(GovernorAlpha), 'initialize', [timelock, trustToken, GOV_GUARDIAN, stkTruToken, VOTING_PERIOD])
 
-  const trueRatingAgencyV2 = proxy(contract('ratingAgency2', TrueRatingAgencyV2), () => {})
-  const arbitraryDistributor = proxy(contract('arbitraryDistributor2', ArbitraryDistributor), 'initialize',
-    [trueRatingAgencyV2, tru, parseTRU(RATING_AGENCY_DISTRIBUTION_AMOUNT_IN_TRU)],
+  const trueRatingAgencyV2 = proxy(contract('trueRatingAgency2', TrueRatingAgencyV2), () => {})
+  const arbitraryDistributor = proxy(contract('arbitraryDistributor', ArbitraryDistributor), 'initialize',
+    [trueRatingAgencyV2, trustToken, parseTRU(RATING_AGENCY_DISTRIBUTION_AMOUNT_IN_TRU)],
   )
-  trueRatingAgencyV2.initialize(tru, stkTru, arbitraryDistributor, factory)
+  trueRatingAgencyV2.initialize(trustToken, stkTruToken, arbitraryDistributor, loanFactory)
 
-  const oracle = contract('uniswapOracle', AddressZero, ['0xb4d0d9df2738abe81b87b66c80851292492d1404', '0xec6a6b7db761a5c9910ba8fcab98116d384b1b85'])
-  proxy(contract('liquidator', Liquidator), 'initialize', [pool, stkTru, tru, oracle, factory])
+  const uniswapOracle = contract('uniswapOracle', AddressZero, ['0xb4d0d9df2738abe81b87b66c80851292492d1404', '0xec6a6b7db761a5c9910ba8fcab98116d384b1b85'])
+  proxy(contract('liquidator', Liquidator), 'initialize', [trueFiPool, stkTruToken, trustToken, uniswapOracle, loanFactory])
 })
