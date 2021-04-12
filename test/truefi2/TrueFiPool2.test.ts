@@ -87,7 +87,7 @@ describe('TrueFiPool2', () => {
 
   const withToleratedError = (number: BigNumber) => {
     const error = 2
-    return number.mul(100 - error).div(100)
+    return number.mul(10000 - error * 100).div(10000)
   }
 
   describe('initializer', () => {

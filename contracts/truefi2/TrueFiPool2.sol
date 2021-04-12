@@ -54,6 +54,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     // allow pausing of deposits
     bool public isJoiningPaused;
 
+    uint8 public toleratedError; // percents
+
     // ======= STORAGE DECLARATION END ===========
 
     function concat(string memory a, string memory b) internal pure returns (string memory) {
@@ -70,6 +72,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
         token = _token;
         stakingToken = _stakingToken;
+        toleratedError = 2;
     }
 
     /// Temporary function to avoid merge conflicts
@@ -449,8 +452,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         return mintedAmount;
     }
 
-    function withToleratedError(uint256 amount) internal pure returns (uint256) {
-        uint256 error = 2; // percents
-        return amount.mul(100 - error).div(100);
+    function withToleratedError(uint256 amount) internal view returns (uint256) {
+        return amount.mul(10000 - toleratedError * 100).div(10000);
     }
 }
