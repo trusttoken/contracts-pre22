@@ -345,7 +345,59 @@ describe('TrueFiPool2', () => {
     })
   })
 
-  describe('borrow-repay', () => {
+  describe('borrow', () => {
+    beforeEach(async () => {
+      await tusd.approve(pool.address, includeFee(parseEth(100)))
+      await pool.join(includeFee(parseEth(100)))
+    })
+
+    it('only lender can be caller', async () => {
+      await expect(pool.connect(owner.address).borrow(0, 0))
+        .to.be.revertedWith('TrueFiPool: Caller is not the lender')
+      const loan = await deployContract(
+        LoanToken2Factory, pool.address, borrower.address,
+        lender.address, AddressZero, 500000, DAY, 1000,
+      )
+      await expect(lender.connect(borrower).fund(loan.address))
+        .not.to.be.reverted
+    })
+
+    it('in order to borrow from pool it has to have liquidity', async () => {
+      let loan = await deployContract(
+        LoanToken2Factory, pool.address,
+        borrower.address, lender.address, AddressZero,
+        (await tusd.balanceOf(pool.address)).add(1), DAY, 0,
+      )
+      await expect(lender.connect(borrower).fund(loan.address))
+        .to.be.revertedWith('TrueFiPool: Insufficient liquidity')
+      loan = await deployContract(
+        LoanToken2Factory, pool.address, borrower.address,
+        lender.address, AddressZero, 500000, DAY, 1000,
+      )
+      await expect(lender.connect(borrower).fund(loan.address))
+        .not.to.be.reverted
+    })
+
+    describe('ensureSufficientLiquidity', () => {
+      it('strategy has to return enouch funds', async () => {
+        const loan = await deployContract(
+          LoanToken2Factory, pool.address,
+          borrower.address, lender.address, AddressZero,
+          (await tusd.balanceOf(pool.address)), DAY, 0,
+        )
+        await pool.connect(owner).switchStrategy(badPoolStrategy.address)
+        await pool.flush(1000)
+        await badPoolStrategy.setErrorPercents(1)
+        await expect(lender.connect(borrower).fund(loan.address))
+          .to.be.revertedWith('TrueFiPool: Not enough funds taken from the strategy')
+        await badPoolStrategy.setErrorPercents(0)
+        await expect(lender.connect(borrower).fund(loan.address))
+          .not.to.be.reverted
+      })
+    })
+  })
+
+  describe('repay', () => {
     // requires strategy
   })
 
