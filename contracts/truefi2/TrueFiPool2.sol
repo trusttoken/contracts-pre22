@@ -54,7 +54,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     // allow pausing of deposits
     bool public isJoiningPaused;
 
-    uint8 public toleratedError; // percents
+    // tolerance difference (percents) between
+    // expected and actual transaction results
+    // when dealing with strategies
+    uint8 public toleratedError;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -452,6 +455,11 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         return mintedAmount;
     }
 
+    /**
+     * @dev Decrease provided amount percentwise by error
+     * @param amount Amount to decrease
+     * @return Calculated value
+     */
     function withToleratedError(uint256 amount) internal view returns (uint256) {
         return amount.mul(10000 - toleratedError * 100).div(10000);
     }
