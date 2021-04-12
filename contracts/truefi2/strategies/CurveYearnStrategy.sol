@@ -33,6 +33,12 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     // Max slippage during uniswap sell
     uint256 constant MAX_PRICE_SLIPPAGE = 200; // 2%
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     // Index of token in Curve pool
     // 0 - DAI
     // 1 - USDC
@@ -50,6 +56,8 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
 
     // CRV price oracle
     ICrvPriceOracle public crvOracle;
+
+    // ======= STORAGE DECLARATION END ===========
 
     modifier onlyPool() {
         require(msg.sender == pool, "CurveYearnStrategy: Can only be called by pool");
