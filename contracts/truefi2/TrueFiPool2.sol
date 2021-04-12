@@ -339,11 +339,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
-        uint256 expectedStrategyValue = strategy.value().add(amount);
+        uint256 expectedMinStrategyValue = strategy.value().add(withToleratedError(amount));
         token.approve(address(strategy), amount);
         strategy.deposit(amount);
-        require(strategy.value() >= withToleratedError(expectedStrategyValue), "TrueFiPool: Strategy value expected to be higher");
-
+        require(strategy.value() >= expectedMinStrategyValue, "TrueFiPool: Strategy value expected to be higher");
         emit Flushed(amount);
     }
 
@@ -415,12 +414,9 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         emit StrategySwitched(newStrategy);
 
         if (address(previousStrategy) != address(0)) {
-            uint256 expectedCurrencyBalance = currencyBalance().add(previousStrategy.value());
+            uint256 expectedMinCurrencyBalance = currencyBalance().add(withToleratedError(previousStrategy.value()));
             previousStrategy.withdrawAll();
-            require(
-                currencyBalance() >= withToleratedError(expectedCurrencyBalance),
-                "TrueFiPool: all funds should be withdrawn to pool"
-            );
+            require(currencyBalance() >= expectedMinCurrencyBalance, "TrueFiPool: all funds should be withdrawn to pool");
             require(previousStrategy.value() == 0, "TrueFiPool: switched strategy should be depleted");
         }
     }
