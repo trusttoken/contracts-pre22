@@ -2,11 +2,13 @@
 pragma solidity 0.6.10;
 
 import {ERC20, IERC20} from "../../common/UpgradeableERC20.sol";
+import {ITrueLender2} from "../interface/ITrueLender2.sol";
 
 interface ITrueFiPool2 is IERC20 {
     function initialize(
         ERC20 _token,
         ERC20 _stakingToken,
+        ITrueLender2 _lender,
         address __owner
     ) external;
 
