@@ -9,54 +9,64 @@ import {
   StkTruToken,
   Timelock,
   TimeOwnedUpgradeabilityProxy,
-  TrueFiPool, TrueRatingAgency,
+  TruPriceOracle,
+  TrueFiPool,
   TrueRatingAgencyV2,
+  TrueUSD,
   TrustToken,
 } from '../build/artifacts'
 import { DAY, parseTRU } from '../test/utils'
 import { AddressZero } from '@ethersproject/constants'
 
 // TODO Fill values
-const DISTRIBUTION_LENGTH_IN_DAYS = 10
-const DISTRIBUTION_START = '02/18/2021'
+const DISTRIBUTION_DURATION_IN_DAYS = 10
+const DISTRIBUTION_DURATION = DISTRIBUTION_DURATION_IN_DAYS * DAY
+const DISTRIBUTION_START_DATE = '02/18/2021'
+const DISTRIBUTION_START = Date.parse(DISTRIBUTION_START_DATE) / 1000
 const STAKE_DISTRIBUTION_AMOUNT_IN_TRU = 10
+const STAKE_DISTRIBUTION_AMOUNT = parseTRU(STAKE_DISTRIBUTION_AMOUNT_IN_TRU)
 const RATING_AGENCY_DISTRIBUTION_AMOUNT_IN_TRU = 10
+const RATING_AGENCY_DISTRIBUTION_AMOUNT = parseTRU(RATING_AGENCY_DISTRIBUTION_AMOUNT_IN_TRU)
 const TIMELOCK_DELAY = 10
 const VOTING_PERIOD = 10
 
 deploy({}, (deployer) => {
   const TIMELOCK_ADMIN = deployer
   const GOV_GUARDIAN = deployer
+  const is_mainnet = false // TODO figure out how to get mars network flag
 
   const proxy = createProxy(OwnedUpgradeabilityProxy)
-
-
   const timeOwnedProxy = createProxy(TimeOwnedUpgradeabilityProxy)
-  // Existing contracts
-  const trustToken = timeOwnedProxy(contract('trustToken', TrustToken), () => {})
+
+  const trueUSD = proxy(contract('trueUSD', TrueUSD), () => {})
+  const trustToken = timeOwnedProxy(contract('trustToken', TrustToken), 'initialize',
+    [],
+  )
   const trueFiPool = proxy(contract('trueFiPool', TrueFiPool), () => {})
-  const loanFactory = proxy(contract('loanFactory', LoanFactory), () => {})
-  proxy(contract('trueRatingAgency', TrueRatingAgency), () => {})
-
-  // New contracts
-  const distributionStart = Date.parse(DISTRIBUTION_START) / 1000
-  const length = DISTRIBUTION_LENGTH_IN_DAYS * DAY
+  const loanFactory = proxy(contract('loanFactory', LoanFactory), 'initialize',
+    [trueUSD],
+  )
+  const truPriceOracle = contract('truPriceOracle', TruPriceOracle)
+  const liquidator = proxy(contract('liquidator', Liquidator), 'initialize',
+    [trueFiPool, stkTruToken, trustToken, truPriceOracle, loanFactory],
+  )
   const stkTruToken_LinearTrueDistributor = proxy(contract('stkTruToken_LinearTrueDistributor', LinearTrueDistributor), 'initialize',
-    [distributionStart, length, parseTRU(STAKE_DISTRIBUTION_AMOUNT_IN_TRU), trustToken],
+    [DISTRIBUTION_START, DISTRIBUTION_DURATION, STAKE_DISTRIBUTION_AMOUNT, trustToken],
   )
-  const stkTruToken = proxy(contract('stkTruToken', StkTruToken), 'initialize', [trustToken, trueFiPool, stkTruToken_LinearTrueDistributor, trustToken])
+  const stkTruToken = proxy(contract('stkTruToken', StkTruToken), 'initialize',
+    [trustToken, trueFiPool, stkTruToken_LinearTrueDistributor, liquidator],
+  )
   stkTruToken_LinearTrueDistributor.setFarm(stkTruToken)
-  trueFiPool.setStakeToken(stkTruToken)
-
-  const timelock = proxy(contract(Timelock), 'initialize', [TIMELOCK_ADMIN, TIMELOCK_DELAY])
-  proxy(contract(GovernorAlpha), 'initialize', [timelock, trustToken, GOV_GUARDIAN, stkTruToken, VOTING_PERIOD])
-
-  const trueRatingAgencyV2 = proxy(contract('trueRatingAgency2', TrueRatingAgencyV2), () => {})
   const arbitraryDistributor = proxy(contract('arbitraryDistributor', ArbitraryDistributor), 'initialize',
-    [trueRatingAgencyV2, trustToken, parseTRU(RATING_AGENCY_DISTRIBUTION_AMOUNT_IN_TRU)],
+    [trueRatingAgencyV2, trustToken, RATING_AGENCY_DISTRIBUTION_AMOUNT],
   )
-  trueRatingAgencyV2.initialize(trustToken, stkTruToken, arbitraryDistributor, loanFactory)
-
-  const uniswapOracle = contract('uniswapOracle', AddressZero, ['0xb4d0d9df2738abe81b87b66c80851292492d1404', '0xec6a6b7db761a5c9910ba8fcab98116d384b1b85'])
-  proxy(contract('liquidator', Liquidator), 'initialize', [trueFiPool, stkTruToken, trustToken, uniswapOracle, loanFactory])
+  const trueRatingAgencyV2 = proxy(contract('trueRatingAgency2', TrueRatingAgencyV2), 'initialize',
+    [trustToken, stkTruToken, arbitraryDistributor, loanFactory],
+  )
+  const timelock = proxy(contract(Timelock), 'initialize',
+    [TIMELOCK_ADMIN, TIMELOCK_DELAY],
+  )
+  proxy(contract(GovernorAlpha), 'initialize',
+    [timelock, trustToken, stkTruToken, GOV_GUARDIAN, VOTING_PERIOD],
+  )
 })
