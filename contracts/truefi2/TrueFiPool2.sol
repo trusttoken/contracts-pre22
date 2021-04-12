@@ -247,7 +247,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      */
     function exit(uint256 amount) external {
         require(block.number != latestJoinBlock[tx.origin], "TrueFiPool: Cannot join and exit in same block");
-        require(amount <= balanceOf(msg.sender), "TrueFiPool: insufficient funds");
+        require(amount <= balanceOf(msg.sender), "TrueFiPool: Insufficient funds");
 
         uint256 _totalSupply = totalSupply();
 
@@ -355,7 +355,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
         uint256 expectedCurrencyBalance = currencyBalance().add(minTokenAmount);
         strategy.withdraw(minTokenAmount);
-        require(currencyBalance() >= expectedCurrencyBalance, "TrueFiPool: currency balance expected to be higher");
+        require(currencyBalance() >= expectedCurrencyBalance, "TrueFiPool: Currency balance expected to be higher");
 
         emit Pulled(minTokenAmount);
     }
@@ -406,7 +406,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param newStrategy strategy to switch to
      */
     function switchStrategy(ITrueStrategy newStrategy) external onlyOwner {
-        require(strategy != newStrategy, "TrueFiPool: cannot switch to the same strategy");
+        require(strategy != newStrategy, "TrueFiPool: Cannot switch to the same strategy");
 
         ITrueStrategy previousStrategy = strategy;
         strategy = newStrategy;
@@ -416,8 +416,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         if (address(previousStrategy) != address(0)) {
             uint256 expectedMinCurrencyBalance = currencyBalance().add(withToleratedError(previousStrategy.value()));
             previousStrategy.withdrawAll();
-            require(currencyBalance() >= expectedMinCurrencyBalance, "TrueFiPool: all funds should be withdrawn to pool");
-            require(previousStrategy.value() == 0, "TrueFiPool: switched strategy should be depleted");
+            require(currencyBalance() >= expectedMinCurrencyBalance, "TrueFiPool: All funds should be withdrawn to pool");
+            require(previousStrategy.value() == 0, "TrueFiPool: Switched strategy should be depleted");
         }
     }
 

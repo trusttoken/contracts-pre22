@@ -325,7 +325,7 @@ describe('TrueFiPool2', () => {
       await pool.flush(1000)
       await badPoolStrategy.setErrorPercents(1)
       await expect(pool.pull(100))
-        .to.be.revertedWith('TrueFiPool: currency balance expected to be higher')
+        .to.be.revertedWith('TrueFiPool: Currency balance expected to be higher')
       await badPoolStrategy.setErrorPercents(0)
 
       await pool.connect(owner).switchStrategy(poolStrategy1.address)
@@ -443,7 +443,7 @@ describe('TrueFiPool2', () => {
     it('cannot switch to the same strategy', async () => {
       await pool.connect(owner).switchStrategy(poolStrategy1.address)
       await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
-        .to.be.revertedWith('TrueFiPool: cannot switch to the same strategy')
+        .to.be.revertedWith('TrueFiPool: Cannot switch to the same strategy')
       await expect(pool.connect(owner).switchStrategy(poolStrategy2.address))
         .not.to.be.reverted
     })
@@ -461,7 +461,7 @@ describe('TrueFiPool2', () => {
       await pool.flush(1000)
       await badPoolStrategy.setErrorPercents(3)
       await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
-        .to.be.revertedWith('TrueFiPool: all funds should be withdrawn to pool')
+        .to.be.revertedWith('TrueFiPool: All funds should be withdrawn to pool')
       await badPoolStrategy.setErrorPercents(0)
 
       await pool.connect(owner).switchStrategy(poolStrategy1.address)
@@ -479,7 +479,7 @@ describe('TrueFiPool2', () => {
       await pool.flush(1000)
       await badPoolStrategy.setErrorPercents(1)
       await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
-        .to.be.revertedWith('TrueFiPool: switched strategy should be depleted')
+        .to.be.revertedWith('TrueFiPool: Switched strategy should be depleted')
       await badPoolStrategy.setErrorPercents(0)
 
       await pool.connect(owner).switchStrategy(poolStrategy1.address)
