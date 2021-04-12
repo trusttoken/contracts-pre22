@@ -16,6 +16,7 @@ import {
   TrueLender2,
   TrueLender2Factory,
   Pool2ArbitrageTestFactory,
+  StkTruToken,
 } from 'contracts/types'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -33,7 +34,7 @@ describe('TrueFiPool2', () => {
   let owner: Wallet
   let borrower: Wallet
   let tusd: MockErc20Token
-  let stakingToken: MockErc20Token
+  let stakingToken: StkTruToken
   let implementationReference: ImplementationReference
   let poolImplementation: TrueFiPool2
   let pool: TrueFiPool2
@@ -51,12 +52,14 @@ describe('TrueFiPool2', () => {
     [owner, borrower] = wallets
     deployContract = setupDeploy(owner)
 
-    stakingToken = await deployContract(MockErc20TokenFactory)
+    stakingToken = await deployContract(StkTruTokenFactory)
     tusd = await deployContract(MockErc20TokenFactory)
     poolFactory = await deployContract(PoolFactoryFactory)
     poolImplementation = await deployContract(TrueFiPool2Factory)
     implementationReference = await deployContract(ImplementationReferenceFactory, poolImplementation.address)
-    const stkToken = await deployContract(StkTruTokenFactory)
+    lender = await deployContract(TrueLender2Factory)
+    rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
+
     await poolFactory.initialize(implementationReference.address, stakingToken.address, lender.address)
     await poolFactory.whitelist(tusd.address, true)
     await poolFactory.createPool(tusd.address)
@@ -64,13 +67,10 @@ describe('TrueFiPool2', () => {
     pool = poolImplementation.attach(await poolFactory.pool(tusd.address))
 
     const distributor = await deployContract(LinearTrueDistributorFactory)
-    await stkToken.initialize(stakingToken.address, pool.address, distributor.address, AddressZero)
+    await stakingToken.initialize(stakingToken.address, pool.address, distributor.address, AddressZero)
 
-    rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
-    lender = await deployContract(TrueLender2Factory)
-    await lender.initialize(stkToken.address, poolFactory.address, rater.address)
-    await pool.setLender(lender.address)
-    await stkToken.setPayerWhitelistingStatus(lender.address, true)
+    await lender.initialize(stakingToken.address, poolFactory.address, rater.address)
+    await stakingToken.setPayerWhitelistingStatus(lender.address, true)
 
     poolStrategy1 = await deployContract(MockStrategyFactory, tusd.address, pool.address)
     poolStrategy2 = await deployContract(MockStrategyFactory, tusd.address, pool.address)
