@@ -49,7 +49,7 @@ describe('Curve Yearn Pool Strategy', () => {
     const poolFactory = await deployContract(PoolFactoryFactory)
     const poolImplementation = await deployContract(TrueFiPool2Factory)
     const implementationReference = await deployContract(ImplementationReferenceFactory, poolImplementation.address)
-    await poolFactory.initialize(implementationReference.address, TRU_ADDRESS)
+    await poolFactory.initialize(implementationReference.address, TRU_ADDRESS, AddressZero)
     await poolFactory.whitelist(USDC_ADDRESS, true)
     await poolFactory.createPool(USDC_ADDRESS)
 
