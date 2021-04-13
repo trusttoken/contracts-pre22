@@ -116,9 +116,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev Emitted when funds are borrowed from pool
      * @param borrower Borrower address
      * @param amount Amount of funds borrowed from pool
-     * @param fee Fees collected from this transaction
      */
-    event Borrow(address borrower, uint256 amount, uint256 fee);
+    event Borrow(address borrower, uint256 amount);
 
     /**
      * @dev Emitted when borrower repays the pool
@@ -394,16 +393,15 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev Remove liquidity from curve if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount, uint256 fee) override external onlyLender {
+    function borrow(uint256 amount) override external onlyLender {
         require(amount <= liquidValue(), "TrueFiPool: Insufficient liquidity");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);
         }
 
-        mint(fee);
-        token.safeTransfer(msg.sender, amount.sub(fee));
+        token.safeTransfer(msg.sender, amount);
 
-        emit Borrow(msg.sender, amount, fee);
+        emit Borrow(msg.sender, amount);
     }
 
     /**

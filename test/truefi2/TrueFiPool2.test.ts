@@ -140,15 +140,14 @@ describe('TrueFiPool2', () => {
         )
         await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
 
-        const fee = 1250
         await lender.connect(borrower).fund(loan.address)
-        expect(await pool.liquidValue()).to.equal(joinAmount.sub(500000).add(fee))
+        expect(await pool.liquidValue()).to.equal(joinAmount.sub(500000))
         expect(await pool.loansValue()).to.equal(500000)
-        expect(await pool.poolValue()).to.equal(joinAmount.add(fee))
+        expect(await pool.poolValue()).to.equal(joinAmount)
 
         await timeTravel(provider, DAY * 2)
         expect(await pool.loansValue()).to.equal(500136)
-        expect(await pool.poolValue()).to.equal(joinAmount.add(136).add(fee))
+        expect(await pool.poolValue()).to.equal(joinAmount.add(136))
       })
     })
     // requires lender
