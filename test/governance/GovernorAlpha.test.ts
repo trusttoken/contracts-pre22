@@ -410,7 +410,7 @@ describe('GovernorAlpha', () => {
   describe('castVoteBySig', () => {
     async function sign (wallet: Wallet, proposalId: number, support: boolean, governor: string) {
       const domain = {
-        name: 'TrustToken Governor Alpha',
+        name: 'TrueFi Governance',
         chainId: 1,
         verifyingContract: governor,
       }
