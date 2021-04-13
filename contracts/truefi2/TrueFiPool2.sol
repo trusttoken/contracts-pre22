@@ -54,6 +54,11 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     // allow pausing of deposits
     bool public isJoiningPaused;
 
+    // cache values during sync for gas optimization
+    bool private inSync;
+    uint256 private strategyValueCache;
+    uint256 private loansValueCache;
+
     // tolerance difference (percents) between
     // expected and actual transaction results
     // when dealing with strategies
@@ -68,6 +73,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     function initialize(
         ERC20 _token,
         ERC20 _stakingToken,
+        ITrueLender2 _lender,
         address __owner
     ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
@@ -75,13 +81,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
         token = _token;
         stakingToken = _stakingToken;
-        toleratedError = 2;
-    }
-
-    /// Temporary function to avoid merge conflicts
-    /// TODO use initializer
-    function setLender(ITrueLender2 _lender) external {
         lender = _lender;
+        toleratedError = 2;
     }
 
     /**
@@ -168,6 +169,23 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     }
 
     /**
+     * Sync values to avoid making expensive calls multiple times
+     * Will set inSync to true, allowing getter functions to return cached values
+     * Wipes cached values to save gas
+     */
+    modifier sync() {
+        // sync
+        strategyValueCache = strategyValue();
+        loansValueCache = loansValue();
+        inSync = true;
+        _;
+        // wipe
+        inSync = false;
+        strategyValueCache = 0;
+        loansValueCache = 0;
+    }
+
+    /**
      * @dev Allow pausing of deposits in case of emergency
      * @param status New deposit status
      */
@@ -181,10 +199,21 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @return Virtual liquid value of pool assets
      */
     function liquidValue() public view returns (uint256) {
+        return currencyBalance().add(strategyValue());
+    }
+
+    /**
+     * @dev Value of funds deposited into the strategy valuated in pool's token
+     * @return Virtual value of strategy
+     */
+    function strategyValue() public view returns (uint256) {
         if (address(strategy) == address(0)) {
-            return currencyBalance();
+            return 0;
         }
-        return currencyBalance().add(strategy.value());
+        if (inSync) {
+            return strategyValueCache;
+        }
+        return strategy.value();
     }
 
     /**
@@ -203,6 +232,9 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @return Value of loans in pool
      */
     function loansValue() public view returns (uint256) {
+        if (inSync) {
+            return loansValueCache;
+        }
         return lender.value(this);
     }
 
@@ -281,7 +313,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * Uses the sync() modifier to reduce gas costs of using curve
      * @param amount amount of pool tokens to redeem for underlying tokens
      */
-    function liquidExit(uint256 amount) external {
+    function liquidExit(uint256 amount) external sync {
         require(block.number != latestJoinBlock[tx.origin], "TrueFiPool: Cannot join and exit in same block");
         require(amount <= balanceOf(msg.sender), "TrueFiPool: Insufficient funds");
 

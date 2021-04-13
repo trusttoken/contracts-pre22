@@ -60,7 +60,7 @@ contract UpgradeableClaimable is Initializable, Context {
      * @dev Modifier throws if called by any account other than the pendingOwner.
      */
     modifier onlyPendingOwner() {
-        require(msg.sender == _pendingOwner);
+        require(msg.sender == _pendingOwner, "Ownable: caller is not the pending owner");
         _;
     }
 
