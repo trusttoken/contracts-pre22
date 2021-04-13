@@ -77,7 +77,7 @@ describe('TrueLender2', () => {
 
     const tfusd = await deployContract(owner, MockTrueCurrencyFactory) // just for testing, change this in origination fees development
     const trueDistributor = await deployContract(owner, LinearTrueDistributorFactory)
-    await stkTru.initialize(tru.address, tfusd.address, trueDistributor.address, AddressZero)
+    await stkTru.initialize(tru.address, tfusd.address, AddressZero, trueDistributor.address, AddressZero)
 
     lender = await deployContract(owner, TestTrueLenderFactory)
     await poolFactory.initialize(implementationReference.address, AddressZero, lender.address)
