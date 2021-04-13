@@ -35,6 +35,7 @@ describe('StkTruToken', () => {
   let tru: TrustToken
   let stkToken: StkTruToken
   let tfusd: MockTrueCurrency
+  let feeToken: MockTrueCurrency
   let distributor: LinearTrueDistributor
   let provider: providers.JsonRpcProvider
 
@@ -48,16 +49,65 @@ describe('StkTruToken', () => {
     tru = await deployContract(TrustTokenFactory)
     await tru.initialize()
     tfusd = await deployContract(MockTrueCurrencyFactory)
+    feeToken = await deployContract(MockTrueCurrencyFactory)
     distributor = await deployContract(LinearTrueDistributorFactory)
 
     stkToken = await deployContract(StkTruTokenFactory)
-    await stkToken.initialize(tru.address, tfusd.address, distributor.address, liquidator.address)
+    await stkToken.initialize(tru.address, tfusd.address, feeToken.address, distributor.address, liquidator.address)
 
     await tru.mint(owner.address, amount)
     await tru.approve(stkToken.address, amount)
 
     await tru.mint(staker.address, amount.div(2))
     await tru.connect(staker).approve(stkToken.address, amount.div(2))
+  })
+
+  describe('Initializer', () => {
+    it('sets TRU', async () => {
+      expect(await stkToken.tru()).to.eq(tru.address)
+    })
+
+    it('sets tfUSD', async () => {
+      expect(await stkToken.tfusd()).to.eq(tfusd.address)
+    })
+
+    it('sets fee token', async () => {
+      expect(await stkToken.feeToken()).to.eq(feeToken.address)
+    })
+
+    it('sets distributor', async () => {
+      expect(await stkToken.distributor()).to.eq(distributor.address)
+    })
+
+    it('sets liquidator', async () => {
+      expect(await stkToken.liquidator()).to.eq(liquidator.address)
+    })
+
+    it('sets cooldown time', async () => {
+      expect(await stkToken.cooldownTime()).to.eq(DAY * 14)
+    })
+
+    it('sets unstake period duration', async () => {
+      expect(await stkToken.unstakePeriodDuration()).to.eq(DAY * 2)
+    })
+  })
+
+  describe('setFeeToken', () => {
+    it('only owner', async () => {
+      await expect(stkToken.connect(staker).setFeeToken(tfusd.address))
+        .to.be.revertedWith('only owner')
+    })
+
+    it('changes value', async () => {
+      await stkToken.setFeeToken(tfusd.address)
+      expect(await stkToken.feeToken()).to.eq(tfusd.address)
+    })
+
+    it('emits event', async () => {
+      await expect(stkToken.setFeeToken(tfusd.address))
+        .to.emit(stkToken, 'FeeTokenChanged')
+        .withArgs(tfusd.address)
+    })
   })
 
   describe('setCooldownTime', () => {
