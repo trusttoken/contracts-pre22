@@ -30,7 +30,6 @@ deploy({}, (deployer) => {
 
   const proxy = createProxy(OwnedUpgradeabilityProxy)
 
-
   const timeOwnedProxy = createProxy(TimeOwnedUpgradeabilityProxy)
   // Existing contracts
   const tru = timeOwnedProxy(contract('tru', TrustToken), () => {})
