@@ -5,7 +5,6 @@ import {Timelock} from "../Timelock.sol";
 import {UpgradeableClaimable} from "../../common/UpgradeableClaimable.sol";
 
 contract MockTimeLock is Timelock {
-
     /**
      * @dev Initialize sets the addresses of admin and the delay timestamp
      * @param admin_ The address of admin
@@ -18,7 +17,7 @@ contract MockTimeLock is Timelock {
         delay = delay_;
     }
 
-    /** 
+    /**
      * @dev Function to set delay for testing
      * @param _delay new delay
      */
