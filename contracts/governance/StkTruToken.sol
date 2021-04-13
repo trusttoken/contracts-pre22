@@ -134,6 +134,8 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         updateClaimableRewards(tru, account);
         updateTotalRewards(tfusd);
         updateClaimableRewards(tfusd, account);
+        updateTotalRewards(feeToken);
+        updateClaimableRewards(feeToken, account);
         _;
     }
 
@@ -149,6 +151,9 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         } else if (token == tfusd) {
             updateTotalRewards(tfusd);
             updateClaimableRewards(tfusd, account);
+        } else if (token == feeToken) {
+            updateTotalRewards(feeToken);
+            updateClaimableRewards(feeToken, account);
         }
         _;
     }
@@ -262,6 +267,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
 
         _claim(tru);
         _claim(tfusd);
+        _claim(feeToken);
 
         uint256 amountToTransfer = amount.mul(stakeSupply).div(totalSupply);
 
@@ -328,6 +334,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     function claim() external distribute update(msg.sender) {
         _claim(tru);
         _claim(tfusd);
+        _claim(feeToken);
     }
 
     /**
@@ -336,7 +343,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @param token Token to claim rewards for
      */
     function claimRewards(IERC20 token) external distribute updateRewards(msg.sender, token) {
-        require(token == tfusd || token == tru, "Token not supported for rewards");
+        require(token == tfusd || token == tru || token == feeToken, "Token not supported for rewards");
         _claim(token);
     }
 
@@ -505,6 +512,9 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         }
         if (token == tfusd) {
             return token.balanceOf(address(this)).sub(undistributedTfusdRewards);
+        }
+        if (token == feeToken) {
+            return token.balanceOf(address(this));
         }
         return 0;
     }
