@@ -50,6 +50,7 @@ describe('Curve Yearn Pool Strategy', () => {
         // eslint-disable-next-line no-empty
       } catch {}
     }
+    throw new Error('Function has failed 3 times')
   }
 
   beforeEach(async () => {
