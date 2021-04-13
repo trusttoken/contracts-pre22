@@ -57,7 +57,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     // CRV price oracle
     ICrvPriceOracle public crvOracle;
 
-    // ======= STORAGE DECLARATION END ============
+    // ======= STORAGE DECLARATION END ===========
 
     modifier onlyPool() {
         require(msg.sender == pool, "CurveYearnStrategy: Can only be called by pool");
