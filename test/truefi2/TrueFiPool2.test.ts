@@ -72,7 +72,8 @@ describe('TrueFiPool2', () => {
     const distributor = await deployContract(LinearTrueDistributorFactory)
     await stakingToken.initialize(stakingToken.address, pool.address, AddressZero, distributor.address, AddressZero)
 
-    await lender.initialize(stakingToken.address, poolFactory.address, rater.address)
+    await lender.initialize(stakingToken.address, poolFactory.address, rater.address, AddressZero, tusd.address)
+    await lender.setFee(0)
     await stakingToken.setPayerWhitelistingStatus(lender.address, true)
 
     poolStrategy1 = await deployContract(MockStrategyFactory, tusd.address, pool.address)
