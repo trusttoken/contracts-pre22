@@ -62,7 +62,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     // tolerance difference (percents) between
     // expected and actual transaction results
     // when dealing with strategies
-    uint8 public toleratedError;
+    uint8 public constant TOLERATED_STRATEGY_ERROR = 98;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -82,7 +82,6 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         token = _token;
         stakingToken = _stakingToken;
         lender = _lender;
-        toleratedError = 2;
     }
 
     /**
@@ -493,6 +492,6 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @return Calculated value
      */
     function withToleratedError(uint256 amount) internal view returns (uint256) {
-        return amount.mul(10000 - toleratedError * 100).div(10000);
+        return amount.mul(TOLERATED_STRATEGY_ERROR).div(100);
     }
 }
