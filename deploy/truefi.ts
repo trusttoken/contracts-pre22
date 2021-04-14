@@ -30,10 +30,10 @@ const RATING_AGENCY_DISTRIBUTION_AMOUNT = parseTRU(RATING_AGENCY_DISTRIBUTION_AM
 const TIMELOCK_DELAY = 10
 const VOTING_PERIOD = 10
 
-deploy({}, (deployer) => {
+deploy({}, (deployer, config) => {
   const TIMELOCK_ADMIN = deployer
   const GOV_GUARDIAN = deployer
-  const is_mainnet = false // TODO figure out how to get mars network flag
+  const is_mainnet = config.network == 'mainnet'
 
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const timeOwnedProxy = createProxy(TimeOwnedUpgradeabilityProxy)
