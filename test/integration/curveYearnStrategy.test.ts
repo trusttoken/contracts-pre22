@@ -40,6 +40,19 @@ describe('Curve Yearn Pool Strategy', () => {
   let pool: TrueFiPool2
   let strategy: CurveYearnStrategy
 
+  // Some requests to forked network are randomly failing (possibly some Ganache issue, so we retry them 3 times)
+  const retry = async (call: () => void) => {
+    let i = 3
+    while (i-- > 0) {
+      try {
+        await call()
+        return
+        // eslint-disable-next-line no-empty
+      } catch {}
+    }
+    throw new Error('Function has failed 3 times')
+  }
+
   beforeEach(async () => {
     await provider.getSigner(ETHER_HOLDER).sendTransaction({
       value: utils.parseEther('1000'),
@@ -49,7 +62,7 @@ describe('Curve Yearn Pool Strategy', () => {
     const poolFactory = await deployContract(PoolFactoryFactory)
     const poolImplementation = await deployContract(TrueFiPool2Factory)
     const implementationReference = await deployContract(ImplementationReferenceFactory, poolImplementation.address)
-    await poolFactory.initialize(implementationReference.address, TRU_ADDRESS)
+    await poolFactory.initialize(implementationReference.address, TRU_ADDRESS, AddressZero)
     await poolFactory.whitelist(USDC_ADDRESS, true)
     await poolFactory.createPool(USDC_ADDRESS)
 
@@ -66,18 +79,18 @@ describe('Curve Yearn Pool Strategy', () => {
   })
 
   it('Flush and pool', async () => {
-    await pool.flush(amount)
+    await retry(() => pool.flush(amount))
     await pool.pull(amount.div(2))
-  })
+  }).timeout(10000000)
 
   it('Withdraw all by switching strategy', async () => {
-    await pool.flush(amount)
-    await pool.switchStrategy(AddressZero)
+    await retry(() => pool.flush(amount))
+    await retry(() => pool.switchStrategy(AddressZero))
     expect(await usdc.balanceOf(pool.address)).to.be.gte(amount.mul(999).div(1000)) // Curve fees
-  })
+  }).timeout(10000000)
 
   it('Mine CRV on Curve gauge and sell on 1Inch, CRV is not part of value', async () => {
-    await pool.flush(amount)
+    await retry(() => pool.flush(amount))
     await timeTravel(provider, DAY * 10)
 
     const valueBefore = await strategy.value()
@@ -94,12 +107,12 @@ describe('Curve Yearn Pool Strategy', () => {
     await strategy.sellCrv(data)
     expect(await usdc.balanceOf(pool.address)).to.be.gt(0)
     expect(await strategy.crvBalance()).to.equal(0)
-  })
+  }).timeout(10000000)
 
   it('value grows with time', async () => {
-    await pool.flush(amount)
+    await retry(() => pool.flush(amount))
     const valueBefore = await strategy.value()
     await timeTravel(provider, DAY * 10)
     expect(await strategy.value()).to.be.gt(valueBefore)
-  })
+  }).timeout(10000000)
 })

@@ -35,7 +35,7 @@ describe('LoanToken2', () => {
     const poolFactory = await deployContract(lender, PoolFactoryFactory)
     const poolImplementation = await deployContract(lender, TrueFiPool2Factory)
     const implementationReference = await deployContract(lender, ImplementationReferenceFactory, [poolImplementation.address])
-    await poolFactory.initialize(implementationReference.address, AddressZero)
+    await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero)
     await poolFactory.whitelist(token.address, true)
     await poolFactory.createPool(token.address)
     poolAddress = await poolFactory.pool(token.address)

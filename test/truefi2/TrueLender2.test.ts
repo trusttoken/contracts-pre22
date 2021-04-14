@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, DAY, parseEth, timeTravel } from 'utils'
+import { beforeEachWithFixture, DAY, parseEth, parseTRU, timeTravel } from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
   ImplementationReferenceFactory,
@@ -9,15 +9,27 @@ import {
   MockErc20Token,
   MockErc20TokenFactory,
   PoolFactoryFactory,
-  StkTruTokenJson,
   TrueFiPool2,
   TrueFiPool2Factory,
   TestTrueLender,
   TestTrueLenderFactory,
+  TrueRatingAgencyV2,
+  TrueRatingAgencyV2Factory,
+  PoolFactory,
+  ArbitraryDistributor,
+  TrustToken,
+  TrustTokenFactory,
+  ArbitraryDistributorFactory,
+  StkTruToken,
+  StkTruTokenFactory,
+  LinearTrueDistributorFactory,
+  MockTrueCurrencyFactory,
 } from 'contracts'
-import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
+import { deployMockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
-import { Wallet } from 'ethers'
+import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { LoanFactory2 } from 'contracts/types/LoanFactory2'
+import { LoanFactory2Factory } from 'contracts/types/LoanFactory2Factory'
 
 use(solidity)
 
@@ -25,27 +37,59 @@ describe('TrueLender2', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
+
+  let loanFactory: LoanFactory2
   let loan1: LoanToken2
   let loan2: LoanToken2
   let pool1: TrueFiPool2
   let pool2: TrueFiPool2
+
+  let rater: TrueRatingAgencyV2
+  let arbitraryDistributor: ArbitraryDistributor
   let lender: TestTrueLender
+
   let counterfeitPool: TrueFiPool2
   let token1: MockErc20Token
-  let mockStake: MockContract
+
+  let poolFactory: PoolFactory
+
+  let stkTru: StkTruToken
+  let tru: TrustToken
+
+  const dayInSeconds = 60 * 60 * 24
+
+  const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
+    const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, apy)
+    const loanAddress = (await loanTx.wait()).events[0].args.contractAddress
+    return new LoanToken2Factory(owner).attach(loanAddress)
+  }
 
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, borrower] = wallets)
-    const poolFactory = await deployContract(owner, PoolFactoryFactory)
+    poolFactory = await deployContract(owner, PoolFactoryFactory)
     const poolImplementation = await deployContract(owner, TrueFiPool2Factory)
     const implementationReference = await deployContract(owner, ImplementationReferenceFactory, [poolImplementation.address])
-    await poolFactory.initialize(implementationReference.address, AddressZero)
 
-    mockStake = await deployMockContract(owner, StkTruTokenJson.abi)
-    await mockStake.mock.payFee.returns()
+    stkTru = await deployContract(owner, StkTruTokenFactory)
+
+    tru = await deployContract(owner, TrustTokenFactory)
+    await tru.initialize()
+
+    const tfusd = await deployContract(owner, MockTrueCurrencyFactory) // just for testing, change this in origination fees development
+    const trueDistributor = await deployContract(owner, LinearTrueDistributorFactory)
+    await stkTru.initialize(tru.address, tfusd.address, trueDistributor.address, AddressZero)
 
     lender = await deployContract(owner, TestTrueLenderFactory)
-    await lender.initialize(mockStake.address, poolFactory.address)
+    await poolFactory.initialize(implementationReference.address, AddressZero, lender.address)
+    rater = await deployContract(owner, TrueRatingAgencyV2Factory)
+    await lender.initialize(stkTru.address, poolFactory.address, rater.address)
+
+    arbitraryDistributor = await deployContract(owner, ArbitraryDistributorFactory)
+    await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(1e7))
+
+    loanFactory = await deployContract(owner, LoanFactory2Factory)
+    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero)
+    await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
 
     token1 = await deployContract(owner, MockErc20TokenFactory)
     const token2 = await deployContract(owner, MockErc20TokenFactory)
@@ -57,11 +101,8 @@ describe('TrueLender2', () => {
 
     pool1 = TrueFiPool2Factory.connect(await poolFactory.pool(token1.address), owner)
     pool2 = TrueFiPool2Factory.connect(await poolFactory.pool(token2.address), owner)
-    await pool1.setLender(lender.address)
-    await pool2.setLender(lender.address)
     counterfeitPool = await deployContract(owner, TrueFiPool2Factory)
-    await counterfeitPool.initialize(token1.address, AddressZero, owner.address)
-    await counterfeitPool.setLender(lender.address)
+    await counterfeitPool.initialize(token1.address, AddressZero, lender.address, owner.address)
     await token1.mint(owner.address, parseEth(1e7))
     await token2.mint(owner.address, parseEth(1e7))
     await token1.approve(pool1.address, parseEth(1e7))
@@ -69,35 +110,124 @@ describe('TrueLender2', () => {
     await pool1.join(parseEth(1e7))
     await pool2.join(parseEth(1e7))
 
-    loan1 = await deployContract(owner, LoanToken2Factory, [
-      pool1.address,
-      borrower.address,
-      lender.address,
-      AddressZero,
-      100000,
-      DAY,
-      100,
-    ])
+    await rater.allowChangingAllowances(owner.address, true)
+    await rater.allow(borrower.address, true)
+    await tru.mint(owner.address, parseTRU(15e6))
 
-    loan2 = await deployContract(owner, LoanToken2Factory, [
-      pool2.address,
-      borrower.address,
-      lender.address,
-      AddressZero,
-      500000,
-      DAY,
-      1000,
-    ])
+    await tru.approve(stkTru.address, parseTRU(15e6))
+    await stkTru.stake(parseTRU(15e6))
+    timeTravel(_provider, 1)
+
+    loan1 = await createLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
+
+    loan2 = await createLoan(loanFactory, borrower, pool2, 500000, DAY, 1000)
 
     provider = _provider
   })
 
-  describe('Funding', () => {
-    describe('reverts if', () => {
-      xit('loan not created by the factory', async () => {
-        // TODO add test when loan factory is updated
+  const approveLoanRating = async function (loan: LoanToken2) {
+    await rater.connect(borrower).submit(loan.address)
+    await rater.yes(loan.address)
+
+    timeTravel(provider, 7 * DAY + 1)
+  }
+
+  describe('Initializer', () => {
+    it('sets the staking pool address', async () => {
+      expect(await lender.stakingPool()).to.equal(stkTru.address)
+    })
+
+    it('sets the pool factory address', async () => {
+      expect(await lender.factory()).to.equal(poolFactory.address)
+    })
+
+    it('sets the rating agency address', async () => {
+      expect(await lender.ratingAgency()).to.equal(rater.address)
+    })
+
+    it('default params', async () => {
+      expect(await lender.minVotes()).to.equal(parseTRU(15e6))
+      expect(await lender.minRatio()).to.equal(8000)
+      expect(await lender.votingPeriod()).to.equal(dayInSeconds * 7)
+      expect(await lender.maxLoans()).to.equal(100)
+    })
+  })
+
+  describe('Parameters set up', () => {
+    describe('setMinVotes', () => {
+      it('changes minVotes', async () => {
+        await lender.setMinVotes(1234)
+        expect(await lender.minVotes()).to.equal(1234)
       })
 
+      it('emits MinVotesChanged', async () => {
+        await expect(lender.setMinVotes(1234))
+          .to.emit(lender, 'MinVotesChanged').withArgs(1234)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setMinVotes(1234)).to.be.revertedWith('caller is not the owner')
+      })
+    })
+
+    describe('setMinRatio', () => {
+      it('changes minRatio', async () => {
+        await lender.setMinRatio(1234)
+        expect(await lender.minRatio()).to.equal(1234)
+      })
+
+      it('forbids setting above 100%', async () => {
+        await expect(lender.setMinRatio(10001))
+          .to.be.revertedWith('TrueLender: minRatio cannot be more than 100%')
+      })
+
+      it('emits MinRatioChanged', async () => {
+        await expect(lender.setMinRatio(1234))
+          .to.emit(lender, 'MinRatioChanged').withArgs(1234)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setMinRatio(1234)).to.be.revertedWith('caller is not the owner')
+      })
+    })
+
+    describe('setVotingPeriod', () => {
+      it('changes votingPeriod', async () => {
+        await lender.setVotingPeriod(dayInSeconds * 3)
+        expect(await lender.votingPeriod()).to.equal(dayInSeconds * 3)
+      })
+
+      it('emits VotingPeriodChanged', async () => {
+        await expect(lender.setVotingPeriod(dayInSeconds * 3))
+          .to.emit(lender, 'VotingPeriodChanged').withArgs(dayInSeconds * 3)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setVotingPeriod(dayInSeconds * 3)).to.be.revertedWith('caller is not the owner')
+      })
+    })
+
+    describe('Setting loans limit', () => {
+      it('reverts when performed by non-owner', async () => {
+        await expect(lender.connect(borrower).setLoansLimit(0))
+          .to.be.revertedWith('caller is not the owner')
+      })
+
+      it('changes loans limit', async () => {
+        await lender.setLoansLimit(3)
+        expect(await lender.maxLoans()).eq(3)
+      })
+
+      it('emits event', async () => {
+        await expect(lender.setLoansLimit(2))
+          .to.emit(lender, 'LoansLimitChanged')
+          .withArgs(2)
+      })
+    })
+  })
+
+  describe('Funding', () => {
+    describe('reverts if', () => {
       it('transaction not called by the borrower', async () => {
         await expect(lender.fund(loan1.address)).to.be.revertedWith('TrueLender: Sender is not borrower')
       })
@@ -117,44 +247,133 @@ describe('TrueLender2', () => {
 
       it('there are too many loans for given pool', async () => {
         await lender.setLoansLimit(1)
+        await approveLoanRating(loan1)
         await lender.connect(borrower).fund(loan1.address)
         await expect(lender.connect(borrower).fund(loan1.address)).to.be.revertedWith('TrueLender: Loans number has reached the limit')
       })
+
+      it('loan was not long enough under voting', async () => {
+        await rater.connect(borrower).submit(loan1.address)
+        await rater.yes(loan1.address)
+        timeTravel(provider, 6 * DAY)
+
+        await expect(lender.connect(borrower).fund(loan1.address))
+          .to.be.revertedWith('TrueLender: Voting time is below minimum')
+      })
+
+      it('votes threshold has not been reached', async () => {
+        await tru.mint(borrower.address, parseTRU(15e6))
+        await tru.connect(borrower).approve(stkTru.address, parseTRU(15e6))
+        await stkTru.connect(borrower).stake(parseTRU(14e6))
+        timeTravel(provider, 1)
+
+        await rater.connect(borrower).submit(loan1.address)
+        await rater.connect(borrower).yes(loan1.address)
+        timeTravel(provider, 7 * DAY + 1)
+
+        await expect(lender.connect(borrower).fund(loan1.address))
+          .to.be.revertedWith('TrueLender: Not enough votes given for the loan')
+      })
+
+      it('loan is predicted to be too risky', async () => {
+        await rater.connect(borrower).submit(loan1.address)
+        await rater.no(loan1.address)
+        timeTravel(provider, 7 * DAY + 1)
+
+        await expect(lender.connect(borrower).fund(loan1.address))
+          .to.be.revertedWith('TrueLender: Loan risk is too high')
+      })
     })
 
-    it('borrows receivedAmount from pool and transfers to the loan', async () => {
-      await expect(lender.connect(borrower).fund(loan1.address))
-        .to.emit(token1, 'Transfer')
-        .withArgs(pool1.address, lender.address, 99750)
-        .and.to.emit(token1, 'Transfer')
-        .withArgs(lender.address, loan1.address, 99750)
-      expect(await loan1.balance()).to.equal(99750)
+    describe('all requirements are met', () => {
+      beforeEach(async () => {
+        await approveLoanRating(loan1)
+      })
+
+      it('borrows tokens from pool', async () => {
+        const poolValueBefore = await pool1.liquidValue()
+        const borrowedAmount = await loan1.receivedAmount()
+        await lender.connect(borrower).fund(loan1.address)
+        expect(poolValueBefore.sub(await pool1.liquidValue())).to.eq(borrowedAmount)
+      })
+
+      xit('pays origination fee to stakers', async () => {
+        // TODO
+      })
+
+      it('borrows receivedAmount from pool and transfers to the loan', async () => {
+        await expect(lender.connect(borrower).fund(loan1.address))
+          .to.emit(token1, 'Transfer')
+          .withArgs(pool1.address, lender.address, 99750)
+          .and.to.emit(token1, 'Transfer')
+          .withArgs(lender.address, loan1.address, 99750)
+        expect(await loan1.balance()).to.equal(99750)
+      })
+
+      it('emits event', async () => {
+        await expect(lender.connect(borrower).fund(loan1.address))
+          .to.emit(lender, 'Funded')
+          .withArgs(pool1.address, loan1.address, 99750)
+      })
     })
 
-    it('pays fee to stakers', async () => {
-      await lender.connect(borrower).fund(loan1.address)
-      expect('payFee').to.have.been.calledOnContract(mockStake)
-    })
+    describe('complex credibility cases', () => {
+      interface LoanScenario {
+        yesVotes: BigNumber,
+        noVotes: BigNumber,
+      }
 
-    it('emits event', async () => {
-      await expect(lender.connect(borrower).fund(loan1.address))
-        .to.emit(lender, 'Funded')
-        .withArgs(pool1.address, loan1.address, 99750)
+      const scenario = (yes: number, no: number) => ({
+        yesVotes: parseTRU(BigNumber.from(yes)),
+        noVotes: parseTRU(BigNumber.from(no)),
+      })
+
+      const loanIsCredible = async (loanScenario: LoanScenario) => {
+        return await lender.loanIsCredible(
+          loanScenario.yesVotes,
+          loanScenario.noVotes,
+        ) && lender.votesThresholdReached(
+          loanScenario.yesVotes.add(loanScenario.noVotes),
+        )
+      }
+
+      describe('approvals', () => {
+        const approvedLoanScenarios = [
+          scenario(40e6, 10e6),
+          scenario(12e6, 3e6),
+        ]
+
+        approvedLoanScenarios.forEach((loanScenario, index) => {
+          it(`approved loan case #${index + 1}`, async () => {
+            expect(await loanIsCredible(loanScenario)).to.be.true
+          })
+        })
+      })
+
+      describe('rejections', () => {
+        const rejectedLoanScenarios = [
+          scenario(40e6, 11e6),
+          scenario(14e6, 9e5),
+        ]
+
+        rejectedLoanScenarios.forEach((loanScenario, index) => {
+          it(`rejected loan case #${index + 1}`, async () => {
+            expect(await loanIsCredible(loanScenario)).to.be.false
+          })
+        })
+      })
     })
   })
 
   describe('value', () => {
     beforeEach(async () => {
+      const newLoan1 = await createLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
+
+      await approveLoanRating(newLoan1)
+      await approveLoanRating(loan1)
+      await approveLoanRating(loan2)
+
       await lender.connect(borrower).fund(loan1.address)
-      const newLoan1 = await deployContract(owner, LoanToken2Factory, [
-        pool1.address,
-        borrower.address,
-        lender.address,
-        AddressZero,
-        100000,
-        DAY,
-        100,
-      ])
       await lender.connect(borrower).fund(newLoan1.address)
       await lender.connect(borrower).fund(loan2.address)
     })
@@ -188,6 +407,7 @@ describe('TrueLender2', () => {
     }
 
     beforeEach(async () => {
+      await approveLoanRating(loan1)
       await lender.connect(borrower).fund(loan1.address)
     })
 
@@ -240,15 +460,12 @@ describe('TrueLender2', () => {
       beforeEach(async () => {
         await payBack(token1, loan1)
         await loan1.settle()
-        newLoan1 = await deployContract(owner, LoanToken2Factory, [
-          pool1.address,
-          borrower.address,
-          lender.address,
-          AddressZero,
-          100000,
-          DAY,
-          100,
-        ])
+
+        newLoan1 = await createLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
+
+        await approveLoanRating(newLoan1)
+        await approveLoanRating(loan2)
+
         await lender.connect(borrower).fund(newLoan1.address)
         await lender.connect(borrower).fund(loan2.address)
       })
@@ -280,17 +497,10 @@ describe('TrueLender2', () => {
 
     beforeEach(async () => {
       for (let i = 0; i < 5; i++) {
-        const newLoan1 = await deployContract(owner, LoanToken2Factory, [
-          pool1.address,
-          borrower.address,
-          lender.address,
-          AddressZero,
-          100000,
-          DAY,
-          100,
-        ])
+        const newLoan1 = await createLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
 
         loanTokens.push(newLoan1)
+        await approveLoanRating(newLoan1)
         await lender.connect(borrower).fund(newLoan1.address)
       }
     })

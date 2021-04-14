@@ -15,7 +15,7 @@
     "build:sol": "waffle .waffle.json",
     "build:types": "typechain --target ethers-v5 --outDir build/types 'build/*.json' > /dev/null && echo 'Typechain generated'",
     "build": "yarn clean && yarn build:sol && yarn build:types && bash ./indexBuild.sh",
-    "test:upgrade": "mocha --config .mocharc.integration.json",
+    "test:integration": "mocha --config .mocharc.integration.json",
     "test": "mocha 'test/**/*.test.ts'",
     "test:governance": "mocha 'test/governance/*.ts'",
     "test:proxy": "mocha 'test/proxy/*.ts' ",
@@ -60,7 +60,7 @@
   "dependencies": {
     "@chainlink/contracts": "^0.1.6",
     "@openzeppelin/contracts": "^3.1.0",
-    "ethereum-mars": "^0.1.3",
+    "ethereum-mars": "^0.1.4",
     "ethers": "5.0.18",
     "ganache-time-traveler": "^1.0.14",
     "openzeppelin-solidity": "^2.4.0",
