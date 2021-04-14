@@ -66,13 +66,13 @@ jobs:
           at: .
       - run: yarn test:truefi2
 
-  upgrade:
+  integration:
     docker:
       - image: circleci/node:12.19.0
     steps:
       - attach_workspace:
           at: .
-      - run: yarn test:upgrade
+      - run: yarn test:integration
 
 workflows:
   version: 2
@@ -91,6 +91,6 @@ workflows:
       - test-others:
           requires:
             - build
-      - upgrade:
+      - integration:
           requires:
             - build
