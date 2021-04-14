@@ -1,16 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
+pragma experimental ABIEncoderV2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
+import {OneInchExchange} from "./libraries/OneInchExchange.sol";
+
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
+import {I1Inch3} from "./interface/I1Inch3.sol";
+import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 
 /**
  * @title TrueLender v2.0
@@ -18,11 +23,14 @@ import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
  * This contract is a bridge that helps to transfer funds from pool to the loans and back
  * TrueLender holds all LoanTokens and may distribute them on pool exits
  */
-contract TrueLender2 is ITrueLender2, Claimable {
+contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     using SafeMath for uint256;
+    using OneInchExchange for I1Inch3;
 
     // basis point for ratio
     uint256 private constant BASIS_RATIO = 10000;
+
+    uint256 private constant ONE_INCH_PARTIAL_FILL_FLAG = 0x01;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -35,11 +43,22 @@ contract TrueLender2 is ITrueLender2, Claimable {
     // maximum amount of loans lender can handle at once
     uint256 public maxLoans;
 
+    // which part of interest should be paid to the stakers
+    uint256 public fee;
+
     IStakingPool public stakingPool;
 
     IPoolFactory public factory;
 
     ITrueRatingAgency public ratingAgency;
+
+    I1Inch3 public _1inch;
+
+    // Loan fees should be swapped for this token and sent to the stakers
+    IERC20WithDecimals public feeToken;
+
+    // Minimal possible fee after swap on 1Inch
+    uint256 public minFee;
 
     // ===== Voting parameters =====
 
@@ -80,6 +99,12 @@ contract TrueLender2 is ITrueLender2, Claimable {
     event VotingPeriodChanged(uint256 votingPeriod);
 
     /**
+     * @dev Emitted when loan fee is changed
+     * @param newFee New fee value in basis points
+     */
+    event FeeChanged(uint256 newFee);
+
+    /**
      * @dev Emitted when a loan is funded
      * @param loanToken LoanToken contract which was funded
      * @param amount Amount funded
@@ -97,22 +122,30 @@ contract TrueLender2 is ITrueLender2, Claimable {
      * @dev Initialize the contract with parameters
      * @param _stakingPool stkTRU address
      * @param _factory PoolFactory address
+     * @param _ratingAgency TrueRatingAgencyV2 address
+     * @param __1inch 1Inch exchange address (0x11111112542d85b3ef69ae05771c2dccff4faa26 for mainnet)
      */
     function initialize(
         IStakingPool _stakingPool,
         IPoolFactory _factory,
-        ITrueRatingAgency _ratingAgency
+        ITrueRatingAgency _ratingAgency,
+        I1Inch3 __1inch,
+        IERC20WithDecimals _feeToken
     ) public initializer {
-        Claimable.initialize(msg.sender);
+        UpgradeableClaimable.initialize(msg.sender);
 
         stakingPool = _stakingPool;
         factory = _factory;
         ratingAgency = _ratingAgency;
+        _1inch = __1inch;
+        feeToken = _feeToken;
 
         minVotes = 15 * (10**6) * (10**8);
         minRatio = 8000;
         votingPeriod = 7 days;
-
+        fee = 1000;
+        // Assume feeToken is USD stablecoin and interest is not below 1000USD
+        minFee = 100 * (10**feeToken.decimals());
         maxLoans = 100;
     }
 
@@ -152,6 +185,16 @@ contract TrueLender2 is ITrueLender2, Claimable {
     function setLoansLimit(uint256 newLoansLimit) external onlyOwner {
         maxLoans = newLoansLimit;
         emit LoansLimitChanged(maxLoans);
+    }
+
+    /**
+     * @dev Set loan interest fee that goes to the stakers.
+     * @param newFee New loans limit
+     */
+    function setFee(uint256 newFee) external onlyOwner {
+        require(newFee <= BASIS_RATIO, "TrueLender: fee cannot be more than 100%");
+        fee = newFee;
+        emit FeeChanged(newFee);
     }
 
     /**
@@ -216,7 +259,7 @@ contract TrueLender2 is ITrueLender2, Claimable {
      * @dev For settled loans, redeem LoanTokens for underlying funds
      * @param loanToken Loan to reclaim capital from (must be previously funded)
      */
-    function reclaim(ILoanToken2 loanToken) external {
+    function reclaim(ILoanToken2 loanToken, bytes calldata data) external {
         ITrueFiPool2 pool = loanToken.pool();
         ILoanToken2.Status status = loanToken.status();
         require(status >= ILoanToken2.Status.Settled, "TrueLender: LoanToken is not closed yet");
@@ -232,8 +275,7 @@ contract TrueLender2 is ITrueLender2, Claimable {
                 _loans[index] = _loans[_loans.length - 1];
                 _loans.pop();
 
-                uint256 fundsReclaimed = _redeemAndRepay(loanToken, pool);
-
+                uint256 fundsReclaimed = _redeemAndRepay(loanToken, pool, data);
                 emit Reclaimed(address(pool), address(loanToken), fundsReclaimed);
                 return;
             }
@@ -248,7 +290,11 @@ contract TrueLender2 is ITrueLender2, Claimable {
      * @param loanToken Loan to reclaim capital from
      * @param pool Pool from which the loan was funded
      */
-    function _redeemAndRepay(ILoanToken2 loanToken, ITrueFiPool2 pool) internal returns (uint256 fundsReclaimed) {
+    function _redeemAndRepay(
+        ILoanToken2 loanToken,
+        ITrueFiPool2 pool,
+        bytes calldata data
+    ) internal returns (uint256 fundsReclaimed) {
         // call redeem function on LoanToken
         uint256 balanceBefore = pool.token().balanceOf(address(this));
         loanToken.redeem(loanToken.balanceOf(address(this)));
@@ -256,8 +302,34 @@ contract TrueLender2 is ITrueLender2, Claimable {
 
         // gets reclaimed amount and pays back to pool
         fundsReclaimed = balanceAfter.sub(balanceBefore);
-        pool.token().approve(address(pool), fundsReclaimed);
-        pool.repay(fundsReclaimed);
+        uint256 fee = _swapFee(pool.token(), loanToken, data);
+
+        pool.token().approve(address(pool), fundsReclaimed.sub(fee));
+        pool.repay(fundsReclaimed.sub(fee));
+    }
+
+    function _swapFee(
+        IERC20 token,
+        ILoanToken2 loanToken,
+        bytes calldata data
+    ) internal returns (uint256 feeAmount) {
+        feeAmount = loanToken.debt().sub(loanToken.amount()).mul(fee).div(BASIS_RATIO);
+        if (token == feeToken) {
+            return feeAmount;
+        }
+        if (feeAmount == 0) {
+            return 0;
+        }
+        uint256 balanceBefore = feeToken.balanceOf(address(this));
+        I1Inch3.SwapDescription memory swap = _1inch.exchange(data);
+        uint256 balanceDiff = feeToken.balanceOf(address(this)).sub(balanceBefore);
+
+        require(balanceDiff >= minFee, "TrueLender: Fee returned from swap is too small");
+        require(swap.srcToken == address(token), "TrueLender: Source token is not same as pool's token");
+        require(swap.dstToken == address(feeToken), "TrueLender: Destination token is not fee token");
+        require(swap.dstReceiver == address(this), "TrueLender: Receiver is not lender");
+        require(swap.amount == feeAmount, "TrueLender: Incorrect fee swap amount");
+        require(swap.flags & ONE_INCH_PARTIAL_FILL_FLAG == 0, "TrueLender: Partial fill is not allowed");
     }
 
     /**
