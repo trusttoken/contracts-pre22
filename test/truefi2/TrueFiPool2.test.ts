@@ -102,6 +102,10 @@ describe('TrueFiPool2', () => {
       expect(await pool.stakingToken()).to.eq(stakingToken.address)
     })
 
+    it('sets lender', async () => {
+      expect(await pool.lender()).to.eq(lender.address)
+    })
+
     it('sets no initial joiningFee', async () => {
       expect(await pool.joiningFee()).to.eq(0)
     })
@@ -354,6 +358,7 @@ describe('TrueFiPool2', () => {
     beforeEach(async () => {
       await tusd.approve(pool.address, includeFee(parseEth(100)))
       await pool.join(includeFee(parseEth(100)))
+      await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
     })
 
     it('only lender can be caller', async () => {
@@ -363,8 +368,8 @@ describe('TrueFiPool2', () => {
         LoanToken2Factory, pool.address, borrower.address,
         lender.address, AddressZero, 500000, DAY, 1000,
       )
-      await expect(lender.connect(borrower).fund(loan.address))
-        .not.to.be.reverted
+      await lender.connect(borrower).fund(loan.address)
+      expect('borrow').to.be.calledOnContract(pool)
     })
 
     it('in order to borrow from pool it has to have liquidity', async () => {
@@ -384,7 +389,7 @@ describe('TrueFiPool2', () => {
     })
 
     describe('ensureSufficientLiquidity', () => {
-      it('strategy has to return enouch funds', async () => {
+      it('strategy has to return enough funds', async () => {
         const loan = await deployContract(
           LoanToken2Factory, pool.address,
           borrower.address, lender.address, AddressZero,
