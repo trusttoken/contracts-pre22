@@ -491,7 +491,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param amount Amount to decrease
      * @return Calculated value
      */
-    function withToleratedError(uint256 amount) internal view returns (uint256) {
+    function withToleratedError(uint256 amount) internal pure returns (uint256) {
         return amount.mul(TOLERATED_STRATEGY_ERROR).div(100);
     }
 }

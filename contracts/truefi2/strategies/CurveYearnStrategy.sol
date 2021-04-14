@@ -31,7 +31,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     // Number of tokens in Curve yPool
     uint8 constant N_TOKENS = 4;
     // Max slippage during uniswap sell
-    uint256 constant MAX_PRICE_SLIPPAGE = 200; // 2%
+    uint256 constant MAX_PRICE_SLIPPAGE = 300; // 3%
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -148,7 +148,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
      * @return Oracle price of TRU in USD
      */
     function yTokenValue() public view returns (uint256) {
-        return yTokenBalance().mul(curvePool.curve().get_virtual_price()).div(1 ether);
+        return normalizeDecimals(yTokenBalance().mul(curvePool.curve().get_virtual_price()).div(1 ether));
     }
 
     /**
@@ -168,7 +168,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         if (balance == 0 || address(crvOracle) == address(0)) {
             return 0;
         }
-        return conservativePriceEstimation(crvOracle.crvToUsd(balance));
+        return normalizeDecimals(conservativePriceEstimation(crvOracle.crvToUsd(balance)));
     }
 
     /**
@@ -198,7 +198,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         I1Inch3.SwapDescription memory swap = _1Inch.exchange(data);
         uint256 balanceDiff = token.balanceOf(pool).sub(balanceBefore);
 
-        uint256 expectedGain = crvOracle.crvToUsd(swap.amount).mul(10**token.decimals()).div(10**18);
+        uint256 expectedGain = normalizeDecimals(crvOracle.crvToUsd(swap.amount));
 
         require(swap.srcToken == address(minter.token()), "CurveYearnStrategy: Source token is not CRV");
         require(swap.dstToken == address(token), "CurveYearnStrategy: Destination token is not TUSD");
@@ -248,5 +248,9 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
 
     function min(uint256 a, uint256 b) internal pure returns (uint256) {
         return a > b ? b : a;
+    }
+
+    function normalizeDecimals(uint256 _value) internal view returns (uint256) {
+        return _value.mul(10**token.decimals()).div(10**18);
     }
 }
