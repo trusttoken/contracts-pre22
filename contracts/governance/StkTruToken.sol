@@ -192,6 +192,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @param _feeToken Address of tfUSDC to be set
      */
     function setFeeToken(IERC20 _feeToken) external onlyOwner {
+        require(rewardBalance(feeToken) == 0, "StkTruToken: Cannot replace fee token with underlying rewards");
         feeToken = _feeToken;
         emit FeeTokenChanged(_feeToken);
     }

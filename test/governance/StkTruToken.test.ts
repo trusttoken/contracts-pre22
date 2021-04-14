@@ -98,6 +98,12 @@ describe('StkTruToken', () => {
         .to.be.revertedWith('only owner')
     })
 
+    it('cannot change when rewards were not claimed', async () => {
+      await feeToken.mint(stkToken.address, 1)
+      await expect(stkToken.setFeeToken(tfusd.address))
+        .to.be.revertedWith('StkTruToken: Cannot replace fee token with underlying rewards')
+    })
+
     it('changes value', async () => {
       await stkToken.setFeeToken(tfusd.address)
       expect(await stkToken.feeToken()).to.eq(tfusd.address)
