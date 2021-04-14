@@ -504,18 +504,22 @@ describe('StkTruToken', () => {
     it('updates claim state on transfer', async () => {
       await timeTravel(provider, DAY)
       await tfusd.mint(stkToken.address, parseEth(1), { gasLimit: 3000000 })
+      await feeToken.mint(stkToken.address, parseEth(2))
 
       expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(1000))
       expect(await stkToken.claimable(owner.address, tfusd.address)).to.equal(parseEth(1))
+      expect(await stkToken.claimable(owner.address, feeToken.address)).to.equal(parseEth(2))
 
       await stkToken.transfer(staker.address, amount.div(2), { gasLimit: 3000000 })
       await stkToken.claim({ gasLimit: 300000 })
 
       expectScaledCloseTo(await tru.balanceOf(owner.address), parseTRU(1000))
       expect(await tfusd.balanceOf(owner.address)).to.equal(parseEth(1))
+      expect(await feeToken.balanceOf(owner.address)).to.equal(parseEth(2))
 
       expectCloseTo(await stkToken.claimable(staker.address, tru.address), parseTRU(0))
       expect(await stkToken.claimable(staker.address, tfusd.address)).to.equal(0)
+      expect(await stkToken.claimable(staker.address, feeToken.address)).to.equal(0)
     })
 
     it('gas cost', async () => {

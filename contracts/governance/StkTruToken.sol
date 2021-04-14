@@ -443,6 +443,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     ) internal override distribute update(sender) {
         updateClaimableRewards(tru, recipient);
         updateClaimableRewards(tfusd, recipient);
+        updateClaimableRewards(feeToken, recipient);
         // unlockTime returns MAX_UINT256 when there's no ongoing cooldown for the address
         if (unlockTime(recipient) != type(uint256).max) {
             receivedDuringCooldown[recipient] = receivedDuringCooldown[recipient].add(amount);
