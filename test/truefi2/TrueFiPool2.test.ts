@@ -3,6 +3,7 @@ import {
   ImplementationReference,
   ImplementationReferenceFactory,
   LinearTrueDistributorFactory,
+  LoanToken2,
   LoanToken2Factory,
   MockErc20Token,
   MockErc20TokenFactory,
@@ -257,7 +258,6 @@ describe('TrueFiPool2', () => {
         expect(await pool.poolValue()).to.equal(joinAmount.add(136))
       })
     })
-    // requires lender
   })
 
   describe('setJoiningFee', () => {
@@ -653,7 +653,40 @@ describe('TrueFiPool2', () => {
   })
 
   describe('repay', () => {
-    // requires strategy
+    let loan: LoanToken2
+
+    const payBack = async (token: MockErc20Token, loan: LoanToken2) => {
+      const balance = await loan.balance()
+      const debt = await loan.debt()
+      await token.mint(loan.address, debt.sub(balance))
+    }
+
+    beforeEach(async () => {
+      await tusd.approve(pool.address, includeFee(parseEth(100)))
+      await pool.join(includeFee(parseEth(100)))
+      await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
+      loan = await deployContract(
+        LoanToken2Factory, pool.address, borrower.address,
+        lender.address, AddressZero, 100000, DAY, 100,
+      )
+      await lender.connect(borrower).fund(loan.address)
+      await payBack(tusd, loan)
+      await loan.settle()
+    })
+
+    it('only lender can be caller', async () => {
+      await expect(pool.connect(owner).repay(0))
+        .to.be.revertedWith('TrueFiPool: Caller is not the lender')
+
+      await lender.reclaim(loan.address)
+      expect('repay').to.be.calledOnContract(pool)
+    })
+
+    it('emits event', async () => {
+      await expect(lender.reclaim(loan.address))
+        .to.emit(pool, 'Repaid')
+        .withArgs(lender.address, 100002)
+    })
   })
 
   describe('collectFees', () => {
