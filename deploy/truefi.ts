@@ -37,15 +37,15 @@ deploy({}, (deployer, config) => {
   const is_mainnet = config.network == 'mainnet'
 
   const proxy = createProxy(OwnedUpgradeabilityProxy)
-  const timeOwnedProxy = createProxy(TimeOwnedUpgradeabilityProxy)
+  const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
 
   const trueUSD = proxy(contract('trueUSD', TrueUSD), () => {})
   const trueFiPool = proxy(contract('trueFiPool', TrueFiPool), () => {})
   const stkTruToken = proxy(contract('stkTruToken', StkTruToken), () => {})
   const trustToken = is_mainnet ?
-    timeOwnedProxy(contract('trustToken', TrustToken), 'initialize',
+    timeProxy(contract('trustToken', TrustToken), 'initialize',
       [],
-    ) : timeOwnedProxy(contract('testTrustToken', TestTrustToken), 'initialize',
+    ) : timeProxy(contract('testTrustToken', TestTrustToken), 'initialize',
       [],
     )
   const truPriceOracle = contract('truPriceOracle', TruPriceOracle)
