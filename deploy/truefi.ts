@@ -1,11 +1,11 @@
 import { contract, createProxy, deploy } from 'ethereum-mars'
 import {
-  ArbitraryDistributor,
   GovernorAlpha,
   LinearTrueDistributor,
   Liquidator,
   LoanFactory,
   OwnedUpgradeabilityProxy,
+  RatingAgencyV2Distributor,
   StkTruToken,
   TestTrustToken,
   Timelock,
@@ -27,8 +27,6 @@ const DISTRIBUTION_START_DATE = '02/18/2021'
 const DISTRIBUTION_START = Date.parse(DISTRIBUTION_START_DATE) / 1000
 const STAKE_DISTRIBUTION_AMOUNT_IN_TRU = 10
 const STAKE_DISTRIBUTION_AMOUNT = parseTRU(STAKE_DISTRIBUTION_AMOUNT_IN_TRU)
-const RATING_AGENCY_DISTRIBUTION_AMOUNT_IN_TRU = 10
-const RATING_AGENCY_DISTRIBUTION_AMOUNT = parseTRU(RATING_AGENCY_DISTRIBUTION_AMOUNT_IN_TRU)
 const TIMELOCK_DELAY = 2 * DAY
 const VOTING_PERIOD = 10
 
@@ -62,10 +60,10 @@ deploy({}, (deployer, config) => {
   stkTruToken_LinearTrueDistributor.setFarm(stkTruToken)
   stkTruToken.initialize(trustToken, trueFiPool, stkTruToken_LinearTrueDistributor, liquidator)
   const trueRatingAgencyV2 = proxy(contract('trueRatingAgencyV2', TrueRatingAgencyV2), () => {})
-  const arbitraryDistributor = proxy(contract('arbitraryDistributor', ArbitraryDistributor), 'initialize',
-    [trueRatingAgencyV2, trustToken, RATING_AGENCY_DISTRIBUTION_AMOUNT],
+  const ratingAgencyV2Distributor = proxy(contract('ratingAgencyV2Distributor', RatingAgencyV2Distributor), 'initialize',
+    [trueRatingAgencyV2, trustToken],
   )
-  trueRatingAgencyV2.initialize(trustToken, stkTruToken, arbitraryDistributor, loanFactory)
+  trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
   // TODO figure out what's going wrong with deploying TrueLender
   // const trueLender = proxy(contract('trueLender', TrueLender), 'initialize',
   //   [trueFiPool, trueRatingAgencyV2, stkTruToken],
