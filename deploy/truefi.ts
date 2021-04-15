@@ -58,12 +58,17 @@ deploy({}, (deployer, config) => {
     [DISTRIBUTION_START, DISTRIBUTION_DURATION, STAKE_DISTRIBUTION_AMOUNT, trustToken],
   )
   stkTruToken_LinearTrueDistributor.setFarm(stkTruToken)
-  stkTruToken.initialize(trustToken, trueFiPool, stkTruToken_LinearTrueDistributor, liquidator)
+  if (!stkTruToken.initalized()) {
+    stkTruToken.initialize(trustToken, trueFiPool, stkTruToken_LinearTrueDistributor, liquidator)
+  }
   const trueRatingAgencyV2 = proxy(contract('trueRatingAgencyV2', TrueRatingAgencyV2), () => {})
   const ratingAgencyV2Distributor = proxy(contract('ratingAgencyV2Distributor', RatingAgencyV2Distributor), 'initialize',
     [trueRatingAgencyV2, trustToken],
   )
-  trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
+  // TODO check whether trueRatingAgencyV2 has already been initialized, else this will revert
+  if (true) {
+    trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
+  }
   // TODO figure out what's going wrong with deploying TrueLender
   // const trueLender = proxy(contract('trueLender', TrueLender), 'initialize',
   //   [trueFiPool, trueRatingAgencyV2, stkTruToken],
