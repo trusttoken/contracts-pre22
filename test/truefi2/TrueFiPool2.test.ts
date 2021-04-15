@@ -20,7 +20,6 @@ import {
   TrueLender2Factory,
   Pool2ArbitrageTestFactory,
   StkTruToken,
-  LoanToken2,
 } from 'contracts/types'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -160,12 +159,14 @@ describe('TrueFiPool2', () => {
   })
 
   describe('liquidValue', () => {
+    const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
+
     beforeEach(async () => {
-      await tusd.approve(pool.address, includeFee(parseEth(1e7)))
+      await tusd.approve(pool.address, includeFee(parseEth(1e5)))
     })
 
     it('liquid value equals balanceOf(pool)', async () => {
-      const depositedAmount = parseEth(1e7)
+      const depositedAmount = parseEth(1e5)
       await pool.join(depositedAmount)
       expect(await pool.liquidValue()).to.equal(depositedAmount)
       expect(await pool.liquidValue())
@@ -174,14 +175,14 @@ describe('TrueFiPool2', () => {
 
     it('liquid value equals balanceOf(pool) - claimableFees', async () => {
       await pool.setJoiningFee(25)
-      await pool.join(includeFee(parseEth(1e7)))
+      await pool.join(includeFee(parseEth(1e5)))
       expect(await pool.liquidValue())
-        .to.equal(parseEth(1e7))
+        .to.equal(parseEth(1e5))
     })
 
     it('liquid value equals balanceOf(pool) - claimableFees + strategyValue', async () => {
       await pool.setJoiningFee(25)
-      await pool.join(includeFee(parseEth(1e7)))
+      await pool.join(includeFee(parseEth(1e5)))
       await pool.connect(owner).switchStrategy(poolStrategy1.address)
       await pool.flush(1000)
       expect(await pool.liquidValue())
@@ -652,8 +653,8 @@ describe('TrueFiPool2', () => {
     }
 
     beforeEach(async () => {
-      await tusd.approve(pool.address, includeFee(parseEth(100)))
-      await pool.join(includeFee(parseEth(100)))
+      await tusd.approve(pool.address, parseEth(100))
+      await pool.join(parseEth(100))
       await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
       loan = await deployContract(
         LoanToken2Factory, pool.address, borrower.address,
