@@ -53,6 +53,7 @@ describe('TrueLender2', () => {
 
   let counterfeitPool: TrueFiPool2
   let token1: MockErc20Token
+  let token2: MockErc20Token
 
   let poolFactory: PoolFactory
 
@@ -99,7 +100,7 @@ describe('TrueLender2', () => {
     await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
 
     token1 = await deployContract(owner, MockErc20TokenFactory)
-    const token2 = await deployContract(owner, MockErc20TokenFactory)
+    token2 = await deployContract(owner, MockErc20TokenFactory)
     await poolFactory.whitelist(token1.address, true)
     await poolFactory.whitelist(token2.address, true)
 
@@ -552,8 +553,9 @@ describe('TrueLender2', () => {
           .withArgs(lender.address, pool1.address, BigNumber.from(101000).sub(fee))
       })
 
-      it('reverts on wrong source token', async () => {
-        const data = encodeData(pool1.address, usdc.address, lender.address, lender.address, fee)
+      it('reverts on wrong destination token', async () => {
+        await token2.mint(lender.address, fee)
+        const data = encodeData(token2.address, usdc.address, lender.address, lender.address, fee)
         await expect(lender.reclaim(loan1.address, data)).to.be.revertedWith('TrueLender: Source token is not same as pool\'s token')
       })
 
