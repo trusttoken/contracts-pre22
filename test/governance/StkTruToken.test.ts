@@ -134,7 +134,7 @@ describe('StkTruToken', () => {
       await expect(stkToken.setPayerWhitelistingStatus(staker.address, true))
         .to.emit(stkToken, 'FeePayerWhitelistingStatusChanged')
         .withArgs(staker.address, true)
-      
+
       await expect(stkToken.setPayerWhitelistingStatus(staker.address, false))
         .to.emit(stkToken, 'FeePayerWhitelistingStatusChanged')
         .withArgs(staker.address, false)
@@ -179,7 +179,7 @@ describe('StkTruToken', () => {
       await expect(stkToken.setPauseStatus(true))
         .to.emit(stkToken, 'PauseStatusChanged')
         .withArgs(true)
-      
+
       await expect(stkToken.setPauseStatus(false))
         .to.emit(stkToken, 'PauseStatusChanged')
         .withArgs(false)
