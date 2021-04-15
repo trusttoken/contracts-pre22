@@ -361,7 +361,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('only lender can be caller', async () => {
-      await expect(pool.connect(owner.address).borrow(0, 0))
+      await expect(pool.connect(owner.address).borrow(0))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender')
       const loan = await deployContract(
         LoanToken2Factory, pool.address, borrower.address,
