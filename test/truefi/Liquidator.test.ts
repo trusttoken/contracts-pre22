@@ -65,6 +65,7 @@ describe('Liquidator', () => {
     await stakingPool.initialize(
       tru.address,
       pool.address,
+      pool.address,
       distributor.address,
       liquidator.address,
     )
