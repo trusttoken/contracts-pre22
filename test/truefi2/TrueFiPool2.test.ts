@@ -188,6 +188,35 @@ describe('TrueFiPool2', () => {
     })
   })
 
+  describe('strategyValue', () => {
+    const joinAmount = parseEth(1e7)
+
+    beforeEach(async () => {
+      await tusd.approve(pool.address, joinAmount)
+      await pool.join(joinAmount)
+    })
+
+    it('returns 0 if pool has no strategy', async () => {
+      expect(await pool.strategyValue()).to.eq(0)
+    })
+
+    xit('returns cached strategy value if in sync', async () => {
+      await pool.switchStrategy(poolStrategy1.address)
+      await pool.flush(1000)
+      const tx = pool.liquidExit(parseEth(1e7))
+      expect(await pool.strategyValue()).to.eq(1000)
+      // todo mock pool contract to be able to check inSync
+      await tx
+      expect(await pool.strategyValue()).to.eq(0)
+    })
+
+    it('returns current strategy value', async () => {
+      await pool.switchStrategy(poolStrategy1.address)
+      await pool.flush(1000)
+      expect(await pool.strategyValue()).to.eq(1000)
+    })
+  })
+
   describe('poolValue', () => {
     const joinAmount = parseEth(1e7)
 
