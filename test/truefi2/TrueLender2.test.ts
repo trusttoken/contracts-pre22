@@ -46,6 +46,7 @@ describe('TrueLender2', () => {
   let loan2: LoanToken2
   let pool1: TrueFiPool2
   let pool2: TrueFiPool2
+  let feePool: TrueFiPool2
 
   let rater: TrueRatingAgencyV2
   let arbitraryDistributor: ArbitraryDistributor
@@ -76,21 +77,39 @@ describe('TrueLender2', () => {
     const poolImplementation = await deployContract(owner, TrueFiPool2Factory)
     const implementationReference = await deployContract(owner, ImplementationReferenceFactory, [poolImplementation.address])
 
+    lender = await deployContract(owner, TestTrueLenderFactory)
+    await poolFactory.initialize(implementationReference.address, AddressZero, lender.address)
+
     stkTru = await deployContract(owner, StkTruTokenFactory)
 
     tru = await deployContract(owner, TrustTokenFactory)
     await tru.initialize()
 
+    usdc = await deployContract(owner, MockErc20TokenFactory)
+    token1 = await deployContract(owner, MockErc20TokenFactory)
+    token2 = await deployContract(owner, MockErc20TokenFactory)
+
+    await poolFactory.whitelist(token1.address, true)
+    await poolFactory.whitelist(token2.address, true)
+    await poolFactory.whitelist(usdc.address, true)
+
+    await poolFactory.createPool(token1.address)
+    await poolFactory.createPool(token2.address)
+    await poolFactory.createPool(usdc.address)
+
+    pool1 = TrueFiPool2Factory.connect(await poolFactory.pool(token1.address), owner)
+    pool2 = TrueFiPool2Factory.connect(await poolFactory.pool(token2.address), owner)
+    counterfeitPool = await deployContract(owner, TrueFiPool2Factory)
+    await counterfeitPool.initialize(token1.address, AddressZero, lender.address, owner.address)
+    feePool = TrueFiPool2Factory.connect(await poolFactory.pool(usdc.address), owner)
+
     const tfusd = await deployContract(owner, MockTrueCurrencyFactory) // just for testing, change this in origination fees development
     const trueDistributor = await deployContract(owner, LinearTrueDistributorFactory)
     await stkTru.initialize(tru.address, tfusd.address, tfusd.address, trueDistributor.address, AddressZero)
 
-    lender = await deployContract(owner, TestTrueLenderFactory)
-    await poolFactory.initialize(implementationReference.address, AddressZero, lender.address)
     rater = await deployContract(owner, TrueRatingAgencyV2Factory)
     oneInch = await new Mock1InchV3Factory(owner).deploy()
-    usdc = await deployContract(owner, MockErc20TokenFactory)
-    await lender.initialize(stkTru.address, poolFactory.address, rater.address, oneInch.address, usdc.address)
+    await lender.initialize(stkTru.address, poolFactory.address, rater.address, oneInch.address, feePool.address)
 
     arbitraryDistributor = await deployContract(owner, ArbitraryDistributorFactory)
     await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(1e7))
@@ -99,18 +118,6 @@ describe('TrueLender2', () => {
     await loanFactory.initialize(poolFactory.address, lender.address, AddressZero)
     await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
 
-    token1 = await deployContract(owner, MockErc20TokenFactory)
-    token2 = await deployContract(owner, MockErc20TokenFactory)
-    await poolFactory.whitelist(token1.address, true)
-    await poolFactory.whitelist(token2.address, true)
-
-    await poolFactory.createPool(token1.address)
-    await poolFactory.createPool(token2.address)
-
-    pool1 = TrueFiPool2Factory.connect(await poolFactory.pool(token1.address), owner)
-    pool2 = TrueFiPool2Factory.connect(await poolFactory.pool(token2.address), owner)
-    counterfeitPool = await deployContract(owner, TrueFiPool2Factory)
-    await counterfeitPool.initialize(token1.address, AddressZero, lender.address, owner.address)
     await token1.mint(owner.address, parseEth(1e7))
     await token2.mint(owner.address, parseEth(1e7))
     await token1.approve(pool1.address, parseEth(1e7))
@@ -578,6 +585,15 @@ describe('TrueLender2', () => {
         await oneInch.setOutputAmount(parseEth(99))
         const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee)
         await expect(lender.reclaim(loan1.address, data)).to.be.revertedWith('TrueLender: Fee returned from swap is too small')
+      })
+
+      it('puts fee into USDC pool and transfers LP tokens to stakers', async () => {
+        const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee)
+        await expect(lender.reclaim(loan1.address, data))
+          .to.emit(feePool, 'Joined')
+          .withArgs(lender.address, parseEth(100), parseEth(100))
+          .and.to.emit(feePool, 'Transfer')
+          .withArgs(lender.address, stkTru.address, parseEth(100))
       })
     })
   })

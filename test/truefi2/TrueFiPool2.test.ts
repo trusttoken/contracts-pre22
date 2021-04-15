@@ -19,7 +19,7 @@ import {
   TrueLender2Factory,
   Pool2ArbitrageTestFactory,
   StkTruToken,
-} from 'contracts/types'
+} from 'contracts'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
@@ -72,7 +72,7 @@ describe('TrueFiPool2', () => {
     const distributor = await deployContract(LinearTrueDistributorFactory)
     await stakingToken.initialize(stakingToken.address, pool.address, AddressZero, distributor.address, AddressZero)
 
-    await lender.initialize(stakingToken.address, poolFactory.address, rater.address, AddressZero, tusd.address)
+    await lender.initialize(stakingToken.address, poolFactory.address, rater.address, AddressZero, pool.address)
     await lender.setFee(0)
     await stakingToken.setPayerWhitelistingStatus(lender.address, true)
 

@@ -265,7 +265,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev Join the pool by depositing tokens
      * @param amount amount of token to deposit
      */
-    function join(uint256 amount) external joiningNotPaused {
+    function join(uint256 amount) external override joiningNotPaused {
         uint256 fee = amount.mul(joiningFee).div(10000);
         uint256 mintedAmount = mint(amount.sub(fee));
         claimableFees = claimableFees.add(fee);

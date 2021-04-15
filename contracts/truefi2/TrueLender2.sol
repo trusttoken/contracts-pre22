@@ -54,8 +54,10 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     I1Inch3 public _1inch;
 
-    // Loan fees should be swapped for this token and sent to the stakers
+    // Loan fees should be swapped for this token, deposited into the feePool
+    // and pool's LP tokens should be sent to the stakers
     IERC20WithDecimals public feeToken;
+    ITrueFiPool2 public feePool;
 
     // Minimal possible fee after swap on 1Inch
     uint256 public minFee;
@@ -124,13 +126,14 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param _factory PoolFactory address
      * @param _ratingAgency TrueRatingAgencyV2 address
      * @param __1inch 1Inch exchange address (0x11111112542d85b3ef69ae05771c2dccff4faa26 for mainnet)
+     * @param _feePool TrueFiPool on feeToken
      */
     function initialize(
         IStakingPool _stakingPool,
         IPoolFactory _factory,
         ITrueRatingAgency _ratingAgency,
         I1Inch3 __1inch,
-        IERC20WithDecimals _feeToken
+        ITrueFiPool2 _feePool
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -138,7 +141,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         factory = _factory;
         ratingAgency = _ratingAgency;
         _1inch = __1inch;
-        feeToken = _feeToken;
+        feeToken = IERC20WithDecimals(address(_feePool.token()));
+        feePool = _feePool;
 
         minVotes = 15 * (10**6) * (10**8);
         minRatio = 8000;
@@ -302,12 +306,16 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
         // gets reclaimed amount and pays back to pool
         fundsReclaimed = balanceAfter.sub(balanceBefore);
-        uint256 fee = _swapFee(pool.token(), loanToken, data);
+        // swap fee for feeToken
+        uint256 feeAmount = _swapFee(pool.token(), loanToken, data);
+        // join pool and reward stakers
+        _transferFeeToStakers();
 
-        pool.token().approve(address(pool), fundsReclaimed.sub(fee));
-        pool.repay(fundsReclaimed.sub(fee));
+        pool.token().approve(address(pool), fundsReclaimed.sub(feeAmount));
+        pool.repay(fundsReclaimed.sub(feeAmount));
     }
 
+    /// @dev Swap `token` for `feeToken` on 1inch
     function _swapFee(
         IERC20 token,
         ILoanToken2 loanToken,
@@ -330,6 +338,14 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         require(swap.dstReceiver == address(this), "TrueLender: Receiver is not lender");
         require(swap.amount == feeAmount, "TrueLender: Incorrect fee swap amount");
         require(swap.flags & ONE_INCH_PARTIAL_FILL_FLAG == 0, "TrueLender: Partial fill is not allowed");
+    }
+
+    /// @dev Deposit feeToken to pool and transfer LP tokens to the stakers
+    function _transferFeeToStakers() internal {
+        uint256 amount = feeToken.balanceOf(address(this));
+        feeToken.approve(address(feePool), amount);
+        feePool.join(amount);
+        feePool.transfer(address(stakingPool), feePool.balanceOf(address(this)));
     }
 
     /**
