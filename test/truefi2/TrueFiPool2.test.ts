@@ -219,6 +219,17 @@ describe('TrueFiPool2', () => {
     })
   })
 
+  describe('setBeneficiary', () => {
+    it('sets beneficiary', async () => {
+      await pool.setBeneficiary(owner.address)
+      expect(await pool.beneficiary()).to.equal(owner.address)
+    })
+
+    it('reverts when called not by owner', async () => {
+      await expect(pool.connect(borrower).setBeneficiary(owner.address)).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+  })
+
   describe('join-exit', () => {
     // requires strategy
     // requires lender
@@ -417,22 +428,18 @@ describe('TrueFiPool2', () => {
       await tusd.approve(pool.address, parseEth(1e7))
       await pool.setJoiningFee(25)
       await pool.join(parseEth(1e7))
+      await pool.setBeneficiary(beneficiary)
     })
 
     it('transfers claimable fees to address', async () => {
-      await pool.collectFees(beneficiary)
+      await pool.collectFees()
       expect(await tusd.balanceOf(beneficiary)).to.equal(parseEth(25000))
     })
 
     it('sets claimableFees to 0', async () => {
-      await pool.collectFees(beneficiary)
+      await pool.collectFees()
       expect(await pool.claimableFees()).to.equal(0)
-      await expect(pool.collectFees(beneficiary)).to.not.emit(tusd, 'Transfer')
-    })
-
-    it('reverts when called not by owner or funds manager', async () => {
-      await expect(pool.connect(borrower).collectFees(beneficiary))
-        .to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(pool.collectFees()).to.not.emit(tusd, 'Transfer')
     })
   })
 
