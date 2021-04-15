@@ -19,7 +19,7 @@ interface ITrueFiPool2 is IERC20 {
      * 1. Transfer TUSD to sender
      * 2. Only lending pool should be allowed to call this
      */
-    function borrow(uint256 amount, uint256 fee) external;
+    function borrow(uint256 amount) external;
 
     /**
      * @dev pay borrowed money back to pool
