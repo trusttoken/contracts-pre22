@@ -70,7 +70,7 @@ describe('TrueFiPool2', () => {
     pool = poolImplementation.attach(await poolFactory.pool(tusd.address))
 
     const distributor = await deployContract(LinearTrueDistributorFactory)
-    await stakingToken.initialize(stakingToken.address, pool.address, distributor.address, AddressZero)
+    await stakingToken.initialize(stakingToken.address, pool.address, AddressZero, distributor.address, AddressZero)
 
     await lender.initialize(stakingToken.address, poolFactory.address, rater.address)
     await stakingToken.setPayerWhitelistingStatus(lender.address, true)
