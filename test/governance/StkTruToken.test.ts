@@ -116,6 +116,31 @@ describe('StkTruToken', () => {
     })
   })
 
+  describe('setPayerWhitelistingStatus', () => {
+    it('only owner', async () => {
+      await expect(stkToken.connect(staker).setPayerWhitelistingStatus(staker.address, true))
+        .to.be.revertedWith('only owner')
+    })
+
+    it('sets status', async () => {
+      await stkToken.setPayerWhitelistingStatus(staker.address, true)
+      expect(await stkToken.whitelistedFeePayers(staker.address)).to.eq(true)
+
+      await stkToken.setPayerWhitelistingStatus(staker.address, false)
+      expect(await stkToken.whitelistedFeePayers(staker.address)).to.eq(false)
+    })
+
+    it('emits event', async () => {
+      await expect(stkToken.setPayerWhitelistingStatus(staker.address, true))
+        .to.emit(stkToken, 'FeePayerWhitelistingStatusChanged')
+        .withArgs(staker.address, true)
+      
+      await expect(stkToken.setPayerWhitelistingStatus(staker.address, false))
+        .to.emit(stkToken, 'FeePayerWhitelistingStatusChanged')
+        .withArgs(staker.address, false)
+    })
+  })
+
   describe('setCooldownTime', () => {
     it('changes value', async () => {
       await stkToken.setCooldownTime(100)
@@ -128,6 +153,36 @@ describe('StkTruToken', () => {
 
     it('cannot be infinite', async () => {
       await expect(stkToken.setCooldownTime(MaxUint256)).to.be.revertedWith('StkTruToken: Cooldown too large')
+    })
+
+    it('emits event', async () => {
+      await expect(stkToken.setCooldownTime(100))
+        .to.emit(stkToken, 'CooldownTimeChanged')
+        .withArgs(100)
+    })
+  })
+
+  describe('setPauseStatus', () => {
+    it('only owner', async () => {
+      await expect(stkToken.connect(staker).setPauseStatus(true)).to.be.revertedWith('only owner')
+    })
+
+    it('sets status', async () => {
+      await stkToken.setPauseStatus(true)
+      expect(await stkToken.pauseStatus()).to.eq(true)
+
+      await stkToken.setPauseStatus(false)
+      expect(await stkToken.pauseStatus()).to.eq(false)
+    })
+
+    it('emits event', async () => {
+      await expect(stkToken.setPauseStatus(true))
+        .to.emit(stkToken, 'PauseStatusChanged')
+        .withArgs(true)
+      
+      await expect(stkToken.setPauseStatus(false))
+        .to.emit(stkToken, 'PauseStatusChanged')
+        .withArgs(false)
     })
   })
 
@@ -147,6 +202,11 @@ describe('StkTruToken', () => {
 
     it('cannot be 0', async () => {
       await expect(stkToken.setUnstakePeriodDuration(0)).to.be.revertedWith('StkTruToken: Unstake period cannot be 0')
+    })
+
+    it('emits event', async () => {
+      await expect(stkToken.setUnstakePeriodDuration(100))
+        .to.emit(stkToken, 'UnstakePeriodDurationChanged')
     })
   })
 
