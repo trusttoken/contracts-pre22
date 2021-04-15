@@ -201,16 +201,6 @@ describe('TrueFiPool2', () => {
       expect(await pool.strategyValue()).to.eq(0)
     })
 
-    xit('returns cached strategy value if in sync', async () => {
-      await pool.switchStrategy(poolStrategy1.address)
-      await pool.flush(1000)
-      const tx = pool.liquidExit(parseEth(1e7))
-      expect(await pool.strategyValue()).to.eq(1000)
-      // todo mock pool contract to be able to check inSync
-      await tx
-      expect(await pool.strategyValue()).to.eq(0)
-    })
-
     it('returns current strategy value', async () => {
       await pool.switchStrategy(poolStrategy1.address)
       await pool.flush(1000)
