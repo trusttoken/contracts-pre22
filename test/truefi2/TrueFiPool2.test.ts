@@ -49,9 +49,6 @@ describe('TrueFiPool2', () => {
   let poolStrategy2: MockStrategy
   let badPoolStrategy: BadStrategy
 
-  // const dayInSeconds = 60 * 60 * 24
-  const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
-
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower] = wallets
     deployContract = setupDeploy(owner)
@@ -241,15 +238,15 @@ describe('TrueFiPool2', () => {
 
     it('mints liquidity tokens proportionally to stake for next users', async () => {
       const loan1 = await deployContract(
-          LoanToken2Factory,
-          pool.address,
-          borrower.address,
-          lender.address,
-          AddressZero,
-          parseEth(1e6), 
-          DAY * 365,
-          1000
-        )
+        LoanToken2Factory,
+        pool.address,
+        borrower.address,
+        lender.address,
+        AddressZero,
+        parseEth(1e6),
+        DAY * 365,
+        1000,
+      )
       await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
       await lender.connect(borrower).fund(loan1.address)
       await timeTravel(provider, DAY * 182.5)
@@ -262,34 +259,34 @@ describe('TrueFiPool2', () => {
 
     it('returns a basket of tokens on exit', async () => {
       const loan1 = await deployContract(
-          LoanToken2Factory,
-          pool.address,
-          borrower.address,
-          lender.address,
-          AddressZero,
-          parseEth(1e6), 
-          DAY * 365,
-          1000
-        )
+        LoanToken2Factory,
+        pool.address,
+        borrower.address,
+        lender.address,
+        AddressZero,
+        parseEth(1e6),
+        DAY * 365,
+        1000,
+      )
       await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
       await lender.connect(borrower).fund(loan1.address)
       await timeTravel(provider, DAY * 182.5)
       const loan2 = await deployContract(
-          LoanToken2Factory,
-          pool.address,
-          borrower.address,
-          lender.address,
-          AddressZero,
-          parseEth(1e6), 
-          DAY * 365,
-          2500
-        )
+        LoanToken2Factory,
+        pool.address,
+        borrower.address,
+        lender.address,
+        AddressZero,
+        parseEth(1e6),
+        DAY * 365,
+        2500,
+      )
       await lender.connect(borrower).fund(loan2.address)
 
       const liquidValue = await pool.liquidValue()
       const totalSupply = await pool.totalSupply()
       const exitAmount = totalSupply.div(2)
-      
+
       await pool.exit(exitAmount)
       expect(await tusd.balanceOf(owner.address)).to.equal(exitAmount.mul(liquidValue).div(totalSupply))
       expectCloseTo(await loan1.balanceOf(owner.address), parseEth(55e4), 10)
@@ -305,9 +302,9 @@ describe('TrueFiPool2', () => {
           borrower.address,
           lender.address,
           AddressZero,
-          parseEth(1e6), 
+          parseEth(1e6),
           DAY * 365,
-          1000
+          1000,
         )
         await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
         await lender.connect(borrower).fund(loan1.address)
@@ -321,10 +318,10 @@ describe('TrueFiPool2', () => {
           borrower.address,
           lender.address,
           AddressZero,
-          parseEth(1e6), 
+          parseEth(1e6),
           DAY * 365,
-          2500
-        )        
+          2500,
+        )
         await lender.connect(borrower).fund(loan2.address)
       })
 
@@ -362,13 +359,61 @@ describe('TrueFiPool2', () => {
         expectScaledCloseTo(await loan2.balanceOf(borrower.address), parseEth(125e4).mul(exitAmountBorrower).div(totalSupply))
       })
     })
-    // requires strategy
-    // requires lender
   })
 
   describe('liquidExit', () => {
-    // requires strategy
-    // requires lender
+    const amount = parseEth(1e7)
+    beforeEach(async () => {
+      await tusd.approve(pool.address, amount)
+      await pool.join(amount)
+      await pool.switchStrategy(poolStrategy1.address)
+    })
+
+    it('burns pool tokens on exit', async () => {
+      const supply = await pool.totalSupply()
+      await pool.liquidExit(supply.div(2))
+      expect(await pool.totalSupply()).to.equal(supply.div(2))
+      await pool.liquidExit(supply.div(3))
+      expect(await pool.totalSupply()).to.equal(supply.sub(supply.mul(5).div(6)))
+    })
+
+    it('all funds are liquid: transfers TUSD without penalty', async () => {
+      await pool.liquidExit(await pool.balanceOf(owner.address))
+      expect(await tusd.balanceOf(owner.address)).to.equal(amount)
+    })
+
+    it('all funds are liquid: transfers TUSD without penalty (half of stake)', async () => {
+      await pool.liquidExit(amount.div(2))
+      expect(await tusd.balanceOf(owner.address)).to.equal(amount.div(2))
+    })
+
+    it('after loan approved, applies a penalty', async () => {
+      const loan1 = await deployContract(
+        LoanToken2Factory,
+        pool.address,
+        borrower.address,
+        lender.address,
+        AddressZero,
+        amount.div(3),
+        DAY * 365,
+        1000,
+      )
+      await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
+      await lender.connect(borrower).fund(loan1.address)
+      expect(await pool.liquidExitPenalty(amount.div(2))).to.equal(9990)
+      await pool.liquidExit(amount.div(2), { gasLimit: 5000000 })
+      expectScaledCloseTo(await tusd.balanceOf(owner.address), (amount.div(2).mul(9990).div(10000)))
+    })
+
+    it('half funds are in strategy: transfers TUSD without penalty', async () => {
+      await pool.flush(parseEth(5e6))
+      await pool.liquidExit(parseEth(6e6))
+      expect(await tusd.balanceOf(owner.address)).to.equal(parseEth(6e6))
+    })
+
+    it.only('emits event', async () => {
+      await expect(pool.liquidExit(amount.div(2))).to.emit(pool, 'Exited').withArgs(owner.address, amount.div(2))
+    })
   })
 
   describe('integrateAtPoint', () => {
