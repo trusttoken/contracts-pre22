@@ -59,6 +59,11 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     uint256 private strategyValueCache;
     uint256 private loansValueCache;
 
+    // tolerance difference (percents) between
+    // expected and actual transaction results
+    // when dealing with strategies
+    uint8 public constant TOLERATED_STRATEGY_ERROR = 98;
+
     // ======= STORAGE DECLARATION END ===========
 
     function concat(string memory a, string memory b) internal pure returns (string memory) {
@@ -116,9 +121,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev Emitted when funds are borrowed from pool
      * @param borrower Borrower address
      * @param amount Amount of funds borrowed from pool
-     * @param fee Fees collected from this transaction
      */
-    event Borrow(address borrower, uint256 amount, uint256 fee);
+    event Borrow(address borrower, uint256 amount);
 
     /**
      * @dev Emitted when borrower repays the pool
@@ -233,21 +237,6 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     }
 
     /**
-     * @dev Join the pool by depositing tokens
-     * @param amount amount of token to deposit
-     */
-    function join(uint256 amount) external joiningNotPaused {
-        uint256 fee = amount.mul(joiningFee).div(10000);
-        uint256 mintedAmount = mint(amount.sub(fee));
-        claimableFees = claimableFees.add(fee);
-
-        latestJoinBlock[tx.origin] = block.number;
-        token.safeTransferFrom(msg.sender, address(this), amount);
-
-        emit Joined(msg.sender, amount, mintedAmount);
-    }
-
-    /**
      * @dev ensure enough tokens are available
      * Check if current available amount of TUSD is enough and
      * withdraw remainder from strategy
@@ -273,13 +262,28 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     }
 
     /**
+     * @dev Join the pool by depositing tokens
+     * @param amount amount of token to deposit
+     */
+    function join(uint256 amount) external joiningNotPaused {
+        uint256 fee = amount.mul(joiningFee).div(10000);
+        uint256 mintedAmount = mint(amount.sub(fee));
+        claimableFees = claimableFees.add(fee);
+
+        latestJoinBlock[tx.origin] = block.number;
+        token.safeTransferFrom(msg.sender, address(this), amount);
+
+        emit Joined(msg.sender, amount, mintedAmount);
+    }
+
+    /**
      * @dev Exit pool
      * This function will withdraw a basket of currencies backing the pool value
      * @param amount amount of pool tokens to redeem for underlying tokens
      */
     function exit(uint256 amount) external {
         require(block.number != latestJoinBlock[tx.origin], "TrueFiPool: Cannot join and exit in same block");
-        require(amount <= balanceOf(msg.sender), "TrueFiPool: insufficient funds");
+        require(amount <= balanceOf(msg.sender), "TrueFiPool: Insufficient funds");
 
         uint256 _totalSupply = totalSupply();
 
@@ -371,9 +375,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
+        uint256 expectedMinStrategyValue = strategy.value().add(withToleratedError(amount));
         token.approve(address(strategy), amount);
         strategy.deposit(amount);
-
+        require(strategy.value() >= expectedMinStrategyValue, "TrueFiPool: Strategy value expected to be higher");
         emit Flushed(amount);
     }
 
@@ -384,7 +389,9 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     function pull(uint256 minTokenAmount) external onlyOwner {
         require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
 
+        uint256 expectedCurrencyBalance = currencyBalance().add(minTokenAmount);
         strategy.withdraw(minTokenAmount);
+        require(currencyBalance() >= expectedCurrencyBalance, "TrueFiPool: Currency balance expected to be higher");
 
         emit Pulled(minTokenAmount);
     }
@@ -394,16 +401,15 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev Remove liquidity from curve if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount, uint256 fee) override external onlyLender {
+    function borrow(uint256 amount) override external onlyLender {
         require(amount <= liquidValue(), "TrueFiPool: Insufficient liquidity");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);
         }
 
-        mint(fee);
-        token.safeTransfer(msg.sender, amount.sub(fee));
+        token.safeTransfer(msg.sender, amount);
 
-        emit Borrow(msg.sender, amount, fee);
+        emit Borrow(msg.sender, amount);
     }
 
     /**
@@ -435,7 +441,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param newStrategy strategy to switch to
      */
     function switchStrategy(ITrueStrategy newStrategy) external onlyOwner {
-        require(strategy != newStrategy, "TrueFiPool: cannot switch to the same strategy");
+        require(strategy != newStrategy, "TrueFiPool: Cannot switch to the same strategy");
 
         ITrueStrategy previousStrategy = strategy;
         strategy = newStrategy;
@@ -443,7 +449,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         emit StrategySwitched(newStrategy);
 
         if (address(previousStrategy) != address(0)) {
+            uint256 expectedMinCurrencyBalance = currencyBalance().add(withToleratedError(previousStrategy.value()));
             previousStrategy.withdrawAll();
+            require(currencyBalance() >= expectedMinCurrencyBalance, "TrueFiPool: All funds should be withdrawn to pool");
+            require(previousStrategy.value() == 0, "TrueFiPool: Switched strategy should be depleted");
         }
     }
 
@@ -473,5 +482,14 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         _mint(msg.sender, mintedAmount);
 
         return mintedAmount;
+    }
+
+    /**
+     * @dev Decrease provided amount percentwise by error
+     * @param amount Amount to decrease
+     * @return Calculated value
+     */
+    function withToleratedError(uint256 amount) internal pure returns (uint256) {
+        return amount.mul(TOLERATED_STRATEGY_ERROR).div(100);
     }
 }

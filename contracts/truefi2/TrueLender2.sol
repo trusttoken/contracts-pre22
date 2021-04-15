@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
-import {ILoanToken2, ILoanToken} from "./interface/ILoanToken2.sol";
+import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
@@ -179,11 +179,10 @@ contract TrueLender2 is ITrueLender2, Claimable {
         ITrueFiPool2 pool = loanToken.pool();
 
         require(factory.isPool(address(pool)), "TrueLender: Pool not created by the factory");
-        require(loanToken.currencyToken() == pool.token(), "TrueLender: Loan and pool token mismatch");
+        require(loanToken.token() == pool.token(), "TrueLender: Loan and pool token mismatch");
         require(poolLoans[pool].length < maxLoans, "TrueLender: Loans number has reached the limit");
 
-        (uint256 amount, , uint256 term) = loanToken.getParameters();
-        uint256 receivedAmount = loanToken.receivedAmount();
+        uint256 amount = loanToken.amount();
         (uint256 start, uint256 no, uint256 yes) = ratingAgency.getResults(address(loanToken));
 
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
@@ -191,15 +190,11 @@ contract TrueLender2 is ITrueLender2, Claimable {
         require(loanIsCredible(yes, no), "TrueLender: Loan risk is too high");
 
         poolLoans[pool].push(loanToken);
-        pool.borrow(amount, amount.sub(receivedAmount));
-        pool.token().approve(address(loanToken), receivedAmount);
+        pool.borrow(amount);
+        pool.token().approve(address(loanToken), amount);
         loanToken.fund();
 
-        // temporary on hold while developing new transaction fees
-        // pool.approve(address(stakingPool), pool.balanceOf(address(this)));
-        // stakingPool.payFee(pool.balanceOf(address(this)), block.timestamp.add(term));
-
-        emit Funded(address(pool), address(loanToken), receivedAmount);
+        emit Funded(address(pool), address(loanToken), amount);
     }
 
     /**
@@ -223,10 +218,10 @@ contract TrueLender2 is ITrueLender2, Claimable {
      */
     function reclaim(ILoanToken2 loanToken) external {
         ITrueFiPool2 pool = loanToken.pool();
-        ILoanToken.Status status = loanToken.status();
-        require(status >= ILoanToken.Status.Settled, "TrueLender: LoanToken is not closed yet");
+        ILoanToken2.Status status = loanToken.status();
+        require(status >= ILoanToken2.Status.Settled, "TrueLender: LoanToken is not closed yet");
 
-        if (status != ILoanToken.Status.Settled) {
+        if (status != ILoanToken2.Status.Settled) {
             require(msg.sender == owner(), "TrueLender: Only owner can reclaim from defaulted loan");
         }
 

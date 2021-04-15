@@ -77,7 +77,7 @@ describe('TrueLender2', () => {
 
     const tfusd = await deployContract(owner, MockTrueCurrencyFactory) // just for testing, change this in origination fees development
     const trueDistributor = await deployContract(owner, LinearTrueDistributorFactory)
-    await stkTru.initialize(tru.address, tfusd.address, trueDistributor.address, AddressZero)
+    await stkTru.initialize(tru.address, tfusd.address, tfusd.address, trueDistributor.address, AddressZero)
 
     lender = await deployContract(owner, TestTrueLenderFactory)
     await poolFactory.initialize(implementationReference.address, AddressZero, lender.address)
@@ -292,28 +292,24 @@ describe('TrueLender2', () => {
 
       it('borrows tokens from pool', async () => {
         const poolValueBefore = await pool1.liquidValue()
-        const borrowedAmount = await loan1.receivedAmount()
+        const borrowedAmount = await loan1.amount()
         await lender.connect(borrower).fund(loan1.address)
         expect(poolValueBefore.sub(await pool1.liquidValue())).to.eq(borrowedAmount)
-      })
-
-      xit('pays origination fee to stakers', async () => {
-        // TODO
       })
 
       it('borrows receivedAmount from pool and transfers to the loan', async () => {
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.emit(token1, 'Transfer')
-          .withArgs(pool1.address, lender.address, 99750)
+          .withArgs(pool1.address, lender.address, 100000)
           .and.to.emit(token1, 'Transfer')
-          .withArgs(lender.address, loan1.address, 99750)
-        expect(await loan1.balance()).to.equal(99750)
+          .withArgs(lender.address, loan1.address, 100000)
+        expect(await loan1.balance()).to.equal(100000)
       })
 
       it('emits event', async () => {
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.emit(lender, 'Funded')
-          .withArgs(pool1.address, loan1.address, 99750)
+          .withArgs(pool1.address, loan1.address, 100000)
       })
     })
 

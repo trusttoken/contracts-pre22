@@ -73,6 +73,8 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     // allow pausing of deposits
     bool public pauseStatus;
 
+    IERC20 public feeToken;
+
     // ======= STORAGE DECLARATION END ============
 
     event Stake(address indexed staker, uint256 amount);
@@ -84,6 +86,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     event UnstakePeriodDurationChanged(uint256 newUnstakePeriodDuration);
     event FeePayerWhitelistingStatusChanged(address payer, bool status);
     event PauseStatusChanged(bool pauseStatus);
+    event FeeTokenChanged(IERC20 token);
 
     /**
      * @dev pool can only be joined when it's unpaused
@@ -131,6 +134,8 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         updateClaimableRewards(tru, account);
         updateTotalRewards(tfusd);
         updateClaimableRewards(tfusd, account);
+        updateTotalRewards(feeToken);
+        updateClaimableRewards(feeToken, account);
         _;
     }
 
@@ -146,6 +151,9 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         } else if (token == tfusd) {
             updateTotalRewards(tfusd);
             updateClaimableRewards(tfusd, account);
+        } else if (token == feeToken) {
+            updateTotalRewards(feeToken);
+            updateClaimableRewards(feeToken, account);
         }
         _;
     }
@@ -154,18 +162,21 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @dev Initialize contract and set default values
      * @param _tru TRU token
      * @param _tfusd tfUSD token
+     * @param _feeToken Token for fees, currently tfUSDC
      * @param _distributor Distributor for this contract
      * @param _liquidator Liquidator for staked TRU
      */
     function initialize(
         IERC20 _tru,
         IERC20 _tfusd,
+        IERC20 _feeToken,
         ITrueDistributor _distributor,
         address _liquidator
     ) public {
         require(!initalized, "StkTruToken: Already initialized");
         tru = _tru;
         tfusd = _tfusd;
+        feeToken = _feeToken;
         distributor = _distributor;
         liquidator = _liquidator;
 
@@ -174,6 +185,16 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
 
         owner_ = msg.sender;
         initalized = true;
+    }
+
+    /**
+     * @dev Set tfUSDC address
+     * @param _feeToken Address of tfUSDC to be set
+     */
+    function setFeeToken(IERC20 _feeToken) external onlyOwner {
+        require(rewardBalance(feeToken) == 0, "StkTruToken: Cannot replace fee token with underlying rewards");
+        feeToken = _feeToken;
+        emit FeeTokenChanged(_feeToken);
     }
 
     /**
@@ -247,6 +268,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
 
         _claim(tru);
         _claim(tfusd);
+        _claim(feeToken);
 
         uint256 amountToTransfer = amount.mul(stakeSupply).div(totalSupply);
 
@@ -313,6 +335,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     function claim() external distribute update(msg.sender) {
         _claim(tru);
         _claim(tfusd);
+        _claim(feeToken);
     }
 
     /**
@@ -321,7 +344,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @param token Token to claim rewards for
      */
     function claimRewards(IERC20 token) external distribute updateRewards(msg.sender, token) {
-        require(token == tfusd || token == tru, "Token not supported for rewards");
+        require(token == tfusd || token == tru || token == feeToken, "Token not supported for rewards");
         _claim(token);
     }
 
@@ -420,6 +443,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     ) internal override distribute update(sender) {
         updateClaimableRewards(tru, recipient);
         updateClaimableRewards(tfusd, recipient);
+        updateClaimableRewards(feeToken, recipient);
         // unlockTime returns MAX_UINT256 when there's no ongoing cooldown for the address
         if (unlockTime(recipient) != type(uint256).max) {
             receivedDuringCooldown[recipient] = receivedDuringCooldown[recipient].add(amount);
@@ -490,6 +514,9 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         }
         if (token == tfusd) {
             return token.balanceOf(address(this)).sub(undistributedTfusdRewards);
+        }
+        if (token == feeToken) {
+            return token.balanceOf(address(this));
         }
         return 0;
     }
