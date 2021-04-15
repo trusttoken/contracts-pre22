@@ -12,6 +12,7 @@ import {
   TimeOwnedUpgradeabilityProxy,
   TruPriceOracle,
   TrueFiPool,
+  TrueLender,
   TrueRatingAgencyV2,
   TrueUSD,
   TrustToken,
@@ -40,14 +41,14 @@ deploy({}, (deployer, config) => {
   const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
 
   const trueUSD = proxy(contract('trueUSD', TrueUSD), () => {})
-  const trueFiPool = proxy(contract('trueFiPool', TrueFiPool), () => {})
-  const stkTruToken = proxy(contract('stkTruToken', StkTruToken), () => {})
   const trustToken = is_mainnet ?
     timeProxy(contract('trustToken', TrustToken), 'initialize',
       [],
     ) : timeProxy(contract('testTrustToken', TestTrustToken), 'initialize',
       [],
     )
+  const trueFiPool = proxy(contract('trueFiPool', TrueFiPool), () => {})
+  const stkTruToken = proxy(contract('stkTruToken', StkTruToken), () => {})
   const truPriceOracle = contract('truPriceOracle', TruPriceOracle)
   const loanFactory = proxy(contract('loanFactory', LoanFactory), 'initialize',
     [trueUSD],
@@ -65,6 +66,10 @@ deploy({}, (deployer, config) => {
     [trueRatingAgencyV2, trustToken, RATING_AGENCY_DISTRIBUTION_AMOUNT],
   )
   trueRatingAgencyV2.initialize(trustToken, stkTruToken, arbitraryDistributor, loanFactory)
+  // TODO figure out what's going wrong with deploying TrueLender
+  // const trueLender = proxy(contract('trueLender', TrueLender), 'initialize',
+  //   [trueFiPool, trueRatingAgencyV2, stkTruToken],
+  // )
   const timelock = proxy(contract(Timelock), 'initialize',
     [TIMELOCK_ADMIN, TIMELOCK_DELAY],
   )
