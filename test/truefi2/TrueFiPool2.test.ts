@@ -411,7 +411,7 @@ describe('TrueFiPool2', () => {
       expect(await tusd.balanceOf(owner.address)).to.equal(parseEth(6e6))
     })
 
-    it.only('emits event', async () => {
+    it('emits event', async () => {
       await expect(pool.liquidExit(amount.div(2))).to.emit(pool, 'Exited').withArgs(owner.address, amount.div(2))
     })
   })
