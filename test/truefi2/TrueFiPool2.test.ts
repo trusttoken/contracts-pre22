@@ -158,6 +158,36 @@ describe('TrueFiPool2', () => {
     })
   })
 
+  describe('liquidValue', () => {
+    beforeEach(async () => {
+      await tusd.approve(pool.address, includeFee(parseEth(1e7)))
+    })
+
+    it('liquid value equals balanceOf(pool)', async () => {
+      const depositedAmount = parseEth(1e7)
+      await pool.join(depositedAmount)
+      expect(await pool.liquidValue()).to.equal(depositedAmount)
+      expect(await pool.liquidValue())
+        .to.equal(await tusd.balanceOf(pool.address))
+    })
+
+    it('liquid value equals balanceOf(pool) - claimableFees', async () => {
+      await pool.setJoiningFee(25)
+      await pool.join(includeFee(parseEth(1e7)))
+      expect(await pool.liquidValue())
+        .to.equal(parseEth(1e7))
+    })
+
+    it('liquid value equals balanceOf(pool) - claimableFees + strategyValue', async () => {
+      await pool.setJoiningFee(25)
+      await pool.join(includeFee(parseEth(1e7)))
+      await pool.connect(owner).switchStrategy(poolStrategy1.address)
+      await pool.flush(1000)
+      expect(await pool.liquidValue())
+        .to.equal((await currencyBalanceOf(pool)).add(1000))
+    })
+  })
+
   describe('poolValue', () => {
     const joinAmount = parseEth(1e7)
 
