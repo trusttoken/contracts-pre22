@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
+pragma experimental ABIEncoderV2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
@@ -8,9 +9,11 @@ import {ERC20} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
-import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
+import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
+
 import {ABDKMath64x64} from "../truefi/Log.sol";
+import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
 /**
  * @title TrueFiPool2
@@ -29,6 +32,8 @@ import {ABDKMath64x64} from "../truefi/Log.sol";
 contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+    using OneInchExchange for I1Inch3;
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -61,16 +66,18 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     uint256 private strategyValueCache;
     uint256 private loansValueCache;
 
+    // who gets all fees
+    address public beneficiary;
+
+    I1Inch3 public _1Inch;
+
+    // ======= STORAGE DECLARATION END ===========
+
     // tolerance difference (percents) between
     // expected and actual transaction results
     // when dealing with strategies
     // and slippage on liquidation token price estimation
     uint8 public constant TOLERATED_SLIPPAGE = 2;
-
-    // who gets all fees
-    address public beneficiary;
-
-    // ======= STORAGE DECLARATION END ===========
 
     function concat(string memory a, string memory b) internal pure returns (string memory) {
         return string(abi.encodePacked(a, b));
@@ -80,6 +87,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         ERC20 _token,
         ERC20 _liquidationToken,
         ITrueLender2 _lender,
+        I1Inch3 __1Inch,
         address __owner
     ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
@@ -88,6 +96,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         token = _token;
         liquidationToken = _liquidationToken;
         lender = _lender;
+        _1Inch = __1Inch;
     }
 
     /**
@@ -510,6 +519,19 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     function setOracle(ITrueFiPoolOracle newOracle) external onlyOwner {
         oracle = newOracle;
         emit OracleChanged(newOracle);
+    }
+
+    function sellLiquidationToken(bytes calldata data) external {
+        uint256 balanceBefore = token.balanceOf(address(this));
+
+        I1Inch3.SwapDescription memory swap = _1Inch.exchange(data);
+
+        uint256 expectedGain = oracle.truToToken(swap.amount);
+        uint256 balanceDiff = token.balanceOf(address(this)).sub(balanceBefore);
+        require(balanceDiff >= withToleratedSlippage(expectedGain), "TrueFiPool: Not optimal exchange");
+        require(swap.srcToken == address(liquidationToken), "TrueFiPool: Source token is not TRU");
+        require(swap.dstToken == address(token), "TrueFiPool: Destination token is not TUSD");
+        require(swap.dstReceiver == address(this), "TrueFiPool: Receiver is not pool");
     }
 
     /**

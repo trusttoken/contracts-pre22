@@ -6,7 +6,7 @@ import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
 
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
-import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+import {ITrueFiPool2, I1Inch3} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ImplementationReference} from "../proxy/ImplementationReference.sol";
 
@@ -39,6 +39,8 @@ contract PoolFactory is IPoolFactory, Claimable {
     ITrueLender2 public trueLender2;
 
     // ======= STORAGE DECLARATION END ===========
+
+    I1Inch3 public constant ONE_INCH_ADDRESS = I1Inch3(0x11111112542D85B3EF69AE05771c2dCCff4fAa26);
 
     /**
      * @dev Event to show creation of the new pool
@@ -110,7 +112,7 @@ contract PoolFactory is IPoolFactory, Claimable {
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), liquidationToken, trueLender2, this.owner());
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), liquidationToken, trueLender2, ONE_INCH_ADDRESS, this.owner());
 
         emit PoolCreated(token, address(proxy));
     }

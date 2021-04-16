@@ -100,7 +100,7 @@ describe('TrueLender2', () => {
     pool1 = TrueFiPool2Factory.connect(await poolFactory.pool(token1.address), owner)
     pool2 = TrueFiPool2Factory.connect(await poolFactory.pool(token2.address), owner)
     counterfeitPool = await deployContract(owner, TrueFiPool2Factory)
-    await counterfeitPool.initialize(token1.address, AddressZero, lender.address, owner.address)
+    await counterfeitPool.initialize(token1.address, AddressZero, lender.address, AddressZero, owner.address)
     feePool = TrueFiPool2Factory.connect(await poolFactory.pool(usdc.address), owner)
 
     const tfusd = await deployContract(owner, MockTrueCurrencyFactory) // just for testing, change this in origination fees development
