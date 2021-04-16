@@ -34,7 +34,7 @@ contract PoolFactory is IPoolFactory, Claimable {
 
     ImplementationReference public poolImplementationReference;
 
-    ERC20 public stakingToken;
+    ERC20 public liquidationToken;
 
     ITrueLender2 public trueLender2;
 
@@ -90,12 +90,12 @@ contract PoolFactory is IPoolFactory, Claimable {
      */
     function initialize(
         ImplementationReference _poolImplementationReference,
-        ERC20 _stakingToken,
+        ERC20 _liquidationToken,
         ITrueLender2 _trueLender2
     ) external initializer {
         Claimable.initialize(msg.sender);
 
-        stakingToken = _stakingToken;
+        liquidationToken = _liquidationToken;
         poolImplementationReference = _poolImplementationReference;
         trueLender2 = _trueLender2;
     }
@@ -110,7 +110,7 @@ contract PoolFactory is IPoolFactory, Claimable {
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), stakingToken, trueLender2, this.owner());
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), liquidationToken, trueLender2, this.owner());
 
         emit PoolCreated(token, address(proxy));
     }

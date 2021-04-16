@@ -64,7 +64,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     // tolerance difference (percents) between
     // expected and actual transaction results
     // when dealing with strategies
-    uint8 public constant TOLERATED_STRATEGY_ERROR = 98;
+    // and slippage on liquidation token price estimation
+    uint8 public constant TOLERATED_SLIPPAGE = 2;
 
     // who gets all fees
     address public beneficiary;
@@ -238,7 +239,28 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      */
     function poolValue() public view returns (uint256) {
         // this assumes defaulted loans are worth their full value
-        return liquidValue().add(loansValue());
+        return liquidValue().add(loansValue()).add(liquidationTokenValue());
+    }
+
+    /**
+     * @dev Get total balance of stake tokens
+     * @return Balance of stake tokens in this contract
+     */
+    function liquidationTokenBalance() public view returns (uint256) {
+        return liquidationToken.balanceOf(address(this));
+    }
+
+    /**
+     * @dev Price of TRU in USD
+     * @return Oracle price of TRU in USD
+     */
+    function liquidationTokenValue() public view returns (uint256) {
+        uint256 balance = liquidationTokenBalance();
+        if (balance == 0 || address(oracle) == address(0)) {
+            return 0;
+        }
+        // Use conservative price estimation to avoid pool being overvalued
+        return withToleratedSlippage(oracle.tokenToTru(balance));
     }
 
     /**
@@ -401,7 +423,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
-        uint256 expectedMinStrategyValue = strategy.value().add(withToleratedError(amount));
+        uint256 expectedMinStrategyValue = strategy.value().add(withToleratedSlippage(amount));
         token.approve(address(strategy), amount);
         strategy.deposit(amount);
         require(strategy.value() >= expectedMinStrategyValue, "TrueFiPool: Strategy value expected to be higher");
@@ -475,7 +497,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         emit StrategySwitched(newStrategy);
 
         if (address(previousStrategy) != address(0)) {
-            uint256 expectedMinCurrencyBalance = currencyBalance().add(withToleratedError(previousStrategy.value()));
+            uint256 expectedMinCurrencyBalance = currencyBalance().add(withToleratedSlippage(previousStrategy.value()));
             previousStrategy.withdrawAll();
             require(currencyBalance() >= expectedMinCurrencyBalance, "TrueFiPool: All funds should be withdrawn to pool");
             require(previousStrategy.value() == 0, "TrueFiPool: Switched strategy should be depleted");
@@ -523,7 +545,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param amount Amount to decrease
      * @return Calculated value
      */
-    function withToleratedError(uint256 amount) internal pure returns (uint256) {
-        return amount.mul(TOLERATED_STRATEGY_ERROR).div(100);
+    function withToleratedSlippage(uint256 amount) internal pure returns (uint256) {
+        return amount.mul(100 - TOLERATED_SLIPPAGE).div(100);
     }
 }

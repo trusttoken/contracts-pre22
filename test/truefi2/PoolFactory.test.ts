@@ -61,7 +61,7 @@ describe('PoolFactory', () => {
     })
 
     it('sets staking token address', async () => {
-      expect(await factory.stakingToken()).to.eq(stakingToken.address)
+      expect(await factory.liquidationToken()).to.eq(stakingToken.address)
     })
 
     it('sets allowAll to false', async () => {
