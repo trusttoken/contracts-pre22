@@ -3,6 +3,7 @@ pragma solidity 0.6.10;
 
 import {ERC20, IERC20} from "../../common/UpgradeableERC20.sol";
 import {ITrueLender2} from "../interface/ITrueLender2.sol";
+import {ITrueFiPoolOracle} from "./ITrueFiPoolOracle.sol";
 
 interface ITrueFiPool2 is IERC20 {
     function initialize(
@@ -13,6 +14,8 @@ interface ITrueFiPool2 is IERC20 {
     ) external;
 
     function token() external view returns (IERC20);
+
+    function oracle() external view returns (ITrueFiPoolOracle);
 
     /**
      * @dev Join the pool by depositing tokens

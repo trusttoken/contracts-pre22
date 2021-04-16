@@ -8,7 +8,7 @@ import {ERC20} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
-import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ABDKMath64x64} from "../truefi/Log.sol";
 
@@ -49,7 +49,9 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
     mapping(address => uint256) latestJoinBlock;
 
-    IERC20 public stakingToken;
+    IERC20 public liquidationToken;
+
+    ITrueFiPoolOracle public override oracle;
 
     // allow pausing of deposits
     bool public isJoiningPaused;
@@ -75,7 +77,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
     function initialize(
         ERC20 _token,
-        ERC20 _stakingToken,
+        ERC20 _liquidationToken,
         ITrueLender2 _lender,
         address __owner
     ) external override initializer {
@@ -83,7 +85,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         Claimable.initialize(__owner);
 
         token = _token;
-        stakingToken = _stakingToken;
+        liquidationToken = _liquidationToken;
         lender = _lender;
     }
 
@@ -98,6 +100,12 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param newBeneficiary New beneficiary
      */
     event BeneficiaryChanged(address newBeneficiary);
+
+    /**
+     * @dev Emitted when oracle is changed
+     * @param newOracle New oracle
+     */
+    event OracleChanged(ITrueFiPoolOracle newOracle);
 
     /**
      * @dev Emitted when someone joins the pool
@@ -414,12 +422,11 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         emit Pulled(minTokenAmount);
     }
 
-    // prettier-ignore
     /**
      * @dev Remove liquidity from curve if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount) override external onlyLender {
+    function borrow(uint256 amount) external override onlyLender {
         require(amount <= liquidValue(), "TrueFiPool: Insufficient liquidity");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);
@@ -473,6 +480,14 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
             require(currencyBalance() >= expectedMinCurrencyBalance, "TrueFiPool: All funds should be withdrawn to pool");
             require(previousStrategy.value() == 0, "TrueFiPool: Switched strategy should be depleted");
         }
+    }
+
+    /**
+     * @dev Change oracle, can only be called by owner
+     */
+    function setOracle(ITrueFiPoolOracle newOracle) external onlyOwner {
+        oracle = newOracle;
+        emit OracleChanged(newOracle);
     }
 
     /**
