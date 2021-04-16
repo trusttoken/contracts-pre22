@@ -13,10 +13,7 @@ import {IUniswapRouter} from "../../truefi/interface/IUniswapRouter.sol";
 import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
 import {I1Inch3} from "../interface/I1Inch3.sol";
 import {OneInchExchange} from "../libraries/OneInchExchange.sol";
-
-interface IERC20WithDecimals is IERC20 {
-    function decimals() external view returns (uint256);
-}
+import {IERC20WithDecimals} from "../interface/IERC20WithDecimals.sol";
 
 /**
  * @dev TrueFi pool strategy that allows depositing stablecoins into Curve Yearn pool (0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51)
