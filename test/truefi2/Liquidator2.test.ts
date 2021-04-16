@@ -16,6 +16,7 @@ describe('Liquidator2', () => {
 
   let provider: MockProvider
   let owner: Wallet
+  let otherWallet: Wallet
   let deployContract: Deployer
 
   let liquidator: Liquidator2
@@ -28,7 +29,7 @@ describe('Liquidator2', () => {
   let oracle: MockTrueFiPoolOracle
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner] = wallets
+    [owner, otherWallet] = wallets
     provider = _provider
     deployContract = setupDeploy(owner)
 
@@ -43,7 +44,7 @@ describe('Liquidator2', () => {
 
     await liquidator.initialize(poolFactory.address, stkTru.address, tru.address, oracle.address, loanFactory.address)
   })
-  
+
   describe('Initializer', () => {
     it('sets poolFactory address correctly', async () => {
       expect(await liquidator.poolFactory()).to.equal(poolFactory.address)
@@ -67,6 +68,34 @@ describe('Liquidator2', () => {
 
     it('sets fetchMaxShare correctly', async () => {
       expect(await liquidator.fetchMaxShare()).to.equal(1000)
+    })
+  })
+
+  describe('fetchMaxShare', () => {
+    it('only owner can set new share', async () => {
+      await expect(liquidator.connect(otherWallet).setFetchMaxShare(500))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot set share to 0', async () => {
+      await expect(liquidator.setFetchMaxShare(0))
+        .to.be.revertedWith('Liquidator: Share cannot be set to 0')
+    })
+
+    it('cannot set share to number larger than 10000', async () => {
+      await expect(liquidator.setFetchMaxShare(10001))
+        .to.be.revertedWith('Liquidator: Share cannot be larger than 10000')
+    })
+
+    it('is changed properly', async () => {
+      await liquidator.setFetchMaxShare(500)
+      expect(await liquidator.fetchMaxShare()).to.equal(500)
+    })
+
+    it('emits event', async () => {
+      await expect(liquidator.setFetchMaxShare(500))
+        .to.emit(liquidator, 'FetchMaxShareChanged')
+        .withArgs(500)
     })
   })
 })
