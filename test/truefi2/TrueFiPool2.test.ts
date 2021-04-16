@@ -37,7 +37,7 @@ describe('TrueFiPool2', () => {
   let owner: Wallet
   let borrower: Wallet
   let tusd: MockErc20Token
-  let stakingToken: StkTruToken
+  let liquidationToken: StkTruToken
   let implementationReference: ImplementationReference
   let poolImplementation: TrueFiPool2
   let pool: TrueFiPool2
@@ -53,7 +53,7 @@ describe('TrueFiPool2', () => {
     [owner, borrower] = wallets
     deployContract = setupDeploy(owner)
 
-    stakingToken = await deployContract(StkTruTokenFactory)
+    liquidationToken = await deployContract(StkTruTokenFactory)
     tusd = await deployContract(MockErc20TokenFactory)
     poolFactory = await deployContract(PoolFactoryFactory)
     poolImplementation = await deployContract(TrueFiPool2Factory)
@@ -61,18 +61,18 @@ describe('TrueFiPool2', () => {
     lender = await deployContract(TrueLender2Factory)
     rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
 
-    await poolFactory.initialize(implementationReference.address, stakingToken.address, lender.address)
+    await poolFactory.initialize(implementationReference.address, liquidationToken.address, lender.address)
     await poolFactory.whitelist(tusd.address, true)
     await poolFactory.createPool(tusd.address)
 
     pool = poolImplementation.attach(await poolFactory.pool(tusd.address))
 
     const distributor = await deployContract(LinearTrueDistributorFactory)
-    await stakingToken.initialize(stakingToken.address, pool.address, AddressZero, distributor.address, AddressZero)
+    await liquidationToken.initialize(liquidationToken.address, pool.address, AddressZero, distributor.address, AddressZero)
 
-    await lender.initialize(stakingToken.address, poolFactory.address, rater.address, AddressZero, pool.address)
+    await lender.initialize(liquidationToken.address, poolFactory.address, rater.address, AddressZero, pool.address)
     await lender.setFee(0)
-    await stakingToken.setPayerWhitelistingStatus(lender.address, true)
+    await liquidationToken.setPayerWhitelistingStatus(lender.address, true)
 
     poolStrategy1 = await deployContract(MockStrategyFactory, tusd.address, pool.address)
     poolStrategy2 = await deployContract(MockStrategyFactory, tusd.address, pool.address)
@@ -98,7 +98,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('sets staking token', async () => {
-      expect(await pool.stakingToken()).to.eq(stakingToken.address)
+      expect(await pool.liquidationToken()).to.eq(liquidationToken.address)
     })
 
     it('sets lender', async () => {
@@ -265,6 +265,19 @@ describe('TrueFiPool2', () => {
     it('reverts when JoiningFee set to more than 100%', async () => {
       await expect(pool.setJoiningFee(10100))
         .to.be.revertedWith('TrueFiPool: Fee cannot exceed transaction value')
+    })
+  })
+
+  describe('setOracle', () => {
+    const oracle = Wallet.createRandom().address
+
+    it('sets oracle', async () => {
+      await pool.setOracle(oracle)
+      expect(await pool.oracle()).to.equal(oracle)
+    })
+
+    it('reverts when called not by owner', async () => {
+      await expect(pool.connect(borrower).setOracle(oracle)).to.be.revertedWith('Ownable: caller is not the owner')
     })
   })
 
@@ -680,13 +693,12 @@ describe('TrueFiPool2', () => {
     it('only lender can be caller', async () => {
       await expect(pool.connect(owner).repay(0))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender')
-
-      await lender.reclaim(loan.address)
+      await lender.reclaim(loan.address, '0x')
       expect('repay').to.be.calledOnContract(pool)
     })
 
     it('emits event', async () => {
-      await expect(lender.reclaim(loan.address))
+      await expect(lender.reclaim(loan.address, '0x'))
         .to.emit(pool, 'Repaid')
         .withArgs(lender.address, 100002)
     })
