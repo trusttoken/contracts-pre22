@@ -86,14 +86,12 @@ contract Liquidator2 is UpgradeableClaimable {
      */
     function liquidate(ILoanToken2 loan) external {
         require(loanFactory.isLoanToken(address(loan)), "Liquidator: Unknown loan");
-        uint256 defaultedValue = getAmountToWithdraw(
-            loan.debt().sub(loan.repaid()),
-            ITrueFiPoolOracle(ITrueFiPool2(loan.pool()).oracle())
-        );
+        ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
+        uint256 defaultedValue = getAmountToWithdraw(loan.debt().sub(loan.repaid()), ITrueFiPoolOracle(pool.oracle()));
         stkTru.withdraw(defaultedValue);
         require(loan.status() == ILoanToken2.Status.Defaulted, "Liquidator: Loan must be defaulted");
         loan.liquidate();
-        require(tru.transfer(address(poolFactory), defaultedValue));
+        require(tru.transfer(address(pool), defaultedValue));
         emit Liquidated(loan);
     }
 
