@@ -55,7 +55,7 @@ describe('TrueFiPool2', () => {
       gasPrice: 0,
     })
 
-    const dataUrl = `https://api.1inch.exchange/v3.0/1/swap?disableEstimate=true&protocols=WETH,CURVE,BALANCER,UNISWAP_V2,SUSHI,ZRX&allowPartialFill=false&fromTokenAddress=${TRU_ADDRESS}&toTokenAddress=${USDC_ADDRESS}&amount=${parseTRU(100)}&fromAddress=${pool.address}&slippage=2`
+    const dataUrl = `https://api.1inch.exchange/v3.0/1/swap?disableEstimate=true&protocols=UNISWAP_V2,SUSHI&allowPartialFill=false&fromTokenAddress=${TRU_ADDRESS}&toTokenAddress=${USDC_ADDRESS}&amount=${parseTRU(100)}&fromAddress=${pool.address}&slippage=2`
     const body = await (await fetch(dataUrl)).json()
     const data = body.tx.data
     expect(await pool.liquidValue()).to.eq(0)

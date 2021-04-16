@@ -527,8 +527,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         I1Inch3.SwapDescription memory swap = _1Inch.exchange(data);
 
         uint256 expectedGain = oracle.truToToken(swap.amount);
+
         uint256 balanceDiff = token.balanceOf(address(this)).sub(balanceBefore);
         require(balanceDiff >= withToleratedSlippage(expectedGain), "TrueFiPool: Not optimal exchange");
+
         require(swap.srcToken == address(liquidationToken), "TrueFiPool: Source token is not TRU");
         require(swap.dstToken == address(token), "TrueFiPool: Destination token is not TUSD");
         require(swap.dstReceiver == address(this), "TrueFiPool: Receiver is not pool");
