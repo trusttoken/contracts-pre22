@@ -681,12 +681,12 @@ describe('TrueFiPool2', () => {
       await expect(pool.connect(owner).repay(0))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender')
 
-      await lender.reclaim(loan.address)
+      await lender.reclaim(loan.address, '0x')
       expect('repay').to.be.calledOnContract(pool)
     })
 
     it('emits event', async () => {
-      await expect(lender.reclaim(loan.address))
+      await expect(lender.reclaim(loan.address, '0x'))
         .to.emit(pool, 'Repaid')
         .withArgs(lender.address, 100002)
     })
