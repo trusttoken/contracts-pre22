@@ -308,11 +308,12 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         fundsReclaimed = balanceAfter.sub(balanceBefore);
         // swap fee for feeToken
         uint256 feeAmount = _swapFee(pool.token(), loanToken, data);
-        // join pool and reward stakers
-        _transferFeeToStakers();
 
         pool.token().approve(address(pool), fundsReclaimed.sub(feeAmount));
         pool.repay(fundsReclaimed.sub(feeAmount));
+
+        // join pool and reward stakers
+        _transferFeeToStakers();
     }
 
     /// @dev Swap `token` for `feeToken` on 1inch
@@ -343,6 +344,9 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     /// @dev Deposit feeToken to pool and transfer LP tokens to the stakers
     function _transferFeeToStakers() internal {
         uint256 amount = feeToken.balanceOf(address(this));
+        if (amount == 0) {
+            return;
+        }
         feeToken.approve(address(feePool), amount);
         feePool.join(amount);
         feePool.transfer(address(stakingPool), feePool.balanceOf(address(this)));
