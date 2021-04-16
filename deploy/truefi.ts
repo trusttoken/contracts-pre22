@@ -1,4 +1,4 @@
-import { contract, createProxy, deploy } from 'ethereum-mars'
+import { contract, createProxy, deploy, runIf } from 'ethereum-mars'
 import {
   GovernorAlpha,
   LinearTrueDistributor,
@@ -57,21 +57,18 @@ deploy({}, (deployer, config) => {
   const stkTruToken_LinearTrueDistributor = proxy(contract('stkTruToken_LinearTrueDistributor', LinearTrueDistributor), 'initialize',
     [DISTRIBUTION_START, DISTRIBUTION_DURATION, STAKE_DISTRIBUTION_AMOUNT, trustToken],
   )
-  // TODO check whether distributor's farm has already been set to stkTRU
-  if (true) {
+  runIf(stkTruToken_LinearTrueDistributor.farm().equals(stkTruToken).not(), () => {
     stkTruToken_LinearTrueDistributor.setFarm(stkTruToken)
-  }
-  if (!stkTruToken.initalized()) {
+  })
+  runIf(stkTruToken.initalized().not(), () => {
     stkTruToken.initialize(trustToken, trueFiPool, stkTruToken_LinearTrueDistributor, liquidator)
-  }
+  })
   const trueRatingAgencyV2 = proxy(contract('trueRatingAgencyV2', TrueRatingAgencyV2), () => {})
   const ratingAgencyV2Distributor = proxy(contract('ratingAgencyV2Distributor', RatingAgencyV2Distributor), 'initialize',
     [trueRatingAgencyV2, trustToken],
   )
   // TODO check whether trueRatingAgencyV2 has already been initialized, else this will revert
-  if (true) {
-    trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
-  }
+  trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
   // TODO figure out what's going wrong with deploying TrueLender
   // const trueLender = proxy(contract('trueLender', TrueLender), 'initialize',
   //   [trueFiPool, trueRatingAgencyV2, stkTruToken],
