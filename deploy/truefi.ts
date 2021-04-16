@@ -57,7 +57,10 @@ deploy({}, (deployer, config) => {
   const stkTruToken_LinearTrueDistributor = proxy(contract('stkTruToken_LinearTrueDistributor', LinearTrueDistributor), 'initialize',
     [DISTRIBUTION_START, DISTRIBUTION_DURATION, STAKE_DISTRIBUTION_AMOUNT, trustToken],
   )
-  stkTruToken_LinearTrueDistributor.setFarm(stkTruToken)
+  // TODO check whether distributor's farm has already been set to stkTRU
+  if (true) {
+    stkTruToken_LinearTrueDistributor.setFarm(stkTruToken)
+  }
   if (!stkTruToken.initalized()) {
     stkTruToken.initialize(trustToken, trueFiPool, stkTruToken_LinearTrueDistributor, liquidator)
   }
