@@ -73,7 +73,7 @@ describe('TrueFiPool2', () => {
     const distributor = await deployContract(LinearTrueDistributorFactory)
     await stakingPool.initialize(stakingPool.address, pool.address, AddressZero, distributor.address, AddressZero)
 
-    await lender.initialize(stakingPool.address, poolFactory.address, rater.address, AddressZero, pool.address)
+    await lender.initialize(stakingPool.address, poolFactory.address, rater.address, AddressZero)
     await lender.setFee(0)
     await stakingPool.setPayerWhitelistingStatus(lender.address, true)
 
@@ -91,7 +91,7 @@ describe('TrueFiPool2', () => {
   )
 
   const withToleratedSlippage = (number: BigNumber) => {
-    const slippage = 2
+    const slippage = 4
     return number.mul(100 - slippage).div(100)
   }
 
@@ -227,10 +227,10 @@ describe('TrueFiPool2', () => {
     it('converts TRU to pool token value using oracle and returns value - 2%', async () => {
       await liquidationToken.mint(pool.address, 1000)
       const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
-      await mockOracle.mock.tokenToTru.returns(500)
+      await mockOracle.mock.truToToken.returns(500)
       await pool.setOracle(mockOracle.address)
       expect(await pool.liquidationTokenValue()).to.eq(withToleratedSlippage(BigNumber.from(500)))
-      expect('tokenToTru').to.be.calledOnContractWith(mockOracle, [1000])
+      expect('truToToken').to.be.calledOnContractWith(mockOracle, [1000])
     })
 
     it('liquidationTokenValue is not part of liquidValue but a part of poolValue', async () => {

@@ -77,7 +77,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     // expected and actual transaction results
     // when dealing with strategies
     // and slippage on liquidation token price estimation
-    uint8 public constant TOLERATED_SLIPPAGE = 2;
+    uint8 public constant TOLERATED_SLIPPAGE = 4;
 
     function concat(string memory a, string memory b) internal pure returns (string memory) {
         return string(abi.encodePacked(a, b));
@@ -269,7 +269,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
             return 0;
         }
         // Use conservative price estimation to avoid pool being overvalued
-        return withToleratedSlippage(oracle.tokenToTru(balance));
+        return withToleratedSlippage(oracle.truToToken(balance));
     }
 
     /**
