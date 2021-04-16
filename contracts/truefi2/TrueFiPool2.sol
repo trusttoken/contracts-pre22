@@ -64,6 +64,9 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     // when dealing with strategies
     uint8 public constant TOLERATED_STRATEGY_ERROR = 98;
 
+    // who gets all fees
+    address public beneficiary;
+
     // ======= STORAGE DECLARATION END ===========
 
     function concat(string memory a, string memory b) internal pure returns (string memory) {
@@ -89,6 +92,12 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param newFee New fee
      */
     event JoiningFeeChanged(uint256 newFee);
+
+    /**
+     * @dev Emitted when beneficiary is changed
+     * @param newBeneficiary New beneficiary
+     */
+    event BeneficiaryChanged(address newBeneficiary);
 
     /**
      * @dev Emitted when someone joins the pool
@@ -262,6 +271,15 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     }
 
     /**
+     * @dev set beneficiary
+     * @param newBeneficiary new beneficiary
+     */
+    function setBeneficiary(address newBeneficiary) external onlyOwner {
+        beneficiary = newBeneficiary;
+        emit BeneficiaryChanged(newBeneficiary);
+    }
+
+    /**
      * @dev Join the pool by depositing tokens
      * @param amount amount of token to deposit
      */
@@ -423,9 +441,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
     /**
      * @dev Claim fees from the pool
-     * @param beneficiary account to send funds to
      */
-    function collectFees(address beneficiary) external onlyOwner {
+    function collectFees() external {
+        require(beneficiary != address(0), "TrueFiPool: Beneficiary is not set");
+
         uint256 amount = claimableFees;
         claimableFees = 0;
 
