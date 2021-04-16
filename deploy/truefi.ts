@@ -69,10 +69,9 @@ deploy({}, (deployer, config) => {
   if (true) {
     trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
   }
-  // TODO figure out what's going wrong with deploying TrueLender
-  // const trueLender = proxy(contract('trueLender', TrueLender), 'initialize',
-  //   [trueFiPool, trueRatingAgencyV2, stkTruToken],
-  // )
+  const trueLender = proxy(contract('trueLender', TrueLender), 'initialize',
+    [trueFiPool, trueRatingAgencyV2, stkTruToken],
+  )
   const timelock = proxy(contract(Timelock), 'initialize',
     [TIMELOCK_ADMIN, TIMELOCK_DELAY],
   )
