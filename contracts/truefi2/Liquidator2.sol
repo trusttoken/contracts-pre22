@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
+import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueFiPoolOracle} from "./interface/ITrueFiPoolOracle.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
@@ -29,7 +30,6 @@ contract Liquidator2 is UpgradeableClaimable {
     IPoolFactory public poolFactory;
     IStakingPool public stkTru;
     IERC20 public tru;
-    ITrueFiPoolOracle public oracle;
     ILoanFactory2 public loanFactory;
 
     // max share of tru to be taken from staking pool during liquidation
@@ -45,12 +45,6 @@ contract Liquidator2 is UpgradeableClaimable {
     event FetchMaxShareChanged(uint256 newShare);
 
     /**
-     * @dev Emitted when oracle is changed
-     * @param newOracle New oracle address
-     */
-    event OracleChanged(ITrueFiPoolOracle newOracle);
-
-    /**
      * @dev Emitted when a loan gets liquidated
      * @param loan Loan that has been liquidated
      */
@@ -63,7 +57,6 @@ contract Liquidator2 is UpgradeableClaimable {
         IPoolFactory _poolFactory,
         IStakingPool _stkTru,
         IERC20 _tru,
-        ITrueFiPoolOracle _oracle,
         ILoanFactory2 _loanFactory
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
@@ -71,7 +64,6 @@ contract Liquidator2 is UpgradeableClaimable {
         poolFactory = _poolFactory;
         stkTru = _stkTru;
         tru = _tru;
-        oracle = _oracle;
         loanFactory = _loanFactory;
         fetchMaxShare = 1000;
     }
@@ -88,26 +80,16 @@ contract Liquidator2 is UpgradeableClaimable {
     }
 
     /**
-     * @dev Change oracle
-     * @param newOracle New oracle for liquidator
-     */
-    function setOracle(ITrueFiPoolOracle newOracle) external onlyOwner {
-        // Check if new oracle implements method
-        require(newOracle.tokenToTru(1 ether) > 0, "Liquidator: Oracle lacks usdToTru method");
-
-        oracle = newOracle;
-
-        emit OracleChanged(newOracle);
-    }
-
-    /**
      * @dev Liquidates a defaulted Loan, withdraws a portion of tru from staking pool
      * then transfers tru to TrueFiPool as compensation
      * @param loan Loan to be liquidated
      */
     function liquidate(ILoanToken2 loan) external {
         require(loanFactory.isLoanToken(address(loan)), "Liquidator: Unknown loan");
-        uint256 defaultedValue = getAmountToWithdraw(loan.debt().sub(loan.repaid()));
+        uint256 defaultedValue = getAmountToWithdraw(
+            loan.debt().sub(loan.repaid()),
+            ITrueFiPoolOracle(ITrueFiPool2(loan.pool()).oracle())
+        );
         stkTru.withdraw(defaultedValue);
         require(loan.status() == ILoanToken2.Status.Defaulted, "Liquidator: Loan must be defaulted");
         loan.liquidate();
@@ -120,7 +102,7 @@ contract Liquidator2 is UpgradeableClaimable {
      * @param deficit Amount of tusd lost on defaulted loan
      * @return amount of TRU to be withdrawn on liquidation
      */
-    function getAmountToWithdraw(uint256 deficit) internal view returns (uint256) {
+    function getAmountToWithdraw(uint256 deficit, ITrueFiPoolOracle oracle) internal view returns (uint256) {
         uint256 stakingPoolSupply = stkTru.stakeSupply();
         uint256 maxWithdrawValue = stakingPoolSupply.mul(fetchMaxShare).div(10000);
         uint256 deficitInTru = oracle.tokenToTru(deficit);

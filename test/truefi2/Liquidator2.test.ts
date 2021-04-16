@@ -4,7 +4,7 @@ import { Liquidator2 } from 'contracts/types/Liquidator2'
 import { Liquidator2Factory } from 'contracts/types/Liquidator2Factory'
 import { MockTrueFiPoolOracle } from 'contracts/types/MockTrueFiPoolOracle'
 import { MockTrueFiPoolOracleFactory } from 'contracts/types/MockTrueFiPoolOracleFactory'
-import { MockProvider, solidity } from 'ethereum-waffle'
+import { MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { Deployer, setupDeploy } from 'scripts/utils'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
@@ -26,6 +26,7 @@ describe('Liquidator2', () => {
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
   let lender: TrueLender2
+  let rater: MockContract
   let oracle: MockTrueFiPoolOracle
 
   beforeEachWithFixture(async (wallets, _provider) => {
@@ -42,7 +43,7 @@ describe('Liquidator2', () => {
     token = await deployContract(MockTrueCurrencyFactory)
     oracle = await deployContract(MockTrueFiPoolOracleFactory, token.address)
 
-    await liquidator.initialize(poolFactory.address, stkTru.address, tru.address, oracle.address, loanFactory.address)
+    await liquidator.initialize(poolFactory.address, stkTru.address, tru.address, loanFactory.address)
   })
 
   describe('Initializer', () => {
@@ -56,10 +57,6 @@ describe('Liquidator2', () => {
 
     it('sets tru address correctly', async () => {
       expect(await liquidator.tru()).to.equal(tru.address)
-    })
-
-    it('sets oracle address correctly', async () => {
-      expect(await liquidator.oracle()).to.equal(oracle.address)
     })
 
     it('sets loanFactory address correctly', async () => {
