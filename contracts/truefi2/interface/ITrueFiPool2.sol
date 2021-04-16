@@ -15,6 +15,12 @@ interface ITrueFiPool2 is IERC20 {
     function token() external view returns (IERC20);
 
     /**
+     * @dev Join the pool by depositing tokens
+     * @param amount amount of tokens to deposit
+     */
+    function join(uint256 amount) external;
+
+    /**
      * @dev borrow from pool
      * 1. Transfer TUSD to sender
      * 2. Only lending pool should be allowed to call this
