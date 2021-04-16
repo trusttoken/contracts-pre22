@@ -55,24 +55,24 @@
       "address": "0x591F55835e2514a58eA430B253db783115dad789"
     },
     "stkTru": {
-      "txHash": "0x97121f41f7e870642d8496b47953804a88b65e05a8dee4225ab7ce93438ae6b2",
-      "address": "0xb899FB2116fAD3f624C093015A7356840d07DfD2"
+      "txHash": "0xa1dab1af3b0e6348022756c09e24840fcf772b7380f9cb14d84ea6ec9f1e97dc",
+      "address": "0xC1fE31f31646960b76cBeCB23444d6Decf3f75fd"
     },
     "stkTru_proxy": {
       "txHash": "0x7c2d5b7e423c800a906c6877ecab38cdd39cba5f8419276287479d484c96471f",
       "address": "0xccf081F684b3481503080Ca4240F76d8381A7eF5"
     },
     "timelock": {
-      "txHash": "0xf4f66294c91f0a33c2b7ed2a9c9e3c5369e2ef933e74b47d7720347a49fd5796",
-      "address": "0xc89405a3f8A9b7C55F554d6fF4A43BC8486A9214"
+      "txHash": "0x9ce49a1e5efaa2c9552022083cad438468d323040c779a8bf31839087734b394",
+      "address": "0xC71b8FbeF6F8394ce76324B0F22e278732843109"
     },
     "timelock_proxy": {
       "txHash": "0xfed3f603aa74e82343cee41b545275d4aecc01183f24d707333125a5d1f4a2ca",
       "address": "0x418Daf88CCfe083324f8c91e6FE8da3e86d9a182"
     },
     "governorAlpha": {
-      "txHash": "0x82a52b075bf5f29749895cd4c6370a3e6112ee2a67216f1c1a4d437a44f9af06",
-      "address": "0xc223F61FD8d9AC4b730B280B0e9B0f7F47c88537"
+      "txHash": "0xc555907bd13be68fdcf70287809816b344a5f5ba6942bfaaba9430a8e1236131",
+      "address": "0xb68c7020e6021F83Ae20e9D8E95b77eb597AAf51"
     },
     "governorAlpha_proxy": {
       "txHash": "0xd55e5ecfbed2510096f237603d7ee96edb58df905f833d7453b006faa7f1c78d",
@@ -113,6 +113,14 @@
     "ratingAgency": {
       "txHash": "0x9e0a5c58c369ec6b5499d05f9f4f127dcf9e52436c1e601a2c1700b9de86898d",
       "address": "0x3a877100BA78198a0cb7269C65bf7313D8A8Fa82"
+    },
+    "testTru": {
+      "txHash": "0xb48866f845db4248cf9413f41587c546acd896ffa680cf9b8364457adff49a5b",
+      "address": "0x90c33ef2CfDc90266997b84a8EbaC616B1F89C2b"
+    },
+    "testTru_proxy": {
+      "txHash": "0x6ceef6f50a1cbad2320d47b7a4745f0a58f523e9052901f4032d93762ff0b9a5",
+      "address": "0x8695B9e52a79f12E032928ee4611567c74295dFD"
     }
   },
   "mainnet": {
