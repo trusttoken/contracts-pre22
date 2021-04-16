@@ -680,7 +680,6 @@ describe('TrueFiPool2', () => {
     it('only lender can be caller', async () => {
       await expect(pool.connect(owner).repay(0))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender')
-
       await lender.reclaim(loan.address, '0x')
       expect('repay').to.be.calledOnContract(pool)
     })
