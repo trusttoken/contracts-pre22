@@ -37,7 +37,7 @@ describe('TrueFiPool2', () => {
   let owner: Wallet
   let borrower: Wallet
   let tusd: MockErc20Token
-  let stakingToken: StkTruToken
+  let liquidationToken: StkTruToken
   let implementationReference: ImplementationReference
   let poolImplementation: TrueFiPool2
   let pool: TrueFiPool2
@@ -53,7 +53,7 @@ describe('TrueFiPool2', () => {
     [owner, borrower] = wallets
     deployContract = setupDeploy(owner)
 
-    stakingToken = await deployContract(StkTruTokenFactory)
+    liquidationToken = await deployContract(StkTruTokenFactory)
     tusd = await deployContract(MockErc20TokenFactory)
     poolFactory = await deployContract(PoolFactoryFactory)
     poolImplementation = await deployContract(TrueFiPool2Factory)
@@ -61,18 +61,18 @@ describe('TrueFiPool2', () => {
     lender = await deployContract(TrueLender2Factory)
     rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
 
-    await poolFactory.initialize(implementationReference.address, stakingToken.address, lender.address)
+    await poolFactory.initialize(implementationReference.address, liquidationToken.address, lender.address)
     await poolFactory.whitelist(tusd.address, true)
     await poolFactory.createPool(tusd.address)
 
     pool = poolImplementation.attach(await poolFactory.pool(tusd.address))
 
     const distributor = await deployContract(LinearTrueDistributorFactory)
-    await stakingToken.initialize(stakingToken.address, pool.address, AddressZero, distributor.address, AddressZero)
+    await liquidationToken.initialize(liquidationToken.address, pool.address, AddressZero, distributor.address, AddressZero)
 
-    await lender.initialize(stakingToken.address, poolFactory.address, rater.address, AddressZero, pool.address)
+    await lender.initialize(liquidationToken.address, poolFactory.address, rater.address, AddressZero, pool.address)
     await lender.setFee(0)
-    await stakingToken.setPayerWhitelistingStatus(lender.address, true)
+    await liquidationToken.setPayerWhitelistingStatus(lender.address, true)
 
     poolStrategy1 = await deployContract(MockStrategyFactory, tusd.address, pool.address)
     poolStrategy2 = await deployContract(MockStrategyFactory, tusd.address, pool.address)
@@ -98,7 +98,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('sets staking token', async () => {
-      expect(await pool.stakingToken()).to.eq(stakingToken.address)
+      expect(await pool.liquidationToken()).to.eq(liquidationToken.address)
     })
 
     it('sets lender', async () => {
