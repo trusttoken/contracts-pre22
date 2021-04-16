@@ -29,7 +29,7 @@ import { parseEth } from 'utils/parseEth'
 import { AddressZero } from '@ethersproject/constants'
 import { DAY, expectCloseTo, expectScaledCloseTo, parseTRU, timeTravel } from 'utils'
 import { Deployer, setupDeploy } from 'scripts/utils'
-import { TrueRatingAgencyV2Json } from 'build/'
+import { TrueRatingAgencyV2Json } from 'build'
 
 use(solidity)
 
@@ -236,7 +236,7 @@ describe('TrueFiPool2', () => {
     it('liquidationTokenValue is not part of liquidValue but a part of poolValue', async () => {
       await liquidationToken.mint(pool.address, 1000)
       const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
-      await mockOracle.mock.tokenToTru.returns(500)
+      await mockOracle.mock.truToToken.returns(500)
       await pool.setOracle(mockOracle.address)
       expect(await pool.liquidValue()).to.eq(0)
       expect(await pool.poolValue()).to.eq(withToleratedSlippage(BigNumber.from(500)))
@@ -592,7 +592,7 @@ describe('TrueFiPool2', () => {
 
     it('funds for deposit should go directly into strategy', async () => {
       await pool.connect(owner).switchStrategy(badPoolStrategy.address)
-      await badPoolStrategy.setErrorPercents(3)
+      await badPoolStrategy.setErrorPercents(5)
       await expect(pool.flush(1000))
         .to.be.revertedWith('TrueFiPool: Strategy value expected to be higher')
       await badPoolStrategy.setErrorPercents(0)
@@ -791,7 +791,7 @@ describe('TrueFiPool2', () => {
     it('all funds should be withdrawn to pool', async () => {
       await pool.connect(owner).switchStrategy(badPoolStrategy.address)
       await pool.flush(1000)
-      await badPoolStrategy.setErrorPercents(3)
+      await badPoolStrategy.setErrorPercents(5)
       await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
         .to.be.revertedWith('TrueFiPool: All funds should be withdrawn to pool')
       await badPoolStrategy.setErrorPercents(0)
