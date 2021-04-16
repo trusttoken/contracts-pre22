@@ -268,6 +268,19 @@ describe('TrueFiPool2', () => {
     })
   })
 
+  describe('setOracle', () => {
+    const oracle = Wallet.createRandom().address
+
+    it('sets oracle', async () => {
+      await pool.setOracle(oracle)
+      expect(await pool.oracle()).to.equal(oracle)
+    })
+
+    it('reverts when called not by owner', async () => {
+      await expect(pool.connect(borrower).setOracle(oracle)).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+  })
+
   describe('setBeneficiary', () => {
     it('sets beneficiary', async () => {
       await pool.setBeneficiary(owner.address)
