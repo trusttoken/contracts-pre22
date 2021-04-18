@@ -33,4 +33,13 @@ contract Mock1InchV3 is I1Inch3 {
         MintableErc20(description.dstToken).mint(msg.sender, outputAmount);
         return (outputAmount, 0, 0);
     }
+
+    function unoswap(
+        address,
+        uint256,
+        uint256,
+        bytes32[] calldata
+    ) external override payable returns (uint256) {
+        return 0;
+    }
 }
