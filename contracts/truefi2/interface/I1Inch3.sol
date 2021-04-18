@@ -25,4 +25,11 @@ interface I1Inch3 {
             uint256 gasLeft,
             uint256 chiSpent
         );
+
+    function unoswap(
+        address srcToken,
+        uint256 amount,
+        uint256 minReturn,
+        bytes32[] calldata /* pools */
+    ) external payable returns (uint256 returnAmount);
 }

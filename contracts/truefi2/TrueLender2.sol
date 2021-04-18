@@ -107,6 +107,12 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     event FeeChanged(uint256 newFee);
 
     /**
+     * @dev Emitted when loan fee pool is changed
+     * @param newFeePool New fee pool address
+     */
+    event FeePoolChanged(ITrueFiPool2 newFeePool);
+
+    /**
      * @dev Emitted when a loan is funded
      * @param loanToken LoanToken contract which was funded
      * @param amount Amount funded
@@ -126,14 +132,12 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param _factory PoolFactory address
      * @param _ratingAgency TrueRatingAgencyV2 address
      * @param __1inch 1Inch exchange address (0x11111112542d85b3ef69ae05771c2dccff4faa26 for mainnet)
-     * @param _feePool TrueFiPool on feeToken
      */
     function initialize(
         IStakingPool _stakingPool,
         IPoolFactory _factory,
         ITrueRatingAgency _ratingAgency,
-        I1Inch3 __1inch,
-        ITrueFiPool2 _feePool
+        I1Inch3 __1inch
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -141,15 +145,11 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         factory = _factory;
         ratingAgency = _ratingAgency;
         _1inch = __1inch;
-        feeToken = IERC20WithDecimals(address(_feePool.token()));
-        feePool = _feePool;
 
         minVotes = 15 * (10**6) * (10**8);
         minRatio = 8000;
         votingPeriod = 7 days;
         fee = 1000;
-        // Assume feeToken is USD stablecoin and interest is not below 1000USD
-        minFee = 100 * (10**feeToken.decimals());
         maxLoans = 100;
     }
 
@@ -189,6 +189,19 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     function setLoansLimit(uint256 newLoansLimit) external onlyOwner {
         maxLoans = newLoansLimit;
         emit LoansLimitChanged(maxLoans);
+    }
+
+    /**
+     * @dev Set new fee pool and fee token.
+     * Only owner can change parameters
+     * @param newFeePool new pool address
+     */
+    function setFeePool(ITrueFiPool2 newFeePool) external onlyOwner {
+        feeToken = IERC20WithDecimals(address(newFeePool.token()));
+        feePool = newFeePool;
+        // Assume feeToken is USD stablecoin and interest is not below 1000USD
+        minFee = 100 * (10**feeToken.decimals());
+        emit FeePoolChanged(newFeePool);
     }
 
     /**
@@ -306,14 +319,20 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
         // gets reclaimed amount and pays back to pool
         fundsReclaimed = balanceAfter.sub(balanceBefore);
-        // swap fee for feeToken
-        uint256 feeAmount = _swapFee(pool.token(), loanToken, data);
+
+        uint256 feeAmount = 0;
+        if (address(feeToken) != address(0)) {
+            // swap fee for feeToken
+            feeAmount = _swapFee(pool.token(), loanToken, data);
+        }
 
         pool.token().approve(address(pool), fundsReclaimed.sub(feeAmount));
         pool.repay(fundsReclaimed.sub(feeAmount));
 
-        // join pool and reward stakers
-        _transferFeeToStakers();
+        if (address(feeToken) != address(0)) {
+            // join pool and reward stakers
+            _transferFeeToStakers();
+        }
     }
 
     /// @dev Swap `token` for `feeToken` on 1inch
