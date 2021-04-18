@@ -20,6 +20,7 @@ import {
   TrueLender2Factory,
   Pool2ArbitrageTestFactory,
   StkTruToken,
+  ITrueFiPoolOracleJson,
 } from 'contracts'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -28,7 +29,7 @@ import { parseEth } from 'utils/parseEth'
 import { AddressZero } from '@ethersproject/constants'
 import { DAY, expectCloseTo, expectScaledCloseTo, parseTRU, timeTravel } from 'utils'
 import { Deployer, setupDeploy } from 'scripts/utils'
-import { TrueRatingAgencyV2Json } from 'build/'
+import { TrueRatingAgencyV2Json } from 'build'
 
 use(solidity)
 
@@ -37,7 +38,8 @@ describe('TrueFiPool2', () => {
   let owner: Wallet
   let borrower: Wallet
   let tusd: MockErc20Token
-  let liquidationToken: StkTruToken
+  let stakingPool: StkTruToken
+  let liquidationToken: MockErc20Token
   let implementationReference: ImplementationReference
   let poolImplementation: TrueFiPool2
   let pool: TrueFiPool2
@@ -53,7 +55,8 @@ describe('TrueFiPool2', () => {
     [owner, borrower] = wallets
     deployContract = setupDeploy(owner)
 
-    liquidationToken = await deployContract(StkTruTokenFactory)
+    stakingPool = await deployContract(StkTruTokenFactory)
+    liquidationToken = await deployContract(MockErc20TokenFactory)
     tusd = await deployContract(MockErc20TokenFactory)
     poolFactory = await deployContract(PoolFactoryFactory)
     poolImplementation = await deployContract(TrueFiPool2Factory)
@@ -68,11 +71,11 @@ describe('TrueFiPool2', () => {
     pool = poolImplementation.attach(await poolFactory.pool(tusd.address))
 
     const distributor = await deployContract(LinearTrueDistributorFactory)
-    await liquidationToken.initialize(liquidationToken.address, pool.address, AddressZero, distributor.address, AddressZero)
+    await stakingPool.initialize(stakingPool.address, pool.address, AddressZero, distributor.address, AddressZero)
 
-    await lender.initialize(liquidationToken.address, poolFactory.address, rater.address, AddressZero, pool.address)
+    await lender.initialize(stakingPool.address, poolFactory.address, rater.address, AddressZero)
     await lender.setFee(0)
-    await liquidationToken.setPayerWhitelistingStatus(lender.address, true)
+    await stakingPool.setPayerWhitelistingStatus(lender.address, true)
 
     poolStrategy1 = await deployContract(MockStrategyFactory, tusd.address, pool.address)
     poolStrategy2 = await deployContract(MockStrategyFactory, tusd.address, pool.address)
@@ -87,9 +90,9 @@ describe('TrueFiPool2', () => {
     (await tusd.balanceOf(pool.address)).sub(await pool.claimableFees())
   )
 
-  const withToleratedError = (number: BigNumber) => {
-    const error = 2
-    return number.mul(10000 - error * 100).div(10000)
+  const withToleratedSlippage = (number: BigNumber) => {
+    const slippage = 4
+    return number.mul(100 - slippage).div(100)
   }
 
   describe('initializer', () => {
@@ -97,7 +100,7 @@ describe('TrueFiPool2', () => {
       expect(await pool.token()).to.equal(tusd.address)
     })
 
-    it('sets staking token', async () => {
+    it('sets liquidation token', async () => {
       expect(await pool.liquidationToken()).to.eq(liquidationToken.address)
     })
 
@@ -207,6 +210,36 @@ describe('TrueFiPool2', () => {
       await pool.switchStrategy(poolStrategy1.address)
       await pool.flush(1000)
       expect(await pool.strategyValue()).to.eq(1000)
+    })
+  })
+
+  describe('liquidationTokenValue', () => {
+    it('returns 0 when pool holds no TRU', async () => {
+      expect(await pool.liquidationTokenValue()).to.eq(0)
+    })
+
+    it('returns 0 when pool has no oracle', async () => {
+      await liquidationToken.mint(pool.address, 1000)
+      expect(await pool.liquidationTokenBalance()).to.eq(1000)
+      expect(await pool.liquidationTokenValue()).to.eq(0)
+    })
+
+    it('converts TRU to pool token value using oracle and returns value - 2%', async () => {
+      await liquidationToken.mint(pool.address, 1000)
+      const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
+      await mockOracle.mock.truToToken.returns(500)
+      await pool.setOracle(mockOracle.address)
+      expect(await pool.liquidationTokenValue()).to.eq(withToleratedSlippage(BigNumber.from(500)))
+      expect('truToToken').to.be.calledOnContractWith(mockOracle, [1000])
+    })
+
+    it('liquidationTokenValue is not part of liquidValue but a part of poolValue', async () => {
+      await liquidationToken.mint(pool.address, 1000)
+      const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
+      await mockOracle.mock.truToToken.returns(500)
+      await pool.setOracle(mockOracle.address)
+      expect(await pool.liquidValue()).to.eq(0)
+      expect(await pool.poolValue()).to.eq(withToleratedSlippage(BigNumber.from(500)))
     })
   })
 
@@ -559,7 +592,7 @@ describe('TrueFiPool2', () => {
 
     it('funds for deposit should go directly into strategy', async () => {
       await pool.connect(owner).switchStrategy(badPoolStrategy.address)
-      await badPoolStrategy.setErrorPercents(3)
+      await badPoolStrategy.setErrorPercents(5)
       await expect(pool.flush(1000))
         .to.be.revertedWith('TrueFiPool: Strategy value expected to be higher')
       await badPoolStrategy.setErrorPercents(0)
@@ -758,7 +791,7 @@ describe('TrueFiPool2', () => {
     it('all funds should be withdrawn to pool', async () => {
       await pool.connect(owner).switchStrategy(badPoolStrategy.address)
       await pool.flush(1000)
-      await badPoolStrategy.setErrorPercents(3)
+      await badPoolStrategy.setErrorPercents(5)
       await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
         .to.be.revertedWith('TrueFiPool: All funds should be withdrawn to pool')
       await badPoolStrategy.setErrorPercents(0)
@@ -766,7 +799,7 @@ describe('TrueFiPool2', () => {
       await pool.connect(owner).switchStrategy(poolStrategy1.address)
       await pool.flush(1000)
       const expectedMinCurrencyBalance = (await currencyBalanceOf(pool))
-        .add(withToleratedError(await poolStrategy1.value()))
+        .add(withToleratedSlippage(await poolStrategy1.value()))
       await expect(pool.connect(owner).switchStrategy(poolStrategy2.address))
         .not.to.be.reverted
       expect(await currencyBalanceOf(pool))

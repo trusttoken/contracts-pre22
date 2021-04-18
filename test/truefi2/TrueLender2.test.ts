@@ -100,7 +100,7 @@ describe('TrueLender2', () => {
     pool1 = TrueFiPool2Factory.connect(await poolFactory.pool(token1.address), owner)
     pool2 = TrueFiPool2Factory.connect(await poolFactory.pool(token2.address), owner)
     counterfeitPool = await deployContract(owner, TrueFiPool2Factory)
-    await counterfeitPool.initialize(token1.address, AddressZero, lender.address, owner.address)
+    await counterfeitPool.initialize(token1.address, AddressZero, lender.address, AddressZero, owner.address)
     feePool = TrueFiPool2Factory.connect(await poolFactory.pool(usdc.address), owner)
 
     const tfusd = await deployContract(owner, MockTrueCurrencyFactory) // just for testing, change this in origination fees development
@@ -109,7 +109,8 @@ describe('TrueLender2', () => {
 
     rater = await deployContract(owner, TrueRatingAgencyV2Factory)
     oneInch = await new Mock1InchV3Factory(owner).deploy()
-    await lender.initialize(stkTru.address, poolFactory.address, rater.address, oneInch.address, feePool.address)
+    await lender.initialize(stkTru.address, poolFactory.address, rater.address, oneInch.address)
+    await lender.setFeePool(feePool.address)
 
     arbitraryDistributor = await deployContract(owner, ArbitraryDistributorFactory)
     await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(1e7))
@@ -224,6 +225,32 @@ describe('TrueLender2', () => {
 
       it('must be called by owner', async () => {
         await expect(lender.connect(borrower).setFee(1234)).to.be.revertedWith('caller is not the owner')
+      })
+    })
+
+    describe('setFeePool', () => {
+      it('changes feePool', async () => {
+        await lender.setFeePool(pool2.address)
+        expect(await lender.feePool()).to.equal(pool2.address)
+      })
+
+      it('changes feeToken', async () => {
+        await lender.setFeePool(pool2.address)
+        expect(await lender.feeToken()).to.equal(token2.address)
+      })
+
+      it('changes minFee', async () => {
+        await lender.setFeePool(pool2.address)
+        expect(await lender.minFee()).to.equal(parseEth(100))
+      })
+
+      it('emits FeePoolChanged', async () => {
+        await expect(lender.setFeePool(pool2.address))
+          .to.emit(lender, 'FeePoolChanged').withArgs(pool2.address)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setFeePool(pool2.address)).to.be.revertedWith('caller is not the owner')
       })
     })
 

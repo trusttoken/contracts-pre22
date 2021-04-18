@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
+pragma experimental ABIEncoderV2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
@@ -8,9 +9,11 @@ import {ERC20} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
-import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
+import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
+
 import {ABDKMath64x64} from "../truefi/Log.sol";
+import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
 /**
  * @title TrueFiPool2
@@ -29,6 +32,8 @@ import {ABDKMath64x64} from "../truefi/Log.sol";
 contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+    using OneInchExchange for I1Inch3;
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -61,15 +66,18 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     uint256 private strategyValueCache;
     uint256 private loansValueCache;
 
-    // tolerance difference (percents) between
-    // expected and actual transaction results
-    // when dealing with strategies
-    uint8 public constant TOLERATED_STRATEGY_ERROR = 98;
-
     // who gets all fees
     address public beneficiary;
 
+    I1Inch3 public _1Inch;
+
     // ======= STORAGE DECLARATION END ===========
+
+    // tolerance difference (percents) between
+    // expected and actual transaction results
+    // when dealing with strategies
+    // and slippage on liquidation token price estimation
+    uint8 public constant TOLERATED_SLIPPAGE = 4;
 
     function concat(string memory a, string memory b) internal pure returns (string memory) {
         return string(abi.encodePacked(a, b));
@@ -79,6 +87,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         ERC20 _token,
         ERC20 _liquidationToken,
         ITrueLender2 _lender,
+        I1Inch3 __1Inch,
         address __owner
     ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
@@ -87,6 +96,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         token = _token;
         liquidationToken = _liquidationToken;
         lender = _lender;
+        _1Inch = __1Inch;
     }
 
     /**
@@ -238,7 +248,28 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      */
     function poolValue() public view returns (uint256) {
         // this assumes defaulted loans are worth their full value
-        return liquidValue().add(loansValue());
+        return liquidValue().add(loansValue()).add(liquidationTokenValue());
+    }
+
+    /**
+     * @dev Get total balance of stake tokens
+     * @return Balance of stake tokens in this contract
+     */
+    function liquidationTokenBalance() public view returns (uint256) {
+        return liquidationToken.balanceOf(address(this));
+    }
+
+    /**
+     * @dev Price of TRU in USD
+     * @return Oracle price of TRU in USD
+     */
+    function liquidationTokenValue() public view returns (uint256) {
+        uint256 balance = liquidationTokenBalance();
+        if (balance == 0 || address(oracle) == address(0)) {
+            return 0;
+        }
+        // Use conservative price estimation to avoid pool being overvalued
+        return withToleratedSlippage(oracle.truToToken(balance));
     }
 
     /**
@@ -401,7 +432,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
-        uint256 expectedMinStrategyValue = strategy.value().add(withToleratedError(amount));
+        uint256 expectedMinStrategyValue = strategy.value().add(withToleratedSlippage(amount));
         token.approve(address(strategy), amount);
         strategy.deposit(amount);
         require(strategy.value() >= expectedMinStrategyValue, "TrueFiPool: Strategy value expected to be higher");
@@ -475,7 +506,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         emit StrategySwitched(newStrategy);
 
         if (address(previousStrategy) != address(0)) {
-            uint256 expectedMinCurrencyBalance = currencyBalance().add(withToleratedError(previousStrategy.value()));
+            uint256 expectedMinCurrencyBalance = currencyBalance().add(withToleratedSlippage(previousStrategy.value()));
             previousStrategy.withdrawAll();
             require(currencyBalance() >= expectedMinCurrencyBalance, "TrueFiPool: All funds should be withdrawn to pool");
             require(previousStrategy.value() == 0, "TrueFiPool: Switched strategy should be depleted");
@@ -488,6 +519,21 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     function setOracle(ITrueFiPoolOracle newOracle) external onlyOwner {
         oracle = newOracle;
         emit OracleChanged(newOracle);
+    }
+
+    function sellLiquidationToken(bytes calldata data) external {
+        uint256 balanceBefore = token.balanceOf(address(this));
+
+        I1Inch3.SwapDescription memory swap = _1Inch.exchange(data);
+
+        uint256 expectedGain = oracle.truToToken(swap.amount);
+
+        uint256 balanceDiff = token.balanceOf(address(this)).sub(balanceBefore);
+        require(balanceDiff >= withToleratedSlippage(expectedGain), "TrueFiPool: Not optimal exchange");
+
+        require(swap.srcToken == address(liquidationToken), "TrueFiPool: Source token is not TRU");
+        require(swap.dstToken == address(token), "TrueFiPool: Destination token is not TUSD");
+        require(swap.dstReceiver == address(this), "TrueFiPool: Receiver is not pool");
     }
 
     /**
@@ -523,7 +569,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param amount Amount to decrease
      * @return Calculated value
      */
-    function withToleratedError(uint256 amount) internal pure returns (uint256) {
-        return amount.mul(TOLERATED_STRATEGY_ERROR).div(100);
+    function withToleratedSlippage(uint256 amount) internal pure returns (uint256) {
+        return amount.mul(100 - TOLERATED_SLIPPAGE).div(100);
     }
 }
