@@ -21,6 +21,9 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 contract Liquidator2 is UpgradeableClaimable {
     using SafeMath for uint256;
 
+    // 10000 means 100%
+    uint256 public constant BASIS_PRECISION = 10000;
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -74,7 +77,7 @@ contract Liquidator2 is UpgradeableClaimable {
      */
     function setFetchMaxShare(uint256 newShare) external onlyOwner {
         require(newShare > 0, "Liquidator: Share cannot be set to 0");
-        require(newShare <= 10000, "Liquidator: Share cannot be larger than 10000");
+        require(newShare <= BASIS_PRECISION, "Liquidator: Share cannot be larger than 10000");
         fetchMaxShare = newShare;
         emit FetchMaxShareChanged(newShare);
     }
@@ -102,7 +105,7 @@ contract Liquidator2 is UpgradeableClaimable {
      */
     function getAmountToWithdraw(uint256 deficit, ITrueFiPoolOracle oracle) internal view returns (uint256) {
         uint256 stakingPoolSupply = stkTru.stakeSupply();
-        uint256 maxWithdrawValue = stakingPoolSupply.mul(fetchMaxShare).div(10000);
+        uint256 maxWithdrawValue = stakingPoolSupply.mul(fetchMaxShare).div(BASIS_PRECISION);
         uint256 deficitInTru = oracle.tokenToTru(deficit);
         return maxWithdrawValue > deficitInTru ? deficitInTru : maxWithdrawValue;
     }
