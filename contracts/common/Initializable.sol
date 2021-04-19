@@ -1,4 +1,5 @@
 // Copied from https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/v3.0.0/contracts/Initializable.sol
+// Added public isInitialized() view of private initialized bool.
 
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
@@ -58,6 +59,13 @@ contract Initializable {
             cs := extcodesize(self)
         }
         return cs == 0;
+    }
+
+    /**
+     * @dev Return true if and only if the contract has been initialized
+     */
+    function isInitialized() public view returns (bool) {
+        return initialized;
     }
 
     // Reserved storage space to allow for layout changes in the future.
