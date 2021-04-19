@@ -141,6 +141,24 @@ describe('StkTruToken', () => {
     })
   })
 
+  describe('setLiquidator', () => {
+    it('only owner', async () => {
+      await expect(stkToken.connect(staker).setLiquidator(staker.address))
+        .to.be.revertedWith('only owner')
+    })
+
+    it('sets liquidator', async () => {
+      await stkToken.setLiquidator(owner.address)
+      expect(await stkToken.liquidator()).to.eq(owner.address)
+    })
+
+    it('emits event', async () => {
+      await expect(stkToken.setLiquidator(owner.address))
+        .to.emit(stkToken, 'LiquidatorChanged')
+        .withArgs(owner.address)
+    })
+  })
+
   describe('setCooldownTime', () => {
     it('changes value', async () => {
       await stkToken.setCooldownTime(100)
