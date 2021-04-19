@@ -167,7 +167,7 @@ describe('Liquidator2', () => {
       await expect(liquidator.setTokenApproval(token.address, true))
         .to.emit(liquidator, 'WhitelistStatusChanged')
         .withArgs(token.address, true)
-      
+
       await expect(liquidator.setTokenApproval(token.address, false))
         .to.emit(liquidator, 'WhitelistStatusChanged')
         .withArgs(token.address, false)
@@ -194,23 +194,23 @@ describe('Liquidator2', () => {
       it('loan is not defaulted', async () => {
         await expect(liquidator.liquidate(loan.address))
           .to.be.revertedWith('Liquidator: Loan must be defaulted')
-  
+
         await timeTravel(provider, defaultedLoanCloseTime)
         await expect(liquidator.liquidate(loan.address))
           .to.be.revertedWith('Liquidator: Loan must be defaulted')
       })
-  
+
       it('loan was not created via factory', async () => {
         const fakeLoan = await deployContract(LoanToken2Factory, pool.address, borrower.address, borrower.address, liquidator.address, parseEth(1000), YEAR, 1000)
         await token.connect(borrower).approve(fakeLoan.address, parseEth(1000))
         await fakeLoan.connect(borrower).fund()
         await timeTravel(provider, defaultedLoanCloseTime)
         await fakeLoan.enterDefault()
-  
+
         await expect(liquidator.liquidate(fakeLoan.address))
           .to.be.revertedWith('Liquidator: Unknown loan')
       })
-  
+
       it('token is not whitelisted', async () => {
         await liquidator.setTokenApproval(token.address, false)
         await timeTravel(provider, defaultedLoanCloseTime)
@@ -219,7 +219,6 @@ describe('Liquidator2', () => {
           .to.be.revertedWith('Liquidator: Token not approved for default protection')
       })
     })
-
 
     it('changes loanToken status', async () => {
       await timeTravel(provider, defaultedLoanCloseTime)
