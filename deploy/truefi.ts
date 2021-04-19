@@ -61,7 +61,7 @@ deploy({}, (deployer, config) => {
     stkTruToken_LinearTrueDistributor.setFarm(stkTruToken)
   })
   runIf(stkTruToken.initalized().not(), () => {
-    stkTruToken.initialize(trustToken, trueFiPool, stkTruToken_LinearTrueDistributor, liquidator)
+    stkTruToken.initialize(trustToken, trueFiPool, trueFiPool, stkTruToken_LinearTrueDistributor, liquidator)
   })
   const trueRatingAgencyV2 = proxy(contract(TrueRatingAgencyV2), () => {})
   const ratingAgencyV2Distributor = proxy(contract(RatingAgencyV2Distributor), 'initialize',
