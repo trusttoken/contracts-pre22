@@ -107,7 +107,8 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         curveGauge.deposit(yBalance);
     }
 
-    /** @dev pull at least `minAmount` of tokens from strategy
+    /** 
+     * @dev pull at least `minAmount` of tokens from strategy
      * Remove token liquidity from curve and transfer to pool
      * @param minAmount Minimum amount of tokens to remove from strategy
      */
@@ -127,7 +128,8 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         transferAllToPool();
     }
 
-    /** @dev withdraw everything from strategy
+    /** 
+     *@dev withdraw everything from strategy
      * Use with caution because Curve slippage is not contolled
      */
     function withdrawAll() external override onlyPool {
@@ -213,7 +215,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     }
 
     /**
-     * @notice Expected amount of minted Curve.fi yDAI/yUSDC/yUSDT/yTUSD tokens.
+     * @dev Expected amount of minted Curve.fi yDAI/yUSDC/yUSDT/yTUSD tokens.
      * @param currencyAmount amount to calculate for
      * @return expected amount minted given currency amount
      */
