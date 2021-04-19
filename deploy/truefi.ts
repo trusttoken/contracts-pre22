@@ -38,20 +38,20 @@ deploy({}, (deployer, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
 
-  const trueUSD = proxy(contract('trueUSD', TrueUSD), () => {})
+  const trueUSD = proxy(contract(TrueUSD), () => {})
   const trustToken = is_mainnet ?
-    timeProxy(contract('trustToken', TrustToken), 'initialize',
+    timeProxy(contract(TrustToken), 'initialize',
       [],
-    ) : timeProxy(contract('testTrustToken', TestTrustToken), 'initialize',
+    ) : timeProxy(contract(TestTrustToken), 'initialize',
       [],
     )
-  const trueFiPool = proxy(contract('trueFiPool', TrueFiPool), () => {})
-  const stkTruToken = proxy(contract('stkTruToken', StkTruToken), () => {})
-  const truPriceOracle = contract('truPriceOracle', TruPriceOracle)
-  const loanFactory = proxy(contract('loanFactory', LoanFactory), 'initialize',
+  const trueFiPool = proxy(contract(TrueFiPool), () => {})
+  const stkTruToken = proxy(contract(StkTruToken), () => {})
+  const truPriceOracle = contract(TruPriceOracle)
+  const loanFactory = proxy(contract(LoanFactory), 'initialize',
     [trueUSD],
   )
-  const liquidator = proxy(contract('liquidator', Liquidator), 'initialize',
+  const liquidator = proxy(contract(Liquidator), 'initialize',
     [trueFiPool, stkTruToken, trustToken, truPriceOracle, loanFactory],
   )
   const stkTruToken_LinearTrueDistributor = proxy(contract('stkTruToken_LinearTrueDistributor', LinearTrueDistributor), 'initialize',
@@ -63,20 +63,20 @@ deploy({}, (deployer, config) => {
   runIf(stkTruToken.initalized().not(), () => {
     stkTruToken.initialize(trustToken, trueFiPool, stkTruToken_LinearTrueDistributor, liquidator)
   })
-  const trueRatingAgencyV2 = proxy(contract('trueRatingAgencyV2', TrueRatingAgencyV2), () => {})
-  const ratingAgencyV2Distributor = proxy(contract('ratingAgencyV2Distributor', RatingAgencyV2Distributor), 'initialize',
+  const trueRatingAgencyV2 = proxy(contract(TrueRatingAgencyV2), () => {})
+  const ratingAgencyV2Distributor = proxy(contract(RatingAgencyV2Distributor), 'initialize',
     [trueRatingAgencyV2, trustToken],
   )
   // TODO check whether trueRatingAgencyV2 has already been initialized, else this will revert
   trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
   // TODO figure out what's going wrong with deploying TrueLender
-  // const trueLender = proxy(contract('trueLender', TrueLender), 'initialize',
+  // const trueLender = proxy(contract(TrueLender), 'initialize',
   //   [trueFiPool, trueRatingAgencyV2, stkTruToken],
   // )
   const timelock = proxy(contract(Timelock), 'initialize',
     [TIMELOCK_ADMIN, TIMELOCK_DELAY],
   )
-  proxy(contract(GovernorAlpha), 'initialize',
+  const governorAlpha = proxy(contract(GovernorAlpha), 'initialize',
     [timelock, trustToken, stkTruToken, GOV_GUARDIAN, VOTING_PERIOD],
   )
 })

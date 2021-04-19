@@ -46,11 +46,11 @@
       "txHash": "0xb5bb26a5fdd37af79fc7438b6057b4b00bd818bc70c98fe453deda02008cd91b",
       "address": "0x6cfd71c324413BE57de75824D8BcfE68948c6572"
     },
-    "stkTruLinearTrueDistributor": {
+    "stkTruToken_LinearTrueDistributor": {
       "txHash": "0x94477f02f3aeb1c0299480b68e5ee04d495856b23308ab91e4f7faf621872edf",
       "address": "0xea3ae0fb787058722A4750805cE2cA502Fdb5cf6"
     },
-    "stkTruLinearTrueDistributor_proxy": {
+    "stkTruToken_LinearTrueDistributor_proxy": {
       "txHash": "0x14be1a69e1865f0de83c7c918727311469d2925ad774bd161de2fc656da1f0ba",
       "address": "0x591F55835e2514a58eA430B253db783115dad789"
     },
