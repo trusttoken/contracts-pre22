@@ -79,6 +79,12 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     // and slippage on liquidation token price estimation
     uint8 public constant TOLERATED_SLIPPAGE = 4;
 
+    /**
+     * @dev Helper function to concatenate two strings
+     * @param a First part of string to concat
+     * @param b Second part of string to concat
+     * @return Concatenated string of `a` and `b`
+     */
     function concat(string memory a, string memory b) internal pure returns (string memory) {
         return string(abi.encodePacked(a, b));
     }
