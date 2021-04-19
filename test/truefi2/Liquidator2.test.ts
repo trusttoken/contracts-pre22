@@ -270,12 +270,13 @@ describe('Liquidator2', () => {
     })
 
     it('emits event', async () => {
+      await stkTru.stake(parseTRU(1e3))
       await timeTravel(provider, defaultedLoanCloseTime)
       await loan.enterDefault()
 
       await expect(liquidator.liquidate(loan.address))
         .to.emit(liquidator, 'Liquidated')
-        .withArgs(loan.address)
+        .withArgs(loan.address, parseEth(1100), parseTRU(100))
     })
   })
 })
