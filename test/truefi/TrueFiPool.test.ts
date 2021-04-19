@@ -29,6 +29,7 @@ import {
   TrueRatingAgencyJson,
 } from 'build'
 import { AddressZero } from '@ethersproject/constants'
+import { MockTrueFiPoolOracleFactory } from 'contracts/types/MockTrueFiPoolOracleFactory'
 
 use(solidity)
 
@@ -70,7 +71,7 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.minter.returns(mockMinter.address)
     await mockMinter.mock.token.returns(mockCrv.address)
     lender = await new TrueLender__factory(owner).deploy()
-    const truOracle = await new MockTruPriceOracle__factory(owner).deploy()
+    const truOracle = await new MockTruPriceOracle__factory(owner).deploy(token.address)
     const crvOracle = await new MockCrvPriceOracle__factory(owner).deploy()
     await pool.initialize(
       curvePool.address,
@@ -391,18 +392,18 @@ describe('TrueFiPool', () => {
     })
 
     it('reverts if borrower is not a lender', async () => {
-      await expect(pool2.borrow(parseEth(1001), 0)).to.be.revertedWith('TrueFiPool: Caller is not the lender')
+      await expect(pool2['borrow(uint256,uint256)'](parseEth(1001), 0)).to.be.revertedWith('TrueFiPool: Caller is not the lender')
     })
 
     it('reverts if repayer is not a lender', async () => {
-      await pool2.connect(borrower).borrow(parseEth(1001), 0)
+      await pool2.connect(borrower)['borrow(uint256,uint256)'](parseEth(1001), 0)
       await expect(pool2.repay(parseEth(1001)))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender')
     })
 
     it('when borrowing less than trueCurrency balance, uses the balance', async () => {
       const borrowedAmount = parseEth(5e6)
-      await pool2.connect(borrower).borrow(borrowedAmount, 0)
+      await pool2.connect(borrower)['borrow(uint256,uint256)'](borrowedAmount, 0)
       expect(await token.balanceOf(borrower.address)).to.equal(borrowedAmount)
       expect(await token.balanceOf(pool2.address)).to.equal(await pool2.claimableFees())
 
@@ -415,14 +416,14 @@ describe('TrueFiPool', () => {
     it('when trueCurrency balance is not enough, withdraws from curve', async () => {
       await token.mint(curvePool.address, parseEth(2e6))
       await curvePool.set_withdraw_price(parseEth(1.5))
-      await pool2.connect(borrower).borrow(parseEth(6e6), 0)
+      await pool2.connect(borrower)['borrow(uint256,uint256)'](parseEth(6e6), 0)
       expect(await token.balanceOf(borrower.address)).to.equal(parseEth(6e6))
     })
 
     it('curvePool allowance is 0 after borrow', async () => {
       await token.mint(curvePool.address, parseEth(2e6))
       await curvePool.set_withdraw_price(parseEth(1.5))
-      await pool2.connect(borrower).borrow(parseEth(6e6), 0)
+      await pool2.connect(borrower)['borrow(uint256,uint256)'](parseEth(6e6), 0)
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.eq(0)
     })
   })

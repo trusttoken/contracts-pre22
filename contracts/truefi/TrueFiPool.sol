@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
-pragma experimental ABIEncoderV2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -13,10 +12,9 @@ import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 import {ABDKMath64x64} from "./Log.sol";
-import {ITruPriceOracle} from "./interface/ITruPriceOracle.sol";
 import {ICrvPriceOracle} from "./interface/ICrvPriceOracle.sol";
-import {I1Inch} from "./interface/I1Inch.sol";
 import {IPauseableContract} from "../governance/interface/IPauseableContract.sol";
+import {ITrueFiPool2, ITrueFiPoolOracle, ITrueLender2} from "../truefi2/interface/ITrueFiPool2.sol";
 
 /**
  * @title TrueFi Pool
@@ -43,7 +41,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
 
     ICurvePool public _curvePool;
     ICurveGauge public _curveGauge;
-    IERC20 public _currencyToken;
+    IERC20 public token;
     ITrueLender public _lender;
     ICurveMinter public _minter;
     IUniswapRouter public _uniRouter;
@@ -63,7 +61,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     uint256 private loansValueCache;
 
     // TRU price oracle
-    ITruPriceOracle public _truOracle;
+    ITrueFiPoolOracle public oracle;
 
     // fund manager can call functions to help manage pool funds
     // fund manager can be set to 0 or governance
@@ -75,7 +73,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     // CRV price oracle
     ICrvPriceOracle public _crvOracle;
 
-    I1Inch public _1inchExchange;
+    ITrueLender2 public _lender2;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -89,19 +87,13 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @dev Emitted when TrueFi oracle was changed
      * @param newOracle New oracle address
      */
-    event TruOracleChanged(ITruPriceOracle newOracle);
+    event TruOracleChanged(ITrueFiPoolOracle newOracle);
 
     /**
      * @dev Emitted when CRV oracle was changed
      * @param newOracle New oracle address
      */
     event CrvOracleChanged(ICrvPriceOracle newOracle);
-
-    /**
-     * @dev Emitted 1Inch address was changed
-     * @param new1Inch New 1Inch address
-     */
-    event OneInchChanged(I1Inch new1Inch);
 
     /**
      * @dev Emitted when funds manager is changed
@@ -174,7 +166,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @dev only lender can perform borrowing or repaying
      */
     modifier onlyLender() {
-        require(msg.sender == address(_lender), "TrueFiPool: Caller is not the lender");
+        require(msg.sender == address(_lender) || msg.sender == address(_lender2), "TrueFiPool: Caller is not the lender");
         _;
     }
 
@@ -198,10 +190,10 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @dev ensure than as a result of running a function,
      * balance of `token` increases by at least `expectedGain`
      */
-    modifier exchangeProtector(uint256 expectedGain, IERC20 token) {
-        uint256 balanceBefore = token.balanceOf(address(this));
+    modifier exchangeProtector(uint256 expectedGain, IERC20 _token) {
+        uint256 balanceBefore = _token.balanceOf(address(this));
         _;
-        uint256 balanceDiff = token.balanceOf(address(this)).sub(balanceBefore);
+        uint256 balanceDiff = _token.balanceOf(address(this)).sub(balanceBefore);
         require(balanceDiff >= conservativePriceEstimation(expectedGain), "TrueFiPool: Not optimal exchange");
     }
 
@@ -222,12 +214,17 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         loansValueCache = 0;
     }
 
+    /// @dev support borrow function from pool V2
+    function borrow(uint256 amount) external {
+        borrow(amount, 0);
+    }
+
     /**
      * @dev get currency token address
      * @return currency token address
      */
     function currencyToken() public override view returns (IERC20) {
-        return _currencyToken;
+        return token;
     }
 
     /**
@@ -236,6 +233,14 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      */
     function stakeToken() public override view returns (IERC20) {
         return _stakeToken;
+    }
+
+    /**
+     * @dev set TrueLenderV2
+     */
+    function setLender2(ITrueLender2 lender2) public onlyOwner {
+        require(address(_lender2) == address(0), "TrueFiPool: Lender 2 is already set");
+        _lender2 = lender2;
     }
 
     /**
@@ -250,8 +255,8 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @dev set TrueFi price oracle token address
      * @param newOracle new oracle address
      */
-    function setTruOracle(ITruPriceOracle newOracle) public onlyOwner {
-        _truOracle = newOracle;
+    function setTruOracle(ITrueFiPoolOracle newOracle) public onlyOwner {
+        oracle = newOracle;
         emit TruOracleChanged(newOracle);
     }
 
@@ -262,14 +267,6 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     function setCrvOracle(ICrvPriceOracle newOracle) public onlyOwner {
         _crvOracle = newOracle;
         emit CrvOracleChanged(newOracle);
-    }
-
-    /**
-     * @dev set 1Inch swap address
-     */
-    function set1InchAddress(I1Inch new1InchAddress) public onlyOwner {
-        _1inchExchange = new1InchAddress;
-        emit OneInchChanged(new1InchAddress);
     }
 
     /**
@@ -323,10 +320,10 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      */
     function truValue() public view returns (uint256) {
         uint256 balance = stakeTokenBalance();
-        if (balance == 0 || address(_truOracle) == address(0)) {
+        if (balance == 0 || address(oracle) == address(0)) {
             return 0;
         }
-        return conservativePriceEstimation(_truOracle.truToUsd(balance));
+        return conservativePriceEstimation(oracle.truToToken(balance));
     }
 
     /**
@@ -368,6 +365,9 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         if (inSync) {
             return loansValueCache;
         }
+        if (address(_lender2) != address(0)) {
+            return _lender.value().add(_lender2.value(ITrueFiPool2(address(this))));
+        }
         return _lender.value();
     }
 
@@ -404,7 +404,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         claimableFees = claimableFees.add(fee);
 
         latestJoinBlock[tx.origin] = block.number;
-        require(_currencyToken.transferFrom(msg.sender, address(this), amount));
+        require(token.transferFrom(msg.sender, address(this), amount));
 
         emit Joined(msg.sender, amount, mintedAmount);
     }
@@ -442,10 +442,13 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
 
         // withdraw basket of loan tokens
         _lender.distribute(msg.sender, amount, _totalSupply);
+        if (address(_lender2) != address(0)) {
+            _lender2.distribute(msg.sender, amount, _totalSupply);
+        }
 
         // if currency remaining, transfer
         if (currencyAmountToTransfer > 0) {
-            require(_currencyToken.transfer(msg.sender, currencyAmountToTransfer));
+            require(token.transfer(msg.sender, currencyAmountToTransfer));
         }
         // if curve tokens remaining, transfer
         if (curveLiquidityAmountToTransfer > 0) {
@@ -488,7 +491,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
             require(amountToWithdraw <= currencyBalance(), "TrueFiPool: Not enough funds were withdrawn from Curve");
         }
 
-        require(_currencyToken.transfer(msg.sender, amountToWithdraw));
+        require(token.transfer(msg.sender, amountToWithdraw));
 
         emit Exited(msg.sender, amountToWithdraw);
     }
@@ -557,7 +560,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     {
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
 
-        _currencyToken.approve(address(_curvePool), currencyAmount);
+        token.approve(address(_curvePool), currencyAmount);
         _curvePool.add_liquidity(amounts, minMintAmount);
     }
 
@@ -584,7 +587,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @dev Remove liquidity from curve if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount, uint256 fee) external override nonReentrant onlyLender {
+    function borrow(uint256 amount, uint256 fee) public override nonReentrant onlyLender {
         // if there is not enough TUSD, withdraw from curve
         if (amount > currencyBalance()) {
             removeLiquidityFromCurve(amount.sub(currencyBalance()));
@@ -592,7 +595,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         }
 
         mint(fee);
-        require(_currencyToken.transfer(msg.sender, amount.sub(fee)));
+        require(token.transfer(msg.sender, amount.sub(fee)));
 
         emit Borrow(msg.sender, amount, fee);
     }
@@ -614,7 +617,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @param currencyAmount amount to repay
      */
     function repay(uint256 currencyAmount) external override onlyLender {
-        require(_currencyToken.transferFrom(msg.sender, address(this), currencyAmount));
+        require(token.transferFrom(msg.sender, address(this), currencyAmount));
         emit Repaid(msg.sender, currencyAmount);
     }
 
@@ -640,7 +643,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         uint256 amountIn,
         uint256 amountOutMin,
         address[] calldata path
-    ) public exchangeProtector(_crvOracle.crvToUsd(amountIn), _currencyToken) {
+    ) public exchangeProtector(_crvOracle.crvToUsd(amountIn), token) {
         _minter.token().approve(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
@@ -660,7 +663,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         uint256 amountIn,
         uint256 amountOutMin,
         address[] calldata path
-    ) public exchangeProtector(_truOracle.truToUsd(amountIn), _currencyToken) {
+    ) public exchangeProtector(oracle.truToToken(amountIn), token) {
         _stakeToken.approve(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
@@ -674,27 +677,10 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         claimableFees = 0;
 
         if (amount > 0) {
-            require(_currencyToken.transfer(beneficiary, amount));
+            require(token.transfer(beneficiary, amount));
         }
 
         emit Collected(beneficiary, amount);
-    }
-
-    function sellCrvWith1Inch(bytes calldata data) external onlyOwnerOrManager {
-        (, I1Inch.SwapDescription memory description, ) = abi.decode(
-            data[4:],
-            (address, I1Inch.SwapDescription, I1Inch.CallDescription[])
-        );
-        require(description.srcToken == address(_minter.token()), "TrueFiPool: Source token is not CRV");
-        require(description.dstToken == address(_currencyToken), "TrueFiPool: Destination token is not TUSD");
-        require(description.dstReceiver == address(this), "TrueFiPool: Receiver is not pool");
-
-        _minter.token().approve(address(_1inchExchange), description.amount);
-
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, ) = address(_1inchExchange).call(data);
-        require(success, "TrueFiPool: 1Inch swap failed");
-        // TODO add post sell slippage check
     }
 
     /**
@@ -717,7 +703,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @return Currency token balance
      */
     function currencyBalance() public view returns (uint256) {
-        return _currencyToken.balanceOf(address(this)).sub(claimableFees);
+        return token.balanceOf(address(this)).sub(claimableFees);
     }
 
     /**
