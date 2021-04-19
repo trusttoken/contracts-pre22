@@ -107,7 +107,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         curveGauge.deposit(yBalance);
     }
 
-    /** 
+    /**
      * @dev pull at least `minAmount` of tokens from strategy
      * Remove token liquidity from curve and transfer to pool
      * @param minAmount Minimum amount of tokens to remove from strategy
@@ -128,7 +128,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         transferAllToPool();
     }
 
-    /** 
+    /**
      *@dev withdraw everything from strategy
      * Use with caution because Curve slippage is not contolled
      */
