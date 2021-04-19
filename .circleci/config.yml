@@ -70,7 +70,7 @@ jobs:
       - image: circleci/node:12.19.0
     steps:
       - attach_workspace:
-        at: .
+          at: .
       - run: yarn deploy:truefi --network kovan --dry-run
   integration:
     docker:
