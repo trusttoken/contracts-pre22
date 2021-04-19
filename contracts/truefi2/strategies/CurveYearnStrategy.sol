@@ -84,8 +84,10 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     }
 
     /**
-     * @dev Transfer `amount` of `token` from pool and add it as liquidity to the Curve yEarn Pool
+     * @dev Transfer `amount` of `token` from pool and add it as
+     * liquidity to the Curve yEarn Pool
      * Curve LP tokens are deposited into Curve Gauge
+     * @param amount amount of token to add to curve
      */
     function deposit(uint256 amount) external override onlyPool {
         token.safeTransferFrom(pool, address(this), amount);
@@ -105,7 +107,11 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         curveGauge.deposit(yBalance);
     }
 
-    /// @dev pull at least `minAmount` of tokens from strategy
+    /**
+     * @dev pull at least `minAmount` of tokens from strategy
+     * Remove token liquidity from curve and transfer to pool
+     * @param minAmount Minimum amount of tokens to remove from strategy
+     */
     function withdraw(uint256 minAmount) external override onlyPool {
         // get rough estimate of how much yCRV we should sell
         uint256 roughCurveTokenAmount = calcTokenAmount(minAmount);
@@ -122,8 +128,10 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         transferAllToPool();
     }
 
-    /// @dev withdraw everything from strategy
-    /// Use with cautious because Curve slippage is not contolled
+    /**
+     *@dev withdraw everything from strategy
+     * Use with caution because Curve slippage is not contolled
+     */
     function withdrawAll() external override onlyPool {
         curveGauge.withdraw(curveGauge.balanceOf(address(this)));
         uint256 yBalance = yTokenBalance();
@@ -134,7 +142,9 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
 
     /**
      * @dev Total pool value in USD
-     * @notice Balance of CRV is not included into value of strategy, because it cannot be converted to pool tokens automatically
+     * @notice Balance of CRV is not included into value of strategy,
+     * because it cannot be converted to pool tokens automatically
+     * @return Value of pool in USD
      */
     function value() external override view returns (uint256) {
         return yTokenValue();
@@ -205,7 +215,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     }
 
     /**
-     * @notice Expected amount of minted Curve.fi yDAI/yUSDC/yUSDT/yTUSD tokens.
+     * @dev Expected amount of minted Curve.fi yDAI/yUSDC/yUSDT/yTUSD tokens.
      * @param currencyAmount amount to calculate for
      * @return expected amount minted given currency amount
      */
@@ -229,6 +239,9 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         }
     }
 
+    /**
+     * @dev Internal function to transfer entire token balance to pool
+     */
     function transferAllToPool() internal {
         token.safeTransfer(pool, token.balanceOf(address(this)));
     }
@@ -243,10 +256,21 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         return price.mul(uint256(10000).sub(MAX_PRICE_SLIPPAGE)).div(10000);
     }
 
+    /**
+     * @dev Helper function to calculate minimum of `a` and `b`
+     * @param a First variable to check if minimum
+     * @param b Second variable to check if minimum
+     * @return Lowest value between a and b
+     */
     function min(uint256 a, uint256 b) internal pure returns (uint256) {
         return a > b ? b : a;
     }
 
+    /**
+     * @dev Helper function to convert between token precision
+     * @param _value Value to normalize decimals for
+     * @return Normalized value
+     */
     function normalizeDecimals(uint256 _value) internal view returns (uint256) {
         return _value.mul(10**token.decimals()).div(10**18);
     }
