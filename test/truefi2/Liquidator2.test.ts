@@ -86,7 +86,7 @@ describe('Liquidator2', () => {
 
     await tru.initialize()
     await stkTru.initialize(tru.address, pool.address, pool.address, distributor.address, liquidator.address)
-    await lender.initialize(stkTru.address, poolFactory.address, rater.address, AddressZero, pool.address)
+    await lender.initialize(stkTru.address, poolFactory.address, rater.address, AddressZero)
     await lender.setFee(0)
 
     loan = await createLoan(loanFactory, borrower, pool, parseEth(1000), YEAR, 1000)
