@@ -63,6 +63,7 @@ contract Initializable {
 
     /**
      * @dev Return true if and only if the contract has been initialized
+     * @return whether the contract has been initialized
      */
     function isInitialized() public view returns (bool) {
         return initialized;
