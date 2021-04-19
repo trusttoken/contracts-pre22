@@ -30,7 +30,6 @@ contract Liquidator2 is UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    IPoolFactory public poolFactory;
     IStakingPool public stkTru;
     IERC20 public tru;
     ILoanFactory2 public loanFactory;
@@ -68,14 +67,12 @@ contract Liquidator2 is UpgradeableClaimable {
      * @dev Initialize this contract
      */
     function initialize(
-        IPoolFactory _poolFactory,
         IStakingPool _stkTru,
         IERC20 _tru,
         ILoanFactory2 _loanFactory
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
-        poolFactory = _poolFactory;
         stkTru = _stkTru;
         tru = _tru;
         loanFactory = _loanFactory;
@@ -112,7 +109,7 @@ contract Liquidator2 is UpgradeableClaimable {
         require(loanFactory.isLoanToken(address(loan)), "Liquidator: Unknown loan");
         require(loan.status() == ILoanToken2.Status.Defaulted, "Liquidator: Loan must be defaulted");
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
-        require(approvedTokens[address(pool.token())] == true, "Liquidator: Token not approved for default protection");
+        require(approvedTokens[address(pool.token())], "Liquidator: Token not approved for default protection");
         uint256 defaultedValue = loan.debt().sub(loan.repaid());
         uint256 withdrawnTru = getAmountToWithdraw(defaultedValue, ITrueFiPoolOracle(pool.oracle()));
         stkTru.withdraw(withdrawnTru);

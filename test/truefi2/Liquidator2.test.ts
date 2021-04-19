@@ -75,7 +75,7 @@ describe('Liquidator2', () => {
     distributor = await deployMockContract(owner, ITrueDistributorJson.abi)
     await distributor.mock.nextDistribution.returns(0)
 
-    await liquidator.initialize(poolFactory.address, stkTru.address, tru.address, loanFactory.address)
+    await liquidator.initialize(stkTru.address, tru.address, loanFactory.address)
     await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address)
     await poolFactory.initialize(implementationReference.address, stkTru.address, lender.address)
 
@@ -100,10 +100,6 @@ describe('Liquidator2', () => {
   })
 
   describe('Initializer', () => {
-    it('sets poolFactory address correctly', async () => {
-      expect(await liquidator.poolFactory()).to.equal(poolFactory.address)
-    })
-
     it('sets stkTru address correctly', async () => {
       expect(await liquidator.stkTru()).to.equal(stkTru.address)
     })
