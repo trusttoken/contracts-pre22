@@ -70,7 +70,7 @@ describe('TrueRatingAgencyV2', () => {
     linearDistributor = await new LinearTrueDistributorFactory(owner).deploy()
 
     stakedTrustToken = await new StkTruTokenFactory(owner).deploy()
-    await stakedTrustToken.initialize(trustToken.address, tusd.address, linearDistributor.address, liquidator.address)
+    await stakedTrustToken.initialize(trustToken.address, tusd.address, tusd.address, linearDistributor.address, liquidator.address)
 
     loanToken = await new LoanTokenFactory(owner).deploy(
       tusd.address,
