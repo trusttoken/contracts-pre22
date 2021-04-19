@@ -35,6 +35,8 @@ contract Liquidator2 is UpgradeableClaimable {
     IERC20 public tru;
     ILoanFactory2 public loanFactory;
 
+    mapping(address => bool) public approvedTokens;
+
     // max share of tru to be taken from staking pool during liquidation
     // 1000 -> 10%
     uint256 public fetchMaxShare;
@@ -46,6 +48,13 @@ contract Liquidator2 is UpgradeableClaimable {
      * @param newShare New share set
      */
     event FetchMaxShareChanged(uint256 newShare);
+
+    /**
+     * @dev Emitted when whitelist status for a token changes
+     * @param token Address of token
+     * @param status New whitelist status
+     */
+    event WhitelistStatusChanged(address token, bool status);
 
     /**
      * @dev Emitted when a loan gets liquidated
@@ -85,6 +94,16 @@ contract Liquidator2 is UpgradeableClaimable {
     }
 
     /**
+     * @dev Change whitelist status of a token for liquidations
+     * @param token Address of token to change whitelist status
+     * @param status New whitelist status for token
+     */
+    function setTokenApproval(address token, bool status) external onlyOwner {
+        approvedTokens[token] = status;
+        emit WhitelistStatusChanged(token, status);
+    }
+
+    /**
      * @dev Liquidates a defaulted Loan, withdraws a portion of tru from staking pool
      * then transfers tru to TrueFiPool as compensation
      * @param loan Loan to be liquidated
@@ -93,6 +112,7 @@ contract Liquidator2 is UpgradeableClaimable {
         require(loanFactory.isLoanToken(address(loan)), "Liquidator: Unknown loan");
         require(loan.status() == ILoanToken2.Status.Defaulted, "Liquidator: Loan must be defaulted");
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
+        require(approvedTokens[address(pool.token())] == true, "Liquidator: Token not approved for default protection");
         uint256 defaultedValue = loan.debt().sub(loan.repaid());
         uint256 withdrawnTru = getAmountToWithdraw(defaultedValue, ITrueFiPoolOracle(pool.oracle()));
         stkTru.withdraw(withdrawnTru);
