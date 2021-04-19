@@ -87,6 +87,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     event FeePayerWhitelistingStatusChanged(address payer, bool status);
     event PauseStatusChanged(bool pauseStatus);
     event FeeTokenChanged(IERC20 token);
+    event LiquidatorChanged(address liquidator);
 
     /**
      * @dev pool can only be joined when it's unpaused
@@ -195,6 +196,15 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         require(rewardBalance(feeToken) == 0, "StkTruToken: Cannot replace fee token with underlying rewards");
         feeToken = _feeToken;
         emit FeeTokenChanged(_feeToken);
+    }
+
+    /**
+     * @dev Set liquidator address
+     * @param _liquidator Address of liquidator to be set
+     */
+    function setLiquidator(address _liquidator) external onlyOwner {
+        liquidator = _liquidator;
+        emit LiquidatorChanged(_liquidator);
     }
 
     /**
