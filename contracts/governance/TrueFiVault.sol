@@ -31,7 +31,7 @@ contract TrueFiVault {
 
     uint256 constant LOCKOUT = 180 days;
 
-    event Unlock();
+    event WithdrawTo(address recipient);
 
     constructor(address _owner, uint256 _amount) public {
         owner = _owner;
@@ -76,8 +76,7 @@ contract TrueFiVault {
      * @dev Allow deployer to withdraw funds in case of emergency or mistake
      */
     function withdrawToDeployer() public onlyDeployer {
-        tru.transfer(deployer, tru.balanceOf(address(this)));
-        stkTru.transfer(deployer, stkTru.balanceOf(address(this)));
+        _withdrawTo(deployer);
     }
 
     /**
@@ -85,16 +84,16 @@ contract TrueFiVault {
      */
     function withdrawToOwner() public onlyOwner {
         require(block.timestamp >= expiry, "TrueFiVault: owner cannot withdraw before expiration");
-        require(tru.balanceOf(address(this)) > 0, "TrueFiVault: already withdrawn");
+        _withdrawTo(owner);
+    }
 
-        // unstake if staked balance
-        // will revert if not in cooldown
-        if (stakedBalance() > 0) {
-            unstake(stkTru.balanceOf(address(this)));
-        }
-
-        tru.transfer(owner, tru.balanceOf(address(this)));
-        emit Unlock();
+    /**
+     * @dev Internal function to withdraw funds to recipient
+     */
+    function _withdrawTo(address recipient) private {
+        tru.transfer(recipient, tru.balanceOf(address(this)));
+        stkTru.transfer(recipient, stkTru.balanceOf(address(this)));
+        emit WithdrawTo(recipient);
     }
 
     /**
