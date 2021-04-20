@@ -15,7 +15,7 @@
     "build:sol": "waffle .waffle.json",
     "build:types": "typechain --target ethers-v5 --outDir build/types 'build/*.json' > /dev/null && echo 'Typechain generated'",
     "build:waffle": "yarn clean && yarn build:sol && yarn build:types && bash ./indexBuild.sh",
-    "build": "yarn clean && yarn hardhat compile && bash flattenBuild.sh && bash indexBuildHardhat.sh",
+    "build": "yarn clean && yarn hardhat compile && bash ./flattenBuild.sh && bash ./indexBuildHardhat.sh",
     "test:integration": "mocha --config .mocharc.integration.json",
     "test": "mocha 'test/**/*.test.ts'",
     "test:governance": "mocha 'test/governance/*.ts'",
