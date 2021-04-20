@@ -119,4 +119,12 @@ contract TrueFiVault {
     function claimRewards() public onlyOwner {
         stkTru.claimRewards(IERC20(address(tru)));
     }
+
+    /**
+     * @dev Claim TRU rewards, then restake without transferring
+     * Allows account to save more gas by avoiding out-and-back transfers
+     */
+    function claimRestake() public onlyOwner {
+        stkTru.claimRestake();
+    }
 }
