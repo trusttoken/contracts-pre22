@@ -12,6 +12,7 @@ touch $outputDir/index.ts
 
 for file in $(find $outputDir -name '[a-zA-Z_]*.json' -not -name '*.dbg.json')
 do
+	echo $file
 	mv $file $outputDir
 done
 
