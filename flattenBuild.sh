@@ -18,7 +18,6 @@ echo "6"
 
 for file in $(find $outputDir -name '[a-zA-Z_]*.json' -not -name '*.dbg.json')
 do
-	echo "7"
 	mv $file $outputDir
 done
 
