@@ -3,10 +3,8 @@ set -e
 
 ODline=$(grep 'artifacts' hardhat.config.ts)
 regex=': \"(.+)\"'
-echo $ODline
 [[ $ODline =~ $regex ]]
 outputDir=${BASH_REMATCH[1]}
-echo $outputDir
 
 touch $outputDir/index.ts
 > $outputDir/index.ts
