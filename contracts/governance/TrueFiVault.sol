@@ -60,7 +60,7 @@ contract TrueFiVault {
         // unstake if staked balance
         // will revert if not in cooldown
         if (stakedBalance() > 0) {
-            _unstake(stkTru.balanceOf(address(this)));
+            unstake(stkTru.balanceOf(address(this)));
         }
 
         tru.transfer(owner, tru.balanceOf(address(this)));
@@ -88,7 +88,7 @@ contract TrueFiVault {
      * @param amount Amount of TRU to stake
      */
     function stake(uint256 amount) public onlyOwner {
-        _stake(amount);
+        stkTru.stake(amount);
     }
 
     /**
@@ -106,7 +106,7 @@ contract TrueFiVault {
      * @param amount Amount of TRU to unstake
      */
     function unstake(uint256 amount) public onlyOwner {
-        _unstake(amount);
+        stkTru.unstake(amount);
     }
 
     /**
@@ -129,21 +129,5 @@ contract TrueFiVault {
     function reclaim() public onlyDeployer {
         tru.transfer(deployer, tru.balanceOf(address(this)));
         stkTru.transfer(deployer, stkTru.balanceOf(address(this)));
-    }
-
-    /**
-     * @dev Internal function to stake `amount` of TRU
-     * @param amount Amount of TRU to stake
-     */
-    function _stake(uint256 amount) internal {
-        stkTru.unstake(amount);
-    }
-
-    /**
-     * @dev Internal function to unstake `amount` of TRU
-     * @param amount Amount of TRU to unstake
-     */
-    function _unstake(uint256 amount) internal {
-        stkTru.stake(amount);
     }
 }
