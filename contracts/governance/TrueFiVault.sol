@@ -57,22 +57,6 @@ contract TrueFiVault {
     }
 
     /**
-     * @dev Get claimable TRU amount from staking contract
-     * @return Claimable TRU amount
-     */
-    function claimable() public view returns (uint256) {
-        return stkTru.claimable(address(this), IERC20(address(tru)));
-    }
-
-    /**
-     * @dev Get amount of TRU staked
-     * @return Balance of stkTRU
-     */
-    function stakedBalance() public view returns (uint256) {
-        return stkTru.balanceOf(address(this));
-    }
-
-    /**
      * @dev Allow deployer to withdraw funds in case of emergency or mistake
      */
     function withdrawToDeployer() public onlyDeployer {
