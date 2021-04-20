@@ -67,8 +67,9 @@ deploy({}, (deployer, config) => {
   const ratingAgencyV2Distributor = proxy(contract(RatingAgencyV2Distributor), 'initialize',
     [trueRatingAgencyV2, trustToken],
   )
-  // TODO check whether trueRatingAgencyV2 has already been initialized, else this will revert
-  trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
+  runIf(trueRatingAgencyV2.isInitialized().not(), () => {
+    trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
+  })
   // TODO figure out what's going wrong with deploying TrueLender
   // const trueLender = proxy(contract(TrueLender), 'initialize',
   //   [trueFiPool, trueRatingAgencyV2, stkTruToken],
