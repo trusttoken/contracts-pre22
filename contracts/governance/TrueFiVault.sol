@@ -97,7 +97,7 @@ contract TrueFiVault {
      * @param proposalId Proposal ID
      * @param support Vote boolean
      */
-    function castVote(uint256 proposalId, bool support) public {
+    function castVote(uint256 proposalId, bool support) public onlyOwner {
         governance.castVote(proposalId, support);
     }
 
