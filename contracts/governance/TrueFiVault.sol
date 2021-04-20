@@ -67,19 +67,19 @@ contract TrueFiVault {
     }
 
     /**
-     * @dev Allow deployer to reclaim funds in case of emergency or mistake
+     * @dev Allow deployer to withdraw funds in case of emergency or mistake
      */
-    function reclaimToDeployer() public onlyDeployer {
+    function withdrawToDeployer() public onlyDeployer {
         tru.transfer(deployer, tru.balanceOf(address(this)));
         stkTru.transfer(deployer, stkTru.balanceOf(address(this)));
     }
 
     /**
-     * @dev Claim TRU after expiry time
+     * @dev Withdraw funds to owner after expiry time
      */
-    function unlock() public onlyOwner {
-        require(block.timestamp >= expiry, "TrueFiVault: cannot claim before expiration");
-        require(tru.balanceOf(address(this)) > 0, "TrueFiVault: already claimed");
+    function withdrawToOwner() public onlyOwner {
+        require(block.timestamp >= expiry, "TrueFiVault: owner cannot withdraw before expiration");
+        require(tru.balanceOf(address(this)) > 0, "TrueFiVault: already withdrawn");
 
         // unstake if staked balance
         // will revert if not in cooldown
