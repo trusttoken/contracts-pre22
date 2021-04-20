@@ -2,7 +2,7 @@ import { expect, use } from 'chai'
 import { constants, Wallet, BigNumber } from 'ethers'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 
-import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo, parseTRU } from 'utils'
+import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo, parseTRU, DAY } from 'utils'
 
 import {
   LoanToken,
@@ -19,6 +19,16 @@ import {
   MockStakingPool,
   MockStakingPool__factory,
   MockCrvPriceOracle__factory,
+  PoolFactoryFactory,
+  TrueLender2Factory,
+  LoanFactory2Factory,
+  LoanFactory2,
+  TrueFiPool2Factory,
+  ImplementationReferenceFactory,
+  TrueLender2,
+  Liquidator2__factory,
+  Liquidator2,
+  MockTrueFiPoolOracle_factory,
 } from 'contracts'
 import {
   ICurveGaugeJson,
@@ -588,6 +598,67 @@ describe('TrueFiPool', () => {
       // expect around ~365006 gas
       const txn = await (await pool.liquidExit(await pool.balanceOf(owner.address))).wait()
       expect(txn.gasUsed.toNumber()).to.be.lt(400000)
+    })
+  })
+
+  describe('flow with TrueFi2', () => {
+    let loanFactory2: LoanFactory2
+    let lender2: TrueLender2
+    let liquidator2: Liquidator2
+
+    beforeEach(async () => {
+      const poolImplementation = await new TrueFiPool2Factory(owner).deploy()
+      const implementationReference = await new ImplementationReferenceFactory(owner).deploy(poolImplementation.address)
+
+      const factory = await new PoolFactoryFactory(owner).deploy()
+      lender2 = await new TrueLender2Factory(owner).deploy()
+      await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero)
+      await factory.initialize(implementationReference.address, trustToken.address, lender2.address)
+      await factory.addLegacyPool(pool.address)
+      const usdc = await new MockErc20TokenFactory(owner).deploy()
+      await factory.setAllowAll(true)
+      await factory.createPool(usdc.address)
+      const feePool = await factory.pool(usdc.address)
+      await lender2.setFeePool(feePool)
+      loanFactory2 = await new LoanFactory2Factory(owner).deploy()
+      liquidator2 = await new Liquidator2Factory(owner).deploy()
+      await loanFactory2.initialize(factory.address, lender2.address, liquidator2.address)
+      await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address)
+      await pool.setLender2(lender2.address)
+      await token.approve(pool.address, parseEth(1e7))
+      await pool.join(parseEth(1e7))
+    })
+
+    async function fundLoan () {
+      const tx = await (await loanFactory2.createLoanToken(pool.address, 1000, DAY, 100)).wait()
+      const newLoanAddress = tx.events[0].args.contractAddress
+      const loan = LoanTokenFactory.connect(newLoanAddress, owner)
+      await mockRatingAgency.mock.getResults.returns(0, 0, parseEth(100))
+      await lender2.fund(newLoanAddress)
+      return { newLoanAddress, loan }
+    }
+
+    it('funds and repays loan', async () => {
+      const { newLoanAddress, loan } = await fundLoan()
+      await loan.settle()
+      await lender2.reclaim(newLoanAddress, '0x')
+    })
+
+    it('funds and liquidates loan', async () => {
+      const { loan } = await fundLoan()
+      await loan.withdraw(owner.address)
+      await timeTravel(provider, DAY * 3)
+      await loan.enterDefault()
+      await liquidator2.setTokenApproval(token.address, true)
+      await liquidator2.liquidate(loan.address)
+    })
+
+    it('distributions with 2 lenders', async () => {
+      await fundLoan()
+      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
+      await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(15e6))
+      await lender.connect(borrower).fund(loan1.address)
+      expect(await pool.loansValue()).to.equal((await lender.value()).add(await lender2.value(pool.address)))
     })
   })
 })
