@@ -1,50 +1,79 @@
 // SPDX-License-Identifier: MIT
 // Copied from https://github.com/sushiswap/sushiswap/blob/master/contracts/mocks/RewarderMock.sol
+// Adapted to reward TRU instead
 
-pragma solidity 0.6.12;
-import "../interfaces/IRewarder.sol";
-import "@boringcrypto/boring-solidity/contracts/libraries/BoringERC20.sol";
-import "@boringcrypto/boring-solidity/contracts/libraries/BoringMath.sol";
+pragma solidity 0.6.10;
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
+import {IRewarder} from "./interface/ITruSushiswapRewarder.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
-contract RewarderMock is IRewarder {
-    using BoringMath for uint256;
-    using BoringERC20 for IERC20;
-    uint256 private immutable rewardMultiplier;
-    IERC20 private immutable rewardToken;
+contract TruSushiswapRewarder is IRewarder, UpgradeableClaimable {
+    using SafeERC20 for IERC20;
+    using SafeMath for uint256;
+
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
+    uint256 private rewardMultiplier;
+    IERC20 private trustToken;
+    address private MASTERCHEF_V2;
+
+    // ======= STORAGE DECLARATION END ===========
+
     uint256 private constant REWARD_TOKEN_DIVISOR = 1e18;
-    address private immutable MASTERCHEF_V2;
 
-    constructor (uint256 _rewardMultiplier, IERC20 _rewardToken, address _MASTERCHEF_V2) public {
+    /**
+     * @dev Initialize this contract with provided parameters
+     * @param _rewardMultiplier conversion factor between sushiAmount and TruAmount
+     * @param _trustToken TRU address
+     * @param _MASTERCHEF_V2 Sushiswap MasterChef address
+     */
+    function initialize(
+        uint256 _rewardMultiplier,
+        IERC20 _trustToken,
+        address _MASTERCHEF_V2
+    ) external initializer {
         rewardMultiplier = _rewardMultiplier;
-        rewardToken = _rewardToken;
+        trustToken = _trustToken;
         MASTERCHEF_V2 = _MASTERCHEF_V2;
     }
 
-    function onSushiReward (uint256, address user, address to, uint256 sushiAmount, uint256) onlyMCV2 override external {
+    function onSushiReward(
+        uint256, /* pid */
+        address, /* user */
+        address recipient,
+        uint256 sushiAmount,
+        uint256 /* newLpAmount */
+    ) external override onlyMCV2 {
         uint256 pendingReward = sushiAmount.mul(rewardMultiplier) / REWARD_TOKEN_DIVISOR;
-        uint256 rewardBal = rewardToken.balanceOf(address(this));
+        uint256 rewardBal = trustToken.balanceOf(address(this));
         if (pendingReward > rewardBal) {
-            rewardToken.safeTransfer(to, rewardBal);
+            trustToken.safeTransfer(recipient, rewardBal);
         } else {
-            rewardToken.safeTransfer(to, pendingReward);
+            trustToken.safeTransfer(recipient, pendingReward);
         }
     }
-    
-    function pendingTokens(uint256 pid, address user, uint256 sushiAmount) override external returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
+
+    function pendingTokens(
+        uint256, /* pid */
+        address, /* user */
+        uint256 sushiAmount
+    ) external override returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
         IERC20[] memory _rewardTokens = new IERC20[](1);
-        _rewardTokens[0] = (rewardToken);
+        _rewardTokens[0] = (trustToken);
         uint256[] memory _rewardAmounts = new uint256[](1);
         _rewardAmounts[0] = sushiAmount.mul(rewardMultiplier) / REWARD_TOKEN_DIVISOR;
         return (_rewardTokens, _rewardAmounts);
     }
 
     modifier onlyMCV2 {
-        require(
-            msg.sender == MASTERCHEF_V2,
-            "Only MCV2 can call this function."
-        );
+        require(msg.sender == MASTERCHEF_V2, "Only MCV2 can call this function.");
         _;
     }
-  
 }
