@@ -12,7 +12,7 @@ import {
   StkTruToken__factory,
   GovernorAlpha__factory,
   Timelock__factory,
-  Loan__factory__factory,
+  LoanFactory__factory,
   Liquidator__factory,
   TruPriceOracle__factory,
   TrueRatingAgency__factory,
@@ -113,7 +113,7 @@ async function deployAddressBehindProxy(wallet, address, name) {
 }
 
 async function deployLoan__factory(wallet) {
-  const loan__factoryImpl = await (await new Loan__factory__factory(wallet).deploy(contractArgs)).deployed()
+  const loan__factoryImpl = await (await new LoanFactory__factory(wallet).deploy(contractArgs)).deployed()
   console.log(`LoanFactory: ${loan__factoryImpl.address}`)
 }
 
