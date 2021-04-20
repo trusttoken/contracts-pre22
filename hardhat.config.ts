@@ -1,17 +1,17 @@
-import 'hardhat-typechain';
-import '@nomiclabs/hardhat-waffle'
+import "hardhat-typechain";
+import "@nomiclabs/hardhat-waffle"
 module.exports = {
   paths: {
-    sources: './contracts',
-    artifacts: './build',
-    cache: './cache',
+    sources: "./contracts",
+    artifacts: "./build",
+    cache: "./cache",
   },
   typechain: {
-    outDir: 'build/types',
-    target: 'ethers-v5',
+    outDir: "build/types",
+    target: "ethers-v5",
   },
   solidity: {
-    version: '0.6.10',
+    version: "0.6.10",
     settings: {
       optimizer: {
         enabled: true,

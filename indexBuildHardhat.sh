@@ -3,7 +3,7 @@
 set -e
 
 ODline=$(grep 'artifacts' hardhat.config.ts)
-regex=": \'(.+)\'"
+regex=': \"(.+)\"'
 [[ $ODline =~ $regex ]]
 outputDir=${BASH_REMATCH[1]}
 
