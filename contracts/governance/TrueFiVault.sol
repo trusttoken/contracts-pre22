@@ -31,7 +31,7 @@ contract TrueFiVault {
         owner = _owner;
         deployer = msg.sender;
         expiry = block.timestamp.add(LOCKOUT);
-        require(tru.transferFrom(msg.sender, address(this), _amount), "TrueFiVault: insufficient balance.");
+        require(tru.transferFrom(deployer, address(this), _amount), "TrueFiVault: insufficient balance.");
     }
 
     /**
@@ -43,7 +43,7 @@ contract TrueFiVault {
     }
 
     /**
-     * @dev Throws if called by any account other than the owner.
+     * @dev Throws if called by any account other than the deployer.
      */
     modifier onlyDeployer() {
         require(msg.sender == deployer, "only deployer");
@@ -126,7 +126,7 @@ contract TrueFiVault {
     /**
      * @dev Allow deployer to reclaim funds in case of emergency or mistake
      */
-    function reclaim() public onlyDeployer {
+    function reclaimToDeployer() public onlyDeployer {
         tru.transfer(deployer, tru.balanceOf(address(this)));
         stkTru.transfer(deployer, stkTru.balanceOf(address(this)));
     }
