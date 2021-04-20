@@ -9,7 +9,7 @@ import { providers, Wallet } from 'ethers'
 import {
   TokenController,
   TokenController__factory,
-  TrueCurrency__factory
+  TrueCurrency__factory,
 } from 'contracts'
 
 export const txnArgs = { gasLimit: 60_000, gasPrice: 90_000_000_000 }
