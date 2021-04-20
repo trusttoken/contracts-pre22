@@ -14,3 +14,5 @@ for file in $(find $outputDir -name '[a-zA-Z_]*.json' -not -name '*.dbg.json')
 do
 	mv $file $outputDir
 done
+
+echo "Build files moved succesfully!"

@@ -33,3 +33,5 @@ done
 echo "}" >> $outputDir/index.ts
 
 echo "export * from './types'" >> $outputDir/index.ts
+
+echo "Index built succesfully!"
