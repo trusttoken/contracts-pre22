@@ -5,13 +5,13 @@ import { BigNumber, BigNumberish, ContractTransaction, Wallet } from 'ethers'
 import { beforeEachWithFixture, expectScaledCloseTo, parseEth, timeTravel } from 'utils'
 
 import {
-  ImplementationReferenceFactory,
+  ImplementationReference__factory,
   LoanToken2,
-  LoanToken2Factory,
+  LoanToken2__factory,
   MockTrueCurrency,
-  MockTrueCurrencyFactory,
-  PoolFactoryFactory,
-  TrueFiPool2Factory,
+  MockTrueCurrency__factory,
+  PoolFactory__factory,
+  TrueFiPool2__factory,
 } from 'contracts'
 import { deployContract } from 'scripts/utils/deployContract'
 import { AddressZero } from '@ethersproject/constants'
@@ -47,19 +47,19 @@ describe('LoanToken2', () => {
     [lender, borrower, other] = wallets
     provider = _provider
 
-    token = await new MockTrueCurrencyFactory(lender).deploy()
+    token = await new MockTrueCurrency__factory(lender).deploy()
     await token.initialize()
     await token.mint(lender.address, parseEth(1000))
 
-    const poolFactory = await deployContract(lender, PoolFactoryFactory)
-    const poolImplementation = await deployContract(lender, TrueFiPool2Factory)
-    const implementationReference = await deployContract(lender, ImplementationReferenceFactory, [poolImplementation.address])
+    const poolFactory = await deployContract(lender, PoolFactory__factory)
+    const poolImplementation = await deployContract(lender, TrueFiPool2__factory)
+    const implementationReference = await deployContract(lender, ImplementationReference__factory, [poolImplementation.address])
     await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero)
     await poolFactory.whitelist(token.address, true)
     await poolFactory.createPool(token.address)
     poolAddress = await poolFactory.pool(token.address)
 
-    loanToken = await new LoanToken2Factory(lender).deploy(
+    loanToken = await new LoanToken2__factory(lender).deploy(
       poolAddress,
       borrower.address,
       lender.address,
@@ -620,7 +620,7 @@ describe('LoanToken2', () => {
 
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
-      const contract = await new LoanToken2Factory(borrower).deploy(poolAddress, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
+      const contract = await new LoanToken2__factory(borrower).deploy(poolAddress, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 

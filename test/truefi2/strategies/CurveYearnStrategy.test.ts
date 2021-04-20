@@ -1,16 +1,18 @@
 import { expect, use } from 'chai'
 import { beforeEachWithFixture, parseEth } from 'utils'
 import {
+  MockCrvPriceOracle__factory,
+  MockCurvePool,
+  MockCurvePool__factory,
+  MockErc20Token,
+  MockErc20Token__factory,
+  TestCurveStrategy,
+  TestCurveStrategy__factory,
+} from 'contracts'
+import {
   ICurveGaugeJson,
   ICurveMinterJson,
-  MockCrvPriceOracleFactory,
-  MockCurvePool,
-  MockCurvePoolFactory,
-  MockErc20Token,
-  MockErc20TokenFactory,
-  TestCurveStrategy,
-  TestCurveStrategyFactory,
-} from 'contracts'
+} from 'build'
 import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
@@ -27,21 +29,21 @@ describe('CurveYearnStrategy', () => {
 
   beforeEachWithFixture(async (wallets) => {
     ([owner, pool] = wallets)
-    token = await new MockErc20TokenFactory(owner).deploy()
+    token = await new MockErc20Token__factory(owner).deploy()
     await token.mint(pool.address, amount)
-    curvePool = await new MockCurvePoolFactory(owner).deploy()
+    curvePool = await new MockCurvePool__factory(owner).deploy()
     await curvePool.initialize(token.address)
     mockCurveGauge = await deployMockContract(owner, ICurveGaugeJson.abi)
-    const mockCrv = await new MockErc20TokenFactory(owner).deploy()
+    const mockCrv = await new MockErc20Token__factory(owner).deploy()
     const mockMinter = await deployMockContract(owner, ICurveMinterJson.abi)
     await mockCurveGauge.mock.deposit.returns()
     await mockCurveGauge.mock.withdraw.returns()
     await mockCurveGauge.mock.balanceOf.returns(0)
     await mockCurveGauge.mock.minter.returns(mockMinter.address)
     await mockMinter.mock.token.returns(mockCrv.address)
-    const crvOracle = await new MockCrvPriceOracleFactory(owner).deploy()
+    const crvOracle = await new MockCrvPriceOracle__factory(owner).deploy()
 
-    strategy = await new TestCurveStrategyFactory(owner).deploy()
+    strategy = await new TestCurveStrategy__factory(owner).deploy()
     await strategy.testInitialize(
       token.address,
       pool.address,

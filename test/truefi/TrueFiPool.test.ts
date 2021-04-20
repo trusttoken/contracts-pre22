@@ -6,26 +6,28 @@ import fetch from 'node-fetch'
 import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo, parseTRU } from 'utils'
 
 import {
+  LoanToken,
+  LoanToken__factory,
+  MockCurvePool,
+  MockCurvePool__factory,
+  MockErc20Token,
+  MockErc20Token__factory,
+  TestTrueFiPool,
+  TestTrueFiPool__factory,
+  TrueLender,
+  TrueLender__factory,
+  PoolArbitrageTest__factory,
+  MockStakingPool,
+  MockStakingPool__factory,
+  MockTruPriceOracle__factory,
+  MockCrvPriceOracle__factory,
+  Mock1Inch__factory,
+} from 'contracts'
+import {
   ICurveGaugeJson,
   ICurveMinterJson,
-  LoanToken,
-  LoanTokenFactory,
-  MockCurvePool,
-  MockCurvePoolFactory,
-  MockErc20Token,
-  MockErc20TokenFactory,
-  TestTrueFiPool,
-  TestTrueFiPoolFactory,
-  TrueLender,
-  TrueLenderFactory,
-  PoolArbitrageTestFactory,
   TrueRatingAgencyJson,
-  MockStakingPool,
-  MockStakingPoolFactory,
-  MockTruPriceOracleFactory,
-  MockCrvPriceOracleFactory,
-  Mock1InchFactory,
-} from 'contracts'
+} from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -50,26 +52,26 @@ describe('TrueFiPool', () => {
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower] = wallets
-    token = await new MockErc20TokenFactory(owner).deploy()
+    token = await new MockErc20Token__factory(owner).deploy()
     await token.mint(owner.address, includeFee(parseEth(1e7)))
-    trustToken = await new MockErc20TokenFactory(owner).deploy()
-    curvePool = await new MockCurvePoolFactory(owner).deploy()
+    trustToken = await new MockErc20Token__factory(owner).deploy()
+    curvePool = await new MockCurvePool__factory(owner).deploy()
     await curvePool.initialize(token.address)
-    curveToken = MockErc20TokenFactory.connect(await curvePool.token(), owner)
-    pool = await new TestTrueFiPoolFactory(owner).deploy()
-    mockStakingPool = await new MockStakingPoolFactory(owner).deploy(pool.address)
+    curveToken = MockErc20Token__factory.connect(await curvePool.token(), owner)
+    pool = await new TestTrueFiPool__factory(owner).deploy()
+    mockStakingPool = await new MockStakingPool__factory(owner).deploy(pool.address)
     mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyJson.abi)
     mockCurveGauge = await deployMockContract(owner, ICurveGaugeJson.abi)
-    mockCrv = await new MockErc20TokenFactory(owner).deploy()
+    mockCrv = await new MockErc20Token__factory(owner).deploy()
     const mockMinter = await deployMockContract(owner, ICurveMinterJson.abi)
     await mockCurveGauge.mock.deposit.returns()
     await mockCurveGauge.mock.withdraw.returns()
     await mockCurveGauge.mock.balanceOf.returns(0)
     await mockCurveGauge.mock.minter.returns(mockMinter.address)
     await mockMinter.mock.token.returns(mockCrv.address)
-    lender = await new TrueLenderFactory(owner).deploy()
-    const truOracle = await new MockTruPriceOracleFactory(owner).deploy()
-    const crvOracle = await new MockCrvPriceOracleFactory(owner).deploy()
+    lender = await new TrueLender__factory(owner).deploy()
+    const truOracle = await new MockTruPriceOracle__factory(owner).deploy()
+    const crvOracle = await new MockCrvPriceOracle__factory(owner).deploy()
     await pool.initialize(
       curvePool.address,
       mockCurveGauge.address,
@@ -81,7 +83,7 @@ describe('TrueFiPool', () => {
       crvOracle.address,
     )
 
-    const oneInch = await new Mock1InchFactory(owner).deploy()
+    const oneInch = await new Mock1Inch__factory(owner).deploy()
     await pool.set1InchAddress(oneInch.address)
 
     await lender.initialize(pool.address, mockRatingAgency.address, mockStakingPool.address)
@@ -106,7 +108,7 @@ describe('TrueFiPool', () => {
   })
 
   it('cannot exit and join on same transaction', async () => {
-    const arbitrage = await new PoolArbitrageTestFactory(owner).deploy()
+    const arbitrage = await new PoolArbitrageTest__factory(owner).deploy()
     await token.transfer(arbitrage.address, parseEth(1))
     await expect(arbitrage.joinExit(pool.address)).to.be.revertedWith('TrueFiPool: Cannot join and exit in same block')
   })
@@ -123,11 +125,11 @@ describe('TrueFiPool', () => {
     it('price of loan tokens is added to pool value after loans were given', async () => {
       await token.approve(pool.address, includeFee(parseEth(1e7)))
       await pool.join(includeFee(parseEth(1e7)))
-      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
+      const loan1 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
       await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(15e6))
       await lender.connect(borrower).fund(loan1.address)
       await timeTravel(provider, dayInSeconds * 182.5)
-      const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
+      const loan2 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
       await lender.connect(borrower).fund(loan2.address)
       expectScaledCloseTo(await pool.poolValue(), parseEth(9e6).add(parseEth(105e4)).add(calcBorrowerFee(parseEth(2e6))))
     })
@@ -135,11 +137,11 @@ describe('TrueFiPool', () => {
     it('loan tokens + tusd + curve liquidity + tru tokens', async () => {
       await token.approve(pool.address, includeFee(parseEth(1e7)))
       await pool.join(includeFee(parseEth(1e7)))
-      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
+      const loan1 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
       await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(15e6))
       await lender.connect(borrower).fund(loan1.address)
       await timeTravel(provider, dayInSeconds * 182.5)
-      const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
+      const loan2 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
       await lender.connect(borrower).fund(loan2.address)
       await pool.flush(parseEth(5e6), 0)
       await curvePool.set_withdraw_price(parseEth(2))
@@ -218,7 +220,7 @@ describe('TrueFiPool', () => {
     })
 
     it('mints liquidity tokens proportionally to stake for next users', async () => {
-      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
+      const loan1 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
       await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(15e6))
       await lender.connect(borrower).fund(loan1.address)
       await timeTravel(provider, dayInSeconds * 182.5)
@@ -230,11 +232,11 @@ describe('TrueFiPool', () => {
     })
 
     it('returns a basket of tokens on exit', async () => {
-      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
+      const loan1 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
       await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(15e6))
       await lender.connect(borrower).fund(loan1.address)
       await timeTravel(provider, dayInSeconds * 182.5)
-      const loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 2500)
+      const loan2 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 2500)
       await lender.connect(borrower).fund(loan2.address)
       await trustToken.mint(pool.address, parseTRU(1e7))
       await mockCrv.mint(pool.address, parseEth(3e5))
@@ -256,14 +258,14 @@ describe('TrueFiPool', () => {
     describe('two stakers', () => {
       let loan1: LoanToken, loan2: LoanToken
       beforeEach(async () => {
-        loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
+        loan1 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
         await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(15e6))
         await lender.connect(borrower).fund(loan1.address)
         await timeTravel(provider, dayInSeconds * 182.5)
         // PoolValue is 10.05M USD at the moment
         // After join, owner has around 91% of shares
         await pool.connect(borrower).join(includeFee(parseEth(1e6)))
-        loan2 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 2500)
+        loan2 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 2500)
         await lender.connect(borrower).fund(loan2.address)
       })
 
@@ -372,7 +374,7 @@ describe('TrueFiPool', () => {
     let pool2: TestTrueFiPool
 
     beforeEach(async () => {
-      pool2 = await new TestTrueFiPoolFactory(owner).deploy()
+      pool2 = await new TestTrueFiPool__factory(owner).deploy()
       await pool2.initialize(
         curvePool.address,
         mockCurveGauge.address,
@@ -548,7 +550,7 @@ describe('TrueFiPool', () => {
     })
 
     it('after loan approved, applies a penalty', async () => {
-      const loan1 = await new LoanTokenFactory(owner).deploy(token.address, borrower.address, lender.address, lender.address, amount.div(3), dayInSeconds * 365, 1000)
+      const loan1 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, amount.div(3), dayInSeconds * 365, 1000)
       await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(15e6))
       await lender.connect(borrower).fund(loan1.address)
       expect(await pool.liquidExitPenalty(amount.div(2))).to.equal(9990)

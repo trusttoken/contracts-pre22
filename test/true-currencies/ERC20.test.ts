@@ -5,7 +5,7 @@ import { expect, use } from 'chai'
 import { initialSupply, trueCurrency } from 'fixtures/trueCurrency'
 import { toAddress, WalletOrAddress } from 'utils'
 
-import { TrueCurrency } from 'contracts/types/TrueCurrency'
+import { TrueCurrency } from 'contracts'
 
 use(solidity)
 

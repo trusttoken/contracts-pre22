@@ -4,11 +4,14 @@ import { Contract, Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils'
 
 import {
+  TrueLenderReclaimer,
+  TrueLenderReclaimer__factory,
+} from 'contracts'
+
+import {
   ILoanTokenJson,
   TrueLenderJson,
-  TrueLenderReclaimer,
-  TrueLenderReclaimerFactory,
-} from 'contracts'
+} from 'build'
 
 use(solidity)
 
@@ -56,7 +59,7 @@ describe('TrueLenderReclaimer', () => {
     ])
     await mockLender.mock.reclaim.reverts()
 
-    reclaimer = await new TrueLenderReclaimerFactory(owner).deploy(mockLender.address)
+    reclaimer = await new TrueLenderReclaimer__factory(owner).deploy(mockLender.address)
   })
 
   describe('Has settleable loans', () => {

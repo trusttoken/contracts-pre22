@@ -12,7 +12,7 @@ import {
 } from 'utils'
 
 import {
-  TrustTokenFactory,
+  TrustToken__factory,
   TrustToken,
 } from 'contracts'
 
@@ -27,7 +27,7 @@ describe('VoteToken', () => {
     ([owner, timeLockRegistry, saftHolder, initialHolder, secondAccount] = wallets)
     provider = _provider
     const deployContract = setupDeploy(owner)
-    trustToken = await deployContract(TrustTokenFactory)
+    trustToken = await deployContract(TrustToken__factory)
     await trustToken.initialize()
     await trustToken.mint(initialHolder.address, parseTRU(1000))
     await trustToken.mint(timeLockRegistry.address, parseTRU(1000))

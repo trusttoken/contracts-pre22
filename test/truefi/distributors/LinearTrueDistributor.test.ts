@@ -13,8 +13,8 @@ import {
 
 import {
   LinearTrueDistributor,
-  LinearTrueDistributorFactory,
-  MockErc20TokenFactory,
+  LinearTrueDistributor__factory,
+  MockErc20Token__factory,
   MockErc20Token,
 } from 'contracts'
 
@@ -34,10 +34,10 @@ describe('LinearTrueDistributor', () => {
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, farm] = wallets
     provider = _provider
-    trustToken = await new MockErc20TokenFactory(owner).deploy()
+    trustToken = await new MockErc20Token__factory(owner).deploy()
     const now = Math.floor(Date.now() / 1000)
     startDate = now + DAY
-    distributor = await new LinearTrueDistributorFactory(owner).deploy()
+    distributor = await new LinearTrueDistributor__factory(owner).deploy()
     await distributor.initialize(startDate, DAY * 30, distributionAmount, trustToken.address)
     await trustToken.mint(distributor.address, distributionAmount)
   })

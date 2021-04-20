@@ -6,11 +6,11 @@ import { setupDeploy } from 'scripts/utils'
 import { beforeEachWithFixture } from 'utils'
 
 import {
-  MockHookFactory,
+  MockHook__factory,
   MockHook,
   TokenControllerMock,
-  TokenControllerMockFactory,
-  MockGasRefundTokenFactory,
+  TokenControllerMock__factory,
+  MockGasRefundToken__factory,
   MockGasRefundToken,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
@@ -28,10 +28,10 @@ describe('TrueCurrency - ERC20', () => {
   beforeEachWithFixture(async (wallets: Wallet[]) => {
     [deployer, refunder, otherAccount] = wallets
     const deployContract = setupDeploy(deployer)
-    token = await deployContract(MockGasRefundTokenFactory)
+    token = await deployContract(MockGasRefundToken__factory)
     await token.initialize()
-    hookContract = await deployContract(MockHookFactory)
-    controller = await deployContract(TokenControllerMockFactory)
+    hookContract = await deployContract(MockHook__factory)
+    controller = await deployContract(TokenControllerMock__factory)
     await controller.initialize()
     await controller.setToken(token.address)
     await token.transferOwnership(controller.address)

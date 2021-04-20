@@ -4,7 +4,7 @@ import { expect, use } from 'chai'
 
 import { initialSupply, trueCurrency } from 'fixtures/trueCurrency'
 
-import { TrueCurrency } from 'contracts/types/TrueCurrency'
+import { TrueCurrency } from 'contracts'
 
 use(solidity)
 

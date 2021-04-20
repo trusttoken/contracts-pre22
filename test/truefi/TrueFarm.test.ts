@@ -14,11 +14,11 @@ import {
 
 import {
   MockErc20Token,
-  MockErc20TokenFactory,
+  MockErc20Token__factory,
   LinearTrueDistributor,
-  TrueFarmFactory,
+  TrueFarm__factory,
   TrueFarm,
-  LinearTrueDistributorFactory,
+  LinearTrueDistributor__factory,
 } from 'contracts'
 
 use(solidity)
@@ -46,16 +46,16 @@ describe('TrueFarm', () => {
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, staker1, staker2] = wallets
     provider = _provider
-    trustToken = await new MockErc20TokenFactory(owner).deploy()
-    stakingToken = await new MockErc20TokenFactory(owner).deploy()
-    distributor = await new LinearTrueDistributorFactory(owner).deploy()
+    trustToken = await new MockErc20Token__factory(owner).deploy()
+    stakingToken = await new MockErc20Token__factory(owner).deploy()
+    distributor = await new LinearTrueDistributor__factory(owner).deploy()
     const now = Math.floor(Date.now() / 1000)
     start = now + DAY
 
     await distributor.initialize(start, DURATION, amount, trustToken.address)
 
-    farm = await new TrueFarmFactory(owner).deploy()
-    farm2 = await new TrueFarmFactory(owner).deploy()
+    farm = await new TrueFarm__factory(owner).deploy()
+    farm2 = await new TrueFarm__factory(owner).deploy()
 
     await distributor.setFarm(farm.address)
     await farm.initialize(stakingToken.address, distributor.address, 'Test farm')

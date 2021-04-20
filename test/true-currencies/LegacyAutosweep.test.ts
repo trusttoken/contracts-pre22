@@ -4,7 +4,7 @@ import { MockProvider, solidity } from 'ethereum-waffle'
 import { beforeEachWithFixture } from 'utils'
 
 import {
-  MockTrueCurrencyWithAutosweepFactory,
+  MockTrueCurrencyWithAutosweep__factory,
   MockTrueCurrencyWithAutosweep,
 } from 'contracts'
 
@@ -18,7 +18,7 @@ describe('TrueCurrency - Legacy autosweep', () => {
   beforeEachWithFixture(async () => {
     const provider = new MockProvider()
     const [owner] = provider.getWallets()
-    token = await new MockTrueCurrencyWithAutosweepFactory(owner).deploy()
+    token = await new MockTrueCurrencyWithAutosweep__factory(owner).deploy()
     await token.mint(owner.address, 100)
   })
 

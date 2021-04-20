@@ -1,6 +1,6 @@
 import { TEST_STATE_BLOCK_NUMBER, upgradeSuite } from './suite'
 import {
-  TrustTokenFactory,
+  TrustToken__factory,
 } from 'contracts'
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
@@ -14,7 +14,7 @@ const addressWithoutLockedFunds = '0x3f5ce5fbfe3e9af3971dd833d26ba9b5c936f0be'
 it('TRU', async () => {
   const emptyAddress = Wallet.createRandom().address
 
-  const contract = await upgradeSuite(TEST_STATE_BLOCK_NUMBER, TrustTokenFactory, '0x4c19596f5aaff459fa38b0f7ed92f11ae6543784', [
+  const contract = await upgradeSuite(TEST_STATE_BLOCK_NUMBER, TrustToken__factory, '0x4c19596f5aaff459fa38b0f7ed92f11ae6543784', [
     (contract) => contract.balanceOf(addressWithLockedFunds),
     (contract) => contract.balanceOf(addressWithoutLockedFunds),
     (contract) => contract.balanceOf(emptyAddress),

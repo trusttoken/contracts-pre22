@@ -17,13 +17,13 @@ import {
 } from 'utils'
 
 import {
-  LinearTrueDistributor, LinearTrueDistributorFactory,
+  LinearTrueDistributor, LinearTrueDistributor__factory,
   MockTrueCurrency,
-  MockTrueCurrencyFactory,
+  MockTrueCurrency__factory,
   StkTruToken,
-  StkTruTokenFactory,
+  StkTruToken__factory,
   TrustToken,
-  TrustTokenFactory,
+  TrustToken__factory,
 } from 'contracts'
 
 use(solidity)
@@ -46,13 +46,13 @@ describe('StkTruToken', () => {
     ([owner, staker, liquidator] = wallets)
     provider = _provider
     const deployContract = setupDeploy(owner)
-    tru = await deployContract(TrustTokenFactory)
+    tru = await deployContract(TrustToken__factory)
     await tru.initialize()
-    tfusd = await deployContract(MockTrueCurrencyFactory)
-    feeToken = await deployContract(MockTrueCurrencyFactory)
-    distributor = await deployContract(LinearTrueDistributorFactory)
+    tfusd = await deployContract(MockTrueCurrency__factory)
+    feeToken = await deployContract(MockTrueCurrency__factory)
+    distributor = await deployContract(LinearTrueDistributor__factory)
 
-    stkToken = await deployContract(StkTruTokenFactory)
+    stkToken = await deployContract(StkTruToken__factory)
     await stkToken.initialize(tru.address, tfusd.address, feeToken.address, distributor.address, liquidator.address)
 
     await tru.mint(owner.address, amount)

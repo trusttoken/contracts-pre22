@@ -5,9 +5,9 @@ import { beforeEachWithFixture, parseEth } from 'utils'
 
 import {
   MockLoanFactory,
-  LoanTokenFactory,
-  MockErc20TokenFactory,
-  MockLoanFactoryFactory,
+  LoanToken__factory,
+  MockErc20Token__factory,
+  MockLoanFactory__factory,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
 
@@ -20,8 +20,8 @@ describe('LoanFactory', () => {
 
   beforeEachWithFixture(async (wallets) => {
     [owner, borrower] = wallets
-    const token = await new MockErc20TokenFactory(owner).deploy()
-    factory = await new MockLoanFactoryFactory(owner).deploy()
+    const token = await new MockErc20Token__factory(owner).deploy()
+    factory = await new MockLoanFactory__factory(owner).deploy()
     await factory.initialize(token.address)
     await factory['setLender(address)'](owner.address)
     const tx = await factory.connect(borrower).createLoanToken(parseEth(123), 100, 200)
@@ -30,7 +30,7 @@ describe('LoanFactory', () => {
   })
 
   it('deploys loan token contract', async () => {
-    const loanToken = LoanTokenFactory.connect(contractAddress, owner)
+    const loanToken = LoanToken__factory.connect(contractAddress, owner)
     expect(await loanToken.amount()).to.equal(parseEth(123))
     expect(await loanToken.term()).to.equal(100)
     expect(await loanToken.apy()).to.equal(200)

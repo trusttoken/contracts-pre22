@@ -8,9 +8,9 @@ import { toAddress, WalletOrAddress } from 'utils'
 import {
   TrueGold,
   Erc20Mock,
-  Erc20MockFactory,
+  Erc20Mock__factory,
   OwnableMock,
-  OwnableMockFactory,
+  OwnableMock__factory,
 } from 'contracts'
 
 use(solidity)
@@ -31,10 +31,10 @@ describe('TrueGold - Reclaimable', () => {
 
     const { secondAccount, token } = await setupTrueGold([deployer, ...wallets])
 
-    const erc20MockFactory = new Erc20MockFactory(deployer)
+    const erc20MockFactory = new Erc20Mock__factory(deployer)
     const otherToken = await erc20MockFactory.deploy(token.address, 1000)
 
-    const ownableMockFactory = new OwnableMockFactory(deployer)
+    const ownableMockFactory = new OwnableMock__factory(deployer)
     const ownableContract = await ownableMockFactory.deploy()
     await ownableContract.transferOwnership(token.address)
 
