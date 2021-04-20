@@ -49,7 +49,7 @@ contract TrueFiVault {
 
         // unstake if staked balance
         // will revert if not in cooldown
-        if(stakedBalance() > 0) {
+        if (stakedBalance() > 0) {
             _unstake(stkTru.balanceOf(address(this)));
         }
 
