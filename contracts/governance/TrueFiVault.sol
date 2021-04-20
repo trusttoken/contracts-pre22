@@ -4,7 +4,6 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {VoteToken} from "./VoteToken.sol";
 import {GovernorAlpha} from "./GovernorAlpha.sol";
 import {StkTruToken} from "./StkTruToken.sol";
 
@@ -25,18 +24,27 @@ contract TrueFiVault {
     address deployer;
     uint256 expiry;
 
-    VoteToken tru = VoteToken(0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784);
-    StkTruToken stkTru = StkTruToken(0x23696914Ca9737466D8553a2d619948f548Ee424);
-    GovernorAlpha governance = GovernorAlpha(0x0000000000000000000000000000000000000000);
+    IERC20 tru;
+    StkTruToken stkTru;
+    GovernorAlpha governance;
 
     uint256 constant LOCKOUT = 180 days;
 
     event WithdrawTo(address recipient);
 
-    constructor(address _owner, uint256 _amount) public {
+    constructor(
+        address _owner,
+        uint256 _amount,
+        GovernorAlpha _governance
+    ) public {
         owner = _owner;
         deployer = msg.sender;
         expiry = block.timestamp.add(LOCKOUT);
+
+        governance = _governance;
+        tru = IERC20(address(governance.trustToken()));
+        stkTru = StkTruToken(address(governance.stkTRU()));
+
         require(tru.transferFrom(deployer, address(this), _amount), "TrueFiVault: insufficient balance.");
     }
 
@@ -117,7 +125,7 @@ contract TrueFiVault {
      * @dev Claim TRU rewards from staking contract
      */
     function claimRewards() public onlyOwner {
-        stkTru.claimRewards(IERC20(address(tru)));
+        stkTru.claimRewards(tru);
     }
 
     /**
