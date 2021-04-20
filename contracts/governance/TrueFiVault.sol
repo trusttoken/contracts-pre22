@@ -10,8 +10,14 @@ import {StkTruToken} from "./StkTruToken.sol";
 
 /**
  * @title TrueFiVault
- * @dev Vault for TRU tokens to create lockup period
- * Allows staking TRU and using TRU in governance
+ * @dev Vault for granting TRU tokens from deployer to owner after a lockout period.
+ *
+ * After the lockout period, owner may withdraw any TRU in the vault.
+ * During the lockout period, the vault still allows owner to stake TRU
+ * and cast votes in governance.
+ *
+ * In case of emergency or error, deployer reserves the ability to withdraw all
+ * funds in vault.
  */
 contract TrueFiVault {
     using SafeMath for uint256;
