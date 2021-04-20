@@ -3,8 +3,6 @@ import { expect, use } from 'chai'
 
 import { deployPausedTrueGold } from 'scripts/deploy_paused_true_gold'
 
-import { toHex } from 'utils'
-
 import { PausedTrueGold } from 'contracts'
 import { PausedTrueGoldJson } from 'build'
 

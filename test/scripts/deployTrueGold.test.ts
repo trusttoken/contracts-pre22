@@ -5,7 +5,7 @@ import { deployTrueGold } from 'scripts/deploy_true_gold'
 import { makeAddress } from 'scripts/model/Address'
 import { asProxy } from 'scripts/utils/asProxy'
 
-import { toHex, MAX_BURN_BOUND } from 'utils'
+import { MAX_BURN_BOUND } from 'utils'
 
 import {
   TrueGold,
