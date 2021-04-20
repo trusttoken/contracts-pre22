@@ -3,7 +3,7 @@ echo "0"
 set -e
 echo "1"
 
-ODline=$(grep 'artifacts' hardhat.config.ts)
+ODline=$(grep 'artifacts' ./hardhat.config.ts)
 echo "2"
 regex=": \'(.+)\'"
 echo "3"
