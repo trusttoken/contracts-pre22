@@ -16,6 +16,7 @@ import {StkTruToken} from "./StkTruToken.sol";
 contract TrueFiVault {
     using SafeMath for uint256;
     address owner;
+    address deployer;
     uint256 expiry;
 
     VoteToken tru = VoteToken(0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784);
@@ -28,6 +29,7 @@ contract TrueFiVault {
 
     constructor(address _owner, uint256 _amount) public {
         owner = _owner;
+        deployer = msg.sender;
         expiry = block.timestamp.add(LOCKOUT);
         require(tru.transferFrom(msg.sender, address(this), _amount), "TrueFiVault: insufficient balance.");
     }
@@ -37,6 +39,14 @@ contract TrueFiVault {
      */
     modifier onlyOwner() {
         require(msg.sender == owner, "only owner");
+        _;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyDeployer() {
+        require(msg.sender == deployer, "only deployer");
         _;
     }
 
@@ -83,6 +93,7 @@ contract TrueFiVault {
 
     /**
      * @dev Cast vote in governance for `proposalId`
+     * Uses both TRU and stkTRU balance
      * @param proposalId Proposal ID
      * @param support Vote boolean
      */
@@ -110,6 +121,14 @@ contract TrueFiVault {
      */
     function claimRewards() public onlyOwner {
         stkTru.claimRewards(IERC20(address(tru)));
+    }
+
+    /**
+     * @dev Allow deployer to reclaim funds in case of emergency or mistake
+     */
+    function reclaim() public onlyDeployer {
+        tru.transfer(deployer, tru.balanceOf(address(this)));
+        stkTru.transfer(deployer, stkTru.balanceOf(address(this)));
     }
 
     /**
