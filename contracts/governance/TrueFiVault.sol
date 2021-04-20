@@ -51,6 +51,30 @@ contract TrueFiVault {
     }
 
     /**
+     * @dev Get claimable TRU amount from staking contract
+     * @return Claimable TRU amount
+     */
+    function claimable() public view returns (uint256) {
+        return stkTru.claimable(address(this), IERC20(address(tru)));
+    }
+
+    /**
+     * @dev Get amount of TRU staked
+     * @return Balance of stkTRU
+     */
+    function stakedBalance() public view returns (uint256) {
+        return stkTru.balanceOf(address(this));
+    }
+
+    /**
+     * @dev Allow deployer to reclaim funds in case of emergency or mistake
+     */
+    function reclaimToDeployer() public onlyDeployer {
+        tru.transfer(deployer, tru.balanceOf(address(this)));
+        stkTru.transfer(deployer, stkTru.balanceOf(address(this)));
+    }
+
+    /**
      * @dev Claim TRU after expiry time
      */
     function unlock() public onlyOwner {
@@ -68,19 +92,13 @@ contract TrueFiVault {
     }
 
     /**
-     * @dev Get claimable TRU amount from staking contract
-     * @return Claimable TRU amount
+     * @dev Cast vote in governance for `proposalId`
+     * Uses both TRU and stkTRU balance
+     * @param proposalId Proposal ID
+     * @param support Vote boolean
      */
-    function claimable() public view returns (uint256) {
-        return stkTru.claimable(address(this), IERC20(address(tru)));
-    }
-
-    /**
-     * @dev Get amount of TRU staked
-     * @return Balance of stkTRU
-     */
-    function stakedBalance() public view returns (uint256) {
-        return stkTru.balanceOf(address(this));
+    function castVote(uint256 proposalId, bool support) public onlyOwner {
+        governance.castVote(proposalId, support);
     }
 
     /**
@@ -89,16 +107,6 @@ contract TrueFiVault {
      */
     function stake(uint256 amount) public onlyOwner {
         stkTru.stake(amount);
-    }
-
-    /**
-     * @dev Cast vote in governance for `proposalId`
-     * Uses both TRU and stkTRU balance
-     * @param proposalId Proposal ID
-     * @param support Vote boolean
-     */
-    function castVote(uint256 proposalId, bool support) public onlyOwner {
-        governance.castVote(proposalId, support);
     }
 
     /**
@@ -121,13 +129,5 @@ contract TrueFiVault {
      */
     function claimRewards() public onlyOwner {
         stkTru.claimRewards(IERC20(address(tru)));
-    }
-
-    /**
-     * @dev Allow deployer to reclaim funds in case of emergency or mistake
-     */
-    function reclaimToDeployer() public onlyDeployer {
-        tru.transfer(deployer, tru.balanceOf(address(this)));
-        stkTru.transfer(deployer, stkTru.balanceOf(address(this)));
     }
 }
