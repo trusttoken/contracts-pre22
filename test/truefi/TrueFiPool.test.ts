@@ -1,7 +1,6 @@
 import { expect, use } from 'chai'
 import { constants, Wallet, BigNumber } from 'ethers'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
-import fetch from 'node-fetch'
 
 import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo, parseTRU } from 'utils'
 
@@ -19,9 +18,7 @@ import {
   PoolArbitrageTest__factory,
   MockStakingPool,
   MockStakingPool__factory,
-  MockTruPriceOracle__factory,
   MockCrvPriceOracle__factory,
-  Mock1Inch__factory,
 } from 'contracts'
 import {
   ICurveGaugeJson,
@@ -29,7 +26,6 @@ import {
   TrueRatingAgencyJson,
 } from 'build'
 import { AddressZero } from '@ethersproject/constants'
-import { MockTrueFiPoolOracleFactory } from 'contracts/types/MockTrueFiPoolOracleFactory'
 
 use(solidity)
 
@@ -83,9 +79,6 @@ describe('TrueFiPool', () => {
       truOracle.address,
       crvOracle.address,
     )
-
-    const oneInch = await new Mock1Inch__factory(owner).deploy()
-    await pool.set1InchAddress(oneInch.address)
 
     await lender.initialize(pool.address, mockRatingAgency.address, mockStakingPool.address)
     provider = _provider
@@ -595,47 +588,6 @@ describe('TrueFiPool', () => {
       // expect around ~365006 gas
       const txn = await (await pool.liquidExit(await pool.balanceOf(owner.address))).wait()
       expect(txn.gasUsed.toNumber()).to.be.lt(400000)
-    })
-  })
-
-  describe('1Inch', () => {
-    const getRequestData = async (fromToken: string, toToken: string, from: string) => {
-      const curveAddress = '0xD533a949740bb3306d119CC777fa900bA034cd52'
-      const tusdAddress = '0x0000000000085d4780B73119b644AE5ecd22b376'
-      const poolAddress = '0xa1e72267084192Db7387c8CC1328fadE470e4149'
-      const url = `https://api.1inch.exchange/v2.0/swap?disableEstimate=true&fromTokenAddress=${curveAddress}&toTokenAddress=${tusdAddress}&amount=100&fromAddress=${poolAddress}&slippage=1`
-      const resp = await (await fetch(url)).json()
-      return (resp.tx.data as string)
-        .replace(/0000000000085d4780b73119b644ae5ecd22b376/g, toToken.slice(2).toLowerCase())
-        .replace(/d533a949740bb3306d119cc777fa900ba034cd52/g, fromToken.slice(2).toLowerCase())
-        .replace(/a1e72267084192db7387c8cc1328fade470e4149/g, from.slice(2).toLowerCase())
-    }
-
-    it('works for CRV -> TUSD swap', async () => {
-      await mockCrv.mint(pool.address, 10000)
-      const data = await getRequestData(mockCrv.address, token.address, pool.address)
-      await expect(pool.sellCrvWith1Inch(data)).to.not.be.reverted
-    })
-
-    it('reverts for bad source token', async () => {
-      const data = await getRequestData(owner.address, token.address, pool.address)
-      await expect(pool.sellCrvWith1Inch(data)).to.be.revertedWith('TrueFiPool: Source token is not CRV')
-    })
-
-    it('reverts for bad destination token', async () => {
-      const data = await getRequestData(mockCrv.address, owner.address, pool.address)
-      await expect(pool.sellCrvWith1Inch(data)).to.be.revertedWith('TrueFiPool: Destination token is not TUSD')
-    })
-
-    it('reverts when receiver is not TrueFIPool', async () => {
-      const data = await getRequestData(mockCrv.address, token.address, owner.address)
-      await expect(pool.sellCrvWith1Inch(data)).to.be.revertedWith('TrueFiPool: Receiver is not pool')
-    })
-
-    it('reverts when 1inch call fails', async () => {
-      const data = await getRequestData(mockCrv.address, token.address, pool.address)
-      // corrupt signature hash
-      await expect(pool.sellCrvWith1Inch(`0x123${data.slice(5)}`)).to.be.revertedWith('TrueFiPool: 1Inch swap failed')
     })
   })
 })
