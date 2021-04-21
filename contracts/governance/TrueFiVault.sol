@@ -10,19 +10,20 @@ import {ITrueRatingAgencyV2} from "../truefi/interface/ITrueRatingAgencyV2.sol";
 
 /**
  * @title TrueFiVault
- * @dev Vault for granting TRU tokens from deployer to owner after a lockout period.
+ * @dev Vault for granting TRU tokens from owner to beneficiary after a lockout period.
  *
- * After the lockout period, owner may withdraw any TRU in the vault.
- * During the lockout period, the vault still allows owner to stake TRU
+ * After the lockout period, beneficiary may withdraw any TRU in the vault.
+ * During the lockout period, the vault still allows beneficiary to stake TRU
  * and cast votes in governance.
  *
- * In case of emergency or error, deployer reserves the ability to withdraw all
+ * In case of emergency or error, owner reserves the ability to withdraw all
  * funds in vault.
  */
 contract TrueFiVault {
     using SafeMath for uint256;
+
     address owner;
-    address deployer;
+    address beneficiary;
     uint256 expiry;
 
     IERC20 tru;
@@ -35,13 +36,13 @@ contract TrueFiVault {
     event WithdrawTo(address recipient);
 
     constructor(
-        address _owner,
+        address _beneficiary,
         uint256 _amount,
         GovernorAlpha _governance,
         ITrueRatingAgencyV2 _ratingAgency
     ) public {
-        owner = _owner;
-        deployer = msg.sender;
+        owner = msg.sender;
+        beneficiary = _beneficiary;
         expiry = block.timestamp.add(LOCKOUT);
 
         governance = _governance;
@@ -49,7 +50,15 @@ contract TrueFiVault {
         stkTru = StkTruToken(address(governance.stkTRU()));
         ratingAgency = _ratingAgency;
 
-        require(tru.transferFrom(deployer, address(this), _amount), "TrueFiVault: insufficient balance.");
+        require(tru.transferFrom(owner, address(this), _amount), "TrueFiVault: insufficient balance.");
+    }
+
+    /**
+     * @dev Throws if called by any account other than the beneficiary.
+     */
+    modifier onlyBeneficiary() {
+        require(msg.sender == beneficiary, "only beneficiary");
+        _;
     }
 
     /**
@@ -61,26 +70,18 @@ contract TrueFiVault {
     }
 
     /**
-     * @dev Throws if called by any account other than the deployer.
-     */
-    modifier onlyDeployer() {
-        require(msg.sender == deployer, "only deployer");
-        _;
-    }
-
-    /**
-     * @dev Allow deployer to withdraw funds in case of emergency or mistake
-     */
-    function withdrawToDeployer() public onlyDeployer {
-        _withdrawTo(deployer);
-    }
-
-    /**
-     * @dev Withdraw funds to owner after expiry time
+     * @dev Allow owner to withdraw funds in case of emergency or mistake
      */
     function withdrawToOwner() public onlyOwner {
-        require(block.timestamp >= expiry, "TrueFiVault: owner cannot withdraw before expiration");
         _withdrawTo(owner);
+    }
+
+    /**
+     * @dev Withdraw funds to beneficiary after expiry time
+     */
+    function withdrawToBeneficiary() public onlyBeneficiary {
+        require(block.timestamp >= expiry, "TrueFiVault: beneficiary cannot withdraw before expiration");
+        _withdrawTo(beneficiary);
     }
 
     /**
@@ -98,7 +99,7 @@ contract TrueFiVault {
      * @param proposalId Proposal ID
      * @param support Vote boolean
      */
-    function castVote(uint256 proposalId, bool support) public onlyOwner {
+    function castVote(uint256 proposalId, bool support) public onlyBeneficiary {
         governance.castVote(proposalId, support);
     }
 
@@ -106,7 +107,7 @@ contract TrueFiVault {
      * @dev Rate YES on a loan by staking TRU
      * @param id Loan ID
      */
-    function rateLoanYes(address id) public onlyOwner {
+    function rateLoanYes(address id) public onlyBeneficiary {
         ratingAgency.yes(id);
     }
 
@@ -114,7 +115,7 @@ contract TrueFiVault {
      * @dev Rate NO on a loan by staking TRU
      * @param id Loan ID
      */
-    function rateLoanNo(address id) public onlyOwner {
+    function rateLoanNo(address id) public onlyBeneficiary {
         ratingAgency.no(id);
     }
 
@@ -122,7 +123,7 @@ contract TrueFiVault {
      * @dev Stake `amount` TRU in staking contract
      * @param amount Amount of TRU to stake
      */
-    function stake(uint256 amount) public onlyOwner {
+    function stake(uint256 amount) public onlyBeneficiary {
         stkTru.stake(amount);
     }
 
@@ -130,21 +131,21 @@ contract TrueFiVault {
      * @dev unstake `amount` TRU in staking contract
      * @param amount Amount of TRU to unstake
      */
-    function unstake(uint256 amount) public onlyOwner {
+    function unstake(uint256 amount) public onlyBeneficiary {
         stkTru.unstake(amount);
     }
 
     /**
      * @dev Initiate cooldown for staked TRU
      */
-    function cooldown() public onlyOwner {
+    function cooldown() public onlyBeneficiary {
         stkTru.cooldown();
     }
 
     /**
      * @dev Claim TRU rewards from staking contract
      */
-    function claimRewards() public onlyOwner {
+    function claimRewards() public onlyBeneficiary {
         stkTru.claimRewards(tru);
     }
 
@@ -152,7 +153,7 @@ contract TrueFiVault {
      * @dev Claim TRU rewards, then restake without transferring
      * Allows account to save more gas by avoiding out-and-back transfers
      */
-    function claimRestake() public onlyOwner {
+    function claimRestake() public onlyBeneficiary {
         stkTru.claimRestake();
     }
 }
