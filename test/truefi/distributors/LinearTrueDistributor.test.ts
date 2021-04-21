@@ -35,7 +35,7 @@ describe('LinearTrueDistributor', () => {
     [owner, farm] = wallets
     provider = _provider
     trustToken = await new MockErc20Token__factory(owner).deploy()
-    const now = Math.floor(Date.now() / 1000)
+    const now = (await provider.getBlock('latest')).timestamp
     startDate = now + DAY
     distributor = await new LinearTrueDistributor__factory(owner).deploy()
     await distributor.initialize(startDate, DAY * 30, distributionAmount, trustToken.address)
@@ -134,7 +134,7 @@ describe('LinearTrueDistributor', () => {
           const balanceBefore = await trustToken.balanceOf(farm.address)
           await distributor.distribute()
           const balanceAfter = await trustToken.balanceOf(farm.address)
-          expectScaledCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(30))
+          expectScaledCloseTo(balanceAfter.sub(balanceBefore), distributionAmount.div(30), 100)
         }
       })
 

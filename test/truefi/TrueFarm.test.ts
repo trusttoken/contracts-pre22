@@ -46,10 +46,11 @@ describe('TrueFarm', () => {
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, staker1, staker2] = wallets
     provider = _provider
+    await provider.send('hardhat_reset', [])
     trustToken = await new MockErc20Token__factory(owner).deploy()
     stakingToken = await new MockErc20Token__factory(owner).deploy()
     distributor = await new LinearTrueDistributor__factory(owner).deploy()
-    const now = Math.floor(Date.now() / 1000)
+    const now = (await provider.getBlock('latest')).timestamp
     start = now + DAY
 
     await distributor.initialize(start, DURATION, amount, trustToken.address)

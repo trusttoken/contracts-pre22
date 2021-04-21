@@ -68,7 +68,7 @@ describe('TrueCurrency - ERC20', () => {
   describe('refund by killing sheep', () => {
     it('refunds gas by calling selfdestruct', async () => {
       await token.sponsorGas2(100, {
-        gasLimit: 6000000,
+        gasLimit: 7500000,
       })
       expect(await token.remainingSheepRefundPool()).to.equal(100)
       const noRefundGasUse = (await (await hookContract.hook()).wait()).gasUsed

@@ -28,6 +28,7 @@ describe('TrustToken', () => {
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, timeLockRegistry, saftHolder, initialHolder, secondAccount, thirdAccount, fourthAccount] = wallets)
     provider = _provider
+    await provider.send('hardhat_reset', [])
     const deployContract = setupDeploy(owner)
     trustToken = await deployContract(TrustToken__factory)
     await trustToken.initialize()

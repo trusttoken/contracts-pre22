@@ -367,7 +367,7 @@ describe('GovernorAlpha', () => {
         const { hasVoted, support, votes }: Receipt = tx
         expect(hasVoted).to.be.true
         expect(support).to.be.false
-        expect(votes.toNumber()).to.be.eq(votesAmount)
+        expect(votes).to.be.eq(votesAmount)
       })
     })
   })
@@ -411,7 +411,7 @@ describe('GovernorAlpha', () => {
     async function sign (wallet: Wallet, proposalId: number, support: boolean, governor: string) {
       const domain = {
         name: 'TrueFi Governance',
-        chainId: 1,
+        chainId: (await wallet.provider.getNetwork()).chainId,
         verifyingContract: governor,
       }
       const types = {

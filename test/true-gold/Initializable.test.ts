@@ -1,8 +1,8 @@
 import { BigNumberish, Wallet } from 'ethers'
-import { loadFixture, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
 
-import { MAX_BURN_BOUND } from 'utils'
+import { loadFixture, MAX_BURN_BOUND } from 'utils'
 
 import {
   TrueGold,
