@@ -22,14 +22,14 @@ import {ITrueRatingAgencyV2} from "../truefi/interface/ITrueRatingAgencyV2.sol";
 contract TrueFiVault {
     using SafeMath for uint256;
 
-    address owner;
-    address beneficiary;
-    uint256 expiry;
+    address public owner;
+    address public beneficiary;
+    uint256 public expiry;
 
-    GovernorAlpha governance;
-    IERC20 tru;
-    StkTruToken stkTru;
-    ITrueRatingAgencyV2 ratingAgency;
+    GovernorAlpha public governance;
+    IERC20 public tru;
+    StkTruToken public stkTru;
+    ITrueRatingAgencyV2 public ratingAgency;
 
     event WithdrawTo(address recipient);
 
@@ -71,14 +71,14 @@ contract TrueFiVault {
     /**
      * @dev Allow owner to withdraw funds in case of emergency or mistake
      */
-    function withdrawToOwner() public onlyOwner {
+    function withdrawToOwner() external onlyOwner {
         _withdrawTo(owner);
     }
 
     /**
      * @dev Withdraw funds to beneficiary after expiry time
      */
-    function withdrawToBeneficiary() public onlyBeneficiary {
+    function withdrawToBeneficiary() external onlyBeneficiary {
         require(block.timestamp >= expiry, "TrueFiVault: beneficiary cannot withdraw before expiration");
         _withdrawTo(beneficiary);
     }
@@ -98,7 +98,7 @@ contract TrueFiVault {
      * @param proposalId Proposal ID
      * @param support Vote boolean
      */
-    function castVote(uint256 proposalId, bool support) public onlyBeneficiary {
+    function castVote(uint256 proposalId, bool support) external onlyBeneficiary {
         governance.castVote(proposalId, support);
     }
 
@@ -106,7 +106,7 @@ contract TrueFiVault {
      * @dev Rate YES on a loan by staking TRU
      * @param id Loan ID
      */
-    function rateLoanYes(address id) public onlyBeneficiary {
+    function rateLoanYes(address id) external onlyBeneficiary {
         ratingAgency.yes(id);
     }
 
@@ -114,7 +114,7 @@ contract TrueFiVault {
      * @dev Rate NO on a loan by staking TRU
      * @param id Loan ID
      */
-    function rateLoanNo(address id) public onlyBeneficiary {
+    function rateLoanNo(address id) external onlyBeneficiary {
         ratingAgency.no(id);
     }
 
@@ -122,7 +122,7 @@ contract TrueFiVault {
      * @dev Stake `amount` TRU in staking contract
      * @param amount Amount of TRU to stake
      */
-    function stake(uint256 amount) public onlyBeneficiary {
+    function stake(uint256 amount) external onlyBeneficiary {
         stkTru.stake(amount);
     }
 
@@ -130,21 +130,21 @@ contract TrueFiVault {
      * @dev unstake `amount` TRU in staking contract
      * @param amount Amount of TRU to unstake
      */
-    function unstake(uint256 amount) public onlyBeneficiary {
+    function unstake(uint256 amount) external onlyBeneficiary {
         stkTru.unstake(amount);
     }
 
     /**
      * @dev Initiate cooldown for staked TRU
      */
-    function cooldown() public onlyBeneficiary {
+    function cooldown() external onlyBeneficiary {
         stkTru.cooldown();
     }
 
     /**
      * @dev Claim TRU rewards from staking contract
      */
-    function claimRewards() public onlyBeneficiary {
+    function claimRewards() external onlyBeneficiary {
         stkTru.claimRewards(tru);
     }
 
@@ -152,7 +152,7 @@ contract TrueFiVault {
      * @dev Claim TRU rewards, then restake without transferring
      * Allows account to save more gas by avoiding out-and-back transfers
      */
-    function claimRestake() public onlyBeneficiary {
+    function claimRestake() external onlyBeneficiary {
         stkTru.claimRestake();
     }
 }
