@@ -87,9 +87,9 @@ contract TrueFiVault {
      * @dev Internal function to withdraw funds to recipient
      */
     function _withdrawTo(address recipient) private {
+        emit WithdrawTo(recipient);
         tru.transfer(recipient, tru.balanceOf(address(this)));
         stkTru.transfer(recipient, stkTru.balanceOf(address(this)));
-        emit WithdrawTo(recipient);
     }
 
     /**
