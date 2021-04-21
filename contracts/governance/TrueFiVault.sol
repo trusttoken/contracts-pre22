@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {GovernorAlpha} from "./GovernorAlpha.sol";
 import {StkTruToken} from "./StkTruToken.sol";
+import {ITrueRatingAgencyV2} from "../truefi/interface/ITrueRatingAgencyV2.sol";
 
 /**
  * @title TrueFiVault
@@ -27,6 +28,7 @@ contract TrueFiVault {
     IERC20 tru;
     StkTruToken stkTru;
     GovernorAlpha governance;
+    ITrueRatingAgencyV2 ratingAgency;
 
     uint256 constant LOCKOUT = 180 days;
 
@@ -35,7 +37,8 @@ contract TrueFiVault {
     constructor(
         address _owner,
         uint256 _amount,
-        GovernorAlpha _governance
+        GovernorAlpha _governance,
+        ITrueRatingAgencyV2 _ratingAgency
     ) public {
         owner = _owner;
         deployer = msg.sender;
@@ -44,6 +47,7 @@ contract TrueFiVault {
         governance = _governance;
         tru = IERC20(address(governance.trustToken()));
         stkTru = StkTruToken(address(governance.stkTRU()));
+        ratingAgency = _ratingAgency;
 
         require(tru.transferFrom(deployer, address(this), _amount), "TrueFiVault: insufficient balance.");
     }
@@ -96,6 +100,22 @@ contract TrueFiVault {
      */
     function castVote(uint256 proposalId, bool support) public onlyOwner {
         governance.castVote(proposalId, support);
+    }
+
+    /**
+     * @dev Rate YES on a loan by staking TRU
+     * @param id Loan ID
+     */
+    function rateLoanYes(address id) public onlyOwner {
+        ratingAgency.yes(id);
+    }
+
+    /**
+     * @dev Rate NO on a loan by staking TRU
+     * @param id Loan ID
+     */
+    function rateLoanNo(address id) public onlyOwner {
+        ratingAgency.no(id);
     }
 
     /**
