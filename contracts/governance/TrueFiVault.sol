@@ -88,8 +88,8 @@ contract TrueFiVault {
      */
     function _withdrawTo(address recipient) private {
         emit WithdrawTo(recipient);
-        tru.transfer(recipient, tru.balanceOf(address(this)));
-        stkTru.transfer(recipient, stkTru.balanceOf(address(this)));
+        require(tru.transfer(recipient, tru.balanceOf(address(this))), "TrueFiVault: insufficient balance.");
+        require(stkTru.transfer(recipient, stkTru.balanceOf(address(this))), "TrueFiVault: insufficient balance.");
     }
 
     /**
