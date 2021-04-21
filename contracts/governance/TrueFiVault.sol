@@ -26,24 +26,23 @@ contract TrueFiVault {
     address beneficiary;
     uint256 expiry;
 
+    GovernorAlpha governance;
     IERC20 tru;
     StkTruToken stkTru;
-    GovernorAlpha governance;
     ITrueRatingAgencyV2 ratingAgency;
-
-    uint256 constant LOCKOUT = 180 days;
 
     event WithdrawTo(address recipient);
 
     constructor(
         address _beneficiary,
         uint256 _amount,
+        uint256 _duration,
         GovernorAlpha _governance,
         ITrueRatingAgencyV2 _ratingAgency
     ) public {
         owner = msg.sender;
         beneficiary = _beneficiary;
-        expiry = block.timestamp.add(LOCKOUT);
+        expiry = block.timestamp.add(_duration);
 
         governance = _governance;
         tru = IERC20(address(governance.trustToken()));
