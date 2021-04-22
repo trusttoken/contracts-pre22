@@ -65,7 +65,13 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn test:truefi2
-
+  deploy:
+    docker:
+      - image: circleci/node:12.19.0
+    steps:
+      - attach_workspace:
+          at: .
+      - run: yarn deploy:truefi --network kovan --dry-run
   integration:
     docker:
       - image: circleci/node:12.19.0
@@ -89,6 +95,9 @@ workflows:
           requires:
             - build
       - test-others:
+          requires:
+            - build
+      - deploy:
           requires:
             - build
       - integration:
