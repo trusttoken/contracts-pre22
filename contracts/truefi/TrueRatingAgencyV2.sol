@@ -326,7 +326,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @dev Cancel ratings of msg.sender
      * @param id ID to cancel ratings for
      */
-    function resetCastRatings(address id) public onlyPendingLoans(id) {
+    function resetCastRatings(address id) public override onlyPendingLoans(id) {
         if (getYesRate(id, msg.sender) > 0) {
             _resetCastRatings(id, true);
         } else if (getNoRate(id, msg.sender) > 0) {
