@@ -106,6 +106,10 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
         emit Stake(token, msg.sender, amount);
     }
 
+    function staked(address token, address staker) public view returns(uint256){
+        return stakes[token].staked[staker];
+    }
+
     /**
      * @dev Internal unstake function
      * @param amount Amount of tokens to unstake
@@ -172,8 +176,8 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
             _updateShares(tokens[i]);
         }
         for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 oldStaked = stakes[address(this)].staked[msg.sender];
-            stakes[address(this)].staked[msg.sender] = shares[i];
+            uint256 oldStaked = stakes[address(this)].staked[tokens[i]];
+            stakes[address(this)].staked[tokens[i]] = shares[i];
             stakes[address(this)].totalStaked = stakes[address(this)].totalStaked.sub(oldStaked).add(shares[i]);
         }
     }
