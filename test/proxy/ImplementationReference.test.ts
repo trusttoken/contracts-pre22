@@ -3,8 +3,8 @@ import { solidity } from 'ethereum-waffle'
 import { beforeEachWithFixture } from 'utils'
 import {
   ImplementationReference,
-  ImplementationReferenceFactory, MockTrueCurrency,
-  MockTrueCurrencyFactory,
+  ImplementationReference__factory, MockTrueCurrency,
+  MockTrueCurrency__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
@@ -20,8 +20,8 @@ describe('ImplementationReference', () => {
 
   beforeEachWithFixture(async (wallets) => {
     [owner, notOwner] = wallets
-    tusd = await new MockTrueCurrencyFactory(owner).deploy()
-    implementationReference = await new ImplementationReferenceFactory(owner).deploy(tusd.address)
+    tusd = await new MockTrueCurrency__factory(owner).deploy()
+    implementationReference = await new ImplementationReference__factory(owner).deploy(tusd.address)
   })
 
   describe('constructor', () => {

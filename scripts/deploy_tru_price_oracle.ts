@@ -4,7 +4,7 @@
 import { ethers, providers } from 'ethers'
 
 import {
-  TruPriceOracleFactory,
+  TruPriceOracle__factory,
 } from '../build'
 
 async function deployTruPriceOracle () {
@@ -15,7 +15,7 @@ async function deployTruPriceOracle () {
   const provider = new providers.InfuraProvider(process.argv[2], INFURA_ENDPOINT)
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
 
-  const truPriceOracleImpl = await (await new TruPriceOracleFactory(wallet).deploy(txnArgs)).deployed()
+  const truPriceOracleImpl = await (await new TruPriceOracle__factory(wallet).deploy(txnArgs)).deployed()
   console.log(`TruPriceOracle: ${truPriceOracleImpl.address}`)
 }
 

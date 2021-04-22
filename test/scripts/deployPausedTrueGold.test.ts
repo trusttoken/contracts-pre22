@@ -3,17 +3,13 @@ import { expect, use } from 'chai'
 
 import { deployPausedTrueGold } from 'scripts/deploy_paused_true_gold'
 
-import { toHex } from 'utils'
-
-import {
-  PausedTrueGold,
-  PausedTrueGoldJson,
-} from 'contracts'
+import { PausedTrueGold } from 'contracts'
+import { PausedTrueGoldJson } from 'build'
 
 use(solidity)
 
 describe('deployPausedTrueGold', () => {
-  const pausedTokenBytecode = toHex(PausedTrueGoldJson.evm.deployedBytecode.object)
+  const pausedTokenBytecode = PausedTrueGoldJson.deployedBytecode
 
   const provider = new MockProvider()
   const [deployer] = provider.getWallets()

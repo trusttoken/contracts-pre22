@@ -5,13 +5,13 @@ import { Wallet } from 'ethers'
 import { beforeEachWithFixture, ZERO_ADDRESS } from 'utils'
 
 import {
-  OwnedProxyWithReferenceFactory,
+  OwnedProxyWithReference__factory,
   OwnedProxyWithReference,
   MockTrueCurrency,
-  MockTrueCurrencyFactory,
+  MockTrueCurrency__factory,
   ImplementationReference,
-  ImplementationReferenceFactory,
-  StringReturnFactory,
+  ImplementationReference__factory,
+  StringReturn__factory,
 } from 'contracts'
 
 use(solidity)
@@ -28,9 +28,9 @@ describe('OwnedProxyWithReference', () => {
 
   beforeEachWithFixture(async (wallets) => {
     [owner, anotherWallet, thirdWallet] = wallets
-    tusd = await new MockTrueCurrencyFactory(owner).deploy()
-    implementationReference = await new ImplementationReferenceFactory(owner).deploy(tusd.address)
-    proxy = await new OwnedProxyWithReferenceFactory(owner).deploy(owner.address, implementationReference.address)
+    tusd = await new MockTrueCurrency__factory(owner).deploy()
+    implementationReference = await new ImplementationReference__factory(owner).deploy(tusd.address)
+    proxy = await new OwnedProxyWithReference__factory(owner).deploy(owner.address, implementationReference.address)
   })
 
   describe('Ownership', () => {
@@ -84,8 +84,8 @@ describe('OwnedProxyWithReference', () => {
     })
 
     it('sets up implementation reference ', async () => {
-      const tusd2 = await new MockTrueCurrencyFactory(owner).deploy()
-      const implementationReference2 = await new ImplementationReferenceFactory(owner).deploy(tusd2.address)
+      const tusd2 = await new MockTrueCurrency__factory(owner).deploy()
+      const implementationReference2 = await new ImplementationReference__factory(owner).deploy(tusd2.address)
       await proxy.changeImplementationReference(implementationReference2.address)
       expect(await proxy.implementation()).to.equal(tusd2.address)
     })
@@ -109,7 +109,7 @@ describe('OwnedProxyWithReference', () => {
   })
 
   it('handles big calldata/returndata', async () => {
-    const tester = await new StringReturnFactory(owner).deploy()
+    const tester = await new StringReturn__factory(owner).deploy()
     await implementationReference.setImplementation(tester.address)
     // 512 byte hexadec
     const bigString = 'a'.repeat(256) + 'b'.repeat(256)

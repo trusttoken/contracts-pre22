@@ -13,10 +13,10 @@ import {
   MockTrueCurrency,
   OwnedUpgradeabilityProxy,
   TokenControllerMock,
-  RegistryMockFactory,
-  MockTrueCurrencyFactory,
-  OwnedUpgradeabilityProxyFactory,
-  TokenControllerMockFactory,
+  RegistryMock__factory,
+  MockTrueCurrency__factory,
+  OwnedUpgradeabilityProxy__factory,
+  TokenControllerMock__factory,
 } from 'contracts'
 
 use(solidity)
@@ -46,18 +46,18 @@ describe('ProxyWithController', () => {
 
   beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet, thirdWallet, mintKey, pauseKey, approver1, approver2, approver3] = wallets
-    registry = await new RegistryMockFactory(owner).deploy()
+    registry = await new RegistryMock__factory(owner).deploy()
 
-    tokenProxy = await new OwnedUpgradeabilityProxyFactory(owner).deploy()
-    tusdImplementation = await new MockTrueCurrencyFactory(owner).deploy()
+    tokenProxy = await new OwnedUpgradeabilityProxy__factory(owner).deploy()
+    tusdImplementation = await new MockTrueCurrency__factory(owner).deploy()
     await tokenProxy.upgradeTo(tusdImplementation.address)
-    token = new MockTrueCurrencyFactory(owner).attach(tokenProxy.address)
+    token = new MockTrueCurrency__factory(owner).attach(tokenProxy.address)
     await token.initialize()
 
-    controllerProxy = await new OwnedUpgradeabilityProxyFactory(owner).deploy()
-    controllerImplementation = await new TokenControllerMockFactory(owner).deploy()
+    controllerProxy = await new OwnedUpgradeabilityProxy__factory(owner).deploy()
+    controllerImplementation = await new TokenControllerMock__factory(owner).deploy()
     await controllerProxy.upgradeTo(controllerImplementation.address)
-    controller = new TokenControllerMockFactory(owner).attach(controllerProxy.address)
+    controller = new TokenControllerMock__factory(owner).attach(controllerProxy.address)
 
     await controller.initialize()
     await controller.setToken(token.address)

@@ -7,7 +7,7 @@ import { setupDeploy } from 'scripts/utils'
 import { beforeEachWithFixture, timeTravel } from 'utils'
 
 import {
-  TimeOwnedUpgradeabilityProxyFactory,
+  TimeOwnedUpgradeabilityProxy__factory,
   TimeOwnedUpgradeabilityProxy,
 } from 'contracts'
 
@@ -24,7 +24,7 @@ describe('TimeOwnedUpgradeabilityProxy', () => {
   }
 
   beforeEachWithFixture(async ([owner], _provider) => {
-    timeOwnedUpgradeabilityProxy = await setupDeploy(owner)(TimeOwnedUpgradeabilityProxyFactory)
+    timeOwnedUpgradeabilityProxy = await setupDeploy(owner)(TimeOwnedUpgradeabilityProxy__factory)
     getCurrentTimestamp = async () => (await _provider.getBlock('latest')).timestamp
     advanceTime = (time: number) => timeTravel(_provider, time)
   })

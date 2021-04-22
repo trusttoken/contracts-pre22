@@ -1,11 +1,31 @@
 import { expect, use } from 'chai'
-import { ITrueDistributorJson } from 'contracts'
-import { TrueRatingAgencyV2Json } from 'contracts'
-import { ImplementationReference, ImplementationReferenceFactory, LoanFactory2, LoanFactory2Factory, LoanToken2, LoanToken2Factory, MockTrueCurrency, MockTrueCurrencyFactory, PoolFactory, PoolFactoryFactory, StkTruToken, StkTruTokenFactory, TrueFiPool2, TrueFiPool2Factory, TrueLender2, TrueLender2Factory } from 'contracts/types'
-import { Liquidator2 } from 'contracts/types/Liquidator2'
-import { Liquidator2Factory } from 'contracts/types/Liquidator2Factory'
-import { MockTrueFiPoolOracle } from 'contracts/types/MockTrueFiPoolOracle'
-import { MockTrueFiPoolOracleFactory } from 'contracts/types/MockTrueFiPoolOracleFactory'
+import {
+  ITrueDistributorJson,
+  TrueRatingAgencyV2Json,
+} from 'build'
+import {
+  ImplementationReference,
+  ImplementationReference__factory,
+  LoanFactory2,
+  LoanFactory2__factory,
+  LoanToken2,
+  LoanToken2__factory,
+  MockTrueCurrency,
+  MockTrueCurrency__factory,
+  PoolFactory,
+  PoolFactory__factory,
+  StkTruToken,
+  StkTruToken__factory,
+  TrueFiPool2,
+  TrueFiPool2__factory,
+  TrueLender2,
+  TrueLender2__factory,
+  Liquidator2,
+  Liquidator2__factory,
+  MockTrueFiPoolOracle,
+  MockTrueFiPoolOracle__factory,
+} from 'contracts'
+
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumberish, Contract, Wallet } from 'ethers'
 import { Deployer, setupDeploy } from 'scripts/utils'
@@ -48,7 +68,7 @@ describe('Liquidator2', () => {
   const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
     const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, apy)
     const loanAddress = (await loanTx.wait()).events[0].args.contractAddress
-    return new LoanToken2Factory(owner).attach(loanAddress)
+    return new LoanToken2__factory(owner).attach(loanAddress)
   }
 
   const withdraw = async (wallet: Wallet, beneficiary = wallet.address) =>
@@ -59,16 +79,16 @@ describe('Liquidator2', () => {
     provider = _provider
     deployContract = setupDeploy(owner)
 
-    liquidator = await deployContract(Liquidator2Factory)
-    loanFactory = await deployContract(LoanFactory2Factory)
-    poolFactory = await deployContract(PoolFactoryFactory)
-    tru = await deployContract(MockTrueCurrencyFactory)
-    stkTru = await deployContract(StkTruTokenFactory)
-    lender = await deployContract(TrueLender2Factory)
-    poolImplementation = await deployContract(TrueFiPool2Factory)
-    implementationReference = await deployContract(ImplementationReferenceFactory, poolImplementation.address)
-    token = await deployContract(MockTrueCurrencyFactory)
-    oracle = await deployContract(MockTrueFiPoolOracleFactory, token.address)
+    liquidator = await deployContract(Liquidator2__factory)
+    loanFactory = await deployContract(LoanFactory2__factory)
+    poolFactory = await deployContract(PoolFactory__factory)
+    tru = await deployContract(MockTrueCurrency__factory)
+    stkTru = await deployContract(StkTruToken__factory)
+    lender = await deployContract(TrueLender2__factory)
+    poolImplementation = await deployContract(TrueFiPool2__factory)
+    implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
+    token = await deployContract(MockTrueCurrency__factory)
+    oracle = await deployContract(MockTrueFiPoolOracle__factory, token.address)
 
     rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
     await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
@@ -197,7 +217,7 @@ describe('Liquidator2', () => {
       })
 
       it('loan was not created via factory', async () => {
-        const fakeLoan = await deployContract(LoanToken2Factory, pool.address, borrower.address, borrower.address, liquidator.address, parseEth(1000), YEAR, 1000)
+        const fakeLoan = await deployContract(LoanToken2__factory, pool.address, borrower.address, borrower.address, liquidator.address, parseEth(1000), YEAR, 1000)
         await token.connect(borrower).approve(fakeLoan.address, parseEth(1000))
         await fakeLoan.connect(borrower).fund()
         await timeTravel(provider, defaultedLoanCloseTime)

@@ -5,24 +5,27 @@ import { deployTrueGold } from 'scripts/deploy_true_gold'
 import { makeAddress } from 'scripts/model/Address'
 import { asProxy } from 'scripts/utils/asProxy'
 
-import { toHex, MAX_BURN_BOUND } from 'utils'
+import { MAX_BURN_BOUND } from 'utils'
 
 import {
   TrueGold,
   TrueGoldController,
-  TrueGoldFactory,
-  TrueGoldControllerFactory,
+  TrueGold__factory,
+  TrueGoldController__factory,
+} from 'contracts'
+
+import {
   OwnedUpgradeabilityProxyJson,
   TrueGoldJson,
   TrueGoldControllerJson,
-} from 'contracts'
+} from 'build'
 
 use(solidity)
 
 describe('deployTrueGold', () => {
-  const proxyBytecode = toHex(OwnedUpgradeabilityProxyJson.evm.deployedBytecode.object)
-  const tokenBytecode = toHex(TrueGoldJson.evm.deployedBytecode.object)
-  const controllerBytecode = toHex(TrueGoldControllerJson.evm.deployedBytecode.object)
+  const proxyBytecode = OwnedUpgradeabilityProxyJson.deployedBytecode
+  const tokenBytecode = TrueGoldJson.deployedBytecode
+  const controllerBytecode = TrueGoldControllerJson.deployedBytecode
 
   const provider = new MockProvider()
   const [deployer, controllerOwner, implContractsOwner] = provider.getWallets()
@@ -53,14 +56,14 @@ describe('deployTrueGold', () => {
 
   it('initializes token implementation contract', async () => {
     const tokenImplAddress = await asProxy(token).implementation()
-    const tokenImpl = TrueGoldFactory.connect(tokenImplAddress, deployer)
+    const tokenImpl = TrueGold__factory.connect(tokenImplAddress, deployer)
 
     await expect(tokenImpl.initialize(0, 10)).to.be.revertedWith('Contract instance has already been initialized')
   })
 
   it('initializes controller implementation contract', async () => {
     const controllerImplAddress = await asProxy(controller).implementation()
-    const controllerImpl = TrueGoldControllerFactory.connect(controllerImplAddress, deployer)
+    const controllerImpl = TrueGoldController__factory.connect(controllerImplAddress, deployer)
 
     await expect(controllerImpl.initialize()).to.be.revertedWith('already initialized')
   })
@@ -81,14 +84,14 @@ describe('deployTrueGold', () => {
 
   it('transfers token implementation contract ownership to specified owner', async () => {
     const tokenImplAddress = await asProxy(token).implementation()
-    const tokenImpl = TrueGoldFactory.connect(tokenImplAddress, deployer)
+    const tokenImpl = TrueGold__factory.connect(tokenImplAddress, deployer)
 
     expect(await tokenImpl.owner()).to.eq(implContractsOwner.address)
   })
 
   it('transfers controller implementation contract ownership to specified owner', async () => {
     const controllerImplAddress = await asProxy(controller).implementation()
-    const controllerImpl = TrueGoldControllerFactory.connect(controllerImplAddress, deployer)
+    const controllerImpl = TrueGoldController__factory.connect(controllerImplAddress, deployer)
 
     expect(await controllerImpl.pendingOwner()).to.eq(implContractsOwner.address)
   })

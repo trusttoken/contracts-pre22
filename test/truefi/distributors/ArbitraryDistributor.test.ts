@@ -5,9 +5,9 @@ import { beforeEachWithFixture, parseEth } from 'utils'
 
 import {
   MockErc20Token,
-  MockErc20TokenFactory,
+  MockErc20Token__factory,
   ArbitraryDistributor,
-  ArbitraryDistributorFactory,
+  ArbitraryDistributor__factory,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
 
@@ -24,8 +24,8 @@ describe('ArbitraryDistributor', () => {
   beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet] = wallets
 
-    trustToken = await new MockErc20TokenFactory(owner).deploy()
-    distributor = await new ArbitraryDistributorFactory(owner).deploy()
+    trustToken = await new MockErc20Token__factory(owner).deploy()
+    distributor = await new ArbitraryDistributor__factory(owner).deploy()
 
     await trustToken.mint(distributor.address, totalAmount)
     await distributor.initialize(owner.address, trustToken.address, totalAmount)

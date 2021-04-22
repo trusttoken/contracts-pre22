@@ -1,15 +1,15 @@
 import { forkChain } from './suite'
 import { setupDeploy } from 'scripts/utils'
 import {
-  ChainlinkTruUsdcOracleFactory,
-  Erc20MockFactory,
-  ImplementationReferenceFactory,
-  PoolFactoryFactory,
+  ChainlinkTruUsdcOracle__factory,
+  Erc20Mock__factory,
+  ImplementationReference__factory,
+  PoolFactory__factory,
   TrueFiPool2,
-  TrueFiPool2Factory,
-  TrueLender2Factory,
+  TrueFiPool2__factory,
+  TrueLender2__factory,
   TrustToken,
-  TrustTokenFactory,
+  TrustToken__factory,
 } from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
 import { parseTRU } from 'utils'
@@ -32,22 +32,22 @@ describe('TrueFiPool2', () => {
   let tru: TrustToken
 
   beforeEach(async () => {
-    const poolFactory = await deployContract(PoolFactoryFactory)
-    const poolImplementation = await deployContract(TrueFiPool2Factory)
-    const implementationReference = await deployContract(ImplementationReferenceFactory, poolImplementation.address)
-    tru = TrustTokenFactory.connect(TRU_ADDRESS, owner)
-    const lender = await deployContract(TrueLender2Factory)
+    const poolFactory = await deployContract(PoolFactory__factory)
+    const poolImplementation = await deployContract(TrueFiPool2__factory)
+    const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
+    tru = TrustToken__factory.connect(TRU_ADDRESS, owner)
+    const lender = await deployContract(TrueLender2__factory)
     await lender.initialize(AddressZero, poolFactory.address, AddressZero, AddressZero)
 
     await poolFactory.initialize(implementationReference.address, tru.address, lender.address)
     await poolFactory.whitelist(USDC_ADDRESS, true)
-    const usdc = Erc20MockFactory.connect(USDC_ADDRESS, owner)
+    const usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
     await poolFactory.createPool(usdc.address)
-    pool = TrueFiPool2Factory.connect(await poolFactory.pool(usdc.address), owner)
+    pool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
   })
 
   it('sell TRU on 1inch', async () => {
-    const oracle = await deployContract(ChainlinkTruUsdcOracleFactory)
+    const oracle = await deployContract(ChainlinkTruUsdcOracle__factory)
     await pool.setOracle(oracle.address)
 
     const holder = provider.getSigner(TRU_HOLDER)

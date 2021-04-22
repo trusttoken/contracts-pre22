@@ -1,11 +1,11 @@
 import { Wallet } from 'ethers'
-import { loadFixture, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
 
 import { trueCurrency } from 'fixtures/trueCurrency'
-import { toAddress, WalletOrAddress } from 'utils'
+import { loadFixture, toAddress, WalletOrAddress } from 'utils'
 
-import { TrueCurrency } from 'contracts/types/TrueCurrency'
+import { TrueCurrency } from 'contracts'
 
 use(solidity)
 
