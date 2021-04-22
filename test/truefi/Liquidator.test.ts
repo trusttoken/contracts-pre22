@@ -1,20 +1,22 @@
 import { expect, use } from 'chai'
 import {
+  Liquidator,
+  Liquidator__factory,
+  LoanToken,
+  LoanToken__factory,
+  MockErc20Token,
+  MockErc20Token__factory,
+  MockTrueCurrency,
+  MockTrueCurrency__factory,
+  MockTruPriceOracle,
+  MockTruPriceOracle__factory,
+  StkTruToken,
+  StkTruToken__factory,
+} from 'contracts'
+import {
   ITrueDistributorJson,
   ILoanFactoryJson,
-  Liquidator,
-  LiquidatorFactory,
-  LoanToken,
-  LoanTokenFactory,
-  MockErc20Token,
-  MockErc20TokenFactory,
-  MockTrueCurrency,
-  MockTrueCurrencyFactory,
-  MockTruPriceOracle,
-  MockTruPriceOracleFactory,
-  StkTruToken,
-  StkTruTokenFactory,
-} from 'contracts'
+} from 'build'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { Contract, Wallet } from 'ethers'
 import { beforeEachWithFixture, parseEth, parseTRU, timeTravel } from 'utils'
@@ -50,15 +52,15 @@ describe('Liquidator', () => {
     [owner, borrower, otherWallet] = wallets
     provider = _provider
 
-    liquidator = await new LiquidatorFactory(owner).deploy()
-    tusd = await new MockTrueCurrencyFactory(owner).deploy()
-    tru = await new MockErc20TokenFactory(owner).deploy()
-    pool = await new MockErc20TokenFactory(owner).deploy()
+    liquidator = await new Liquidator__factory(owner).deploy()
+    tusd = await new MockTrueCurrency__factory(owner).deploy()
+    tru = await new MockErc20Token__factory(owner).deploy()
+    pool = await new MockErc20Token__factory(owner).deploy()
     await tusd.initialize()
     distributor = await deployMockContract(owner, ITrueDistributorJson.abi)
     await distributor.mock.nextDistribution.returns(0)
-    stakingPool = await new StkTruTokenFactory(owner).deploy()
-    oracle = await new MockTruPriceOracleFactory(owner).deploy()
+    stakingPool = await new StkTruToken__factory(owner).deploy()
+    oracle = await new MockTruPriceOracle__factory(owner).deploy()
     factory = await deployMockContract(owner, ILoanFactoryJson.abi)
     await factory.mock.isLoanToken.returns(true)
 
@@ -78,7 +80,7 @@ describe('Liquidator', () => {
       factory.address,
     )
 
-    loanToken = await new LoanTokenFactory(owner).deploy(
+    loanToken = await new LoanToken__factory(owner).deploy(
       tusd.address,
       borrower.address,
       owner.address,

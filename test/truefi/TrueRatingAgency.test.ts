@@ -13,20 +13,23 @@ import {
 } from 'utils'
 
 import {
-  TrueRatingAgencyFactory,
+  TrueRatingAgency__factory,
   TrueRatingAgency,
-  TrustTokenFactory,
+  TrustToken__factory,
   TrustToken,
-  LoanTokenFactory,
+  LoanToken__factory,
   LoanToken,
-  MockTrueCurrencyFactory,
+  MockTrueCurrency__factory,
   MockTrueCurrency,
-  ArbitraryDistributorFactory,
+  ArbitraryDistributor__factory,
   ArbitraryDistributor,
+} from 'contracts'
+
+import {
   ILoanFactoryJson,
   ArbitraryDistributorJson,
   TrueRatingAgencyJson,
-} from 'contracts'
+} from 'build'
 
 use(solidity)
 
@@ -60,12 +63,12 @@ describe('TrueRatingAgency', () => {
   beforeEachWithFixture(async (_wallets, _provider) => {
     [owner, otherWallet, ...wallets] = _wallets
 
-    trustToken = await new TrustTokenFactory(owner).deploy()
+    trustToken = await new TrustToken__factory(owner).deploy()
     await trustToken.initialize()
-    tusd = await new MockTrueCurrencyFactory(owner).deploy()
+    tusd = await new MockTrueCurrency__factory(owner).deploy()
     await tusd.mint(owner.address, parseEth(1e7))
 
-    loanToken = await new LoanTokenFactory(owner).deploy(
+    loanToken = await new LoanToken__factory(owner).deploy(
       tusd.address,
       owner.address,
       owner.address,
@@ -76,9 +79,9 @@ describe('TrueRatingAgency', () => {
     )
     await tusd.approve(loanToken.address, 5_000_000)
 
-    distributor = await new ArbitraryDistributorFactory(owner).deploy()
+    distributor = await new ArbitraryDistributor__factory(owner).deploy()
     mockFactory = await deployMockContract(owner, ILoanFactoryJson.abi)
-    rater = await new TrueRatingAgencyFactory(owner).deploy()
+    rater = await new TrueRatingAgency__factory(owner).deploy()
 
     await mockFactory.mock.isLoanToken.returns(true)
     await distributor.initialize(rater.address, trustToken.address, parseTRU(1e7))
@@ -102,7 +105,7 @@ describe('TrueRatingAgency', () => {
     it('checks distributor beneficiary address', async () => {
       const mockDistributor = await deployMockContract(owner, ArbitraryDistributorJson.abi)
       await mockDistributor.mock.beneficiary.returns(owner.address)
-      const newRater = await new TrueRatingAgencyFactory(owner).deploy()
+      const newRater = await new TrueRatingAgency__factory(owner).deploy()
       await expect(newRater.initialize(trustToken.address, mockDistributor.address, mockFactory.address)).to.be.revertedWith('TrueRatingAgency: Invalid distributor beneficiary')
     })
   })
@@ -729,7 +732,7 @@ describe('TrueRatingAgency', () => {
   describe('Claim', () => {
     const rewardMultiplier = 1
     beforeEach(async () => {
-      loanToken = await new LoanTokenFactory(owner).deploy(
+      loanToken = await new LoanToken__factory(owner).deploy(
         tusd.address,
         owner.address,
         owner.address,

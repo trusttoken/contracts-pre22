@@ -1,11 +1,11 @@
 import { expect } from 'chai'
 import { beforeEachWithFixture } from 'utils'
-import { MockLog, MockLogFactory } from 'contracts'
+import { MockLog, MockLog__factory } from 'contracts'
 
 describe('Log', () => {
   let log: MockLog
   beforeEachWithFixture(async ([owner]) => {
-    log = await new MockLogFactory(owner).deploy()
+    log = await new MockLog__factory(owner).deploy()
   })
 
   const checkLog = async (x: number) => {

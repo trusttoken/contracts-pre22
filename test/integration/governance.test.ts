@@ -1,5 +1,5 @@
 import { TEST_STATE_BLOCK_NUMBER, upgradeSuite } from './suite'
-import { GovernorAlphaFactory, StkTruTokenFactory } from 'contracts'
+import { GovernorAlpha__factory, StkTruToken__factory } from 'contracts'
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 import { solidity } from 'ethereum-waffle'
@@ -10,7 +10,7 @@ describe('Governance', () => {
   it('stkTRU', async () => {
     const emptyAddress = Wallet.createRandom().address
     const holder = '0xfa43e72793535d9059c9b9aa015e3b86e72f4de7'
-    const contract = await upgradeSuite(TEST_STATE_BLOCK_NUMBER, StkTruTokenFactory, '0x23696914ca9737466d8553a2d619948f548ee424', [
+    const contract = await upgradeSuite(TEST_STATE_BLOCK_NUMBER, StkTruToken__factory, '0x23696914ca9737466d8553a2d619948f548ee424', [
       (contract) => contract.balanceOf(holder),
       (contract) => contract.balanceOf(emptyAddress),
       (contract) => contract.delegates(holder),
@@ -38,7 +38,7 @@ describe('Governance', () => {
   })
 
   it('GovernorAlpha', async () => {
-    await upgradeSuite(TEST_STATE_BLOCK_NUMBER, GovernorAlphaFactory, '0x0236c16f06aAFdbea5b5EDC8C326A479DB090eB2', [
+    await upgradeSuite(TEST_STATE_BLOCK_NUMBER, GovernorAlpha__factory, '0x0236c16f06aAFdbea5b5EDC8C326A479DB090eB2', [
       // add proposals and latestProposalsIds when they are made on chain
       (contract) => contract.quorumVotes(),
       (contract) => contract.proposalThreshold(),

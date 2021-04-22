@@ -7,17 +7,17 @@ import { parseEther } from '@ethersproject/units'
 import { beforeEachWithFixture } from 'utils'
 
 import {
-  TokenControllerMockFactory,
+  TokenControllerMock__factory,
   TokenControllerMock,
   RegistryMock,
-  RegistryMockFactory,
+  RegistryMock__factory,
   OwnedUpgradeabilityProxy,
-  OwnedUpgradeabilityProxyFactory,
-  MockTrueCurrencyFactory,
+  OwnedUpgradeabilityProxy__factory,
+  MockTrueCurrency__factory,
   MockTrueCurrency,
   ForceEther,
-  ForceEtherFactory,
-  AvalancheTokenControllerFactory, AvalancheTokenController,
+  ForceEther__factory,
+  AvalancheTokenController__factory, AvalancheTokenController,
 } from 'contracts'
 
 use(solidity)
@@ -52,14 +52,14 @@ describe('TokenController', () => {
     [owner, registryAdmin, otherWallet, thirdWallet, mintKey, pauseKey, ratifier1, ratifier2, ratifier3] = wallets
     provider = _provider
 
-    registry = await new RegistryMockFactory(owner).deploy()
-    controller = await new TokenControllerMockFactory(owner).deploy()
+    registry = await new RegistryMock__factory(owner).deploy()
+    controller = await new TokenControllerMock__factory(owner).deploy()
 
-    tokenProxy = await new OwnedUpgradeabilityProxyFactory(owner).deploy()
-    tokenImplementation = await new MockTrueCurrencyFactory(owner).deploy()
+    tokenProxy = await new OwnedUpgradeabilityProxy__factory(owner).deploy()
+    tokenImplementation = await new MockTrueCurrency__factory(owner).deploy()
     await tokenProxy.upgradeTo(tokenImplementation.address)
 
-    token = new MockTrueCurrencyFactory(owner).attach(tokenProxy.address)
+    token = new MockTrueCurrency__factory(owner).attach(tokenProxy.address)
     await token.initialize()
 
     await token.transferOwnership(controller.address)
@@ -538,7 +538,7 @@ describe('TokenController', () => {
     let forceEther: ForceEther
 
     beforeEach(async () => {
-      forceEther = await new ForceEtherFactory(thirdWallet).deploy({ value: parseEther('1') })
+      forceEther = await new ForceEther__factory(thirdWallet).deploy({ value: parseEther('1') })
     })
 
     it('reclaims ether', async function () {
@@ -620,7 +620,7 @@ describe('TokenController', () => {
     let avaController: AvalancheTokenController
 
     beforeEach(async () => {
-      avaController = await new AvalancheTokenControllerFactory(owner).deploy()
+      avaController = await new AvalancheTokenController__factory(owner).deploy()
       await avaController.initialize()
       await controller.transferChild(token.address, avaController.address)
       await avaController.issueClaimOwnership(token.address)
