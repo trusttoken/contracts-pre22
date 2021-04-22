@@ -55,8 +55,8 @@
       "address": "0xE3A4359045CF14C4466c3E80Fc279527cbD754cD"
     },
     "loanFactory": {
-      "txHash": "0xb5bb26a5fdd37af79fc7438b6057b4b00bd818bc70c98fe453deda02008cd91b",
-      "address": "0x6cfd71c324413BE57de75824D8BcfE68948c6572"
+      "txHash": "0x6120e820c2293a638f246bb2717423c6d74288c9041984d8b93e4bd5544ab943",
+      "address": "0xb31014fD914023b2CD58e90934BD6EF3DE318D31"
     },
     "loanFactory_proxy": {
       "txHash": "0x551b5d6d778a6bc02eda9615606116bb90acea6b55716bbddee38feb0d03794b",
@@ -87,12 +87,12 @@
       "address": "0x6854E91dEB5D7Ec35b556711c5ED6c702C67eefC"
     },
     "ratingAgencyV2Distributor": {
-      "txHash": "",
-      "address": ""
+      "txHash": "0xde0c1db1a2e19e61117612970c7a951a66663cc6b61b9ac36e785b8d116a82de",
+      "address": "0x3398a469c739875c54b02e8c40be2599a6bffb8a"
     },
     "ratingAgencyV2Distributor_proxy": {
-      "txHash": "",
-      "address": ""
+      "txHash": "0xa3642c7ee0fd46743fbac38a9c2e13a09b840e3e1b6dcd44a8a2ebf34d5df020",
+      "address": "0x149a201b7A1e8Be075a5431e9595B07e8FFD04BF"
     },
     "timelock": {
       "txHash": "0x9ce49a1e5efaa2c9552022083cad438468d323040c779a8bf31839087734b394",
