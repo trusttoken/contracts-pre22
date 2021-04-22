@@ -6,16 +6,16 @@ import { beforeEachWithFixture, parseEth } from 'utils'
 import { AddressZero } from '@ethersproject/constants'
 
 import {
-  LoanTokenFactory,
-  MockErc20TokenFactory,
+  LoanToken__factory,
+  MockErc20Token__factory,
   LoanFactory2,
-  LoanFactory2Factory,
+  LoanFactory2__factory,
   PoolFactory,
-  PoolFactoryFactory,
+  PoolFactory__factory,
   TrueFiPool2,
   ImplementationReference,
-  TrueFiPool2Factory,
-  ImplementationReferenceFactory,
+  TrueFiPool2__factory,
+  ImplementationReference__factory,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
 
@@ -35,11 +35,11 @@ describe('LoanFactory2', () => {
 
   beforeEachWithFixture(async (wallets) => {
     [owner, borrower, lender, liquidator] = wallets
-    const token = await new MockErc20TokenFactory(owner).deploy()
-    factory = await new LoanFactory2Factory(owner).deploy()
-    poolFactory = await new PoolFactoryFactory(owner).deploy()
-    poolImplementation = await new TrueFiPool2Factory(owner).deploy()
-    implementationReference = await new ImplementationReferenceFactory(owner).deploy(poolImplementation.address)
+    const token = await new MockErc20Token__factory(owner).deploy()
+    factory = await new LoanFactory2__factory(owner).deploy()
+    poolFactory = await new PoolFactory__factory(owner).deploy()
+    poolImplementation = await new TrueFiPool2__factory(owner).deploy()
+    implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
 
     await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero)
     await factory.initialize(poolFactory.address, lender.address, liquidator.address)
@@ -54,7 +54,7 @@ describe('LoanFactory2', () => {
   })
 
   it('deploys loan token contract', async () => {
-    const loanToken = LoanTokenFactory.connect(contractAddress, owner)
+    const loanToken = LoanToken__factory.connect(contractAddress, owner)
     expect(await loanToken.amount()).to.equal(parseEth(123))
     expect(await loanToken.term()).to.equal(100)
     expect(await loanToken.apy()).to.equal(200)
@@ -77,7 +77,7 @@ describe('LoanFactory2', () => {
   })
 
   it('prevents fake pool loans', async () => {
-    const fakePool = await new TrueFiPool2Factory(owner).deploy()
+    const fakePool = await new TrueFiPool2__factory(owner).deploy()
     await expect(factory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), 0, 200))
       .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
   })

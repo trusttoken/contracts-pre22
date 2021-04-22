@@ -4,25 +4,25 @@ import { expect, use } from 'chai'
 
 import { Newable } from 'scripts/utils'
 
-import { TrueCurrency } from 'contracts/types/TrueCurrency'
+import { TrueCurrency } from 'contracts'
 import {
-  TrueCadFactory,
-  TrueAudFactory,
-  TrueGbpFactory,
-  TrueHkdFactory,
+  TrueCad__factory,
+  TrueAud__factory,
+  TrueGbp__factory,
+  TrueHkd__factory,
 } from 'contracts'
 
 use(solidity)
 
 describe('TrueCurrency - Tokens', () => {
-  function shouldHaveCorrectAttributes (TokenFactory: Newable<ContractFactory>, name: string, symbol: string) {
+  function shouldHaveCorrectAttributes (Token__factory: Newable<ContractFactory>, name: string, symbol: string) {
     describe(`${name} attributes`, () => {
       let token: TrueCurrency
 
       before(async () => {
         const provider = new MockProvider()
         const [owner] = provider.getWallets()
-        token = await new TokenFactory(owner).deploy() as TrueCurrency
+        token = await new Token__factory(owner).deploy() as TrueCurrency
       })
 
       it('name', async () => {
@@ -39,8 +39,8 @@ describe('TrueCurrency - Tokens', () => {
     })
   }
 
-  shouldHaveCorrectAttributes(TrueAudFactory, 'TrueAUD', 'TAUD')
-  shouldHaveCorrectAttributes(TrueCadFactory, 'TrueCAD', 'TCAD')
-  shouldHaveCorrectAttributes(TrueGbpFactory, 'TrueGBP', 'TGBP')
-  shouldHaveCorrectAttributes(TrueHkdFactory, 'TrueHKD', 'THKD')
+  shouldHaveCorrectAttributes(TrueAud__factory, 'TrueAUD', 'TAUD')
+  shouldHaveCorrectAttributes(TrueCad__factory, 'TrueCAD', 'TCAD')
+  shouldHaveCorrectAttributes(TrueGbp__factory, 'TrueGBP', 'TGBP')
+  shouldHaveCorrectAttributes(TrueHkd__factory, 'TrueHKD', 'THKD')
 })

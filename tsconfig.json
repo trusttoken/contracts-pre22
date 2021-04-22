@@ -8,8 +8,10 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "contracts/*": ["build/*"],
-      "contracts": ["build"],
+      "build/*": ["build/*"],
+      "build": ["build"],
+      "contracts/*": ["build/types/*"],
+      "contracts": ["build/types", "build/types/factories"],
       "scripts/*": ["scripts/*"],
       "scripts": ["scripts"],
       "utils/*": ["test/utils/*"],
@@ -18,7 +20,13 @@
       "fixtures": ["test/fixtures"]
     }
   },
+  "files": ["./hardhat.config.ts"],
   "exclude": [
     "deploy"
+  ],
+  "include": [
+    "build",
+    "scripts",
+    "test",
   ]
 }

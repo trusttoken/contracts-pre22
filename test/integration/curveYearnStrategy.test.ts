@@ -1,16 +1,16 @@
 import { CONTRACTS_OWNER, ETHER_HOLDER, forkChain } from './suite'
 import {
-  CrvPriceOracleFactory,
+  CrvPriceOracle__factory,
   CurveYearnStrategy,
-  CurveYearnStrategyFactory,
-  ImplementationReferenceFactory,
-  PoolFactoryFactory,
+  CurveYearnStrategy__factory,
+  ImplementationReference__factory,
+  PoolFactory__factory,
   TrueFiPool2,
-  TrueFiPool2Factory,
+  TrueFiPool2__factory,
+  Erc20,
+  Erc20__factory,
 } from 'contracts'
 import { setupDeploy } from 'scripts/utils'
-import { Erc20Factory } from 'contracts/types/Erc20Factory'
-import { Erc20 } from 'contracts/types/Erc20'
 import { utils } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 import { expect, use } from 'chai'
@@ -58,10 +58,10 @@ describe('Curve Yearn Pool Strategy', () => {
       value: utils.parseEther('1000'),
       to: CONTRACTS_OWNER,
     })
-    usdc = Erc20Factory.connect(USDC_ADDRESS, owner)
-    const poolFactory = await deployContract(PoolFactoryFactory)
-    const poolImplementation = await deployContract(TrueFiPool2Factory)
-    const implementationReference = await deployContract(ImplementationReferenceFactory, poolImplementation.address)
+    usdc = Erc20__factory.connect(USDC_ADDRESS, owner)
+    const poolFactory = await deployContract(PoolFactory__factory)
+    const poolImplementation = await deployContract(TrueFiPool2__factory)
+    const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
     await poolFactory.initialize(implementationReference.address, TRU_ADDRESS, AddressZero)
     await poolFactory.whitelist(USDC_ADDRESS, true)
     await poolFactory.createPool(USDC_ADDRESS)
@@ -71,8 +71,8 @@ describe('Curve Yearn Pool Strategy', () => {
     await usdc.connect(holder).approve(pool.address, amount)
     await pool.connect(holder).join(amount)
 
-    strategy = await new CurveYearnStrategyFactory(owner).deploy()
-    const oracle = await deployContract(CrvPriceOracleFactory)
+    strategy = await new CurveYearnStrategy__factory(owner).deploy()
+    const oracle = await deployContract(CrvPriceOracle__factory)
 
     await strategy.initialize(pool.address, CURVE_POOL, GAUGE, MINTER, ONE_INCH, oracle.address, 1)
     await pool.switchStrategy(strategy.address)
@@ -101,7 +101,7 @@ describe('Curve Yearn Pool Strategy', () => {
     expect(await strategy.crvValue()).to.be.gt(0)
 
     const crvBalance = await strategy.crvBalance()
-    const dataUrl = `https://api.1inch.exchange/v3.0/1/swap?disableEstimate=true&protocols=WETH,CURVE,BALANCER,UNISWAP_V2,SUSHI,ZRX&allowPartialFill=false&fromTokenAddress=${CRV}&toTokenAddress=${USDC_ADDRESS}&amount=${crvBalance.toString()}&fromAddress=${strategy.address}&destReceiver=${pool.address}&slippage=2`
+    const dataUrl = `https://api.1inch.exchange/v3.0/1/swap?disableEstimate=true&protocols=UNISWAP_V2,SUSHI&allowPartialFill=false&fromTokenAddress=${CRV}&toTokenAddress=${USDC_ADDRESS}&amount=${crvBalance.toString()}&fromAddress=${strategy.address}&destReceiver=${pool.address}&slippage=2`
     const body = await (await fetch(dataUrl)).json()
     const data = body.tx.data
     await strategy.sellCrv(data)

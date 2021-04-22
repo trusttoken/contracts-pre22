@@ -1,11 +1,11 @@
 import { constants, Wallet, BigNumber, BigNumberish } from 'ethers'
-import { loadFixture, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 import { parseEther } from '@ethersproject/units'
 import { AddressZero, Zero } from '@ethersproject/constants'
 import { expect, use } from 'chai'
 
 import { initialSupply, trueCurrency } from 'fixtures/trueCurrency'
-import { toAddress, WalletOrAddress } from 'utils'
+import { loadFixture, toAddress, WalletOrAddress } from 'utils'
 
 import { MockTrueCurrency } from 'contracts'
 

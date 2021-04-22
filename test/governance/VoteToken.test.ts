@@ -4,17 +4,9 @@ import { solidity } from 'ethereum-waffle'
 
 import { setupDeploy } from 'scripts/utils'
 
-import {
-  beforeEachWithFixture,
-  parseTRU,
-  timeTravelTo,
-  timeTravel,
-} from 'utils'
+import { beforeEachWithFixture, parseTRU, skipBlocksWithProvider, timeTravel, timeTravelTo } from 'utils'
 
-import {
-  TrustTokenFactory,
-  TrustToken,
-} from 'contracts'
+import { TrustToken, TrustToken__factory } from 'contracts'
 
 use(solidity)
 
@@ -27,7 +19,8 @@ describe('VoteToken', () => {
     ([owner, timeLockRegistry, saftHolder, initialHolder, secondAccount] = wallets)
     provider = _provider
     const deployContract = setupDeploy(owner)
-    trustToken = await deployContract(TrustTokenFactory)
+    await provider.send('hardhat_reset', [])
+    trustToken = await deployContract(TrustToken__factory)
     await trustToken.initialize()
     await trustToken.mint(initialHolder.address, parseTRU(1000))
     await trustToken.mint(timeLockRegistry.address, parseTRU(1000))
@@ -107,9 +100,13 @@ describe('VoteToken', () => {
     let curBlockNumber = 0
     beforeEach(async () => {
       await trustToken.connect(initialHolder).delegate(initialHolder.address)
+      // Disable block number caching by ethers
+      provider._maxInternalBlockNumber = 0
       curBlockNumber = await provider.getBlockNumber()
-      timeTravel(provider, 60) // mine one block
+      await timeTravel(provider, 60) // mine one block
+      await skipBlocksWithProvider(provider, 10)
     })
+
     describe('when trying to get prior votes', async () => {
       it('return 1000 votes at block 6', async () => {
         expect(await trustToken.getPriorVotes(initialHolder.address, curBlockNumber)).to.eq(parseTRU(1000))

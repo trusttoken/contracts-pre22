@@ -1,10 +1,11 @@
 import { BigNumberish, constants, Wallet } from 'ethers'
-import { loadFixture, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
 
 import { initialSupply, trueCurrency } from 'fixtures/trueCurrency'
 
-import { TrueCurrency } from 'contracts/types/TrueCurrency'
+import { TrueCurrency } from 'contracts'
+import { loadFixture } from 'utils'
 
 use(solidity)
 

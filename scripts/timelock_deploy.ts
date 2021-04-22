@@ -4,9 +4,9 @@
 import { ethers, providers } from 'ethers'
 
 import {
-  TrustTokenFactory,
-  TimeLockRegistryFactory,
-  OwnedUpgradeabilityProxyFactory,
+  TrustToken__factory,
+  TimeLockRegistry__factory,
+  OwnedUpgradeabilityProxy__factory,
 } from 'contracts'
 
 async function deployTimeLockRegistry () {
@@ -14,15 +14,15 @@ async function deployTimeLockRegistry () {
   const provider = new providers.InfuraProvider(process.argv[2], 'e33335b99d78415b82f8b9bc5fdc44c0')
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
 
-  const trustTokenImpl = await (await new TrustTokenFactory(wallet).deploy(txnArgs)).deployed()
+  const trustTokenImpl = await (await new TrustToken__factory(wallet).deploy(txnArgs)).deployed()
   console.log(`TrustToken Impl at: ${trustTokenImpl.address}`)
-  const timeLockRegistry = await (await new TimeLockRegistryFactory(wallet).deploy(txnArgs)).deployed()
+  const timeLockRegistry = await (await new TimeLockRegistry__factory(wallet).deploy(txnArgs)).deployed()
   console.log(`TimeLockRegistry Impl at: ${timeLockRegistry.address}`)
-  const proxy = await (await new OwnedUpgradeabilityProxyFactory(wallet).deploy(txnArgs)).deployed()
+  const proxy = await (await new OwnedUpgradeabilityProxy__factory(wallet).deploy(txnArgs)).deployed()
   console.log(`Proxy at: ${proxy.address}`)
   await (await proxy.upgradeTo(timeLockRegistry.address, txnArgs)).wait()
   console.log('Proxy upgrade: done')
-  await (await TimeLockRegistryFactory.connect(proxy.address, wallet).initialize(trustTokenImpl.address, txnArgs)).wait()
+  await (await TimeLockRegistry__factory.connect(proxy.address, wallet).initialize(trustTokenImpl.address, txnArgs)).wait()
   console.log('Registry initialization: done')
 }
 

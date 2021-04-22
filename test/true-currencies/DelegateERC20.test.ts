@@ -11,10 +11,10 @@ import {
 
 import {
   MockTrueCurrencyWithAutosweep,
-  MockTrueCurrencyWithAutosweepFactory,
-  OwnedUpgradeabilityProxyFactory,
+  MockTrueCurrencyWithAutosweep__factory,
+  OwnedUpgradeabilityProxy__factory,
   MockDelegateErc20,
-  MockDelegateErc20Factory,
+  MockDelegateErc20__factory,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
 
@@ -35,13 +35,13 @@ describe('TrueCurrency - Delegate ERC20', () => {
   beforeEachWithFixture(async (wallets: Wallet[]) => {
     [initialHolder, secondAccount, thirdAccount] = wallets
     const deployContract = setupDeploy(initialHolder)
-    const implementation = await deployContract(MockTrueCurrencyWithAutosweepFactory)
-    const proxy = await deployContract(OwnedUpgradeabilityProxyFactory)
+    const implementation = await deployContract(MockTrueCurrencyWithAutosweep__factory)
+    const proxy = await deployContract(OwnedUpgradeabilityProxy__factory)
     delegateToken = implementation.attach(proxy.address)
     await proxy.upgradeTo(implementation.address)
     await delegateToken.initialize()
     await delegateToken.mint(initialHolder.address, initialSupply)
-    token = await new MockDelegateErc20Factory(initialHolder).deploy()
+    token = await new MockDelegateErc20__factory(initialHolder).deploy()
     await delegateToken.setDelegateAddress(token.address)
     await token.delegateToNewContract(delegateToken.address)
   })
