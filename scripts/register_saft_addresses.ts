@@ -11,9 +11,9 @@ import { toTrustToken } from './utils'
 
 import {
   TimeLockRegistry,
-  TimeLockRegistryFactory,
+  TimeLockRegistry__factory,
   TrustToken,
-  TrustTokenFactory,
+  TrustToken__factory,
 } from 'contracts'
 
 export const txnArgs = { gasLimit: 2_000_000, gasPrice: 20_000_000_000 }
@@ -58,7 +58,7 @@ if (require.main === module) {
   const deployedAddresses = require(`./deploy/${process.argv[2]}.json`)
   const provider = new providers.InfuraProvider(process.argv[2], '81447a33c1cd4eb09efb1e8c388fb28e')
   const wallet = new Wallet(process.env.PRIVATE_KEY, provider)
-  const registry = TimeLockRegistryFactory.connect(deployedAddresses.timeLockRegistry, wallet)
-  const trustToken = TrustTokenFactory.connect(deployedAddresses.trustToken, wallet)
+  const registry = TimeLockRegistry__factory.connect(deployedAddresses.timeLockRegistry, wallet)
+  const trustToken = TrustToken__factory.connect(deployedAddresses.trustToken, wallet)
   registerSaftAccounts(registry, trustToken, readAccountList(process.argv[3])).then(() => console.log('Done.'))
 }

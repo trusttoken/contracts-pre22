@@ -12,9 +12,9 @@ import {
 
 import {
   LoanToken,
-  LoanTokenFactory,
+  LoanToken__factory,
   MockTrueCurrency,
-  MockTrueCurrencyFactory,
+  MockTrueCurrency__factory,
 } from 'contracts'
 
 use(solidity)
@@ -49,11 +49,11 @@ describe('LoanToken', () => {
     [lender, borrower, other] = wallets
     provider = _provider
 
-    tusd = await new MockTrueCurrencyFactory(lender).deploy()
+    tusd = await new MockTrueCurrency__factory(lender).deploy()
     await tusd.initialize()
     await tusd.mint(lender.address, parseEth(1000))
 
-    loanToken = await new LoanTokenFactory(lender).deploy(
+    loanToken = await new LoanToken__factory(lender).deploy(
       tusd.address,
       borrower.address,
       lender.address,
@@ -620,7 +620,7 @@ describe('LoanToken', () => {
 
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
-      const contract = await new LoanTokenFactory(borrower).deploy(tusd.address, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
+      const contract = await new LoanToken__factory(borrower).deploy(tusd.address, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 

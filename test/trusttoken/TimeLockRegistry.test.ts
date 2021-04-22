@@ -15,11 +15,11 @@ import {
 } from 'test/utils'
 
 import {
-  TrustTokenFactory,
+  TrustToken__factory,
   TrustToken,
-  TimeLockRegistryFactory,
+  TimeLockRegistry__factory,
   TimeLockRegistry,
-  OwnedUpgradeabilityProxyFactory,
+  OwnedUpgradeabilityProxy__factory,
 } from 'contracts'
 
 use(solidity)
@@ -32,12 +32,12 @@ describe('TimeLockRegistry', () => {
   beforeEachWithFixture(async (wallets) => {
     ([owner, holder, another] = wallets)
     const deployContract = setupDeploy(owner)
-    trustToken = await deployContract(TrustTokenFactory)
+    trustToken = await deployContract(TrustToken__factory)
     await trustToken.mint(owner.address, toTrustToken(1000))
-    const proxy = await deployContract(OwnedUpgradeabilityProxyFactory)
-    const registryImpl = await deployContract(TimeLockRegistryFactory)
+    const proxy = await deployContract(OwnedUpgradeabilityProxy__factory)
+    const registryImpl = await deployContract(TimeLockRegistry__factory)
     await proxy.upgradeTo(registryImpl.address)
-    registry = TimeLockRegistryFactory.connect(proxy.address, owner)
+    registry = TimeLockRegistry__factory.connect(proxy.address, owner)
     await registry.initialize(trustToken.address)
     await trustToken.setTimeLockRegistry(registry.address)
   })

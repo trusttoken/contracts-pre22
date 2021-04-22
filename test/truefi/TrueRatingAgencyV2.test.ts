@@ -13,22 +13,25 @@ import {
 } from 'utils'
 
 import {
-  TrueRatingAgencyV2Factory, TrueRatingAgencyV2,
-  TrustTokenFactory,
+  TrueRatingAgencyV2__factory, TrueRatingAgencyV2,
+  TrustToken__factory,
   TrustToken,
-  LoanTokenFactory,
+  LoanToken__factory,
   LoanToken,
-  MockTrueCurrencyFactory,
+  MockTrueCurrency__factory,
   MockTrueCurrency,
-  ILoanFactoryJson,
-  ArbitraryDistributorJson,
   StkTruToken,
-  StkTruTokenFactory,
-  LinearTrueDistributorFactory,
+  StkTruToken__factory,
+  LinearTrueDistributor__factory,
   LinearTrueDistributor,
-  ArbitraryDistributorFactory,
+  ArbitraryDistributor__factory,
   ArbitraryDistributor,
 } from 'contracts'
+
+import {
+  ILoanFactoryJson,
+  ArbitraryDistributorJson,
+} from 'build'
 
 use(solidity)
 
@@ -62,17 +65,17 @@ describe('TrueRatingAgencyV2', () => {
   beforeEachWithFixture(async (_wallets, _provider) => {
     [owner, otherWallet, liquidator] = _wallets
 
-    trustToken = await new TrustTokenFactory(owner).deploy()
+    trustToken = await new TrustToken__factory(owner).deploy()
     await trustToken.initialize()
-    tusd = await new MockTrueCurrencyFactory(owner).deploy()
+    tusd = await new MockTrueCurrency__factory(owner).deploy()
 
-    arbitraryDistributor = await new ArbitraryDistributorFactory(owner).deploy()
-    linearDistributor = await new LinearTrueDistributorFactory(owner).deploy()
+    arbitraryDistributor = await new ArbitraryDistributor__factory(owner).deploy()
+    linearDistributor = await new LinearTrueDistributor__factory(owner).deploy()
 
-    stakedTrustToken = await new StkTruTokenFactory(owner).deploy()
+    stakedTrustToken = await new StkTruToken__factory(owner).deploy()
     await stakedTrustToken.initialize(trustToken.address, tusd.address, tusd.address, linearDistributor.address, liquidator.address)
 
-    loanToken = await new LoanTokenFactory(owner).deploy(
+    loanToken = await new LoanToken__factory(owner).deploy(
       tusd.address,
       owner.address,
       owner.address,
@@ -84,7 +87,7 @@ describe('TrueRatingAgencyV2', () => {
     await tusd.approve(loanToken.address, 5_000_000)
 
     mockFactory = await deployMockContract(owner, ILoanFactoryJson.abi)
-    rater = await new TrueRatingAgencyV2Factory(owner).deploy()
+    rater = await new TrueRatingAgencyV2__factory(owner).deploy()
     await arbitraryDistributor.initialize(rater.address, trustToken.address, stake)
 
     await mockFactory.mock.isLoanToken.returns(true)
@@ -117,7 +120,7 @@ describe('TrueRatingAgencyV2', () => {
     it('checks distributor beneficiary address', async () => {
       const mockDistributor = await deployMockContract(owner, ArbitraryDistributorJson.abi)
       await mockDistributor.mock.beneficiary.returns(owner.address)
-      const newRater = await new TrueRatingAgencyV2Factory(owner).deploy()
+      const newRater = await new TrueRatingAgencyV2__factory(owner).deploy()
       await expect(newRater.initialize(trustToken.address, stakedTrustToken.address, mockDistributor.address, mockFactory.address)).to.be.revertedWith('TrueRatingAgencyV2: Invalid distributor beneficiary')
     })
   })
@@ -477,7 +480,7 @@ describe('TrueRatingAgencyV2', () => {
   describe('Claim', () => {
     const rewardMultiplier = 1
     beforeEach(async () => {
-      loanToken = await new LoanTokenFactory(owner).deploy(
+      loanToken = await new LoanToken__factory(owner).deploy(
         tusd.address,
         owner.address,
         owner.address,

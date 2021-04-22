@@ -1,9 +1,9 @@
 import { expect, use } from 'chai'
 import { BigNumberish, providers, Wallet } from 'ethers'
-import { loadFixture, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 
 import { initialSupply, setupTrueGold } from 'fixtures/trueGold'
-import { toAddress, WalletOrAddress } from 'utils'
+import { loadFixture, toAddress, WalletOrAddress } from 'utils'
 
 import { TrueGold } from 'contracts'
 

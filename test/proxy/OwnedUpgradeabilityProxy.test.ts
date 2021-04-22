@@ -5,10 +5,10 @@ import { Wallet } from 'ethers'
 import { beforeEachWithFixture, ZERO_ADDRESS } from 'utils'
 
 import {
-  OwnedUpgradeabilityProxyFactory,
+  OwnedUpgradeabilityProxy__factory,
   OwnedUpgradeabilityProxy,
   MockTrueCurrency,
-  MockTrueCurrencyFactory,
+  MockTrueCurrency__factory,
 } from 'contracts'
 
 use(solidity)
@@ -23,8 +23,8 @@ describe('OwnedUpgradeabilityProxy', () => {
 
   beforeEachWithFixture(async (wallets) => {
     [owner, anotherWallet, thirdWallet] = wallets
-    proxy = await new OwnedUpgradeabilityProxyFactory(owner).deploy()
-    tusd = await new MockTrueCurrencyFactory(owner).deploy()
+    proxy = await new OwnedUpgradeabilityProxy__factory(owner).deploy()
+    tusd = await new MockTrueCurrency__factory(owner).deploy()
   })
 
   describe('Ownership', () => {
