@@ -14,11 +14,11 @@ import {
 
 import {
   MockErc20Token,
-  MockErc20TokenFactory,
+  MockErc20Token__factory,
   LinearTrueDistributor,
-  TrueMultiFarmFactory,
+  TrueMultiFarm__factory,
   TrueMultiFarm,
-  LinearTrueDistributorFactory,
+  LinearTrueDistributor__factory,
 } from 'contracts'
 
 use(solidity)
@@ -46,16 +46,16 @@ describe('TrueMultiFarm', () => {
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, staker1, staker2] = wallets
     provider = _provider
-    trustToken = await new MockErc20TokenFactory(owner).deploy()
-    stakingToken = await new MockErc20TokenFactory(owner).deploy()
-    distributor = await new LinearTrueDistributorFactory(owner).deploy()
+    trustToken = await new MockErc20Token__factory(owner).deploy()
+    stakingToken = await new MockErc20Token__factory(owner).deploy()
+    distributor = await new LinearTrueDistributor__factory(owner).deploy()
     const now = Math.floor(Date.now() / 1000)
     start = now + DAY
 
     await distributor.initialize(start, DURATION, amount, trustToken.address)
 
-    farm = await new TrueMultiFarmFactory(owner).deploy()
-    farm2 = await new TrueMultiFarmFactory(owner).deploy()
+    farm = await new TrueMultiFarm__factory(owner).deploy()
+    farm2 = await new TrueMultiFarm__factory(owner).deploy()
 
     await distributor.setFarm(farm.address)
     await farm.initialize(distributor.address)
@@ -85,6 +85,10 @@ describe('TrueMultiFarm', () => {
     })
   })
 
+  async function totalStaked() {
+    return farm.stakes(stakingToken.address)
+  }
+
   describe.only('one staker', () => {
     beforeEach(async () => {
       await timeTravelTo(provider, start)
@@ -102,25 +106,25 @@ describe('TrueMultiFarm', () => {
     it('staking changes stake balance', async () => {
       await farm.connect(staker1).stake(stakingToken.address, parseEth(500), txArgs)
       expect(await farm.staked(stakingToken.address, staker1.address)).to.equal(parseEth(500))
-      expect(await farm.totalStaked()).to.equal(parseEth(500))
+      expect(await totalStaked()).to.equal(parseEth(500))
 
       await farm.connect(staker1).stake(stakingToken.address, parseEth(500), txArgs)
       expect(await farm.staked(stakingToken.address, staker1.address)).to.equal(parseEth(1000))
-      expect(await farm.totalStaked()).to.equal(parseEth(1000))
+      expect(await totalStaked()).to.equal(parseEth(1000))
     })
 
     it('unstaking changes stake balance', async () => {
       await farm.connect(staker1).stake(stakingToken.address, parseEth(1000), txArgs)
       await farm.connect(staker1).unstake(stakingToken.address, parseEth(500), txArgs)
-      expect(await farm.staked(staker1.address)).to.equal(parseEth(500))
-      expect(await farm.totalStaked()).to.equal(parseEth(500))
+      expect(await farm.staked(stakingToken.address, staker1.address)).to.equal(parseEth(500))
+      expect(await totalStaked()).to.equal(parseEth(500))
     })
 
-    it('exiting changes stake balance', async () => {
+    it.only('exiting changes stake balance', async () => {
       await farm.connect(staker1).stake(stakingToken.address, parseEth(1000), txArgs)
       await farm.connect(staker1).exit([stakingToken.address], txArgs)
-      expect(await farm.staked(staker1.address)).to.equal(parseEth(500))
-      expect(await farm.totalStaked()).to.equal(parseEth(500))
+      expect(await farm.staked(stakingToken.address, staker1.address)).to.equal(parseEth(500))
+      expect(await totalStaked()).to.equal(parseEth(500))
     })
 
     it('cannot unstake more than is staked', async () => {
