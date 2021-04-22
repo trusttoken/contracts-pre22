@@ -4,10 +4,10 @@ import { utils, Wallet } from 'ethers'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
   MockPauseableContract,
-  MockPauseableContractFactory,
-  OwnedUpgradeabilityProxyFactory,
+  MockPauseableContract__factory,
+  OwnedUpgradeabilityProxy__factory,
   Timelock,
-  TimelockFactory,
+  Timelock__factory,
 } from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
 import { formatBytes32String } from '@ethersproject/strings'
@@ -21,7 +21,7 @@ describe('Timelock', () => {
 
   beforeEachWithFixture(async (wallets) => {
     ([admin, notAdmin, pauser] = wallets)
-    timelock = await deployContract(admin, TimelockFactory)
+    timelock = await deployContract(admin, Timelock__factory)
     await timelock.initialize(admin.address, 200000)
   })
 
@@ -41,7 +41,7 @@ describe('Timelock', () => {
     })
 
     async function createProxy () {
-      const proxy = await deployContract(admin, OwnedUpgradeabilityProxyFactory)
+      const proxy = await deployContract(admin, OwnedUpgradeabilityProxy__factory)
       await proxy.upgradeTo(Wallet.createRandom().address)
       await proxy.transferProxyOwnership(timelock.address)
       const block = await admin.provider.getBlock('latest')
@@ -59,7 +59,7 @@ describe('Timelock', () => {
     })
 
     it('can only be called by pauser', async () => {
-      const proxy = await deployContract(admin, OwnedUpgradeabilityProxyFactory)
+      const proxy = await deployContract(admin, OwnedUpgradeabilityProxy__factory)
       await expect(timelock.connect(notAdmin).emergencyPause(proxy.address)).to.be.revertedWith('Timelock::emergencyPause: Call must come from Timelock or pauser.')
       await expect(timelock.connect(admin).emergencyPause(proxy.address)).to.be.revertedWith('Timelock::emergencyPause: Call must come from Timelock or pauser.')
     })
@@ -89,7 +89,7 @@ describe('Timelock', () => {
     let pauseable: MockPauseableContract
 
     beforeEach(async () => {
-      pauseable = await deployContract(admin, MockPauseableContractFactory)
+      pauseable = await deployContract(admin, MockPauseableContract__factory)
       await timelock.setPauser(pauser.address)
     })
 

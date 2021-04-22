@@ -4,7 +4,7 @@
 import { ethers, providers } from 'ethers'
 
 import {
-  TrustTokenFactory,
+  TrustToken__factory,
 } from '../build'
 
 async function deployTru () {
@@ -12,7 +12,7 @@ async function deployTru () {
   const provider = new providers.InfuraProvider(process.argv[2], 'e33335b99d78415b82f8b9bc5fdc44c0')
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
 
-  const trustTokenImpl = await (await new TrustTokenFactory(wallet).deploy(txnArgs)).deployed()
+  const trustTokenImpl = await (await new TrustToken__factory(wallet).deploy(txnArgs)).deployed()
   console.log(`TrustToken: ${trustTokenImpl.address}`)
 }
 

@@ -13,13 +13,13 @@ import {
 
 import {
   RegistryMock,
-  RegistryMockFactory,
+  RegistryMock__factory,
   ForceEther,
-  ForceEtherFactory,
+  ForceEther__factory,
   MockErc20Token,
-  MockErc20TokenFactory,
+  MockErc20Token__factory,
   MockRegistrySubscriber,
-  MockRegistrySubscriberFactory,
+  MockRegistrySubscriber__factory,
 } from 'contracts'
 
 use(solidity)
@@ -39,7 +39,7 @@ describe('Registry', () => {
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, anotherWallet, thirdWallet] = wallets
     provider = _provider
-    registry = await new RegistryMockFactory(owner).deploy()
+    registry = await new RegistryMock__factory(owner).deploy()
     await registry.initialize()
   })
 
@@ -140,7 +140,7 @@ describe('Registry', () => {
     const emptyAddress = '0x5fef93e79a73b28a9113a618aabf84f2956eb3ba'
 
     beforeEach(async () => {
-      token = await new MockErc20TokenFactory(owner).deploy()
+      token = await new MockErc20Token__factory(owner).deploy()
     })
 
     it('owner can transfer out token in the contract address ', async () => {
@@ -155,7 +155,7 @@ describe('Registry', () => {
     })
 
     it('owner can transfer out ether in the contract address', async () => {
-      forceEther = await new ForceEtherFactory(owner).deploy({ value: parseEther('10') })
+      forceEther = await new ForceEther__factory(owner).deploy({ value: parseEther('10') })
       await forceEther.destroyAndSend(registry.address)
       const registryInitialWithForcedEther = await provider.getBalance(registry.address)
       await registry.reclaimEther(emptyAddress)
@@ -172,7 +172,7 @@ describe('Registry', () => {
     let registryToken: MockRegistrySubscriber
 
     beforeEach(async () => {
-      registryToken = await new MockRegistrySubscriberFactory(owner).deploy()
+      registryToken = await new MockRegistrySubscriber__factory(owner).deploy()
       await registry.subscribe(prop1, registryToken.address)
       await registry.setAttributeValue(thirdWallet.address, prop1, 3)
     })
@@ -201,7 +201,7 @@ describe('Registry', () => {
     })
 
     it('syncs prior writes', async () => {
-      const token2 = await new MockRegistrySubscriberFactory(owner).deploy()
+      const token2 = await new MockRegistrySubscriber__factory(owner).deploy()
       await registry.subscribe(prop1, token2.address)
       expect(await registryToken.getAttributeValue(thirdWallet.address, prop1)).to.equal(3)
       expect(await token2.getAttributeValue(thirdWallet.address, prop1)).to.equal(0)
@@ -211,7 +211,7 @@ describe('Registry', () => {
     })
 
     it('syncs prior attribute', async () => {
-      const token2 = await new MockRegistrySubscriberFactory(owner).deploy()
+      const token2 = await new MockRegistrySubscriber__factory(owner).deploy()
       await registry.subscribe(prop1, token2.address)
       expect(await registryToken.getAttributeValue(thirdWallet.address, prop1)).to.equal(3)
       expect(await token2.getAttributeValue(thirdWallet.address, prop1)).to.equal(0)
@@ -225,7 +225,7 @@ describe('Registry', () => {
       await registry.setAttributeValue(anotherWallet.address, prop1, 5, { gasLimit: 2_000_000 })
       await registry.setAttributeValue(owner.address, prop1, 6, { gasLimit: 2_000_000 })
 
-      const token2 = await new MockRegistrySubscriberFactory(owner).deploy()
+      const token2 = await new MockRegistrySubscriber__factory(owner).deploy()
       await registry.subscribe(prop1, token2.address, { gasLimit: 2_000_000 })
       await registry.syncAttribute(prop1, 2, [thirdWallet.address, anotherWallet.address, owner.address], { gasLimit: 2_000_000 })
       expect(await registryToken.getAttributeValue(thirdWallet.address, prop1)).to.equal(3)

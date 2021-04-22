@@ -2,37 +2,41 @@ import { expect, use } from 'chai'
 import { beforeEachWithFixture, DAY, parseEth, parseTRU, timeTravel } from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
-  ImplementationReferenceFactory,
+  ImplementationReference__factory,
   LoanToken2,
-  LoanToken2Factory,
-  LoanToken2Json,
+  LoanToken2__factory,
   MockErc20Token,
-  MockErc20TokenFactory,
-  PoolFactoryFactory,
+  MockErc20Token__factory,
+  PoolFactory__factory,
   TrueFiPool2,
-  TrueFiPool2Factory,
+  TrueFiPool2__factory,
   TestTrueLender,
-  TestTrueLenderFactory,
+  TestTrueLender__factory,
   TrueRatingAgencyV2,
-  TrueRatingAgencyV2Factory,
+  TrueRatingAgencyV2__factory,
   PoolFactory,
   ArbitraryDistributor,
   TrustToken,
-  TrustTokenFactory,
-  ArbitraryDistributorFactory,
+  TrustToken__factory,
+  ArbitraryDistributor__factory,
   StkTruToken,
-  StkTruTokenFactory,
-  LinearTrueDistributorFactory,
-  MockTrueCurrencyFactory,
-  Mock1InchV3Factory,
+  StkTruToken__factory,
+  LinearTrueDistributor__factory,
+  MockTrueCurrency__factory,
+  Mock1InchV3__factory,
   Mock1InchV3,
-  Mock1InchV3Json,
+  LoanFactory2,
+  LoanFactory2__factory,
 } from 'contracts'
+
+import {
+  Mock1InchV3Json,
+  LoanToken2Json,
+} from 'build'
+
 import { deployMockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
-import { LoanFactory2 } from 'contracts/types/LoanFactory2'
-import { LoanFactory2Factory } from 'contracts/types/LoanFactory2Factory'
 
 use(solidity)
 
@@ -68,26 +72,26 @@ describe('TrueLender2', () => {
   const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
     const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, apy)
     const loanAddress = (await loanTx.wait()).events[0].args.contractAddress
-    return new LoanToken2Factory(owner).attach(loanAddress)
+    return new LoanToken2__factory(owner).attach(loanAddress)
   }
 
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, borrower] = wallets)
-    poolFactory = await deployContract(owner, PoolFactoryFactory)
-    const poolImplementation = await deployContract(owner, TrueFiPool2Factory)
-    const implementationReference = await deployContract(owner, ImplementationReferenceFactory, [poolImplementation.address])
+    poolFactory = await deployContract(owner, PoolFactory__factory)
+    const poolImplementation = await deployContract(owner, TrueFiPool2__factory)
+    const implementationReference = await deployContract(owner, ImplementationReference__factory, [poolImplementation.address])
 
-    lender = await deployContract(owner, TestTrueLenderFactory)
+    lender = await deployContract(owner, TestTrueLender__factory)
     await poolFactory.initialize(implementationReference.address, AddressZero, lender.address)
 
-    stkTru = await deployContract(owner, StkTruTokenFactory)
+    stkTru = await deployContract(owner, StkTruToken__factory)
 
-    tru = await deployContract(owner, TrustTokenFactory)
+    tru = await deployContract(owner, TrustToken__factory)
     await tru.initialize()
 
-    usdc = await deployContract(owner, MockErc20TokenFactory)
-    token1 = await deployContract(owner, MockErc20TokenFactory)
-    token2 = await deployContract(owner, MockErc20TokenFactory)
+    usdc = await deployContract(owner, MockErc20Token__factory)
+    token1 = await deployContract(owner, MockErc20Token__factory)
+    token2 = await deployContract(owner, MockErc20Token__factory)
 
     await poolFactory.whitelist(token1.address, true)
     await poolFactory.whitelist(token2.address, true)
@@ -97,25 +101,25 @@ describe('TrueLender2', () => {
     await poolFactory.createPool(token2.address)
     await poolFactory.createPool(usdc.address)
 
-    pool1 = TrueFiPool2Factory.connect(await poolFactory.pool(token1.address), owner)
-    pool2 = TrueFiPool2Factory.connect(await poolFactory.pool(token2.address), owner)
-    counterfeitPool = await deployContract(owner, TrueFiPool2Factory)
+    pool1 = TrueFiPool2__factory.connect(await poolFactory.pool(token1.address), owner)
+    pool2 = TrueFiPool2__factory.connect(await poolFactory.pool(token2.address), owner)
+    counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
     await counterfeitPool.initialize(token1.address, AddressZero, lender.address, AddressZero, owner.address)
-    feePool = TrueFiPool2Factory.connect(await poolFactory.pool(usdc.address), owner)
+    feePool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
 
-    const tfusd = await deployContract(owner, MockTrueCurrencyFactory) // just for testing, change this in origination fees development
-    const trueDistributor = await deployContract(owner, LinearTrueDistributorFactory)
+    const tfusd = await deployContract(owner, MockTrueCurrency__factory) // just for testing, change this in origination fees development
+    const trueDistributor = await deployContract(owner, LinearTrueDistributor__factory)
     await stkTru.initialize(tru.address, tfusd.address, tfusd.address, trueDistributor.address, AddressZero)
 
-    rater = await deployContract(owner, TrueRatingAgencyV2Factory)
-    oneInch = await new Mock1InchV3Factory(owner).deploy()
+    rater = await deployContract(owner, TrueRatingAgencyV2__factory)
+    oneInch = await new Mock1InchV3__factory(owner).deploy()
     await lender.initialize(stkTru.address, poolFactory.address, rater.address, oneInch.address)
     await lender.setFeePool(feePool.address)
 
-    arbitraryDistributor = await deployContract(owner, ArbitraryDistributorFactory)
+    arbitraryDistributor = await deployContract(owner, ArbitraryDistributor__factory)
     await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(1e7))
 
-    loanFactory = await deployContract(owner, LoanFactory2Factory)
+    loanFactory = await deployContract(owner, LoanFactory2__factory)
     await loanFactory.initialize(poolFactory.address, lender.address, AddressZero)
     await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
 
@@ -296,7 +300,7 @@ describe('TrueLender2', () => {
       })
 
       it('loan was created for unknown pool', async () => {
-        const badLoan = await deployContract(owner, LoanToken2Factory, [
+        const badLoan = await deployContract(owner, LoanToken2__factory, [
           counterfeitPool.address,
           borrower.address,
           lender.address,

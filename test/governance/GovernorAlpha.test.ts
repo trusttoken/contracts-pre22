@@ -6,11 +6,11 @@ import { solidity } from 'ethereum-waffle'
 
 import {
   GovernorAlpha,
-  GovernorAlphaFactory,
+  GovernorAlpha__factory,
   Timelock,
-  TimelockFactory,
+  Timelock__factory,
   TrustToken,
-  TrustTokenFactory,
+  TrustToken__factory,
 } from 'contracts'
 
 use(solidity)
@@ -53,16 +53,16 @@ describe('GovernorAlpha', () => {
     ([owner, initialHolder] = wallets)
     provider = _provider
 
-    timelock = await new TimelockFactory(owner).deploy()
+    timelock = await new Timelock__factory(owner).deploy()
     await timelock.connect(owner).initialize(owner.address, 2 * 24 * 3600)
 
-    trustToken = await new TrustTokenFactory(owner).deploy()
+    trustToken = await new TrustToken__factory(owner).deploy()
     await trustToken.connect(owner).initialize()
 
-    stkTru = await new TrustTokenFactory(owner).deploy()
+    stkTru = await new TrustToken__factory(owner).deploy()
     await stkTru.connect(owner).initialize()
 
-    governorAlpha = await new GovernorAlphaFactory(owner).deploy()
+    governorAlpha = await new GovernorAlpha__factory(owner).deploy()
     await governorAlpha.connect(owner).initialize(timelock.address, trustToken.address, owner.address, stkTru.address, 5) // votingPeriod = 1 blocks
 
     // mint votesAmount/2 of tru
@@ -367,7 +367,7 @@ describe('GovernorAlpha', () => {
         const { hasVoted, support, votes }: Receipt = tx
         expect(hasVoted).to.be.true
         expect(support).to.be.false
-        expect(votes.toNumber()).to.be.eq(votesAmount)
+        expect(votes).to.be.eq(votesAmount)
       })
     })
   })
@@ -411,7 +411,7 @@ describe('GovernorAlpha', () => {
     async function sign (wallet: Wallet, proposalId: number, support: boolean, governor: string) {
       const domain = {
         name: 'TrueFi Governance',
-        chainId: 1,
+        chainId: (await wallet.provider.getNetwork()).chainId,
         verifyingContract: governor,
       }
       const types = {

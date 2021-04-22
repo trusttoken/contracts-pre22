@@ -1,14 +1,14 @@
 import { utils, Wallet } from 'ethers'
-import { loadFixture, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
 
 import { trueCurrency } from 'fixtures/trueCurrency'
-import { toAddress, WalletOrAddress } from 'utils'
+import { loadFixture, toAddress, WalletOrAddress } from 'utils'
 
-import { TrueCurrency } from 'contracts/types/TrueCurrency'
+import { TrueCurrency } from 'contracts'
 import {
-  MockErc20TokenFactory,
-  ForceEtherFactory,
+  MockErc20Token__factory,
+  ForceEther__factory,
   MockErc20Token,
 } from 'contracts'
 
@@ -25,10 +25,10 @@ describe('TrueCurrency - Reclaimable', () => {
 
   beforeEach(async () => {
     ({ wallets: [owner, otherAccount], token } = await loadFixture(trueCurrency))
-    const forceEther = await new ForceEtherFactory(owner).deploy({ value: utils.parseEther('1') })
+    const forceEther = await new ForceEther__factory(owner).deploy({ value: utils.parseEther('1') })
     await forceEther.destroyAndSend(token.address)
 
-    otherToken = await new MockErc20TokenFactory(owner).deploy()
+    otherToken = await new MockErc20Token__factory(owner).deploy()
     await otherToken.mint(token.address, 1000)
   })
 

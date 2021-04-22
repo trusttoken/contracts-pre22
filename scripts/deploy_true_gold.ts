@@ -7,9 +7,9 @@ import { waitForTx } from 'scripts/utils/waitForTx'
 import { asProxy } from 'scripts/utils/asProxy'
 
 import {
-  TrueGoldFactory,
-  OwnedUpgradeabilityProxyFactory,
-  TrueGoldControllerFactory,
+  TrueGold__factory,
+  OwnedUpgradeabilityProxy__factory,
+  TrueGoldController__factory,
   TrueGoldController,
   TrueGold,
 } from 'contracts'
@@ -45,13 +45,13 @@ export async function deployTrueGold (deployer: Wallet, params: DeploymentParams
 }
 
 async function deployControllerBehindProxy (deployer: Wallet) {
-  const controllerImpl = await deployContract(deployer, TrueGoldControllerFactory)
+  const controllerImpl = await deployContract(deployer, TrueGoldController__factory)
   await waitForTx(controllerImpl.initialize()) // controllerImpl.owner = deployer
 
-  const proxy = await deployContract(deployer, OwnedUpgradeabilityProxyFactory) // controller.proxyOwner = deployer
+  const proxy = await deployContract(deployer, OwnedUpgradeabilityProxy__factory) // controller.proxyOwner = deployer
   await waitForTx(proxy.upgradeTo(controllerImpl.address))
 
-  const controller = TrueGoldControllerFactory.connect(proxy.address, deployer)
+  const controller = TrueGoldController__factory.connect(proxy.address, deployer)
   await waitForTx(controller.initialize()) // controller.owner = deployer
 
   console.log(`Controller address: ${proxy.address}`)
@@ -59,13 +59,13 @@ async function deployControllerBehindProxy (deployer: Wallet) {
 }
 
 async function deployTokenBehindProxy (deployer: Wallet, burnBounds: DeploymentParams['initialBurnBounds']) {
-  const tokenImpl = await deployContract(deployer, TrueGoldFactory)
+  const tokenImpl = await deployContract(deployer, TrueGold__factory)
   await waitForTx(tokenImpl.initialize(0, 0)) // tokenImpl._owner = deployer
 
-  const proxy = await deployContract(deployer, OwnedUpgradeabilityProxyFactory) // token.proxyOwner = deployer
+  const proxy = await deployContract(deployer, OwnedUpgradeabilityProxy__factory) // token.proxyOwner = deployer
   await waitForTx(proxy.upgradeTo(tokenImpl.address))
 
-  const token = TrueGoldFactory.connect(proxy.address, deployer)
+  const token = TrueGold__factory.connect(proxy.address, deployer)
   await waitForTx(token.initialize(burnBounds.min, burnBounds.max)) // token._owner = deployer
 
   console.log(`TrueGold address: ${proxy.address}`)

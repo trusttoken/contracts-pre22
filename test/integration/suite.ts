@@ -2,7 +2,7 @@
 import { BigNumberish, Contract, providers } from 'ethers'
 import { ContractFactoryConstructor, deployContract } from 'scripts/utils/deployContract'
 import ganache from 'ganache-core'
-import { OwnedUpgradeabilityProxyFactory } from 'contracts'
+import { OwnedUpgradeabilityProxy__factory } from 'contracts'
 import { expect } from 'chai'
 import { parseEth } from 'utils'
 
@@ -55,7 +55,7 @@ async function _upgradeSuite<T extends Contract> (
   const newContract = await deployContract(owner, Factory)
   const existingContract = new Factory(owner).attach(currentAddress)
   const oldValues = await Promise.all(getters.map(execGetter(existingContract)))
-  const proxy = new OwnedUpgradeabilityProxyFactory(owner).attach(currentAddress)
+  const proxy = new OwnedUpgradeabilityProxy__factory(owner).attach(currentAddress)
   await (await proxy.upgradeTo(newContract.address)).wait()
   const newValues = await Promise.all(getters.map(execGetter(existingContract)))
   for (let i = 0; i < oldValues.length; i++) {

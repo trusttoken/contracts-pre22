@@ -1,7 +1,6 @@
 import { Contract } from 'ethers'
-import { OwnedUpgradeabilityProxyFactory } from 'contracts/types/OwnedUpgradeabilityProxyFactory'
-import { OwnedUpgradeabilityProxy } from 'contracts/types/OwnedUpgradeabilityProxy'
+import { OwnedUpgradeabilityProxy__factory, OwnedUpgradeabilityProxy } from 'contracts'
 
 export function asProxy (contract: Contract): OwnedUpgradeabilityProxy {
-  return OwnedUpgradeabilityProxyFactory.connect(contract.address, contract.signer)
+  return OwnedUpgradeabilityProxy__factory.connect(contract.address, contract.signer)
 }

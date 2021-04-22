@@ -4,7 +4,7 @@
 import { ethers, providers } from 'ethers'
 
 import {
-  TrueLenderReclaimerFactory,
+  TrueLenderReclaimer__factory,
 } from '../build'
 
 async function deployTrueLenderReclaimer () {
@@ -16,7 +16,7 @@ async function deployTrueLenderReclaimer () {
   const provider = new providers.InfuraProvider(process.argv[2], INFURA_ENDPOINT)
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
 
-  const trueLenderReclaimerImpl = await (await new TrueLenderReclaimerFactory(wallet).deploy(TRUE_LENDER_ADDRESS, txnArgs)).deployed()
+  const trueLenderReclaimerImpl = await (await new TrueLenderReclaimer__factory(wallet).deploy(TRUE_LENDER_ADDRESS, txnArgs)).deployed()
   console.log(`TrueLenderReclaimer: ${trueLenderReclaimerImpl.address}`)
 }
 

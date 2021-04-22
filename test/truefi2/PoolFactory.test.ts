@@ -1,18 +1,18 @@
 import { expect, use } from 'chai'
 import {
   ImplementationReference,
-  ImplementationReferenceFactory,
+  ImplementationReference__factory,
   MockErc20Token,
-  MockErc20TokenFactory,
+  MockErc20Token__factory,
   OwnedProxyWithReference,
-  OwnedProxyWithReferenceFactory,
+  OwnedProxyWithReference__factory,
   TestTrueLender,
-  TestTrueLenderFactory,
+  TestTrueLender__factory,
   PoolFactory,
-  PoolFactoryFactory,
+  PoolFactory__factory,
   TrueFiPool2,
-  TrueFiPool2Factory,
-} from 'contracts/types'
+  TrueFiPool2__factory,
+} from 'contracts'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
@@ -33,15 +33,15 @@ describe('PoolFactory', () => {
 
   beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet] = wallets
-    poolImplementation = await new TrueFiPool2Factory(owner).deploy()
-    implementationReference = await new ImplementationReferenceFactory(owner).deploy(poolImplementation.address)
+    poolImplementation = await new TrueFiPool2__factory(owner).deploy()
+    implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
 
-    factory = await new PoolFactoryFactory(owner).deploy()
-    token1 = await new MockErc20TokenFactory(owner).deploy()
-    token2 = await new MockErc20TokenFactory(owner).deploy()
-    stakingToken = await new MockErc20TokenFactory(owner).deploy()
-    trueLenderInstance1 = await new TestTrueLenderFactory(owner).deploy()
-    trueLenderInstance2 = await new TestTrueLenderFactory(owner).deploy()
+    factory = await new PoolFactory__factory(owner).deploy()
+    token1 = await new MockErc20Token__factory(owner).deploy()
+    token2 = await new MockErc20Token__factory(owner).deploy()
+    stakingToken = await new MockErc20Token__factory(owner).deploy()
+    trueLenderInstance1 = await new TestTrueLender__factory(owner).deploy()
+    trueLenderInstance2 = await new TestTrueLender__factory(owner).deploy()
 
     await factory.initialize(
       implementationReference.address,
@@ -78,7 +78,7 @@ describe('PoolFactory', () => {
       await factory.whitelist(token1.address, true)
       const tx = await factory.createPool(token1.address)
       creationEventArgs = (await tx.wait()).events[2].args
-      proxy = OwnedProxyWithReferenceFactory.connect(await factory.pool(token1.address), owner)
+      proxy = OwnedProxyWithReference__factory.connect(await factory.pool(token1.address), owner)
 
       pool = poolImplementation.attach(proxy.address)
     })
@@ -90,7 +90,7 @@ describe('PoolFactory', () => {
     it('initializes implementation with ownership', async () => {
       await factory.whitelist(token2.address, true)
       await factory.connect(otherWallet).createPool(token2.address)
-      proxy = OwnedProxyWithReferenceFactory.connect(await factory.pool(token2.address), owner)
+      proxy = OwnedProxyWithReference__factory.connect(await factory.pool(token2.address), owner)
       expect(await pool.owner()).to.eq(owner.address)
     })
 
@@ -131,8 +131,8 @@ describe('PoolFactory', () => {
       await factory.whitelist(token2.address, true)
       await factory.createPool(token1.address)
       await factory.createPool(token2.address)
-      proxy1 = OwnedProxyWithReferenceFactory.connect(await factory.pool(token1.address), owner)
-      proxy2 = OwnedProxyWithReferenceFactory.connect(await factory.pool(token2.address), owner)
+      proxy1 = OwnedProxyWithReference__factory.connect(await factory.pool(token1.address), owner)
+      proxy2 = OwnedProxyWithReference__factory.connect(await factory.pool(token2.address), owner)
     })
 
     it('adds 2 pools for 2 tokens', async () => {
@@ -150,7 +150,7 @@ describe('PoolFactory', () => {
     })
 
     it('changing reference, changes implementation for both', async () => {
-      const newPoolImplementation = await new TrueFiPool2Factory(owner).deploy()
+      const newPoolImplementation = await new TrueFiPool2__factory(owner).deploy()
       await implementationReference.setImplementation(newPoolImplementation.address)
 
       expect(await proxy1.implementation()).to.eq(newPoolImplementation.address)
@@ -158,9 +158,9 @@ describe('PoolFactory', () => {
     })
 
     it('one reference changed, second remains, then change initial implementation', async () => {
-      const newPoolImplementation1 = await new TrueFiPool2Factory(owner).deploy()
-      const newReference = await new ImplementationReferenceFactory(owner).deploy(newPoolImplementation1.address)
-      const newPoolImplementation2 = await new TrueFiPool2Factory(owner).deploy()
+      const newPoolImplementation1 = await new TrueFiPool2__factory(owner).deploy()
+      const newReference = await new ImplementationReference__factory(owner).deploy(newPoolImplementation1.address)
+      const newPoolImplementation2 = await new TrueFiPool2__factory(owner).deploy()
 
       await proxy1.changeImplementationReference(newReference.address)
       expect(await proxy1.implementation()).to.eq(newPoolImplementation1.address)

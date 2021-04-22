@@ -1,12 +1,12 @@
 import { BigNumberish, Wallet } from 'ethers'
-import { loadFixture, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
 
-import { MAX_BURN_BOUND } from 'utils'
+import { loadFixture, MAX_BURN_BOUND } from 'utils'
 
 import {
   TrueGold,
-  TrueGoldFactory,
+  TrueGold__factory,
 } from 'contracts'
 
 use(solidity)
@@ -16,7 +16,7 @@ describe('TrueGold - Initializable', () => {
   let token: TrueGold
 
   async function fixture ([deployer, proxy]: Wallet[]) {
-    const trueGoldFactory = new TrueGoldFactory(deployer)
+    const trueGoldFactory = new TrueGold__factory(deployer)
     const token = await trueGoldFactory.deploy()
 
     return { proxy, token }

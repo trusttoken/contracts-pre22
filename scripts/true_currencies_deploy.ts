@@ -4,11 +4,11 @@
 import { ethers, providers } from 'ethers'
 
 import {
-  TrueAudFactory,
-  TrueCadFactory,
-  TrueGbpFactory,
-  TrueHkdFactory,
-  TrueUsdFactory,
+  TrueAud__factory,
+  TrueCad__factory,
+  TrueGbp__factory,
+  TrueHkd__factory,
+  TrueUsd__factory,
 } from 'contracts'
 
 async function deployTrueCurrencies () {
@@ -24,31 +24,31 @@ async function deployTrueCurrencies () {
 }
 
 async function deployTrueUSD (provider, wallet, txnArgs) {
-  const trueUsd = await (await new TrueUsdFactory(wallet).deploy(txnArgs)).deployed()
+  const trueUsd = await (await new TrueUsd__factory(wallet).deploy(txnArgs)).deployed()
   console.log('TrueUSD at: ', trueUsd.address)
   return trueUsd
 }
 
 async function deployTrueAUD (provider, wallet, txnArgs) {
-  const trueAud = await (await new TrueAudFactory(wallet).deploy(txnArgs)).deployed()
+  const trueAud = await (await new TrueAud__factory(wallet).deploy(txnArgs)).deployed()
   console.log('TrueAud at: ', trueAud.address)
   return trueAud
 }
 
 async function deployTrueCAD (provider, wallet, txnArgs) {
-  const trueCad = await (await new TrueCadFactory(wallet).deploy(txnArgs)).deployed()
+  const trueCad = await (await new TrueCad__factory(wallet).deploy(txnArgs)).deployed()
   console.log('TrueCad at: ', trueCad.address)
   return trueCad
 }
 
 async function deployTrueGBP (provider, wallet, txnArgs) {
-  const trueGbp = await (await new TrueGbpFactory(wallet).deploy(txnArgs)).deployed()
+  const trueGbp = await (await new TrueGbp__factory(wallet).deploy(txnArgs)).deployed()
   console.log('TrueGbp at: ', trueGbp.address)
   return trueGbp
 }
 
 async function deployTrueHKD (provider, wallet, txnArgs) {
-  const trueHkd = await (await new TrueHkdFactory(wallet).deploy(txnArgs)).deployed()
+  const trueHkd = await (await new TrueHkd__factory(wallet).deploy(txnArgs)).deployed()
   console.log('TrueHkd at: ', trueHkd.address)
   return trueHkd
 }
