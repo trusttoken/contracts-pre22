@@ -103,6 +103,14 @@ contract TrueFiVault {
     }
 
     /**
+     * @dev Cancel YES/NO ratings on a loan
+     * @param id ID to cancel ratings for
+     */
+    function resetCastLoanRatings(address id) external onlyBeneficiary {
+        ratingAgency.resetCastRatings(id);
+    }
+
+    /**
      * @dev Rate YES on a loan by staking TRU
      * @param id Loan ID
      */
