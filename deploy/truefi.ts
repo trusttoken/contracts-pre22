@@ -4,6 +4,7 @@ import {
   LinearTrueDistributor,
   Liquidator,
   LoanFactory,
+  MockTrueUSD,
   MockTruPriceOracle,
   OwnedUpgradeabilityProxy,
   RatingAgencyV2Distributor,
@@ -39,7 +40,11 @@ deploy({}, (deployer, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
 
-  const trueUSD = proxy(contract(TrueUSD), () => {})
+  const trueUSD = is_mainnet
+    ? proxy(contract(TrueUSD), () => {})
+    : proxy(contract(MockTrueUSD), 'initialize',
+      [],
+    )
   const trustToken = is_mainnet
     ? timeProxy(contract(TrustToken), 'initialize',
       [],
