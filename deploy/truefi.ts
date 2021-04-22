@@ -12,13 +12,13 @@ import {
   TimeOwnedUpgradeabilityProxy,
   TruPriceOracle,
   TrueFiPool,
-  TrueLender,
   TrueRatingAgencyV2,
   TrueUSD,
   TrustToken,
 } from '../build/artifacts'
-import { DAY, parseTRU } from '../test/utils'
-import { AddressZero } from '@ethersproject/constants'
+import { utils } from 'ethers'
+
+const DAY = 60 * 60 * 24
 
 // TODO Fill values
 const DISTRIBUTION_DURATION_IN_DAYS = 10
@@ -26,21 +26,21 @@ const DISTRIBUTION_DURATION = DISTRIBUTION_DURATION_IN_DAYS * DAY
 const DISTRIBUTION_START_DATE = '02/18/2021'
 const DISTRIBUTION_START = Date.parse(DISTRIBUTION_START_DATE) / 1000
 const STAKE_DISTRIBUTION_AMOUNT_IN_TRU = 10
-const STAKE_DISTRIBUTION_AMOUNT = parseTRU(STAKE_DISTRIBUTION_AMOUNT_IN_TRU)
+const STAKE_DISTRIBUTION_AMOUNT = utils.parseUnits(STAKE_DISTRIBUTION_AMOUNT_IN_TRU.toString(), 8)
 const TIMELOCK_DELAY = 2 * DAY
 const VOTING_PERIOD = 10
 
 deploy({}, (deployer, config) => {
   const TIMELOCK_ADMIN = deployer
   const GOV_GUARDIAN = deployer
-  const is_mainnet = config.network == 'mainnet'
+  const is_mainnet = config.network === 'mainnet'
 
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
 
   const trueUSD = proxy(contract(TrueUSD), () => {})
-  const trustToken = is_mainnet ?
-    timeProxy(contract(TrustToken), 'initialize',
+  const trustToken = is_mainnet
+    ? timeProxy(contract(TrustToken), 'initialize',
       [],
     ) : timeProxy(contract(TestTrustToken), 'initialize',
       [],
@@ -76,7 +76,7 @@ deploy({}, (deployer, config) => {
   const timelock = proxy(contract(Timelock), 'initialize',
     [TIMELOCK_ADMIN, TIMELOCK_DELAY],
   )
-  const governorAlpha = proxy(contract(GovernorAlpha), 'initialize',
+  proxy(contract(GovernorAlpha), 'initialize',
     [timelock, trustToken, stkTruToken, GOV_GUARDIAN, VOTING_PERIOD],
   )
 })
