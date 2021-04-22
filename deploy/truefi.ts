@@ -4,6 +4,7 @@ import {
   LinearTrueDistributor,
   Liquidator,
   LoanFactory,
+  MockTruPriceOracle,
   OwnedUpgradeabilityProxy,
   RatingAgencyV2Distributor,
   StkTruToken,
@@ -47,7 +48,9 @@ deploy({}, (deployer, config) => {
     )
   const trueFiPool = proxy(contract(TrueFiPool), () => {})
   const stkTruToken = proxy(contract(StkTruToken), () => {})
-  const truPriceOracle = contract(TruPriceOracle)
+  const truPriceOracle = is_mainnet
+    ? contract(TruPriceOracle)
+    : contract(MockTruPriceOracle)
   const loanFactory = proxy(contract(LoanFactory), 'initialize',
     [trueUSD],
   )
@@ -77,7 +80,7 @@ deploy({}, (deployer, config) => {
   const timelock = proxy(contract(Timelock), 'initialize',
     [TIMELOCK_ADMIN, TIMELOCK_DELAY],
   )
-  proxy(contract(GovernorAlpha), 'initialize',
+  const governorAlpha = proxy(contract(GovernorAlpha), 'initialize',
     [timelock, trustToken, stkTruToken, GOV_GUARDIAN, VOTING_PERIOD],
   )
 })
