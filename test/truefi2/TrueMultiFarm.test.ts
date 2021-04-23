@@ -120,21 +120,16 @@ describe('TrueMultiFarm', () => {
       expect(await totalStaked()).to.equal(parseEth(500))
     })
 
-    it.only('exiting changes stake balance', async () => {
+    it('exiting changes stake balance', async () => {
       await farm.connect(staker1).stake(stakingToken.address, parseEth(1000), txArgs)
       await farm.connect(staker1).exit([stakingToken.address], txArgs)
-      expect(await farm.staked(stakingToken.address, staker1.address)).to.equal(parseEth(500))
-      expect(await totalStaked()).to.equal(parseEth(500))
+      expect(await farm.staked(stakingToken.address, staker1.address)).to.equal('0')
+      expect(await totalStaked()).to.equal('0')
     })
 
     it('cannot unstake more than is staked', async () => {
       await farm.connect(staker1).stake(stakingToken.address, parseEth(1000), txArgs)
       await expect(farm.connect(staker1).unstake(stakingToken.address, parseEth(1001), txArgs)).to.be.revertedWith('TrueMultiFarm: Cannot withdraw amount bigger than available balance')
-    })
-
-    it('cannot exit more than is staked', async () => {
-      await farm.connect(staker1).stake(stakingToken.address, parseEth(1000), txArgs)
-      await expect(farm.connect(staker1).exit([stakingToken.address], txArgs)).to.be.revertedWith('TrueMultiFarm: Cannot withdraw amount bigger than available balance')
     })
 
     it('yields rewards per staked tokens (using claim)', async () => {
