@@ -115,8 +115,8 @@
       "address": "0x418Daf88CCfe083324f8c91e6FE8da3e86d9a182"
     },
     "governorAlpha": {
-      "txHash": "0xf2b9cab87ed4d4c4a98d842430053e920502cb2502a36ebfd64f9265cd69e323",
-      "address": "0x7ee1311dEA8B3F65F0A36cB33f0ECa3A6D359260"
+      "txHash": "0x0e02313deaae380166887c26688bc2fe45ae6c0cdc7a30d84ecd23f34eb32b03",
+      "address": "0xdd019846EFCBb523275e4f3611b19a58848213E0"
     },
     "governorAlpha_proxy": {
       "txHash": "0xd55e5ecfbed2510096f237603d7ee96edb58df905f833d7453b006faa7f1c78d",
