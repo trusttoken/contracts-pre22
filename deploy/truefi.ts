@@ -5,6 +5,8 @@ import {
   Liquidator,
   LoanFactory,
   MockCurveGauge,
+  MockTrueUSD,
+  MockTruPriceOracle,
   OwnedUpgradeabilityProxy,
   RatingAgencyV2Distributor,
   StkTruToken,
@@ -52,7 +54,11 @@ deploy({}, (deployer, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
 
-  const trueUSD = proxy(contract(TrueUSD), () => {})
+  const trueUSD = is_mainnet
+    ? proxy(contract(TrueUSD), () => {})
+    : proxy(contract(MockTrueUSD), 'initialize',
+      [],
+    )
   const trustToken = is_mainnet
     ? timeProxy(contract(TrustToken), 'initialize',
       [],
@@ -69,7 +75,9 @@ deploy({}, (deployer, config) => {
     : proxy(contract(TestTrueFiPool), 'initialize',
     [AddressZero, yCrvGauge, trueUSD, trueLender, AddressZero, stkTruToken, AddressZero, AddressZero],
   )
-  const truPriceOracle = contract(TruPriceOracle)
+  const truPriceOracle = is_mainnet
+    ? contract(TruPriceOracle)
+    : contract(MockTruPriceOracle)
   const loanFactory = proxy(contract(LoanFactory), 'initialize',
     [trueUSD],
   )
