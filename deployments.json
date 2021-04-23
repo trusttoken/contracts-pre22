@@ -19,8 +19,8 @@
   },
   "ropsten": {
     "mockTrueUSD": {
-      "txHash": "0x5c015cf257e19a1864d81d611ad182ae9951f36bedd223e87413301dee79bef8",
-      "address": "0xa6e9883Fb67E0CB23aD81c6C2123B17E7083cA31"
+      "txHash": "0xa9213c7ff15ff08f883b6a6a8166d1fa4abecc72736909a652b7ffc9cf4e4bf5",
+      "address": "0xA81EeBb973Edc64D7fb3c8D926ab41645f937b6d"
     },
     "mockTrueUSD_proxy": {
       "txHash": "0x4f7bcc685297c7a0ef947b02bf8cff8fde18a9e268208b761574479752b96dc9",
@@ -35,16 +35,16 @@
       "address": "0x8695B9e52a79f12E032928ee4611567c74295dFD"
     },
     "trueLender": {
-      "txHash": "0x66e18a221f7d3ae1d8bec549333a9d650c5629bcc9efee94ccf9d12cab963c32",
-      "address": "0xDb25A8942365436C5976AE7E4dFAfbD90c08B360"
+      "txHash": "0xdaca50e68bcad58529f518b17edadf35da3176108140b6488a2188fbb8a81bc7",
+      "address": "0xC7cf4485B748fD58636a55D383C8F379529960c2"
     },
     "trueLender_proxy": {
       "txHash": "0xedc9b9fec56800b058f2b256bf8919dc40cce93a3e047e13f787d02b1a77c3ac",
       "address": "0xb1f283F554995F666bD3238F229ADf0aF7d54fC4"
     },
     "stkTruToken": {
-      "txHash": "0xa1dab1af3b0e6348022756c09e24840fcf772b7380f9cb14d84ea6ec9f1e97dc",
-      "address": "0xC1fE31f31646960b76cBeCB23444d6Decf3f75fd"
+      "txHash": "0x4b29b5af903a88361667e4b8bed3d67891a7a26f3908920fadb2e314a1faaeb8",
+      "address": "0xFe4d1627473BcE8b7f86CF1Cf35D4B16C8302518"
     },
     "stkTruToken_proxy": {
       "txHash": "0x7c2d5b7e423c800a906c6877ecab38cdd39cba5f8419276287479d484c96471f",
