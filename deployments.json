@@ -18,11 +18,11 @@
     }
   },
   "ropsten": {
-    "trueUSD": {
+    "mockTrueUSD": {
       "txHash": "0x5c015cf257e19a1864d81d611ad182ae9951f36bedd223e87413301dee79bef8",
       "address": "0xa6e9883Fb67E0CB23aD81c6C2123B17E7083cA31"
     },
-    "trueUSD_proxy": {
+    "mockTrueUSD_proxy": {
       "txHash": "0x4f7bcc685297c7a0ef947b02bf8cff8fde18a9e268208b761574479752b96dc9",
       "address": "0x1cB0906955623920c86A3963593a02a405Bb97fC"
     },
@@ -34,13 +34,13 @@
       "txHash": "0x6ceef6f50a1cbad2320d47b7a4745f0a58f523e9052901f4032d93762ff0b9a5",
       "address": "0x8695B9e52a79f12E032928ee4611567c74295dFD"
     },
-    "trueFiPool": {
-      "txHash": "0x7234f8b3fe55c0f269350fd364f4e86df3ac6c7a64c0fc32b712bd5298b486a2",
-      "address": "0x9C0b3C16F62d3c1CaDeD9f9088f925b4eb40adbA"
+    "trueLender": {
+      "txHash": "0x66e18a221f7d3ae1d8bec549333a9d650c5629bcc9efee94ccf9d12cab963c32",
+      "address": "0xDb25A8942365436C5976AE7E4dFAfbD90c08B360"
     },
-    "trueFiPool_proxy": {
-      "txHash": "0x3439bdd66e0396ebaa12e4acee9ccf49d3cea6ed4b01bf8b5a915e86784b8f66",
-      "address": "0xd943D9CB0904bB2a057f2e6AdE738daCA3e5d405"
+    "trueLender_proxy": {
+      "txHash": "0xedc9b9fec56800b058f2b256bf8919dc40cce93a3e047e13f787d02b1a77c3ac",
+      "address": "0xb1f283F554995F666bD3238F229ADf0aF7d54fC4"
     },
     "stkTruToken": {
       "txHash": "0xa1dab1af3b0e6348022756c09e24840fcf772b7380f9cb14d84ea6ec9f1e97dc",
@@ -49,6 +49,18 @@
     "stkTruToken_proxy": {
       "txHash": "0x7c2d5b7e423c800a906c6877ecab38cdd39cba5f8419276287479d484c96471f",
       "address": "0xccf081F684b3481503080Ca4240F76d8381A7eF5"
+    },
+    "mockCurveGauge": {
+      "txHash": "0x62dcdf6bb465b5e5154a244510e046b43b7b14a3fe2aa5575df54d788b7093e1",
+      "address": "0xcfa73181B8f4010d9E3d519Bab1D55D1f30c0562"
+    },
+    "testTrueFiPool": {
+      "txHash": "0x7234f8b3fe55c0f269350fd364f4e86df3ac6c7a64c0fc32b712bd5298b486a2",
+      "address": "0x9C0b3C16F62d3c1CaDeD9f9088f925b4eb40adbA"
+    },
+    "testTrueFiPool_proxy": {
+      "txHash": "0x3439bdd66e0396ebaa12e4acee9ccf49d3cea6ed4b01bf8b5a915e86784b8f66",
+      "address": "0xd943D9CB0904bB2a057f2e6AdE738daCA3e5d405"
     },
     "mockTruPriceOracle": {
       "txHash": "0xff1f3e31712e9f15e38ab999ee7439ed5daa3caa54f22c571fc70d3c300cc3e3",
