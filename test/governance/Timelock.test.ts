@@ -32,7 +32,7 @@ describe('Timelock', () => {
     const block = await admin.provider.getBlock('latest')
     await timelock.queueTransaction(timelock.address, 0, signature, data, block.timestamp + 200100)
     await timeTravel(admin.provider as any, 200200)
-    return timelock.executeTransaction(timelock.address, 0, signature, data, block.timestamp + 200100)
+    return timelock.executeTransaction(timelock.address, 0, signature, data, block.timestamp + 200100, { gasLimit: 6000000 })
   }
 
   describe('emergency pause', () => {
@@ -354,7 +354,7 @@ describe('Timelock', () => {
           // reverted because first setPendingAdmin() call
           // should come from admin, not from timelock itself;
           // though would revert the same way in case of another cause
-          await expect(timelock.connect(admin).executeTransaction(target, value, signature, data, eta))
+          await expect(timelock.connect(admin).executeTransaction(target, value, signature, data, eta, { gasLimit: 6000000 }))
             .to.be.revertedWith('Timelock::executeTransaction: Transaction execution reverted.')
         })
 
@@ -373,7 +373,7 @@ describe('Timelock', () => {
           // reverted because first setPendingAdmin() call
           // should come from admin, not from timelock itself;
           // though would revert the same way in case of another cause
-          await expect(timelock.connect(admin).executeTransaction(target, value, signature, callData, eta))
+          await expect(timelock.connect(admin).executeTransaction(target, value, signature, callData, eta, { gasLimit: 6000000 }))
             .to.be.revertedWith('Timelock::executeTransaction: Transaction execution reverted.')
         })
       })
