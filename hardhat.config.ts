@@ -1,5 +1,10 @@
 import "hardhat-typechain";
 import "@nomiclabs/hardhat-waffle"
+import "solidity-coverage"
+import "hardhat-abi-exporter"
+import "tsconfig-paths/register";
+
+import mocharc from "./.mocharc.json"
 
 module.exports = {
   paths: {
@@ -7,9 +12,15 @@ module.exports = {
     artifacts: "./build",
     cache: "./cache",
   },
+  abiExporter: {
+    path: './build',
+    flat: true,
+    spacing: 2
+  },
   networks: {
     hardhat: {
       initialDate: "2020-01-01T00:00:00",
+      allowUnlimitedContractSize: true,
     },
   },
   typechain: {
@@ -25,4 +36,7 @@ module.exports = {
       },
     },
   },
+  mocha: {
+    ...mocharc
+  }
 }
