@@ -50,7 +50,7 @@ describe('TrueLender', () => {
   const averageMonthInSeconds = yearInSeconds / 12
 
   const deployMockLoanToken = async () => {
-    const mock = await deployMockContract(owner, ILoanTokenJson.abi)
+    const mock = await deployMockContract(owner, ILoanTokenJson)
     await mock.mock.isLoanToken.returns(true)
     await mock.mock.fund.returns()
     await mock.mock.redeem.returns()
@@ -67,7 +67,7 @@ describe('TrueLender', () => {
     tusd = await new MockTrueCurrency__factory(owner).deploy()
     await tusd.initialize()
 
-    mockPool = await deployMockContract(owner, ITrueFiPoolJson.abi)
+    mockPool = await deployMockContract(owner, ITrueFiPoolJson)
     await mockPool.mock.currencyToken.returns(tusd.address)
     await mockPool.mock.borrow.returns()
     await mockPool.mock.repay.returns()
@@ -79,10 +79,10 @@ describe('TrueLender', () => {
     await mockLoanToken.mock.borrowerFee.returns(25)
     await mockLoanToken.mock.currencyToken.returns(tusd.address)
 
-    mockStakingPool = await deployMockContract(owner, IStakingPoolJson.abi)
+    mockStakingPool = await deployMockContract(owner, IStakingPoolJson)
     await mockStakingPool.mock.payFee.returns()
 
-    mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
+    mockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson)
     await mockRatingAgency.mock.getResults.returns(0, 0, 0)
 
     lender = await new MockTrueLender__factory(owner).deploy()
@@ -161,7 +161,7 @@ describe('TrueLender', () => {
       })
 
       it('sets the rating agency address', async () => {
-        const newMockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson.abi)
+        const newMockRatingAgency = await deployMockContract(owner, ITrueRatingAgencyJson)
         await expect(lender.setRatingAgency(newMockRatingAgency.address)).to.emit(lender, 'RatingAgencyChanged').withArgs(newMockRatingAgency.address)
         expect(await lender.ratingAgency()).to.equal(newMockRatingAgency.address)
       })

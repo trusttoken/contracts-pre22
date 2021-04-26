@@ -481,7 +481,7 @@ describe('TrueLender2', () => {
     })
 
     it('reverts if loan has not been previously funded', async () => {
-      const mockLoanToken = await deployMockContract(owner, LoanToken2Json.abi)
+      const mockLoanToken = await deployMockContract(owner, LoanToken2Json)
       await mockLoanToken.mock.status.returns(3)
       await mockLoanToken.mock.pool.returns(pool1.address)
       await expect(lender.reclaim(mockLoanToken.address, '0x'))
@@ -566,7 +566,7 @@ describe('TrueLender2', () => {
       })
 
       const encodeData = (fromToken: string, toToken: string, sender: string, receiver: string, amount: BigNumberish, flags = 0) => {
-        const iface = new utils.Interface(Mock1InchV3Json.abi)
+        const iface = new utils.Interface(Mock1InchV3Json)
         return iface.encodeFunctionData('swap', [AddressZero, {
           srcToken: fromToken,
           dstToken: toToken,

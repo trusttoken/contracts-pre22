@@ -64,7 +64,7 @@ describe('TrueFiPool2', () => {
     poolImplementation = await deployContract(TrueFiPool2__factory)
     implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
     lender = await deployContract(TrueLender2__factory)
-    rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
+    rater = await deployMockContract(owner, TrueRatingAgencyV2Json)
 
     await poolFactory.initialize(implementationReference.address, liquidationToken.address, lender.address)
     await poolFactory.whitelist(tusd.address, true)
@@ -228,7 +228,7 @@ describe('TrueFiPool2', () => {
 
     xit('converts TRU to pool token value using oracle and returns value - 2%', async () => {
       await liquidationToken.mint(pool.address, 1000)
-      const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
+      const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson)
       await mockOracle.mock.truToToken.returns(500)
       await pool.setOracle(mockOracle.address)
       expect(await pool.liquidationTokenValue()).to.eq(withToleratedSlippage(BigNumber.from(500)))
@@ -237,7 +237,7 @@ describe('TrueFiPool2', () => {
 
     it('liquidationTokenValue is not part of liquidValue but a part of poolValue', async () => {
       await liquidationToken.mint(pool.address, 1000)
-      const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
+      const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson)
       await mockOracle.mock.truToToken.returns(500)
       await pool.setOracle(mockOracle.address)
       expect(await pool.liquidValue()).to.eq(0)

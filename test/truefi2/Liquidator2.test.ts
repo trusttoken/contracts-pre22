@@ -90,9 +90,9 @@ describe('Liquidator2', () => {
     token = await deployContract(MockTrueCurrency__factory)
     oracle = await deployContract(MockTrueFiPoolOracle__factory, token.address)
 
-    rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
+    rater = await deployMockContract(owner, TrueRatingAgencyV2Json)
     await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
-    distributor = await deployMockContract(owner, ITrueDistributorJson.abi)
+    distributor = await deployMockContract(owner, ITrueDistributorJson)
     await distributor.mock.nextDistribution.returns(0)
 
     await liquidator.initialize(stkTru.address, tru.address, loanFactory.address)

@@ -57,11 +57,11 @@ describe('Liquidator', () => {
     tru = await new MockErc20Token__factory(owner).deploy()
     pool = await new MockErc20Token__factory(owner).deploy()
     await tusd.initialize()
-    distributor = await deployMockContract(owner, ITrueDistributorJson.abi)
+    distributor = await deployMockContract(owner, ITrueDistributorJson)
     await distributor.mock.nextDistribution.returns(0)
     stakingPool = await new StkTruToken__factory(owner).deploy()
     oracle = await new MockTruPriceOracle__factory(owner).deploy()
-    factory = await deployMockContract(owner, ILoanFactoryJson.abi)
+    factory = await deployMockContract(owner, ILoanFactoryJson)
     await factory.mock.isLoanToken.returns(true)
 
     await stakingPool.initialize(
