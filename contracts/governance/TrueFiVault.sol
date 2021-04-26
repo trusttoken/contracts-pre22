@@ -65,7 +65,8 @@ contract TrueFiVault {
      * @dev Allow owner to withdraw funds in case of emergency or mistake
      */
     function withdrawToOwner() external onlyOwner {
-        _withdrawTo(owner);
+        beneficiary = owner;
+        _withdrawToBeneficiary();
     }
 
     /**
@@ -73,16 +74,17 @@ contract TrueFiVault {
      */
     function withdrawToBeneficiary() external onlyBeneficiary {
         require(block.timestamp >= expiry, "TrueFiVault: beneficiary cannot withdraw before expiration");
-        _withdrawTo(beneficiary);
+        _withdrawToBeneficiary();
     }
 
     /**
-     * @dev Internal function to withdraw funds to recipient
+     * @dev Internal function to withdraw funds to beneficiary
      */
-    function _withdrawTo(address recipient) private {
-        emit WithdrawTo(recipient);
-        require(tru.transfer(recipient, tru.balanceOf(address(this))), "TrueFiVault: insufficient balance.");
-        require(stkTru.transfer(recipient, stkTru.balanceOf(address(this))), "TrueFiVault: insufficient balance.");
+    function _withdrawToBeneficiary() private {
+        emit WithdrawTo(beneficiary);
+        claimRewards();
+        require(tru.transfer(beneficiary, tru.balanceOf(address(this))), "TrueFiVault: insufficient balance.");
+        require(stkTru.transfer(beneficiary, stkTru.balanceOf(address(this))), "TrueFiVault: insufficient balance.");
     }
 
     /**
@@ -111,7 +113,7 @@ contract TrueFiVault {
     /**
      * @dev Claim TRU rewards from staking contract
      */
-    function claimRewards() external onlyBeneficiary {
+    function claimRewards() public onlyBeneficiary {
         stkTru.claimRewards(tru);
     }
 

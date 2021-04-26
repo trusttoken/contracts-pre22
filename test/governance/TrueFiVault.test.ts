@@ -36,6 +36,7 @@ describe('TrueFiVault', () => {
     await tru.mock.transferFrom.returns(true)
     stkTru = await deployMockContract(owner, StkTruTokenJson.abi)
     await stkTru.mock.delegate.withArgs(beneficiary.address).returns()
+    await stkTru.mock.claimRewards.withArgs(tru.address).returns()
 
     trueFiVault = await new TrueFiVault__factory(owner).deploy(
       beneficiary.address,
@@ -56,6 +57,11 @@ describe('TrueFiVault', () => {
 
     it('reverts with wrong caller', async () => {
       await expect(trueFiVault.connect(beneficiary).withdrawToOwner()).to.be.revertedWith('only owner')
+    })
+
+    xit('claims rewards', async () => {
+      await trueFiVault.connect(owner).withdrawToOwner()
+      expect('claimRewards').to.be.calledOnContractWith(stkTru, [tru.address])
     })
 
     xit('transfers TRU to owner', async () => {
@@ -89,6 +95,12 @@ describe('TrueFiVault', () => {
     it('reverts before expiry', async () => {
       await timeTravel(provider, DURATION - 10)
       await expect(trueFiVault.connect(beneficiary).withdrawToBeneficiary()).to.be.revertedWith('TrueFiVault: beneficiary cannot withdraw before expiration')
+    })
+
+    xit('claims rewards', async () => {
+      await timeTravel(provider, DURATION + 1)
+      await trueFiVault.connect(beneficiary).withdrawToBeneficiary()
+      expect('claimRewards').to.be.calledOnContractWith(stkTru, [tru.address])
     })
 
     xit('transfers TRU to beneficiary', async () => {
