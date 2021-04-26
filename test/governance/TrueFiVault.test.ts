@@ -35,8 +35,7 @@ describe('TrueFiVault', () => {
     tru = await deployMockContract(owner, IERC20Json.abi)
     await tru.mock.transferFrom.returns(true)
     stkTru = await deployMockContract(owner, StkTruTokenJson.abi)
-    await stkTru.mock.delegate.withArgs(beneficiary.address).returns()
-    await stkTru.mock.claimRewards.withArgs(tru.address).returns()
+    await stkTru.mock.delegate.returns()
 
     trueFiVault = await new TrueFiVault__factory(owner).deploy(
       beneficiary.address,
@@ -53,6 +52,7 @@ describe('TrueFiVault', () => {
       await tru.mock.transfer.withArgs(owner.address, parseTRU(1000)).returns(true)
       await stkTru.mock.balanceOf.withArgs(trueFiVault.address).returns(parseTRU(2000))
       await stkTru.mock.transfer.withArgs(owner.address, parseTRU(2000)).returns(true)
+      await stkTru.mock.claimRewards.withArgs(tru.address).returns()
     })
 
     it('reverts with wrong caller', async () => {
@@ -85,6 +85,7 @@ describe('TrueFiVault', () => {
       await tru.mock.transfer.withArgs(beneficiary.address, parseTRU(1000)).returns(true)
       await stkTru.mock.balanceOf.withArgs(trueFiVault.address).returns(parseTRU(2000))
       await stkTru.mock.transfer.withArgs(beneficiary.address, parseTRU(2000)).returns(true)
+      await stkTru.mock.claimRewards.withArgs(tru.address).returns()
     })
 
     it('reverts with wrong caller', async () => {
