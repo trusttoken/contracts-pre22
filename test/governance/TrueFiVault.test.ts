@@ -46,6 +46,51 @@ describe('TrueFiVault', () => {
     )
   })
 
+  describe('Constructor', () => {
+    it('sets owner to msg.sender', async () => {
+      expect(await trueFiVault.owner()).to.equal(owner.address)
+    })
+
+    it('sets beneficiary', async () => {
+      expect(await trueFiVault.beneficiary()).to.equal(beneficiary.address)
+    })
+
+    it('reverts if owner has less than amount', async () => {
+      await tru.mock.transferFrom.returns(false)
+      await expect(new TrueFiVault__factory(owner).deploy(
+        beneficiary.address,
+        AMOUNT,
+        DURATION,
+        tru.address,
+        stkTru.address,
+      )).to.be.revertedWith('TrueFiVault: insufficient balance.')
+    })
+
+    xit('transfers amount from owner', async () => {
+      await tru.mock.transferFrom.returns(true)
+      const constructedVault = await new TrueFiVault__factory(owner).deploy(
+        beneficiary.address,
+        AMOUNT,
+        DURATION,
+        tru.address,
+        stkTru.address,
+      )
+      expect('transferFrom').to.be.calledOnContractWith(tru, [owner.address, constructedVault.address, AMOUNT])
+    })
+
+    xit('delegates stkTRU to beneficiary', async () => {
+      await stkTru.mock.delegate.withArgs(beneficiary.address).returns()
+      await new TrueFiVault__factory(owner).deploy(
+        beneficiary.address,
+        AMOUNT,
+        DURATION,
+        tru.address,
+        stkTru.address,
+      )
+      expect('delegate').to.be.calledOnContractWith(stkTru, [beneficiary.address])
+    })
+  })
+
   describe('Withdraw to owner', () => {
     beforeEach(async () => {
       await tru.mock.balanceOf.withArgs(trueFiVault.address).returns(parseTRU(1000))
