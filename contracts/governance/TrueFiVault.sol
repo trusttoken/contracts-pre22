@@ -41,7 +41,7 @@ contract TrueFiVault {
         tru = _tru;
         stkTru = _stkTru;
 
-        require(tru.transferFrom(owner, address(this), _amount), "TrueFiVault: insufficient balance.");
+        require(tru.transferFrom(owner, address(this), _amount), "TrueFiVault: insufficient owner balance");
         stkTru.delegate(beneficiary);
     }
 
@@ -49,7 +49,7 @@ contract TrueFiVault {
      * @dev Throws if called by any account other than the beneficiary.
      */
     modifier onlyBeneficiary() {
-        require(msg.sender == beneficiary, "only beneficiary");
+        require(msg.sender == beneficiary, "TrueFiVault: only beneficiary");
         _;
     }
 
@@ -57,7 +57,7 @@ contract TrueFiVault {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(msg.sender == owner, "only owner");
+        require(msg.sender == owner, "TrueFiVault: only owner");
         _;
     }
 
@@ -83,8 +83,8 @@ contract TrueFiVault {
     function _withdrawToBeneficiary() private {
         emit WithdrawTo(beneficiary);
         claimRewards();
-        require(tru.transfer(beneficiary, tru.balanceOf(address(this))), "TrueFiVault: insufficient balance.");
-        require(stkTru.transfer(beneficiary, stkTru.balanceOf(address(this))), "TrueFiVault: insufficient balance.");
+        require(tru.transfer(beneficiary, tru.balanceOf(address(this))), "TrueFiVault: insufficient TRU balance");
+        require(stkTru.transfer(beneficiary, stkTru.balanceOf(address(this))), "TrueFiVault: insufficient stkTRU balance");
     }
 
     /**

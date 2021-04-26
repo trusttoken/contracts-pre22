@@ -63,7 +63,7 @@ describe('TrueFiVault', () => {
         DURATION,
         tru.address,
         stkTru.address,
-      )).to.be.revertedWith('TrueFiVault: insufficient balance.')
+      )).to.be.revertedWith('TrueFiVault: insufficient owner balance')
     })
 
     xit('transfers amount from owner', async () => {
@@ -101,7 +101,7 @@ describe('TrueFiVault', () => {
     })
 
     it('reverts with wrong caller', async () => {
-      await expect(trueFiVault.connect(beneficiary).withdrawToOwner()).to.be.revertedWith('only owner')
+      await expect(trueFiVault.connect(beneficiary).withdrawToOwner()).to.be.revertedWith('TrueFiVault: only owner')
     })
 
     xit('claims rewards', async () => {
@@ -135,7 +135,7 @@ describe('TrueFiVault', () => {
 
     it('reverts with wrong caller', async () => {
       await timeTravel(provider, DURATION + 1)
-      await expect(trueFiVault.connect(owner).withdrawToBeneficiary()).to.be.revertedWith('only beneficiary')
+      await expect(trueFiVault.connect(owner).withdrawToBeneficiary()).to.be.revertedWith('TrueFiVault: only beneficiary')
     })
 
     it('reverts before expiry', async () => {
@@ -169,7 +169,7 @@ describe('TrueFiVault', () => {
 
   describe('Delegate beneficiary stkTruToken calls', () => {
     it('reverts stake from non-beneficiary', async () => {
-      await expect(trueFiVault.connect(owner).stake(parseTRU(1000))).to.be.revertedWith('only beneficiary')
+      await expect(trueFiVault.connect(owner).stake(parseTRU(1000))).to.be.revertedWith('TrueFiVault: only beneficiary')
     })
 
     xit('delegates stake from beneficiary', async () => {
@@ -179,7 +179,7 @@ describe('TrueFiVault', () => {
     })
 
     it('reverts unstake from non-beneficiary', async () => {
-      await expect(trueFiVault.connect(owner).unstake(parseTRU(1000))).to.be.revertedWith('only beneficiary')
+      await expect(trueFiVault.connect(owner).unstake(parseTRU(1000))).to.be.revertedWith('TrueFiVault: only beneficiary')
     })
 
     xit('delegates unstake from beneficiary', async () => {
@@ -189,7 +189,7 @@ describe('TrueFiVault', () => {
     })
 
     it('reverts cooldown from non-beneficiary', async () => {
-      await expect(trueFiVault.connect(owner).cooldown()).to.be.revertedWith('only beneficiary')
+      await expect(trueFiVault.connect(owner).cooldown()).to.be.revertedWith('TrueFiVault: only beneficiary')
     })
 
     xit('delegates cooldown from beneficiary', async () => {
@@ -199,7 +199,7 @@ describe('TrueFiVault', () => {
     })
 
     it('reverts claimRewards from non-beneficiary', async () => {
-      await expect(trueFiVault.connect(owner).claimRewards()).to.be.revertedWith('only beneficiary')
+      await expect(trueFiVault.connect(owner).claimRewards()).to.be.revertedWith('TrueFiVault: only beneficiary')
     })
 
     xit('delegates claimRewards from beneficiary', async () => {
@@ -209,7 +209,7 @@ describe('TrueFiVault', () => {
     })
 
     it('reverts claimRestake from non-beneficiary', async () => {
-      await expect(trueFiVault.connect(owner).claimRestake()).to.be.revertedWith('only beneficiary')
+      await expect(trueFiVault.connect(owner).claimRestake()).to.be.revertedWith('TrueFiVault: only beneficiary')
     })
 
     xit('delegates claimRestake from beneficiary', async () => {
