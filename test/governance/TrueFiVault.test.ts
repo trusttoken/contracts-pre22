@@ -108,4 +108,56 @@ describe('TrueFiVault', () => {
       await expect(trueFiVault.connect(beneficiary).withdrawToBeneficiary()).to.emit(trueFiVault, 'WithdrawTo').withArgs(beneficiary.address)
     })
   })
+
+  describe('Delegate beneficiary stkTruToken calls', () => {
+    it('reverts stake from non-beneficiary', async () => {
+      await expect(trueFiVault.connect(owner).stake(parseTRU(1000))).to.be.revertedWith('only beneficiary')
+    })
+
+    xit('delegates stake from beneficiary', async () => {
+      await stkTru.mock.stake.withArgs(parseTRU(1000)).returns()
+      await trueFiVault.connect(beneficiary).stake(parseTRU(1000))
+      expect('stake').to.be.calledOnContractWith(stkTru, [parseTRU(1000)])
+    })
+
+    it('reverts unstake from non-beneficiary', async () => {
+      await expect(trueFiVault.connect(owner).unstake(parseTRU(1000))).to.be.revertedWith('only beneficiary')
+    })
+
+    xit('delegates unstake from beneficiary', async () => {
+      await stkTru.mock.unstake.withArgs(parseTRU(1000)).returns()
+      await trueFiVault.connect(beneficiary).unstake(parseTRU(1000))
+      expect('unstake').to.be.calledOnContractWith(stkTru, [parseTRU(1000)])
+    })
+
+    it('reverts cooldown from non-beneficiary', async () => {
+      await expect(trueFiVault.connect(owner).cooldown()).to.be.revertedWith('only beneficiary')
+    })
+
+    xit('delegates cooldown from beneficiary', async () => {
+      await stkTru.mock.cooldown.returns()
+      await trueFiVault.connect(beneficiary).cooldown()
+      expect('cooldown').to.be.calledOnContract(stkTru)
+    })
+
+    it('reverts claimRewards from non-beneficiary', async () => {
+      await expect(trueFiVault.connect(owner).claimRewards()).to.be.revertedWith('only beneficiary')
+    })
+
+    xit('delegates claimRewards from beneficiary', async () => {
+      await stkTru.mock.claimRewards.withArgs(tru.address).returns()
+      await trueFiVault.connect(beneficiary).claimRewards()
+      expect('claimRewards').to.be.calledOnContractWith(stkTru, [tru.address])
+    })
+
+    it('reverts claimRestake from non-beneficiary', async () => {
+      await expect(trueFiVault.connect(owner).claimRestake()).to.be.revertedWith('only beneficiary')
+    })
+
+    xit('delegates claimRestake from beneficiary', async () => {
+      await stkTru.mock.claimRestake.returns()
+      await trueFiVault.connect(beneficiary).claimRestake()
+      expect('claimRestake').to.be.calledOnContract(stkTru)
+    })
+  })
 })
