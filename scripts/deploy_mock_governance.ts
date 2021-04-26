@@ -4,8 +4,6 @@
 import { ethers, providers } from 'ethers'
 
 import {
-  TestTrustToken__factory,
-  MockTimeLock__factory,
   GovernorAlpha__factory,
   OwnedUpgradeabilityProxy__factory,
 } from '../build'
