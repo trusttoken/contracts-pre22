@@ -4,9 +4,7 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {GovernorAlpha} from "./GovernorAlpha.sol";
 import {StkTruToken} from "./StkTruToken.sol";
-import {ITrueRatingAgencyV2} from "../truefi/interface/ITrueRatingAgencyV2.sol";
 
 /**
  * @title TrueFiVault
@@ -25,11 +23,8 @@ contract TrueFiVault {
     address public owner;
     address public beneficiary;
     uint256 public expiry;
-
-    GovernorAlpha public governance;
     IERC20 public tru;
     StkTruToken public stkTru;
-    ITrueRatingAgencyV2 public ratingAgency;
 
     event WithdrawTo(address recipient);
 
@@ -37,19 +32,17 @@ contract TrueFiVault {
         address _beneficiary,
         uint256 _amount,
         uint256 _duration,
-        GovernorAlpha _governance,
-        ITrueRatingAgencyV2 _ratingAgency
+        IERC20 _tru,
+        StkTruToken _stkTru
     ) public {
         owner = msg.sender;
         beneficiary = _beneficiary;
         expiry = block.timestamp.add(_duration);
-
-        governance = _governance;
-        tru = IERC20(address(governance.trustToken()));
-        stkTru = StkTruToken(address(governance.stkTRU()));
-        ratingAgency = _ratingAgency;
+        tru = _tru;
+        stkTru = _stkTru;
 
         require(tru.transferFrom(owner, address(this), _amount), "TrueFiVault: insufficient balance.");
+        stkTru.delegate(beneficiary);
     }
 
     /**
@@ -90,40 +83,6 @@ contract TrueFiVault {
         emit WithdrawTo(recipient);
         require(tru.transfer(recipient, tru.balanceOf(address(this))), "TrueFiVault: insufficient balance.");
         require(stkTru.transfer(recipient, stkTru.balanceOf(address(this))), "TrueFiVault: insufficient balance.");
-    }
-
-    /**
-     * @dev Cast vote in governance for `proposalId`
-     * Uses both TRU and stkTRU balance
-     * @param proposalId Proposal ID
-     * @param support Vote boolean
-     */
-    function castVote(uint256 proposalId, bool support) external onlyBeneficiary {
-        governance.castVote(proposalId, support);
-    }
-
-    /**
-     * @dev Cancel YES/NO ratings on a loan
-     * @param id ID to cancel ratings for
-     */
-    function resetCastLoanRatings(address id) external onlyBeneficiary {
-        ratingAgency.resetCastRatings(id);
-    }
-
-    /**
-     * @dev Rate YES on a loan by staking TRU
-     * @param id Loan ID
-     */
-    function rateLoanYes(address id) external onlyBeneficiary {
-        ratingAgency.yes(id);
-    }
-
-    /**
-     * @dev Rate NO on a loan by staking TRU
-     * @param id Loan ID
-     */
-    function rateLoanNo(address id) external onlyBeneficiary {
-        ratingAgency.no(id);
     }
 
     /**

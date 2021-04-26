@@ -8,9 +8,7 @@ import {
   TrueFiVault__factory,
 } from 'contracts'
 import {
-  GovernorAlphaJson,
   IERC20Json,
-  ITrueRatingAgencyV2Json,
   StkTruTokenJson,
 } from 'build'
 
@@ -21,10 +19,8 @@ describe('TrueFiVault', () => {
   let beneficiary: Wallet
   let provider: MockProvider
 
-  let governance: Contract
   let tru: Contract
   let stkTru: Contract
-  let ratingAgency: Contract
 
   let trueFiVault: TrueFiVault
 
@@ -39,17 +35,14 @@ describe('TrueFiVault', () => {
     tru = await deployMockContract(owner, IERC20Json.abi)
     await tru.mock.transferFrom.returns(true)
     stkTru = await deployMockContract(owner, StkTruTokenJson.abi)
-    ratingAgency = await deployMockContract(owner, ITrueRatingAgencyV2Json.abi)
-    governance = await deployMockContract(owner, GovernorAlphaJson.abi)
-    await governance.mock.trustToken.returns(tru.address)
-    await governance.mock.stkTRU.returns(stkTru.address)
+    await stkTru.mock.delegate.withArgs(beneficiary.address).returns()
 
     trueFiVault = await new TrueFiVault__factory(owner).deploy(
       beneficiary.address,
       AMOUNT,
       DURATION,
-      governance.address,
-      ratingAgency.address,
+      tru.address,
+      stkTru.address,
     )
   })
 
