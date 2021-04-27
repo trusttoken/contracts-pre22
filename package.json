@@ -30,7 +30,8 @@
     "deploy:truefi": "yarn mars && yarn ts-node deploy/truefi.ts --yes --waffle-config ./.waffle.json --infura-key ec659e9f6af4425c8a13aeb0af9f2809 --etherscan-key XQPPJGFR4J3I6PEISYEG4JPETFZ2EF56EX",
     "checks": "yarn lint && yarn typecheck && yarn test && yarn test:integration",
     "docs": "npx solidity-docgen --solc-module solc-0.6 -i contracts -o docs",
-    "slither": "./slither.sh"
+    "slither": "./slither.sh",
+    "gen:address:csv": "run(){ jq --arg n \"$1\" '.[$n] | with_entries(select(.key|test(\"_proxy\"))) | to_entries[] | [.key[:-6], .value.address] | @csv' deployments.json; }; run"
   },
   "author": "",
   "license": "SEE LICENSE IN LICENSE.md",
