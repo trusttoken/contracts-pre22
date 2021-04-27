@@ -3,7 +3,7 @@ pragma solidity 0.6.10;
 
 import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
 import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
-import {ERC20} from "../common/UpgradeableERC20.sol";
+import {ERC20, IERC20} from "../common/UpgradeableERC20.sol";
 
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueFiPool2, I1Inch3} from "./interface/ITrueFiPool2.sol";
@@ -100,6 +100,14 @@ contract PoolFactory is IPoolFactory, Claimable {
         liquidationToken = _liquidationToken;
         poolImplementationReference = _poolImplementationReference;
         trueLender2 = _trueLender2;
+    }
+
+    /**
+     * @dev After TUSD pool is updated to comply with ITrueFiPool2 interface, call this with it's address
+     */
+    function addLegacyPool(ITrueFiPool2 legacyPool) external onlyOwner {
+        pool[address(legacyPool.token())] = address(legacyPool);
+        isPool[address(legacyPool)] = true;
     }
 
     /**
