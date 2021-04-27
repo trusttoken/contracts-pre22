@@ -1,5 +1,6 @@
 module.exports = {
   skipFiles: [
+    './avalanche',
     './governance/interface',
     './governance/mocks',
     './proxy/interface',
@@ -16,5 +17,9 @@ module.exports = {
     './truefi2/mocks',
     './trusttoken/interface',
     './trusttoken/mocks',
-  ]
+  ],
+  mocha: {
+    "grep": "gas cost",
+    invert: true
+  }
 }

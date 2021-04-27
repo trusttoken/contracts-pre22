@@ -31,7 +31,7 @@
     "checks": "yarn lint && yarn typecheck && yarn test && yarn test:integration",
     "docs": "npx solidity-docgen --solc-module solc-0.6 -i contracts -o docs",
     "slither": "./slither.sh",
-    "coverage": "node --max-old-space-size=4096 ./node_modules/.bin/hardhat coverage"
+    "coverage": "bash ./runCoverage.sh"
   },
   "author": "",
   "license": "SEE LICENSE IN LICENSE.md",
