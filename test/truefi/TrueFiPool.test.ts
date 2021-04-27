@@ -1,33 +1,37 @@
 import { expect, use } from 'chai'
-import { constants, Wallet, BigNumber } from 'ethers'
+import { BigNumber, constants, Wallet } from 'ethers'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
-import fetch from 'node-fetch'
 
-import { beforeEachWithFixture, expectScaledCloseTo, timeTravel, parseEth, expectCloseTo, parseTRU } from 'utils'
+import { beforeEachWithFixture, DAY, expectCloseTo, expectScaledCloseTo, parseEth, parseTRU, timeTravel } from 'utils'
 
 import {
+  ImplementationReference__factory,
+  Liquidator2,
+  Liquidator2__factory,
+  LoanFactory2,
+  LoanFactory2__factory,
   LoanToken,
   LoanToken__factory,
+  LoanToken2__factory,
+  MockCrvPriceOracle__factory,
   MockCurvePool,
   MockCurvePool__factory,
   MockErc20Token,
   MockErc20Token__factory,
-  TestTrueFiPool,
-  TestTrueFiPool__factory,
-  TrueLender,
-  TrueLender__factory,
-  PoolArbitrageTest__factory,
   MockStakingPool,
   MockStakingPool__factory,
-  MockTruPriceOracle__factory,
-  MockCrvPriceOracle__factory,
-  Mock1Inch__factory,
+  PoolArbitrageTest__factory,
+  PoolFactory__factory,
+  TestTrueFiPool,
+  TestTrueFiPool__factory,
+  TrueFiPool2__factory,
+  TrueLender,
+  TrueLender2,
+  TrueLender2__factory,
+  TrueLender__factory,
+  MockTrueFiPoolOracle__factory,
 } from 'contracts'
-import {
-  ICurveGaugeJson,
-  ICurveMinterJson,
-  TrueRatingAgencyJson,
-} from 'build'
+import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -70,7 +74,7 @@ describe('TrueFiPool', () => {
     await mockCurveGauge.mock.minter.returns(mockMinter.address)
     await mockMinter.mock.token.returns(mockCrv.address)
     lender = await new TrueLender__factory(owner).deploy()
-    const truOracle = await new MockTruPriceOracle__factory(owner).deploy()
+    const truOracle = await new MockTrueFiPoolOracle__factory(owner).deploy(token.address)
     const crvOracle = await new MockCrvPriceOracle__factory(owner).deploy()
     await pool.initialize(
       curvePool.address,
@@ -82,9 +86,6 @@ describe('TrueFiPool', () => {
       truOracle.address,
       crvOracle.address,
     )
-
-    const oneInch = await new Mock1Inch__factory(owner).deploy()
-    await pool.set1InchAddress(oneInch.address)
 
     await lender.initialize(pool.address, mockRatingAgency.address, mockStakingPool.address)
     provider = _provider
@@ -391,18 +392,18 @@ describe('TrueFiPool', () => {
     })
 
     it('reverts if borrower is not a lender', async () => {
-      await expect(pool2.borrow(parseEth(1001), 0)).to.be.revertedWith('TrueFiPool: Caller is not the lender')
+      await expect(pool2['borrow(uint256,uint256)'](parseEth(1001), 0)).to.be.revertedWith('TrueFiPool: Caller is not the lender')
     })
 
     it('reverts if repayer is not a lender', async () => {
-      await pool2.connect(borrower).borrow(parseEth(1001), 0)
+      await pool2.connect(borrower)['borrow(uint256,uint256)'](parseEth(1001), 0)
       await expect(pool2.repay(parseEth(1001)))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender')
     })
 
     it('when borrowing less than trueCurrency balance, uses the balance', async () => {
       const borrowedAmount = parseEth(5e6)
-      await pool2.connect(borrower).borrow(borrowedAmount, 0)
+      await pool2.connect(borrower)['borrow(uint256,uint256)'](borrowedAmount, 0)
       expect(await token.balanceOf(borrower.address)).to.equal(borrowedAmount)
       expect(await token.balanceOf(pool2.address)).to.equal(await pool2.claimableFees())
 
@@ -415,14 +416,14 @@ describe('TrueFiPool', () => {
     it('when trueCurrency balance is not enough, withdraws from curve', async () => {
       await token.mint(curvePool.address, parseEth(2e6))
       await curvePool.set_withdraw_price(parseEth(1.5))
-      await pool2.connect(borrower).borrow(parseEth(6e6), 0)
+      await pool2.connect(borrower)['borrow(uint256,uint256)'](parseEth(6e6), 0)
       expect(await token.balanceOf(borrower.address)).to.equal(parseEth(6e6))
     })
 
     it('curvePool allowance is 0 after borrow', async () => {
       await token.mint(curvePool.address, parseEth(2e6))
       await curvePool.set_withdraw_price(parseEth(1.5))
-      await pool2.connect(borrower).borrow(parseEth(6e6), 0)
+      await pool2.connect(borrower)['borrow(uint256,uint256)'](parseEth(6e6), 0)
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.eq(0)
     })
   })
@@ -597,44 +598,64 @@ describe('TrueFiPool', () => {
     })
   })
 
-  describe('1Inch', () => {
-    const getRequestData = async (fromToken: string, toToken: string, from: string) => {
-      const curveAddress = '0xD533a949740bb3306d119CC777fa900bA034cd52'
-      const tusdAddress = '0x0000000000085d4780B73119b644AE5ecd22b376'
-      const poolAddress = '0xa1e72267084192Db7387c8CC1328fadE470e4149'
-      const url = `https://api.1inch.exchange/v2.0/swap?disableEstimate=true&fromTokenAddress=${curveAddress}&toTokenAddress=${tusdAddress}&amount=100&fromAddress=${poolAddress}&slippage=1`
-      const resp = await (await fetch(url)).json()
-      return (resp.tx.data as string)
-        .replace(/0000000000085d4780b73119b644ae5ecd22b376/g, toToken.slice(2).toLowerCase())
-        .replace(/d533a949740bb3306d119cc777fa900ba034cd52/g, fromToken.slice(2).toLowerCase())
-        .replace(/a1e72267084192db7387c8cc1328fade470e4149/g, from.slice(2).toLowerCase())
+  describe('flow with TrueFi2', () => {
+    let loanFactory2: LoanFactory2
+    let lender2: TrueLender2
+    let liquidator2: Liquidator2
+
+    beforeEach(async () => {
+      const poolImplementation = await new TrueFiPool2__factory(owner).deploy()
+      const implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
+
+      const factory = await new PoolFactory__factory(owner).deploy()
+      lender2 = await new TrueLender2__factory(owner).deploy()
+      await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero)
+      await factory.initialize(implementationReference.address, trustToken.address, lender2.address)
+      await factory.addLegacyPool(pool.address)
+      const usdc = await new MockErc20Token__factory(owner).deploy()
+      await factory.setAllowAll(true)
+      await factory.createPool(usdc.address)
+      const feePool = await factory.pool(usdc.address)
+      await lender2.setFeePool(feePool)
+      loanFactory2 = await new LoanFactory2__factory(owner).deploy()
+      liquidator2 = await new Liquidator2__factory(owner).deploy()
+      await loanFactory2.initialize(factory.address, lender2.address, liquidator2.address)
+      await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address)
+      await pool.setLender2(lender2.address)
+      await token.approve(pool.address, parseEth(1e7))
+      await pool.join(parseEth(1e7))
+    })
+
+    async function fundLoan () {
+      const tx = await (await loanFactory2.createLoanToken(pool.address, 1000, DAY, 100)).wait()
+      const newLoanAddress = tx.events[0].args.contractAddress
+      const loan = LoanToken2__factory.connect(newLoanAddress, owner)
+      await mockRatingAgency.mock.getResults.returns(0, 0, parseEth(100))
+      await lender2.fund(newLoanAddress)
+      return { newLoanAddress, loan }
     }
 
-    it('works for CRV -> TUSD swap', async () => {
-      await mockCrv.mint(pool.address, 10000)
-      const data = await getRequestData(mockCrv.address, token.address, pool.address)
-      await expect(pool.sellCrvWith1Inch(data)).to.not.be.reverted
+    it('funds and repays loan', async () => {
+      const { newLoanAddress, loan } = await fundLoan()
+      await loan.settle()
+      await lender2.reclaim(newLoanAddress, '0x')
     })
 
-    it('reverts for bad source token', async () => {
-      const data = await getRequestData(owner.address, token.address, pool.address)
-      await expect(pool.sellCrvWith1Inch(data)).to.be.revertedWith('TrueFiPool: Source token is not CRV')
+    it('funds and liquidates loan', async () => {
+      const { loan } = await fundLoan()
+      await loan.withdraw(owner.address)
+      await timeTravel(provider, DAY * 3)
+      await loan.enterDefault()
+      await liquidator2.setTokenApproval(token.address, true)
+      await liquidator2.liquidate(loan.address)
     })
 
-    it('reverts for bad destination token', async () => {
-      const data = await getRequestData(mockCrv.address, owner.address, pool.address)
-      await expect(pool.sellCrvWith1Inch(data)).to.be.revertedWith('TrueFiPool: Destination token is not TUSD')
-    })
-
-    it('reverts when receiver is not TrueFIPool', async () => {
-      const data = await getRequestData(mockCrv.address, token.address, owner.address)
-      await expect(pool.sellCrvWith1Inch(data)).to.be.revertedWith('TrueFiPool: Receiver is not pool')
-    })
-
-    it('reverts when 1inch call fails', async () => {
-      const data = await getRequestData(mockCrv.address, token.address, pool.address)
-      // corrupt signature hash
-      await expect(pool.sellCrvWith1Inch(`0x123${data.slice(5)}`)).to.be.revertedWith('TrueFiPool: 1Inch swap failed')
+    it('distributions with 2 lenders', async () => {
+      await fundLoan()
+      const loan1 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
+      await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(15e6))
+      await lender.connect(borrower).fund(loan1.address)
+      expect(await pool.loansValue()).to.equal((await lender.value()).add(await lender2.value(pool.address)))
     })
   })
 })

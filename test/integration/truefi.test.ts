@@ -64,7 +64,7 @@ describe('TrueFi', () => {
     await upgradeSuite(TEST_STATE_BLOCK_NUMBER, TrueFiPool__factory, '0xa1e72267084192db7387c8cc1328fade470e4149', [
       '_curvePool',
       '_curveGauge',
-      '_currencyToken',
+      // '_currencyToken', renamed to token
       '_lender',
       '_minter',
       '_uniRouter',
@@ -73,7 +73,7 @@ describe('TrueFi', () => {
       'fundsManager',
       '_stakeToken',
       // 'isJoiningPaused', Renamed to pauseStatus
-      // '_truOracle',
+      // 'oracle',
       // '_crvOracle',
       // '_1inchExchange', not yet deployed
     ])
