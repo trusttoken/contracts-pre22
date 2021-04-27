@@ -30,7 +30,7 @@ describe('TrueLenderReclaimer', () => {
   let reclaimer: TrueLenderReclaimer
 
   const deployMockLoanToken = async (status) => {
-    const mockLoanToken = await deployMockContract(owner, ILoanTokenJson)
+    const mockLoanToken = await deployMockContract(owner, ILoanTokenJson.abi)
     await mockLoanToken.mock.isLoanToken.returns(true)
     await mockLoanToken.mock.status.returns(status)
     await mockLoanToken.mock.isRepaid.returns(false)
@@ -48,7 +48,7 @@ describe('TrueLenderReclaimer', () => {
     defaultedLoanToken = await deployMockLoanToken(4) // ILoanToken.Status.Defaulted
     liquidatedLoanToken = await deployMockLoanToken(5) // ILoanToken.Status.Liquidated
 
-    mockLender = await deployMockContract(owner, TrueLenderJson)
+    mockLender = await deployMockContract(owner, TrueLenderJson.abi)
     await mockLender.mock.loans.returns([
       awaitingLoanToken.address,
       fundedLoanToken.address,

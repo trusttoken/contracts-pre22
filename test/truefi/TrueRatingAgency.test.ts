@@ -80,7 +80,7 @@ describe('TrueRatingAgency', () => {
     await tusd.approve(loanToken.address, 5_000_000)
 
     distributor = await new ArbitraryDistributor__factory(owner).deploy()
-    mockFactory = await deployMockContract(owner, ILoanFactoryJson)
+    mockFactory = await deployMockContract(owner, ILoanFactoryJson.abi)
     rater = await new TrueRatingAgency__factory(owner).deploy()
 
     await mockFactory.mock.isLoanToken.returns(true)
@@ -103,7 +103,7 @@ describe('TrueRatingAgency', () => {
     })
 
     it('checks distributor beneficiary address', async () => {
-      const mockDistributor = await deployMockContract(owner, ArbitraryDistributorJson)
+      const mockDistributor = await deployMockContract(owner, ArbitraryDistributorJson.abi)
       await mockDistributor.mock.beneficiary.returns(owner.address)
       const newRater = await new TrueRatingAgency__factory(owner).deploy()
       await expect(newRater.initialize(trustToken.address, mockDistributor.address, mockFactory.address)).to.be.revertedWith('TrueRatingAgency: Invalid distributor beneficiary')
@@ -795,7 +795,7 @@ describe('TrueRatingAgency', () => {
 
       const tx = await rater.claim(loanToken.address, owner.address, txArgs)
       const receipt = await tx.wait()
-      const event = new utils.Interface(TrueRatingAgencyJson).parseLog(receipt.events[3])
+      const event = new utils.Interface(TrueRatingAgencyJson.abi).parseLog(receipt.events[3])
 
       expect(event.args[0]).eq(loanToken.address)
       expect(event.args[1]).eq(owner.address)

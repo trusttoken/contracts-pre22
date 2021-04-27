@@ -13,8 +13,7 @@ import {
 } from 'utils'
 
 import {
-  TrueRatingAgencyV2__factory,
-  TrueRatingAgencyV2,
+  TrueRatingAgencyV2__factory, TrueRatingAgencyV2,
   TrustToken__factory,
   TrustToken,
   LoanToken__factory,
@@ -87,7 +86,7 @@ describe('TrueRatingAgencyV2', () => {
     )
     await tusd.approve(loanToken.address, 5_000_000)
 
-    mockFactory = await deployMockContract(owner, ILoanFactoryJson)
+    mockFactory = await deployMockContract(owner, ILoanFactoryJson.abi)
     rater = await new TrueRatingAgencyV2__factory(owner).deploy()
     await arbitraryDistributor.initialize(rater.address, trustToken.address, stake)
 
@@ -119,7 +118,7 @@ describe('TrueRatingAgencyV2', () => {
     })
 
     it('checks distributor beneficiary address', async () => {
-      const mockDistributor = await deployMockContract(owner, ArbitraryDistributorJson)
+      const mockDistributor = await deployMockContract(owner, ArbitraryDistributorJson.abi)
       await mockDistributor.mock.beneficiary.returns(owner.address)
       const newRater = await new TrueRatingAgencyV2__factory(owner).deploy()
       await expect(newRater.initialize(trustToken.address, stakedTrustToken.address, mockDistributor.address, mockFactory.address)).to.be.revertedWith('TrueRatingAgencyV2: Invalid distributor beneficiary')
