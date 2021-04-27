@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
-pragma experimental ABIEncoderV2;
 
 import "../TrueFiPool.sol";
 
@@ -16,19 +15,19 @@ contract TestTrueFiPool is TrueFiPool {
         ITrueLender __lender,
         IUniswapRouter __uniRouter,
         IERC20 __stakeToken,
-        ITruPriceOracle __truOracle,
+        ITrueFiPoolOracle __truOracle,
         ICrvPriceOracle __crvOracle
     ) public initializer {
         ERC20.__ERC20_initialize("TrueFi LP", "TFI-LP");
         Ownable.initialize();
         _curvePool = __curvePool;
         _curveGauge = __curveGauge;
-        _currencyToken = __currencyToken;
+        token = __currencyToken;
         _lender = __lender;
         _minter = _curveGauge.minter();
         _uniRouter = __uniRouter;
         _stakeToken = __stakeToken;
-        _truOracle = __truOracle;
+        oracle = __truOracle;
         _crvOracle = __crvOracle;
 
         joiningFee = 25;
