@@ -4,9 +4,13 @@ import {
   LinearTrueDistributor,
   Liquidator,
   LoanFactory,
+  MockCurveGauge,
+  MockTrueUSD,
+  MockTruPriceOracle,
   OwnedUpgradeabilityProxy,
   RatingAgencyV2Distributor,
   StkTruToken,
+  TestTrueFiPool,
   TestTrustToken,
   Timelock,
   TimeOwnedUpgradeabilityProxy,
@@ -15,39 +19,65 @@ import {
   TrueRatingAgencyV2,
   TrueUSD,
   TrustToken,
+  TrueLender,
 } from '../build/artifacts'
 import { utils } from 'ethers'
+import { AddressZero } from '@ethersproject/constants'
 
 const DAY = 60 * 60 * 24
 
 // TODO Fill values
-const DISTRIBUTION_DURATION_IN_DAYS = 10
-const DISTRIBUTION_DURATION = DISTRIBUTION_DURATION_IN_DAYS * DAY
-const DISTRIBUTION_START_DATE = '02/18/2021'
-const DISTRIBUTION_START = Date.parse(DISTRIBUTION_START_DATE) / 1000
-const STAKE_DISTRIBUTION_AMOUNT_IN_TRU = 10
-const STAKE_DISTRIBUTION_AMOUNT = utils.parseUnits(STAKE_DISTRIBUTION_AMOUNT_IN_TRU.toString(), 8)
-const TIMELOCK_DELAY = 2 * DAY
-const VOTING_PERIOD = 10
+const deployParams = {
+  mainnet: {
+    Y_CRV_GAUGE: "0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1",
+    DISTRIBUTION_DURATION: 180 * DAY,
+    DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
+    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
+    TIMELOCK_DELAY: 2 * DAY,
+    VOTING_PERIOD: 10, // blocks
+  },
+  testnet: {
+    DISTRIBUTION_DURATION: 180 * DAY,
+    DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
+    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
+    TIMELOCK_DELAY: 2 * DAY,
+    VOTING_PERIOD: 10, // blocks
+  },
+}
 
 deploy({}, (deployer, config) => {
   const TIMELOCK_ADMIN = deployer
   const GOV_GUARDIAN = deployer
   const is_mainnet = config.network === 'mainnet'
+  const NETWORK = is_mainnet ? 'mainnet' : 'testnet'
 
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
 
-  const trueUSD = proxy(contract(TrueUSD), () => {})
+  const trueUSD = is_mainnet
+    ? proxy(contract(TrueUSD), () => {})
+    : proxy(contract(MockTrueUSD), 'initialize',
+      [],
+    )
   const trustToken = is_mainnet
     ? timeProxy(contract(TrustToken), 'initialize',
       [],
     ) : timeProxy(contract(TestTrustToken), 'initialize',
       [],
     )
-  const trueFiPool = proxy(contract(TrueFiPool), () => {})
+  const trueLender = proxy(contract(TrueLender), () => {})
   const stkTruToken = proxy(contract(StkTruToken), () => {})
-  const truPriceOracle = contract(TruPriceOracle)
+  const yCrvGauge = is_mainnet
+    ? deployParams['mainnet'].Y_CRV_GAUGE
+    : contract(MockCurveGauge)
+  const trueFiPool = is_mainnet
+    ? proxy(contract(TrueFiPool), () => {})
+    : proxy(contract(TestTrueFiPool), 'initialize',
+    [AddressZero, yCrvGauge, trueUSD, trueLender, AddressZero, stkTruToken, AddressZero, AddressZero],
+  )
+  const truPriceOracle = is_mainnet
+    ? contract(TruPriceOracle)
+    : contract(MockTruPriceOracle)
   const loanFactory = proxy(contract(LoanFactory), 'initialize',
     [trueUSD],
   )
@@ -55,7 +85,7 @@ deploy({}, (deployer, config) => {
     [trueFiPool, stkTruToken, trustToken, truPriceOracle, loanFactory],
   )
   const stkTruToken_LinearTrueDistributor = proxy(contract('stkTruToken_LinearTrueDistributor', LinearTrueDistributor), 'initialize',
-    [DISTRIBUTION_START, DISTRIBUTION_DURATION, STAKE_DISTRIBUTION_AMOUNT, trustToken],
+    [deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken],
   )
   runIf(stkTruToken_LinearTrueDistributor.farm().equals(stkTruToken).not(), () => {
     stkTruToken_LinearTrueDistributor.setFarm(stkTruToken)
@@ -70,14 +100,13 @@ deploy({}, (deployer, config) => {
   runIf(trueRatingAgencyV2.isInitialized().not(), () => {
     trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
   })
-  // TODO figure out what's going wrong with deploying TrueLender
-  // const trueLender = proxy(contract(TrueLender), 'initialize',
-  //   [trueFiPool, trueRatingAgencyV2, stkTruToken],
-  // )
+  runIf(trueLender.isInitialized().not(), () => {
+    trueLender.initialize(trueFiPool, trueRatingAgencyV2, stkTruToken)
+  })
   const timelock = proxy(contract(Timelock), 'initialize',
-    [TIMELOCK_ADMIN, TIMELOCK_DELAY],
+    [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY],
   )
-  proxy(contract(GovernorAlpha), 'initialize',
-    [timelock, trustToken, stkTruToken, GOV_GUARDIAN, VOTING_PERIOD],
+  const governorAlpha = proxy(contract(GovernorAlpha), 'initialize',
+    [timelock, trustToken, stkTruToken, GOV_GUARDIAN, deployParams[NETWORK].VOTING_PERIOD],
   )
 })
