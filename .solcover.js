@@ -17,9 +17,5 @@ module.exports = {
     './truefi2/mocks',
     './trusttoken/interface',
     './trusttoken/mocks',
-  ],
-  mocha: {
-    "grep": "gas cost",
-    invert: true
-  }
+  ]
 }
