@@ -1,7 +1,7 @@
 import "hardhat-typechain";
 import "@nomiclabs/hardhat-waffle"
 import "solidity-coverage"
-import "hardhat-abi-exporter"
+import "./abi-exporter"
 import "tsconfig-paths/register";
 
 import mocharc from "./.mocharc.json"
