@@ -12,6 +12,8 @@
 // Ctrl+f for XXX to see all the modifications.
 // Ctrl+f for YYY to see all TrustToken modifications.
 
+// XXX: pragma solidity ^0.5.16;
+// YYY: pragma solidity 0.6.12;
 pragma solidity 0.6.10;
 
 // XXX: import "./SafeMath.sol";
