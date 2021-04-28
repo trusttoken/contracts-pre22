@@ -45,6 +45,7 @@ contract TimeLockedOwnedUpgradeabilityProxy {
      */
     constructor() public {
         _setUpgradeabilityOwner(msg.sender);
+        _setDelay(10 days);
     }
 
     /**
@@ -188,6 +189,29 @@ contract TimeLockedOwnedUpgradeabilityProxy {
         emit ProxyOwnershipTransferred(proxyOwner(), pendingProxyOwner());
         _setUpgradeabilityOwner(pendingProxyOwner());
         _setPendingUpgradeabilityOwner(address(0));
+    }
+
+    /**
+     * @dev Initializes cooldown on setting new delay variable
+     */
+    function initializeSetDelay(uint256 _delay) external onlyProxyOwner {
+        uint256 unlockTime = block.timestamp.add(delay());
+        assembly {
+            sstore(delayUnlockTimestampPosition, unlockTime)
+            sstore(pendingDelayPosition, _delay)
+        }
+    }
+
+    /**
+     * @dev Execute set delay with previously initialize value
+     */
+    function executeSetDelay() external {
+        require(block.timestamp >= delayUnlockTimestamp(), "not enough time has passed");
+        uint256 _delay;
+        assembly {
+            _delay := sload(pendingDelayPosition)
+        }
+        _setDelay(_delay);
     }
 
     /**
