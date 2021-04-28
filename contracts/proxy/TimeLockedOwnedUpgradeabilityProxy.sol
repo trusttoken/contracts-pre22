@@ -166,6 +166,11 @@ contract TimeLockedOwnedUpgradeabilityProxy {
      */
     function _setDelay(uint256 _delay) internal {
         bytes32 position = delayPosition;
+        uint256 currentDelay;
+        assembly {
+            currentDelay := sload(delayPosition)
+        }
+        require(currentDelay != _delay);
         assembly {
             sstore(position, _delay)
         }
@@ -177,6 +182,29 @@ contract TimeLockedOwnedUpgradeabilityProxy {
      * @param _delay new delay
      */
     event DelayChanged(uint256 _delay);
+
+    /**
+     * @dev Allows the proxy owner to upgrade the current version of the proxy.
+     * @param _implementation representing the address of the new implementation to be set.
+     */
+    function _upgradeTo(address _implementation) internal {
+        address currentImplementation;
+        bytes32 position = implementationPosition;
+        assembly {
+            currentImplementation := sload(position)
+        }
+        require(currentImplementation != _implementation);
+        assembly {
+            sstore(position, _implementation)
+        }
+        emit Upgraded(_implementation);
+    }
+
+    /**
+     * @dev This event will be emitted every time the implementation gets upgraded
+     * @param implementation representing the address of the upgraded implementation
+     */
+    event Upgraded(address indexed implementation);
 
     /**
      * @dev Allows the current owner to transfer control of the contract to a newOwner.
@@ -222,27 +250,27 @@ contract TimeLockedOwnedUpgradeabilityProxy {
     }
 
     /**
-     * @dev Allows the proxy owner to upgrade the current version of the proxy.
-     * @param implementation representing the address of the new implementation to be set.
+     * @dev Initializes cooldown on upgrading to new implementation
      */
-    function upgradeTo(address implementation) public virtual onlyProxyOwner {
-        address currentImplementation;
-        bytes32 position = implementationPosition;
+    function initializeUpgradeTo(uint256 _implementation) external onlyProxyOwner {
+        uint256 unlockTime = block.timestamp.add(delay());
         assembly {
-            currentImplementation := sload(position)
+            sstore(implementationUnlockTimestampPosition, unlockTime)
+            sstore(pendingImplementationPosition, _implementation)
         }
-        require(currentImplementation != implementation);
-        assembly {
-            sstore(position, implementation)
-        }
-        emit Upgraded(implementation);
     }
 
     /**
-     * @dev This event will be emitted every time the implementation gets upgraded
-     * @param implementation representing the address of the upgraded implementation
+     * @dev Execute upgrading to new implementation after delay
      */
-    event Upgraded(address indexed implementation);
+    function executeUpgradeTo() external {
+        require(block.timestamp >= implementationUnlockTimestamp(), "not enough time has passed");
+        address _implementation;
+        assembly {
+            _implementation := sload(pendingImplementationPosition)
+        }
+        _upgradeTo(_implementation);
+    }
 
     // Storage position of the address of the current implementation
     bytes32 private constant implementationPosition = 0x6e41e0fbe643dfdb6043698bf865aada82dc46b953f754a3468eaa272a362dc7; //keccak256("trueUSD.proxy.implementation");

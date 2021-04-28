@@ -1,6 +1,7 @@
 import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
+import { AddressZero } from '@ethersproject/constants'
 
 import { beforeEachWithFixture, DAY, timeTravel, ZERO_ADDRESS } from 'utils'
 
@@ -111,8 +112,8 @@ describe('TimeLockedOwnedUpgradeabilityProxy', () => {
       it('can execute multiple times', async () => {
         await proxy.executeSetDelay()
         expect(await proxy.delay()).to.eq(3 * DAY)
-        await proxy.executeSetDelay()
-        expect(await proxy.delay()).to.eq(3 * DAY)
+        await expect(proxy.executeSetDelay())
+          .to.be.reverted
       })
 
       it('emits event', async () => {
@@ -133,26 +134,59 @@ describe('TimeLockedOwnedUpgradeabilityProxy', () => {
   })
 
   describe('Upgrading', () => {
-    it('sets up implementation contract ', async () => {
-      await proxy.upgradeTo(tusd.address)
-      expect(await proxy.implementation()).to.equal(tusd.address)
+    it('initially set to 0x', async () => {
+      expect(await proxy.implementation()).to.eq(AddressZero)
     })
 
-    it('non owner cannot upgrade implementation contract', async () => {
-      await expect(proxy.connect(anotherWallet).upgradeTo(tusd.address))
-        .to.be.reverted
+    it('only proxy owner can initialize setter', async () => {
+      await expect(proxy.connect(anotherWallet).initializeUpgradeTo(tusd.address))
+        .to.be.revertedWith('only Proxy Owner')
+
+      await expect(proxy.initializeUpgradeTo(tusd.address))
+        .not.to.be.reverted
     })
 
-    it('new implementation contract cannot be the same as the old', async () => {
-      await proxy.upgradeTo(tusd.address)
-      await expect(proxy.upgradeTo(tusd.address))
-        .to.be.reverted
+    describe('setting delay process', () => {
+      beforeEach(async () => {
+        await proxy.initializeUpgradeTo(tusd.address)
+        timeTravel(provider, 10 * DAY)
+      })
+
+      it('sets pendingImplementation', async () => {
+        expect(await proxy.pendingImplementation()).to.eq(tusd.address)
+      })
+
+      it('anyone execute setter', async () => {
+        await expect(proxy.connect(anotherWallet).executeUpgradeTo())
+          .not.to.be.reverted
+      })
+
+      it('sets new implementation', async () => {
+        await proxy.executeUpgradeTo()
+        expect(await proxy.implementation()).to.eq(tusd.address)
+      })
+
+      it('cannot set to the same implementation', async () => {
+        await proxy.executeUpgradeTo()
+        expect(await proxy.implementation()).to.eq(tusd.address)
+        await expect(proxy.executeUpgradeTo())
+          .to.be.reverted
+      })
+
+      it('emits event', async () => {
+        await expect(proxy.connect(anotherWallet).executeUpgradeTo())
+          .to.emit(proxy, 'Upgraded')
+          .withArgs(tusd.address)
+      })
     })
 
-    it('emits proper event', async () => {
-      await expect(proxy.upgradeTo(tusd.address))
-        .to.emit(proxy, 'Upgraded')
-        .withArgs(tusd.address)
+    it('initializing setter initializes cooldown', async () => {
+      await proxy.initializeUpgradeTo(tusd.address)
+      timeTravel(provider, 9 * DAY)
+      expect(await proxy.implementationUnlockTimestamp())
+        .to.be.gt((await provider.getBlock('latest')).timestamp)
+      await expect(proxy.executeUpgradeTo())
+        .to.be.revertedWith('not enough time has passed')
     })
   })
 })
