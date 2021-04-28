@@ -106,6 +106,10 @@
       "txHash": "0xa3642c7ee0fd46743fbac38a9c2e13a09b840e3e1b6dcd44a8a2ebf34d5df020",
       "address": "0x149a201b7A1e8Be075a5431e9595B07e8FFD04BF"
     },
+    "trueLenderReclaimer": {
+      "txHash": "0x9e1851f07181df2cb9e01d5c56b78a91e68f34c6d801b914a570c92bfb4833d6",
+      "address": "0xcC9ec45D17964b30223478A6614541D99BC4AE82"
+    },
     "timelock": {
       "txHash": "0x58eebba48f4b027cd0fcd053bfd1a46de836f0f8be6a2fdc4a07b6bfd3197cfa",
       "address": "0x5Dd9927Ea75539Fc6847eE53c9d217379e3c7fD0"

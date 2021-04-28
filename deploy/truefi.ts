@@ -20,6 +20,7 @@ import {
   TrueUSD,
   TrustToken,
   TrueLender,
+  TrueLenderReclaimer,
 } from '../build/artifacts'
 import { utils } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
@@ -103,6 +104,7 @@ deploy({}, (deployer, config) => {
   runIf(trueLender.isInitialized().not(), () => {
     trueLender.initialize(trueFiPool, trueRatingAgencyV2, stkTruToken)
   })
+  const trueLenderReclaimer = contract(TrueLenderReclaimer, [trueLender])
   const timelock = proxy(contract(Timelock), 'initialize',
     [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY],
   )
