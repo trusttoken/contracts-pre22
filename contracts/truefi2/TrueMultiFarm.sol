@@ -35,7 +35,6 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
         uint256 totalFarmRewards;
     }
 
-
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -46,8 +45,8 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
     ITrueDistributor public override trueDistributor;
 
     // address(this) = multistake
-    mapping(address => Stakes) public stakes; 
-    mapping(address => FarmRewards) public rewards; 
+    mapping(address => Stakes) public stakes;
+    mapping(address => FarmRewards) public rewards;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -78,9 +77,7 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
      * gets, and stores TRU for distribution.
      * @param _trueDistributor Distributor contract
      */
-    function initialize(
-        ITrueDistributor _trueDistributor
-    ) public initializer {
+    function initialize(ITrueDistributor _trueDistributor) public initializer {
         trueDistributor = _trueDistributor;
         trustToken = _trueDistributor.trustToken();
         require(trueDistributor.farm() == address(this), "TrueMultiFarm: Distributor farm is not set");
@@ -106,7 +103,7 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
         emit Stake(token, msg.sender, amount);
     }
 
-    function staked(address token, address staker) public view returns(uint256){
+    function staked(address token, address staker) public view returns (uint256) {
         return stakes[token].staked[staker];
     }
 
@@ -128,6 +125,7 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
     function _claim(address token) internal {
         uint256 rewardToClaim = rewards[token].claimableReward[msg.sender];
         rewards[token].totalClaimedRewards = rewards[token].totalClaimedRewards.add(rewardToClaim);
+        rewards[address(this)].totalClaimedRewards = rewards[address(this)].totalClaimedRewards.add(rewardToClaim);
         rewards[token].claimableReward[msg.sender] = 0;
         rewards[address(this)].claimableReward[token] = rewards[address(this)].claimableReward[token].sub(rewardToClaim);
         require(trustToken.transfer(msg.sender, rewardToClaim));
@@ -182,23 +180,53 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
         }
     }
 
-    // function claimable(address account) external view returns (uint256) {
-    //     if (staked[account] == 0) {
-    //         return claimableReward[account];
-    //     }
-    //     // estimate pending reward from distributor
-    //     uint256 pending = trueDistributor.nextDistribution();
-    //     // calculate total rewards (including pending)
-    //     uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(pending).add(totalClaimedRewards).mul(PRECISION);
-    //     // calculate block reward
-    //     uint256 totalBlockReward = newTotalFarmRewards.sub(totalFarmRewards);
-    //     // calculate next cumulative reward per token
-    //     uint256 nextcumulativeRewardPerToken = cumulativeRewardPerToken.add(totalBlockReward.div(totalStaked));
-    //     // return claimable reward for this account
-    //     // prettier-ignore
-    //     return claimableReward[account].add(
-    //         staked[account].mul(nextcumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[account])).div(PRECISION));
-    // }
+    function claimable(address token, address account) external view returns (uint256) {
+        if (stakes[token].staked[account] == 0) {
+            return rewards[token].claimableReward[account];
+        }
+        // estimate pending reward from distributor
+        uint256 pending = _pendingDistribution(token);
+        // calculate total rewards (including pending)
+        uint256 newTotalFarmRewards = pending.add(rewards[token].totalClaimedRewards).mul(PRECISION);
+        // calculate block reward
+        uint256 totalBlockReward = newTotalFarmRewards.sub(rewards[token].totalFarmRewards);
+        // calculate next cumulative reward per token
+        uint256 nextcumulativeRewardPerToken = rewards[token].cumulativeRewardPerToken.add(
+            totalBlockReward.div(stakes[token].totalStaked)
+        );
+        // return claimable reward for this account
+        return
+            rewards[token].claimableReward[account].add(
+                stakes[token].staked[account]
+                    .mul(nextcumulativeRewardPerToken.sub(rewards[token].previousCumulatedRewardPerToken[account]))
+                    .div(PRECISION)
+            );
+    }
+
+    function _pendingDistribution(address token) internal view returns (uint256) {
+        // estimate pending reward from distributor
+        uint256 pending = trueDistributor.nextDistribution();
+
+        // calculate new total rewards ever received by farm
+        uint256 newTotalFarmRewards = trustToken
+            .balanceOf(address(this))
+            .add(pending)
+            .add(rewards[address(this)].totalClaimedRewards)
+            .mul(PRECISION);
+        // calculate new rewards that were received since previous distribution
+        uint256 totalBlockReward = newTotalFarmRewards.sub(rewards[address(this)].totalFarmRewards);
+
+        uint256 cumulativeRewardPerShare = rewards[address(this)].cumulativeRewardPerToken;
+        if (stakes[address(this)].totalStaked > 0) {
+            cumulativeRewardPerShare = cumulativeRewardPerShare.add(totalBlockReward.div(stakes[address(this)].totalStaked));
+        }
+
+        uint256 newReward = stakes[address(this)].staked[token]
+            .mul(cumulativeRewardPerShare.sub(rewards[address(this)].previousCumulatedRewardPerToken[token]))
+            .div(PRECISION);
+
+        return rewards[address(this)].claimableReward[token].add(newReward);
+    }
 
     function _distribute() internal {
         // pull TRU from distributor
@@ -207,46 +235,53 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
             trueDistributor.distribute();
         }
         // calculate new total rewards ever received by farm
-        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(rewards[address(this)].totalClaimedRewards).mul(PRECISION);
+        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(rewards[address(this)].totalClaimedRewards).mul(
+            PRECISION
+        );
         // calculate new rewards that were received since previous distribution
         uint256 totalBlockReward = newTotalFarmRewards.sub(rewards[address(this)].totalFarmRewards);
         // update info about total farm rewards
         rewards[address(this)].totalFarmRewards = newTotalFarmRewards;
         // if there are sub farms increase their value per share
         if (stakes[address(this)].totalStaked > 0) {
-            rewards[address(this)].cumulativeRewardPerToken = rewards[address(this)].cumulativeRewardPerToken
-                .add(totalBlockReward.div(stakes[address(this)].totalStaked));
+            rewards[address(this)].cumulativeRewardPerToken = rewards[address(this)].cumulativeRewardPerToken.add(
+                totalBlockReward.div(stakes[address(this)].totalStaked)
+            );
         }
     }
 
     function _updateShares(address token) public {
         // claimableReward += staked(token) * (cumulativeRewardPerShare - previousCumulatedRewardPerShare(token))
-        rewards[address(this)].claimableReward[token] = rewards[address(this)].claimableReward[token].add(
-            stakes[address(this)].staked[token].mul(
-                rewards[address(this)].cumulativeRewardPerToken
-                    .sub(rewards[address(this)].previousCumulatedRewardPerToken[token])
-            ).div(PRECISION)
-        );
+        uint256 newReward = stakes[address(this)].staked[token]
+            .mul(rewards[address(this)].cumulativeRewardPerToken.sub(rewards[address(this)].previousCumulatedRewardPerToken[token]))
+            .div(PRECISION);
+
+        rewards[address(this)].claimableReward[token] = rewards[address(this)].claimableReward[token].add(newReward);
         rewards[address(this)].previousCumulatedRewardPerToken[token] = rewards[address(this)].cumulativeRewardPerToken;
     }
 
     function _updateRewardsForToken(address token) public {
         _updateShares(token);
         // calculate total rewards
-        uint256 newTotalFarmRewards = rewards[address(this)].claimableReward[token].add(rewards[token].totalClaimedRewards).mul(PRECISION);
+        uint256 newTotalFarmRewards = rewards[address(this)].claimableReward[token].add(rewards[token].totalClaimedRewards).mul(
+            PRECISION
+        );
         // calculate block reward
         uint256 totalBlockReward = newTotalFarmRewards.sub(rewards[token].totalFarmRewards);
         // update farm rewards
         rewards[token].totalFarmRewards = newTotalFarmRewards;
         // if there are stakers
         if (stakes[token].totalStaked > 0) {
-            rewards[token].cumulativeRewardPerToken = rewards[token].cumulativeRewardPerToken
-                .add(totalBlockReward.div(stakes[token].totalStaked));
+            rewards[token].cumulativeRewardPerToken = rewards[token].cumulativeRewardPerToken.add(
+                totalBlockReward.div(stakes[token].totalStaked)
+            );
         }
 
         // update claimable reward for sender
         rewards[token].claimableReward[msg.sender] = rewards[token].claimableReward[msg.sender].add(
-            stakes[msg.sender].staked[token].mul(rewards[token].cumulativeRewardPerToken.sub(rewards[token].previousCumulatedRewardPerToken[msg.sender])).div(PRECISION)
+            stakes[token].staked[msg.sender]
+                .mul(rewards[token].cumulativeRewardPerToken.sub(rewards[token].previousCumulatedRewardPerToken[msg.sender]))
+                .div(PRECISION)
         );
         // update previous cumulative for sender
         rewards[token].previousCumulatedRewardPerToken[msg.sender] = rewards[token].cumulativeRewardPerToken;

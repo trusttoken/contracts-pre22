@@ -85,11 +85,11 @@ describe('TrueMultiFarm', () => {
     })
   })
 
-  async function totalStaked() {
+  async function totalStaked () {
     return farm.stakes(stakingToken.address)
   }
 
-  describe.only('one staker', () => {
+  describe('one staker', () => {
     beforeEach(async () => {
       await timeTravelTo(provider, start)
     })
@@ -132,20 +132,11 @@ describe('TrueMultiFarm', () => {
       await expect(farm.connect(staker1).unstake(stakingToken.address, parseEth(1001), txArgs)).to.be.revertedWith('TrueMultiFarm: Cannot withdraw amount bigger than available balance')
     })
 
-    it.only('yields rewards per staked tokens (using claim)', async () => {
-      console.log(await farm.stakes(farm.address));
+    it('yields rewards per staked tokens (using claim)', async () => {
       await farm.connect(staker1).stake(stakingToken.address, parseEth(1000), txArgs)
-      console.log(await distributor.nextDistribution());
       await timeTravel(provider, DAY)
-      console.log(await distributor.nextDistribution());
-      console.log(await trustToken.balanceOf(distributor.address));
-      console.log(await trustToken.balanceOf(farm.address));
       await farm.connect(staker1).claim([stakingToken.address], txArgs)
-      console.log(await distributor.nextDistribution());
-      // await expect(farm.connect(staker1).claim([stakingToken.address], txArgs))
-      //   .to.emit(farm, 'Claim')
-      //   .withArgs(stakingToken.address, staker1.address, fromTru(100))
-      // expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+      expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
     })
 
     it('yields rewards per staked tokens (using exit)', async () => {
@@ -158,13 +149,13 @@ describe('TrueMultiFarm', () => {
     it('estimate rewards correctly', async () => {
       await farm.connect(staker1).stake(stakingToken.address, parseEth(1000), txArgs)
       await timeTravel(provider, DAY)
-      expect(expectScaledCloseTo((await farm.claimable(staker1.address)), fromTru(100)))
+      expect(expectScaledCloseTo((await farm.claimable(stakingToken.address, staker1.address)), fromTru(100), 1000))
       await timeTravel(provider, DAY)
-      expect(expectScaledCloseTo((await farm.claimable(staker1.address)), fromTru(200)))
+      expect(expectScaledCloseTo((await farm.claimable(stakingToken.address, staker1.address)), fromTru(200), 1000))
       await farm.connect(staker1).unstake(stakingToken.address, 100, txArgs)
-      expect(expectScaledCloseTo((await farm.claimable(staker1.address)), fromTru(200)))
+      expect(expectScaledCloseTo((await farm.claimable(stakingToken.address, staker1.address)), fromTru(200), 1000))
       await farm.connect(staker1).claim([stakingToken.address], txArgs)
-      expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
+      expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200), 1000))
     })
 
     it('rewards when stake increases', async () => {
@@ -194,27 +185,25 @@ describe('TrueMultiFarm', () => {
       expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
     })
 
-    it('claiming clears claimableRewards', async () => {
+    it('claiming sets claimable to 0', async () => {
       await farm.connect(staker1).stake(stakingToken.address, parseEth(500), txArgs)
       await timeTravel(provider, DAY)
       // force an update to claimableReward:
       await farm.connect(staker1).unstake(stakingToken.address, parseEth(1), txArgs)
-      expect(await farm.claimableReward(staker1.address)).to.be.gt(0)
 
       await farm.connect(staker1).claim([stakingToken.address], txArgs)
-      expect(await farm.claimableReward(staker1.address)).to.equal(0)
-      expect(await farm.claimable(staker1.address)).to.equal(0)
+      expect(await farm.claimable(stakingToken.address, staker1.address)).to.equal(0)
     })
 
     it('claimable is zero from the start', async () => {
-      expect(await farm.claimable(staker1.address)).to.equal(0)
+      expect(await farm.claimable(stakingToken.address, staker1.address)).to.equal(0)
     })
 
     it('claimable is callable after unstake', async () => {
       await farm.connect(staker1).stake(stakingToken.address, parseEth(500), txArgs)
       await timeTravel(provider, DAY)
       await farm.connect(staker1).unstake(stakingToken.address, parseEth(500), txArgs)
-      expect(await farm.claimable(staker1.address)).to.be.gt(0)
+      expect(await farm.claimable(stakingToken.address, staker1.address)).to.be.gt(0)
     })
 
     it('calling distribute does not break reward calculations', async () => {
