@@ -29,8 +29,10 @@ async function deploySushiswapFarm () {
   const timelock = await (await new SushiTimelock__factory(wallet).deploy(ownerAddress, 172800, txnArgs)).deployed()
   console.log(`timelock: ${timelock.address}`)
 
+  await waitForTx(sushiFarm.upgradeTo(sushiFarmImpl.address))
   await waitForTx(sushiFarm.initialize(rewardMultiplier, truAddress, masterChefAddress))
   await waitForTx(sushiFarm.transferOwnership(ownerAddress))
+  await waitForTx(sushiFarm.transferProxyOwnership(ownerAddress))
 }
 
 deploySushiswapFarm().catch(console.error)
