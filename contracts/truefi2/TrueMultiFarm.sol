@@ -168,7 +168,7 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
     }
 
     function setShares(address[] calldata tokens, uint256[] calldata shares) public {
-        require(tokens.length == shares.length);
+        require(tokens.length == shares.length, "TrueMultiFarm: Array lengths mismatch");
         _distribute();
         for (uint256 i = 0; i < tokens.length; i++) {
             _updateShares(tokens[i]);
@@ -205,7 +205,7 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
 
     function _pendingDistribution(address token) internal view returns (uint256) {
         // estimate pending reward from distributor
-        uint256 pending = trueDistributor.nextDistribution();
+        uint256 pending = trueDistributor.farm() == address(this) ? trueDistributor.nextDistribution() : 0;
 
         // calculate new total rewards ever received by farm
         uint256 newTotalFarmRewards = trustToken
