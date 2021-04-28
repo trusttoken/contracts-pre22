@@ -2,7 +2,7 @@
  * PRIVATE_KEY={private_key} ts-node scripts/deploy_sushiswap_farm.ts "{network}"
  */
 import { ethers, providers } from 'ethers'
-import { waitForTx } from 'scripts/utils/waitForTx'
+import { waitForTx } from './utils/waitForTx'
 
 import {
   SushiTimelock__factory,
@@ -30,6 +30,7 @@ async function deploySushiswapFarm () {
   console.log(`timelock: ${timelock.address}`)
 
   await waitForTx(sushiFarm.initialize(rewardMultiplier, truAddress, masterChefAddress))
+  await waitForTx(sushiFarm.transferOwnership(ownerAddress))
 }
 
 deploySushiswapFarm().catch(console.error)
