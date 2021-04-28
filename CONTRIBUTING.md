@@ -55,29 +55,31 @@ $ yarn flatten
 
 ## Deploying
 
-Feel free to deploy up-to-date `dev` contracts to Ropsten at any time. Deploy
-scripts are located under [scripts/](scripts/).
+Feel free to deploy up-to-date `dev` contracts to Ropsten at any time from a
+clean branch.
 
-After deploying a contract:
-1. Go to https://ropsten.etherscan.io/address/0xNEW_CONTRACT_ADDRESS#contracts
-to submit the flattened contract code (found under [flatten/](flatten/)) for
-verification. Use the following options to ensure bytecode compatibility:
+1. Test the deployment locally with the `--dry-run` flag to confirm the
+update can succeed:
 
-  - Compiler Type: Solidity (Single file)
-  - Compiler Version: v0.6.10+commit.00c0fcaf
-  - Open Source License Type: MIT
-  - Optimization: Yes
-  - Constructor Arguments: <as required>
-  - Misc Settings:
-    - Runs: 20000
-    - EVM Version: default
-  - I'm not a robot: :white_check_mark: (bots: no lying!)
+```sh
+$ PRIVATE_KEY={0x123} yarn deploy:truefi --network ropsten --dry-run
+```
 
-If this succeeds, then Etherscan should tell you the contract source code has
-been verified.
+Note that PRIVATE_KEY might require ownership of the respective contracts.
+If you want to deploy your own version of TrueFi from scratch, delete
+`deployments.json` or try another testnet.
 
-2. Commit the new contract address here: (TODO).
-3. Submit a PR with the committed contract address for review.
+2. Then deploy and verify the contracts on Etherscan:
+
+```sh
+$ PRIVATE_KEY={0x123} yarn deploy:truefi --network ropsten --verify
+```
+
+3. This should update addresses in [deployments.json](deployments.json).
+Confirm these updates are correct before submitting a PR with the updates for
+review.
+
+4. Don't forget to update the Ropsten spreadsheet tab with your new addresses!
 
 ## Code style
 
