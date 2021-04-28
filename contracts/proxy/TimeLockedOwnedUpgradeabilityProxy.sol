@@ -7,9 +7,11 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 /**
  * @title OwnedUpgradeabilityProxy
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
+ * Additionally implementation can be changed only with a set time delay
  */
-contract OwnedUpgradeabilityProxy {
+contract TimeLockedOwnedUpgradeabilityProxy {
     using SafeMath for uint256;
+
     /**
      * @dev Event to show ownership has been transferred
      * @param previousOwner representing the address of the previous owner
@@ -27,6 +29,16 @@ contract OwnedUpgradeabilityProxy {
     // Storage position of the owner and pendingOwner of the contract
     bytes32 private constant proxyOwnerPosition = 0x6279e8199720cf3557ecd8b58d667c8edc486bd1cf3ad59ea9ebdfcae0d0dfac; //keccak256("trueUSD.proxy.owner");
     bytes32 private constant pendingProxyOwnerPosition = 0x8ddbac328deee8d986ec3a7b933a196f96986cb4ee030d86cc56431c728b83f4; //keccak256("trueUSD.pending.proxy.owner");
+
+    // Storage position of the pendingImplementation and implementationUnlockTimestamp
+    bytes32 private constant pendingImplementationPosition = 0x4359d49cbfd2cc607978416ae1dea85f5262cf4529e27457e37b57e7442a4d7c; //keccak256("truefi.pending.implementation");
+    bytes32
+        private constant implementationUnlockTimestampPosition = 0xcf61f7598d90ff2ffb1943849fdb26d9724ff84436f33ef54158376ce6a5f983; //keccak256("truefi.implementation.unlock.timestamp");
+
+    // Storage position of delay, pendingDelay and delayUnlockTimestamp
+    bytes32 private constant delayPosition = 0xebc3dcd17da29814a80851128f1891f608c2818c3e9458610aa4bb3eb5d12727; //keccak256("truefi.delay");
+    bytes32 private constant pendingDelayPosition = 0x83f53add1661b003726c66a030c7e89742291b05ffc1d42d8b9df532d2c3c4a4; //keccak256("truefi.pending.delay");
+    bytes32 private constant delayUnlockTimestampPosition = 0x372f30a889207caf68f3492d7e16ececd7dcab7d32776b318351083da409103b; //keccak256("truefi.delay.timestamp");
 
     /**
      * @dev the constructor sets the original owner of the contract to the sender account.
@@ -63,13 +75,68 @@ contract OwnedUpgradeabilityProxy {
     }
 
     /**
-     * @dev Tells the address of the owner
+     * @dev Tells the address of the pending owner
      * @return pendingOwner the address of the pending owner
      */
     function pendingProxyOwner() public view returns (address pendingOwner) {
         bytes32 position = pendingProxyOwnerPosition;
         assembly {
             pendingOwner := sload(position)
+        }
+    }
+
+    /**
+     * @dev Tells the address of the pending implementation
+     * @return _pendingImplementation the address of the pending implementation
+     */
+    function pendingImplementation() public view returns (address _pendingImplementation) {
+        bytes32 position = pendingImplementationPosition;
+        assembly {
+            _pendingImplementation := sload(position)
+        }
+    }
+
+    /**
+     * @dev Tells the timestamp on which proxy could be upgraded to pending implementation
+     * @return _implementationUnlockTimestamp timestamp on which proxy could be upgraded to pending implementation
+     */
+    function implementationUnlockTimestamp() public view returns (uint256 _implementationUnlockTimestamp) {
+        bytes32 position = implementationUnlockTimestampPosition;
+        assembly {
+            _implementationUnlockTimestamp := sload(position)
+        }
+    }
+
+    /**
+     * @dev Tells the delay for time locked functions
+     * @return _delay delay for time locked functions
+     */
+    function delay() public view returns (uint256 _delay) {
+        bytes32 position = delayPosition;
+        assembly {
+            _delay := sload(position)
+        }
+    }
+
+    /**
+     * @dev Tells the pendingDelay for time locked functions
+     * @return _pendingDelay pendingDelay for time locked functions
+     */
+    function pendingDelay() public view returns (uint256 _pendingDelay) {
+        bytes32 position = pendingDelayPosition;
+        assembly {
+            _pendingDelay := sload(position)
+        }
+    }
+
+    /**
+     * @dev Tells the timestamp on which time lock pending delay could be set
+     * @return _delayUnlockTimestamp timestamp on which time lock pending delay could be set
+     */
+    function delayUnlockTimestamp() public view returns (uint256 _delayUnlockTimestamp) {
+        bytes32 position = delayUnlockTimestampPosition;
+        assembly {
+            _delayUnlockTimestamp := sload(position)
         }
     }
 
@@ -90,6 +157,16 @@ contract OwnedUpgradeabilityProxy {
         bytes32 position = pendingProxyOwnerPosition;
         assembly {
             sstore(position, newPendingProxyOwner)
+        }
+    }
+
+    /**
+     * @dev Sets delay
+     */
+    function _setDelay(uint256 _delay) internal {
+        bytes32 position = delayPosition;
+        assembly {
+            sstore(position, _delay)
         }
     }
 
