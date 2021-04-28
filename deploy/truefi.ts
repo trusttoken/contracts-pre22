@@ -29,7 +29,7 @@ const DAY = 60 * 60 * 24
 // TODO Fill values
 const deployParams = {
   mainnet: {
-    Y_CRV_GAUGE: "0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1",
+    Y_CRV_GAUGE: '0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1',
     DISTRIBUTION_DURATION: 180 * DAY,
     DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
     STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
@@ -73,8 +73,8 @@ deploy({}, (deployer, config) => {
   const trueFiPool = is_mainnet
     ? proxy(contract(TrueFiPool), () => {})
     : proxy(contract(TestTrueFiPool), 'initialize',
-    [AddressZero, yCrvGauge, trueUSD, trueLender, AddressZero, stkTruToken, AddressZero, AddressZero],
-  )
+      [AddressZero, yCrvGauge, trueUSD, trueLender, AddressZero, stkTruToken, AddressZero, AddressZero],
+    )
   const truPriceOracle = is_mainnet
     ? contract(TruPriceOracle)
     : contract(MockTruPriceOracle)
