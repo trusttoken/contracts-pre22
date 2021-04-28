@@ -169,7 +169,14 @@ contract TimeLockedOwnedUpgradeabilityProxy {
         assembly {
             sstore(position, _delay)
         }
+        emit DelayChanged(_delay);
     }
+
+    /**
+     * @dev This event will be emitted every time the delay is changed
+     * @param _delay new delay
+     */
+    event DelayChanged(uint256 _delay);
 
     /**
      * @dev Allows the current owner to transfer control of the contract to a newOwner.

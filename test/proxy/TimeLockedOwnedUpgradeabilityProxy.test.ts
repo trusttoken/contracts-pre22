@@ -114,6 +114,12 @@ describe('TimeLockedOwnedUpgradeabilityProxy', () => {
         await proxy.executeSetDelay()
         expect(await proxy.delay()).to.eq(3 * DAY)
       })
+
+      it('emits event', async () => {
+        await expect(proxy.connect(anotherWallet).executeSetDelay())
+          .to.emit(proxy, 'DelayChanged')
+          .withArgs(DAY*3)
+      })
     })
 
     it('initializing setter initializes cooldown', async () => {
