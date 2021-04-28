@@ -61,9 +61,9 @@ deploy({}, (deployer, config) => {
       [],
     )
   const trustToken = is_mainnet
-    ? timeProxy(contract('trustToken', TrustToken), 'initialize',
+    ? timeProxy(contract(TrustToken), 'initialize',
       [],
-    ) : timeProxy(contract('trustToken', TestTrustToken), 'initialize',
+    ) : timeProxy(contract(TestTrustToken), 'initialize',
       [],
     )
   const trueLender = proxy(contract(TrueLender), () => {})
