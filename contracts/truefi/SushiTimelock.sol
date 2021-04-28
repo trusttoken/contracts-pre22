@@ -134,6 +134,7 @@ contract SushiTimelock {
     }
 
     function getBlockTimestamp() internal view returns (uint) {
+        // YYY: // solium-disable-next-line security/no-block-members
         // solhint-disable-next-line no-block-members
         return block.timestamp;
     }
