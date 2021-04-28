@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {Initializable} from "../common/Initializable.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITrueDistributor} from "../truefi/interface/ITrueDistributor.sol";
 import {ITrueMultiFarm} from "./interface/ITrueMultiFarm.sol";
 
@@ -14,7 +14,7 @@ import {ITrueMultiFarm} from "./interface/ITrueMultiFarm.sol";
  * @dev Staking pool where tokens are staked for TRU rewards
  * A Distributor contract decides how much TRU a farm can earn over time
  */
-contract TrueMultiFarm is ITrueMultiFarm, Initializable {
+contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     using SafeMath for uint256;
     uint256 constant PRECISION = 1e30;
 
@@ -41,7 +41,7 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    IERC20 public trustToken;
+    IERC20 public rewardToken;
     ITrueDistributor public override trueDistributor;
 
     // address(this) = multistake
@@ -71,6 +71,11 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
      */
     event Claim(address indexed token, address indexed who, uint256 amountClaimed);
 
+    modifier hasShares(address token) {
+        require(stakes[address(this)].staked[token] > 0, "TrueMultiFarm: This token has no shares");
+        _;
+    }
+
     /**
      * @dev Initialize staking pool with a Distributor contract
      * The distributor contract calculates how much TRU rewards this contract
@@ -78,14 +83,10 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
      * @param _trueDistributor Distributor contract
      */
     function initialize(ITrueDistributor _trueDistributor) public initializer {
+        UpgradeableClaimable.initialize(msg.sender);
         trueDistributor = _trueDistributor;
-        trustToken = _trueDistributor.trustToken();
+        rewardToken = _trueDistributor.trustToken();
         require(trueDistributor.farm() == address(this), "TrueMultiFarm: Distributor farm is not set");
-    }
-
-    modifier hasShares(address token) {
-        require(stakes[address(this)].staked[token] > 0, "TrueMultiFarm: This token has no shares");
-        _;
     }
 
     /**
@@ -103,8 +104,67 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
         emit Stake(token, msg.sender, amount);
     }
 
+    /**
+     * @dev How much is staked by staker on token farm
+     */
     function staked(address token, address staker) public view returns (uint256) {
         return stakes[token].staked[staker];
+    }
+
+    /**
+     * @dev Remove staked tokens
+     * @param amount Amount of tokens to unstake
+     */
+    function unstake(address token, uint256 amount) external override update(token) {
+        _unstake(token, amount);
+    }
+
+    /**
+     * @dev Claim TRU rewards
+     */
+    function claim(address[] calldata tokens) external override {
+        distribute();
+        for (uint256 i = 0; i < tokens.length; i++) {
+            updateRewards(tokens[i]);
+        }
+        for (uint256 i = 0; i < tokens.length; i++) {
+            _claim(tokens[i]);
+        }
+    }
+
+    /**
+     * @dev Unstake amount and claim rewards
+     */
+    function exit(address[] calldata tokens) external override {
+        distribute();
+        for (uint256 i = 0; i < tokens.length; i++) {
+            updateRewards(tokens[i]);
+        }
+        for (uint256 i = 0; i < tokens.length; i++) {
+            _unstake(tokens[i], stakes[tokens[i]].staked[msg.sender]);
+            _claim(tokens[i]);
+        }
+    }
+
+    /**
+     * @dev Set shares for farms
+     * Example: setShares([DAI, USDC], [1, 2]) will ensure that 33.(3)% of rewards will go to DAI farm and rest to USDC farm
+     * If later setShares([DAI, TUSD], [2, 1]) will be called then shares of DAI will grow to 2, shares of USDC won't change and shares of TUSD will be 1
+     * So this will give 40% of rewards going to DAI farm, 40% to USDC and 20% to TUSD
+     * @param tokens Token addresses
+     * @param shares share of the i-th token in the multifarm
+     */
+    function setShares(address[] calldata tokens, uint256[] calldata shares) public onlyOwner {
+        require(tokens.length == shares.length, "TrueMultiFarm: Array lengths mismatch");
+        distribute();
+        for (uint256 i = 0; i < tokens.length; i++) {
+            _updateClaimableRewardsForFarm(tokens[i]);
+        }
+        for (uint256 i = 0; i < tokens.length; i++) {
+            uint256 oldStaked = stakes[address(this)].staked[tokens[i]];
+            stakes[address(this)].staked[tokens[i]] = shares[i];
+            stakes[address(this)].totalStaked = stakes[address(this)].totalStaked.sub(oldStaked).add(shares[i]);
+        }
     }
 
     /**
@@ -128,58 +188,14 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
         rewards[address(this)].totalClaimedRewards = rewards[address(this)].totalClaimedRewards.add(rewardToClaim);
         rewards[token].claimableReward[msg.sender] = 0;
         rewards[address(this)].claimableReward[token] = rewards[address(this)].claimableReward[token].sub(rewardToClaim);
-        require(trustToken.transfer(msg.sender, rewardToClaim));
+        require(rewardToken.transfer(msg.sender, rewardToClaim));
         emit Claim(token, msg.sender, rewardToClaim);
     }
 
     /**
-     * @dev Remove staked tokens
-     * @param amount Amount of tokens to unstake
+     * @dev View to estimate the claimable reward for an account that is staking token
+     * @return claimable rewards for account
      */
-    function unstake(address token, uint256 amount) external override update(token) {
-        _unstake(token, amount);
-    }
-
-    /**
-     * @dev Claim TRU rewards
-     */
-    function claim(address[] calldata tokens) external override {
-        _distribute();
-        for (uint256 i = 0; i < tokens.length; i++) {
-            _updateRewardsForToken(tokens[i]);
-        }
-        for (uint256 i = 0; i < tokens.length; i++) {
-            _claim(tokens[i]);
-        }
-    }
-
-    /**
-     * @dev Unstake amount and claim rewards
-     */
-    function exit(address[] calldata tokens) external override {
-        _distribute();
-        for (uint256 i = 0; i < tokens.length; i++) {
-            _updateRewardsForToken(tokens[i]);
-        }
-        for (uint256 i = 0; i < tokens.length; i++) {
-            _unstake(tokens[i], stakes[tokens[i]].staked[msg.sender]);
-            _claim(tokens[i]);
-        }
-    }
-
-    function setShares(address[] calldata tokens, uint256[] calldata shares) public {
-        require(tokens.length == shares.length, "TrueMultiFarm: Array lengths mismatch");
-        _distribute();
-        for (uint256 i = 0; i < tokens.length; i++) {
-            _updateShares(tokens[i]);
-        }
-        for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 oldStaked = stakes[address(this)].staked[tokens[i]];
-            stakes[address(this)].staked[tokens[i]] = shares[i];
-            stakes[address(this)].totalStaked = stakes[address(this)].totalStaked.sub(oldStaked).add(shares[i]);
-        }
-    }
-
     function claimable(address token, address account) external view returns (uint256) {
         if (stakes[token].staked[account] == 0) {
             return rewards[token].claimableReward[account];
@@ -208,7 +224,7 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
         uint256 pending = trueDistributor.farm() == address(this) ? trueDistributor.nextDistribution() : 0;
 
         // calculate new total rewards ever received by farm
-        uint256 newTotalFarmRewards = trustToken
+        uint256 newTotalFarmRewards = rewardToken
             .balanceOf(address(this))
             .add(pending)
             .add(rewards[address(this)].totalClaimedRewards)
@@ -228,29 +244,64 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
         return rewards[address(this)].claimableReward[token].add(newReward);
     }
 
-    function _distribute() internal {
+    /**
+     * @dev Distribute rewards from distributor and increase cumulativeRewardPerShare in Multifarm
+     */
+    function distribute() internal {
         // pull TRU from distributor
         // only pull if there is distribution and distributor farm is set to this farm
         if (trueDistributor.nextDistribution() > 0 && trueDistributor.farm() == address(this)) {
             trueDistributor.distribute();
         }
+        _updateCumulativeRewardPerShare();
+    }
+
+    /**
+     * @dev This function must be called before any change of token share in multifarm happens (e.g. before stakes[address(this)].totalStaked changes)
+     * This will also update cumulativeRewardPerToken after distribution has happened
+     * 1. Get total lifetime rewards as Balance of TRU plus total rewards that have already been claimed
+     * 2. See how much reward we got since previous update (R)
+     * 3. Increase cumulativeRewardPerToken by R/total shares
+     */
+    function _updateCumulativeRewardPerShare() internal {
         // calculate new total rewards ever received by farm
-        uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(rewards[address(this)].totalClaimedRewards).mul(
+        uint256 newTotalFarmRewards = rewardToken.balanceOf(address(this)).add(rewards[address(this)].totalClaimedRewards).mul(
             PRECISION
         );
         // calculate new rewards that were received since previous distribution
-        uint256 totalBlockReward = newTotalFarmRewards.sub(rewards[address(this)].totalFarmRewards);
+        uint256 rewardSinceLastUpdate = newTotalFarmRewards.sub(rewards[address(this)].totalFarmRewards);
         // update info about total farm rewards
         rewards[address(this)].totalFarmRewards = newTotalFarmRewards;
         // if there are sub farms increase their value per share
         if (stakes[address(this)].totalStaked > 0) {
             rewards[address(this)].cumulativeRewardPerToken = rewards[address(this)].cumulativeRewardPerToken.add(
-                totalBlockReward.div(stakes[address(this)].totalStaked)
+                rewardSinceLastUpdate.div(stakes[address(this)].totalStaked)
             );
         }
     }
 
-    function _updateShares(address token) public {
+    /**
+     * @dev Update rewards for the farm on token and for the staker.
+     * The function must be called before any modification of staker's stake and to update values when claiming rewards
+     */
+    function updateRewards(address token) internal {
+        _updateTokenFarmRewards(token);
+        _updateClaimableRewardsForStaker(token);
+    }
+
+    /**
+     * @dev Update rewards data for the token farm - update all values associated with total available rewards for the farm inside multifarm
+     */
+    function _updateTokenFarmRewards(address token) internal {
+        _updateClaimableRewardsForFarm(token);
+        _updateTotalFarmRewards(token);
+    }
+
+    /**
+     * @dev Increase total claimable rewards for token farm in multifarm.
+     * This function must be called before share of the token in multifarm is changed and to update total claimable rewards for the staker
+     */
+    function _updateClaimableRewardsForFarm(address token) internal {
         // claimableReward += staked(token) * (cumulativeRewardPerShare - previousCumulatedRewardPerShare(token))
         uint256 newReward = stakes[address(this)].staked[token]
             .mul(rewards[address(this)].cumulativeRewardPerToken.sub(rewards[address(this)].previousCumulatedRewardPerToken[token]))
@@ -260,39 +311,52 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
         rewards[address(this)].previousCumulatedRewardPerToken[token] = rewards[address(this)].cumulativeRewardPerToken;
     }
 
-    function _updateRewardsForToken(address token) public {
-        _updateShares(token);
-        // calculate total rewards
-        uint256 newTotalFarmRewards = rewards[address(this)].claimableReward[token].add(rewards[token].totalClaimedRewards).mul(
+    /**
+     * @dev Update total reward for the farm
+     * Get total farm reward as claimable rewards for the given farm plus total rewards claimed by stakers in the farm
+     */
+    function _updateTotalFarmRewards(address token) internal {
+        uint256 totalFarmRewards = rewards[address(this)].claimableReward[token].add(rewards[token].totalClaimedRewards).mul(
             PRECISION
         );
-        // calculate block reward
-        uint256 totalBlockReward = newTotalFarmRewards.sub(rewards[token].totalFarmRewards);
-        // update farm rewards
-        rewards[token].totalFarmRewards = newTotalFarmRewards;
-        // if there are stakers
+        // calculate received reward
+        uint256 rewardReceivedSinceLastUpdate = totalFarmRewards.sub(rewards[token].totalFarmRewards);
+
+        // if there are stakers of the token, increase cumulativeRewardPerToken by newly received reward per total staked amount
         if (stakes[token].totalStaked > 0) {
             rewards[token].cumulativeRewardPerToken = rewards[token].cumulativeRewardPerToken.add(
-                totalBlockReward.div(stakes[token].totalStaked)
+                rewardReceivedSinceLastUpdate.div(stakes[token].totalStaked)
             );
         }
 
-        // update claimable reward for sender
+        // update farm rewards
+        rewards[token].totalFarmRewards = totalFarmRewards;
+    }
+
+    /**
+     * @dev Update claimable rewards for the msg.sender who is staking this token
+     * Increase claimable reward by the number that is
+     * staker's stake times the change of cumulativeRewardPerToken for the given token since this function was previously called
+     * This method must be called before any change of staker's stake
+     */
+    function _updateClaimableRewardsForStaker(address token) internal {
+        // increase claimable reward for sender by amount staked by the staker times the growth of cumulativeRewardPerToken since last update
         rewards[token].claimableReward[msg.sender] = rewards[token].claimableReward[msg.sender].add(
             stakes[token].staked[msg.sender]
                 .mul(rewards[token].cumulativeRewardPerToken.sub(rewards[token].previousCumulatedRewardPerToken[msg.sender]))
                 .div(PRECISION)
         );
+
         // update previous cumulative for sender
         rewards[token].previousCumulatedRewardPerToken[msg.sender] = rewards[token].cumulativeRewardPerToken;
     }
 
     /**
-     * @dev Update state and get TRU from distributor
+     * @dev Update all rewards associated with the token and msg.sender
      */
     modifier update(address token) {
-        _distribute();
-        _updateRewardsForToken(token);
+        distribute();
+        updateRewards(token);
         _;
     }
 }
