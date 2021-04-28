@@ -206,13 +206,13 @@ contract TrueMultiFarm is ITrueMultiFarm, Initializable {
         if (trueDistributor.nextDistribution() > 0 && trueDistributor.farm() == address(this)) {
             trueDistributor.distribute();
         }
-        // calculate total rewards
+        // calculate new total rewards ever received by farm
         uint256 newTotalFarmRewards = trustToken.balanceOf(address(this)).add(rewards[address(this)].totalClaimedRewards).mul(PRECISION);
-        // calculate block reward
+        // calculate new rewards that were received since previous distribution
         uint256 totalBlockReward = newTotalFarmRewards.sub(rewards[address(this)].totalFarmRewards);
-        // update farm rewards
+        // update info about total farm rewards
         rewards[address(this)].totalFarmRewards = newTotalFarmRewards;
-        // if there are stakers
+        // if there are sub farms increase their value per share
         if (stakes[address(this)].totalStaked > 0) {
             rewards[address(this)].cumulativeRewardPerToken = rewards[address(this)].cumulativeRewardPerToken
                 .add(totalBlockReward.div(stakes[address(this)].totalStaked));

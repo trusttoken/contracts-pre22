@@ -52,20 +52,20 @@ describe('TrueMultiFarm', () => {
     const now = Math.floor(Date.now() / 1000)
     start = now + DAY
 
-    await distributor.initialize(start, DURATION, amount, trustToken.address)
+    await distributor.initialize(start, DURATION, amount, trustToken.address, txArgs)
 
     farm = await new TrueMultiFarm__factory(owner).deploy()
     farm2 = await new TrueMultiFarm__factory(owner).deploy()
 
-    await distributor.setFarm(farm.address)
-    await farm.initialize(distributor.address)
-    await farm.setShares([stakingToken.address], [1])
+    await distributor.setFarm(farm.address, txArgs)
+    await farm.initialize(distributor.address, txArgs)
+    await farm.setShares([stakingToken.address], [1], txArgs)
 
-    await trustToken.mint(distributor.address, amount)
-    await stakingToken.mint(staker1.address, parseEth(1000))
-    await stakingToken.mint(staker2.address, parseEth(1000))
-    await stakingToken.connect(staker1).approve(farm.address, MaxUint256)
-    await stakingToken.connect(staker2).approve(farm.address, MaxUint256)
+    await trustToken.mint(distributor.address, amount, txArgs)
+    await stakingToken.mint(staker1.address, parseEth(1000), txArgs)
+    await stakingToken.mint(staker2.address, parseEth(1000), txArgs)
+    await stakingToken.connect(staker1).approve(farm.address, MaxUint256, txArgs)
+    await stakingToken.connect(staker2).approve(farm.address, MaxUint256, txArgs)
   })
 
   describe('initializer', () => {
@@ -132,11 +132,20 @@ describe('TrueMultiFarm', () => {
       await expect(farm.connect(staker1).unstake(stakingToken.address, parseEth(1001), txArgs)).to.be.revertedWith('TrueMultiFarm: Cannot withdraw amount bigger than available balance')
     })
 
-    it('yields rewards per staked tokens (using claim)', async () => {
+    it.only('yields rewards per staked tokens (using claim)', async () => {
+      console.log(await farm.stakes(farm.address));
       await farm.connect(staker1).stake(stakingToken.address, parseEth(1000), txArgs)
+      console.log(await distributor.nextDistribution());
       await timeTravel(provider, DAY)
+      console.log(await distributor.nextDistribution());
+      console.log(await trustToken.balanceOf(distributor.address));
+      console.log(await trustToken.balanceOf(farm.address));
       await farm.connect(staker1).claim([stakingToken.address], txArgs)
-      expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+      console.log(await distributor.nextDistribution());
+      // await expect(farm.connect(staker1).claim([stakingToken.address], txArgs))
+      //   .to.emit(farm, 'Claim')
+      //   .withArgs(stakingToken.address, staker1.address, fromTru(100))
+      // expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
     })
 
     it('yields rewards per staked tokens (using exit)', async () => {
