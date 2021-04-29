@@ -7,10 +7,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-import {IRewarder} from "./interface/ITruSushiswapRewarder.sol";
+import {ISushiswapRewarder} from "./interface/ISushiswapRewarder.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
-contract TruSushiswapRewarder is IRewarder, UpgradeableClaimable {
+contract TruSushiswapRewarder is ISushiswapRewarder, UpgradeableClaimable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -44,6 +44,10 @@ contract TruSushiswapRewarder is IRewarder, UpgradeableClaimable {
         MASTERCHEF_V2 = _MASTERCHEF_V2;
     }
 
+    /**
+     * @dev Hook called on sushi reward
+     * Calculate token reward amount based on sushi reward amount
+     */
     function onSushiReward(
         uint256, /* pid */
         address, /* user */
@@ -60,11 +64,17 @@ contract TruSushiswapRewarder is IRewarder, UpgradeableClaimable {
         }
     }
 
+    /**
+     * @dev Get pending token rewards
+     * Calculate token reward amount based on sushi reward amount
+     * @return rewardTokens Array of token addresses to be granted
+     * @return rewardAmounts Amounts of reward tokens corresponding to `rewardTokens`
+     */
     function pendingTokens(
         uint256, /* pid */
         address, /* user */
         uint256 sushiAmount
-    ) external override returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
+    ) external override view returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
         IERC20[] memory _rewardTokens = new IERC20[](1);
         _rewardTokens[0] = (trustToken);
         uint256[] memory _rewardAmounts = new uint256[](1);
