@@ -23,7 +23,7 @@ deploy({}, (_, config) => {
   const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
   const isMainnet = config.network === 'mainnet'
 
-  const trustToken = isMainnet ? timeProxy(contract('trustToken', TrustToken), () => {}) : timeProxy(contract('trustToken', TestTrustToken), () => {})
+  const trustToken = isMainnet ? timeProxy(contract(TrustToken), () => {}) : timeProxy(contract(TestTrustToken), () => {})
   const stkTruToken = proxy(contract(StkTruToken), () => {})
   const trueRatingAgencyV2 = proxy(contract(TrueRatingAgencyV2), () => {})
 
@@ -38,7 +38,7 @@ deploy({}, (_, config) => {
   const loanFactory2 = proxy(contract(LoanFactory2), 'initialize', [poolFactory, trueLender2, liquidator2])
   runIf(liquidator2.isInitialized().not(), () => liquidator2.initialize(stkTruToken, trustToken, loanFactory2))
 
-  const usdc = contract('usdc', MockERC20Token)
+  const usdc = contract('usdc_MockERC20Token', MockERC20Token)
 
   runIf(poolFactory.pool(usdc).equals(AddressZero), () => {
     poolFactory.whitelist(usdc, true)
@@ -51,6 +51,6 @@ deploy({}, (_, config) => {
     trueLender2.setFee(500)
   }
 
-  const oldPool = isMainnet ? proxy(contract('trueFiPool', TrueFiPool), () => {}) : proxy(contract('trueFiPool', TestTrueFiPool), () => {})
+  const oldPool = isMainnet ? proxy(contract(TrueFiPool), () => {}) : proxy(contract(TestTrueFiPool), () => {})
   runIf(poolFactory.isPool(oldPool).not(), () => poolFactory.addLegacyPool(oldPool))
 })

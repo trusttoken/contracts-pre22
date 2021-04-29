@@ -126,7 +126,7 @@
       "txHash": "0xd55e5ecfbed2510096f237603d7ee96edb58df905f833d7453b006faa7f1c78d",
       "address": "0x01cACF74540154B7c759657A73f74a578CFEA69b"
     },
-    "usdc": {
+    "usdc_MockERC20Token": {
       "txHash": "0x80bf3b737fcf3a4ddee7a861a2c792911905fdc3d5eeaf92b5d47cbdb6a21958",
       "address": "0x0fD070f1641A375Db0A34a4c93444722d1eF2c71"
     },
