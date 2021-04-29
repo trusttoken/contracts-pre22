@@ -682,8 +682,50 @@ describe('TrueMultiFarm', () => {
         expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(60))
       })
 
-      it('works for complex cases', async () => {
-          // stake, claimable, claim, unstake, exit, setShares
+      it.only('works for complex cases', async () => {
+        const thirdToken = await new MockErc20Token__factory(owner).deploy()
+        await thirdToken.mint(staker1.address, parseEth(1000), txArgs)
+        await thirdToken.connect(staker1).approve(farm.address, MaxUint256, txArgs)
+
+        await timeTravel(provider, DAY)
+        await farm.setShares([thirdToken.address], [6], txArgs)
+        await farm.connect(staker1).stake(thirdToken.address, parseEth(500), txArgs)
+
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(25))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(75))
+        expectCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
+
+        await timeTravel(provider, DAY)
+        await farm.connect(staker1).claim([secondToken.address])
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(35))
+        expectCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
+        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(60))
+
+        await farm.connect(staker1).unstake(firstToken.address, parseEth(500))
+        await timeTravel(provider, DAY)
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(35))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(30))
+        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(120))
+
+        await farm.connect(staker1).claim([firstToken.address, secondToken.address])
+        expectCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
+        expectCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
+        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(120))
+
+        await farm.connect(staker2).stake(secondToken.address, parseEth(1000))
+        await timeTravel(provider, DAY)
+        expectCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(10))
+        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(180))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker2.address), fromTru(20))
+
+        await farm.setShares([firstToken.address, secondToken.address, thirdToken.address], [0, 3, 1], txArgs)
+
+        await timeTravel(provider, DAY)
+        expectCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(35))
+        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(205))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker2.address), fromTru(70))
       })
     })
   })
