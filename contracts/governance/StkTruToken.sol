@@ -519,6 +519,9 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @return Reward balance for token
      */
     function rewardBalance(IERC20 token) internal view returns (uint256) {
+        if (address(token) == address(0)) {
+            return 0;
+        }
         if (token == tru) {
             return token.balanceOf(address(this)).sub(stakeSupply);
         }

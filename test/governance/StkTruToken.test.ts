@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { providers, utils, Wallet, constants } from 'ethers'
 import { solidity } from 'ethereum-waffle'
-import { MaxUint256 } from '@ethersproject/constants'
+import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 
 import { setupDeploy } from 'scripts/utils'
 
@@ -93,6 +93,12 @@ describe('StkTruToken', () => {
   })
 
   describe('setFeeToken', () => {
+    it('is possible to change fee token from address(0)', async () => {
+      await stkToken.setFeeToken(AddressZero)
+      await stkToken.setFeeToken(feeToken.address)
+      expect(await stkToken.feeToken()).to.eq(feeToken.address)
+    })
+
     it('only owner', async () => {
       await expect(stkToken.connect(staker).setFeeToken(tfusd.address))
         .to.be.revertedWith('only owner')

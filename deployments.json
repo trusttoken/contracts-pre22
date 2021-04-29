@@ -43,8 +43,8 @@
       "address": "0xb1f283F554995F666bD3238F229ADf0aF7d54fC4"
     },
     "stkTruToken": {
-      "txHash": "0x4b29b5af903a88361667e4b8bed3d67891a7a26f3908920fadb2e314a1faaeb8",
-      "address": "0xFe4d1627473BcE8b7f86CF1Cf35D4B16C8302518"
+      "txHash": "0x34d8e552166f006463856c0cdb2cc09abba960ae5a38204638e4a74f7727ec2e",
+      "address": "0xfB876Ea0Fb750372c24C5Af584e6b315d9df6158"
     },
     "stkTruToken_proxy": {
       "txHash": "0x7c2d5b7e423c800a906c6877ecab38cdd39cba5f8419276287479d484c96471f",
