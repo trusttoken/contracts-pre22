@@ -314,7 +314,7 @@ describe('TrueMultiFarm', () => {
     })
   })
 
-  describe.only('two farms', () => {
+  describe('two farms', () => {
     beforeEach(async () => {
       await farm.setShares([secondToken.address], [3], txArgs)
     })
@@ -682,7 +682,7 @@ describe('TrueMultiFarm', () => {
         expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(60))
       })
 
-      it.only('works for complex cases', async () => {
+      it('works for complex cases', async () => {
         const thirdToken = await new MockErc20Token__factory(owner).deploy()
         await thirdToken.mint(staker1.address, parseEth(1000), txArgs)
         await thirdToken.connect(staker1).approve(farm.address, MaxUint256, txArgs)
