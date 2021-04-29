@@ -8,11 +8,11 @@ import {ITrueDistributor} from "../../truefi/interface/ITrueDistributor.sol";
 interface ITrueMultiFarm {
     function trueDistributor() external view returns (ITrueDistributor);
 
-    function stake(address token, uint256 amount) external;
+    function stake(IERC20 token, uint256 amount) external;
 
-    function unstake(address token, uint256 amount) external;
+    function unstake(IERC20 token, uint256 amount) external;
 
-    function claim(address[] calldata tokens) external;
+    function claim(IERC20[] calldata tokens) external;
 
-    function exit(address[] calldata tokens) external;
+    function exit(IERC20[] calldata tokens) external;
 }
