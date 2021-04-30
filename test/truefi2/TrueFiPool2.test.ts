@@ -226,7 +226,7 @@ describe('TrueFiPool2', () => {
       expect(await pool.liquidationTokenValue()).to.eq(0)
     })
 
-    xit('converts TRU to pool token value using oracle and returns value - 2%', async () => {
+    it('converts TRU to pool token value using oracle and returns value - 2%', async () => {
       await liquidationToken.mint(pool.address, 1000)
       const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
       await mockOracle.mock.truToToken.returns(500)
@@ -657,7 +657,7 @@ describe('TrueFiPool2', () => {
       await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
     })
 
-    xit('only lender can be caller', async () => {
+    it('only lender can be caller', async () => {
       await expect(pool.connect(owner.address).borrow(0))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender')
       const loan = await deployContract(
@@ -725,7 +725,7 @@ describe('TrueFiPool2', () => {
       await loan.settle()
     })
 
-    xit('only lender can be caller', async () => {
+    it('only lender can be caller', async () => {
       await expect(pool.connect(owner).repay(0))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender')
       await lender.reclaim(loan.address, '0x')

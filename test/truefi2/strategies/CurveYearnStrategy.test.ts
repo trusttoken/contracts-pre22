@@ -62,12 +62,12 @@ describe('CurveYearnStrategy', () => {
       await curvePool.set_withdraw_price(parseEth(2))
     })
 
-    xit('calls add_liquidity with correct amounts and minAmount as 95% of theoretical', async () => {
+    it('calls add_liquidity with correct amounts and minAmount as 95% of theoretical', async () => {
       await strategy.connect(pool).deposit(amount)
       expect('add_liquidity').to.be.calledOnContractWith(curvePool, [[0, 0, 0, amount], amount.div(2).mul(95).div(100)])
     })
 
-    xit('puts received tokens into gauge', async () => {
+    it('puts received tokens into gauge', async () => {
       await strategy.connect(pool).deposit(amount)
       expect('deposit').to.be.calledOnContractWith(mockCurveGauge, [amount.div(2)])
     })
@@ -96,7 +96,7 @@ describe('CurveYearnStrategy', () => {
       expect(await token.balanceOf(pool.address)).to.be.gte(amount.div(2))
     })
 
-    xit('withdraws from cure a bit more then theoretical value because of Curve\'s errors', async () => {
+    it('withdraws from cure a bit more then theoretical value because of Curve\'s errors', async () => {
       await strategy.connect(pool).withdraw(amount.div(2))
       const curveLpAmount = amount
         .div(2) // minAmount
@@ -105,7 +105,7 @@ describe('CurveYearnStrategy', () => {
       expect('remove_liquidity_one_coin').to.be.calledOnContractWith(curvePool, [curveLpAmount, 3, amount.div(2), false])
     })
 
-    xit('if curve LP amount is less than 0.5% below balance, withdraws all available balance', async () => {
+    it('if curve LP amount is less than 0.5% below balance, withdraws all available balance', async () => {
       await strategy.connect(pool).withdraw(amount.sub(2))
       const curveLpAmount = amount.div(2)
       expect('remove_liquidity_one_coin').to.be.calledOnContractWith(curvePool, [curveLpAmount, 3, amount.sub(2), false])

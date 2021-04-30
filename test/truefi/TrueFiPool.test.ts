@@ -317,7 +317,7 @@ describe('TrueFiPool', () => {
       await pool.join(parseEth(1e7))
     })
 
-    xit('deposits given amount to curve', async () => {
+    it('deposits given amount to curve', async () => {
       await pool.flush(parseEth(100), 123)
       expect('add_liquidity').to.be.calledOnContractWith(curvePool, [[0, 0, 0, parseEth(100)], 123])
     })
@@ -331,7 +331,7 @@ describe('TrueFiPool', () => {
       await expect(pool.flush(parseEth(1e7 + 1), 0)).to.be.revertedWith('TrueFiPool: Insufficient currency balance')
     })
 
-    xit('deposits liquidity tokens in curve gauge', async () => {
+    it('deposits liquidity tokens in curve gauge', async () => {
       await expect('deposit').to.be.calledOnContractWith(mockCurveGauge, [parseEth(100)])
     })
 
@@ -352,7 +352,7 @@ describe('TrueFiPool', () => {
       await token.mint(curvePool.address, parseEth(1000))
     })
 
-    xit('withdraws given amount from curve', async () => {
+    it('withdraws given amount from curve', async () => {
       await pool.pull(parseEth(100), 123)
       expect('remove_liquidity_one_coin').to.be.calledOnContractWith(curvePool, [parseEth(100), 3, 123, false])
     })
@@ -573,7 +573,7 @@ describe('TrueFiPool', () => {
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
 
-    xit('calls remove_liquidity_one_coin with correct arguments', async () => {
+    it('calls remove_liquidity_one_coin with correct arguments', async () => {
       await curvePool.set_withdraw_price(parseEth(2))
       const amount = parseEth(5e6)
       await pool.flush(amount, 0)

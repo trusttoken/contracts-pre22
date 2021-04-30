@@ -375,18 +375,18 @@ describe('TrueLender', () => {
         await mockPool.mock.balanceOf.returns(fee)
       })
 
-      xit('borrows tokens from pool', async () => {
+      it('borrows tokens from pool', async () => {
         await lender.fund(mockLoanToken.address)
         expect('borrow').to.be.calledOnContractWith(mockPool, [amount, fee])
       })
 
-      xit('calls approve and pays fee', async () => {
+      it('calls approve and pays fee', async () => {
         await lender.fund(mockLoanToken.address)
         expect('approve').to.be.calledOnContractWith(mockPool, [mockStakingPool.address, fee])
         expect('payFee').to.be.calledOnContract(mockStakingPool)
       })
 
-      xit('calls fund function', async () => {
+      it('calls fund function', async () => {
         await lender.fund(mockLoanToken.address)
         expect('fund').to.be.calledOnContractWith(mockLoanToken, [])
       })
@@ -487,13 +487,13 @@ describe('TrueLender', () => {
         .to.be.revertedWith('TrueLender: This loan has not been funded by the lender')
     })
 
-    xit('redeems funds from loan token', async () => {
+    it('redeems funds from loan token', async () => {
       await lender.fund(mockLoanToken.address)
       await lender.reclaim(mockLoanToken.address)
       await expect('redeem').to.be.calledOnContractWith(mockLoanToken, [availableLoanTokens])
     })
 
-    xit('repays funds from the pool', async () => {
+    it('repays funds from the pool', async () => {
       await lender.fund(mockLoanToken.address)
       await lender.reclaim(mockLoanToken.address)
       await expect('repay').to.be.calledOnContract(mockPool)
@@ -649,7 +649,7 @@ describe('TrueLender', () => {
       await lender.setPool(owner.address)
     })
 
-    xit('sends all loan tokens in the same proportion as numerator/denominator', async () => {
+    it('sends all loan tokens in the same proportion as numerator/denominator', async () => {
       await lender.distribute(otherWallet.address, 2, 5)
       for (let i = 0; i < 5; i++) {
         expect('transfer').to.be.calledOnContractWith(loanTokens[i], [otherWallet.address, parseEth(((i + 1) * 10).toString()).mul(2).div(5)])
