@@ -425,6 +425,12 @@ describe('StkTruToken', () => {
       it('cannot claim non-reward tokens revert', async () => {
         await expect(stkToken.claimRewards(constants.AddressZero, { gasLimit: 3000000 })).to.be.revertedWith('Token not supported for rewards')
       })
+
+      it('skips transfer if there is nothing to claim', async () => {
+        await stkToken.claimRewards(feeToken.address, { gasLimit: 3000000 })
+        await expect(stkToken.claimRewards(feeToken.address, { gasLimit: 3000000 }))
+          .to.not.emit(feeToken, 'Transfer')
+      })
     })
 
     describe('Claim Restake TRU', () => {

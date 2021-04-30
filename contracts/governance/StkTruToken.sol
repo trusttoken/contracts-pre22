@@ -475,7 +475,9 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      */
     function _claim(IERC20 token) internal {
         uint256 rewardToClaim = _claimWithoutTransfer(token);
-        require(token.transfer(msg.sender, rewardToClaim));
+        if (rewardToClaim > 0) {
+            require(token.transfer(msg.sender, rewardToClaim));
+        }
     }
 
     /**
