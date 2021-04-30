@@ -4,6 +4,7 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import "../truefi/interface/ICurve.sol";
 
+// prettier-ignore
 contract CrvBaseRateOracle {
     using SafeMath for uint256;
     uint8 public constant BUFFER_SIZE = 7;
@@ -49,7 +50,6 @@ contract CrvBaseRateOracle {
         return (v_n.sub(v_1)).mul(100_00).div(t_n.sub(t_1));
     }
 
-    // returns profit rates for week, month and year ahead
     function rate() public view returns (uint256, uint256, uint256) {
         require(histBuffer.timestamps[histBuffer.insertIndex] != 0, "CrvBaseRateOracle: histBuffer must be filled up");
         uint256 curCrvBaseRate = curve.get_virtual_price();
@@ -58,5 +58,5 @@ contract CrvBaseRateOracle {
         uint256 monthlyProfit = immediateProfit.mul(30 days).div(curCrvBaseRate);
         uint256 yearlyProfit = immediateProfit.mul(365 days).div(curCrvBaseRate);
         return (weeklyProfit, monthlyProfit, yearlyProfit);
-   }
+    }
 }

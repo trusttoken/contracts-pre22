@@ -54,13 +54,13 @@ describe('CrvBaseRateOracle', () => {
 
     it('insertIndex increments cyclically', async () => {
       await mockCurve.mock.get_virtual_price.returns(100)
-      for (let _ = 0; _ < (bufferSize-1); _++) {
+      for (let _ = 0; _ < (bufferSize - 1); _++) {
         await crvBaseRateOracle.updateRate()
       }
-      let [_, __, insertIndex] = await crvBaseRateOracle.getHistBuffer()
+      let [, , insertIndex] = await crvBaseRateOracle.getHistBuffer()
       expect(insertIndex).to.eq(6)
       await crvBaseRateOracle.updateRate()
-      ;[ _, __, insertIndex ] = await crvBaseRateOracle.getHistBuffer()
+      ;[, , insertIndex] = await crvBaseRateOracle.getHistBuffer()
       expect(insertIndex).to.eq(0)
     })
 
@@ -79,9 +79,9 @@ describe('CrvBaseRateOracle', () => {
   })
 
   const fillHistoricalBuffer = async () => {
-    let buffer = {
+    const buffer = {
       rates: [],
-      timestamps: []
+      timestamps: [],
     }
     const initialRate = 100
     for (let i = 0; i < bufferSize; i++) {
@@ -126,7 +126,7 @@ describe('CrvBaseRateOracle', () => {
       await expect(crvBaseRateOracle.rate())
         .to.be.revertedWith('CrvBaseRateOracle: histBuffer must be filled up')
       await mockCurve.mock.get_virtual_price.returns(100)
-      for (let _ = 0; _ < (bufferSize-1); _++) {
+      for (let _ = 0; _ < (bufferSize - 1); _++) {
         await crvBaseRateOracle.updateRate()
       }
       await expect(crvBaseRateOracle.rate())
@@ -141,7 +141,7 @@ describe('CrvBaseRateOracle', () => {
       const immediateProfit = Math.round(calcAvgRate(buffer, 0))
       expect(await crvBaseRateOracle.rate())
         .to.deep.equal(
-          [7 * DAY, 30 * DAY, 365 * DAY].map(x => BigNumber.from( immediateProfit).mul(x).div(BigNumber.from(curRate)))
+          [7 * DAY, 30 * DAY, 365 * DAY].map(x => BigNumber.from(immediateProfit).mul(x).div(BigNumber.from(curRate))),
         )
     })
   })
