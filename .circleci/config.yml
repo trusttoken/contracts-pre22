@@ -1,6 +1,4 @@
 version: 2.1
-orbs:
-  coveralls: coveralls/coveralls@1.0.6
 
 commands:
   pull_submodules:
@@ -38,16 +36,6 @@ jobs:
           root: .
           paths:
             - .
-  coverage:
-    docker:
-      - image: circleci/node:12.19.0
-    steps:
-      - attach_workspace:
-          at: .
-      - run: yarn coverage
-      - coveralls/upload:
-          path_to_lcov: ./coverage/lcov.info
-
   lint:
     docker:
       - image: circleci/node:12.19.0
@@ -112,8 +100,5 @@ workflows:
           requires:
             - build
       - integration:
-          requires:
-            - build
-      - coverage:
           requires:
             - build
