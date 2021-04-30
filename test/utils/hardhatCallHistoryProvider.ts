@@ -1,13 +1,12 @@
 import { waffle } from 'hardhat'
 import { utils } from 'ethers'
 
-let callHistory = []
-let subscribed = false
+const callHistory = []
 
 const init = (waffle.provider as any)._hardhatNetwork.provider._wrapped._wrapped._wrapped._wrapped._init
 ;(waffle.provider as any)._hardhatNetwork.provider._wrapped._wrapped._wrapped._wrapped._init = async function () {
   await init.apply(this)
-  if (!subscribed) {
+  if ((waffle.provider as any)._hardhatNetwork.provider._wrapped._wrapped._wrapped._wrapped._node._vmTracer._vm.listenerCount('beforeMessage') < 2) {
     (waffle.provider as any)._hardhatNetwork.provider._wrapped._wrapped._wrapped._wrapped._node._vmTracer._vm.on('beforeMessage', (message) => {
       if (message.to) {
         callHistory.push({
@@ -16,7 +15,6 @@ const init = (waffle.provider as any)._hardhatNetwork.provider._wrapped._wrapped
         })
       }
     })
-    subscribed = true
   }
 }
 
@@ -30,7 +28,7 @@ const proxyProvider = new Proxy(waffle.provider, {
 })
 
 proxyProvider.clearCallHistory = () => {
-  callHistory = []
+  callHistory.length = 0
 }
 
 export { proxyProvider }
