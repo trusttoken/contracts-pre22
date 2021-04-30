@@ -141,7 +141,7 @@ describe('CrvBaseRateOracle', () => {
       const immediateProfit = Math.round(calcAvgRate(buffer, 0))
       expect(await crvBaseRateOracle.rate())
         .to.deep.equal(
-          [7 * DAY, 30 * DAY, 365 * DAY].map(x => BigNumber.from( immediateProfit).mul(x).div(curRate))
+          [7 * DAY, 30 * DAY, 365 * DAY].map(x => BigNumber.from( immediateProfit).mul(x).div(BigNumber.from(curRate)))
         )
     })
   })
