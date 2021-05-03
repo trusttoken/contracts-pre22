@@ -87,7 +87,7 @@ describe('TrueLenderReclaimer', () => {
         .to.be.revertedWith('TrueLenderReclaimer: Only LoanTokens can be settled')
     })
 
-    xit('settles fully repaid Withdrawn loans', async () => {
+    it('settles fully repaid Withdrawn loans', async () => {
       await withdrawnLoanToken.mock.isRepaid.returns(true)
       await withdrawnLoanToken.mock.settle.returns()
       await reclaimer.settleAll()
@@ -132,7 +132,7 @@ describe('TrueLenderReclaimer', () => {
         .to.be.revertedWith('TrueLenderReclaimer: Only LoanTokens can be reclaimed')
     })
 
-    xit('reclaims Settled loans', async () => {
+    it('reclaims Settled loans', async () => {
       await settledLoanToken.mock.status.returns(3) // ILoanToken.Status.Settled
       await mockLender.mock.reclaim.returns()
       await reclaimer.reclaimAll()

@@ -67,7 +67,7 @@ describe('TrueFiVault', () => {
       )).to.be.revertedWith('TrueFiVault: insufficient owner balance')
     })
 
-    xit('transfers amount from owner', async () => {
+    it('transfers amount from owner', async () => {
       await tru.mock.transferFrom.returns(true)
       const constructedVault = await new TrueFiVault__factory(owner).deploy(
         beneficiary.address,
@@ -79,7 +79,7 @@ describe('TrueFiVault', () => {
       expect('transferFrom').to.be.calledOnContractWith(tru, [owner.address, constructedVault.address, TRU_AMOUNT])
     })
 
-    xit('delegates stkTRU to beneficiary', async () => {
+    it('delegates stkTRU to beneficiary', async () => {
       await stkTru.mock.delegate.withArgs(beneficiary.address).returns()
       await new TrueFiVault__factory(owner).deploy(
         beneficiary.address,
@@ -105,17 +105,17 @@ describe('TrueFiVault', () => {
       await expect(trueFiVault.connect(beneficiary).withdrawToOwner()).to.be.revertedWith('TrueFiVault: only owner')
     })
 
-    xit('claims rewards', async () => {
+    it('claims rewards', async () => {
       await trueFiVault.connect(owner).withdrawToOwner()
       expect('claimRewards').to.be.calledOnContractWith(stkTru, [tru.address])
     })
 
-    xit('transfers TRU to owner', async () => {
+    it('transfers TRU to owner', async () => {
       await trueFiVault.connect(owner).withdrawToOwner()
       expect('transfer').to.be.calledOnContractWith(tru, [owner.address, TRU_AMOUNT])
     })
 
-    xit('transfers stkTRU to owner', async () => {
+    it('transfers stkTRU to owner', async () => {
       await trueFiVault.connect(owner).withdrawToOwner()
       expect('transfer').to.be.calledOnContractWith(stkTru, [owner.address, STKTRU_AMOUNT])
     })
@@ -144,19 +144,19 @@ describe('TrueFiVault', () => {
       await expect(trueFiVault.connect(beneficiary).withdrawToBeneficiary()).to.be.revertedWith('TrueFiVault: beneficiary cannot withdraw before expiration')
     })
 
-    xit('claims rewards', async () => {
+    it('claims rewards', async () => {
       await timeTravel(provider, DURATION + 1)
       await trueFiVault.connect(beneficiary).withdrawToBeneficiary()
       expect('claimRewards').to.be.calledOnContractWith(stkTru, [tru.address])
     })
 
-    xit('transfers TRU to beneficiary', async () => {
+    it('transfers TRU to beneficiary', async () => {
       await timeTravel(provider, DURATION + 1)
       await trueFiVault.connect(beneficiary).withdrawToBeneficiary()
       expect('transfer').to.be.calledOnContractWith(tru, [beneficiary.address, TRU_AMOUNT])
     })
 
-    xit('transfers stkTRU to beneficiary', async () => {
+    it('transfers stkTRU to beneficiary', async () => {
       await timeTravel(provider, DURATION + 1)
       await trueFiVault.connect(beneficiary).withdrawToBeneficiary()
       expect('transfer').to.be.calledOnContractWith(stkTru, [beneficiary.address, STKTRU_AMOUNT])
@@ -173,7 +173,7 @@ describe('TrueFiVault', () => {
       await expect(trueFiVault.connect(owner).stake(TRU_AMOUNT)).to.be.revertedWith('TrueFiVault: only beneficiary')
     })
 
-    xit('delegates stake from beneficiary', async () => {
+    it('delegates stake from beneficiary', async () => {
       await stkTru.mock.stake.withArgs(TRU_AMOUNT).returns()
       await trueFiVault.connect(beneficiary).stake(TRU_AMOUNT)
       expect('stake').to.be.calledOnContractWith(stkTru, [TRU_AMOUNT])
@@ -183,7 +183,7 @@ describe('TrueFiVault', () => {
       await expect(trueFiVault.connect(owner).unstake(TRU_AMOUNT)).to.be.revertedWith('TrueFiVault: only beneficiary')
     })
 
-    xit('delegates unstake from beneficiary', async () => {
+    it('delegates unstake from beneficiary', async () => {
       await stkTru.mock.unstake.withArgs(TRU_AMOUNT).returns()
       await trueFiVault.connect(beneficiary).unstake(TRU_AMOUNT)
       expect('unstake').to.be.calledOnContractWith(stkTru, [TRU_AMOUNT])
@@ -193,7 +193,7 @@ describe('TrueFiVault', () => {
       await expect(trueFiVault.connect(owner).cooldown()).to.be.revertedWith('TrueFiVault: only beneficiary')
     })
 
-    xit('delegates cooldown from beneficiary', async () => {
+    it('delegates cooldown from beneficiary', async () => {
       await stkTru.mock.cooldown.returns()
       await trueFiVault.connect(beneficiary).cooldown()
       expect('cooldown').to.be.calledOnContract(stkTru)
@@ -203,7 +203,7 @@ describe('TrueFiVault', () => {
       await expect(trueFiVault.connect(owner).claimRewards()).to.be.revertedWith('TrueFiVault: only beneficiary')
     })
 
-    xit('delegates claimRewards from beneficiary', async () => {
+    it('delegates claimRewards from beneficiary', async () => {
       await stkTru.mock.claimRewards.withArgs(tru.address).returns()
       await trueFiVault.connect(beneficiary).claimRewards()
       expect('claimRewards').to.be.calledOnContractWith(stkTru, [tru.address])
@@ -213,7 +213,7 @@ describe('TrueFiVault', () => {
       await expect(trueFiVault.connect(owner).claimRestake()).to.be.revertedWith('TrueFiVault: only beneficiary')
     })
 
-    xit('delegates claimRestake from beneficiary', async () => {
+    it('delegates claimRestake from beneficiary', async () => {
       await stkTru.mock.claimRestake.returns()
       await trueFiVault.connect(beneficiary).claimRestake()
       expect('claimRestake').to.be.calledOnContract(stkTru)
