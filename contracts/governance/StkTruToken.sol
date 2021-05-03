@@ -475,7 +475,9 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      */
     function _claim(IERC20 token) internal {
         uint256 rewardToClaim = _claimWithoutTransfer(token);
-        require(token.transfer(msg.sender, rewardToClaim));
+        if (rewardToClaim > 0) {
+            require(token.transfer(msg.sender, rewardToClaim));
+        }
     }
 
     /**
@@ -519,6 +521,9 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @return Reward balance for token
      */
     function rewardBalance(IERC20 token) internal view returns (uint256) {
+        if (address(token) == address(0)) {
+            return 0;
+        }
         if (token == tru) {
             return token.balanceOf(address(this)).sub(stakeSupply);
         }

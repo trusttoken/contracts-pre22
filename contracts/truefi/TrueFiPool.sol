@@ -291,6 +291,9 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @return Balance of stake tokens in this contract
      */
     function crvBalance() public view returns (uint256) {
+        if (address(_minter) == address(0)) {
+            return 0;
+        }
         return _minter.token().balanceOf(address(this));
     }
 
