@@ -421,7 +421,7 @@ describe('StkTruToken', () => {
       })
     })
 
-    describe('Claim Restake TRU', () => {
+    describe('Claim Restake TRU with no extra', () => {
       beforeEach(async () => {
         await stkToken.stake(amount, { gasLimit: 3000000 })
         await timeTravel(provider, DAY)
@@ -429,29 +429,67 @@ describe('StkTruToken', () => {
       })
 
       it('emits Claim event', async () => {
-        await expect(stkToken.claimRestake()).to.emit(stkToken, 'Claim')
+        await expect(stkToken.claimRestake(0)).to.emit(stkToken, 'Claim')
       })
 
       it('emits Stake event', async () => {
-        await expect(stkToken.claimRestake()).to.emit(stkToken, 'Stake')
+        await expect(stkToken.claimRestake(0)).to.emit(stkToken, 'Stake')
       })
 
       it('clears claimable balance', async () => {
         expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(1000))
-        await stkToken.claimRestake()
+        await stkToken.claimRestake(0)
         expect(await stkToken.claimable(owner.address, tru.address)).to.equal(0)
       })
 
       it('stakes claimable balance', async () => {
         expect(await stkToken.stakeSupply()).to.equal(amount)
-        await stkToken.claimRestake()
+        await stkToken.claimRestake(0)
         expectScaledCloseTo(await stkToken.stakeSupply(), amount.add(parseTRU(1000)))
       })
 
       it('does not affect owner address balance', async () => {
         const balanceBefore = await tru.balanceOf(owner.address)
-        await stkToken.claimRestake()
+        await stkToken.claimRestake(0)
         expect(await tru.balanceOf(owner.address)).to.equal(balanceBefore)
+      })
+    })
+
+    describe('Claim Restake TRU with extra', () => {
+      const extraStake = amount.div(4)
+
+      beforeEach(async () => {
+        await stkToken.stake(amount, { gasLimit: 3000000 })
+        await tru.mint(owner.address, extraStake)
+        await tru.approve(stkToken.address, extraStake)
+        await timeTravel(provider, DAY)
+        await tfusd.mint(stkToken.address, parseEth(1), { gasLimit: 3000000 })
+      })
+
+      it('emits Claim event', async () => {
+        await expect(stkToken.claimRestake(extraStake)).to.emit(stkToken, 'Claim')
+      })
+
+      it('emits Stake event', async () => {
+        await expect(stkToken.claimRestake(extraStake)).to.emit(stkToken, 'Stake')
+      })
+
+      it('clears claimable balance', async () => {
+        expectScaledCloseTo(await stkToken.claimable(owner.address, tru.address), parseTRU(1000))
+        await stkToken.claimRestake(extraStake)
+        expect(await stkToken.claimable(owner.address, tru.address)).to.equal(0)
+      })
+
+      it('stakes claimable balance and extra amount', async () => {
+        expect(await stkToken.stakeSupply()).to.equal(amount)
+        await stkToken.claimRestake(extraStake)
+        expectScaledCloseTo(await stkToken.stakeSupply(), amount.add(parseTRU(1000)).add(extraStake))
+      })
+
+      it('removes extra amount from owner address balance', async () => {
+        const balanceBefore = await tru.balanceOf(owner.address)
+        await stkToken.claimRestake(extraStake)
+        expect(await tru.balanceOf(owner.address)).to.equal(balanceBefore.sub(extraStake))
       })
     })
   })

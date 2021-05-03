@@ -359,12 +359,14 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     }
 
     /**
-     * @dev Claim TRU rewards, then restake without transferring
-     * Allows account to save more gas by avoiding out-and-back transfers
+     * @dev Claim TRU rewards, transfer in extraStakeAmount, and
+     * stake both the rewards and the new amount.
+     * Allows account to save more gas by avoiding out-and-back transfers of rewards
      */
-    function claimRestake() external distribute update(msg.sender) {
-        uint256 amount = _claimWithoutTransfer(tru);
+    function claimRestake(uint256 extraStakeAmount) external distribute update(msg.sender) {
+        uint256 amount = _claimWithoutTransfer(tru) + extraStakeAmount;
         _stakeWithoutTransfer(amount);
+        require(tru.transferFrom(msg.sender, address(this), extraStakeAmount));
     }
 
     /**
