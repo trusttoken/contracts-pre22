@@ -43,8 +43,8 @@
       "address": "0xb1f283F554995F666bD3238F229ADf0aF7d54fC4"
     },
     "stkTruToken": {
-      "txHash": "0x4b29b5af903a88361667e4b8bed3d67891a7a26f3908920fadb2e314a1faaeb8",
-      "address": "0xFe4d1627473BcE8b7f86CF1Cf35D4B16C8302518"
+      "txHash": "0x70bed2f9dcb1200d597d649794b7b5087ec50350222d25e1f9a72eac638af3a3",
+      "address": "0x16e62EE3c8c439FA99296AA259768F034C3B1D78"
     },
     "stkTruToken_proxy": {
       "txHash": "0x7c2d5b7e423c800a906c6877ecab38cdd39cba5f8419276287479d484c96471f",
@@ -55,8 +55,8 @@
       "address": "0x20FA73e9d6cE61DBB0240E57C68dB8b1124B9378"
     },
     "testTrueFiPool": {
-      "txHash": "0x1c079973413d12204c7726c77d8f4c96cb119b1b33cda3b98d5192aa4292ecc2",
-      "address": "0x08aCCebc24723a233250adaF19412b152d5138E6"
+      "txHash": "0xa3c893fb27f17974275a88bcb693b1ce7a48fb6e3d2584c92a5094600fc488ce",
+      "address": "0x6f87e95E365F9fB56b930357a2dF7eAE812B1012"
     },
     "testTrueFiPool_proxy": {
       "txHash": "0x3439bdd66e0396ebaa12e4acee9ccf49d3cea6ed4b01bf8b5a915e86784b8f66",
