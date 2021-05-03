@@ -366,7 +366,9 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     function claimRestake(uint256 extraStakeAmount) external distribute update(msg.sender) {
         uint256 amount = _claimWithoutTransfer(tru) + extraStakeAmount;
         _stakeWithoutTransfer(amount);
-        require(tru.transferFrom(msg.sender, address(this), extraStakeAmount));
+        if (extraStakeAmount > 0) {
+            require(tru.transferFrom(msg.sender, address(this), extraStakeAmount));
+        }
     }
 
     /**
