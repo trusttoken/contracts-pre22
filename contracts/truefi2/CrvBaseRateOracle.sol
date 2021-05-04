@@ -7,7 +7,6 @@ import "../truefi/interface/ICurve.sol";
 // prettier-ignore
 contract CrvBaseRateOracle {
     using SafeMath for uint256;
-    uint8 public constant BUFFER_SIZE = 7;
 
     ICurve public curve;
 
@@ -18,6 +17,8 @@ contract CrvBaseRateOracle {
     }
 
     HistoricalRatesBuffer public histBuffer;
+
+    uint8 public constant BUFFER_SIZE = 7;
 
     constructor(ICurve _curve) public {
         curve = _curve;
