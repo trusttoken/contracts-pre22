@@ -122,6 +122,6 @@ contract TrueFiVault {
      * Allows account to save more gas by avoiding out-and-back transfers
      */
     function claimRestake() external onlyBeneficiary {
-        stkTru.claimRestake();
+        stkTru.claimRestake(0);
     }
 }
