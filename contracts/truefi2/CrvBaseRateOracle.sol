@@ -22,6 +22,14 @@ contract CrvBaseRateOracle {
 
     constructor(ICurve _curve) public {
         curve = _curve;
+
+        // fill the buffer
+        uint256 curCrvBaseRate = curve.get_virtual_price();
+        uint256 curTimestamp = block.timestamp;
+        for (uint i = 0; i < BUFFER_SIZE; i++) {
+            histBuffer.baseRates[i] = curCrvBaseRate;
+            histBuffer.timestamps[i] = curTimestamp;
+        }
     }
 
     function getHistBuffer() public view returns (uint256[BUFFER_SIZE] memory, uint256[BUFFER_SIZE] memory, uint8) {
