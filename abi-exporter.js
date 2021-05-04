@@ -51,7 +51,7 @@ task(TASK_COMPILE, async function (args, hre, runSuper) {
     if (config.only.length && !config.only.some(m => fullName.match(m))) continue
     if (config.except.length && config.except.some(m => fullName.match(m))) continue
 
-    const { abi, sourceName, contractName, bytecode } = await hre.artifacts.readArtifact(fullName)
+    const { abi, sourceName, contractName, bytecode, deployedBytecode } = await hre.artifacts.readArtifact(fullName)
 
     if (!abi.length) continue
 
@@ -65,6 +65,6 @@ task(TASK_COMPILE, async function (args, hre, runSuper) {
       fs.mkdirSync(path.dirname(destination), { recursive: true })
     }
 
-    fs.writeFileSync(destination, `${JSON.stringify({ abi, bytecode }, null, config.spacing)}\n`, { flag: 'w' })
+    fs.writeFileSync(destination, `${JSON.stringify({ abi, bytecode, deployedBytecode }, null, config.spacing)}\n`, { flag: 'w' })
   }
 })
