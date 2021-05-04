@@ -1,5 +1,6 @@
-import { MockProvider, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
+import { waffle } from 'hardhat'
 
 import { deployPausedTrueGold } from 'scripts/deploy_paused_true_gold'
 
@@ -11,7 +12,7 @@ use(solidity)
 describe('deployPausedTrueGold', () => {
   const pausedTokenBytecode = PausedTrueGoldJson.deployedBytecode
 
-  const provider = new MockProvider()
+  const provider = waffle.provider
   const [deployer] = provider.getWallets()
 
   let pausedToken: PausedTrueGold

@@ -1,5 +1,6 @@
 import { expect, use } from 'chai'
-import { MockProvider, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
+import { waffle } from 'hardhat'
 
 import { beforeEachWithFixture } from 'utils'
 
@@ -16,7 +17,7 @@ describe('TrueCurrency - Legacy autosweep', () => {
   const replaceTail = (address: string, replacer: string) => `${address.slice(0, -replacer.length)}${replacer}`
 
   beforeEachWithFixture(async () => {
-    const provider = new MockProvider()
+    const provider = waffle.provider
     const [owner] = provider.getWallets()
     token = await new MockTrueCurrencyWithAutosweep__factory(owner).deploy()
     await token.mint(owner.address, 100)

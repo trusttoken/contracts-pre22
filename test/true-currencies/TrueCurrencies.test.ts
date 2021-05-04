@@ -1,6 +1,7 @@
 import { ContractFactory } from 'ethers'
-import { MockProvider, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
+import { waffle } from 'hardhat'
 
 import { Newable } from 'scripts/utils'
 
@@ -20,7 +21,7 @@ describe('TrueCurrency - Tokens', () => {
       let token: TrueCurrency
 
       before(async () => {
-        const provider = new MockProvider()
+        const provider = waffle.provider
         const [owner] = provider.getWallets()
         token = await new Token__factory(owner).deploy() as TrueCurrency
       })
