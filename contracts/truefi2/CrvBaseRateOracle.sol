@@ -26,7 +26,7 @@ contract CrvBaseRateOracle {
         // fill the buffer
         uint256 curCrvBaseRate = curve.get_virtual_price();
         uint256 curTimestamp = block.timestamp;
-        for (uint i = 0; i < BUFFER_SIZE; i++) {
+        for (uint8 i = 0; i < BUFFER_SIZE; i++) {
             histBuffer.baseRates[i] = curCrvBaseRate;
             histBuffer.timestamps[i] = curTimestamp;
         }
