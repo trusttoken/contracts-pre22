@@ -169,6 +169,10 @@
     "loanFactory2_proxy": {
       "txHash": "0xb01288f17495e734b3425b165577e15c3051b03b761453ffdb85348730072852",
       "address": "0x5f31A8BdA2d9C126D8b95892f05f146361a6d9B7"
+    },
+    "mock1InchV3": {
+      "txHash": "0x7fc6f15137e192c4d2c2b8d24db2ed39775c5dadfa1430b08bec082a5e251435",
+      "address": "0x8bb4DEA3e4D1BA6d4e28F151F1CbcB841a314dCe"
     }
   },
   "mainnet": {
