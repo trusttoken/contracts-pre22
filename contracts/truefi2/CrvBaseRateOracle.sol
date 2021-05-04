@@ -44,9 +44,9 @@ contract CrvBaseRateOracle {
         // where v_n is the most recent rate, v_1 is the oldest rate,
         // t_n and t_1 are their timestamps respectively
         uint8 idxOfOldestRate = histBuffer.insertIndex;
-        uint256 v_n = histBuffer.baseRates[(idxOfOldestRate - 1) % BUFFER_SIZE];
+        uint256 v_n = histBuffer.baseRates[(idxOfOldestRate - 1 + BUFFER_SIZE) % BUFFER_SIZE];
         uint256 v_1 = histBuffer.baseRates[idxOfOldestRate];
-        uint256 t_n = histBuffer.timestamps[(idxOfOldestRate - 1) % BUFFER_SIZE];
+        uint256 t_n = histBuffer.timestamps[(idxOfOldestRate - 1 + BUFFER_SIZE) % BUFFER_SIZE];
         uint256 t_1 = histBuffer.timestamps[idxOfOldestRate];
         return (v_n.sub(v_1)).mul(100_00).div(t_n.sub(t_1));
     }
