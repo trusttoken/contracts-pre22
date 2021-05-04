@@ -36,7 +36,6 @@ jobs:
           root: .
           paths:
             - .
-
   lint:
     docker:
       - image: circleci/node:12.19.0

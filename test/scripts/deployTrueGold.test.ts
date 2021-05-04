@@ -1,9 +1,10 @@
-import { MockProvider, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
 
 import { deployTrueGold } from 'scripts/deploy_true_gold'
 import { makeAddress } from 'scripts/model/Address'
 import { asProxy } from 'scripts/utils/asProxy'
+import { waffle } from 'hardhat'
 
 import { MAX_BURN_BOUND } from 'utils'
 
@@ -27,7 +28,7 @@ describe('deployTrueGold', () => {
   const tokenBytecode = TrueGoldJson.deployedBytecode
   const controllerBytecode = TrueGoldControllerJson.deployedBytecode
 
-  const provider = new MockProvider()
+  const provider = waffle.provider
   const [deployer, controllerOwner, implContractsOwner] = provider.getWallets()
 
   const params = {
