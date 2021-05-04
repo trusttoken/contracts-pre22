@@ -6,7 +6,6 @@
 - [🧰 Installation](#-🧰-Installation)
 - [✅ Testing](#-✅-Testing)
 - [🚉 Addresses](#-🚉-Addresses)
-- [☎️ Contact](#-☎️-Contact)
 
 # 💡 Intro
 TrueFi is a decentralized protocol for uncollateralized lending. This repository contains all smart contracts used across TrueFi ecosystem. Contracts are written in Solidity. All key functionalities are tested with attached TypeScript test suite. Apart from contracts and tests repository contains scripts used for deployment and maintenance of existing infrastructure.
@@ -90,7 +89,6 @@ yarn checks
 | stkTRUDistributor | [`0xecfD4F2C07EABdb7b592308732B59713728A957F`](https://etherscan.io/address/0xecfD4F2C07EABdb7b592308732B59713728A957F) |
 | Uniswap Router | [`0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D`](https://etherscan.io/address/0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D) |
 | Uniswap Factory | [`0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f`](https://etherscan.io/address/0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f) |
-
 
 # ☎️ Contact
  - [TrueFi main website](https://truefi.io/)
