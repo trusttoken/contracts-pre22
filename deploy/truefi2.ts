@@ -2,7 +2,7 @@ import { contract, createProxy, deploy, runIf } from 'ethereum-mars'
 import {
   ImplementationReference,
   Liquidator2,
-  LoanFactory2,
+  LoanFactory2, Mock1InchV3,
   MockERC20Token,
   OwnedUpgradeabilityProxy,
   PoolFactory,
@@ -33,7 +33,6 @@ deploy({}, (_, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
   const isMainnet = config.network === 'mainnet'
-  const NETWORK = isMainnet ? 'mainnet' : 'testnet'
 
   // Existing contracts
   const trustToken = isMainnet
@@ -53,14 +52,16 @@ deploy({}, (_, config) => {
   const trueFiPool2 = contract(TrueFiPool2)
   const implementationReference = contract(ImplementationReference, [trueFiPool2])
   const poolFactory = proxy(contract(PoolFactory), 'initialize',
-    [implementationReference, trustToken, trueLender2]
+    [implementationReference, trustToken, trueLender2],
   )
+  const oneInch = isMainnet ? ONE_INCH_EXCHANGE : contract(Mock1InchV3)
   runIf(trueLender2.isInitialized().not(), () => {
-    trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, ONE_INCH_EXCHANGE)
+    trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch)
   })
+  trueLender2.set1inch()
   const liquidator2 = proxy(contract(Liquidator2), () => {})
   const loanFactory2 = proxy(contract(LoanFactory2), 'initialize',
-    [poolFactory, trueLender2, liquidator2]
+    [poolFactory, trueLender2, liquidator2],
   )
   runIf(liquidator2.isInitialized().not(), () => {
     liquidator2.initialize(stkTruToken, trustToken, loanFactory2)
