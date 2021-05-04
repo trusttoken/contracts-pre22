@@ -58,7 +58,6 @@ deploy({}, (_, config) => {
   runIf(trueLender2.isInitialized().not(), () => {
     trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch)
   })
-  trueLender2.set1inch()
   const liquidator2 = proxy(contract(Liquidator2), () => {})
   const loanFactory2 = proxy(contract(LoanFactory2), 'initialize',
     [poolFactory, trueLender2, liquidator2],
