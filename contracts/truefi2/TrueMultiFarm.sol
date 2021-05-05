@@ -323,6 +323,9 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      * This function must be called before share of the token in multifarm is changed and to update total claimable rewards for the staker
      */
     function _updateClaimableRewardsForFarm(IERC20 token) internal {
+        if(shares.staked[address(token)] == 0) {
+            return;
+        }
         // claimableReward += staked(token) * (cumulativeRewardPerShare - previousCumulatedRewardPerShare(token))
         uint256 newReward = shares.staked[address(token)]
             .mul(farmRewards.cumulativeRewardPerToken.sub(farmRewards.previousCumulatedRewardPerToken[address(token)]))
