@@ -388,6 +388,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         uint256 numerator,
         uint256 denominator
     ) external override {
+        require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
         _distribute(recipient, numerator, denominator, msg.sender);
     }
 
