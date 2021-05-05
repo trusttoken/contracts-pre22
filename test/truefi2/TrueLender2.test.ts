@@ -655,5 +655,9 @@ describe('TrueLender2', () => {
         .and.to.emit(loanTokens[4], 'Transfer')
         .withArgs(lender.address, borrower.address, Math.floor(100002 * 2 / 5))
     })
+
+    it('reverts if not called by the pool', async () => {
+      await expect(lender.distribute(borrower.address, 2, 5)).to.be.revertedWith('TrueLender: Pool not created by the factory')
+    })
   })
 })
