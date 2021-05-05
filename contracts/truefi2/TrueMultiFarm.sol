@@ -24,9 +24,9 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     uint256 constant PRECISION = 1e30;
 
     struct Stakes {
-        // total amount of liquidity token staked
+        // total amount of a particular token staked
         uint256 totalStaked;
-        // who staked how much. For address(this) how much shares the farm has
+        // who staked how much
         mapping(address => uint256) staked;
     }
 
@@ -39,7 +39,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         mapping(address => uint256) claimableReward;
         // track total rewards
         uint256 totalClaimedRewards;
-        uint256 totalFarmRewards;
+        uint256 totalRewards;
     }
 
     // ================ WARNING ==================
@@ -91,6 +91,9 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         _;
     }
 
+    /**
+     * @dev Is there any reward allocatiion for given token
+     */
     modifier hasShares(IERC20 token) {
         require(shares.staked[address(token)] > 0, "TrueMultiFarm: This token has no shares");
         _;
@@ -228,9 +231,9 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         // estimate pending reward from distributor
         uint256 pending = _pendingDistribution(token);
         // calculate total rewards (including pending)
-        uint256 newTotalFarmRewards = pending.add(stakerRewards[token].totalClaimedRewards).mul(PRECISION);
+        uint256 newTotalRewards = pending.add(stakerRewards[token].totalClaimedRewards).mul(PRECISION);
         // calculate block reward
-        uint256 totalBlockReward = newTotalFarmRewards.sub(stakerRewards[token].totalFarmRewards);
+        uint256 totalBlockReward = newTotalRewards.sub(stakerRewards[token].totalRewards);
         // calculate next cumulative reward per token
         uint256 nextcumulativeRewardPerToken = stakerRewards[token].cumulativeRewardPerToken.add(
             totalBlockReward.div(stakes[token].totalStaked)
@@ -249,11 +252,11 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         uint256 pending = trueDistributor.farm() == address(this) ? trueDistributor.nextDistribution() : 0;
 
         // calculate new total rewards ever received by farm
-        uint256 newTotalFarmRewards = rewardToken.balanceOf(address(this)).add(pending).add(farmRewards.totalClaimedRewards).mul(
+        uint256 newTotalRewards = rewardToken.balanceOf(address(this)).add(pending).add(farmRewards.totalClaimedRewards).mul(
             PRECISION
         );
         // calculate new rewards that were received since previous distribution
-        uint256 totalBlockReward = newTotalFarmRewards.sub(farmRewards.totalFarmRewards);
+        uint256 totalBlockReward = newTotalRewards.sub(farmRewards.totalRewards);
 
         uint256 cumulativeRewardPerShare = farmRewards.cumulativeRewardPerToken;
         if (shares.totalStaked > 0) {
@@ -288,11 +291,11 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      */
     function _updateCumulativeRewardPerShare() internal {
         // calculate new total rewards ever received by farm
-        uint256 newTotalFarmRewards = rewardToken.balanceOf(address(this)).add(farmRewards.totalClaimedRewards).mul(PRECISION);
+        uint256 newTotalRewards = rewardToken.balanceOf(address(this)).add(farmRewards.totalClaimedRewards).mul(PRECISION);
         // calculate new rewards that were received since previous distribution
-        uint256 rewardSinceLastUpdate = newTotalFarmRewards.sub(farmRewards.totalFarmRewards);
+        uint256 rewardSinceLastUpdate = newTotalRewards.sub(farmRewards.totalRewards);
         // update info about total farm rewards
-        farmRewards.totalFarmRewards = newTotalFarmRewards;
+        farmRewards.totalRewards = newTotalRewards;
         // if there are sub farms increase their value per share
         if (shares.totalStaked > 0) {
             farmRewards.cumulativeRewardPerToken = farmRewards.cumulativeRewardPerToken.add(
@@ -315,7 +318,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      */
     function _updateTokenFarmRewards(IERC20 token) internal {
         _updateClaimableRewardsForFarm(token);
-        _updateTotalFarmRewards(token);
+        _updateTotalRewards(token);
     }
 
     /**
@@ -339,12 +342,12 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      * @dev Update total reward for the farm
      * Get total farm reward as claimable rewards for the given farm plus total rewards claimed by stakers in the farm
      */
-    function _updateTotalFarmRewards(IERC20 token) internal {
-        uint256 totalFarmRewards = farmRewards.claimableReward[address(token)].add(stakerRewards[token].totalClaimedRewards).mul(
+    function _updateTotalRewards(IERC20 token) internal {
+        uint256 totalRewards = farmRewards.claimableReward[address(token)].add(stakerRewards[token].totalClaimedRewards).mul(
             PRECISION
         );
         // calculate received reward
-        uint256 rewardReceivedSinceLastUpdate = totalFarmRewards.sub(stakerRewards[token].totalFarmRewards);
+        uint256 rewardReceivedSinceLastUpdate = totalRewards.sub(stakerRewards[token].totalRewards);
 
         // if there are stakers of the token, increase cumulativeRewardPerToken by newly received reward per total staked amount
         if (stakes[token].totalStaked > 0) {
@@ -354,7 +357,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         }
 
         // update farm rewards
-        stakerRewards[token].totalFarmRewards = totalFarmRewards;
+        stakerRewards[token].totalRewards = totalRewards;
     }
 
     /**
