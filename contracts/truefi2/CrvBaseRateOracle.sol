@@ -7,6 +7,7 @@ import "../truefi/interface/ICurve.sol";
 // prettier-ignore
 contract CrvBaseRateOracle {
     using SafeMath for uint256;
+    using SafeMath for uint8;
 
     ICurve public curve;
 
@@ -17,11 +18,19 @@ contract CrvBaseRateOracle {
     }
 
     HistoricalRatesBuffer public histBuffer;
+    uint256 public cooldownTime;
 
     uint8 public constant BUFFER_SIZE = 7;
 
+    modifier offCooldown() {
+        uint256 lastUpdated = histBuffer.timestamps[histBuffer.insertIndex.add(BUFFER_SIZE).sub(1) % BUFFER_SIZE];
+        require(now >= lastUpdated.add(cooldownTime), "CrvBaseRateOracle: Buffer on cooldown");
+        _;
+    }
+
     constructor(ICurve _curve) public {
         curve = _curve;
+        cooldownTime = 1 days;
 
         // fill the buffer
         uint256 curCrvBaseRate = curve.get_virtual_price();
@@ -36,11 +45,11 @@ contract CrvBaseRateOracle {
         return (histBuffer.baseRates, histBuffer.timestamps, histBuffer.insertIndex);
     }
 
-    function updateRate() public {
+    function updateRate() public offCooldown {
         uint8 iidx = histBuffer.insertIndex;
         histBuffer.timestamps[iidx] = block.timestamp;
         histBuffer.baseRates[iidx] = curve.get_virtual_price();
-        histBuffer.insertIndex = (iidx + 1) % BUFFER_SIZE;
+        histBuffer.insertIndex = uint8(iidx.add(1) % BUFFER_SIZE);
     }
 
     function calculateAverageRate() public view returns (uint256) {

@@ -2,7 +2,7 @@ import { expect, use } from 'chai'
 import { solidity, deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
-import { DAY, timeTravelTo } from 'utils'
+import { DAY, timeTravel, timeTravelTo } from 'utils'
 
 import {
   CrvBaseRateOracle,
@@ -17,6 +17,7 @@ describe('CrvBaseRateOracle', () => {
   let owner: Wallet
   let crvBaseRateOracle: CrvBaseRateOracle
   let mockCurve: MockContract
+  let cooldownTime
   let BUFFER_SIZE
   // values historical buffer is prefilled with
   const STARTING_RATE = 100
@@ -30,9 +31,15 @@ describe('CrvBaseRateOracle', () => {
     crvBaseRateOracle = await new CrvBaseRateOracle__factory(owner).deploy(mockCurve.address)
     STARTING_TIMESTAMP = (await _provider.getBlock('latest')).timestamp
     BUFFER_SIZE = await crvBaseRateOracle.BUFFER_SIZE()
+    cooldownTime = (await crvBaseRateOracle.cooldownTime()).toNumber()
 
     provider = _provider
   })
+
+  const updateRateAfterCooldown = async () => {
+    await timeTravel(provider, cooldownTime)
+    await crvBaseRateOracle.updateRate()
+  }
 
   describe('Constructor', () => {
     it('correctly sets curve interface', async () => {
@@ -56,7 +63,7 @@ describe('CrvBaseRateOracle', () => {
 
     it('adds one rate to buffer', async () => {
       await mockCurve.mock.get_virtual_price.returns(100)
-      await crvBaseRateOracle.updateRate()
+      await updateRateAfterCooldown()
       const curTimestamp = (await provider.getBlock('latest')).timestamp
       const [baseRates, timestamps, insertIndex] = await crvBaseRateOracle.getHistBuffer()
       expect(baseRates[0]).to.eq(100)
@@ -67,11 +74,11 @@ describe('CrvBaseRateOracle', () => {
     it('insertIndex increments cyclically', async () => {
       await mockCurve.mock.get_virtual_price.returns(100)
       for (let i = 0; i < (BUFFER_SIZE - 1); i++) {
-        await crvBaseRateOracle.updateRate()
+        await updateRateAfterCooldown()
       }
       let [, , insertIndex] = await crvBaseRateOracle.getHistBuffer()
       expect(insertIndex).to.eq(6)
-      await crvBaseRateOracle.updateRate()
+      await updateRateAfterCooldown()
       ;[, , insertIndex] = await crvBaseRateOracle.getHistBuffer()
       expect(insertIndex).to.eq(0)
     })
@@ -79,12 +86,12 @@ describe('CrvBaseRateOracle', () => {
     it('overwrites old values with new ones', async () => {
       await mockCurve.mock.get_virtual_price.returns(100)
       for (let i = 0; i < BUFFER_SIZE; i++) {
-        await crvBaseRateOracle.updateRate()
+        await updateRateAfterCooldown()
       }
       let [baseRates] = await crvBaseRateOracle.getHistBuffer()
       expect(baseRates[0]).to.eq(100)
       await mockCurve.mock.get_virtual_price.returns(200)
-      await crvBaseRateOracle.updateRate()
+      await updateRateAfterCooldown()
       ;[baseRates] = await crvBaseRateOracle.getHistBuffer()
       expect(baseRates[0]).to.eq(200)
     })
@@ -94,21 +101,21 @@ describe('CrvBaseRateOracle', () => {
     describe('calculates the rate correctly', () => {
       it('with prefilled buffer', async () => {
         await mockCurve.mock.get_virtual_price.returns(200)
-        await crvBaseRateOracle.updateRate()
-        await timeTravelTo(provider, STARTING_TIMESTAMP + 60)
+        await updateRateAfterCooldown()
+        await timeTravelTo(provider, STARTING_TIMESTAMP + 2 * DAY)
         expect(await crvBaseRateOracle.calculateAverageRate())
-          .to.eq((BigNumber.from(200 - STARTING_RATE)).mul(100_00).div(60))
+          .to.eq((BigNumber.from(200 - STARTING_RATE)).mul(100_00).div(2 * DAY))
       })
 
       it('with manually added rates', async () => {
         await mockCurve.mock.get_virtual_price.returns(200)
         const t_1 = (await provider.getBlock('latest')).timestamp
         for (let i = 0; i < 6; i++) {
-          await crvBaseRateOracle.updateRate()
+          await updateRateAfterCooldown()
         }
         await mockCurve.mock.get_virtual_price.returns(400)
         const t_n = (await provider.getBlock('latest')).timestamp
-        await crvBaseRateOracle.updateRate()
+        await updateRateAfterCooldown()
         expect(await crvBaseRateOracle.calculateAverageRate())
           .to.eq(BigNumber.from(400 - 200).mul(100_00).div(t_n - t_1))
       })
@@ -120,11 +127,11 @@ describe('CrvBaseRateOracle', () => {
       await mockCurve.mock.get_virtual_price.returns(200)
       const t_1 = (await provider.getBlock('latest')).timestamp
       for (let i = 0; i < 6; i++) {
-        await crvBaseRateOracle.updateRate()
+        await updateRateAfterCooldown()
       }
       await mockCurve.mock.get_virtual_price.returns(400)
       const t_n = (await provider.getBlock('latest')).timestamp
-      await crvBaseRateOracle.updateRate()
+      await updateRateAfterCooldown()
       const avgRate = BigNumber.from(400 - 200).mul(100_00).div(t_n - t_1)
       expect(await crvBaseRateOracle.rate())
         .to.deep.equal(
