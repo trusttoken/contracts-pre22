@@ -61,16 +61,6 @@ describe('CrvBaseRateOracle', () => {
       expect(timestamps.length).to.eq(BUFFER_SIZE)
     })
 
-    it('adds one rate to buffer', async () => {
-      await mockCurve.mock.get_virtual_price.returns(100)
-      await updateRateAfterCooldown()
-      const curTimestamp = (await provider.getBlock('latest')).timestamp
-      const [baseRates, timestamps, insertIndex] = await crvBaseRateOracle.getHistBuffer()
-      expect(baseRates[0]).to.eq(100)
-      expect(timestamps[0]).to.eq(curTimestamp)
-      expect(insertIndex).to.eq(1)
-    })
-
     it('insertIndex increments cyclically', async () => {
       await mockCurve.mock.get_virtual_price.returns(100)
       for (let i = 0; i < (BUFFER_SIZE - 1); i++) {
@@ -94,6 +84,27 @@ describe('CrvBaseRateOracle', () => {
       await updateRateAfterCooldown()
       ;[baseRates] = await crvBaseRateOracle.getHistBuffer()
       expect(baseRates[0]).to.eq(200)
+    })
+  })
+
+  describe('updateRate', () => {
+    it.only('reverts if cooldown is on', async () => {
+      await updateRateAfterCooldown()
+      await expect(crvBaseRateOracle.updateRate())
+        .to.be.revertedWith('CrvBaseRateOracle: Buffer on cooldown')
+      await timeTravel(provider, cooldownTime)
+      await expect(crvBaseRateOracle.updateRate())
+        .not.to.be.reverted
+    })
+
+    it('adds one rate to buffer', async () => {
+      await mockCurve.mock.get_virtual_price.returns(100)
+      await updateRateAfterCooldown()
+      const curTimestamp = (await provider.getBlock('latest')).timestamp
+      const [baseRates, timestamps, insertIndex] = await crvBaseRateOracle.getHistBuffer()
+      expect(baseRates[0]).to.eq(100)
+      expect(timestamps[0]).to.eq(curTimestamp)
+      expect(insertIndex).to.eq(1)
     })
   })
 
