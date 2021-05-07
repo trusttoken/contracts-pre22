@@ -135,7 +135,7 @@ describe('CrvBaseRateOracle', () => {
         for (let i = 0; i < BUFFER_SIZE; i++) {
           await updateRateRightAfterCooldown()
         }
-        const expectedAverageRate = 200 * DAY * (BUFFER_SIZE - 1) / (DAY * (BUFFER_SIZE - 1))
+        const expectedAverageRate = 200 * DAY * (BUFFER_SIZE - 1) * 100_00 / (DAY * (BUFFER_SIZE - 1))
         expect(await crvBaseRateOracle.calculateAverageRate()).to.eq(expectedAverageRate)
       })
     })
