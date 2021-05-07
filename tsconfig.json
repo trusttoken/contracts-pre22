@@ -28,5 +28,6 @@
     "build",
     "scripts",
     "contracts",
+    "test",
   ]
 }
