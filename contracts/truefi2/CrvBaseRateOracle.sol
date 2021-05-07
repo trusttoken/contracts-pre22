@@ -7,7 +7,7 @@ import "../truefi/interface/ICurve.sol";
 // prettier-ignore
 contract CrvBaseRateOracle {
     using SafeMath for uint256;
-    using SafeMath for uint8;
+    using SafeMath for uint16;
 
     ICurve public curve;
 
@@ -17,7 +17,7 @@ contract CrvBaseRateOracle {
     struct HistoricalRatesBuffer {
         uint256[BUFFER_SIZE] baseRates;
         uint256[BUFFER_SIZE] timestamps;
-        uint8 insertIndex;
+        uint16 insertIndex;
     }
     HistoricalRatesBuffer public histBuffer;
 
@@ -25,7 +25,7 @@ contract CrvBaseRateOracle {
     // to be able to update the historical buffer
     uint256 public cooldownTime;
 
-    uint8 public constant BUFFER_SIZE = 7;
+    uint16 public constant BUFFER_SIZE = 7;
 
     /**
      * @dev Throws if cooldown is on when updating the historical buffer
@@ -43,7 +43,7 @@ contract CrvBaseRateOracle {
         // fill the buffer
         uint256 curCrvBaseRate = curve.get_virtual_price();
         uint256 curTimestamp = block.timestamp;
-        for (uint8 i = 0; i < BUFFER_SIZE; i++) {
+        for (uint16 i = 0; i < BUFFER_SIZE; i++) {
             histBuffer.baseRates[i] = curCrvBaseRate;
             histBuffer.timestamps[i] = curTimestamp;
         }
@@ -54,7 +54,7 @@ contract CrvBaseRateOracle {
     /**
      * @dev Helper function to get contents of the historical buffer
      */
-    function getHistBuffer() public view returns (uint256[BUFFER_SIZE] memory, uint256[BUFFER_SIZE] memory, uint8) {
+    function getHistBuffer() public view returns (uint256[BUFFER_SIZE] memory, uint256[BUFFER_SIZE] memory, uint16) {
         return (histBuffer.baseRates, histBuffer.timestamps, histBuffer.insertIndex);
     }
 
@@ -64,10 +64,10 @@ contract CrvBaseRateOracle {
      * and updates its timestamp
      */
     function updateRate() public offCooldown {
-        uint8 iidx = histBuffer.insertIndex;
+        uint16 iidx = histBuffer.insertIndex;
         histBuffer.timestamps[iidx] = block.timestamp;
         histBuffer.baseRates[iidx] = curve.get_virtual_price();
-        histBuffer.insertIndex = uint8(iidx.add(1) % BUFFER_SIZE);
+        histBuffer.insertIndex = uint16(iidx.add(1) % BUFFER_SIZE);
     }
 
     /**
@@ -82,14 +82,27 @@ contract CrvBaseRateOracle {
      * where v_i, t_i are values of the prices and their respective timestamps
      * stored in the historical buffer. Index n-1 corresponds to the most
      * recent values and index 0 to the oldest ones.
+     * Notice that whether we are going to use the whole buffer or not
+     * depends on value of timeToCover parameter.
+     * @param timeToCover For how much time average should be calculated
      * @return Average rate in percentage with precision
      */
-    function calculateAverageRate() public view returns (uint256) {
-        uint8 iidx = histBuffer.insertIndex;
+    function calculateAverageRate(uint256 timeToCover) public view returns (uint256) {
+        require(
+            1 days <= timeToCover && timeToCover <= 365 days,
+            "CrvBaseRateOracle: Expected number of days from range 1 to 365"
+        );
+        // estimate how much buffer we need to use
+        uint256 bufferSizeNeeded = timeToCover.div(cooldownTime);
+        require(
+            bufferSizeNeeded <= BUFFER_SIZE,
+            "CrvBaseRateOracle: Needed buffer size cannot exceed size limit"
+        );
+        uint16 iidx = histBuffer.insertIndex;
         uint256 sum;
-        for (uint8 i = 1; i < BUFFER_SIZE; i++) {
-            uint8 idx = uint8(iidx.add(i) % BUFFER_SIZE);
-            uint8 prevIdx = uint8(iidx.add(i).sub(1) % BUFFER_SIZE);
+        for (uint16 i = 1; i < bufferSizeNeeded; i++) {
+            uint16 idx = uint16(iidx.add(BUFFER_SIZE).sub(i) % BUFFER_SIZE);
+            uint16 prevIdx = uint16(iidx.add(BUFFER_SIZE).sub(i).sub(1) % BUFFER_SIZE);
             uint256 dt = histBuffer.timestamps[idx].sub(histBuffer.timestamps[prevIdx]);
             sum = sum.add(histBuffer.baseRates[idx].mul(dt));
         }
@@ -99,12 +112,21 @@ contract CrvBaseRateOracle {
         return sum.mul(100_00).div(totalTime);
     }
 
-    function weeklyMonthlyYearlyProfit() public view returns (uint256, uint256, uint256) {
+    function weeklyProfit() public view returns (uint256) {
+        uint256 avgRate = calculateAverageRate(7 days);
         uint256 curCrvBaseRate = curve.get_virtual_price();
-        uint256 avgRate = calculateAverageRate();
-        uint256 weeklyProfit = avgRate.mul(7 days).div(curCrvBaseRate);
-        uint256 monthlyProfit = avgRate.mul(30 days).div(curCrvBaseRate);
-        uint256 yearlyProfit = avgRate.mul(365 days).div(curCrvBaseRate);
-        return (weeklyProfit, monthlyProfit, yearlyProfit);
+        return avgRate.mul(7 days).div(curCrvBaseRate);
+    }
+
+    function monthlyProfit() public view returns (uint256) {
+        uint256 avgRate = calculateAverageRate(30 days);
+        uint256 curCrvBaseRate = curve.get_virtual_price();
+        return avgRate.mul(30 days).div(curCrvBaseRate);
+    }
+
+    function yearlyProfit() public view returns (uint256) {
+        uint256 avgRate = calculateAverageRate(365 days);
+        uint256 curCrvBaseRate = curve.get_virtual_price();
+        return avgRate.mul(365 days).div(curCrvBaseRate);
     }
 }
