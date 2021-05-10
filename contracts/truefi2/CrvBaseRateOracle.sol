@@ -32,13 +32,13 @@ contract CrvBaseRateOracle {
      */
     modifier offCooldown() {
         uint256 lastUpdated = histBuffer.timestamps[histBuffer.insertIndex.add(BUFFER_SIZE).sub(1) % BUFFER_SIZE];
-        require(now >= lastUpdated.add(cooldownTime), "CrvBaseRateOracle: Buffer on cooldown");
+        require(block.timestamp >= lastUpdated.add(cooldownTime), "CrvBaseRateOracle: Buffer on cooldown");
         _;
     }
 
-    constructor(ICurve _curve) public {
+    constructor(ICurve _curve, uint256 _cooldownTime) public {
         curve = _curve;
-        cooldownTime = 1 days;
+        cooldownTime = _cooldownTime;
 
         // fill the buffer
         uint256 curCrvBaseRate = curve.get_virtual_price();
@@ -85,7 +85,7 @@ contract CrvBaseRateOracle {
      * Notice that whether we are going to use the whole buffer or not
      * depends on value of timeToCover parameter.
      * @param timeToCover For how much time average should be calculated
-     * @return Average rate in percentage with precision
+     * @return Average rate in basis points
      */
     function calculateAverageRate(uint256 timeToCover) public view returns (uint256) {
         require(
