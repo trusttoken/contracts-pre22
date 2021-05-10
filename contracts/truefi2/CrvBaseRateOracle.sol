@@ -90,7 +90,7 @@ contract CrvBaseRateOracle {
     function calculateAverageRate(uint256 timeToCover) public view returns (uint256) {
         require(
             1 days <= timeToCover && timeToCover <= 365 days,
-            "CrvBaseRateOracle: Expected number of days from range 1 to 365"
+            "CrvBaseRateOracle: Expected amount of time in range 1 to 365 days"
         );
         // estimate how much buffer we need to use
         uint256 bufferSizeNeeded = timeToCover.div(cooldownTime);
@@ -106,9 +106,12 @@ contract CrvBaseRateOracle {
             uint256 dt = histBuffer.timestamps[idx].sub(histBuffer.timestamps[prevIdx]);
             sum = sum.add(histBuffer.baseRates[idx].mul(dt));
         }
+        uint256 curCrvBaseRate = curve.get_virtual_price();
+        uint256 curTimestamp = block.timestamp;
+        uint16 idx = iidx.add(BUFFER_SIZE).sub(1) % BUFFER_SIZE;
+        sum += curCrvBaseRate.mul(curTimestamp.sub(histBuffer.timestamps[idx]));
         // amount of time covered by the buffer
-        uint256 totalTime = histBuffer.timestamps[iidx.add(BUFFER_SIZE).sub(1) % BUFFER_SIZE]
-        .sub(histBuffer.timestamps[iidx]);
+        uint256 totalTime = curTimestamp.sub(histBuffer.timestamps[iidx]);
         return sum.mul(100_00).div(totalTime);
     }
 
