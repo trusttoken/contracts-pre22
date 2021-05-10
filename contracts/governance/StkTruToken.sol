@@ -8,7 +8,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {VoteToken} from "./VoteToken.sol";
 import {ITrueDistributor} from "../truefi/interface/ITrueDistributor.sol";
 import {StkClaimableContract} from "./common/StkClaimableContract.sol";
-import {IPauseableContract} from "../governance/interface/IPauseableContract.sol";
+import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 
 /**
  * @title stkTRU
