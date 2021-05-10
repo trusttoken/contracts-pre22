@@ -104,12 +104,18 @@ contract CrvBaseRateOracle {
             uint16 idx = uint16(iidx.add(BUFFER_SIZE).sub(i) % BUFFER_SIZE);
             uint16 prevIdx = uint16(iidx.add(BUFFER_SIZE).sub(i).sub(1) % BUFFER_SIZE);
             uint256 dt = histBuffer.timestamps[idx].sub(histBuffer.timestamps[prevIdx]);
-            sum = sum.add(histBuffer.baseRates[idx].mul(dt));
+            sum = sum.add(
+                histBuffer.baseRates[idx].add(histBuffer.baseRates[prevIdx])
+                    .mul(dt).div(2)
+            );
         }
         uint256 curCrvBaseRate = curve.get_virtual_price();
         uint256 curTimestamp = block.timestamp;
-        uint16 idx = iidx.add(BUFFER_SIZE).sub(1) % BUFFER_SIZE;
-        sum += curCrvBaseRate.mul(curTimestamp.sub(histBuffer.timestamps[idx]));
+        uint16 idx = uint16(iidx.add(BUFFER_SIZE).sub(1) % BUFFER_SIZE);
+        sum = sum.add(
+            curCrvBaseRate.add(histBuffer.baseRates[idx])
+                .mul(curTimestamp.sub(histBuffer.timestamps[idx])).div(2)
+        );
         // amount of time covered by the buffer
         uint256 totalTime = curTimestamp.sub(histBuffer.timestamps[iidx]);
         return sum.mul(100_00).div(totalTime);
