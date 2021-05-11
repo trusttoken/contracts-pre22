@@ -431,7 +431,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     /**
      * @dev Calculate interest that will be paid by this loan for an amount (returned funds included)
-     * amount + ((amount * apy * term) / (365 days / precision))
+     * amount + ((amount * apy * term) / 365 days / precision)
      * @param _amount amount
      * @return uint256 Amount of interest paid for _amount
      */
