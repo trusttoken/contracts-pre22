@@ -35,11 +35,14 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     using SafeERC20 for IERC20;
 
     uint128 public constant LAST_MINUTE_PAYBACK_DURATION = 1 days;
+    uint256 public constant APY_PRECISION = 10000;
 
     address public override borrower;
     address public liquidator;
     uint256 public override amount;
     uint256 public override term;
+
+    // apy precision: 10000 = 100%
     uint256 public override apy;
 
     uint256 public override start;
@@ -265,7 +268,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         }
 
         // assume year is 365 days
-        uint256 interest = amount.mul(apy).mul(passed).div(365 days).div(10000);
+        uint256 interest = amount.mul(apy).mul(passed).div(365 days).div(APY_PRECISION);
 
         return amount.add(interest).mul(_balance).div(debt);
     }
@@ -436,7 +439,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @return uint256 Amount of interest paid for _amount
      */
     function interest(uint256 _amount) internal view returns (uint256) {
-        return _amount.add(_amount.mul(apy).mul(term).div(365 days).div(10000));
+        return _amount.add(_amount.mul(apy).mul(term).div(365 days).div(APY_PRECISION));
     }
 
     /**
