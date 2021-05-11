@@ -34,7 +34,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     using SafeERC20 for IERC20;
     using OneInchExchange for I1Inch3;
 
-    uint256 public constant BASIS_PRECISION = 10000;
+    uint256 private constant BASIS_PRECISION = 10000;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
