@@ -16,6 +16,7 @@ import {
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
+import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
@@ -250,6 +251,11 @@ describe('PoolFactory', () => {
         .to.be.revertedWith('Ownable: caller is not the owner')
       await expect(factory.connect(owner).setTrueLender(trueLenderInstance2.address))
         .not.to.be.reverted
+    })
+
+    it('reverts when set to 0', async () => {
+      await expect(factory.setTrueLender(AddressZero))
+        .to.be.revertedWith('PoolFactory: TrueLender address cannot be set to 0')
     })
 
     it('sets new true lender contract', async () => {
