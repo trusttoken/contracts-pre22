@@ -118,21 +118,23 @@ contract CrvBaseRateOracle {
         return sum.mul(100_00).div(2).div(totalTime);
     }
 
-    function weeklyProfit() public view returns (uint256) {
-        uint256 avgRate = calculateAverageRate(7 days);
+    function weeklyProfit() public view returns (int256) {
+        int256 avgRate = int(calculateAverageRate(7 days));
         uint256 curCrvBaseRate = curve.get_virtual_price();
-        return avgRate.mul(7 days).div(curCrvBaseRate);
+        return (int256(curCrvBaseRate.mul(100_00)) - avgRate) * 7 days / avgRate;
     }
 
-    function monthlyProfit() public view returns (uint256) {
-        uint256 avgRate = calculateAverageRate(30 days);
-        uint256 curCrvBaseRate = curve.get_virtual_price();
-        return avgRate.mul(30 days).div(curCrvBaseRate);
-    }
+//    function monthlyProfit() public view returns (uint256) {
+//        uint256 avgRate = calculateAverageRate(30 days);
+//        uint256 curCrvBaseRate = curve.get_virtual_price();
+//        uint256 curCrvBaseRate = curve.get_virtual_price();
+//        return curCrvBaseRate.sub(avgRate).mul(30 days).div(curCrvBaseRate);
+//    }
 
-    function yearlyProfit() public view returns (uint256) {
-        uint256 avgRate = calculateAverageRate(365 days);
-        uint256 curCrvBaseRate = curve.get_virtual_price();
-        return avgRate.mul(365 days).div(curCrvBaseRate);
-    }
+//    function yearlyProfit() public view returns (uint256) {
+//        uint256 avgRate = calculateAverageRate(365 days);
+//        uint256 curCrvBaseRate = curve.get_virtual_price();
+//        uint256 curCrvBaseRate = curve.get_virtual_price();
+//        return curCrvBaseRate.sub(avgRate).mul(365 days).div(curCrvBaseRate);
+//    }
 }
