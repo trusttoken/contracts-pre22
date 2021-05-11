@@ -40,15 +40,10 @@ contract CrvBaseRateOracle {
         curve = _curve;
         cooldownTime = _cooldownTime;
 
-        // fill the buffer
-        uint256 curCrvBaseRate = curve.get_virtual_price();
-        uint256 curTimestamp = block.timestamp;
-        for (uint16 i = 0; i < BUFFER_SIZE; i++) {
-            histBuffer.baseRates[i] = curCrvBaseRate;
-            histBuffer.timestamps[i] = curTimestamp;
-        }
-        // prevent first calculateAverageRate call from division by zero
-        histBuffer.timestamps[0] = histBuffer.timestamps[0].sub(1);
+        // fill one field up of the historical buffer
+        // so the first calculateAverageRate call won't return 0
+        histBuffer.baseRates[BUFFER_SIZE - 1] = curve.get_virtual_price();
+        histBuffer.timestamps[BUFFER_SIZE - 1] = block.timestamp;
     }
 
     /**
@@ -100,25 +95,27 @@ contract CrvBaseRateOracle {
         );
         uint16 iidx = histBuffer.insertIndex;
         uint256 sum;
+        uint256 totalTime;
         for (uint16 i = 1; i < bufferSizeNeeded; i++) {
-            uint16 idx = uint16(iidx.add(BUFFER_SIZE).sub(i) % BUFFER_SIZE);
             uint16 prevIdx = uint16(iidx.add(BUFFER_SIZE).sub(i).sub(1) % BUFFER_SIZE);
+            if (histBuffer.timestamps[prevIdx] == 0)
+                break;
+            uint16 idx = uint16(iidx.add(BUFFER_SIZE).sub(i) % BUFFER_SIZE);
             uint256 dt = histBuffer.timestamps[idx].sub(histBuffer.timestamps[prevIdx]);
             sum = sum.add(
-                histBuffer.baseRates[idx].add(histBuffer.baseRates[prevIdx])
-                    .mul(dt).div(2)
+                histBuffer.baseRates[idx].add(histBuffer.baseRates[prevIdx]).mul(dt)
             );
+            totalTime = totalTime.add(dt);
         }
         uint256 curCrvBaseRate = curve.get_virtual_price();
         uint256 curTimestamp = block.timestamp;
         uint16 idx = uint16(iidx.add(BUFFER_SIZE).sub(1) % BUFFER_SIZE);
         sum = sum.add(
             curCrvBaseRate.add(histBuffer.baseRates[idx])
-                .mul(curTimestamp.sub(histBuffer.timestamps[idx])).div(2)
+                .mul(curTimestamp.sub(histBuffer.timestamps[idx]))
         );
-        // amount of time covered by the buffer
-        uint256 totalTime = curTimestamp.sub(histBuffer.timestamps[iidx]);
-        return sum.mul(100_00).div(totalTime);
+        totalTime = totalTime.add(curTimestamp.sub(histBuffer.timestamps[idx]));
+        return sum.mul(100_00).div(2).div(totalTime);
     }
 
     function weeklyProfit() public view returns (uint256) {
