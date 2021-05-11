@@ -38,7 +38,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    mapping(ITrueFiPool2 => ILoanToken2[]) poolLoans;
+    mapping(ITrueFiPool2 => ILoanToken2[]) public poolLoans;
 
     // maximum amount of loans lender can handle at once
     uint256 public maxLoans;
