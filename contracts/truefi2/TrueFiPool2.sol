@@ -555,10 +555,10 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @return amount minted from this transaction
      */
     function mint(uint256 depositedAmount) internal returns (uint256) {
-        uint256 mintedAmount = depositedAmount;
-        if (mintedAmount == 0) {
-            return mintedAmount;
+        if (depositedAmount == 0) {
+            return depositedAmount;
         }
+        uint256 mintedAmount = depositedAmount;
 
         // first staker mints same amount deposited
         if (totalSupply() > 0) {
