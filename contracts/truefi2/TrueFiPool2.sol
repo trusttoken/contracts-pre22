@@ -323,6 +323,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param newBeneficiary new beneficiary
      */
     function setBeneficiary(address newBeneficiary) external onlyOwner {
+        require(newBeneficiary != address(0), "TrueFiPool: Beneficiary address cannot be set to 0");
         beneficiary = newBeneficiary;
         emit BeneficiaryChanged(newBeneficiary);
     }

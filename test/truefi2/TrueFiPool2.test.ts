@@ -323,7 +323,13 @@ describe('TrueFiPool2', () => {
     })
 
     it('reverts when called not by owner', async () => {
-      await expect(pool.connect(borrower).setBeneficiary(owner.address)).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(pool.connect(borrower).setBeneficiary(owner.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to 0', async () => {
+      await expect(pool.setBeneficiary(AddressZero))
+        .to.be.revertedWith('TrueFiPool: Beneficiary address cannot be set to 0')
     })
   })
 
