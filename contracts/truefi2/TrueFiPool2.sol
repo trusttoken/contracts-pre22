@@ -34,6 +34,8 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     using SafeERC20 for IERC20;
     using OneInchExchange for I1Inch3;
 
+    uint256 public constant BASIS_PRECISION = 10000;
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -48,6 +50,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     ITrueLender2 public lender;
 
     // fee for deposits
+    // fee precision: 10000 = 100%
     uint256 public joiningFee;
     // track claimable fees
     uint256 public claimableFees;
@@ -310,7 +313,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param fee new fee
      */
     function setJoiningFee(uint256 fee) external onlyOwner {
-        require(fee <= 10000, "TrueFiPool: Fee cannot exceed transaction value");
+        require(fee <= BASIS_PRECISION, "TrueFiPool: Fee cannot exceed transaction value");
         joiningFee = fee;
         emit JoiningFeeChanged(fee);
     }
@@ -329,7 +332,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param amount amount of token to deposit
      */
     function join(uint256 amount) external override joiningNotPaused {
-        uint256 fee = amount.mul(joiningFee).div(10000);
+        uint256 fee = amount.mul(joiningFee).div(BASIS_PRECISION);
         uint256 mintedAmount = mint(amount.sub(fee));
         claimableFees = claimableFees.add(fee);
 
@@ -379,7 +382,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         require(amount <= balanceOf(msg.sender), "TrueFiPool: Insufficient funds");
 
         uint256 amountToWithdraw = poolValue().mul(amount).div(totalSupply());
-        amountToWithdraw = amountToWithdraw.mul(liquidExitPenalty(amountToWithdraw)).div(10000);
+        amountToWithdraw = amountToWithdraw.mul(liquidExitPenalty(amountToWithdraw)).div(BASIS_PRECISION);
         require(amountToWithdraw <= liquidValue(), "TrueFiPool: Not enough liquidity in pool");
 
         // burn tokens sent
@@ -394,17 +397,17 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
     /**
      * @dev Penalty (in % * 100) applied if liquid exit is performed with this amount
-     * returns 10000 if no penalty
+     * returns BASIS_PRECISION (10000) if no penalty
      */
     function liquidExitPenalty(uint256 amount) public view returns (uint256) {
         uint256 lv = liquidValue();
         uint256 pv = poolValue();
         if (amount == pv) {
-            return 10000;
+            return BASIS_PRECISION;
         }
-        uint256 liquidRatioBefore = lv.mul(10000).div(pv);
-        uint256 liquidRatioAfter = lv.sub(amount).mul(10000).div(pv.sub(amount));
-        return uint256(10000).sub(averageExitPenalty(liquidRatioAfter, liquidRatioBefore));
+        uint256 liquidRatioBefore = lv.mul(BASIS_PRECISION).div(pv);
+        uint256 liquidRatioAfter = lv.sub(amount).mul(BASIS_PRECISION).div(pv.sub(amount));
+        return uint256(BASIS_PRECISION).sub(averageExitPenalty(liquidRatioAfter, liquidRatioBefore));
     }
 
     /**
@@ -420,7 +423,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      */
     function averageExitPenalty(uint256 from, uint256 to) public pure returns (uint256) {
         require(from <= to, "TrueFiPool: To precedes from");
-        if (from == 10000) {
+        if (from == BASIS_PRECISION) {
             // When all liquid, don't penalize
             return 0;
         }
