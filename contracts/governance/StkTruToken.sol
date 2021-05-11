@@ -24,8 +24,8 @@ import {IPauseableContract} from "../governance/interface/IPauseableContract.sol
 contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-    uint256 constant PRECISION = 1e30;
-    uint256 constant MIN_DISTRIBUTED_AMOUNT = 100e8;
+    uint256 public constant PRECISION = 1e30;
+    uint256 public constant MIN_DISTRIBUTED_AMOUNT = 100e8;
 
     struct FarmRewards {
         // track overall cumulative rewards
@@ -57,7 +57,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
 
     uint256 public stakeSupply;
 
-    mapping(address => uint256) cooldowns;
+    mapping(address => uint256) private cooldowns;
     uint256 public cooldownTime;
     uint256 public unstakePeriodDuration;
 
