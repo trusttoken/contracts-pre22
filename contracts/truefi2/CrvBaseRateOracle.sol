@@ -3,6 +3,7 @@ pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import "../truefi/interface/ICurve.sol";
+import "hardhat/console.sol";
 
 // prettier-ignore
 contract CrvBaseRateOracle {
@@ -70,13 +71,13 @@ contract CrvBaseRateOracle {
      * the time-weighted average of the curve virtual prices.
      * Formula is given below:
      *
-     *           sum_{i=1}^{n - 1} v_i * (t_i - t_{i-1})
-     * avgRate = ---------------------------------------
-     *                      (t_{n-1} - t_0)
+     *           (v + v_{n-1}) / 2 + sum_{i=1}^{n - 1} (v_i + v_{i-1}) / 2 * (t_i - t_{i-1})
+     * avgRate = ---------------------------------------------------------------------------
+     *                                           (t - t_0)
      *
      * where v_i, t_i are values of the prices and their respective timestamps
-     * stored in the historical buffer. Index n-1 corresponds to the most
-     * recent values and index 0 to the oldest ones.
+     * stored in the historical buffer, v is a value of current price ant t is its timestamp.
+     * Index n-1 corresponds to the most recent values and index 0 to the oldest ones.
      * Notice that whether we are going to use the whole buffer or not
      * depends on value of timeToCover parameter.
      * @param timeToCover For how much time average should be calculated
@@ -118,6 +119,10 @@ contract CrvBaseRateOracle {
         return sum.mul(100_00).div(2).div(totalTime);
     }
 
+    /**
+     * @dev Profit in 7 days based on
+     * average rate from collected data from last 7 days
+     */
     function weeklyProfit() public view returns (int256) {
         int256 avgRate = int(calculateAverageRate(7 days));
         uint256 curCrvBaseRate = curve.get_virtual_price();
