@@ -312,7 +312,13 @@ describe('TrueFiPool2', () => {
     })
 
     it('reverts when called not by owner', async () => {
-      await expect(pool.connect(borrower).setOracle(oracle)).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(pool.connect(borrower).setOracle(oracle))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to 0', async () => {
+      await expect(pool.setOracle(AddressZero))
+        .to.be.revertedWith('TrueFiPool: Oracle address cannot be set to 0')
     })
   })
 

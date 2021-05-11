@@ -527,6 +527,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev Change oracle, can only be called by owner
      */
     function setOracle(ITrueFiPoolOracle newOracle) external onlyOwner {
+        require(address(newOracle) != address(0), "TrueFiPool: Oracle address cannot be set to 0");
         oracle = newOracle;
         emit OracleChanged(newOracle);
     }
