@@ -26,9 +26,9 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     using OneInchExchange for I1Inch3;
 
     // Number of tokens in Curve yPool
-    uint8 constant N_TOKENS = 4;
+    uint8 public constant N_TOKENS = 4;
     // Max slippage during uniswap sell
-    uint256 constant MAX_PRICE_SLIPPAGE = 300; // 3%
+    uint256 public constant MAX_PRICE_SLIPPAGE = 300; // 3%
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
