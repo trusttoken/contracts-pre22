@@ -21,7 +21,7 @@ import {ITrueMultiFarm} from "./interface/ITrueMultiFarm.sol";
 contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-    uint256 constant PRECISION = 1e30;
+    uint256 private constant PRECISION = 1e30;
 
     struct Stakes {
         // total amount of a particular token staked
