@@ -12,7 +12,7 @@ pragma solidity ^0.6.10;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
-import {IPauseableContract} from "./interface/IPauseableContract.sol";
+import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 
 contract Timelock is UpgradeableClaimable {
     using SafeMath for uint;

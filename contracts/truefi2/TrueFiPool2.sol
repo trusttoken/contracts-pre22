@@ -11,6 +11,7 @@ import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
@@ -29,7 +30,7 @@ import {OneInchExchange} from "./libraries/OneInchExchange.sol";
  *
  * Funds are managed through an external function to save gas on deposits
  */
-contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
+contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, Claimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using OneInchExchange for I1Inch3;
@@ -62,7 +63,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     ITrueFiPoolOracle public override oracle;
 
     // allow pausing of deposits
-    bool public isJoiningPaused;
+    bool public pauseStatus;
 
     // cache values during sync for gas optimization
     bool private inSync;
@@ -175,16 +176,16 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     event Collected(address indexed beneficiary, uint256 amount);
 
     /**
-     * @dev Emitted when joining is paused or unpaused
-     * @param isJoiningPaused New pausing status
-     */
-    event JoiningPauseStatusChanged(bool isJoiningPaused);
-
-    /**
      * @dev Emitted when strategy is switched
      * @param newStrategy Strategy to switch to
      */
     event StrategySwitched(ITrueStrategy newStrategy);
+
+    /**
+     * @dev Emitted when joining is paused or unpaused
+     * @param pauseStatus New pausing status
+     */
+    event PauseStatusChanged(bool pauseStatus);
 
     /**
      * @dev only lender can perform borrowing or repaying
@@ -198,7 +199,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev pool can only be joined when it's unpaused
      */
     modifier joiningNotPaused() {
-        require(!isJoiningPaused, "TrueFiPool: Joining the pool is paused");
+        require(!pauseStatus, "TrueFiPool: Joining the pool is paused");
         _;
     }
 
@@ -223,9 +224,9 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev Allow pausing of deposits in case of emergency
      * @param status New deposit status
      */
-    function changeJoiningPauseStatus(bool status) external onlyOwner {
-        isJoiningPaused = status;
-        emit JoiningPauseStatusChanged(status);
+    function setPauseStatus(bool status) external override onlyOwner {
+        pauseStatus = status;
+        emit PauseStatusChanged(status);
     }
 
     /**

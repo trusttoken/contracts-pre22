@@ -9,7 +9,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {VoteToken} from "./VoteToken.sol";
 import {ITrueDistributor} from "../truefi/interface/ITrueDistributor.sol";
 import {StkClaimableContract} from "./common/StkClaimableContract.sol";
-import {IPauseableContract} from "../governance/interface/IPauseableContract.sol";
+import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 
 /**
  * @title stkTRU
