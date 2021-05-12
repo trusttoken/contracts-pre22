@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.10;
 
-import {IPauseableContract} from "../interface/IPauseableContract.sol";
+import {IPauseableContract} from "../../common/interface/IPauseableContract.sol";
 
 contract MockPauseableContract is IPauseableContract {
     bool public pauseStatus;
