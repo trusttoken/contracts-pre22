@@ -4,11 +4,12 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {VoteToken} from "./VoteToken.sol";
 import {ITrueDistributor} from "../truefi/interface/ITrueDistributor.sol";
 import {StkClaimableContract} from "./common/StkClaimableContract.sol";
-import {IPauseableContract} from "../governance/interface/IPauseableContract.sol";
+import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 
 /**
  * @title stkTRU
@@ -22,8 +23,9 @@ import {IPauseableContract} from "../governance/interface/IPauseableContract.sol
  */
 contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, ReentrancyGuard {
     using SafeMath for uint256;
-    uint256 constant PRECISION = 1e30;
-    uint256 constant MIN_DISTRIBUTED_AMOUNT = 100e8;
+    using SafeERC20 for IERC20;
+    uint256 private constant PRECISION = 1e30;
+    uint256 private constant MIN_DISTRIBUTED_AMOUNT = 100e8;
 
     struct FarmRewards {
         // track overall cumulative rewards
@@ -55,7 +57,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
 
     uint256 public stakeSupply;
 
-    mapping(address => uint256) cooldowns;
+    mapping(address => uint256) private cooldowns;
     uint256 public cooldownTime;
     uint256 public unstakePeriodDuration;
 
@@ -261,7 +263,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      */
     function stake(uint256 amount) external distribute update(msg.sender) joiningNotPaused {
         _stakeWithoutTransfer(amount);
-        require(tru.transferFrom(msg.sender, address(this), amount));
+        tru.safeTransferFrom(msg.sender, address(this), amount);
     }
 
     /**
@@ -285,7 +287,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         _burn(msg.sender, amount);
         stakeSupply = stakeSupply.sub(amountToTransfer);
 
-        tru.transfer(msg.sender, amountToTransfer);
+        tru.safeTransfer(msg.sender, amountToTransfer);
 
         emit Unstake(msg.sender, amount);
     }
@@ -306,7 +308,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      */
     function withdraw(uint256 amount) external onlyLiquidator {
         stakeSupply = stakeSupply.sub(amount);
-        tru.transfer(liquidator, amount);
+        tru.safeTransfer(liquidator, amount);
 
         emit Withdraw(amount);
     }
@@ -331,7 +333,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         require(endTime < type(uint64).max, "StkTruToken: time overflow");
         require(amount < type(uint96).max, "StkTruToken: amount overflow");
 
-        require(tfusd.transferFrom(msg.sender, address(this), amount));
+        tfusd.safeTransferFrom(msg.sender, address(this), amount);
         undistributedTfusdRewards = undistributedTfusdRewards.add(amount.div(2));
         scheduledRewards.push(ScheduledTfUsdRewards({amount: uint96(amount.div(2)), timestamp: uint64(endTime)}));
 
@@ -367,7 +369,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         uint256 amount = _claimWithoutTransfer(tru).add(extraStakeAmount);
         _stakeWithoutTransfer(amount);
         if (extraStakeAmount > 0) {
-            require(tru.transferFrom(msg.sender, address(this), extraStakeAmount));
+            tru.safeTransferFrom(msg.sender, address(this), extraStakeAmount);
         }
     }
 
@@ -480,7 +482,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     function _claim(IERC20 token) internal {
         uint256 rewardToClaim = _claimWithoutTransfer(token);
         if (rewardToClaim > 0) {
-            require(token.transfer(msg.sender, rewardToClaim));
+            token.safeTransfer(msg.sender, rewardToClaim);
         }
     }
 

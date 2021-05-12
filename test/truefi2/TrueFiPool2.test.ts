@@ -131,35 +131,35 @@ describe('TrueFiPool2', () => {
     await expect(arbitrage.joinExit(pool.address)).to.be.revertedWith('TrueFiPool: Cannot join and exit in same block')
   })
 
-  describe('changeJoiningPauseStatus', () => {
+  describe('setPauseStatus', () => {
     it('can be called by owner', async () => {
-      await expect(pool.changeJoiningPauseStatus(true))
+      await expect(pool.setPauseStatus(true))
         .not.to.be.reverted
-      await expect(pool.changeJoiningPauseStatus(false))
+      await expect(pool.setPauseStatus(false))
         .not.to.be.reverted
     })
 
     it('cannot be called by unauthorized address', async () => {
-      await expect(pool.connect(borrower).changeJoiningPauseStatus(true))
+      await expect(pool.connect(borrower).setPauseStatus(true))
         .to.be.revertedWith('Ownable: caller is not the owner')
-      await expect(pool.connect(borrower).changeJoiningPauseStatus(false))
+      await expect(pool.connect(borrower).setPauseStatus(false))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('properly changes pausing status', async () => {
-      expect(await pool.isJoiningPaused()).to.be.false
-      await pool.changeJoiningPauseStatus(true)
-      expect(await pool.isJoiningPaused()).to.be.true
-      await pool.changeJoiningPauseStatus(false)
-      expect(await pool.isJoiningPaused()).to.be.false
+      expect(await pool.pauseStatus()).to.be.false
+      await pool.setPauseStatus(true)
+      expect(await pool.pauseStatus()).to.be.true
+      await pool.setPauseStatus(false)
+      expect(await pool.pauseStatus()).to.be.false
     })
 
     it('emits proper event', async () => {
-      await expect(pool.changeJoiningPauseStatus(true))
-        .to.emit(pool, 'JoiningPauseStatusChanged')
+      await expect(pool.setPauseStatus(true))
+        .to.emit(pool, 'PauseStatusChanged')
         .withArgs(true)
-      await expect(pool.changeJoiningPauseStatus(false))
-        .to.emit(pool, 'JoiningPauseStatusChanged')
+      await expect(pool.setPauseStatus(false))
+        .to.emit(pool, 'PauseStatusChanged')
         .withArgs(false)
     })
   })
@@ -312,7 +312,8 @@ describe('TrueFiPool2', () => {
     })
 
     it('reverts when called not by owner', async () => {
-      await expect(pool.connect(borrower).setOracle(oracle)).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(pool.connect(borrower).setOracle(oracle))
+        .to.be.revertedWith('Ownable: caller is not the owner')
     })
   })
 
@@ -323,7 +324,13 @@ describe('TrueFiPool2', () => {
     })
 
     it('reverts when called not by owner', async () => {
-      await expect(pool.connect(borrower).setBeneficiary(owner.address)).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(pool.connect(borrower).setBeneficiary(owner.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to 0', async () => {
+      await expect(pool.setBeneficiary(AddressZero))
+        .to.be.revertedWith('TrueFiPool: Beneficiary address cannot be set to 0')
     })
   })
 
@@ -337,7 +344,7 @@ describe('TrueFiPool2', () => {
 
     it('does not allow to join when joining is paused', async () => {
       await tusd.approve(pool.address, parseEth(1e6))
-      await pool.changeJoiningPauseStatus(true)
+      await pool.setPauseStatus(true)
       await expect(pool.join(parseEth(1e6)))
         .to.be.revertedWith('TrueFiPool: Joining the pool is paused')
     })

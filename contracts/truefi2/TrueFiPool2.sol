@@ -11,6 +11,7 @@ import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
@@ -20,7 +21,7 @@ import {OneInchExchange} from "./libraries/OneInchExchange.sol";
  * @dev Lending pool which may use a strategy to store idle funds
  * Earn high interest rates on currency deposits through uncollateralized loans
  *
- * Funds deposited in this pool are not fully liquid. Liquidity
+ * Funds deposited in this pool are not fully liquid.
  * Exiting the pool has 2 options:
  * - withdraw a basket of LoanTokens backing the pool
  * - take an exit penalty depending on pool liquidity
@@ -29,10 +30,12 @@ import {OneInchExchange} from "./libraries/OneInchExchange.sol";
  *
  * Funds are managed through an external function to save gas on deposits
  */
-contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
+contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, Claimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using OneInchExchange for I1Inch3;
+
+    uint256 private constant BASIS_PRECISION = 10000;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -48,6 +51,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     ITrueLender2 public lender;
 
     // fee for deposits
+    // fee precision: 10000 = 100%
     uint256 public joiningFee;
     // track claimable fees
     uint256 public claimableFees;
@@ -59,7 +63,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     ITrueFiPoolOracle public override oracle;
 
     // allow pausing of deposits
-    bool public isJoiningPaused;
+    bool public pauseStatus;
 
     // cache values during sync for gas optimization
     bool private inSync;
@@ -139,16 +143,16 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     event Exited(address indexed staker, uint256 amount);
 
     /**
-     * @dev Emitted when funds are flushed into curve.fi
+     * @dev Emitted when funds are flushed into the strategy
      * @param currencyAmount Amount of tokens deposited
      */
     event Flushed(uint256 currencyAmount);
 
     /**
-     * @dev Emitted when funds are pulled from curve.fi
-     * @param yAmount Amount of pool tokens
+     * @dev Emitted when funds are pulled from the strategy
+     * @param minTokenAmount Minimal expected amount received tokens
      */
-    event Pulled(uint256 yAmount);
+    event Pulled(uint256 minTokenAmount);
 
     /**
      * @dev Emitted when funds are borrowed from pool
@@ -172,16 +176,16 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     event Collected(address indexed beneficiary, uint256 amount);
 
     /**
-     * @dev Emitted when joining is paused or unpaused
-     * @param isJoiningPaused New pausing status
-     */
-    event JoiningPauseStatusChanged(bool isJoiningPaused);
-
-    /**
      * @dev Emitted when strategy is switched
      * @param newStrategy Strategy to switch to
      */
     event StrategySwitched(ITrueStrategy newStrategy);
+
+    /**
+     * @dev Emitted when joining is paused or unpaused
+     * @param pauseStatus New pausing status
+     */
+    event PauseStatusChanged(bool pauseStatus);
 
     /**
      * @dev only lender can perform borrowing or repaying
@@ -195,7 +199,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev pool can only be joined when it's unpaused
      */
     modifier joiningNotPaused() {
-        require(!isJoiningPaused, "TrueFiPool: Joining the pool is paused");
+        require(!pauseStatus, "TrueFiPool: Joining the pool is paused");
         _;
     }
 
@@ -220,9 +224,9 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @dev Allow pausing of deposits in case of emergency
      * @param status New deposit status
      */
-    function changeJoiningPauseStatus(bool status) external onlyOwner {
-        isJoiningPaused = status;
-        emit JoiningPauseStatusChanged(status);
+    function setPauseStatus(bool status) external override onlyOwner {
+        pauseStatus = status;
+        emit PauseStatusChanged(status);
     }
 
     /**
@@ -234,7 +238,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     }
 
     /**
-     * @dev Value of funds deposited into the strategy valuated in pool's token
+     * @dev Value of funds deposited into the strategy denominated in underlying token
      * @return Virtual value of strategy
      */
     function strategyValue() public view returns (uint256) {
@@ -248,9 +252,9 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     }
 
     /**
-     * @dev Calculate pool value in TUSD
-     * "virtual price" of entire pool - LoanTokens, TUSD, curve y pool tokens
-     * @return pool value in USD
+     * @dev Calculate pool value in underlying token
+     * "virtual price" of entire pool - LoanTokens, UnderlyingTokens, strategy value
+     * @return pool value denominated in underlying token
      */
     function poolValue() public view returns (uint256) {
         // this assumes defaulted loans are worth their full value
@@ -259,15 +263,15 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
     /**
      * @dev Get total balance of stake tokens
-     * @return Balance of stake tokens in this contract
+     * @return Balance of stake tokens denominated in this contract
      */
     function liquidationTokenBalance() public view returns (uint256) {
         return liquidationToken.balanceOf(address(this));
     }
 
     /**
-     * @dev Price of TRU in USD
-     * @return Oracle price of TRU in USD
+     * @dev Price of TRU denominated in underlying tokens
+     * @return Oracle price of TRU in underlying tokens
      */
     function liquidationTokenValue() public view returns (uint256) {
         uint256 balance = liquidationTokenBalance();
@@ -292,7 +296,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
     /**
      * @dev ensure enough tokens are available
-     * Check if current available amount of TUSD is enough and
+     * Check if current available amount of `token` is enough and
      * withdraw remainder from strategy
      * @param neededAmount amount required
      */
@@ -310,7 +314,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param fee new fee
      */
     function setJoiningFee(uint256 fee) external onlyOwner {
-        require(fee <= 10000, "TrueFiPool: Fee cannot exceed transaction value");
+        require(fee <= BASIS_PRECISION, "TrueFiPool: Fee cannot exceed transaction value");
         joiningFee = fee;
         emit JoiningFeeChanged(fee);
     }
@@ -320,6 +324,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param newBeneficiary new beneficiary
      */
     function setBeneficiary(address newBeneficiary) external onlyOwner {
+        require(newBeneficiary != address(0), "TrueFiPool: Beneficiary address cannot be set to 0");
         beneficiary = newBeneficiary;
         emit BeneficiaryChanged(newBeneficiary);
     }
@@ -329,7 +334,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @param amount amount of token to deposit
      */
     function join(uint256 amount) external override joiningNotPaused {
-        uint256 fee = amount.mul(joiningFee).div(10000);
+        uint256 fee = amount.mul(joiningFee).div(BASIS_PRECISION);
         uint256 mintedAmount = mint(amount.sub(fee));
         claimableFees = claimableFees.add(fee);
 
@@ -370,16 +375,16 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
     /**
      * @dev Exit pool only with liquid tokens
-     * This function will withdraw TUSD but with a small penalty
-     * Uses the sync() modifier to reduce gas costs of using curve
-     * @param amount amount of pool tokens to redeem for underlying tokens
+     * This function will only transfer underlying token but with a small penalty
+     * Uses the sync() modifier to reduce gas costs of using strategy and lender
+     * @param amount amount of pool liquidity tokens to redeem for underlying tokens
      */
     function liquidExit(uint256 amount) external sync {
         require(block.number != latestJoinBlock[tx.origin], "TrueFiPool: Cannot join and exit in same block");
         require(amount <= balanceOf(msg.sender), "TrueFiPool: Insufficient funds");
 
         uint256 amountToWithdraw = poolValue().mul(amount).div(totalSupply());
-        amountToWithdraw = amountToWithdraw.mul(liquidExitPenalty(amountToWithdraw)).div(10000);
+        amountToWithdraw = amountToWithdraw.mul(liquidExitPenalty(amountToWithdraw)).div(BASIS_PRECISION);
         require(amountToWithdraw <= liquidValue(), "TrueFiPool: Not enough liquidity in pool");
 
         // burn tokens sent
@@ -394,17 +399,17 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
     /**
      * @dev Penalty (in % * 100) applied if liquid exit is performed with this amount
-     * returns 10000 if no penalty
+     * returns BASIS_PRECISION (10000) if no penalty
      */
     function liquidExitPenalty(uint256 amount) public view returns (uint256) {
         uint256 lv = liquidValue();
         uint256 pv = poolValue();
         if (amount == pv) {
-            return 10000;
+            return BASIS_PRECISION;
         }
-        uint256 liquidRatioBefore = lv.mul(10000).div(pv);
-        uint256 liquidRatioAfter = lv.sub(amount).mul(10000).div(pv.sub(amount));
-        return uint256(10000).sub(averageExitPenalty(liquidRatioAfter, liquidRatioBefore));
+        uint256 liquidRatioBefore = lv.mul(BASIS_PRECISION).div(pv);
+        uint256 liquidRatioAfter = lv.sub(amount).mul(BASIS_PRECISION).div(pv.sub(amount));
+        return BASIS_PRECISION.sub(averageExitPenalty(liquidRatioAfter, liquidRatioBefore));
     }
 
     /**
@@ -420,7 +425,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      */
     function averageExitPenalty(uint256 from, uint256 to) public pure returns (uint256) {
         require(from <= to, "TrueFiPool: To precedes from");
-        if (from == 10000) {
+        if (from == BASIS_PRECISION) {
             // When all liquid, don't penalize
             return 0;
         }
@@ -432,7 +437,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
 
     /**
      * @dev Deposit idle funds into strategy
-     * @param amount Amount of funds to deposit into curve
+     * @param amount Amount of funds to deposit into strategy
      */
     function flush(uint256 amount) external {
         require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
@@ -460,7 +465,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
     }
 
     /**
-     * @dev Remove liquidity from curve if necessary and transfer to lender
+     * @dev Remove liquidity from strategy if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
     function borrow(uint256 amount) external override onlyLender {
@@ -509,14 +514,14 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         ITrueStrategy previousStrategy = strategy;
         strategy = newStrategy;
 
-        emit StrategySwitched(newStrategy);
-
         if (address(previousStrategy) != address(0)) {
             uint256 expectedMinCurrencyBalance = currencyBalance().add(withToleratedSlippage(previousStrategy.value()));
             previousStrategy.withdrawAll();
             require(currencyBalance() >= expectedMinCurrencyBalance, "TrueFiPool: All funds should be withdrawn to pool");
             require(previousStrategy.value() == 0, "TrueFiPool: Switched strategy should be depleted");
         }
+
+        emit StrategySwitched(newStrategy);
     }
 
     /**
@@ -538,7 +543,7 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
         require(balanceDiff >= withToleratedSlippage(expectedGain), "TrueFiPool: Not optimal exchange");
 
         require(swap.srcToken == address(liquidationToken), "TrueFiPool: Source token is not TRU");
-        require(swap.dstToken == address(token), "TrueFiPool: Destination token is not TUSD");
+        require(swap.dstToken == address(token), "TrueFiPool: Invalid destination token");
         require(swap.dstReceiver == address(this), "TrueFiPool: Receiver is not pool");
     }
 
@@ -555,16 +560,16 @@ contract TrueFiPool2 is ITrueFiPool2, ERC20, Claimable {
      * @return amount minted from this transaction
      */
     function mint(uint256 depositedAmount) internal returns (uint256) {
-        uint256 mintedAmount = depositedAmount;
-        if (mintedAmount == 0) {
-            return mintedAmount;
+        if (depositedAmount == 0) {
+            return depositedAmount;
         }
+        uint256 mintedAmount = depositedAmount;
 
-        // first staker mints same amount deposited
+        // first staker mints same amount as deposited
         if (totalSupply() > 0) {
             mintedAmount = totalSupply().mul(depositedAmount).div(poolValue());
         }
-        // mint pool tokens
+        // mint pool liquidity tokens
         _mint(msg.sender, mintedAmount);
 
         return mintedAmount;

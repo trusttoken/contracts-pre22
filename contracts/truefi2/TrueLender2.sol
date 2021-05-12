@@ -38,7 +38,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    mapping(ITrueFiPool2 => ILoanToken2[]) poolLoans;
+    mapping(ITrueFiPool2 => ILoanToken2[]) public poolLoans;
 
     // maximum amount of loans lender can handle at once
     uint256 public maxLoans;
@@ -311,14 +311,14 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         ILoanToken2 loanToken,
         ITrueFiPool2 pool,
         bytes calldata data
-    ) internal returns (uint256 fundsReclaimed) {
+    ) internal returns (uint256) {
         // call redeem function on LoanToken
         uint256 balanceBefore = pool.token().balanceOf(address(this));
         loanToken.redeem(loanToken.balanceOf(address(this)));
         uint256 balanceAfter = pool.token().balanceOf(address(this));
 
         // gets reclaimed amount and pays back to pool
-        fundsReclaimed = balanceAfter.sub(balanceBefore);
+        uint256 fundsReclaimed = balanceAfter.sub(balanceBefore);
 
         uint256 feeAmount = 0;
         if (address(feeToken) != address(0)) {
@@ -333,6 +333,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
             // join pool and reward stakers
             _transferFeeToStakers();
         }
+        return fundsReclaimed;
     }
 
     /// @dev Swap `token` for `feeToken` on 1inch
@@ -340,8 +341,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         IERC20 token,
         ILoanToken2 loanToken,
         bytes calldata data
-    ) internal returns (uint256 feeAmount) {
-        feeAmount = loanToken.debt().sub(loanToken.amount()).mul(fee).div(BASIS_RATIO);
+    ) internal returns (uint256) {
+        uint256 feeAmount = loanToken.debt().sub(loanToken.amount()).mul(fee).div(BASIS_RATIO);
         if (token == feeToken) {
             return feeAmount;
         }
@@ -358,6 +359,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         require(swap.dstReceiver == address(this), "TrueLender: Receiver is not lender");
         require(swap.amount == feeAmount, "TrueLender: Incorrect fee swap amount");
         require(swap.flags & ONE_INCH_PARTIAL_FILL_FLAG == 0, "TrueLender: Partial fill is not allowed");
+
+        return feeAmount;
     }
 
     /// @dev Deposit feeToken to pool and transfer LP tokens to the stakers
