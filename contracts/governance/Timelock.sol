@@ -12,6 +12,7 @@ pragma solidity ^0.6.10;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
+import {ImplementationReference} from "../proxy/ImplementationReference.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 
 contract Timelock is UpgradeableClaimable {
@@ -43,7 +44,8 @@ contract Timelock is UpgradeableClaimable {
     event NewPauser(address indexed newPauser);
     event NewPendingAdmin(address indexed newPendingAdmin);
     event NewDelay(uint indexed newDelay);
-    event EmergencyPause(OwnedUpgradeabilityProxy proxy);
+    event EmergencyPauseProxy(OwnedUpgradeabilityProxy proxy);
+    event EmergencyPauseReference(ImplementationReference implementationReference);
     event PauseStatusChanged(address pauseContract, bool status);
     event CancelTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
     event ExecuteTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
@@ -89,13 +91,25 @@ contract Timelock is UpgradeableClaimable {
      * Upgrades a proxy to the zero address in order to emergency pause
      * @param proxy Proxy to upgrade to zero address
      */
-    function emergencyPause(OwnedUpgradeabilityProxy proxy) external {
-        require(msg.sender == address(this) || msg.sender == pauser, "Timelock::emergencyPause: Call must come from Timelock or pauser.");
-        require(address(proxy) != address(this), "Timelock::emergencyPause: Cannot pause Timelock.");
-        require(address(proxy) != address(admin), "Timelock:emergencyPause: Cannot pause admin.");
+    function emergencyPauseProxy(OwnedUpgradeabilityProxy proxy) external {
+        require(msg.sender == address(this) || msg.sender == pauser, "Timelock::emergencyPauseProxy: Call must come from Timelock or pauser.");
+        require(address(proxy) != address(this), "Timelock::emergencyPauseProxy: Cannot pause Timelock.");
+        require(address(proxy) != address(admin), "Timelock:emergencyPauseProxy: Cannot pause admin.");
         proxy.upgradeTo(address(0));
 
-        emit EmergencyPause(proxy);
+        emit EmergencyPauseProxy(proxy);
+    }
+
+    /**
+     * @dev Emergency pause a proxy with reference owned by this contract
+     * Upgrades implementation in ImplementationReference to 0 address
+     * @param implementationReference ImplementationReference which implementation is upgraded to 0 address
+     */
+    function emergencyPauseReference(ImplementationReference implementationReference) external {
+        require(msg.sender == address(this) || msg.sender == pauser, "Timelock::emergencyPauseProxy: Call must come from Timelock or pauser.");
+        implementationReference.setImplementation(address(0));
+
+        emit EmergencyPauseReference(implementationReference);
     }
 
     /**
