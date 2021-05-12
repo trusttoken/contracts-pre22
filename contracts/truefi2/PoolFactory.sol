@@ -145,6 +145,7 @@ contract PoolFactory is IPoolFactory, Claimable {
     }
 
     function setTrueLender(ITrueLender2 _trueLender2) external onlyOwner {
+        require(address(_trueLender2) != address(0), "PoolFactory: TrueLender address cannot be set to 0");
         trueLender2 = _trueLender2;
         emit TrueLenderChanged(trueLender2);
     }
