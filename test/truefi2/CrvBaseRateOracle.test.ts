@@ -5,8 +5,8 @@ import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 import { DAY, timeTravel, timeTravelTo } from 'utils'
 
 import {
-  CrvBaseRateOracle,
-  CrvBaseRateOracle__factory,
+  MockCrvBaseRateOracle,
+  MockCrvBaseRateOracle__factory,
 } from 'contracts'
 import { ICurveJson } from 'build'
 
@@ -15,11 +15,12 @@ use(solidity)
 describe('CrvBaseRateOracle', () => {
   let provider: MockProvider
   let owner: Wallet
-  let crvBaseRateOracle: CrvBaseRateOracle
-  let oracleShortCooldown: CrvBaseRateOracle
+  let crvBaseRateOracle: MockCrvBaseRateOracle
+  let oracleShortCooldown: MockCrvBaseRateOracle
   let mockCurve: MockContract
-  let BUFFER_SIZE
   let DEPLOYMENT_TIMESTAMP
+  let BUFFER_SIZE
+  const MAX_BUFFER_SIZE = 365
   const COOLDOWN_TIME = DAY
   // values historical buffer is prefilled with
   const STARTING_RATE = 100
@@ -31,11 +32,12 @@ describe('CrvBaseRateOracle', () => {
     mockCurve = await deployMockContract(owner, ICurveJson.abi)
     await mockCurve.mock.get_virtual_price.returns(STARTING_RATE)
 
-    crvBaseRateOracle = await new CrvBaseRateOracle__factory(owner).deploy(mockCurve.address, COOLDOWN_TIME)
+    await new MockCrvBaseRateOracle__factory(owner)
+    crvBaseRateOracle = await new MockCrvBaseRateOracle__factory(owner).deploy(mockCurve.address, COOLDOWN_TIME)
     DEPLOYMENT_TIMESTAMP = await getCurrentTimestamp()
 
-    BUFFER_SIZE = await crvBaseRateOracle.BUFFER_SIZE()
-    oracleShortCooldown = await new CrvBaseRateOracle__factory(owner).deploy(mockCurve.address, COOLDOWN_TIME / 2)
+    BUFFER_SIZE = await crvBaseRateOracle.bufferSize()
+    oracleShortCooldown = await new MockCrvBaseRateOracle__factory(owner).deploy(mockCurve.address, COOLDOWN_TIME / 2)
   })
 
   const updateRateRightAfterCooldown = async () => {
@@ -65,10 +67,10 @@ describe('CrvBaseRateOracle', () => {
   })
 
   describe('HistoricalRatesBuffer', () => {
-    it('has expected length', async () => {
+    it('has expected capacity', async () => {
       const [baseRates, timestamps] = await crvBaseRateOracle.getHistBuffer()
-      expect(baseRates.length).to.eq(BUFFER_SIZE)
-      expect(timestamps.length).to.eq(BUFFER_SIZE)
+      expect(baseRates.length).to.eq(MAX_BUFFER_SIZE)
+      expect(timestamps.length).to.eq(MAX_BUFFER_SIZE)
     })
 
     it('has expected initial insert index', async () => {

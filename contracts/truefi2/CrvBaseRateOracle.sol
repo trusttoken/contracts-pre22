@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import "../truefi/interface/ICurve.sol";
+import {ICurve} from "../truefi/interface/ICurve.sol";
 import "hardhat/console.sol";
 
 // prettier-ignore
@@ -16,8 +16,8 @@ contract CrvBaseRateOracle {
     // insertIndex points to the place where the next value
     // should be inserted.
     struct HistoricalRatesBuffer {
-        uint256[BUFFER_SIZE] baseRates;
-        uint256[BUFFER_SIZE] timestamps;
+        uint256[MAX_BUFFER_SIZE] baseRates;
+        uint256[MAX_BUFFER_SIZE] timestamps;
         uint16 insertIndex;
     }
     HistoricalRatesBuffer public histBuffer;
@@ -26,13 +26,13 @@ contract CrvBaseRateOracle {
     // to be able to update the historical buffer
     uint256 public cooldownTime;
 
-    uint16 public constant BUFFER_SIZE = 7;
+    uint16 public constant MAX_BUFFER_SIZE = 365;
 
     /**
      * @dev Throws if cooldown is on when updating the historical buffer
      */
     modifier offCooldown() {
-        uint256 lastUpdated = histBuffer.timestamps[histBuffer.insertIndex.add(BUFFER_SIZE).sub(1) % BUFFER_SIZE];
+        uint256 lastUpdated = histBuffer.timestamps[histBuffer.insertIndex.add(bufferSize()).sub(1) % bufferSize()];
         require(block.timestamp >= lastUpdated.add(cooldownTime), "CrvBaseRateOracle: Buffer on cooldown");
         _;
     }
@@ -43,14 +43,18 @@ contract CrvBaseRateOracle {
 
         // fill one field up of the historical buffer
         // so the first calculateAverageRate call won't return 0
-        histBuffer.baseRates[BUFFER_SIZE - 1] = curve.get_virtual_price();
-        histBuffer.timestamps[BUFFER_SIZE - 1] = block.timestamp;
+        histBuffer.baseRates[bufferSize() - 1] = curve.get_virtual_price();
+        histBuffer.timestamps[bufferSize() - 1] = block.timestamp;
+    }
+
+    function bufferSize() public pure virtual returns (uint16) {
+        return 30;
     }
 
     /**
      * @dev Helper function to get contents of the historical buffer
      */
-    function getHistBuffer() public view returns (uint256[BUFFER_SIZE] memory, uint256[BUFFER_SIZE] memory, uint16) {
+    function getHistBuffer() public view returns (uint256[MAX_BUFFER_SIZE] memory, uint256[MAX_BUFFER_SIZE] memory, uint16) {
         return (histBuffer.baseRates, histBuffer.timestamps, histBuffer.insertIndex);
     }
 
@@ -63,7 +67,7 @@ contract CrvBaseRateOracle {
         uint16 iidx = histBuffer.insertIndex;
         histBuffer.timestamps[iidx] = block.timestamp;
         histBuffer.baseRates[iidx] = curve.get_virtual_price();
-        histBuffer.insertIndex = uint16(iidx.add(1) % BUFFER_SIZE);
+        histBuffer.insertIndex = uint16(iidx.add(1) % bufferSize());
     }
 
     /**
@@ -91,17 +95,17 @@ contract CrvBaseRateOracle {
         // estimate how much buffer we need to use
         uint256 bufferSizeNeeded = timeToCover.div(cooldownTime);
         require(
-            bufferSizeNeeded <= BUFFER_SIZE,
+            bufferSizeNeeded <= bufferSize(),
             "CrvBaseRateOracle: Needed buffer size cannot exceed size limit"
         );
         uint16 iidx = histBuffer.insertIndex;
         uint256 sum;
         uint256 totalTime;
         for (uint16 i = 1; i < bufferSizeNeeded; i++) {
-            uint16 prevIdx = uint16(iidx.add(BUFFER_SIZE).sub(i).sub(1) % BUFFER_SIZE);
+            uint16 prevIdx = uint16(iidx.add(bufferSize()).sub(i).sub(1) % bufferSize());
             if (histBuffer.timestamps[prevIdx] == 0)
                 break;
-            uint16 idx = uint16(iidx.add(BUFFER_SIZE).sub(i) % BUFFER_SIZE);
+            uint16 idx = uint16(iidx.add(bufferSize()).sub(i) % bufferSize());
             uint256 dt = histBuffer.timestamps[idx].sub(histBuffer.timestamps[prevIdx]);
             sum = sum.add(
                 histBuffer.baseRates[idx].add(histBuffer.baseRates[prevIdx]).mul(dt)
@@ -110,7 +114,7 @@ contract CrvBaseRateOracle {
         }
         uint256 curCrvBaseRate = curve.get_virtual_price();
         uint256 curTimestamp = block.timestamp;
-        uint16 idx = uint16(iidx.add(BUFFER_SIZE).sub(1) % BUFFER_SIZE);
+        uint16 idx = uint16(iidx.add(bufferSize()).sub(1) % bufferSize());
         sum = sum.add(
             curCrvBaseRate.add(histBuffer.baseRates[idx])
                 .mul(curTimestamp.sub(histBuffer.timestamps[idx]))
