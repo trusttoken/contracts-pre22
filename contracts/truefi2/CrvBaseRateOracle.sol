@@ -3,11 +3,12 @@ pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {ICurve} from "../truefi/interface/ICurve.sol";
-import "hardhat/console.sol";
 
 contract CrvBaseRateOracle {
     using SafeMath for uint256;
     using SafeMath for uint16;
+
+    uint16 public constant MAX_BUFFER_SIZE = 365;
 
     ICurve public curve;
 
@@ -25,8 +26,6 @@ contract CrvBaseRateOracle {
     // to be able to update the historical buffer
     uint256 public cooldownTime;
 
-    uint16 public constant MAX_BUFFER_SIZE = 365;
-
     /**
      * @dev Throws if cooldown is on when updating the historical buffer
      */
@@ -42,8 +41,9 @@ contract CrvBaseRateOracle {
 
         // fill one field up of the historical buffer
         // so the first calculateAverageRate call won't return 0
-        histBuffer.baseRates[bufferSize() - 1] = curve.get_virtual_price();
-        histBuffer.timestamps[bufferSize() - 1] = block.timestamp;
+        histBuffer.baseRates[0] = curve.get_virtual_price();
+        histBuffer.timestamps[0] = block.timestamp;
+        histBuffer.insertIndex++;
     }
 
     function bufferSize() public virtual pure returns (uint16) {
