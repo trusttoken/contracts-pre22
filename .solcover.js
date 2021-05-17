@@ -1,6 +1,7 @@
 module.exports = {
   skipFiles: [
     './avalanche',
+    './common/interface',
     './governance/interface',
     './governance/mocks',
     './proxy/interface',
