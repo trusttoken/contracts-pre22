@@ -229,6 +229,10 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, Claimable {
         emit PauseStatusChanged(status);
     }
 
+    /**
+     * @dev Number of decimals for user-facing representations.
+     * Delegates to the underlying pool token.
+     */
     function decimals() public override view returns (uint8) {
         return token.decimals();
     }
