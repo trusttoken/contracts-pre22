@@ -11,7 +11,7 @@ pragma solidity ^0.6.10;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
-import {OwnedUpgradeabilityProxy} from "../proxy/OwnedUpgradeabilityProxy.sol";
+import {IOwnedUpgradeabilityProxy} from "../proxy/interface/IOwnedUpgradeabilityProxy.sol";
 import {ImplementationReference} from "../proxy/ImplementationReference.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 
@@ -44,7 +44,7 @@ contract Timelock is UpgradeableClaimable {
     event NewPauser(address indexed newPauser);
     event NewPendingAdmin(address indexed newPendingAdmin);
     event NewDelay(uint indexed newDelay);
-    event EmergencyPauseProxy(OwnedUpgradeabilityProxy proxy);
+    event EmergencyPauseProxy(IOwnedUpgradeabilityProxy proxy);
     event EmergencyPauseReference(ImplementationReference implementationReference);
     event PauseStatusChanged(address pauseContract, bool status);
     event CancelTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
@@ -91,7 +91,7 @@ contract Timelock is UpgradeableClaimable {
      * Upgrades a proxy to the zero address in order to emergency pause
      * @param proxy Proxy to upgrade to zero address
      */
-    function emergencyPauseProxy(OwnedUpgradeabilityProxy proxy) external {
+    function emergencyPauseProxy(IOwnedUpgradeabilityProxy proxy) external {
         require(msg.sender == address(this) || msg.sender == pauser, "Timelock::emergencyPauseProxy: Call must come from Timelock or pauser.");
         require(address(proxy) != address(this), "Timelock::emergencyPauseProxy: Cannot pause Timelock.");
         require(address(proxy) != address(admin), "Timelock:emergencyPauseProxy: Cannot pause admin.");

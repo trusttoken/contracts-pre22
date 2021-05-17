@@ -2,6 +2,10 @@
 
 pragma solidity ^0.6.10;
 
+import {IOwnedUpgradeabilityProxy} from "../../proxy/interface/IOwnedUpgradeabilityProxy.sol";
+import {ImplementationReference} from "../../proxy/ImplementationReference.sol";
+import {IPauseableContract} from "../../common/interface/IPauseableContract.sol";
+
 interface ITimelock {
     function delay() external view returns (uint256);
 
@@ -34,4 +38,10 @@ interface ITimelock {
         bytes calldata data,
         uint256 eta
     ) external payable returns (bytes memory);
+
+    function emergencyPauseProxy(IOwnedUpgradeabilityProxy proxy) external;
+
+    function emergencyPauseReference(ImplementationReference implementationReference) external;
+
+    function setPauseStatus(IPauseableContract pauseContract, bool status) external;
 }

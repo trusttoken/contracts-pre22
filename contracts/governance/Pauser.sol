@@ -4,6 +4,9 @@ pragma solidity 0.6.10;
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITimelock} from "./interface/ITimelock.sol";
 import {IVoteToken} from "./interface/IVoteToken.sol";
+import {IOwnedUpgradeabilityProxy} from "../proxy/interface/IOwnedUpgradeabilityProxy.sol";
+import {ImplementationReference} from "../proxy/ImplementationReference.sol";
+import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 
 contract Pauser is UpgradeableClaimable {
     // ================ WARNING ==================
@@ -30,35 +33,40 @@ contract Pauser is UpgradeableClaimable {
     // @notice The official record of all requests ever proposed
     mapping(uint256 => PauseRequest) public requests;
 
+    // @notice The latest request for each requester
+    mapping(address => uint256) public latestRequestIds;
+
     // ======= STORAGE DECLARATION END ============
 
     // @notice The name of this contract
     string public constant name = "TrueFi Pauser";
+
+    uint256 public constant EXECUTION_PERIOD = 1 days;
 
     struct PauseRequest {
         // @notice Unique id for looking up a request
         uint256 id;
         // @notice Creator of the request
         address requester;
-        // @notice The timestamp that the request will be available for execution, set once the vote succeeds
+        // @notice The timestamp that the request will be available for execution
         uint256 eta;
         // @notice the ordered list of target addresses of contracts to be paused
         address[] targets;
-        // @notice The ordered list of function signatures to be called by the
+        // @notice The ordered list of functions to be called
         // different types of proxies might require different types of pause functions
-        string[] signatures;
-        // @notice The block at which voting begins: holders must delegate their votes prior to this block
-        uint256 startBlock;
-        // @notice The block at which voting ends: votes must be cast prior to this block
-        uint256 endBlock;
+        PausingMethod[] methods;
+        // @notice The timestamp at which voting begins: holders must delegate their votes prior to this timestamp
+        uint256 startTime;
+        // @notice The timestamp at which voting ends: votes must be cast prior to this timestamp
+        uint256 endTime;
         // @notice Current number of votes in favor of this request
-        uint256 forVotes;
+        uint256 votes;
         // @notice Flag marking whether the request has been canceled
         bool canceled;
         // @notice Flag marking whether the request has been executed
         bool executed;
         // @notice Receipts of ballots for the entire set of voters
-        mapping(address => bool) receipts;
+        mapping(address => Receipt) receipts;
     }
 
     // @notice Ballot receipt record for a voter
@@ -69,8 +77,27 @@ contract Pauser is UpgradeableClaimable {
         uint96 votes;
     }
 
+    // @notice Possible pausing mechanisms
+    enum PausingMethod {Status, Proxy, Reference}
+
     // @notice Possible states that a request may be in
-    enum RequestState {Pending, Active, Canceled, Succeeded, Expired, Executed}
+    enum RequestState {Pending, Active, Succeeded, Expired, Executed}
+
+    // @notice An event emitted when a request has been executed in the Timelock
+    event RequestExecuted(uint256 id);
+
+    // @notice An event emitted when a vote has been cast on a request
+    event VoteCast(address voter, uint256 requestId, uint256 votes);
+
+    // @notice An event emitted when a new request is created
+    event RequestCreated(
+        uint256 id,
+        address requester,
+        address[] targets,
+        PausingMethod[] methods,
+        uint256 startTime,
+        uint256 endTime
+    );
 
     // @notice The number of votes in support of a request required in order for a quorum to be reached and for a vote to succeed
     function quorumVotes() public pure returns (uint256) {
@@ -109,13 +136,11 @@ contract Pauser is UpgradeableClaimable {
      * @return Enumerated type of RequestState
      */
     function state(uint256 requestId) public view returns (RequestState) {
-        require(requestCount >= requestId && requestId > 0, "Pauser: invalid request id");
+        require(requestCount >= requestId && requestId > 0, "Pauser::state: invalid request id");
         PauseRequest storage request = requests[requestId];
-        if (request.canceled) {
-            return RequestState.Canceled;
-        } else if (block.number <= request.startBlock) {
+        if (block.timestamp <= request.startTime) {
             return RequestState.Pending;
-        } else if (block.number <= request.endBlock) {
+        } else if (block.timestamp <= request.endTime) {
             return RequestState.Active;
         } else if (request.eta == 0) {
             return RequestState.Succeeded;
@@ -127,12 +152,75 @@ contract Pauser is UpgradeableClaimable {
     }
 
     /**
-     * @dev safe addition function for uint256
+     * @dev Create a request to pause the protocol or its parts
+     * @param targets The ordered list of target addresses for calls to be made during request execution
+     * @param methods The ordered list of function signatures to be passed during execution
+     * @return The ID of the newly created request
      */
-    function add256(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, "addition overflow");
-        return c;
+    function makeRequest(address[] memory targets, PausingMethod[] memory methods) public returns (uint256) {
+        require(
+            countVotes(msg.sender, sub256(block.number, 1)) > requestThreshold(),
+            "Pauser::request: requester votes below request threshold"
+        );
+        require(targets.length == methods.length, "Pauser::request: request function information arity mismatch");
+        require(targets.length != 0, "Pauser::request: must provide actions");
+        require(targets.length <= requestMaxOperations(), "Pauser::request: too many actions");
+
+        uint256 latestRequestId = latestRequestIds[msg.sender];
+        if (latestRequestId != 0) {
+            RequestState proposersLatestRequestState = state(latestRequestId);
+            require(
+                proposersLatestRequestState != RequestState.Active,
+                "GovernorAlpha::propose: one live request per proposer, found an already active request"
+            );
+            require(
+                proposersLatestRequestState != RequestState.Pending,
+                "GovernorAlpha::propose: one live request per proposer, found an already pending request"
+            );
+        }
+
+        uint256 startTime = block.timestamp;
+        uint256 endTime = add256(startTime, votingPeriod);
+
+        requestCount++;
+        PauseRequest memory newRequest = PauseRequest({
+            id: requestCount,
+            requester: msg.sender,
+            eta: EXECUTION_PERIOD,
+            targets: targets,
+            methods: methods,
+            startTime: startTime,
+            endTime: endTime,
+            votes: 0,
+            canceled: false,
+            executed: false
+        });
+
+        requests[newRequest.id] = newRequest;
+        latestRequestIds[newRequest.requester] = newRequest.id;
+
+        emit RequestCreated(newRequest.id, msg.sender, targets, methods, startTime, endTime);
+        return newRequest.id;
+    }
+
+    /**
+     * @dev Execute a request after enough votes have been accumulated
+     * @param requestId ID of a request that has queued
+     */
+    function execute(uint256 requestId) external {
+        require(state(requestId) == RequestState.Active, "Pauser::execute: request can only be executed if it is active");
+        PauseRequest storage request = requests[requestId];
+        request.executed = true;
+        for (uint256 i = 0; i < request.targets.length; i++) {
+            if (request.methods[i] == PausingMethod.Status) {
+                timelock.setPauseStatus(IPauseableContract(request.targets[i]), true);
+            } else if (request.methods[i] == PausingMethod.Proxy) {
+                timelock.emergencyPauseProxy(IOwnedUpgradeabilityProxy(request.targets[i]));
+            } else if (request.methods[i] == PausingMethod.Reference) {
+                timelock.emergencyPauseReference(ImplementationReference(request.targets[i]));
+            }
+        }
+        emit RequestExecuted(requestId);
     }
 
     /**
@@ -144,8 +232,36 @@ contract Pauser is UpgradeableClaimable {
     function countVotes(address account, uint256 blockNumber) public view returns (uint96) {
         uint96 truVote = trustToken.getPriorVotes(account, blockNumber);
         uint96 stkTRUVote = stkTRU.getPriorVotes(account, blockNumber);
-        uint96 totalVote = add96(truVote, stkTRUVote, "GovernorAlpha: countVotes addition overflow");
+        uint96 totalVote = add96(truVote, stkTRUVote, "Pauser::countVotes: addition overflow");
         return totalVote;
+    }
+
+    /**
+     * @dev Cast a vote on a request
+     * @param requestId ID of a request in which to cast a vote
+     */
+    function castVote(uint256 requestId) public {
+        return _castVote(msg.sender, requestId);
+    }
+
+    /**
+     * @dev Cast a vote on a request internal function
+     * @param voter The address of the voter
+     * @param requestId ID of a request in which to cast a vote
+     */
+    function _castVote(address voter, uint256 requestId) internal {
+        require(state(requestId) == RequestState.Active, "Pauser::_castVote: voting is closed");
+        PauseRequest storage request = requests[requestId];
+        Receipt storage receipt = request.receipts[voter];
+        require(!receipt.hasVoted, "Pauser::_castVote: voter already voted");
+        uint96 votes = countVotes(voter, request.startTime);
+
+        request.votes = add256(request.votes, votes);
+
+        receipt.hasVoted = true;
+        receipt.votes = votes;
+
+        emit VoteCast(voter, requestId, votes);
     }
 
     /**
@@ -159,6 +275,15 @@ contract Pauser is UpgradeableClaimable {
     ) internal pure returns (uint96) {
         uint96 c = a + b;
         require(c >= a, errorMessage);
+        return c;
+    }
+
+    /**
+     * @dev safe addition function for uint256
+     */
+    function add256(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "addition overflow");
         return c;
     }
 
