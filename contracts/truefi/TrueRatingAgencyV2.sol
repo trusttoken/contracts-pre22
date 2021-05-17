@@ -97,6 +97,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     event RewardMultiplierChanged(uint256 newRewardMultiplier);
     event Claimed(address loanToken, address rater, uint256 claimedReward);
     event SubmissionPauseStatusChanged(bool status);
+    event LoanFactoryChanged(address newLoanFactory);
 
     /**
      * @dev Only whitelisted borrowers can submit for credit ratings
@@ -160,6 +161,15 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         factory = _factory;
 
         ratersRewardFactor = 10000;
+    }
+
+    /**
+     * @dev Set new loan factory.
+     * @param _factory New LoanFactory contract address
+     */
+    function setLoanFactory(ILoanFactory _factory) external onlyOwner {
+        factory = _factory;
+        emit LoanFactoryChanged(address(_factory));
     }
 
     /**
