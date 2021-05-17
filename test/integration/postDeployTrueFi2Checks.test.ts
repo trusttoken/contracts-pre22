@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { BigNumber, providers } from 'ethers'
+import { providers } from 'ethers'
 import {
   ImplementationReference__factory,
   Liquidator2__factory, LoanFactory2__factory,
@@ -7,7 +7,6 @@ import {
   TrueLender2__factory,
 } from 'contracts'
 import { DAY, parseTRU } from 'utils'
-import { CONTRACTS_OWNER, forkChain } from './suite'
 import { AddressZero } from '@ethersproject/constants'
 
 // TODO fill addresses
@@ -32,11 +31,10 @@ const loadContracts = (provider: providers.Provider) => {
   const lender2 = TrueLender2__factory.connect(addresses.lender2, provider)
   const liquidator2 = Liquidator2__factory.connect(addresses.liquidator2, provider)
   const loanFactory2 = LoanFactory2__factory.connect(addresses.loanFactory2, provider)
-  // const legacyPool = TrueFiPool__factory.connect(addresses.loanFactory2, provider)
   return [poolFactory, impRef, lender2, liquidator2, loanFactory2]
 }
 
-describe('TrueFi2 deployment state', () => {
+describe.skip('TrueFi2 deployment state', () => {
   describe('Setup', () => {
     const provider = new providers.AlchemyProvider('mainnet', 'Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl')
     const [poolFactory, impRef, lender2, liquidator2, loanFactory2] = loadContracts(provider)
