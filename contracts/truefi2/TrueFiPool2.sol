@@ -32,7 +32,7 @@ import {OneInchExchange} from "./libraries/OneInchExchange.sol";
  */
 contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, Claimable {
     using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeERC20 for ERC20;
     using OneInchExchange for I1Inch3;
 
     uint256 private constant BASIS_PRECISION = 10000;
@@ -45,7 +45,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, Claimable {
 
     uint8 public constant VERSION = 0;
 
-    IERC20 public override token;
+    ERC20 public override token;
 
     ITrueStrategy public strategy;
     ITrueLender2 public lender;
@@ -227,6 +227,14 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, Claimable {
     function setPauseStatus(bool status) external override onlyOwner {
         pauseStatus = status;
         emit PauseStatusChanged(status);
+    }
+
+    /**
+     * @dev Number of decimals for user-facing representations.
+     * Delegates to the underlying pool token.
+     */
+    function decimals() public override view returns (uint8) {
+        return token.decimals();
     }
 
     /**

@@ -15,7 +15,7 @@ interface ITrueFiPool2 is IERC20 {
         address __owner
     ) external;
 
-    function token() external view returns (IERC20);
+    function token() external view returns (ERC20);
 
     function oracle() external view returns (ITrueFiPoolOracle);
 
