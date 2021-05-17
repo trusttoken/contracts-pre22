@@ -5,6 +5,7 @@
 - [📎 Projects](#-📎-Projects)
 - [🧰 Installation](#-🧰-Installation)
 - [✅ Testing](#-✅-Testing)
+- [🛡 Coverage](#-🛡-Coverage)  
 - [🚉 Addresses](#-🚉-Addresses)
 
 # 💡 Intro
@@ -62,6 +63,24 @@ All three check suites can be run at once by running
 ```
 yarn checks
 ```
+
+# 🛡 Coverage
+Before proceeding make sure you have the smart contracts compiled.
+If needed compile by running
+```
+yarn build
+```
+In order to run coverage, run 
+```
+yarn coverage
+```
+You may also want to run coverage for specific tests.
+You can do so by providing named argument `--testfiles`
+```
+yarn coverage --testfiles "path/to/tests"
+```
+**Important note:** Keep in mind that when running coverage smart contracts are additionally compiled with optimizer disabled and
+it may take longer for tests to complete.
 
 # 🚉 Addresses
 ## Mainnet
