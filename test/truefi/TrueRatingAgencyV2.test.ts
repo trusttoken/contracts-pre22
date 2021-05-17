@@ -163,7 +163,31 @@ describe('TrueRatingAgencyV2', () => {
 
       it('must be called by owner', async () => {
         await expect(rater.connect(otherWallet).setRewardMultiplier(1234))
-          .to.be.revertedWith('caller is not the owner')
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+    })
+
+    describe('setLoanFactory', () => {
+      let newMockFactory
+
+      beforeEach(async () => {
+        newMockFactory = await deployMockContract(owner, ILoanFactoryJson.abi)
+      })
+
+      it('changes factory', async () => {
+        await rater.setLoanFactory(newMockFactory.address)
+        expect(await rater.factory())
+          .to.equal(newMockFactory.address)
+      })
+
+      it('emits RewardMultiplierChanged', async () => {
+        await expect(rater.setLoanFactory(newMockFactory.address))
+          .to.emit(rater, 'LoanFactoryChanged').withArgs(newMockFactory.address)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(rater.connect(otherWallet).setLoanFactory(newMockFactory.address))
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
   })
