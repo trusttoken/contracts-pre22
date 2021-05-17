@@ -180,7 +180,7 @@ describe('TrueRatingAgencyV2', () => {
           .to.equal(newMockFactory.address)
       })
 
-      it('emits RewardMultiplierChanged', async () => {
+      it('emits LoanFactoryChanged', async () => {
         await expect(rater.setLoanFactory(newMockFactory.address))
           .to.emit(rater, 'LoanFactoryChanged').withArgs(newMockFactory.address)
       })
