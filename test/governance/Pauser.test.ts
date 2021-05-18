@@ -83,25 +83,25 @@ describe('Pauser', () => {
     describe('reverts if', () => {
       it('requester has not enough votes', async () => {
         await expect(pauser.connect(holder2).makeRequest([], []))
-          .to.be.revertedWith('Pauser::request: requester votes below request threshold')
+          .to.be.revertedWith('Pauser::makeRequest: requester votes below request threshold')
       })
 
       it('targets length does not match methods length', async () => {
         await expect(pauser.connect(holder1).makeRequest([standardProxy.address, referenceProxy.address], [PausingMethod.Proxy]))
-          .to.be.revertedWith('Pauser::request: request function information arity mismatch')
+          .to.be.revertedWith('Pauser::makeRequest: request function information arity mismatch')
 
         await expect(pauser.connect(holder1).makeRequest([standardProxy.address], [PausingMethod.Proxy, PausingMethod.Reference]))
-          .to.be.revertedWith('Pauser::request: request function information arity mismatch')
+          .to.be.revertedWith('Pauser::makeRequest: request function information arity mismatch')
       })
 
       it('no actions provided', async () => {
         await expect(pauser.connect(holder1).makeRequest([], []))
-          .to.be.revertedWith('Pauser::request: must provide actions')
+          .to.be.revertedWith('Pauser::makeRequest: must provide actions')
       })
 
       it('too many actions provided', async () => {
         await expect(pauser.connect(holder1).makeRequest(Array(11).fill(standardProxy.address), Array(11).fill(PausingMethod.Proxy)))
-          .to.be.revertedWith('Pauser::request: too many actions')
+          .to.be.revertedWith('Pauser::makeRequest: too many actions')
       })
     })
 

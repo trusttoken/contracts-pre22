@@ -160,22 +160,22 @@ contract Pauser is UpgradeableClaimable {
     function makeRequest(address[] memory targets, PausingMethod[] memory methods) public returns (uint256) {
         require(
             countVotes(msg.sender, sub256(block.number, 1)) > requestThreshold(),
-            "Pauser::request: requester votes below request threshold"
+            "Pauser::makeRequest: requester votes below request threshold"
         );
-        require(targets.length == methods.length, "Pauser::request: request function information arity mismatch");
-        require(targets.length != 0, "Pauser::request: must provide actions");
-        require(targets.length <= requestMaxOperations(), "Pauser::request: too many actions");
+        require(targets.length == methods.length, "Pauser::makeRequest: request function information arity mismatch");
+        require(targets.length != 0, "Pauser::makeRequest: must provide actions");
+        require(targets.length <= requestMaxOperations(), "Pauser::makeRequest: too many actions");
 
         uint256 latestRequestId = latestRequestIds[msg.sender];
         if (latestRequestId != 0) {
             RequestState proposersLatestRequestState = state(latestRequestId);
             require(
                 proposersLatestRequestState != RequestState.Active,
-                "GovernorAlpha::propose: one live request per proposer, found an already active request"
+                "Pauser::makeRequest: one live request per proposer, found an already active request"
             );
             require(
                 proposersLatestRequestState != RequestState.Pending,
-                "GovernorAlpha::propose: one live request per proposer, found an already pending request"
+                "Pauser::makeRequest: one live request per proposer, found an already pending request"
             );
         }
 
