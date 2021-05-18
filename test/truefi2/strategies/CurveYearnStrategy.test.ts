@@ -62,9 +62,9 @@ describe('CurveYearnStrategy', () => {
       await curvePool.set_withdraw_price(parseEth(2))
     })
 
-    it('calls add_liquidity with correct amounts and minAmount as 95% of theoretical', async () => {
+    it('calls add_liquidity with correct amounts and minAmount as 99.9% of theoretical', async () => {
       await strategy.connect(pool).deposit(amount)
-      expect('add_liquidity').to.be.calledOnContractWith(curvePool, [[0, 0, 0, amount], amount.div(2).mul(95).div(100)])
+      expect('add_liquidity').to.be.calledOnContractWith(curvePool, [[0, 0, 0, amount], amount.div(2).mul(999).div(1000)])
     })
 
     it('puts received tokens into gauge', async () => {
