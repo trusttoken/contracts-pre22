@@ -1,7 +1,7 @@
 import { forkChain } from './suite'
 import { setupDeploy } from 'scripts/utils'
 import {
-  MockTrueFiPoolOracle__factory,
+  MockUsdStableCoinOracle__factory,
   Erc20Mock__factory,
   ImplementationReference__factory,
   TrueFiPool2,
@@ -86,7 +86,7 @@ describe('TrueLender2', () => {
   })
 
   it('ensure max 1% swap fee slippage', async () => {
-    const oracle = await deployContract(MockTrueFiPoolOracle__factory)
+    const oracle = await deployContract(MockUsdStableCoinOracle__factory)
     await loanPool.setOracle(oracle.address)
 
     await tusd.connect(tusdHolder).approve(loanPool.address, parseEth(100000))
