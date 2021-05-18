@@ -11,10 +11,9 @@ import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
-import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
-import {I1Inch3} from "./interface/I1Inch3.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 
 /**
@@ -59,8 +58,9 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     IERC20WithDecimals public feeToken;
     ITrueFiPool2 public feePool;
 
-    // Minimal possible fee after swap on 1Inch
-    uint256 public minFee;
+    // Minimal possible fee swap slippage
+    // basis precision: 10000 = 100%
+    uint256 public swapFeeSlippage;
 
     // ===== Voting parameters =====
 
@@ -146,6 +146,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         ratingAgency = _ratingAgency;
         _1inch = __1inch;
 
+        swapFeeSlippage = 100; // 1%
         minVotes = 15 * (10**6) * (10**8);
         minRatio = 8000;
         votingPeriod = 7 days;
@@ -199,8 +200,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     function setFeePool(ITrueFiPool2 newFeePool) external onlyOwner {
         feeToken = IERC20WithDecimals(address(newFeePool.token()));
         feePool = newFeePool;
-        // Assume feeToken is USD stablecoin and interest is not below 1000USD
-        minFee = 100 * (10**feeToken.decimals());
         emit FeePoolChanged(newFeePool);
     }
 
@@ -323,7 +322,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         uint256 feeAmount = 0;
         if (address(feeToken) != address(0)) {
             // swap fee for feeToken
-            feeAmount = _swapFee(pool.token(), loanToken, data);
+            feeAmount = _swapFee(pool, loanToken, data);
         }
 
         pool.token().approve(address(pool), fundsReclaimed.sub(feeAmount));
@@ -338,11 +337,12 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     /// @dev Swap `token` for `feeToken` on 1inch
     function _swapFee(
-        IERC20 token,
+        ITrueFiPool2 pool,
         ILoanToken2 loanToken,
         bytes calldata data
     ) internal returns (uint256) {
         uint256 feeAmount = loanToken.debt().sub(loanToken.amount()).mul(fee).div(BASIS_RATIO);
+        IERC20WithDecimals token = IERC20WithDecimals(address(pool.token()));
         if (token == feeToken) {
             return feeAmount;
         }
@@ -352,8 +352,12 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         uint256 balanceBefore = feeToken.balanceOf(address(this));
         I1Inch3.SwapDescription memory swap = _1inch.exchange(data);
         uint256 balanceDiff = feeToken.balanceOf(address(this)).sub(balanceBefore);
+        uint256 expectedDiff = pool.oracle().tokenToUsd(feeAmount).mul(10**feeToken.decimals()).div(1 ether);
 
-        require(balanceDiff >= minFee, "TrueLender: Fee returned from swap is too small");
+        require(
+            balanceDiff >= expectedDiff.mul(BASIS_RATIO.sub(swapFeeSlippage)).div(BASIS_RATIO),
+            "TrueLender: Fee returned from swap is too small"
+        );
         require(swap.srcToken == address(token), "TrueLender: Source token is not same as pool's token");
         require(swap.dstToken == address(feeToken), "TrueLender: Destination token is not fee token");
         require(swap.dstReceiver == address(this), "TrueLender: Receiver is not lender");
