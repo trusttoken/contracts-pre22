@@ -27,6 +27,8 @@ import {
   Mock1InchV3,
   LoanFactory2,
   LoanFactory2__factory,
+  MockTrueFiPoolOracle,
+  MockTrueFiPoolOracle__factory,
 } from 'contracts'
 
 import {
@@ -51,6 +53,7 @@ describe('TrueLender2', () => {
   let pool1: TrueFiPool2
   let pool2: TrueFiPool2
   let feePool: TrueFiPool2
+  let poolOracle: MockTrueFiPoolOracle
 
   let rater: TrueRatingAgencyV2
   let arbitraryDistributor: ArbitraryDistributor
@@ -106,6 +109,9 @@ describe('TrueLender2', () => {
     counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
     await counterfeitPool.initialize(token1.address, AddressZero, lender.address, AddressZero, owner.address)
     feePool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
+
+    poolOracle = await deployContract(owner, MockTrueFiPoolOracle__factory, [token1.address])
+    await pool1.setOracle(poolOracle.address)
 
     const tfusd = await deployContract(owner, MockTrueCurrency__factory) // just for testing, change this in origination fees development
     const trueDistributor = await deployContract(owner, LinearTrueDistributor__factory)
@@ -241,11 +247,6 @@ describe('TrueLender2', () => {
       it('changes feeToken', async () => {
         await lender.setFeePool(pool2.address)
         expect(await lender.feeToken()).to.equal(token2.address)
-      })
-
-      it('changes minFee', async () => {
-        await lender.setFeePool(pool2.address)
-        expect(await lender.minFee()).to.equal(parseEth(100))
       })
 
       it('emits FeePoolChanged', async () => {
@@ -557,12 +558,17 @@ describe('TrueLender2', () => {
 
     describe('With fees', () => {
       let fee: BigNumber
+      let newLoan1: LoanToken2
       beforeEach(async () => {
+        newLoan1 = await createLoan(loanFactory, borrower, pool1, parseEth(100000), YEAR, 100)
+        await approveLoanRating(newLoan1)
+        await lender.connect(borrower).fund(newLoan1.address)
+
         await lender.setFee(1000)
-        await oneInch.setOutputAmount(parseEth(100))
-        await payBack(token1, loan1)
-        await loan1.settle()
-        fee = (await loan1.debt()).sub(await loan1.amount()).div(10)
+        await oneInch.setOutputAmount(parseEth(25))
+        await payBack(token1, newLoan1)
+        await newLoan1.settle()
+        fee = (await newLoan1.debt()).sub(await newLoan1.amount()).div(10)
       })
 
       const encodeData = (fromToken: string, toToken: string, sender: string, receiver: string, amount: BigNumberish, flags = 0) => {
@@ -581,50 +587,50 @@ describe('TrueLender2', () => {
 
       it('swaps token for usdc', async () => {
         const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee)
-        await lender.reclaim(loan1.address, data)
+        await lender.reclaim(newLoan1.address, data)
       })
 
       it('fee is not sent to the pool', async () => {
         const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee)
-        await expect(lender.reclaim(loan1.address, data))
+        await expect(lender.reclaim(newLoan1.address, data))
           .to.emit(token1, 'Transfer')
-          .withArgs(lender.address, pool1.address, BigNumber.from(101000).sub(fee))
+          .withArgs(lender.address, pool1.address, parseEth(101000).sub(fee))
       })
 
       it('reverts on wrong destination token', async () => {
         await token2.mint(lender.address, fee)
         const data = encodeData(token2.address, usdc.address, lender.address, lender.address, fee)
-        await expect(lender.reclaim(loan1.address, data)).to.be.revertedWith('TrueLender: Source token is not same as pool\'s token')
+        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('TrueLender: Source token is not same as pool\'s token')
       })
 
       it('reverts when receiver is not lender', async () => {
         const data = encodeData(token1.address, usdc.address, lender.address, pool1.address, fee)
-        await expect(lender.reclaim(loan1.address, data)).to.be.revertedWith('TrueLender: Receiver is not lender')
+        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('TrueLender: Receiver is not lender')
       })
 
       it('reverts on wrong amount', async () => {
         const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee.sub(1))
-        await expect(lender.reclaim(loan1.address, data)).to.be.revertedWith('TrueLender: Incorrect fee swap amount')
+        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('TrueLender: Incorrect fee swap amount')
       })
 
       it('reverts if partial fill is allowed', async () => {
         const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee, 1)
-        await expect(lender.reclaim(loan1.address, data)).to.be.revertedWith('TrueLender: Partial fill is not allowed')
+        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('TrueLender: Partial fill is not allowed')
       })
 
       it('reverts if small USDC amount is returned', async () => {
-        await oneInch.setOutputAmount(parseEth(99))
+        await oneInch.setOutputAmount(parseEth(24))
         const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee)
-        await expect(lender.reclaim(loan1.address, data)).to.be.revertedWith('TrueLender: Fee returned from swap is too small')
+        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('TrueLender: Fee returned from swap is too small')
       })
 
       it('puts fee into USDC pool and transfers LP tokens to stakers', async () => {
         const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee)
-        await expect(lender.reclaim(loan1.address, data))
+        await expect(lender.reclaim(newLoan1.address, data))
           .to.emit(feePool, 'Joined')
-          .withArgs(lender.address, parseEth(100), parseEth(100))
+          .withArgs(lender.address, parseEth(25), parseEth(25))
           .and.to.emit(feePool, 'Transfer')
-          .withArgs(lender.address, stkTru.address, parseEth(100))
+          .withArgs(lender.address, stkTru.address, parseEth(25))
       })
     })
   })
