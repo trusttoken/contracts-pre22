@@ -249,5 +249,37 @@ describe('CrvBaseRateOracle', () => {
         })
       })
     })
+
+    describe('monthlyProfit', () => {
+      it('correctly calculates profit', async () => {
+        await updateRateRightAfterCooldown(oracleLongBuffer)
+        await updateRateRightAfterCooldown(oracleLongBuffer)
+
+        for (let i = 0; i < 30; i++) {
+          await mockCurve.mock.get_virtual_price.returns(100 + i * 10)
+          await updateRateRightAfterCooldown(oracleLongBuffer)
+        }
+        // Having buffer with values: 100, 110, ..., 390 probed with 1 day interval
+        // Expected avg rate is 245
+        // Expected monthly profit is 59.18
+        expect(await oracleLongBuffer.monthlyProfit()).to.eq(59_18)
+      })
+    })
+
+    describe('yearlyProfit', () => {
+      xit('correctly calculates profit', async () => {
+        await updateRateRightAfterCooldown(oracleLongBuffer)
+        await updateRateRightAfterCooldown(oracleLongBuffer)
+
+        for (let i = 0; i < 365; i++) {
+          await mockCurve.mock.get_virtual_price.returns(100 + i * 10)
+          await updateRateRightAfterCooldown(oracleLongBuffer)
+        }
+        // Having buffer with values: 100, 110, ..., 3740 probed with 1 day interval
+        // Expected avg rate is 1920
+        // Expected yearly profit is 94.79
+        expect(await oracleLongBuffer.yearlyProfit()).to.eq(94_79)
+      }).timeout(100_000)
+    })
   })
 })
