@@ -4,7 +4,6 @@ pragma solidity 0.6.10;
 import {ERC20} from "../common/ERC20.sol";
 
 contract TestUSDCToken is ERC20 {
-
     uint8 constant DECIMALS = 6;
 
     function mint(address _to, uint256 _value) public {
