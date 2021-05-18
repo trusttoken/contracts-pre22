@@ -126,9 +126,9 @@
       "txHash": "0xd55e5ecfbed2510096f237603d7ee96edb58df905f833d7453b006faa7f1c78d",
       "address": "0x01cACF74540154B7c759657A73f74a578CFEA69b"
     },
-    "usdc_MockERC20Token": {
-      "txHash": "0xcf064d59646632ed4cbc08f0978bf74de1eaa18c91b24d9ea8c801a1869fcaa7",
-      "address": "0x46427bF7DAF84340A46D0fDF143297a1922b73C9"
+    "testUSDCToken": {
+      "txHash": "0x7dc9b86bf766b4dd9c2c449909dead3a73cbe929a2d2853f2327e97b0b851361",
+      "address": "0x671A5708E1b038725fceEF51dFE9453295788125"
     },
     "trueLender2": {
       "txHash": "0x25805158c0652a2aec53e907284195a0c63576384839f1cc9fb98fcf4ac11fc6",
