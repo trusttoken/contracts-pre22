@@ -6,7 +6,6 @@ import {ICurve} from "../truefi/interface/ICurve.sol";
 
 contract CrvBaseRateOracle {
     using SafeMath for uint256;
-    using SafeMath for uint16;
 
     uint16 public constant MAX_BUFFER_SIZE = 365;
 
@@ -32,7 +31,7 @@ contract CrvBaseRateOracle {
     modifier offCooldown() {
         // get the last timestamp written into the buffer
         // lastWritten = timestamps[insertIndex - 1]
-        uint256 lastWritten = histBuffer.timestamps[histBuffer.insertIndex.add(bufferSize()).sub(1) % bufferSize()];
+        uint256 lastWritten = histBuffer.timestamps[uint256(histBuffer.insertIndex).add(bufferSize()).sub(1) % bufferSize()];
         require(block.timestamp >= lastWritten.add(cooldownTime), "CrvBaseRateOracle: Buffer on cooldown");
         _;
     }
@@ -73,7 +72,7 @@ contract CrvBaseRateOracle {
      * and updates its timestamp
      */
     function updateRate() public offCooldown {
-        uint16 iidx = histBuffer.insertIndex;
+        uint256 iidx = histBuffer.insertIndex;
         histBuffer.timestamps[iidx] = block.timestamp;
         histBuffer.baseRates[iidx] = curve.get_virtual_price();
         histBuffer.insertIndex = uint16(iidx.add(1) % bufferSize());
@@ -101,22 +100,22 @@ contract CrvBaseRateOracle {
         // estimate how much buffer we need to use
         uint256 bufferSizeNeeded = timeToCover.div(cooldownTime);
         require(bufferSizeNeeded <= bufferSize(), "CrvBaseRateOracle: Needed buffer size cannot exceed size limit");
-        uint16 iidx = histBuffer.insertIndex;
+        uint256 iidx = histBuffer.insertIndex;
         uint256 sum;
         uint256 totalTime;
         for (uint16 i = 1; i < bufferSizeNeeded; i++) {
-            uint16 prevIdx = uint16(iidx.add(bufferSize()).sub(i).sub(1) % bufferSize());
+            uint256 prevIdx = iidx.add(bufferSize()).sub(i).sub(1) % bufferSize();
             if (histBuffer.timestamps[prevIdx] == 0) {
                 break;
             }
-            uint16 idx = uint16(prevIdx.add(1) % bufferSize());
+            uint256 idx = prevIdx.add(1) % bufferSize();
             uint256 dt = histBuffer.timestamps[idx].sub(histBuffer.timestamps[prevIdx]);
             sum = sum.add(histBuffer.baseRates[idx].add(histBuffer.baseRates[prevIdx]).mul(dt));
             totalTime = totalTime.add(dt);
         }
         uint256 curCrvBaseRate = curve.get_virtual_price();
         uint256 curTimestamp = block.timestamp;
-        uint16 idx = uint16(iidx.add(bufferSize()).sub(1) % bufferSize());
+        uint256 idx = iidx.add(bufferSize()).sub(1) % bufferSize();
         sum = sum.add(curCrvBaseRate.add(histBuffer.baseRates[idx]).mul(curTimestamp.sub(histBuffer.timestamps[idx])));
         totalTime = totalTime.add(curTimestamp.sub(histBuffer.timestamps[idx]));
         return sum.mul(10000).div(2).div(totalTime);
