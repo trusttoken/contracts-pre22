@@ -8,7 +8,7 @@ import {
   CrvBaseRateOracle,
   CrvBaseRateOracle__factory,
   MockCrvBaseRateOracle,
-  MockCrvBaseRateOracle__factory
+  MockCrvBaseRateOracle__factory,
 } from 'contracts'
 import { ICurveJson } from 'build'
 
