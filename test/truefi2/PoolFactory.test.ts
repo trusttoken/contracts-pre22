@@ -24,7 +24,8 @@ describe('PoolFactory', () => {
   let owner: Wallet
   let otherWallet: Wallet
   let poolImplementation: TrueFiPool2
-  let implementationReference: ImplementationReference
+  let implementationReference1: ImplementationReference
+  let implementationReference2: ImplementationReference
   let factory: PoolFactory
   let token1: MockErc20Token
   let token2: MockErc20Token
@@ -35,7 +36,8 @@ describe('PoolFactory', () => {
   beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet] = wallets
     poolImplementation = await new TrueFiPool2__factory(owner).deploy()
-    implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
+    implementationReference1 = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
+    implementationReference2 = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
 
     factory = await new PoolFactory__factory(owner).deploy()
     token1 = await new MockErc20Token__factory(owner).deploy()
@@ -45,7 +47,7 @@ describe('PoolFactory', () => {
     trueLenderInstance2 = await new TestTrueLender__factory(owner).deploy()
 
     await factory.initialize(
-      implementationReference.address,
+      implementationReference1.address,
       stakingToken.address,
       trueLenderInstance1.address,
     )
@@ -57,8 +59,8 @@ describe('PoolFactory', () => {
     })
 
     it('sets pool implementation address', async () => {
-      expect(await factory.poolImplementationReference()).to.eq(implementationReference.address)
-      expect(await implementationReference.attach(await factory.poolImplementationReference()).implementation()).to.eq(poolImplementation.address)
+      expect(await factory.poolImplementationReference()).to.eq(implementationReference1.address)
+      expect(await implementationReference1.attach(await factory.poolImplementationReference()).implementation()).to.eq(poolImplementation.address)
     })
 
     it('sets staking token address', async () => {
@@ -152,7 +154,7 @@ describe('PoolFactory', () => {
 
     it('changing reference, changes implementation for both', async () => {
       const newPoolImplementation = await new TrueFiPool2__factory(owner).deploy()
-      await implementationReference.setImplementation(newPoolImplementation.address)
+      await implementationReference1.setImplementation(newPoolImplementation.address)
 
       expect(await proxy1.implementation()).to.eq(newPoolImplementation.address)
       expect(await proxy2.implementation()).to.eq(newPoolImplementation.address)
@@ -167,7 +169,7 @@ describe('PoolFactory', () => {
       expect(await proxy1.implementation()).to.eq(newPoolImplementation1.address)
       expect(await proxy2.implementation()).to.eq(poolImplementation.address)
 
-      await implementationReference.setImplementation(newPoolImplementation2.address)
+      await implementationReference1.setImplementation(newPoolImplementation2.address)
       expect(await proxy1.implementation()).to.eq(newPoolImplementation1.address)
       expect(await proxy2.implementation()).to.eq(newPoolImplementation2.address)
     })
@@ -262,6 +264,26 @@ describe('PoolFactory', () => {
       expect(await factory.trueLender2()).to.eq(trueLenderInstance1.address)
       await factory.connect(owner).setTrueLender(trueLenderInstance2.address)
       expect(await factory.trueLender2()).to.eq(trueLenderInstance2.address)
+    })
+  })
+
+  describe('setImplementationReference', () => {
+    it('only owner can set implementationReference', async () => {
+      await expect(factory.connect(otherWallet).setImplementationReference(implementationReference2.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(factory.connect(owner).setImplementationReference(implementationReference2.address))
+        .not.to.be.reverted
+    })
+
+    it('reverts when set to 0', async () => {
+      await expect(factory.setImplementationReference(AddressZero))
+        .to.be.revertedWith('PoolFactory: ImplementationReference cannot be set to 0')
+    })
+
+    it('sets new implementationReference contract', async () => {
+      expect(await factory.poolImplementationReference()).to.eq(implementationReference1.address)
+      await factory.connect(owner).setImplementationReference(implementationReference2.address)
+      expect(await factory.poolImplementationReference()).to.eq(implementationReference2.address)
     })
   })
 })
