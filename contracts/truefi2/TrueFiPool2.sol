@@ -37,15 +37,14 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, Claimable {
 
     uint256 private constant BASIS_PRECISION = 10000;
 
-    // tolerance difference (percents) between
-    // and slippage on liquidation token price estimation
+    // max slippage on liquidation token swaps
     // Measured in basis points, e.g. 10000 = 100%
     uint16 public constant TOLERATED_SLIPPAGE = 100; // 1%
 
-    // tolerance difference (percents) between
+    // tolerance difference between
     // expected and actual transaction results
     // when dealing with strategies
-    // Measured in basis points, e.g. 10000 = 100%
+    // Measured in  basis points, e.g. 10000 = 100%
     uint16 public constant TOLERATED_STRATEGY_LOSS = 10; // 0.1%
 
     // ================ WARNING ==================
