@@ -43,8 +43,8 @@
       "address": "0xb1f283F554995F666bD3238F229ADf0aF7d54fC4"
     },
     "stkTruToken": {
-      "txHash": "0x70bed2f9dcb1200d597d649794b7b5087ec50350222d25e1f9a72eac638af3a3",
-      "address": "0x16e62EE3c8c439FA99296AA259768F034C3B1D78"
+      "txHash": "0xf54a47927291e13ec9aba8d8c1d959fb6453a461b4cbe3b80baa03e37bd7cf6e",
+      "address": "0x3eEC05da44A629Eec20cafF3e760De0382D409CA"
     },
     "stkTruToken_proxy": {
       "txHash": "0x7c2d5b7e423c800a906c6877ecab38cdd39cba5f8419276287479d484c96471f",
@@ -91,8 +91,8 @@
       "address": "0x591F55835e2514a58eA430B253db783115dad789"
     },
     "trueRatingAgencyV2": {
-      "txHash": "0xd698158ca646e4cd8eff5d6646b8785e9f80452893982e78ae6c4eb66ff60350",
-      "address": "0xbA34c09Ee3d29FB68e187BDB2265a4862f6554d2"
+      "txHash": "0x30b8e3537b77da8ef50280a85960736e68964c204331db4f764144e68ea5a693",
+      "address": "0x4CDaD74C53B7C80339CBCF6A5572cf6f88c142Db"
     },
     "trueRatingAgencyV2_proxy": {
       "txHash": "0x2f8463c6e93d6a2ba407d8e84b9630f44fd577a3815cc65beeaf5efbfce816bc",
@@ -111,8 +111,8 @@
       "address": "0xcC9ec45D17964b30223478A6614541D99BC4AE82"
     },
     "timelock": {
-      "txHash": "0x58eebba48f4b027cd0fcd053bfd1a46de836f0f8be6a2fdc4a07b6bfd3197cfa",
-      "address": "0x5Dd9927Ea75539Fc6847eE53c9d217379e3c7fD0"
+      "txHash": "0x24feeed51d7fe73b284129d7444df9cfa028652077a614ef4c0f75b014dbac5b",
+      "address": "0xcA3052c28032A6DE39905034AD05b09aE3D07e02"
     },
     "timelock_proxy": {
       "txHash": "0xfed3f603aa74e82343cee41b545275d4aecc01183f24d707333125a5d1f4a2ca",
@@ -131,24 +131,24 @@
       "address": "0x0fD070f1641A375Db0A34a4c93444722d1eF2c71"
     },
     "trueLender2": {
-      "txHash": "0x19c642b95f81ee3c3004b62e435e2c3354ec12c68bfe7784253a7cfa283f25b0",
-      "address": "0x5E8B52f4251cBaf228a55C7928Ae0e549D1A157c"
+      "txHash": "0x25805158c0652a2aec53e907284195a0c63576384839f1cc9fb98fcf4ac11fc6",
+      "address": "0xBA144846e3224A8cef083bbED56bEe8511684306"
     },
     "trueLender2_proxy": {
       "txHash": "0x3ff8828760e731541dce75d6dbe8781307b1fbae7f3be70587bf254f7395761d",
       "address": "0xc16eEed3cC648225105B199324E0e2cd3ADB86db"
     },
     "trueFiPool2": {
-      "txHash": "0x8490d55a1d6bf98ec24f575660cc54b445e6b0c9cb24e70819df0bcd93bbd040",
-      "address": "0x6d8f4dBF6E05c3a5a7e94d3F28c08291154971F7"
+      "txHash": "0x905bf3aff90df82994f2b7ae77f723ee48c34b8ebe7d5381d6c1dc4359d2711d",
+      "address": "0x0A3413Dbd76Af3b7C04244CDB752c07caeCbeb50"
     },
     "implementationReference": {
-      "txHash": "0xe4bc459f592daaecd305febf9afa9a236d01bb5643379422b0fa73286c068b74",
-      "address": "0x2B279fe17139e9D577157E378Fd16Fe6B8852428"
+      "txHash": "0x88554c1cd713673a329d075d77b15817f95d47c319a1cf8207e2f6917cdaec13",
+      "address": "0x84c15305cdC46ae37Fd58E07E614d315947a003f"
     },
     "poolFactory": {
-      "txHash": "0xa948a031c078b63e4c530889e9946aebe5ff52a629dbe075b865ffc7701a1086",
-      "address": "0xB0f37c44aB82ce0c60e2B58d97e0AbC9c1Ac14C6"
+      "txHash": "0xcc10840c5ac8a5f0bb57f1be62cc8d860a420dffba4aea05e32b4a640b411f90",
+      "address": "0xCf387605bFd3Ecc0dd382f3F0451EfCE27190235"
     },
     "poolFactory_proxy": {
       "txHash": "0xc35986818f8d42782971824548d8d2d826c82dc4f0c339349d6e331d8f673d54",
@@ -163,8 +163,8 @@
       "address": "0xc9766261d895f5A7b045Fc65c2c47072bc7B5c3b"
     },
     "loanFactory2": {
-      "txHash": "0x0624c6f4e1ee88fa9449cbeade78e27290ca24daf6427a59fb4e68b083e07e17",
-      "address": "0xDa5273E46f87b3b0f3583455d616E8c641b3DF22"
+      "txHash": "0x4b1d97f110b54051c6ac2180f7695e2442d431d6c0d63d42866c94800846df73",
+      "address": "0xD6a578eFc1f39319483eE81452D64cb175113C44"
     },
     "loanFactory2_proxy": {
       "txHash": "0xb01288f17495e734b3425b165577e15c3051b03b761453ffdb85348730072852",
