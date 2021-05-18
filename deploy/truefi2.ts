@@ -54,6 +54,9 @@ deploy({}, (_, config) => {
   const poolFactory = proxy(contract(PoolFactory), 'initialize',
     [implementationReference, trustToken, trueLender2],
   )
+  runIf(poolFactory.poolImplementationReference().equals(implementationReference).not(), () => {
+    poolFactory.setImplementationReference(implementationReference)
+  })
   const oneInch = isMainnet ? ONE_INCH_EXCHANGE : contract(Mock1InchV3)
   runIf(trueLender2.isInitialized().not(), () => {
     trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch)
