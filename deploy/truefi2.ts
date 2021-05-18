@@ -3,7 +3,7 @@ import {
   ImplementationReference,
   Liquidator2,
   LoanFactory2, Mock1InchV3,
-  MockERC20Token,
+  TestUSDCToken,
   OwnedUpgradeabilityProxy,
   PoolFactory,
   StkTruToken,
@@ -44,7 +44,7 @@ deploy({}, (_, config) => {
     : proxy(contract(TestTrueFiPool), () => {})
   const usdc = isMainnet
     ? deployParams['mainnet'].USDC
-    : contract('usdc_MockERC20Token', MockERC20Token)
+    : contract(TestUSDCToken)
   const trueRatingAgencyV2 = proxy(contract(TrueRatingAgencyV2), () => {})
 
   // New contracts
