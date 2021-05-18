@@ -30,8 +30,10 @@ contract CrvBaseRateOracle {
      * @dev Throws if cooldown is on when updating the historical buffer
      */
     modifier offCooldown() {
-        uint256 lastUpdated = histBuffer.timestamps[histBuffer.insertIndex.add(bufferSize()).sub(1) % bufferSize()];
-        require(block.timestamp >= lastUpdated.add(cooldownTime), "CrvBaseRateOracle: Buffer on cooldown");
+        // get the last timestamp written into the buffer
+        // lastWritten = timestamps[insertIndex - 1]
+        uint256 lastWritten = histBuffer.timestamps[histBuffer.insertIndex.add(bufferSize()).sub(1) % bufferSize()];
+        require(block.timestamp >= lastWritten.add(cooldownTime), "CrvBaseRateOracle: Buffer on cooldown");
         _;
     }
 
@@ -47,7 +49,7 @@ contract CrvBaseRateOracle {
     }
 
     function bufferSize() public virtual pure returns (uint16) {
-        return 30;
+        return 365;
     }
 
     /**
@@ -82,9 +84,9 @@ contract CrvBaseRateOracle {
      * the time-weighted average of the curve virtual prices.
      * Formula is given below:
      *
-     *           (v + v_{n-1}) / 2 + sum_{i=1}^{n - 1} (v_i + v_{i-1}) / 2 * (t_i - t_{i-1})
-     * avgRate = ---------------------------------------------------------------------------
-     *                                           (t - t_0)
+     *           (v + v_{n-1}) / 2 * (t - t_{n-1}) + sum_{i=1}^{n - 1} (v_i + v_{i-1}) / 2 * (t_i - t_{i-1})
+     * avgRate = -------------------------------------------------------------------------------------------
+     *                                                  (t - t_0)
      *
      * where v_i, t_i are values of the prices and their respective timestamps
      * stored in the historical buffer, v is a value of current price ant t is its timestamp.
@@ -107,7 +109,7 @@ contract CrvBaseRateOracle {
             if (histBuffer.timestamps[prevIdx] == 0) {
                 break;
             }
-            uint16 idx = uint16(iidx.add(bufferSize()).sub(i) % bufferSize());
+            uint16 idx = uint16(prevIdx.add(1) % bufferSize());
             uint256 dt = histBuffer.timestamps[idx].sub(histBuffer.timestamps[prevIdx]);
             sum = sum.add(histBuffer.baseRates[idx].add(histBuffer.baseRates[prevIdx]).mul(dt));
             totalTime = totalTime.add(dt);
@@ -117,24 +119,39 @@ contract CrvBaseRateOracle {
         uint16 idx = uint16(iidx.add(bufferSize()).sub(1) % bufferSize());
         sum = sum.add(curCrvBaseRate.add(histBuffer.baseRates[idx]).mul(curTimestamp.sub(histBuffer.timestamps[idx])));
         totalTime = totalTime.add(curTimestamp.sub(histBuffer.timestamps[idx]));
-        return sum.mul(100_00).div(2).div(totalTime);
+        return sum.mul(10000).div(2).div(totalTime);
     }
 
+    /**
+     * @dev Profit in 7 days based on average rate
+     * from collected data from last 7 days
+     * @return Calculated weekly profit
+     */
     function weeklyProfit() public view returns (int256) {
         int256 avgRate = int256(calculateAverageRate(7 days));
         uint256 curCrvBaseRate = curve.get_virtual_price();
-        return ((int256(curCrvBaseRate.mul(100_00)) - avgRate) * 7 days) / avgRate;
+        return ((int256(curCrvBaseRate.mul(10000)) - avgRate) * 10000) / avgRate;
     }
 
+    /**
+     * @dev Profit in 30 days based on average rate
+     * from collected data from last 30 days
+     * @return Calculated monthly profit
+     */
     function monthlyProfit() public view returns (int256) {
         int256 avgRate = int256(calculateAverageRate(30 days));
         uint256 curCrvBaseRate = curve.get_virtual_price();
-        return ((int256(curCrvBaseRate.mul(100_00)) - avgRate) * 30 days) / avgRate;
+        return ((int256(curCrvBaseRate.mul(10000)) - avgRate) * 10000) / avgRate;
     }
 
+    /**
+     * @dev Profit in 365 days based on average rate
+     * from collected data from last 365 days
+     * @return Calculated yearly profit
+     */
     function yearlyProfit() public view returns (int256) {
         int256 avgRate = int256(calculateAverageRate(365 days));
         uint256 curCrvBaseRate = curve.get_virtual_price();
-        return ((int256(curCrvBaseRate.mul(100_00)) - avgRate) * 365 days) / avgRate;
+        return ((int256(curCrvBaseRate.mul(10000)) - avgRate) * 10000) / avgRate;
     }
 }
