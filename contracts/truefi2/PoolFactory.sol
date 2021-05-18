@@ -69,6 +69,12 @@ contract PoolFactory is IPoolFactory, Claimable {
     event TrueLenderChanged(ITrueLender2 trueLender2);
 
     /**
+     * @dev Event to show poolImplementationReference was changed
+     * @param implementationReference new ImplementationReference
+     */
+    event PoolImplementationReferenceChanged(ImplementationReference implementationReference);
+
+    /**
      * @dev Throws if token already has an existing corresponding pool
      * @param token Token to be checked for existing pool
      */
@@ -148,5 +154,11 @@ contract PoolFactory is IPoolFactory, Claimable {
         require(address(_trueLender2) != address(0), "PoolFactory: TrueLender address cannot be set to 0");
         trueLender2 = _trueLender2;
         emit TrueLenderChanged(trueLender2);
+    }
+
+    function setImplementationReference(ImplementationReference _implementationReference) external onlyOwner {
+        require(address(_implementationReference) != address(0), "PoolFactory: ImplementationReference cannot be set to 0");
+        poolImplementationReference = _implementationReference;
+        emit PoolImplementationReferenceChanged(poolImplementationReference);
     }
 }
