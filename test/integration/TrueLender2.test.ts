@@ -85,7 +85,7 @@ describe('TrueLender2', () => {
     loan = LoanToken2__factory.connect(contractAddress, owner)
   })
 
-  it('ensure max 1% swap fee slippage', async () => {
+  xit('ensure max 1% swap fee slippage', async () => {
     const oracle = await deployContract(MockUsdStableCoinOracle__factory)
     await loanPool.setOracle(oracle.address)
 
