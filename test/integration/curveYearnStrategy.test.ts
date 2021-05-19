@@ -80,7 +80,7 @@ describe('Curve Yearn Pool Strategy', () => {
 
   it('Flush and pool', async () => {
     await retry(() => pool.flush(amount))
-    await pool.pull(amount.div(2))
+    await retry(() => pool.pull(amount.div(2)))
   }).timeout(10000000)
 
   it('Withdraw all by switching strategy', async () => {

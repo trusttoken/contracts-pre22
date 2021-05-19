@@ -27,8 +27,8 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
 
     // Number of tokens in Curve yPool
     uint8 public constant N_TOKENS = 4;
-    // Max slippage during uniswap sell
-    uint256 public constant MAX_PRICE_SLIPPAGE = 300; // 3%
+    // Max slippage during the swap
+    uint256 public constant MAX_PRICE_SLIPPAGE = 200; // 2%
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -97,8 +97,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         amounts[tokenIndex] = totalAmount;
 
         token.approve(address(curvePool), totalAmount);
-        // Used same ratio as Curve.fi frontend
-        uint256 conservativeMinAmount = calcTokenAmount(totalAmount).mul(95).div(100);
+        uint256 conservativeMinAmount = calcTokenAmount(totalAmount).mul(999).div(1000);
         curvePool.add_liquidity(amounts, conservativeMinAmount);
 
         // stake yCurve tokens in gauge
