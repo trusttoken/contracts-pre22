@@ -235,7 +235,7 @@ describe('TrueFiPool2', () => {
       expect('truToToken').to.be.calledOnContractWith(mockOracle, [1000])
     })
 
-    it('liquidationTokenValue is not part of liquidValue but a part of poolValue', async () => {
+    xit('liquidationTokenValue is not part of liquidValue but a part of poolValue', async () => {
       await liquidationToken.mint(pool.address, 1000)
       const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
       await mockOracle.mock.truToToken.returns(500)

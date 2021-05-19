@@ -266,7 +266,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, Claimable {
      */
     function poolValue() public view returns (uint256) {
         // this assumes defaulted loans are worth their full value
-        return liquidValue().add(loansValue()).add(liquidationTokenValue());
+        return liquidValue().add(loansValue());
     }
 
     /**
@@ -346,6 +346,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, Claimable {
         uint256 mintedAmount = mint(amount.sub(fee));
         claimableFees = claimableFees.add(fee);
 
+        // TODO: tx.origin will be depricated in a future ethereum upgrade
         latestJoinBlock[tx.origin] = block.number;
         token.safeTransferFrom(msg.sender, address(this), amount);
 
