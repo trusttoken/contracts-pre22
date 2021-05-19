@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
+pragma experimental ABIEncoderV2;
 
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITimelock} from "./interface/ITimelock.sol";
@@ -55,14 +56,12 @@ contract Pauser is UpgradeableClaimable {
         // @notice The ordered list of functions to be called
         // different types of proxies might require different types of pause functions
         PausingMethod[] methods;
-        // @notice The timestamp at which voting begins: holders must delegate their votes prior to this timestamp
-        uint256 startTime;
+        // @notice The block number at which voting begins: holders must delegate their votes prior to this block
+        uint256 startBlock;
         // @notice The timestamp at which voting ends: votes must be cast prior to this timestamp
         uint256 endTime;
         // @notice Current number of votes in favor of this request
         uint256 votes;
-        // @notice Flag marking whether the request has been canceled
-        bool canceled;
         // @notice Flag marking whether the request has been executed
         bool executed;
         // @notice Receipts of ballots for the entire set of voters
@@ -81,7 +80,7 @@ contract Pauser is UpgradeableClaimable {
     enum PausingMethod {Status, Proxy, Reference}
 
     // @notice Possible states that a request may be in
-    enum RequestState {Pending, Active, Succeeded, Expired, Executed}
+    enum RequestState {Active, Succeeded, Defeated, Expired, Executed}
 
     // @notice An event emitted when a request has been executed in the Timelock
     event RequestExecuted(uint256 id);
@@ -95,7 +94,7 @@ contract Pauser is UpgradeableClaimable {
         address requester,
         address[] targets,
         PausingMethod[] methods,
-        uint256 startTime,
+        uint256 startBlock,
         uint256 endTime
     );
 
@@ -138,16 +137,16 @@ contract Pauser is UpgradeableClaimable {
     function state(uint256 requestId) public view returns (RequestState) {
         require(requestCount >= requestId && requestId > 0, "Pauser::state: invalid request id");
         PauseRequest storage request = requests[requestId];
-        if (block.timestamp <= request.startTime) {
-            return RequestState.Pending;
+        if (request.executed) {
+            return RequestState.Executed;
+        } else if (block.timestamp >= add256(request.eta, request.endTime)) {
+            return RequestState.Expired;
+        } else if (request.votes >= quorumVotes()) {
+            return RequestState.Succeeded;
         } else if (block.timestamp <= request.endTime) {
             return RequestState.Active;
-        } else if (request.eta == 0) {
-            return RequestState.Succeeded;
-        } else if (request.executed) {
-            return RequestState.Executed;
-        } else if (block.timestamp >= add256(request.eta, timelock.GRACE_PERIOD())) {
-            return RequestState.Expired;
+        } else {
+            return RequestState.Defeated;
         }
     }
 
@@ -173,14 +172,10 @@ contract Pauser is UpgradeableClaimable {
                 proposersLatestRequestState != RequestState.Active,
                 "Pauser::makeRequest: one live request per proposer, found an already active request"
             );
-            require(
-                proposersLatestRequestState != RequestState.Pending,
-                "Pauser::makeRequest: one live request per proposer, found an already pending request"
-            );
         }
 
-        uint256 startTime = block.timestamp;
-        uint256 endTime = add256(startTime, votingPeriod);
+        uint256 startBlock = block.number;
+        uint256 endTime = add256(block.timestamp, votingPeriod);
 
         requestCount++;
         PauseRequest memory newRequest = PauseRequest({
@@ -189,17 +184,16 @@ contract Pauser is UpgradeableClaimable {
             eta: EXECUTION_PERIOD,
             targets: targets,
             methods: methods,
-            startTime: startTime,
+            startBlock: startBlock,
             endTime: endTime,
             votes: 0,
-            canceled: false,
             executed: false
         });
 
         requests[newRequest.id] = newRequest;
         latestRequestIds[newRequest.requester] = newRequest.id;
 
-        emit RequestCreated(newRequest.id, msg.sender, targets, methods, startTime, endTime);
+        emit RequestCreated(newRequest.id, msg.sender, targets, methods, startBlock, endTime);
         return newRequest.id;
     }
 
@@ -208,7 +202,7 @@ contract Pauser is UpgradeableClaimable {
      * @param requestId ID of a request that has queued
      */
     function execute(uint256 requestId) external {
-        require(state(requestId) == RequestState.Active, "Pauser::execute: request can only be executed if it is active");
+        require(state(requestId) == RequestState.Succeeded, "Pauser::execute: request can only be executed if it is succeeded");
         PauseRequest storage request = requests[requestId];
         request.executed = true;
         for (uint256 i = 0; i < request.targets.length; i++) {
@@ -221,6 +215,25 @@ contract Pauser is UpgradeableClaimable {
             }
         }
         emit RequestExecuted(requestId);
+    }
+
+    /**
+     * @dev Get the actions of a selected request
+     * @param requestId ID of a request
+     * return An array of target addresses, an array of request pausing methods
+     */
+    function getActions(uint256 requestId) public view returns (address[] memory targets, PausingMethod[] memory methods) {
+        PauseRequest storage r = requests[requestId];
+        return (r.targets, r.methods);
+    }
+
+    /**
+     * @dev Get a request ballot receipt of the indicated voter
+     * @param requestId ID of a request in which to get voter's ballot receipt
+     * @return the Ballot receipt record for a voter
+     */
+    function getReceipt(uint256 requestId, address voter) public view returns (Receipt memory) {
+        return requests[requestId].receipts[voter];
     }
 
     /**
@@ -254,7 +267,7 @@ contract Pauser is UpgradeableClaimable {
         PauseRequest storage request = requests[requestId];
         Receipt storage receipt = request.receipts[voter];
         require(!receipt.hasVoted, "Pauser::_castVote: voter already voted");
-        uint96 votes = countVotes(voter, request.startTime);
+        uint96 votes = countVotes(voter, request.startBlock);
 
         request.votes = add256(request.votes, votes);
 
