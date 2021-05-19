@@ -131,20 +131,20 @@
       "address": "0x671A5708E1b038725fceEF51dFE9453295788125"
     },
     "trueLender2": {
-      "txHash": "0x25805158c0652a2aec53e907284195a0c63576384839f1cc9fb98fcf4ac11fc6",
-      "address": "0xBA144846e3224A8cef083bbED56bEe8511684306"
+      "txHash": "0x318c7d1366a96c040c765bf62b83d00e0f94e5eddde2932b3b3da31bd9f88c72",
+      "address": "0x0EC47f59Fb40512Af5cF440E64A623CD296fBb58"
     },
     "trueLender2_proxy": {
       "txHash": "0x3ff8828760e731541dce75d6dbe8781307b1fbae7f3be70587bf254f7395761d",
       "address": "0xc16eEed3cC648225105B199324E0e2cd3ADB86db"
     },
     "trueFiPool2": {
-      "txHash": "0x905bf3aff90df82994f2b7ae77f723ee48c34b8ebe7d5381d6c1dc4359d2711d",
-      "address": "0x0A3413Dbd76Af3b7C04244CDB752c07caeCbeb50"
+      "txHash": "0xe6e477ebaae1c6e03e1a816693079a5f47032951fa185cdd548e275764f3c1d1",
+      "address": "0x2dAFb6a3b77344568E0355Af45DBf38010d613B5"
     },
     "implementationReference": {
-      "txHash": "0x88554c1cd713673a329d075d77b15817f95d47c319a1cf8207e2f6917cdaec13",
-      "address": "0x84c15305cdC46ae37Fd58E07E614d315947a003f"
+      "txHash": "0x36f1069d048f25489d3ea66858e8d123b3e4768e2782e38583dfe9a1da95896f",
+      "address": "0xfeA49C810d7533F168A25128b7320676336dF9E3"
     },
     "poolFactory": {
       "txHash": "0xcc10840c5ac8a5f0bb57f1be62cc8d860a420dffba4aea05e32b4a640b411f90",
