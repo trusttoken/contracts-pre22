@@ -41,6 +41,6 @@ contract BadStrategy is ITrueStrategy {
     }
 
     function withError(uint256 amount) public view returns (uint256) {
-        return amount.mul(100 - error).div(100);
+        return amount.mul(10000 - error).div(10000);
     }
 }
