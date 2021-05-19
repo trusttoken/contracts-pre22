@@ -56,6 +56,7 @@ deploy({}, (deployer, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
 
+  // Existing contracts
   const trueUSD = is_mainnet
     ? proxy(contract(TrueUSD), () => {})
     : proxy(contract(MockTrueUSD), 'initialize',
@@ -67,26 +68,43 @@ deploy({}, (deployer, config) => {
     ) : timeProxy(contract(TestTrustToken), 'initialize',
       [],
     )
-  const trueLender = proxy(contract(TrueLender), () => {})
-  const stkTruToken = proxy(contract(StkTruToken), () => {})
+
+  // New contract impls
+  const trueLender_impl = contract(TrueLender)
+  const stkTruToken_impl = contract(StkTruToken)
+  const trueFiPool_impl = contract(TrueFiPool)
+  const testTrueFiPool_impl = contract(TestTrueFiPool)
+  const loanFactory_impl = contract(LoanFactory)
+  const liquidator_impl = contract(Liquidator)
+  const stkTruToken_LinearTrueDistributor_impl = contract('stkTruToken_LinearTrueDistributor', LinearTrueDistributor)
+  const trueRatingAgencyV2_impl = contract(TrueRatingAgencyV2)
+  const ratingAgencyV2Distributor_impl = contract(RatingAgencyV2Distributor)
+  const trueFiPool_LinearTrueDistributor_impl = contract('trueFiPool_LinearTrueDistributor', LinearTrueDistributor)
+  const trueFiPool_TrueFarm_impl = contract('trueFiPool_TrueFarm', TrueFarm)
+  const timelock_impl = contract(Timelock)
+  const governorAlpha_impl = contract(GovernorAlpha)
+
+  // New contract proxies
+  const trueLender = proxy(trueLender_impl, () => {})
+  const stkTruToken = proxy(stkTruToken_impl, () => {})
   const yCrvGauge = is_mainnet
     ? deployParams['mainnet'].Y_CRV_GAUGE
     : contract(MockCurveGauge)
   const trueFiPool = is_mainnet
-    ? proxy(contract(TrueFiPool), () => {})
-    : proxy(contract(TestTrueFiPool), 'initialize',
-      [AddressZero, yCrvGauge, trueUSD, trueLender, AddressZero, stkTruToken, AddressZero, AddressZero],
-    )
+    ? proxy(trueFiPool_impl, () => {})
+    : proxy(testTrueFiPool_impl, 'initialize',
+    [AddressZero, yCrvGauge, trueUSD, trueLender, AddressZero, stkTruToken, AddressZero, AddressZero],
+  )
   const truPriceOracle = is_mainnet
     ? contract(TruPriceOracle)
     : contract(MockTruPriceOracle)
-  const loanFactory = proxy(contract(LoanFactory), 'initialize',
+  const loanFactory = proxy(loanFactory_impl, 'initialize',
     [trueUSD],
   )
-  const liquidator = proxy(contract(Liquidator), 'initialize',
+  const liquidator = proxy(liquidator_impl, 'initialize',
     [trueFiPool, stkTruToken, trustToken, truPriceOracle, loanFactory],
   )
-  const stkTruToken_LinearTrueDistributor = proxy(contract('stkTruToken_LinearTrueDistributor', LinearTrueDistributor), 'initialize',
+  const stkTruToken_LinearTrueDistributor = proxy(stkTruToken_LinearTrueDistributor_impl, 'initialize',
     [deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken],
   )
   runIf(stkTruToken_LinearTrueDistributor.farm().equals(stkTruToken).not(), () => {
@@ -95,8 +113,8 @@ deploy({}, (deployer, config) => {
   runIf(stkTruToken.initalized().not(), () => {
     stkTruToken.initialize(trustToken, trueFiPool, trueFiPool, stkTruToken_LinearTrueDistributor, liquidator)
   })
-  const trueRatingAgencyV2 = proxy(contract(TrueRatingAgencyV2), () => {})
-  const ratingAgencyV2Distributor = proxy(contract(RatingAgencyV2Distributor), 'initialize',
+  const trueRatingAgencyV2 = proxy(trueRatingAgencyV2_impl, () => {})
+  const ratingAgencyV2Distributor = proxy(ratingAgencyV2Distributor_impl, 'initialize',
     [trueRatingAgencyV2, trustToken],
   )
   runIf(trueRatingAgencyV2.isInitialized().not(), () => {
@@ -106,19 +124,19 @@ deploy({}, (deployer, config) => {
     trueLender.initialize(trueFiPool, trueRatingAgencyV2, stkTruToken)
   })
   const trueLenderReclaimer = contract(TrueLenderReclaimer, [trueLender])
-  const trueFiPool_LinearTrueDistributor = proxy(contract('trueFiPool_LinearTrueDistributor', LinearTrueDistributor), 'initialize',
+  const trueFiPool_LinearTrueDistributor = proxy(trueFiPool_LinearTrueDistributor_impl, 'initialize',
     [deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trueFiPool],
   )
-  const trueFiPool_TrueFarm = proxy(contract('trueFiPool_TrueFarm', TrueFarm), 'initialize',
+  const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, 'initialize',
     [trueFiPool, trueFiPool_LinearTrueDistributor, 'tfTUSD']
   )
   runIf(trueFiPool_LinearTrueDistributor.farm().equals(trueFiPool_TrueFarm).not(), () => {
     trueFiPool_LinearTrueDistributor.setFarm(trueFiPool_TrueFarm)
   })
-  const timelock = proxy(contract(Timelock), 'initialize',
+  const timelock = proxy(timelock_impl, 'initialize',
     [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY],
   )
-  const governorAlpha = proxy(contract(GovernorAlpha), 'initialize',
+  const governorAlpha = proxy(governorAlpha_impl, 'initialize',
     [timelock, trustToken, stkTruToken, GOV_GUARDIAN, deployParams[NETWORK].VOTING_PERIOD],
   )
 })
