@@ -15,6 +15,7 @@ import {
   Timelock,
   TimeOwnedUpgradeabilityProxy,
   TruPriceOracle,
+  TrueFarm,
   TrueFiPool,
   TrueRatingAgencyV2,
   TrueUSD,
@@ -105,6 +106,15 @@ deploy({}, (deployer, config) => {
     trueLender.initialize(trueFiPool, trueRatingAgencyV2, stkTruToken)
   })
   const trueLenderReclaimer = contract(TrueLenderReclaimer, [trueLender])
+  const trueFiPool_LinearTrueDistributor = proxy(contract('trueFiPool_LinearTrueDistributor', LinearTrueDistributor), 'initialize',
+    [deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trueFiPool],
+  )
+  const trueFiPool_TrueFarm = proxy(contract('trueFiPool_TrueFarm', TrueFarm), 'initialize',
+    [trueFiPool, trueFiPool_LinearTrueDistributor, 'tfTUSD']
+  )
+  runIf(trueFiPool_LinearTrueDistributor.farm().equals(trueFiPool_TrueFarm).not(), () => {
+    trueFiPool_LinearTrueDistributor.setFarm(trueFiPool_TrueFarm)
+  })
   const timelock = proxy(contract(Timelock), 'initialize',
     [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY],
   )
