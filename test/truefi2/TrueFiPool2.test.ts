@@ -93,7 +93,7 @@ describe('TrueFiPool2', () => {
   )
 
   const withToleratedSlippage = (number: BigNumber) => {
-    const slippage = 4
+    const slippage = 1
     return number.mul(100 - slippage).div(100)
   }
 
@@ -226,7 +226,7 @@ describe('TrueFiPool2', () => {
       expect(await pool.liquidationTokenValue()).to.eq(0)
     })
 
-    it('converts TRU to pool token value using oracle and returns value - 2%', async () => {
+    it('converts TRU to pool token value using oracle and returns value - 1%', async () => {
       await liquidationToken.mint(pool.address, 1000)
       const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
       await mockOracle.mock.truToToken.returns(500)
@@ -601,7 +601,7 @@ describe('TrueFiPool2', () => {
 
     it('funds for deposit should go directly into strategy', async () => {
       await pool.connect(owner).switchStrategy(badPoolStrategy.address)
-      await badPoolStrategy.setErrorPercents(5)
+      await badPoolStrategy.setErrorPercents(500)
       await expect(pool.flush(1000))
         .to.be.revertedWith('TrueFiPool: Strategy value expected to be higher')
       await badPoolStrategy.setErrorPercents(0)
@@ -800,7 +800,7 @@ describe('TrueFiPool2', () => {
     it('all funds should be withdrawn to pool', async () => {
       await pool.connect(owner).switchStrategy(badPoolStrategy.address)
       await pool.flush(1000)
-      await badPoolStrategy.setErrorPercents(5)
+      await badPoolStrategy.setErrorPercents(500)
       await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
         .to.be.revertedWith('TrueFiPool: All funds should be withdrawn to pool')
       await badPoolStrategy.setErrorPercents(0)
@@ -818,7 +818,7 @@ describe('TrueFiPool2', () => {
     it('switched strategy should be depleted', async () => {
       await pool.connect(owner).switchStrategy(badPoolStrategy.address)
       await pool.flush(1000)
-      await badPoolStrategy.setErrorPercents(1)
+      await badPoolStrategy.setErrorPercents(5)
       await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
         .to.be.revertedWith('TrueFiPool: Switched strategy should be depleted')
       await badPoolStrategy.setErrorPercents(0)
