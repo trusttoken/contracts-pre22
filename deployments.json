@@ -363,6 +363,10 @@
     "usdc_TrueFiPool2_TrueFarm_proxy": {
       "txHash": "0x53c61340438845b8dc80ee6e5c4ef46f61f7e88a726dd000d07b3ca2c7ca38a3",
       "address": "0x6b6A4EABa8bA12765dF51a859C0Fa75894817f5a"
+    },
+    "chainlinkTruUsdcOracle": {
+      "txHash": "0xa2557f84ee15c070ae63f26f686dfb62e2b193b0ccdb47c4c51af251d28731a8",
+      "address": "0xd0D931d49F4eCF41CFF5e082aCA4FEB4C511415A"
     }
   }
 }
