@@ -356,7 +356,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      */
     function poolValue() public view returns (uint256) {
         // this assumes defaulted loans are worth their full value
-        return liquidValue().add(loansValue()).add(truValue()).add(crvValue());
+        return liquidValue().add(loansValue()).add(crvValue());
     }
 
     /**

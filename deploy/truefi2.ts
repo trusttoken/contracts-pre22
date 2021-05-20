@@ -59,19 +59,25 @@ deploy({}, (_, config) => {
     : contract(TestUSDCToken)
   const trueRatingAgencyV2 = proxy(contract(TrueRatingAgencyV2), () => {})
 
-  // New contracts
-  const trueLender2 = proxy(contract(TrueLender2), () => {})
+  // New contract impls
+  const trueLender2_impl = contract(TrueLender2)
   const trueFiPool2 = contract(TrueFiPool2)
   const implementationReference = contract(ImplementationReference, [trueFiPool2])
-  const poolFactory = proxy(contract(PoolFactory), 'initialize',
+  const poolFactory_impl = contract(PoolFactory)
+  const liquidator2_impl = contract(Liquidator2)
+  const loanFactory2_impl = contract(LoanFactory2)
+
+  // New contract proxies
+  const trueLender2 = proxy(trueLender2_impl, () => {})
+  const poolFactory = proxy(poolFactory_impl, 'initialize',
     [implementationReference, trustToken, trueLender2],
   )
   const oneInch = isMainnet ? ONE_INCH_EXCHANGE : contract(Mock1InchV3)
   runIf(trueLender2.isInitialized().not(), () => {
     trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch)
   })
-  const liquidator2 = proxy(contract(Liquidator2), () => {})
-  const loanFactory2 = proxy(contract(LoanFactory2), 'initialize',
+  const liquidator2 = proxy(liquidator2_impl, () => {})
+  const loanFactory2 = proxy(loanFactory2_impl, 'initialize',
     [poolFactory, trueLender2, liquidator2],
   )
   runIf(liquidator2.isInitialized().not(), () => {
