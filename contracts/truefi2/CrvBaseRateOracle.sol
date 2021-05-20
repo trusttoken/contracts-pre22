@@ -31,7 +31,8 @@ contract CrvBaseRateOracle {
     modifier offCooldown() {
         // get the last timestamp written into the buffer
         // lastWritten = timestamps[insertIndex - 1]
-        uint256 lastWritten = histBuffer.timestamps[uint256(histBuffer.insertIndex).add(bufferSize()).sub(1) % bufferSize()];
+        uint256 idx = histBuffer.insertIndex > 0 ? uint256(histBuffer.insertIndex).sub(1) : bufferSize() - 1;
+        uint256 lastWritten = histBuffer.timestamps[idx];
         require(block.timestamp >= lastWritten.add(cooldownTime), "CrvBaseRateOracle: Buffer on cooldown");
         _;
     }
@@ -115,8 +116,9 @@ contract CrvBaseRateOracle {
         }
         uint256 curCrvBaseRate = curve.get_virtual_price();
         uint256 curTimestamp = block.timestamp;
-        uint256 idx = iidx.add(bufferSize()).sub(1) % bufferSize();
-        sum = sum.add(curCrvBaseRate.add(histBuffer.baseRates[idx]).mul(curTimestamp.sub(histBuffer.timestamps[idx])));
+        uint256 idx = iidx > 0 ? iidx.sub(1) : bufferSize() - 1;
+        uint256 dt = curTimestamp.sub(histBuffer.timestamps[idx]);
+        sum = sum.add(curCrvBaseRate.add(histBuffer.baseRates[idx]).mul(dt));
         totalTime = totalTime.add(curTimestamp.sub(histBuffer.timestamps[idx]));
         return sum.mul(10000).div(2).div(totalTime);
     }
