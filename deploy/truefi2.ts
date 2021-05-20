@@ -108,7 +108,7 @@ deploy({}, (_, config) => {
     usdc_TrueFiPool2_LinearTrueDistributor.setFarm(usdc_TrueFiPool2_TrueFarm)
   })
   runIf(usdc_TrueFiPool2_TrueFarm.isInitialized().not(), () => {
-    usdc_TrueFiPool2_TrueFarm.initialize(usdc_TrueFiPool2, usdc_TrueFiPool2_LinearTrueDistributor, 'tfUSDC')
+    usdc_TrueFiPool2_TrueFarm.initialize(usdc_TrueFiPool2, usdc_TrueFiPool2_LinearTrueDistributor, 'TrueFi tfUSDC Farm')
   })
   if (!isMainnet) {
     trueLender2.setFee(deployParams['testnet'].LOAN_INTEREST_FEE)
