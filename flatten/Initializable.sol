@@ -24,13 +24,51 @@
 */
 
 // https://github.com/trusttoken/smart-contracts
-// Root file: contracts/common/Initializable.sol
+// Dependency file: contracts/true-gold/common/ProxyStorage.sol
 
-// Copied from https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/v3.0.0/contracts/Initializable.sol
-// Added public isInitialized() view of private initialized bool.
+// SPDX-License-Identifier: UNLICENSED
+// pragma solidity 0.6.10;
 
-// SPDX-License-Identifier: MIT
+contract ProxyStorage {
+    // Initializable.sol
+    bool _initialized;
+    bool _initializing;
+
+    // Ownable.sol
+    address _owner;
+
+    // ERC20.sol
+    mapping(address => uint256) _balances;
+    mapping(address => mapping(address => uint256)) _allowances;
+    uint256 _totalSupply;
+
+    // TrueMintableBurnable.sol
+    uint256 _minBurnAmount;
+    uint256 _maxBurnAmount;
+
+    /* Additionally, we have several keccak-based storage locations.
+     * If you add more keccak-based storage mappings, such as mappings, you must document them here.
+     * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.
+     * A preimage collision can be used to attack the contract by treating one storage location as another,
+     * which would always be a critical issue.
+     * Carefully examine future keccak-based storage to ensure there can be no preimage collisions.
+     *******************************************************************************************************
+     ** length     input                                                         usage
+     *******************************************************************************************************
+     ** 20         "trueGold.proxy.owner"                                        Proxy Owner
+     ** 28         "trueGold.pending.proxy.owner"                                Pending Proxy Owner
+     ** 29         "trueGold.proxy.implementation"                               Proxy Implementation
+     ** 64         uint256(address),uint256(1)                                   _balances
+     ** 64         uint256(address),keccak256(uint256(address),uint256(2))       _allowances
+     **/
+}
+
+
+// Root file: contracts/true-gold/common/Initializable.sol
+
 pragma solidity 0.6.10;
+
+// import "contracts/true-gold/common/ProxyStorage.sol";
 
 /**
  * @title Initializable
@@ -44,33 +82,33 @@ pragma solidity 0.6.10;
  * a parent initializer twice, or ensure that all initializers are idempotent,
  * because this is not dealt with automatically as with constructors.
  */
-contract Initializable {
+contract Initializable is ProxyStorage {
     /**
      * @dev Indicates that the contract has been initialized.
      */
-    bool private initialized;
+    // bool private _initialized;
 
     /**
      * @dev Indicates that the contract is in the process of being initialized.
      */
-    bool private initializing;
+    // bool private _initializing;
 
     /**
      * @dev Modifier to use in the initializer function of a contract.
      */
     modifier initializer() {
-        require(initializing || isConstructor() || !initialized, "Contract instance has already been initialized");
+        require(_initializing || isConstructor() || !_initialized, "Contract instance has already been initialized");
 
-        bool isTopLevelCall = !initializing;
+        bool isTopLevelCall = !_initializing;
         if (isTopLevelCall) {
-            initializing = true;
-            initialized = true;
+            _initializing = true;
+            _initialized = true;
         }
 
         _;
 
         if (isTopLevelCall) {
-            initializing = false;
+            _initializing = false;
         }
     }
 
@@ -83,20 +121,10 @@ contract Initializable {
         // under construction or not.
         address self = address(this);
         uint256 cs;
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             cs := extcodesize(self)
         }
         return cs == 0;
     }
-
-    /**
-     * @dev Return true if and only if the contract has been initialized
-     * @return whether the contract has been initialized
-     */
-    function isInitialized() public view returns (bool) {
-        return initialized;
-    }
-
-    // Reserved storage space to allow for layout changes in the future.
-    uint256[50] private ______gap;
 }

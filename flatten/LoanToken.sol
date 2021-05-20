@@ -748,84 +748,6 @@ contract ERC20 is Context, IERC20 {
 }
 
 
-// Dependency file: @openzeppelin/contracts/token/ERC20/SafeERC20.sol
-
-
-// pragma solidity ^0.6.0;
-
-// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-// import "@openzeppelin/contracts/math/SafeMath.sol";
-// import "@openzeppelin/contracts/utils/Address.sol";
-
-/**
- * @title SafeERC20
- * @dev Wrappers around ERC20 operations that throw on failure (when the token
- * contract returns false). Tokens that return no value (and instead revert or
- * throw on failure) are also supported, non-reverting calls are assumed to be
- * successful.
- * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
- * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
- */
-library SafeERC20 {
-    using SafeMath for uint256;
-    using Address for address;
-
-    function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
-    }
-
-    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
-    }
-
-    /**
-     * @dev Deprecated. This function has issues similar to the ones found in
-     * {IERC20-approve}, and its usage is discouraged.
-     *
-     * Whenever possible, use {safeIncreaseAllowance} and
-     * {safeDecreaseAllowance} instead.
-     */
-    function safeApprove(IERC20 token, address spender, uint256 value) internal {
-        // safeApprove should only be called when setting an initial allowance,
-        // or when resetting it to zero. To increase and decrease it, use
-        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
-        // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
-    }
-
-    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(value);
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-    }
-
-    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-    }
-
-    /**
-     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
-     * on the return value: the return value is optional (but if data is returned, it must not be false).
-     * @param token The token targeted by the call.
-     * @param data The call data (encoded using abi.encode or one of its variants).
-     */
-    function _callOptionalReturn(IERC20 token, bytes memory data) private {
-        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
-        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
-        // the target address contains contract code and also asserts for success in the low-level call.
-
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
-        if (returndata.length > 0) { // Return data is optional
-            // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
-        }
-    }
-}
-
-
 // Dependency file: contracts/truefi/interface/ILoanToken.sol
 
 // pragma solidity 0.6.10;
@@ -872,9 +794,7 @@ interface ILoanToken is IERC20 {
 
     function withdraw(address _beneficiary) external;
 
-    function settle() external;
-
-    function enterDefault() external;
+    function close() external;
 
     function liquidate() external;
 
@@ -882,15 +802,11 @@ interface ILoanToken is IERC20 {
 
     function repay(address _sender, uint256 _amount) external;
 
-    function repayInFull(address _sender) external;
-
     function reclaim() external;
 
     function allowTransfer(address account, bool _status) external;
 
     function repaid() external view returns (uint256);
-
-    function isRepaid() external view returns (bool);
 
     function balance() external view returns (uint256);
 
@@ -909,7 +825,6 @@ pragma solidity 0.6.10;
 // import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 // import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-// import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 // import {ILoanToken} from "contracts/truefi/interface/ILoanToken.sol";
 
@@ -936,9 +851,9 @@ pragma solidity 0.6.10;
  */
 contract LoanToken is ILoanToken, ERC20 {
     using SafeMath for uint256;
-    using SafeERC20 for IERC20;
 
     uint128 public constant lastMinutePaybackDuration = 1 days;
+    uint8 public constant override version = 3;
 
     address public override borrower;
     address public liquidator;
@@ -982,16 +897,11 @@ contract LoanToken is ILoanToken, ERC20 {
     event Withdrawn(address beneficiary);
 
     /**
-     * @dev Emitted when loan has been fully repaid
-     * @param returnedAmount Amount that was returned
-     */
-    event Settled(uint256 returnedAmount);
-
-    /**
-     * @dev Emitted when term is over without full repayment
+     * @dev Emitted when term is over
+     * @param status Final loan status
      * @param returnedAmount Amount that was returned before expiry
      */
-    event Defaulted(uint256 returnedAmount);
+    event Closed(Status status, uint256 returnedAmount);
 
     /**
      * @dev Emitted when a LoanToken is redeemed for underlying currencyTokens
@@ -1067,10 +977,10 @@ contract LoanToken is ILoanToken, ERC20 {
     }
 
     /**
-     * @dev Only after loan has been closed: Settled, Defaulted, or Liquidated
+     * @dev Only when loan is Settled
      */
-    modifier onlyAfterClose() {
-        require(status >= Status.Settled, "LoanToken: Only after loan has been closed");
+    modifier onlyClosed() {
+        require(status >= Status.Settled, "LoanToken: Current status should be Settled or Defaulted");
         _;
     }
 
@@ -1170,7 +1080,7 @@ contract LoanToken is ILoanToken, ERC20 {
         }
 
         uint256 passed = block.timestamp.sub(start);
-        if (passed > term || status == Status.Settled) {
+        if (passed > term) {
             passed = term;
         }
 
@@ -1188,7 +1098,7 @@ contract LoanToken is ILoanToken, ERC20 {
         status = Status.Funded;
         start = block.timestamp;
         _mint(msg.sender, debt);
-        currencyToken.safeTransferFrom(msg.sender, address(this), receivedAmount());
+        require(currencyToken.transferFrom(msg.sender, address(this), receivedAmount()));
 
         emit Funded(msg.sender);
     }
@@ -1210,28 +1120,27 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function withdraw(address _beneficiary) external override onlyBorrower onlyFunded {
         status = Status.Withdrawn;
-        currencyToken.safeTransfer(_beneficiary, receivedAmount());
+        require(currencyToken.transfer(_beneficiary, receivedAmount()));
 
         emit Withdrawn(_beneficiary);
     }
 
     /**
-     * @dev Settle the loan after checking it has been repaid
+     * @dev Close the loan and check if it has been repaid
      */
-    function settle() public override onlyOngoing {
-        require(isRepaid(), "LoanToken: loan must be repaid to settle");
-        status = Status.Settled;
-        emit Settled(_balance());
-    }
+    function close() external override onlyOngoing {
+        require(start.add(term) <= block.timestamp, "LoanToken: Loan cannot be closed yet");
+        if (_balance() >= debt) {
+            status = Status.Settled;
+        } else {
+            require(
+                start.add(term).add(lastMinutePaybackDuration) <= block.timestamp,
+                "LoanToken: Borrower can still pay the loan back"
+            );
+            status = Status.Defaulted;
+        }
 
-    /**
-     * @dev Default the loan if it has not been repaid by the end of term
-     */
-    function enterDefault() external override onlyOngoing {
-        require(!isRepaid(), "LoanToken: cannot default a repaid loan");
-        require(start.add(term).add(lastMinutePaybackDuration) <= block.timestamp, "LoanToken: Loan cannot be defaulted yet");
-        status = Status.Defaulted;
-        emit Defaulted(_balance());
+        emit Closed(status, _balance());
     }
 
     /**
@@ -1248,11 +1157,11 @@ contract LoanToken is ILoanToken, ERC20 {
      * Can only call this function after the loan is Closed
      * @param _amount amount to redeem
      */
-    function redeem(uint256 _amount) external override onlyAfterClose {
+    function redeem(uint256 _amount) external override onlyClosed {
         uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
         redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
-        currencyToken.safeTransfer(msg.sender, amountToReturn);
+        require(currencyToken.transfer(msg.sender, amountToReturn));
 
         emit Redeemed(msg.sender, _amount, amountToReturn);
     }
@@ -1263,33 +1172,10 @@ contract LoanToken is ILoanToken, ERC20 {
      * @param _sender account sending currencyToken to repay
      * @param _amount amount of currencyToken to repay
      */
-    function repay(address _sender, uint256 _amount) external override {
-        _repay(_sender, _amount);
-    }
-
-    /**
-     * @dev Function for borrower to repay all of the remaining loan balance
-     * Borrower should use this to ensure full repayment
-     * @param _sender account sending currencyToken to repay
-     */
-    function repayInFull(address _sender) external override {
-        _repay(_sender, debt.sub(_balance()));
-    }
-
-    /**
-     * @dev Internal function for loan repayment
-     * If _amount is sufficient, then this also settles the loan
-     * @param _sender account sending currencyToken to repay
-     * @param _amount amount of currencyToken to repay
-     */
-    function _repay(address _sender, uint256 _amount) internal onlyAfterWithdraw {
+    function repay(address _sender, uint256 _amount) external override onlyAfterWithdraw {
         require(_amount <= debt.sub(_balance()), "LoanToken: Cannot repay over the debt");
+        require(currencyToken.transferFrom(_sender, address(this), _amount));
         emit Repaid(_sender, _amount);
-
-        currencyToken.safeTransferFrom(_sender, address(this), _amount);
-        if (isRepaid()) {
-            settle();
-        }
     }
 
     /**
@@ -1297,12 +1183,12 @@ contract LoanToken is ILoanToken, ERC20 {
      * Can only call this function after the loan is Closed
      * and all of LoanToken holders have been burnt
      */
-    function reclaim() external override onlyAfterClose onlyBorrower {
+    function reclaim() external override onlyClosed onlyBorrower {
         require(totalSupply() == 0, "LoanToken: Cannot reclaim when LoanTokens are in circulation");
         uint256 balanceRemaining = _balance();
         require(balanceRemaining > 0, "LoanToken: Cannot reclaim when balance 0");
 
-        currencyToken.safeTransfer(borrower, balanceRemaining);
+        require(currencyToken.transfer(borrower, balanceRemaining));
         emit Reclaimed(borrower, balanceRemaining);
     }
 
@@ -1313,14 +1199,6 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function repaid() external override view onlyAfterWithdraw returns (uint256) {
         return _balance().add(redeemed);
-    }
-
-    /**
-     * @dev Check whether an ongoing loan has been repaid in full
-     * @return true if and only if this loan has been repaid
-     */
-    function isRepaid() public override view onlyOngoing returns (bool) {
-        return _balance() >= debt;
     }
 
     /**
@@ -1377,9 +1255,5 @@ contract LoanToken is ILoanToken, ERC20 {
         uint256 _amount
     ) internal override onlyWhoCanTransfer(sender) {
         return super._transfer(sender, recipient, _amount);
-    }
-
-    function version() external virtual override pure returns (uint8) {
-        return 3;
     }
 }

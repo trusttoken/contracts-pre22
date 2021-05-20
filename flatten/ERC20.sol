@@ -24,9 +24,89 @@
 */
 
 // https://github.com/trusttoken/smart-contracts
-// Dependency file: @openzeppelin/contracts/GSN/Context.sol
+// Dependency file: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
 // SPDX-License-Identifier: MIT
+
+// pragma solidity ^0.6.0;
+
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP.
+ */
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * // importANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+
+// Dependency file: @openzeppelin/contracts/GSN/Context.sol
+
 
 // pragma solidity ^0.6.0;
 
@@ -358,35 +438,64 @@ library Address {
 }
 
 
-// Dependency file: contracts/governance/common/ProxyStorage.sol
+// Dependency file: contracts/true-currencies/common/ProxyStorage.sol
 
 // pragma solidity 0.6.10;
 
+// solhint-disable max-states-count, var-name-mixedcase
+
 /**
- * All storage must be declared here
- * New storage must be appended to the end
- * Never remove items from this list
+ * Defines the storage layout of the token implementation contract. Any
+ * newly declared state variables in future upgrades should be appended
+ * to the bottom. Never remove state variables from this list, however variables
+ * can be renamed. Please add _Deprecated to deprecated variables.
  */
 contract ProxyStorage {
-    bool public initalized;
-    uint256 public totalSupply;
+    address public owner;
+    address public pendingOwner;
 
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
-    mapping(uint144 => uint256) attributes_Depricated;
+    bool initialized;
 
-    address owner_;
-    address pendingOwner_;
+    address balances_Deprecated;
+    address allowances_Deprecated;
 
-    mapping(address => address) public delegates; // A record of votes checkpoints for each account, by index
-    struct Checkpoint {
-        // A checkpoint for marking number of votes from a given block
-        uint32 fromBlock;
-        uint96 votes;
+    uint256 _totalSupply;
+
+    bool private paused_Deprecated = false;
+    address private globalPause_Deprecated;
+
+    uint256 public burnMin = 0;
+    uint256 public burnMax = 0;
+
+    address registry_Deprecated;
+
+    string name_Deprecated;
+    string symbol_Deprecated;
+
+    uint256[] gasRefundPool_Deprecated;
+    uint256 private redemptionAddressCount_Deprecated;
+    uint256 minimumGasPriceForFutureRefunds_Deprecated;
+
+    mapping(address => uint256) _balances;
+    mapping(address => mapping(address => uint256)) _allowances;
+    mapping(bytes32 => mapping(address => uint256)) attributes_Deprecated;
+
+    // reward token storage
+    mapping(address => address) finOps_Deprecated;
+    mapping(address => mapping(address => uint256)) finOpBalances_Deprecated;
+    mapping(address => uint256) finOpSupply_Deprecated;
+
+    // true reward allocation
+    // proportion: 1000 = 100%
+    struct RewardAllocation {
+        uint256 proportion;
+        address finOp;
     }
-    mapping(address => mapping(uint32 => Checkpoint)) public checkpoints; // A record of votes checkpoints for each account, by index
-    mapping(address => uint32) public numCheckpoints; // The number of checkpoints for each account
-    mapping(address => uint256) public nonces;
+    mapping(address => RewardAllocation[]) _rewardDistribution_Deprecated;
+    uint256 maxRewardProportion_Deprecated = 1000;
+
+    mapping(address => bool) isBlacklisted;
+    mapping(address => bool) public canBurn;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
@@ -400,25 +509,89 @@ contract ProxyStorage {
      ** 19         "trueXXX.proxy.owner"                                         Proxy Owner
      ** 27         "trueXXX.pending.proxy.owner"                                 Pending Proxy Owner
      ** 28         "trueXXX.proxy.implementation"                                Proxy Implementation
-     ** 64         uint256(address),uint256(1)                                   balanceOf
-     ** 64         uint256(address),keccak256(uint256(address),uint256(2))       allowance
-     ** 64         uint256(address),keccak256(bytes32,uint256(3))                attributes
+     ** 32         uint256(11)                                                   gasRefundPool_Deprecated
+     ** 64         uint256(address),uint256(14)                                  balanceOf
+     ** 64         uint256(address),keccak256(uint256(address),uint256(15))      allowance
+     ** 64         uint256(address),keccak256(bytes32,uint256(16))               attributes
      **/
 }
 
 
-// Root file: contracts/governance/common/ERC20.sol
+// Dependency file: contracts/true-currencies/common/ClaimableOwnable.sol
+
+// pragma solidity 0.6.10;
+
+// import {ProxyStorage} from "contracts/true-currencies/common/ProxyStorage.sol";
+
+/**
+ * @title ClamableOwnable
+ * @dev The ClamableOwnable contract is a copy of Claimable Contract by Zeppelin.
+ * and provides basic authorization control functions. Inherits storage layout of
+ * ProxyStorage.
+ */
+contract ClaimableOwnable is ProxyStorage {
+    /**
+     * @dev emitted when ownership is transferred
+     * @param previousOwner previous owner of this contract
+     * @param newOwner new owner of this contract
+     */
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev sets the original `owner` of the contract to the sender
+     * at construction. Must then be reinitialized
+     */
+    constructor() public {
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(msg.sender == owner, "only Owner");
+        _;
+    }
+
+    /**
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
+    modifier onlyPendingOwner() {
+        require(msg.sender == pendingOwner, "only pending owner");
+        _;
+    }
+
+    /**
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        pendingOwner = newOwner;
+    }
+
+    /**
+     * @dev Allows the pendingOwner address to finalize the transfer.
+     */
+    function claimOwnership() public onlyPendingOwner {
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
+    }
+}
+
+
+// Root file: contracts/true-currencies/common/ERC20.sol
 
 /**
  * @notice This is a copy of openzeppelin ERC20 contract with removed state variables.
  * Removing state variables has been necessary due to proxy pattern usage.
  * Changes to Openzeppelin ERC20 https://github.com/OpenZeppelin/openzeppelin-contracts/blob/de99bccbfd4ecd19d7369d01b070aa72c64423c9/contracts/token/ERC20/ERC20.sol:
  * - Remove state variables _name, _symbol, _decimals
- * - Use state variables balances, allowances, totalSupply from ProxyStorage
+ * - Use state variables _balances, _allowances, _totalSupply from ProxyStorage
  * - Remove constructor
  * - Solidity version changed from ^0.6.0 to 0.6.10
  * - Contract made abstract
- * - Remove inheritance from IERC20 because of ProxyStorage name conflicts
  *
  * See also: ClaimableOwnable.sol and ProxyStorage.sol
  */
@@ -426,11 +599,12 @@ contract ProxyStorage {
 
 pragma solidity 0.6.10;
 
+// import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
 // import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 // import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-// import {ProxyStorage} from "contracts/governance/common/ProxyStorage.sol";
+// import {ClaimableOwnable} from "contracts/true-currencies/common/ClaimableOwnable.sol";
 
 // prettier-ignore
 /**
@@ -457,24 +631,9 @@ pragma solidity 0.6.10;
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-abstract contract ERC20 is ProxyStorage, Context {
+abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
     using SafeMath for uint256;
     using Address for address;
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-
 
     /**
      * @dev Returns the name of the token.
@@ -505,6 +664,20 @@ abstract contract ERC20 is ProxyStorage, Context {
     }
 
     /**
+     * @dev See {IERC20-totalSupply}.
+     */
+    function totalSupply() public view virtual override returns (uint256) {
+        return _totalSupply;
+    }
+
+    /**
+     * @dev See {IERC20-balanceOf}.
+     */
+    function balanceOf(address account) public view virtual override returns (uint256) {
+        return _balances[account];
+    }
+
+    /**
      * @dev See {IERC20-transfer}.
      *
      * Requirements:
@@ -512,9 +685,16 @@ abstract contract ERC20 is ProxyStorage, Context {
      * - `recipient` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    function transfer(address recipient, uint256 amount) public virtual returns (bool) {
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
+    }
+
+    /**
+     * @dev See {IERC20-allowance}.
+     */
+    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+        return _allowances[owner][spender];
     }
 
     /**
@@ -524,7 +704,7 @@ abstract contract ERC20 is ProxyStorage, Context {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address spender, uint256 amount) public virtual returns (bool) {
+    function approve(address spender, uint256 amount) public virtual override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
@@ -541,9 +721,9 @@ abstract contract ERC20 is ProxyStorage, Context {
      * - the caller must have allowance for ``sender``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), allowance[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
     }
 
@@ -560,7 +740,7 @@ abstract contract ERC20 is ProxyStorage, Context {
      * - `spender` cannot be the zero address.
      */
     function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, allowance[_msgSender()][spender].add(addedValue));
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
         return true;
     }
 
@@ -579,7 +759,7 @@ abstract contract ERC20 is ProxyStorage, Context {
      * `subtractedValue`.
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, allowance[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
         return true;
     }
 
@@ -603,8 +783,8 @@ abstract contract ERC20 is ProxyStorage, Context {
 
         _beforeTokenTransfer(sender, recipient, amount);
 
-        balanceOf[sender] = balanceOf[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        balanceOf[recipient] = balanceOf[recipient].add(amount);
+        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        _balances[recipient] = _balances[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
     }
 
@@ -622,8 +802,8 @@ abstract contract ERC20 is ProxyStorage, Context {
 
         _beforeTokenTransfer(address(0), account, amount);
 
-        totalSupply = totalSupply.add(amount);
-        balanceOf[account] = balanceOf[account].add(amount);
+        _totalSupply = _totalSupply.add(amount);
+        _balances[account] = _balances[account].add(amount);
         emit Transfer(address(0), account, amount);
     }
 
@@ -643,8 +823,8 @@ abstract contract ERC20 is ProxyStorage, Context {
 
         _beforeTokenTransfer(account, address(0), amount);
 
-        balanceOf[account] = balanceOf[account].sub(amount, "ERC20: burn amount exceeds balance");
-        totalSupply = totalSupply.sub(amount);
+        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
+        _totalSupply = _totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
 
@@ -665,7 +845,7 @@ abstract contract ERC20 is ProxyStorage, Context {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
-        allowance[owner][spender] = amount;
+        _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 

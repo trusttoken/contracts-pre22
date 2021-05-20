@@ -24,36 +24,65 @@
 */
 
 // https://github.com/trusttoken/smart-contracts
-// Root file: contracts/governance/common/ProxyStorage.sol
+// Root file: contracts/true-currencies/common/ProxyStorage.sol
 
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+// solhint-disable max-states-count, var-name-mixedcase
+
 /**
- * All storage must be declared here
- * New storage must be appended to the end
- * Never remove items from this list
+ * Defines the storage layout of the token implementation contract. Any
+ * newly declared state variables in future upgrades should be appended
+ * to the bottom. Never remove state variables from this list, however variables
+ * can be renamed. Please add _Deprecated to deprecated variables.
  */
 contract ProxyStorage {
-    bool public initalized;
-    uint256 public totalSupply;
+    address public owner;
+    address public pendingOwner;
 
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
-    mapping(uint144 => uint256) attributes_Depricated;
+    bool initialized;
 
-    address owner_;
-    address pendingOwner_;
+    address balances_Deprecated;
+    address allowances_Deprecated;
 
-    mapping(address => address) public delegates; // A record of votes checkpoints for each account, by index
-    struct Checkpoint {
-        // A checkpoint for marking number of votes from a given block
-        uint32 fromBlock;
-        uint96 votes;
+    uint256 _totalSupply;
+
+    bool private paused_Deprecated = false;
+    address private globalPause_Deprecated;
+
+    uint256 public burnMin = 0;
+    uint256 public burnMax = 0;
+
+    address registry_Deprecated;
+
+    string name_Deprecated;
+    string symbol_Deprecated;
+
+    uint256[] gasRefundPool_Deprecated;
+    uint256 private redemptionAddressCount_Deprecated;
+    uint256 minimumGasPriceForFutureRefunds_Deprecated;
+
+    mapping(address => uint256) _balances;
+    mapping(address => mapping(address => uint256)) _allowances;
+    mapping(bytes32 => mapping(address => uint256)) attributes_Deprecated;
+
+    // reward token storage
+    mapping(address => address) finOps_Deprecated;
+    mapping(address => mapping(address => uint256)) finOpBalances_Deprecated;
+    mapping(address => uint256) finOpSupply_Deprecated;
+
+    // true reward allocation
+    // proportion: 1000 = 100%
+    struct RewardAllocation {
+        uint256 proportion;
+        address finOp;
     }
-    mapping(address => mapping(uint32 => Checkpoint)) public checkpoints; // A record of votes checkpoints for each account, by index
-    mapping(address => uint32) public numCheckpoints; // The number of checkpoints for each account
-    mapping(address => uint256) public nonces;
+    mapping(address => RewardAllocation[]) _rewardDistribution_Deprecated;
+    uint256 maxRewardProportion_Deprecated = 1000;
+
+    mapping(address => bool) isBlacklisted;
+    mapping(address => bool) public canBurn;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
@@ -67,8 +96,9 @@ contract ProxyStorage {
      ** 19         "trueXXX.proxy.owner"                                         Proxy Owner
      ** 27         "trueXXX.pending.proxy.owner"                                 Pending Proxy Owner
      ** 28         "trueXXX.proxy.implementation"                                Proxy Implementation
-     ** 64         uint256(address),uint256(1)                                   balanceOf
-     ** 64         uint256(address),keccak256(uint256(address),uint256(2))       allowance
-     ** 64         uint256(address),keccak256(bytes32,uint256(3))                attributes
+     ** 32         uint256(11)                                                   gasRefundPool_Deprecated
+     ** 64         uint256(address),uint256(14)                                  balanceOf
+     ** 64         uint256(address),keccak256(uint256(address),uint256(15))      allowance
+     ** 64         uint256(address),keccak256(bytes32,uint256(16))               attributes
      **/
 }

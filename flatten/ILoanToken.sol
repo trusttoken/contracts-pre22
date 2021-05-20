@@ -151,9 +151,7 @@ interface ILoanToken is IERC20 {
 
     function withdraw(address _beneficiary) external;
 
-    function settle() external;
-
-    function enterDefault() external;
+    function close() external;
 
     function liquidate() external;
 
@@ -161,15 +159,11 @@ interface ILoanToken is IERC20 {
 
     function repay(address _sender, uint256 _amount) external;
 
-    function repayInFull(address _sender) external;
-
     function reclaim() external;
 
     function allowTransfer(address account, bool _status) external;
 
     function repaid() external view returns (uint256);
-
-    function isRepaid() external view returns (bool);
 
     function balance() external view returns (uint256);
 

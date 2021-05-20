@@ -438,7 +438,7 @@ library Address {
 }
 
 
-// Dependency file: contracts/trusttoken/common/TruProxyStorage.sol
+// Dependency file: contracts/trusttoken/common/ProxyStorage.sol
 
 // pragma solidity 0.6.10;
 
@@ -447,7 +447,7 @@ library Address {
  * New storage must be appended to the end
  * Never remove items from this list
  */
-contract TruProxyStorage {
+contract ProxyStorage {
     bool initalized;
     uint256 public totalSupply;
 
@@ -457,14 +457,6 @@ contract TruProxyStorage {
 
     address owner_;
     address pendingOwner_;
-
-    // represents total distribution for locked balances
-    mapping(address => uint256) distribution;
-
-    // registry of locked addresses
-    address public timeLockRegistry;
-    // allow unlocked transfers to special account
-    bool public returnsLocked;
 
     mapping(address => address) public delegates; // A record of votes checkpoints for each account, by index
     struct Checkpoint {
@@ -518,7 +510,7 @@ contract TruProxyStorage {
 // import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 // import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-// import {TruProxyStorage} from "contracts/trusttoken/common/TruProxyStorage.sol";
+// import {ProxyStorage} from "contracts/trusttoken/common/ProxyStorage.sol";
 
 // prettier-ignore
 /**
@@ -545,7 +537,7 @@ contract TruProxyStorage {
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-abstract contract ERC20 is TruProxyStorage, Context {
+abstract contract ERC20 is ProxyStorage, Context {
     using SafeMath for uint256;
     using Address for address;
 
@@ -1025,10 +1017,9 @@ contract MockERC20Token is ERC20 {
 }
 
 
-// Dependency file: contracts/common/Initializable.sol
+// Dependency file: contracts/truefi/common/Initializable.sol
 
 // Copied from https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/v3.0.0/contracts/Initializable.sol
-// Added public isInitialized() view of private initialized bool.
 
 // pragma solidity 0.6.10;
 
@@ -1087,14 +1078,6 @@ contract Initializable {
             cs := extcodesize(self)
         }
         return cs == 0;
-    }
-
-    /**
-     * @dev Return true if and only if the contract has been initialized
-     * @return whether the contract has been initialized
-     */
-    function isInitialized() public view returns (bool) {
-        return initialized;
     }
 
     // Reserved storage space to allow for layout changes in the future.
@@ -1171,7 +1154,7 @@ pragma solidity 0.6.10;
 
 // import {MockERC20Token} from "contracts/trusttoken/mocks/MockERC20Token.sol";
 
-// import {Initializable} from "contracts/common/Initializable.sol";
+// import {Initializable} from "contracts/truefi/common/Initializable.sol";
 // import {ICurve, ICurvePool} from "contracts/truefi/interface/ICurve.sol";
 // import {IYToken} from "contracts/truefi/interface/IYToken.sol";
 // import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";

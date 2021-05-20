@@ -374,10 +374,9 @@ abstract contract Context {
 }
 
 
-// Dependency file: contracts/common/Initializable.sol
+// Dependency file: contracts/truefi/common/Initializable.sol
 
 // Copied from https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/v3.0.0/contracts/Initializable.sol
-// Added public isInitialized() view of private initialized bool.
 
 // pragma solidity 0.6.10;
 
@@ -438,26 +437,18 @@ contract Initializable {
         return cs == 0;
     }
 
-    /**
-     * @dev Return true if and only if the contract has been initialized
-     * @return whether the contract has been initialized
-     */
-    function isInitialized() public view returns (bool) {
-        return initialized;
-    }
-
     // Reserved storage space to allow for layout changes in the future.
     uint256[50] private ______gap;
 }
 
 
-// Dependency file: contracts/common/UpgradeableOwnable.sol
+// Dependency file: contracts/truefi/common/UpgradeableOwnable.sol
 
 // pragma solidity 0.6.10;
 
 // import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
 
-// import {Initializable} from "contracts/common/Initializable.sol";
+// import {Initializable} from "contracts/truefi/common/Initializable.sol";
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -570,9 +561,7 @@ interface ILoanToken is IERC20 {
 
     function withdraw(address _beneficiary) external;
 
-    function settle() external;
-
-    function enterDefault() external;
+    function close() external;
 
     function liquidate() external;
 
@@ -580,15 +569,11 @@ interface ILoanToken is IERC20 {
 
     function repay(address _sender, uint256 _amount) external;
 
-    function repayInFull(address _sender) external;
-
     function reclaim() external;
 
     function allowTransfer(address account, bool _status) external;
 
     function repaid() external view returns (uint256);
-
-    function isRepaid() external view returns (bool);
 
     function balance() external view returns (uint256);
 
@@ -637,7 +622,7 @@ interface IStakingPool is IERC20 {
 // import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-// import {Ownable} from "contracts/common/UpgradeableOwnable.sol";
+// import {Ownable} from "contracts/truefi/common/UpgradeableOwnable.sol";
 // import {ILoanToken} from "contracts/truefi/interface/ILoanToken.sol";
 // import {ITrueFiPool} from "contracts/truefi/interface/ITrueFiPool.sol";
 // import {ITrueLender} from "contracts/truefi/interface/ITrueLender.sol";
@@ -661,8 +646,8 @@ interface IStakingPool is IERC20 {
  *
  * 2. Only approve loans which have been rated in the prediction market under the conditions:
  * - timeInMarket >= votingPeriod
- * - stakedTRU > minVotes
- * - yesVotes > minRatio * totalVotes
+ * - stakedTRU > (participationFactor * loanSize)
+ * - 1 < ( interest * P(loan_repaid) - (loanSize * riskAversion * P(loan_defaults))
  *
  * Once a loan meets these requirements, fund() can be called to transfer
  * funds from the pool to the LoanToken contract
@@ -691,12 +676,11 @@ contract TrueLender is ITrueLender, Ownable {
     uint256 public minApy;
     uint256 public maxApy;
 
-    // How many votes are needed for a loan to be approved
-    uint256 public minVotes;
+    // How many votes in predction market
+    uint256 public participationFactor;
 
-    // Minimum ratio of yes votes to total votes for a loan to be approved
-    // basis precision: 10000 = 100%
-    uint256 public minRatio;
+    // How much worse is it to lose $1 TUSD than it is to gain $1 TUSD
+    uint256 public riskAversion;
 
     // bound on min & max loan sizes
     uint256 public minSize;
@@ -715,9 +699,6 @@ contract TrueLender is ITrueLender, Ownable {
     // implemented as an ERC20, will change after implementing stkPool
     IStakingPool public stakingPool;
 
-    // basis point for ratio
-    uint256 private constant BASIS_RATIO = 10000;
-
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -735,16 +716,16 @@ contract TrueLender is ITrueLender, Ownable {
     event ApyLimitsChanged(uint256 minApy, uint256 maxApy);
 
     /**
-     * @dev Emitted when minVotes changed
-     * @param minVotes New minVotes
+     * @dev Emitted when participation factor changed
+     * @param participationFactor New participation factor
      */
-    event MinVotesChanged(uint256 minVotes);
+    event ParticipationFactorChanged(uint256 participationFactor);
 
     /**
      * @dev Emitted when risk aversion changed
-     * @param minRatio New risk aversion factor
+     * @param riskAversion New risk aversion factor
      */
-    event MinRatioChanged(uint256 minRatio);
+    event RiskAversionChanged(uint256 riskAversion);
 
     /**
      * @dev Emitted when the minimum voting period is changed
@@ -807,7 +788,7 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     /**
-     * @dev Initialize the contract with parameters
+     * @dev Initalize the contract with parameters
      * @param _pool Lending pool address
      * @param _ratingAgency Prediction market address
      */
@@ -826,8 +807,8 @@ contract TrueLender is ITrueLender, Ownable {
 
         minApy = 1000;
         maxApy = 3000;
-        minVotes = 15 * (10**6) * (10**8);
-        minRatio = 8000;
+        participationFactor = 10000;
+        riskAversion = 15000;
         minSize = 1000000 ether;
         maxSize = 10000000 ether;
         minTerm = 182 days;
@@ -894,22 +875,21 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     /**
-     * @dev Set new minimal amount of votes for loan to be approved. Only owner can change parameters.
-     * @param newMinVotes New minVotes.
+     * @dev Set new participation factor. Only owner can change parameters.
+     * @param newParticipationFactor New participation factor.
      */
-    function setMinVotes(uint256 newMinVotes) external onlyOwner {
-        minVotes = newMinVotes;
-        emit MinVotesChanged(newMinVotes);
+    function setParticipationFactor(uint256 newParticipationFactor) external onlyOwner {
+        participationFactor = newParticipationFactor;
+        emit ParticipationFactorChanged(newParticipationFactor);
     }
 
     /**
-     * @dev Set new yes to no votes ratio. Only owner can change parameters.
-     * @param newMinRatio New yes to no votes ratio
+     * @dev Set new risk aversion factor. Only owner can change parameters.
+     * @param newRiskAversion New risk aversion factor
      */
-    function setMinRatio(uint256 newMinRatio) external onlyOwner {
-        require(newMinRatio <= BASIS_RATIO, "TrueLender: minRatio cannot be more than 100%");
-        minRatio = newMinRatio;
-        emit MinRatioChanged(newMinRatio);
+    function setRiskAversion(uint256 newRiskAversion) external onlyOwner {
+        riskAversion = newRiskAversion;
+        emit RiskAversionChanged(newRiskAversion);
     }
 
     /**
@@ -956,8 +936,8 @@ contract TrueLender is ITrueLender, Ownable {
         require(loanTermWithinBounds(term), "TrueLender: Loan term is out of bounds");
         require(loanIsAttractiveEnough(apy), "TrueLender: APY is out of bounds");
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
-        require(votesThresholdReached(yes.add(no)), "TrueLender: Not enough votes given for the loan");
-        require(loanIsCredible(yes, no), "TrueLender: Loan risk is too high");
+        require(votesThresholdReached(amount, yes), "TrueLender: Not enough votes given for the loan");
+        require(loanIsCredible(apy, term, yes, no), "TrueLender: Loan risk is too high");
 
         _loans.push(loanToken);
         pool.borrow(amount, amount.sub(receivedAmount));
@@ -982,7 +962,7 @@ contract TrueLender is ITrueLender, Ownable {
         }
 
         uint256 passed = block.timestamp.sub(loan.start());
-        if (passed > loan.term() || loan.status() == ILoanToken.Status.Settled) {
+        if (passed > loan.term()) {
             passed = loan.term();
         }
 
@@ -1102,22 +1082,32 @@ contract TrueLender is ITrueLender, Ownable {
     }
 
     /**
-     * @dev Check if a loan has enough votes to be approved
-     * @param votes Total number of votes
+     * @dev Check if a loan is within APY bounds
+     * Minimum absolute value of yes votes, rather than ratio of yes to no
+     * @param amount Size of loan
+     * @param yesVotes Number of yes votes
      * @return Whether a loan has reached the required voting threshold
      */
-    function votesThresholdReached(uint256 votes) public view returns (bool) {
-        return votes >= minVotes;
+    function votesThresholdReached(uint256 amount, uint256 yesVotes) public view returns (bool) {
+        return amount.mul(participationFactor) <= yesVotes.mul(10000).mul(TOKEN_PRECISION_DIFFERENCE);
     }
 
     /**
-     * @dev Check if yes to no votes ratio reached the minimum rate
+     * @dev Use APY and term of loan to check expected value of a loan
+     * Expected value = profit - (default_loss * (no / yes))
+     * e.g. riskAversion = 10,000 => expected value of 1
+     * @param apy APY of loan
+     * @param term Term length of loan
      * @param yesVotes Number of YES votes in credit market
      * @param noVotes Number of NO votes in credit market
      */
-    function loanIsCredible(uint256 yesVotes, uint256 noVotes) public view returns (bool) {
-        uint256 totalVotes = yesVotes.add(noVotes);
-        return yesVotes >= totalVotes.mul(minRatio).div(BASIS_RATIO);
+    function loanIsCredible(
+        uint256 apy,
+        uint256 term,
+        uint256 yesVotes,
+        uint256 noVotes
+    ) public view returns (bool) {
+        return apy.mul(term).mul(yesVotes).div(365 days) >= noVotes.mul(riskAversion);
     }
 }
 

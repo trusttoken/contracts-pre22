@@ -358,7 +358,7 @@ library Address {
 }
 
 
-// Dependency file: contracts/trusttoken/common/TruProxyStorage.sol
+// Dependency file: contracts/trusttoken/common/ProxyStorage.sol
 
 // pragma solidity 0.6.10;
 
@@ -367,7 +367,7 @@ library Address {
  * New storage must be appended to the end
  * Never remove items from this list
  */
-contract TruProxyStorage {
+contract ProxyStorage {
     bool initalized;
     uint256 public totalSupply;
 
@@ -377,14 +377,6 @@ contract TruProxyStorage {
 
     address owner_;
     address pendingOwner_;
-
-    // represents total distribution for locked balances
-    mapping(address => uint256) distribution;
-
-    // registry of locked addresses
-    address public timeLockRegistry;
-    // allow unlocked transfers to special account
-    bool public returnsLocked;
 
     mapping(address => address) public delegates; // A record of votes checkpoints for each account, by index
     struct Checkpoint {
@@ -438,7 +430,7 @@ contract TruProxyStorage {
 // import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 // import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-// import {TruProxyStorage} from "contracts/trusttoken/common/TruProxyStorage.sol";
+// import {ProxyStorage} from "contracts/trusttoken/common/ProxyStorage.sol";
 
 // prettier-ignore
 /**
@@ -465,7 +457,7 @@ contract TruProxyStorage {
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-abstract contract ERC20 is TruProxyStorage, Context {
+abstract contract ERC20 is ProxyStorage, Context {
     using SafeMath for uint256;
     using Address for address;
 

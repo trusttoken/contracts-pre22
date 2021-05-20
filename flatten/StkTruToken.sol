@@ -332,6 +332,33 @@ library SafeMath {
 }
 
 
+// Dependency file: @openzeppelin/contracts/GSN/Context.sol
+
+
+// pragma solidity ^0.6.0;
+
+/*
+ * @dev Provides information about the current execution context, including the
+ * sender of the transaction and its data. While these are generally available
+ * via msg.sender and msg.data, they should not be accessed in such a direct
+ * manner, since when dealing with GSN meta-transactions the account sending and
+ * paying for execution may not be the actual sender (as far as an application
+ * is concerned).
+ *
+ * This contract is only required for intermediate, library-like contracts.
+ */
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
+
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
+}
+
+
 // Dependency file: @openzeppelin/contracts/utils/Address.sol
 
 
@@ -476,112 +503,7 @@ library Address {
 }
 
 
-// Dependency file: @openzeppelin/contracts/token/ERC20/SafeERC20.sol
-
-
-// pragma solidity ^0.6.0;
-
-// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-// import "@openzeppelin/contracts/math/SafeMath.sol";
-// import "@openzeppelin/contracts/utils/Address.sol";
-
-/**
- * @title SafeERC20
- * @dev Wrappers around ERC20 operations that throw on failure (when the token
- * contract returns false). Tokens that return no value (and instead revert or
- * throw on failure) are also supported, non-reverting calls are assumed to be
- * successful.
- * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
- * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
- */
-library SafeERC20 {
-    using SafeMath for uint256;
-    using Address for address;
-
-    function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
-    }
-
-    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
-    }
-
-    /**
-     * @dev Deprecated. This function has issues similar to the ones found in
-     * {IERC20-approve}, and its usage is discouraged.
-     *
-     * Whenever possible, use {safeIncreaseAllowance} and
-     * {safeDecreaseAllowance} instead.
-     */
-    function safeApprove(IERC20 token, address spender, uint256 value) internal {
-        // safeApprove should only be called when setting an initial allowance,
-        // or when resetting it to zero. To increase and decrease it, use
-        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
-        // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
-    }
-
-    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(value);
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-    }
-
-    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-    }
-
-    /**
-     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
-     * on the return value: the return value is optional (but if data is returned, it must not be false).
-     * @param token The token targeted by the call.
-     * @param data The call data (encoded using abi.encode or one of its variants).
-     */
-    function _callOptionalReturn(IERC20 token, bytes memory data) private {
-        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
-        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
-        // the target address contains contract code and also asserts for success in the low-level call.
-
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
-        if (returndata.length > 0) { // Return data is optional
-            // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
-        }
-    }
-}
-
-
-// Dependency file: @openzeppelin/contracts/GSN/Context.sol
-
-
-// pragma solidity ^0.6.0;
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-}
-
-
-// Dependency file: contracts/governance/common/ProxyStorage.sol
+// Dependency file: contracts/trusttoken/common/ProxyStorage.sol
 
 // pragma solidity 0.6.10;
 
@@ -591,7 +513,7 @@ abstract contract Context {
  * Never remove items from this list
  */
 contract ProxyStorage {
-    bool public initalized;
+    bool initalized;
     uint256 public totalSupply;
 
     mapping(address => uint256) public balanceOf;
@@ -630,7 +552,7 @@ contract ProxyStorage {
 }
 
 
-// Dependency file: contracts/governance/common/ERC20.sol
+// Dependency file: contracts/trusttoken/common/ERC20.sol
 
 /**
  * @notice This is a copy of openzeppelin ERC20 contract with removed state variables.
@@ -653,7 +575,7 @@ contract ProxyStorage {
 // import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 // import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-// import {ProxyStorage} from "contracts/governance/common/ProxyStorage.sol";
+// import {ProxyStorage} from "contracts/trusttoken/common/ProxyStorage.sol";
 
 // prettier-ignore
 /**
@@ -951,7 +873,7 @@ interface IVoteTokenWithERC20 is IVoteToken, IERC20 {}
 
 // pragma solidity 0.6.10;
 
-// import {ERC20} from "contracts/governance/common/ERC20.sol";
+// import {ERC20} from "contracts/trusttoken/common/ERC20.sol";
 // import {IVoteToken} from "contracts/governance/interface/IVoteToken.sol";
 
 /**
@@ -973,7 +895,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return _delegate(msg.sender, delegatee);
     }
 
-    /**
+    /** 
      * @dev Delegate votes using signature
      */
     function delegateBySig(
@@ -1108,7 +1030,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
         }
     }
 
-    /**
+    /** 
      * @dev internal function to write a checkpoint for voting power
      */
     function _writeCheckpoint(
@@ -1170,7 +1092,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return a - b;
     }
 
-    /**
+    /** 
      * @dev internal function to get chain ID
      */
     function getChainId() internal pure returns (uint256) {
@@ -1183,30 +1105,11 @@ abstract contract VoteToken is ERC20, IVoteToken {
 }
 
 
-// Dependency file: contracts/truefi/interface/ITrueDistributor.sol
+// Dependency file: contracts/trusttoken/common/ClaimableContract.sol
 
 // pragma solidity 0.6.10;
 
-// import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-interface ITrueDistributor {
-    function trustToken() external view returns (IERC20);
-
-    function farm() external view returns (address);
-
-    function distribute() external;
-
-    function nextDistribution() external view returns (uint256);
-
-    function empty() external;
-}
-
-
-// Dependency file: contracts/governance/common/StkClaimableContract.sol
-
-// pragma solidity 0.6.10;
-
-// import {ProxyStorage} from "contracts/governance/common/ProxyStorage.sol";
+// import {ProxyStorage} from "contracts/trusttoken/common/ProxyStorage.sol";
 
 /**
  * @title ClaimableContract
@@ -1214,7 +1117,7 @@ interface ITrueDistributor {
  and provides basic authorization control functions. Inherits storage layout of
  ProxyStorage.
  */
-contract StkClaimableContract is ProxyStorage {
+contract ClaimableContract is ProxyStorage {
     function owner() public view returns (address) {
         return owner_;
     }
@@ -1270,16 +1173,22 @@ contract StkClaimableContract is ProxyStorage {
 }
 
 
-// Dependency file: contracts/common/interface/IPauseableContract.sol
-
+// Dependency file: contracts/truefi/interface/ITrueDistributor.sol
 
 // pragma solidity 0.6.10;
 
-/**
- * @dev interface to allow standard pause function
- */
-interface IPauseableContract {
-    function setPauseStatus(bool pauseStatus) external;
+// import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface ITrueDistributor {
+    function trustToken() external view returns (IERC20);
+
+    function farm() external view returns (address);
+
+    function distribute() external;
+
+    function nextDistribution() external view returns (uint256);
+
+    function empty() external;
 }
 
 
@@ -1290,12 +1199,10 @@ pragma solidity 0.6.10;
 // import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 // import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-// import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 // import {VoteToken} from "contracts/governance/VoteToken.sol";
+// import {ClaimableContract} from "contracts/trusttoken/common/ClaimableContract.sol";
 // import {ITrueDistributor} from "contracts/truefi/interface/ITrueDistributor.sol";
-// import {StkClaimableContract} from "contracts/governance/common/StkClaimableContract.sol";
-// import {IPauseableContract} from "contracts/common/interface/IPauseableContract.sol";
 
 /**
  * @title stkTRU
@@ -1307,11 +1214,10 @@ pragma solidity 0.6.10;
  * stkTRU can be used to vote in governance
  * stkTRU can be used to rate and approve loans
  */
-contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, ReentrancyGuard {
+contract StkTruToken is VoteToken, ClaimableContract, ReentrancyGuard {
     using SafeMath for uint256;
-    using SafeERC20 for IERC20;
-    uint256 private constant PRECISION = 1e30;
-    uint256 private constant MIN_DISTRIBUTED_AMOUNT = 100e8;
+    uint256 constant PRECISION = 1e30;
+    uint256 constant MIN_DISTRIBUTED_AMOUNT = 100e8;
 
     struct FarmRewards {
         // track overall cumulative rewards
@@ -1343,7 +1249,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
 
     uint256 public stakeSupply;
 
-    mapping(address => uint256) private cooldowns;
+    mapping(address => uint256) cooldowns;
     uint256 public cooldownTime;
     uint256 public unstakePeriodDuration;
 
@@ -1356,13 +1262,6 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
 
     mapping(address => bool) public whitelistedFeePayers;
 
-    mapping(address => uint256) public receivedDuringCooldown;
-
-    // allow pausing of deposits
-    bool public pauseStatus;
-
-    IERC20 public feeToken;
-
     // ======= STORAGE DECLARATION END ============
 
     event Stake(address indexed staker, uint256 amount);
@@ -1373,17 +1272,6 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     event CooldownTimeChanged(uint256 newUnstakePeriodDuration);
     event UnstakePeriodDurationChanged(uint256 newUnstakePeriodDuration);
     event FeePayerWhitelistingStatusChanged(address payer, bool status);
-    event PauseStatusChanged(bool pauseStatus);
-    event FeeTokenChanged(IERC20 token);
-    event LiquidatorChanged(address liquidator);
-
-    /**
-     * @dev pool can only be joined when it's unpaused
-     */
-    modifier joiningNotPaused() {
-        require(!pauseStatus, "StkTruToken: Joining the pool is paused");
-        _;
-    }
 
     /**
      * @dev Only Liquidator contract can perform TRU liquidations
@@ -1423,8 +1311,6 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         updateClaimableRewards(tru, account);
         updateTotalRewards(tfusd);
         updateClaimableRewards(tfusd, account);
-        updateTotalRewards(feeToken);
-        updateClaimableRewards(feeToken, account);
         _;
     }
 
@@ -1440,9 +1326,6 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         } else if (token == tfusd) {
             updateTotalRewards(tfusd);
             updateClaimableRewards(tfusd, account);
-        } else if (token == feeToken) {
-            updateTotalRewards(feeToken);
-            updateClaimableRewards(feeToken, account);
         }
         _;
     }
@@ -1451,21 +1334,18 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @dev Initialize contract and set default values
      * @param _tru TRU token
      * @param _tfusd tfUSD token
-     * @param _feeToken Token for fees, currently tfUSDC
      * @param _distributor Distributor for this contract
      * @param _liquidator Liquidator for staked TRU
      */
     function initialize(
         IERC20 _tru,
         IERC20 _tfusd,
-        IERC20 _feeToken,
         ITrueDistributor _distributor,
         address _liquidator
     ) public {
         require(!initalized, "StkTruToken: Already initialized");
         tru = _tru;
         tfusd = _tfusd;
-        feeToken = _feeToken;
         distributor = _distributor;
         liquidator = _liquidator;
 
@@ -1474,25 +1354,6 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
 
         owner_ = msg.sender;
         initalized = true;
-    }
-
-    /**
-     * @dev Set tfUSDC address
-     * @param _feeToken Address of tfUSDC to be set
-     */
-    function setFeeToken(IERC20 _feeToken) external onlyOwner {
-        require(rewardBalance(feeToken) == 0, "StkTruToken: Cannot replace fee token with underlying rewards");
-        feeToken = _feeToken;
-        emit FeeTokenChanged(_feeToken);
-    }
-
-    /**
-     * @dev Set liquidator address
-     * @param _liquidator Address of liquidator to be set
-     */
-    function setLiquidator(address _liquidator) external onlyOwner {
-        liquidator = _liquidator;
-        emit LiquidatorChanged(_liquidator);
     }
 
     /**
@@ -1520,15 +1381,6 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     }
 
     /**
-     * @dev Allow pausing of deposits in case of emergency
-     * @param status New deposit status
-     */
-    function setPauseStatus(bool status) external override onlyOwner {
-        pauseStatus = status;
-        emit PauseStatusChanged(status);
-    }
-
-    /**
      * @dev Owner can set unstake period duration
      * Unstake period defines how long after cooldown a user has to withdraw stake
      * @param newUnstakePeriodDuration New unstake period
@@ -1547,9 +1399,26 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * Updates rewards when staking
      * @param amount Amount of TRU to stake for stkTRU
      */
-    function stake(uint256 amount) external distribute update(msg.sender) joiningNotPaused {
-        _stakeWithoutTransfer(amount);
-        tru.safeTransferFrom(msg.sender, address(this), amount);
+    function stake(uint256 amount) external distribute update(msg.sender) {
+        require(amount > 0, "StkTruToken: Cannot stake 0");
+
+        if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime).add(unstakePeriodDuration) > block.timestamp) {
+            cooldowns[msg.sender] = block.timestamp;
+
+            emit Cooldown(msg.sender, block.timestamp.add(cooldownTime));
+        }
+
+        if (delegates[msg.sender] == address(0)) {
+            delegates[msg.sender] = msg.sender;
+        }
+
+        uint256 amountToMint = stakeSupply == 0 ? amount : amount.mul(totalSupply).div(stakeSupply);
+        _mint(msg.sender, amountToMint);
+        stakeSupply = stakeSupply.add(amount);
+
+        require(tru.transferFrom(msg.sender, address(this), amount));
+
+        emit Stake(msg.sender, amount);
     }
 
     /**
@@ -1561,19 +1430,18 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     function unstake(uint256 amount) external distribute update(msg.sender) nonReentrant {
         require(amount > 0, "StkTruToken: Cannot unstake 0");
 
-        require(unstakable(msg.sender) >= amount, "StkTruToken: Insufficient balance");
+        require(balanceOf[msg.sender] >= amount, "StkTruToken: Insufficient balance");
         require(unlockTime(msg.sender) <= block.timestamp, "StkTruToken: Stake on cooldown");
 
         _claim(tru);
         _claim(tfusd);
-        _claim(feeToken);
 
         uint256 amountToTransfer = amount.mul(stakeSupply).div(totalSupply);
 
         _burn(msg.sender, amount);
         stakeSupply = stakeSupply.sub(amountToTransfer);
 
-        tru.safeTransfer(msg.sender, amountToTransfer);
+        tru.transfer(msg.sender, amountToTransfer);
 
         emit Unstake(msg.sender, amount);
     }
@@ -1581,11 +1449,12 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     /**
      * @dev Initiate cooldown period
      */
-    function cooldown() public {
-        cooldowns[msg.sender] = block.timestamp;
-        receivedDuringCooldown[msg.sender] = 0;
+    function cooldown() external {
+        if (unlockTime(msg.sender) == type(uint256).max) {
+            cooldowns[msg.sender] = block.timestamp;
 
-        emit Cooldown(msg.sender, block.timestamp.add(cooldownTime));
+            emit Cooldown(msg.sender, block.timestamp.add(cooldownTime));
+        }
     }
 
     /**
@@ -1594,7 +1463,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      */
     function withdraw(uint256 amount) external onlyLiquidator {
         stakeSupply = stakeSupply.sub(amount);
-        tru.safeTransfer(liquidator, amount);
+        tru.transfer(liquidator, amount);
 
         emit Withdraw(amount);
     }
@@ -1619,7 +1488,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         require(endTime < type(uint64).max, "StkTruToken: time overflow");
         require(amount < type(uint96).max, "StkTruToken: amount overflow");
 
-        tfusd.safeTransferFrom(msg.sender, address(this), amount);
+        require(tfusd.transferFrom(msg.sender, address(this), amount));
         undistributedTfusdRewards = undistributedTfusdRewards.add(amount.div(2));
         scheduledRewards.push(ScheduledTfUsdRewards({amount: uint96(amount.div(2)), timestamp: uint64(endTime)}));
 
@@ -1633,7 +1502,6 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     function claim() external distribute update(msg.sender) {
         _claim(tru);
         _claim(tfusd);
-        _claim(feeToken);
     }
 
     /**
@@ -1642,21 +1510,8 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @param token Token to claim rewards for
      */
     function claimRewards(IERC20 token) external distribute updateRewards(msg.sender, token) {
-        require(token == tfusd || token == tru || token == feeToken, "Token not supported for rewards");
+        require(token == tfusd || token == tru, "Token not supported for rewards");
         _claim(token);
-    }
-
-    /**
-     * @dev Claim TRU rewards, transfer in extraStakeAmount, and
-     * stake both the rewards and the new amount.
-     * Allows account to save more gas by avoiding out-and-back transfers of rewards
-     */
-    function claimRestake(uint256 extraStakeAmount) external distribute update(msg.sender) {
-        uint256 amount = _claimWithoutTransfer(tru).add(extraStakeAmount);
-        _stakeWithoutTransfer(amount);
-        if (extraStakeAmount > 0) {
-            tru.safeTransferFrom(msg.sender, address(this), extraStakeAmount);
-        }
     }
 
     /**
@@ -1684,19 +1539,6 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
                     .mul(nextCumulativeRewardPerToken.sub(farmRewards[token].previousCumulatedRewardPerToken[account]))
                     .div(PRECISION)
             );
-    }
-
-    /**
-     * @dev max amount of stkTRU than can be unstaked after current cooldown period is over
-     */
-    function unstakable(address staker) public view returns (uint256) {
-        if (unlockTime(staker) == type(uint256).max) {
-            return balanceOf[staker];
-        }
-        if (receivedDuringCooldown[staker] > balanceOf[staker]) {
-            return 0;
-        }
-        return balanceOf[staker].sub(receivedDuringCooldown[staker]);
     }
 
     /**
@@ -1745,19 +1587,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     ) internal override distribute update(sender) {
         updateClaimableRewards(tru, recipient);
         updateClaimableRewards(tfusd, recipient);
-        updateClaimableRewards(feeToken, recipient);
-        // unlockTime returns MAX_UINT256 when there's no ongoing cooldown for the address
-        if (unlockTime(recipient) != type(uint256).max) {
-            receivedDuringCooldown[recipient] = receivedDuringCooldown[recipient].add(amount);
-        }
-        if (unlockTime(sender) != type(uint256).max) {
-            receivedDuringCooldown[sender] = receivedDuringCooldown[sender].sub(min(receivedDuringCooldown[sender], amount));
-        }
         super._transfer(sender, recipient, amount);
-    }
-
-    function min(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a < b ? a : b;
     }
 
     /**
@@ -1766,45 +1596,13 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @param token Token to claim rewards for
      */
     function _claim(IERC20 token) internal {
-        uint256 rewardToClaim = _claimWithoutTransfer(token);
-        if (rewardToClaim > 0) {
-            token.safeTransfer(msg.sender, rewardToClaim);
-        }
-    }
-
-    /**
-     * @dev Internal claim function that returns the transfer value
-     * Claim rewards for a specific ERC20 token to return in a uint256
-     * @param token Token to claim rewards for
-     */
-    function _claimWithoutTransfer(IERC20 token) internal returns (uint256) {
+        farmRewards[token].totalClaimedRewards = farmRewards[token].totalClaimedRewards.add(
+            farmRewards[token].claimableReward[msg.sender]
+        );
         uint256 rewardToClaim = farmRewards[token].claimableReward[msg.sender];
-        farmRewards[token].totalClaimedRewards = farmRewards[token].totalClaimedRewards.add(rewardToClaim);
         farmRewards[token].claimableReward[msg.sender] = 0;
+        require(token.transfer(msg.sender, rewardToClaim));
         emit Claim(msg.sender, token, rewardToClaim);
-        return rewardToClaim;
-    }
-
-    /**
-     * @dev Internal stake of TRU for stkTRU from a uint256
-     * Caller is responsible for ensuring amount is transferred from a valid source
-     * @param amount Amount of TRU to stake for stkTRU
-     */
-    function _stakeWithoutTransfer(uint256 amount) internal {
-        require(amount > 0, "StkTruToken: Cannot stake 0");
-
-        if (cooldowns[msg.sender] != 0 && cooldowns[msg.sender].add(cooldownTime).add(unstakePeriodDuration) > block.timestamp) {
-            cooldown();
-        }
-
-        if (delegates[msg.sender] == address(0)) {
-            delegates[msg.sender] = msg.sender;
-        }
-
-        uint256 amountToMint = stakeSupply == 0 ? amount : amount.mul(totalSupply).div(stakeSupply);
-        _mint(msg.sender, amountToMint);
-        stakeSupply = stakeSupply.add(amount);
-        emit Stake(msg.sender, amount);
     }
 
     /**
@@ -1813,17 +1611,11 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @return Reward balance for token
      */
     function rewardBalance(IERC20 token) internal view returns (uint256) {
-        if (address(token) == address(0)) {
-            return 0;
-        }
         if (token == tru) {
             return token.balanceOf(address(this)).sub(stakeSupply);
         }
         if (token == tfusd) {
             return token.balanceOf(address(this)).sub(undistributedTfusdRewards);
-        }
-        if (token == feeToken) {
-            return token.balanceOf(address(this));
         }
         return 0;
     }

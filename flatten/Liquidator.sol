@@ -52,10 +52,9 @@ abstract contract Context {
 }
 
 
-// Dependency file: contracts/common/Initializable.sol
+// Dependency file: contracts/truefi/common/Initializable.sol
 
 // Copied from https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/v3.0.0/contracts/Initializable.sol
-// Added public isInitialized() view of private initialized bool.
 
 // pragma solidity 0.6.10;
 
@@ -116,26 +115,18 @@ contract Initializable {
         return cs == 0;
     }
 
-    /**
-     * @dev Return true if and only if the contract has been initialized
-     * @return whether the contract has been initialized
-     */
-    function isInitialized() public view returns (bool) {
-        return initialized;
-    }
-
     // Reserved storage space to allow for layout changes in the future.
     uint256[50] private ______gap;
 }
 
 
-// Dependency file: contracts/common/UpgradeableOwnable.sol
+// Dependency file: contracts/truefi/common/UpgradeableOwnable.sol
 
 // pragma solidity 0.6.10;
 
 // import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
 
-// import {Initializable} from "contracts/common/Initializable.sol";
+// import {Initializable} from "contracts/truefi/common/Initializable.sol";
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -328,9 +319,7 @@ interface ILoanToken is IERC20 {
 
     function withdraw(address _beneficiary) external;
 
-    function settle() external;
-
-    function enterDefault() external;
+    function close() external;
 
     function liquidate() external;
 
@@ -338,15 +327,11 @@ interface ILoanToken is IERC20 {
 
     function repay(address _sender, uint256 _amount) external;
 
-    function repayInFull(address _sender) external;
-
     function reclaim() external;
 
     function allowTransfer(address account, bool _status) external;
 
     function repaid() external view returns (uint256);
-
-    function isRepaid() external view returns (bool);
 
     function balance() external view returns (uint256);
 
@@ -617,7 +602,7 @@ library SafeMath {
 
 pragma solidity 0.6.10;
 
-// import {Ownable} from "contracts/common/UpgradeableOwnable.sol";
+// import {Ownable} from "contracts/truefi/common/UpgradeableOwnable.sol";
 // import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // import {ILoanToken} from "contracts/truefi/interface/ILoanToken.sol";
@@ -631,7 +616,7 @@ pragma solidity 0.6.10;
  * @title Liquidator
  * @notice Liquidate LoanTokens with this Contract
  * @dev When a Loan becomes defaulted, Liquidator allows to
- * compensate pool participants, by transferring some of TRU to the pool
+ * compensate pool participants, by transfering some of TRU to the pool
  */
 contract Liquidator is Ownable {
     using SafeMath for uint256;
