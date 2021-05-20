@@ -135,7 +135,7 @@ describe('TrueFiPool', () => {
       expectScaledCloseTo(await pool.poolValue(), parseEth(9e6).add(parseEth(105e4)).add(calcBorrowerFee(parseEth(2e6))))
     })
 
-    it('loan tokens + tusd + curve liquidity + tru tokens', async () => {
+    it('loan tokens + tusd + curve liquidity', async () => {
       await token.approve(pool.address, includeFee(parseEth(1e7)))
       await pool.join(includeFee(parseEth(1e7)))
       const loan1 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
@@ -149,10 +149,10 @@ describe('TrueFiPool', () => {
       expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(calcBorrowerFee(parseEth(2e6))))
       await trustToken.mint(pool.address, parseTRU(4e5))
       expect(await pool.truValue()).to.equal(parseEth(98000)) // 100000 - 2%
-      expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7)).add(parseEth(98000))).add(calcBorrowerFee(parseEth(2e6))))
+      expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(calcBorrowerFee(parseEth(2e6))))
       await mockCrv.mint(pool.address, parseEth(1e5))
       expect(await pool.crvValue()).to.equal(parseEth(4.9e4)) // 50000 - 2%
-      expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7)).add(parseEth(98000))).add(parseEth(4.9e4)).add(calcBorrowerFee(parseEth(2e6))))
+      expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(parseEth(4.9e4)).add(calcBorrowerFee(parseEth(2e6))))
     })
   })
 
