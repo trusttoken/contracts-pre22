@@ -56,6 +56,11 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
     event Distributed(uint256 amount);
 
     /**
+     * @dev Emitted when a distribution is restarted after it was over
+     */
+    event DistributionRestarted(uint256 _distributionStart, uint256 _duration, uint256 _dailyDistribution);
+
+    /**
      * @dev Initialize distributor
      * @param _distributionStart Start time for distribution
      * @param _duration Length of distribution
@@ -152,5 +157,26 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
         totalAmount = dailyDistribution.mul(timeLeft).div(1 days);
         distributed = 0;
         emit TotalAmountChanged(totalAmount);
+    }
+
+    /**
+     * @dev Restart the distribution that has ended
+     */
+    function restart(
+        uint256 _distributionStart,
+        uint256 _duration,
+        uint256 _dailyDistribution
+    ) public onlyOwner {
+        require(
+            block.timestamp > distributionStart.add(duration),
+            "LinearTrueDistributor: Cannot restart distribution before it's over"
+        );
+        distribute();
+
+        distributionStart = _distributionStart;
+        lastDistribution = _distributionStart;
+        duration = _duration;
+        totalAmount = _dailyDistribution.mul(_duration).div(1 days);
+        distributed = 0;
     }
 }
