@@ -105,6 +105,44 @@ describe('LinearTrueDistributor', () => {
     })
   })
 
+  describe('restart', () => {
+    beforeEach(async () => {
+      await distributor.setFarm(farm.address)
+    })
+
+    it('can only be called by the owner', async () => {
+      await expect(distributor.connect(farm).restart(10, 10, 10))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be called while distribution is still active', async () => {
+      await expect(distributor.restart(10, 10, 10))
+        .to.be.revertedWith('LinearTrueDistributor: Cannot restart distribution before it\'s over')
+    })
+
+    it('cannot be called while distribution is still active', async () => {
+      await timeTravelTo(provider, startDate + DAY * 30 + 1)
+
+      await distributor.restart(startDate + DAY * 31, DAY * 2, toTrustToken(20))
+
+      expect(await distributor.distributionStart()).to.equal(startDate + DAY * 31)
+      expect(await distributor.duration()).to.equal(DAY * 2)
+      expect(await distributor.totalAmount()).to.equal(toTrustToken(40))
+      expect(await distributor.distributed()).to.equal(0)
+    })
+
+    it('starts distributing once new startDate is reached', async () => {
+      await timeTravelTo(provider, startDate + DAY * 30 + 1)
+
+      await distributor.restart(startDate + DAY * 31, DAY * 2, toTrustToken(20))
+      await timeTravel(provider, DAY / 2)
+      expect(await distributor.nextDistribution()).to.equal(0)
+      await timeTravel(provider, DAY - 1)
+      // half a day after distribution start
+      expectScaledCloseTo(await distributor.nextDistribution(), toTrustToken(10))
+    })
+  })
+
   describe('distribute', () => {
     beforeEach(async () => {
       await distributor.setFarm(farm.address)
