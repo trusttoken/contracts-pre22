@@ -22,15 +22,16 @@ import { utils } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
 const DAY = 60 * 60 * 24
+// 290,934 per day for 14 days
 
 // TODO set this properly for testnets or deploy a mock
 const ONE_INCH_EXCHANGE = '0x11111112542d85b3ef69ae05771c2dccff4faa26'
 const deployParams = {
   mainnet: {
     USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-    DISTRIBUTION_DURATION: 180 * DAY,
-    DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
-    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
+    DISTRIBUTION_DURATION: 14 * DAY,
+    DISTRIBUTION_START: 1621529911,
+    STAKE_DISTRIBUTION_AMOUNT: '407307600000000',
   },
   testnet: {
     LOAN_INTEREST_FEE: 500,
