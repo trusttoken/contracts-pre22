@@ -358,7 +358,7 @@ library Address {
 }
 
 
-// Dependency file: contracts/trusttoken/common/ProxyStorage.sol
+// Dependency file: contracts/trusttoken/common/TruProxyStorage.sol
 
 // pragma solidity 0.6.10;
 
@@ -367,7 +367,7 @@ library Address {
  * New storage must be appended to the end
  * Never remove items from this list
  */
-contract ProxyStorage {
+contract TruProxyStorage {
     bool initalized;
     uint256 public totalSupply;
 
@@ -377,6 +377,14 @@ contract ProxyStorage {
 
     address owner_;
     address pendingOwner_;
+
+    // represents total distribution for locked balances
+    mapping(address => uint256) distribution;
+
+    // registry of locked addresses
+    address public timeLockRegistry;
+    // allow unlocked transfers to special account
+    bool public returnsLocked;
 
     mapping(address => address) public delegates; // A record of votes checkpoints for each account, by index
     struct Checkpoint {
@@ -430,7 +438,7 @@ contract ProxyStorage {
 // import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 // import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-// import {ProxyStorage} from "contracts/trusttoken/common/ProxyStorage.sol";
+// import {TruProxyStorage} from "contracts/trusttoken/common/TruProxyStorage.sol";
 
 // prettier-ignore
 /**
@@ -457,7 +465,7 @@ contract ProxyStorage {
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-abstract contract ERC20 is ProxyStorage, Context {
+abstract contract ERC20 is TruProxyStorage, Context {
     using SafeMath for uint256;
     using Address for address;
 
@@ -794,7 +802,7 @@ interface IVoteToken {
 interface IVoteTokenWithERC20 is IVoteToken, IERC20 {}
 
 
-// Dependency file: contracts/governance/VoteToken.sol
+// Dependency file: contracts/trusttoken/TruVoteToken.sol
 
 // AND COPIED FROM https://github.com/compound-finance/compound-protocol/blob/c5fcc34222693ad5f547b14ed01ce719b5f4b000/contracts/Governance/Comp.sol
 // Copyright 2020 Compound Labs, Inc.
@@ -819,7 +827,7 @@ interface IVoteTokenWithERC20 is IVoteToken, IERC20 {}
  * Checkpoints are created every time state is changed which record voting power
  * Inherits standard ERC20 behavior
  */
-abstract contract VoteToken is ERC20, IVoteToken {
+abstract contract TruVoteToken is ERC20, IVoteToken {
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
     bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
 
@@ -830,7 +838,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return _delegate(msg.sender, delegatee);
     }
 
-    /** 
+    /**
      * @dev Delegate votes using signature
      */
     function delegateBySig(
@@ -917,7 +925,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
         _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
-    function _balanceOf(address account) internal view virtual returns (uint256) {
+    function _balanceOf(address account) internal virtual view returns (uint256) {
         return balanceOf[account];
     }
 
@@ -965,7 +973,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
         }
     }
 
-    /** 
+    /**
      * @dev internal function to write a checkpoint for voting power
      */
     function _writeCheckpoint(
@@ -1027,7 +1035,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
         return a - b;
     }
 
-    /** 
+    /**
      * @dev internal function to get chain ID
      */
     function getChainId() internal pure returns (uint256) {
@@ -1044,7 +1052,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
 
 // pragma solidity 0.6.10;
 
-// import {ProxyStorage} from "contracts/trusttoken/common/ProxyStorage.sol";
+// import {TruProxyStorage} from "contracts/trusttoken/common/TruProxyStorage.sol";
 
 /**
  * @title ClaimableContract
@@ -1052,7 +1060,7 @@ abstract contract VoteToken is ERC20, IVoteToken {
  and provides basic authorization control functions. Inherits storage layout of
  ProxyStorage.
  */
-contract ClaimableContract is ProxyStorage {
+contract ClaimableContract is TruProxyStorage {
     function owner() public view returns (address) {
         return owner_;
     }
@@ -1114,7 +1122,7 @@ pragma solidity 0.6.10;
 
 // import "@openzeppelin/contracts/math/SafeMath.sol";
 
-// import {VoteToken} from "contracts/governance/VoteToken.sol";
+// import {TruVoteToken} from "contracts/trusttoken/TruVoteToken.sol";
 // import {ClaimableContract} from "contracts/trusttoken/common/ClaimableContract.sol";
 
 /**
@@ -1135,11 +1143,8 @@ pragma solidity 0.6.10;
  * are allowed to be transferred, and after all epochs have passed, the full
  * account balance is unlocked
  */
-abstract contract TimeLockedToken is VoteToken, ClaimableContract {
+abstract contract TimeLockedToken is TruVoteToken, ClaimableContract {
     using SafeMath for uint256;
-
-    // represents total distribution for locked balances
-    mapping(address => uint256) distribution;
 
     // start of the lockup period
     // Friday, July 24, 2020 4:58:31 PM GMT
@@ -1150,10 +1155,6 @@ abstract contract TimeLockedToken is VoteToken, ClaimableContract {
     uint256 constant EPOCH_DURATION = 90 days;
     // number of epochs
     uint256 constant TOTAL_EPOCHS = 8;
-    // registry of locked addresses
-    address public timeLockRegistry;
-    // allow unlocked transfers to special account
-    bool public returnsLocked;
 
     modifier onlyTimeLockRegistry() {
         require(msg.sender == timeLockRegistry, "only TimeLockRegistry");

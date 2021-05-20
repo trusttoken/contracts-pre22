@@ -438,9 +438,10 @@ library SafeMath {
 }
 
 
-// Dependency file: contracts/truefi/common/Initializable.sol
+// Dependency file: contracts/common/Initializable.sol
 
 // Copied from https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/v3.0.0/contracts/Initializable.sol
+// Added public isInitialized() view of private initialized bool.
 
 // pragma solidity 0.6.10;
 
@@ -501,12 +502,20 @@ contract Initializable {
         return cs == 0;
     }
 
+    /**
+     * @dev Return true if and only if the contract has been initialized
+     * @return whether the contract has been initialized
+     */
+    function isInitialized() public view returns (bool) {
+        return initialized;
+    }
+
     // Reserved storage space to allow for layout changes in the future.
     uint256[50] private ______gap;
 }
 
 
-// Root file: contracts/truefi/common/UpgradeableERC20.sol
+// Root file: contracts/common/UpgradeableERC20.sol
 
 pragma solidity 0.6.10;
 
@@ -515,7 +524,7 @@ pragma solidity 0.6.10;
 // import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-// import {Initializable} from "contracts/truefi/common/Initializable.sol";
+// import {Initializable} from "contracts/common/Initializable.sol";
 
 /**
  * @dev Implementation of the {IERC20} interface.
@@ -598,7 +607,7 @@ contract ERC20 is Initializable, Context, IERC20 {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public view returns (uint8) {
+    function decimals() public virtual view returns (uint8) {
         return _decimals;
     }
 

@@ -267,9 +267,10 @@ library SafeMath {
 }
 
 
-// Dependency file: contracts/truefi/common/Initializable.sol
+// Dependency file: contracts/common/Initializable.sol
 
 // Copied from https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/v3.0.0/contracts/Initializable.sol
+// Added public isInitialized() view of private initialized bool.
 
 // pragma solidity 0.6.10;
 
@@ -328,6 +329,14 @@ contract Initializable {
             cs := extcodesize(self)
         }
         return cs == 0;
+    }
+
+    /**
+     * @dev Return true if and only if the contract has been initialized
+     * @return whether the contract has been initialized
+     */
+    function isInitialized() public view returns (bool) {
+        return initialized;
     }
 
     // Reserved storage space to allow for layout changes in the future.
@@ -390,7 +399,7 @@ pragma solidity 0.6.10;
 // import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-// import {Initializable} from "contracts/truefi/common/Initializable.sol";
+// import {Initializable} from "contracts/common/Initializable.sol";
 // import {ITrueDistributor} from "contracts/truefi/interface/ITrueDistributor.sol";
 // import {ITrueFarm} from "contracts/truefi/interface/ITrueFarm.sol";
 
@@ -454,7 +463,7 @@ contract TrueFarm is ITrueFarm, Initializable {
     event Claim(address indexed who, uint256 amountClaimed);
 
     /**
-     * @dev Initalize staking pool with a Distributor contract
+     * @dev Initialize staking pool with a Distributor contract
      * The distributor contract calculates how much TRU rewards this contract
      * gets, and stores TRU for distribution.
      * @param _stakingToken Token to stake

@@ -305,9 +305,10 @@ abstract contract Context {
 }
 
 
-// Dependency file: contracts/truefi/common/Initializable.sol
+// Dependency file: contracts/common/Initializable.sol
 
 // Copied from https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/v3.0.0/contracts/Initializable.sol
+// Added public isInitialized() view of private initialized bool.
 
 // pragma solidity 0.6.10;
 
@@ -368,18 +369,26 @@ contract Initializable {
         return cs == 0;
     }
 
+    /**
+     * @dev Return true if and only if the contract has been initialized
+     * @return whether the contract has been initialized
+     */
+    function isInitialized() public view returns (bool) {
+        return initialized;
+    }
+
     // Reserved storage space to allow for layout changes in the future.
     uint256[50] private ______gap;
 }
 
 
-// Dependency file: contracts/truefi/common/UpgradeableOwnable.sol
+// Dependency file: contracts/common/UpgradeableOwnable.sol
 
 // pragma solidity 0.6.10;
 
 // import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
 
-// import {Initializable} from "contracts/truefi/common/Initializable.sol";
+// import {Initializable} from "contracts/common/Initializable.sol";
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -524,7 +533,9 @@ interface ILoanToken is IERC20 {
 
     function withdraw(address _beneficiary) external;
 
-    function close() external;
+    function settle() external;
+
+    function enterDefault() external;
 
     function liquidate() external;
 
@@ -532,11 +543,15 @@ interface ILoanToken is IERC20 {
 
     function repay(address _sender, uint256 _amount) external;
 
+    function repayInFull(address _sender) external;
+
     function reclaim() external;
 
     function allowTransfer(address account, bool _status) external;
 
     function repaid() external view returns (uint256);
+
+    function isRepaid() external view returns (bool);
 
     function balance() external view returns (uint256);
 
@@ -637,7 +652,7 @@ pragma solidity 0.6.10;
 
 // import {IBurnableERC20} from "contracts/trusttoken/interface/IBurnableERC20.sol";
 
-// import {Ownable} from "contracts/truefi/common/UpgradeableOwnable.sol";
+// import {Ownable} from "contracts/common/UpgradeableOwnable.sol";
 // import {IArbitraryDistributor} from "contracts/truefi/interface/IArbitraryDistributor.sol";
 // import {ILoanFactory} from "contracts/truefi/interface/ILoanFactory.sol";
 // import {ILoanToken} from "contracts/truefi/interface/ILoanToken.sol";
@@ -758,7 +773,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
-     * @dev Only loans in Running state
+     * @dev Only loans not in Running state
      */
     modifier onlyNotRunningLoans(address id) {
         require(status(id) != LoanStatus.Running, "TrueRatingAgency: Loan is currently running");
@@ -774,7 +789,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
     }
 
     /**
-     * @dev Initalize Rating Agenct
+     * @dev Initialize Rating Agency
      * Distributor contract decides how much TRU is rewarded to stakers
      * @param _trustToken TRU contract
      * @param _distributor Distributor contract
@@ -1111,7 +1126,7 @@ contract TrueRatingAgency is ITrueRatingAgency, Ownable {
         uint256 passedTime = block.timestamp.sub(ILoanToken(id).start());
 
         // check time of loan
-        if (passedTime > totalTime) {
+        if (passedTime > totalTime || ILoanToken(id).status() == ILoanToken.Status.Settled) {
             passedTime = totalTime;
         }
         // calculate how many tokens user can claim

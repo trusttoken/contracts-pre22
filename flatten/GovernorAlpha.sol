@@ -24,46 +24,167 @@
 */
 
 // https://github.com/trusttoken/smart-contracts
-// Dependency file: contracts/governance/common/ClaimableContract.sol
+// Dependency file: @openzeppelin/contracts/GSN/Context.sol
 
 // SPDX-License-Identifier: MIT
+
+// pragma solidity ^0.6.0;
+
+/*
+ * @dev Provides information about the current execution context, including the
+ * sender of the transaction and its data. While these are generally available
+ * via msg.sender and msg.data, they should not be accessed in such a direct
+ * manner, since when dealing with GSN meta-transactions the account sending and
+ * paying for execution may not be the actual sender (as far as an application
+ * is concerned).
+ *
+ * This contract is only required for intermediate, library-like contracts.
+ */
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
+
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
+}
+
+
+// Dependency file: contracts/common/Initializable.sol
+
+// Copied from https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/v3.0.0/contracts/Initializable.sol
+// Added public isInitialized() view of private initialized bool.
+
 // pragma solidity 0.6.10;
 
 /**
- * @title ClaimableContract
- * @dev The ClaimableContract contract is a copy of Claimable Contract by Zeppelin.
- and provides basic authorization control functions. Inherits storage layout of
- ProxyStorage.
+ * @title Initializable
+ *
+ * @dev Helper contract to support initializer functions. To use it, replace
+ * the constructor with a function that has the `initializer` modifier.
+ * WARNING: Unlike constructors, initializer functions must be manually
+ * invoked. This applies both to deploying an Initializable contract, as well
+ * as extending an Initializable contract via inheritance.
+ * WARNING: When used with inheritance, manual care must be taken to not invoke
+ * a parent initializer twice, or ensure that all initializers are idempotent,
+ * because this is not dealt with automatically as with constructors.
  */
-contract ClaimableContract {
-    address owner_;
-    address pendingOwner_;
-    bool initalized;
+contract Initializable {
+    /**
+     * @dev Indicates that the contract has been initialized.
+     */
+    bool private initialized;
 
-    function owner() public view returns (address) {
-        return owner_;
+    /**
+     * @dev Indicates that the contract is in the process of being initialized.
+     */
+    bool private initializing;
+
+    /**
+     * @dev Modifier to use in the initializer function of a contract.
+     */
+    modifier initializer() {
+        require(initializing || isConstructor() || !initialized, "Contract instance has already been initialized");
+
+        bool isTopLevelCall = !initializing;
+        if (isTopLevelCall) {
+            initializing = true;
+            initialized = true;
+        }
+
+        _;
+
+        if (isTopLevelCall) {
+            initializing = false;
+        }
     }
 
-    function pendingOwner() public view returns (address) {
-        return pendingOwner_;
+    /// @dev Returns true if and only if the function is running in the constructor
+    function isConstructor() private view returns (bool) {
+        // extcodesize checks the size of the code stored in an address, and
+        // address returns the current address. Since the code is still not
+        // deployed when running a constructor, any checks on its code size will
+        // yield zero, making it an effective way to detect if a contract is
+        // under construction or not.
+        address self = address(this);
+        uint256 cs;
+        assembly {
+            cs := extcodesize(self)
+        }
+        return cs == 0;
     }
+
+    /**
+     * @dev Return true if and only if the contract has been initialized
+     * @return whether the contract has been initialized
+     */
+    function isInitialized() public view returns (bool) {
+        return initialized;
+    }
+
+    // Reserved storage space to allow for layout changes in the future.
+    uint256[50] private ______gap;
+}
+
+
+// Dependency file: contracts/common/UpgradeableClaimable.sol
+
+// pragma solidity 0.6.10;
+
+// import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
+
+// import {Initializable} from "contracts/common/Initializable.sol";
+
+/**
+ * @title UpgradeableClaimable
+ * @dev Contract module which provides a basic access control mechanism, where
+ * there is an account (an owner) that can be granted exclusive access to
+ * specific functions.
+ *
+ * By default, the owner account will be the one that deploys the contract. Since
+ * this contract combines Claimable and UpgradableOwnable contracts, ownership
+ * can be later change via 2 step method {transferOwnership} and {claimOwnership}
+ *
+ * This module is used through inheritance. It will make available the modifier
+ * `onlyOwner`, which can be applied to your functions to restrict their use to
+ * the owner.
+ */
+contract UpgradeableClaimable is Initializable, Context {
+    address private _owner;
+    address private _pendingOwner;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
-     * @dev sets the original `owner` of the contract to the sender
-     * at construction. Must then be reinitialized
+     * @dev Initializes the contract setting a custom initial owner of choice.
+     * @param __owner Initial owner of contract to be set.
      */
-    constructor() public {
-        owner_ = msg.sender;
-        emit OwnershipTransferred(address(0), msg.sender);
+    function initialize(address __owner) internal initializer {
+        _owner = __owner;
+        emit OwnershipTransferred(address(0), __owner);
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Returns the address of the pending owner.
+     */
+    function pendingOwner() public view returns (address) {
+        return _pendingOwner;
     }
 
     /**
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(msg.sender == owner_, "only owner");
+        require(_owner == _msgSender(), "Ownable: caller is not the owner");
         _;
     }
 
@@ -71,7 +192,7 @@ contract ClaimableContract {
      * @dev Modifier throws if called by any account other than the pendingOwner.
      */
     modifier onlyPendingOwner() {
-        require(msg.sender == pendingOwner_);
+        require(msg.sender == _pendingOwner, "Ownable: caller is not the pending owner");
         _;
     }
 
@@ -80,17 +201,16 @@ contract ClaimableContract {
      * @param newOwner The address to transfer ownership to.
      */
     function transferOwnership(address newOwner) public onlyOwner {
-        pendingOwner_ = newOwner;
+        _pendingOwner = newOwner;
     }
 
     /**
      * @dev Allows the pendingOwner address to finalize the transfer.
      */
     function claimOwnership() public onlyPendingOwner {
-        address _pendingOwner = pendingOwner_;
-        emit OwnershipTransferred(owner_, _pendingOwner);
-        owner_ = _pendingOwner;
-        pendingOwner_ = address(0);
+        emit OwnershipTransferred(_owner, _pendingOwner);
+        _owner = _pendingOwner;
+        _pendingOwner = address(0);
     }
 }
 
@@ -250,32 +370,21 @@ interface IVoteTokenWithERC20 is IVoteToken, IERC20 {}
 // 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
 // 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Ctrl+f for OLD to see all the modifications.
 
-// OLD: pragma solidity ^0.5.16;
 pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
-// import {ClaimableContract} from "contracts/governance/common/ClaimableContract.sol";
+// import {UpgradeableClaimable} from "contracts/common/UpgradeableClaimable.sol";
 // import {ITimelock} from "contracts/governance/interface/ITimelock.sol";
 // import {IVoteToken} from "contracts/governance/interface/IVoteToken.sol";
 
-contract GovernorAlpha is ClaimableContract {
-    // @notice The name of this contract
-    string public constant name = "TrustToken Governor Alpha";
+contract GovernorAlpha is UpgradeableClaimable {
 
-    // @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
-    function quorumVotes() public pure returns (uint) { return 10000000e8; } // 10,000,000 Tru
-
-    // @notice The number of votes required in order for a voter to become a proposer
-    function proposalThreshold() public pure returns (uint) { return 100000e8; } // 100,000 TRU
-
-    // @notice The maximum number of actions that can be included in a proposal
-    function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions
-
-    // @notice The delay before voting on a proposal may take place, once proposed
-    function votingDelay() public pure returns (uint) { return 1; } // 1 block
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
 
     // @notice The duration of voting on a proposal, in blocks
     uint public votingPeriod;
@@ -294,6 +403,17 @@ contract GovernorAlpha is ClaimableContract {
 
     // @notice The total number of proposals
     uint public proposalCount;
+
+    // @notice The official record of all proposals ever proposed
+    mapping (uint => Proposal) public proposals;
+
+    // @notice The latest proposal for each proposer
+    mapping (address => uint) public latestProposalIds;
+
+    // ======= STORAGE DECLARATION END ============
+
+    // @notice The name of this contract
+    string public constant name = "TrueFi Governance";
 
     struct Proposal {
         // @notice Unique id for looking up a proposal
@@ -363,12 +483,6 @@ contract GovernorAlpha is ClaimableContract {
         Executed
     }
 
-    // @notice The official record of all proposals ever proposed
-    mapping (uint => Proposal) public proposals;
-
-    // @notice The latest proposal for each proposer
-    mapping (address => uint) public latestProposalIds;
-
     // @notice The EIP-712 typehash for the contract's domain
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
 
@@ -390,18 +504,28 @@ contract GovernorAlpha is ClaimableContract {
     // @notice An event emitted when a proposal has been executed in the Timelock
     event ProposalExecuted(uint id);
 
+    // @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
+    function quorumVotes() public pure returns (uint) { return 10000000e8; } // 10,000,000 Tru
+
+    // @notice The number of votes required in order for a voter to become a proposer
+    function proposalThreshold() public pure returns (uint) { return 100000e8; } // 100,000 TRU
+
+    // @notice The maximum number of actions that can be included in a proposal
+    function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions
+
+    // @notice The delay before voting on a proposal may take place, once proposed
+    function votingDelay() public pure returns (uint) { return 1; } // 1 block
+
     /**
      * @dev Initialize sets the addresses of timelock contract, trusttoken contract, and guardian
      */
     function initialize(ITimelock _timelock, IVoteToken _trustToken, address _guardian, IVoteToken _stkTRU, uint256 _votingPeriod) external {
+        UpgradeableClaimable.initialize(msg.sender);
         timelock = _timelock;
         trustToken = _trustToken;
         stkTRU = _stkTRU;
         guardian = _guardian;
         votingPeriod = _votingPeriod;
-
-        owner_ = msg.sender;
-        initalized = true;
     }
 
     /**
@@ -598,7 +722,7 @@ contract GovernorAlpha is ClaimableContract {
         require(state(proposalId) == ProposalState.Active, "GovernorAlpha::_castVote: voting is closed");
         Proposal storage proposal = proposals[proposalId];
         Receipt storage receipt = proposal.receipts[voter];
-        require(receipt.hasVoted == false, "GovernorAlpha::_castVote: voter already voted");
+        require(!receipt.hasVoted, "GovernorAlpha::_castVote: voter already voted");
         uint96 votes = countVotes(voter, proposal.startBlock);
 
         if (support) {
@@ -690,6 +814,10 @@ contract GovernorAlpha is ClaimableContract {
         return totalVote;
     }
 
+    /**
+     * @dev safe96 add function
+     * @return a + b
+     */
     function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
         uint96 c = a + b;
         require(c >= a, errorMessage);
