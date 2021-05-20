@@ -188,7 +188,7 @@ describe('CrvBaseRateOracle', () => {
       })
     })
 
-    describe('weeklyProfit', () => {
+    describe('getWeeklyAPY', () => {
       describe('returns correct value if', () => {
         it('prices grows for last 3 days', async () => {
           await updateRateRightAfterCooldown(crvBaseRateOracle)
@@ -206,9 +206,9 @@ describe('CrvBaseRateOracle', () => {
           //                            <^
           //                             starting from here and to left
           // Expected avg rate is (1050 + 400 / 2) / 6.5 = 192.3076
-          // Expected weekly profit is (400 - 192.3076) / 192.3076 = 1.08..
+          // Expected weekly apy is (400 - 192.3076) / 192.3076 = 1.08..
           expectCloseTo(await crvBaseRateOracle.calculateAverageRate(7 * DAY), BigNumber.from(192_3076), 5)
-          expect(await crvBaseRateOracle.weeklyProfit()).to.eq(108_00)
+          expect(await crvBaseRateOracle.getWeeklyAPY()).to.eq(108_00)
         })
 
         it('price goes up and down', async () => {
@@ -231,9 +231,9 @@ describe('CrvBaseRateOracle', () => {
           //                            <^
           //                             starting from here and to left
           // Expected avg rate is (1175 + 250 / 2) / 6.5 = 200.00
-          // Expected weekly profit is (250 - 200) / 200 = 0.25
+          // Expected weekly apy is (250 - 200) / 200 = 0.25
           expectCloseTo(await crvBaseRateOracle.calculateAverageRate(7 * DAY), BigNumber.from(200_0000), 5)
-          expect(await crvBaseRateOracle.weeklyProfit()).to.eq(25_00)
+          expect(await crvBaseRateOracle.getWeeklyAPY()).to.eq(25_00)
         })
 
         it('prices goes down', async () => {
@@ -243,15 +243,15 @@ describe('CrvBaseRateOracle', () => {
           //                                 <^
           //                                  starting from here and to left
           // Expected avg rate is 75 / 1 = 75
-          // Expected weekly profit is (50 - 75) / 75 = -0.(3)
+          // Expected weekly apy is (50 - 75) / 75 = -0.(3)
           expectCloseTo(await crvBaseRateOracle.calculateAverageRate(2 * DAY), BigNumber.from(75_0000), 5)
-          expect(await crvBaseRateOracle.weeklyProfit()).to.eq(-33_33)
+          expect(await crvBaseRateOracle.getWeeklyAPY()).to.eq(-33_33)
         })
       })
     })
 
-    describe('monthlyProfit', () => {
-      it('correctly calculates profit', async () => {
+    describe('getMonthlyAPY', () => {
+      it('correctly calculates APY', async () => {
         await updateRateRightAfterCooldown(oracleLongBuffer)
         await updateRateRightAfterCooldown(oracleLongBuffer)
 
@@ -261,13 +261,13 @@ describe('CrvBaseRateOracle', () => {
         }
         // Having buffer with values: 100, 110, ..., 390 probed with 1 day interval
         // Expected avg rate is 245
-        // Expected monthly profit is 59.18
-        expect(await oracleLongBuffer.monthlyProfit()).to.eq(59_18)
+        // Expected monthly apy is 59.18
+        expect(await oracleLongBuffer.getMonthlyAPY()).to.eq(59_18)
       })
     })
 
-    describe('yearlyProfit', () => {
-      xit('correctly calculates profit', async () => {
+    describe('getYearlyAPY', () => {
+      xit('correctly calculates APY', async () => {
         await updateRateRightAfterCooldown(oracleLongBuffer)
         await updateRateRightAfterCooldown(oracleLongBuffer)
 
@@ -277,8 +277,8 @@ describe('CrvBaseRateOracle', () => {
         }
         // Having buffer with values: 100, 110, ..., 3740 probed with 1 day interval
         // Expected avg rate is 1920
-        // Expected yearly profit is 94.79
-        expect(await oracleLongBuffer.yearlyProfit()).to.eq(94_79)
+        // Expected yearly apy is 94.79
+        expect(await oracleLongBuffer.getYearlyAPY()).to.eq(94_79)
       }).timeout(100_000)
     })
   })

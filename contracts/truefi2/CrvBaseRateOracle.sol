@@ -124,35 +124,35 @@ contract CrvBaseRateOracle {
     }
 
     /**
-     * @dev Profit in 7 days based on average rate
-     * from collected data from last 7 days
-     * @return Calculated weekly profit
+     * @dev What percent of average rate is difference of current rate and average rate.
+     * Based on average rate from collected data in the nearest past.
+     * @param time Determines from how far in the past collected data should be used.
+     * @return Calculated percentage of estimated apy.
      */
-    function weeklyProfit() public view returns (int256) {
-        int256 avgRate = int256(calculateAverageRate(7 days));
+    function apy(uint256 time) internal view returns (int256) {
+        int256 avgRate = int256(calculateAverageRate(time));
         uint256 curCrvBaseRate = curve.get_virtual_price();
         return ((int256(curCrvBaseRate.mul(10000)) - avgRate) * 10000) / avgRate;
     }
 
     /**
-     * @dev Profit in 30 days based on average rate
-     * from collected data from last 30 days
-     * @return Calculated monthly profit
+     * @dev APY based on data from last 7 days.
      */
-    function monthlyProfit() public view returns (int256) {
-        int256 avgRate = int256(calculateAverageRate(30 days));
-        uint256 curCrvBaseRate = curve.get_virtual_price();
-        return ((int256(curCrvBaseRate.mul(10000)) - avgRate) * 10000) / avgRate;
+    function getWeeklyAPY() public view returns (int256) {
+        return apy(7 days);
     }
 
     /**
-     * @dev Profit in 365 days based on average rate
-     * from collected data from last 365 days
-     * @return Calculated yearly profit
+     * @dev APY based on data from last 30 days.
      */
-    function yearlyProfit() public view returns (int256) {
-        int256 avgRate = int256(calculateAverageRate(365 days));
-        uint256 curCrvBaseRate = curve.get_virtual_price();
-        return ((int256(curCrvBaseRate.mul(10000)) - avgRate) * 10000) / avgRate;
+    function getMonthlyAPY() public view returns (int256) {
+        return apy(30 days);
+    }
+
+    /**
+     * @dev APY based on data from last 365 days.
+     */
+    function getYearlyAPY() public view returns (int256) {
+        return apy(365 days);
     }
 }
