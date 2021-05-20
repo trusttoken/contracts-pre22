@@ -47,17 +47,23 @@ deploy({}, (_, config) => {
   const NETWORK = isMainnet ? 'mainnet' : 'testnet'
 
   // Existing contracts
-  const trustToken = isMainnet
-    ? timeProxy(contract(TrustToken), () => {})
-    : timeProxy(contract(TestTrustToken), () => {})
-  const stkTruToken = proxy(contract(StkTruToken), () => {})
-  const trueFiPool = isMainnet
-    ? proxy(contract(TrueFiPool), () => {})
-    : proxy(contract(TestTrueFiPool), () => {})
-  const usdc = isMainnet
-    ? deployParams['mainnet'].USDC
-    : contract(TestUSDCToken)
-  const trueRatingAgencyV2 = proxy(contract(TrueRatingAgencyV2), () => {})
+  // const trustToken = isMainnet
+  //   ? timeProxy(contract(TrustToken), () => {})
+  //   : timeProxy(contract(TestTrustToken), () => {})
+  // const stkTruToken = proxy(contract(StkTruToken), () => {})
+  // const trueFiPool = isMainnet
+  //   ? proxy(contract(TrueFiPool), () => {})
+  //   : proxy(contract(TestTrueFiPool), () => {})
+  // const usdc = isMainnet
+  //   ? deployParams['mainnet'].USDC
+  //   : contract(TestUSDCToken)
+  // const trueRatingAgencyV2 = proxy(contract(TrueRatingAgencyV2), () => {})
+
+  const trustToken = '0x4c19596f5aaff459fa38b0f7ed92f11ae6543784'
+  const stkTruToken = '0x23696914ca9737466d8553a2d619948f548ee424'
+  const trueFiPool = '0xa1e72267084192Db7387c8CC1328fadE470e4149'
+  const usdc = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+  const trueRatingAgencyV2 = '0x05461334340568075bE35438b221A3a0D261Fb6b'
 
   // New contract impls
   const trueLender2_impl = contract(TrueLender2)
