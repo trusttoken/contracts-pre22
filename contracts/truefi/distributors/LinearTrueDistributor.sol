@@ -171,6 +171,8 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
             block.timestamp > distributionStart.add(duration),
             "LinearTrueDistributor: Cannot restart distribution before it's over"
         );
+        require(_distributionStart > block.timestamp, "LinearTrueDistributor: Cannot restart distribution from the past");
+
         distribute();
 
         distributionStart = _distributionStart;
