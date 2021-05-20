@@ -324,25 +324,13 @@
       "txHash": "0x36f1069d048f25489d3ea66858e8d123b3e4768e2782e38583dfe9a1da95896f",
       "address": "0xfeA49C810d7533F168A25128b7320676336dF9E3"
     },
-    "poolFactory": {
-      "txHash": "0x9daeaff686b742e439a85c907dcfe9869d98e8f3e145c4651d1421657cc228d7",
-      "address": "0x1F2891069A0d5a01bE558737e05b49611E82d7a3"
-    },
     "poolFactory_proxy": {
       "txHash": "0x75dab2c94c06d6f9ce54d3c48505e658e04a7012304f187f689b1efac9193905",
       "address": "0x1391D9223E08845e536157995085fE0Cef8Bd393"
     },
-    "liquidator2": {
-      "txHash": "0x288d7e98bd21f54f994428426fa224c11385bc991a9c782ca9a2654944bafe4f",
-      "address": "0x319Aa2D6e282AB389df85fD7494D913C855ae4bf"
-    },
     "liquidator2_proxy": {
       "txHash": "0x6e5e772f5d64aa07483b79e0b61e4be2815fea50f313312b90eae2c1d86f742c",
       "address": "0x7aC899754Dd042024bb168fd5c9a07420F444Bdf"
-    },
-    "loanFactory2": {
-      "txHash": "0x07e4f1e502d84d2597ae7198e612b2e95312859c914dcf54c58588f4670f2d79",
-      "address": "0xcF14AbAAff220dD6059B54e5ACF356f516189AB6"
     },
     "loanFactory2_proxy": {
       "txHash": "0x07e4f1e502d84d2597ae7198e612b2e95312859c914dcf54c58588f4670f2d79",
