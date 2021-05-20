@@ -189,6 +189,22 @@
     "mock1InchV3": {
       "txHash": "0x7fc6f15137e192c4d2c2b8d24db2ed39775c5dadfa1430b08bec082a5e251435",
       "address": "0x8bb4DEA3e4D1BA6d4e28F151F1CbcB841a314dCe"
+    },
+    "usdc_TrueFiPool2_LinearTrueDistributor": {
+      "txHash": "0x2ad9eb9ab31fd8ca0448a1f447fd12461bd4bd960f2c65568a384bc4f2bca9ee",
+      "address": "0x8CAf88f3463000E50fFec881805e29A628c87D04"
+    },
+    "usdc_TrueFiPool2_LinearTrueDistributor_proxy": {
+      "txHash": "0x39efe349d5f76740b2d4740f96179faa950de8c989dc16c0447dbeb318846e5f",
+      "address": "0xB3fa96579cCc4769DeEa5B08fCFbC56A34996480"
+    },
+    "usdc_TrueFiPool2_TrueFarm": {
+      "txHash": "0x15feee9fc0add36164b1a294f6f7df74d05348401c52a639e0243bdb439c5c38",
+      "address": "0xc3c32872920103900525F1e7F323De52610e572e"
+    },
+    "usdc_TrueFiPool2_TrueFarm_proxy": {
+      "txHash": "0xa50ffd39cca1bfdd42078164d51c6e1539fae370ad1d956d28213f0983190b90",
+      "address": "0x3b375F0426cc592D2991Dc43B3b90F691cD900Ff"
     }
   },
   "mainnet": {
