@@ -10,11 +10,13 @@ import {
   OwnedUpgradeabilityProxy,
   RatingAgencyV2Distributor,
   StkTruToken,
+  SushiTimelock,
   TestTrueFiPool,
   TestTrustToken,
   Timelock,
   TimeOwnedUpgradeabilityProxy,
   TruPriceOracle,
+  TruSushiswapRewarder,
   TrueFarm,
   TrueFiPool,
   TrueRatingAgencyV2,
@@ -35,6 +37,8 @@ const deployParams = {
     DISTRIBUTION_DURATION: 180 * DAY,
     DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
     STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
+    SUSHI_MASTER_CHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
+    SUSHI_REWARD_MULTIPLIER: 100,
     TIMELOCK_DELAY: 2 * DAY,
     VOTING_PERIOD: 10, // blocks
   },
@@ -42,6 +46,8 @@ const deployParams = {
     DISTRIBUTION_DURATION: 180 * DAY,
     DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
     STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
+    SUSHI_MASTER_CHEF: AddressZero, // TODO replace with a test address
+    SUSHI_REWARD_MULTIPLIER: 100,
     TIMELOCK_DELAY: 2 * DAY,
     VOTING_PERIOD: 10, // blocks
   },
@@ -81,6 +87,8 @@ deploy({}, (deployer, config) => {
   const ratingAgencyV2Distributor_impl = contract(RatingAgencyV2Distributor)
   const trueFiPool_LinearTrueDistributor_impl = contract('trueFiPool_LinearTrueDistributor', LinearTrueDistributor)
   const trueFiPool_TrueFarm_impl = contract('trueFiPool_TrueFarm', TrueFarm)
+  const sushiTimelock = contract(SushiTimelock, [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY])
+  const truSushiswapRewarder_impl = contract(TruSushiswapRewarder)
   const timelock_impl = contract(Timelock)
   const governorAlpha_impl = contract(GovernorAlpha)
 
@@ -132,6 +140,10 @@ deploy({}, (deployer, config) => {
   )
   runIf(trueFiPool_LinearTrueDistributor.farm().equals(trueFiPool_TrueFarm).not(), () => {
     trueFiPool_LinearTrueDistributor.setFarm(trueFiPool_TrueFarm)
+  })
+  const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => {})
+  runIf(truSushiswapRewarder.isInitialized().not(), () => {
+    truSushiswapRewarder.initialize(deployParams[NETWORK].SUSHI_REWARD_MULTIPLIER, trustToken, deployParams[NETWORK].SUSHI_MASTER_CHEF)
   })
   const timelock = proxy(timelock_impl, 'initialize',
     [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY],
