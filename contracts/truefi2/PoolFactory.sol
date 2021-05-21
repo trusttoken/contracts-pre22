@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
 import {ERC20, IERC20} from "../common/UpgradeableERC20.sol";
 
@@ -17,7 +17,7 @@ import {ImplementationReference} from "../proxy/ImplementationReference.sol";
  * Anyone can create a new pool, however the token has to be whitelisted
  * Initially created pools hold the same implementation, which can be changed later on individually
  */
-contract PoolFactory is IPoolFactory, Claimable {
+contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -95,7 +95,7 @@ contract PoolFactory is IPoolFactory, Claimable {
         ERC20 _liquidationToken,
         ITrueLender2 _trueLender2
     ) external initializer {
-        Claimable.initialize(msg.sender);
+        UpgradeableClaimable.initialize(msg.sender);
 
         liquidationToken = _liquidationToken;
         poolImplementationReference = _poolImplementationReference;
