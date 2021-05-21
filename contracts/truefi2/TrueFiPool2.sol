@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
-import {UpgradeableClaimable as Claimable} from "../common/UpgradeableClaimable.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
@@ -30,7 +30,7 @@ import {OneInchExchange} from "./libraries/OneInchExchange.sol";
  *
  * Funds are managed through an external function to save gas on deposits
  */
-contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, Claimable {
+contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
     using OneInchExchange for I1Inch3;
@@ -105,7 +105,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, Claimable {
         address __owner
     ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
-        Claimable.initialize(__owner);
+        UpgradeableClaimable.initialize(__owner);
 
         token = _token;
         liquidationToken = _liquidationToken;
