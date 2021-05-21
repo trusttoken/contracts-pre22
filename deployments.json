@@ -269,8 +269,8 @@
       "address": "0x76dd4921C99AC6b61b3a98f9fa6f181cA6D70c77"
     },
     "stkTruToken_LinearTrueDistributor": {
-      "txHash": "0x73def730be468e897632a508d0a6254fbe3f1407f92b138ff0d3b5312c65fe56",
-      "address": "0x1Bd6423320f8450A4bcD64E16F9cc228f589d1B9"
+      "txHash": "0x05ca5eb3fe1bb8ce1e513630d5667e61c2abc8b1b555b2a8757923a17d25cf67",
+      "address": "0x27f74f7fa7e813AD6a2b452FA6589ae5a5D4C941"
     },
     "stkTruToken_LinearTrueDistributor_proxy": {
       "txHash": "0xcc12ea7b72ae8c0be09bb5b5830e7e73ba326f2f3f9280a019b033422631c576",
