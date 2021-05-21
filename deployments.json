@@ -292,6 +292,22 @@
       "txHash": "0xbc3ebd3bc5ee273dd84811e77c067e629d786effa78099303f71998bd986ba70",
       "address": "0x6151570934470214592AA051c28805cF4744BCA7"
     },
+    "trueFiPool_LinearTrueDistributor": {
+      "txHash": "0xb2b47b2197ae1edb2364e944ab159e200e3c1ad32d40ccc4efe082fb6ce2ce55",
+      "address": "0xf06d60a02505c99de700505c0e8f998856aeefe7"
+    },
+    "trueFiPool_LinearTrueDistributor_proxy": {
+      "txHash": "0x07e2e109e36990dc9ef378408fe642eae3a87c9ac2b7bda4bf779590a18b94bc",
+      "address": "0xfB8d918428373f766B352564b70d1DcC1e3b6383"
+    },
+    "trueFiPool_TrueFarm": {
+      "txHash": "0xc3b6db67ec31af37de525334eaf2e36ccb5a2562d736683d592689b5cf145031",
+      "address": "0x5810380CBC47E1F2Ab42Eeaa69A142CC6C419F27"
+    },
+    "trueFiPool_TrueFarm_proxy": {
+      "txHash": "0xbe7be856cac0d1392870ef880987a834181ba2bcdbb7f4efac7dd1e65a4340a7",
+      "address": "0x8FD832757F58F71BAC53196270A4a55c8E1a29D9"
+    },
     "timelock": {
       "txHash": "0x0d78d79f61c9e09418ef0b4891e8e015e9dd06088339c8072bcdb94770c6041e",
       "address": "0x7762BC14f475fd8Ba8F994DD17bee91D2D280Db7"
