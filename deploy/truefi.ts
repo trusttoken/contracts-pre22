@@ -133,14 +133,14 @@ deploy({}, (deployer, config) => {
   })
   const trueLenderReclaimer = contract(TrueLenderReclaimer, [trueLender])
   const trueFiPool_LinearTrueDistributor = proxy(trueFiPool_LinearTrueDistributor_impl, 'initialize',
-    [deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trueFiPool],
+    [deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken],
   )
-  const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, 'initialize',
-    [trueFiPool, trueFiPool_LinearTrueDistributor, 'tfTUSD']
-  )
+  const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, () => {})
   runIf(trueFiPool_LinearTrueDistributor.farm().equals(trueFiPool_TrueFarm).not(), () => {
     trueFiPool_LinearTrueDistributor.setFarm(trueFiPool_TrueFarm)
   })
+  runIf(trueFiPool_TrueFarm.isInitialized().not(), () => {
+    trueFiPool_TrueFarm.initialize(trueFiPool, trueFiPool_LinearTrueDistributor, 'TrueFi tfTUSD Farm')
   const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => {})
   runIf(truSushiswapRewarder.isInitialized().not(), () => {
     truSushiswapRewarder.initialize(deployParams[NETWORK].SUSHI_REWARD_MULTIPLIER, trustToken, deployParams[NETWORK].SUSHI_MASTER_CHEF)
