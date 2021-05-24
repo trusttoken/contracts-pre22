@@ -383,6 +383,18 @@
     "chainlinkTruUsdcOracle": {
       "txHash": "0xa2557f84ee15c070ae63f26f686dfb62e2b193b0ccdb47c4c51af251d28731a8",
       "address": "0xd0D931d49F4eCF41CFF5e082aCA4FEB4C511415A"
+    },
+    "sushiTimelock": {
+      "txHash": "0x7b6997a758bc3c45fa99818582960425a479d712c93ef5dabb0ccac9a7b17164",
+      "address": "0x12feB1CCE013812B6A0046B1aCdF100b485cD72B"
+    },
+    "truSushiswapRewarder": {
+      "txHash": "0xf0ef5e4af650ce88cc22ddd89b41d6c58909aa3ccb91be01650fee9c6a690605",
+      "address": "0xedf406f9F8C43aeAD852F125e237a9c5c09a7cFd"
+    },
+    "truSushiswapRewarder_proxy": {
+      "txHash": "0xa7910d132ab819e877845fee9b073a791f29611ea214d7228867282dcd799f43",
+      "address": "0xDA46c92c13D67A32B65c35720d3cd456e5d96128"
     }
   }
 }
