@@ -141,6 +141,7 @@ deploy({}, (deployer, config) => {
   })
   runIf(trueFiPool_TrueFarm.isInitialized().not(), () => {
     trueFiPool_TrueFarm.initialize(trueFiPool, trueFiPool_LinearTrueDistributor, 'TrueFi tfTUSD Farm')
+  })
   const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => {})
   runIf(truSushiswapRewarder.isInitialized().not(), () => {
     truSushiswapRewarder.initialize(deployParams[NETWORK].SUSHI_REWARD_MULTIPLIER, trustToken, deployParams[NETWORK].SUSHI_MASTER_CHEF)
