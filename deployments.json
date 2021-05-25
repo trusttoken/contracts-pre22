@@ -395,6 +395,18 @@
     "truSushiswapRewarder_proxy": {
       "txHash": "0xa7910d132ab819e877845fee9b073a791f29611ea214d7228867282dcd799f43",
       "address": "0xDA46c92c13D67A32B65c35720d3cd456e5d96128"
+    },
+    "curveYearnStrategy": {
+      "txHash": "0xb154752559b8bcb60543b07cbcf427356e631d8e635b4081de6015c073fba86e",
+      "address": "0x0aF2ad636B6D396F9789C3427381fcB2f110E262"
+    },
+    "curveYearnStrategy_proxy": {
+      "txHash": "0xe79c22e26201792a9e1292173b171634431aa84637fe1193fb92613bb34dba4c",
+      "address": "0xe7f52d4F1C056FbfBF2b377de760510fa088bAef"
+    },
+    "crvPriceOracle": {
+      "txHash": "0x9f1f2a8be0574db1a0e5c2e96d861436b0112ef20c63991d4e50d235486a7d65",
+      "address": "0x842D486a5d12b3729c89B0E8968C54f68eADba7c"
     }
   }
 }
