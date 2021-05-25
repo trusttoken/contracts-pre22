@@ -56,6 +56,11 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
 
     // ======= STORAGE DECLARATION END ===========
 
+    event OracleChanged(ICrvPriceOracle newOracle);
+    event Deposited(uint256 depositedAmount, uint256 receivedYAmount);
+    event Withdrawn(uint256 minAmount, uint256 yAmount);
+    event WithdrawnAll(uint256 yAmount);
+
     modifier onlyPool() {
         require(msg.sender == pool, "CurveYearnStrategy: Can only be called by pool");
         _;
@@ -84,6 +89,15 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     }
 
     /**
+     * @dev Sets new  crv oracle address
+     * @param _crvOracle new oracle address
+     */
+    function setOracle(ICrvPriceOracle _crvOracle) external onlyOwner {
+        crvOracle = _crvOracle;
+        emit OracleChanged(_crvOracle);
+    }
+
+    /**
      * @dev Transfer `amount` of `token` from pool and add it as
      * liquidity to the Curve yEarn Pool
      * Curve LP tokens are deposited into Curve Gauge
@@ -104,6 +118,8 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         uint256 yBalance = curvePool.token().balanceOf(address(this));
         curvePool.token().approve(address(curveGauge), yBalance);
         curveGauge.deposit(yBalance);
+
+        emit Deposited(amount, yBalance);
     }
 
     /**
@@ -125,11 +141,13 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         curvePool.token().approve(address(curvePool), conservativeCurveTokenAmount);
         curvePool.remove_liquidity_one_coin(conservativeCurveTokenAmount, tokenIndex, minAmount, false);
         transferAllToPool();
+
+        emit Withdrawn(minAmount, conservativeCurveTokenAmount);
     }
 
     /**
      *@dev withdraw everything from strategy
-     * Use with caution because Curve slippage is not contolled
+     * Use with caution because Curve slippage is not controlled
      */
     function withdrawAll() external override onlyPool {
         curveGauge.withdraw(curveGauge.balanceOf(address(this)));
@@ -137,6 +155,8 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         curvePool.token().approve(address(curvePool), yBalance);
         curvePool.remove_liquidity_one_coin(yBalance, tokenIndex, 0, false);
         transferAllToPool();
+
+        emit WithdrawnAll(yBalance);
     }
 
     /**
