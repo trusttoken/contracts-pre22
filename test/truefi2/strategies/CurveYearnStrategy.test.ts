@@ -1,6 +1,7 @@
 import { expect, use } from 'chai'
 import { beforeEachWithFixture, parseEth } from 'utils'
 import {
+  MockCrvPriceOracle,
   MockCrvPriceOracle__factory,
   MockCurvePool,
   MockCurvePool__factory,
@@ -56,6 +57,29 @@ describe('CurveYearnStrategy', () => {
     )
   })
 
+  describe('setOracle', () => {
+    let newOracle: MockCrvPriceOracle
+    beforeEach(async () => {
+      newOracle = await new MockCrvPriceOracle__factory(owner).deploy()
+    })
+
+    it('only owner', async () => {
+      await expect(strategy.connect(pool).setOracle(newOracle.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets new oracle', async () => {
+      await strategy.setOracle(newOracle.address)
+      expect(await strategy.crvOracle()).to.eq(newOracle.address)
+    })
+
+    it('emits event', async () => {
+      await expect(strategy.setOracle(newOracle.address))
+        .to.emit(strategy, 'OracleChanged')
+        .withArgs(newOracle.address)
+    })
+  })
+
   describe('deposit', () => {
     beforeEach(async () => {
       await token.connect(pool).approve(strategy.address, amount)
@@ -81,6 +105,12 @@ describe('CurveYearnStrategy', () => {
 
     it('can only be called by the pool', async () => {
       await expect(strategy.deposit(amount)).to.be.revertedWith('CurveYearnStrategy: Can only be called by pool')
+    })
+
+    it('emits event', async () => {
+      await expect(strategy.connect(pool).deposit(amount))
+        .to.emit(strategy, 'Deposited')
+        .withArgs(amount, amount.div(2))
     })
   })
 
@@ -129,6 +159,12 @@ describe('CurveYearnStrategy', () => {
       await expect(strategy.connect(pool).withdraw(amount.add(2)))
         .to.be.revertedWith('CurveYearnStrategy: Not enough Curve liquidity tokens in pool to cover borrow')
     })
+
+    it('emits event', async () => {
+      await expect(strategy.connect(pool).withdraw(amount))
+        .to.emit(strategy, 'Withdrawn')
+        .withArgs(amount, amount.div(2))
+    })
   })
 
   describe('withdrawAll', () => {
@@ -150,6 +186,12 @@ describe('CurveYearnStrategy', () => {
 
     it('can only be called by the pool', async () => {
       await expect(strategy.withdrawAll()).to.be.revertedWith('CurveYearnStrategy: Can only be called by pool')
+    })
+
+    it('emits event', async () => {
+      await expect(strategy.connect(pool).withdrawAll())
+        .to.emit(strategy, 'WithdrawnAll')
+        .withArgs(amount.div(2))
     })
   })
 })
