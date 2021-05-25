@@ -24,6 +24,7 @@ describe('Pauser', () => {
   let reference: ImplementationReference
   let pauseable: MockPauseableContract
   let provider: providers.JsonRpcProvider
+  let governor: OwnedUpgradeabilityProxy
 
   let target: string[]
   let methods: PausingMethod[]
@@ -44,12 +45,13 @@ describe('Pauser', () => {
     standardProxy = await deployContract(owner, OwnedUpgradeabilityProxy__factory)
     reference = await deployContract(owner, ImplementationReference__factory, [randomAddress])
     referenceProxy = await deployContract(owner, OwnedProxyWithReference__factory, [timelock.address, reference.address])
+    governor = await deployContract(owner, OwnedUpgradeabilityProxy__factory)
     pauseable = await deployContract(owner, MockPauseableContract__factory)
 
     await timelock.initialize(owner.address, 200000)
     await trustToken.initialize()
     await stkTru.initialize()
-    await pauser.initialize(timelock.address, trustToken.address, stkTru.address, DAY)
+    await pauser.initialize(timelock.address, governor.address, trustToken.address, stkTru.address, DAY)
 
     await stkTru.mint(holder1.address, votesAmount.div(2))
     await stkTru.connect(holder1).delegate(holder1.address)
@@ -79,6 +81,10 @@ describe('Pauser', () => {
   describe('initializer', () => {
     it('sets timelock address', async () => {
       expect(await pauser.timelock()).to.eq(timelock.address)
+    })
+
+    it('sets governor address', async () => {
+      expect(await pauser.governor()).to.eq(governor.address)
     })
 
     it('sets trust token address', async () => {
@@ -213,6 +219,14 @@ describe('Pauser', () => {
         await expect(pauser.connect(owner).execute(newRequestId))
           .to.be.revertedWith('Pauser::execute: request can only be executed if it is succeeded')
         expect(await pauser.state(newRequestId)).to.eq(RequestState.Executed)
+      })
+
+      it('attempting to pause governor', async () => {
+        await pauser.connect(holder2).makeRequest([governor.address], [PausingMethod.Proxy])
+        await pauser.connect(holder1).castVote(2)
+        await pauser.connect(holder2).castVote(2)
+        await expect(pauser.execute(2))
+          .to.be.revertedWith('Pauser::execute: cannot pause the governor contract')
       })
     })
 

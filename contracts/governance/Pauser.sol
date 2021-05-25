@@ -22,6 +22,9 @@ contract Pauser is UpgradeableClaimable {
     // @notice The address of the TrustToken Protocol Timelock
     ITimelock public timelock;
 
+    // @notice The address of the TrustToken Protocol Governor
+    IOwnedUpgradeabilityProxy public governor;
+
     // @notice The address of the TrustToken governance token
     IVoteToken public trustToken;
 
@@ -118,12 +121,14 @@ contract Pauser is UpgradeableClaimable {
      */
     function initialize(
         ITimelock _timelock,
+        IOwnedUpgradeabilityProxy _governor,
         IVoteToken _trustToken,
         IVoteToken _stkTRU,
         uint256 _votingPeriod
     ) external {
         UpgradeableClaimable.initialize(msg.sender);
         timelock = _timelock;
+        governor = _governor;
         trustToken = _trustToken;
         stkTRU = _stkTRU;
         votingPeriod = _votingPeriod;
@@ -206,6 +211,7 @@ contract Pauser is UpgradeableClaimable {
         PauseRequest storage request = requests[requestId];
         request.executed = true;
         for (uint256 i = 0; i < request.targets.length; i++) {
+            require(request.targets[i] != address(governor), "Pauser::execute: cannot pause the governor contract");
             if (request.methods[i] == PausingMethod.Status) {
                 timelock.setPauseStatus(IPauseableContract(request.targets[i]), true);
             } else if (request.methods[i] == PausingMethod.Proxy) {
