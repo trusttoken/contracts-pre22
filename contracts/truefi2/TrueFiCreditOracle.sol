@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
@@ -6,7 +7,8 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 /**
  * @title TrueFiCreditOracle
- *
+ * @dev Contract which allows the storage of credit scores for
+ * TrueFi borrower accounts.
  */
 contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     // ================ WARNING ==================
@@ -20,10 +22,14 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
 
     // ======= STORAGE DECLARATION END ============
 
+    function initialize() public initializer {
+        UpgradeableClaimable.initialize(msg.sender);
+    }
+
     /**
      * @dev Get score for `account`
      */
-    function getScore(address account) public view returns (uint8) {
+    function getScore(address account) public override view returns (uint8) {
         return score[account];
     }
 
