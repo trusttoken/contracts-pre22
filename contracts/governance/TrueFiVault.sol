@@ -46,7 +46,7 @@ contract TrueFiVault {
     }
 
     function lock(uint256 _amount) external onlyOwner {
-        require(tru.balanceOf(address(this)) == 0, "TrueFiVault: funds Already locked");
+        require(tru.balanceOf(address(this)) == 0, "TrueFiVault: funds already locked");
         require(tru.transferFrom(owner, address(this), _amount), "TrueFiVault: insufficient owner balance");
     }
 
