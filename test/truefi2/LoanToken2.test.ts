@@ -92,6 +92,12 @@ describe('LoanToken2', () => {
     it('sets borrowers debt', async () => {
       expect(await loanToken.debt()).to.equal(parseEth(1100))
     })
+
+    it('sets erc20 params', async () => {
+      expect(await loanToken.name()).to.equal('TrueFi Loan Token')
+      expect(await loanToken.symbol()).to.equal('LOAN')
+      expect(await loanToken.decimals()).to.equal(18)
+    })
   })
 
   describe('Fund', () => {

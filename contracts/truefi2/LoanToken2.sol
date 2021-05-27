@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
+import {ERC20} from "../common/UpgradeableERC20.sol";
 import {ILoanToken2, ITrueFiPool2} from "./interface/ILoanToken2.sol";
 import {LoanToken} from "../truefi/LoanToken.sol";
 
@@ -32,7 +32,7 @@ import {LoanToken} from "../truefi/LoanToken.sol";
  */
 contract LoanToken2 is ILoanToken2, ERC20 {
     using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeERC20 for ERC20;
 
     uint128 public constant LAST_MINUTE_PAYBACK_DURATION = 1 days;
     uint256 private constant APY_PRECISION = 10000;
@@ -56,7 +56,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     Status public override status;
 
-    IERC20 public override token;
+    ERC20 public override token;
 
     ITrueFiPool2 public override pool;
 
@@ -137,8 +137,9 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         uint256 _amount,
         uint256 _term,
         uint256 _apy
-    ) public ERC20("TrueFi Loan Token", "LOAN") {
+    ) public {
         require(_lender != address(0), "LoanToken2: Lender is not set");
+        ERC20.__ERC20_initialize("TrueFi Loan Token", "LOAN");
 
         pool = _pool;
         token = _pool.token();
@@ -466,5 +467,9 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     function version() external override pure returns (uint8) {
         return 4;
+    }
+
+    function decimals() public override view returns (uint8) {
+        return token.decimals();
     }
 }
