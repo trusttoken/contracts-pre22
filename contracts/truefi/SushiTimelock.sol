@@ -123,9 +123,10 @@ contract SushiTimelock {
             callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
         }
 
+        // YYY: (bool success, bytes memory returnData) = target.call.value(value)(callData);
         // YYY: // solium-disable-next-line security/no-call-value
         // solhint-disable-next-line avoid-call-value, avoid-low-level-calls
-        (bool success, bytes memory returnData) = target.call.value(value)(callData);
+        (bool success, bytes memory returnData) = target.call{value: value}(callData);
         require(success, "Timelock::executeTransaction: Transaction execution reverted.");
 
         emit ExecuteTransaction(txHash, target, value, signature, data, eta);
