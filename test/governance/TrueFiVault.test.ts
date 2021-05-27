@@ -140,7 +140,7 @@ describe('TrueFiVault', () => {
     })
 
     it('reverts before expiry', async () => {
-      await timeTravel(provider, DURATION - 10)
+      await timeTravel(provider, DURATION - 100)
       await expect(trueFiVault.connect(beneficiary).withdrawToBeneficiary()).to.be.revertedWith('TrueFiVault: beneficiary cannot withdraw before expiration')
     })
 
