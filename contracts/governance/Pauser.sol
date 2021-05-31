@@ -52,8 +52,6 @@ contract Pauser is UpgradeableClaimable {
         uint256 id;
         // @notice Creator of the request
         address requester;
-        // @notice The timestamp that the request will be available for execution
-        uint256 eta;
         // @notice the ordered list of target addresses of contracts to be paused
         address[] targets;
         // @notice The ordered list of functions to be called
@@ -144,7 +142,7 @@ contract Pauser is UpgradeableClaimable {
         PauseRequest storage request = requests[requestId];
         if (request.executed) {
             return RequestState.Executed;
-        } else if (block.timestamp >= add256(request.eta, request.endTime)) {
+        } else if (block.timestamp >= add256(EXECUTION_PERIOD, request.endTime)) {
             return RequestState.Expired;
         } else if (request.votes >= quorumVotes()) {
             return RequestState.Succeeded;
@@ -186,7 +184,6 @@ contract Pauser is UpgradeableClaimable {
         PauseRequest memory newRequest = PauseRequest({
             id: requestCount,
             requester: msg.sender,
-            eta: EXECUTION_PERIOD,
             targets: targets,
             methods: methods,
             startBlock: startBlock,
