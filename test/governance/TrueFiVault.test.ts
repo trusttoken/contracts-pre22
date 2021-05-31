@@ -122,7 +122,6 @@ describe('TrueFiVault', () => {
     describe('Vesting', () => {
       const MONTH = DURATION / 12
       const VEST_EACH_MONTH = TRU_AMOUNT.div(12)
-      const STK_VEST_EACH_MONTH = STKTRU_AMOUNT.div(12)
 
       it('unlocks TRU linearly over a year', async () => {
         const start = await trueFiVault.withdrawable(tru.address)
@@ -137,15 +136,15 @@ describe('TrueFiVault', () => {
         expect(await trueFiVault.withdrawable(tru.address)).to.equal(TRU_AMOUNT)
       })
 
-      it('unlocks stkTRU linearly over a year', async () => {
+      it('unlocks all stkTRU only after a year has passed', async () => {
         const start = await trueFiVault.withdrawable(stkTru.address)
         expect(start).to.be.lt(parseTRU(1))
         await timeTravel(provider, MONTH)
-        expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(start.add(STK_VEST_EACH_MONTH), 100)
+        expect(await trueFiVault.withdrawable(stkTru.address)).to.equal(0)
         await timeTravel(provider, MONTH)
-        expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(start.add(STK_VEST_EACH_MONTH.mul(2)), 100)
+        expect(await trueFiVault.withdrawable(stkTru.address)).to.equal(0)
         await timeTravel(provider, MONTH * 2)
-        expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(start.add(STK_VEST_EACH_MONTH.mul(4)), 100)
+        expect(await trueFiVault.withdrawable(stkTru.address)).to.equal(0)
         await timeTravel(provider, MONTH * 10)
         expect(await trueFiVault.withdrawable(stkTru.address)).to.equal(STKTRU_AMOUNT)
       })
@@ -186,7 +185,7 @@ describe('TrueFiVault', () => {
       expect('transfer').to.be.calledOnContractWith(tru, [beneficiary.address, TRU_AMOUNT])
     })
 
-    it('transfers stkTRU to beneficiary', async () => {
+    it('does not transfer stkTRU when ', async () => {
       await timeTravel(provider, DURATION + 1)
       await trueFiVault.connect(beneficiary).withdrawToBeneficiary()
       expect('transfer').to.be.calledOnContractWith(stkTru, [beneficiary.address, STKTRU_AMOUNT])

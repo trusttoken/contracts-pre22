@@ -73,6 +73,9 @@ contract TrueFiVault {
         uint256 timePassed = block.timestamp.sub(expiry.sub(DURATION));
         if (timePassed > DURATION) {
             timePassed = DURATION;
+        } else if (token != tru) {
+            // Only TRU is unlocked linearly
+            return 0;
         }
         return token.balanceOf(address(this)).add(withdrawn[token]).mul(timePassed).div(DURATION).sub(withdrawn[token]);
     }
@@ -103,6 +106,9 @@ contract TrueFiVault {
 
     function _withdraw(IERC20 token) private {
         uint256 amountToWithdraw = withdrawable(token);
+        if (amountToWithdraw == 0) {
+            return;
+        }
         require(token.transfer(beneficiary, amountToWithdraw), "TrueFiVault: insufficient balance");
         withdrawn[token] = withdrawn[token].add(amountToWithdraw);
 
