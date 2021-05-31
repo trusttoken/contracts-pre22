@@ -45,6 +45,8 @@ contract Pauser is UpgradeableClaimable {
     // @notice The name of this contract
     string public constant name = "TrueFi Pauser";
 
+    // @notice Time in seconds, which corresponds to a period of time,
+    // that a request is available for execution after successful voting
     uint256 public constant EXECUTION_PERIOD = 1 days;
 
     struct PauseRequest {
