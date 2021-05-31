@@ -3,6 +3,7 @@ pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IVoteTokenWithERC20} from "./interface/IVoteToken.sol";
 import {IStkTruToken} from "./interface/IStkTruToken.sol";
 import {Initializable} from "../common/Initializable.sol";
 
@@ -20,21 +21,21 @@ import {Initializable} from "../common/Initializable.sol";
 contract TrueFiVault is Initializable {
     using SafeMath for uint256;
 
-    uint256 public DURATION = 365 days;
+    uint256 public constant DURATION = 365 days;
 
     address public owner;
     address public beneficiary;
     uint256 public expiry;
     mapping(IERC20 => uint256) public withdrawn;
 
-    IERC20 public tru;
+    IVoteTokenWithERC20 public tru;
     IStkTruToken public stkTru;
 
     event Withdraw(IERC20 token, uint256 amount, address beneficiary);
 
     function initialize(
         address _beneficiary,
-        IERC20 _tru,
+        IVoteTokenWithERC20 _tru,
         IStkTruToken _stkTru
     ) external initializer {
         owner = msg.sender;
@@ -152,5 +153,14 @@ contract TrueFiVault is Initializable {
      */
     function claimRestake() external onlyBeneficiary {
         stkTru.claimRestake(0);
+    }
+
+    /**
+     * @dev Delegate tru+stkTRU voting power to another address
+     * @param delegatee Address to delegate to
+     */
+    function delegate(address delegatee) external onlyBeneficiary {
+        tru.delegate(delegatee);
+        stkTru.delegate(delegatee);
     }
 }
