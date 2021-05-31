@@ -148,11 +148,11 @@ describe('TrueFiPool', () => {
       await curvePool.set_withdraw_price(parseEth(2))
       expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(calcBorrowerFee(parseEth(2e6))))
       await trustToken.mint(pool.address, parseTRU(4e5))
-      expect(await pool.truValue()).to.equal(parseEth(98000)) // 100000 - 2%
+      expect(await pool.truValue()).to.equal(parseEth(99900)) // 100000 - 0.1%
       expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(calcBorrowerFee(parseEth(2e6))))
       await mockCrv.mint(pool.address, parseEth(1e5))
-      expect(await pool.crvValue()).to.equal(parseEth(4.9e4)) // 50000 - 2%
-      expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(parseEth(4.9e4)).add(calcBorrowerFee(parseEth(2e6))))
+      expect(await pool.crvValue()).to.equal(parseEth(4.995e4)) // 50000 - 0.1%
+      expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(parseEth(4.995e4)).add(calcBorrowerFee(parseEth(2e6))))
     })
   })
 

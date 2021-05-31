@@ -81,7 +81,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     uint8 constant N_TOKENS = 4;
     uint8 constant TUSD_INDEX = 3;
 
-    uint256 constant MAX_PRICE_SLIPPAGE = 200; // 2%
+    uint256 constant MAX_PRICE_SLIPPAGE = 10; // 0.1%
 
     /**
      * @dev Emitted when TrueFi oracle was changed
