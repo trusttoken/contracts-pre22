@@ -40,7 +40,8 @@ describe('TrueFiVault', () => {
     stkTru = await deployMockContract(owner, StkTruTokenJson.abi)
     await stkTru.mock.delegate.returns()
 
-    trueFiVault = await new TrueFiVault__factory(owner).deploy(
+    trueFiVault = await new TrueFiVault__factory(owner).deploy()
+    await trueFiVault.initialize(
       beneficiary.address,
       tru.address,
       stkTru.address,
@@ -61,7 +62,8 @@ describe('TrueFiVault', () => {
 
     it('delegates stkTRU to beneficiary', async () => {
       await stkTru.mock.delegate.withArgs(beneficiary.address).returns()
-      await new TrueFiVault__factory(owner).deploy(
+      const vault = await new TrueFiVault__factory(owner).deploy()
+      await vault.initialize(
         beneficiary.address,
         tru.address,
         stkTru.address,

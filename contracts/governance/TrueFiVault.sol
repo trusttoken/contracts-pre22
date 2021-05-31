@@ -4,6 +4,7 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IStkTruToken} from "./interface/IStkTruToken.sol";
+import {Initializable} from "../common/Initializable.sol";
 
 /**
  * @title TrueFiVault
@@ -16,7 +17,7 @@ import {IStkTruToken} from "./interface/IStkTruToken.sol";
  * In case of emergency or error, owner reserves the ability to withdraw all
  * funds in vault.
  */
-contract TrueFiVault {
+contract TrueFiVault is Initializable {
     using SafeMath for uint256;
 
     uint256 public DURATION = 365 days;
@@ -31,11 +32,11 @@ contract TrueFiVault {
 
     event Withdraw(IERC20 token, uint256 amount, address beneficiary);
 
-    constructor(
+    function initialize(
         address _beneficiary,
         IERC20 _tru,
         IStkTruToken _stkTru
-    ) public {
+    ) external initializer {
         owner = msg.sender;
         beneficiary = _beneficiary;
         expiry = block.timestamp.add(DURATION);
