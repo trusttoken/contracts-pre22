@@ -23,7 +23,6 @@ import {
   TrueUSD,
   TrustToken,
   TrueLender,
-  TrueLenderReclaimer,
 } from '../build/artifacts'
 import { utils } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
@@ -115,7 +114,6 @@ deploy({}, (deployer, config) => {
     ? contract(TruPriceOracle)
     : contract(MockTruPriceOracle)
   const sushiTimelock = contract(SushiTimelock, [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY])
-  const trueLenderReclaimer = contract(TrueLenderReclaimer, [trueLender])
 
   // Contract initialization
   runIf(testTrueFiPool.isInitialized().not(), () => {
