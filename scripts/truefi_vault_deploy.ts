@@ -5,7 +5,7 @@ import { ethers, providers } from 'ethers'
 
 import {
   OwnedUpgradeabilityProxy__factory,
-  TrueFiVault__factory
+  TrueFiVault__factory,
 } from 'contracts'
 
 // inputs
@@ -23,18 +23,18 @@ let stkTruAddress = ''
 
 const contractArgs = { gasLimit: 5_000_000, gasPrice: txnArgs.gasPrice }
 
-async function deployTrueFiVault() {
+async function deployTrueFiVault () {
   const network = process.argv[2]
   const provider = new providers.InfuraProvider(network, 'e33335b99d78415b82f8b9bc5fdc44c0')
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
 
-  if (network == 'mainnet') {
+  if (network === 'mainnet') {
     truAddress = truMainnet
     stkTruAddress = stkTruMainnet
   }
 
   // deploy
-  const trueFiVaultImpl = await (await new TrueFiVault__factory(wallet).deploy(txnArgs)).deployed()
+  const trueFiVaultImpl = await (await new TrueFiVault__factory(wallet).deploy(contractArgs)).deployed()
   console.log(`trueFiVaultImpl: ${trueFiVaultImpl.address}`)
   const vault = await (await new OwnedUpgradeabilityProxy__factory(wallet).deploy(txnArgs)).deployed()
   console.log(`vault: ${vault.address}`)
@@ -44,10 +44,10 @@ async function deployTrueFiVault() {
   // initialize and transfer TRU
   await (await TrueFiVault__factory.connect(vault.address, wallet)
     .initialize(beneficiary, truAddress, stkTruAddress, txnArgs)).wait()
-  console.log('Initialized for: ${beneficiary}')
+  console.log(`Initialized for: ${beneficiary}`)
   await (await TrueFiVault__factory.connect(vault.address, wallet)
     .lock(amount, txnArgs)).wait()
-  console.log('Locked: ${amount} TRU')
+  console.log(`Locked: ${amount} TRU`)
 }
 
 deployTrueFiVault().catch(console.error)

@@ -111,8 +111,8 @@ contract TrueFiVault is Initializable {
         if (amountToWithdraw == 0) {
             return;
         }
-        require(token.transfer(beneficiary, amountToWithdraw), "TrueFiVault: insufficient balance");
         withdrawn[token] = withdrawn[token].add(amountToWithdraw);
+        require(token.transfer(beneficiary, amountToWithdraw), "TrueFiVault: insufficient balance");
 
         emit Withdraw(token, amountToWithdraw, beneficiary);
     }
