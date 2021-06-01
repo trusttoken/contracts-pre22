@@ -98,23 +98,29 @@ deploy({}, (deployer, config) => {
   const yCrvGauge = is_mainnet
     ? deployParams['mainnet'].Y_CRV_GAUGE
     : contract(MockCurveGauge)
-  const trueFiPool = is_mainnet
-    ? proxy(trueFiPool_impl, () => {})
-    : proxy(testTrueFiPool_impl, 'initialize',
-    [AddressZero, yCrvGauge, trueUSD, trueLender, AddressZero, stkTruToken, AddressZero, AddressZero],
-  )
+  let trueFiPool = proxy(trueFiPool_impl, () => {})
+  const testTrueFiPool = proxy(testTrueFiPool_impl, () => {})
+  runIf(testTrueFiPool.isInitialized().not(), () => {
+    testTrueFiPool.initialize(AddressZero, yCrvGauge, trueUSD, trueLender, AddressZero, stkTruToken, AddressZero, AddressZero)
+  })
+  if (!is_mainnet) {
+    trueFiPool = testTrueFiPool
+  }
   const truPriceOracle = is_mainnet
     ? contract(TruPriceOracle)
     : contract(MockTruPriceOracle)
-  const loanFactory = proxy(loanFactory_impl, 'initialize',
-    [trueUSD],
-  )
-  const liquidator = proxy(liquidator_impl, 'initialize',
-    [trueFiPool, stkTruToken, trustToken, truPriceOracle, loanFactory],
-  )
-  const stkTruToken_LinearTrueDistributor = proxy(stkTruToken_LinearTrueDistributor_impl, 'initialize',
-    [deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken],
-  )
+  const loanFactory = proxy(loanFactory_impl, () => {})
+  runIf(loanFactory.isInitialized().not(), () => {
+    loanFactory.initialize(trueUSD)
+  })
+  const liquidator = proxy(liquidator_impl, () => {})
+  runIf(liquidator.isInitialized().not(), () => {
+    liquidator.initialize(trueFiPool, stkTruToken, trustToken, truPriceOracle, loanFactory)
+  })
+  const stkTruToken_LinearTrueDistributor = proxy(stkTruToken_LinearTrueDistributor_impl, () => {})
+  runIf(stkTruToken_LinearTrueDistributor.isInitialized().not(), () => {
+    stkTruToken_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
+  })
   runIf(stkTruToken_LinearTrueDistributor.farm().equals(stkTruToken).not(), () => {
     stkTruToken_LinearTrueDistributor.setFarm(stkTruToken)
   })
@@ -122,9 +128,10 @@ deploy({}, (deployer, config) => {
     stkTruToken.initialize(trustToken, trueFiPool, trueFiPool, stkTruToken_LinearTrueDistributor, liquidator)
   })
   const trueRatingAgencyV2 = proxy(trueRatingAgencyV2_impl, () => {})
-  const ratingAgencyV2Distributor = proxy(ratingAgencyV2Distributor_impl, 'initialize',
-    [trueRatingAgencyV2, trustToken],
-  )
+  const ratingAgencyV2Distributor = proxy(ratingAgencyV2Distributor_impl, () => {})
+  runIf(ratingAgencyV2Distributor.isInitialized().not(), () => {
+    ratingAgencyV2Distributor.initialize(trueRatingAgencyV2, trustToken)
+  })
   runIf(trueRatingAgencyV2.isInitialized().not(), () => {
     trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
   })
@@ -132,9 +139,10 @@ deploy({}, (deployer, config) => {
     trueLender.initialize(trueFiPool, trueRatingAgencyV2, stkTruToken)
   })
   const trueLenderReclaimer = contract(TrueLenderReclaimer, [trueLender])
-  const trueFiPool_LinearTrueDistributor = proxy(trueFiPool_LinearTrueDistributor_impl, 'initialize',
-    [deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken],
-  )
+  const trueFiPool_LinearTrueDistributor = proxy(trueFiPool_LinearTrueDistributor_impl, () => {})
+  runIf(trueFiPool_LinearTrueDistributor.isInitialized().not(), () => {
+    trueFiPool_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
+  })
   const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, () => {})
   runIf(trueFiPool_LinearTrueDistributor.farm().equals(trueFiPool_TrueFarm).not(), () => {
     trueFiPool_LinearTrueDistributor.setFarm(trueFiPool_TrueFarm)
@@ -146,10 +154,12 @@ deploy({}, (deployer, config) => {
   runIf(truSushiswapRewarder.isInitialized().not(), () => {
     truSushiswapRewarder.initialize(deployParams[NETWORK].SUSHI_REWARD_MULTIPLIER, trustToken, deployParams[NETWORK].SUSHI_MASTER_CHEF)
   })
-  const timelock = proxy(timelock_impl, 'initialize',
-    [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY],
-  )
-  const governorAlpha = proxy(governorAlpha_impl, 'initialize',
-    [timelock, trustToken, stkTruToken, GOV_GUARDIAN, deployParams[NETWORK].VOTING_PERIOD],
-  )
+  const timelock = proxy(timelock_impl, () => {})
+  runIf(timelock.isInitialized().not(), () => {
+    timelock.initialize(TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY)
+  })
+  const governorAlpha = proxy(governorAlpha_impl, () => {})
+  runIf(governorAlpha.isInitialized().not(), () => {
+    governorAlpha.initialize(timelock, trustToken, stkTruToken, GOV_GUARDIAN, deployParams[NETWORK].VOTING_PERIOD)
+  })
 })
