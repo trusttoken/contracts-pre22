@@ -26,7 +26,7 @@ contract TrueFiVault is Initializable {
     address public owner;
     address public beneficiary;
     uint256 public expiry;
-    mapping(IERC20 => uint256) public withdrawn;
+    uint256 public withdrawn;
 
     IVoteTokenWithERC20 public tru;
     IStkTruToken public stkTru;
@@ -69,17 +69,19 @@ contract TrueFiVault is Initializable {
     }
 
     function withdrawable(IERC20 token) public view returns (uint256) {
+        uint256 tokenBalance = token.balanceOf(address(this));
         if (beneficiary == owner) {
-            return token.balanceOf(address(this));
+            return tokenBalance;
         }
         uint256 timePassed = block.timestamp.sub(expiry.sub(DURATION));
         if (timePassed > DURATION) {
             timePassed = DURATION;
-        } else if (token != tru) {
-            // Only TRU is unlocked linearly
-            return 0;
         }
-        return token.balanceOf(address(this)).add(withdrawn[token]).mul(timePassed).div(DURATION).sub(withdrawn[token]);
+        uint256 amount = totalBalance().add(withdrawn).mul(timePassed).div(DURATION).sub(withdrawn);
+        if (token == stkTru) {
+            amount = amount.mul(stkTru.totalSupply()).div(stkTru.stakeSupply());
+        }
+        return amount > tokenBalance ? tokenBalance : amount;
     }
 
     /**
@@ -87,34 +89,44 @@ contract TrueFiVault is Initializable {
      */
     function withdrawToOwner() external onlyOwner {
         beneficiary = owner;
-        _withdrawToBeneficiary();
+        claimRewards();
+        _withdraw(tru, tru.balanceOf(address(this)));
+        _withdraw(stkTru, stkTru.balanceOf(address(this)));
     }
 
     /**
-     * @dev Withdraw funds to beneficiary after expiry time
+     * @dev Withdraw vested TRU to beneficiary
+     */
+    function withdrawTru(uint256 amount) external onlyBeneficiary {
+        claimRewards();
+        require(amount <= withdrawable(tru), "TrueFiVault: attempting to withdraw more than allowed");
+        withdrawn = withdrawn.add(amount);
+        _withdraw(tru, amount);
+    }
+
+    /**
+     * @dev Withdraw vested stkTRU to beneficiary
+     */
+    function withdrawStkTru(uint256 amount) external onlyBeneficiary {
+        require(amount <= withdrawable(stkTru), "TrueFiVault: attempting to withdraw more than allowed");
+        withdrawn = withdrawn.add(amount.mul(stkTru.stakeSupply()).div(stkTru.totalSupply()));
+        _withdraw(stkTru, amount);
+    }
+
+    /**
+     * @dev Withdraw all funds to beneficiary after expiry time
      */
     function withdrawToBeneficiary() external onlyBeneficiary {
-        _withdrawToBeneficiary();
-    }
-
-    /**
-     * @dev Internal function to withdraw funds to beneficiary
-     */
-    function _withdrawToBeneficiary() private {
+        uint256 timePassed = block.timestamp.sub(expiry.sub(DURATION));
+        require(timePassed >= DURATION, "TrueFiVault: vault is not expired yet");
         claimRewards();
-        _withdraw(tru);
-        _withdraw(stkTru);
+        _withdraw(tru, tru.balanceOf(address(this)));
+        _withdraw(stkTru, stkTru.balanceOf(address(this)));
     }
 
-    function _withdraw(IERC20 token) private {
-        uint256 amountToWithdraw = withdrawable(token);
-        if (amountToWithdraw == 0) {
-            return;
-        }
-        withdrawn[token] = withdrawn[token].add(amountToWithdraw);
-        require(token.transfer(beneficiary, amountToWithdraw), "TrueFiVault: insufficient balance");
-
-        emit Withdraw(token, amountToWithdraw, beneficiary);
+    function _withdraw(IERC20 token, uint256 amount) private {
+        require(token.transfer(beneficiary, amount), "TrueFiVault: insufficient balance");
+        emit Withdraw(token, amount, beneficiary);
     }
 
     /**
@@ -122,6 +134,7 @@ contract TrueFiVault is Initializable {
      * @param amount Amount of TRU to stake
      */
     function stake(uint256 amount) external onlyBeneficiary {
+        tru.approve(address(stkTru), amount);
         stkTru.stake(amount);
     }
 
@@ -162,5 +175,10 @@ contract TrueFiVault is Initializable {
     function delegate(address delegatee) external onlyBeneficiary {
         tru.delegate(delegatee);
         stkTru.delegate(delegatee);
+    }
+
+    function totalBalance() public view returns (uint256) {
+        uint256 normalizedStkTruBalance = stkTru.balanceOf(address(this)).mul(stkTru.stakeSupply()).div(stkTru.totalSupply());
+        return tru.balanceOf(address(this)).add(normalizedStkTruBalance);
     }
 }
