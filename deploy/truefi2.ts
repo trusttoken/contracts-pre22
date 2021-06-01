@@ -74,17 +74,19 @@ deploy({}, (_, config) => {
   
   // // New contract proxies
   const trueLender2 = proxy(trueLender2_impl, () => {})
-  const poolFactory = proxy(poolFactory_impl, 'initialize',
-    [implementationReference, trustToken, trueLender2],
-  )
+  const poolFactory = proxy(poolFactory_impl, () => {})
+  runIf(poolFactory.isInitialized().not(), () => {
+    poolFactory.initialize(implementationReference, trustToken, trueLender2)
+  })
   const oneInch = isMainnet ? ONE_INCH_EXCHANGE : contract(Mock1InchV3)
   runIf(trueLender2.isInitialized().not(), () => {
     trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch)
   })
   const liquidator2 = proxy(liquidator2_impl, () => {})
-  const loanFactory2 = proxy(loanFactory2_impl, 'initialize',
-    [poolFactory, trueLender2, liquidator2],
-  )
+  const loanFactory2 = proxy(loanFactory2_impl, () => {})
+  runIf(loanFactory2.isInitialized().not(), () => {
+    loanFactory2.initialize(poolFactory, trueLender2, liquidator2)
+  })
   runIf(liquidator2.isInitialized().not(), () => {
     liquidator2.initialize(stkTruToken, trustToken, loanFactory2)
   })
@@ -96,9 +98,10 @@ deploy({}, (_, config) => {
   runIf(trueLender2.feePool().equals(AddressZero), () => {
     trueLender2.setFeePool(usdc_TrueFiPool2)
   })
-  const usdc_TrueFiPool2_LinearTrueDistributor = proxy(usdc_TrueFiPool2_LinearTrueDistributor_impl, 'initialize',
-    [deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken],
-  )
+  const usdc_TrueFiPool2_LinearTrueDistributor = proxy(usdc_TrueFiPool2_LinearTrueDistributor_impl, () => {})
+  runIf(usdc_TrueFiPool2_LinearTrueDistributor.isInitialized().not(), () => {
+    usdc_TrueFiPool2_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
+  })
   const usdc_TrueFiPool2_TrueFarm = proxy(usdc_TrueFiPool2_TrueFarm_impl, () => {})
   runIf(usdc_TrueFiPool2_LinearTrueDistributor.farm().equals(usdc_TrueFiPool2_TrueFarm).not(), () => {
     usdc_TrueFiPool2_LinearTrueDistributor.setFarm(usdc_TrueFiPool2_TrueFarm)
