@@ -87,7 +87,6 @@ deploy({}, (deployer, config) => {
   const ratingAgencyV2Distributor_impl = contract(RatingAgencyV2Distributor)
   const trueFiPool_LinearTrueDistributor_impl = contract('trueFiPool_LinearTrueDistributor', LinearTrueDistributor)
   const trueFiPool_TrueFarm_impl = contract('trueFiPool_TrueFarm', TrueFarm)
-  const sushiTimelock = contract(SushiTimelock, [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY])
   const truSushiswapRewarder_impl = contract(TruSushiswapRewarder)
   const timelock_impl = contract(Timelock)
   const governorAlpha_impl = contract(GovernorAlpha)
@@ -95,29 +94,42 @@ deploy({}, (deployer, config) => {
   // New contract proxies
   const trueLender = proxy(trueLender_impl, () => {})
   const stkTruToken = proxy(stkTruToken_impl, () => {})
+  let trueFiPool = proxy(trueFiPool_impl, () => {})
+  const testTrueFiPool = proxy(testTrueFiPool_impl, () => {})
+  const loanFactory = proxy(loanFactory_impl, () => {})
+  const liquidator = proxy(liquidator_impl, () => {})
+  const stkTruToken_LinearTrueDistributor = proxy(stkTruToken_LinearTrueDistributor_impl, () => {})
+  const trueRatingAgencyV2 = proxy(trueRatingAgencyV2_impl, () => {})
+  const ratingAgencyV2Distributor = proxy(ratingAgencyV2Distributor_impl, () => {})
+  const trueFiPool_LinearTrueDistributor = proxy(trueFiPool_LinearTrueDistributor_impl, () => {})
+  const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, () => {})
+  const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => {})
+  const timelock = proxy(timelock_impl, () => {})
+  const governorAlpha = proxy(governorAlpha_impl, () => {})
+
+  // New bare contracts
   const yCrvGauge = is_mainnet
     ? deployParams['mainnet'].Y_CRV_GAUGE
     : contract(MockCurveGauge)
-  let trueFiPool = proxy(trueFiPool_impl, () => {})
-  const testTrueFiPool = proxy(testTrueFiPool_impl, () => {})
+  const truPriceOracle = is_mainnet
+    ? contract(TruPriceOracle)
+    : contract(MockTruPriceOracle)
+  const sushiTimelock = contract(SushiTimelock, [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY])
+  const trueLenderReclaimer = contract(TrueLenderReclaimer, [trueLender])
+
+  // Contract initialization
   runIf(testTrueFiPool.isInitialized().not(), () => {
     testTrueFiPool.initialize(AddressZero, yCrvGauge, trueUSD, trueLender, AddressZero, stkTruToken, AddressZero, AddressZero)
   })
   if (!is_mainnet) {
     trueFiPool = testTrueFiPool
   }
-  const truPriceOracle = is_mainnet
-    ? contract(TruPriceOracle)
-    : contract(MockTruPriceOracle)
-  const loanFactory = proxy(loanFactory_impl, () => {})
   runIf(loanFactory.isInitialized().not(), () => {
     loanFactory.initialize(trueUSD)
   })
-  const liquidator = proxy(liquidator_impl, () => {})
   runIf(liquidator.isInitialized().not(), () => {
     liquidator.initialize(trueFiPool, stkTruToken, trustToken, truPriceOracle, loanFactory)
   })
-  const stkTruToken_LinearTrueDistributor = proxy(stkTruToken_LinearTrueDistributor_impl, () => {})
   runIf(stkTruToken_LinearTrueDistributor.isInitialized().not(), () => {
     stkTruToken_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
   })
@@ -127,8 +139,6 @@ deploy({}, (deployer, config) => {
   runIf(stkTruToken.initalized().not(), () => {
     stkTruToken.initialize(trustToken, trueFiPool, trueFiPool, stkTruToken_LinearTrueDistributor, liquidator)
   })
-  const trueRatingAgencyV2 = proxy(trueRatingAgencyV2_impl, () => {})
-  const ratingAgencyV2Distributor = proxy(ratingAgencyV2Distributor_impl, () => {})
   runIf(ratingAgencyV2Distributor.isInitialized().not(), () => {
     ratingAgencyV2Distributor.initialize(trueRatingAgencyV2, trustToken)
   })
@@ -138,27 +148,21 @@ deploy({}, (deployer, config) => {
   runIf(trueLender.isInitialized().not(), () => {
     trueLender.initialize(trueFiPool, trueRatingAgencyV2, stkTruToken)
   })
-  const trueLenderReclaimer = contract(TrueLenderReclaimer, [trueLender])
-  const trueFiPool_LinearTrueDistributor = proxy(trueFiPool_LinearTrueDistributor_impl, () => {})
   runIf(trueFiPool_LinearTrueDistributor.isInitialized().not(), () => {
     trueFiPool_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
   })
-  const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, () => {})
   runIf(trueFiPool_LinearTrueDistributor.farm().equals(trueFiPool_TrueFarm).not(), () => {
     trueFiPool_LinearTrueDistributor.setFarm(trueFiPool_TrueFarm)
   })
   runIf(trueFiPool_TrueFarm.isInitialized().not(), () => {
     trueFiPool_TrueFarm.initialize(trueFiPool, trueFiPool_LinearTrueDistributor, 'TrueFi tfTUSD Farm')
   })
-  const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => {})
   runIf(truSushiswapRewarder.isInitialized().not(), () => {
     truSushiswapRewarder.initialize(deployParams[NETWORK].SUSHI_REWARD_MULTIPLIER, trustToken, deployParams[NETWORK].SUSHI_MASTER_CHEF)
   })
-  const timelock = proxy(timelock_impl, () => {})
   runIf(timelock.isInitialized().not(), () => {
     timelock.initialize(TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY)
   })
-  const governorAlpha = proxy(governorAlpha_impl, () => {})
   runIf(governorAlpha.isInitialized().not(), () => {
     governorAlpha.initialize(timelock, trustToken, stkTruToken, GOV_GUARDIAN, deployParams[NETWORK].VOTING_PERIOD)
   })
