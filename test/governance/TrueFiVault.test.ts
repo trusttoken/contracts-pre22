@@ -4,6 +4,7 @@ import { BigNumber, Wallet } from 'ethers'
 import { beforeEachWithFixture, DAY, parseTRU, timeTravel, timeTravelTo } from 'utils'
 
 import {
+  Erc20Mock,
   Erc20Mock__factory,
   LinearTrueDistributor__factory,
   StkTruToken,
@@ -22,6 +23,8 @@ describe('TrueFiVault', () => {
   let beneficiary: Wallet
   let liquidator: Wallet
   let provider: MockProvider
+  let tfUsd: Erc20Mock
+  let feeToken: Erc20Mock
 
   let tru: TrustToken
   let stkTru: StkTruToken
@@ -42,9 +45,10 @@ describe('TrueFiVault', () => {
     await tru.initialize()
     await tru.mint(owner.address, TRU_AMOUNT.add(STKTRU_AMOUNT))
     stkTru = await new StkTruToken__factory(owner).deploy()
-    const tfUsd = await new Erc20Mock__factory(owner).deploy(owner.address, 0)
+    tfUsd = await new Erc20Mock__factory(owner).deploy(owner.address, 0)
+    feeToken = await new Erc20Mock__factory(owner).deploy(owner.address, 0)
     const distributor = await new LinearTrueDistributor__factory(owner).deploy()
-    await stkTru.initialize(tru.address, tfUsd.address, tfUsd.address, distributor.address, liquidator.address)
+    await stkTru.initialize(tru.address, tfUsd.address, feeToken.address, distributor.address, liquidator.address)
 
     const vaultStart = (await provider.getBlock('latest')).timestamp + DAY
     trueFiVault = await new TrueFiVault__factory(owner).deploy()
@@ -81,6 +85,26 @@ describe('TrueFiVault', () => {
         stkTru.address,
       )
       expect('delegate').to.be.calledOnContractWith(stkTru, [beneficiary.address])
+    })
+
+    it('checks vault start time', async () => {
+      const vault = await new TrueFiVault__factory(owner).deploy()
+      const now = (await provider.getBlock('latest')).timestamp
+      await expect(vault.initialize(
+        beneficiary.address,
+        0,
+        now - 10,
+        tru.address,
+        stkTru.address,
+      )).to.be.revertedWith('TrueFiVault: lock start in the past')
+
+      await expect(vault.initialize(
+        beneficiary.address,
+        0,
+        now * 2,
+        tru.address,
+        stkTru.address,
+      )).to.be.revertedWith('TrueFiVault: lock start too far in the future')
     })
   })
 
@@ -267,6 +291,12 @@ describe('TrueFiVault', () => {
       expect('cooldown').to.be.calledOnContract(stkTru)
     })
 
+    it('claims FeeToken rewards', async () => {
+      await trueFiVault.connect(beneficiary).claimFeeRewards()
+      expect('transfer').to.be.calledOnContractWith(tfUsd, [beneficiary.address, 0])
+      expect('transfer').to.be.calledOnContractWith(feeToken, [beneficiary.address, 0])
+    })
+
     it('reverts claimRewards from non-beneficiary', async () => {
       await expect(trueFiVault.connect(owner).claimRewards()).to.be.revertedWith('TrueFiVault: only beneficiary')
     })
@@ -282,6 +312,10 @@ describe('TrueFiVault', () => {
   })
 
   describe('Delegation', () => {
+    beforeEach(async () => {
+      await trueFiVault.connect(beneficiary).delegate(beneficiary.address)
+    })
+
     it('vault delegates votes to beneficiary', async () => {
       expect(await tru.getCurrentVotes(beneficiary.address)).to.equal(TRU_AMOUNT)
       expect(await stkTru.getCurrentVotes(beneficiary.address)).to.equal(STKTRU_AMOUNT)

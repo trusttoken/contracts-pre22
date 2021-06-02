@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IVoteTokenWithERC20} from "./interface/IVoteToken.sol";
 import {IStkTruToken} from "./interface/IStkTruToken.sol";
 import {Initializable} from "../common/Initializable.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 /**
  * @title TrueFiVault
@@ -20,6 +21,8 @@ import {Initializable} from "../common/Initializable.sol";
  */
 contract TrueFiVault is Initializable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+    using SafeERC20 for IVoteTokenWithERC20;
 
     uint256 public constant DURATION = 365 days;
 
@@ -49,10 +52,11 @@ contract TrueFiVault is Initializable {
         tru = _tru;
         stkTru = _stkTru;
 
+        // TODO Uncomment after TRU is updated to support voting
+        //        tru.delegate(beneficiary);
         stkTru.delegate(beneficiary);
-        tru.delegate(beneficiary);
 
-        require(tru.transferFrom(owner, address(this), _amount), "TrueFiVault: insufficient owner balance");
+        tru.safeTransferFrom(owner, address(this), _amount);
     }
 
     /**
@@ -128,7 +132,7 @@ contract TrueFiVault is Initializable {
     }
 
     function _withdraw(IERC20 token, uint256 amount) private {
-        require(token.transfer(beneficiary, amount), "TrueFiVault: insufficient balance");
+        token.safeTransfer(beneficiary, amount);
         emit Withdraw(token, amount, beneficiary);
     }
 
@@ -178,6 +182,17 @@ contract TrueFiVault is Initializable {
     function delegate(address delegatee) external onlyBeneficiary {
         tru.delegate(delegatee);
         stkTru.delegate(delegatee);
+    }
+
+    /**
+     * @dev Claim rewards in tfTUSD and feeToken from stake and transfer to the beneficiary
+     */
+    function claimFeeRewards() external onlyBeneficiary {
+        stkTru.claim();
+        IERC20 tfTUSD = stkTru.tfusd();
+        tfTUSD.safeTransfer(beneficiary, tfTUSD.balanceOf(address(this)));
+        IERC20 feeToken = stkTru.feeToken();
+        feeToken.safeTransfer(beneficiary, feeToken.balanceOf(address(this)));
     }
 
     function totalBalance() public view returns (uint256) {

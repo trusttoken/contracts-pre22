@@ -20,4 +20,8 @@ interface IStkTruToken is IERC20, IVoteToken {
     function claimRestake(uint256 extraStakeAmount) external;
 
     function stakeSupply() external view returns (uint256);
+
+    function tfusd() external view returns (IERC20);
+
+    function feeToken() external view returns (IERC20);
 }
