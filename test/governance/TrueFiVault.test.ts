@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
-import { beforeEachWithFixture, DAY, parseTRU, timeTravel } from 'utils'
+import { beforeEachWithFixture, DAY, parseTRU, timeTravel, timeTravelTo } from 'utils'
 
 import {
   Erc20Mock__factory,
@@ -36,6 +36,7 @@ describe('TrueFiVault', () => {
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, beneficiary, liquidator] = wallets
     provider = _provider
+    await provider.send('hardhat_reset', [])
 
     tru = await new TrustToken__factory(owner).deploy()
     await tru.initialize()
@@ -45,16 +46,19 @@ describe('TrueFiVault', () => {
     const distributor = await new LinearTrueDistributor__factory(owner).deploy()
     await stkTru.initialize(tru.address, tfUsd.address, tfUsd.address, distributor.address, liquidator.address)
 
+    const vaultStart = (await provider.getBlock('latest')).timestamp + DAY
     trueFiVault = await new TrueFiVault__factory(owner).deploy()
+    await tru.approve(trueFiVault.address, TRU_AMOUNT.add(STKTRU_AMOUNT))
     await trueFiVault.initialize(
       beneficiary.address,
+      TRU_AMOUNT.add(STKTRU_AMOUNT),
+      vaultStart,
       tru.address,
       stkTru.address,
     )
 
-    await tru.approve(trueFiVault.address, TRU_AMOUNT.add(STKTRU_AMOUNT))
-    await trueFiVault.lock(TRU_AMOUNT.add(STKTRU_AMOUNT))
     await trueFiVault.connect(beneficiary).stake(STKTRU_AMOUNT)
+    await timeTravelTo(provider, vaultStart)
   })
 
   describe('Constructor', () => {
@@ -68,8 +72,11 @@ describe('TrueFiVault', () => {
 
     it('delegates stkTRU to beneficiary', async () => {
       const vault = await new TrueFiVault__factory(owner).deploy()
+      const vaultStart = (await provider.getBlock('latest')).timestamp + DAY
       await vault.initialize(
         beneficiary.address,
+        0,
+        vaultStart,
         tru.address,
         stkTru.address,
       )
@@ -131,11 +138,11 @@ describe('TrueFiVault', () => {
         const start = await trueFiVault.withdrawable(tru.address)
         expect(start).to.be.lt(parseTRU(1))
         await timeTravel(provider, MONTH)
-        expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(start.add(VEST_EACH_MONTH), 20000)
+        expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(start.add(VEST_EACH_MONTH), 40000)
         await timeTravel(provider, MONTH)
-        expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(start.add(VEST_EACH_MONTH.mul(2)), 30000)
+        expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(start.add(VEST_EACH_MONTH.mul(2)), 40000)
         await timeTravel(provider, MONTH * 2)
-        expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(start.add(VEST_EACH_MONTH.mul(4)), 30000)
+        expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(start.add(VEST_EACH_MONTH.mul(4)), 40000)
         await timeTravel(provider, MONTH * 10)
         expect(await trueFiVault.withdrawable(tru.address)).to.equal(TRU_AMOUNT)
       })
@@ -144,9 +151,9 @@ describe('TrueFiVault', () => {
         const start = await trueFiVault.withdrawable(stkTru.address)
         expect(start).to.be.lt(parseTRU(1))
         await timeTravel(provider, MONTH)
-        expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(start.add(VEST_EACH_MONTH), 20000)
+        expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(start.add(VEST_EACH_MONTH), 40000)
         await timeTravel(provider, MONTH)
-        expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(start.add(VEST_EACH_MONTH.mul(2)), 20000)
+        expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(start.add(VEST_EACH_MONTH.mul(2)), 40000)
         await timeTravel(provider, MONTH * 2)
         // STKTRU_AMOUNT < VEST_EACH_MONTH * 8
         expect(await trueFiVault.withdrawable(stkTru.address)).to.equal(STKTRU_AMOUNT)
@@ -271,6 +278,19 @@ describe('TrueFiVault', () => {
 
     it('reverts claimRestake from non-beneficiary', async () => {
       await expect(trueFiVault.connect(owner).claimRestake()).to.be.revertedWith('TrueFiVault: only beneficiary')
+    })
+  })
+
+  describe('Delegation', () => {
+    it('vault delegates votes to beneficiary', async () => {
+      expect(await tru.getCurrentVotes(beneficiary.address)).to.equal(TRU_AMOUNT)
+      expect(await stkTru.getCurrentVotes(beneficiary.address)).to.equal(STKTRU_AMOUNT)
+    })
+
+    it('beneficiary can delegate votes', async () => {
+      await trueFiVault.connect(beneficiary).delegate(liquidator.address)
+      expect(await tru.getCurrentVotes(liquidator.address)).to.equal(TRU_AMOUNT)
+      expect(await stkTru.getCurrentVotes(liquidator.address)).to.equal(STKTRU_AMOUNT)
     })
   })
 })

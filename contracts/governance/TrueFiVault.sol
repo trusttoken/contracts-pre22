@@ -35,20 +35,23 @@ contract TrueFiVault is Initializable {
 
     function initialize(
         address _beneficiary,
+        uint256 _amount,
+        uint256 _start,
         IVoteTokenWithERC20 _tru,
         IStkTruToken _stkTru
     ) external initializer {
+        // Protect from accidental passing incorrect start timestamp
+        require(_start >= block.timestamp, "TrueFiVault: lock start in the past");
+        require(_start < block.timestamp + 90 days, "TrueFiVault: lock start too far in the future");
         owner = msg.sender;
         beneficiary = _beneficiary;
-        expiry = block.timestamp.add(DURATION);
+        expiry = _start.add(DURATION);
         tru = _tru;
         stkTru = _stkTru;
 
         stkTru.delegate(beneficiary);
-    }
+        tru.delegate(beneficiary);
 
-    function lock(uint256 _amount) external onlyOwner {
-        require(tru.balanceOf(address(this)) == 0, "TrueFiVault: funds already locked");
         require(tru.transferFrom(owner, address(this), _amount), "TrueFiVault: insufficient owner balance");
     }
 
