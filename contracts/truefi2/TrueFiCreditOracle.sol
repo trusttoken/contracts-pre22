@@ -28,6 +28,7 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
 
     /**
      * @dev Get score for `account`
+     * Scores are stored as uint8 allowing scores of 0-255
      */
     function getScore(address account) public override view returns (uint8) {
         return score[account];
@@ -35,6 +36,7 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
 
     /**
      * @dev Set `newScore` value for `account`
+     * Scores are stored as uint8 allowing scores of 0-255
      */
     function setScore(address account, uint8 newScore) public onlyOwner {
         score[account] = newScore;
