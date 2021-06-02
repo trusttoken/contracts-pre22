@@ -11,6 +11,7 @@ import {
 // inputs
 const beneficiary = ''
 const amount = '10000000000'
+const start = ''
 const txnArgs = { gasLimit: 1_000_000, gasPrice: 60_000_000_000 }
 
 // mainnet
@@ -40,13 +41,10 @@ async function deployTrueFiVault () {
   console.log(`vault: ${vault.address}`)
   await (await vault.upgradeTo(trueFiVaultImpl.address, txnArgs)).wait()
   console.log('Proxy upgrade: done')
-
+  // todo approve TRU
   // initialize and transfer TRU
   await (await TrueFiVault__factory.connect(vault.address, wallet)
-    .initialize(beneficiary, truAddress, stkTruAddress, txnArgs)).wait()
-  console.log(`Initialized for: ${beneficiary}`)
-  await (await TrueFiVault__factory.connect(vault.address, wallet)
-    .lock(amount, txnArgs)).wait()
+    .initialize(beneficiary, amount, start, truAddress, stkTruAddress, txnArgs)).wait()
   console.log(`Locked: ${amount} TRU`)
 }
 
