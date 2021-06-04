@@ -23,43 +23,15 @@ solc-select use 0.6.10
 
 yarn flatten
 
-slither_args="--solc-disable-warnings --exclude-low --exclude-informational --exclude=naming-convention,unused-state-variables,solc-version,assembly-usage,low-level-call"
+status=0
+slither flatten/GovernorAlpha.sol || status=1
+slither flatten/Liquidator.sol || status=1
+slither flatten/LoanFactory.sol || status=1
+slither flatten/LoanToken.sol || status=1
+slither flatten/StkTruToken.sol || status=1
+slither flatten/TrueLender.sol || status=1
+slither flatten/TrueRatingAgencyV2.sol || status=1
+slither flatten/TrustToken.sol || status=1
+slither flatten/Timelock.sol || status=1
 
-if ! slither flatten/GovernorAlpha.sol ${slither_args}; then
-  echo "slither failed: GovernorAlpha"
-  exit 1
-fi
-if ! slither flatten/Liquidator.sol ${slither_args}; then
-  echo "slither failed: Liquidator"
-  exit 1
-fi
-if ! slither flatten/LoanFactory.sol ${slither_args}; then
-  echo "slither failed: LoanFactory"
-  exit 1
-fi
-if ! slither flatten/LoanToken.sol ${slither_args}; then
-  echo "slither failed: LoanToken"
-  exit 1
-fi
-if ! slither flatten/StkTruToken.sol ${slither_args}; then
-  echo "slither failed: StkTruToken"
-  exit 1
-fi
-if ! slither flatten/TrueLender.sol ${slither_args}; then
-  echo "slither failed: TrueLender"
-  exit 1
-fi
-if ! slither flatten/TrueRatingAgencyV2.sol ${slither_args}; then
-  echo "slither failed: TrueRatingAgencyV2"
-  exit 1
-fi
-if ! slither flatten/TrustToken.sol ${slither_args}; then
-  echo "slither failed: TrustToken"
-  exit 1
-fi
-if ! slither flatten/Timelock.sol ${slither_args}; then
-  echo "slither failed: Timelock"
-  exit 1
-fi
-
-echo "Done."
+exit $status
