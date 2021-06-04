@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
-
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20WithDecimals} from "../truefi2/interface/IERC20WithDecimals.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {IBurnableERC20} from "../trusttoken/interface/IBurnableERC20.sol";
@@ -10,9 +10,10 @@ import {IVoteTokenWithERC20} from "../governance/interface/IVoteToken.sol";
 import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanFactory} from "./interface/ILoanFactory.sol";
-import {ILoanToken} from "./interface/ILoanToken.sol";
+import {ILoanToken2} from "../truefi2/interface/ILoanToken2.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
+import "hardhat/console.sol";
 
 /**
  * @title TrueRatingAgencyV2
@@ -286,7 +287,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      */
     function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
         require(!submissionPauseStatus, "TrueRatingAgencyV2: New submissions are paused");
-        require(ILoanToken(id).borrower() == msg.sender, "TrueRatingAgencyV2: Sender is not borrower");
+        require(ILoanToken2(id).borrower() == msg.sender, "TrueRatingAgencyV2: Sender is not borrower");
         require(factory.isLoanToken(id), "TrueRatingAgencyV2: Only LoanTokens created via LoanFactory are supported");
         loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, blockNumber: block.number, reward: 0});
         emit LoanSubmitted(id);
@@ -379,15 +380,13 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      */
     modifier calculateTotalReward(address id) {
         if (loans[id].reward == 0) {
-            uint256 interest = ILoanToken(id).profit();
-
+            uint256 interest = ILoanToken2(id).profit();
             // calculate reward
             // prettier-ignore
             uint256 totalReward = toTRU(
-                interest
-                    .mul(distributor.remaining())
-                    .mul(rewardMultiplier)
-                    .div(distributor.amount())
+                interest.mul(distributor.remaining()).mul(rewardMultiplier).mul(10**18).div(distributor.amount()).div(
+                    10**IERC20WithDecimals(id).decimals()
+                )
             );
 
             uint256 ratersReward = totalReward.mul(ratersRewardFactor).div(10000);
@@ -477,22 +476,22 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
             return LoanStatus.Retracted;
         }
         // get internal status
-        ILoanToken.Status loanInternalStatus = ILoanToken(id).status();
+        ILoanToken2.Status loanInternalStatus = ILoanToken2(id).status();
 
         // Running is Funded || Withdrawn
-        if (loanInternalStatus == ILoanToken.Status.Funded || loanInternalStatus == ILoanToken.Status.Withdrawn) {
+        if (loanInternalStatus == ILoanToken2.Status.Funded || loanInternalStatus == ILoanToken2.Status.Withdrawn) {
             return LoanStatus.Running;
         }
         // Settled has been paid back in full and past term
-        if (loanInternalStatus == ILoanToken.Status.Settled) {
+        if (loanInternalStatus == ILoanToken2.Status.Settled) {
             return LoanStatus.Settled;
         }
         // Defaulted has not been paid back in full and past term
-        if (loanInternalStatus == ILoanToken.Status.Defaulted) {
+        if (loanInternalStatus == ILoanToken2.Status.Defaulted) {
             return LoanStatus.Defaulted;
         }
         // Liquidated is same as defaulted and stakers have been liquidated
-        if (loanInternalStatus == ILoanToken.Status.Liquidated) {
+        if (loanInternalStatus == ILoanToken2.Status.Liquidated) {
             return LoanStatus.Liquidated;
         }
         // otherwise return Pending
