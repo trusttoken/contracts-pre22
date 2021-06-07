@@ -33,12 +33,14 @@ const deployParams = {
     DISTRIBUTION_START: 1621529911,
     // 290,934 per day for 14 days
     STAKE_DISTRIBUTION_AMOUNT: BigNumber.from('407307600000000'),
+    WITHDRAW_PERIOD: 3 * DAY,
   },
   testnet: {
     LOAN_INTEREST_FEE: 500,
     DISTRIBUTION_DURATION: 180 * DAY,
     DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
     STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
+    WITHDRAW_PERIOD: 3 * DAY,
   },
 }
 
@@ -68,7 +70,7 @@ deploy({}, (_, config) => {
   const loanFactory2_impl = contract(LoanFactory2)
   const usdc_TrueFiPool2_LinearTrueDistributor_impl = contract('usdc_TrueFiPool2_LinearTrueDistributor', LinearTrueDistributor)
   const usdc_TrueFiPool2_TrueFarm_impl = contract('usdc_TrueFiPool2_TrueFarm', TrueFarm)
-  
+
   // New contract proxies
   const trueLender2 = proxy(trueLender2_impl, () => {})
   const poolFactory = proxy(poolFactory_impl, () => {})
@@ -89,6 +91,9 @@ deploy({}, (_, config) => {
   })
   runIf(trueLender2.isInitialized().not(), () => {
     trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch)
+  })
+  runIf(trueLender2.votingPeriod().equals(deployParams[NETWORK].WITHDRAW_PERIOD).not(), () => {
+    trueLender.setVotingPeriod(deployParams[NETWORK].WITHDRAW_PERIOD)
   })
   runIf(loanFactory2.isInitialized().not(), () => {
     loanFactory2.initialize(poolFactory, trueLender2, liquidator2)
