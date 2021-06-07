@@ -439,6 +439,14 @@
     "crvPriceOracle": {
       "txHash": "0x9f1f2a8be0574db1a0e5c2e96d861436b0112ef20c63991d4e50d235486a7d65",
       "address": "0x842D486a5d12b3729c89B0E8968C54f68eADba7c"
+    },
+    "trueFiCreditOracle": {
+      "txHash": "0xa235b90914ab19b605aa4362d4276368fa1c414607a1beb9e767e502315cf387",
+      "address": "0xf47d06C3E8734B3cc21eD3DD91dD7E100FDAeB06"
+    },
+    "trueFiCreditOracle_proxy": {
+      "txHash": "0xdd6e5f89621e4060cfce40a90b8a0d87e585805377892c827f9b69c3050dde2d",
+      "address": "0x73581551665680696946f568259977Da02e8712A"
     }
   }
 }
