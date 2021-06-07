@@ -3,8 +3,10 @@ pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import {StkTruToken} from "./StkTruToken.sol";
+import {IVoteTokenWithERC20} from "./interface/IVoteToken.sol";
+import {IStkTruToken} from "./interface/IStkTruToken.sol";
+import {Initializable} from "../common/Initializable.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 /**
  * @title TrueFiVault
@@ -17,32 +19,44 @@ import {StkTruToken} from "./StkTruToken.sol";
  * In case of emergency or error, owner reserves the ability to withdraw all
  * funds in vault.
  */
-contract TrueFiVault {
+contract TrueFiVault is Initializable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+    using SafeERC20 for IVoteTokenWithERC20;
+
+    uint256 public constant DURATION = 365 days;
 
     address public owner;
     address public beneficiary;
     uint256 public expiry;
-    IERC20 public tru;
-    StkTruToken public stkTru;
+    uint256 public withdrawn;
 
-    event WithdrawTo(address recipient);
+    IVoteTokenWithERC20 public tru;
+    IStkTruToken public stkTru;
 
-    constructor(
+    event Withdraw(IERC20 token, uint256 amount, address beneficiary);
+
+    function initialize(
         address _beneficiary,
         uint256 _amount,
-        uint256 _duration,
-        IERC20 _tru,
-        StkTruToken _stkTru
-    ) public {
+        uint256 _start,
+        IVoteTokenWithERC20 _tru,
+        IStkTruToken _stkTru
+    ) external initializer {
+        // Protect from accidental passing incorrect start timestamp
+        require(_start >= block.timestamp, "TrueFiVault: lock start in the past");
+        require(_start < block.timestamp + 90 days, "TrueFiVault: lock start too far in the future");
         owner = msg.sender;
         beneficiary = _beneficiary;
-        expiry = block.timestamp.add(_duration);
+        expiry = _start.add(DURATION);
         tru = _tru;
         stkTru = _stkTru;
 
-        require(tru.transferFrom(owner, address(this), _amount), "TrueFiVault: insufficient owner balance");
+        // TODO Uncomment after TRU is updated to support voting
+        //        tru.delegate(beneficiary);
         stkTru.delegate(beneficiary);
+
+        tru.safeTransferFrom(owner, address(this), _amount);
     }
 
     /**
@@ -61,30 +75,65 @@ contract TrueFiVault {
         _;
     }
 
+    function withdrawable(IERC20 token) public view returns (uint256) {
+        uint256 tokenBalance = token.balanceOf(address(this));
+        if (beneficiary == owner) {
+            return tokenBalance;
+        }
+        uint256 timePassed = block.timestamp.sub(expiry.sub(DURATION));
+        if (timePassed > DURATION) {
+            timePassed = DURATION;
+        }
+        uint256 amount = totalBalance().add(withdrawn).mul(timePassed).div(DURATION).sub(withdrawn);
+        if (token == stkTru) {
+            amount = amount.mul(stkTru.totalSupply()).div(stkTru.stakeSupply());
+        }
+        return amount > tokenBalance ? tokenBalance : amount;
+    }
+
     /**
      * @dev Allow owner to withdraw funds in case of emergency or mistake
      */
     function withdrawToOwner() external onlyOwner {
         beneficiary = owner;
-        _withdrawToBeneficiary();
+        claimRewards();
+        _withdraw(tru, tru.balanceOf(address(this)));
+        _withdraw(stkTru, stkTru.balanceOf(address(this)));
     }
 
     /**
-     * @dev Withdraw funds to beneficiary after expiry time
+     * @dev Withdraw vested TRU to beneficiary
+     */
+    function withdrawTru(uint256 amount) external onlyBeneficiary {
+        claimRewards();
+        require(amount <= withdrawable(tru), "TrueFiVault: attempting to withdraw more than allowed");
+        withdrawn = withdrawn.add(amount);
+        _withdraw(tru, amount);
+    }
+
+    /**
+     * @dev Withdraw vested stkTRU to beneficiary
+     */
+    function withdrawStkTru(uint256 amount) external onlyBeneficiary {
+        require(amount <= withdrawable(stkTru), "TrueFiVault: attempting to withdraw more than allowed");
+        withdrawn = withdrawn.add(amount.mul(stkTru.stakeSupply()).div(stkTru.totalSupply()));
+        _withdraw(stkTru, amount);
+    }
+
+    /**
+     * @dev Withdraw all funds to beneficiary after expiry time
      */
     function withdrawToBeneficiary() external onlyBeneficiary {
-        require(block.timestamp >= expiry, "TrueFiVault: beneficiary cannot withdraw before expiration");
-        _withdrawToBeneficiary();
+        uint256 timePassed = block.timestamp.sub(expiry.sub(DURATION));
+        require(timePassed >= DURATION, "TrueFiVault: vault is not expired yet");
+        claimRewards();
+        _withdraw(tru, tru.balanceOf(address(this)));
+        _withdraw(stkTru, stkTru.balanceOf(address(this)));
     }
 
-    /**
-     * @dev Internal function to withdraw funds to beneficiary
-     */
-    function _withdrawToBeneficiary() private {
-        emit WithdrawTo(beneficiary);
-        claimRewards();
-        require(tru.transfer(beneficiary, tru.balanceOf(address(this))), "TrueFiVault: insufficient TRU balance");
-        require(stkTru.transfer(beneficiary, stkTru.balanceOf(address(this))), "TrueFiVault: insufficient stkTRU balance");
+    function _withdraw(IERC20 token, uint256 amount) private {
+        token.safeTransfer(beneficiary, amount);
+        emit Withdraw(token, amount, beneficiary);
     }
 
     /**
@@ -92,6 +141,7 @@ contract TrueFiVault {
      * @param amount Amount of TRU to stake
      */
     function stake(uint256 amount) external onlyBeneficiary {
+        tru.approve(address(stkTru), amount);
         stkTru.stake(amount);
     }
 
@@ -123,5 +173,30 @@ contract TrueFiVault {
      */
     function claimRestake() external onlyBeneficiary {
         stkTru.claimRestake(0);
+    }
+
+    /**
+     * @dev Delegate tru+stkTRU voting power to another address
+     * @param delegatee Address to delegate to
+     */
+    function delegate(address delegatee) external onlyBeneficiary {
+        tru.delegate(delegatee);
+        stkTru.delegate(delegatee);
+    }
+
+    /**
+     * @dev Claim rewards in tfTUSD and feeToken from stake and transfer to the beneficiary
+     */
+    function claimFeeRewards() external onlyBeneficiary {
+        stkTru.claim();
+        IERC20 tfTUSD = stkTru.tfusd();
+        tfTUSD.safeTransfer(beneficiary, tfTUSD.balanceOf(address(this)));
+        IERC20 feeToken = stkTru.feeToken();
+        feeToken.safeTransfer(beneficiary, feeToken.balanceOf(address(this)));
+    }
+
+    function totalBalance() public view returns (uint256) {
+        uint256 normalizedStkTruBalance = stkTru.balanceOf(address(this)).mul(stkTru.stakeSupply()).div(stkTru.totalSupply());
+        return tru.balanceOf(address(this)).add(normalizedStkTruBalance);
     }
 }
