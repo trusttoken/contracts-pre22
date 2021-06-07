@@ -229,6 +229,14 @@
     "sushiTimelock": {
       "txHash": "0x136db0350b6942b6665c0fce22937906f2a6ccaeab68f9c5354cefa151712667",
       "address": "0x43c93F4A3CC43c4f4d5a2f29b8A646090A2b325f"
+    },
+    "trueFiCreditOracle": {
+      "txHash": "0x006914e44fdf135410e4ce56ac219a30adb38ff29676997afab3759b9746d7f8",
+      "address": "0x669Ef7fdebCA0100883C35a9EbdC28FcD983C63D"
+    },
+    "trueFiCreditOracle_proxy": {
+      "txHash": "0xc764b8c1db38b2e8c15d2ae032183d87caa1ce103cff95428ac3e0923650ebda",
+      "address": "0x9ff6ca759631E658444Ba85409a283f55C49bb93"
     }
   },
   "mainnet": {
