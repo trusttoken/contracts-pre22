@@ -12,6 +12,7 @@ import {
   TestTrustToken,
   TimeOwnedUpgradeabilityProxy,
   TrueFarm,
+  TrueFiCreditOracle,
   TrueFiPool,
   TrueFiPool2,
   TrueLender2,
@@ -70,6 +71,7 @@ deploy({}, (_, config) => {
   const loanFactory2_impl = contract(LoanFactory2)
   const usdc_TrueFiPool2_LinearTrueDistributor_impl = contract('usdc_TrueFiPool2_LinearTrueDistributor', LinearTrueDistributor)
   const usdc_TrueFiPool2_TrueFarm_impl = contract('usdc_TrueFiPool2_TrueFarm', TrueFarm)
+  const trueFiCreditOracle_impl = contract(TrueFiCreditOracle)
 
   // New contract proxies
   const trueLender2 = proxy(trueLender2_impl, () => {})
@@ -78,6 +80,7 @@ deploy({}, (_, config) => {
   const loanFactory2 = proxy(loanFactory2_impl, () => {})
   const usdc_TrueFiPool2_LinearTrueDistributor = proxy(usdc_TrueFiPool2_LinearTrueDistributor_impl, () => {})
   const usdc_TrueFiPool2_TrueFarm = proxy(usdc_TrueFiPool2_TrueFarm_impl, () => {})
+  const trueFiCreditOracle = proxy(trueFiCreditOracle_impl, () => {})
 
   // New bare contracts
   const trueFiPool2 = contract(TrueFiPool2)
@@ -117,6 +120,9 @@ deploy({}, (_, config) => {
   })
   runIf(usdc_TrueFiPool2_TrueFarm.isInitialized().not(), () => {
     usdc_TrueFiPool2_TrueFarm.initialize(usdc_TrueFiPool2, usdc_TrueFiPool2_LinearTrueDistributor, 'TrueFi tfUSDC Farm')
+  })
+  runIf(trueFiCreditOracle.isInitialized().not(), () => {
+    trueFiCreditOracle.initialize()
   })
   if (!isMainnet) {
     trueLender2.setFee(deployParams['testnet'].LOAN_INTEREST_FEE)
