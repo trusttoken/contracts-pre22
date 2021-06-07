@@ -47,87 +47,87 @@ const deployParams = {
 
 deploy({}, (_, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
-  // const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
-  // const isMainnet = config.network === 'mainnet'
-  // const NETWORK = isMainnet ? 'mainnet' : 'testnet'
+  const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
+  const isMainnet = config.network === 'mainnet'
+  const NETWORK = isMainnet ? 'mainnet' : 'testnet'
 
-  // // Existing contracts
-  // const trustToken = isMainnet
-  //   ? timeProxy(contract(TrustToken), () => {})
-  //   : timeProxy(contract(TestTrustToken), () => {})
-  // const stkTruToken = proxy(contract(StkTruToken), () => {})
-  // const trueFiPool = isMainnet
-  //   ? proxy(contract(TrueFiPool), () => {})
-  //   : proxy(contract(TestTrueFiPool), () => {})
-  // const usdc = isMainnet
-  //   ? deployParams['mainnet'].USDC
-  //   : contract(TestUSDCToken)
-  // const trueRatingAgencyV2 = proxy(contract(TrueRatingAgencyV2), () => {})
+  // Existing contracts
+  const trustToken = isMainnet
+    ? timeProxy(contract(TrustToken), () => {})
+    : timeProxy(contract(TestTrustToken), () => {})
+  const stkTruToken = proxy(contract(StkTruToken), () => {})
+  const trueFiPool = isMainnet
+    ? proxy(contract(TrueFiPool), () => {})
+    : proxy(contract(TestTrueFiPool), () => {})
+  const usdc = isMainnet
+    ? deployParams['mainnet'].USDC
+    : contract(TestUSDCToken)
+  const trueRatingAgencyV2 = proxy(contract(TrueRatingAgencyV2), () => {})
 
-  // // New contract impls
-  // const trueLender2_impl = contract(TrueLender2)
-  // const poolFactory_impl = contract(PoolFactory)
-  // const liquidator2_impl = contract(Liquidator2)
-  // const loanFactory2_impl = contract(LoanFactory2)
-  // const usdc_TrueFiPool2_LinearTrueDistributor_impl = contract('usdc_TrueFiPool2_LinearTrueDistributor', LinearTrueDistributor)
-  // const usdc_TrueFiPool2_TrueFarm_impl = contract('usdc_TrueFiPool2_TrueFarm', TrueFarm)
+  // New contract impls
+  const trueLender2_impl = contract(TrueLender2)
+  const poolFactory_impl = contract(PoolFactory)
+  const liquidator2_impl = contract(Liquidator2)
+  const loanFactory2_impl = contract(LoanFactory2)
+  const usdc_TrueFiPool2_LinearTrueDistributor_impl = contract('usdc_TrueFiPool2_LinearTrueDistributor', LinearTrueDistributor)
+  const usdc_TrueFiPool2_TrueFarm_impl = contract('usdc_TrueFiPool2_TrueFarm', TrueFarm)
   const trueFiCreditOracle_impl = contract(TrueFiCreditOracle)
 
-  // // New contract proxies
-  // const trueLender2 = proxy(trueLender2_impl, () => {})
-  // const poolFactory = proxy(poolFactory_impl, () => {})
-  // const liquidator2 = proxy(liquidator2_impl, () => {})
-  // const loanFactory2 = proxy(loanFactory2_impl, () => {})
-  // const usdc_TrueFiPool2_LinearTrueDistributor = proxy(usdc_TrueFiPool2_LinearTrueDistributor_impl, () => {})
-  // const usdc_TrueFiPool2_TrueFarm = proxy(usdc_TrueFiPool2_TrueFarm_impl, () => {})
+  // New contract proxies
+  const trueLender2 = proxy(trueLender2_impl, () => {})
+  const poolFactory = proxy(poolFactory_impl, () => {})
+  const liquidator2 = proxy(liquidator2_impl, () => {})
+  const loanFactory2 = proxy(loanFactory2_impl, () => {})
+  const usdc_TrueFiPool2_LinearTrueDistributor = proxy(usdc_TrueFiPool2_LinearTrueDistributor_impl, () => {})
+  const usdc_TrueFiPool2_TrueFarm = proxy(usdc_TrueFiPool2_TrueFarm_impl, () => {})
   const trueFiCreditOracle = proxy(trueFiCreditOracle_impl, () => {})
 
-  // // New bare contracts
-  // const trueFiPool2 = contract(TrueFiPool2)
-  // const implementationReference = contract(ImplementationReference, [trueFiPool2])
-  // const chainlinkTruUsdcOracle = contract(ChainlinkTruUsdcOracle)
-  // const oneInch = isMainnet ? ONE_INCH_EXCHANGE : contract(Mock1InchV3)
+  // New bare contracts
+  const trueFiPool2 = contract(TrueFiPool2)
+  const implementationReference = contract(ImplementationReference, [trueFiPool2])
+  const chainlinkTruUsdcOracle = contract(ChainlinkTruUsdcOracle)
+  const oneInch = isMainnet ? ONE_INCH_EXCHANGE : contract(Mock1InchV3)
 
-  // // Contract initialization
-  // runIf(poolFactory.isInitialized().not(), () => {
-  //   poolFactory.initialize(implementationReference, trustToken, trueLender2)
-  // })
-  // runIf(trueLender2.isInitialized().not(), () => {
-  //   trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch)
-  // })
-  // runIf(trueLender2.votingPeriod().equals(deployParams[NETWORK].WITHDRAW_PERIOD).not(), () => {
-  //   trueLender2.setVotingPeriod(deployParams[NETWORK].WITHDRAW_PERIOD)
-  // })
-  // runIf(loanFactory2.isInitialized().not(), () => {
-  //   loanFactory2.initialize(poolFactory, trueLender2, liquidator2)
-  // })
-  // runIf(liquidator2.isInitialized().not(), () => {
-  //   liquidator2.initialize(stkTruToken, trustToken, loanFactory2)
-  // })
-  // runIf(poolFactory.pool(usdc).equals(AddressZero), () => {
-  //   poolFactory.whitelist(usdc, true)
-  //   poolFactory.createPool(usdc)
-  // })
-  // const usdc_TrueFiPool2 = poolFactory.pool(usdc)
-  // runIf(trueLender2.feePool().equals(AddressZero), () => {
-  //   trueLender2.setFeePool(usdc_TrueFiPool2)
-  // })
-  // runIf(usdc_TrueFiPool2_LinearTrueDistributor.isInitialized().not(), () => {
-  //   usdc_TrueFiPool2_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
-  // })
-  // runIf(usdc_TrueFiPool2_LinearTrueDistributor.farm().equals(usdc_TrueFiPool2_TrueFarm).not(), () => {
-  //   usdc_TrueFiPool2_LinearTrueDistributor.setFarm(usdc_TrueFiPool2_TrueFarm)
-  // })
-  // runIf(usdc_TrueFiPool2_TrueFarm.isInitialized().not(), () => {
-  //   usdc_TrueFiPool2_TrueFarm.initialize(usdc_TrueFiPool2, usdc_TrueFiPool2_LinearTrueDistributor, 'TrueFi tfUSDC Farm')
-  // })
+  // Contract initialization
+  runIf(poolFactory.isInitialized().not(), () => {
+    poolFactory.initialize(implementationReference, trustToken, trueLender2)
+  })
+  runIf(trueLender2.isInitialized().not(), () => {
+    trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch)
+  })
+  runIf(trueLender2.votingPeriod().equals(deployParams[NETWORK].WITHDRAW_PERIOD).not(), () => {
+    trueLender2.setVotingPeriod(deployParams[NETWORK].WITHDRAW_PERIOD)
+  })
+  runIf(loanFactory2.isInitialized().not(), () => {
+    loanFactory2.initialize(poolFactory, trueLender2, liquidator2)
+  })
+  runIf(liquidator2.isInitialized().not(), () => {
+    liquidator2.initialize(stkTruToken, trustToken, loanFactory2)
+  })
+  runIf(poolFactory.pool(usdc).equals(AddressZero), () => {
+    poolFactory.whitelist(usdc, true)
+    poolFactory.createPool(usdc)
+  })
+  const usdc_TrueFiPool2 = poolFactory.pool(usdc)
+  runIf(trueLender2.feePool().equals(AddressZero), () => {
+    trueLender2.setFeePool(usdc_TrueFiPool2)
+  })
+  runIf(usdc_TrueFiPool2_LinearTrueDistributor.isInitialized().not(), () => {
+    usdc_TrueFiPool2_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
+  })
+  runIf(usdc_TrueFiPool2_LinearTrueDistributor.farm().equals(usdc_TrueFiPool2_TrueFarm).not(), () => {
+    usdc_TrueFiPool2_LinearTrueDistributor.setFarm(usdc_TrueFiPool2_TrueFarm)
+  })
+  runIf(usdc_TrueFiPool2_TrueFarm.isInitialized().not(), () => {
+    usdc_TrueFiPool2_TrueFarm.initialize(usdc_TrueFiPool2, usdc_TrueFiPool2_LinearTrueDistributor, 'TrueFi tfUSDC Farm')
+  })
   runIf(trueFiCreditOracle.isInitialized().not(), () => {
     trueFiCreditOracle.initialize()
   })
-  // if (!isMainnet) {
-  //   trueLender2.setFee(deployParams['testnet'].LOAN_INTEREST_FEE)
-  // }
-  // runIf(poolFactory.isPool(trueFiPool).not(), () => {
-  //   poolFactory.addLegacyPool(trueFiPool)
-  // })
+  if (!isMainnet) {
+    trueLender2.setFee(deployParams['testnet'].LOAN_INTEREST_FEE)
+  }
+  runIf(poolFactory.isPool(trueFiPool).not(), () => {
+    poolFactory.addLegacyPool(trueFiPool)
+  })
 })
