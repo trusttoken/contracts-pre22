@@ -26,13 +26,13 @@ import {
   LinearTrueDistributor,
   ArbitraryDistributor__factory,
   ArbitraryDistributor,
-  MockUsdc,
-  MockUsdc__factory,
   LoanToken2,
   LoanToken2__factory,
   TrueFiPool2__factory,
   LoanToken2Deprecated,
   LoanToken2Deprecated__factory,
+  TestUsdcToken,
+  TestUsdcToken__factory,
 } from 'contracts'
 
 import {
@@ -57,7 +57,7 @@ describe('TrueRatingAgencyV2', () => {
   let arbitraryDistributor: ArbitraryDistributor
   let linearDistributor: LinearTrueDistributor
   let tusd: MockTrueCurrency
-  let usdc: MockUsdc
+  let usdc: TestUsdcToken
   let mockFactory: MockContract
 
   const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
@@ -79,7 +79,7 @@ describe('TrueRatingAgencyV2', () => {
     trustToken = await new TrustToken__factory(owner).deploy()
     await trustToken.initialize()
     tusd = await new MockTrueCurrency__factory(owner).deploy()
-    usdc = await new MockUsdc__factory(owner).deploy()
+    usdc = await new TestUsdcToken__factory(owner).deploy()
 
     arbitraryDistributor = await new ArbitraryDistributor__factory(owner).deploy()
     linearDistributor = await new LinearTrueDistributor__factory(owner).deploy()
