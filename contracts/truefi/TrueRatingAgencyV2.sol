@@ -381,11 +381,20 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     modifier calculateTotalReward(address id) {
         if (loans[id].reward == 0) {
             uint256 interest = ILoanToken2(id).profit();
+
+            // This method of calculation might be erased in the future
+            uint256 decimals;
+            if (ILoanToken2(id).version() == 4) {
+                decimals = IERC20WithDecimals(address(ILoanToken2(id).token())).decimals();
+            } else {
+                decimals = IERC20WithDecimals(id).decimals();
+            }
+
             // calculate reward
             // prettier-ignore
             uint256 totalReward = toTRU(
                 interest.mul(distributor.remaining()).mul(rewardMultiplier).mul(10**18).div(distributor.amount()).div(
-                    10**IERC20WithDecimals(id).decimals()
+                    10**decimals
                 )
             );
 
