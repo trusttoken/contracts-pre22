@@ -722,6 +722,6 @@ describe('LoanToken2', () => {
   })
 
   it('version', async () => {
-    expect(await loanToken.version()).to.equal(4)
+    expect(await loanToken.version()).to.equal(5)
   })
 })
