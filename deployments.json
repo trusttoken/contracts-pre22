@@ -55,8 +55,8 @@
       "address": "0x20FA73e9d6cE61DBB0240E57C68dB8b1124B9378"
     },
     "testTrueFiPool": {
-      "txHash": "0xa3c893fb27f17974275a88bcb693b1ce7a48fb6e3d2584c92a5094600fc488ce",
-      "address": "0x6f87e95E365F9fB56b930357a2dF7eAE812B1012"
+      "txHash": "0xdccedf274f0d320d8fba07fe8924a305948d360b2aa5db0306adf0c81e40d1e0",
+      "address": "0x5233E2212de6aed2B0C9881731FF74D9Fc2c4Ac6"
     },
     "testTrueFiPool_proxy": {
       "txHash": "0x3439bdd66e0396ebaa12e4acee9ccf49d3cea6ed4b01bf8b5a915e86784b8f66",
@@ -83,8 +83,8 @@
       "address": "0xAab6eC654d502a4efF6dcb85832C690858A691d5"
     },
     "stkTruToken_LinearTrueDistributor": {
-      "txHash": "0x87f83a7e31887d8e5401b995dc8d9b8ec86622357c6e6c9af999240abbf7a9ca",
-      "address": "0xFC8d192566e66Ea5FF31ba4ad5DC3FC9b2B52C72"
+      "txHash": "0xe22667c387c74faf739533dda801bc1c044e676d2791ca8fbb985e3187ee0093",
+      "address": "0x342cF53599D777126979a994bDf324B2d94Faf47"
     },
     "stkTruToken_LinearTrueDistributor_proxy": {
       "txHash": "0x14be1a69e1865f0de83c7c918727311469d2925ad774bd161de2fc656da1f0ba",
@@ -111,8 +111,8 @@
       "address": "0xcC9ec45D17964b30223478A6614541D99BC4AE82"
     },
     "trueFiPool_LinearTrueDistributor": {
-      "txHash": "0xbbc36d8df9e8e85351cde4bfa6de697e2c9bdd1214e5467b458240a281e3ae46",
-      "address": "0xC9eB467989843e9b5B668c9bAD57A1C24B3A896d"
+      "txHash": "0xc6b7434407c3f41a36088c1704c3f37ff6fc31e5576cf82b918a8008eaa2a472",
+      "address": "0x80A049F30C44D3343eBb7e219C98C4339c25e093"
     },
     "trueFiPool_LinearTrueDistributor_proxy": {
       "txHash": "0x337ffd0515e6a414ea082bea22be466b3c64fd7f8514b7e61cfea30eee516b11",
@@ -135,8 +135,8 @@
       "address": "0x418Daf88CCfe083324f8c91e6FE8da3e86d9a182"
     },
     "governorAlpha": {
-      "txHash": "0x68138509d70e2c9e8940ed303e9a11f9ef4e9dd3611cc37df97b3634972cda3f",
-      "address": "0x6600feB84f40e58AF3835F091bd11722CB4502C3"
+      "txHash": "0x034626f2d0f7c41566fe1bd71473ce2301b89371833b61e0fbb82f3be11ad322",
+      "address": "0x40a67041bE6964097dBffE6483c77145aeE88f1a"
     },
     "governorAlpha_proxy": {
       "txHash": "0xd55e5ecfbed2510096f237603d7ee96edb58df905f833d7453b006faa7f1c78d",
@@ -179,20 +179,20 @@
       "address": "0xc9766261d895f5A7b045Fc65c2c47072bc7B5c3b"
     },
     "loanFactory2": {
-      "txHash": "0x4b1d97f110b54051c6ac2180f7695e2442d431d6c0d63d42866c94800846df73",
-      "address": "0xD6a578eFc1f39319483eE81452D64cb175113C44"
+      "txHash": "0x4b76a09989f3d7df7501133f4d6b8037bf0bfc7566f2224dbb737a0face97596",
+      "address": "0x0337D987812389EAf7d555aB54b4b6e6b6e78b55"
     },
     "loanFactory2_proxy": {
       "txHash": "0xb01288f17495e734b3425b165577e15c3051b03b761453ffdb85348730072852",
       "address": "0x5f31A8BdA2d9C126D8b95892f05f146361a6d9B7"
     },
     "mock1InchV3": {
-      "txHash": "0x7fc6f15137e192c4d2c2b8d24db2ed39775c5dadfa1430b08bec082a5e251435",
-      "address": "0x8bb4DEA3e4D1BA6d4e28F151F1CbcB841a314dCe"
+      "txHash": "0xc04ba47bbcef7343062229065bc6d5179bf2d73cc29f2aa5f605095fb2f4015e",
+      "address": "0xdcD9a61cAbC7D28b37F2FbB12E4c1EaC38fDD03A"
     },
     "usdc_TrueFiPool2_LinearTrueDistributor": {
-      "txHash": "0x2ad9eb9ab31fd8ca0448a1f447fd12461bd4bd960f2c65568a384bc4f2bca9ee",
-      "address": "0x8CAf88f3463000E50fFec881805e29A628c87D04"
+      "txHash": "0x1db4446398d47347fea527e69daef4e121554a5a018a10caf289ad6bf38a4339",
+      "address": "0x5B3344FE9970B17040550e5D817174ac5Be47aC1"
     },
     "usdc_TrueFiPool2_LinearTrueDistributor_proxy": {
       "txHash": "0x39efe349d5f76740b2d4740f96179faa950de8c989dc16c0447dbeb318846e5f",
@@ -205,6 +205,30 @@
     "usdc_TrueFiPool2_TrueFarm_proxy": {
       "txHash": "0xa50ffd39cca1bfdd42078164d51c6e1539fae370ad1d956d28213f0983190b90",
       "address": "0x3b375F0426cc592D2991Dc43B3b90F691cD900Ff"
+    },
+    "chainlinkTruUsdcOracle": {
+      "txHash": "0x8cdb156ae7f918644b9d961dc41bc9e6f8e5e119199d4114eec5f383a185703c",
+      "address": "0x8f977f9336610Ea690D30F70B01822Cc76e6F97D"
+    },
+    "trueFiPool": {
+      "txHash": "0x73f108a0c040cb3dd5885fd1add20ac328959da46603f2d98344124937716578",
+      "address": "0x8405c83b194bcE353Ea7b1f62E2eA9F199EFBAC2"
+    },
+    "truSushiswapRewarder": {
+      "txHash": "0xed3d07f33f587fa9e5fc3ad0a2d750112d73dfd361b288eb420c7fa5d0819fcd",
+      "address": "0x25f79e554ea3AD01DED63c245CeFFf4eE8FE5C44"
+    },
+    "trueFiPool_proxy": {
+      "txHash": "0xce2b8b6338935a794cafa92fc78b0e74f208300f9d8d1312109149705b168b17",
+      "address": "0xd77F74C824708f84915c8a5D0d33A3F24b2E915F"
+    },
+    "truSushiswapRewarder_proxy": {
+      "txHash": "0x0c86b1506668a9b24e55babd4bb7605f355ec227fd3d1de7a1912334aebe7988",
+      "address": "0xC71bCd7e86a3078e7EE371f7172c62215475E0ac"
+    },
+    "sushiTimelock": {
+      "txHash": "0x136db0350b6942b6665c0fce22937906f2a6ccaeab68f9c5354cefa151712667",
+      "address": "0x43c93F4A3CC43c4f4d5a2f29b8A646090A2b325f"
     }
   },
   "mainnet": {
