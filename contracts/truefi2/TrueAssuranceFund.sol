@@ -16,9 +16,7 @@ contract TrueAssuranceFund is Initializable {
 
     ILoanFactory2 public loanFactory;
 
-    function initialize(
-        ILoanFactory2 _loanFactory
-    ) public initializer {
+    function initialize(ILoanFactory2 _loanFactory) public initializer {
         loanFactory = _loanFactory;
     }
 
