@@ -55,6 +55,7 @@ describe('TrueFiVault', () => {
     await tru.approve(trueFiVault.address, TRU_AMOUNT.add(STKTRU_AMOUNT))
     await trueFiVault.initialize(
       beneficiary.address,
+      owner.address,
       TRU_AMOUNT.add(STKTRU_AMOUNT),
       vaultStart,
       tru.address,
@@ -79,6 +80,7 @@ describe('TrueFiVault', () => {
       const vaultStart = (await provider.getBlock('latest')).timestamp + DAY
       await vault.initialize(
         beneficiary.address,
+        owner.address,
         0,
         vaultStart,
         tru.address,
@@ -92,6 +94,7 @@ describe('TrueFiVault', () => {
       const now = (await provider.getBlock('latest')).timestamp
       await expect(vault.initialize(
         beneficiary.address,
+        owner.address,
         0,
         now - 10,
         tru.address,
@@ -100,6 +103,7 @@ describe('TrueFiVault', () => {
 
       await expect(vault.initialize(
         beneficiary.address,
+        owner.address,
         0,
         now * 2,
         tru.address,

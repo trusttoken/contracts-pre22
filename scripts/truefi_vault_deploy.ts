@@ -12,7 +12,7 @@ import {
 // inputs
 const beneficiary = '0x58f5F0684C381fCFC203D77B2BbA468eBb29B098' // blocktower
 const amount = '4210526315000000' // 42,105,263.15 TRU (8 Decimals)
-const start = '1623211200' // 8:00PM PT
+const start = '1623211200' // 9:00PM PT
 const txnArgs = { gasLimit: 1_000_000, gasPrice: 20_000_000_000 }
 
 // mainnet
@@ -45,13 +45,15 @@ async function deployTrueFiVault () {
   console.log('Proxy upgrade: done')
   const tru = await TrustToken__factory.connect(truAddress, wallet)
   const vault = await TrueFiVault__factory.connect(vaultProxy.address, wallet)
+
   // initialize and transfer
   await (await tru.approve(vault.address, amount)).wait()
   console.log(`Approved: ${amount} TRU`)
-  await (await vault.initialize(beneficiary, amount, start, truAddress, stkTruAddress, txnArgs)).wait()
+  await (await vault.initialize(beneficiary, finalOwner, amount, start, truAddress, stkTruAddress, txnArgs)).wait()
   console.log(`Locked: ${amount} TRU`)
   if (network === 'mainnet') {
-    await (await vaultProxy.transferProxyOwnership(finalOwner))
+    await (await vaultProxy.transferProxyOwnership(finalOwner)).wait()
+    console.log(`Transfereed Proxy Ownership to: ${finalOwner}`)
   }
 }
 
