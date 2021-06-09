@@ -12,7 +12,7 @@ import {
 
 import { loadFixture, MockProvider, solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
-import { Deployer, setupDeploy } from 'scripts/utils'
+import { setupDeploy } from 'scripts/utils'
 import { DAY } from 'utils/constants'
 import { parseEth } from 'utils/parseEth'
 import { parseTRU } from 'utils/parseTRU'
@@ -28,7 +28,6 @@ describe('Liquidator2', () => {
   let owner: Wallet
   let otherWallet: Wallet
   let borrower: Wallet
-  let deployContract: Deployer
 
   let liquidator: Liquidator2
   let loanFactory: LoanFactory2
