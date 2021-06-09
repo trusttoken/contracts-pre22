@@ -26,24 +26,19 @@ async function registerCreditScores () {
   const oracle = await TrueFiCreditOracle__factory.connect(oracleAddress, wallet)
   const scores = getScores()
 
-  for (let i = 0; i < scores.length; i++){
+  for (let i = 0; i < scores.length; i++) {
     await setScore(oracle, scores[i].score, scores[i].address)
   }
-  console.log(`\nDONE.`)
+  console.log('\nDONE.')
 }
 
 async function setScore (oracle, score, address) {
-  if ((await oracle.getScore(address)).toString() != score.toString()) {
+  if ((await oracle.getScore(address)).toString() !== score.toString()) {
     await (await oracle.setScore(address, score, txnArgs)).wait()
     console.log(`SET:   ${address}: ${score}`)
-  }
-  else {
+  } else {
     console.log(`CHECK: ${address}: ${score}`)
   }
-}
-
-async function isScoreSet(oracle, score, address) {
-
 }
 
 function getScores () {
