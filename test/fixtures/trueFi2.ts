@@ -42,7 +42,7 @@ export const trueFi2Fixture = async (wallets: Wallet[], _provider: MockProvider)
   const token = await deployContract(MockTrueCurrency__factory)
   const oracle = await deployContract(MockTrueFiPoolOracle__factory, token.address)
   const safu = await deployContract(TrueAssuranceFund__factory)
-  
+
   const rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
   await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
   const distributor = await deployMockContract(owner, ITrueDistributorJson.abi)

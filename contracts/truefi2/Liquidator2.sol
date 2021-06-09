@@ -134,7 +134,7 @@ contract Liquidator2 is UpgradeableClaimable {
         uint256 withdrawnTru = getAmountToWithdraw(defaultedValue, ITrueFiPoolOracle(pool.oracle()));
         stkTru.withdraw(withdrawnTru);
         loan.liquidate();
-        require(tru.transfer(address(pool), withdrawnTru));
+        require(tru.transfer(assurance, withdrawnTru));
         emit Liquidated(loan, defaultedValue, withdrawnTru);
     }
 
