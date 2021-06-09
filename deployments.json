@@ -309,8 +309,8 @@
       "address": "0xecfD4F2C07EABdb7b592308732B59713728A957F"
     },
     "trueRatingAgencyV2": {
-      "txHash": "0x091284718a813490ba7a9308422d1e4b327ddc81dd2e80741a439317a85f7279",
-      "address": "0x57abFE6c9615Cba3C346446723721D8eBf0b8B5e"
+      "txHash": "0x9fde4f802fcd967aa3dc979e3add2e043331abc1bfb64fa98503ff27a14ea3f8",
+      "address": "0x41EAc49713B8f6B2F1C80bA55c6dbb988dD9AB83"
     },
     "trueRatingAgencyV2_proxy": {
       "txHash": "0x1e3e717beac53ffa877fed6bcfe1dc0a756b61870be2d857722cd360fd9bd4ca",
