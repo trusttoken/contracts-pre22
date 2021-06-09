@@ -6,6 +6,7 @@ import {
   LoanToken2__factory,
   MockTrueCurrency,
   StkTruToken,
+  TrueAssuranceFund,
   TrueFiPool2,
   TrueLender2,
 } from 'contracts'
@@ -37,6 +38,7 @@ describe('Liquidator2', () => {
   let lender: TrueLender2
   let pool: TrueFiPool2
   let loan: LoanToken2
+  let safu: TrueAssuranceFund
 
   const YEAR = DAY * 365
   const defaultedLoanCloseTime = YEAR + DAY
@@ -58,6 +60,7 @@ describe('Liquidator2', () => {
       token,
       pool,
       loan,
+      safu,
     } = await loadFixture(trueFi2Fixture))
   })
 
@@ -76,6 +79,28 @@ describe('Liquidator2', () => {
 
     it('sets fetchMaxShare correctly', async () => {
       expect(await liquidator.fetchMaxShare()).to.equal(1000)
+    })
+
+    it('sets assurance correctly', async () => {
+      expect(await liquidator.assurance()).to.equal(safu.address)
+    })
+  })
+
+  describe('setAssurance', () => {
+    it('only owner', async () => {
+      await expect(liquidator.connect(otherWallet).setAssurance(otherWallet.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets new assurance', async () => {
+      await liquidator.setAssurance(owner.address)
+      expect(await liquidator.assurance()).to.eq(owner.address)
+    })
+
+    it('emits event', async () => {
+      await expect(liquidator.setAssurance(owner.address))
+        .to.emit(liquidator, 'AssuranceChanged')
+        .withArgs(owner.address)
     })
   })
 

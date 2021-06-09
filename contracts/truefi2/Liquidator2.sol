@@ -40,6 +40,9 @@ contract Liquidator2 is UpgradeableClaimable {
     // 1000 -> 10%
     uint256 public fetchMaxShare;
 
+    // Address of assurance fund, to which slashed tru is transferred after liquidation
+    address public assurance;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -64,19 +67,36 @@ contract Liquidator2 is UpgradeableClaimable {
     event Liquidated(ILoanToken2 loan, uint256 defaultedValue, uint256 withdrawnTru);
 
     /**
+     * @dev Emitted when assurance is changed
+     * @param assurance New assurance address
+     */
+    event AssuranceChanged(address assurance);
+
+    /**
      * @dev Initialize this contract
      */
     function initialize(
         IStakingPool _stkTru,
         IERC20 _tru,
-        ILoanFactory2 _loanFactory
+        ILoanFactory2 _loanFactory,
+        address _assurance
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
         stkTru = _stkTru;
         tru = _tru;
         loanFactory = _loanFactory;
+        assurance = _assurance;
         fetchMaxShare = 1000;
+    }
+
+    /**
+     * @dev Set a new assurance address
+     * @param _assurance Address to be set as assurance
+     */
+    function setAssurance(address _assurance) external onlyOwner {
+        assurance = _assurance;
+        emit AssuranceChanged(_assurance);
     }
 
     /**
