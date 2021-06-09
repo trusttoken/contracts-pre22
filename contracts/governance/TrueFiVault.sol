@@ -77,9 +77,6 @@ contract TrueFiVault is Initializable {
 
     function withdrawable(IERC20 token) public view returns (uint256) {
         uint256 tokenBalance = token.balanceOf(address(this));
-        if (beneficiary == owner) {
-            return tokenBalance;
-        }
         uint256 timePassed = block.timestamp.sub(expiry.sub(DURATION));
         if (timePassed > DURATION) {
             timePassed = DURATION;
@@ -89,16 +86,6 @@ contract TrueFiVault is Initializable {
             amount = amount.mul(stkTru.totalSupply()).div(stkTru.stakeSupply());
         }
         return amount > tokenBalance ? tokenBalance : amount;
-    }
-
-    /**
-     * @dev Allow owner to withdraw funds in case of emergency or mistake
-     */
-    function withdrawToOwner() external onlyOwner {
-        beneficiary = owner;
-        claimRewards();
-        _withdraw(tru, tru.balanceOf(address(this)));
-        _withdraw(stkTru, stkTru.balanceOf(address(this)));
     }
 
     /**

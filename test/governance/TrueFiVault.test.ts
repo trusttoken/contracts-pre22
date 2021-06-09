@@ -114,31 +114,6 @@ describe('TrueFiVault', () => {
     })
   })
 
-  describe('Withdraw to owner', () => {
-    it('reverts with wrong caller', async () => {
-      await expect(trueFiVault.connect(beneficiary).withdrawToOwner()).to.be.revertedWith('TrueFiVault: only owner')
-    })
-
-    it('claims rewards', async () => {
-      await trueFiVault.connect(owner).withdrawToOwner()
-      expect('claimRewards').to.be.calledOnContractWith(stkTru, [tru.address])
-    })
-
-    it('transfers TRU to owner', async () => {
-      await trueFiVault.connect(owner).withdrawToOwner()
-      expect('transfer').to.be.calledOnContractWith(tru, [owner.address, TRU_AMOUNT])
-    })
-
-    it('transfers stkTRU to owner', async () => {
-      await trueFiVault.connect(owner).withdrawToOwner()
-      expect('transfer').to.be.calledOnContractWith(stkTru, [owner.address, STKTRU_AMOUNT])
-    })
-
-    it('emits event', async () => {
-      await expect(trueFiVault.connect(owner).withdrawToOwner()).to.emit(trueFiVault, 'Withdraw').withArgs(tru.address, TRU_AMOUNT, owner.address)
-    })
-  })
-
   describe('Withdraw to beneficiary', () => {
     it('reverts with wrong caller', async () => {
       await timeTravel(provider, DURATION + 1)

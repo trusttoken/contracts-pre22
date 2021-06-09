@@ -10,14 +10,15 @@ import {
 } from '../build'
 
 // inputs
-const beneficiary = '0xF5aabc6E4cDa33f2c60c255c230AaC0CF6eF7b24'
-const amount = '100000000'
-const start = '1623202395'
+const beneficiary = '0x58f5F0684C381fCFC203D77B2BbA468eBb29B098' // blocktower
+const amount = '4210526315000000' // 42,105,263.15 TRU (8 Decimals)
+const start = '1623211200' // 8:00PM PT
 const txnArgs = { gasLimit: 1_000_000, gasPrice: 20_000_000_000 }
 
 // mainnet
 const truMainnet = '0x4c19596f5aaff459fa38b0f7ed92f11ae6543784'
 const stkTruMainnet = '0x23696914ca9737466d8553a2d619948f548ee424'
+const finalOwner = '0x16cEa306506c387713C70b9C1205fd5aC997E78E' // multisig
 
 // ropsten
 let truAddress = '0x12b2f909D9eA91C86DC7FBba272D8aBbcDDfd72C'
@@ -49,6 +50,9 @@ async function deployTrueFiVault () {
   console.log(`Approved: ${amount} TRU`)
   await (await vault.initialize(beneficiary, amount, start, truAddress, stkTruAddress, txnArgs)).wait()
   console.log(`Locked: ${amount} TRU`)
+  if (network === 'mainnet') {
+    await (await vaultProxy.transferProxyOwnership(finalOwner))
+  }
 }
 
 deployTrueFiVault().catch(console.error)
