@@ -1,40 +1,23 @@
 import { expect, use } from 'chai'
 import {
-  ITrueDistributorJson,
-  TrueRatingAgencyV2Json,
-} from 'build'
-import {
-  ImplementationReference,
-  ImplementationReference__factory,
+  Liquidator2,
   LoanFactory2,
-  LoanFactory2__factory,
   LoanToken2,
   LoanToken2__factory,
   MockTrueCurrency,
-  MockTrueCurrency__factory,
-  PoolFactory,
-  PoolFactory__factory,
   StkTruToken,
-  StkTruToken__factory,
   TrueFiPool2,
-  TrueFiPool2__factory,
   TrueLender2,
-  TrueLender2__factory,
-  Liquidator2,
-  Liquidator2__factory,
-  MockTrueFiPoolOracle,
-  MockTrueFiPoolOracle__factory,
 } from 'contracts'
 
-import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
-import { BigNumberish, Contract, Wallet } from 'ethers'
+import { loadFixture, MockProvider, solidity } from 'ethereum-waffle'
+import { Wallet } from 'ethers'
 import { Deployer, setupDeploy } from 'scripts/utils'
-import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
-import { AddressZero } from '@ethersproject/constants'
 import { DAY } from 'utils/constants'
 import { parseEth } from 'utils/parseEth'
 import { parseTRU } from 'utils/parseTRU'
 import { timeTravel } from 'utils/timeTravel'
+import { trueFi2Fixture } from 'fixtures/trueFi2'
 
 use(solidity)
 
@@ -49,74 +32,34 @@ describe('Liquidator2', () => {
 
   let liquidator: Liquidator2
   let loanFactory: LoanFactory2
-  let poolFactory: PoolFactory
   let token: MockTrueCurrency
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
   let lender: TrueLender2
-  let implementationReference: ImplementationReference
-  let poolImplementation: TrueFiPool2
   let pool: TrueFiPool2
   let loan: LoanToken2
-  let distributor: Contract
-  let rater: MockContract
-  let oracle: MockTrueFiPoolOracle
 
   const YEAR = DAY * 365
   const defaultedLoanCloseTime = YEAR + DAY
 
-  const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
-    const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, apy)
-    const loanAddress = (await loanTx.wait()).events[0].args.contractAddress
-    return new LoanToken2__factory(owner).attach(loanAddress)
-  }
-
   const withdraw = async (wallet: Wallet, beneficiary = wallet.address) =>
     loan.connect(wallet).withdraw(beneficiary)
 
-  beforeEachWithFixture(async (wallets, _provider) => {
-    [owner, otherWallet, borrower] = wallets
-    provider = _provider
-    deployContract = setupDeploy(owner)
-
-    liquidator = await deployContract(Liquidator2__factory)
-    loanFactory = await deployContract(LoanFactory2__factory)
-    poolFactory = await deployContract(PoolFactory__factory)
-    tru = await deployContract(MockTrueCurrency__factory)
-    stkTru = await deployContract(StkTruToken__factory)
-    lender = await deployContract(TrueLender2__factory)
-    poolImplementation = await deployContract(TrueFiPool2__factory)
-    implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
-    token = await deployContract(MockTrueCurrency__factory)
-    oracle = await deployContract(MockTrueFiPoolOracle__factory, token.address)
-
-    rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
-    await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
-    distributor = await deployMockContract(owner, ITrueDistributorJson.abi)
-    await distributor.mock.nextDistribution.returns(0)
-
-    await liquidator.initialize(stkTru.address, tru.address, loanFactory.address)
-    await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address)
-    await poolFactory.initialize(implementationReference.address, stkTru.address, lender.address)
-
-    await poolFactory.whitelist(token.address, true)
-    await poolFactory.createPool(token.address)
-    pool = poolImplementation.attach(await poolFactory.pool(token.address))
-    await pool.setOracle(oracle.address)
-
-    await tru.initialize()
-    await stkTru.initialize(tru.address, pool.address, pool.address, distributor.address, liquidator.address)
-    await lender.initialize(stkTru.address, poolFactory.address, rater.address, AddressZero)
-    await lender.setFee(0)
-
-    loan = await createLoan(loanFactory, borrower, pool, parseEth(1000), YEAR, 1000)
-
-    await token.mint(owner.address, parseEth(1e7))
-    await token.approve(pool.address, parseEth(1e7))
-    await tru.mint(owner.address, parseEth(1e7))
-    await tru.approve(stkTru.address, parseEth(1e7))
-    await tru.mint(otherWallet.address, parseEth(15e6))
-    await tru.connect(otherWallet).approve(stkTru.address, parseEth(1e7))
+  beforeEach(async () => {
+    ({
+      owner,
+      otherWallet,
+      borrower,
+      provider,
+      liquidator,
+      loanFactory,
+      tru,
+      stkTru,
+      lender,
+      token,
+      pool,
+      loan,
+    } = await loadFixture(trueFi2Fixture))
   })
 
   describe('Initializer', () => {
@@ -217,6 +160,7 @@ describe('Liquidator2', () => {
       })
 
       it('loan was not created via factory', async () => {
+        const deployContract = setupDeploy(owner)
         const fakeLoan = await deployContract(LoanToken2__factory, pool.address, borrower.address, borrower.address, liquidator.address, parseEth(1000), YEAR, 1000)
         await token.connect(borrower).approve(fakeLoan.address, parseEth(1000))
         await fakeLoan.connect(borrower).fund()
