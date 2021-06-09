@@ -126,6 +126,7 @@ contract Liquidator2 is UpgradeableClaimable {
      * @param loan Loan to be liquidated
      */
     function liquidate(ILoanToken2 loan) external {
+        require(msg.sender == assurance, "Liquidator: Only assurance contract can liquidate a loan");
         require(loanFactory.isLoanToken(address(loan)), "Liquidator: Unknown loan");
         require(loan.status() == ILoanToken2.Status.Defaulted, "Liquidator: Loan must be defaulted");
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());

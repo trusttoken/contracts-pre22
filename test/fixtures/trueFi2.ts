@@ -20,8 +20,8 @@ import {
 import { BigNumberish, Wallet } from 'ethers'
 const YEAR = DAY * 365
 
-export const trueFi2Fixture = async (wallets: Wallet[], _provider: MockProvider) => {
-  const [owner, otherWallet, borrower] = wallets
+export const trueFi2Fixture = async (_wallets: Wallet[], _provider: MockProvider) => {
+  const [owner, otherWallet, borrower, ...wallets] = _wallets
   const provider = _provider
   const deployContract = setupDeploy(owner)
 
@@ -91,5 +91,6 @@ export const trueFi2Fixture = async (wallets: Wallet[], _provider: MockProvider)
     pool,
     loan,
     safu,
+    wallets,
   } as const
 }
