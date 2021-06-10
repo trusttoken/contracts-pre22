@@ -266,7 +266,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @param status Flag to whitelist accounts
      */
     function allow(address who, bool status) external {
-        require(canChangeAllowance[msg.sender], "TrueFiPool: Cannot change allowances");
+        require(canChangeAllowance[msg.sender], "TrueRatingAgencyV2: Cannot change allowances");
         allowedSubmitters[who] = status;
         emit Allowed(who, status);
     }
