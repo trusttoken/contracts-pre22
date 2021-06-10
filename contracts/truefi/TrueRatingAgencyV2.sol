@@ -13,7 +13,6 @@ import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {ILoanToken2} from "../truefi2/interface/ILoanToken2.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
-import "hardhat/console.sol";
 
 /**
  * @title TrueRatingAgencyV2
