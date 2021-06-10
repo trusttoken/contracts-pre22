@@ -5,18 +5,19 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {Initializable} from "../common/Initializable.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 
-contract TrueAssuranceFund is Initializable {
+contract TrueAssuranceFund is UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     ILoanFactory2 public loanFactory;
 
     function initialize(ILoanFactory2 _loanFactory) public initializer {
+        UpgradeableClaimable.initialize(msg.sender);
         loanFactory = _loanFactory;
     }
 
