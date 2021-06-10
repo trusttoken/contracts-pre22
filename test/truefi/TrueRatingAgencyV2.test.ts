@@ -223,7 +223,7 @@ describe('TrueRatingAgencyV2', () => {
 
     it('reverts when performed by not allowed account', async () => {
       await expect(rater.connect(otherWallet).allow(otherWallet.address, true))
-        .to.be.revertedWith('TrueFiPool: Cannot change allowances')
+        .to.be.revertedWith('TrueRatingAgencyV2: Cannot change allowances')
     })
   })
 
