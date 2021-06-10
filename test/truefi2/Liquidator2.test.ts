@@ -17,11 +17,8 @@ import { setupDeploy } from 'scripts/utils'
 import { DAY } from 'utils/constants'
 import { parseEth } from 'utils/parseEth'
 import { parseTRU } from 'utils/parseTRU'
-import { createApprovedLoan, timeTravel as _timeTravel, } from 'utils'
-import { beforeEachWithFixture, setupTruefi2, createLoan } from 'utils'
-
-const YEAR = DAY * 365
-const defaultedLoanCloseTime = YEAR + DAY
+import { createApprovedLoan, timeTravel as _timeTravel } from 'utils'
+import { beforeEachWithFixture, setupTruefi2 } from 'utils'
 
 use(solidity)
 
@@ -55,7 +52,7 @@ describe('Liquidator2', () => {
     [owner, otherWallet, borrower, voter] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
-    ;({liquidator, loanFactory, feeToken: token, tru, stkTru, lender, pool, rater} = await setupTruefi2(owner))
+    ;({ liquidator, loanFactory, feeToken: token, tru, stkTru, lender, pool, rater } = await setupTruefi2(owner))
 
     loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseEth(1000), YEAR, 1000, voter, timeTravel)
 
@@ -145,7 +142,6 @@ describe('Liquidator2', () => {
       await lender.connect(borrower).fund(loan.address)
       await withdraw(borrower)
       await liquidator.setTokenApproval(token.address, true)
-
     })
 
     it('anyone can call it', async () => {
