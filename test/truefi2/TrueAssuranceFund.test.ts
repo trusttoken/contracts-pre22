@@ -44,7 +44,7 @@ describe('TrueAssuranceFund', () => {
     await expect(safu.liquidate(loan.address)).to.be.revertedWith('TrueAssuranceFund: Loan is not defaulted')
   })
 
-  it('fails if loan is not defaulted', async () => {
+  it('fails if loan is not created by factory', async () => {
     const strangerLoan = await new LoanToken2__factory(owner).deploy(pool.address, owner.address, owner.address, owner.address, 1000, 1, 1)
     await expect(safu.liquidate(strangerLoan.address)).to.be.revertedWith('TrueAssuranceFund: Unknown loan')
   })
