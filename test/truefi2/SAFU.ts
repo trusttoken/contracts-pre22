@@ -9,13 +9,13 @@ import {
   LoanToken2,
   LoanToken2__factory,
   MockTrueCurrency,
-  TrueAssuranceFund,
+  SAFU,
   TrueFiPool2,
   TrueLender2,
 } from 'contracts'
 
-describe('TrueAssuranceFund', () => {
-  let safu: TrueAssuranceFund
+describe('SAFU', () => {
+  let safu: SAFU
   let token: MockTrueCurrency
   let loan: LoanToken2
   let loanFactory: LoanFactory2
@@ -41,11 +41,11 @@ describe('TrueAssuranceFund', () => {
   })
 
   it('fails if loan is not defaulted', async () => {
-    await expect(safu.liquidate(loan.address)).to.be.revertedWith('TrueAssuranceFund: Loan is not defaulted')
+    await expect(safu.liquidate(loan.address)).to.be.revertedWith('SAFU: Loan is not defaulted')
   })
 
   it('fails if loan is not created by factory', async () => {
     const strangerLoan = await new LoanToken2__factory(owner).deploy(pool.address, owner.address, owner.address, owner.address, 1000, 1, 1)
-    await expect(safu.liquidate(strangerLoan.address)).to.be.revertedWith('TrueAssuranceFund: Unknown loan')
+    await expect(safu.liquidate(strangerLoan.address)).to.be.revertedWith('SAFU: Unknown loan')
   })
 })

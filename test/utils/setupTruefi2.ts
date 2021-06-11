@@ -6,7 +6,7 @@ import {
   LoanFactory2__factory, MockTrueCurrency__factory,
   MockTrueFiPoolOracle__factory,
   PoolFactory__factory, StkTruToken__factory,
-  TrueAssuranceFund__factory,
+  Safu__factory,
   TrueFiPool2__factory,
   TrueLender2__factory,
   TrueRatingAgencyV2__factory,
@@ -21,7 +21,7 @@ export const setupTruefi2 = async (owner: Wallet) => {
   const loanFactory = await deployContract(LoanFactory2__factory)
   const rater = await deployContract(TrueRatingAgencyV2__factory)
   const lender = await deployContract(TrueLender2__factory)
-  const safu = await deployContract(TrueAssuranceFund__factory)
+  const safu = await deployContract(Safu__factory)
 
   const poolFactory = await deployContract(PoolFactory__factory)
   const poolImplementation = await deployContract(TrueFiPool2__factory)
