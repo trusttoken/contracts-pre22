@@ -21,6 +21,7 @@ describe('SAFU', () => {
   let token: MockTrueCurrency
   let loan: LoanToken2
   let loanFactory: LoanFactory2
+  let otherWallet: Wallet
   let pool: TrueFiPool2
   let lender: TrueLender2
   let rater: TrueRatingAgencyV2
@@ -62,5 +63,29 @@ describe('SAFU', () => {
   it('fails if loan is not created by factory', async () => {
     const strangerLoan = await new LoanToken2__factory(owner).deploy(pool.address, owner.address, owner.address, owner.address, 1000, 1, 1)
     await expect(safu.liquidate(strangerLoan.address)).to.be.revertedWith('SAFU: Unknown loan')
+  })
+
+  describe.only('redeem', () => {
+      beforeEach(async () => {
+        await lender.connect(borrower).fund(loan.address)
+        await timeTravel(DAY * 400)
+        await loan.enterDefault()
+        await safu.liquidate(loan.address)
+      })
+
+      it('only manager can call it', async () => {
+        await expect(safu.connect(otherWallet).redeem(loan.address))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+
+      it('burns loan tokens', async () => {
+        console.log(await loan.balanceOf(safu.address));
+        await safu.redeem(loan.address)
+        console.log(await loan.balanceOf(safu.address));
+      })
+
+      it('redeems available tokens', async () => {})
+
+      it('emits a proper event', async () => {})
   })
 })

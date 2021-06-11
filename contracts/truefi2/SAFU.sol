@@ -16,6 +16,8 @@ contract SAFU is UpgradeableClaimable {
 
     ILoanFactory2 public loanFactory;
 
+    event Redeemed(uint256 burnedAmount, uint256 redeemedAmount);
+
     function initialize(ILoanFactory2 _loanFactory) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         loanFactory = _loanFactory;
@@ -27,4 +29,12 @@ contract SAFU is UpgradeableClaimable {
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
         IERC20(pool.token()).safeTransfer(address(pool), loan.debt());
     }
+
+    function redeem(ILoanToken2 loan) public onlyOwner {
+        uint256 amountToBurn = loan.balanceOf(address(this));
+        uint256 balanceBeforeRedeem = loan.token().balanceOf(address(this));
+        loan.redeem(amountToBurn);
+        uint256 redeemedAmount = loan.token().balanceOf(address(this)).sub(balanceBeforeRedeem);
+        emit Redeemed(amountToBurn, redeemedAmount);
+    }   
 }
