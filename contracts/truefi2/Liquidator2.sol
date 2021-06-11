@@ -40,8 +40,8 @@ contract Liquidator2 is UpgradeableClaimable {
     // 1000 -> 10%
     uint256 public fetchMaxShare;
 
-    // Address of assurance fund, to which slashed tru is transferred after liquidation
-    address public assurance;
+    // Address of SAFU fund, to which slashed tru is transferred after liquidation
+    address public SAFU;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -67,10 +67,10 @@ contract Liquidator2 is UpgradeableClaimable {
     event Liquidated(ILoanToken2 loan, uint256 defaultedValue, uint256 withdrawnTru);
 
     /**
-     * @dev Emitted when assurance is changed
-     * @param assurance New assurance address
+     * @dev Emitted when SAFU is changed
+     * @param SAFU New SAFU address
      */
-    event AssuranceChanged(address assurance);
+    event AssuranceChanged(address SAFU);
 
     /**
      * @dev Initialize this contract
@@ -79,24 +79,24 @@ contract Liquidator2 is UpgradeableClaimable {
         IStakingPool _stkTru,
         IERC20 _tru,
         ILoanFactory2 _loanFactory,
-        address _assurance
+        address _SAFU
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
         stkTru = _stkTru;
         tru = _tru;
         loanFactory = _loanFactory;
-        assurance = _assurance;
+        SAFU = _SAFU;
         fetchMaxShare = 1000;
     }
 
     /**
-     * @dev Set a new assurance address
-     * @param _assurance Address to be set as assurance
+     * @dev Set a new SAFU address
+     * @param _SAFU Address to be set as SAFU
      */
-    function setAssurance(address _assurance) external onlyOwner {
-        assurance = _assurance;
-        emit AssuranceChanged(_assurance);
+    function setAssurance(address _SAFU) external onlyOwner {
+        SAFU = _SAFU;
+        emit AssuranceChanged(_SAFU);
     }
 
     /**
@@ -126,7 +126,7 @@ contract Liquidator2 is UpgradeableClaimable {
      * @param loan Loan to be liquidated
      */
     function liquidate(ILoanToken2 loan) external {
-        require(msg.sender == assurance, "Liquidator: Only assurance contract can liquidate a loan");
+        require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a loan");
         require(loanFactory.isLoanToken(address(loan)), "Liquidator: Unknown loan");
         require(loan.status() == ILoanToken2.Status.Defaulted, "Liquidator: Loan must be defaulted");
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
@@ -135,7 +135,7 @@ contract Liquidator2 is UpgradeableClaimable {
         uint256 withdrawnTru = getAmountToWithdraw(defaultedValue, ITrueFiPoolOracle(pool.oracle()));
         stkTru.withdraw(withdrawnTru);
         loan.liquidate();
-        require(tru.transfer(assurance, withdrawnTru));
+        require(tru.transfer(SAFU, withdrawnTru));
         emit Liquidated(loan, defaultedValue, withdrawnTru);
     }
 

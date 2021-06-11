@@ -86,7 +86,7 @@ describe('Liquidator2', () => {
     })
 
     it('sets assurance correctly', async () => {
-      expect(await liquidator.assurance()).to.equal(assurance.address)
+      expect(await liquidator.SAFU()).to.equal(assurance.address)
     })
   })
 
@@ -98,7 +98,7 @@ describe('Liquidator2', () => {
 
     it('sets new assurance', async () => {
       await liquidator.setAssurance(owner.address)
-      expect(await liquidator.assurance()).to.eq(owner.address)
+      expect(await liquidator.SAFU()).to.eq(owner.address)
     })
 
     it('emits event', async () => {
@@ -177,7 +177,7 @@ describe('Liquidator2', () => {
         .to.not.be.reverted
 
       await expect(liquidator.connect(otherWallet).liquidate(loan.address))
-        .to.be.revertedWith('Liquidator: Only assurance contract can liquidate a loan')
+        .to.be.revertedWith('Liquidator: Only SAFU contract can liquidate a loan')
     })
 
     describe('reverts if', () => {

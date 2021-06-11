@@ -8,7 +8,7 @@ import {
   LoanFactory2__factory, LoanToken2__factory, MockTrueCurrency__factory,
   MockTrueFiPoolOracle__factory,
   PoolFactory__factory, StkTruToken__factory,
-  TrueAssuranceFund__factory,
+  Safu__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
   TrueLender2__factory,
@@ -41,7 +41,7 @@ export const trueFi2Fixture = async (_wallets: Wallet[], _provider: MockProvider
   const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
   const token = await deployContract(MockTrueCurrency__factory)
   const oracle = await deployContract(MockTrueFiPoolOracle__factory, token.address)
-  const safu = await deployContract(TrueAssuranceFund__factory)
+  const safu = await deployContract(Safu__factory)
 
   const rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
   await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
