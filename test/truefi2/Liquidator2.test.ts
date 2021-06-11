@@ -27,6 +27,7 @@ describe('Liquidator2', () => {
 
   let owner: Wallet
   let otherWallet: Wallet
+  let assurance: Wallet
   let borrower: Wallet
   let voter: Wallet
 
@@ -49,12 +50,14 @@ describe('Liquidator2', () => {
     loan.connect(wallet).withdraw(beneficiary)
 
   beforeEachWithFixture(async (_wallets, _provider) => {
-    [owner, otherWallet, borrower, voter] = _wallets
+    [owner, otherWallet, borrower, assurance, voter] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
-
+    
     ;({ liquidator, loanFactory, feeToken: token, tru, stkTru, lender, pool, rater } = await setupTruefi2(owner))
 
     loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseEth(1000), YEAR, 1000, voter, _provider)
+
+    await liquidator.setAssurance(assurance.address)
 
     await token.mint(owner.address, parseEth(1e7))
     await token.approve(pool.address, parseEth(1e7))
@@ -80,6 +83,28 @@ describe('Liquidator2', () => {
 
     it('sets fetchMaxShare correctly', async () => {
       expect(await liquidator.fetchMaxShare()).to.equal(1000)
+    })
+
+    it('sets assurance correctly', async () => {
+      expect(await liquidator.assurance()).to.equal(assurance.address)
+    })
+  })
+
+  describe('setAssurance', () => {
+    it('only owner', async () => {
+      await expect(liquidator.connect(otherWallet).setAssurance(otherWallet.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets new assurance', async () => {
+      await liquidator.setAssurance(owner.address)
+      expect(await liquidator.assurance()).to.eq(owner.address)
+    })
+
+    it('emits event', async () => {
+      await expect(liquidator.setAssurance(owner.address))
+        .to.emit(liquidator, 'AssuranceChanged')
+        .withArgs(owner.address)
     })
   })
 
@@ -148,17 +173,20 @@ describe('Liquidator2', () => {
       await timeTravel(defaultedLoanCloseTime)
       await loan.enterDefault()
 
-      await expect(liquidator.connect(otherWallet).liquidate(loan.address))
+      await expect(liquidator.connect(assurance).liquidate(loan.address))
         .to.not.be.reverted
+
+      await expect(liquidator.connect(otherWallet).liquidate(loan.address))
+        .to.be.revertedWith('Liquidator: Only assurance contract can liquidate a loan')
     })
 
     describe('reverts if', () => {
       it('loan is not defaulted', async () => {
-        await expect(liquidator.liquidate(loan.address))
+        await expect(liquidator.connect(assurance).liquidate(loan.address))
           .to.be.revertedWith('Liquidator: Loan must be defaulted')
 
         await timeTravel(defaultedLoanCloseTime)
-        await expect(liquidator.liquidate(loan.address))
+        await expect(liquidator.connect(assurance).liquidate(loan.address))
           .to.be.revertedWith('Liquidator: Loan must be defaulted')
       })
 
@@ -170,7 +198,7 @@ describe('Liquidator2', () => {
         await timeTravel(defaultedLoanCloseTime)
         await fakeLoan.enterDefault()
 
-        await expect(liquidator.liquidate(fakeLoan.address))
+        await expect(liquidator.connect(assurance).liquidate(fakeLoan.address))
           .to.be.revertedWith('Liquidator: Unknown loan')
       })
 
@@ -178,7 +206,7 @@ describe('Liquidator2', () => {
         await liquidator.setTokenApproval(token.address, false)
         await timeTravel(defaultedLoanCloseTime)
         await loan.enterDefault()
-        await expect(liquidator.liquidate(loan.address))
+        await expect(liquidator.connect(assurance).liquidate(loan.address))
           .to.be.revertedWith('Liquidator: Token not approved for default protection')
       })
     })
@@ -187,33 +215,33 @@ describe('Liquidator2', () => {
       await timeTravel(defaultedLoanCloseTime)
       await loan.enterDefault()
 
-      await liquidator.connect(otherWallet).liquidate(loan.address)
+      await liquidator.connect(assurance).liquidate(loan.address)
       expect(await loan.status()).to.equal(LoanTokenStatus.Liquidated)
     })
 
-    describe('transfers correct amount of tru to trueFiPool', () => {
+    describe('transfers correct amount of tru to assurance contract', () => {
       beforeEach(async () => {
         await timeTravel(defaultedLoanCloseTime)
         await loan.enterDefault()
       })
 
       it('0 tru in staking pool balance', async () => {
-        await liquidator.liquidate(loan.address)
-        expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(0))
+        await liquidator.connect(assurance).liquidate(loan.address)
+        expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(0))
       })
 
-      it('returns max fetch share to pool', async () => {
+      it('returns max fetch share to assurance', async () => {
         await stkTru.stake(parseTRU(1e3))
 
-        await liquidator.liquidate(loan.address)
-        expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(1e2))
+        await liquidator.connect(assurance).liquidate(loan.address)
+        expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(1e2))
       })
 
       it('returns defaulted value', async () => {
         await stkTru.stake(parseTRU(1e7))
 
-        await liquidator.liquidate(loan.address)
-        expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(4400))
+        await liquidator.connect(assurance).liquidate(loan.address)
+        expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(4400))
       })
 
       describe('only half of loan value has defaulted', () => {
@@ -222,22 +250,22 @@ describe('Liquidator2', () => {
         })
 
         it('0 tru in staking pool balance', async () => {
-          await liquidator.liquidate(loan.address)
-          expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(0))
+          await liquidator.connect(assurance).liquidate(loan.address)
+          expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(0))
         })
 
-        it('returns max fetch share to pool', async () => {
+        it('returns max fetch share to assurance', async () => {
           await stkTru.stake(parseTRU(1e3))
 
-          await liquidator.liquidate(loan.address)
-          expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(100))
+          await liquidator.connect(assurance).liquidate(loan.address)
+          expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(100))
         })
 
         it('returns defaulted value', async () => {
           await stkTru.stake(parseTRU(1e7))
 
-          await liquidator.liquidate(loan.address)
-          expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(22e2))
+          await liquidator.connect(assurance).liquidate(loan.address)
+          expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(22e2))
         })
       })
 
@@ -248,22 +276,22 @@ describe('Liquidator2', () => {
         })
 
         it('0 tru in staking pool balance', async () => {
-          await liquidator.liquidate(loan.address)
-          expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(0))
+          await liquidator.connect(assurance).liquidate(loan.address)
+          expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(0))
         })
 
-        it('returns max fetch share to pool', async () => {
+        it('returns max fetch share to assurance', async () => {
           await stkTru.stake(parseTRU(1e3))
 
-          await liquidator.liquidate(loan.address)
-          expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(100))
+          await liquidator.connect(assurance).liquidate(loan.address)
+          expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(100))
         })
 
         it('returns defaulted value', async () => {
           await stkTru.stake(parseTRU(1e7))
 
-          await liquidator.liquidate(loan.address)
-          expect(await tru.balanceOf(pool.address)).to.equal(parseTRU(22e2))
+          await liquidator.connect(assurance).liquidate(loan.address)
+          expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(22e2))
         })
       })
     })
@@ -273,7 +301,7 @@ describe('Liquidator2', () => {
       await timeTravel(defaultedLoanCloseTime)
       await loan.enterDefault()
 
-      await expect(liquidator.liquidate(loan.address))
+      await expect(liquidator.connect(assurance).liquidate(loan.address))
         .to.emit(liquidator, 'Liquidated')
         .withArgs(loan.address, parseEth(1100), parseTRU(100))
     })

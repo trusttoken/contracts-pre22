@@ -620,7 +620,7 @@ describe('TrueFiPool', () => {
       loanFactory2 = await new LoanFactory2__factory(owner).deploy()
       liquidator2 = await new Liquidator2__factory(owner).deploy()
       await loanFactory2.initialize(factory.address, lender2.address, liquidator2.address)
-      await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address)
+      await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, owner.address)
       await pool.setLender2(lender2.address)
       await token.approve(pool.address, parseEth(1e7))
       await pool.join(parseEth(1e7))

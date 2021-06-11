@@ -21,7 +21,7 @@ export const setupTruefi2 = async (owner: Wallet) => {
   const loanFactory = await deployContract(LoanFactory2__factory)
   const rater = await deployContract(TrueRatingAgencyV2__factory)
   const lender = await deployContract(TrueLender2__factory)
-  const assurance = await deployContract(TrueAssuranceFund__factory)
+  const safu = await deployContract(TrueAssuranceFund__factory)
 
   const poolFactory = await deployContract(PoolFactory__factory)
   const poolImplementation = await deployContract(TrueFiPool2__factory)
@@ -36,12 +36,12 @@ export const setupTruefi2 = async (owner: Wallet) => {
   const arbitraryDistributor = await deployContract(ArbitraryDistributor__factory)
 
   // ====== SETUP ======
-  await liquidator.initialize(stkTru.address, tru.address, loanFactory.address)
+  await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, safu.address)
   await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address)
   await arbitraryDistributor.initialize(rater.address, tru.address, 0)
   await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
   await lender.initialize(stkTru.address, poolFactory.address, rater.address, AddressZero)
-  // TODO await assurance.initialize()
+  await safu.initialize(loanFactory.address)
   await poolFactory.initialize(implementationReference.address, stkTru.address, lender.address)
 
   await poolFactory.whitelist(feeToken.address, true)
@@ -68,6 +68,6 @@ export const setupTruefi2 = async (owner: Wallet) => {
     rater,
     linearDistributor,
     pool,
-    assurance,
+    safu,
   }
 }
