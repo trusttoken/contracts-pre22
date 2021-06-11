@@ -189,7 +189,7 @@ describe('TrueFiVault', () => {
         const start = await trueFiVault.withdrawable(tru.address)
         await timeTravel(provider, MONTH * 2)
         await trueFiVault.connect(beneficiary).withdrawTru(await trueFiVault.withdrawable(tru.address))
-        expect(await tru.balanceOf(beneficiary.address)).to.be.closeTo(start.add((VEST_EACH_MONTH.mul(2))), 30000)
+        expect(await tru.balanceOf(beneficiary.address)).to.be.closeTo(start.add((VEST_EACH_MONTH.mul(2))), 30500)
         expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(BigNumber.from(0), 10000)
         await timeTravel(provider, MONTH * 2)
         expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(VEST_EACH_MONTH.mul(2), 10000)
