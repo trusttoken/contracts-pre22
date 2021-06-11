@@ -145,7 +145,7 @@ describe('Liquidator2', () => {
     })
 
     it('anyone can call it', async () => {
-      timeTravel(defaultedLoanCloseTime)
+      await timeTravel(defaultedLoanCloseTime)
       await loan.enterDefault()
 
       await expect(liquidator.connect(otherWallet).liquidate(loan.address))
@@ -157,7 +157,7 @@ describe('Liquidator2', () => {
         await expect(liquidator.liquidate(loan.address))
           .to.be.revertedWith('Liquidator: Loan must be defaulted')
 
-        timeTravel(defaultedLoanCloseTime)
+        await timeTravel(defaultedLoanCloseTime)
         await expect(liquidator.liquidate(loan.address))
           .to.be.revertedWith('Liquidator: Loan must be defaulted')
       })
@@ -167,7 +167,7 @@ describe('Liquidator2', () => {
         const fakeLoan = await deployContract(LoanToken2__factory, pool.address, borrower.address, borrower.address, liquidator.address, parseEth(1000), YEAR, 1000)
         await token.connect(borrower).approve(fakeLoan.address, parseEth(1000))
         await fakeLoan.connect(borrower).fund()
-        timeTravel(defaultedLoanCloseTime)
+        await timeTravel(defaultedLoanCloseTime)
         await fakeLoan.enterDefault()
 
         await expect(liquidator.liquidate(fakeLoan.address))
@@ -176,7 +176,7 @@ describe('Liquidator2', () => {
 
       it('token is not whitelisted', async () => {
         await liquidator.setTokenApproval(token.address, false)
-        timeTravel(defaultedLoanCloseTime)
+        await timeTravel(defaultedLoanCloseTime)
         await loan.enterDefault()
         await expect(liquidator.liquidate(loan.address))
           .to.be.revertedWith('Liquidator: Token not approved for default protection')
@@ -184,7 +184,7 @@ describe('Liquidator2', () => {
     })
 
     it('changes loanToken status', async () => {
-      timeTravel(defaultedLoanCloseTime)
+      await timeTravel(defaultedLoanCloseTime)
       await loan.enterDefault()
 
       await liquidator.connect(otherWallet).liquidate(loan.address)
@@ -193,7 +193,7 @@ describe('Liquidator2', () => {
 
     describe('transfers correct amount of tru to trueFiPool', () => {
       beforeEach(async () => {
-        timeTravel(defaultedLoanCloseTime)
+        await timeTravel(defaultedLoanCloseTime)
         await loan.enterDefault()
       })
 
@@ -270,7 +270,7 @@ describe('Liquidator2', () => {
 
     it('emits event', async () => {
       await stkTru.stake(parseTRU(1e3))
-      timeTravel(defaultedLoanCloseTime)
+      await timeTravel(defaultedLoanCloseTime)
       await loan.enterDefault()
 
       await expect(liquidator.liquidate(loan.address))
