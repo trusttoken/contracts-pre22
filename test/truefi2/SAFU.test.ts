@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture, createApprovedLoan, DAY, parseEth, setupTruefi2, timeTravel as _timeTravel } from 'utils'
+import { beforeEachWithFixture, createApprovedLoan, DAY, parseEth, parseTRU, setupTruefi2, timeTravel as _timeTravel } from 'utils'
 import { Wallet } from 'ethers'
 
 import {
@@ -32,6 +32,7 @@ describe('SAFU', () => {
   let timeTravel: (time: number) => void
 
   const YEAR = DAY * 365
+  const defaultedLoanCloseTime = YEAR + DAY
 
   const defaultAmount = parseEth(1100)
 
@@ -48,6 +49,12 @@ describe('SAFU', () => {
     await token.approve(pool.address, parseEth(1e7))
     await pool.connect(owner).join(parseEth(1e7))
     await lender.connect(borrower).fund(loan.address)
+    await loan.connect(borrower).withdraw(borrower.address)
+
+    await tru.mint(owner.address, parseTRU(1e7))
+    await tru.approve(stkTru.address, parseTRU(1e7))
+
+    await liquidator.setTokenApproval(token.address, true)
   })
 
   describe('initializer', () => {
@@ -65,10 +72,63 @@ describe('SAFU', () => {
       it('loan is not defaulted', async () => {
         await expect(safu.liquidate(loan.address)).to.be.revertedWith('SAFU: Loan is not defaulted')
       })
-    
+
       it('loan is not created by factory', async () => {
         const strangerLoan = await new LoanToken2__factory(owner).deploy(pool.address, owner.address, owner.address, owner.address, 1000, 1, 1)
         await expect(safu.liquidate(strangerLoan.address)).to.be.revertedWith('SAFU: Unknown loan')
+      })
+    })
+
+    describe('slashes tru', () => {
+      beforeEach(async () => {
+        await timeTravel(defaultedLoanCloseTime)
+        await loan.enterDefault()
+      })
+
+      describe('loan not repaid at all', () => {
+        it('0 tru in staking pool balance', async () => {
+          await safu.liquidate(loan.address)
+          expect(await tru.balanceOf(safu.address)).to.eq(0)
+        })
+
+        it('returns max fetch share to assurance', async () => {
+          await stkTru.stake(parseTRU(1e3))
+
+          await safu.liquidate(loan.address)
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(1e2))
+        })
+
+        it('returns defaulted value', async () => {
+          await stkTru.stake(parseTRU(1e7))
+
+          await safu.liquidate(loan.address)
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400))
+        })
+      })
+
+      describe('half of loan repaid', () => {
+        beforeEach(async () => {
+          await token.mint(loan.address, parseEth(550))
+        })
+
+        it('0 tru in staking pool balance', async () => {
+          await safu.liquidate(loan.address)
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(0))
+        })
+
+        it('returns max fetch share to assurance', async () => {
+          await stkTru.stake(parseTRU(1e3))
+
+          await safu.liquidate(loan.address)
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(100))
+        })
+
+        it('returns defaulted value', async () => {
+          await stkTru.stake(parseTRU(1e7))
+
+          await safu.liquidate(loan.address)
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(22e2))
+        })
       })
     })
 
@@ -78,6 +138,5 @@ describe('SAFU', () => {
       await safu.liquidate(loan.address)
       expect(await token.balanceOf(safu.address)).to.equal(0)
     })
-  
   })
 })

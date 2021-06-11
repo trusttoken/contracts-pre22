@@ -27,6 +27,7 @@ contract SAFU is UpgradeableClaimable {
     function liquidate(ILoanToken2 loan) external {
         require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
         require(loan.status() == ILoanToken2.Status.Defaulted, "SAFU: Loan is not defaulted");
+        liquidator.liquidate(loan);
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
         IERC20(pool.token()).safeTransfer(address(pool), loan.debt());
     }
