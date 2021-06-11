@@ -436,7 +436,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     ) internal {
         ILoanToken2[] storage _loans = poolLoans[ITrueFiPool2(pool)];
         for (uint256 index = 0; index < _loans.length; index++) {
-            transferLoan(_loans[index], recipient, numerator, denominator);
+            _transferLoan(_loans[index], recipient, numerator, denominator);
         }
     }
 
@@ -447,6 +447,15 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         uint256 denominator
     ) public override {
         require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
+        _transferLoan(loan, recipient, numerator, denominator);
+    }
+
+    function _transferLoan(
+        ILoanToken2 loan,
+        address recipient,
+        uint256 numerator,
+        uint256 denominator
+    ) internal {
         loan.transfer(recipient, numerator.mul(loan.balanceOf(address(this))).div(denominator));
     }
 }
