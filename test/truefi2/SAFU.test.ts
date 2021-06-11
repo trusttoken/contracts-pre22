@@ -3,6 +3,7 @@ import { beforeEachWithFixture, createApprovedLoan, DAY, parseEth, setupTruefi2,
 import { Wallet } from 'ethers'
 
 import {
+  Liquidator2,
   LoanFactory2,
   LoanToken2,
   LoanToken2__factory,
@@ -24,6 +25,7 @@ describe('SAFU', () => {
   let pool: TrueFiPool2
   let lender: TrueLender2
   let rater: TrueRatingAgencyV2
+  let liquidator: Liquidator2
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
 
@@ -37,7 +39,7 @@ describe('SAFU', () => {
     [owner, borrower, voter] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
-    ;({ safu, feeToken: token, pool, lender, loanFactory, tru, stkTru, rater } = await setupTruefi2(owner))
+    ;({ safu, feeToken: token, pool, lender, loanFactory, tru, stkTru, rater, liquidator } = await setupTruefi2(owner))
 
     loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseEth(1000), YEAR, 1000, voter, _provider)
 
@@ -48,19 +50,34 @@ describe('SAFU', () => {
     await lender.connect(borrower).fund(loan.address)
   })
 
-  it('transfers total loan amount to the pool', async () => {
-    await timeTravel(DAY * 400)
-    await loan.enterDefault()
-    await safu.liquidate(loan.address)
-    expect(await token.balanceOf(safu.address)).to.equal(0)
+  describe('initializer', () => {
+    it('sets loan factory', async () => {
+      expect(await safu.loanFactory()).to.eq(loanFactory.address)
+    })
+
+    it('sets liquidator', async () => {
+      expect(await safu.liquidator()).to.eq(liquidator.address)
+    })
   })
 
-  it('fails if loan is not defaulted', async () => {
-    await expect(safu.liquidate(loan.address)).to.be.revertedWith('SAFU: Loan is not defaulted')
-  })
+  describe('liquidate', () => {
+    describe('reverts if', () => {
+      it('loan is not defaulted', async () => {
+        await expect(safu.liquidate(loan.address)).to.be.revertedWith('SAFU: Loan is not defaulted')
+      })
+    
+      it('loan is not created by factory', async () => {
+        const strangerLoan = await new LoanToken2__factory(owner).deploy(pool.address, owner.address, owner.address, owner.address, 1000, 1, 1)
+        await expect(safu.liquidate(strangerLoan.address)).to.be.revertedWith('SAFU: Unknown loan')
+      })
+    })
 
-  it('fails if loan is not created by factory', async () => {
-    const strangerLoan = await new LoanToken2__factory(owner).deploy(pool.address, owner.address, owner.address, owner.address, 1000, 1, 1)
-    await expect(safu.liquidate(strangerLoan.address)).to.be.revertedWith('SAFU: Unknown loan')
+    it('transfers total loan amount to the pool', async () => {
+      await timeTravel(DAY * 400)
+      await loan.enterDefault()
+      await safu.liquidate(loan.address)
+      expect(await token.balanceOf(safu.address)).to.equal(0)
+    })
+  
   })
 })
