@@ -315,7 +315,7 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function settle() public override onlyOngoing {
         require(isRepaid(), "LoanToken: loan must be repaid to settle");
-        // slither-disable-next-line reentrancy-eth
+        // slither-disable-next-line
         status = Status.Settled;
         emit Settled(_balance());
     }
@@ -382,7 +382,7 @@ contract LoanToken is ILoanToken, ERC20 {
         require(_amount <= debt.sub(_balance()), "LoanToken: Cannot repay over the debt");
         emit Repaid(_sender, _amount);
 
-        // slither-disable-next-line reentrancy-no-eth
+        // slither-disable-next-line
         currencyToken.safeTransferFrom(_sender, address(this), _amount);
         if (isRepaid()) {
             settle();

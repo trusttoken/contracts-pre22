@@ -147,7 +147,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @param _distributor Distributor contract
      * @param _factory Factory contract for deploying tokens
      */
-    // slither-disable-next-line reentrancy-no-eth
+    // slither-disable-next-line
     function initialize(
         IBurnableERC20 _TRU,
         IVoteTokenWithERC20 _stkTRU,
@@ -385,7 +385,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * R = Total Reward = (interest * chi * rewardFactor)
      * @param id Loan ID
      */
-    // slither-disable-next-line reentrancy-no-eth
+    // slither-disable-next-line
     modifier calculateTotalReward(address id) {
         // slither-disable-next-line incorrect-equality
         if (loans[id].reward == 0) {
@@ -436,7 +436,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @param id Loan ID
      * @param rater Rater account
      */
-    // slither-disable-next-line reentrancy-no-eth
+    // slither-disable-next-line
     function claim(address id, address rater) external override onlyFundedLoans(id) calculateTotalReward(id) {
         uint256 claimableRewards = claimable(id, rater);
 
