@@ -20,8 +20,8 @@ import {
 import { BigNumberish, Wallet } from 'ethers'
 const YEAR = DAY * 365
 
-export const trueFi2Fixture = async (wallets: Wallet[], _provider: MockProvider) => {
-  const [owner, otherWallet, borrower] = wallets
+export const trueFi2Fixture = async (_wallets: Wallet[], _provider: MockProvider) => {
+  const [owner, otherWallet, borrower, ...wallets] = _wallets
   const provider = _provider
   const deployContract = setupDeploy(owner)
 
@@ -41,13 +41,14 @@ export const trueFi2Fixture = async (wallets: Wallet[], _provider: MockProvider)
   const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
   const token = await deployContract(MockTrueCurrency__factory)
   const oracle = await deployContract(MockTrueFiPoolOracle__factory, token.address)
+  const safu = await deployContract(TrueAssuranceFund__factory)
 
   const rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
   await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
   const distributor = await deployMockContract(owner, ITrueDistributorJson.abi)
   await distributor.mock.nextDistribution.returns(0)
 
-  await liquidator.initialize(stkTru.address, tru.address, loanFactory.address)
+  await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, safu.address)
   await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address)
   await poolFactory.initialize(implementationReference.address, stkTru.address, lender.address)
 
@@ -69,7 +70,6 @@ export const trueFi2Fixture = async (wallets: Wallet[], _provider: MockProvider)
   await tru.approve(stkTru.address, parseEth(1e7))
   await tru.mint(otherWallet.address, parseEth(15e6))
   await tru.connect(otherWallet).approve(stkTru.address, parseEth(1e7))
-  const safu = await deployContract(TrueAssuranceFund__factory)
 
   return {
     owner,
@@ -91,5 +91,6 @@ export const trueFi2Fixture = async (wallets: Wallet[], _provider: MockProvider)
     pool,
     loan,
     safu,
+    wallets,
   } as const
 }

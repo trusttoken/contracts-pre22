@@ -102,7 +102,7 @@ deploy({}, (_, config) => {
     loanFactory2.initialize(poolFactory, trueLender2, liquidator2)
   })
   runIf(liquidator2.isInitialized().not(), () => {
-    liquidator2.initialize(stkTruToken, trustToken, loanFactory2)
+    liquidator2.initialize(stkTruToken, trustToken, loanFactory2, AddressZero)
   })
   runIf(poolFactory.pool(usdc).equals(AddressZero), () => {
     poolFactory.whitelist(usdc, true)
