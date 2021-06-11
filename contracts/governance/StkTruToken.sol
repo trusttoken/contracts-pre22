@@ -195,6 +195,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @param _feeToken Address of tfUSDC to be set
      */
     function setFeeToken(IERC20 _feeToken) external onlyOwner {
+        // slither-disable-next-line incorrect-equality
         require(rewardBalance(feeToken) == 0, "StkTruToken: Cannot replace fee token with underlying rewards");
         feeToken = _feeToken;
         emit FeeTokenChanged(_feeToken);
@@ -272,6 +273,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * Claims rewards when unstaking
      * @param amount Amount of stkTRU to unstake for TRU
      */
+    // slither-disable-next-line reentrancy-eth
     function unstake(uint256 amount) external distribute update(msg.sender) nonReentrant {
         require(amount > 0, "StkTruToken: Cannot unstake 0");
 
@@ -319,6 +321,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @return Unlock time for account
      */
     function unlockTime(address account) public view returns (uint256) {
+        // slither-disable-next-line incorrect-equality
         if (cooldowns[account] == 0 || cooldowns[account].add(cooldownTime).add(unstakePeriodDuration) < block.timestamp) {
             return type(uint256).max;
         }
@@ -344,6 +347,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     /**
      * @dev Claim all rewards
      */
+    // slither-disable-next-line reentrancy-no-eth,reentrancy-eth
     function claim() external distribute update(msg.sender) {
         _claim(tru);
         _claim(tfusd);
@@ -404,6 +408,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @dev max amount of stkTRU than can be unstaked after current cooldown period is over
      */
     function unstakable(address staker) public view returns (uint256) {
+        // slither-disable-next-line incorrect-equality
         if (unlockTime(staker) == type(uint256).max) {
             return balanceOf[staker];
         }
@@ -565,6 +570,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         }
         // calculate total rewards
         uint256 newTotalFarmRewards = rewardBalance(token).add(farmRewards[token].totalClaimedRewards).mul(PRECISION);
+        // slither-disable-next-line incorrect-equality
         if (newTotalFarmRewards == farmRewards[token].totalFarmRewards) {
             return;
         }

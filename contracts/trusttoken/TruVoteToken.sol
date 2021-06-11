@@ -179,6 +179,7 @@ abstract contract TruVoteToken is ERC20, IVoteToken {
     ) internal {
         uint32 blockNumber = safe32(block.number, "TrustToken::_writeCheckpoint: block number exceeds 32 bits");
 
+        // slither-disable-next-line incorrect-equality
         if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
             checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
         } else {
