@@ -65,21 +65,21 @@ describe('SAFU', () => {
   })
 
   describe.only('redeem', () => {
-      beforeEach(async () => {
-        await timeTravel(DAY * 400)
-        await loan.enterDefault()
-      })
-      
-      it('only manager can call it', async () => {
-        await safu.liquidate(loan.address)
-        await expect(safu.connect(borrower).redeem(loan.address))
+    beforeEach(async () => {
+      await timeTravel(DAY * 400)
+      await loan.enterDefault()
+    })
+
+    it('only manager can call it', async () => {
+      await safu.liquidate(loan.address)
+      await expect(safu.connect(borrower).redeem(loan.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
-      })
-      
-      it.skip('burns loan tokens', async () => {})
+    })
 
-      it.skip('redeems available tokens', async () => {})
+    it.skip('burns loan tokens', async () => {})
 
-      it.skip('emits a proper event', async () => {})
+    it.skip('redeems available tokens', async () => {})
+
+    it.skip('emits a proper event', async () => {})
   })
 })
