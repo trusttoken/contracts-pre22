@@ -55,6 +55,21 @@ describe('SAFU', () => {
     expect(await token.balanceOf(safu.address)).to.equal(0)
   })
 
+  it('transfers LoanTokens to the SAFU', async () => {
+    await timeTravel(provider, DAY * 400)
+    await loan.enterDefault()
+    await safu.liquidate(loan.address)
+    await expect(await loan.balanceOf(safu.address)).to.equal(defaultAmount)
+  })
+
+  it('transfers LoanTokens that were partially taken from pool', async () => {
+    await pool.exit(parseEth(1e6))
+    await timeTravel(provider, DAY * 400)
+    await loan.enterDefault()
+    await safu.liquidate(loan.address)
+    await expect(await loan.balanceOf(safu.address)).to.equal(defaultAmount.mul(9).div(10))
+  })
+
   it('fails if loan is not defaulted', async () => {
     await expect(safu.liquidate(loan.address)).to.be.revertedWith('SAFU: Loan is not defaulted')
   })

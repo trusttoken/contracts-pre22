@@ -85,7 +85,7 @@ describe('TrueLender2', () => {
     const implementationReference = await deployContract(owner, ImplementationReference__factory, [poolImplementation.address])
 
     lender = await deployContract(owner, TestTrueLender__factory)
-    await poolFactory.initialize(implementationReference.address, AddressZero, lender.address)
+    await poolFactory.initialize(implementationReference.address, AddressZero, lender.address, AddressZero)
 
     stkTru = await deployContract(owner, StkTruToken__factory)
 
@@ -107,7 +107,7 @@ describe('TrueLender2', () => {
     pool1 = TrueFiPool2__factory.connect(await poolFactory.pool(token1.address), owner)
     pool2 = TrueFiPool2__factory.connect(await poolFactory.pool(token2.address), owner)
     counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
-    await counterfeitPool.initialize(token1.address, AddressZero, lender.address, AddressZero, owner.address)
+    await counterfeitPool.initialize(token1.address, AddressZero, lender.address, AddressZero, owner.address, AddressZero)
     feePool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
 
     poolOracle = await deployContract(owner, MockTrueFiPoolOracle__factory, [token1.address])

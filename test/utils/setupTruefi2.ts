@@ -42,7 +42,7 @@ export const setupTruefi2 = async (owner: Wallet) => {
   await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
   await lender.initialize(stkTru.address, poolFactory.address, rater.address, AddressZero)
   await safu.initialize(loanFactory.address)
-  await poolFactory.initialize(implementationReference.address, stkTru.address, lender.address)
+  await poolFactory.initialize(implementationReference.address, stkTru.address, lender.address, safu.address)
 
   await poolFactory.whitelist(feeToken.address, true)
   await poolFactory.createPool(feeToken.address)

@@ -23,6 +23,7 @@ use(solidity)
 describe('PoolFactory', () => {
   let owner: Wallet
   let otherWallet: Wallet
+  let safu: Wallet
   let poolImplementation: TrueFiPool2
   let implementationReference: ImplementationReference
   let factory: PoolFactory
@@ -33,7 +34,7 @@ describe('PoolFactory', () => {
   let trueLenderInstance2: TestTrueLender
 
   beforeEachWithFixture(async (wallets) => {
-    [owner, otherWallet] = wallets
+    [owner, otherWallet, safu] = wallets
     poolImplementation = await new TrueFiPool2__factory(owner).deploy()
     implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
 
@@ -48,6 +49,7 @@ describe('PoolFactory', () => {
       implementationReference.address,
       stakingToken.address,
       trueLenderInstance1.address,
+      safu.address,
     )
   })
 
@@ -101,6 +103,10 @@ describe('PoolFactory', () => {
 
     it('adds pool to isPool mapping', async () => {
       expect(await factory.isPool(proxy.address)).to.eq(true)
+    })
+
+    it('sets safu', async () => {
+      expect(await pool.safu()).to.equal(safu.address)
     })
 
     it('proxy gets correct implementation', async () => {
@@ -262,6 +268,30 @@ describe('PoolFactory', () => {
       expect(await factory.trueLender2()).to.eq(trueLenderInstance1.address)
       await factory.connect(owner).setTrueLender(trueLenderInstance2.address)
       expect(await factory.trueLender2()).to.eq(trueLenderInstance2.address)
+    })
+  })
+
+  describe('setSAFU', () => {
+    it('can be called by owner', async () => {
+      await expect(factory.setSafuAddress(safu.address))
+        .not.to.be.reverted
+    })
+
+    it('cannot be called by unauthorized address', async () => {
+      await expect(factory.connect(otherWallet).setSafuAddress(safu.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('properly changes SAFU address', async () => {
+      expect(await factory.safu()).to.equal(safu.address)
+      await factory.setSafuAddress(otherWallet.address)
+      expect(await factory.safu()).to.equal(otherWallet.address)
+    })
+
+    it('emits proper event', async () => {
+      await expect(factory.setSafuAddress(otherWallet.address))
+        .to.emit(factory, 'SafuChanged')
+        .withArgs(otherWallet.address)
     })
   })
 })
