@@ -1,7 +1,6 @@
 import { expect } from 'chai'
-import { loadFixture, MockProvider } from 'ethereum-waffle'
-import { trueFi2Fixture } from 'fixtures/trueFi2'
-import { DAY, parseEth, timeTravel } from 'utils'
+import { MockProvider } from 'ethereum-waffle'
+import { beforeEachWithFixture, createApprovedLoan, DAY, parseEth, setupTruefi2, timeTravel as _timeTravel } from 'utils'
 import { Wallet } from 'ethers'
 
 import {
@@ -10,31 +9,49 @@ import {
   LoanToken2__factory,
   MockTrueCurrency,
   Safu,
+  StkTruToken,
   TrueFiPool2,
   TrueLender2,
+  TrueRatingAgencyV2,
 } from 'contracts'
 
 describe('SAFU', () => {
+  let owner: Wallet, borrower: Wallet, voter: Wallet
+
   let safu: Safu
   let token: MockTrueCurrency
   let loan: LoanToken2
   let loanFactory: LoanFactory2
-  let provider: MockProvider
-  let owner: Wallet, borrower: Wallet
   let pool: TrueFiPool2
   let lender: TrueLender2
+  let rater: TrueRatingAgencyV2
+  let tru: MockTrueCurrency
+  let stkTru: StkTruToken
+
+  let timeTravel: (time: number) => void
+
+
+  const YEAR = DAY * 365
+
   const defaultAmount = parseEth(1100)
 
-  beforeEach(async () => {
-    ({ safu, token, loan, provider, owner, pool, borrower, lender, loanFactory } = await loadFixture(trueFi2Fixture))
+  beforeEachWithFixture(async (_wallets, _provider) => {
+    [owner, borrower, voter] = _wallets
+    timeTravel = (time: number) => _timeTravel(_provider, time)
+
+    ;({ safu, feeToken: token, pool, lender, loanFactory, tru, stkTru, rater } = await setupTruefi2(owner))
+
+    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseEth(1000), YEAR, 1000, voter, _provider)
+
     await token.mint(safu.address, defaultAmount)
+    await token.mint(owner.address, parseEth(1e7))
+    await token.approve(pool.address, parseEth(1e7))
     await pool.connect(owner).join(parseEth(1e7))
     await lender.connect(borrower).fund(loan.address)
-    await safu.initialize(loanFactory.address)
   })
 
   it('transfers total loan amount to the pool', async () => {
-    await timeTravel(provider, DAY * 400)
+    await timeTravel(DAY * 400)
     await loan.enterDefault()
     await safu.liquidate(loan.address)
     expect(await token.balanceOf(safu.address)).to.equal(0)
