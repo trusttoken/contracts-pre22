@@ -54,7 +54,7 @@ describe('Liquidator2', () => {
 
     ;({ liquidator, loanFactory, feeToken: token, tru, stkTru, lender, pool, rater } = await setupTruefi2(owner))
 
-    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseEth(1000), YEAR, 1000, voter, timeTravel)
+    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseEth(1000), YEAR, 1000, voter, _provider)
 
     await token.mint(owner.address, parseEth(1e7))
     await token.approve(pool.address, parseEth(1e7))
