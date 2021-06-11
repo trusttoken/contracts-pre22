@@ -8,30 +8,32 @@ import {
   StkTruToken,
   TrueFiPool2,
   TrueLender2,
+  TrueRatingAgencyV2,
 } from 'contracts'
 
-import { loadFixture, MockProvider, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
 import { DAY } from 'utils/constants'
 import { parseEth } from 'utils/parseEth'
 import { parseTRU } from 'utils/parseTRU'
-import { timeTravel } from 'utils/timeTravel'
-import { trueFi2Fixture } from 'fixtures/trueFi2'
+import { createApprovedLoan, timeTravel as _timeTravel } from 'utils'
+import { beforeEachWithFixture, setupTruefi2 } from 'utils'
 
 use(solidity)
 
 describe('Liquidator2', () => {
   enum LoanTokenStatus { Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated }
 
-  let provider: MockProvider
   let owner: Wallet
   let otherWallet: Wallet
   let assurance: Wallet
   let borrower: Wallet
+  let voter: Wallet
 
   let liquidator: Liquidator2
   let loanFactory: LoanFactory2
+  let rater: TrueRatingAgencyV2
   let token: MockTrueCurrency
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
@@ -39,29 +41,31 @@ describe('Liquidator2', () => {
   let pool: TrueFiPool2
   let loan: LoanToken2
 
+  let timeTravel: (time: number) => void
+
   const YEAR = DAY * 365
   const defaultedLoanCloseTime = YEAR + DAY
 
   const withdraw = async (wallet: Wallet, beneficiary = wallet.address) =>
     loan.connect(wallet).withdraw(beneficiary)
 
-  beforeEach(async () => {
-    ({
-      owner,
-      otherWallet,
-      borrower,
-      provider,
-      liquidator,
-      loanFactory,
-      tru,
-      stkTru,
-      lender,
-      token,
-      pool,
-      loan,
-      wallets: [assurance],
-    } = await loadFixture(trueFi2Fixture))
+  beforeEachWithFixture(async (_wallets, _provider) => {
+    [owner, otherWallet, borrower, assurance, voter] = _wallets
+    timeTravel = (time: number) => _timeTravel(_provider, time)
+
+    ;({ liquidator, loanFactory, feeToken: token, tru, stkTru, lender, pool, rater } = await setupTruefi2(owner))
+
+    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseEth(1000), YEAR, 1000, voter, _provider)
+
     await liquidator.setAssurance(assurance.address)
+
+    await token.mint(owner.address, parseEth(1e7))
+    await token.approve(pool.address, parseEth(1e7))
+
+    await tru.mint(owner.address, parseEth(1e7))
+    await tru.mint(otherWallet.address, parseEth(15e6))
+    await tru.approve(stkTru.address, parseEth(1e7))
+    await tru.connect(otherWallet).approve(stkTru.address, parseEth(1e7))
   })
 
   describe('Initializer', () => {
@@ -165,8 +169,8 @@ describe('Liquidator2', () => {
       await liquidator.setTokenApproval(token.address, true)
     })
 
-    it('only assurance can call it', async () => {
-      await timeTravel(provider, defaultedLoanCloseTime)
+    it('anyone can call it', async () => {
+      await timeTravel(defaultedLoanCloseTime)
       await loan.enterDefault()
 
       await expect(liquidator.connect(assurance).liquidate(loan.address))
@@ -181,7 +185,7 @@ describe('Liquidator2', () => {
         await expect(liquidator.connect(assurance).liquidate(loan.address))
           .to.be.revertedWith('Liquidator: Loan must be defaulted')
 
-        await timeTravel(provider, defaultedLoanCloseTime)
+        await timeTravel(defaultedLoanCloseTime)
         await expect(liquidator.connect(assurance).liquidate(loan.address))
           .to.be.revertedWith('Liquidator: Loan must be defaulted')
       })
@@ -191,7 +195,7 @@ describe('Liquidator2', () => {
         const fakeLoan = await deployContract(LoanToken2__factory, pool.address, borrower.address, borrower.address, liquidator.address, parseEth(1000), YEAR, 1000)
         await token.connect(borrower).approve(fakeLoan.address, parseEth(1000))
         await fakeLoan.connect(borrower).fund()
-        await timeTravel(provider, defaultedLoanCloseTime)
+        await timeTravel(defaultedLoanCloseTime)
         await fakeLoan.enterDefault()
 
         await expect(liquidator.connect(assurance).liquidate(fakeLoan.address))
@@ -200,7 +204,7 @@ describe('Liquidator2', () => {
 
       it('token is not whitelisted', async () => {
         await liquidator.setTokenApproval(token.address, false)
-        await timeTravel(provider, defaultedLoanCloseTime)
+        await timeTravel(defaultedLoanCloseTime)
         await loan.enterDefault()
         await expect(liquidator.connect(assurance).liquidate(loan.address))
           .to.be.revertedWith('Liquidator: Token not approved for default protection')
@@ -208,7 +212,7 @@ describe('Liquidator2', () => {
     })
 
     it('changes loanToken status', async () => {
-      await timeTravel(provider, defaultedLoanCloseTime)
+      await timeTravel(defaultedLoanCloseTime)
       await loan.enterDefault()
 
       await liquidator.connect(assurance).liquidate(loan.address)
@@ -217,7 +221,7 @@ describe('Liquidator2', () => {
 
     describe('transfers correct amount of tru to assurance contract', () => {
       beforeEach(async () => {
-        await timeTravel(provider, defaultedLoanCloseTime)
+        await timeTravel(defaultedLoanCloseTime)
         await loan.enterDefault()
       })
 
@@ -294,7 +298,7 @@ describe('Liquidator2', () => {
 
     it('emits event', async () => {
       await stkTru.stake(parseTRU(1e3))
-      await timeTravel(provider, defaultedLoanCloseTime)
+      await timeTravel(defaultedLoanCloseTime)
       await loan.enterDefault()
 
       await expect(liquidator.connect(assurance).liquidate(loan.address))
