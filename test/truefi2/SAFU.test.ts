@@ -1,5 +1,4 @@
 import { expect } from 'chai'
-import { MockProvider } from 'ethereum-waffle'
 import { beforeEachWithFixture, createApprovedLoan, DAY, parseEth, setupTruefi2, timeTravel as _timeTravel } from 'utils'
 import { Wallet } from 'ethers'
 
@@ -29,7 +28,6 @@ describe('SAFU', () => {
   let stkTru: StkTruToken
 
   let timeTravel: (time: number) => void
-
 
   const YEAR = DAY * 365
 
