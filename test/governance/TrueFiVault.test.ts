@@ -202,7 +202,7 @@ describe('TrueFiVault', () => {
         // Simulate claiming rewards by minting TRU
         await tru.mint(trueFiVault.address, REWARDS_AMOUNT)
         await trueFiVault.connect(beneficiary).withdrawTru(await trueFiVault.withdrawable(tru.address))
-        expect(await tru.balanceOf(beneficiary.address)).to.be.closeTo(start.add(((VEST_EACH_MONTH.add(REWARDS_AMOUNT.div(12))).mul(2))), 50000)
+        expect(await tru.balanceOf(beneficiary.address)).to.be.closeTo(start.add(((VEST_EACH_MONTH.add(REWARDS_AMOUNT.div(12))).mul(2))), 100000)
         await timeTravel(provider, MONTH * 20)
         await trueFiVault.connect(beneficiary).withdrawTru(await trueFiVault.withdrawable(tru.address))
         expect(await tru.balanceOf(beneficiary.address)).to.equal(REWARDS_AMOUNT.add(TRU_AMOUNT))

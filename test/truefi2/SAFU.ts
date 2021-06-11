@@ -9,13 +9,13 @@ import {
   LoanToken2,
   LoanToken2__factory,
   MockTrueCurrency,
-  SAFU,
+  Safu,
   TrueFiPool2,
   TrueLender2,
 } from 'contracts'
 
 describe('SAFU', () => {
-  let safu: SAFU
+  let safu: Safu
   let token: MockTrueCurrency
   let loan: LoanToken2
   let loanFactory: LoanFactory2
