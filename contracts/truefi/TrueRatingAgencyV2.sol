@@ -111,6 +111,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @dev Only loan submitter can perform certain actions
      */
     modifier onlyCreator(address id) {
+        // slither-disable-next-line incorrect-equality
         require(loans[id].creator == msg.sender, "TrueRatingAgencyV2: Not sender's loan");
         _;
     }
@@ -146,6 +147,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @param _distributor Distributor contract
      * @param _factory Factory contract for deploying tokens
      */
+    // slither-disable-next-line reentrancy-no-eth
     function initialize(
         IBurnableERC20 _TRU,
         IVoteTokenWithERC20 _stkTRU,
@@ -197,6 +199,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @param rater Rater account
      */
     function getNoRate(address id, address rater) public view returns (uint256) {
+        // slither-disable-next-line boolean-cst
         return loans[id].ratings[rater][false];
     }
 
@@ -206,6 +209,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @param rater Rater account
      */
     function getYesRate(address id, address rater) public view returns (uint256) {
+        // slither-disable-next-line boolean-cst
         return loans[id].ratings[rater][true];
     }
 
@@ -214,6 +218,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @param id Loan ID
      */
     function getTotalNoRatings(address id) public view returns (uint256) {
+        // slither-disable-next-line boolean-cst
         return loans[id].prediction[false];
     }
 
@@ -222,6 +227,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @param id Loan ID
      */
     function getTotalYesRatings(address id) public view returns (uint256) {
+        // slither-disable-next-line boolean-cst
         return loans[id].prediction[true];
     }
 
@@ -299,7 +305,9 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      */
     function retract(address id) external override onlyPendingLoans(id) onlyCreator(id) {
         loans[id].creator = address(0);
+        // slither-disable-next-line boolean-cst
         loans[id].prediction[true] = 0;
+        // slither-disable-next-line boolean-cst
         loans[id].prediction[false] = 0;
 
         emit LoanRetracted(id);
@@ -377,7 +385,9 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * R = Total Reward = (interest * chi * rewardFactor)
      * @param id Loan ID
      */
+    // slither-disable-next-line reentrancy-no-eth
     modifier calculateTotalReward(address id) {
+        // slither-disable-next-line incorrect-equality
         if (loans[id].reward == 0) {
             uint256 interest = ILoanToken2(id).profit();
 
@@ -401,7 +411,10 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
             loans[id].reward = ratersReward;
             if (totalReward > 0) {
                 distributor.distribute(totalReward);
-                TRU.transfer(address(stkTRU), totalReward.sub(ratersReward));
+                if (!TRU.transfer(address(stkTRU), totalReward.sub(ratersReward))) {
+                    // handle transfer failure
+                    0;
+                }
             }
         }
         _;
@@ -423,6 +436,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @param id Loan ID
      * @param rater Rater account
      */
+    // slither-disable-next-line reentrancy-no-eth
     function claim(address id, address rater) external override onlyFundedLoans(id) calculateTotalReward(id) {
         uint256 claimableRewards = claimable(id, rater);
 
@@ -458,7 +472,9 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
 
         // calculate how many tokens user can claim
         // claimable = stakedByRater / totalStaked
+        // slither-disable-next-line boolean-cst
         uint256 stakedByRater = loans[id].ratings[rater][false].add(loans[id].ratings[rater][true]);
+        // slither-disable-next-line boolean-cst
         uint256 totalStaked = loans[id].prediction[false].add(loans[id].prediction[true]);
 
         // calculate claimable rewards at current time

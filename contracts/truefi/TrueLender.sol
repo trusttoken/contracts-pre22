@@ -187,6 +187,7 @@ contract TrueLender is ITrueLender, Ownable {
 
         pool = _pool;
         currencyToken = _pool.currencyToken();
+        // slither-disable-next-line unused-return
         currencyToken.approve(address(_pool), uint256(-1));
         ratingAgency = _ratingAgency;
         stakingPool = _stakingPool;
@@ -328,9 +329,11 @@ contract TrueLender is ITrueLender, Ownable {
 
         _loans.push(loanToken);
         pool.borrow(amount, amount.sub(receivedAmount));
+        // slither-disable-next-line unused-return
         currencyToken.approve(address(loanToken), receivedAmount);
         loanToken.fund();
 
+        // slither-disable-next-line unused-return
         pool.approve(address(stakingPool), pool.balanceOf(address(this)));
         stakingPool.payFee(pool.balanceOf(address(this)), block.timestamp.add(term));
 
@@ -344,6 +347,7 @@ contract TrueLender is ITrueLender, Ownable {
      */
     function loanValue(ILoanToken loan) public view returns (uint256) {
         uint256 _balance = loan.balanceOf(address(this));
+        // slither-disable-next-line incorrect-equality
         if (_balance == 0) {
             return 0;
         }
@@ -428,7 +432,9 @@ contract TrueLender is ITrueLender, Ownable {
         uint256 denominator
     ) external override onlyPool {
         for (uint256 index = 0; index < _loans.length; index++) {
-            _loans[index].transfer(recipient, numerator.mul(_loans[index].balanceOf(address(this))).div(denominator));
+            if (!_loans[index].transfer(recipient, numerator.mul(_loans[index].balanceOf(address(this))).div(denominator))) {
+                0;
+            }
         }
     }
 
