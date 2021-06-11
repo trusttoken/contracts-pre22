@@ -52,7 +52,7 @@ describe('Liquidator2', () => {
   beforeEachWithFixture(async (_wallets, _provider) => {
     [owner, otherWallet, borrower, assurance, voter] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
-    
+
     ;({ liquidator, loanFactory, feeToken: token, tru, stkTru, lender, pool, rater } = await setupTruefi2(owner))
 
     loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseEth(1000), YEAR, 1000, voter, _provider)
