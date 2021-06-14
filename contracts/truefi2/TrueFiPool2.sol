@@ -10,7 +10,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
-import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {ITrueLender2, ILoanToken2} from "./interface/ITrueLender2.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
@@ -85,6 +85,8 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     I1Inch3 public _1Inch;
 
+    address public safu;
+
     // ======= STORAGE DECLARATION END ===========
 
     /**
@@ -102,6 +104,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         ERC20 _liquidationToken,
         ITrueLender2 _lender,
         I1Inch3 __1Inch,
+        address _safu,
         address __owner
     ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
@@ -110,6 +113,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         token = _token;
         liquidationToken = _liquidationToken;
         lender = _lender;
+        safu = _safu;
         _1Inch = __1Inch;
     }
 
@@ -192,6 +196,12 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     event PauseStatusChanged(bool pauseStatus);
 
     /**
+     * @dev Emitted when SAFU address is changed
+     * @param newSafu New SAFU address
+     */
+    event SafuChanged(address newSafu);
+
+    /**
      * @dev only lender can perform borrowing or repaying
      */
     modifier onlyLender() {
@@ -231,6 +241,14 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     function setPauseStatus(bool status) external override onlyOwner {
         pauseStatus = status;
         emit PauseStatusChanged(status);
+    }
+
+    /**
+     * @dev Change SAFU address
+     */
+    function setSafuAddress(address _safu) external onlyOwner {
+        safu = _safu;
+        emit SafuChanged(_safu);
     }
 
     /**
@@ -535,6 +553,14 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         }
 
         emit StrategySwitched(newStrategy);
+    }
+
+    /**
+     * @dev Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
+     */
+    function liquidate(ILoanToken2 loan) external override {
+        require(msg.sender == safu, "TrueFiPool: Should be called by SAFU");
+        lender.transferAllLoanTokens(loan, safu);
     }
 
     /**

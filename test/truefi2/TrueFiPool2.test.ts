@@ -39,6 +39,7 @@ describe('TrueFiPool2', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
+  let safu: Wallet
   let tusd: MockErc20Token
   let stakingPool: StkTruToken
   let liquidationToken: MockErc20Token
@@ -54,7 +55,7 @@ describe('TrueFiPool2', () => {
   let badPoolStrategy: BadStrategy
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner, borrower] = wallets
+    [owner, borrower, safu] = wallets
     deployContract = setupDeploy(owner)
 
     stakingPool = await deployContract(StkTruToken__factory)
@@ -66,7 +67,7 @@ describe('TrueFiPool2', () => {
     lender = await deployContract(TrueLender2__factory)
     rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
 
-    await poolFactory.initialize(implementationReference.address, liquidationToken.address, lender.address)
+    await poolFactory.initialize(implementationReference.address, liquidationToken.address, lender.address, safu.address)
     await poolFactory.whitelist(tusd.address, true)
     await poolFactory.createPool(tusd.address)
 
@@ -161,6 +162,30 @@ describe('TrueFiPool2', () => {
       await expect(pool.setPauseStatus(false))
         .to.emit(pool, 'PauseStatusChanged')
         .withArgs(false)
+    })
+  })
+
+  describe('setSAFU', () => {
+    it('can be called by owner', async () => {
+      await expect(pool.setSafuAddress(borrower.address))
+        .not.to.be.reverted
+    })
+
+    it('cannot be called by unauthorized address', async () => {
+      await expect(pool.connect(borrower).setSafuAddress(borrower.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('properly changes SAFU address', async () => {
+      expect(await pool.safu()).to.equal(safu.address)
+      await pool.setSafuAddress(borrower.address)
+      expect(await pool.safu()).to.equal(borrower.address)
+    })
+
+    it('emits proper event', async () => {
+      await expect(pool.setSafuAddress(borrower.address))
+        .to.emit(pool, 'SafuChanged')
+        .withArgs(borrower.address)
     })
   })
 

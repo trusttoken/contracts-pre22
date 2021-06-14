@@ -62,7 +62,7 @@ describe('TrueLender2', () => {
     lender = await deployContract(TrueLender2__factory)
     await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS)
 
-    await poolFactory.initialize(implementationReference.address, tru.address, lender.address)
+    await poolFactory.initialize(implementationReference.address, tru.address, lender.address, AddressZero)
 
     await poolFactory.whitelist(USDC_ADDRESS, true)
     usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)

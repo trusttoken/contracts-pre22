@@ -19,6 +19,7 @@ import {
   TrueRatingAgencyV2,
   TrustToken,
   ChainlinkTruUsdcOracle,
+  SAFU,
 } from '../build/artifacts'
 import { utils, BigNumber } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
@@ -69,6 +70,7 @@ deploy({}, (_, config) => {
   const poolFactory_impl = contract(PoolFactory)
   const liquidator2_impl = contract(Liquidator2)
   const loanFactory2_impl = contract(LoanFactory2)
+  const safu_impl = contract(SAFU)
   const usdc_TrueFiPool2_LinearTrueDistributor_impl = contract('usdc_TrueFiPool2_LinearTrueDistributor', LinearTrueDistributor)
   const usdc_TrueFiPool2_TrueFarm_impl = contract('usdc_TrueFiPool2_TrueFarm', TrueFarm)
   const trueFiCreditOracle_impl = contract(TrueFiCreditOracle)
@@ -81,7 +83,7 @@ deploy({}, (_, config) => {
   const usdc_TrueFiPool2_LinearTrueDistributor = proxy(usdc_TrueFiPool2_LinearTrueDistributor_impl, () => {})
   const usdc_TrueFiPool2_TrueFarm = proxy(usdc_TrueFiPool2_TrueFarm_impl, () => {})
   const trueFiCreditOracle = proxy(trueFiCreditOracle_impl, () => {})
-
+  const safu = proxy(safu_impl, () => {})
   // New bare contracts
   const trueFiPool2 = contract(TrueFiPool2)
   const implementationReference = contract(ImplementationReference, [trueFiPool2])
@@ -89,8 +91,11 @@ deploy({}, (_, config) => {
   const oneInch = isMainnet ? ONE_INCH_EXCHANGE : contract(Mock1InchV3)
 
   // Contract initialization
+  runIf(safu.isInitialized().not(), () => {
+    safu.initialize(loanFactory2)
+  })
   runIf(poolFactory.isInitialized().not(), () => {
-    poolFactory.initialize(implementationReference, trustToken, trueLender2)
+    poolFactory.initialize(implementationReference, trustToken, trueLender2, safu)
   })
   runIf(trueLender2.isInitialized().not(), () => {
     trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch)
