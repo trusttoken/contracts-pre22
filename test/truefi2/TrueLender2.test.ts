@@ -678,7 +678,7 @@ describe('TrueLender2', () => {
       await expect(lender.transferAllLoanTokens(loan1.address, owner.address)).to.be.revertedWith('TrueLender: Pool not created by the factory')
     })
 
-    it('transfers whole LT balance to the receiver', async () => {
+    it('transfers whole LT balance to the recipient', async () => {
       const balance = await loan1.balanceOf(lender.address)
       await expect(lender.testTransferAllLoanTokens(loan1.address, owner.address))
         .to.emit(loan1, 'Transfer').withArgs(lender.address, owner.address, balance)

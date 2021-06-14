@@ -400,6 +400,16 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     }
 
     /**
+     * @dev Allow pool to transfer all LoanTokens to the SAFU in case of liquidation
+     * @param loan LoanToken address
+     * @param recipient expected to be SAFU address
+     */
+    function transferAllLoanTokens(ILoanToken2 loan, address recipient) public override {
+        require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
+        _transferLoan(loan, recipient, 1, 1);
+    }
+
+    /**
      * @dev Check if a loan has been in the credit market long enough
      * @param start Timestamp at which rating began
      * @return Whether a loan has been rated for long enough
@@ -440,11 +450,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         }
     }
 
-    function transferAllLoanTokens(ILoanToken2 loan, address recipient) public override {
-        require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
-        _transferLoan(loan, recipient, 1, 1);
-    }
-
+    // @dev Transfer (numerator/denominator)*balance of loan to the recipient
     function _transferLoan(
         ILoanToken2 loan,
         address recipient,

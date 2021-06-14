@@ -555,6 +555,9 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         emit StrategySwitched(newStrategy);
     }
 
+    /**
+     * @dev Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
+     */
     function liquidate(ILoanToken2 loan) external override {
         require(msg.sender == safu, "TrueFiPool: Should be called by SAFU");
         lender.transferAllLoanTokens(loan, safu);
