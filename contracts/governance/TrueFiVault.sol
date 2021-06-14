@@ -16,8 +16,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
  * During the lockout period, the vault still allows beneficiary to stake TRU
  * and cast votes in governance.
  *
- * In case of emergency or error, owner reserves the ability to withdraw all
- * funds in vault.
  */
 contract TrueFiVault is Initializable {
     using SafeMath for uint256;
@@ -38,6 +36,7 @@ contract TrueFiVault is Initializable {
 
     function initialize(
         address _beneficiary,
+        address _finalOwner,
         uint256 _amount,
         uint256 _start,
         IVoteTokenWithERC20 _tru,
@@ -46,7 +45,7 @@ contract TrueFiVault is Initializable {
         // Protect from accidental passing incorrect start timestamp
         require(_start >= block.timestamp, "TrueFiVault: lock start in the past");
         require(_start < block.timestamp + 90 days, "TrueFiVault: lock start too far in the future");
-        owner = msg.sender;
+        owner = _finalOwner;
         beneficiary = _beneficiary;
         expiry = _start.add(DURATION);
         tru = _tru;
@@ -56,7 +55,8 @@ contract TrueFiVault is Initializable {
         //        tru.delegate(beneficiary);
         stkTru.delegate(beneficiary);
 
-        tru.safeTransferFrom(owner, address(this), _amount);
+        // transfer from sender
+        tru.safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     /**
@@ -77,9 +77,6 @@ contract TrueFiVault is Initializable {
 
     function withdrawable(IERC20 token) public view returns (uint256) {
         uint256 tokenBalance = token.balanceOf(address(this));
-        if (beneficiary == owner) {
-            return tokenBalance;
-        }
         uint256 timePassed = block.timestamp.sub(expiry.sub(DURATION));
         if (timePassed > DURATION) {
             timePassed = DURATION;
@@ -89,16 +86,6 @@ contract TrueFiVault is Initializable {
             amount = amount.mul(stkTru.totalSupply()).div(stkTru.stakeSupply());
         }
         return amount > tokenBalance ? tokenBalance : amount;
-    }
-
-    /**
-     * @dev Allow owner to withdraw funds in case of emergency or mistake
-     */
-    function withdrawToOwner() external onlyOwner {
-        beneficiary = owner;
-        claimRewards();
-        _withdraw(tru, tru.balanceOf(address(this)));
-        _withdraw(stkTru, stkTru.balanceOf(address(this)));
     }
 
     /**

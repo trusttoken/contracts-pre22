@@ -55,6 +55,7 @@ describe('TrueFiVault', () => {
     await tru.approve(trueFiVault.address, TRU_AMOUNT.add(STKTRU_AMOUNT))
     await trueFiVault.initialize(
       beneficiary.address,
+      owner.address,
       TRU_AMOUNT.add(STKTRU_AMOUNT),
       vaultStart,
       tru.address,
@@ -79,6 +80,7 @@ describe('TrueFiVault', () => {
       const vaultStart = (await provider.getBlock('latest')).timestamp + DAY
       await vault.initialize(
         beneficiary.address,
+        owner.address,
         0,
         vaultStart,
         tru.address,
@@ -92,6 +94,7 @@ describe('TrueFiVault', () => {
       const now = (await provider.getBlock('latest')).timestamp
       await expect(vault.initialize(
         beneficiary.address,
+        owner.address,
         0,
         now - 10,
         tru.address,
@@ -100,6 +103,7 @@ describe('TrueFiVault', () => {
 
       await expect(vault.initialize(
         beneficiary.address,
+        owner.address,
         0,
         now * 2,
         tru.address,
@@ -111,31 +115,6 @@ describe('TrueFiVault', () => {
   describe('Lock', () => {
     it('transfers TRU to the Vault', async () => {
       expect(await tru.balanceOf(trueFiVault.address)).to.equal(TRU_AMOUNT)
-    })
-  })
-
-  describe('Withdraw to owner', () => {
-    it('reverts with wrong caller', async () => {
-      await expect(trueFiVault.connect(beneficiary).withdrawToOwner()).to.be.revertedWith('TrueFiVault: only owner')
-    })
-
-    it('claims rewards', async () => {
-      await trueFiVault.connect(owner).withdrawToOwner()
-      expect('claimRewards').to.be.calledOnContractWith(stkTru, [tru.address])
-    })
-
-    it('transfers TRU to owner', async () => {
-      await trueFiVault.connect(owner).withdrawToOwner()
-      expect('transfer').to.be.calledOnContractWith(tru, [owner.address, TRU_AMOUNT])
-    })
-
-    it('transfers stkTRU to owner', async () => {
-      await trueFiVault.connect(owner).withdrawToOwner()
-      expect('transfer').to.be.calledOnContractWith(stkTru, [owner.address, STKTRU_AMOUNT])
-    })
-
-    it('emits event', async () => {
-      await expect(trueFiVault.connect(owner).withdrawToOwner()).to.emit(trueFiVault, 'Withdraw').withArgs(tru.address, TRU_AMOUNT, owner.address)
     })
   })
 
