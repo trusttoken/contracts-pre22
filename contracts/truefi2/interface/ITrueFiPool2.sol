@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {ERC20, IERC20} from "../../common/UpgradeableERC20.sol";
-import {ITrueLender2} from "../interface/ITrueLender2.sol";
+import {ITrueLender2, ILoanToken2} from "../interface/ITrueLender2.sol";
 import {ITrueFiPoolOracle} from "./ITrueFiPoolOracle.sol";
 import {I1Inch3} from "./I1Inch3.sol";
 
@@ -12,6 +12,7 @@ interface ITrueFiPool2 is IERC20 {
         ERC20 _stakingToken,
         ITrueLender2 _lender,
         I1Inch3 __1Inch,
+        address safu,
         address __owner
     ) external;
 
@@ -38,4 +39,9 @@ interface ITrueFiPool2 is IERC20 {
      * 2. Only lending pool should be allowed to call this
      */
     function repay(uint256 currencyAmount) external;
+
+    /**
+     * @dev SAFU buys LoanTokens from the pool
+     */
+    function liquidate(ILoanToken2 loan) external;
 }

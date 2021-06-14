@@ -127,6 +127,14 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     event Reclaimed(address indexed pool, address loanToken, uint256 amount);
 
     /**
+     * @dev Can be only called by a pool
+     */
+    modifier onlyPool() {
+        require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
+        _;
+    }
+
+    /**
      * @dev Initialize the contract with parameters
      * @param _stakingPool stkTRU address
      * @param _factory PoolFactory address
@@ -394,9 +402,17 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         address recipient,
         uint256 numerator,
         uint256 denominator
-    ) external override {
-        require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
+    ) external override onlyPool {
         _distribute(recipient, numerator, denominator, msg.sender);
+    }
+
+    /**
+     * @dev Allow pool to transfer all LoanTokens to the SAFU in case of liquidation
+     * @param loan LoanToken address
+     * @param recipient expected to be SAFU address
+     */
+    function transferAllLoanTokens(ILoanToken2 loan, address recipient) external override onlyPool {
+        _transferLoan(loan, recipient, 1, 1);
     }
 
     /**
@@ -436,7 +452,17 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     ) internal {
         ILoanToken2[] storage _loans = poolLoans[ITrueFiPool2(pool)];
         for (uint256 index = 0; index < _loans.length; index++) {
-            _loans[index].transfer(recipient, numerator.mul(_loans[index].balanceOf(address(this))).div(denominator));
+            _transferLoan(_loans[index], recipient, numerator, denominator);
         }
+    }
+
+    // @dev Transfer (numerator/denominator)*balance of loan to the recipient
+    function _transferLoan(
+        ILoanToken2 loan,
+        address recipient,
+        uint256 numerator,
+        uint256 denominator
+    ) internal {
+        loan.transfer(recipient, numerator.mul(loan.balanceOf(address(this))).div(denominator));
     }
 }

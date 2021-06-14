@@ -40,6 +40,7 @@ describe('TrueFiPool', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
+  let safu: Wallet
   let token: MockErc20Token
   let trustToken: MockErc20Token
   let mockStakingPool: MockStakingPool
@@ -55,7 +56,7 @@ describe('TrueFiPool', () => {
   const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner, borrower] = wallets
+    [owner, borrower, safu] = wallets
     token = await new MockErc20Token__factory(owner).deploy()
     await token.mint(owner.address, includeFee(parseEth(1e7)))
     trustToken = await new MockErc20Token__factory(owner).deploy()
@@ -194,6 +195,30 @@ describe('TrueFiPool', () => {
       await expect(pool.setPauseStatus(false))
         .to.emit(pool, 'PauseStatusChanged')
         .withArgs(false)
+    })
+  })
+
+  describe('setSAFU', () => {
+    it('can be called by owner', async () => {
+      await expect(pool.setSafuAddress(safu.address))
+        .not.to.be.reverted
+    })
+
+    it('cannot be called by unauthorized address', async () => {
+      await expect(pool.connect(borrower).setSafuAddress(safu.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('properly changes SAFU address', async () => {
+      expect(await pool.safu()).to.equal(AddressZero)
+      await pool.setSafuAddress(safu.address)
+      expect(await pool.safu()).to.equal(safu.address)
+    })
+
+    it('emits proper event', async () => {
+      await expect(pool.setSafuAddress(safu.address))
+        .to.emit(pool, 'SafuChanged')
+        .withArgs(safu.address)
     })
   })
 
@@ -610,7 +635,7 @@ describe('TrueFiPool', () => {
       const factory = await new PoolFactory__factory(owner).deploy()
       lender2 = await new TrueLender2__factory(owner).deploy()
       await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero)
-      await factory.initialize(implementationReference.address, trustToken.address, lender2.address)
+      await factory.initialize(implementationReference.address, trustToken.address, lender2.address, safu.address)
       await factory.addLegacyPool(pool.address)
       const usdc = await new MockErc20Token__factory(owner).deploy()
       await factory.setAllowAll(true)
