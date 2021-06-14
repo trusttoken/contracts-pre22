@@ -5,22 +5,24 @@ import { ethers, providers } from 'ethers'
 
 import {
   OwnedUpgradeabilityProxy__factory,
+  TrustToken__factory,
   TrueFiVault__factory,
-} from 'contracts'
+} from '../build'
 
 // inputs
-const beneficiary = ''
-const amount = '10000000000'
-const start = ''
-const txnArgs = { gasLimit: 1_000_000, gasPrice: 60_000_000_000 }
+const beneficiary = '' // Beneficiary
+const amount = '' // (8 Decimals)
+const start = '0' // Unix Time
+const finalOwner = '0x16cEa306506c387713C70b9C1205fd5aC997E78E' // Multisig
+const txnArgs = { gasLimit: 1_000_000, gasPrice: 20_000_000_000 }
 
 // mainnet
 const truMainnet = '0x4c19596f5aaff459fa38b0f7ed92f11ae6543784'
 const stkTruMainnet = '0x23696914ca9737466d8553a2d619948f548ee424'
 
 // ropsten
-let truAddress = ''
-let stkTruAddress = ''
+let truAddress = '0x12b2f909D9eA91C86DC7FBba272D8aBbcDDfd72C'
+let stkTruAddress = '0xccf081F684b3481503080Ca4240F76d8381A7eF5'
 
 const contractArgs = { gasLimit: 5_000_000, gasPrice: txnArgs.gasPrice }
 
@@ -37,15 +39,22 @@ async function deployTrueFiVault () {
   // deploy
   const trueFiVaultImpl = await (await new TrueFiVault__factory(wallet).deploy(contractArgs)).deployed()
   console.log(`trueFiVaultImpl: ${trueFiVaultImpl.address}`)
-  const vault = await (await new OwnedUpgradeabilityProxy__factory(wallet).deploy(txnArgs)).deployed()
-  console.log(`vault: ${vault.address}`)
-  await (await vault.upgradeTo(trueFiVaultImpl.address, txnArgs)).wait()
+  const vaultProxy = await (await new OwnedUpgradeabilityProxy__factory(wallet).deploy(txnArgs)).deployed()
+  console.log(`vault: ${vaultProxy.address}`)
+  await (await vaultProxy.upgradeTo(trueFiVaultImpl.address, txnArgs)).wait()
   console.log('Proxy upgrade: done')
-  // todo approve TRU
-  // initialize and transfer TRU
-  await (await TrueFiVault__factory.connect(vault.address, wallet)
-    .initialize(beneficiary, amount, start, truAddress, stkTruAddress, txnArgs)).wait()
+  const tru = await TrustToken__factory.connect(truAddress, wallet)
+  const vault = await TrueFiVault__factory.connect(vaultProxy.address, wallet)
+
+  // initialize and transfer
+  await (await tru.approve(vault.address, amount)).wait()
+  console.log(`Approved: ${amount} TRU`)
+  await (await vault.initialize(beneficiary, finalOwner, amount, start, truAddress, stkTruAddress, txnArgs)).wait()
   console.log(`Locked: ${amount} TRU`)
+  if (network === 'mainnet') {
+    await (await vaultProxy.transferProxyOwnership(finalOwner)).wait()
+    console.log(`Transfereed Proxy Ownership to: ${finalOwner}`)
+  }
 }
 
 deployTrueFiVault().catch(console.error)
