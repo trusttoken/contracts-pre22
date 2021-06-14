@@ -127,6 +127,14 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     event Reclaimed(address indexed pool, address loanToken, uint256 amount);
 
     /**
+     * @dev Can be only called by a pool
+     */
+    modifier onlyPool() {
+        require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
+        _;
+    }
+
+    /**
      * @dev Initialize the contract with parameters
      * @param _stakingPool stkTRU address
      * @param _factory PoolFactory address
@@ -394,8 +402,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         address recipient,
         uint256 numerator,
         uint256 denominator
-    ) external override {
-        require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
+    ) external override onlyPool {
         _distribute(recipient, numerator, denominator, msg.sender);
     }
 
@@ -404,8 +411,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param loan LoanToken address
      * @param recipient expected to be SAFU address
      */
-    function transferAllLoanTokens(ILoanToken2 loan, address recipient) public override {
-        require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
+    function transferAllLoanTokens(ILoanToken2 loan, address recipient) external override onlyPool {
         _transferLoan(loan, recipient, 1, 1);
     }
 
