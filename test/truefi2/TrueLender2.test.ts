@@ -666,4 +666,22 @@ describe('TrueLender2', () => {
       await expect(lender.distribute(borrower.address, 2, 5)).to.be.revertedWith('TrueLender: Pool not created by the factory')
     })
   })
+
+  describe('transferAllLoanTokens', () => {
+    beforeEach(async () => {
+      await approveLoanRating(loan1)
+      await lender.connect(borrower).fund(loan1.address)
+      await lender.setFee(0)
+    })
+
+    it('can only be called by the pool', async () => {
+      await expect(lender.transferAllLoanTokens(loan1.address, owner.address)).to.be.revertedWith('TrueLender: Pool not created by the factory')
+    })
+
+    it('transfers whole LT balance to the receiver', async () => {
+      const balance = await loan1.balanceOf(lender.address)
+      await expect(lender.testTransferAllLoanTokens(loan1.address, owner.address))
+        .to.emit(loan1, 'Transfer').withArgs(lender.address, owner.address, balance)
+    })
+  })
 })

@@ -440,14 +440,9 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         }
     }
 
-    function transferLoan(
-        ILoanToken2 loan,
-        address recipient,
-        uint256 numerator,
-        uint256 denominator
-    ) public override {
+    function transferAllLoanTokens(ILoanToken2 loan, address recipient) public override {
         require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
-        _transferLoan(loan, recipient, numerator, denominator);
+        _transferLoan(loan, recipient, 1, 1);
     }
 
     function _transferLoan(

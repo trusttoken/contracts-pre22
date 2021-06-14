@@ -15,10 +15,5 @@ interface ITrueLender2 {
         uint256 denominator
     ) external;
 
-    function transferLoan(
-        ILoanToken2 loan,
-        address recipient,
-        uint256 numerator,
-        uint256 denominator
-    ) external;
+    function transferAllLoanTokens(ILoanToken2 loan, address recipient) external;
 }
