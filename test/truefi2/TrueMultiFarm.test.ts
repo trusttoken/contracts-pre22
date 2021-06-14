@@ -52,6 +52,8 @@ describe('TrueMultiFarm', () => {
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, staker1, staker2] = wallets
     provider = _provider
+    await provider.send('hardhat_reset', [])
+
     trustToken = await new MockErc20Token__factory(owner).deploy()
     firstToken = await new MockErc20Token__factory(owner).deploy()
     secondToken = await new MockErc20Token__factory(owner).deploy()
