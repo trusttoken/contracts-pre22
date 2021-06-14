@@ -108,7 +108,7 @@ describe('TrueRatingAgencyV2', () => {
     rater = await new TrueRatingAgencyV2__factory(owner).deploy()
 
     await trustToken.initialize()
-    await poolFactory.initialize(implementationReference.address, usdc.address, lender.address)
+    await poolFactory.initialize(implementationReference.address, usdc.address, lender.address, AddressZero)
     await lender.initialize(stakedTrustToken.address, poolFactory.address, rater.address, AddressZero)
     await arbitraryDistributor.initialize(rater.address, trustToken.address, stake)
     await rater.initialize(trustToken.address, stakedTrustToken.address, arbitraryDistributor.address, loanFactory.address)

@@ -75,6 +75,8 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
 
     ITrueLender2 public _lender2;
 
+    address public safu;
+
     // ======= STORAGE DECLARATION END ============
 
     // curve.fi data
@@ -161,6 +163,12 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @param pauseStatus New pausing status
      */
     event PauseStatusChanged(bool pauseStatus);
+
+    /**
+     * @dev Emitted when SAFU address is changed
+     * @param newSafu New SAFU address
+     */
+    event SafuChanged(address newSafu);
 
     /**
      * @dev only lender can perform borrowing or repaying
@@ -276,6 +284,14 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     function setPauseStatus(bool status) external override onlyOwnerOrManager {
         pauseStatus = status;
         emit PauseStatusChanged(status);
+    }
+
+    /**
+     * @dev Change SAFU address
+     */
+    function setSafuAddress(address _safu) external onlyOwner {
+        safu = _safu;
+        emit SafuChanged(_safu);
     }
 
     /**

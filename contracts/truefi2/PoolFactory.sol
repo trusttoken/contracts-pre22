@@ -38,6 +38,8 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     ITrueLender2 public trueLender2;
 
+    address public safu;
+
     // ======= STORAGE DECLARATION END ===========
 
     I1Inch3 public constant ONE_INCH_ADDRESS = I1Inch3(0x11111112542D85B3EF69AE05771c2dCCff4fAa26);
@@ -69,6 +71,12 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     event TrueLenderChanged(ITrueLender2 trueLender2);
 
     /**
+     * @dev Emitted when SAFU address is changed
+     * @param newSafu New SAFU address
+     */
+    event SafuChanged(address newSafu);
+
+    /**
      * @dev Throws if token already has an existing corresponding pool
      * @param token Token to be checked for existing pool
      */
@@ -93,13 +101,15 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     function initialize(
         ImplementationReference _poolImplementationReference,
         ERC20 _liquidationToken,
-        ITrueLender2 _trueLender2
+        ITrueLender2 _trueLender2,
+        address _safu
     ) external initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
         liquidationToken = _liquidationToken;
         poolImplementationReference = _poolImplementationReference;
         trueLender2 = _trueLender2;
+        safu = _safu;
     }
 
     /**
@@ -120,7 +130,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), liquidationToken, trueLender2, ONE_INCH_ADDRESS, this.owner());
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), liquidationToken, trueLender2, ONE_INCH_ADDRESS, safu, this.owner());
 
         emit PoolCreated(token, address(proxy));
     }
@@ -148,5 +158,11 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         require(address(_trueLender2) != address(0), "PoolFactory: TrueLender address cannot be set to 0");
         trueLender2 = _trueLender2;
         emit TrueLenderChanged(trueLender2);
+    }
+
+    function setSafuAddress(address _safu) external onlyOwner {
+        require(address(_safu) != address(0), "PoolFactory: SAFU address cannot be set to 0");
+        safu = _safu;
+        emit SafuChanged(_safu);
     }
 }

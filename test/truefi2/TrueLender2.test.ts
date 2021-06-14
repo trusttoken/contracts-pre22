@@ -85,7 +85,7 @@ describe('TrueLender2', () => {
     const implementationReference = await deployContract(owner, ImplementationReference__factory, [poolImplementation.address])
 
     lender = await deployContract(owner, TestTrueLender__factory)
-    await poolFactory.initialize(implementationReference.address, AddressZero, lender.address)
+    await poolFactory.initialize(implementationReference.address, AddressZero, lender.address, AddressZero)
 
     stkTru = await deployContract(owner, StkTruToken__factory)
 
@@ -107,7 +107,7 @@ describe('TrueLender2', () => {
     pool1 = TrueFiPool2__factory.connect(await poolFactory.pool(token1.address), owner)
     pool2 = TrueFiPool2__factory.connect(await poolFactory.pool(token2.address), owner)
     counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
-    await counterfeitPool.initialize(token1.address, AddressZero, lender.address, AddressZero, owner.address)
+    await counterfeitPool.initialize(token1.address, AddressZero, lender.address, AddressZero, owner.address, AddressZero)
     feePool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
 
     poolOracle = await deployContract(owner, MockTrueFiPoolOracle__factory, [token1.address])
@@ -664,6 +664,24 @@ describe('TrueLender2', () => {
 
     it('reverts if not called by the pool', async () => {
       await expect(lender.distribute(borrower.address, 2, 5)).to.be.revertedWith('TrueLender: Pool not created by the factory')
+    })
+  })
+
+  describe('transferAllLoanTokens', () => {
+    beforeEach(async () => {
+      await approveLoanRating(loan1)
+      await lender.connect(borrower).fund(loan1.address)
+      await lender.setFee(0)
+    })
+
+    it('can only be called by the pool', async () => {
+      await expect(lender.transferAllLoanTokens(loan1.address, owner.address)).to.be.revertedWith('TrueLender: Pool not created by the factory')
+    })
+
+    it('transfers whole LT balance to the recipient', async () => {
+      const balance = await loan1.balanceOf(lender.address)
+      await expect(lender.testTransferAllLoanTokens(loan1.address, owner.address))
+        .to.emit(loan1, 'Transfer').withArgs(lender.address, owner.address, balance)
     })
   })
 })

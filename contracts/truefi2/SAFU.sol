@@ -29,6 +29,8 @@ contract SAFU is UpgradeableClaimable {
         require(loan.status() == ILoanToken2.Status.Defaulted, "SAFU: Loan is not defaulted");
         liquidator.liquidate(loan);
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
-        IERC20(pool.token()).safeTransfer(address(pool), loan.debt());
+        pool.liquidate(loan);
+        uint256 lostByPool = loan.debt().mul(loan.balanceOf(address(this))).div(loan.totalSupply());
+        IERC20(pool.token()).safeTransfer(address(pool), lostByPool);
     }
 }
