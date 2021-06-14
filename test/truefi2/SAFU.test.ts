@@ -79,7 +79,7 @@ describe('SAFU', () => {
     await expect(safu.liquidate(strangerLoan.address)).to.be.revertedWith('SAFU: Unknown loan')
   })
 
-  describe.only('redeem', () => {
+  describe('redeem', () => {
     beforeEach(async () => {
       await timeTravel(DAY * 400)
       await loan.connect(borrower).withdraw(borrower.address)
