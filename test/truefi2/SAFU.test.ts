@@ -70,12 +70,22 @@ describe('SAFU', () => {
   describe('liquidate', () => {
     describe('reverts if', () => {
       it('loan is not defaulted', async () => {
-        await expect(safu.liquidate(loan.address)).to.be.revertedWith('SAFU: Loan is not defaulted')
+        await expect(safu.liquidate(loan.address))
+          .to.be.revertedWith('SAFU: Loan is not defaulted')
       })
 
       it('loan is not created by factory', async () => {
         const strangerLoan = await new LoanToken2__factory(owner).deploy(pool.address, owner.address, owner.address, owner.address, 1000, 1, 1)
-        await expect(safu.liquidate(strangerLoan.address)).to.be.revertedWith('SAFU: Unknown loan')
+        await expect(safu.liquidate(strangerLoan.address))
+          .to.be.revertedWith('SAFU: Unknown loan')
+      })
+
+      it('loan has already been liquidated', async () => {
+        await timeTravel(DAY * 400)
+        await loan.enterDefault()
+        await safu.liquidate(loan.address)
+        await expect(safu.liquidate(loan.address))
+          .to.be.revertedWith('SAFU: Loan is not defaulted')
       })
     })
 
