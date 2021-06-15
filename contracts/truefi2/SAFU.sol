@@ -51,7 +51,7 @@ contract SAFU is UpgradeableClaimable {
 
         liquidator.liquidate(loan);
         pool.liquidate(loan);
-        uint256 owedToPool = loan.debt().mul(loan.balanceOf(address(this))).div(loan.totalSupply());
+        uint256 owedToPool = loan.debt().mul(tokenBalance(loan)).div(loan.totalSupply());
         uint256 safuTokenBalance = tokenBalance(token);
 
         uint256 toTransfer;
