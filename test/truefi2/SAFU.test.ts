@@ -286,7 +286,6 @@ describe('SAFU', () => {
   describe('redeem', () => {
     beforeEach(async () => {
       await timeTravel(DAY * 400)
-      await loan.connect(borrower).withdraw(borrower.address)
       await loan.enterDefault()
     })
 
