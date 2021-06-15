@@ -78,10 +78,10 @@ contract SAFU is UpgradeableClaimable {
     }
 
     function redeem(ILoanToken2 loan) public onlyOwner {
-        uint256 amountToBurn = loan.balanceOf(address(this));
-        uint256 balanceBeforeRedeem = loan.token().balanceOf(address(this));
+        uint256 amountToBurn = tokenBalance(loan);
+        uint256 balanceBeforeRedeem = tokenBalance(loan.token());
         loan.redeem(amountToBurn);
-        uint256 redeemedAmount = loan.token().balanceOf(address(this)).sub(balanceBeforeRedeem);
+        uint256 redeemedAmount = tokenBalance(loan.token()).sub(balanceBeforeRedeem);
         emit Redeemed(loan, amountToBurn, redeemedAmount);
     }
 }
