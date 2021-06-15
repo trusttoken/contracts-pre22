@@ -29,6 +29,14 @@ contract SAFU is UpgradeableClaimable {
     // ======= STORAGE DECLARATION END ============
 
     /**
+     * @dev Emitted when a loan is redeemed
+     * @param loan Loan that has been liquidated
+     * @param burnedAmount Amount of loan tokens that were burned
+     * @param redeemedAmount Amount of tokens that were received
+     */
+    event Redeemed(ILoanToken2 loan, uint256 burnedAmount, uint256 redeemedAmount);
+
+    /**
      * @dev Emitted when a loan gets liquidated
      * @param loan Loan that has been liquidated
      * @param repaid Amount repaid to the pool
@@ -67,5 +75,13 @@ contract SAFU is UpgradeableClaimable {
 
     function tokenBalance(IERC20 token) public view returns (uint256) {
         return token.balanceOf(address(this));
+    }
+
+    function redeem(ILoanToken2 loan) public onlyOwner {
+        uint256 amountToBurn = tokenBalance(loan);
+        uint256 balanceBeforeRedeem = tokenBalance(loan.token());
+        loan.redeem(amountToBurn);
+        uint256 redeemedAmount = tokenBalance(loan.token()).sub(balanceBeforeRedeem);
+        emit Redeemed(loan, amountToBurn, redeemedAmount);
     }
 }

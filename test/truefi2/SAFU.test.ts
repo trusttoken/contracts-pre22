@@ -282,4 +282,40 @@ describe('SAFU', () => {
       })
     })
   })
+
+  describe('redeem', () => {
+    beforeEach(async () => {
+      await timeTravel(DAY * 400)
+      await loan.enterDefault()
+    })
+
+    it('only manager can call it', async () => {
+      await safu.liquidate(loan.address)
+      await expect(safu.connect(borrower).redeem(loan.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('burns loan tokens', async () => {
+      await safu.liquidate(loan.address)
+      await expect(() => safu.redeem(loan.address)).changeTokenBalance(loan, safu, parseEth(1100).mul(-1))
+    })
+
+    it('redeems available tokens', async () => {
+      await safu.liquidate(loan.address)
+      await token.mint(loan.address, parseEth(25))
+      await expect(() => safu.redeem(loan.address)).changeTokenBalance(token, safu, parseEth(25))
+    })
+
+    it('emits a proper event', async () => {
+      await safu.liquidate(loan.address)
+      await token.mint(loan.address, parseEth(25))
+
+      const loanTokensToBurn = await loan.balanceOf(safu.address)
+      const currencyTokensToRedeem = await token.balanceOf(loan.address)
+
+      await expect(safu.redeem(loan.address))
+        .to.emit(safu, 'Redeemed')
+        .withArgs(loan.address, loanTokensToBurn, currencyTokensToRedeem)
+    })
+  })
 })
