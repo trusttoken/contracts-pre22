@@ -111,7 +111,7 @@ contract SAFU is UpgradeableClaimable {
         emit Reclaimed(loan, deficit);
     }
 
-    function swap(bytes calldata data) public onlyOwner  {
+    function swap(bytes calldata data) public onlyOwner {
         I1Inch3.SwapDescription memory swapResult = _1Inch.exchange(data);
         require(swapResult.dstReceiver == address(this), "SAFU: Receiver is not SAFU");
     }
