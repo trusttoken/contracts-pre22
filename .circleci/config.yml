@@ -90,7 +90,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - run: yarn test:integration
+      - run: yarn test:integration | (npx ts-node integrationTestsAllowFail.ts)
 
 workflows:
   version: 2
