@@ -132,6 +132,11 @@ describe('SAFU', () => {
             .to.changeTokenBalance(token, pool, defaultAmount)
         })
 
+        it('sets deficit', async () => {
+          await safu.liquidate(loan.address)
+          expect(await safu.loanDeficit(loan.address)).to.eq(0)
+        })
+
         it('emits event', async () => {
           await expect(safu.liquidate(loan.address))
             .to.emit(safu, 'Liquidated')
@@ -153,6 +158,11 @@ describe('SAFU', () => {
         it('transfers funds to the pool', async () => {
           await expect(() => safu.liquidate(loan.address))
             .to.changeTokenBalance(token, pool, defaultAmount.mul(9).div(10))
+        })
+
+        it('sets deficit', async () => {
+          await safu.liquidate(loan.address)
+          expect(await safu.loanDeficit(loan.address)).to.eq(0)
         })
 
         it('emits event', async () => {
@@ -177,6 +187,11 @@ describe('SAFU', () => {
             .to.changeTokenBalance(token, pool, defaultAmount.div(2))
         })
 
+        it('sets deficit', async () => {
+          await safu.liquidate(loan.address)
+          expect(await safu.loanDeficit(loan.address)).to.eq(defaultAmount.div(2))
+        })
+
         it('emits event', async () => {
           await expect(safu.liquidate(loan.address))
             .to.emit(safu, 'Liquidated')
@@ -198,6 +213,11 @@ describe('SAFU', () => {
         it('transfers funds to the pool', async () => {
           await expect(() => safu.liquidate(loan.address))
             .to.changeTokenBalance(token, pool, defaultAmount.div(2))
+        })
+
+        it('sets deficit', async () => {
+          await safu.liquidate(loan.address)
+          expect(await safu.loanDeficit(loan.address)).to.eq(defaultAmount.mul(9).div(10).sub(defaultAmount.div(2)))
         })
 
         it('emits event', async () => {

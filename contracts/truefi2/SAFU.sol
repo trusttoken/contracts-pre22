@@ -62,6 +62,7 @@ contract SAFU is UpgradeableClaimable {
         } else {
             deficit = owedToPool.sub(safuTokenBalance);
             toTransfer = safuTokenBalance;
+            loanDeficit[loan] = deficit;
         }
         token.safeTransfer(address(pool), toTransfer);
         emit Liquidated(loan, toTransfer, deficit);
