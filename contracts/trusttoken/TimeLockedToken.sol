@@ -199,14 +199,12 @@ abstract contract TimeLockedToken is TruVoteToken, ClaimableContract {
         uint256 passed = epochsPassed();
 
         // if all epochs passed, return
-        // slither-disable-next-line incorrect-equality
         if (passed == TOTAL_EPOCHS) {
             // return INT_MAX
             return uint256(-1);
         }
 
         // if no epochs passed, return latest epoch + delay + standard duration
-        // slither-disable-next-line incorrect-equality
         if (passed == 0) {
             return latestEpoch().add(FIRST_EPOCH_DELAY).add(EPOCH_DURATION);
         }
@@ -224,7 +222,6 @@ abstract contract TimeLockedToken is TruVoteToken, ClaimableContract {
         uint256 passed = epochsPassed();
 
         // if no epochs passed, return lock start time
-        // slither-disable-next-line incorrect-equality
         if (passed == 0) {
             return LOCK_START;
         }

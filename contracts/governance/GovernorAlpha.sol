@@ -239,7 +239,6 @@ contract GovernorAlpha is UpgradeableClaimable {
      */
     function _queueOrRevert(address target, uint value, string memory signature, bytes memory data, uint eta) internal {
         require(!timelock.queuedTransactions(keccak256(abi.encode(target, value, signature, data, eta))), "GovernorAlpha::_queueOrRevert: proposal action already queued at eta");
-        // slither-disable-next-line unused-return
         timelock.queueTransaction(target, value, signature, data, eta);
     }
 
@@ -253,7 +252,7 @@ contract GovernorAlpha is UpgradeableClaimable {
         proposal.executed = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
             //OLD: timelock.executeTransaction.value(proposal.values[i])(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
-            // slither-disable-next-line arbitrary-send,unused-return
+            // slither-disable-next-line arbitrary-send
             timelock.executeTransaction{value: proposal.values[i]}(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
         }
         emit ProposalExecuted(proposalId);
@@ -399,7 +398,6 @@ contract GovernorAlpha is UpgradeableClaimable {
      */
     function __queueSetTimelockPendingAdmin(address newPendingAdmin, uint eta) public {
         require(msg.sender == guardian, "GovernorAlpha::__queueSetTimelockPendingAdmin: sender must be gov guardian");
-        // slither-disable-next-line unused-return
         timelock.queueTransaction(address(timelock), 0, "setPendingAdmin(address)", abi.encode(newPendingAdmin), eta);
     }
 
@@ -410,7 +408,6 @@ contract GovernorAlpha is UpgradeableClaimable {
      */
     function __executeSetTimelockPendingAdmin(address newPendingAdmin, uint eta) public {
         require(msg.sender == guardian, "GovernorAlpha::__executeSetTimelockPendingAdmin: sender must be gov guardian");
-        // slither-disable-next-line unused-return
         timelock.executeTransaction(address(timelock), 0, "setPendingAdmin(address)", abi.encode(newPendingAdmin), eta);
     }
 
