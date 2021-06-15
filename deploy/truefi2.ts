@@ -92,7 +92,7 @@ deploy({}, (_, config) => {
 
   // Contract initialization
   runIf(safu.isInitialized().not(), () => {
-    safu.initialize(loanFactory2, liquidator2)
+    safu.initialize(loanFactory2, liquidator2, oneInch)
   })
   runIf(poolFactory.isInitialized().not(), () => {
     poolFactory.initialize(implementationReference, trustToken, trueLender2, safu)
