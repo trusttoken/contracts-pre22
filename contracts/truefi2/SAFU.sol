@@ -28,6 +28,14 @@ contract SAFU is UpgradeableClaimable {
 
     // ======= STORAGE DECLARATION END ============
 
+    /**
+     * @dev Emitted when a loan gets liquidated
+     * @param loan Loan that has been liquidated
+     * @param repaid Amount repaid to the pool
+     * @param deficit Deficit amount that SAFU still owes the pool
+     */
+    event Liquidated(ILoanToken2 loan, uint256 repaid, uint256 deficit);
+
     function initialize(ILoanFactory2 _loanFactory, ILiquidator2 _liquidator) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         loanFactory = _loanFactory;
@@ -47,12 +55,16 @@ contract SAFU is UpgradeableClaimable {
         uint256 safuTokenBalance = tokenBalance(token);
 
         uint256 toTransfer;
+        uint256 deficit;
         if (owedToPool <= safuTokenBalance) {
+            deficit = 0;
             toTransfer = owedToPool;
         } else {
+            deficit = owedToPool.sub(safuTokenBalance);
             toTransfer = safuTokenBalance;
         }
         token.safeTransfer(address(pool), toTransfer);
+        emit Liquidated(loan, toTransfer, deficit);
     }
 
     function tokenBalance(IERC20 token) public view returns (uint256) {
