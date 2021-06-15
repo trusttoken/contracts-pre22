@@ -12,6 +12,7 @@ import {
   LoanFactory2__factory,
   LoanToken,
   LoanToken__factory,
+  LoanToken2,
   LoanToken2__factory,
   MockCrvPriceOracle__factory,
   MockCurvePool,
@@ -623,51 +624,58 @@ describe('TrueFiPool', () => {
     })
   })
 
+  const deployLender2 = async () => {
+    const poolImplementation = await new TrueFiPool2__factory(owner).deploy()
+    const implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
+
+    const factory = await new PoolFactory__factory(owner).deploy()
+    const lender2 = await new TrueLender2__factory(owner).deploy()
+    await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero)
+    await factory.initialize(implementationReference.address, trustToken.address, lender2.address, safu.address)
+    await factory.addLegacyPool(pool.address)
+    const usdc = await new MockErc20Token__factory(owner).deploy()
+    await factory.setAllowAll(true)
+    await factory.createPool(usdc.address)
+    const feePool = await factory.pool(usdc.address)
+    await lender2.setFeePool(feePool)
+    await pool.setLender2(lender2.address)
+    const loanFactory2 = await new LoanFactory2__factory(owner).deploy()
+    const liquidator2 = await new Liquidator2__factory(owner).deploy()
+    await loanFactory2.initialize(factory.address, lender2.address, liquidator2.address)
+    await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, owner.address)
+
+    return { lender2, loanFactory2, liquidator2 }
+  }
+
+  async function fundLoan (loanFactory2: LoanFactory2, lender2: TrueLender2) {
+    const tx = await (await loanFactory2.createLoanToken(pool.address, 1000, DAY, 100)).wait()
+    const newLoanAddress = tx.events[0].args.contractAddress
+    const loan = LoanToken2__factory.connect(newLoanAddress, owner)
+    await mockRatingAgency.mock.getResults.returns(0, 0, parseEth(100))
+    await lender2.fund(newLoanAddress)
+    return { newLoanAddress, loan }
+  }
+
   describe('flow with TrueFi2', () => {
     let loanFactory2: LoanFactory2
     let lender2: TrueLender2
+
     let liquidator2: Liquidator2
 
     beforeEach(async () => {
-      const poolImplementation = await new TrueFiPool2__factory(owner).deploy()
-      const implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
-
-      const factory = await new PoolFactory__factory(owner).deploy()
-      lender2 = await new TrueLender2__factory(owner).deploy()
-      await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero)
-      await factory.initialize(implementationReference.address, trustToken.address, lender2.address, safu.address)
-      await factory.addLegacyPool(pool.address)
-      const usdc = await new MockErc20Token__factory(owner).deploy()
-      await factory.setAllowAll(true)
-      await factory.createPool(usdc.address)
-      const feePool = await factory.pool(usdc.address)
-      await lender2.setFeePool(feePool)
-      loanFactory2 = await new LoanFactory2__factory(owner).deploy()
-      liquidator2 = await new Liquidator2__factory(owner).deploy()
-      await loanFactory2.initialize(factory.address, lender2.address, liquidator2.address)
-      await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, owner.address)
-      await pool.setLender2(lender2.address)
+      ({ lender2, loanFactory2, liquidator2 } = await deployLender2())
       await token.approve(pool.address, parseEth(1e7))
       await pool.join(parseEth(1e7))
     })
 
-    async function fundLoan () {
-      const tx = await (await loanFactory2.createLoanToken(pool.address, 1000, DAY, 100)).wait()
-      const newLoanAddress = tx.events[0].args.contractAddress
-      const loan = LoanToken2__factory.connect(newLoanAddress, owner)
-      await mockRatingAgency.mock.getResults.returns(0, 0, parseEth(100))
-      await lender2.fund(newLoanAddress)
-      return { newLoanAddress, loan }
-    }
-
     it('funds and repays loan', async () => {
-      const { newLoanAddress, loan } = await fundLoan()
+      const { newLoanAddress, loan } = await fundLoan(loanFactory2, lender2)
       await loan.settle()
       await lender2.reclaim(newLoanAddress, '0x')
     })
 
     it('funds and liquidates loan', async () => {
-      const { loan } = await fundLoan()
+      const { loan } = await fundLoan(loanFactory2, lender2)
       await loan.withdraw(owner.address)
       await timeTravel(provider, DAY * 3)
       await loan.enterDefault()
@@ -676,11 +684,32 @@ describe('TrueFiPool', () => {
     })
 
     it('distributions with 2 lenders', async () => {
-      await fundLoan()
+      await fundLoan(loanFactory2, lender2)
       const loan1 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
       await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(15e6))
       await lender.connect(borrower).fund(loan1.address)
       expect(await pool.loansValue()).to.equal((await lender.value()).add(await lender2.value(pool.address)))
+    })
+  })
+
+  describe('liquidate', () => {
+    let loan: LoanToken2
+
+    beforeEach(async () => {
+      const { lender2, loanFactory2 } = await deployLender2()
+      await token.approve(pool.address, parseEth(1e7))
+      await pool.join(parseEth(1e7))
+      ;({ loan } = await fundLoan(loanFactory2, lender2))
+      await pool.setSafuAddress(safu.address)
+    })
+
+    it('can only be performed by the SAFU', async () => {
+      await expect(pool.liquidate(loan.address)).to.be.revertedWith('TrueFiPool: Should be called by SAFU')
+    })
+
+    it('transfers all LTs to the safu', async () => {
+      await pool.connect(safu).liquidate(loan.address)
+      expect(await loan.balanceOf(safu.address)).to.equal(await loan.totalSupply())
     })
   })
 })
