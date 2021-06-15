@@ -316,7 +316,7 @@ describe('SAFU', () => {
 
       await expect(safu.redeem(loan.address))
         .to.emit(safu, 'Redeemed')
-        .withArgs(loanTokensToBurn, currencyTokensToRedeem)
+        .withArgs(loan.address, loanTokensToBurn, currencyTokensToRedeem)
     })
   })
 })
