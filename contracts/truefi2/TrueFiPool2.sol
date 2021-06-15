@@ -15,6 +15,7 @@ import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
+import {PoolExtensions} from "./PoolExtensions.sol";
 
 /**
  * @title TrueFiPool2
@@ -559,8 +560,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
      */
     function liquidate(ILoanToken2 loan) external override {
-        require(msg.sender == safu, "TrueFiPool: Should be called by SAFU");
-        lender.transferAllLoanTokens(loan, safu);
+        PoolExtensions._liquidate(safu, loan, lender);
     }
 
     /**

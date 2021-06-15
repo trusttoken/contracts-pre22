@@ -861,4 +861,28 @@ describe('TrueFiPool2', () => {
         .withArgs(poolStrategy1.address)
     })
   })
+
+  describe('liquidate', () => {
+    let loan: LoanToken2
+
+    beforeEach(async () => {
+      await tusd.approve(pool.address, parseEth(100))
+      await pool.join(parseEth(100))
+      await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
+      loan = await deployContract(
+        LoanToken2__factory, pool.address, borrower.address,
+        lender.address, AddressZero, 100000, DAY, 100,
+      )
+      await lender.connect(borrower).fund(loan.address)
+    })
+
+    it('can only be performed by the SAFU', async () => {
+      await expect(pool.liquidate(loan.address)).to.be.revertedWith('TrueFiPool: Should be called by SAFU')
+    })
+
+    it('transfers all LTs to the safu', async () => {
+      await pool.connect(safu).liquidate(loan.address)
+      expect(await loan.balanceOf(safu.address)).to.equal(await loan.totalSupply())
+    })
+  })
 })
