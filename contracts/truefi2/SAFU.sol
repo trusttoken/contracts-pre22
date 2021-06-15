@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
+pragma experimental ABIEncoderV2;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -10,10 +11,13 @@ import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ILiquidator2} from "./interface/ILiquidator2.sol";
+import {I1Inch3} from "./interface/I1Inch3.sol";
+import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
 contract SAFU is UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+    using OneInchExchange for I1Inch3;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -23,6 +27,7 @@ contract SAFU is UpgradeableClaimable {
 
     ILoanFactory2 public loanFactory;
     ILiquidator2 public liquidator;
+    I1Inch3 public _1Inch;
 
     mapping(ILoanToken2 => uint256) public loanDeficit;
 
@@ -44,10 +49,15 @@ contract SAFU is UpgradeableClaimable {
      */
     event Liquidated(ILoanToken2 loan, uint256 repaid, uint256 deficit);
 
-    function initialize(ILoanFactory2 _loanFactory, ILiquidator2 _liquidator) public initializer {
+    function initialize(
+        ILoanFactory2 _loanFactory,
+        ILiquidator2 _liquidator,
+        I1Inch3 __1Inch
+    ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         loanFactory = _loanFactory;
         liquidator = _liquidator;
+        _1Inch = __1Inch;
     }
 
     function liquidate(ILoanToken2 loan) external {
@@ -83,5 +93,10 @@ contract SAFU is UpgradeableClaimable {
         loan.redeem(amountToBurn);
         uint256 redeemedAmount = tokenBalance(loan.token()).sub(balanceBeforeRedeem);
         emit Redeemed(loan, amountToBurn, redeemedAmount);
+    }
+
+    function swap(bytes calldata data) public onlyOwner  {
+        I1Inch3.SwapDescription memory swapResult = _1Inch.exchange(data);
+        require(swapResult.dstReceiver == address(this), "SAFU: Receiver is not SAFU");
     }
 }
