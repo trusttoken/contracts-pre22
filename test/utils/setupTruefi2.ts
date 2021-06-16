@@ -57,7 +57,7 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   await poolFactory.createPool(standardToken.address)
   const standardPool = poolImplementation.attach(await poolFactory.pool(standardToken.address))
   await standardPool.setOracle(standardTokenOracle.address)
-  
+
   await lender.setFee(0)
   await rater.allowChangingAllowances(owner.address, true)
 

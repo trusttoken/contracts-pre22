@@ -20,15 +20,12 @@ import {
   TrueRatingAgencyV2__factory, TrueRatingAgencyV2,
   MockTrueCurrency,
   StkTruToken,
-  LinearTrueDistributor,
   ArbitraryDistributor,
   MockUsdc,
   LoanToken2,
   LoanToken2__factory,
   LoanFactory2,
-  PoolFactory,
   TrueFiPool2,
-  ImplementationReference,
   TrueLender2,
   Liquidator2,
 } from 'contracts'
@@ -43,7 +40,7 @@ use(solidity)
 describe('TrueRatingAgencyV2', () => {
   let owner: Wallet
   let otherWallet: Wallet
-  
+
   let liquidator: Liquidator2
   let rater: TrueRatingAgencyV2
   let trustToken: MockTrueCurrency
@@ -69,14 +66,14 @@ describe('TrueRatingAgencyV2', () => {
   const txArgs = {
     gasLimit: 6_000_000,
   }
-  
+
   let timeTravel: (time: number) => void
-  
+
   beforeEachWithFixture(async (_wallets, _provider) => {
     [owner, otherWallet] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
-    ;({liquidator,
+    ;({ liquidator,
       rater,
       tru: trustToken,
       stkTru: stakedTrustToken,
