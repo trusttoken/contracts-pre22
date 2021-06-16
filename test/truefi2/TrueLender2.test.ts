@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, DAY, parseEth, parseTRU, timeTravel } from 'utils'
+import { beforeEachWithFixture, createLoan, DAY, parseEth, parseTRU, timeTravel } from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
   ImplementationReference__factory,
@@ -71,12 +71,6 @@ describe('TrueLender2', () => {
   let oneInch: Mock1InchV3
 
   const YEAR = DAY * 365
-
-  const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
-    const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, apy)
-    const loanAddress = (await loanTx.wait()).events[0].args.contractAddress
-    return new LoanToken2__factory(owner).attach(loanAddress)
-  }
 
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, borrower] = wallets)
