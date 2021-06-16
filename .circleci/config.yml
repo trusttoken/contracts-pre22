@@ -58,35 +58,35 @@ jobs:
       - run: yarn lint
   test-others:
     docker:
-      - image: circleci/node:12.19.0
+      - image: circleci/node:16.1.0
     steps:
       - attach_workspace:
           at: .
       - run: yarn test:governance && yarn test:proxy && yarn test:registry && yarn test:scripts && yarn test:true-currencies && yarn test:true-gold && yarn test:trusttoken
   test-truefi:
     docker:
-      - image: circleci/node:12.19.0
+      - image: circleci/node:16.1.0
     steps:
       - attach_workspace:
           at: .
       - run: yarn test:truefi
   test-truefi2:
     docker:
-      - image: circleci/node:12.19.0
+      - image: circleci/node:16.1.0
     steps:
       - attach_workspace:
           at: .
       - run: yarn test:truefi2
   deploy:
     docker:
-      - image: circleci/node:12.19.0
+      - image: circleci/node:16.1.0
     steps:
       - attach_workspace:
           at: .
       - run: yarn deploy:truefi --network kovan --dry-run && yarn deploy:truefi2 --network kovan --dry-run
   integration:
     docker:
-      - image: circleci/node:12.19.0
+      - image: circleci/node:16.1.0
     steps:
       - attach_workspace:
           at: .
