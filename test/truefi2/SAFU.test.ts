@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture, createApprovedLoan, DAY, parseEth, parseTRU, setupTruefi2, timeTravel as _timeTravel } from 'utils'
+import { beforeEachWithFixture, createApprovedLoan, DAY, parseEth, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
 import { Wallet } from 'ethers'
 
 import {
@@ -35,7 +35,7 @@ describe('SAFU', () => {
   const YEAR = DAY * 365
   const defaultedLoanCloseTime = YEAR + DAY
 
-  const defaultAmount = parseEth(1100)
+  const defaultAmount = parseUSDC(1100)
 
   beforeEachWithFixture(async (_wallets, _provider) => {
     [owner, borrower, voter] = _wallets
@@ -43,12 +43,12 @@ describe('SAFU', () => {
 
     ;({ safu, feeLpToken: token, feePool: pool, lender, loanFactory, tru, stkTru, rater, liquidator } = await setupTruefi2(owner))
 
-    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseEth(1000), YEAR, 1000, voter, _provider)
+    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000, voter, _provider)
 
     await token.mint(safu.address, defaultAmount)
-    await token.mint(owner.address, parseEth(1e7))
-    await token.approve(pool.address, parseEth(1e7))
-    await pool.connect(owner).join(parseEth(1e7))
+    await token.mint(owner.address, parseUSDC(1e7))
+    await token.approve(pool.address, parseUSDC(1e7))
+    await pool.connect(owner).join(parseUSDC(1e7))
     await lender.connect(borrower).fund(loan.address)
     await loan.connect(borrower).withdraw(borrower.address)
 
@@ -99,7 +99,7 @@ describe('SAFU', () => {
       })
 
       it('transfers LoanTokens that were partially taken from pool', async () => {
-        await pool.exit(parseEth(1e6))
+        await pool.exit(parseUSDC(1e6))
         await timeTravel(DAY * 400)
         await loan.enterDefault()
         await safu.liquidate(loan.address)
@@ -136,7 +136,7 @@ describe('SAFU', () => {
 
       describe('half of loan repaid', () => {
         beforeEach(async () => {
-          await token.mint(loan.address, parseEth(550))
+          await token.mint(loan.address, parseUSDC(550))
         })
 
         it('0 tru in staking pool balance', async () => {

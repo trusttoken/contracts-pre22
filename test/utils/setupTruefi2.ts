@@ -33,7 +33,8 @@ export const setupTruefi2 = async (owner: Wallet) => {
   const feeLpToken = await deployContract(MockUsdc__factory)
   const lpToken = await deployContract(MockTrueCurrency__factory)
 
-  const oracle = await deployContract(MockTrueFiPoolOracle__factory, feeLpToken.address)
+  const feeTokenOracle = await deployContract(MockTrueFiPoolOracle__factory, feeLpToken.address)
+  const standardTokenOracle = await deployContract(MockTrueFiPoolOracle__factory, lpToken.address)
   const linearDistributor = await deployContract(LinearTrueDistributor__factory)
   const arbitraryDistributor = await deployContract(ArbitraryDistributor__factory)
 
@@ -49,12 +50,12 @@ export const setupTruefi2 = async (owner: Wallet) => {
   await poolFactory.whitelist(feeLpToken.address, true)
   await poolFactory.createPool(feeLpToken.address)
   const feePool = poolImplementation.attach(await poolFactory.pool(feeLpToken.address))
-  await feePool.setOracle(oracle.address)
+  await feePool.setOracle(feeTokenOracle.address)
 
   await poolFactory.whitelist(lpToken.address, true)
   await poolFactory.createPool(lpToken.address)
   const standardPool = poolImplementation.attach(await poolFactory.pool(lpToken.address))
-  await standardPool.setOracle(oracle.address)
+  await standardPool.setOracle(standardTokenOracle.address)
   
   await lender.setFee(0)
   await rater.allowChangingAllowances(owner.address, true)
@@ -73,7 +74,8 @@ export const setupTruefi2 = async (owner: Wallet) => {
     implementationReference,
     feeLpToken,
     lpToken,
-    oracle,
+    feeTokenOracle,
+    standardTokenOracle,
     rater,
     linearDistributor,
     arbitraryDistributor,

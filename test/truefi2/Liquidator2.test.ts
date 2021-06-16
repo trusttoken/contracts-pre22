@@ -16,10 +16,8 @@ import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
 import { DAY } from 'utils/constants'
-import { parseEth } from 'utils/parseEth'
-import { parseTRU } from 'utils/parseTRU'
 import { createApprovedLoan, timeTravel as _timeTravel } from 'utils'
-import { beforeEachWithFixture, setupTruefi2 } from 'utils'
+import { beforeEachWithFixture, setupTruefi2, parseEth, parseTRU, parseUSDC } from 'utils'
 
 use(solidity)
 
@@ -56,12 +54,12 @@ describe('Liquidator2', () => {
 
     ;({ liquidator, loanFactory, feeLpToken: token, tru, stkTru, lender, feePool: pool, rater } = await setupTruefi2(owner))
 
-    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseEth(1000), YEAR, 1000, voter, _provider)
+    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000, voter, _provider)
 
     await liquidator.setAssurance(assurance.address)
 
-    await token.mint(owner.address, parseEth(1e7))
-    await token.approve(pool.address, parseEth(1e7))
+    await token.mint(owner.address, parseUSDC(1e7))
+    await token.approve(pool.address, parseUSDC(1e7))
 
     await tru.mint(owner.address, parseEth(1e7))
     await tru.mint(otherWallet.address, parseEth(15e6))
@@ -164,7 +162,7 @@ describe('Liquidator2', () => {
 
   describe('liquidate', () => {
     beforeEach(async () => {
-      await pool.connect(owner).join(parseEth(1e7))
+      await pool.connect(owner).join(parseUSDC(1e7))
       await lender.connect(borrower).fund(loan.address)
       await withdraw(borrower)
       await liquidator.setTokenApproval(token.address, true)
@@ -193,8 +191,8 @@ describe('Liquidator2', () => {
 
       it('loan was not created via factory', async () => {
         const deployContract = setupDeploy(owner)
-        const fakeLoan = await deployContract(LoanToken2__factory, pool.address, borrower.address, borrower.address, liquidator.address, parseEth(1000), YEAR, 1000)
-        await token.connect(borrower).approve(fakeLoan.address, parseEth(1000))
+        const fakeLoan = await deployContract(LoanToken2__factory, pool.address, borrower.address, borrower.address, liquidator.address, parseUSDC(1000), YEAR, 1000)
+        await token.connect(borrower).approve(fakeLoan.address, parseUSDC(1000))
         await fakeLoan.connect(borrower).fund()
         await timeTravel(defaultedLoanCloseTime)
         await fakeLoan.enterDefault()
@@ -247,7 +245,7 @@ describe('Liquidator2', () => {
 
       describe('only half of loan value has defaulted', () => {
         beforeEach(async () => {
-          await token.mint(loan.address, parseEth(550))
+          await token.mint(loan.address, parseUSDC(550))
         })
 
         it('0 tru in staking pool balance', async () => {
@@ -272,7 +270,7 @@ describe('Liquidator2', () => {
 
       describe('half of loan has defaulted and half redeemed', () => {
         beforeEach(async () => {
-          await token.mint(loan.address, parseEth(550))
+          await token.mint(loan.address, parseUSDC(550))
           await lender.reclaim(loan.address, '0x')
         })
 
@@ -304,7 +302,7 @@ describe('Liquidator2', () => {
 
       await expect(liquidator.connect(assurance).liquidate(loan.address))
         .to.emit(liquidator, 'Liquidated')
-        .withArgs(loan.address, parseEth(1100), parseTRU(100))
+        .withArgs(loan.address, parseUSDC(1100), parseTRU(100))
     })
   })
 })
