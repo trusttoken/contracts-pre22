@@ -1,34 +1,24 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, createLoan, DAY, parseEth, parseTRU, timeTravel as _timeTravel } from 'utils'
+import { beforeEachWithFixture, createLoan, DAY, parseEth, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
-  ImplementationReference__factory,
   LoanToken2,
   LoanToken2__factory,
   MockErc20Token,
   MockErc20Token__factory,
-  PoolFactory__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
   TestTrueLender,
   TestTrueLender__factory,
   TrueRatingAgencyV2,
-  TrueRatingAgencyV2__factory,
   PoolFactory,
-  ArbitraryDistributor,
-  TrustToken,
-  TrustToken__factory,
-  ArbitraryDistributor__factory,
   StkTruToken,
-  StkTruToken__factory,
-  LinearTrueDistributor__factory,
-  MockTrueCurrency__factory,
   Mock1InchV3__factory,
   Mock1InchV3,
   LoanFactory2,
-  LoanFactory2__factory,
   MockTrueFiPoolOracle,
-  MockTrueFiPoolOracle__factory,
+  MockTrueCurrency,
+  MockUsdc,
 } from 'contracts'
 
 import {
@@ -55,7 +45,6 @@ describe('TrueLender2', () => {
   let poolOracle: MockTrueFiPoolOracle
 
   let rater: TrueRatingAgencyV2
-  let arbitraryDistributor: ArbitraryDistributor
   let lender: TestTrueLender
 
   let counterfeitPool: TrueFiPool2
@@ -65,8 +54,8 @@ describe('TrueLender2', () => {
   let poolFactory: PoolFactory
 
   let stkTru: StkTruToken
-  let tru: TrustToken
-  let usdc: MockErc20Token
+  let tru: MockTrueCurrency
+  let usdc: MockUsdc
   let oneInch: Mock1InchV3
 
   const YEAR = DAY * 365
@@ -77,54 +66,29 @@ describe('TrueLender2', () => {
     ([owner, borrower] = wallets)
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
-    poolFactory = await deployContract(owner, PoolFactory__factory)
-    const poolImplementation = await deployContract(owner, TrueFiPool2__factory)
-    const implementationReference = await deployContract(owner, ImplementationReference__factory, [poolImplementation.address])
-
     lender = await deployContract(owner, TestTrueLender__factory)
-    await poolFactory.initialize(implementationReference.address, AddressZero, lender.address, AddressZero)
+    oneInch = await new Mock1InchV3__factory(owner).deploy()
 
-    stkTru = await deployContract(owner, StkTruToken__factory)
+    ;({loanFactory, feePool, standardTokenOracle: poolOracle, rater, poolFactory, stkTru, tru, feeToken: usdc, lender} = await setupTruefi2(owner, {lender: lender, oneInch: oneInch}))
 
-    tru = await deployContract(owner, TrustToken__factory)
-    await tru.initialize()
-
-    usdc = await deployContract(owner, MockErc20Token__factory)
     token1 = await deployContract(owner, MockErc20Token__factory)
     token2 = await deployContract(owner, MockErc20Token__factory)
 
     await poolFactory.whitelist(token1.address, true)
     await poolFactory.whitelist(token2.address, true)
-    await poolFactory.whitelist(usdc.address, true)
 
     await poolFactory.createPool(token1.address)
     await poolFactory.createPool(token2.address)
-    await poolFactory.createPool(usdc.address)
 
     pool1 = TrueFiPool2__factory.connect(await poolFactory.pool(token1.address), owner)
     pool2 = TrueFiPool2__factory.connect(await poolFactory.pool(token2.address), owner)
+
     counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
     await counterfeitPool.initialize(token1.address, AddressZero, lender.address, AddressZero, owner.address, AddressZero)
-    feePool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
 
-    poolOracle = await deployContract(owner, MockTrueFiPoolOracle__factory, [token1.address])
     await pool1.setOracle(poolOracle.address)
 
-    const tfusd = await deployContract(owner, MockTrueCurrency__factory) // just for testing, change this in origination fees development
-    const trueDistributor = await deployContract(owner, LinearTrueDistributor__factory)
-    await stkTru.initialize(tru.address, tfusd.address, tfusd.address, trueDistributor.address, AddressZero)
-
-    rater = await deployContract(owner, TrueRatingAgencyV2__factory)
-    oneInch = await new Mock1InchV3__factory(owner).deploy()
-    await lender.initialize(stkTru.address, poolFactory.address, rater.address, oneInch.address)
     await lender.setFeePool(feePool.address)
-
-    arbitraryDistributor = await deployContract(owner, ArbitraryDistributor__factory)
-    await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(1e7))
-
-    loanFactory = await deployContract(owner, LoanFactory2__factory)
-    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero)
-    await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
 
     await token1.mint(owner.address, parseEth(1e7))
     await token2.mint(owner.address, parseEth(1e7))
@@ -133,7 +97,6 @@ describe('TrueLender2', () => {
     await pool1.join(parseEth(1e7))
     await pool2.join(parseEth(1e7))
 
-    await rater.allowChangingAllowances(owner.address, true)
     await rater.allow(borrower.address, true)
     await tru.mint(owner.address, parseTRU(15e6))
 
@@ -614,7 +577,7 @@ describe('TrueLender2', () => {
       })
 
       it('reverts if small USDC amount is returned', async () => {
-        await oneInch.setOutputAmount(parseEth(24))
+        await oneInch.setOutputAmount(parseUSDC(24))
         const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee)
         await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('TrueLender: Fee returned from swap is too small')
       })
