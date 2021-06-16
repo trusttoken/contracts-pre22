@@ -51,7 +51,7 @@ jobs:
       - run: ./slither.sh
   lint:
     docker:
-      - image: circleci/node:12.19.0
+      - image: circleci/node:16.1.0
     steps:
       - attach_workspace:
           at: .
