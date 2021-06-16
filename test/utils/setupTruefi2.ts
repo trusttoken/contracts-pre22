@@ -13,6 +13,7 @@ import {
   MockUsdc__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
+import { parseTRU } from '.'
 
 export const setupTruefi2 = async (owner: Wallet) => {
   const deployContract = setupDeploy(owner)
@@ -30,31 +31,31 @@ export const setupTruefi2 = async (owner: Wallet) => {
 
   const tru = await deployContract(MockTrueCurrency__factory)
   const stkTru = await deployContract(StkTruToken__factory)
-  const feeLpToken = await deployContract(MockUsdc__factory)
-  const lpToken = await deployContract(MockTrueCurrency__factory)
+  const feeToken = await deployContract(MockUsdc__factory)
+  const standardToken = await deployContract(MockTrueCurrency__factory)
 
-  const feeTokenOracle = await deployContract(MockTrueFiPoolOracle__factory, feeLpToken.address)
-  const standardTokenOracle = await deployContract(MockTrueFiPoolOracle__factory, lpToken.address)
+  const feeTokenOracle = await deployContract(MockTrueFiPoolOracle__factory, feeToken.address)
+  const standardTokenOracle = await deployContract(MockTrueFiPoolOracle__factory, standardToken.address)
   const linearDistributor = await deployContract(LinearTrueDistributor__factory)
   const arbitraryDistributor = await deployContract(ArbitraryDistributor__factory)
 
   // ====== SETUP ======
   await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, safu.address)
   await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address)
-  await arbitraryDistributor.initialize(rater.address, tru.address, 0)
+  await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(15e6))
   await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
   await lender.initialize(stkTru.address, poolFactory.address, rater.address, AddressZero)
   await safu.initialize(loanFactory.address, liquidator.address)
   await poolFactory.initialize(implementationReference.address, stkTru.address, lender.address, safu.address)
 
-  await poolFactory.whitelist(feeLpToken.address, true)
-  await poolFactory.createPool(feeLpToken.address)
-  const feePool = poolImplementation.attach(await poolFactory.pool(feeLpToken.address))
+  await poolFactory.whitelist(feeToken.address, true)
+  await poolFactory.createPool(feeToken.address)
+  const feePool = poolImplementation.attach(await poolFactory.pool(feeToken.address))
   await feePool.setOracle(feeTokenOracle.address)
 
-  await poolFactory.whitelist(lpToken.address, true)
-  await poolFactory.createPool(lpToken.address)
-  const standardPool = poolImplementation.attach(await poolFactory.pool(lpToken.address))
+  await poolFactory.whitelist(standardToken.address, true)
+  await poolFactory.createPool(standardToken.address)
+  const standardPool = poolImplementation.attach(await poolFactory.pool(standardToken.address))
   await standardPool.setOracle(standardTokenOracle.address)
   
   await lender.setFee(0)
@@ -72,8 +73,8 @@ export const setupTruefi2 = async (owner: Wallet) => {
     lender,
     poolImplementation,
     implementationReference,
-    feeLpToken,
-    lpToken,
+    feeToken,
+    standardToken,
     feeTokenOracle,
     standardTokenOracle,
     rater,

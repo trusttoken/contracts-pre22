@@ -41,7 +41,7 @@ describe('SAFU', () => {
     [owner, borrower, voter] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
-    ;({ safu, feeLpToken: token, feePool: pool, lender, loanFactory, tru, stkTru, rater, liquidator } = await setupTruefi2(owner))
+    ;({ safu, feeToken: token, feePool: pool, lender, loanFactory, tru, stkTru, rater, liquidator } = await setupTruefi2(owner))
 
     loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000, voter, _provider)
 
