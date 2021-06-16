@@ -67,6 +67,7 @@ export const setupTruefi2 = async (owner: Wallet) => {
     oracle,
     rater,
     linearDistributor,
+    arbitraryDistributor,
     pool,
     safu,
   }
