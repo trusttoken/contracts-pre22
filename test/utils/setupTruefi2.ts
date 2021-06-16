@@ -10,6 +10,7 @@ import {
   TrueFiPool2__factory,
   TrueLender2__factory,
   TrueRatingAgencyV2__factory,
+  MockUsdc__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
 
@@ -29,9 +30,10 @@ export const setupTruefi2 = async (owner: Wallet) => {
 
   const tru = await deployContract(MockTrueCurrency__factory)
   const stkTru = await deployContract(StkTruToken__factory)
-  const feeToken = await deployContract(MockTrueCurrency__factory)
+  const feeLpToken = await deployContract(MockUsdc__factory)
+  const lpToken = await deployContract(MockTrueCurrency__factory)
 
-  const oracle = await deployContract(MockTrueFiPoolOracle__factory, feeToken.address)
+  const oracle = await deployContract(MockTrueFiPoolOracle__factory, feeLpToken.address)
   const linearDistributor = await deployContract(LinearTrueDistributor__factory)
   const arbitraryDistributor = await deployContract(ArbitraryDistributor__factory)
 
@@ -44,15 +46,21 @@ export const setupTruefi2 = async (owner: Wallet) => {
   await safu.initialize(loanFactory.address, liquidator.address)
   await poolFactory.initialize(implementationReference.address, stkTru.address, lender.address, safu.address)
 
-  await poolFactory.whitelist(feeToken.address, true)
-  await poolFactory.createPool(feeToken.address)
-  const pool = poolImplementation.attach(await poolFactory.pool(feeToken.address))
-  await pool.setOracle(oracle.address)
+  await poolFactory.whitelist(feeLpToken.address, true)
+  await poolFactory.createPool(feeLpToken.address)
+  const feePool = poolImplementation.attach(await poolFactory.pool(feeLpToken.address))
+  await feePool.setOracle(oracle.address)
+
+  await poolFactory.whitelist(lpToken.address, true)
+  await poolFactory.createPool(lpToken.address)
+  const standardPool = poolImplementation.attach(await poolFactory.pool(lpToken.address))
+  await standardPool.setOracle(oracle.address)
+  
   await lender.setFee(0)
   await rater.allowChangingAllowances(owner.address, true)
 
   await tru.initialize()
-  await stkTru.initialize(tru.address, pool.address, pool.address, linearDistributor.address, liquidator.address)
+  await stkTru.initialize(tru.address, feePool.address, feePool.address, linearDistributor.address, liquidator.address)
 
   return {
     liquidator,
@@ -63,12 +71,14 @@ export const setupTruefi2 = async (owner: Wallet) => {
     lender,
     poolImplementation,
     implementationReference,
-    feeToken,
+    feeLpToken,
+    lpToken,
     oracle,
     rater,
     linearDistributor,
     arbitraryDistributor,
-    pool,
+    feePool,
+    standardPool,
     safu,
   }
 }

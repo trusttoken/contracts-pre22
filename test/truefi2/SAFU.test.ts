@@ -8,6 +8,7 @@ import {
   LoanToken2,
   LoanToken2__factory,
   MockTrueCurrency,
+  MockUsdc,
   Safu,
   StkTruToken,
   TrueFiPool2,
@@ -19,7 +20,7 @@ describe('SAFU', () => {
   let owner: Wallet, borrower: Wallet, voter: Wallet
 
   let safu: Safu
-  let token: MockTrueCurrency
+  let token: MockUsdc
   let loan: LoanToken2
   let loanFactory: LoanFactory2
   let pool: TrueFiPool2
@@ -40,7 +41,7 @@ describe('SAFU', () => {
     [owner, borrower, voter] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
-    ;({ safu, feeToken: token, pool, lender, loanFactory, tru, stkTru, rater, liquidator } = await setupTruefi2(owner))
+    ;({ safu, feeLpToken: token, feePool: pool, lender, loanFactory, tru, stkTru, rater, liquidator } = await setupTruefi2(owner))
 
     loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseEth(1000), YEAR, 1000, voter, _provider)
 
