@@ -13,6 +13,7 @@ import {
   parseUSDC,
   DAY,
   setupTruefi2,
+  createLoan,
 } from 'utils'
 
 import {
@@ -58,12 +59,6 @@ describe('TrueRatingAgencyV2', () => {
   let tusdPool: TrueFiPool2
   let usdcPool: TrueFiPool2
 
-  const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
-    const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, apy)
-    const loanAddress = (await loanTx.wait()).events[0].args.contractAddress
-    return new LoanToken2__factory(owner).attach(loanAddress)
-  }
-
   const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
   const stake = parseTRU(15e6)
 
@@ -105,7 +100,6 @@ describe('TrueRatingAgencyV2', () => {
     await trustToken.mint(owner.address, stake.mul(2))
     await trustToken.mint(arbitraryDistributor.address, stake)
     await trustToken.approve(stakedTrustToken.address, stake.mul(2))
-
 
     await stakedTrustToken.delegate(owner.address)
     await stakedTrustToken.connect(otherWallet).delegate(otherWallet.address)
