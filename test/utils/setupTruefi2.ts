@@ -22,7 +22,7 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   const liquidator = await deployContract(Liquidator2__factory)
   const loanFactory = await deployContract(LoanFactory2__factory)
   const rater = await deployContract(TrueRatingAgencyV2__factory)
-  const lender = customDeployed.lender ? customDeployed.lender : await deployContract(TrueLender2__factory)
+  const lender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2__factory)
   const safu = await deployContract(Safu__factory)
 
   const poolFactory = await deployContract(PoolFactory__factory)
@@ -44,7 +44,7 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address)
   await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(15e6))
   await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
-  await lender.initialize(stkTru.address, poolFactory.address, rater.address, customDeployed.oneInch ? customDeployed.oneInch.address : AddressZero)
+  await lender.initialize(stkTru.address, poolFactory.address, rater.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await safu.initialize(loanFactory.address, liquidator.address)
   await poolFactory.initialize(implementationReference.address, stkTru.address, lender.address, safu.address)
 
