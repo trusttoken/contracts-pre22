@@ -15,8 +15,34 @@ contract SAFU is UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     ILoanFactory2 public loanFactory;
     ILiquidator2 public liquidator;
+
+    mapping(ILoanToken2 => uint256) public loanDeficit;
+
+    // ======= STORAGE DECLARATION END ============
+
+    /**
+     * @dev Emitted when a loan is redeemed
+     * @param loan Loan that has been liquidated
+     * @param burnedAmount Amount of loan tokens that were burned
+     * @param redeemedAmount Amount of tokens that were received
+     */
+    event Redeemed(ILoanToken2 loan, uint256 burnedAmount, uint256 redeemedAmount);
+
+    /**
+     * @dev Emitted when a loan gets liquidated
+     * @param loan Loan that has been liquidated
+     * @param repaid Amount repaid to the pool
+     * @param deficit Deficit amount that SAFU still owes the pool
+     */
+    event Liquidated(ILoanToken2 loan, uint256 repaid, uint256 deficit);
 
     function initialize(ILoanFactory2 _loanFactory, ILiquidator2 _liquidator) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
@@ -27,10 +53,35 @@ contract SAFU is UpgradeableClaimable {
     function liquidate(ILoanToken2 loan) external {
         require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
         require(loan.status() == ILoanToken2.Status.Defaulted, "SAFU: Loan is not defaulted");
-        liquidator.liquidate(loan);
+
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
+        IERC20 token = IERC20(pool.token());
+
+        liquidator.liquidate(loan);
         pool.liquidate(loan);
-        uint256 lostByPool = loan.debt().mul(loan.balanceOf(address(this))).div(loan.totalSupply());
-        IERC20(pool.token()).safeTransfer(address(pool), lostByPool);
+        uint256 owedToPool = loan.debt().mul(tokenBalance(loan)).div(loan.totalSupply());
+        uint256 safuTokenBalance = tokenBalance(token);
+
+        uint256 deficit = 0;
+        uint256 toTransfer = owedToPool;
+        if (owedToPool > safuTokenBalance) {
+            deficit = owedToPool.sub(safuTokenBalance);
+            toTransfer = safuTokenBalance;
+            loanDeficit[loan] = deficit;
+        }
+        token.safeTransfer(address(pool), toTransfer);
+        emit Liquidated(loan, toTransfer, deficit);
+    }
+
+    function tokenBalance(IERC20 token) public view returns (uint256) {
+        return token.balanceOf(address(this));
+    }
+
+    function redeem(ILoanToken2 loan) public onlyOwner {
+        uint256 amountToBurn = tokenBalance(loan);
+        uint256 balanceBeforeRedeem = tokenBalance(loan.token());
+        loan.redeem(amountToBurn);
+        uint256 redeemedAmount = tokenBalance(loan.token()).sub(balanceBeforeRedeem);
+        emit Redeemed(loan, amountToBurn, redeemedAmount);
     }
 }
