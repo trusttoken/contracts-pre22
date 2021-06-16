@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture, createApprovedLoan, DAY, parseEth, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
+import { beforeEachWithFixture, createApprovedLoan, DAY, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
 import { Wallet } from 'ethers'
 
 import {

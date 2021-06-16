@@ -54,7 +54,7 @@ describe('TrueRatingAgencyV2', () => {
   let liquidator: Wallet
 
   let rater: TrueRatingAgencyV2
-  let trustToken: TrustToken
+  let trustToken: MockTrueCurrency
   let stakedTrustToken: StkTruToken
   let arbitraryDistributor: ArbitraryDistributor
   let linearDistributor: LinearTrueDistributor
@@ -93,7 +93,7 @@ describe('TrueRatingAgencyV2', () => {
   beforeEachWithFixture(async (_wallets, _provider) => {
     [owner, otherWallet, liquidator] = _wallets
 
-    trustToken = await new TrustToken__factory(owner).deploy()
+    trustToken = await new MockTrueCurrency__factory(owner).deploy()
     tusd = await new MockTrueCurrency__factory(owner).deploy()
     usdc = await new MockUsdc__factory(owner).deploy()
 
