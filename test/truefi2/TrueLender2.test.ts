@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, createLoan, DAY, parseEth, parseTRU, timeTravel } from 'utils'
+import { beforeEachWithFixture, createLoan, DAY, parseEth, parseTRU, timeTravel as _timeTravel } from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
   ImplementationReference__factory,
@@ -43,7 +43,6 @@ import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
 use(solidity)
 
 describe('TrueLender2', () => {
-  let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
 
@@ -72,8 +71,12 @@ describe('TrueLender2', () => {
 
   const YEAR = DAY * 365
 
+  let timeTravel: (time: number) => void
+
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, borrower] = wallets)
+    timeTravel = (time: number) => _timeTravel(_provider, time)
+
     poolFactory = await deployContract(owner, PoolFactory__factory)
     const poolImplementation = await deployContract(owner, TrueFiPool2__factory)
     const implementationReference = await deployContract(owner, ImplementationReference__factory, [poolImplementation.address])
@@ -136,20 +139,18 @@ describe('TrueLender2', () => {
 
     await tru.approve(stkTru.address, parseTRU(15e6))
     await stkTru.stake(parseTRU(15e6))
-    await timeTravel(_provider, 1)
+    await timeTravel(1)
 
     loan1 = await createLoan(loanFactory, borrower, pool1, 100000, YEAR, 100)
 
     loan2 = await createLoan(loanFactory, borrower, pool2, 500000, YEAR, 1000)
-
-    provider = _provider
   })
 
   const approveLoanRating = async function (loan: LoanToken2) {
     await rater.connect(borrower).submit(loan.address)
     await rater.yes(loan.address)
 
-    await timeTravel(provider, 7 * DAY + 1)
+    await timeTravel(7 * DAY + 1)
   }
 
   describe('Initializer', () => {
@@ -317,7 +318,7 @@ describe('TrueLender2', () => {
       it('loan was not long enough under voting', async () => {
         await rater.connect(borrower).submit(loan1.address)
         await rater.yes(loan1.address)
-        await timeTravel(provider, 6 * DAY)
+        await timeTravel(6 * DAY)
 
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.be.revertedWith('TrueLender: Voting time is below minimum')
@@ -327,11 +328,11 @@ describe('TrueLender2', () => {
         await tru.mint(borrower.address, parseTRU(15e6))
         await tru.connect(borrower).approve(stkTru.address, parseTRU(15e6))
         await stkTru.connect(borrower).stake(parseTRU(14e6))
-        await timeTravel(provider, 1)
+        await timeTravel(1)
 
         await rater.connect(borrower).submit(loan1.address)
         await rater.connect(borrower).yes(loan1.address)
-        await timeTravel(provider, 7 * DAY + 1)
+        await timeTravel(7 * DAY + 1)
 
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.be.revertedWith('TrueLender: Not enough votes given for the loan')
@@ -340,7 +341,7 @@ describe('TrueLender2', () => {
       it('loan is predicted to be too risky', async () => {
         await rater.connect(borrower).submit(loan1.address)
         await rater.no(loan1.address)
-        await timeTravel(provider, 7 * DAY + 1)
+        await timeTravel(7 * DAY + 1)
 
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.be.revertedWith('TrueLender: Loan risk is too high')
@@ -442,16 +443,16 @@ describe('TrueLender2', () => {
     })
 
     it('value should increase with time', async () => {
-      await timeTravel(provider, DAY / 2)
+      await timeTravel(DAY / 2)
       expect(await lender.value(pool1.address)).to.equal(200002)
       expect(await lender.value(pool2.address)).to.equal(500068)
     })
 
     it('value stops increasing after term passes', async () => {
-      await timeTravel(provider, YEAR)
+      await timeTravel(YEAR)
       expect(await lender.value(pool1.address)).to.equal(201002)
       expect(await lender.value(pool2.address)).to.equal(550000)
-      await timeTravel(provider, YEAR * 10)
+      await timeTravel(YEAR * 10)
       expect(await lender.value(pool1.address)).to.equal(201002)
       expect(await lender.value(pool2.address)).to.equal(550000)
     })
@@ -500,7 +501,7 @@ describe('TrueLender2', () => {
     })
 
     it('defaulted loans can only be reclaimed by owner', async () => {
-      await timeTravel(provider, YEAR * 2)
+      await timeTravel(YEAR * 2)
       await loan1.enterDefault()
       await expect(lender.connect(borrower).reclaim(loan1.address, '0x'))
         .to.be.revertedWith('TrueLender: Only owner can reclaim from defaulted loan')
