@@ -447,6 +447,22 @@
     "trueFiCreditOracle_proxy": {
       "txHash": "0xdd6e5f89621e4060cfce40a90b8a0d87e585805377892c827f9b69c3050dde2d",
       "address": "0x73581551665680696946f568259977Da02e8712A"
+    },
+    "usdt_TrueFiPool2_LinearTrueDistributor": {
+      "txHash": "0x0a9a6c11c9a1d095a1aa3d87dcb79944c41c7280932acf9440a340a9430ab655",
+      "address": "0xD3c706e029584c2A24bc25Ed5aB0fAe87d5372Bb"
+    },
+    "usdt_TrueFiPool2_TrueFarm": {
+      "txHash": "0x4365936b3f5d2d4e81514b89b2fd84fde38c4ca8f1bb9c736d86eb7dcfc4406e",
+      "address": "0xaeeA93b793B232C3c9d494f36783A2A966fF9780"
+    },
+    "usdt_TrueFiPool2_LinearTrueDistributor_proxy": {
+      "txHash": "0xe8ee591b9f2c9fe74e190f9e048bb757ef8fcea078fab5fbce1b3428603d0e2e",
+      "address": "0xdEc91F8E7C30CEeCb008C82E7f0847aD3Dec98c4"
+    },
+    "usdt_TrueFiPool2_TrueFarm_proxy": {
+      "txHash": "0x9b1136919143b0a5172c2b69643496347b96537a26a281a01dc318dad06e6faf",
+      "address": "0xC06E16D2Fbe2b9Fe088a615f23cb20898745Dc6D"
     }
   }
 }
