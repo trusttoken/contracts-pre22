@@ -20,8 +20,8 @@ contract BorrowerRewardDistributor {
     IERC20 public rewardCurrency;
 
     /**
-     * @dev Reward rate is set as 1% by default.
-     * so the actual reward can be calculated as: loan / rewardRate
+     * @dev Reward rate is set as 1% by default. 2 decimals
+     * so the actual reward can be calculated as: loan * rewardRate / 10000
      */
     uint256 public rewardRate = 100;
 
@@ -32,11 +32,17 @@ contract BorrowerRewardDistributor {
     }
 
     function setRewardRate(uint256 _rewardRate) external {
-        require(_rewardRate > 0 && _rewardRate < 100, "Reward rate should greater than 0 and less than 100");
+        require(_rewardRate < 10000, "Reward rate should be less than 10000(100%)");
         rewardRate = _rewardRate;
     }
 
     function distribute(address borrower, uint256 loanAmount) external {
-        rewardCurrency.safeTransfer(borrower, loanAmount.div(rewardRate));
+        uint256 rewardAmount = loanAmount.mul(rewardRate).div(10000);
+        uint256 balance = rewardCurrency.balanceOf(address(this));
+
+        if (balance >= rewardAmount) {
+            rewardCurrency.approve(borrower, rewardAmount);
+            rewardCurrency.safeTransfer(borrower, rewardAmount);
+        }
     }
 }
