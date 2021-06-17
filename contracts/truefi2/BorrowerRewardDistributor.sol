@@ -41,7 +41,6 @@ contract BorrowerRewardDistributor {
         uint256 balance = rewardCurrency.balanceOf(address(this));
 
         if (balance >= rewardAmount) {
-            rewardCurrency.approve(borrower, rewardAmount);
             rewardCurrency.safeTransfer(borrower, rewardAmount);
         }
     }
