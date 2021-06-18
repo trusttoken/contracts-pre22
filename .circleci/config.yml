@@ -44,6 +44,8 @@ jobs:
     docker:
       - image: circleci/python:3-node
     steps:
+      - attach_workspace:
+          at: .
       - run: yarn build
       - run: yarn typecheck
       - persist_to_workspace:
