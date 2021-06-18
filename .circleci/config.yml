@@ -97,9 +97,7 @@ workflows:
   test:
     jobs:
       - build
-      - lint:
-          requires:
-            - build
+      - lint
       - slither:
           requires:
             - build
