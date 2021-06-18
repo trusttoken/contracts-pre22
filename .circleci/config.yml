@@ -113,7 +113,7 @@ workflows:
             - setup
       - slither:
           requires:
-            - build
+            - setup
       - test-truefi:
           requires:
             - build
