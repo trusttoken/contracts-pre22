@@ -15,7 +15,7 @@ contract MockTrueFiPoolOracle is ITrueFiPoolOracle {
     }
 
     function tokenToTru(uint256 tokenAmount) external override view returns (uint256) {
-        return (((tokenAmount * 4) * 10**(18 - _token.decimals())) / 1e10);
+        return (tokenAmount * 4 * 10**8) / 10**_token.decimals();
     }
 
     function truToToken(uint256 truAmount) external override view returns (uint256) {
