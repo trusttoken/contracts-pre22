@@ -28,9 +28,5 @@ const header = `/*
 */
 
 `
-export default async (contractName: string) => {
-  console.log(`${header}
-  ${await flattenSingleFile({ sourceDirectory: 'contracts' }, contractName)}`)
-  return `${header}
-  ${await flattenSingleFile({ sourceDirectory: 'contracts' }, contractName)}`
-}
+export default async (contractName: string) => `${header}
+${await flattenSingleFile({ sourceDirectory: 'contracts' }, contractName)}`

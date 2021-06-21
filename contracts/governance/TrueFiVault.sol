@@ -5,8 +5,8 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IVoteTokenWithERC20} from "./interface/IVoteToken.sol";
 import {IStkTruToken} from "./interface/IStkTruToken.sol";
-import {Initializable} from "../common/Initializable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 /**
  * @title TrueFiVault
@@ -17,14 +17,13 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
  * and cast votes in governance.
  *
  */
-contract TrueFiVault is Initializable {
+contract TrueFiVault is UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using SafeERC20 for IVoteTokenWithERC20;
 
     uint256 public constant DURATION = 365 days;
 
-    address public owner;
     address public beneficiary;
     uint256 public expiry;
     uint256 public withdrawn;
@@ -36,16 +35,16 @@ contract TrueFiVault is Initializable {
 
     function initialize(
         address _beneficiary,
-        address _finalOwner,
         uint256 _amount,
         uint256 _start,
         IVoteTokenWithERC20 _tru,
         IStkTruToken _stkTru
     ) external initializer {
+        UpgradeableClaimable.initialize(msg.sender);
+
         // Protect from accidental passing incorrect start timestamp
         require(_start >= block.timestamp, "TrueFiVault: lock start in the past");
         require(_start < block.timestamp + 90 days, "TrueFiVault: lock start too far in the future");
-        owner = _finalOwner;
         beneficiary = _beneficiary;
         expiry = _start.add(DURATION);
         tru = _tru;
@@ -64,14 +63,6 @@ contract TrueFiVault is Initializable {
      */
     modifier onlyBeneficiary() {
         require(msg.sender == beneficiary, "TrueFiVault: only beneficiary");
-        _;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(msg.sender == owner, "TrueFiVault: only owner");
         _;
     }
 
