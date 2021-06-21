@@ -28,7 +28,7 @@ commands:
             - ./venv
 
 jobs:
-  build:
+  setup:
     docker:
       - image: circleci/python:3-node
     steps:
@@ -36,6 +36,16 @@ jobs:
       - setup_remote_docker
       - pull_submodules
       - install_dependencies
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+  build:
+    docker:
+      - image: circleci/python:3-node
+    steps:
+      - attach_workspace:
+          at: .
       - run: yarn build
       - run: yarn typecheck
       - persist_to_workspace:
@@ -96,13 +106,16 @@ workflows:
   version: 2
   test:
     jobs:
-      - build
+      - setup
+      - build:
+          requires:
+            - setup
       - lint:
           requires:
-            - build
+            - setup
       - slither:
           requires:
-            - build
+            - setup
       - test-truefi:
           requires:
             - build
