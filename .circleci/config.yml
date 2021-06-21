@@ -28,18 +28,6 @@ commands:
             - ./venv
 
 jobs:
-  update-node:
-    machine: true
-    steps:
-      - checkout
-      - run:
-          name: Install node@v16.1.0
-          command: |
-            NVM_DIR="/opt/circleci/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            nvm install v16.1.0
-            nvm alias default v16.1.0
-            node -v
   build:
     docker:
       - image: circleci/python:3-node
@@ -108,7 +96,6 @@ workflows:
   version: 2
   test:
     jobs:
-      - update-node
       - build
       - lint:
           requires:
