@@ -451,6 +451,10 @@
     "usdt_CurveYearnStrategy": {
       "txHash": "0xb154752559b8bcb60543b07cbcf427356e631d8e635b4081de6015c073fba86e",
       "address": "0x0aF2ad636B6D396F9789C3427381fcB2f110E262"
+    },
+    "usdt_CurveYearnStrategy_proxy": {
+      "txHash": "0x558cb43809425cebd4152388e4bce489d6b290506ee0b4cb2881b98c85b86c24",
+      "address": "0x8D162Caa649e981E2a0b0ba5908A77f2536B11A8"
     }
   }
 }
