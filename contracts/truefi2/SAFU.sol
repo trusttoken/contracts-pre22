@@ -44,6 +44,13 @@ contract SAFU is UpgradeableClaimable {
      */
     event Liquidated(ILoanToken2 loan, uint256 repaid, uint256 deficit);
 
+    /**
+     * @dev Emitted when a loan deficit is reclaimed
+     * @param loan Defaulted loan, which deficit was reclaimed
+     * @param reclaimed Amount reclaimed by the pool
+     */
+    event Reclaimed(ILoanToken2 loan, uint256 reclaimed);
+
     function initialize(ILoanFactory2 _loanFactory, ILiquidator2 _liquidator) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         loanFactory = _loanFactory;
@@ -83,5 +90,14 @@ contract SAFU is UpgradeableClaimable {
         loan.redeem(amountToBurn);
         uint256 redeemedAmount = tokenBalance(loan.token()).sub(balanceBeforeRedeem);
         emit Redeemed(loan, amountToBurn, redeemedAmount);
+    }
+
+    function reclaim(ILoanToken2 loan) public {
+        require(loan.balanceOf(address(this)) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
+        uint256 deficit = loanDeficit[loan];
+        require(deficit > 0, "SAFU: Loan does not have any deficit");
+        loanDeficit[loan] = 0;
+        loan.token().transfer(address(loan.pool()), deficit);
+        emit Reclaimed(loan, deficit);
     }
 }

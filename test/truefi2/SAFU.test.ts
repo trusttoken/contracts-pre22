@@ -284,6 +284,61 @@ describe('SAFU', () => {
     })
   })
 
+  describe.only('reclaim', () => {
+    beforeEach(async () => {
+      await timeTravel(DAY * 400)
+      await loan.enterDefault()
+      await token.mint(safu.address, defaultAmount.div(2))
+      await safu.liquidate(loan.address)
+    })
+
+    describe('Reverts if', () => {
+      it('loan was not fully redeemed by safu', async () => {
+        await expect(safu.reclaim(loan.address))
+          .to.be.revertedWith('SAFU: Loan has to be fully redeemed by SAFU')
+      })
+
+      it('deficit on a loan has to be positive', async () => {
+        await token.mint(loan.address, defaultAmount)
+        await safu.redeem(loan.address)
+        await safu.reclaim(loan.address)
+        await expect(safu.reclaim(loan.address))
+          .to.be.revertedWith('SAFU: Loan does not have any deficit')
+      })
+    })
+
+    describe('Handles debt repay', () => {
+      beforeEach(async () => {
+        await token.mint(loan.address, defaultAmount)
+        await safu.redeem(loan.address)
+      })
+
+      it('sets loan deficit to 0', async () => {
+        await safu.reclaim(loan.address)
+        expect(await safu.loanDeficit(loan.address)).to.eq(0)
+      })
+
+      it('transfers deficit to the pool', async () => {
+        await expect(() => safu.reclaim(loan.address)).changeTokenBalance(token, pool, defaultAmount.div(2))
+      })
+
+      it('transfers deficit from the safu', async () => {
+        await expect(() => safu.reclaim(loan.address)).changeTokenBalance(token, safu, defaultAmount.div(2).mul(-1))
+      })
+
+      it('safu keeps excessive funds', async () => {
+        await safu.reclaim(loan.address)
+        expect(await token.balanceOf(safu.address)).to.eq(defaultAmount.div(2))
+      })
+
+      it('emits event', async () => {
+        await expect(safu.reclaim(loan.address))
+          .to.emit(safu, 'Reclaimed')
+          .withArgs(loan.address, defaultAmount.div(2))
+      })
+    })
+  })
+
   describe('redeem', () => {
     beforeEach(async () => {
       await timeTravel(DAY * 400)
