@@ -110,6 +110,7 @@ workflows:
   version: 2
   test:
     jobs:
+      - update-node
       - build
       - lint:
           requires:
