@@ -35,7 +35,8 @@ jobs:
       - run:
           name: Install node@v16.1.0
           command: |
-            ./load-nvm.sh
+            NVM_DIR="/opt/circleci/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             nvm install v16.1.0
             nvm alias default v16.1.0
 
