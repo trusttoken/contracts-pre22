@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture, createApprovedLoan, DAY, parseEth, parseTRU, setupTruefi2, timeTravel as _timeTravel } from 'utils'
+import { beforeEachWithFixture, createApprovedLoan, DAY, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
 import { Wallet } from 'ethers'
 
 import {
@@ -8,6 +8,7 @@ import {
   LoanToken2,
   LoanToken2__factory,
   MockTrueCurrency,
+  MockUsdc,
   Safu,
   StkTruToken,
   TrueFiPool2,
@@ -19,7 +20,7 @@ describe('SAFU', () => {
   let owner: Wallet, borrower: Wallet, voter: Wallet
 
   let safu: Safu
-  let token: MockTrueCurrency
+  let token: MockUsdc
   let loan: LoanToken2
   let loanFactory: LoanFactory2
   let pool: TrueFiPool2
@@ -34,19 +35,19 @@ describe('SAFU', () => {
   const YEAR = DAY * 365
   const defaultedLoanCloseTime = YEAR + DAY
 
-  const defaultAmount = parseEth(1100)
+  const defaultAmount = parseUSDC(1100)
 
   beforeEachWithFixture(async (_wallets, _provider) => {
     [owner, borrower, voter] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
-    ;({ safu, feeToken: token, pool, lender, loanFactory, tru, stkTru, rater, liquidator } = await setupTruefi2(owner))
+    ;({ safu, feeToken: token, feePool: pool, lender, loanFactory, tru, stkTru, rater, liquidator } = await setupTruefi2(owner))
 
-    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseEth(1000), YEAR, 1000, voter, _provider)
+    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000, voter, _provider)
 
-    await token.mint(owner.address, parseEth(1e7))
-    await token.approve(pool.address, parseEth(1e7))
-    await pool.connect(owner).join(parseEth(1e7))
+    await token.mint(owner.address, parseUSDC(1e7))
+    await token.approve(pool.address, parseUSDC(1e7))
+    await pool.connect(owner).join(parseUSDC(1e7))
     await lender.connect(borrower).fund(loan.address)
     await loan.connect(borrower).withdraw(borrower.address)
 
@@ -103,7 +104,7 @@ describe('SAFU', () => {
       })
 
       it('transfers LoanTokens that were partially taken from pool', async () => {
-        await pool.exit(parseEth(1e6))
+        await pool.exit(parseUSDC(1e6))
         await timeTravel(DAY * 400)
         await loan.enterDefault()
         await safu.liquidate(loan.address)
@@ -147,7 +148,7 @@ describe('SAFU', () => {
       describe('Safu has funds to cover, 90% of loan tokens are in pool', () => {
         beforeEach(async () => {
           await token.mint(safu.address, defaultAmount)
-          await pool.exit(parseEth(1e6))
+          await pool.exit(parseUSDC(1e6))
         })
 
         it('takes funds from safu', async () => {
@@ -202,7 +203,7 @@ describe('SAFU', () => {
       describe('Safu does not have funds to cover, 90% of loan tokens are in pool', () => {
         beforeEach(async () => {
           await token.mint(safu.address, defaultAmount.div(2))
-          await pool.exit(parseEth(1e6))
+          await pool.exit(parseUSDC(1e6))
         })
 
         it('takes funds from safu', async () => {
@@ -258,7 +259,7 @@ describe('SAFU', () => {
 
       describe('Half of loan repaid', () => {
         beforeEach(async () => {
-          await token.mint(loan.address, parseEth(550))
+          await token.mint(loan.address, parseUSDC(550))
         })
 
         it('0 tru in staking pool balance', async () => {
@@ -297,18 +298,18 @@ describe('SAFU', () => {
 
     it('burns loan tokens', async () => {
       await safu.liquidate(loan.address)
-      await expect(() => safu.redeem(loan.address)).changeTokenBalance(loan, safu, parseEth(1100).mul(-1))
+      await expect(() => safu.redeem(loan.address)).changeTokenBalance(loan, safu, parseUSDC(1100).mul(-1))
     })
 
     it('redeems available tokens', async () => {
       await safu.liquidate(loan.address)
-      await token.mint(loan.address, parseEth(25))
-      await expect(() => safu.redeem(loan.address)).changeTokenBalance(token, safu, parseEth(25))
+      await token.mint(loan.address, parseUSDC(25))
+      await expect(() => safu.redeem(loan.address)).changeTokenBalance(token, safu, parseUSDC(25))
     })
 
     it('emits a proper event', async () => {
       await safu.liquidate(loan.address)
-      await token.mint(loan.address, parseEth(25))
+      await token.mint(loan.address, parseUSDC(25))
 
       const loanTokensToBurn = await loan.balanceOf(safu.address)
       const currencyTokensToRedeem = await token.balanceOf(loan.address)

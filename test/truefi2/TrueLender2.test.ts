@@ -1,34 +1,24 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, DAY, parseEth, parseTRU, timeTravel } from 'utils'
+import { beforeEachWithFixture, createLoan, DAY, parseEth, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
-  ImplementationReference__factory,
   LoanToken2,
   LoanToken2__factory,
   MockErc20Token,
   MockErc20Token__factory,
-  PoolFactory__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
   TestTrueLender,
   TestTrueLender__factory,
   TrueRatingAgencyV2,
-  TrueRatingAgencyV2__factory,
   PoolFactory,
-  ArbitraryDistributor,
-  TrustToken,
-  TrustToken__factory,
-  ArbitraryDistributor__factory,
   StkTruToken,
-  StkTruToken__factory,
-  LinearTrueDistributor__factory,
-  MockTrueCurrency__factory,
   Mock1InchV3__factory,
   Mock1InchV3,
   LoanFactory2,
-  LoanFactory2__factory,
   MockTrueFiPoolOracle,
-  MockTrueFiPoolOracle__factory,
+  MockTrueCurrency,
+  MockUsdc,
 } from 'contracts'
 
 import {
@@ -36,14 +26,13 @@ import {
   LoanToken2Json,
 } from 'build'
 
-import { deployMockContract, MockProvider, solidity } from 'ethereum-waffle'
+import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
 
 use(solidity)
 
 describe('TrueLender2', () => {
-  let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
 
@@ -56,7 +45,6 @@ describe('TrueLender2', () => {
   let poolOracle: MockTrueFiPoolOracle
 
   let rater: TrueRatingAgencyV2
-  let arbitraryDistributor: ArbitraryDistributor
   let lender: TestTrueLender
 
   let counterfeitPool: TrueFiPool2
@@ -66,68 +54,41 @@ describe('TrueLender2', () => {
   let poolFactory: PoolFactory
 
   let stkTru: StkTruToken
-  let tru: TrustToken
-  let usdc: MockErc20Token
+  let tru: MockTrueCurrency
+  let usdc: MockUsdc
   let oneInch: Mock1InchV3
 
   const YEAR = DAY * 365
 
-  const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
-    const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, apy)
-    const loanAddress = (await loanTx.wait()).events[0].args.contractAddress
-    return new LoanToken2__factory(owner).attach(loanAddress)
-  }
+  let timeTravel: (time: number) => void
 
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, borrower] = wallets)
-    poolFactory = await deployContract(owner, PoolFactory__factory)
-    const poolImplementation = await deployContract(owner, TrueFiPool2__factory)
-    const implementationReference = await deployContract(owner, ImplementationReference__factory, [poolImplementation.address])
+    timeTravel = (time: number) => _timeTravel(_provider, time)
 
     lender = await deployContract(owner, TestTrueLender__factory)
-    await poolFactory.initialize(implementationReference.address, AddressZero, lender.address, AddressZero)
+    oneInch = await new Mock1InchV3__factory(owner).deploy()
 
-    stkTru = await deployContract(owner, StkTruToken__factory)
+    ;({ loanFactory, feePool, standardTokenOracle: poolOracle, rater, poolFactory, stkTru, tru, feeToken: usdc, lender } = await setupTruefi2(owner, { lender: lender, oneInch: oneInch }))
 
-    tru = await deployContract(owner, TrustToken__factory)
-    await tru.initialize()
-
-    usdc = await deployContract(owner, MockErc20Token__factory)
     token1 = await deployContract(owner, MockErc20Token__factory)
     token2 = await deployContract(owner, MockErc20Token__factory)
 
     await poolFactory.whitelist(token1.address, true)
     await poolFactory.whitelist(token2.address, true)
-    await poolFactory.whitelist(usdc.address, true)
 
     await poolFactory.createPool(token1.address)
     await poolFactory.createPool(token2.address)
-    await poolFactory.createPool(usdc.address)
 
     pool1 = TrueFiPool2__factory.connect(await poolFactory.pool(token1.address), owner)
     pool2 = TrueFiPool2__factory.connect(await poolFactory.pool(token2.address), owner)
+
     counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
     await counterfeitPool.initialize(token1.address, AddressZero, lender.address, AddressZero, owner.address, AddressZero)
-    feePool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
 
-    poolOracle = await deployContract(owner, MockTrueFiPoolOracle__factory, [token1.address])
     await pool1.setOracle(poolOracle.address)
 
-    const tfusd = await deployContract(owner, MockTrueCurrency__factory) // just for testing, change this in origination fees development
-    const trueDistributor = await deployContract(owner, LinearTrueDistributor__factory)
-    await stkTru.initialize(tru.address, tfusd.address, tfusd.address, trueDistributor.address, AddressZero)
-
-    rater = await deployContract(owner, TrueRatingAgencyV2__factory)
-    oneInch = await new Mock1InchV3__factory(owner).deploy()
-    await lender.initialize(stkTru.address, poolFactory.address, rater.address, oneInch.address)
     await lender.setFeePool(feePool.address)
-
-    arbitraryDistributor = await deployContract(owner, ArbitraryDistributor__factory)
-    await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(1e7))
-
-    loanFactory = await deployContract(owner, LoanFactory2__factory)
-    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero)
-    await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
 
     await token1.mint(owner.address, parseEth(1e7))
     await token2.mint(owner.address, parseEth(1e7))
@@ -136,26 +97,23 @@ describe('TrueLender2', () => {
     await pool1.join(parseEth(1e7))
     await pool2.join(parseEth(1e7))
 
-    await rater.allowChangingAllowances(owner.address, true)
     await rater.allow(borrower.address, true)
     await tru.mint(owner.address, parseTRU(15e6))
 
     await tru.approve(stkTru.address, parseTRU(15e6))
     await stkTru.stake(parseTRU(15e6))
-    await timeTravel(_provider, 1)
+    await timeTravel(1)
 
     loan1 = await createLoan(loanFactory, borrower, pool1, 100000, YEAR, 100)
 
     loan2 = await createLoan(loanFactory, borrower, pool2, 500000, YEAR, 1000)
-
-    provider = _provider
   })
 
   const approveLoanRating = async function (loan: LoanToken2) {
     await rater.connect(borrower).submit(loan.address)
     await rater.yes(loan.address)
 
-    await timeTravel(provider, 7 * DAY + 1)
+    await timeTravel(7 * DAY + 1)
   }
 
   describe('Initializer', () => {
@@ -323,7 +281,7 @@ describe('TrueLender2', () => {
       it('loan was not long enough under voting', async () => {
         await rater.connect(borrower).submit(loan1.address)
         await rater.yes(loan1.address)
-        await timeTravel(provider, 6 * DAY)
+        await timeTravel(6 * DAY)
 
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.be.revertedWith('TrueLender: Voting time is below minimum')
@@ -333,11 +291,11 @@ describe('TrueLender2', () => {
         await tru.mint(borrower.address, parseTRU(15e6))
         await tru.connect(borrower).approve(stkTru.address, parseTRU(15e6))
         await stkTru.connect(borrower).stake(parseTRU(14e6))
-        await timeTravel(provider, 1)
+        await timeTravel(1)
 
         await rater.connect(borrower).submit(loan1.address)
         await rater.connect(borrower).yes(loan1.address)
-        await timeTravel(provider, 7 * DAY + 1)
+        await timeTravel(7 * DAY + 1)
 
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.be.revertedWith('TrueLender: Not enough votes given for the loan')
@@ -346,7 +304,7 @@ describe('TrueLender2', () => {
       it('loan is predicted to be too risky', async () => {
         await rater.connect(borrower).submit(loan1.address)
         await rater.no(loan1.address)
-        await timeTravel(provider, 7 * DAY + 1)
+        await timeTravel(7 * DAY + 1)
 
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.be.revertedWith('TrueLender: Loan risk is too high')
@@ -448,16 +406,16 @@ describe('TrueLender2', () => {
     })
 
     it('value should increase with time', async () => {
-      await timeTravel(provider, DAY / 2)
+      await timeTravel(DAY / 2)
       expect(await lender.value(pool1.address)).to.equal(200002)
       expect(await lender.value(pool2.address)).to.equal(500068)
     })
 
     it('value stops increasing after term passes', async () => {
-      await timeTravel(provider, YEAR)
+      await timeTravel(YEAR)
       expect(await lender.value(pool1.address)).to.equal(201002)
       expect(await lender.value(pool2.address)).to.equal(550000)
-      await timeTravel(provider, YEAR * 10)
+      await timeTravel(YEAR * 10)
       expect(await lender.value(pool1.address)).to.equal(201002)
       expect(await lender.value(pool2.address)).to.equal(550000)
     })
@@ -506,7 +464,7 @@ describe('TrueLender2', () => {
     })
 
     it('defaulted loans can only be reclaimed by owner', async () => {
-      await timeTravel(provider, YEAR * 2)
+      await timeTravel(YEAR * 2)
       await loan1.enterDefault()
       await expect(lender.connect(borrower).reclaim(loan1.address, '0x'))
         .to.be.revertedWith('TrueLender: Only owner can reclaim from defaulted loan')
@@ -619,7 +577,7 @@ describe('TrueLender2', () => {
       })
 
       it('reverts if small USDC amount is returned', async () => {
-        await oneInch.setOutputAmount(parseEth(24))
+        await oneInch.setOutputAmount(parseUSDC(24))
         const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee)
         await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('TrueLender: Fee returned from swap is too small')
       })
