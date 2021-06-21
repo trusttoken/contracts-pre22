@@ -28,6 +28,20 @@ commands:
             - ./venv
 
 jobs:
+  update-node:
+    steps:
+      - run:
+        name: Install  Node.js 16.1.0 with build in nvm tool
+        # https://www.cloudesire.com/how-to-upgrade-node-on-circleci-machine-executor/
+        command: |
+          export NVM_DIR="/opt/circleci/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          nvm install v16.1.0 && nvm use v16.1.0 && nvm alias default v16.1.0
+          node -v
+      - run:
+        name: Check node version
+        command: |
+          node -v
   build:
     docker:
       - image: circleci/python:3-node
