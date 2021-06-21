@@ -11,14 +11,13 @@ const ONE_INCH = '0x11111112542d85b3ef69ae05771c2dccff4faa26'
 deploy({}, () => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
 
-  // const poolFactory = proxy(contract(PoolFactory), () => {})
-  // const usdcPool = poolFactory.pool(USDC)
-  // const usdtPool = poolFactory.pool(USDT)
-  const usdcPool = '0xA991356d261fbaF194463aF6DF8f0464F8f1c742'
-  const usdtPool = '0x6002b1dcB26E7B1AA797A17551C6F487923299d7'
+  const poolFactory = proxy(contract(PoolFactory), () => {})
 
   const usdc_CurveYearnStrategy = proxy(contract('usdc_CurveYearnStrategy', CurveYearnStrategy), () => {})
   const usdt_CurveYearnStrategy = proxy(contract('usdt_CurveYearnStrategy', CurveYearnStrategy), () => {})
+
+  const usdcPool = poolFactory.pool(USDC)
+  const usdtPool = poolFactory.pool(USDT)
 
   const oracle = contract(CrvPriceOracle)
   runIf(usdc_CurveYearnStrategy.isInitialized().not(), () => usdc_CurveYearnStrategy.initialize(usdcPool, CURVE_POOL, GAUGE, MINTER, ONE_INCH, oracle, 1))
