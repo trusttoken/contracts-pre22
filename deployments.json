@@ -447,6 +447,10 @@
     "trueFiCreditOracle_proxy": {
       "txHash": "0xdd6e5f89621e4060cfce40a90b8a0d87e585805377892c827f9b69c3050dde2d",
       "address": "0x73581551665680696946f568259977Da02e8712A"
+    },
+    "usdt_CurveYearnStrategy": {
+      "txHash": "0xb154752559b8bcb60543b07cbcf427356e631d8e635b4081de6015c073fba86e",
+      "address": "0x0aF2ad636B6D396F9789C3427381fcB2f110E262"
     }
   }
 }
