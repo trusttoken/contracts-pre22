@@ -12,10 +12,10 @@ deploy({}, () => {
 
   const poolFactory = proxy(contract(PoolFactory), () => {})
 
-  const curveStrategy = proxy(contract(CurveYearnStrategy), () => {})
+  const usdc_CurveYearnStrategy = proxy(contract('usdc_CurveYearnStrategy', CurveYearnStrategy), () => {})
 
   const usdcPool = poolFactory.pool(USDC)
 
   const oracle = contract(CrvPriceOracle)
-  runIf(curveStrategy.isInitialized().not(), () => curveStrategy.initialize(usdcPool, CURVE_POOL, GAUGE, MINTER, ONE_INCH, oracle, 1))
+  runIf(usdc_CurveYearnStrategy.isInitialized().not(), () => usdc_CurveYearnStrategy.initialize(usdcPool, CURVE_POOL, GAUGE, MINTER, ONE_INCH, oracle, 1))
 })
