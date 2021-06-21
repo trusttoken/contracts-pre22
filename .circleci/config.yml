@@ -39,10 +39,7 @@ jobs:
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             nvm install v16.1.0
             nvm alias default v16.1.0
-
-      - run: |
-          ./load-nvm.sh
-          npm version
+            node -v
   build:
     docker:
       - image: circleci/python:3-node
