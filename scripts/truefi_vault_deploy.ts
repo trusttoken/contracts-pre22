@@ -13,7 +13,6 @@ import {
 const beneficiary = '' // Beneficiary
 const amount = '' // (8 Decimals)
 const start = '0' // Unix Time
-const finalOwner = '0x16cEa306506c387713C70b9C1205fd5aC997E78E' // Multisig
 const txnArgs = { gasLimit: 1_000_000, gasPrice: 20_000_000_000 }
 
 // mainnet
@@ -49,12 +48,8 @@ async function deployTrueFiVault () {
   // initialize and transfer
   await (await tru.approve(vault.address, amount)).wait()
   console.log(`Approved: ${amount} TRU`)
-  await (await vault.initialize(beneficiary, finalOwner, amount, start, truAddress, stkTruAddress, txnArgs)).wait()
+  await (await vault.initialize(beneficiary, amount, start, truAddress, stkTruAddress, txnArgs)).wait()
   console.log(`Locked: ${amount} TRU`)
-  if (network === 'mainnet') {
-    await (await vaultProxy.transferProxyOwnership(finalOwner)).wait()
-    console.log(`Transfereed Proxy Ownership to: ${finalOwner}`)
-  }
 }
 
 deployTrueFiVault().catch(console.error)
