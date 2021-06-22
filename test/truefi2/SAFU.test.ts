@@ -284,7 +284,7 @@ describe('SAFU', () => {
     })
   })
 
-  describe.only('reclaim', () => {
+  describe('reclaim', () => {
     beforeEach(async () => {
       await timeTravel(DAY * 400)
       await loan.enterDefault()
