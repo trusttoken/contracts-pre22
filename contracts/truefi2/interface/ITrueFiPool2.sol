@@ -5,6 +5,7 @@ import {ERC20, IERC20} from "../../common/UpgradeableERC20.sol";
 import {ITrueLender2, ILoanToken2} from "../interface/ITrueLender2.sol";
 import {ITrueFiPoolOracle} from "./ITrueFiPoolOracle.sol";
 import {I1Inch3} from "./I1Inch3.sol";
+import {ISAFU} from "./ISAFU.sol";
 
 interface ITrueFiPool2 is IERC20 {
     function initialize(
@@ -12,7 +13,7 @@ interface ITrueFiPool2 is IERC20 {
         ERC20 _stakingToken,
         ITrueLender2 _lender,
         I1Inch3 __1Inch,
-        address safu,
+        ISAFU safu,
         address __owner
     ) external;
 
