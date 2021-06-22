@@ -10,16 +10,19 @@ set -eu
 DEPLOY_SCRIPT="$1"
 shift 1
 
-# Prompt the user for a PRIVATE_KEY without echoing to bash output.
-# Then export PRIVATE_KEY to an environment variable that won't get
-# leaked to bash history.
-#
-# WARNING: environment variables are still leaked to the process table
-# while a process is running, and hence visible in a call to `ps -E`.
-echo "Enter a private key (0x{64 hex chars}) for contract deployment,"
-echo "or leave blank if performing a dry run without authorization."
-read -s -p "PRIVATE_KEY=" PRIVATE_KEY
-export PRIVATE_KEY
+# Skip PRIVATE_KEY prompt if --yes flag passed
+if [[ ! " $@ " =~ " --yes " ]]; then
+  # Prompt the user for a PRIVATE_KEY without echoing to bash output.
+  # Then export PRIVATE_KEY to an environment variable that won't get
+  # leaked to bash history.
+  #
+  # WARNING: environment variables are still leaked to the process table
+  # while a process is running, and hence visible in a call to `ps -E`.
+  echo "Enter a private key (0x{64 hex chars}) for contract deployment,"
+  echo "or leave blank if performing a dry run without authorization."
+  read -s -p "PRIVATE_KEY=" PRIVATE_KEY
+  export PRIVATE_KEY
+fi
 export INFURA_KEY="ec659e9f6af4425c8a13aeb0af9f2809"
 export ETHERSCAN_KEY="XQPPJGFR4J3I6PEISYEG4JPETFZ2EF56EX"
 
