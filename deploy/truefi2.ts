@@ -135,6 +135,10 @@ deploy({}, (_, config) => {
   runIf(usdc_TrueFiPool2_TrueFarm.isInitialized().not(), () => {
     usdc_TrueFiPool2_TrueFarm.initialize(usdc_TrueFiPool2, usdc_TrueFiPool2_LinearTrueDistributor, 'TrueFi tfUSDC Farm')
   })
+  runIf(poolFactory.pool(usdt).equals(AddressZero), () => {
+    poolFactory.whitelist(usdt, true)
+    poolFactory.createPool(usdt)
+  })
   const usdt_TrueFiPool2 = poolFactory.pool(usdt)
   runIf(usdt_TrueFiPool2_LinearTrueDistributor.isInitialized().not(), () => {
     usdt_TrueFiPool2_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
