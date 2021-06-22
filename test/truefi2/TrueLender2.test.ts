@@ -641,5 +641,11 @@ describe('TrueLender2', () => {
       await expect(lender.testTransferAllLoanTokens(loan1.address, owner.address))
         .to.emit(loan1, 'Transfer').withArgs(lender.address, owner.address, balance)
     })
+
+    it('removes LT from the list', async () => {
+      expect(await lender.loans(pool1.address)).to.deep.equal([loan1.address])
+      await lender.testTransferAllLoanTokens(loan1.address, owner.address)
+      expect(await lender.loans(pool1.address)).to.deep.equal([])
+    })
   })
 })

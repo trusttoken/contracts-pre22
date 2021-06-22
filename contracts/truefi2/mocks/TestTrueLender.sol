@@ -19,6 +19,6 @@ contract TestTrueLender is TrueLender2 {
     }
 
     function testTransferAllLoanTokens(ILoanToken2 loan, address recipient) external {
-        _transferLoan(loan, recipient, 1, 1);
+        _transferAllLoanTokens(loan, recipient);
     }
 }
