@@ -93,7 +93,7 @@ contract SAFU is UpgradeableClaimable {
     }
 
     function reclaim(ILoanToken2 loan) external {
-        require(loan.balanceOf(address(this)) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
+        require(tokenBalance(loan) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
         uint256 deficit = loanDeficit[loan];
         require(deficit > 0, "SAFU: Loan does not have any deficit");
         loanDeficit[loan] = 0;
