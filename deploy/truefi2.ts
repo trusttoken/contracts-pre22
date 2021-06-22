@@ -5,6 +5,7 @@ import {
   Liquidator2,
   LoanFactory2, Mock1InchV3,
   TestUSDCToken,
+  TestUSDTToken,
   OwnedUpgradeabilityProxy,
   PoolFactory,
   StkTruToken,
@@ -64,7 +65,9 @@ deploy({}, (_, config) => {
   const usdc = isMainnet
     ? deployParams['mainnet'].USDC
     : contract(TestUSDCToken)
-  const usdt = deployParams['mainnet'].USDT
+  const usdt = isMainnet
+    ? deployParams['mainnet'].USDT
+    : contract(TestUSDTToken)
   const trueRatingAgencyV2 = proxy(contract(TrueRatingAgencyV2), () => {})
 
   // New contract impls
