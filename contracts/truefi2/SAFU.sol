@@ -25,6 +25,7 @@ contract SAFU is UpgradeableClaimable {
     ILiquidator2 public liquidator;
 
     mapping(ILoanToken2 => uint256) public loanDeficit;
+    mapping(ITrueFiPool2 => uint256) public poolDeficit;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -75,6 +76,7 @@ contract SAFU is UpgradeableClaimable {
             deficit = owedToPool.sub(safuTokenBalance);
             toTransfer = safuTokenBalance;
             loanDeficit[loan] = deficit;
+            poolDeficit[loan.pool()] = poolDeficit[loan.pool()].add(deficit);
         }
         token.safeTransfer(address(pool), toTransfer);
         emit Liquidated(loan, toTransfer, deficit);
@@ -97,6 +99,7 @@ contract SAFU is UpgradeableClaimable {
         uint256 deficit = loanDeficit[loan];
         require(deficit > 0, "SAFU: Loan does not have any deficit");
         loanDeficit[loan] = 0;
+        poolDeficit[loan.pool()] = poolDeficit[loan.pool()].sub(deficit);
         loan.token().transfer(address(loan.pool()), deficit);
         emit Reclaimed(loan, deficit);
     }
