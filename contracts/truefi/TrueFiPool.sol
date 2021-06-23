@@ -367,13 +367,21 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     }
 
     /**
+     * @dev Return pool deficiency value, to be returned by safu
+     * @return pool deficiency value
+     */
+    function deficitValue() public view returns (uint256) {
+        return safu.poolDeficit(address(this));
+    }
+
+    /**
      * @dev Calculate pool value in TUSD
      * "virtual price" of entire pool - LoanTokens, TUSD, curve y pool tokens
      * @return pool value in USD
      */
     function poolValue() public view returns (uint256) {
         // this assumes defaulted loans are worth their full value
-        return liquidValue().add(loansValue()).add(crvValue());
+        return liquidValue().add(loansValue()).add(crvValue()).add(deficitValue());
     }
 
     /**
