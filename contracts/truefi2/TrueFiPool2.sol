@@ -12,6 +12,7 @@ import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2, ILoanToken2} from "./interface/ITrueLender2.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
+import {ISAFU} from "./interface/ISAFU.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
@@ -54,7 +55,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    uint8 public constant VERSION = 0;
+    uint8 public constant VERSION = 1;
 
     ERC20 public override token;
 
@@ -86,7 +87,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     I1Inch3 public _1Inch;
 
-    address public safu;
+    ISAFU public safu;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -105,7 +106,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         ERC20 _liquidationToken,
         ITrueLender2 _lender,
         I1Inch3 __1Inch,
-        address _safu,
+        ISAFU _safu,
         address __owner
     ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
@@ -200,7 +201,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Emitted when SAFU address is changed
      * @param newSafu New SAFU address
      */
-    event SafuChanged(address newSafu);
+    event SafuChanged(ISAFU newSafu);
 
     /**
      * @dev only lender can perform borrowing or repaying
@@ -247,7 +248,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     /**
      * @dev Change SAFU address
      */
-    function setSafuAddress(address _safu) external onlyOwner {
+    function setSafuAddress(ISAFU _safu) external onlyOwner {
         safu = _safu;
         emit SafuChanged(_safu);
     }
@@ -289,7 +290,18 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     function poolValue() public view returns (uint256) {
         // this assumes defaulted loans are worth their full value
-        return liquidValue().add(loansValue());
+        return liquidValue().add(loansValue()).add(deficitValue());
+    }
+
+    /**
+     * @dev Return pool deficiency value, to be returned by safu
+     * @return pool deficiency value
+     */
+    function deficitValue() public view returns (uint256) {
+        if (address(safu) == address(0)) {
+            return 0;
+        }
+        return safu.poolDeficit(address(this));
     }
 
     /**
@@ -586,7 +598,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Currency token balance
      * @return Currency token balance
      */
-    function currencyBalance() internal view returns (uint256) {
+    function currencyBalance() public view returns (uint256) {
         return token.balanceOf(address(this)).sub(claimableFees);
     }
 

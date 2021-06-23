@@ -14,7 +14,7 @@ import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 import {ABDKMath64x64} from "./Log.sol";
 import {ICrvPriceOracle} from "./interface/ICrvPriceOracle.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
-import {ITrueFiPool2, ITrueFiPoolOracle, ITrueLender2, ILoanToken2} from "../truefi2/interface/ITrueFiPool2.sol";
+import {ITrueFiPool2, ITrueFiPoolOracle, ITrueLender2, ILoanToken2, ISAFU} from "../truefi2/interface/ITrueFiPool2.sol";
 import {PoolExtensions} from "../truefi2/PoolExtensions.sol";
 
 /**
@@ -76,7 +76,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
 
     ITrueLender2 public _lender2;
 
-    address public safu;
+    ISAFU public safu;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -169,7 +169,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @dev Emitted when SAFU address is changed
      * @param newSafu New SAFU address
      */
-    event SafuChanged(address newSafu);
+    event SafuChanged(ISAFU newSafu);
 
     /**
      * @dev only lender can perform borrowing or repaying
@@ -290,7 +290,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     /**
      * @dev Change SAFU address
      */
-    function setSafuAddress(address _safu) external onlyOwner {
+    function setSafuAddress(ISAFU _safu) external onlyOwner {
         safu = _safu;
         emit SafuChanged(_safu);
     }
@@ -367,13 +367,24 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     }
 
     /**
+     * @dev Return pool deficiency value, to be returned by safu
+     * @return pool deficiency value
+     */
+    function deficitValue() public view returns (uint256) {
+        if (address(safu) == address(0)) {
+            return 0;
+        }
+        return safu.poolDeficit(address(this));
+    }
+
+    /**
      * @dev Calculate pool value in TUSD
      * "virtual price" of entire pool - LoanTokens, TUSD, curve y pool tokens
      * @return pool value in USD
      */
     function poolValue() public view returns (uint256) {
         // this assumes defaulted loans are worth their full value
-        return liquidValue().add(loansValue()).add(crvValue());
+        return liquidValue().add(loansValue()).add(crvValue()).add(deficitValue());
     }
 
     /**

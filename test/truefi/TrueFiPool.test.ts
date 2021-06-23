@@ -32,7 +32,7 @@ import {
   TrueLender__factory,
   MockTrueFiPoolOracle__factory,
 } from 'contracts'
-import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyJson } from 'build'
+import { ICurveGaugeJson, ICurveMinterJson, SAFUJson, TrueRatingAgencyJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -41,7 +41,7 @@ describe('TrueFiPool', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
-  let safu: Wallet
+  let safu: MockContract
   let token: MockErc20Token
   let trustToken: MockErc20Token
   let mockStakingPool: MockStakingPool
@@ -57,7 +57,7 @@ describe('TrueFiPool', () => {
   const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner, borrower, safu] = wallets
+    [owner, borrower] = wallets
     token = await new MockErc20Token__factory(owner).deploy()
     await token.mint(owner.address, includeFee(parseEth(1e7)))
     trustToken = await new MockErc20Token__factory(owner).deploy()
@@ -78,6 +78,8 @@ describe('TrueFiPool', () => {
     lender = await new TrueLender__factory(owner).deploy()
     const truOracle = await new MockTrueFiPoolOracle__factory(owner).deploy(token.address)
     const crvOracle = await new MockCrvPriceOracle__factory(owner).deploy()
+    safu = await deployMockContract(owner, SAFUJson.abi)
+    await safu.mock.poolDeficit.returns(0)
     await pool.initialize(
       curvePool.address,
       mockCurveGauge.address,
@@ -88,6 +90,7 @@ describe('TrueFiPool', () => {
       truOracle.address,
       crvOracle.address,
     )
+    await pool.setSafuAddress(safu.address)
 
     await lender.initialize(pool.address, mockRatingAgency.address, mockStakingPool.address)
     provider = _provider
@@ -211,6 +214,7 @@ describe('TrueFiPool', () => {
     })
 
     it('properly changes SAFU address', async () => {
+      await pool.setSafuAddress(AddressZero)
       expect(await pool.safu()).to.equal(AddressZero)
       await pool.setSafuAddress(safu.address)
       expect(await pool.safu()).to.equal(safu.address)
@@ -708,6 +712,8 @@ describe('TrueFiPool', () => {
     })
 
     it('transfers all LTs to the safu', async () => {
+      const safu = borrower
+      await pool.setSafuAddress(safu.address)
       await pool.connect(safu).liquidate(loan.address)
       expect(await loan.balanceOf(safu.address)).to.equal(await loan.totalSupply())
     })

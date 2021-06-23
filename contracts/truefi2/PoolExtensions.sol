@@ -3,17 +3,18 @@ pragma solidity 0.6.10;
 
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {ISAFU} from "./interface/ISAFU.sol";
 
 /**
  * @dev Library that has shared functions between legacy TrueFi Pool and Pool2
  */
 library PoolExtensions {
     function _liquidate(
-        address safu,
+        ISAFU safu,
         ILoanToken2 loan,
         ITrueLender2 lender
     ) internal {
-        require(msg.sender == safu, "TrueFiPool: Should be called by SAFU");
-        lender.transferAllLoanTokens(loan, safu);
+        require(msg.sender == address(safu), "TrueFiPool: Should be called by SAFU");
+        lender.transferAllLoanTokens(loan, address(safu));
     }
 }
