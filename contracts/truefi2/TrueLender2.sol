@@ -357,9 +357,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         if (feeAmount == 0) {
             return 0;
         }
-        uint256 balanceBefore = feeToken.balanceOf(address(this));
-        I1Inch3.SwapDescription memory swap = _1inch.exchange(data);
-        uint256 balanceDiff = feeToken.balanceOf(address(this)).sub(balanceBefore);
+        (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1inch.exchange(data);
         uint256 expectedDiff = pool.oracle().tokenToUsd(feeAmount).mul(10**feeToken.decimals()).div(1 ether);
 
         require(

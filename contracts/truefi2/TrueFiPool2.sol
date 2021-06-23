@@ -572,13 +572,9 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     }
 
     function sellLiquidationToken(bytes calldata data) external {
-        uint256 balanceBefore = token.balanceOf(address(this));
-
-        I1Inch3.SwapDescription memory swap = _1Inch.exchange(data);
+        (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1Inch.exchange(data);
 
         uint256 expectedGain = oracle.truToToken(swap.amount);
-
-        uint256 balanceDiff = token.balanceOf(address(this)).sub(balanceBefore);
         require(balanceDiff >= withToleratedSlippage(expectedGain), "TrueFiPool: Not optimal exchange");
 
         require(swap.srcToken == address(liquidationToken), "TrueFiPool: Source token is not TRU");
