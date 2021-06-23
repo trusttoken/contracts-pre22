@@ -412,7 +412,24 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param recipient expected to be SAFU address
      */
     function transferAllLoanTokens(ILoanToken2 loan, address recipient) external override onlyPool {
-        _transferLoan(loan, recipient, 1, 1);
+        _transferAllLoanTokens(loan, recipient);
+    }
+
+    function _transferAllLoanTokens(ILoanToken2 loan, address recipient) internal {
+        // find the token, transfer to SAFU and remove loan from loans list
+        ILoanToken2[] storage _loans = poolLoans[loan.pool()];
+        for (uint256 index = 0; index < _loans.length; index++) {
+            if (_loans[index] == loan) {
+                _loans[index] = _loans[_loans.length - 1];
+                _loans.pop();
+
+                _transferLoan(loan, recipient, 1, 1);
+                return;
+            }
+        }
+        // If we reach this, it means loanToken was not present in _loans array
+        // This prevents invalid loans from being reclaimed
+        revert("TrueLender: This loan has not been funded by the lender");
     }
 
     /**
