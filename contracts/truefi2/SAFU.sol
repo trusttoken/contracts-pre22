@@ -10,8 +10,9 @@ import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ILiquidator2} from "./interface/ILiquidator2.sol";
+import {ISAFU} from "./interface/ISAFU.sol";
 
-contract SAFU is UpgradeableClaimable {
+contract SAFU is ISAFU, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -25,6 +26,7 @@ contract SAFU is UpgradeableClaimable {
     ILiquidator2 public liquidator;
 
     mapping(ILoanToken2 => uint256) public loanDeficit;
+    mapping(address => uint256) public override poolDeficit;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -75,6 +77,7 @@ contract SAFU is UpgradeableClaimable {
             deficit = owedToPool.sub(safuTokenBalance);
             toTransfer = safuTokenBalance;
             loanDeficit[loan] = deficit;
+            poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].add(deficit);
         }
         token.safeTransfer(address(pool), toTransfer);
         emit Liquidated(loan, toTransfer, deficit);
@@ -97,6 +100,7 @@ contract SAFU is UpgradeableClaimable {
         uint256 deficit = loanDeficit[loan];
         require(deficit > 0, "SAFU: Loan does not have any deficit");
         loanDeficit[loan] = 0;
+        poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].sub(deficit);
         loan.token().transfer(address(loan.pool()), deficit);
         emit Reclaimed(loan, deficit);
     }

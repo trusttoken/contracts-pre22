@@ -46,7 +46,7 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
   await lender.initialize(stkTru.address, poolFactory.address, rater.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await safu.initialize(loanFactory.address, liquidator.address)
-  await poolFactory.initialize(implementationReference.address, stkTru.address, lender.address, safu.address)
+  await poolFactory.initialize(implementationReference.address, tru.address, lender.address, safu.address)
 
   await poolFactory.whitelist(feeToken.address, true)
   await poolFactory.createPool(feeToken.address)
@@ -57,6 +57,9 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   await poolFactory.createPool(standardToken.address)
   const standardPool = poolImplementation.attach(await poolFactory.pool(standardToken.address))
   await standardPool.setOracle(standardTokenOracle.address)
+
+  await liquidator.setTokenApproval(feeToken.address, true)
+  await liquidator.setTokenApproval(standardToken.address, true)
 
   await lender.setFee(0)
   await rater.allowChangingAllowances(owner.address, true)
