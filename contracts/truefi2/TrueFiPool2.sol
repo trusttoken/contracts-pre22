@@ -298,6 +298,9 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @return pool deficiency value
      */
     function deficitValue() public view returns (uint256) {
+        if (address(safu) == address(0)) {
+            return 0;
+        }
         return safu.poolDeficit(address(this));
     }
 

@@ -271,6 +271,11 @@ describe('TrueFiPool2', () => {
     it('returns correct deficit value', async () => {
       expect(await tusdPool.deficitValue()).to.eq(500136)
     })
+
+    it('returns 0 if no safu address set', async () => {
+      await tusdPool.setSafuAddress(AddressZero)
+      expect(await tusdPool.deficitValue()).to.eq(0)
+    })
   })
 
   describe('poolValue', () => {

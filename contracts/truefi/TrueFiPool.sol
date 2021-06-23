@@ -371,6 +371,9 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @return pool deficiency value
      */
     function deficitValue() public view returns (uint256) {
+        if (address(safu) == address(0)) {
+            return 0;
+        }
         return safu.poolDeficit(address(this));
     }
 
