@@ -590,7 +590,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Currency token balance
      * @return Currency token balance
      */
-    function currencyBalance() internal view returns (uint256) {
+    function currencyBalance() public view returns (uint256) {
         return token.balanceOf(address(this)).sub(claimableFees);
     }
 
