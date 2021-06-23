@@ -250,6 +250,14 @@
       "txHash": "0xa50edf039a7282d5c68e5ce7d4eae499320131250c32700c5d565d0e6603d6e9",
       "address": "0x84CD64C65D48Ae9dDF8eF324A8c5dC571e5f3833"
     },
+    "usdt_TrueFiPool2_LinearTrueDistributor_proxy": {
+      "txHash": "0x04922cb49a012a427e93b9e7735c3a9e38abd467dc2594568983050526097263",
+      "address": "0xAeB550d2Fe2373C4EB81d3bE9BC7D33731EfA8eD"
+    },
+    "usdt_TrueFiPool2_TrueFarm_proxy": {
+      "txHash": "0xb74c9e20dd97be6902b6b8d4166fbd50ff7fa51e0333b2b94ae2c85876aa0f24",
+      "address": "0xEFE2709D623a19493A9F9AAf1Cf50029D30567fC"
+    },
     "sAFU_proxy": {
       "txHash": "0x2d415ad00f64fa2ffa1bb327df6d26861442d35aa2ecca8cc2d0b7dcc20244af",
       "address": "0xD8bCC7Bdf3D2E6F3F865f1060cf814C51f5F9C17"
