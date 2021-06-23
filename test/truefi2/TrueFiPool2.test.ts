@@ -1,37 +1,31 @@
 import { expect, use } from 'chai'
 import {
-  ImplementationReference,
-  ImplementationReference__factory,
-  LinearTrueDistributor__factory,
   LoanToken2,
-  LoanToken2__factory,
   MockErc20Token,
-  MockErc20Token__factory,
   MockStrategy,
   MockStrategy__factory,
   BadStrategy,
   BadStrategy__factory,
-  PoolFactory,
-  PoolFactory__factory,
-  StkTruToken__factory,
   TrueFiPool2,
-  TrueFiPool2__factory,
   TrueLender2,
-  TrueLender2__factory,
   Pool2ArbitrageTest__factory,
   StkTruToken,
+  MockTrueCurrency,
+  TrueRatingAgencyV2,
+  LoanFactory2,
+  Safu,
 } from 'contracts'
 import {
   ITrueFiPoolOracleJson,
 } from 'build'
-import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
+import { deployMockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 import { parseEth } from 'utils/parseEth'
 import { AddressZero } from '@ethersproject/constants'
-import { DAY, expectCloseTo, expectScaledCloseTo, parseTRU, timeTravel } from 'utils'
+import { createApprovedLoan, DAY, expectCloseTo, expectScaledCloseTo, setupTruefi2, timeTravel as _timeTravel } from 'utils'
 import { Deployer, setupDeploy } from 'scripts/utils'
-import { TrueRatingAgencyV2Json } from 'build'
+import { beforeEach } from 'mocha'
 
 use(solidity)
 
@@ -39,54 +33,46 @@ describe('TrueFiPool2', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
-  let safu: Wallet
-  let tusd: MockErc20Token
-  let stakingPool: StkTruToken
+  let tusd: MockTrueCurrency
+  let tru: MockTrueCurrency
+  let stkTru: StkTruToken
   let liquidationToken: MockErc20Token
-  let implementationReference: ImplementationReference
-  let poolImplementation: TrueFiPool2
-  let pool: TrueFiPool2
-  let poolFactory: PoolFactory
+  let tusdPool: TrueFiPool2
+  let loanFactory: LoanFactory2
   let lender: TrueLender2
-  let rater: MockContract
+  let rater: TrueRatingAgencyV2
+  let loan: LoanToken2
+  let safu: Safu
   let deployContract: Deployer
   let poolStrategy1: MockStrategy
   let poolStrategy2: MockStrategy
   let badPoolStrategy: BadStrategy
 
+  let timeTravel: (time: number) => void
+
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner, borrower, safu] = wallets
+    [owner, borrower] = wallets
     deployContract = setupDeploy(owner)
+    timeTravel = (time: number) => _timeTravel(_provider, time)
+    provider = _provider
 
-    stakingPool = await deployContract(StkTruToken__factory)
-    liquidationToken = await deployContract(MockErc20Token__factory)
-    tusd = await deployContract(MockErc20Token__factory)
-    poolFactory = await deployContract(PoolFactory__factory)
-    poolImplementation = await deployContract(TrueFiPool2__factory)
-    implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
-    lender = await deployContract(TrueLender2__factory)
-    rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
+    ;({ stkTru,
+      tru,
+      standardToken: tusd,
+      rater,
+      lender,
+      standardPool: tusdPool,
+      loanFactory,
+      safu,
+    } = await setupTruefi2(owner))
 
-    await poolFactory.initialize(implementationReference.address, liquidationToken.address, lender.address, safu.address)
-    await poolFactory.whitelist(tusd.address, true)
-    await poolFactory.createPool(tusd.address)
+    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, tusdPool, 500000, DAY, 1000, owner, provider)
 
-    pool = poolImplementation.attach(await poolFactory.pool(tusd.address))
-
-    const distributor = await deployContract(LinearTrueDistributor__factory)
-    await stakingPool.initialize(stakingPool.address, pool.address, AddressZero, distributor.address, AddressZero)
-
-    await lender.initialize(stakingPool.address, poolFactory.address, rater.address, AddressZero)
-    await lender.setFee(0)
-    await stakingPool.setPayerWhitelistingStatus(lender.address, true)
-
-    poolStrategy1 = await deployContract(MockStrategy__factory, tusd.address, pool.address)
-    poolStrategy2 = await deployContract(MockStrategy__factory, tusd.address, pool.address)
-    badPoolStrategy = await deployContract(BadStrategy__factory, tusd.address, pool.address)
+    poolStrategy1 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
+    poolStrategy2 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
+    badPoolStrategy = await deployContract(BadStrategy__factory, tusd.address, tusdPool.address)
 
     await tusd.mint(owner.address, parseEth(1e7))
-
-    provider = _provider
   })
 
   const currencyBalanceOf = async (pool: TrueFiPool2) => (
@@ -100,91 +86,91 @@ describe('TrueFiPool2', () => {
 
   describe('initializer', () => {
     it('sets corresponding token', async () => {
-      expect(await pool.token()).to.equal(tusd.address)
+      expect(await tusdPool.token()).to.equal(tusd.address)
     })
 
     it('sets liquidation token', async () => {
-      expect(await pool.liquidationToken()).to.eq(liquidationToken.address)
+      expect(await tusdPool.liquidationToken()).to.eq(tru.address)
     })
 
     it('sets lender', async () => {
-      expect(await pool.lender()).to.eq(lender.address)
+      expect(await tusdPool.lender()).to.eq(lender.address)
     })
 
     it('sets no initial joiningFee', async () => {
-      expect(await pool.joiningFee()).to.eq(0)
+      expect(await tusdPool.joiningFee()).to.eq(0)
     })
 
     it('sets erc20 params', async () => {
-      expect(await pool.name()).to.equal('TrueFi TrueUSD')
-      expect(await pool.symbol()).to.equal('tfTUSD')
-      expect(await pool.decimals()).to.equal(18)
+      expect(await tusdPool.name()).to.equal('TrueFi TrueCurrency')
+      expect(await tusdPool.symbol()).to.equal('tfTCUR')
+      expect(await tusdPool.decimals()).to.equal(18)
     })
 
     it('transfers ownership', async () => {
-      expect(await pool.owner()).to.eq(owner.address)
+      expect(await tusdPool.owner()).to.eq(owner.address)
     })
   })
 
   it('cannot exit and join on same transaction', async () => {
     const arbitrage = await new Pool2ArbitrageTest__factory(owner).deploy()
     await tusd.transfer(arbitrage.address, parseEth(1))
-    await expect(arbitrage.joinExit(pool.address)).to.be.revertedWith('TrueFiPool: Cannot join and exit in same block')
+    await expect(arbitrage.joinExit(tusdPool.address)).to.be.revertedWith('TrueFiPool: Cannot join and exit in same block')
   })
 
   describe('setPauseStatus', () => {
     it('can be called by owner', async () => {
-      await expect(pool.setPauseStatus(true))
+      await expect(tusdPool.setPauseStatus(true))
         .not.to.be.reverted
-      await expect(pool.setPauseStatus(false))
+      await expect(tusdPool.setPauseStatus(false))
         .not.to.be.reverted
     })
 
     it('cannot be called by unauthorized address', async () => {
-      await expect(pool.connect(borrower).setPauseStatus(true))
+      await expect(tusdPool.connect(borrower).setPauseStatus(true))
         .to.be.revertedWith('Ownable: caller is not the owner')
-      await expect(pool.connect(borrower).setPauseStatus(false))
+      await expect(tusdPool.connect(borrower).setPauseStatus(false))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('properly changes pausing status', async () => {
-      expect(await pool.pauseStatus()).to.be.false
-      await pool.setPauseStatus(true)
-      expect(await pool.pauseStatus()).to.be.true
-      await pool.setPauseStatus(false)
-      expect(await pool.pauseStatus()).to.be.false
+      expect(await tusdPool.pauseStatus()).to.be.false
+      await tusdPool.setPauseStatus(true)
+      expect(await tusdPool.pauseStatus()).to.be.true
+      await tusdPool.setPauseStatus(false)
+      expect(await tusdPool.pauseStatus()).to.be.false
     })
 
     it('emits proper event', async () => {
-      await expect(pool.setPauseStatus(true))
-        .to.emit(pool, 'PauseStatusChanged')
+      await expect(tusdPool.setPauseStatus(true))
+        .to.emit(tusdPool, 'PauseStatusChanged')
         .withArgs(true)
-      await expect(pool.setPauseStatus(false))
-        .to.emit(pool, 'PauseStatusChanged')
+      await expect(tusdPool.setPauseStatus(false))
+        .to.emit(tusdPool, 'PauseStatusChanged')
         .withArgs(false)
     })
   })
 
   describe('setSAFU', () => {
     it('can be called by owner', async () => {
-      await expect(pool.setSafuAddress(borrower.address))
+      await expect(tusdPool.setSafuAddress(borrower.address))
         .not.to.be.reverted
     })
 
     it('cannot be called by unauthorized address', async () => {
-      await expect(pool.connect(borrower).setSafuAddress(borrower.address))
+      await expect(tusdPool.connect(borrower).setSafuAddress(borrower.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('properly changes SAFU address', async () => {
-      expect(await pool.safu()).to.equal(safu.address)
-      await pool.setSafuAddress(borrower.address)
-      expect(await pool.safu()).to.equal(borrower.address)
+      expect(await tusdPool.safu()).to.equal(safu.address)
+      await tusdPool.setSafuAddress(borrower.address)
+      expect(await tusdPool.safu()).to.equal(borrower.address)
     })
 
     it('emits proper event', async () => {
-      await expect(pool.setSafuAddress(borrower.address))
-        .to.emit(pool, 'SafuChanged')
+      await expect(tusdPool.setSafuAddress(borrower.address))
+        .to.emit(tusdPool, 'SafuChanged')
         .withArgs(borrower.address)
     })
   })
@@ -193,31 +179,31 @@ describe('TrueFiPool2', () => {
     const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
 
     beforeEach(async () => {
-      await tusd.approve(pool.address, includeFee(parseEth(1e5)))
+      await tusd.approve(tusdPool.address, includeFee(parseEth(1e5)))
     })
 
     it('liquid value equals balanceOf(pool)', async () => {
       const depositedAmount = parseEth(1e5)
-      await pool.join(depositedAmount)
-      expect(await pool.liquidValue()).to.equal(depositedAmount)
-      expect(await pool.liquidValue())
-        .to.equal(await tusd.balanceOf(pool.address))
+      await tusdPool.join(depositedAmount)
+      expect(await tusdPool.liquidValue()).to.equal(depositedAmount)
+      expect(await tusdPool.liquidValue())
+        .to.equal(await tusd.balanceOf(tusdPool.address))
     })
 
     it('liquid value equals balanceOf(pool) - claimableFees', async () => {
-      await pool.setJoiningFee(25)
-      await pool.join(includeFee(parseEth(1e5)))
-      expect(await pool.liquidValue())
+      await tusdPool.setJoiningFee(25)
+      await tusdPool.join(includeFee(parseEth(1e5)))
+      expect(await tusdPool.liquidValue())
         .to.equal(parseEth(1e5))
     })
 
     it('liquid value equals balanceOf(pool) - claimableFees + strategyValue', async () => {
-      await pool.setJoiningFee(25)
-      await pool.join(includeFee(parseEth(1e5)))
-      await pool.connect(owner).switchStrategy(poolStrategy1.address)
-      await pool.flush(1000)
-      expect(await pool.liquidValue())
-        .to.equal((await currencyBalanceOf(pool)).add(1000))
+      await tusdPool.setJoiningFee(25)
+      await tusdPool.join(includeFee(parseEth(1e5)))
+      await tusdPool.connect(owner).switchStrategy(poolStrategy1.address)
+      await tusdPool.flush(1000)
+      expect(await tusdPool.liquidValue())
+        .to.equal((await currencyBalanceOf(tusdPool)).add(1000))
     })
   })
 
@@ -225,48 +211,65 @@ describe('TrueFiPool2', () => {
     const joinAmount = parseEth(1e7)
 
     beforeEach(async () => {
-      await tusd.approve(pool.address, joinAmount)
-      await pool.join(joinAmount)
+      await tusd.approve(tusdPool.address, joinAmount)
+      await tusdPool.join(joinAmount)
     })
 
     it('returns 0 if pool has no strategy', async () => {
-      expect(await pool.strategyValue()).to.eq(0)
+      expect(await tusdPool.strategyValue()).to.eq(0)
     })
 
     it('returns current strategy value', async () => {
-      await pool.switchStrategy(poolStrategy1.address)
-      await pool.flush(1000)
-      expect(await pool.strategyValue()).to.eq(1000)
+      await tusdPool.switchStrategy(poolStrategy1.address)
+      await tusdPool.flush(1000)
+      expect(await tusdPool.strategyValue()).to.eq(1000)
     })
   })
 
   describe('liquidationTokenValue', () => {
     it('returns 0 when pool holds no TRU', async () => {
-      expect(await pool.liquidationTokenValue()).to.eq(0)
+      expect(await tusdPool.liquidationTokenValue()).to.eq(0)
     })
 
     it('returns 0 when pool has no oracle', async () => {
-      await liquidationToken.mint(pool.address, 1000)
-      expect(await pool.liquidationTokenBalance()).to.eq(1000)
-      expect(await pool.liquidationTokenValue()).to.eq(0)
+      await tru.mint(tusdPool.address, 1000)
+      await tusdPool.setOracle(AddressZero)
+      expect(await tusdPool.liquidationTokenBalance()).to.eq(1000)
+      expect(await tusdPool.liquidationTokenValue()).to.eq(0)
     })
 
     it('converts TRU to pool token value using oracle and returns value - 1%', async () => {
-      await liquidationToken.mint(pool.address, 1000)
+      await tru.mint(tusdPool.address, 1000)
       const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
       await mockOracle.mock.truToToken.returns(500)
-      await pool.setOracle(mockOracle.address)
-      expect(await pool.liquidationTokenValue()).to.eq(withToleratedSlippage(BigNumber.from(500)))
+      await tusdPool.setOracle(mockOracle.address)
+      expect(await tusdPool.liquidationTokenValue()).to.eq(withToleratedSlippage(BigNumber.from(500)))
       expect('truToToken').to.be.calledOnContractWith(mockOracle, [1000])
     })
 
     xit('liquidationTokenValue is not part of liquidValue but a part of poolValue', async () => {
-      await liquidationToken.mint(pool.address, 1000)
+      await liquidationToken.mint(tusdPool.address, 1000)
       const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
       await mockOracle.mock.truToToken.returns(500)
-      await pool.setOracle(mockOracle.address)
-      expect(await pool.liquidValue()).to.eq(0)
-      expect(await pool.poolValue()).to.eq(withToleratedSlippage(BigNumber.from(500)))
+      await tusdPool.setOracle(mockOracle.address)
+      expect(await tusdPool.liquidValue()).to.eq(0)
+      expect(await tusdPool.poolValue()).to.eq(withToleratedSlippage(BigNumber.from(500)))
+    })
+  })
+
+  describe('deficitValue', () => {
+    beforeEach(async () => {
+      await tusd.approve(tusdPool.address, parseEth(1e7))
+      await tusdPool.join(parseEth(1e7))
+      await lender.connect(borrower).fund(loan.address)
+      await loan.connect(borrower).withdraw(borrower.address)
+      await timeTravel(DAY * 4)
+      await loan.enterDefault()
+      await safu.liquidate(loan.address)
+    })
+
+    it('returns correct deficit value', async () => {
+      expect(await tusdPool.deficitValue()).to.eq(500136)
     })
   })
 
@@ -274,56 +277,55 @@ describe('TrueFiPool2', () => {
     const joinAmount = parseEth(1e7)
 
     beforeEach(async () => {
-      await tusd.approve(pool.address, joinAmount)
-      await pool.join(joinAmount)
+      await tusd.approve(tusdPool.address, joinAmount)
+      await tusdPool.join(joinAmount)
     })
 
     describe('When pool has no strategy', () => {
       it('liquid value equals deposited amount', async () => {
-        expect(await pool.liquidValue()).to.equal(joinAmount)
+        expect(await tusdPool.liquidValue()).to.equal(joinAmount)
       })
 
       it('when no ongoing loans, pool value equals liquidValue', async () => {
-        expect(await pool.poolValue()).to.equal(joinAmount)
+        expect(await tusdPool.poolValue()).to.equal(joinAmount)
       })
 
       it('when there are ongoing loans, pool value equals liquidValue + loanValue', async () => {
-        const loan = await deployContract(
-          LoanToken2__factory,
-          pool.address,
-          borrower.address,
-          lender.address,
-          AddressZero,
-          500000,
-          DAY,
-          1000,
-        )
-        await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
-
         await lender.connect(borrower).fund(loan.address)
-        expect(await pool.liquidValue()).to.equal(joinAmount.sub(500000))
-        expect(await pool.loansValue()).to.equal(500000)
-        expect(await pool.poolValue()).to.equal(joinAmount)
+        expect(await tusdPool.liquidValue()).to.equal(joinAmount.sub(500000))
+        expect(await tusdPool.loansValue()).to.equal(500000)
+        expect(await tusdPool.poolValue()).to.equal(joinAmount)
 
-        await timeTravel(provider, DAY * 2)
-        expect(await pool.loansValue()).to.equal(500136)
-        expect(await pool.poolValue()).to.equal(joinAmount.add(136))
+        await timeTravel(DAY * 2)
+        expect(await tusdPool.loansValue()).to.equal(500136)
+        expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
+      })
+
+      it('when pool has some deficiency value', async () => {
+        await lender.connect(borrower).fund(loan.address)
+        await loan.connect(borrower).withdraw(borrower.address)
+        await timeTravel(DAY * 4)
+        await loan.enterDefault()
+        await safu.liquidate(loan.address)
+
+        expect(await tusdPool.deficitValue()).to.eq(500136)
+        expect(await expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136)))
       })
     })
   })
 
   describe('setJoiningFee', () => {
     it('sets fee value', async () => {
-      await pool.setJoiningFee(50)
-      expect(await pool.joiningFee()).to.equal(50)
+      await tusdPool.setJoiningFee(50)
+      expect(await tusdPool.joiningFee()).to.equal(50)
     })
 
     it('reverts when called not by owner', async () => {
-      await expect(pool.connect(borrower).setJoiningFee(50)).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(tusdPool.connect(borrower).setJoiningFee(50)).to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('reverts when JoiningFee set to more than 100%', async () => {
-      await expect(pool.setJoiningFee(10100))
+      await expect(tusdPool.setJoiningFee(10100))
         .to.be.revertedWith('TrueFiPool: Fee cannot exceed transaction value')
     })
   })
@@ -332,104 +334,115 @@ describe('TrueFiPool2', () => {
     const oracle = Wallet.createRandom().address
 
     it('sets oracle', async () => {
-      await pool.setOracle(oracle)
-      expect(await pool.oracle()).to.equal(oracle)
+      await tusdPool.setOracle(oracle)
+      expect(await tusdPool.oracle()).to.equal(oracle)
     })
 
     it('reverts when called not by owner', async () => {
-      await expect(pool.connect(borrower).setOracle(oracle))
+      await expect(tusdPool.connect(borrower).setOracle(oracle))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
   })
 
   describe('setBeneficiary', () => {
     it('sets beneficiary', async () => {
-      await pool.setBeneficiary(owner.address)
-      expect(await pool.beneficiary()).to.equal(owner.address)
+      await tusdPool.setBeneficiary(owner.address)
+      expect(await tusdPool.beneficiary()).to.equal(owner.address)
     })
 
     it('reverts when called not by owner', async () => {
-      await expect(pool.connect(borrower).setBeneficiary(owner.address))
+      await expect(tusdPool.connect(borrower).setBeneficiary(owner.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('cannot be set to 0', async () => {
-      await expect(pool.setBeneficiary(AddressZero))
+      await expect(tusdPool.setBeneficiary(AddressZero))
         .to.be.revertedWith('TrueFiPool: Beneficiary address cannot be set to 0')
     })
   })
 
   describe('join-exit', () => {
     beforeEach(async () => {
-      await tusd.approve(pool.address, parseEth(1e7))
-      await pool.join(parseEth(1e7))
+      await tusd.approve(tusdPool.address, parseEth(1e7))
+      await tusdPool.join(parseEth(1e7))
       await tusd.mint(borrower.address, parseEth(1e6))
-      await tusd.connect(borrower).approve(pool.address, parseEth(1e6))
+      await tusd.connect(borrower).approve(tusdPool.address, parseEth(1e6))
     })
 
     it('does not allow to join when joining is paused', async () => {
-      await tusd.approve(pool.address, parseEth(1e6))
-      await pool.setPauseStatus(true)
-      await expect(pool.join(parseEth(1e6)))
+      await tusd.approve(tusdPool.address, parseEth(1e6))
+      await tusdPool.setPauseStatus(true)
+      await expect(tusdPool.join(parseEth(1e6)))
         .to.be.revertedWith('TrueFiPool: Joining the pool is paused')
     })
 
     it('mints liquidity tokens as 1-to-1 to TUSD for first user', async () => {
-      expect(await pool.balanceOf(owner.address)).to.equal(parseEth(1e7))
+      expect(await tusdPool.balanceOf(owner.address)).to.equal(parseEth(1e7))
     })
 
     it('mints liquidity tokens proportionally to stake for next users', async () => {
-      const loan1 = await deployContract(
-        LoanToken2__factory,
-        pool.address,
-        borrower.address,
-        lender.address,
-        AddressZero,
+      const loan1 = await createApprovedLoan(
+        rater,
+        tru,
+        stkTru,
+        loanFactory,
+        borrower,
+        tusdPool,
         parseEth(1e6),
         DAY * 365,
         1000,
+        owner,
+        provider,
       )
-      await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
-      await lender.connect(borrower).fund(loan1.address)
-      await timeTravel(provider, DAY * 182.5)
-      const totalSupply = await pool.totalSupply()
-      const poolValue = await pool.poolValue()
 
-      await pool.connect(borrower).join(parseEth(1e6))
-      expectScaledCloseTo(await pool.balanceOf(borrower.address), totalSupply.mul(parseEth(1e6)).div(poolValue))
+      await lender.connect(borrower).fund(loan1.address)
+      await timeTravel(DAY * 182.5)
+      const totalSupply = await tusdPool.totalSupply()
+      const poolValue = await tusdPool.poolValue()
+
+      await tusdPool.connect(borrower).join(parseEth(1e6))
+      expectScaledCloseTo(await tusdPool.balanceOf(borrower.address), totalSupply.mul(parseEth(1e6)).div(poolValue))
     })
 
     it('returns a basket of tokens on exit', async () => {
-      const loan1 = await deployContract(
-        LoanToken2__factory,
-        pool.address,
-        borrower.address,
-        lender.address,
-        AddressZero,
+      const loan1 = await createApprovedLoan(
+        rater,
+        tru,
+        stkTru,
+        loanFactory,
+        borrower,
+        tusdPool,
         parseEth(1e6),
         DAY * 365,
         1000,
+        owner,
+        provider,
       )
-      await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
+
       await lender.connect(borrower).fund(loan1.address)
-      await timeTravel(provider, DAY * 182.5)
-      const loan2 = await deployContract(
-        LoanToken2__factory,
-        pool.address,
-        borrower.address,
-        lender.address,
-        AddressZero,
+      await timeTravel(DAY * 182.5)
+
+      const loan2 = await createApprovedLoan(
+        rater,
+        tru,
+        stkTru,
+        loanFactory,
+        borrower,
+        tusdPool,
         parseEth(1e6),
         DAY * 365,
         2500,
+        owner,
+        provider,
       )
+
       await lender.connect(borrower).fund(loan2.address)
 
-      const liquidValue = await pool.liquidValue()
-      const totalSupply = await pool.totalSupply()
+      const liquidValue = await tusdPool.liquidValue()
+      const totalSupply = await tusdPool.totalSupply()
       const exitAmount = totalSupply.div(2)
 
-      await pool.exit(exitAmount)
+      await tusdPool.exit(exitAmount)
       expect(await tusd.balanceOf(owner.address)).to.equal(exitAmount.mul(liquidValue).div(totalSupply))
       expectCloseTo(await loan1.balanceOf(owner.address), parseEth(55e4), 10)
       expectCloseTo(await loan2.balanceOf(owner.address), parseEth(625e3), 10)
@@ -438,59 +451,65 @@ describe('TrueFiPool2', () => {
     describe('two stakers', () => {
       let loan1: LoanToken2, loan2: LoanToken2
       beforeEach(async () => {
-        loan1 = await deployContract(
-          LoanToken2__factory,
-          pool.address,
-          borrower.address,
-          lender.address,
-          AddressZero,
+        loan1 = await createApprovedLoan(
+          rater,
+          tru,
+          stkTru,
+          loanFactory,
+          borrower,
+          tusdPool,
           parseEth(1e6),
           DAY * 365,
           1000,
+          owner,
+          provider,
         )
-        await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
+
         await lender.connect(borrower).fund(loan1.address)
-        await timeTravel(provider, DAY * 182.5)
+        await timeTravel(DAY * 182.5)
         // PoolValue is 10.05M USD at the moment
         // After join, owner has around 91% of shares
-        await pool.connect(borrower).join(parseEth(1e6))
-        loan2 = await deployContract(
-          LoanToken2__factory,
-          pool.address,
-          borrower.address,
-          lender.address,
-          AddressZero,
+        await tusdPool.connect(borrower).join(parseEth(1e6))
+        loan2 = await createApprovedLoan(
+          rater,
+          tru,
+          stkTru,
+          loanFactory,
+          borrower,
+          tusdPool,
           parseEth(1e6),
           DAY * 365,
           2500,
+          owner,
+          provider,
         )
         await lender.connect(borrower).fund(loan2.address)
       })
 
       it('returns a basket of tokens on exit, two stakers', async () => {
-        const liquidValue = await pool.liquidValue()
-        const totalSupply = await pool.totalSupply()
+        const liquidValue = await tusdPool.liquidValue()
+        const totalSupply = await tusdPool.totalSupply()
         const exitAmount = totalSupply.div(2)
 
-        await pool.exit(exitAmount)
+        await tusdPool.exit(exitAmount)
         expect(await tusd.balanceOf(owner.address)).to.equal(exitAmount.mul(liquidValue).div(totalSupply))
         expectCloseTo(await loan1.balanceOf(owner.address), parseEth(55e4), 10)
         expectCloseTo(await loan2.balanceOf(owner.address), parseEth(625e3), 10)
       })
 
       it('erases all tokens after all stakers exit', async () => {
-        const liquidValue = await pool.liquidValue()
-        const totalSupply = await pool.totalSupply()
-        const exitAmountBorrower = await pool.balanceOf(borrower.address)
+        const liquidValue = await tusdPool.liquidValue()
+        const totalSupply = await tusdPool.totalSupply()
+        const exitAmountBorrower = await tusdPool.balanceOf(borrower.address)
 
-        const exitAmountOwner = await pool.balanceOf(owner.address)
+        const exitAmountOwner = await tusdPool.balanceOf(owner.address)
 
-        await pool.exit(exitAmountOwner)
-        await pool.connect(borrower).exit(exitAmountBorrower)
+        await tusdPool.exit(exitAmountOwner)
+        await tusdPool.connect(borrower).exit(exitAmountBorrower)
 
-        expect(await tusd.balanceOf(pool.address)).to.equal(await pool.claimableFees())
-        expect(await loan1.balanceOf(pool.address)).to.equal(0)
-        expect(await loan2.balanceOf(pool.address)).to.equal(0)
+        expect(await tusd.balanceOf(tusdPool.address)).to.equal(await tusdPool.claimableFees())
+        expect(await loan1.balanceOf(tusdPool.address)).to.equal(0)
+        expect(await loan2.balanceOf(tusdPool.address)).to.equal(0)
 
         expectScaledCloseTo(await tusd.balanceOf(owner.address), exitAmountOwner.mul(liquidValue).div(totalSupply))
         expectScaledCloseTo(await loan1.balanceOf(owner.address), parseEth(11e5).mul(exitAmountOwner).div(totalSupply))
@@ -506,55 +525,57 @@ describe('TrueFiPool2', () => {
   describe('liquidExit', () => {
     const amount = parseEth(1e7)
     beforeEach(async () => {
-      await tusd.approve(pool.address, amount)
-      await pool.join(amount)
-      await pool.switchStrategy(poolStrategy1.address)
+      await tusd.approve(tusdPool.address, amount)
+      await tusdPool.join(amount)
+      await tusdPool.switchStrategy(poolStrategy1.address)
     })
 
     it('burns pool tokens on exit', async () => {
-      const supply = await pool.totalSupply()
-      await pool.liquidExit(supply.div(2))
-      expect(await pool.totalSupply()).to.equal(supply.div(2))
-      await pool.liquidExit(supply.div(3))
-      expect(await pool.totalSupply()).to.equal(supply.sub(supply.mul(5).div(6)))
+      const supply = await tusdPool.totalSupply()
+      await tusdPool.liquidExit(supply.div(2))
+      expect(await tusdPool.totalSupply()).to.equal(supply.div(2))
+      await tusdPool.liquidExit(supply.div(3))
+      expect(await tusdPool.totalSupply()).to.equal(supply.sub(supply.mul(5).div(6)))
     })
 
     it('all funds are liquid: transfers TUSD without penalty', async () => {
-      await pool.liquidExit(await pool.balanceOf(owner.address))
+      await tusdPool.liquidExit(await tusdPool.balanceOf(owner.address))
       expect(await tusd.balanceOf(owner.address)).to.equal(amount)
     })
 
     it('all funds are liquid: transfers TUSD without penalty (half of stake)', async () => {
-      await pool.liquidExit(amount.div(2))
+      await tusdPool.liquidExit(amount.div(2))
       expect(await tusd.balanceOf(owner.address)).to.equal(amount.div(2))
     })
 
     it('after loan approved, applies a penalty', async () => {
-      const loan1 = await deployContract(
-        LoanToken2__factory,
-        pool.address,
-        borrower.address,
-        lender.address,
-        AddressZero,
+      const loan1 = await createApprovedLoan(
+        rater,
+        tru,
+        stkTru,
+        loanFactory,
+        borrower,
+        tusdPool,
         amount.div(3),
         DAY * 365,
         1000,
+        owner,
+        provider,
       )
-      await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
       await lender.connect(borrower).fund(loan1.address)
-      expect(await pool.liquidExitPenalty(amount.div(2))).to.equal(9990)
-      await pool.liquidExit(amount.div(2), { gasLimit: 5000000 })
+      expect(await tusdPool.liquidExitPenalty(amount.div(2))).to.equal(9990)
+      await tusdPool.liquidExit(amount.div(2), { gasLimit: 5000000 })
       expectScaledCloseTo(await tusd.balanceOf(owner.address), (amount.div(2).mul(9990).div(10000)))
     })
 
     it('half funds are in strategy: transfers TUSD without penalty', async () => {
-      await pool.flush(parseEth(5e6))
-      await pool.liquidExit(parseEth(6e6))
+      await tusdPool.flush(parseEth(5e6))
+      await tusdPool.liquidExit(parseEth(6e6))
       expect(await tusd.balanceOf(owner.address)).to.equal(parseEth(6e6))
     })
 
     it('emits event', async () => {
-      await expect(pool.liquidExit(amount.div(2))).to.emit(pool, 'Exited').withArgs(owner.address, amount.div(2))
+      await expect(tusdPool.liquidExit(amount.div(2))).to.emit(tusdPool, 'Exited').withArgs(owner.address, amount.div(2))
     })
   })
 
@@ -562,16 +583,16 @@ describe('TrueFiPool2', () => {
     const calcOffchain = (x: number) => Math.floor(Math.log(x + 50) * 50000)
     it('calculates integral * 1e9', async () => {
       for (let i = 0; i < 100; i++) {
-        expect(await pool.integrateAtPoint(i)).to.equal(calcOffchain(i))
+        expect(await tusdPool.integrateAtPoint(i)).to.equal(calcOffchain(i))
       }
     })
   })
 
   describe('averageExitPenalty', () => {
-    const testPenalty = async (from: number, to: number, result: number) => expect(await pool.averageExitPenalty(from, to)).to.equal(result)
+    const testPenalty = async (from: number, to: number, result: number) => expect(await tusdPool.averageExitPenalty(from, to)).to.equal(result)
 
     it('throws if from > to', async () => {
-      await expect(pool.averageExitPenalty(10, 9)).to.be.revertedWith('TrueFiPool: To precedes from')
+      await expect(tusdPool.averageExitPenalty(10, 9)).to.be.revertedWith('TrueFiPool: To precedes from')
     })
 
     it('correctly calculates penalty when from = to', async () => {
@@ -583,8 +604,8 @@ describe('TrueFiPool2', () => {
 
     it('correctly calculates penalty when from+1=to', async () => {
       const testWithStep1 = async (from: number) => {
-        const penalty = await pool.averageExitPenalty(from, from + 1)
-        const expected = (await pool.averageExitPenalty(from, from)).add(await pool.averageExitPenalty(from + 1, from + 1)).div(2)
+        const penalty = await tusdPool.averageExitPenalty(from, from + 1)
+        const expected = (await tusdPool.averageExitPenalty(from, from)).add(await tusdPool.averageExitPenalty(from + 1, from + 1)).div(2)
         expect(penalty.sub(expected).abs()).to.be.lte(1)
       }
 
@@ -615,116 +636,139 @@ describe('TrueFiPool2', () => {
 
   describe('flush', () => {
     beforeEach(async () => {
-      await tusd.approve(pool.address, parseEth(100))
-      await pool.join(parseEth(100))
+      await tusd.approve(tusdPool.address, parseEth(100))
+      await tusdPool.join(parseEth(100))
     })
 
     it('reverts when strategy is not set', async () => {
-      await expect(pool.flush(100))
+      await expect(tusdPool.flush(100))
         .to.be.revertedWith('TrueFiPool: Pool has no strategy set up')
     })
 
     it('funds for deposit should go directly into strategy', async () => {
-      await pool.connect(owner).switchStrategy(badPoolStrategy.address)
+      await tusdPool.connect(owner).switchStrategy(badPoolStrategy.address)
       await badPoolStrategy.setErrorPercents(500)
-      await expect(pool.flush(1000))
+      await expect(tusdPool.flush(1000))
         .to.be.revertedWith('TrueFiPool: Strategy value expected to be higher')
       await badPoolStrategy.setErrorPercents(0)
 
-      await pool.connect(owner).switchStrategy(poolStrategy1.address)
+      await tusdPool.connect(owner).switchStrategy(poolStrategy1.address)
       expect(await poolStrategy1.value()).to.eq(0)
-      await expect(pool.flush(1000))
+      await expect(tusdPool.flush(1000))
         .not.to.be.reverted
       expect(await poolStrategy1.value()).to.eq(1000)
     })
 
     it('emits event', async () => {
-      await pool.connect(owner).switchStrategy(poolStrategy1.address)
-      await expect(pool.flush(1000))
-        .to.emit(pool, 'Flushed')
+      await tusdPool.connect(owner).switchStrategy(poolStrategy1.address)
+      await expect(tusdPool.flush(1000))
+        .to.emit(tusdPool, 'Flushed')
         .withArgs(1000)
     })
   })
 
   describe('pull', () => {
     beforeEach(async () => {
-      await tusd.approve(pool.address, parseEth(100))
-      await pool.join(parseEth(100))
+      await tusd.approve(tusdPool.address, parseEth(100))
+      await tusdPool.join(parseEth(100))
     })
 
     it('reverts when strategy is not set', async () => {
-      await expect(pool.pull(100))
+      await expect(tusdPool.pull(100))
         .to.be.revertedWith('TrueFiPool: Pool has no strategy set up')
     })
 
     it('removed liquidity should get back to pool', async () => {
-      await pool.connect(owner).switchStrategy(badPoolStrategy.address)
-      await pool.flush(1000)
+      await tusdPool.connect(owner).switchStrategy(badPoolStrategy.address)
+      await tusdPool.flush(1000)
       await badPoolStrategy.setErrorPercents(1)
-      await expect(pool.pull(100))
+      await expect(tusdPool.pull(100))
         .to.be.revertedWith('TrueFiPool: Currency balance expected to be higher')
       await badPoolStrategy.setErrorPercents(0)
 
-      await pool.connect(owner).switchStrategy(poolStrategy1.address)
-      await pool.flush(1000)
-      const expectedCurrencyBalance = (await currencyBalanceOf(pool)).add(100)
-      await expect(pool.pull(100))
+      await tusdPool.connect(owner).switchStrategy(poolStrategy1.address)
+      await tusdPool.flush(1000)
+      const expectedCurrencyBalance = (await currencyBalanceOf(tusdPool)).add(100)
+      await expect(tusdPool.pull(100))
         .not.to.be.reverted
-      expect(await currencyBalanceOf(pool)).to.be.gte(expectedCurrencyBalance)
+      expect(await currencyBalanceOf(tusdPool)).to.be.gte(expectedCurrencyBalance)
     })
 
     it('emits event', async () => {
-      await pool.connect(owner).switchStrategy(poolStrategy1.address)
-      await pool.flush(1000)
-      await expect(pool.pull(100))
-        .to.emit(pool, 'Pulled')
+      await tusdPool.connect(owner).switchStrategy(poolStrategy1.address)
+      await tusdPool.flush(1000)
+      await expect(tusdPool.pull(100))
+        .to.emit(tusdPool, 'Pulled')
         .withArgs(100)
     })
   })
 
   describe('borrow', () => {
     beforeEach(async () => {
-      await tusd.approve(pool.address, parseEth(100))
-      await pool.join(parseEth(100))
-      await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
+      await tusd.approve(tusdPool.address, parseEth(100))
+      await tusdPool.join(parseEth(100))
     })
 
     it('only lender can be caller', async () => {
-      await expect(pool.connect(owner.address).borrow(0))
+      await expect(tusdPool.connect(owner.address).borrow(0))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender')
-      const loan = await deployContract(
-        LoanToken2__factory, pool.address, borrower.address,
-        lender.address, AddressZero, 500000, DAY, 1000,
-      )
       await lender.connect(borrower).fund(loan.address)
-      expect('borrow').to.be.calledOnContract(pool)
+      expect('borrow').to.be.calledOnContract(tusdPool)
     })
 
     it('in order to borrow from pool it has to have liquidity', async () => {
-      let loan = await deployContract(
-        LoanToken2__factory, pool.address,
-        borrower.address, lender.address, AddressZero,
-        (await tusd.balanceOf(pool.address)).add(1), DAY, 0,
+      const loan1 = await createApprovedLoan(
+        rater,
+        tru,
+        stkTru,
+        loanFactory,
+        borrower,
+        tusdPool,
+        (await tusd.balanceOf(tusdPool.address)).add(1),
+        DAY,
+        0,
+        owner,
+        provider,
       )
-      await expect(lender.connect(borrower).fund(loan.address))
+
+      await expect(lender.connect(borrower).fund(loan1.address))
         .to.be.revertedWith('TrueFiPool: Insufficient liquidity')
-      loan = await deployContract(
-        LoanToken2__factory, pool.address, borrower.address,
-        lender.address, AddressZero, 500000, DAY, 1000,
+
+      const loan2 = await createApprovedLoan(
+        rater,
+        tru,
+        stkTru,
+        loanFactory,
+        borrower,
+        tusdPool,
+        500000,
+        DAY,
+        1000,
+        owner,
+        provider,
       )
-      await expect(lender.connect(borrower).fund(loan.address))
+
+      await expect(lender.connect(borrower).fund(loan2.address))
         .not.to.be.reverted
     })
 
     describe('ensureSufficientLiquidity', () => {
       it('strategy has to return enough funds', async () => {
-        const loan = await deployContract(
-          LoanToken2__factory, pool.address,
-          borrower.address, lender.address, AddressZero,
-          (await tusd.balanceOf(pool.address)), DAY, 0,
+        const loan = await createApprovedLoan(
+          rater,
+          tru,
+          stkTru,
+          loanFactory,
+          borrower,
+          tusdPool,
+          (await tusd.balanceOf(tusdPool.address)),
+          DAY,
+          0,
+          owner,
+          provider,
         )
-        await pool.connect(owner).switchStrategy(badPoolStrategy.address)
-        await pool.flush(1000)
+        await tusdPool.connect(owner).switchStrategy(badPoolStrategy.address)
+        await tusdPool.flush(1000)
         await badPoolStrategy.setErrorPercents(1)
         await expect(lender.connect(borrower).fund(loan.address))
           .to.be.revertedWith('TrueFiPool: Not enough funds taken from the strategy')
@@ -738,36 +782,46 @@ describe('TrueFiPool2', () => {
   describe('repay', () => {
     let loan: LoanToken2
 
-    const payBack = async (token: MockErc20Token, loan: LoanToken2) => {
+    const payBack = async (token: MockTrueCurrency, loan: LoanToken2) => {
       const balance = await loan.balance()
       const debt = await loan.debt()
       await token.mint(loan.address, debt.sub(balance))
     }
 
     beforeEach(async () => {
-      await tusd.approve(pool.address, parseEth(100))
-      await pool.join(parseEth(100))
-      await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
-      loan = await deployContract(
-        LoanToken2__factory, pool.address, borrower.address,
-        lender.address, AddressZero, 100000, DAY, 100,
+      await tusd.approve(tusdPool.address, parseEth(100))
+      await tusdPool.join(parseEth(100))
+
+      loan = await createApprovedLoan(
+        rater,
+        tru,
+        stkTru,
+        loanFactory,
+        borrower,
+        tusdPool,
+        100000,
+        DAY,
+        0,
+        owner,
+        provider,
       )
+
       await lender.connect(borrower).fund(loan.address)
       await payBack(tusd, loan)
       await loan.settle()
     })
 
     it('only lender can be caller', async () => {
-      await expect(pool.connect(owner).repay(0))
+      await expect(tusdPool.connect(owner).repay(0))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender')
       await lender.reclaim(loan.address, '0x')
-      expect('repay').to.be.calledOnContract(pool)
+      expect('repay').to.be.calledOnContract(tusdPool)
     })
 
     it('emits event', async () => {
       await expect(lender.reclaim(loan.address, '0x'))
-        .to.emit(pool, 'Repaid')
-        .withArgs(lender.address, 100002)
+        .to.emit(tusdPool, 'Repaid')
+        .withArgs(lender.address, 100000)
     })
   })
 
@@ -775,89 +829,89 @@ describe('TrueFiPool2', () => {
     const beneficiary = Wallet.createRandom().address
 
     beforeEach(async () => {
-      await tusd.approve(pool.address, parseEth(1e7))
-      await pool.setJoiningFee(25)
-      await pool.join(parseEth(1e7))
-      await pool.setBeneficiary(beneficiary)
+      await tusd.approve(tusdPool.address, parseEth(1e7))
+      await tusdPool.setJoiningFee(25)
+      await tusdPool.join(parseEth(1e7))
+      await tusdPool.setBeneficiary(beneficiary)
     })
 
     it('transfers claimable fees to address', async () => {
-      await pool.collectFees()
+      await tusdPool.collectFees()
       expect(await tusd.balanceOf(beneficiary)).to.equal(parseEth(25000))
     })
 
     it('sets claimableFees to 0', async () => {
-      await pool.collectFees()
-      expect(await pool.claimableFees()).to.equal(0)
-      await expect(pool.collectFees()).to.not.emit(tusd, 'Transfer')
+      await tusdPool.collectFees()
+      expect(await tusdPool.claimableFees()).to.equal(0)
+      await expect(tusdPool.collectFees()).to.not.emit(tusd, 'Transfer')
     })
   })
 
   describe('switchStrategy', () => {
     beforeEach(async () => {
-      await tusd.approve(pool.address, parseEth(100))
-      await pool.join(parseEth(100))
+      await tusd.approve(tusdPool.address, parseEth(100))
+      await tusdPool.join(parseEth(100))
     })
 
     it('only owner can switch strategy', async () => {
-      await expect(pool.connect(borrower).switchStrategy(poolStrategy1.address))
+      await expect(tusdPool.connect(borrower).switchStrategy(poolStrategy1.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
-      await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
+      await expect(tusdPool.connect(owner).switchStrategy(poolStrategy1.address))
         .not.to.be.reverted
     })
 
     it('cannot switch to the same strategy', async () => {
-      await pool.connect(owner).switchStrategy(poolStrategy1.address)
-      await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
+      await tusdPool.connect(owner).switchStrategy(poolStrategy1.address)
+      await expect(tusdPool.connect(owner).switchStrategy(poolStrategy1.address))
         .to.be.revertedWith('TrueFiPool: Cannot switch to the same strategy')
-      await expect(pool.connect(owner).switchStrategy(poolStrategy2.address))
+      await expect(tusdPool.connect(owner).switchStrategy(poolStrategy2.address))
         .not.to.be.reverted
     })
 
     it('switches strategy', async () => {
-      expect(await pool.strategy()).to.eq(AddressZero)
-      await pool.connect(owner).switchStrategy(poolStrategy1.address)
-      expect(await pool.strategy()).to.eq(poolStrategy1.address)
-      await pool.connect(owner).switchStrategy(poolStrategy2.address)
-      expect(await pool.strategy()).to.eq(poolStrategy2.address)
+      expect(await tusdPool.strategy()).to.eq(AddressZero)
+      await tusdPool.connect(owner).switchStrategy(poolStrategy1.address)
+      expect(await tusdPool.strategy()).to.eq(poolStrategy1.address)
+      await tusdPool.connect(owner).switchStrategy(poolStrategy2.address)
+      expect(await tusdPool.strategy()).to.eq(poolStrategy2.address)
     })
 
     it('all funds should be withdrawn to pool', async () => {
-      await pool.connect(owner).switchStrategy(badPoolStrategy.address)
-      await pool.flush(1000)
+      await tusdPool.connect(owner).switchStrategy(badPoolStrategy.address)
+      await tusdPool.flush(1000)
       await badPoolStrategy.setErrorPercents(500)
-      await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
+      await expect(tusdPool.connect(owner).switchStrategy(poolStrategy1.address))
         .to.be.revertedWith('TrueFiPool: All funds should be withdrawn to pool')
       await badPoolStrategy.setErrorPercents(0)
 
-      await pool.connect(owner).switchStrategy(poolStrategy1.address)
-      await pool.flush(1000)
-      const expectedMinCurrencyBalance = (await currencyBalanceOf(pool))
+      await tusdPool.connect(owner).switchStrategy(poolStrategy1.address)
+      await tusdPool.flush(1000)
+      const expectedMinCurrencyBalance = (await currencyBalanceOf(tusdPool))
         .add(withToleratedSlippage(await poolStrategy1.value()))
-      await expect(pool.connect(owner).switchStrategy(poolStrategy2.address))
+      await expect(tusdPool.connect(owner).switchStrategy(poolStrategy2.address))
         .not.to.be.reverted
-      expect(await currencyBalanceOf(pool))
+      expect(await currencyBalanceOf(tusdPool))
         .to.be.gte(expectedMinCurrencyBalance)
     })
 
     it('switched strategy should be depleted', async () => {
-      await pool.connect(owner).switchStrategy(badPoolStrategy.address)
-      await pool.flush(1000)
+      await tusdPool.connect(owner).switchStrategy(badPoolStrategy.address)
+      await tusdPool.flush(1000)
       await badPoolStrategy.setErrorPercents(5)
-      await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
+      await expect(tusdPool.connect(owner).switchStrategy(poolStrategy1.address))
         .to.be.revertedWith('TrueFiPool: Switched strategy should be depleted')
       await badPoolStrategy.setErrorPercents(0)
 
-      await pool.connect(owner).switchStrategy(poolStrategy1.address)
-      await pool.flush(1000)
-      await expect(pool.connect(owner).switchStrategy(poolStrategy2.address))
+      await tusdPool.connect(owner).switchStrategy(poolStrategy1.address)
+      await tusdPool.flush(1000)
+      await expect(tusdPool.connect(owner).switchStrategy(poolStrategy2.address))
         .not.to.be.reverted
       expect(await poolStrategy1.value()).to.eq(0)
     })
 
     it('emits event', async () => {
-      await expect(pool.connect(owner).switchStrategy(poolStrategy1.address))
-        .to.emit(pool, 'StrategySwitched')
+      await expect(tusdPool.connect(owner).switchStrategy(poolStrategy1.address))
+        .to.emit(tusdPool, 'StrategySwitched')
         .withArgs(poolStrategy1.address)
     })
   })
@@ -866,22 +920,34 @@ describe('TrueFiPool2', () => {
     let loan: LoanToken2
 
     beforeEach(async () => {
-      await tusd.approve(pool.address, parseEth(100))
-      await pool.join(parseEth(100))
-      await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
-      loan = await deployContract(
-        LoanToken2__factory, pool.address, borrower.address,
-        lender.address, AddressZero, 100000, DAY, 100,
+      await tusd.approve(tusdPool.address, parseEth(100))
+      await tusdPool.join(parseEth(100))
+
+      loan = await createApprovedLoan(
+        rater,
+        tru,
+        stkTru,
+        loanFactory,
+        borrower,
+        tusdPool,
+        100000,
+        DAY,
+        100,
+        owner,
+        provider,
       )
+
       await lender.connect(borrower).fund(loan.address)
     })
 
     it('can only be performed by the SAFU', async () => {
-      await expect(pool.liquidate(loan.address)).to.be.revertedWith('TrueFiPool: Should be called by SAFU')
+      await expect(tusdPool.liquidate(loan.address)).to.be.revertedWith('TrueFiPool: Should be called by SAFU')
     })
 
     it('transfers all LTs to the safu', async () => {
-      await pool.connect(safu).liquidate(loan.address)
+      await timeTravel(DAY * 4)
+      await loan.enterDefault()
+      await safu.liquidate(loan.address)
       expect(await loan.balanceOf(safu.address)).to.equal(await loan.totalSupply())
     })
   })

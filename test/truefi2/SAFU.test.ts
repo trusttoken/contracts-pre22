@@ -339,9 +339,9 @@ describe('SAFU', () => {
       })
 
       it('decreases pool deficit', async () => {
-          await safu.reclaim(loan.address)
-          expect(await safu.poolDeficit(pool.address)).to.eq(0)
-        })
+        await safu.reclaim(loan.address)
+        expect(await safu.poolDeficit(pool.address)).to.eq(0)
+      })
 
       it('transfers deficit to the pool', async () => {
         await expect(() => safu.reclaim(loan.address)).changeTokenBalance(token, pool, defaultAmount.div(2))
