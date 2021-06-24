@@ -58,7 +58,7 @@ describe('TrueFiPool2', () => {
     await proxy.changeImplementationReference(implementationReference.address)
     const newStrategy = await deployContract(CurveYearnStrategy__factory)
     await strategyProxy.upgradeTo(newStrategy.address)
-    
+
     await expect(usdtPool.flush(10000000)).not.to.be.reverted
   })
 
