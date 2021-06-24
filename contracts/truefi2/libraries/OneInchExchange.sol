@@ -45,7 +45,7 @@ library OneInchExchange {
             description.dstReceiver = address(this);
         }
 
-        IERC20(description.srcToken).approve(address(_1inchExchange), description.amount);
+        IERC20(description.srcToken).safeApprove(address(_1inchExchange), description.amount);
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = address(_1inchExchange).call(data);

@@ -258,7 +258,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
-        pool.token().approve(address(loanToken), amount);
+        pool.token().safeApprove(address(loanToken), amount);
         loanToken.fund();
 
         emit Funded(address(pool), address(loanToken), amount);
@@ -333,7 +333,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
             feeAmount = _swapFee(pool, loanToken, data);
         }
 
-        pool.token().approve(address(pool), fundsReclaimed.sub(feeAmount));
+        pool.token().safeApprove(address(pool), fundsReclaimed.sub(feeAmount));
         pool.repay(fundsReclaimed.sub(feeAmount));
 
         if (address(feeToken) != address(0)) {
@@ -381,7 +381,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         if (amount == 0) {
             return;
         }
-        feeToken.approve(address(feePool), amount);
+        feeToken.safeApprove(address(feePool), amount);
         feePool.join(amount);
         feePool.transfer(address(stakingPool), feePool.balanceOf(address(this)));
     }

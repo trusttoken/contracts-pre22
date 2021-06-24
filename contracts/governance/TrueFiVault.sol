@@ -119,7 +119,7 @@ contract TrueFiVault is UpgradeableClaimable {
      * @param amount Amount of TRU to stake
      */
     function stake(uint256 amount) external onlyBeneficiary {
-        tru.approve(address(stkTru), amount);
+        tru.safeApprove(address(stkTru), amount);
         stkTru.stake(amount);
     }
 

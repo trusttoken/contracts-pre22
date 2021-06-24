@@ -187,7 +187,7 @@ contract TrueLender is ITrueLender, Ownable {
 
         pool = _pool;
         currencyToken = _pool.currencyToken();
-        currencyToken.approve(address(_pool), uint256(-1));
+        currencyToken.safeApprove(address(_pool), uint256(-1));
         ratingAgency = _ratingAgency;
         stakingPool = _stakingPool;
 
@@ -328,10 +328,10 @@ contract TrueLender is ITrueLender, Ownable {
 
         _loans.push(loanToken);
         pool.borrow(amount, amount.sub(receivedAmount));
-        currencyToken.approve(address(loanToken), receivedAmount);
+        currencyToken.safeApprove(address(loanToken), receivedAmount);
         loanToken.fund();
 
-        pool.approve(address(stakingPool), pool.balanceOf(address(this)));
+        pool.safeApprove(address(stakingPool), pool.balanceOf(address(this)));
         stakingPool.payFee(pool.balanceOf(address(this)), block.timestamp.add(term));
 
         emit Funded(address(loanToken), receivedAmount);

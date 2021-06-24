@@ -579,7 +579,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
 
         // stake yCurve tokens in gauge
         uint256 yBalance = _curvePool.token().balanceOf(address(this));
-        _curvePool.token().approve(address(_curveGauge), yBalance);
+        _curvePool.token().safeApprove(address(_curveGauge), yBalance);
         _curveGauge.deposit(yBalance);
 
         emit Flushed(currencyAmount);
@@ -591,7 +591,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     {
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
 
-        token.approve(address(_curvePool), currencyAmount);
+        token.safeApprove(address(_curvePool), currencyAmount);
         _curvePool.add_liquidity(amounts, minMintAmount);
     }
 
@@ -607,7 +607,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         ensureEnoughTokensAreAvailable(yAmount);
 
         // remove TUSD from curve
-        _curvePool.token().approve(address(_curvePool), yAmount);
+        _curvePool.token().safeApprove(address(_curvePool), yAmount);
         _curvePool.remove_liquidity_one_coin(yAmount, TUSD_INDEX, minCurrencyAmount, false);
 
         emit Pulled(yAmount);
@@ -638,7 +638,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         // pull tokens from gauge
         ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
         // remove TUSD from curve
-        _curvePool.token().approve(address(_curvePool), roughCurveTokenAmount);
+        _curvePool.token().safeApprove(address(_curvePool), roughCurveTokenAmount);
         uint256 minAmount = roughCurveTokenAmount.mul(_curvePool.curve().get_virtual_price()).mul(999).div(1000).div(1 ether);
         _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, minAmount, false);
     }
@@ -675,7 +675,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         uint256 amountOutMin,
         address[] calldata path
     ) public exchangeProtector(_crvOracle.crvToUsd(amountIn), token) {
-        _minter.token().approve(address(_uniRouter), amountIn);
+        _minter.token().safeApprove(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
 
@@ -695,7 +695,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         uint256 amountOutMin,
         address[] calldata path
     ) public exchangeProtector(oracle.truToToken(amountIn), token) {
-        _stakeToken.approve(address(_uniRouter), amountIn);
+        _stakeToken.safeApprove(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
 
