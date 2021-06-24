@@ -9,6 +9,7 @@ import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueFiPool2, I1Inch3} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ImplementationReference} from "../proxy/ImplementationReference.sol";
+import {ISAFU} from "./interface/ISAFU.sol";
 
 /**
  * @title PoolFactory
@@ -38,7 +39,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     ITrueLender2 public trueLender2;
 
-    address public safu;
+    ISAFU public safu;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -74,7 +75,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @dev Emitted when SAFU address is changed
      * @param newSafu New SAFU address
      */
-    event SafuChanged(address newSafu);
+    event SafuChanged(ISAFU newSafu);
 
     /**
      * @dev Throws if token already has an existing corresponding pool
@@ -102,7 +103,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         ImplementationReference _poolImplementationReference,
         ERC20 _liquidationToken,
         ITrueLender2 _trueLender2,
-        address _safu
+        ISAFU _safu
     ) external initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -160,7 +161,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         emit TrueLenderChanged(trueLender2);
     }
 
-    function setSafuAddress(address _safu) external onlyOwner {
+    function setSafuAddress(ISAFU _safu) external onlyOwner {
         require(address(_safu) != address(0), "PoolFactory: SAFU address cannot be set to 0");
         safu = _safu;
         emit SafuChanged(_safu);

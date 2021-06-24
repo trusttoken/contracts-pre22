@@ -357,20 +357,18 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         if (feeAmount == 0) {
             return 0;
         }
-        uint256 balanceBefore = feeToken.balanceOf(address(this));
-        I1Inch3.SwapDescription memory swap = _1inch.exchange(data);
-        uint256 balanceDiff = feeToken.balanceOf(address(this)).sub(balanceBefore);
+        (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1inch.exchange(data);
         uint256 expectedDiff = pool.oracle().tokenToUsd(feeAmount).mul(10**feeToken.decimals()).div(1 ether);
 
-        require(
-            balanceDiff >= expectedDiff.mul(BASIS_RATIO.sub(swapFeeSlippage)).div(BASIS_RATIO),
-            "TrueLender: Fee returned from swap is too small"
-        );
         require(swap.srcToken == address(token), "TrueLender: Source token is not same as pool's token");
         require(swap.dstToken == address(feeToken), "TrueLender: Destination token is not fee token");
         require(swap.dstReceiver == address(this), "TrueLender: Receiver is not lender");
         require(swap.amount == feeAmount, "TrueLender: Incorrect fee swap amount");
         require(swap.flags & ONE_INCH_PARTIAL_FILL_FLAG == 0, "TrueLender: Partial fill is not allowed");
+        require(
+            balanceDiff >= expectedDiff.mul(BASIS_RATIO.sub(swapFeeSlippage)).div(BASIS_RATIO),
+            "TrueLender: Fee returned from swap is too small"
+        );
 
         return feeAmount;
     }
@@ -412,7 +410,24 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param recipient expected to be SAFU address
      */
     function transferAllLoanTokens(ILoanToken2 loan, address recipient) external override onlyPool {
-        _transferLoan(loan, recipient, 1, 1);
+        _transferAllLoanTokens(loan, recipient);
+    }
+
+    function _transferAllLoanTokens(ILoanToken2 loan, address recipient) internal {
+        // find the token, transfer to SAFU and remove loan from loans list
+        ILoanToken2[] storage _loans = poolLoans[loan.pool()];
+        for (uint256 index = 0; index < _loans.length; index++) {
+            if (_loans[index] == loan) {
+                _loans[index] = _loans[_loans.length - 1];
+                _loans.pop();
+
+                _transferLoan(loan, recipient, 1, 1);
+                return;
+            }
+        }
+        // If we reach this, it means loanToken was not present in _loans array
+        // This prevents invalid loans from being reclaimed
+        revert("TrueLender: This loan has not been funded by the lender");
     }
 
     /**

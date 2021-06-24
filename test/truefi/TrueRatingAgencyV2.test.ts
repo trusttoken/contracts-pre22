@@ -10,6 +10,7 @@ import {
   expectScaledCloseTo,
   expectBalanceChangeCloseTo,
   parseEth,
+  parseUSDC,
 } from 'utils'
 
 import {
@@ -41,8 +42,6 @@ import {
 } from 'build'
 
 use(solidity)
-
-const parseUSDC = (amount: BigNumberish) => parseEth(amount).div(10 ** 12)
 
 describe('TrueRatingAgencyV2', () => {
   let owner: Wallet

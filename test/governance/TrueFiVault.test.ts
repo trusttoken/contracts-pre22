@@ -55,7 +55,6 @@ describe('TrueFiVault', () => {
     await tru.approve(trueFiVault.address, TRU_AMOUNT.add(STKTRU_AMOUNT))
     await trueFiVault.initialize(
       beneficiary.address,
-      owner.address,
       TRU_AMOUNT.add(STKTRU_AMOUNT),
       vaultStart,
       tru.address,
@@ -80,7 +79,6 @@ describe('TrueFiVault', () => {
       const vaultStart = (await provider.getBlock('latest')).timestamp + DAY
       await vault.initialize(
         beneficiary.address,
-        owner.address,
         0,
         vaultStart,
         tru.address,
@@ -94,7 +92,6 @@ describe('TrueFiVault', () => {
       const now = (await provider.getBlock('latest')).timestamp
       await expect(vault.initialize(
         beneficiary.address,
-        owner.address,
         0,
         now - 10,
         tru.address,
@@ -103,7 +100,6 @@ describe('TrueFiVault', () => {
 
       await expect(vault.initialize(
         beneficiary.address,
-        owner.address,
         0,
         now * 2,
         tru.address,
@@ -194,8 +190,8 @@ describe('TrueFiVault', () => {
         // 1/6th of stake was slashed by half, our balance is 11/12 of initial
         expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(start.mul(11).div(12).mul(2), 10000)
         await trueFiVault.connect(beneficiary).withdrawStkTru(await trueFiVault.withdrawable(stkTru.address))
-        expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(Zero, 10000)
-        expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(Zero, 10000)
+        expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(Zero, 100000)
+        expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(Zero, 100000)
         await timeTravel(provider, MONTH)
         expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(VEST_EACH_MONTH.mul(11).div(12).mul(2), 20000000)
         await timeTravel(provider, MONTH)

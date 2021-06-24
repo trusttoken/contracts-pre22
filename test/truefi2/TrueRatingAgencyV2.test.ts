@@ -10,35 +10,24 @@ import {
   expectScaledCloseTo,
   expectBalanceChangeCloseTo,
   parseEth,
+  parseUSDC,
   DAY,
+  setupTruefi2,
+  createLoan,
 } from 'utils'
 
 import {
   TrueRatingAgencyV2__factory, TrueRatingAgencyV2,
-  TrustToken__factory,
-  TrustToken,
-  MockTrueCurrency__factory,
   MockTrueCurrency,
   StkTruToken,
-  StkTruToken__factory,
-  LinearTrueDistributor__factory,
-  LinearTrueDistributor,
-  ArbitraryDistributor__factory,
   ArbitraryDistributor,
   MockUsdc,
-  MockUsdc__factory,
   LoanToken2,
   LoanToken2__factory,
   LoanFactory2,
-  PoolFactory,
   TrueFiPool2,
-  PoolFactory__factory,
-  TrueFiPool2__factory,
-  LoanFactory2__factory,
-  ImplementationReference,
-  ImplementationReference__factory,
   TrueLender2,
-  TrueLender2__factory,
+  Liquidator2,
 } from 'contracts'
 
 import {
@@ -51,13 +40,12 @@ use(solidity)
 describe('TrueRatingAgencyV2', () => {
   let owner: Wallet
   let otherWallet: Wallet
-  let liquidator: Wallet
 
+  let liquidator: Liquidator2
   let rater: TrueRatingAgencyV2
-  let trustToken: TrustToken
+  let trustToken: MockTrueCurrency
   let stakedTrustToken: StkTruToken
   let arbitraryDistributor: ArbitraryDistributor
-  let linearDistributor: LinearTrueDistributor
 
   let tusd: MockTrueCurrency
   let usdc: MockUsdc
@@ -65,17 +53,8 @@ describe('TrueRatingAgencyV2', () => {
   let lender: TrueLender2
   let loanToken: LoanToken2
   let loanFactory: LoanFactory2
-  let poolFactory: PoolFactory
   let tusdPool: TrueFiPool2
   let usdcPool: TrueFiPool2
-  let implementationReference: ImplementationReference
-  let poolImplementation: TrueFiPool2
-
-  const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
-    const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, apy)
-    const loanAddress = (await loanTx.wait()).events[0].args.contractAddress
-    return new LoanToken2__factory(owner).attach(loanAddress)
-  }
 
   const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
   const stake = parseTRU(15e6)
@@ -91,36 +70,21 @@ describe('TrueRatingAgencyV2', () => {
   let timeTravel: (time: number) => void
 
   beforeEachWithFixture(async (_wallets, _provider) => {
-    [owner, otherWallet, liquidator] = _wallets
+    [owner, otherWallet] = _wallets
+    timeTravel = (time: number) => _timeTravel(_provider, time)
 
-    trustToken = await new TrustToken__factory(owner).deploy()
-    tusd = await new MockTrueCurrency__factory(owner).deploy()
-    usdc = await new MockUsdc__factory(owner).deploy()
-
-    arbitraryDistributor = await new ArbitraryDistributor__factory(owner).deploy()
-    linearDistributor = await new LinearTrueDistributor__factory(owner).deploy()
-    stakedTrustToken = await new StkTruToken__factory(owner).deploy()
-    poolImplementation = await new TrueFiPool2__factory(owner).deploy()
-    implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
-    poolFactory = await new PoolFactory__factory(owner).deploy()
-    lender = await new TrueLender2__factory(owner).deploy()
-    loanFactory = await new LoanFactory2__factory(owner).deploy()
-    rater = await new TrueRatingAgencyV2__factory(owner).deploy()
-
-    await trustToken.initialize()
-    await poolFactory.initialize(implementationReference.address, usdc.address, lender.address, AddressZero)
-    await lender.initialize(stakedTrustToken.address, poolFactory.address, rater.address, AddressZero)
-    await arbitraryDistributor.initialize(rater.address, trustToken.address, stake)
-    await rater.initialize(trustToken.address, stakedTrustToken.address, arbitraryDistributor.address, loanFactory.address)
-    await stakedTrustToken.initialize(trustToken.address, tusd.address, tusd.address, linearDistributor.address, liquidator.address)
-    await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address)
-
-    await poolFactory.whitelist(tusd.address, true)
-    await poolFactory.whitelist(usdc.address, true)
-    await poolFactory.createPool(tusd.address)
-    await poolFactory.createPool(usdc.address)
-    tusdPool = poolImplementation.attach(await poolFactory.pool(tusd.address))
-    usdcPool = poolImplementation.attach(await poolFactory.pool(usdc.address))
+    ;({ liquidator,
+      rater,
+      tru: trustToken,
+      stkTru: stakedTrustToken,
+      arbitraryDistributor,
+      feeToken: usdc,
+      standardToken: tusd,
+      lender,
+      loanFactory,
+      feePool: usdcPool,
+      standardPool: tusdPool,
+    } = await setupTruefi2(owner))
 
     await rater.setRatersRewardFactor(10000)
 
@@ -134,16 +98,12 @@ describe('TrueRatingAgencyV2', () => {
     await trustToken.mint(arbitraryDistributor.address, stake)
     await trustToken.approve(stakedTrustToken.address, stake.mul(2))
 
-    timeTravel = (time: number) => _timeTravel(_provider, time)
-
     await stakedTrustToken.delegate(owner.address)
     await stakedTrustToken.connect(otherWallet).delegate(otherWallet.address)
     await stakedTrustToken.stake(stake)
 
-    await rater.allowChangingAllowances(owner.address, true)
-
     await tusd.mint(tusdPool.address, parseEth(1e7))
-    await usdc.mint(usdcPool.address, parseEth(1e7))
+    await usdc.mint(usdcPool.address, parseUSDC(1e7))
   })
 
   const submit = async (loanTokenAddress: string, wallet = owner) =>

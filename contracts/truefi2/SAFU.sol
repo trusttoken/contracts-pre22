@@ -13,8 +13,9 @@ import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ILiquidator2} from "./interface/ILiquidator2.sol";
 import {I1Inch3} from "./interface/I1Inch3.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
+import {ISAFU} from "./interface/ISAFU.sol";
 
-contract SAFU is UpgradeableClaimable {
+contract SAFU is ISAFU, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using OneInchExchange for I1Inch3;
@@ -30,6 +31,7 @@ contract SAFU is UpgradeableClaimable {
     I1Inch3 public _1Inch;
 
     mapping(ILoanToken2 => uint256) public loanDeficit;
+    mapping(address => uint256) public override poolDeficit;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -48,6 +50,13 @@ contract SAFU is UpgradeableClaimable {
      * @param deficit Deficit amount that SAFU still owes the pool
      */
     event Liquidated(ILoanToken2 loan, uint256 repaid, uint256 deficit);
+
+    /**
+     * @dev Emitted when a loan deficit is reclaimed
+     * @param loan Defaulted loan, which deficit was reclaimed
+     * @param reclaimed Amount reclaimed by the pool
+     */
+    event Reclaimed(ILoanToken2 loan, uint256 reclaimed);
 
     function initialize(
         ILoanFactory2 _loanFactory,
@@ -78,6 +87,7 @@ contract SAFU is UpgradeableClaimable {
             deficit = owedToPool.sub(safuTokenBalance);
             toTransfer = safuTokenBalance;
             loanDeficit[loan] = deficit;
+            poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].add(deficit);
         }
         token.safeTransfer(address(pool), toTransfer);
         emit Liquidated(loan, toTransfer, deficit);
@@ -95,8 +105,19 @@ contract SAFU is UpgradeableClaimable {
         emit Redeemed(loan, amountToBurn, redeemedAmount);
     }
 
-    function swap(bytes calldata data) public onlyOwner {
-        I1Inch3.SwapDescription memory swapResult = _1Inch.exchange(data);
+    function reclaim(ILoanToken2 loan) external {
+        require(tokenBalance(loan) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
+        uint256 deficit = loanDeficit[loan];
+        require(deficit > 0, "SAFU: Loan does not have any deficit");
+        loanDeficit[loan] = 0;
+        poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].sub(deficit);
+        loan.token().transfer(address(loan.pool()), deficit);
+        emit Reclaimed(loan, deficit);
+    }
+
+    function swap(bytes calldata data, uint256 minReturnAmount) public onlyOwner {
+        (I1Inch3.SwapDescription memory swapResult, uint256 returnAmount) = _1Inch.exchange(data);
         require(swapResult.dstReceiver == address(this), "SAFU: Receiver is not SAFU");
+        require(returnAmount >= minReturnAmount, "SAFU: Not enough tokens returned from swap");
     }
 }
