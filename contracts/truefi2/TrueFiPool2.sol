@@ -488,7 +488,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
         uint256 expectedMinStrategyValue = strategy.value().add(withToleratedStrategyLoss(amount));
-        token.approve(address(strategy), amount);
+        token.safeApprove(address(strategy), amount);
         strategy.deposit(amount);
         require(strategy.value() >= expectedMinStrategyValue, "TrueFiPool: Strategy value expected to be higher");
         emit Flushed(amount);
