@@ -2,6 +2,7 @@ import { forkChain } from './suite'
 import { setupDeploy } from 'scripts/utils'
 import {
   MockUsdStableCoinOracle__factory,
+  Erc20Mock,
   Erc20Mock__factory,
   ImplementationReference__factory,
   TrueFiPool2,
@@ -15,7 +16,6 @@ import {
   LoanFactory2__factory,
   LoanToken2,
   LoanToken2__factory,
-  Erc20Mock,
 } from 'contracts'
 import { DAY, parseEth, parseTRU } from 'utils'
 import fetch from 'node-fetch'
@@ -52,7 +52,7 @@ describe('TrueLender2', () => {
   let stkTru: Wallet
   let tusd: Erc20Mock
   let usdc: Erc20Mock
-  let usdt: ERC20Mock
+  let usdt: Erc20Mock
   let loan: LoanToken2
 
   beforeEach(async () => {
