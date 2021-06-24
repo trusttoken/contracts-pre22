@@ -110,7 +110,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         uint256[N_TOKENS] memory amounts = [uint256(0), 0, 0, 0];
         amounts[tokenIndex] = totalAmount;
 
-        token.approve(address(curvePool), totalAmount);
+        token.safeApprove(address(curvePool), totalAmount);
         uint256 conservativeMinAmount = calcTokenAmount(totalAmount).mul(999).div(1000);
         curvePool.add_liquidity(amounts, conservativeMinAmount);
 

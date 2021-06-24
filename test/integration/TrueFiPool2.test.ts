@@ -2,8 +2,10 @@ import { forkChain } from './suite'
 import { setupDeploy } from 'scripts/utils'
 import {
   ChainlinkTruUsdcOracle__factory,
+  CurveYearnStrategy__factory,
   Erc20Mock__factory, ImplementationReference,
   ImplementationReference__factory, OwnedProxyWithReference__factory,
+  OwnedUpgradeabilityProxy__factory,
   PoolFactory__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
@@ -49,14 +51,15 @@ describe('TrueFiPool2', () => {
     pool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
   })
 
-  it('tether', async () => {
+  it('tether flush', async () => {
     const usdtPool = TrueFiPool2__factory.connect('0x6002b1dcb26e7b1aa797a17551c6f487923299d7', powner)
     const proxy = OwnedProxyWithReference__factory.connect('0x6002b1dcb26e7b1aa797a17551c6f487923299d7', powner)
+    const strategyProxy = OwnedUpgradeabilityProxy__factory.connect('0x8D162Caa649e981E2a0b0ba5908A77f2536B11A8', powner)
     await proxy.changeImplementationReference(implementationReference.address)
-    const token = Erc20Mock__factory.connect(await usdtPool.token(), powner)
-    console.log(token.address)
-    console.log(await token.allowance(usdtPool.address, await usdtPool.strategy()))
-    await usdtPool.flush(10000000)
+    const newStrategy = await deployContract(CurveYearnStrategy__factory)
+    await strategyProxy.upgradeTo(newStrategy.address)
+    
+    await expect(usdtPool.flush(10000000)).not.to.be.reverted
   })
 
   it('sell TRU on 1inch', async () => {
