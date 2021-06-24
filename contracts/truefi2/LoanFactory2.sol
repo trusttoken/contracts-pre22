@@ -28,7 +28,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     address public lender;
     address public liquidator;
 
-    address admin;
+    address public admin;
 
     // ======= STORAGE DECLARATION END ============
 
