@@ -28,6 +28,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     address public lender;
     address public liquidator;
 
+    address public admin;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -49,7 +51,12 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     ) external initializer {
         poolFactory = _poolFactory;
         lender = _lender;
+        admin = msg.sender;
         liquidator = _liquidator;
+    }
+
+    function setAdmin() external {
+        admin = 0x16cEa306506c387713C70b9C1205fd5aC997E78E;
     }
 
     /**
@@ -68,7 +75,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
         require(poolFactory.isPool(address(_pool)), "LoanFactory: Pool was not created by PoolFactory");
 
-        address newToken = address(new LoanToken2(_pool, msg.sender, lender, liquidator, _amount, _term, _apy));
+        address newToken = address(new LoanToken2(_pool, msg.sender, lender, admin, liquidator, _amount, _term, _apy));
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);
