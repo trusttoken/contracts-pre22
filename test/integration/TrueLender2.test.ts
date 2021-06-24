@@ -34,10 +34,12 @@ describe('TrueLender2', () => {
   const TUSD_ADDRESS = '0x0000000000085d4780B73119b644AE5ecd22b376'
   const INCH_ADDRESS = '0x11111112542D85B3EF69AE05771c2dCCff4fAa26'
   const TUSD_HOLDER = '0xE662710B76BF0Eda532b109Ac2f6C1ca8688210b'
+  const USDT_HOLDER = '0x2faf487a4414fe77e2327f0bf4ae2a264a776ad2'
   const OWNER = '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [OWNER, TUSD_HOLDER])
+  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [OWNER, TUSD_HOLDER, USDT_HOLDER])
   const owner = provider.getSigner(OWNER)
   const tusdHolder = provider.getSigner(TUSD_HOLDER)
+  const usdtHolder = provider.getSigner(USDT_HOLDER)
   const deployContract = setupDeploy(owner)
 
   let usdcFeePool: TrueFiPool2
@@ -111,5 +113,18 @@ describe('TrueLender2', () => {
 
     await lender.reclaim(loan.address, data)
     expect(await usdcFeePool.balanceOf(stkTru.address)).to.gt(utils.parseUnits('100', 6).mul(98).div(100))
+  })
+
+  it('funds tether loan tokens', async () => {
+    const tx = await loanFactory.createLoanToken(usdtLoanPool.address, parseEth(100000), 1000, DAY * 365)
+    const creationEvent = (await tx.wait()).events[0]
+    const { contractAddress } = creationEvent.args
+
+    loan = LoanToken2__factory.connect(contractAddress, owner)
+
+    await usdt.connect(usdtHolder).approve(usdtLoanPool.address, parseEth(100000))
+    await usdtLoanPool.connect(usdtHolder).join(parseEth(100000))
+
+    await expect(lender.fund(loan.address)).not.to.be.reverted
   })
 })
