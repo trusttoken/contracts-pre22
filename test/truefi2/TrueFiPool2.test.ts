@@ -276,6 +276,13 @@ describe('TrueFiPool2', () => {
       await tusdPool.setSafuAddress(AddressZero)
       expect(await tusdPool.deficitValue()).to.eq(0)
     })
+
+    it('returns 0 after loan has been repaid and redeemed', async () => {
+      await tusd.mint(loan.address, 500136)
+      await safu.redeem(loan.address)
+      await safu.reclaim(loan.address)
+      expect(await tusdPool.deficitValue()).to.eq(0)
+    })
   })
 
   describe('poolValue', () => {
