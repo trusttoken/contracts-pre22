@@ -705,6 +705,7 @@ describe('TrueRatingAgencyV2', () => {
           usdcPool.address,
           owner.address,
           owner.address,
+          owner.address,
           AddressZero,
           parseUSDC(5e6),
           yearInSeconds * 2,

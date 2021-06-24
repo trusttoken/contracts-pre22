@@ -191,7 +191,7 @@ describe('Liquidator2', () => {
 
       it('loan was not created via factory', async () => {
         const deployContract = setupDeploy(owner)
-        const fakeLoan = await deployContract(LoanToken2__factory, pool.address, borrower.address, borrower.address, liquidator.address, parseUSDC(1000), YEAR, 1000)
+        const fakeLoan = await deployContract(LoanToken2__factory, pool.address, borrower.address, borrower.address, owner.address, liquidator.address, parseUSDC(1000), YEAR, 1000)
         await token.connect(borrower).approve(fakeLoan.address, parseUSDC(1000))
         await fakeLoan.connect(borrower).fund()
         await timeTravel(defaultedLoanCloseTime)

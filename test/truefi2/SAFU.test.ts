@@ -75,7 +75,7 @@ describe('SAFU', () => {
       })
 
       it('loan is not created by factory', async () => {
-        const strangerLoan = await new LoanToken2__factory(owner).deploy(pool.address, owner.address, owner.address, owner.address, 1000, 1, 1)
+        const strangerLoan = await new LoanToken2__factory(owner).deploy(pool.address, owner.address, owner.address, owner.address, owner.address, 1000, 1, 1)
         await expect(safu.liquidate(strangerLoan.address))
           .to.be.revertedWith('SAFU: Unknown loan')
       })

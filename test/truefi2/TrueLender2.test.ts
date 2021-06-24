@@ -263,6 +263,7 @@ describe('TrueLender2', () => {
           counterfeitPool.address,
           borrower.address,
           lender.address,
+          owner.address,
           AddressZero,
           100000,
           DAY,
