@@ -76,7 +76,7 @@ describe('TrueLender2', () => {
     loanPool = TrueFiPool2__factory.connect(await poolFactory.pool(tusd.address), owner)
 
     const loanFactory = await new LoanFactory2__factory(owner).deploy()
-    await loanFactory.initialize(poolFactory.address, lender.address, OWNER, AddressZero)
+    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero)
 
     const tx = await loanFactory.createLoanToken(loanPool.address, parseEth(100000), 1000, DAY * 365)
     const creationEvent = (await tx.wait()).events[0]

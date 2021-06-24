@@ -47,12 +47,11 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     function initialize(
         IPoolFactory _poolFactory,
         address _lender,
-        address _admin,
         address _liquidator
     ) external initializer {
         poolFactory = _poolFactory;
         lender = _lender;
-        admin = _admin;
+        admin = msg.sender;
         liquidator = _liquidator;
     }
 
