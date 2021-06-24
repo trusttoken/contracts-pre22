@@ -22,6 +22,7 @@ import {IERC20WithDecimals} from "../interface/IERC20WithDecimals.sol";
  */
 contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
     using SafeERC20 for IERC20WithDecimals;
     using OneInchExchange for I1Inch3;
 

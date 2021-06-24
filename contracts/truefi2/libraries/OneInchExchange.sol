@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import {I1Inch3} from "../interface/I1Inch3.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 interface IUniRouter {
     function token0() external view returns (address);
@@ -12,6 +13,8 @@ interface IUniRouter {
 }
 
 library OneInchExchange {
+    using SafeERC20 for IERC20;
+
     uint256 constant ADDRESS_MASK = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
     uint256 constant REVERSE_MASK = 0x8000000000000000000000000000000000000000000000000000000000000000;
 

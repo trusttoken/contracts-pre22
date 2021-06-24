@@ -3,6 +3,7 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
@@ -36,6 +37,8 @@ import {IStakingPool} from "./interface/IStakingPool.sol";
  */
 contract TrueLender is ITrueLender, Ownable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+    using SafeERC20 for ITrueFiPool;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======

@@ -4,7 +4,9 @@ pragma experimental ABIEncoderV2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
+import {ERC20} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
@@ -24,6 +26,8 @@ import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
  */
 contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     using SafeMath for uint256;
+    using SafeERC20 for ERC20;
+    using SafeERC20 for IERC20WithDecimals;
     using OneInchExchange for I1Inch3;
 
     // basis point for ratio
