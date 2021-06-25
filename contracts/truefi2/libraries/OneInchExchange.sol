@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {I1Inch3} from "../interface/I1Inch3.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 interface IUniRouter {
     function token0() external view returns (address);
@@ -13,6 +14,7 @@ interface IUniRouter {
 }
 
 library OneInchExchange {
+    using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
     uint256 constant ADDRESS_MASK = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
@@ -53,7 +55,7 @@ library OneInchExchange {
             description.dstReceiver = address(this);
         }
 
-        IERC20(description.srcToken).approve(address(_1inchExchange), description.amount);
+        IERC20(description.srcToken).safeApprove(address(_1inchExchange), description.amount);
         uint256 balanceBefore = IERC20(description.dstToken).balanceOf(description.dstReceiver);
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = address(_1inchExchange).call(data);

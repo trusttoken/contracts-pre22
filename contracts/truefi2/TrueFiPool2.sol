@@ -35,6 +35,7 @@ import {PoolExtensions} from "./PoolExtensions.sol";
 contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
+    using SafeERC20 for IERC20;
     using OneInchExchange for I1Inch3;
 
     uint256 private constant BASIS_PRECISION = 10000;
