@@ -38,7 +38,6 @@ import {IStakingPool} from "./interface/IStakingPool.sol";
 contract TrueLender is ITrueLender, Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-    using SafeERC20 for ITrueFiPool;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -334,7 +333,7 @@ contract TrueLender is ITrueLender, Ownable {
         currencyToken.safeApprove(address(loanToken), receivedAmount);
         loanToken.fund();
 
-        pool.safeApprove(address(stakingPool), pool.balanceOf(address(this)));
+        pool.approve(address(stakingPool), pool.balanceOf(address(this)));
         stakingPool.payFee(pool.balanceOf(address(this)), block.timestamp.add(term));
 
         emit Funded(address(loanToken), receivedAmount);
