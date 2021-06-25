@@ -221,9 +221,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
      * [See more](https://docs.1inch.exchange/api/quote-swap#swap)
      */
     function sellCrv(bytes calldata data) external {
-        uint256 balanceBefore = token.balanceOf(pool);
-        I1Inch3.SwapDescription memory swap = _1Inch.exchange(data);
-        uint256 balanceDiff = token.balanceOf(pool).sub(balanceBefore);
+        (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1Inch.exchange(data);
 
         uint256 expectedGain = normalizeDecimals(crvOracle.crvToUsd(swap.amount));
 

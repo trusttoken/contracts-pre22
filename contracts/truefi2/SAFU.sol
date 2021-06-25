@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
+pragma experimental ABIEncoderV2;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -10,11 +11,14 @@ import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ILiquidator2} from "./interface/ILiquidator2.sol";
+import {I1Inch3} from "./interface/I1Inch3.sol";
+import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 
 contract SAFU is ISAFU, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+    using OneInchExchange for I1Inch3;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -24,6 +28,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
 
     ILoanFactory2 public loanFactory;
     ILiquidator2 public liquidator;
+    I1Inch3 public _1Inch;
 
     mapping(ILoanToken2 => uint256) public loanDeficit;
     mapping(address => uint256) public override poolDeficit;
@@ -53,10 +58,15 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      */
     event Reclaimed(ILoanToken2 loan, uint256 reclaimed);
 
-    function initialize(ILoanFactory2 _loanFactory, ILiquidator2 _liquidator) public initializer {
+    function initialize(
+        ILoanFactory2 _loanFactory,
+        ILiquidator2 _liquidator,
+        I1Inch3 __1Inch
+    ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         loanFactory = _loanFactory;
         liquidator = _liquidator;
+        _1Inch = __1Inch;
     }
 
     function liquidate(ILoanToken2 loan) external {
@@ -103,5 +113,11 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].sub(deficit);
         loan.token().transfer(address(loan.pool()), deficit);
         emit Reclaimed(loan, deficit);
+    }
+
+    function swap(bytes calldata data, uint256 minReturnAmount) public onlyOwner {
+        (I1Inch3.SwapDescription memory swapResult, uint256 returnAmount) = _1Inch.exchange(data);
+        require(swapResult.dstReceiver == address(this), "SAFU: Receiver is not SAFU");
+        require(returnAmount >= minReturnAmount, "SAFU: Not enough tokens returned from swap");
     }
 }
