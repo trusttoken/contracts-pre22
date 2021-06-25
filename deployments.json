@@ -381,8 +381,8 @@
       "address": "0x0236c16f06aAFdbea5b5EDC8C326A479DB090eB2"
     },
     "trueLender2": {
-      "txHash": "0xbd0d53538be71721cc778a18705c689a502f73e2f878fa47a3974cc698ea142c",
-      "address": "0x23ade98FA576AcBab49A67d2E6d4159B89eE26b9"
+      "txHash": "0x25f363fc9ebd50865cc14cd5499814985fe822db1b9dc6bbd4f37a0b17f833c5",
+      "address": "0x1BBBF37a055059089d9438566fC5f100e9F08EB6"
     },
     "trueLender2_proxy": {
       "txHash": "0x74f980e54fb0a9bd0cfc836af959567539453c24f54730beed0b3b721cc880e9",
