@@ -116,14 +116,14 @@ describe('TrueLender2', () => {
   })
 
   it('funds tether loan tokens', async () => {
-    const tx = await loanFactory.createLoanToken(usdtLoanPool.address, parseEth(100000), 1000, DAY * 365)
+    const tx = await loanFactory.createLoanToken(usdtLoanPool.address, 10_000_000, 1000, DAY * 365)
     const creationEvent = (await tx.wait()).events[0]
     const { contractAddress } = creationEvent.args
 
     loan = LoanToken2__factory.connect(contractAddress, owner)
 
-    await usdt.connect(usdtHolder).approve(usdtLoanPool.address, parseEth(100000))
-    await usdtLoanPool.connect(usdtHolder).join(parseEth(100000))
+    await usdt.connect(usdtHolder).approve(usdtLoanPool.address, 10_000_000)
+    await usdtLoanPool.connect(usdtHolder).join(10_000_000)
 
     await expect(lender.fund(loan.address)).not.to.be.reverted
   })
