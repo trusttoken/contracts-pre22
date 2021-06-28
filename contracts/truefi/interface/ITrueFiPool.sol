@@ -15,9 +15,6 @@ interface ITrueFiPool is IERC20 {
     /// @dev pool token (TUSD)
     function currencyToken() external view returns (IERC20);
 
-    /// @dev stake token (TRU)
-    function stakeToken() external view returns (IERC20);
-
     /**
      * @dev join pool
      * 1. Transfer TUSD from sender

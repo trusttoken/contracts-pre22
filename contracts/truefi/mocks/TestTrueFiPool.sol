@@ -14,7 +14,6 @@ contract TestTrueFiPool is TrueFiPool {
         IERC20 __currencyToken,
         ITrueLender __lender,
         IUniswapRouter __uniRouter,
-        IERC20 __stakeToken,
         ITrueFiPoolOracle __truOracle,
         ICrvPriceOracle __crvOracle
     ) public initializer {
@@ -26,7 +25,6 @@ contract TestTrueFiPool is TrueFiPool {
         _lender = __lender;
         _minter = _curveGauge.minter();
         _uniRouter = __uniRouter;
-        _stakeToken = __stakeToken;
         oracle = __truOracle;
         _crvOracle = __crvOracle;
 
