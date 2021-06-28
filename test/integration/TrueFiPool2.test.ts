@@ -1,21 +1,17 @@
 import { forkChain } from './suite'
 import { setupDeploy } from 'scripts/utils'
 import {
-  ChainlinkTruUsdcOracle__factory,
   CurveYearnStrategy__factory,
   Erc20Mock__factory, ImplementationReference,
   ImplementationReference__factory, OwnedProxyWithReference__factory,
   OwnedUpgradeabilityProxy__factory,
   PoolFactory__factory,
-  TrueFiPool2,
   TrueFiPool2__factory,
   TrueLender2__factory,
   TrustToken,
   TrustToken__factory,
 } from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
-import { parseTRU } from 'utils'
-import fetch from 'node-fetch'
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 
@@ -34,7 +30,7 @@ describe('TrueFiPool2', () => {
   const powner = provider.getSigner(PROXY_OWNER)
   const deployContract = setupDeploy(owner)
 
-  let pool: TrueFiPool2
+  // let pool: TrueFiPool2
   let tru: TrustToken
   let implementationReference: ImplementationReference
 
@@ -50,7 +46,7 @@ describe('TrueFiPool2', () => {
     await poolFactory.whitelist(USDC_ADDRESS, true)
     const usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
     await poolFactory.createPool(usdc.address)
-    pool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
+    // pool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
   })
 
   it('tether flush', async () => {
