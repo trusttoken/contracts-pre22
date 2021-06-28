@@ -272,6 +272,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * Claims rewards when unstaking
      * @param amount Amount of stkTRU to unstake for TRU
      */
+    // slither-disable-next-line reentrancy-eth
     function unstake(uint256 amount) external distribute update(msg.sender) nonReentrant {
         require(amount > 0, "StkTruToken: Cannot unstake 0");
 
@@ -344,6 +345,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
     /**
      * @dev Claim all rewards
      */
+    // slither-disable-next-line reentrancy-eth
     function claim() external distribute update(msg.sender) {
         _claim(tru);
         _claim(tfusd);
