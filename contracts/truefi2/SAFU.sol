@@ -69,6 +69,12 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         _1Inch = __1Inch;
     }
 
+    /**
+     * @dev Liquidates a defaulted Loan, withdraws a portion of tru from staking pool
+     * then tries to cover the loan with own funds, to compensate TrueFiPool
+     * If SAFU does not have enough funds, deficit is saved to be redeemed later
+     * @param loan Loan to be liquidated
+     */
     function liquidate(ILoanToken2 loan) external {
         require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
         require(loan.status() == ILoanToken2.Status.Defaulted, "SAFU: Loan is not defaulted");
@@ -93,10 +99,18 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         emit Liquidated(loan, toTransfer, deficit);
     }
 
+    /**
+     * @dev Checks SAFU's balance of a specific token
+     * @param token
+     */
     function tokenBalance(IERC20 token) public view returns (uint256) {
         return token.balanceOf(address(this));
     }
 
+    /**
+     * @dev Redeems a loan for underlying repaid debt
+     * @param loan Loan token to be redeemed
+     */
     function redeem(ILoanToken2 loan) public onlyOwner {
         uint256 amountToBurn = tokenBalance(loan);
         uint256 balanceBeforeRedeem = tokenBalance(loan.token());
@@ -105,6 +119,10 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         emit Redeemed(loan, amountToBurn, redeemedAmount);
     }
 
+    /**
+     * @dev Reclaims deficit funds, after a loan is repaid and transfers them to the pool
+     * @param loan Loan with a deficit to be reclaimed
+     */
     function reclaim(ILoanToken2 loan) external {
         require(tokenBalance(loan) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
         uint256 deficit = loanDeficit[loan];
@@ -115,6 +133,9 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         emit Reclaimed(loan, deficit);
     }
 
+    /**
+     * @dev Swap any asset owned by SAFU to any other asset, using 1inch protocol
+     */
     function swap(bytes calldata data, uint256 minReturnAmount) public onlyOwner {
         (I1Inch3.SwapDescription memory swapResult, uint256 returnAmount) = _1Inch.exchange(data);
         require(swapResult.dstReceiver == address(this), "SAFU: Receiver is not SAFU");
