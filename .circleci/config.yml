@@ -62,7 +62,13 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - run: yarn test:governance && yarn test:proxy && yarn test:registry && yarn test:scripts && yarn test:true-currencies && yarn test:true-gold && yarn test:trusttoken
+      - run: yarn test:governance
+      - run: yarn test:proxy
+      - run: yarn test:registry
+      - run: yarn test:scripts
+      - run: yarn test:true-currencies
+      - run: yarn test:true-gold
+      - run: yarn test:trusttoken
   test-truefi:
     docker:
       - image: circleci/node:12.19.0
