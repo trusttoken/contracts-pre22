@@ -63,23 +63,4 @@ describe('TrueFiPool2', () => {
 
     await expect(usdtPool.flush(10000000)).not.to.be.reverted
   })
-
-  it('sell TRU on 1inch', async () => {
-    const oracle = await deployContract(ChainlinkTruUsdcOracle__factory)
-    await pool.setOracle(oracle.address)
-
-    const holder = provider.getSigner(TRU_HOLDER)
-    await tru.connect(holder).transfer(pool.address, parseTRU(100), {
-      gasPrice: 0,
-    })
-
-    const dataUrl = `https://api.1inch.exchange/v3.0/1/swap?disableEstimate=true&protocols=UNISWAP_V2,SUSHI&allowPartialFill=false&fromTokenAddress=${TRU_ADDRESS}&toTokenAddress=${USDC_ADDRESS}&amount=${parseTRU(100)}&fromAddress=${pool.address}&slippage=2`
-    const body = await (await fetch(dataUrl)).json()
-    const data = body.tx.data
-    expect(await pool.liquidValue()).to.eq(0)
-    await pool.sellLiquidationToken(data)
-    expect(await pool.liquidationTokenBalance()).to.equal(0)
-    expect(await pool.poolValue()).to.be.gt(0)
-    expect(await pool.liquidValue()).to.be.gt(0)
-  })
 })
