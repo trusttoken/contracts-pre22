@@ -377,6 +377,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * R = Total Reward = (interest * chi * rewardFactor)
      * @param id Loan ID
      */
+    // slither-disable-next-line reentrancy-no-eth
     modifier calculateTotalReward(address id) {
         if (loans[id].reward == 0) {
             uint256 interest = ILoanToken2(id).profit();
@@ -401,7 +402,10 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
             loans[id].reward = ratersReward;
             if (totalReward > 0) {
                 distributor.distribute(totalReward);
-                TRU.transfer(address(stkTRU), totalReward.sub(ratersReward));
+                if (!TRU.transfer(address(stkTRU), totalReward.sub(ratersReward))) {
+                    // handle transfer failure
+                    0;
+                }
             }
         }
         _;

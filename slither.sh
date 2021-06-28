@@ -23,14 +23,15 @@ solc-select use 0.6.10
 
 yarn flatten
 
-slither flatten/GovernorAlpha.sol --print human-summary
-slither flatten/Liquidator.sol --print human-summary
-slither flatten/LoanFactory.sol --print human-summary
-slither flatten/LoanToken.sol --print human-summary
-slither flatten/StkTruToken.sol --print human-summary
-slither flatten/TrueLender.sol --print human-summary
-slither flatten/TrueRatingAgencyV2.sol --print human-summary
-slither flatten/TrustToken.sol --print human-summary
-slither flatten/Timelock.sol --print human-summary
+status=0
+slither flatten/GovernorAlpha.sol || status=1
+slither flatten/Liquidator.sol || status=1
+slither flatten/LoanFactory.sol || status=1
+slither flatten/LoanToken.sol || status=1
+slither flatten/StkTruToken.sol || status=1
+slither flatten/TrueLender.sol || status=1
+slither flatten/TrueRatingAgencyV2.sol || status=1
+slither flatten/TrustToken.sol || status=1
+slither flatten/Timelock.sol || status=1
 
-echo "Done."
+exit $status

@@ -252,6 +252,7 @@ contract GovernorAlpha is UpgradeableClaimable {
         proposal.executed = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
             //OLD: timelock.executeTransaction.value(proposal.values[i])(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
+            // slither-disable-next-line arbitrary-send
             timelock.executeTransaction{value: proposal.values[i]}(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
         }
         emit ProposalExecuted(proposalId);
