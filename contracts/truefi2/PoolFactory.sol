@@ -131,7 +131,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), liquidationToken, trueLender2, ONE_INCH_ADDRESS, safu, this.owner());
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, ONE_INCH_ADDRESS, safu, this.owner());
 
         emit PoolCreated(token, address(proxy));
     }

@@ -10,7 +10,6 @@ import {ISAFU} from "./ISAFU.sol";
 interface ITrueFiPool2 is IERC20 {
     function initialize(
         ERC20 _token,
-        ERC20 _stakingToken,
         ITrueLender2 _lender,
         I1Inch3 __1Inch,
         ISAFU safu,

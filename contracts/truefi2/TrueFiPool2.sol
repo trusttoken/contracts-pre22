@@ -71,7 +71,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     mapping(address => uint256) latestJoinBlock;
 
-    IERC20 public liquidationToken;
+    IERC20 public DEPRECATED__liquidationToken;
 
     ITrueFiPoolOracle public override oracle;
 
@@ -104,7 +104,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     function initialize(
         ERC20 _token,
-        ERC20 _liquidationToken,
         ITrueLender2 _lender,
         I1Inch3 __1Inch,
         ISAFU _safu,
@@ -114,7 +113,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         UpgradeableClaimable.initialize(__owner);
 
         token = _token;
-        liquidationToken = _liquidationToken;
         lender = _lender;
         safu = _safu;
         _1Inch = __1Inch;
@@ -303,27 +301,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
             return 0;
         }
         return safu.poolDeficit(address(this));
-    }
-
-    /**
-     * @dev Get total balance of stake tokens
-     * @return Balance of stake tokens denominated in this contract
-     */
-    function liquidationTokenBalance() public view returns (uint256) {
-        return liquidationToken.balanceOf(address(this));
-    }
-
-    /**
-     * @dev Price of TRU denominated in underlying tokens
-     * @return Oracle price of TRU in underlying tokens
-     */
-    function liquidationTokenValue() public view returns (uint256) {
-        uint256 balance = liquidationTokenBalance();
-        if (balance == 0 || address(oracle) == address(0)) {
-            return 0;
-        }
-        // Use conservative price estimation to avoid pool being overvalued
-        return withToleratedSlippage(oracle.truToToken(balance));
     }
 
     /**
@@ -582,17 +559,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     function setOracle(ITrueFiPoolOracle newOracle) external onlyOwner {
         oracle = newOracle;
         emit OracleChanged(newOracle);
-    }
-
-    function sellLiquidationToken(bytes calldata data) external {
-        (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1Inch.exchange(data);
-
-        uint256 expectedGain = oracle.truToToken(swap.amount);
-        require(balanceDiff >= withToleratedSlippage(expectedGain), "TrueFiPool: Not optimal exchange");
-
-        require(swap.srcToken == address(liquidationToken), "TrueFiPool: Source token is not TRU");
-        require(swap.dstToken == address(token), "TrueFiPool: Invalid destination token");
-        require(swap.dstReceiver == address(this), "TrueFiPool: Receiver is not pool");
     }
 
     /**

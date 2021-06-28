@@ -1,7 +1,6 @@
 import { expect, use } from 'chai'
 import {
   LoanToken2,
-  MockErc20Token,
   MockStrategy,
   MockStrategy__factory,
   BadStrategy,
@@ -15,10 +14,7 @@ import {
   LoanFactory2,
   Safu,
 } from 'contracts'
-import {
-  ITrueFiPoolOracleJson,
-} from 'build'
-import { deployMockContract, MockProvider, solidity } from 'ethereum-waffle'
+import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 import { parseEth } from 'utils/parseEth'
@@ -36,7 +32,6 @@ describe('TrueFiPool2', () => {
   let tusd: MockTrueCurrency
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
-  let liquidationToken: MockErc20Token
   let tusdPool: TrueFiPool2
   let loanFactory: LoanFactory2
   let lender: TrueLender2
@@ -87,10 +82,6 @@ describe('TrueFiPool2', () => {
   describe('initializer', () => {
     it('sets corresponding token', async () => {
       expect(await tusdPool.token()).to.equal(tusd.address)
-    })
-
-    it('sets liquidation token', async () => {
-      expect(await tusdPool.liquidationToken()).to.eq(tru.address)
     })
 
     it('sets lender', async () => {
@@ -223,37 +214,6 @@ describe('TrueFiPool2', () => {
       await tusdPool.switchStrategy(poolStrategy1.address)
       await tusdPool.flush(1000)
       expect(await tusdPool.strategyValue()).to.eq(1000)
-    })
-  })
-
-  describe('liquidationTokenValue', () => {
-    it('returns 0 when pool holds no TRU', async () => {
-      expect(await tusdPool.liquidationTokenValue()).to.eq(0)
-    })
-
-    it('returns 0 when pool has no oracle', async () => {
-      await tru.mint(tusdPool.address, 1000)
-      await tusdPool.setOracle(AddressZero)
-      expect(await tusdPool.liquidationTokenBalance()).to.eq(1000)
-      expect(await tusdPool.liquidationTokenValue()).to.eq(0)
-    })
-
-    it('converts TRU to pool token value using oracle and returns value - 1%', async () => {
-      await tru.mint(tusdPool.address, 1000)
-      const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
-      await mockOracle.mock.truToToken.returns(500)
-      await tusdPool.setOracle(mockOracle.address)
-      expect(await tusdPool.liquidationTokenValue()).to.eq(withToleratedSlippage(BigNumber.from(500)))
-      expect('truToToken').to.be.calledOnContractWith(mockOracle, [1000])
-    })
-
-    xit('liquidationTokenValue is not part of liquidValue but a part of poolValue', async () => {
-      await liquidationToken.mint(tusdPool.address, 1000)
-      const mockOracle = await deployMockContract(owner, ITrueFiPoolOracleJson.abi)
-      await mockOracle.mock.truToToken.returns(500)
-      await tusdPool.setOracle(mockOracle.address)
-      expect(await tusdPool.liquidValue()).to.eq(0)
-      expect(await tusdPool.poolValue()).to.eq(withToleratedSlippage(BigNumber.from(500)))
     })
   })
 
