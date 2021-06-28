@@ -64,7 +64,7 @@ describe('TrueFiPool2', () => {
     await expect(usdtPool.flush(10000000)).not.to.be.reverted
   })
 
-  it('sell TRU on 1inch', async () => {
+  xit('sell TRU on 1inch', async () => {
     const oracle = await deployContract(ChainlinkTruUsdcOracle__factory)
     await pool.setOracle(oracle.address)
 
