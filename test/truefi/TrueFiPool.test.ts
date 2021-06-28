@@ -31,8 +31,9 @@ import {
   TrueLender2__factory,
   TrueLender__factory,
   MockTrueFiPoolOracle__factory, Safu__factory,
+  Safu,
 } from 'contracts'
-import { ICurveGaugeJson, ICurveMinterJson, SAFUJson, TrueRatingAgencyJson } from 'build'
+import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
