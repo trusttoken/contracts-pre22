@@ -114,31 +114,6 @@ describe('TrueFiVault', () => {
     })
   })
 
-  describe('Withdraw to owner', () => {
-    it('reverts with wrong caller', async () => {
-      await expect(trueFiVault.connect(beneficiary).withdrawToOwner()).to.be.revertedWith('TrueFiVault: only owner')
-    })
-
-    it('claims rewards', async () => {
-      await trueFiVault.connect(owner).withdrawToOwner()
-      expect('claimRewards').to.be.calledOnContractWith(stkTru, [tru.address])
-    })
-
-    it('transfers TRU to owner', async () => {
-      await trueFiVault.connect(owner).withdrawToOwner()
-      expect('transfer').to.be.calledOnContractWith(tru, [owner.address, TRU_AMOUNT])
-    })
-
-    it('transfers stkTRU to owner', async () => {
-      await trueFiVault.connect(owner).withdrawToOwner()
-      expect('transfer').to.be.calledOnContractWith(stkTru, [owner.address, STKTRU_AMOUNT])
-    })
-
-    it('emits event', async () => {
-      await expect(trueFiVault.connect(owner).withdrawToOwner()).to.emit(trueFiVault, 'Withdraw').withArgs(tru.address, TRU_AMOUNT, owner.address)
-    })
-  })
-
   describe('Withdraw to beneficiary', () => {
     it('reverts with wrong caller', async () => {
       await timeTravel(provider, DURATION + 1)
@@ -189,7 +164,7 @@ describe('TrueFiVault', () => {
         const start = await trueFiVault.withdrawable(tru.address)
         await timeTravel(provider, MONTH * 2)
         await trueFiVault.connect(beneficiary).withdrawTru(await trueFiVault.withdrawable(tru.address))
-        expect(await tru.balanceOf(beneficiary.address)).to.be.closeTo(start.add((VEST_EACH_MONTH.mul(2))), 30000)
+        expect(await tru.balanceOf(beneficiary.address)).to.be.closeTo(start.add((VEST_EACH_MONTH.mul(2))), 32000)
         expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(BigNumber.from(0), 10000)
         await timeTravel(provider, MONTH * 2)
         expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(VEST_EACH_MONTH.mul(2), 10000)
@@ -202,7 +177,7 @@ describe('TrueFiVault', () => {
         // Simulate claiming rewards by minting TRU
         await tru.mint(trueFiVault.address, REWARDS_AMOUNT)
         await trueFiVault.connect(beneficiary).withdrawTru(await trueFiVault.withdrawable(tru.address))
-        expect(await tru.balanceOf(beneficiary.address)).to.be.closeTo(start.add(((VEST_EACH_MONTH.add(REWARDS_AMOUNT.div(12))).mul(2))), 50000)
+        expect(await tru.balanceOf(beneficiary.address)).to.be.closeTo(start.add(((VEST_EACH_MONTH.add(REWARDS_AMOUNT.div(12))).mul(2))), 100000)
         await timeTravel(provider, MONTH * 20)
         await trueFiVault.connect(beneficiary).withdrawTru(await trueFiVault.withdrawable(tru.address))
         expect(await tru.balanceOf(beneficiary.address)).to.equal(REWARDS_AMOUNT.add(TRU_AMOUNT))
@@ -215,8 +190,8 @@ describe('TrueFiVault', () => {
         // 1/6th of stake was slashed by half, our balance is 11/12 of initial
         expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(start.mul(11).div(12).mul(2), 10000)
         await trueFiVault.connect(beneficiary).withdrawStkTru(await trueFiVault.withdrawable(stkTru.address))
-        expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(Zero, 10000)
-        expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(Zero, 10000)
+        expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(Zero, 100000)
+        expect(await trueFiVault.withdrawable(tru.address)).to.be.closeTo(Zero, 100000)
         await timeTravel(provider, MONTH)
         expect(await trueFiVault.withdrawable(stkTru.address)).to.be.closeTo(VEST_EACH_MONTH.mul(11).div(12).mul(2), 20000000)
         await timeTravel(provider, MONTH)

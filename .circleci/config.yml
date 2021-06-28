@@ -28,7 +28,7 @@ commands:
             - ./venv
 
 jobs:
-  build:
+  setup:
     docker:
       - image: circleci/python:3-node
     steps:
@@ -36,6 +36,16 @@ jobs:
       - setup_remote_docker
       - pull_submodules
       - install_dependencies
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+  build:
+    docker:
+      - image: circleci/python:3-node
+    steps:
+      - attach_workspace:
+          at: .
       - run: yarn build
       - run: yarn typecheck
       - persist_to_workspace:
@@ -51,14 +61,14 @@ jobs:
       - run: ./slither.sh
   lint:
     docker:
-      - image: circleci/node:12.19.0
+      - image: cimg/node:16.1.0
     steps:
       - attach_workspace:
           at: .
       - run: yarn lint
   test-others:
     docker:
-      - image: circleci/node:12.19.0
+      - image: cimg/node:16.1.0
     steps:
       - attach_workspace:
           at: .
@@ -71,28 +81,28 @@ jobs:
       - run: yarn test:trusttoken
   test-truefi:
     docker:
-      - image: circleci/node:12.19.0
+      - image: cimg/node:16.1.0
     steps:
       - attach_workspace:
           at: .
       - run: yarn test:truefi
   test-truefi2:
     docker:
-      - image: circleci/node:12.19.0
+      - image: cimg/node:16.1.0
     steps:
       - attach_workspace:
           at: .
       - run: yarn test:truefi2
   deploy:
     docker:
-      - image: circleci/node:12.19.0
+      - image: cimg/node:16.1.0
     steps:
       - attach_workspace:
           at: .
-      - run: yarn deploy:truefi --network kovan --dry-run && yarn deploy:truefi2 --network kovan --dry-run
+      - run: yarn deploy:truefi --network kovan --dry-run --yes && yarn deploy:truefi2 --network kovan --dry-run --yes
   integration:
     docker:
-      - image: circleci/node:12.19.0
+      - image: cimg/node:16.1.0
     steps:
       - attach_workspace:
           at: .
@@ -102,13 +112,16 @@ workflows:
   version: 2
   test:
     jobs:
-      - build
+      - setup
+      - build:
+          requires:
+            - setup
       - lint:
           requires:
-            - build
+            - setup
       - slither:
           requires:
-            - build
+            - setup
       - test-truefi:
           requires:
             - build

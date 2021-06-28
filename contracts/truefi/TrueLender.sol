@@ -3,6 +3,7 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {ILoanToken} from "./interface/ILoanToken.sol";
@@ -36,6 +37,7 @@ import {IStakingPool} from "./interface/IStakingPool.sol";
  */
 contract TrueLender is ITrueLender, Ownable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -187,7 +189,7 @@ contract TrueLender is ITrueLender, Ownable {
 
         pool = _pool;
         currencyToken = _pool.currencyToken();
-        currencyToken.approve(address(_pool), uint256(-1));
+        currencyToken.safeApprove(address(_pool), uint256(-1));
         ratingAgency = _ratingAgency;
         stakingPool = _stakingPool;
 
@@ -328,7 +330,7 @@ contract TrueLender is ITrueLender, Ownable {
 
         _loans.push(loanToken);
         pool.borrow(amount, amount.sub(receivedAmount));
-        currencyToken.approve(address(loanToken), receivedAmount);
+        currencyToken.safeApprove(address(loanToken), receivedAmount);
         loanToken.fund();
 
         pool.approve(address(stakingPool), pool.balanceOf(address(this)));

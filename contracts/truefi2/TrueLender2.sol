@@ -4,7 +4,9 @@ pragma experimental ABIEncoderV2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
+import {ERC20} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
@@ -24,6 +26,8 @@ import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
  */
 contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     using SafeMath for uint256;
+    using SafeERC20 for ERC20;
+    using SafeERC20 for IERC20WithDecimals;
     using OneInchExchange for I1Inch3;
 
     // basis point for ratio
@@ -125,6 +129,14 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param amount Amount repaid
      */
     event Reclaimed(address indexed pool, address loanToken, uint256 amount);
+
+    /**
+     * @dev Can be only called by a pool
+     */
+    modifier onlyPool() {
+        require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
+        _;
+    }
 
     /**
      * @dev Initialize the contract with parameters
@@ -250,7 +262,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
-        pool.token().approve(address(loanToken), amount);
+        pool.token().safeApprove(address(loanToken), amount);
         loanToken.fund();
 
         emit Funded(address(pool), address(loanToken), amount);
@@ -325,7 +337,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
             feeAmount = _swapFee(pool, loanToken, data);
         }
 
-        pool.token().approve(address(pool), fundsReclaimed.sub(feeAmount));
+        pool.token().safeApprove(address(pool), fundsReclaimed.sub(feeAmount));
         pool.repay(fundsReclaimed.sub(feeAmount));
 
         if (address(feeToken) != address(0)) {
@@ -349,20 +361,18 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         if (feeAmount == 0) {
             return 0;
         }
-        uint256 balanceBefore = feeToken.balanceOf(address(this));
-        I1Inch3.SwapDescription memory swap = _1inch.exchange(data);
-        uint256 balanceDiff = feeToken.balanceOf(address(this)).sub(balanceBefore);
+        (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1inch.exchange(data);
         uint256 expectedDiff = pool.oracle().tokenToUsd(feeAmount).mul(10**feeToken.decimals()).div(1 ether);
 
-        require(
-            balanceDiff >= expectedDiff.mul(BASIS_RATIO.sub(swapFeeSlippage)).div(BASIS_RATIO),
-            "TrueLender: Fee returned from swap is too small"
-        );
         require(swap.srcToken == address(token), "TrueLender: Source token is not same as pool's token");
         require(swap.dstToken == address(feeToken), "TrueLender: Destination token is not fee token");
         require(swap.dstReceiver == address(this), "TrueLender: Receiver is not lender");
         require(swap.amount == feeAmount, "TrueLender: Incorrect fee swap amount");
         require(swap.flags & ONE_INCH_PARTIAL_FILL_FLAG == 0, "TrueLender: Partial fill is not allowed");
+        require(
+            balanceDiff >= expectedDiff.mul(BASIS_RATIO.sub(swapFeeSlippage)).div(BASIS_RATIO),
+            "TrueLender: Fee returned from swap is too small"
+        );
 
         return feeAmount;
     }
@@ -373,7 +383,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         if (amount == 0) {
             return;
         }
-        feeToken.approve(address(feePool), amount);
+        feeToken.safeApprove(address(feePool), amount);
         feePool.join(amount);
         feePool.transfer(address(stakingPool), feePool.balanceOf(address(this)));
     }
@@ -394,9 +404,34 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         address recipient,
         uint256 numerator,
         uint256 denominator
-    ) external override {
-        require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
+    ) external override onlyPool {
         _distribute(recipient, numerator, denominator, msg.sender);
+    }
+
+    /**
+     * @dev Allow pool to transfer all LoanTokens to the SAFU in case of liquidation
+     * @param loan LoanToken address
+     * @param recipient expected to be SAFU address
+     */
+    function transferAllLoanTokens(ILoanToken2 loan, address recipient) external override onlyPool {
+        _transferAllLoanTokens(loan, recipient);
+    }
+
+    function _transferAllLoanTokens(ILoanToken2 loan, address recipient) internal {
+        // find the token, transfer to SAFU and remove loan from loans list
+        ILoanToken2[] storage _loans = poolLoans[loan.pool()];
+        for (uint256 index = 0; index < _loans.length; index++) {
+            if (_loans[index] == loan) {
+                _loans[index] = _loans[_loans.length - 1];
+                _loans.pop();
+
+                _transferLoan(loan, recipient, 1, 1);
+                return;
+            }
+        }
+        // If we reach this, it means loanToken was not present in _loans array
+        // This prevents invalid loans from being reclaimed
+        revert("TrueLender: This loan has not been funded by the lender");
     }
 
     /**
@@ -436,7 +471,17 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     ) internal {
         ILoanToken2[] storage _loans = poolLoans[ITrueFiPool2(pool)];
         for (uint256 index = 0; index < _loans.length; index++) {
-            _loans[index].transfer(recipient, numerator.mul(_loans[index].balanceOf(address(this))).div(denominator));
+            _transferLoan(_loans[index], recipient, numerator, denominator);
         }
+    }
+
+    // @dev Transfer (numerator/denominator)*balance of loan to the recipient
+    function _transferLoan(
+        ILoanToken2 loan,
+        address recipient,
+        uint256 numerator,
+        uint256 denominator
+    ) internal {
+        loan.transfer(recipient, numerator.mul(loan.balanceOf(address(this))).div(denominator));
     }
 }

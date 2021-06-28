@@ -37,6 +37,7 @@ describe('TrueLender', () => {
   let tusd: MockTrueCurrency
   let mockPool: Contract
   let mockLoanToken: Contract
+  let mockAnotherLoanToken: Contract
   let mockRatingAgency: Contract
   let mockStakingPool: MockContract
 
@@ -57,6 +58,9 @@ describe('TrueLender', () => {
     await mock.mock.transfer.returns(true)
     await mock.mock.receivedAmount.returns(0)
     await mock.mock.borrower.returns(owner.address)
+    await mock.mock.borrowerFee.returns(25)
+    await mock.mock.currencyToken.returns(tusd.address)
+    await mock.mock.getParameters.returns(amount, apy, term)
     return mock
   }
 
@@ -75,10 +79,6 @@ describe('TrueLender', () => {
     await mockPool.mock.balanceOf.returns(0)
     await mockPool.mock.transfer.returns(true)
 
-    mockLoanToken = await deployMockLoanToken()
-    await mockLoanToken.mock.borrowerFee.returns(25)
-    await mockLoanToken.mock.currencyToken.returns(tusd.address)
-
     mockStakingPool = await deployMockContract(owner, IStakingPoolJson.abi)
     await mockStakingPool.mock.payFee.returns()
 
@@ -92,7 +92,9 @@ describe('TrueLender', () => {
     apy = (await lender.minApy()).mul(2)
     term = (await lender.minTerm()).mul(2)
     fee = amount.sub(amount.mul(25).div(10000))
-    await mockLoanToken.mock.getParameters.returns(amount, apy, term)
+
+    mockLoanToken = await deployMockLoanToken()
+    mockAnotherLoanToken = await deployMockLoanToken()
   })
 
   describe('Initializer', () => {
@@ -369,8 +371,8 @@ describe('TrueLender', () => {
 
     describe('all requirements are met', () => {
       beforeEach(async () => {
-        await mockLoanToken.mock.getParameters.returns(amount, apy, term)
         await mockLoanToken.mock.receivedAmount.returns(amount.sub(fee))
+        await mockAnotherLoanToken.mock.receivedAmount.returns(amount.sub(fee))
         await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, parseTRU(15e6))
         await mockPool.mock.balanceOf.returns(fee)
       })
@@ -400,8 +402,8 @@ describe('TrueLender', () => {
       it('adds funded loan to an array', async () => {
         await lender.fund(mockLoanToken.address)
         expect(await lender.loans()).to.deep.equal([mockLoanToken.address])
-        await lender.fund(mockLoanToken.address)
-        expect(await lender.loans()).to.deep.equal([mockLoanToken.address, mockLoanToken.address])
+        await lender.fund(mockAnotherLoanToken.address)
+        expect(await lender.loans()).to.deep.equal([mockLoanToken.address, mockAnotherLoanToken.address])
       })
     })
 
@@ -462,8 +464,8 @@ describe('TrueLender', () => {
       await mockLoanToken.mock.balanceOf.returns(availableLoanTokens)
       await tusd.mint(lender.address, fee)
 
-      await mockLoanToken.mock.getParameters.returns(amount, apy, term)
       await mockLoanToken.mock.receivedAmount.returns(amount.sub(fee))
+      await mockAnotherLoanToken.mock.receivedAmount.returns(amount.sub(fee))
       await mockRatingAgency.mock.getResults.returns(dayInSeconds * 14, 0, parseTRU(15e6))
       await mockPool.mock.balanceOf.returns(fee)
     })
@@ -515,10 +517,10 @@ describe('TrueLender', () => {
       await tusd.mint(lender.address, fee.mul(2)) // mockPool won't do it
 
       await lender.fund(mockLoanToken.address)
-      await lender.fund(mockLoanToken.address)
-      expect(await lender.loans()).to.deep.equal([mockLoanToken.address, mockLoanToken.address])
+      await lender.fund(mockAnotherLoanToken.address)
+      expect(await lender.loans()).to.deep.equal([mockLoanToken.address, mockAnotherLoanToken.address])
       await lender.reclaim(mockLoanToken.address)
-      expect(await lender.loans()).to.deep.equal([mockLoanToken.address])
+      expect(await lender.loans()).to.deep.equal([mockAnotherLoanToken.address])
     })
   })
 
@@ -642,8 +644,6 @@ describe('TrueLender', () => {
         loanTokens.push(await deployMockLoanToken())
         await loanTokens[i].mock.balanceOf.returns(parseEth(((i + 1) * 10).toString()))
         await loanTokens[i].mock.getParameters.returns(amount, apy, term)
-        await loanTokens[i].mock.borrowerFee.returns(25)
-        await loanTokens[i].mock.currencyToken.returns(tusd.address)
         await lender.fund(loanTokens[i].address)
       }
       await lender.setPool(owner.address)

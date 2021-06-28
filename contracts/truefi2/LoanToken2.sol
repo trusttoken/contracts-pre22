@@ -37,6 +37,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     uint128 public constant LAST_MINUTE_PAYBACK_DURATION = 1 days;
     uint256 private constant APY_PRECISION = 10000;
 
+    address public admin;
     address public override borrower;
     address public liquidator;
     uint256 public override amount;
@@ -53,6 +54,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     // whitelist for transfers
     mapping(address => bool) public canTransfer;
+
+    bool public transferable;
 
     Status public override status;
 
@@ -120,6 +123,12 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     event Liquidated(Status status);
 
     /**
+     * @dev Emitted when all transfers are allowed
+     * @param status Transferability status
+     */
+    event TransferabilityChanged(bool status);
+
+    /**
      * @dev Create a Loan
      * @param _pool Pool to lend from
      * @param _borrower Borrower address
@@ -133,6 +142,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         ITrueFiPool2 _pool,
         address _borrower,
         address _lender,
+        address _admin,
         address _liquidator,
         uint256 _amount,
         uint256 _term,
@@ -144,12 +154,21 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         pool = _pool;
         token = _pool.token();
         borrower = _borrower;
+        admin = _admin;
         liquidator = _liquidator;
         amount = _amount;
         term = _term;
         apy = _apy;
         lender = _lender;
         debt = interest(amount);
+    }
+
+    /**
+     * @dev Only admin can withdraw & repay loan
+     */
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "LoanToken2: Caller is not the admin");
+        _;
     }
 
     /**
@@ -221,7 +240,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      */
     modifier onlyWhoCanTransfer(address sender) {
         require(
-            sender == lender || canTransfer[sender],
+            transferable || sender == lender || canTransfer[sender],
             "LoanToken2: This can be performed only by lender or accounts allowed to transfer"
         );
         _;
@@ -295,6 +314,15 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     function allowTransfer(address account, bool _status) external override onlyLender {
         canTransfer[account] = _status;
         emit TransferAllowanceChanged(account, _status);
+    }
+
+    /**
+     * @dev Make token transferable
+     * @param _status true allows transfers, false disables transfers
+     */
+    function allowAllTransfers(bool _status) external onlyAdmin {
+        transferable = _status;
+        emit TransferabilityChanged(_status);
     }
 
     /**

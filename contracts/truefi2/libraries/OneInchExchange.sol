@@ -2,8 +2,10 @@
 pragma solidity 0.6.10;
 pragma experimental ABIEncoderV2;
 
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {I1Inch3} from "../interface/I1Inch3.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 interface IUniRouter {
     function token0() external view returns (address);
@@ -12,8 +14,13 @@ interface IUniRouter {
 }
 
 library OneInchExchange {
+    using SafeERC20 for IERC20;
+    using SafeMath for uint256;
+
     uint256 constant ADDRESS_MASK = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
     uint256 constant REVERSE_MASK = 0x8000000000000000000000000000000000000000000000000000000000000000;
+
+    event Swapped(I1Inch3.SwapDescription description, uint256 returnedAmount);
 
     /**
      * @dev Forward data to 1Inch contract
@@ -24,7 +31,10 @@ library OneInchExchange {
      * @return description - description of the swap
      */
 
-    function exchange(I1Inch3 _1inchExchange, bytes calldata data) internal returns (I1Inch3.SwapDescription memory description) {
+    function exchange(I1Inch3 _1inchExchange, bytes calldata data)
+        internal
+        returns (I1Inch3.SwapDescription memory description, uint256 returnedAmount)
+    {
         if (data[0] == 0x7c) {
             // call `swap()`
             (, description, ) = abi.decode(data[4:], (address, I1Inch3.SwapDescription, bytes));
@@ -45,8 +55,8 @@ library OneInchExchange {
             description.dstReceiver = address(this);
         }
 
-        IERC20(description.srcToken).approve(address(_1inchExchange), description.amount);
-
+        IERC20(description.srcToken).safeApprove(address(_1inchExchange), description.amount);
+        uint256 balanceBefore = IERC20(description.dstToken).balanceOf(description.dstReceiver);
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = address(_1inchExchange).call(data);
         if (!success) {
@@ -58,5 +68,10 @@ library OneInchExchange {
                 revert(ptr, size)
             }
         }
+
+        uint256 balanceAfter = IERC20(description.dstToken).balanceOf(description.dstReceiver);
+        returnedAmount = balanceAfter.sub(balanceBefore);
+
+        emit Swapped(description, returnedAmount);
     }
 }

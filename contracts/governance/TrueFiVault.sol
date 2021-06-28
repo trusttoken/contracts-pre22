@@ -5,8 +5,8 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IVoteTokenWithERC20} from "./interface/IVoteToken.sol";
 import {IStkTruToken} from "./interface/IStkTruToken.sol";
-import {Initializable} from "../common/Initializable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 /**
  * @title TrueFiVault
@@ -16,17 +16,14 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
  * During the lockout period, the vault still allows beneficiary to stake TRU
  * and cast votes in governance.
  *
- * In case of emergency or error, owner reserves the ability to withdraw all
- * funds in vault.
  */
-contract TrueFiVault is Initializable {
+contract TrueFiVault is UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using SafeERC20 for IVoteTokenWithERC20;
 
     uint256 public constant DURATION = 365 days;
 
-    address public owner;
     address public beneficiary;
     uint256 public expiry;
     uint256 public withdrawn;
@@ -43,10 +40,11 @@ contract TrueFiVault is Initializable {
         IVoteTokenWithERC20 _tru,
         IStkTruToken _stkTru
     ) external initializer {
+        UpgradeableClaimable.initialize(msg.sender);
+
         // Protect from accidental passing incorrect start timestamp
         require(_start >= block.timestamp, "TrueFiVault: lock start in the past");
         require(_start < block.timestamp + 90 days, "TrueFiVault: lock start too far in the future");
-        owner = msg.sender;
         beneficiary = _beneficiary;
         expiry = _start.add(DURATION);
         tru = _tru;
@@ -56,7 +54,8 @@ contract TrueFiVault is Initializable {
         //        tru.delegate(beneficiary);
         stkTru.delegate(beneficiary);
 
-        tru.safeTransferFrom(owner, address(this), _amount);
+        // transfer from sender
+        tru.safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     /**
@@ -67,19 +66,8 @@ contract TrueFiVault is Initializable {
         _;
     }
 
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(msg.sender == owner, "TrueFiVault: only owner");
-        _;
-    }
-
     function withdrawable(IERC20 token) public view returns (uint256) {
         uint256 tokenBalance = token.balanceOf(address(this));
-        if (beneficiary == owner) {
-            return tokenBalance;
-        }
         uint256 timePassed = block.timestamp.sub(expiry.sub(DURATION));
         if (timePassed > DURATION) {
             timePassed = DURATION;
@@ -89,16 +77,6 @@ contract TrueFiVault is Initializable {
             amount = amount.mul(stkTru.totalSupply()).div(stkTru.stakeSupply());
         }
         return amount > tokenBalance ? tokenBalance : amount;
-    }
-
-    /**
-     * @dev Allow owner to withdraw funds in case of emergency or mistake
-     */
-    function withdrawToOwner() external onlyOwner {
-        beneficiary = owner;
-        claimRewards();
-        _withdraw(tru, tru.balanceOf(address(this)));
-        _withdraw(stkTru, stkTru.balanceOf(address(this)));
     }
 
     /**
@@ -141,7 +119,7 @@ contract TrueFiVault is Initializable {
      * @param amount Amount of TRU to stake
      */
     function stake(uint256 amount) external onlyBeneficiary {
-        tru.approve(address(stkTru), amount);
+        tru.safeApprove(address(stkTru), amount);
         stkTru.stake(amount);
     }
 

@@ -4,6 +4,7 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {ERC20} from "../common/UpgradeableERC20.sol";
 import {Ownable} from "../common/UpgradeableOwnable.sol";
@@ -14,7 +15,8 @@ import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 import {ABDKMath64x64} from "./Log.sol";
 import {ICrvPriceOracle} from "./interface/ICrvPriceOracle.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
-import {ITrueFiPool2, ITrueFiPoolOracle, ITrueLender2} from "../truefi2/interface/ITrueFiPool2.sol";
+import {ITrueFiPool2, ITrueFiPoolOracle, ITrueLender2, ILoanToken2, ISAFU} from "../truefi2/interface/ITrueFiPool2.sol";
+import {PoolExtensions} from "../truefi2/PoolExtensions.sol";
 
 /**
  * @title TrueFi Pool
@@ -32,6 +34,7 @@ import {ITrueFiPool2, ITrueFiPoolOracle, ITrueLender2} from "../truefi2/interfac
  */
 contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -74,6 +77,8 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     ICrvPriceOracle public _crvOracle;
 
     ITrueLender2 public _lender2;
+
+    ISAFU public safu;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -161,6 +166,12 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @param pauseStatus New pausing status
      */
     event PauseStatusChanged(bool pauseStatus);
+
+    /**
+     * @dev Emitted when SAFU address is changed
+     * @param newSafu New SAFU address
+     */
+    event SafuChanged(ISAFU newSafu);
 
     /**
      * @dev only lender can perform borrowing or repaying
@@ -279,6 +290,14 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     }
 
     /**
+     * @dev Change SAFU address
+     */
+    function setSafuAddress(ISAFU _safu) external onlyOwner {
+        safu = _safu;
+        emit SafuChanged(_safu);
+    }
+
+    /**
      * @dev Get total balance of stake tokens
      * @return Balance of stake tokens in this contract
      */
@@ -350,13 +369,24 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     }
 
     /**
+     * @dev Return pool deficiency value, to be returned by safu
+     * @return pool deficiency value
+     */
+    function deficitValue() public view returns (uint256) {
+        if (address(safu) == address(0)) {
+            return 0;
+        }
+        return safu.poolDeficit(address(this));
+    }
+
+    /**
      * @dev Calculate pool value in TUSD
      * "virtual price" of entire pool - LoanTokens, TUSD, curve y pool tokens
      * @return pool value in USD
      */
     function poolValue() public view returns (uint256) {
         // this assumes defaulted loans are worth their full value
-        return liquidValue().add(loansValue()).add(crvValue());
+        return liquidValue().add(loansValue()).add(crvValue()).add(deficitValue());
     }
 
     /**
@@ -551,7 +581,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
 
         // stake yCurve tokens in gauge
         uint256 yBalance = _curvePool.token().balanceOf(address(this));
-        _curvePool.token().approve(address(_curveGauge), yBalance);
+        _curvePool.token().safeApprove(address(_curveGauge), yBalance);
         _curveGauge.deposit(yBalance);
 
         emit Flushed(currencyAmount);
@@ -563,7 +593,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     {
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
 
-        token.approve(address(_curvePool), currencyAmount);
+        token.safeApprove(address(_curvePool), currencyAmount);
         _curvePool.add_liquidity(amounts, minMintAmount);
     }
 
@@ -579,7 +609,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         ensureEnoughTokensAreAvailable(yAmount);
 
         // remove TUSD from curve
-        _curvePool.token().approve(address(_curvePool), yAmount);
+        _curvePool.token().safeApprove(address(_curvePool), yAmount);
         _curvePool.remove_liquidity_one_coin(yAmount, TUSD_INDEX, minCurrencyAmount, false);
 
         emit Pulled(yAmount);
@@ -610,7 +640,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         // pull tokens from gauge
         ensureEnoughTokensAreAvailable(roughCurveTokenAmount);
         // remove TUSD from curve
-        _curvePool.token().approve(address(_curvePool), roughCurveTokenAmount);
+        _curvePool.token().safeApprove(address(_curvePool), roughCurveTokenAmount);
         uint256 minAmount = roughCurveTokenAmount.mul(_curvePool.curve().get_virtual_price()).mul(999).div(1000).div(1 ether);
         _curvePool.remove_liquidity_one_coin(roughCurveTokenAmount, TUSD_INDEX, minAmount, false);
     }
@@ -647,7 +677,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         uint256 amountOutMin,
         address[] calldata path
     ) public exchangeProtector(_crvOracle.crvToUsd(amountIn), token) {
-        _minter.token().approve(address(_uniRouter), amountIn);
+        _minter.token().safeApprove(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
 
@@ -667,7 +697,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         uint256 amountOutMin,
         address[] calldata path
     ) public exchangeProtector(oracle.truToToken(amountIn), token) {
-        _stakeToken.approve(address(_uniRouter), amountIn);
+        _stakeToken.safeApprove(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
 
@@ -684,6 +714,13 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         }
 
         emit Collected(beneficiary, amount);
+    }
+
+    /**
+     * @dev Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
+     */
+    function liquidate(ILoanToken2 loan) external {
+        PoolExtensions._liquidate(safu, loan, _lender2);
     }
 
     /**

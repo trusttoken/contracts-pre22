@@ -22,6 +22,7 @@ import {IERC20WithDecimals} from "../interface/IERC20WithDecimals.sol";
  */
 contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
     using SafeERC20 for IERC20WithDecimals;
     using OneInchExchange for I1Inch3;
 
@@ -110,13 +111,13 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         uint256[N_TOKENS] memory amounts = [uint256(0), 0, 0, 0];
         amounts[tokenIndex] = totalAmount;
 
-        token.approve(address(curvePool), totalAmount);
+        token.safeApprove(address(curvePool), totalAmount);
         uint256 conservativeMinAmount = calcTokenAmount(totalAmount).mul(999).div(1000);
         curvePool.add_liquidity(amounts, conservativeMinAmount);
 
         // stake yCurve tokens in gauge
         uint256 yBalance = curvePool.token().balanceOf(address(this));
-        curvePool.token().approve(address(curveGauge), yBalance);
+        curvePool.token().safeApprove(address(curveGauge), yBalance);
         curveGauge.deposit(yBalance);
 
         emit Deposited(amount, yBalance);
@@ -138,7 +139,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         // pull tokens from gauge
         withdrawFromGaugeIfNecessary(conservativeCurveTokenAmount);
         // remove TUSD from curve
-        curvePool.token().approve(address(curvePool), conservativeCurveTokenAmount);
+        curvePool.token().safeApprove(address(curvePool), conservativeCurveTokenAmount);
         curvePool.remove_liquidity_one_coin(conservativeCurveTokenAmount, tokenIndex, minAmount, false);
         transferAllToPool();
 
@@ -152,7 +153,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     function withdrawAll() external override onlyPool {
         curveGauge.withdraw(curveGauge.balanceOf(address(this)));
         uint256 yBalance = yTokenBalance();
-        curvePool.token().approve(address(curvePool), yBalance);
+        curvePool.token().safeApprove(address(curvePool), yBalance);
         curvePool.remove_liquidity_one_coin(yBalance, tokenIndex, 0, false);
         transferAllToPool();
 
@@ -220,9 +221,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
      * [See more](https://docs.1inch.exchange/api/quote-swap#swap)
      */
     function sellCrv(bytes calldata data) external {
-        uint256 balanceBefore = token.balanceOf(pool);
-        I1Inch3.SwapDescription memory swap = _1Inch.exchange(data);
-        uint256 balanceDiff = token.balanceOf(pool).sub(balanceBefore);
+        (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1Inch.exchange(data);
 
         uint256 expectedGain = normalizeDecimals(crvOracle.crvToUsd(swap.amount));
 

@@ -10,6 +10,7 @@ import {
   expectScaledCloseTo,
   expectBalanceChangeCloseTo,
   parseEth,
+  parseUSDC,
 } from 'utils'
 
 import {
@@ -41,8 +42,6 @@ import {
 } from 'build'
 
 use(solidity)
-
-const parseUSDC = (amount: BigNumberish) => parseEth(amount).div(10 ** 12)
 
 describe('TrueRatingAgencyV2', () => {
   let owner: Wallet
@@ -223,7 +222,7 @@ describe('TrueRatingAgencyV2', () => {
 
     it('reverts when performed by not allowed account', async () => {
       await expect(rater.connect(otherWallet).allow(otherWallet.address, true))
-        .to.be.revertedWith('TrueFiPool: Cannot change allowances')
+        .to.be.revertedWith('TrueRatingAgencyV2: Cannot change allowances')
     })
   })
 
@@ -701,9 +700,10 @@ describe('TrueRatingAgencyV2', () => {
       beforeEach(async () => {
         await usdc.mint(owner.address, parseEth(1e20))
         const usdcPool = await new TrueFiPool2__factory(owner).deploy()
-        await usdcPool.initialize(usdc.address, AddressZero, AddressZero, AddressZero, AddressZero)
+        await usdcPool.initialize(usdc.address, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero)
         loanToken2 = await new LoanToken2__factory(owner).deploy(
           usdcPool.address,
+          owner.address,
           owner.address,
           owner.address,
           AddressZero,
@@ -886,7 +886,7 @@ describe('TrueRatingAgencyV2', () => {
       beforeEach(async () => {
         await usdc.mint(owner.address, parseEth(1e20))
         const usdcPool = await new TrueFiPool2__factory(owner).deploy()
-        await usdcPool.initialize(usdc.address, AddressZero, AddressZero, AddressZero, AddressZero)
+        await usdcPool.initialize(usdc.address, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero)
         loanToken2 = await new LoanToken2Deprecated__factory(owner).deploy(
           usdcPool.address,
           owner.address,

@@ -54,7 +54,7 @@ describe('LoanToken2', () => {
     const poolFactory = await deployContract(lender, PoolFactory__factory)
     const poolImplementation = await deployContract(lender, TrueFiPool2__factory)
     const implementationReference = await deployContract(lender, ImplementationReference__factory, [poolImplementation.address])
-    await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero)
+    await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero, AddressZero)
     await poolFactory.whitelist(token.address, true)
     await poolFactory.createPool(token.address)
     poolAddress = await poolFactory.pool(token.address)
@@ -62,6 +62,7 @@ describe('LoanToken2', () => {
     loanToken = await new LoanToken2__factory(lender).deploy(
       poolAddress,
       borrower.address,
+      lender.address,
       lender.address,
       lender.address, // easier testing purposes
       parseEth(1000),
@@ -600,6 +601,39 @@ describe('LoanToken2', () => {
     })
   })
 
+  describe('Transferability', () => {
+    it('initially set to false', async () => {
+      expect(await loanToken.transferable()).to.eq(false)
+    })
+
+    it('only admin can call', async () => {
+      await expect(loanToken.connect(borrower).allowAllTransfers(true))
+        .to.be.revertedWith('LoanToken2: Caller is not the admin')
+    })
+
+    it('allow all transfers', async () => {
+      await loanToken.allowAllTransfers(true)
+      expect(await loanToken.transferable()).to.eq(true)
+
+      await loanToken.allowAllTransfers(false)
+      expect(await loanToken.transferable()).to.eq(false)
+    })
+
+    it('anyone can transfer', async () => {
+      await loanToken.fund()
+      await loanToken.transfer(other.address, 10)
+      await loanToken.allowAllTransfers(true)
+      expect(await loanToken.canTransfer(other.address)).to.eq(false)
+      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.not.reverted
+    })
+
+    it('emits event', async () => {
+      await expect(loanToken.allowAllTransfers(true))
+        .to.emit(loanToken, 'TransferabilityChanged')
+        .withArgs(true)
+    })
+  })
+
   describe('Whitelisting', () => {
     it('reverts when not whitelisted before funding', async () => {
       await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken2: This can be performed only by lender')
@@ -626,7 +660,7 @@ describe('LoanToken2', () => {
 
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
-      const contract = await new LoanToken2__factory(borrower).deploy(poolAddress, borrower.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
+      const contract = await new LoanToken2__factory(borrower).deploy(poolAddress, borrower.address, lender.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 

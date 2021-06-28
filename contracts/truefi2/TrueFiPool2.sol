@@ -10,11 +10,13 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
-import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {ITrueLender2, ILoanToken2} from "./interface/ITrueLender2.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
+import {ISAFU} from "./interface/ISAFU.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
+import {PoolExtensions} from "./PoolExtensions.sol";
 
 /**
  * @title TrueFiPool2
@@ -33,6 +35,7 @@ import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
+    using SafeERC20 for IERC20;
     using OneInchExchange for I1Inch3;
 
     uint256 private constant BASIS_PRECISION = 10000;
@@ -53,7 +56,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    uint8 public constant VERSION = 0;
+    uint8 public constant VERSION = 1;
 
     ERC20 public override token;
 
@@ -85,6 +88,8 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     I1Inch3 public _1Inch;
 
+    ISAFU public safu;
+
     // ======= STORAGE DECLARATION END ===========
 
     /**
@@ -102,6 +107,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         ERC20 _liquidationToken,
         ITrueLender2 _lender,
         I1Inch3 __1Inch,
+        ISAFU _safu,
         address __owner
     ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
@@ -110,6 +116,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         token = _token;
         liquidationToken = _liquidationToken;
         lender = _lender;
+        safu = _safu;
         _1Inch = __1Inch;
     }
 
@@ -192,6 +199,12 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     event PauseStatusChanged(bool pauseStatus);
 
     /**
+     * @dev Emitted when SAFU address is changed
+     * @param newSafu New SAFU address
+     */
+    event SafuChanged(ISAFU newSafu);
+
+    /**
      * @dev only lender can perform borrowing or repaying
      */
     modifier onlyLender() {
@@ -234,6 +247,14 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     }
 
     /**
+     * @dev Change SAFU address
+     */
+    function setSafuAddress(ISAFU _safu) external onlyOwner {
+        safu = _safu;
+        emit SafuChanged(_safu);
+    }
+
+    /**
      * @dev Number of decimals for user-facing representations.
      * Delegates to the underlying pool token.
      */
@@ -270,7 +291,18 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     function poolValue() public view returns (uint256) {
         // this assumes defaulted loans are worth their full value
-        return liquidValue().add(loansValue());
+        return liquidValue().add(loansValue()).add(deficitValue());
+    }
+
+    /**
+     * @dev Return pool deficiency value, to be returned by safu
+     * @return pool deficiency value
+     */
+    function deficitValue() public view returns (uint256) {
+        if (address(safu) == address(0)) {
+            return 0;
+        }
+        return safu.poolDeficit(address(this));
     }
 
     /**
@@ -457,7 +489,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
         uint256 expectedMinStrategyValue = strategy.value().add(withToleratedStrategyLoss(amount));
-        token.approve(address(strategy), amount);
+        token.safeApprove(address(strategy), amount);
         strategy.deposit(amount);
         require(strategy.value() >= expectedMinStrategyValue, "TrueFiPool: Strategy value expected to be higher");
         emit Flushed(amount);
@@ -538,6 +570,13 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     }
 
     /**
+     * @dev Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
+     */
+    function liquidate(ILoanToken2 loan) external override {
+        PoolExtensions._liquidate(safu, loan, lender);
+    }
+
+    /**
      * @dev Change oracle, can only be called by owner
      */
     function setOracle(ITrueFiPoolOracle newOracle) external onlyOwner {
@@ -546,13 +585,9 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     }
 
     function sellLiquidationToken(bytes calldata data) external {
-        uint256 balanceBefore = token.balanceOf(address(this));
-
-        I1Inch3.SwapDescription memory swap = _1Inch.exchange(data);
+        (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1Inch.exchange(data);
 
         uint256 expectedGain = oracle.truToToken(swap.amount);
-
-        uint256 balanceDiff = token.balanceOf(address(this)).sub(balanceBefore);
         require(balanceDiff >= withToleratedSlippage(expectedGain), "TrueFiPool: Not optimal exchange");
 
         require(swap.srcToken == address(liquidationToken), "TrueFiPool: Source token is not TRU");
@@ -564,7 +599,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Currency token balance
      * @return Currency token balance
      */
-    function currencyBalance() internal view returns (uint256) {
+    function currencyBalance() public view returns (uint256) {
         return token.balanceOf(address(this)).sub(claimableFees);
     }
 
