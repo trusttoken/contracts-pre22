@@ -9,7 +9,7 @@ import {ERC20} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
-import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
+import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2, ILoanToken2} from "./interface/ITrueLender2.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
@@ -36,7 +36,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
     using SafeERC20 for IERC20;
-    using OneInchExchange for I1Inch3;
 
     uint256 private constant BASIS_PRECISION = 10000;
 
@@ -86,7 +85,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     // who gets all fees
     address public beneficiary;
 
-    I1Inch3 public _1Inch;
+    address public _1Inch;
 
     ISAFU public safu;
 
@@ -105,7 +104,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     function initialize(
         ERC20 _token,
         ITrueLender2 _lender,
-        I1Inch3 __1Inch,
         ISAFU _safu,
         address __owner
     ) external override initializer {
@@ -115,7 +113,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         token = _token;
         lender = _lender;
         safu = _safu;
-        _1Inch = __1Inch;
     }
 
     /**

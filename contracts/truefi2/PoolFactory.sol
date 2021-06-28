@@ -43,8 +43,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     // ======= STORAGE DECLARATION END ===========
 
-    I1Inch3 public constant ONE_INCH_ADDRESS = I1Inch3(0x11111112542D85B3EF69AE05771c2dCCff4fAa26);
-
     /**
      * @dev Event to show creation of the new pool
      * @param token Address of token, for which the pool was created
@@ -131,7 +129,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, ONE_INCH_ADDRESS, safu, this.owner());
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, safu, this.owner());
 
         emit PoolCreated(token, address(proxy));
     }
