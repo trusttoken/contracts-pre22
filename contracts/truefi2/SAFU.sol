@@ -100,8 +100,8 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     }
 
     /**
-     * @dev Checks SAFU's balance of a specific token
-     * @param token
+     * @dev Returns SAFU's balance of a specific token
+     * @param token A token which balance is to be returned
      */
     function tokenBalance(IERC20 token) public view returns (uint256) {
         return token.balanceOf(address(this));
