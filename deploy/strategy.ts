@@ -30,8 +30,8 @@ deploy({}, (_, config) => {
     ? USDT
     : contract(TestUSDTToken)
   const poolFactory = proxy(contract(PoolFactory), () => {})
-  const usdc_TrueFiPool2 = contract('usdc_TrueFiPool2', poolFactory.pool(usdc))
-  const usdt_TrueFiPool2 = contract('usdt_TrueFiPool2', poolFactory.pool(usdt))
+  const usdc_TrueFiPool2 = poolFactory.pool(usdc)
+  const usdt_TrueFiPool2 = poolFactory.pool(usdt)
 
   // New contract impls
   const usdc_CurveYearnStrategy_impl = contract('usdc_CurveYearnStrategy', CurveYearnStrategy)
@@ -61,10 +61,10 @@ deploy({}, (_, config) => {
   const usdt_Strategy = isMainnet
     ? usdt_CurveYearnStrategy
     : usdt_MockStrategy
-  runIf(usdc_TrueFiPool2.strategy().equals(usdc_Strategy).not(), () => {
-    usdc_TrueFiPool2.switchStrategy(usdc_Strategy)
-  })
-  runIf(usdt_TrueFiPool2.strategy().equals(usdt_Strategy).not(), () => {
-    usdt_TrueFiPool2.switchStrategy(usdt_Strategy)
-  })
+  // runIf(usdc_TrueFiPool2.strategy().equals(usdc_Strategy).not(), () => {
+  //   usdc_TrueFiPool2.switchStrategy(usdc_Strategy)
+  // })
+  // runIf(usdt_TrueFiPool2.strategy().equals(usdt_Strategy).not(), () => {
+  //   usdt_TrueFiPool2.switchStrategy(usdt_Strategy)
+  // })
 })
