@@ -20,7 +20,7 @@ export const createApprovedLoan = async function (rater: TrueRatingAgencyV2, tru
   await tru.mint(voter.address, parseTRU(15e6))
   await tru.connect(voter).approve(stkTru.address, parseTRU(15e6))
   await stkTru.connect(voter).stake(parseTRU(15e6))
-  timeTravel(provider, 1)
+  await timeTravel(provider, 1)
 
   const loan = await createLoan(factory, creator, pool, amount, duration, apy)
 
@@ -28,7 +28,7 @@ export const createApprovedLoan = async function (rater: TrueRatingAgencyV2, tru
   await rater.connect(creator).submit(loan.address)
   await rater.connect(voter).yes(loan.address)
   await stkTru.connect(voter).cooldown()
-  timeTravel(provider, 14 * DAY + 1)
+  await timeTravel(provider, 14 * DAY + 1)
   await stkTru.connect(voter).unstake(parseTRU(15e6))
 
   return loan

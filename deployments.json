@@ -389,8 +389,8 @@
       "address": "0xa606dd423dF7dFb65Efe14ab66f5fDEBf62FF583"
     },
     "trueFiPool2": {
-      "txHash": "0x3cc56721af8fdc70204f22fab45ca27d1a13eb4614ee1b847e910d3f89956fe6",
-      "address": "0x01BD87bC97e27CB11e3c45dAB9B59Bc44edC4fc6"
+      "txHash": "0x99c9475aa7a33da9599de95cb303ddbe50dabae11cf36d0553777f87f54b4669",
+      "address": "0x47D439d319EE33e4795B353CD144972aD4536C04"
     },
     "implementationReference": {
       "txHash": "0x435d1acd1f13f4b8117b8ef2ca39b93902b23bf3e5593d76aedaecd3ac04b38a",

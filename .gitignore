@@ -1,6 +1,6 @@
 /node_modules
 /build
-/flat-contracts
+/flatten
 /cache
 
 # python virtual environment

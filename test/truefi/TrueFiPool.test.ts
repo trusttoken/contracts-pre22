@@ -30,9 +30,10 @@ import {
   TrueLender2,
   TrueLender2__factory,
   TrueLender__factory,
-  MockTrueFiPoolOracle__factory,
+  MockTrueFiPoolOracle__factory, Safu__factory,
+  Safu,
 } from 'contracts'
-import { ICurveGaugeJson, ICurveMinterJson, SAFUJson, TrueRatingAgencyJson } from 'build'
+import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -41,7 +42,7 @@ describe('TrueFiPool', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
-  let safu: MockContract
+  let safu: Safu
   let token: MockErc20Token
   let trustToken: MockErc20Token
   let mockStakingPool: MockStakingPool
@@ -78,8 +79,7 @@ describe('TrueFiPool', () => {
     lender = await new TrueLender__factory(owner).deploy()
     const truOracle = await new MockTrueFiPoolOracle__factory(owner).deploy(token.address)
     const crvOracle = await new MockCrvPriceOracle__factory(owner).deploy()
-    safu = await deployMockContract(owner, SAFUJson.abi)
-    await safu.mock.poolDeficit.returns(0)
+    safu = await new Safu__factory(owner).deploy()
     await pool.initialize(
       curvePool.address,
       mockCurveGauge.address,
@@ -688,11 +688,14 @@ describe('TrueFiPool', () => {
     let loan: LoanToken2
 
     beforeEach(async () => {
-      const { lender2, loanFactory2 } = await deployLender2()
+      const { lender2, loanFactory2, liquidator2 } = await deployLender2()
       await token.approve(pool.address, parseEth(1e7))
       await pool.join(parseEth(1e7))
       ;({ loan } = await fundLoan(loanFactory2, lender2))
       await pool.setSafuAddress(safu.address)
+      await liquidator2.setAssurance(safu.address)
+      await liquidator2.setTokenApproval(token.address, true)
+      await safu.initialize(loanFactory2.address, liquidator2.address, AddressZero)
     })
 
     it('can only be performed by the SAFU', async () => {
@@ -704,6 +707,29 @@ describe('TrueFiPool', () => {
       await pool.setSafuAddress(safu.address)
       await pool.connect(safu).liquidate(loan.address)
       expect(await loan.balanceOf(safu.address)).to.equal(await loan.totalSupply())
+    })
+
+    async function liquidate () {
+      await loan.withdraw(borrower.address)
+      await timeTravel(provider, DAY * 7)
+      await loan.enterDefault()
+      await safu.liquidate(loan.address)
+    }
+
+    it('exiting after liquidation returns correct amount of tokens', async () => {
+      await liquidate()
+      const totalValue = await pool.poolValue()
+      const totalSupply = await pool.totalSupply()
+      await expect(() => pool.exit(totalSupply.div(2))).to.changeTokenBalance(token, owner, totalValue.div(2))
+    })
+
+    it('liquid exit after liquidation returns correct amount of tokens', async () => {
+      await liquidate()
+      const totalValue = await pool.poolValue()
+      const totalSupply = await pool.totalSupply()
+      const penalty = await pool.liquidExitPenalty(totalSupply.div(2))
+      expect(penalty).to.equal(9996)
+      await expect(() => pool.liquidExit(totalSupply.div(2))).to.changeTokenBalance(token, owner, totalValue.div(2).mul(penalty).div(10000))
     })
   })
 })

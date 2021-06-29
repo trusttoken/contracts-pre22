@@ -916,11 +916,60 @@ describe('TrueFiPool2', () => {
       await expect(tusdPool.liquidate(loan.address)).to.be.revertedWith('TrueFiPool: Should be called by SAFU')
     })
 
-    it('transfers all LTs to the safu', async () => {
+    async function liquidate () {
       await timeTravel(DAY * 4)
       await loan.enterDefault()
       await safu.liquidate(loan.address)
+    }
+
+    it('transfers all LTs to the safu', async () => {
+      await liquidate()
       expect(await loan.balanceOf(safu.address)).to.equal(await loan.totalSupply())
+    })
+
+    it('exiting post liquidation returns correct amount of tokens', async () => {
+      await liquidate()
+      const totalValue = await tusdPool.poolValue()
+      const totalSupply = await tusdPool.totalSupply()
+      await expect(() => tusdPool.exit(totalSupply.div(2))).to.changeTokenBalance(tusd, owner, totalValue.div(2))
+    })
+
+    it('exit with different loans', async () => {
+      const otherloan = await createApprovedLoan(
+        rater,
+        tru,
+        stkTru,
+        loanFactory,
+        borrower,
+        tusdPool,
+        100000,
+        DAY,
+        100,
+        owner,
+        provider,
+      )
+
+      await lender.connect(borrower).fund(otherloan.address)
+      await liquidate()
+      const totalValue = await tusdPool.poolValue()
+      const totalSupply = await tusdPool.totalSupply()
+      await expect(() => tusdPool.exit(totalSupply.div(2))).to.changeTokenBalance(tusd, owner, totalValue.sub(100004).div(2))
+      expect(await otherloan.balanceOf(owner.address)).to.equal(100002 / 2)
+    })
+
+    it('deficiency claims are locked in the pool which may result in inability to exit pool', async () => {
+      await liquidate()
+      const totalSupply = await tusdPool.totalSupply()
+      await expect(tusdPool.exit(totalSupply)).to.be.revertedWith('TrueFiPool: Pool has no strategy to withdraw from')
+    })
+
+    it('liquid exit after liquidation returns correct amount of tokens', async () => {
+      await liquidate()
+      const totalValue = await tusdPool.poolValue()
+      const totalSupply = await tusdPool.totalSupply()
+      const penalty = await tusdPool.liquidExitPenalty(totalSupply.div(2))
+      expect(penalty).to.equal(9996)
+      await expect(() => tusdPool.liquidExit(totalSupply.div(2))).to.changeTokenBalance(tusd, owner, totalValue.div(2).mul(penalty).div(10000))
     })
   })
 })

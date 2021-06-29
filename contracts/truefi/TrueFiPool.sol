@@ -425,6 +425,11 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         require(amount <= balanceOf(msg.sender), "TrueFiPool: insufficient funds");
 
         uint256 _totalSupply = totalSupply();
+        uint256 deficitValue = deficitValue();
+        if (deficitValue > 0) {
+            uint256 value = poolValue();
+            _totalSupply = _totalSupply.mul(value.sub(deficitValue)).div(value);
+        }
 
         // get share of currency tokens kept in the pool
         uint256 currencyAmountToTransfer = amount.mul(
