@@ -261,6 +261,34 @@
     "sAFU_proxy": {
       "txHash": "0x2d415ad00f64fa2ffa1bb327df6d26861442d35aa2ecca8cc2d0b7dcc20244af",
       "address": "0xD8bCC7Bdf3D2E6F3F865f1060cf814C51f5F9C17"
+    },
+    "usdc_CurveYearnStrategy": {
+      "txHash": "0x430fa16ef0d4b9d8276830ecab0071d1216c8c5571c44a6efecf050a4a681c84",
+      "address": "0x781Cb4Ff86A65d2818f1E7dc4Ce6287aCfD85859"
+    },
+    "usdt_CurveYearnStrategy": {
+      "txHash": "0x784c6102775cb016537c78cbeb54ca1e256e86168c6ffc97d07f25f88b47d00e",
+      "address": "0xA8C5659cB12A114Bc9E0F6347016A3b534A8FD0b"
+    },
+    "usdc_CurveYearnStrategy_proxy": {
+      "txHash": "0xc56f1696207456807a87c8d2bb1ae2bddcb9a2586e7093a6b6ee2e51b64de736",
+      "address": "0xACa76b522311DDE652Ad8E92766e3259737d75a2"
+    },
+    "usdt_CurveYearnStrategy_proxy": {
+      "txHash": "0x4599d52c3bbbabc3ed6b90a600150e7af7bd408289f5d58fdaa68eb49b5f34b0",
+      "address": "0x5274499b8616E6F0F55b881Fd735B3f252Ca7945"
+    },
+    "mockCrvPriceOracle": {
+      "txHash": "0xb36b46b285180e9a1b983bdcca8174c0a5e9d53a49538985e71936462b75d87b",
+      "address": "0x536308ca4b09A56D2601eD5Fa7031ccd4B4CD820"
+    },
+    "usdc_MockStrategy": {
+      "txHash": "0x8ef52cb2539e741ae0ef86fff0d6146d97187b9dc76a9b67b2ce892eddabe95f",
+      "address": "0x93AcD29f4a9b53bF2358bbfA0CA2aC3969D06f7a"
+    },
+    "usdt_MockStrategy": {
+      "txHash": "0x8ac7a1da80a2fc6dc3b1d334e16f44c6a15fed847139720b82ea344796b72b82",
+      "address": "0x893f4Be807fad9BDaFc5fE8929d432B16F279ceF"
     }
   },
   "mainnet": {
