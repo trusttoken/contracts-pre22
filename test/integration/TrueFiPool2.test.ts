@@ -30,7 +30,6 @@ describe('TrueFiPool2', () => {
   const powner = provider.getSigner(PROXY_OWNER)
   const deployContract = setupDeploy(owner)
 
-  // let pool: TrueFiPool2
   let tru: TrustToken
   let implementationReference: ImplementationReference
 
@@ -46,7 +45,6 @@ describe('TrueFiPool2', () => {
     await poolFactory.whitelist(USDC_ADDRESS, true)
     const usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
     await poolFactory.createPool(usdc.address)
-    // pool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
   })
 
   it('tether flush', async () => {
