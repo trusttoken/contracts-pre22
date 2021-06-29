@@ -117,7 +117,7 @@ deploy({}, (deployer, config) => {
 
   // Contract initialization
   runIf(testTrueFiPool.isInitialized().not(), () => {
-    testTrueFiPool.initialize(AddressZero, yCrvGauge, trueUSD, trueLender, AddressZero, stkTruToken, AddressZero, AddressZero)
+    testTrueFiPool.initialize(AddressZero, yCrvGauge, trueUSD, trueLender, AddressZero, AddressZero, AddressZero)
   })
   if (!is_mainnet) {
     trueFiPool = testTrueFiPool
