@@ -2,7 +2,6 @@
 pragma solidity 0.6.10;
 pragma experimental ABIEncoderV2;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
@@ -35,7 +34,6 @@ import {PoolExtensions} from "./PoolExtensions.sol";
 contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
-    using SafeERC20 for IERC20;
 
     uint256 private constant BASIS_PRECISION = 10000;
 
@@ -70,7 +68,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     mapping(address => uint256) latestJoinBlock;
 
-    IERC20 public DEPRECATED__liquidationToken;
+    address private DEPRECATED__liquidationToken;
 
     ITrueFiPoolOracle public override oracle;
 
@@ -85,7 +83,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     // who gets all fees
     address public beneficiary;
 
-    address public _1Inch;
+    address private DEPRECATED__1Inch;
 
     ISAFU public safu;
 

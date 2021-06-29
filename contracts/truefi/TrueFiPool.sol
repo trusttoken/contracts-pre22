@@ -56,7 +56,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
 
     mapping(address => uint256) latestJoinBlock;
 
-    IERC20 public DEPRECATED__stakeToken;
+    address private DEPRECATED__stakeToken;
 
     // cache values during sync for gas optimization
     bool private inSync;
