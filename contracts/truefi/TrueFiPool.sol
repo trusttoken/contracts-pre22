@@ -539,30 +539,30 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @dev Deposit idle funds into curve.fi pool and stake in gauge
      * Called by owner to help manage funds in pool and save on gas for deposits
      * @param currencyAmount Amount of funds to deposit into curve
-     * @param minMintAmount Minimum amount to mint
      */
-    function flush(uint256 currencyAmount, uint256 minMintAmount) external {
+    function flush(uint256 currencyAmount) external {
         require(currencyAmount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
-        // add TUSD to curve
-        _flush(currencyAmount, minMintAmount);
-
-        // stake yCurve tokens in gauge
-        uint256 yBalance = _curvePool.token().balanceOf(address(this));
-        _curvePool.token().safeApprove(address(_curveGauge), yBalance);
-        _curveGauge.deposit(yBalance);
-
+        uint256 expectedMinYTokenValue = yTokenValue().add(conservativePriceEstimation(currencyAmount));
+        _curvePoolDeposit(currencyAmount);
+        require(yTokenValue() >= expectedMinYTokenValue, "TrueFiPool: yToken value expected to be higher");
         emit Flushed(currencyAmount);
     }
 
-    function _flush(uint256 currencyAmount, uint256 minMintAmount)
+    function _curvePoolDeposit(uint256 currencyAmount)
         internal
         exchangeProtector(calcTokenAmount(currencyAmount), _curvePool.token())
     {
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
 
         token.safeApprove(address(_curvePool), currencyAmount);
-        _curvePool.add_liquidity(amounts, minMintAmount);
+        uint256 conservativeMinAmount = calcTokenAmount(currencyAmount).mul(999).div(1000);
+        _curvePool.add_liquidity(amounts, conservativeMinAmount);
+
+        // stake yCurve tokens in gauge
+        uint256 yBalance = _curvePool.token().balanceOf(address(this));
+        _curvePool.token().safeApprove(address(_curveGauge), yBalance);
+        _curveGauge.deposit(yBalance);
     }
 
     /**
