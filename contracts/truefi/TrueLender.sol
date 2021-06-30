@@ -430,9 +430,7 @@ contract TrueLender is ITrueLender, Ownable {
         uint256 denominator
     ) external override onlyPool {
         for (uint256 index = 0; index < _loans.length; index++) {
-            if (!_loans[index].transfer(recipient, numerator.mul(_loans[index].balanceOf(address(this))).div(denominator))) {
-                0;
-            }
+            _loans[index].transfer(recipient, numerator.mul(_loans[index].balanceOf(address(this))).div(denominator));
         }
     }
 
