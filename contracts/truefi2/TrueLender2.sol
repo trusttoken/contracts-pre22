@@ -28,6 +28,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
     using SafeERC20 for IERC20WithDecimals;
+    using SafeERC20 for ITrueFiPool2;
+    using SafeERC20 for ILoanToken2;
     using OneInchExchange for I1Inch3;
 
     // basis point for ratio
@@ -385,7 +387,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         }
         feeToken.safeApprove(address(feePool), amount);
         feePool.join(amount);
-        feePool.transfer(address(stakingPool), feePool.balanceOf(address(this)));
+        feePool.safeTransfer(address(stakingPool), feePool.balanceOf(address(this)));
     }
 
     /**
@@ -482,6 +484,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         uint256 numerator,
         uint256 denominator
     ) internal {
-        loan.transfer(recipient, numerator.mul(loan.balanceOf(address(this))).div(denominator));
+        loan.safeTransfer(recipient, numerator.mul(loan.balanceOf(address(this))).div(denominator));
     }
 }
