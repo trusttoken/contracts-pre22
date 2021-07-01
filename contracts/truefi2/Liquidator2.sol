@@ -3,6 +3,7 @@ pragma solidity 0.6.10;
 
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
@@ -20,6 +21,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
  */
 contract Liquidator2 is UpgradeableClaimable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     // basis point for ratio
     uint256 private constant BASIS_RATIO = 10000;
@@ -135,7 +137,7 @@ contract Liquidator2 is UpgradeableClaimable {
         uint256 withdrawnTru = getAmountToWithdraw(defaultedValue, ITrueFiPoolOracle(pool.oracle()));
         stkTru.withdraw(withdrawnTru);
         loan.liquidate();
-        require(tru.transfer(SAFU, withdrawnTru));
+        tru.safeTransfer(SAFU, withdrawnTru);
         emit Liquidated(loan, defaultedValue, withdrawnTru);
     }
 
