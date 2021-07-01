@@ -148,7 +148,7 @@ describe('TrueFiPool', () => {
       await timeTravel(provider, dayInSeconds * 182.5)
       const loan2 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 1000)
       await lender.connect(borrower).fund(loan2.address)
-      await pool.flush(parseEth(5e6), 0)
+      await pool.flush(parseEth(5e6))
       await curvePool.set_withdraw_price(parseEth(2))
       expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(calcBorrowerFee(parseEth(2e6))))
       await mockCrv.mint(pool.address, parseEth(1e5))
@@ -337,17 +337,17 @@ describe('TrueFiPool', () => {
     })
 
     it('deposits given amount to curve', async () => {
-      await pool.flush(parseEth(100), 123)
+      await pool.flush(parseEth(100))
       expect('add_liquidity').to.be.calledOnContractWith(curvePool, [[0, 0, 0, parseEth(100)], 123])
     })
 
     it('can be called by funds manager', async () => {
       await pool.setFundsManager(borrower.address)
-      await expect(pool.flush(parseEth(100), 123)).to.be.not.reverted
+      await expect(pool.flush(parseEth(100))).to.be.not.reverted
     })
 
     it('reverts if flushing more than tUSD balance', async () => {
-      await expect(pool.flush(parseEth(1e7 + 1), 0)).to.be.revertedWith('TrueFiPool: Insufficient currency balance')
+      await expect(pool.flush(parseEth(1e7 + 1))).to.be.revertedWith('TrueFiPool: Insufficient currency balance')
     })
 
     it('deposits liquidity tokens in curve gauge', async () => {
@@ -355,12 +355,12 @@ describe('TrueFiPool', () => {
     })
 
     it('curvePool allowance is 0 after flushing', async () => {
-      await pool.flush(parseEth(100), 123)
+      await pool.flush(parseEth(100))
       expect(await token.allowance(pool.address, curvePool.address)).to.eq(0)
     })
 
     it('curveGauge allowance remains (Mock)', async () => {
-      await pool.flush(parseEth(100), 123)
+      await pool.flush(parseEth(100))
       expect(await curveToken.allowance(pool.address, mockCurveGauge.address)).to.eq(parseEth(100))
     })
   })
@@ -406,7 +406,7 @@ describe('TrueFiPool', () => {
       )
       await token.approve(pool2.address, includeFee(parseEth(1e7)))
       await pool2.join(includeFee(parseEth(1e7)))
-      await pool2.flush(parseEth(5e6), 0)
+      await pool2.flush(parseEth(5e6))
     })
 
     it('reverts if borrower is not a lender', async () => {
@@ -577,14 +577,14 @@ describe('TrueFiPool', () => {
     })
 
     it('half funds are in curve: transfers TUSD without penalty and leaves curve with 0 allowance', async () => {
-      await pool.flush(parseEth(5e6), 0)
+      await pool.flush(parseEth(5e6))
       await pool.liquidExit(parseEth(6e6))
       expect(await token.balanceOf(owner.address)).to.equal(parseEth(6e6))
       expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
 
     it('half funds are in curve and curve earns: transfers TUSD without penalty and leaves curve with 0 allowance', async () => {
-      await pool.flush(parseEth(5e6), 0)
+      await pool.flush(parseEth(5e6))
       await curvePool.set_withdraw_price(parseEth(2))
       await pool.liquidExit(parseEth(6e6))
       expect(await token.balanceOf(owner.address)).to.equal(parseEth(9e6))
@@ -594,7 +594,7 @@ describe('TrueFiPool', () => {
     it('calls remove_liquidity_one_coin with correct arguments', async () => {
       await curvePool.set_withdraw_price(parseEth(2))
       const amount = parseEth(5e6)
-      await pool.flush(amount, 0)
+      await pool.flush(amount)
       provider.clearCallHistory()
       await pool.liquidExit(parseEth(6e6))
 
