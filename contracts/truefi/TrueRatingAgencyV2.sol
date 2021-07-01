@@ -402,10 +402,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
             loans[id].reward = ratersReward;
             if (totalReward > 0) {
                 distributor.distribute(totalReward);
-                if (!TRU.transfer(address(stkTRU), totalReward.sub(ratersReward))) {
-                    // handle transfer failure
-                    0;
-                }
+                require(TRU.transfer(address(stkTRU), totalReward.sub(ratersReward)));
             }
         }
         _;
