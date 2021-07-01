@@ -71,7 +71,7 @@ describe('TrueFi', () => {
       'joiningFee',
       'claimableFees',
       'fundsManager',
-      '_stakeToken',
+      // '_stakeToken',
       // 'isJoiningPaused', Renamed to pauseStatus
       // 'oracle',
       // '_crvOracle',

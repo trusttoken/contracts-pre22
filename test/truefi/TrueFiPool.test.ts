@@ -86,7 +86,6 @@ describe('TrueFiPool', () => {
       token.address,
       lender.address,
       constants.AddressZero,
-      trustToken.address,
       truOracle.address,
       crvOracle.address,
     )
@@ -151,9 +150,6 @@ describe('TrueFiPool', () => {
       await lender.connect(borrower).fund(loan2.address)
       await pool.flush(parseEth(5e6), 0)
       await curvePool.set_withdraw_price(parseEth(2))
-      expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(calcBorrowerFee(parseEth(2e6))))
-      await trustToken.mint(pool.address, parseTRU(4e5))
-      expect(await pool.truValue()).to.equal(parseEth(99900)) // 100000 - 0.1%
       expectScaledCloseTo(await pool.poolValue(), parseEth(4e6).add(parseEth(105e4).add(parseEth(1e7))).add(calcBorrowerFee(parseEth(2e6))))
       await mockCrv.mint(pool.address, parseEth(1e5))
       expect(await pool.crvValue()).to.equal(parseEth(4.995e4)) // 50000 - 0.1%
@@ -269,18 +265,15 @@ describe('TrueFiPool', () => {
       await timeTravel(provider, dayInSeconds * 182.5)
       const loan2 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, parseEth(1e6), dayInSeconds * 365, 2500)
       await lender.connect(borrower).fund(loan2.address)
-      await trustToken.mint(pool.address, parseTRU(1e7))
       await mockCrv.mint(pool.address, parseEth(3e5))
 
       const liquidValue = await pool.liquidValue()
-      const tfiBalance = await pool.stakeTokenBalance()
       const crvBalance = await pool.crvBalance()
       const totalSupply = await pool.totalSupply()
       const exitAmount = totalSupply.div(2)
 
       await pool.exit(exitAmount)
       expect(await token.balanceOf(owner.address)).to.equal(exitAmount.mul(liquidValue).div(totalSupply))
-      expect(await trustToken.balanceOf(owner.address)).to.equal(exitAmount.mul(tfiBalance).div(totalSupply))
       expect(await mockCrv.balanceOf(owner.address)).to.equal(exitAmount.mul(crvBalance).div(totalSupply))
       expectCloseTo(await loan1.balanceOf(owner.address), parseEth(55e4), 10)
       expectCloseTo(await loan2.balanceOf(owner.address), parseEth(625e3), 10)
@@ -301,16 +294,12 @@ describe('TrueFiPool', () => {
       })
 
       it('returns a basket of tokens on exit, two stakers', async () => {
-        await trustToken.mint(pool.address, parseEth(1e7))
-
         const liquidValue = await pool.liquidValue()
-        const tfiBalance = await pool.stakeTokenBalance()
         const totalSupply = await pool.totalSupply()
         const exitAmount = totalSupply.div(2)
 
         await pool.exit(exitAmount)
         expect(await token.balanceOf(owner.address)).to.equal(exitAmount.mul(liquidValue).div(totalSupply))
-        expect(await trustToken.balanceOf(owner.address)).to.equal(exitAmount.mul(tfiBalance).div(totalSupply))
         expectCloseTo(await loan1.balanceOf(owner.address), parseEth(55e4), 10)
         expectCloseTo(await loan2.balanceOf(owner.address), parseEth(625e3), 10)
       })
@@ -412,7 +401,6 @@ describe('TrueFiPool', () => {
         token.address,
         borrower.address,
         constants.AddressZero,
-        trustToken.address,
         AddressZero,
         AddressZero,
       )

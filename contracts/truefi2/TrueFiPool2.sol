@@ -2,14 +2,13 @@
 pragma solidity 0.6.10;
 pragma experimental ABIEncoderV2;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
-import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
+import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2, ILoanToken2} from "./interface/ITrueLender2.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
@@ -35,8 +34,6 @@ import {PoolExtensions} from "./PoolExtensions.sol";
 contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
-    using SafeERC20 for IERC20;
-    using OneInchExchange for I1Inch3;
 
     uint256 private constant BASIS_PRECISION = 10000;
 
@@ -71,7 +68,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     mapping(address => uint256) latestJoinBlock;
 
-    IERC20 public liquidationToken;
+    address private DEPRECATED__liquidationToken;
 
     ITrueFiPoolOracle public override oracle;
 
@@ -86,7 +83,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     // who gets all fees
     address public beneficiary;
 
-    I1Inch3 public _1Inch;
+    address private DEPRECATED__1Inch;
 
     ISAFU public safu;
 
@@ -104,9 +101,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     function initialize(
         ERC20 _token,
-        ERC20 _liquidationToken,
         ITrueLender2 _lender,
-        I1Inch3 __1Inch,
         ISAFU _safu,
         address __owner
     ) external override initializer {
@@ -114,10 +109,8 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         UpgradeableClaimable.initialize(__owner);
 
         token = _token;
-        liquidationToken = _liquidationToken;
         lender = _lender;
         safu = _safu;
-        _1Inch = __1Inch;
     }
 
     /**
@@ -303,27 +296,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
             return 0;
         }
         return safu.poolDeficit(address(this));
-    }
-
-    /**
-     * @dev Get total balance of stake tokens
-     * @return Balance of stake tokens denominated in this contract
-     */
-    function liquidationTokenBalance() public view returns (uint256) {
-        return liquidationToken.balanceOf(address(this));
-    }
-
-    /**
-     * @dev Price of TRU denominated in underlying tokens
-     * @return Oracle price of TRU in underlying tokens
-     */
-    function liquidationTokenValue() public view returns (uint256) {
-        uint256 balance = liquidationTokenBalance();
-        if (balance == 0 || address(oracle) == address(0)) {
-            return 0;
-        }
-        // Use conservative price estimation to avoid pool being overvalued
-        return withToleratedSlippage(oracle.truToToken(balance));
     }
 
     /**
@@ -586,17 +558,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     function setOracle(ITrueFiPoolOracle newOracle) external onlyOwner {
         oracle = newOracle;
         emit OracleChanged(newOracle);
-    }
-
-    function sellLiquidationToken(bytes calldata data) external {
-        (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1Inch.exchange(data);
-
-        uint256 expectedGain = oracle.truToToken(swap.amount);
-        require(balanceDiff >= withToleratedSlippage(expectedGain), "TrueFiPool: Not optimal exchange");
-
-        require(swap.srcToken == address(liquidationToken), "TrueFiPool: Source token is not TRU");
-        require(swap.dstToken == address(token), "TrueFiPool: Invalid destination token");
-        require(swap.dstReceiver == address(this), "TrueFiPool: Receiver is not pool");
     }
 
     /**

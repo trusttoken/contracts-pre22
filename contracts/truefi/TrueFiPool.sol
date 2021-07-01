@@ -56,7 +56,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
 
     mapping(address => uint256) latestJoinBlock;
 
-    IERC20 public _stakeToken;
+    address private DEPRECATED__stakeToken;
 
     // cache values during sync for gas optimization
     bool private inSync;
@@ -239,14 +239,6 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     }
 
     /**
-     * @dev get stake token address
-     * @return stake token address
-     */
-    function stakeToken() public override view returns (IERC20) {
-        return _stakeToken;
-    }
-
-    /**
      * @dev set TrueLenderV2
      */
     function setLender2(ITrueLender2 lender2) public onlyOwner {
@@ -298,14 +290,6 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     }
 
     /**
-     * @dev Get total balance of stake tokens
-     * @return Balance of stake tokens in this contract
-     */
-    function stakeTokenBalance() public view returns (uint256) {
-        return _stakeToken.balanceOf(address(this));
-    }
-
-    /**
      * @dev Get total balance of CRV tokens
      * @return Balance of stake tokens in this contract
      */
@@ -334,18 +318,6 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
             return yTokenValueCache;
         }
         return yTokenBalance().mul(_curvePool.curve().get_virtual_price()).div(1 ether);
-    }
-
-    /**
-     * @dev Price of TRU in USD
-     * @return Oracle price of TRU in USD
-     */
-    function truValue() public view returns (uint256) {
-        uint256 balance = stakeTokenBalance();
-        if (balance == 0 || address(oracle) == address(0)) {
-            return 0;
-        }
-        return conservativePriceEstimation(oracle.truToToken(balance));
     }
 
     /**
@@ -467,10 +439,6 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         uint256 curveLiquidityAmountToTransfer = amount.mul(
             yTokenBalance()).div(_totalSupply);
 
-        // calculate amount of stake tokens
-        uint256 stakeTokenAmountToTransfer = amount.mul(
-            stakeTokenBalance()).div(_totalSupply);
-
         // calculate amount of CRV
         uint256 crvTokenAmountToTransfer = amount.mul(
             crvBalance()).div(_totalSupply);
@@ -492,11 +460,6 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         if (curveLiquidityAmountToTransfer > 0) {
             ensureEnoughTokensAreAvailable(curveLiquidityAmountToTransfer);
             require(_curvePool.token().transfer(msg.sender, curveLiquidityAmountToTransfer));
-        }
-
-        // if stake token remaining, transfer
-        if (stakeTokenAmountToTransfer > 0) {
-            require(_stakeToken.transfer(msg.sender, stakeTokenAmountToTransfer));
         }
 
         // if crv remaining, transfer
@@ -683,26 +646,6 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         address[] calldata path
     ) public exchangeProtector(_crvOracle.crvToUsd(amountIn), token) {
         _minter.token().safeApprove(address(_uniRouter), amountIn);
-        _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
-    }
-
-    /**
-     * @dev Sell collected TRU on Uniswap
-     * - Selling TRU is managed by the contract owner
-     * - Calculations can be made off-chain and called based on market conditions
-     * - Need to pass path of exact pairs to go through while executing exchange
-     * For example, CRV -> WETH -> TUSD
-     *
-     * @param amountIn see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
-     * @param amountOutMin see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
-     * @param path see https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
-     */
-    function sellStakeToken(
-        uint256 amountIn,
-        uint256 amountOutMin,
-        address[] calldata path
-    ) public exchangeProtector(oracle.truToToken(amountIn), token) {
-        _stakeToken.safeApprove(address(_uniRouter), amountIn);
         _uniRouter.swapExactTokensForTokens(amountIn, amountOutMin, path, address(this), block.timestamp + 1 hours);
     }
 
