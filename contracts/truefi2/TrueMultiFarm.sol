@@ -216,7 +216,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         stakerRewards[token].claimableReward[msg.sender] = 0;
         farmRewards.claimableReward[address(token)] = farmRewards.claimableReward[address(token)].sub(rewardToClaim);
 
-        require(rewardToken.transfer(msg.sender, rewardToClaim));
+        rewardToken.safeTransfer(msg.sender, rewardToClaim);
         emit Claim(token, msg.sender, rewardToClaim);
     }
 
