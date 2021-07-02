@@ -107,8 +107,17 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @dev Throws if token is not whitelisted for creating new pool
      * @param token Address of token to be checked in whitelist
      */
-    modifier onlyAllowed(address token) {
+    modifier onlyAllowedTokens(address token) {
         require(allowAllTokens || isTokenAllowed[token], "PoolFactory: This token is not allowed to have a pool");
+        _;
+    }
+
+    /**
+     * @dev Throws if borrower is not whitelisted for creating new pool
+     * @param borrower Address of borrower to be checked in whitelist
+     */
+    modifier onlyAllowedBorrowers(address borrower) {
+        require(isBorrowerAllowed[borrower], "PoolFactory: This borrower is not allowed to have a pool");
         _;
     }
 
@@ -143,14 +152,33 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * Transfer ownership of created pool to Factory owner.
      * @param token Address of token which the pool will correspond to.
      */
-    function createPool(address token) external onlyAllowed(token) onlyNotExistingPools(token) {
+    function createPool(address token) external onlyAllowedTokens(token) onlyNotExistingPools(token) {
         OwnedProxyWithReference proxy = new OwnedProxyWithReference(this.owner(), address(poolImplementationReference));
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, safu, this.owner());
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, safu, this.owner(), "");
 
         emit PoolCreated(token, address(proxy));
+    }
+
+    /**
+     * @dev Create a new private pool behind proxy. Update new pool's implementation.
+     * Transfer ownership of created pool to Factory owner.
+     * @param token Address of token which the pool will correspond to.
+     */
+    function createPrivatePool(address token, string memory name) external onlyAllowedTokens(token) onlyAllowedBorrowers(msg.sender) {
+        require(
+            privatePool[msg.sender][token] == address(0),
+            "PoolFactory: This borrower and token already have a corresponding pool"
+        );
+        OwnedProxyWithReference proxy = new OwnedProxyWithReference(this.owner(), address(poolImplementationReference));
+        privatePool[msg.sender][token] = address(proxy);
+        isPool[address(proxy)] = true;
+
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, safu, this.owner(), name);
+
+        emit PrivatePoolCreated(msg.sender, token, address(proxy));
     }
 
     /**

@@ -12,7 +12,8 @@ interface ITrueFiPool2 is IERC20 {
         ERC20 _token,
         ITrueLender2 _lender,
         ISAFU safu,
-        address __owner
+        address __owner,
+        string memory name
     ) external;
 
     function token() external view returns (ERC20);

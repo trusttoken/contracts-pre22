@@ -73,7 +73,7 @@ describe('PoolFactory', () => {
     })
   })
 
-  describe('Creating new pool', () => {
+  describe('createPool', () => {
     let creationEventArgs: any
     let proxy: OwnedProxyWithReference
     let pool: TrueFiPool2
@@ -177,6 +177,69 @@ describe('PoolFactory', () => {
       await implementationReference.setImplementation(newPoolImplementation2.address)
       expect(await proxy1.implementation()).to.eq(newPoolImplementation1.address)
       expect(await proxy2.implementation()).to.eq(newPoolImplementation2.address)
+    })
+  })
+
+  describe('createPrivatePool', () => {
+    let creationEventArgs: any
+    let proxy: OwnedProxyWithReference
+    let pool: TrueFiPool2
+
+    beforeEach(async () => {
+      await factory.whitelistToken(token1.address, true)
+      await factory.whitelistBorrower(borrower.address, true)
+      const tx = await factory.connect(borrower).createPrivatePool(token1.address, "CompanyName ")
+      creationEventArgs = (await tx.wait()).events[2].args
+      proxy = OwnedProxyWithReference__factory.connect(await factory.privatePool(borrower.address, token1.address), owner)
+
+      pool = poolImplementation.attach(proxy.address)
+    })
+
+    it('transfers proxy ownership', async () => {
+      expect(await proxy.proxyOwner()).to.eq(owner.address)
+    })
+
+    it('initializes implementation with ownership', async () => {
+      await factory.whitelistToken(token2.address, true)
+      await factory.connect(borrower).createPrivatePool(token2.address, "CompanyName ")
+      proxy = OwnedProxyWithReference__factory.connect(await factory.pool(token2.address), owner)
+      expect(await pool.owner()).to.eq(owner.address)
+    })
+
+    it('names pool correctly', async () => {
+      expect(await pool.name()).to.eq('TrueFi CompanyName TrueUSD')
+    })
+
+    it('adds pool to token -> pool mapping', async () => {
+      expect(await factory.privatePool(borrower.address, token1.address)).to.eq(proxy.address)
+    })
+
+    it('adds pool to isPool mapping', async () => {
+      expect(await factory.isPool(proxy.address)).to.eq(true)
+    })
+
+    it('sets safu', async () => {
+      expect(await pool.safu()).to.equal(safu.address)
+    })
+
+    it('proxy gets correct implementation', async () => {
+      expect(await proxy.implementation()).to.eq(poolImplementation.address)
+    })
+
+    it('true lender is set correctly', async () => {
+      expect(await pool.lender()).to.eq(trueLenderInstance1.address)
+    })
+
+    it('cannot create pool for token that already has a pool', async () => {
+      await expect(factory.connect(borrower).createPrivatePool(token1.address, "CompanyName"))
+        .to.be.revertedWith('PoolFactory: This borrower and token already have a corresponding pool')
+    })
+
+    it('emits event', async () => {
+      const proxyAddress = await factory.privatePool(borrower.address, token1.address)
+      expect(creationEventArgs['borrower']).to.eq(borrower.address)
+      expect(creationEventArgs['token']).to.eq(token1.address)
+      expect(creationEventArgs['pool']).to.eq(proxyAddress)
     })
   })
 
