@@ -3,6 +3,7 @@ pragma solidity 0.6.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20WithDecimals} from "../truefi2/interface/IERC20WithDecimals.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {IBurnableERC20} from "../trusttoken/interface/IBurnableERC20.sol";
 import {IVoteTokenWithERC20} from "../governance/interface/IVoteToken.sol";
@@ -42,6 +43,7 @@ import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
  */
 contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     using SafeMath for uint256;
+    using SafeERC20 for IBurnableERC20;
 
     enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted, Liquidated}
 
@@ -402,7 +404,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
             loans[id].reward = ratersReward;
             if (totalReward > 0) {
                 distributor.distribute(totalReward);
-                require(TRU.transfer(address(stkTRU), totalReward.sub(ratersReward)));
+                TRU.safeTransfer(address(stkTRU), totalReward.sub(ratersReward));
             }
         }
         _;
@@ -431,7 +433,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
             // track amount of claimed tokens
             loans[id].claimed[rater] = loans[id].claimed[rater].add(claimableRewards);
             // transfer tokens
-            require(TRU.transfer(rater, claimableRewards));
+            TRU.safeTransfer(rater, claimableRewards);
             emit Claimed(id, rater, claimableRewards);
         }
     }

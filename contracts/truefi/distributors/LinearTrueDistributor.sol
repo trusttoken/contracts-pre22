@@ -2,6 +2,7 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {Ownable} from "../../common/UpgradeableOwnable.sol";
 import {ITrueDistributor, IERC20} from "../interface/ITrueDistributor.sol";
@@ -18,6 +19,7 @@ import {ITrueDistributor, IERC20} from "../interface/ITrueDistributor.sol";
  */
 contract LinearTrueDistributor is ITrueDistributor, Ownable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -106,7 +108,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
         // transfer tokens & update state
         lastDistribution = block.timestamp;
         distributed = distributed.add(amount);
-        require(trustToken.transfer(farm, amount));
+        trustToken.safeTransfer(farm, amount);
 
         emit Distributed(amount);
     }
@@ -138,7 +140,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
         distribute();
         distributed = 0;
         totalAmount = 0;
-        require(trustToken.transfer(msg.sender, trustToken.balanceOf(address(this))));
+        trustToken.safeTransfer(msg.sender, trustToken.balanceOf(address(this)));
     }
 
     /**

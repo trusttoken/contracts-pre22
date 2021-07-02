@@ -6,6 +6,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import {ERC20} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
@@ -18,6 +19,7 @@ import {ISAFU} from "./interface/ISAFU.sol";
 contract SAFU is ISAFU, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+    using SafeERC20 for ERC20;
     using OneInchExchange for I1Inch3;
 
     // ================ WARNING ==================
@@ -129,7 +131,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         require(deficit > 0, "SAFU: Loan does not have any deficit");
         loanDeficit[loan] = 0;
         poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].sub(deficit);
-        loan.token().transfer(address(loan.pool()), deficit);
+        loan.token().safeTransfer(address(loan.pool()), deficit);
         emit Reclaimed(loan, deficit);
     }
 

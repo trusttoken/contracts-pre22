@@ -3,6 +3,7 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {Ownable} from "../../common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "../interface/IArbitraryDistributor.sol";
@@ -18,6 +19,7 @@ import {IArbitraryDistributor} from "../interface/IArbitraryDistributor.sol";
  */
 contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -80,7 +82,7 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
      */
     function distribute(uint256 _amount) public override onlyBeneficiary {
         remaining = remaining.sub(_amount);
-        require(trustToken.transfer(msg.sender, _amount));
+        trustToken.safeTransfer(msg.sender, _amount);
 
         emit Distributed(_amount);
     }
@@ -90,6 +92,6 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
      */
     function empty() public override onlyOwner {
         remaining = 0;
-        require(trustToken.transfer(msg.sender, trustToken.balanceOf(address(this))));
+        trustToken.safeTransfer(msg.sender, trustToken.balanceOf(address(this)));
     }
 }
