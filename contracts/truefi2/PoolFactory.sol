@@ -31,7 +31,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     // @dev Whitelist for tokens, which can have pools created
     mapping(address => bool) public isTokenAllowed;
-    bool public allowAll;
+    bool public allowAllTokens;
 
     ImplementationReference public poolImplementationReference;
 
@@ -77,10 +77,10 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     event BorrowerAllowedStatusChanged(address borrower, bool status);
 
     /**
-     * @dev Event to show that allowAll status has been changed
-     * @param status New status of allowAll
+     * @dev Event to show that allowAllTokens status has been changed
+     * @param status New status of allowAllTokens
      */
-    event AllowAllStatusChanged(bool status);
+    event AllowAllTokensStatusChanged(bool status);
 
     /**
      * @dev Event to show that trueLender was changed
@@ -108,7 +108,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @param token Address of token to be checked in whitelist
      */
     modifier onlyAllowed(address token) {
-        require(allowAll || isTokenAllowed[token], "PoolFactory: This token is not allowed to have a pool");
+        require(allowAllTokens || isTokenAllowed[token], "PoolFactory: This token is not allowed to have a pool");
         _;
     }
 
@@ -174,12 +174,12 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     }
 
     /**
-     * @dev Change allowAll status
-     * @param status New status of allowAll
+     * @dev Change allowAllTokens status
+     * @param status New status of allowAllTokens
      */
-    function setAllowAll(bool status) external onlyOwner {
-        allowAll = status;
-        emit AllowAllStatusChanged(status);
+    function setAllowAllTokens(bool status) external onlyOwner {
+        allowAllTokens = status;
+        emit AllowAllTokensStatusChanged(status);
     }
 
     function setTrueLender(ITrueLender2 _trueLender2) external onlyOwner {
