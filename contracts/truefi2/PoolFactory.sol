@@ -30,7 +30,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     mapping(address => bool) public override isPool;
 
     // @dev Whitelist for tokens, which can have pools created
-    mapping(address => bool) public isAllowed;
+    mapping(address => bool) public isTokenAllowed;
     bool public allowAll;
 
     ImplementationReference public poolImplementationReference;
@@ -67,7 +67,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @param token Address of token
      * @param status New status of allowance
      */
-    event AllowedStatusChanged(address token, bool status);
+    event TokenAllowedStatusChanged(address token, bool status);
 
     /**
      * @dev Event to show that borrower is now allowed/disallowed to have a private pool
@@ -108,7 +108,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @param token Address of token to be checked in whitelist
      */
     modifier onlyAllowed(address token) {
-        require(allowAll || isAllowed[token], "PoolFactory: This token is not allowed to have a pool");
+        require(allowAll || isTokenAllowed[token], "PoolFactory: This token is not allowed to have a pool");
         _;
     }
 
@@ -158,9 +158,9 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @param token Address of token to be allowed or disallowed
      * @param status New status of allowance for token
      */
-    function whitelist(address token, bool status) external onlyOwner {
-        isAllowed[token] = status;
-        emit AllowedStatusChanged(token, status);
+    function whitelistToken(address token, bool status) external onlyOwner {
+        isTokenAllowed[token] = status;
+        emit TokenAllowedStatusChanged(token, status);
     }
 
     /**

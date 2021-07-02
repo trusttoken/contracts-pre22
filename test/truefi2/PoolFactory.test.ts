@@ -79,7 +79,7 @@ describe('PoolFactory', () => {
     let pool: TrueFiPool2
 
     beforeEach(async () => {
-      await factory.whitelist(token1.address, true)
+      await factory.whitelistToken(token1.address, true)
       const tx = await factory.createPool(token1.address)
       creationEventArgs = (await tx.wait()).events[2].args
       proxy = OwnedProxyWithReference__factory.connect(await factory.pool(token1.address), owner)
@@ -92,7 +92,7 @@ describe('PoolFactory', () => {
     })
 
     it('initializes implementation with ownership', async () => {
-      await factory.whitelist(token2.address, true)
+      await factory.whitelistToken(token2.address, true)
       await factory.connect(otherWallet).createPool(token2.address)
       proxy = OwnedProxyWithReference__factory.connect(await factory.pool(token2.address), owner)
       expect(await pool.owner()).to.eq(owner.address)
@@ -135,8 +135,8 @@ describe('PoolFactory', () => {
     let proxy2: OwnedProxyWithReference
 
     beforeEach(async () => {
-      await factory.whitelist(token1.address, true)
-      await factory.whitelist(token2.address, true)
+      await factory.whitelistToken(token1.address, true)
+      await factory.whitelistToken(token2.address, true)
       await factory.createPool(token1.address)
       await factory.createPool(token2.address)
       proxy1 = OwnedProxyWithReference__factory.connect(await factory.pool(token1.address), owner)
@@ -182,22 +182,22 @@ describe('PoolFactory', () => {
 
   describe('Whitelist', () => {
     beforeEach(async () => {
-      await factory.whitelist(token1.address, true)
+      await factory.whitelistToken(token1.address, true)
       await factory.createPool(token1.address)
     })
 
     it('only owner can call', async () => {
-      await expect(factory.connect(otherWallet).whitelist(token1.address, true))
+      await expect(factory.connect(otherWallet).whitelistToken(token1.address, true))
         .to.be.revertedWith('Ownable: caller is not the owner')
 
-      await expect(factory.whitelist(token1.address, true))
+      await expect(factory.whitelistToken(token1.address, true))
         .to.not.be.reverted
     })
 
     it('can create only whitelisted', async () => {
       await expect(factory.createPool(token2.address))
         .to.be.revertedWith('PoolFactory: This token is not allowed to have a pool')
-      await factory.whitelist(token2.address, true)
+      await factory.whitelistToken(token2.address, true)
       await expect(factory.createPool(token2.address))
         .to.not.be.reverted
     })
@@ -206,19 +206,19 @@ describe('PoolFactory', () => {
       await expect(factory.createPool(token2.address))
         .to.be.revertedWith('PoolFactory: This token is not allowed to have a pool')
       await factory.setAllowAll(true)
-      expect(await factory.isAllowed(token2.address))
+      expect(await factory.isTokenAllowed(token2.address))
         .to.eq(false)
       await expect(factory.createPool(token2.address))
         .not.to.be.reverted
     })
 
     it('emits event', async () => {
-      await expect(factory.whitelist(token1.address, true))
-        .to.emit(factory, 'AllowedStatusChanged')
+      await expect(factory.whitelistToken(token1.address, true))
+        .to.emit(factory, 'TokenAllowedStatusChanged')
         .withArgs(token1.address, true)
 
-      await expect(factory.whitelist(token1.address, false))
-        .to.emit(factory, 'AllowedStatusChanged')
+      await expect(factory.whitelistToken(token1.address, false))
+        .to.emit(factory, 'TokenAllowedStatusChanged')
         .withArgs(token1.address, false)
     })
   })
