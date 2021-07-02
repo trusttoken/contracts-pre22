@@ -23,6 +23,7 @@ use(solidity)
 describe('PoolFactory', () => {
   let owner: Wallet
   let otherWallet: Wallet
+  let borrower: Wallet
   let safu: Wallet
   let poolImplementation: TrueFiPool2
   let implementationReference: ImplementationReference
@@ -34,7 +35,7 @@ describe('PoolFactory', () => {
   let trueLenderInstance2: TestTrueLender
 
   beforeEachWithFixture(async (wallets) => {
-    [owner, otherWallet, safu] = wallets
+    [owner, otherWallet, safu, borrower] = wallets
     poolImplementation = await new TrueFiPool2__factory(owner).deploy()
     implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
 
@@ -219,6 +220,34 @@ describe('PoolFactory', () => {
       await expect(factory.whitelist(token1.address, false))
         .to.emit(factory, 'AllowedStatusChanged')
         .withArgs(token1.address, false)
+    })
+  })
+
+  describe('whitelistBorrower', () => {
+    it('only owner can call', async () => {
+      await expect(factory.connect(otherWallet).whitelistBorrower(borrower.address, true))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+
+      await expect(factory.whitelistBorrower(borrower.address, true))
+        .to.not.be.reverted
+    })
+
+    it('changes whitelist status', async () => {
+      await factory.whitelistBorrower(borrower.address, true)
+      expect(await factory.isBorrowerAllowed(borrower.address)).to.eq(true)
+
+      await factory.whitelistBorrower(borrower.address, false)
+      expect(await factory.isBorrowerAllowed(borrower.address)).to.eq(false)
+    })
+
+    it('emits event', async () => {
+      await expect(factory.whitelistBorrower(borrower.address, true))
+        .to.emit(factory, 'BorrowerAllowedStatusChanged')
+        .withArgs(borrower.address, true)
+
+      await expect(factory.whitelistBorrower(borrower.address, false))
+        .to.emit(factory, 'BorrowerAllowedStatusChanged')
+        .withArgs(borrower.address, false)
     })
   })
 

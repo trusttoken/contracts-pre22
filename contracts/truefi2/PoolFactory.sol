@@ -41,6 +41,10 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     ISAFU public safu;
 
+    // @dev Mapping of borrowers to mapping of ERC20 token's addresses to its private pools
+    mapping(address => mapping(address => address)) public privatePool;
+    mapping(address => bool) public isBorrowerAllowed;
+
     // ======= STORAGE DECLARATION END ===========
 
     /**
@@ -51,11 +55,26 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     event PoolCreated(address token, address pool);
 
     /**
+     * @dev Event to show creation of the new private pool
+     * @param borrower Address of new pool's borrower
+     * @param token Address of token, for which the pool was created
+     * @param pool Address of new pool's proxy
+     */
+    event PrivatePoolCreated(address borrower, address token, address pool);
+
+    /**
      * @dev Event to show that token is now allowed/disallowed to have a pool created
      * @param token Address of token
      * @param status New status of allowance
      */
     event AllowedStatusChanged(address token, bool status);
+
+    /**
+     * @dev Event to show that borrower is now allowed/disallowed to have a private pool
+     * @param borrower Address of borrower
+     * @param status New status of allowance
+     */
+    event BorrowerAllowedStatusChanged(address borrower, bool status);
 
     /**
      * @dev Event to show that allowAll status has been changed
@@ -142,6 +161,16 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     function whitelist(address token, bool status) external onlyOwner {
         isAllowed[token] = status;
         emit AllowedStatusChanged(token, status);
+    }
+
+    /**
+     * @dev Change borrower allowance status
+     * @param borrower Address of borrower to be allowed or disallowed
+     * @param status New status of allowance for borrower
+     */
+    function whitelistBorrower(address borrower, bool status) external onlyOwner {
+        isBorrowerAllowed[borrower] = status;
+        emit BorrowerAllowedStatusChanged(borrower, status);
     }
 
     /**
