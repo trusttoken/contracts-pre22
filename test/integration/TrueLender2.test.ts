@@ -70,18 +70,18 @@ describe('TrueLender2', () => {
 
     await poolFactory.initialize(implementationReference.address, tru.address, lender.address, AddressZero)
 
-    await poolFactory.whitelist(USDC_ADDRESS, true)
+    await poolFactory.whitelistToken(USDC_ADDRESS, true)
     usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
     await poolFactory.createPool(usdc.address)
     usdcFeePool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
     await lender.setFeePool(usdcFeePool.address)
 
-    await poolFactory.whitelist(TUSD_ADDRESS, true)
+    await poolFactory.whitelistToken(TUSD_ADDRESS, true)
     tusd = Erc20Mock__factory.connect(TUSD_ADDRESS, owner)
     await poolFactory.createPool(tusd.address)
     tusdLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(tusd.address), owner)
 
-    await poolFactory.whitelist(USDT_ADDRESS, true)
+    await poolFactory.whitelistToken(USDT_ADDRESS, true)
     usdt = Erc20Mock__factory.connect(USDT_ADDRESS, owner)
     await poolFactory.createPool(usdt.address)
     usdtLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdt.address), owner)
