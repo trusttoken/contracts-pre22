@@ -188,7 +188,7 @@ describe('PoolFactory', () => {
     beforeEach(async () => {
       await factory.whitelistToken(token1.address, true)
       await factory.whitelistBorrower(borrower.address, true)
-      const tx = await factory.connect(borrower).createPrivatePool(token1.address, "CompanyName ")
+      const tx = await factory.connect(borrower).createPrivatePool(token1.address, 'CompanyName ')
       creationEventArgs = (await tx.wait()).events[2].args
       proxy = OwnedProxyWithReference__factory.connect(await factory.privatePool(borrower.address, token1.address), owner)
 
@@ -201,7 +201,7 @@ describe('PoolFactory', () => {
 
     it('initializes implementation with ownership', async () => {
       await factory.whitelistToken(token2.address, true)
-      await factory.connect(borrower).createPrivatePool(token2.address, "CompanyName ")
+      await factory.connect(borrower).createPrivatePool(token2.address, 'CompanyName ')
       proxy = OwnedProxyWithReference__factory.connect(await factory.pool(token2.address), owner)
       expect(await pool.owner()).to.eq(owner.address)
     })
@@ -231,7 +231,7 @@ describe('PoolFactory', () => {
     })
 
     it('cannot create pool for token that already has a pool', async () => {
-      await expect(factory.connect(borrower).createPrivatePool(token1.address, "CompanyName"))
+      await expect(factory.connect(borrower).createPrivatePool(token1.address, 'CompanyName'))
         .to.be.revertedWith('PoolFactory: This borrower and token already have a corresponding pool')
     })
 

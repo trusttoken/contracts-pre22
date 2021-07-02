@@ -700,7 +700,7 @@ describe('TrueRatingAgencyV2', () => {
       beforeEach(async () => {
         await usdc.mint(owner.address, parseEth(1e20))
         const usdcPool = await new TrueFiPool2__factory(owner).deploy()
-        await usdcPool.initialize(usdc.address, AddressZero, AddressZero, AddressZero)
+        await usdcPool.initialize(usdc.address, AddressZero, AddressZero, AddressZero, '')
         loanToken2 = await new LoanToken2__factory(owner).deploy(
           usdcPool.address,
           owner.address,
@@ -886,7 +886,7 @@ describe('TrueRatingAgencyV2', () => {
       beforeEach(async () => {
         await usdc.mint(owner.address, parseEth(1e20))
         const usdcPool = await new TrueFiPool2__factory(owner).deploy()
-        await usdcPool.initialize(usdc.address, AddressZero, AddressZero, AddressZero)
+        await usdcPool.initialize(usdc.address, AddressZero, AddressZero, AddressZero, '')
         loanToken2 = await new LoanToken2Deprecated__factory(owner).deploy(
           usdcPool.address,
           owner.address,

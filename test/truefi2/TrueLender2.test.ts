@@ -84,7 +84,7 @@ describe('TrueLender2', () => {
     pool2 = TrueFiPool2__factory.connect(await poolFactory.pool(token2.address), owner)
 
     counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
-    await counterfeitPool.initialize(token1.address, lender.address, AddressZero, owner.address)
+    await counterfeitPool.initialize(token1.address, lender.address, AddressZero, owner.address, '')
 
     await pool1.setOracle(poolOracle.address)
 
