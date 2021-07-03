@@ -52,7 +52,7 @@ export const trueFi2Fixture = async (_wallets: Wallet[], _provider: MockProvider
   await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address)
   await poolFactory.initialize(implementationReference.address, stkTru.address, lender.address, safu.address)
 
-  await poolFactory.whitelist(token.address, true)
+  await poolFactory.whitelistToken(token.address, true)
   await poolFactory.createPool(token.address)
   const pool = poolImplementation.attach(await poolFactory.pool(token.address))
   await pool.setOracle(oracle.address)

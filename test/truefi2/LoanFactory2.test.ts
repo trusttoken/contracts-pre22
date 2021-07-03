@@ -44,7 +44,7 @@ describe('LoanFactory2', () => {
     await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero, AddressZero)
     await factory.initialize(poolFactory.address, lender.address, liquidator.address)
 
-    await poolFactory.whitelist(token.address, true)
+    await poolFactory.whitelistToken(token.address, true)
     await poolFactory.createPool(token.address)
     poolAddress = await poolFactory.pool(token.address)
 
