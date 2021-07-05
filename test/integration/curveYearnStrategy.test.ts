@@ -22,7 +22,6 @@ use(solidity)
 
 describe('Curve Yearn Pool Strategy', () => {
   const USDC_HOLDER = '0x55fe002aeff02f77364de339a1292923a15844b8'
-  const TRU_ADDRESS = '0x4c19596f5aaff459fa38b0f7ed92f11ae6543784'
   const USDC_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
   const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [CONTRACTS_OWNER, USDC_HOLDER, ETHER_HOLDER])
   const owner = provider.getSigner(CONTRACTS_OWNER)
@@ -62,7 +61,7 @@ describe('Curve Yearn Pool Strategy', () => {
     const poolFactory = await deployContract(PoolFactory__factory)
     const poolImplementation = await deployContract(TrueFiPool2__factory)
     const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
-    await poolFactory.initialize(implementationReference.address, TRU_ADDRESS, AddressZero, AddressZero)
+    await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero)
     await poolFactory.whitelist(USDC_ADDRESS, true)
     await poolFactory.createPool(USDC_ADDRESS)
 
