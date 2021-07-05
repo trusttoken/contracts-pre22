@@ -1,6 +1,6 @@
 import { CONTRACTS_OWNER, ETHER_HOLDER, forkChain } from './suite'
 import {
-  CrvPriceOracle__factory,
+  MockCrvPriceOracle__factory,
   CurveYearnStrategy,
   CurveYearnStrategy__factory,
   ImplementationReference__factory,
@@ -72,7 +72,7 @@ describe('Curve Yearn Pool Strategy', () => {
     await pool.connect(holder).join(amount)
 
     strategy = await new CurveYearnStrategy__factory(owner).deploy()
-    const oracle = await deployContract(CrvPriceOracle__factory)
+    const oracle = await deployContract(MockCrvPriceOracle__factory)
 
     await strategy.initialize(pool.address, CURVE_POOL, GAUGE, MINTER, ONE_INCH, oracle.address, 1)
     await pool.switchStrategy(strategy.address)
