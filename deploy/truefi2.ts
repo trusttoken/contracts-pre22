@@ -104,7 +104,7 @@ deploy({}, (_, config) => {
     safu.initialize(loanFactory2, liquidator2, oneInch)
   })
   runIf(poolFactory.isInitialized().not(), () => {
-    poolFactory.initialize(implementationReference, trustToken, trueLender2, safu)
+    poolFactory.initialize(implementationReference, trueLender2, safu)
   })
   runIf(trueLender2.isInitialized().not(), () => {
     trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch)
