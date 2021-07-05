@@ -426,6 +426,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * @param id Loan ID
      * @param rater Rater account
      */
+    // slither-disable-next-line reentrancy-eth
     function claim(address id, address rater) external override onlyFundedLoans(id) calculateTotalReward(id) {
         uint256 claimableRewards = claimable(id, rater);
 
