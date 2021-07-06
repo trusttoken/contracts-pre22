@@ -372,15 +372,26 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     }
 
     /**
-     * @dev Update total TRU reward for a Loan
-     * Reward is divided proportionally based on # TRU staked
+     * @dev Claim TRU rewards for raters
+     * - Reward is divided proportionally based on # TRU staked
+     * - Only can claim TRU rewards for funded loans
+     * - Claimed automatically when a user withdraws stake
+     *
      * chi = (TRU remaining in distributor) / (Total TRU allocated for distribution)
      * interest = (loan APY * term * principal)
      * R = Total Reward = (interest * chi * rewardFactor)
+     * R is distributed to raters based on their proportion of ratings/total_ratings
+     *
+     * Claimable reward = R x (current time / total time)
+     *      * (account TRU staked / total TRU staked) - (amount claimed)
+     *
      * @param id Loan ID
+     * @param rater Rater account
      */
-    // slither-disable-next-line reentrancy-no-eth
-    modifier calculateTotalReward(address id) {
+    function claim(address id, address rater) external override onlyFundedLoans(id) {
+        // Update total and rater's TRU rewards for a loan
+        uint256 totalReward = 0;
+        uint256 ratersReward = 0;
         if (loans[id].reward == 0) {
             uint256 interest = ILoanToken2(id).profit();
 
@@ -394,45 +405,26 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
 
             // calculate reward
             // prettier-ignore
-            uint256 totalReward = toTRU(
+            totalReward = toTRU(
                 interest.mul(distributor.remaining()).mul(rewardMultiplier).mul(10**18).div(distributor.amount()).div(
                     10**decimals
                 )
             );
 
-            uint256 ratersReward = totalReward.mul(ratersRewardFactor).div(10000);
+            ratersReward = totalReward.mul(ratersRewardFactor).div(10000);
             loans[id].reward = ratersReward;
-            if (totalReward > 0) {
-                distributor.distribute(totalReward);
-                TRU.safeTransfer(address(stkTRU), totalReward.sub(ratersReward));
-            }
         }
-        _;
-    }
 
-    /**
-     * @dev Claim TRU rewards for raters
-     * - Only can claim TRU rewards for funded loans
-     * - Claimed automatically when a user withdraws stake
-     *
-     * chi = (TRU remaining in distributor) / (Total TRU allocated for distribution)
-     * interest = (loan APY * term * principal)
-     * R = Total Reward = (interest * chi)
-     * R is distributed to raters based on their proportion of ratings/total_ratings
-     *
-     * Claimable reward = R x (current time / total time)
-     *      * (account TRU staked / total TRU staked) - (amount claimed)
-     *
-     * @param id Loan ID
-     * @param rater Rater account
-     */
-    function claim(address id, address rater) external override onlyFundedLoans(id) calculateTotalReward(id) {
         uint256 claimableRewards = claimable(id, rater);
+        // track amount of claimed tokens
+        loans[id].claimed[rater] = loans[id].claimed[rater].add(claimableRewards);
 
+        // transfer tokens
+        if (totalReward > 0) {
+            distributor.distribute(totalReward);
+            TRU.safeTransfer(address(stkTRU), totalReward.sub(ratersReward));
+        }
         if (claimableRewards > 0) {
-            // track amount of claimed tokens
-            loans[id].claimed[rater] = loans[id].claimed[rater].add(claimableRewards);
-            // transfer tokens
             TRU.safeTransfer(rater, claimableRewards);
             emit Claimed(id, rater, claimableRewards);
         }
