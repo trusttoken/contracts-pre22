@@ -379,7 +379,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * R = Total Reward = (interest * chi * rewardFactor)
      * @param id Loan ID
      */
-    // slither-disable-next-line reentrancy-no-eth
     modifier calculateTotalReward(address id) {
         if (loans[id].reward == 0) {
             uint256 interest = ILoanToken2(id).profit();
