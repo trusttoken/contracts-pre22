@@ -7,6 +7,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {ERC20} from "../common/UpgradeableERC20.sol";
+import {DeficiencyToken} from "./DeficiencyToken.sol";
+import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
@@ -19,6 +21,7 @@ import {ISAFU} from "./interface/ISAFU.sol";
 contract SAFU is ISAFU, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+    using SafeERC20 for IDeficiencyToken;
     using SafeERC20 for ERC20;
     using OneInchExchange for I1Inch3;
 
@@ -32,7 +35,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     ILiquidator2 public liquidator;
     I1Inch3 public _1Inch;
 
-    mapping(ILoanToken2 => uint256) public loanDeficit;
+    mapping(ILoanToken2 => IDeficiencyToken) public override deficiencyToken;
     mapping(address => uint256) public override poolDeficit;
 
     // ======= STORAGE DECLARATION END ============
@@ -49,9 +52,10 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @dev Emitted when a loan gets liquidated
      * @param loan Loan that has been liquidated
      * @param repaid Amount repaid to the pool
+     * @param deficiencyToken Deficiency token representing a deficit that is owed to the pool by SAFU
      * @param deficit Deficit amount that SAFU still owes the pool
      */
-    event Liquidated(ILoanToken2 loan, uint256 repaid, uint256 deficit);
+    event Liquidated(ILoanToken2 loan, uint256 repaid, IDeficiencyToken deficiencyToken, uint256 deficit);
 
     /**
      * @dev Emitted when a loan deficit is reclaimed
@@ -94,11 +98,11 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         if (owedToPool > safuTokenBalance) {
             deficit = owedToPool.sub(safuTokenBalance);
             toTransfer = safuTokenBalance;
-            loanDeficit[loan] = deficit;
+            deficiencyToken[loan] = new DeficiencyToken(loan, deficit);
             poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].add(deficit);
         }
         token.safeTransfer(address(pool), toTransfer);
-        emit Liquidated(loan, toTransfer, deficit);
+        emit Liquidated(loan, toTransfer, deficiencyToken[loan], deficit);
     }
 
     /**
@@ -124,15 +128,19 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     /**
      * @dev Reclaims deficit funds, after a loan is repaid and transfers them to the pool
      * @param loan Loan with a deficit to be reclaimed
+     * @param amount Amount of deficiency tokens to be reclaimed
      */
-    function reclaim(ILoanToken2 loan) external {
+    function reclaim(ILoanToken2 loan, uint256 amount) external override {
         require(tokenBalance(loan) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
-        uint256 deficit = loanDeficit[loan];
-        require(deficit > 0, "SAFU: Loan does not have any deficit");
-        loanDeficit[loan] = 0;
-        poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].sub(deficit);
-        loan.token().safeTransfer(address(loan.pool()), deficit);
-        emit Reclaimed(loan, deficit);
+        IDeficiencyToken dToken = deficiencyToken[loan];
+        require(dToken.balanceOf(msg.sender) > 0, "SAFU: Sender does not have deficiency tokens to be reclaimed");
+
+        poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].sub(amount);
+        dToken.safeTransferFrom(msg.sender, address(this), amount);
+        dToken.burn(amount);
+        loan.token().safeTransfer(msg.sender, amount);
+
+        emit Reclaimed(loan, amount);
     }
 
     /**
