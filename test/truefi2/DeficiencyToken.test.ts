@@ -35,4 +35,8 @@ describe('DeficiencyToken', () => {
   it('mints tokens to the pool', async () => {
     expect(await deficiency.balanceOf(pool.address)).to.eq(parseEth(1))
   })
+
+  it('returns correct version', async () => {
+    expect(await deficiency.version()).to.eq(0)
+  })
 })
