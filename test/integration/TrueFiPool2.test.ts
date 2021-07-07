@@ -8,8 +8,6 @@ import {
   PoolFactory__factory,
   TrueFiPool2__factory,
   TrueLender2__factory,
-  TrustToken,
-  TrustToken__factory,
 } from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
 import { expect, use } from 'chai'
@@ -18,7 +16,6 @@ import { solidity } from 'ethereum-waffle'
 use(solidity)
 
 describe('TrueFiPool2', () => {
-  const TRU_ADDRESS = '0x4c19596f5aaff459fa38b0f7ed92f11ae6543784'
   const USDC_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
   const TFUSDT_ADDRESS = '0x6002b1dcb26e7b1aa797a17551c6f487923299d7'
   const TFUSDT_STRATEGY_ADDRESS = '0x8D162Caa649e981E2a0b0ba5908A77f2536B11A8'
@@ -30,18 +27,16 @@ describe('TrueFiPool2', () => {
   const powner = provider.getSigner(PROXY_OWNER)
   const deployContract = setupDeploy(owner)
 
-  let tru: TrustToken
   let implementationReference: ImplementationReference
 
   beforeEach(async () => {
     const poolFactory = await deployContract(PoolFactory__factory)
     const poolImplementation = await deployContract(TrueFiPool2__factory)
     implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
-    tru = TrustToken__factory.connect(TRU_ADDRESS, owner)
     const lender = await deployContract(TrueLender2__factory)
     await lender.initialize(AddressZero, poolFactory.address, AddressZero, AddressZero)
 
-    await poolFactory.initialize(implementationReference.address, tru.address, lender.address, AddressZero)
+    await poolFactory.initialize(implementationReference.address, lender.address, AddressZero)
     await poolFactory.whitelist(USDC_ADDRESS, true)
     const usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
     await poolFactory.createPool(usdc.address)

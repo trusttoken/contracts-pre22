@@ -9,8 +9,6 @@ import {
   TrueFiPool2__factory,
   TrueLender2,
   TrueLender2__factory,
-  TrustToken,
-  TrustToken__factory,
   PoolFactory__factory,
   LoanFactory2,
   LoanFactory2__factory,
@@ -28,7 +26,6 @@ import { AddressZero } from '@ethersproject/constants'
 use(solidity)
 
 describe('TrueLender2', () => {
-  const TRU_ADDRESS = '0x4c19596f5aaff459fa38b0f7ed92f11ae6543784'
   const USDC_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
   const USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
   const TUSD_ADDRESS = '0x0000000000085d4780B73119b644AE5ecd22b376'
@@ -47,7 +44,6 @@ describe('TrueLender2', () => {
   let tusdLoanPool: TrueFiPool2
   let lender: TrueLender2
   let loanFactory: LoanFactory2
-  let tru: TrustToken
   let mockRatingAgency: MockContract
   let stkTru: Wallet
   let tusd: Erc20Mock
@@ -60,7 +56,6 @@ describe('TrueLender2', () => {
     const poolFactory = await deployContract(PoolFactory__factory)
     const poolImplementation = await deployContract(TrueFiPool2__factory)
     const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
-    tru = TrustToken__factory.connect(TRU_ADDRESS, owner)
 
     mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyJson.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(50e6))
@@ -68,7 +63,7 @@ describe('TrueLender2', () => {
     lender = await deployContract(TrueLender2__factory)
     await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS)
 
-    await poolFactory.initialize(implementationReference.address, tru.address, lender.address, AddressZero)
+    await poolFactory.initialize(implementationReference.address, lender.address, AddressZero)
 
     await poolFactory.whitelist(USDC_ADDRESS, true)
     usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
