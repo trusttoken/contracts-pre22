@@ -13,6 +13,8 @@ import {
   TrueRatingAgencyV2,
   LoanFactory2,
   Safu,
+  DeficiencyToken__factory,
+  DeficiencyToken,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -217,7 +219,7 @@ describe('TrueFiPool2', () => {
     })
   })
 
-  describe('deficitValue', () => {
+  describe('SAFU deficit', () => {
     beforeEach(async () => {
       await tusd.approve(tusdPool.address, parseEth(1e7))
       await tusdPool.join(parseEth(1e7))
@@ -228,20 +230,44 @@ describe('TrueFiPool2', () => {
       await safu.liquidate(loan.address)
     })
 
-    it('returns correct deficit value', async () => {
-      expect(await tusdPool.deficitValue()).to.eq(500136)
+    describe('deficitValue', () => {
+      it('returns correct deficit value', async () => {
+        expect(await tusdPool.deficitValue()).to.eq(500136)
+      })
+  
+      it('returns 0 if no safu address set', async () => {
+        await tusdPool.setSafuAddress(AddressZero)
+        expect(await tusdPool.deficitValue()).to.eq(0)
+      })
+  
+      it('returns 0 after loan has been repaid and redeemed', async () => {
+        await tusd.mint(loan.address, 500136)
+        await safu.redeem(loan.address)
+        await tusdPool.reclaimDeficit(loan.address)
+        expect(await tusdPool.deficitValue()).to.eq(0)
+      })
     })
 
-    it('returns 0 if no safu address set', async () => {
-      await tusdPool.setSafuAddress(AddressZero)
-      expect(await tusdPool.deficitValue()).to.eq(0)
-    })
+    describe.only('reclaimDeficit', () => {
+      let dToken: DeficiencyToken
 
-    it('returns 0 after loan has been repaid and redeemed', async () => {
-      await tusd.mint(loan.address, 500136)
-      await safu.redeem(loan.address)
-      await safu.reclaim(loan.address)
-      expect(await tusdPool.deficitValue()).to.eq(0)
+      beforeEach(async () => {
+        await tusd.mint(loan.address, 500136)
+        dToken = new DeficiencyToken__factory(owner).attach(await safu.deficiencyToken(loan.address))
+        await safu.redeem(loan.address)
+      })
+      
+      it('pool has deficiency tokens', async () => {
+        expect(await dToken.balanceOf(tusdPool.address)).to.eq(500136)
+      })
+
+      it('transfers deficiency tokens to safu', async () => {
+        await expect(() => tusdPool.reclaimDeficit(loan.address)).changeTokenBalance(dToken, tusdPool, -500136)
+      })
+
+      it('gets pool tokens from safu', async () => {
+        await expect(() => tusdPool.reclaimDeficit(loan.address)).changeTokenBalance(tusd, tusdPool, 500136)
+      })
     })
   })
 
