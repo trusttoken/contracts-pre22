@@ -29,4 +29,8 @@ contract DeficiencyToken is IDeficiencyToken, ERC20 {
         loan = _loan;
         _mint(address(_loan.pool()), _amount);
     }
+
+    function version() external override pure returns (uint8) {
+        return 0;
+    }
 }
