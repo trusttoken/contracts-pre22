@@ -89,6 +89,8 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     ISAFU public safu;
 
+    address public creditAgency;
+
     // ======= STORAGE DECLARATION END ===========
 
     /**
@@ -207,10 +209,19 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     event DeficitReclaimed(ILoanToken2 loan, uint256 deficit);
 
     /**
-     * @dev only lender can perform borrowing or repaying
+     * @dev Emitted when Credit Agency address is changed
+     * @param newCreditAgency New Credit Agency address
      */
-    modifier onlyLender() {
-        require(msg.sender == address(lender), "TrueFiPool: Caller is not the lender");
+    event CreditAgencyChanged(address newCreditAgency);
+
+    /**
+     * @dev only TrueLender of CreditAgency can perform borrowing or repaying
+     */
+    modifier onlyLenderOrTrueCreditAgency() {
+        require(
+            msg.sender == address(lender) || msg.sender == address(creditAgency),
+            "TrueFiPool: Caller is not the lender or creditAgency"
+        );
         _;
     }
 
@@ -254,6 +265,11 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     function setSafuAddress(ISAFU _safu) external onlyOwner {
         safu = _safu;
         emit SafuChanged(_safu);
+    }
+
+    function setCreditAgency(address _creditAgency) external onlyOwner {
+        creditAgency = _creditAgency;
+        emit CreditAgencyChanged(_creditAgency);
     }
 
     /**
@@ -498,7 +514,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Remove liquidity from strategy if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount) external override onlyLender {
+    function borrow(uint256 amount) external override onlyLenderOrTrueCreditAgency {
         require(amount <= liquidValue(), "TrueFiPool: Insufficient liquidity");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);
@@ -513,7 +529,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev repay debt by transferring tokens to the contract
      * @param currencyAmount amount to repay
      */
-    function repay(uint256 currencyAmount) external override onlyLender {
+    function repay(uint256 currencyAmount) external override onlyLenderOrTrueCreditAgency {
         token.safeTransferFrom(msg.sender, address(this), currencyAmount);
         emit Repaid(msg.sender, currencyAmount);
     }
