@@ -200,6 +200,13 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     event SafuChanged(ISAFU newSafu);
 
     /**
+     * @dev Emitted when pool reclaims deficit from SAFU
+     * @param loan Loan for which the deficit was reclaimed
+     * @param deficit Amount reclaimed
+     */
+    event DeficitReclaimed(ILoanToken2 loan, uint256 deficit);
+
+    /**
      * @dev only lender can perform borrowing or repaying
      */
     modifier onlyLender() {
@@ -562,6 +569,8 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         uint256 deficit = dToken.balanceOf(address(this));
         dToken.safeApprove(address(safu), deficit);
         safu.reclaim(loan, deficit);
+
+        emit DeficitReclaimed(loan, deficit);
     }
 
     /**

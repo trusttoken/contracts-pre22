@@ -203,7 +203,7 @@ describe('SAFU', () => {
         it('sets deficiencyToken', async () => {
           const tx = await safu.liquidate(loan.address)
           const deficiencyToken = (await tx.wait()).events[8].args.deficiencyToken
-          expect(await safu.deficiencyToken (loan.address)).to.eq(deficiencyToken)
+          expect(await safu.deficiencyToken(loan.address)).to.eq(deficiencyToken)
         })
 
         it('increases pool deficit', async () => {
@@ -238,7 +238,7 @@ describe('SAFU', () => {
         it('sets deficiencyToken', async () => {
           const tx = await safu.liquidate(loan.address)
           const deficiencyToken = (await tx.wait()).events[8].args.deficiencyToken
-          expect(await safu.deficiencyToken (loan.address)).to.eq(deficiencyToken)
+          expect(await safu.deficiencyToken(loan.address)).to.eq(deficiencyToken)
         })
 
         it('increases pool deficit', async () => {

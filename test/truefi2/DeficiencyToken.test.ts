@@ -1,15 +1,15 @@
-import { 
+import {
   LoanToken2,
   DeficiencyToken,
   DeficiencyToken__factory,
   TrueFiPool2,
   LoanFactory2,
-} from "contracts";
-import { expect, use } from "chai";
-import { deployContract, solidity } from "ethereum-waffle";
-import { Wallet } from "ethers";
-import { beforeEachWithFixture } from "utils/beforeEachWithFixture";
-import { createLoan, parseEth, setupTruefi2 } from "utils";
+} from 'contracts'
+import { expect, use } from 'chai'
+import { deployContract, solidity } from 'ethereum-waffle'
+import { Wallet } from 'ethers'
+import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
+import { createLoan, parseEth, setupTruefi2 } from 'utils'
 
 use(solidity)
 

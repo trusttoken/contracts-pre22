@@ -234,12 +234,12 @@ describe('TrueFiPool2', () => {
       it('returns correct deficit value', async () => {
         expect(await tusdPool.deficitValue()).to.eq(500136)
       })
-  
+
       it('returns 0 if no safu address set', async () => {
         await tusdPool.setSafuAddress(AddressZero)
         expect(await tusdPool.deficitValue()).to.eq(0)
       })
-  
+
       it('returns 0 after loan has been repaid and redeemed', async () => {
         await tusd.mint(loan.address, 500136)
         await safu.redeem(loan.address)
@@ -248,7 +248,7 @@ describe('TrueFiPool2', () => {
       })
     })
 
-    describe.only('reclaimDeficit', () => {
+    describe('reclaimDeficit', () => {
       let dToken: DeficiencyToken
 
       beforeEach(async () => {
@@ -256,7 +256,7 @@ describe('TrueFiPool2', () => {
         dToken = new DeficiencyToken__factory(owner).attach(await safu.deficiencyToken(loan.address))
         await safu.redeem(loan.address)
       })
-      
+
       it('pool has deficiency tokens', async () => {
         expect(await dToken.balanceOf(tusdPool.address)).to.eq(500136)
       })
@@ -267,6 +267,12 @@ describe('TrueFiPool2', () => {
 
       it('gets pool tokens from safu', async () => {
         await expect(() => tusdPool.reclaimDeficit(loan.address)).changeTokenBalance(tusd, tusdPool, 500136)
+      })
+
+      it('emits event', async () => {
+        await expect(tusdPool.reclaimDeficit(loan.address))
+          .to.emit(tusdPool, 'DeficitReclaimed')
+          .withArgs(loan.address, 500136)
       })
     })
   })
