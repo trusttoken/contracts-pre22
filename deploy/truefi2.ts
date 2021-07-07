@@ -9,17 +9,14 @@ import {
   OwnedUpgradeabilityProxy,
   PoolFactory,
   StkTruToken,
-  TestTrueFiPool,
   TestTrustToken,
   TimeOwnedUpgradeabilityProxy,
   TrueFarm,
   TrueFiCreditOracle,
-  TrueFiPool,
   TrueFiPool2,
   TrueLender2,
   TrueRatingAgencyV2,
   TrustToken,
-  ChainlinkTruUsdcOracle,
   SAFU,
 } from '../build/artifacts'
 import { utils, BigNumber } from 'ethers'
@@ -59,9 +56,6 @@ deploy({}, (_, config) => {
     ? timeProxy(contract(TrustToken), () => {})
     : timeProxy(contract(TestTrustToken), () => {})
   const stkTruToken = proxy(contract(StkTruToken), () => {})
-  const trueFiPool = isMainnet
-    ? proxy(contract(TrueFiPool), () => {})
-    : proxy(contract(TestTrueFiPool), () => {})
   const usdc = isMainnet
     ? deployParams['mainnet'].USDC
     : contract(TestUSDCToken)
@@ -96,7 +90,6 @@ deploy({}, (_, config) => {
   // New bare contracts
   const trueFiPool2 = contract(TrueFiPool2)
   const implementationReference = contract(ImplementationReference, [trueFiPool2])
-  const chainlinkTruUsdcOracle = contract(ChainlinkTruUsdcOracle)
   const oneInch = isMainnet ? ONE_INCH_EXCHANGE : contract(Mock1InchV3)
 
   // Contract initialization
@@ -155,7 +148,4 @@ deploy({}, (_, config) => {
   if (!isMainnet) {
     trueLender2.setFee(deployParams['testnet'].LOAN_INTEREST_FEE)
   }
-  runIf(poolFactory.isPool(trueFiPool).not(), () => {
-    poolFactory.addLegacyPool(trueFiPool)
-  })
 })
