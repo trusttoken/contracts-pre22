@@ -7,15 +7,16 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {ERC20} from "../common/UpgradeableERC20.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
 
 /**
  *
  */
-contract DeficiencyToken is ERC20 {
+contract DeficiencyToken is IDeficiencyToken, ERC20 {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
-    ILoanToken2 public loan;
+    ILoanToken2 public override loan;
 
     /**
      * @dev Create Deficiency
