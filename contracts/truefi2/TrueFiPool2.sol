@@ -568,7 +568,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         IDeficiencyToken dToken = safu.deficiencyToken(loan);
         uint256 deficit = dToken.balanceOf(address(this));
         dToken.safeApprove(address(safu), deficit);
-
         safu.reclaim(loan, deficit);
 
         emit DeficitReclaimed(loan, deficit);
