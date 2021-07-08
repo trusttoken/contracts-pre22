@@ -4,9 +4,14 @@ pragma solidity 0.6.10;
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20, IERC20} from "../common/UpgradeableERC20.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
-contract TrueCreditAgency {
+contract TrueCreditAgency is UpgradeableClaimable {
     using SafeERC20 for ERC20;
+
+    function initialize() public initializer {
+        UpgradeableClaimable.initialize(msg.sender);
+    }
 
     function borrow(ITrueFiPool2 pool, uint256 amount) external {
         pool.borrow(amount);

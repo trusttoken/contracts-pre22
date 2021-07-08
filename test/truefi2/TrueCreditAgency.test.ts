@@ -2,6 +2,7 @@ import { Wallet } from 'ethers'
 import { MockTrueCurrency, TrueCreditAgency, TrueCreditAgency__factory, TrueFiPool2 } from 'contracts'
 import { beforeEachWithFixture, parseEth, setupTruefi2 } from 'utils'
 import { expect } from 'chai'
+import { AddressZero } from '@ethersproject/constants'
 
 describe('TrueCreditAgency', () => {
   let owner: Wallet
@@ -23,8 +24,24 @@ describe('TrueCreditAgency', () => {
     await tusdPool.join(parseEth(1e7))
 
     creditAgency = await new TrueCreditAgency__factory(owner).deploy()
+    await creditAgency.initialize()
 
     await tusdPool.setCreditAgency(creditAgency.address)
+  })
+
+  describe('Ownership', () => {
+    it('owner is set to msg.sender of initialize()', async () => {
+      expect(await creditAgency.owner()).to.equal(owner.address)
+    })
+
+    it('ownership transfer', async () => {
+      await creditAgency.transferOwnership(borrower.address)
+      expect(await creditAgency.owner()).to.equal(owner.address)
+      expect(await creditAgency.pendingOwner()).to.equal(borrower.address)
+      await creditAgency.connect(borrower).claimOwnership()
+      expect(await creditAgency.owner()).to.equal(borrower.address)
+      expect(await creditAgency.pendingOwner()).to.equal(AddressZero)
+    })
   })
 
   describe('Borrowing', () => {
