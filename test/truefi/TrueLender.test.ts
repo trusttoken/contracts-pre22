@@ -4,8 +4,6 @@ import { Contract, Wallet, BigNumber, providers } from 'ethers'
 import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 import {
   beforeEachWithFixture,
-  timeTravel,
-  expectScaledCloseTo,
   parseEth,
   parseTRU,
 } from 'utils'
@@ -13,8 +11,6 @@ import {
 import {
   MockTrueLender,
   MockTrueLender__factory,
-  LoanToken,
-  LoanToken__factory,
   MockTrueCurrency,
   MockTrueCurrency__factory,
 } from 'contracts'
@@ -351,7 +347,7 @@ describe('TrueLender', () => {
     })
 
     it('reverts if loan was not long enough under voting', async () => {
-      const { timestamp } = (await owner.provider.getBlock('latest'))
+      const { timestamp } = (await provider.getBlock('latest'))
       await mockRatingAgency.mock.getResults.returns(timestamp, 0, parseTRU(15e6))
       await expect(lender.fund(mockLoanToken.address))
         .to.be.revertedWith('TrueLender: Voting time is below minimum')
