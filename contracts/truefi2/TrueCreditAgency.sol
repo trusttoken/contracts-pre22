@@ -9,11 +9,25 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 contract TrueCreditAgency is UpgradeableClaimable {
     using SafeERC20 for ERC20;
 
+    mapping(address => bool) public allowedBorrowers;
+
+    event Allowed(address indexed who, bool status);
+
+    modifier onlyAllowedBorrowers() {
+        require(allowedBorrowers[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
+        _;
+    }
+
     function initialize() public initializer {
         UpgradeableClaimable.initialize(msg.sender);
     }
 
-    function borrow(ITrueFiPool2 pool, uint256 amount) external {
+    function allow(address who, bool status) external onlyOwner {
+        allowedBorrowers[who] = status;
+        emit Allowed(who, status);
+    }
+
+    function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {
         pool.borrow(amount);
         pool.token().safeTransfer(msg.sender, amount);
     }
