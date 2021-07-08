@@ -7,9 +7,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {ERC20} from "../common/UpgradeableERC20.sol";
 
-/**
- *
- */
 contract TrueCreditLine is ERC20 {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
@@ -18,17 +15,17 @@ contract TrueCreditLine is ERC20 {
     address public pool;
 
     /**
-     * @dev Create Deficiency
-     * @param _borrower Defaulted loans address
+     * @dev Create Credit Line
+     * @param _borrower Borrower address
      * @param _pool Pool for which the credit line is attached to
-     * @param _amount Amount of underlying pool token's that are owed to the pool
+     * @param _amount Amount of tokens to be minted to the pool
      */
     constructor(
         address _borrower,
         address _pool,
         uint256 _amount
     ) public {
-        ERC20.__ERC20_initialize("TrueFi Deficiency Token", "DEF");
+        ERC20.__ERC20_initialize("TrueFi Credit Line", "tfCL");
 
         borrower = _borrower;
         pool = _pool;
