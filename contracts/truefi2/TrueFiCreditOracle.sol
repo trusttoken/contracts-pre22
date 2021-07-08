@@ -20,10 +20,20 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     // @dev Track credit scores for an account
     mapping(address => uint8) score;
 
+    // Manager role authorized to set credit scores
+    address public manager;
+
     // ======= STORAGE DECLARATION END ============
+
+    event ManagerChanged(address newManager);
 
     function initialize() public initializer {
         UpgradeableClaimable.initialize(msg.sender);
+    }
+
+    modifier onlyManager() {
+        require(msg.sender == manager, "TrueFiCreditOracle: Caller is not the manager");
+        _;
     }
 
     /**
@@ -38,7 +48,15 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
      * @dev Set `newScore` value for `account`
      * Scores are stored as uint8 allowing scores of 0-255
      */
-    function setScore(address account, uint8 newScore) public onlyOwner {
+    function setScore(address account, uint8 newScore) public onlyManager {
         score[account] = newScore;
+    }
+
+    /**
+     * @dev Set new manager
+     */
+    function setManager(address newManager) public onlyOwner {
+        manager = newManager;
+        emit ManagerChanged(newManager);
     }
 }
