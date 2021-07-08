@@ -31,6 +31,7 @@ describe('TrueFiPool2', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
+  let creditAgency: Wallet
   let tusd: MockTrueCurrency
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
@@ -48,7 +49,7 @@ describe('TrueFiPool2', () => {
   let timeTravel: (time: number) => void
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner, borrower] = wallets
+    [owner, borrower, creditAgency] = wallets
     deployContract = setupDeploy(owner)
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
@@ -165,6 +166,30 @@ describe('TrueFiPool2', () => {
       await expect(tusdPool.setSafuAddress(borrower.address))
         .to.emit(tusdPool, 'SafuChanged')
         .withArgs(borrower.address)
+    })
+  })
+
+  describe('setCreditAgency', () => {
+    it('can be called by owner', async () => {
+      await expect(tusdPool.setCreditAgency(creditAgency.address))
+        .not.to.be.reverted
+    })
+
+    it('cannot be called by unauthorized address', async () => {
+      await expect(tusdPool.connect(borrower).setCreditAgency(creditAgency.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('properly changes Credit Agency address', async () => {
+      expect(await tusdPool.creditAgency()).to.equal(AddressZero)
+      await tusdPool.setCreditAgency(creditAgency.address)
+      expect(await tusdPool.creditAgency()).to.equal(creditAgency.address)
+    })
+
+    it('emits proper event', async () => {
+      await expect(tusdPool.setCreditAgency(creditAgency.address))
+        .to.emit(tusdPool, 'CreditAgencyChanged')
+        .withArgs(creditAgency.address)
     })
   })
 
@@ -713,11 +738,19 @@ describe('TrueFiPool2', () => {
       await tusdPool.join(parseEth(100))
     })
 
-    it('only lender can be caller', async () => {
+    it('only lender and creditAgency can borrow from pool', async () => {
       await expect(tusdPool.connect(owner.address).borrow(0))
-        .to.be.revertedWith('TrueFiPool: Caller is not the lender')
+        .to.be.revertedWith('TrueFiPool: Caller is not the lender or creditAgency')
+    })
+
+    it('lender can borrow funds', async () => {
       await lender.connect(borrower).fund(loan.address)
       expect('borrow').to.be.calledOnContract(tusdPool)
+    })
+
+    it('creditAgency can borrow funds', async () => {
+      await tusdPool.setCreditAgency(creditAgency.address)
+      await expect(tusdPool.connect(creditAgency).borrow(100)).to.be.not.reverted
     })
 
     it('in order to borrow from pool it has to have liquidity', async () => {
@@ -815,11 +848,19 @@ describe('TrueFiPool2', () => {
       await loan.settle()
     })
 
-    it('only lender can be caller', async () => {
-      await expect(tusdPool.connect(owner).repay(0))
-        .to.be.revertedWith('TrueFiPool: Caller is not the lender')
+    it('only lender and creditAgency can repay to pool', async () => {
+      await expect(tusdPool.connect(owner.address).repay(0))
+        .to.be.revertedWith('TrueFiPool: Caller is not the lender or creditAgency')
+    })
+
+    it('lender can repay funds', async () => {
       await lender.reclaim(loan.address, '0x')
       expect('repay').to.be.calledOnContract(tusdPool)
+    })
+
+    it('creditAgency can borrow funds', async () => {
+      await tusdPool.setCreditAgency(creditAgency.address)
+      await expect(tusdPool.connect(creditAgency).repay(0)).to.be.not.reverted
     })
 
     it('emits event', async () => {
