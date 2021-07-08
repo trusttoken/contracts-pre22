@@ -50,7 +50,7 @@ export const trueFi2Fixture = async (_wallets: Wallet[], _provider: MockProvider
 
   await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, safu.address)
   await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address)
-  await poolFactory.initialize(implementationReference.address, stkTru.address, lender.address, safu.address)
+  await poolFactory.initialize(implementationReference.address, lender.address, safu.address)
 
   await poolFactory.whitelistToken(token.address, true)
   await poolFactory.createPool(token.address)

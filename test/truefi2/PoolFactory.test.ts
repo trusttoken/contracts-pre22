@@ -30,7 +30,6 @@ describe('PoolFactory', () => {
   let factory: PoolFactory
   let token1: MockErc20Token
   let token2: MockErc20Token
-  let stakingToken: MockErc20Token
   let trueLenderInstance1: TestTrueLender
   let trueLenderInstance2: TestTrueLender
 
@@ -42,13 +41,11 @@ describe('PoolFactory', () => {
     factory = await new PoolFactory__factory(owner).deploy()
     token1 = await new MockErc20Token__factory(owner).deploy()
     token2 = await new MockErc20Token__factory(owner).deploy()
-    stakingToken = await new MockErc20Token__factory(owner).deploy()
     trueLenderInstance1 = await new TestTrueLender__factory(owner).deploy()
     trueLenderInstance2 = await new TestTrueLender__factory(owner).deploy()
 
     await factory.initialize(
       implementationReference.address,
-      stakingToken.address,
       trueLenderInstance1.address,
       safu.address,
     )
@@ -62,10 +59,6 @@ describe('PoolFactory', () => {
     it('sets pool implementation address', async () => {
       expect(await factory.poolImplementationReference()).to.eq(implementationReference.address)
       expect(await implementationReference.attach(await factory.poolImplementationReference()).implementation()).to.eq(poolImplementation.address)
-    })
-
-    it('sets staking token address', async () => {
-      expect(await factory.liquidationToken()).to.eq(stakingToken.address)
     })
 
     it('sets allowAllTokens to false', async () => {

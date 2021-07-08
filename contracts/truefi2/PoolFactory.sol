@@ -35,7 +35,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     ImplementationReference public poolImplementationReference;
 
-    ERC20 public liquidationToken;
+    address public DEPRECATED__liquidationToken;
 
     ITrueLender2 public trueLender2;
 
@@ -127,13 +127,11 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      */
     function initialize(
         ImplementationReference _poolImplementationReference,
-        ERC20 _liquidationToken,
         ITrueLender2 _trueLender2,
         ISAFU _safu
     ) external initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
-        liquidationToken = _liquidationToken;
         poolImplementationReference = _poolImplementationReference;
         trueLender2 = _trueLender2;
         safu = _safu;

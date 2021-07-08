@@ -12,6 +12,7 @@ import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2, ILoanToken2} from "./interface/ITrueLender2.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
+import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
@@ -34,6 +35,7 @@ import {PoolExtensions} from "./PoolExtensions.sol";
 contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
+    using SafeERC20 for IDeficiencyToken;
 
     uint256 private constant BASIS_PRECISION = 10000;
 
@@ -197,6 +199,13 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @param newSafu New SAFU address
      */
     event SafuChanged(ISAFU newSafu);
+
+    /**
+     * @dev Emitted when pool reclaims deficit from SAFU
+     * @param loan Loan for which the deficit was reclaimed
+     * @param deficit Amount reclaimed
+     */
+    event DeficitReclaimed(ILoanToken2 loan, uint256 deficit);
 
     /**
      * @dev only lender can perform borrowing or repaying
@@ -551,6 +560,18 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     function liquidate(ILoanToken2 loan) external override {
         PoolExtensions._liquidate(safu, loan, lender);
+    }
+
+    /**
+     * @dev Function called when loan's debt is repaid to SAFU, pool has a deficit value towards that loan
+     */
+    function reclaimDeficit(ILoanToken2 loan) external {
+        IDeficiencyToken dToken = safu.deficiencyToken(loan);
+        uint256 deficit = dToken.balanceOf(address(this));
+        dToken.safeApprove(address(safu), deficit);
+        safu.reclaim(loan, deficit);
+
+        emit DeficitReclaimed(loan, deficit);
     }
 
     /**

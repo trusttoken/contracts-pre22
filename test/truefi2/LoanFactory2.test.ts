@@ -41,7 +41,7 @@ describe('LoanFactory2', () => {
     poolImplementation = await new TrueFiPool2__factory(owner).deploy()
     implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
 
-    await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero, AddressZero)
+    await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero)
     await factory.initialize(poolFactory.address, lender.address, liquidator.address)
 
     await poolFactory.whitelistToken(token.address, true)
