@@ -11,15 +11,15 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
 
-    event PoolAllowanceChanged(ITrueFiPool2 pool, bool isAllowed);
+    event PoolAllowed(ITrueFiPool2 pool, bool isAllowed);
 
     function initialize() public initializer {
         UpgradeableClaimable.initialize(msg.sender);
     }
 
-    function setPoolAllowance(ITrueFiPool2 pool, bool isAllowed) external onlyOwner {
+    function allowPool(ITrueFiPool2 pool, bool isAllowed) external onlyOwner {
         isPoolAllowed[pool] = isAllowed;
-        emit PoolAllowanceChanged(pool, isAllowed);
+        emit PoolAllowed(pool, isAllowed);
     }
 
     function borrow(ITrueFiPool2 pool, uint256 amount) external {
