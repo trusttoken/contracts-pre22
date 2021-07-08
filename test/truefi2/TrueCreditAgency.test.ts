@@ -68,7 +68,7 @@ describe('TrueCreditAgency', () => {
         .withArgs(borrower.address, false)
     })
   })
-  
+
   describe('Setting pool allowance', () => {
     it('can only be called by the owner', async () => {
       await expect(creditAgency.connect(borrower).allowPool(tusdPool.address, true)).to.be.revertedWith('Ownable: caller is not the owner')
