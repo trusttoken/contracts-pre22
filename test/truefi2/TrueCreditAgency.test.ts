@@ -27,6 +27,7 @@ describe('TrueCreditAgency', () => {
     await creditAgency.initialize()
 
     await tusdPool.setCreditAgency(creditAgency.address)
+    await creditAgency.setPoolAllowance(tusdPool.address, true)
   })
 
   describe('Ownership', () => {
@@ -44,10 +45,29 @@ describe('TrueCreditAgency', () => {
     })
   })
 
+  describe('Setting pool allowance', () => {
+    it('can only be called by the owner', async () => {
+      await expect(creditAgency.connect(borrower).setPoolAllowance(tusdPool.address, true)).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('changes pool allowance status', async () => {
+      await creditAgency.setPoolAllowance(tusdPool.address, false)
+      expect(await creditAgency.isPoolAllowed(tusdPool.address)).to.be.false
+      await creditAgency.setPoolAllowance(tusdPool.address, true)
+      expect(await creditAgency.isPoolAllowed(tusdPool.address)).to.be.true
+    })
+  })
+
   describe('Borrowing', () => {
     it('borrows funds from the pool', async () => {
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       expect(await tusd.balanceOf(borrower.address)).to.equal(1000)
+    })
+
+    it('cannot borrow from the pool that is not whitelisted', async () => {
+      await creditAgency.setPoolAllowance(tusdPool.address, false)
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
+        .to.be.revertedWith('TrueCreditAgency: The pool is not whitelisted for borrowing')
     })
   })
 
