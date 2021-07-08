@@ -106,6 +106,9 @@ contract CrvBaseRateOracle {
         require(bufferSizeNeeded <= bufferSize(), "CrvBaseRateOracle: Needed buffer size cannot exceed size limit");
         uint16 iidx = histBuffer.latestIndex;
         uint16 startIndex = (iidx + bufferSize() - bufferSizeNeeded + 1) % bufferSize();
+        if (histBuffer.timestamps[startIndex] == 0) {
+            startIndex = 0;
+        }
         uint256 sum = histBuffer.cumsum[iidx].sub(histBuffer.cumsum[startIndex]);
         uint256 curCrvBaseRate = curve.get_virtual_price();
         uint256 curTimestamp = block.timestamp;
