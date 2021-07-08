@@ -11,7 +11,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     mapping(address => bool) public allowedBorrowers;
 
-    event Allowed(address indexed who, bool status);
+    event BorrowerAllowed(address indexed who, bool status);
 
     modifier onlyAllowedBorrowers() {
         require(allowedBorrowers[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
@@ -22,9 +22,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
         UpgradeableClaimable.initialize(msg.sender);
     }
 
-    function allow(address who, bool status) external onlyOwner {
+    function allowBorrower(address who, bool status) external onlyOwner {
         allowedBorrowers[who] = status;
-        emit Allowed(who, status);
+        emit BorrowerAllowed(who, status);
     }
 
     function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {

@@ -44,33 +44,33 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe('Allowance', () => {
+  describe('Borrower allowance', () => {
     it('only owner can set allowance', async () => {
-      await expect(creditAgency.connect(borrower).allow(borrower.address, true))
+      await expect(creditAgency.connect(borrower).allowBorrower(borrower.address, true))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('allowance is properly set', async () => {
       expect(await creditAgency.allowedBorrowers(borrower.address)).to.equal(false)
-      await creditAgency.allow(borrower.address, true)
+      await creditAgency.allowBorrower(borrower.address, true)
       expect(await creditAgency.allowedBorrowers(borrower.address)).to.equal(true)
-      await creditAgency.allow(borrower.address, false)
+      await creditAgency.allowBorrower(borrower.address, false)
       expect(await creditAgency.allowedBorrowers(borrower.address)).to.equal(false)
     })
 
     it('emits a proper event', async () => {
-      await expect(creditAgency.allow(borrower.address, true))
-        .to.emit(creditAgency, 'Allowed')
+      await expect(creditAgency.allowBorrower(borrower.address, true))
+        .to.emit(creditAgency, 'BorrowerAllowed')
         .withArgs(borrower.address, true)
-      await expect(creditAgency.allow(borrower.address, false))
-        .to.emit(creditAgency, 'Allowed')
+      await expect(creditAgency.allowBorrower(borrower.address, false))
+        .to.emit(creditAgency, 'BorrowerAllowed')
         .withArgs(borrower.address, false)
     })
   })
 
   describe('Borrowing', () => {
     beforeEach(async () => {
-      await creditAgency.allow(borrower.address, true)
+      await creditAgency.allowBorrower(borrower.address, true)
     })
 
     it('borrows funds from the pool', async () => {
@@ -79,7 +79,7 @@ describe('TrueCreditAgency', () => {
     })
 
     it('fails if borrower is not whitelisted', async () => {
-      await creditAgency.allow(borrower.address, false)
+      await creditAgency.allowBorrower(borrower.address, false)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
         .to.be.revertedWith('TrueCreditAgency: Sender is not allowed to borrow')
     })
@@ -87,7 +87,7 @@ describe('TrueCreditAgency', () => {
 
   describe('Repaying', () => {
     beforeEach(async () => {
-      await creditAgency.allow(borrower.address, true)
+      await creditAgency.allowBorrower(borrower.address, true)
     })
 
     it('repays the funds to the pool', async () => {
