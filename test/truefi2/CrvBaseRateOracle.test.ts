@@ -47,7 +47,7 @@ describe('CrvBaseRateOracle', () => {
   const updateRateRightAfterCooldown = async (oracle: CrvBaseRateOracle) => {
     const bufferSize = await oracle.bufferSize()
     const [, timestamps, insertIndex] = await oracle.getHistBuffer()
-    const newestTimestamp = timestamps[(insertIndex + bufferSize - 1) % bufferSize].toNumber()
+    const newestTimestamp = timestamps[(insertIndex + bufferSize) % bufferSize].toNumber()
     await timeTravelTo(provider, newestTimestamp + COOLDOWN_TIME)
     await oracle.updateRate()
   }
@@ -262,7 +262,7 @@ describe('CrvBaseRateOracle', () => {
         // Having buffer with values: 100, 110, ..., 390 probed with 1 day interval
         // Expected avg rate is 245
         // Expected monthly apy is 59.18
-        expect(await oracleLongBuffer.getMonthlyAPY()).to.eq(59_18)
+        expect(await oracleLongBuffer.getMonthlyAPY()).to.eq(5_918)
       })
     })
 
