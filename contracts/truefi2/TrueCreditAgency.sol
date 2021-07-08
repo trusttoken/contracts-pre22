@@ -15,12 +15,20 @@ contract TrueCreditAgency is UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
+    mapping(ITrueFiPool2 => bool) public isPoolAllowed;
+
+    mapping(address => bool) public isBorrowerAllowed;
+
     // basis precision: 10000 = 100%
     uint256 public riskPremium;
 
     // ======= STORAGE DECLARATION END ============
 
     event RiskPremiumChanged(uint256 newRate);
+
+    event BorrowerAllowed(address indexed who, bool status);
+
+    event PoolAllowed(ITrueFiPool2 pool, bool isAllowed);
 
     function initialize(uint256 _riskPremium) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
@@ -32,7 +40,23 @@ contract TrueCreditAgency is UpgradeableClaimable {
         emit RiskPremiumChanged(newRate);
     }
 
-    function borrow(ITrueFiPool2 pool, uint256 amount) external {
+    modifier onlyAllowedBorrowers() {
+        require(isBorrowerAllowed[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
+        _;
+    }
+
+    function allowBorrower(address who, bool status) external onlyOwner {
+        isBorrowerAllowed[who] = status;
+        emit BorrowerAllowed(who, status);
+    }
+
+    function allowPool(ITrueFiPool2 pool, bool isAllowed) external onlyOwner {
+        isPoolAllowed[pool] = isAllowed;
+        emit PoolAllowed(pool, isAllowed);
+    }
+
+    function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {
+        require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
         pool.borrow(amount);
         pool.token().safeTransfer(msg.sender, amount);
     }
