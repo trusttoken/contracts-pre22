@@ -51,11 +51,11 @@ describe('TrueCreditAgency', () => {
     })
 
     it('allowance is properly set', async () => {
-      expect(await creditAgency.allowedBorrowers(borrower.address)).to.equal(false)
+      expect(await creditAgency.isBorrowerAllowed(borrower.address)).to.equal(false)
       await creditAgency.allowBorrower(borrower.address, true)
-      expect(await creditAgency.allowedBorrowers(borrower.address)).to.equal(true)
+      expect(await creditAgency.isBorrowerAllowed(borrower.address)).to.equal(true)
       await creditAgency.allowBorrower(borrower.address, false)
-      expect(await creditAgency.allowedBorrowers(borrower.address)).to.equal(false)
+      expect(await creditAgency.isBorrowerAllowed(borrower.address)).to.equal(false)
     })
 
     it('emits a proper event', async () => {
