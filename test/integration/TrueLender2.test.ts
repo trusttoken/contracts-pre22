@@ -22,7 +22,7 @@ import fetch from 'node-fetch'
 import { expect, use } from 'chai'
 import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
 import { utils, Wallet } from 'ethers'
-import { TrueRatingAgencyJson } from 'build'
+import { TrueRatingAgencyV2Json } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -62,7 +62,7 @@ describe('TrueLender2', () => {
     const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
     tru = TrustToken__factory.connect(TRU_ADDRESS, owner)
 
-    mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyJson.abi)
+    mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(50e6))
 
     lender = await deployContract(TrueLender2__factory)
