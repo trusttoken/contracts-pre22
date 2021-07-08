@@ -189,7 +189,7 @@ describe('TrueFiPool2', () => {
     it('emits proper event', async () => {
       await expect(tusdPool.setCreditAgency(creditAgency.address))
         .to.emit(tusdPool, 'CreditAgencyChanged')
-        .withArgs(borrower.address)
+        .withArgs(creditAgency.address)
     })
   })
 
