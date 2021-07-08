@@ -24,9 +24,15 @@ describe('TrueCreditAgency', () => {
     await tusdPool.join(parseEth(1e7))
 
     creditAgency = await new TrueCreditAgency__factory(owner).deploy()
-    await creditAgency.initialize()
+    await creditAgency.initialize(100)
 
     await tusdPool.setCreditAgency(creditAgency.address)
+  })
+
+  describe('initializer', () => {
+    it('sets riskPremium', async () => {
+      expect(await creditAgency.riskPremium()).to.eq(100)
+    })
   })
 
   describe('Ownership', () => {
@@ -41,6 +47,24 @@ describe('TrueCreditAgency', () => {
       await creditAgency.connect(borrower).claimOwnership()
       expect(await creditAgency.owner()).to.equal(borrower.address)
       expect(await creditAgency.pendingOwner()).to.equal(AddressZero)
+    })
+  })
+
+  describe('setRiskPremium', () => {
+    it('reverts if not called by the owner', async () => {
+      await expect(creditAgency.connect(borrower).setRiskPremium(1))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('changes riskPremium rate', async () => {
+      await creditAgency.setRiskPremium(1)
+      expect(await creditAgency.riskPremium()).to.eq(1)
+    })
+
+    it('emits event', async () => {
+      await expect(creditAgency.setRiskPremium(1))
+        .to.emit(creditAgency, 'RiskPremiumChanged')
+        .withArgs(1)
     })
   })
 
