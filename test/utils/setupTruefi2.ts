@@ -48,12 +48,12 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   await safu.initialize(loanFactory.address, liquidator.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await poolFactory.initialize(implementationReference.address, lender.address, safu.address)
 
-  await poolFactory.whitelistToken(feeToken.address, true)
+  await poolFactory.allowToken(feeToken.address, true)
   await poolFactory.createPool(feeToken.address)
   const feePool = poolImplementation.attach(await poolFactory.pool(feeToken.address))
   await feePool.setOracle(feeTokenOracle.address)
 
-  await poolFactory.whitelistToken(standardToken.address, true)
+  await poolFactory.allowToken(standardToken.address, true)
   await poolFactory.createPool(standardToken.address)
   const standardPool = poolImplementation.attach(await poolFactory.pool(standardToken.address))
   await standardPool.setOracle(standardTokenOracle.address)

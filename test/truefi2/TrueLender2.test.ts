@@ -74,8 +74,8 @@ describe('TrueLender2', () => {
     token1 = await deployContract(owner, MockErc20Token__factory)
     token2 = await deployContract(owner, MockErc20Token__factory)
 
-    await poolFactory.whitelistToken(token1.address, true)
-    await poolFactory.whitelistToken(token2.address, true)
+    await poolFactory.allowToken(token1.address, true)
+    await poolFactory.allowToken(token2.address, true)
 
     await poolFactory.createPool(token1.address)
     await poolFactory.createPool(token2.address)

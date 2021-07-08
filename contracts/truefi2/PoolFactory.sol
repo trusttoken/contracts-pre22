@@ -67,14 +67,14 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @param token Address of token
      * @param status New status of allowance
      */
-    event TokenAllowedStatusChanged(address token, bool status);
+    event AllowedStatusChanged(address token, bool status);
 
     /**
      * @dev Event to show that borrower is now allowed/disallowed to have a private pool
      * @param borrower Address of borrower
      * @param status New status of allowance
      */
-    event BorrowerAllowedStatusChanged(address borrower, bool status);
+    event BorrowerWhitelistStatusChanged(address borrower, bool status);
 
     /**
      * @dev Event to show that allowAllTokens status has been changed
@@ -184,9 +184,9 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @param token Address of token to be allowed or disallowed
      * @param status New status of allowance for token
      */
-    function whitelistToken(address token, bool status) external onlyOwner {
+    function allowToken(address token, bool status) external onlyOwner {
         isTokenAllowed[token] = status;
-        emit TokenAllowedStatusChanged(token, status);
+        emit AllowedStatusChanged(token, status);
     }
 
     /**
@@ -196,7 +196,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      */
     function whitelistBorrower(address borrower, bool status) external onlyOwner {
         isBorrowerAllowed[borrower] = status;
-        emit BorrowerAllowedStatusChanged(borrower, status);
+        emit BorrowerWhitelistStatusChanged(borrower, status);
     }
 
     /**
