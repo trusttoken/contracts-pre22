@@ -74,6 +74,22 @@ contract TrueCreditLine is ERC20 {
         _;
     }
 
+    /**
+     * @dev View to estimate the claimable reward for an account
+     * @return claimable rewards for account
+     */
+    function claimable(address account) external view returns (uint256) {
+        // calculate total rewards (including not updated)
+        uint256 newTotalInterestRewards = token().balanceOf(address(this)).add(totalClaimedRewards);
+        // calculate new reward
+        uint256 totalNewRewards = newTotalInterestRewards.sub(totalInterestRewards);
+        // return claimable reward for this account
+        // prettier-ignore
+        return claimableRewards[account].add(
+            balanceOf(account).mul(cumulativeTotalRewards.add(totalNewRewards).sub(previousCumulatedRewards[account])).div(totalSupply())
+        );
+    }
+
     function transfer(address recipient, uint256 amount) public virtual override update(msg.sender) update(recipient) returns (bool) {
         super.transfer(recipient, amount);
     }

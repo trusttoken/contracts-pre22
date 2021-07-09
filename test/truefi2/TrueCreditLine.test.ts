@@ -142,4 +142,62 @@ describe('TrueCreditLine', () => {
       })
     })
   })
+
+  describe('claimable', () => {
+    const fullReward = parseEth(1)
+    const splitReward = fullReward.div(2)
+
+    describe('only pool holds CreditLine tokens', () => {
+      it('initially 0 rewards', async () => {
+        expect(await creditLine.claimable(pool.address)).to.eq(0)
+      })
+
+      it('updates rewards after payInterest', async () => {
+        await creditLine.connect(borrower).payInterest(fullReward)
+
+        expect(await creditLine.claimable(pool.address)).to.eq(fullReward)
+      })
+    })
+
+    describe('two holders of CreditLine', () => {
+      beforeEach(async () => {
+        await creditLine.mint(holder.address, parseEth(1000))
+        await creditLine.connect(borrower).payInterest(fullReward)
+      })
+
+      it('updates rewards after payInterest', async () => {
+        expect(await creditLine.claimable(pool.address)).to.eq(splitReward)
+        expect(await creditLine.claimable(holder.address)).to.eq(splitReward)
+      })
+
+      it('updates holders rewards after transfer', async () => {
+        await creditLine.connect(holder).transfer(owner.address, parseEth(1000))
+
+        expect(await creditLine.claimable(holder.address)).to.eq(splitReward)
+        expect(await creditLine.claimable(owner.address)).to.eq(0)
+
+        await creditLine.connect(borrower).payInterest(fullReward)
+        await creditLine.connect(owner).transfer(holder.address, parseEth(1000))
+
+        expect(await creditLine.claimable(holder.address)).to.eq(splitReward)
+        expect(await creditLine.claimable(owner.address)).to.eq(splitReward)
+      })
+
+      it('updates holders rewards after transferFrom', async () => {
+        await creditLine.connect(holder).approve(owner.address, parseEth(1000))
+        await creditLine.connect(owner).approve(holder.address, parseEth(1000))
+
+        await creditLine.connect(owner).transferFrom(holder.address, owner.address, parseEth(1000))
+
+        expect(await creditLine.claimable(holder.address)).to.eq(splitReward)
+        expect(await creditLine.claimable(owner.address)).to.eq(0)
+
+        await creditLine.connect(borrower).payInterest(fullReward)
+        await creditLine.connect(holder).transferFrom(owner.address, holder.address, parseEth(1000))
+
+        expect(await creditLine.claimable(holder.address)).to.eq(splitReward)
+        expect(await creditLine.claimable(owner.address)).to.eq(splitReward)
+      })
+    })
+  })
 })
