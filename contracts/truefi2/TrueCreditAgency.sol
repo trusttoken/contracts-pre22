@@ -9,16 +9,35 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 contract TrueCreditAgency is UpgradeableClaimable {
     using SafeERC20 for ERC20;
 
-    mapping(address => bool) public isBorrowerAllowed;
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
 
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
+
+    mapping(address => bool) public isBorrowerAllowed;
+
+    // basis precision: 10000 = 100%
+    uint256 public riskPremium;
+
+    // ======= STORAGE DECLARATION END ============
+
+    event RiskPremiumChanged(uint256 newRate);
 
     event BorrowerAllowed(address indexed who, bool status);
 
     event PoolAllowed(ITrueFiPool2 pool, bool isAllowed);
 
-    function initialize() public initializer {
+    function initialize(uint256 _riskPremium) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
+        riskPremium = _riskPremium;
+    }
+
+    function setRiskPremium(uint256 newRate) external onlyOwner {
+        riskPremium = newRate;
+        emit RiskPremiumChanged(newRate);
     }
 
     modifier onlyAllowedBorrowers() {
