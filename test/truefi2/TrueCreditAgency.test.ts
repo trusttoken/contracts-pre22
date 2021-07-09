@@ -1,8 +1,15 @@
 import { Wallet } from 'ethers'
-import { MockTrueCurrency, TrueCreditAgency, TrueCreditAgency__factory, TrueFiPool2 } from 'contracts'
+import {
+  MockTrueCurrency,
+  TrueCreditAgency,
+  TrueCreditAgency__factory,
+  TrueFiCreditOracle,
+  TrueFiCreditOracle__factory,
+  TrueFiPool2,
+} from 'contracts'
 import { beforeEachWithFixture, parseEth, setupTruefi2 } from 'utils'
 import { expect } from 'chai'
-import { AddressZero } from '@ethersproject/constants'
+import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 
 describe('TrueCreditAgency', () => {
   let owner: Wallet
@@ -10,6 +17,7 @@ describe('TrueCreditAgency', () => {
   let creditAgency: TrueCreditAgency
   let tusd: MockTrueCurrency
   let tusdPool: TrueFiPool2
+  let creditOracle: TrueFiCreditOracle
 
   beforeEachWithFixture(async (wallets) => {
     [owner, borrower] = wallets
@@ -23,16 +31,26 @@ describe('TrueCreditAgency', () => {
     await tusd.approve(tusdPool.address, parseEth(1e7))
     await tusdPool.join(parseEth(1e7))
 
+    creditOracle = await new TrueFiCreditOracle__factory(owner).deploy()
+    await creditOracle.initialize()
+    await creditOracle.setManager(owner.address)
+
     creditAgency = await new TrueCreditAgency__factory(owner).deploy()
-    await creditAgency.initialize(100)
+    await creditAgency.initialize(creditOracle.address, 100)
 
     await tusdPool.setCreditAgency(creditAgency.address)
     await creditAgency.allowPool(tusdPool.address, true)
+
+    await creditOracle.setScore(borrower.address, 255)
   })
 
   describe('initializer', () => {
     it('sets riskPremium', async () => {
       expect(await creditAgency.riskPremium()).to.eq(100)
+    })
+
+    it('sets creditOracle', async () => {
+      expect(await creditAgency.creditOracle()).to.equal(creditOracle.address)
     })
   })
 
@@ -131,6 +149,28 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowPool(tusdPool.address, false)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
         .to.be.revertedWith('TrueCreditAgency: The pool is not whitelisted for borrowing')
+    })
+  })
+
+  describe('Credit score rate adjustment', () => {
+    [
+      [255, 0],
+      [223, 143],
+      [191, 335],
+      [159, 603],
+      [127, 1007],
+      [95, 1684],
+      [63, 3047],
+      [31, 7225],
+    ].map(([score, adjustment]) =>
+      it(`returns ${adjustment} when score is ${score}`, async () => {
+        await creditOracle.setScore(borrower.address, score)
+        expect(await creditAgency.creditScoreAdjustmentRate(borrower.address)).to.equal(adjustment)
+      }),
+    )
+
+    it('returns infinity if credit score is 0', async () => {
+      expect(await creditAgency.creditScoreAdjustmentRate(owner.address)).to.equal(MaxUint256)
     })
   })
 
