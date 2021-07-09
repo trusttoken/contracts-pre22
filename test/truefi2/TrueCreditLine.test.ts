@@ -20,22 +20,28 @@ describe('TrueCreditLine', () => {
     [owner] = wallets
 
     ;({ standardPool: pool } = await setupTruefi2(owner))
-    creditLine = await deployContract(owner, TrueCreditLine__factory, [owner.address, pool.address, parseEth(1)])
+    creditLine = await deployContract(owner, TrueCreditLine__factory, [owner.address, pool.address, parseEth(1000)])
   })
 
-  it('sets borrower', async () => {
-    expect(await creditLine.borrower()).to.eq(owner.address)
-  })
+  describe('on creation', () => {
+    it('sets borrower', async () => {
+      expect(await creditLine.borrower()).to.eq(owner.address)
+    })
+  
+    it('sets pool', async () => {
+      expect(await creditLine.pool()).to.eq(pool.address)
+    })
 
-  it('sets pool', async () => {
-    expect(await creditLine.pool()).to.eq(pool.address)
-  })
-
-  it('mints tokens to the pool', async () => {
-    expect(await creditLine.balanceOf(pool.address)).to.eq(parseEth(1))
-  })
-
-  it('returns correct version', async () => {
-    expect(await creditLine.version()).to.eq(0)
+    it('sets principal debt', async () => {
+      expect(await creditLine.principalDebt()).to.eq(parseEth(1000))
+    })
+  
+    it('mints tokens to the pool', async () => {
+      expect(await creditLine.balanceOf(pool.address)).to.eq(parseEth(1000))
+    })
+  
+    it('returns correct version', async () => {
+      expect(await creditLine.version()).to.eq(0)
+    })
   })
 })

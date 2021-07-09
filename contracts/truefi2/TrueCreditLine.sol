@@ -14,22 +14,26 @@ contract TrueCreditLine is ERC20 {
     address public borrower;
     address public pool;
 
+    uint256 public principalDebt;
+
     /**
      * @dev Create Credit Line
      * @param _borrower Borrower address
-     * @param _pool Pool for which the credit line is attached to
-     * @param _amount Amount of tokens to be minted to the pool
+     * @param _pool Pool to which the credit line is attached to
+     * @param _principalDebt Initial amount of debt taken by borrower
      */
     constructor(
         address _borrower,
         address _pool,
-        uint256 _amount
+        uint256 _principalDebt
     ) public {
         ERC20.__ERC20_initialize("TrueFi Credit Line", "tfCL");
 
         borrower = _borrower;
         pool = _pool;
-        _mint(_pool, _amount);
+
+        principalDebt = _principalDebt;
+        _mint(_pool, _principalDebt);
     }
 
     function version() external pure returns (uint8) {
