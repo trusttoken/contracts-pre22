@@ -523,6 +523,10 @@
     "usdt_CurveYearnStrategy_proxy": {
       "txHash": "0x558cb43809425cebd4152388e4bce489d6b290506ee0b4cb2881b98c85b86c24",
       "address": "0x8D162Caa649e981E2a0b0ba5908A77f2536B11A8"
+    },
+    "trueFiVault": {
+      "txHash": "0x0ff1aafdb4637a4e0c76d49e6e804141bbbc2e80e0a4112afce852edfe2349dc",
+      "address": "0x77e933f1c05dB055960c73A18881076FBc789224"
     }
   }
 }
