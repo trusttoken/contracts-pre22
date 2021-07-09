@@ -610,7 +610,8 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @return Utilization in basis points
      */
     function utilization() public view returns (uint256) {
-        return poolValue().sub(liquidValue()).mul(BASIS_PRECISION).div(poolValue());
+        uint256 pv = poolValue();
+        return pv.sub(liquidValue()).mul(BASIS_PRECISION).div(pv);
     }
 
     /**
