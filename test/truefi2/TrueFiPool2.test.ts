@@ -1086,5 +1086,26 @@ describe('TrueFiPool2', () => {
       await lender.connect(borrower).fund(loanForPartOfPool.address)
       expect(await tusdPool.utilization()).to.eq(50_00)
     })
+
+    describe('liquidRatio', () => {
+      beforeEach(async () => {
+        await tusd.approve(tusdPool.address, includeFee(parseEth(1e5)))
+        await tusdPool.join(parseEth(1e5))
+        const loanForPartOfPool = await createApprovedLoan(
+          rater, tru,
+          stkTru, loanFactory,
+          borrower, tusdPool,
+          parseEth(1e5).div(4), DAY,
+          100, owner,
+          provider,
+        )
+        await lender.connect(borrower).fund(loanForPartOfPool.address)
+      })
+
+      it('equals 1 - utilization', async () => {
+        const expected = 100_00 - await tusdPool.utilization()
+        expect(await tusdPool.liquidRatio()).to.eq(expected)
+      })
+    })
   })
 })
