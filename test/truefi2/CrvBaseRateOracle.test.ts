@@ -49,7 +49,7 @@ describe('CrvBaseRateOracle', () => {
     const [, timestamps, insertIndex] = await oracle.getTotalsBuffer()
     const newestTimestamp = timestamps[(insertIndex + bufferSize) % bufferSize].toNumber()
     await timeTravelTo(provider, newestTimestamp + COOLDOWN_TIME)
-    await oracle.updateBuffer()
+    await oracle.update()
   }
 
   const getCurrentTimestamp = async () => {
@@ -106,13 +106,13 @@ describe('CrvBaseRateOracle', () => {
     })
   })
 
-  describe('updateBuffer', () => {
+  describe('update', () => {
     it('reverts if cooldown is on', async () => {
       await updateBufferRightAfterCooldown(crvBaseRateOracle)
-      await expect(crvBaseRateOracle.updateBuffer())
+      await expect(crvBaseRateOracle.update())
         .to.be.revertedWith('CrvBaseRateOracle: Buffer on cooldown')
       await timeTravel(provider, COOLDOWN_TIME)
-      await expect(crvBaseRateOracle.updateBuffer())
+      await expect(crvBaseRateOracle.update())
         .not.to.be.reverted
     })
 
@@ -144,7 +144,7 @@ describe('CrvBaseRateOracle', () => {
     })
 
     describe('calculates the rate correctly', () => {
-      it('before any updateBuffer call', async () => {
+      it('before any update call', async () => {
         expect(await crvBaseRateOracle.calculateAverageRate(DAY)).to.eq(100_0000)
       })
 

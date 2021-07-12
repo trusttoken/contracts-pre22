@@ -71,7 +71,7 @@ contract CrvBaseRateOracle {
      * If the buffer is filled overwrites the oldest value
      * with a new one and updates its timestamp.
      */
-    function updateBuffer() public offCooldown {
+    function update() public offCooldown {
         uint16 lidx = totalsBuffer.latestIndex;
         uint16 nextIndex = (lidx + 1) % bufferSize();
         uint256 rate = curve.get_virtual_price();
