@@ -290,7 +290,7 @@ describe('TrueCreditLine', () => {
       expect(await creditLine.previousCumulatedRewards(owner.address)).to.eq(0)
     })
 
-    it.only('complex transfer scenario', async () => {
+    it('complex transfer scenario', async () => {
       // owner and holder transfer credit line tokens between each other
       await creditLine.mint(holder.address, parseEth(500))
       await creditLine.mint(owner.address, parseEth(500))
