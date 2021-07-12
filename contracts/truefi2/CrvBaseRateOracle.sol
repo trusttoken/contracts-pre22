@@ -46,7 +46,7 @@ contract CrvBaseRateOracle {
     }
 
     function bufferSize() public virtual pure returns (uint16) {
-        return 365;
+        return MAX_BUFFER_SIZE;
     }
 
     /**
