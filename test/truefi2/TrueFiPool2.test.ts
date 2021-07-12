@@ -1103,7 +1103,7 @@ describe('TrueFiPool2', () => {
       })
 
       it('equals 1 - utilization', async () => {
-        const expected = 100_00 - await tusdPool.utilization()
+        const expected = 100_00 - (await tusdPool.utilization()).toNumber()
         expect(await tusdPool.liquidRatio()).to.eq(expected)
       })
     })
