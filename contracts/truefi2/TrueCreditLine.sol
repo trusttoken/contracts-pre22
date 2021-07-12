@@ -97,16 +97,12 @@ contract TrueCreditLine is ERC20 {
         );
     }
 
-    function transfer(address recipient, uint256 amount) public virtual override update(msg.sender) update(recipient) returns (bool) {
-        super.transfer(recipient, amount);
-    }
-
-    function transferFrom(
+    function _transfer(
         address sender,
         address recipient,
         uint256 amount
-    ) public virtual override update(sender) update(recipient) returns (bool) {
-        super.transferFrom(sender, recipient, amount);
+    ) internal virtual override update(sender) update(recipient) {
+        super._transfer(sender, recipient, amount);
     }
 
     /**
