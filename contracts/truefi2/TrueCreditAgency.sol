@@ -94,12 +94,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         }
         require(newScore > 0, "TrueCreditAgency: Cannot set credit score to 0");
 
-        uint256 totalBorrowerInterest = oldScore > 0 ? _unbucket(pool, buckets[pool][oldScore], borrower) : 0;
-        creditScore[pool][borrower] = newScore;
-        CreditScoreBucket storage bucket = buckets[pool][newScore];
-        _putInBucket(pool, bucket, borrower);
-        poke(pool);
-        bucket.savedInterest[borrower] = SavedInterest(totalBorrowerInterest, bucket.cumulativeInterestPerShare);
+        _rebucket(pool, borrower, oldScore, newScore, borrowed[pool][borrower]);
     }
 
     function creditScoreAdjustmentRate(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
@@ -124,13 +119,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         uint8 newScore = creditOracle.getScore(msg.sender);
         require(newScore > 0, "TrueCreditAgency: Cannot borrow without a credit score");
 
-        uint256 totalBorrowerInterest = oldScore > 0 ? _unbucket(pool, buckets[pool][oldScore], msg.sender) : 0;
-        borrowed[pool][msg.sender] = borrowed[pool][msg.sender].add(amount);
-        creditScore[pool][msg.sender] = newScore;
-        CreditScoreBucket storage bucket = buckets[pool][newScore];
-        _putInBucket(pool, bucket, msg.sender);
-        poke(pool);
-        bucket.savedInterest[msg.sender] = SavedInterest(totalBorrowerInterest, bucket.cumulativeInterestPerShare);
+        _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].add(amount));
 
         pool.borrow(amount);
         pool.token().safeTransfer(msg.sender, amount);
@@ -159,7 +148,23 @@ contract TrueCreditAgency is UpgradeableClaimable {
         }
     }
 
-    function _unbucket(
+    function _rebucket(
+        ITrueFiPool2 pool,
+        address borrower,
+        uint8 oldScore,
+        uint8 newScore,
+        uint256 totalBorrowed
+    ) internal {
+        uint256 totalBorrowerInterest = oldScore > 0 ? _takeOutOfBucket(pool, buckets[pool][oldScore], borrower) : 0;
+        borrowed[pool][borrower] = totalBorrowed;
+        creditScore[pool][borrower] = newScore;
+        CreditScoreBucket storage bucket = buckets[pool][newScore];
+        _putIntoBucket(pool, bucket, borrower);
+        poke(pool);
+        bucket.savedInterest[borrower] = SavedInterest(totalBorrowerInterest, bucket.cumulativeInterestPerShare);
+    }
+
+    function _takeOutOfBucket(
         ITrueFiPool2 pool,
         CreditScoreBucket storage bucket,
         address borrower
@@ -171,7 +176,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         delete bucket.savedInterest[borrower];
     }
 
-    function _putInBucket(
+    function _putIntoBucket(
         ITrueFiPool2 pool,
         CreditScoreBucket storage bucket,
         address borrower
