@@ -292,24 +292,24 @@ describe('TrueCreditLine', () => {
 
     it('complex transfer scenario', async () => {
       // owner and holder transfer credit line tokens between each other
-      await creditLine.mint(holder.address, parseEth(500))
-      await creditLine.mint(owner.address, parseEth(500))
+      await creditLine.mint(holder.address, parseEth(600))
+      await creditLine.mint(owner.address, parseEth(400))
 
       // first interest repay
       await creditLine.connect(borrower).payInterest(fullReward)
 
-      expect(await creditLine.claimable(holder.address)).to.eq(quarterReward)
-      expect(await creditLine.claimable(owner.address)).to.eq(quarterReward)
+      expect(await creditLine.claimable(holder.address)).to.eq(splitReward.mul(6).div(10))
+      expect(await creditLine.claimable(owner.address)).to.eq(splitReward.mul(4).div(10))
 
-      await creditLine.connect(owner).transfer(holder.address, parseEth(250))
+      await creditLine.connect(owner).transfer(holder.address, parseEth(200))
 
-      expect(await creditLine.claimable(holder.address)).to.eq(quarterReward)
-      expect(await creditLine.claimable(owner.address)).to.eq(quarterReward)
+      expect(await creditLine.claimable(holder.address)).to.eq(splitReward.mul(6).div(10))
+      expect(await creditLine.claimable(owner.address)).to.eq(splitReward.mul(4).div(10))
 
       await creditLine.connect(borrower).payInterest(fullReward)
 
-      expect(await creditLine.claimable(holder.address)).to.eq(quarterReward.add(quarterReward.mul(3).div(2)))
-      expect(await creditLine.claimable(owner.address)).to.eq(quarterReward.add(quarterReward.div(2)))
+      expect(await creditLine.claimable(holder.address)).to.eq(splitReward.mul(6).div(10).add(splitReward.mul(8).div(10)))
+      expect(await creditLine.claimable(owner.address)).to.eq(splitReward.mul(4).div(10).add(splitReward.mul(2).div(10)))
     })
   })
 })
