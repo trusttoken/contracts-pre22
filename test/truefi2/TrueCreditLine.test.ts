@@ -228,4 +228,88 @@ describe('TrueCreditLine', () => {
       })
     })
   })
+
+  describe('Complex scenarios', () => {
+    const quarterReward = splitReward.div(2)
+
+    it('complex claim scenario for multiple repayments', async () => {
+      // holder will claim rewards, owner will not claim rewards, pool claims rewards automatically
+      await creditLine.mint(holder.address, parseEth(500))
+      await creditLine.mint(owner.address, parseEth(500))
+
+      // first interest repay
+      await creditLine.connect(borrower).payInterest(fullReward)
+
+      expect(await creditLine.cumulativeTotalRewards()).to.eq(fullReward)
+      expect(await creditLine.totalInterestRewards()).to.eq(fullReward)
+      expect(await creditLine.totalClaimedRewards()).to.eq(splitReward)
+
+      // pool
+      expect(await creditLine.claimable(pool.address)).to.eq(0)
+      expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward)
+
+      // holder
+      expect(await creditLine.claimable(holder.address)).to.eq(quarterReward)
+      expect(await creditLine.claimableRewards(holder.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewards(holder.address)).to.eq(0)
+
+      await creditLine.connect(holder).claim()
+      expect(await creditLine.claimable(holder.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewards(holder.address)).to.eq(fullReward)
+
+      // owner
+      expect(await creditLine.claimable(owner.address)).to.eq(quarterReward)
+      expect(await creditLine.claimableRewards(owner.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewards(owner.address)).to.eq(0)
+
+      // second interest repay
+      await creditLine.connect(borrower).payInterest(fullReward)
+
+      expect(await creditLine.cumulativeTotalRewards()).to.eq(fullReward.mul(2))
+      expect(await creditLine.totalInterestRewards()).to.eq(fullReward.mul(2))
+      expect(await creditLine.totalClaimedRewards()).to.eq(splitReward.mul(2).add(quarterReward))
+
+      // pool
+      expect(await creditLine.claimable(pool.address)).to.eq(0)
+      expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward.mul(2))
+
+      // holder
+      expect(await creditLine.claimable(holder.address)).to.eq(quarterReward)
+      expect(await creditLine.claimableRewards(holder.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewards(holder.address)).to.eq(fullReward)
+
+      await creditLine.connect(holder).claim()
+      expect(await creditLine.claimable(holder.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewards(holder.address)).to.eq(fullReward.mul(2))
+
+      // owner
+      expect(await creditLine.claimable(owner.address)).to.eq(quarterReward.mul(2))
+      expect(await creditLine.claimableRewards(owner.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewards(owner.address)).to.eq(0)
+    })
+
+    it.only('complex transfer scenario', async () => {
+      // owner and holder transfer credit line tokens between each other
+      await creditLine.mint(holder.address, parseEth(500))
+      await creditLine.mint(owner.address, parseEth(500))
+
+      // first interest repay
+      await creditLine.connect(borrower).payInterest(fullReward)
+
+      expect(await creditLine.claimable(holder.address)).to.eq(quarterReward)
+      expect(await creditLine.claimable(owner.address)).to.eq(quarterReward)
+
+      await creditLine.connect(owner).transfer(holder.address, parseEth(250))
+
+      expect(await creditLine.claimable(holder.address)).to.eq(quarterReward)
+      expect(await creditLine.claimable(owner.address)).to.eq(quarterReward)
+
+      await creditLine.connect(borrower).payInterest(fullReward)
+
+      expect(await creditLine.claimable(holder.address)).to.eq(quarterReward.add(quarterReward.mul(3).div(2)))
+      expect(await creditLine.claimable(owner.address)).to.eq(quarterReward.add(quarterReward.div(2)))
+    })
+  })
 })
