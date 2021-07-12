@@ -6,7 +6,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20, IERC20, SafeMath} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
-import {Sqrt} from "./libraries/Sqrt.sol";
 
 contract TrueCreditAgency is UpgradeableClaimable {
     using SafeERC20 for ERC20;
@@ -86,8 +85,6 @@ contract TrueCreditAgency is UpgradeableClaimable {
         isPoolAllowed[pool] = isAllowed;
         emit PoolAllowed(pool, isAllowed);
     }
-
-    function borrowLimit() {}
 
     function updateCreditScore(ITrueFiPool2 pool, address borrower) external {
         uint8 oldScore = creditScore[pool][borrower];
