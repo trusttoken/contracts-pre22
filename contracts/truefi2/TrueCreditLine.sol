@@ -35,6 +35,13 @@ contract TrueCreditLine is ERC20 {
     uint256 public totalClaimedRewards;
 
     /**
+     * @dev Emitted when an account claims TRU rewards
+     * @param who Account claiming
+     * @param amountClaimed Amount of TRU claimed
+     */
+    event Claimed(address indexed who, uint256 amountClaimed);
+
+    /**
      * @dev Create Credit Line
      * @param _borrower Borrower address
      * @param _pool Pool to which the credit line is attached to
@@ -103,10 +110,18 @@ contract TrueCreditLine is ERC20 {
     }
 
     /**
+     * @dev Claim interest rewards
+     */
+    function claim() external {
+        _claim(msg.sender);
+    }
+
+    /**
      * @dev Function used by the borrower to pay periodic interest
      */
-    function payInterest(uint256 amount) external update(address(pool)) {
+    function payInterest(uint256 amount) external {
         token().safeTransferFrom(msg.sender, address(this), amount);
+        _claim(address(pool));
     }
 
     function token() public view returns (ERC20) {
@@ -115,5 +130,16 @@ contract TrueCreditLine is ERC20 {
 
     function version() external pure returns (uint8) {
         return 0;
+    }
+
+    /**
+     * @dev Internal claim function
+     */
+    function _claim(address account) internal update(account) {
+        totalClaimedRewards = totalClaimedRewards.add(claimableRewards[account]);
+        uint256 rewardToClaim = claimableRewards[account];
+        claimableRewards[account] = 0;
+        token().safeTransfer(account, rewardToClaim);
+        emit Claimed(account, rewardToClaim);
     }
 }

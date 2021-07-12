@@ -20,6 +20,9 @@ describe('TrueCreditLine', () => {
   let token: MockTrueCurrency
   let creditLine: TestTrueCreditLine
 
+  const fullReward = parseEth(1)
+  const splitReward = fullReward.div(2)
+
   beforeEachWithFixture(async (wallets) => {
     [owner, borrower, holder] = wallets
 
@@ -53,9 +56,6 @@ describe('TrueCreditLine', () => {
   })
 
   describe('updating rewards', () => {
-    const fullReward = parseEth(1)
-    const splitReward = fullReward.div(2)
-
     describe('only pool holds CreditLine tokens', () => {
       it('initially 0 rewards', async () => {
         expect(await creditLine.cumulativeTotalRewards()).to.eq(0)
@@ -68,20 +68,11 @@ describe('TrueCreditLine', () => {
       it('updates rewards after payInterest', async () => {
         await creditLine.connect(borrower).payInterest(fullReward)
 
-        expect(await creditLine.cumulativeTotalRewards()).to.eq(0)
-        expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(0)
-        expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
-        expect(await creditLine.totalInterestRewards()).to.eq(0)
-        expect(await creditLine.totalClaimedRewards()).to.eq(0)
-
-        // second call just to update
-        await creditLine.connect(borrower).payInterest(parseEth(0))
-
         expect(await creditLine.cumulativeTotalRewards()).to.eq(fullReward)
         expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward)
-        expect(await creditLine.claimableRewards(pool.address)).to.eq(fullReward)
+        expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
         expect(await creditLine.totalInterestRewards()).to.eq(fullReward)
-        expect(await creditLine.totalClaimedRewards()).to.eq(0)
+        expect(await creditLine.totalClaimedRewards()).to.eq(fullReward)
       })
     })
 
@@ -92,12 +83,8 @@ describe('TrueCreditLine', () => {
       })
 
       it('updates rewards after payInterest', async () => {
-        expect(await creditLine.cumulativeTotalRewards()).to.eq(0)
-        expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(0)
+        expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward)
         expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
-        expect(await creditLine.totalInterestRewards()).to.eq(0)
-        expect(await creditLine.totalClaimedRewards()).to.eq(0)
-
         expect(await creditLine.claimableRewards(holder.address)).to.eq(0)
 
         // second call just to update
@@ -105,9 +92,9 @@ describe('TrueCreditLine', () => {
 
         expect(await creditLine.cumulativeTotalRewards()).to.eq(fullReward)
         expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward)
-        expect(await creditLine.claimableRewards(pool.address)).to.eq(splitReward)
+        expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
         expect(await creditLine.totalInterestRewards()).to.eq(fullReward)
-        expect(await creditLine.totalClaimedRewards()).to.eq(0)
+        expect(await creditLine.totalClaimedRewards()).to.eq(splitReward)
 
         expect(await creditLine.claimableRewards(holder.address)).to.eq(0)
       })
@@ -144,9 +131,6 @@ describe('TrueCreditLine', () => {
   })
 
   describe('claimable', () => {
-    const fullReward = parseEth(1)
-    const splitReward = fullReward.div(2)
-
     describe('only pool holds CreditLine tokens', () => {
       it('initially 0 rewards', async () => {
         expect(await creditLine.claimable(pool.address)).to.eq(0)
@@ -155,7 +139,7 @@ describe('TrueCreditLine', () => {
       it('updates rewards after payInterest', async () => {
         await creditLine.connect(borrower).payInterest(fullReward)
 
-        expect(await creditLine.claimable(pool.address)).to.eq(fullReward)
+        expect(await creditLine.claimable(pool.address)).to.eq(0)
       })
     })
 
@@ -166,7 +150,7 @@ describe('TrueCreditLine', () => {
       })
 
       it('updates rewards after payInterest', async () => {
-        expect(await creditLine.claimable(pool.address)).to.eq(splitReward)
+        expect(await creditLine.claimable(pool.address)).to.eq(0)
         expect(await creditLine.claimable(holder.address)).to.eq(splitReward)
       })
 
@@ -197,6 +181,50 @@ describe('TrueCreditLine', () => {
 
         expect(await creditLine.claimable(holder.address)).to.eq(splitReward)
         expect(await creditLine.claimable(owner.address)).to.eq(splitReward)
+      })
+    })
+  })
+
+  describe('claim', () => {
+    describe('payInterest triggers claim for pool', () => {
+      it('pool gets interest tokens', async () => {
+        await expect(() => creditLine.connect(borrower).payInterest(fullReward))
+          .to.changeTokenBalance(token, pool, fullReward)
+      })
+
+      it('sets claimable for pool to 0', async () => {
+        await creditLine.connect(borrower).payInterest(fullReward)
+        expect(await creditLine.claimable(pool.address)).to.eq(0)
+      })
+
+      it('emits claim event', async () => {
+        expect(await creditLine.connect(borrower).payInterest(fullReward))
+          .to.emit(creditLine, 'Claimed')
+          .withArgs(pool.address, fullReward)
+      })
+    })
+
+    describe('called by non pool holder', () => {
+      beforeEach(async () => {
+        await creditLine.mint(holder.address, parseEth(1000))
+        await creditLine.connect(borrower).payInterest(fullReward)
+      })
+
+      it('transfers tokens', async () => {
+        await expect(() => creditLine.connect(holder).claim())
+          .to.changeTokenBalance(token, holder, splitReward)
+      })
+
+      it('changes claimable state', async () => {
+        expect(await creditLine.claimable(holder.address)).to.eq(splitReward)
+        await creditLine.connect(holder).claim()
+        expect(await creditLine.claimable(holder.address)).to.eq(0)
+      })
+
+      it('emits event', async () => {
+        await expect(creditLine.connect(holder).claim())
+          .to.emit(creditLine, 'Claimed')
+          .withArgs(holder.address, splitReward)
       })
     })
   })
