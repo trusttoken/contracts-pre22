@@ -2,7 +2,7 @@ import { TEST_STATE_BLOCK_NUMBER, upgradeSuite } from './suite'
 import {
   ArbitraryDistributor__factory,
   LinearTrueDistributor__factory,
-  Liquidator__factory, LoanFactory__factory, RatingAgencyV2Distributor__factory, TrueFarm__factory, TrueFiPool__factory, TrueLender__factory,  TrueRatingAgencyV2__factory,
+  Liquidator__factory, LoanFactory__factory, RatingAgencyV2Distributor__factory, TrueFarm__factory, TrueFiPool__factory, TrueLender__factory, TrueRatingAgencyV2__factory,
 } from 'contracts'
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
