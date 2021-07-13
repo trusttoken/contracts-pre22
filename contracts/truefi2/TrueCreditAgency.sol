@@ -50,6 +50,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     ITrueFiCreditOracle public creditOracle;
 
+    uint256 public usedBuckets;
+
     // ======= STORAGE DECLARATION END ============
 
     event RiskPremiumChanged(uint256 newRate);
@@ -129,11 +131,14 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function poke(ITrueFiPool2 pool) public {
-        for (uint16 i = 1; i <= MAX_CREDIT_SCORE; i++) {
-            CreditScoreBucket storage bucket = buckets[pool][i];
-            if (bucket.borrowersCount == 0) {
+        uint256 bitMap = usedBuckets;
+        for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
+            if (bitMap & 1 == 0) {
                 continue;
             }
+
+            CreditScoreBucket storage bucket = buckets[pool][i];
+
             uint256 timeNow = block.timestamp;
 
             bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
@@ -152,11 +157,11 @@ contract TrueCreditAgency is UpgradeableClaimable {
         uint8 newScore,
         uint256 totalBorrowed
     ) internal {
-        uint256 totalBorrowerInterest = oldScore > 0 ? _takeOutOfBucket(pool, buckets[pool][oldScore], borrower) : 0;
+        uint256 totalBorrowerInterest = oldScore > 0 ? _takeOutOfBucket(pool, buckets[pool][oldScore], oldScore, borrower) : 0;
         borrowed[pool][borrower] = totalBorrowed;
         creditScore[pool][borrower] = newScore;
         CreditScoreBucket storage bucket = buckets[pool][newScore];
-        _putIntoBucket(pool, bucket, borrower);
+        _putIntoBucket(pool, bucket, newScore, borrower);
         poke(pool);
         bucket.savedInterest[borrower] = SavedInterest(totalBorrowerInterest, bucket.cumulativeInterestPerShare);
     }
@@ -164,10 +169,14 @@ contract TrueCreditAgency is UpgradeableClaimable {
     function _takeOutOfBucket(
         ITrueFiPool2 pool,
         CreditScoreBucket storage bucket,
+        uint8 bucketNumber,
         address borrower
     ) internal returns (uint256 totalBorrowerInterest) {
         require(bucket.borrowersCount > 0, "TrueCreditAgency: bucket is empty");
-        bucket.borrowersCount = bucket.borrowersCount - 1;
+        bucket.borrowersCount -= 1;
+        if (bucket.borrowersCount == 0) {
+            usedBuckets &= ~(uint256(1) << bucketNumber);
+        }
         bucket.totalBorrowed = bucket.totalBorrowed.sub(borrowed[pool][borrower]);
         totalBorrowerInterest = _interest(pool, bucket, borrower);
         delete bucket.savedInterest[borrower];
@@ -176,9 +185,13 @@ contract TrueCreditAgency is UpgradeableClaimable {
     function _putIntoBucket(
         ITrueFiPool2 pool,
         CreditScoreBucket storage bucket,
+        uint8 bucketNumber,
         address borrower
     ) internal {
         bucket.borrowersCount = bucket.borrowersCount + 1;
+        if (bucket.borrowersCount == 1) {
+            usedBuckets |= uint256(1) << bucketNumber;
+        }
         bucket.totalBorrowed = bucket.totalBorrowed.add(borrowed[pool][borrower]);
     }
 
