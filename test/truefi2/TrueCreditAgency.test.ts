@@ -9,7 +9,7 @@ import {
 } from 'contracts'
 import { beforeEachWithFixture, parseEth, setupTruefi2, timeTravel as _timeTravel, YEAR } from 'utils'
 import { expect } from 'chai'
-import { AddressZero, MaxUint256 } from '@ethersproject/constants'
+import { AddressZero } from '@ethersproject/constants'
 
 describe('TrueCreditAgency', () => {
   let owner: Wallet
@@ -179,6 +179,9 @@ describe('TrueCreditAgency', () => {
       [95, 1684],
       [63, 3047],
       [31, 7225],
+      [5, 50000],
+      [1, 50000],
+      [0, 50000],
     ].map(([score, adjustment]) =>
       it(`returns ${adjustment} when score is ${score}`, async () => {
         await creditOracle.setScore(borrower.address, score)
@@ -186,10 +189,6 @@ describe('TrueCreditAgency', () => {
         expect(await creditAgency.creditScoreAdjustmentRate(tusdPool.address, borrower.address)).to.equal(adjustment)
       }),
     )
-
-    it('returns infinity if credit score is 0', async () => {
-      expect(await creditAgency.creditScoreAdjustmentRate(tusdPool.address, owner.address)).to.equal(MaxUint256)
-    })
   })
 
   describe('Repaying', () => {

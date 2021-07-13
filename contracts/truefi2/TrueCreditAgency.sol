@@ -92,7 +92,6 @@ contract TrueCreditAgency is UpgradeableClaimable {
         if (oldScore == newScore) {
             return;
         }
-        require(newScore > 0, "TrueCreditAgency: Cannot set credit score to 0");
 
         _rebucket(pool, borrower, oldScore, newScore, borrowed[pool][borrower]);
     }
@@ -103,9 +102,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     function _creditScoreAdjustmentRate(uint8 score) internal view returns (uint256) {
         if (score == 0) {
-            return type(uint256).max;
+            return 50000; // Cap rate by 500%
         }
-        return creditAdjustmentCoefficient.mul(MAX_CREDIT_SCORE - score).div(score);
+        return min(creditAdjustmentCoefficient.mul(MAX_CREDIT_SCORE - score).div(score), 50000);
     }
 
     function interest(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
@@ -117,7 +116,6 @@ contract TrueCreditAgency is UpgradeableClaimable {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
         uint8 oldScore = creditScore[pool][msg.sender];
         uint8 newScore = creditOracle.getScore(msg.sender);
-        require(newScore > 0, "TrueCreditAgency: Cannot borrow without a credit score");
 
         _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].add(amount));
 
@@ -205,5 +203,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
                 .div(10000)
                 .div(365 days)
             );
+    }
+
+    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a > b ? b : a;
     }
 }
