@@ -17,8 +17,6 @@ contract TrueCreditLine is ERC20 {
 
     uint256 public principalDebt;
 
-    uint256 unpaidAccumulatedInterest;
-
     // track overall cumulative rewards
     uint256 public cumulativeTotalRewards;
     /**
