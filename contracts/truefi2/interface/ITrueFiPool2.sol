@@ -19,6 +19,8 @@ interface ITrueFiPool2 is IERC20 {
 
     function oracle() external view returns (ITrueFiPoolOracle);
 
+    function poolValue() external view returns (uint256);
+
     /**
      * @dev Ratio of liquid assets in the pool to the pool value
      */

@@ -307,7 +307,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * "virtual price" of entire pool - LoanTokens, UnderlyingTokens, strategy value
      * @return pool value denominated in underlying token
      */
-    function poolValue() public view returns (uint256) {
+    function poolValue() public override view returns (uint256) {
         // this assumes defaulted loans are worth their full value
         return liquidValue().add(loansValue()).add(deficitValue());
     }
