@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture, parseEth } from 'utils'
 import {
   TrueFiCreditOracle__factory,
   TrueFiCreditOracle,
@@ -61,6 +61,29 @@ describe('TrueFiCreditOracle', () => {
     it('change existing score', async () => {
       await oracle.connect(manager).setScore(firstAccount.address, secondScore)
       expect(await oracle.getScore(firstAccount.address)).to.equal(secondScore)
+    })
+  })
+
+  describe('set and get max borrower limits', () => {
+    const firstBorrowLimit = parseEth(100)
+    const secondBorrowLimit = parseEth(200)
+
+    beforeEach(async () => {
+      await oracle.connect(manager).setMaxBorrowerLimit(firstAccount.address, firstBorrowLimit)
+    })
+
+    it('only manager can set max borrower limits', async () => {
+      await expect(oracle.connect(owner).setMaxBorrowerLimit(firstAccount.address, firstBorrowLimit))
+        .to.be.revertedWith('TrueFiCreditOracle: Caller is not the manager')
+    })
+
+    it('max borrower limit is set correctly for account', async () => {
+      expect(await oracle.getMaxBorrowerLimit(firstAccount.address)).to.equal(firstBorrowLimit)
+    })
+
+    it('change existing max borrower limit', async () => {
+      await oracle.connect(manager).setMaxBorrowerLimit(firstAccount.address, secondBorrowLimit)
+      expect(await oracle.getMaxBorrowerLimit(firstAccount.address)).to.equal(secondBorrowLimit)
     })
   })
 })
