@@ -20,8 +20,8 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     // @dev Track credit scores for an account
     mapping(address => uint8) score;
 
-    // @dev Track credit scores for an account
-    mapping(address => uint256) borrowLimit;
+    // @dev Track max borrowing limit for an account
+    mapping(address => uint256) maxBorrowerLimit;
 
     // Manager role authorized to set credit scores
     address public manager;
@@ -58,15 +58,15 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     /**
      * @dev Get max borrow limit for `account`
      */
-    function getBorrowLimit(address account) public override view returns (uint256) {
-        return borrowLimit[account];
+    function getMaxBorrowerLimit(address account) public override view returns (uint256) {
+        return maxBorrowerLimit[account];
     }
 
     /**
-     * @dev Set `newBorrowLimit` value for `account`
+     * @dev Set `newMaxBorrowerLimit` value for `account`
      */
-    function setBorrowLimit(address account, uint256 newBorrowLimit) public onlyManager {
-        borrowLimit[account] = newBorrowLimit;
+    function setMaxBorrowerLimit(address account, uint256 newMaxBorrowerLimit) public onlyManager {
+        maxBorrowerLimit[account] = newMaxBorrowerLimit;
     }
 
     /**
