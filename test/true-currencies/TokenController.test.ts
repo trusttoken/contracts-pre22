@@ -17,7 +17,6 @@ import {
   MockTrueCurrency,
   ForceEther,
   ForceEther__factory,
-  AvalancheTokenController__factory, AvalancheTokenController,
 } from 'contracts'
 
 use(solidity)
@@ -613,45 +612,6 @@ describe('TokenController', () => {
 
     it('rejects when called by non owner or registry admin', async () => {
       await expect(controller.connect(otherWallet).setBlacklisted(otherWallet.address, true)).to.be.revertedWith('must be registry admin or owner')
-    })
-  })
-
-  describe('Avalanche Controller', () => {
-    let avaController: AvalancheTokenController
-
-    beforeEach(async () => {
-      avaController = await new AvalancheTokenController__factory(owner).deploy()
-      await avaController.initialize()
-      await controller.transferChild(token.address, avaController.address)
-      await avaController.issueClaimOwnership(token.address)
-      await avaController.setToken(token.address)
-      await controller.setRegistryAdmin(registryAdmin.address)
-      await controller.transferMintKey(mintKey.address)
-    })
-
-    it('only registry admin and owner can set mint pauser', async () => {
-      await expect(avaController.connect(thirdWallet).setIsMintPauser(thirdWallet.address, true))
-        .to.be.revertedWith('TokenController: Must be registry admin or owner')
-    })
-
-    it('only registry admin and owner can set mint ratufuer', async () => {
-      await expect(avaController.connect(thirdWallet).setIsMintRatifier(thirdWallet.address, true))
-        .to.be.revertedWith('TokenController: Must be registry admin or owner')
-    })
-
-    it('only mint pauser can pause mints', async () => {
-      await avaController.setIsMintPauser(thirdWallet.address, true)
-      await avaController.pauseMints()
-      expect(await avaController.connect(thirdWallet).mintPaused()).to.equal(true)
-      await avaController.setIsMintPauser(thirdWallet.address, false)
-      await expect(avaController.connect(thirdWallet).pauseMints()).to.be.revertedWith('TokenController: Must be pauser or owner')
-    })
-
-    it('only mint ratifier can refill pool', async () => {
-      await avaController.setIsMintRatifier(thirdWallet.address, true)
-      await expect(avaController.refillInstantMintPool()).to.be.not.reverted
-      await avaController.setIsMintRatifier(thirdWallet.address, false)
-      await expect(avaController.connect(thirdWallet).refillInstantMintPool()).to.be.revertedWith('TokenController: Must be ratifier or owner')
     })
   })
 })
