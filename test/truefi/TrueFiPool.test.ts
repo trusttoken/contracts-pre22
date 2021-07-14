@@ -338,7 +338,7 @@ describe('TrueFiPool', () => {
 
     it('deposits given amount to curve', async () => {
       await pool.flush(parseEth(100))
-      expect('add_liquidity').to.be.calledOnContractWith(curvePool, [[0, 0, 0, parseEth(100)], 123])
+      expect('add_liquidity').to.be.calledOnContractWith(curvePool, [[0, 0, 0, parseEth(100)], parseEth(99.9)])
     })
 
     it('can be called by funds manager', async () => {
