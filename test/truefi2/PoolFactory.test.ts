@@ -290,10 +290,10 @@ describe('PoolFactory', () => {
 
     it('changes whitelist status', async () => {
       await factory.whitelistBorrower(borrower.address, true)
-      expect(await factory.isBorrowerAllowed(borrower.address)).to.eq(true)
+      expect(await factory.isBorrowerWhitelisted(borrower.address)).to.eq(true)
 
       await factory.whitelistBorrower(borrower.address, false)
-      expect(await factory.isBorrowerAllowed(borrower.address)).to.eq(false)
+      expect(await factory.isBorrowerWhitelisted(borrower.address)).to.eq(false)
     })
 
     it('emits event', async () => {

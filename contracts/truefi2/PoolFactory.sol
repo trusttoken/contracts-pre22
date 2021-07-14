@@ -43,7 +43,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     // @dev Mapping of borrowers to mapping of ERC20 token's addresses to its private pools
     mapping(address => mapping(address => address)) public privatePool;
-    mapping(address => bool) public isBorrowerAllowed;
+    mapping(address => bool) public isBorrowerWhitelisted;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -116,8 +116,8 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @dev Throws if borrower is not whitelisted for creating new pool
      * @param borrower Address of borrower to be checked in whitelist
      */
-    modifier onlyAllowedBorrowers(address borrower) {
-        require(isBorrowerAllowed[borrower], "PoolFactory: This borrower is not allowed to have a pool");
+    modifier onlyWhitelistedBorrowers(address borrower) {
+        require(isBorrowerWhitelisted[borrower], "PoolFactory: This borrower is not allowed to have a pool");
         _;
     }
 
@@ -165,7 +165,11 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * Transfer ownership of created pool to Factory owner.
      * @param token Address of token which the pool will correspond to.
      */
-    function createPrivatePool(address token, string memory name) external onlyAllowedTokens(token) onlyAllowedBorrowers(msg.sender) {
+    function createPrivatePool(address token, string memory name)
+        external
+        onlyAllowedTokens(token)
+        onlyWhitelistedBorrowers(msg.sender)
+    {
         require(
             privatePool[msg.sender][token] == address(0),
             "PoolFactory: This borrower and token already have a corresponding pool"
@@ -195,7 +199,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @param status New status of allowance for borrower
      */
     function whitelistBorrower(address borrower, bool status) external onlyOwner {
-        isBorrowerAllowed[borrower] = status;
+        isBorrowerWhitelisted[borrower] = status;
         emit BorrowerWhitelistStatusChanged(borrower, status);
     }
 
