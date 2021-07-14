@@ -105,10 +105,31 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         ERC20 _token,
         ITrueLender2 _lender,
         ISAFU _safu,
-        address __owner,
-        string memory _customName
+        address __owner
     ) external override initializer {
-        ERC20.__ERC20_initialize(concat("TrueFi ", concat(_customName, _token.name())), concat("tf", _token.symbol()));
+        ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
+        UpgradeableClaimable.initialize(__owner);
+
+        token = _token;
+        lender = _lender;
+        safu = _safu;
+    }
+
+    /**
+     * @dev Initializer for custom pools
+     */
+    function customInitialize(
+        ERC20 _token,
+        ITrueLender2 _lender,
+        ISAFU _safu,
+        address __owner,
+        string memory borrowerName,
+        string memory borrowerSymbol
+    ) external override initializer {
+        ERC20.__ERC20_initialize(
+            concat(concat("TrueFi ", borrowerName), concat(" ", _token.name())),
+            concat(concat("tf", borrowerSymbol), _token.symbol())
+        );
         UpgradeableClaimable.initialize(__owner);
 
         token = _token;

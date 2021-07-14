@@ -155,7 +155,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, safu, this.owner(), "");
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, safu, this.owner());
 
         emit PoolCreated(token, address(proxy));
     }
@@ -165,11 +165,11 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * Transfer ownership of created pool to Factory owner.
      * @param token Address of token which the pool will correspond to.
      */
-    function createPrivatePool(address token, string memory name)
-        external
-        onlyAllowedTokens(token)
-        onlyWhitelistedBorrowers(msg.sender)
-    {
+    function createPrivatePool(
+        address token,
+        string memory borrowerName,
+        string memory borrowerSymbol
+    ) external onlyAllowedTokens(token) onlyWhitelistedBorrowers(msg.sender) {
         require(
             privatePool[msg.sender][token] == address(0),
             "PoolFactory: This borrower and token already have a corresponding pool"
@@ -178,7 +178,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         privatePool[msg.sender][token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, safu, this.owner(), name);
+        ITrueFiPool2(address(proxy)).customInitialize(ERC20(token), trueLender2, safu, this.owner(), borrowerName, borrowerSymbol);
 
         emit PrivatePoolCreated(msg.sender, token, address(proxy));
     }
