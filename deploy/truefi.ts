@@ -128,6 +128,9 @@ deploy({}, (deployer, config) => {
   runIf(stkTruToken_LinearTrueDistributor.farm().equals(stkTruToken).not(), () => {
     stkTruToken_LinearTrueDistributor.setFarm(stkTruToken)
   })
+  runIf(stkTruToken.initalized().not(), () => {
+    stkTruToken.initialize(trustToken, trueFiPool, trueFiPool, stkTruToken_LinearTrueDistributor, AddressZero)
+  })
   runIf(ratingAgencyV2Distributor.isInitialized().not(), () => {
     ratingAgencyV2Distributor.initialize(trueRatingAgencyV2, trustToken)
   })
