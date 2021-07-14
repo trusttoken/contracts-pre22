@@ -7,7 +7,6 @@ import {
   TrueFarm__factory,
   TrueFiPool__factory,
   TrueLender__factory,
-  TrueRatingAgency__factory,
   TrueRatingAgencyV2__factory,
 } from 'contracts'
 import { expect, use } from 'chai'
@@ -95,21 +94,6 @@ describe('TrueFi', () => {
     ])
     expect(await contract.minVotes()).to.eq(5000)
     expect(await contract.minRatio()).to.eq(15000)
-  })
-
-  it('TrueRatingAgency', async () => {
-    const allowedSubmitter = '0x83c1b27276108c0f68c52c2319beed4646061a1f'
-
-    await upgradeSuite(TEST_STATE_BLOCK_NUMBER, TrueRatingAgency__factory, '0x43A4F930F2cC35948d3a6dcd47CD0E50761f9B88', [
-      (contract) => contract.allowedSubmitters(allowedSubmitter),
-      'trustToken',
-      'distributor',
-      'factory',
-      'lossFactor',
-      'burnFactor',
-      'rewardMultiplier',
-      'submissionPauseStatus',
-    ])
   })
 
   it('TrueRatingAgencyV2', async () => {

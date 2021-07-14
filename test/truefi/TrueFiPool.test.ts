@@ -33,7 +33,7 @@ import {
   MockTrueFiPoolOracle__factory, Safu__factory,
   Safu,
 } from 'contracts'
-import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyJson } from 'build'
+import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyV2Json } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -67,7 +67,7 @@ describe('TrueFiPool', () => {
     curveToken = MockErc20Token__factory.connect(await curvePool.token(), owner)
     pool = await new TestTrueFiPool__factory(owner).deploy()
     mockStakingPool = await new MockStakingPool__factory(owner).deploy(pool.address)
-    mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyJson.abi)
+    mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
     mockCurveGauge = await deployMockContract(owner, ICurveGaugeJson.abi)
     mockCrv = await new MockErc20Token__factory(owner).deploy()
     const mockMinter = await deployMockContract(owner, ICurveMinterJson.abi)

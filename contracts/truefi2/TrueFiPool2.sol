@@ -606,6 +606,24 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     }
 
     /**
+     * @dev Utilization of the pool
+     * @return Utilization in basis points
+     */
+    function utilization() public view returns (uint256) {
+        uint256 pv = poolValue();
+        return pv.sub(liquidValue()).mul(BASIS_PRECISION).div(pv);
+    }
+
+    /**
+     * @dev Ratio of liquid assets in the pool to the pool value.
+     * Equals to 1 - utilization.
+     * @return Calculated ratio in basis points
+     */
+    function liquidRatio() public view returns (uint256) {
+        return liquidValue().mul(BASIS_PRECISION).div(poolValue());
+    }
+
+    /**
      * @param depositedAmount Amount of currency deposited
      * @return amount minted from this transaction
      */

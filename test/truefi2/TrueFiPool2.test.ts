@@ -1045,4 +1045,67 @@ describe('TrueFiPool2', () => {
       await expect(() => tusdPool.liquidExit(totalSupply.div(2))).to.changeTokenBalance(tusd, owner, totalValue.div(2).mul(penalty).div(10000))
     })
   })
+
+  describe('utilization', () => {
+    const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
+
+    beforeEach(async () => {
+      await tusd.approve(tusdPool.address, includeFee(parseEth(1e5)))
+    })
+
+    it('utilization is 0%', async () => {
+      const depositedAmount = parseEth(1e5)
+      await tusdPool.join(depositedAmount)
+      expect(await tusdPool.utilization()).to.eq(0)
+    })
+
+    it('utilization is 100%', async () => {
+      await tusdPool.join(parseEth(1e5))
+      const loanForWholePool = await createApprovedLoan(
+        rater, tru,
+        stkTru, loanFactory,
+        borrower, tusdPool,
+        parseEth(1e5), DAY,
+        100, owner,
+        provider,
+      )
+      await lender.connect(borrower).fund(loanForWholePool.address)
+      expect(await tusdPool.utilization()).to.eq(100_00)
+    })
+
+    it('utilization is 50 %', async () => {
+      await tusdPool.join(parseEth(1e5))
+      const loanForPartOfPool = await createApprovedLoan(
+        rater, tru,
+        stkTru, loanFactory,
+        borrower, tusdPool,
+        parseEth(1e5).div(2), DAY,
+        100, owner,
+        provider,
+      )
+      await lender.connect(borrower).fund(loanForPartOfPool.address)
+      expect(await tusdPool.utilization()).to.eq(50_00)
+    })
+
+    describe('liquidRatio', () => {
+      beforeEach(async () => {
+        await tusd.approve(tusdPool.address, includeFee(parseEth(1e5)))
+        await tusdPool.join(parseEth(1e5))
+        const loanForPartOfPool = await createApprovedLoan(
+          rater, tru,
+          stkTru, loanFactory,
+          borrower, tusdPool,
+          parseEth(1e5).div(4), DAY,
+          100, owner,
+          provider,
+        )
+        await lender.connect(borrower).fund(loanForPartOfPool.address)
+      })
+
+      it('equals 1 - utilization', async () => {
+        const expected = 100_00 - (await tusdPool.utilization()).toNumber()
+        expect(await tusdPool.liquidRatio()).to.eq(expected)
+      })
+    })
+  })
 })
