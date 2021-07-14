@@ -61,8 +61,8 @@ describe('PoolFactory', () => {
       expect(await implementationReference.attach(await factory.poolImplementationReference()).implementation()).to.eq(poolImplementation.address)
     })
 
-    it('sets allowAllTokens to false', async () => {
-      expect(await factory.allowAllTokens()).to.eq(false)
+    it('sets allowAll to false', async () => {
+      expect(await factory.allowAll()).to.eq(false)
     })
   })
 
@@ -258,11 +258,11 @@ describe('PoolFactory', () => {
         .to.not.be.reverted
     })
 
-    it('can create if allowAllTokens is true', async () => {
+    it('can create if allowAll is true', async () => {
       await expect(factory.createPool(token2.address))
         .to.be.revertedWith('PoolFactory: This token is not allowed to have a pool')
-      await factory.setAllowAllTokens(true)
-      expect(await factory.isTokenAllowed(token2.address))
+      await factory.setAllowAll(true)
+      expect(await factory.isAllowed(token2.address))
         .to.eq(false)
       await expect(factory.createPool(token2.address))
         .not.to.be.reverted
@@ -307,31 +307,31 @@ describe('PoolFactory', () => {
     })
   })
 
-  describe('setAllowAllTokens', () => {
-    it('only owner can set allowAllTokens', async () => {
-      await (expect(factory.connect(otherWallet).setAllowAllTokens(true)))
+  describe('setAllowAll', () => {
+    it('only owner can set allowAll', async () => {
+      await (expect(factory.connect(otherWallet).setAllowAll(true)))
         .to.be.revertedWith('Ownable: caller is not the owner')
-      await (expect(factory.connect(owner).setAllowAllTokens(true)))
+      await (expect(factory.connect(owner).setAllowAll(true)))
         .not.to.be.reverted
     })
 
     it('toggles correctly', async () => {
-      expect(await factory.allowAllTokens())
+      expect(await factory.allowAll())
         .to.eq(false)
-      await factory.setAllowAllTokens(true)
-      expect(await factory.allowAllTokens())
+      await factory.setAllowAll(true)
+      expect(await factory.allowAll())
         .to.eq(true)
-      await factory.setAllowAllTokens(false)
-      expect(await factory.allowAllTokens())
+      await factory.setAllowAll(false)
+      expect(await factory.allowAll())
         .to.eq(false)
     })
 
     it('emits events', async () => {
-      await expect(factory.setAllowAllTokens(true))
-        .to.emit(factory, 'AllowAllTokensStatusChanged')
+      await expect(factory.setAllowAll(true))
+        .to.emit(factory, 'AllowAllStatusChanged')
         .withArgs(true)
-      await expect(factory.setAllowAllTokens(false))
-        .to.emit(factory, 'AllowAllTokensStatusChanged')
+      await expect(factory.setAllowAll(false))
+        .to.emit(factory, 'AllowAllStatusChanged')
         .withArgs(false)
     })
   })

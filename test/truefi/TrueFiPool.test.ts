@@ -626,7 +626,7 @@ describe('TrueFiPool', () => {
     await factory.initialize(implementationReference.address, lender2.address, safu.address)
     await factory.addLegacyPool(pool.address)
     const usdc = await new MockErc20Token__factory(owner).deploy()
-    await factory.setAllowAllTokens(true)
+    await factory.setAllowAll(true)
     await factory.createPool(usdc.address)
     const feePool = await factory.pool(usdc.address)
     await lender2.setFeePool(feePool)

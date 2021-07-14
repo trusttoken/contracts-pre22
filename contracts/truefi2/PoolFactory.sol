@@ -30,8 +30,8 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     mapping(address => bool) public override isPool;
 
     // @dev Whitelist for tokens, which can have pools created
-    mapping(address => bool) public isTokenAllowed;
-    bool public allowAllTokens;
+    mapping(address => bool) public isAllowed;
+    bool public allowAll;
 
     ImplementationReference public poolImplementationReference;
 
@@ -77,10 +77,10 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     event BorrowerWhitelistStatusChanged(address borrower, bool status);
 
     /**
-     * @dev Event to show that allowAllTokens status has been changed
-     * @param status New status of allowAllTokens
+     * @dev Event to show that allowAll status has been changed
+     * @param status New status of allowAll
      */
-    event AllowAllTokensStatusChanged(bool status);
+    event AllowAllStatusChanged(bool status);
 
     /**
      * @dev Event to show that trueLender was changed
@@ -108,7 +108,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @param token Address of token to be checked in whitelist
      */
     modifier onlyAllowedTokens(address token) {
-        require(allowAllTokens || isTokenAllowed[token], "PoolFactory: This token is not allowed to have a pool");
+        require(allowAll || isAllowed[token], "PoolFactory: This token is not allowed to have a pool");
         _;
     }
 
@@ -185,7 +185,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @param status New status of allowance for token
      */
     function allowToken(address token, bool status) external onlyOwner {
-        isTokenAllowed[token] = status;
+        isAllowed[token] = status;
         emit AllowedStatusChanged(token, status);
     }
 
@@ -200,12 +200,12 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     }
 
     /**
-     * @dev Change allowAllTokens status
-     * @param status New status of allowAllTokens
+     * @dev Change allowAll status
+     * @param status New status of allowAll
      */
-    function setAllowAllTokens(bool status) external onlyOwner {
-        allowAllTokens = status;
-        emit AllowAllTokensStatusChanged(status);
+    function setAllowAll(bool status) external onlyOwner {
+        allowAll = status;
+        emit AllowAllStatusChanged(status);
     }
 
     function setTrueLender(ITrueLender2 _trueLender2) external onlyOwner {
