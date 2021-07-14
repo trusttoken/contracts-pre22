@@ -42,7 +42,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     ISAFU public safu;
 
     // @dev Mapping of borrowers to mapping of ERC20 token's addresses to its private pools
-    mapping(address => mapping(address => address)) public privatePool;
+    mapping(address => mapping(address => address)) public singleBorrowerPool;
     mapping(address => bool) public isBorrowerWhitelisted;
 
     // ======= STORAGE DECLARATION END ===========
@@ -60,7 +60,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @param token Address of token, for which the pool was created
      * @param pool Address of new pool's proxy
      */
-    event PrivatePoolCreated(address borrower, address token, address pool);
+    event SingleBorrowerPoolCreated(address borrower, address token, address pool);
 
     /**
      * @dev Event to show that token is now allowed/disallowed to have a pool created
@@ -165,22 +165,22 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * Transfer ownership of created pool to Factory owner.
      * @param token Address of token which the pool will correspond to.
      */
-    function createPrivatePool(
+    function createSingleBorrowerPool(
         address token,
         string memory borrowerName,
         string memory borrowerSymbol
     ) external onlyAllowedTokens(token) onlyWhitelistedBorrowers(msg.sender) {
         require(
-            privatePool[msg.sender][token] == address(0),
+            singleBorrowerPool[msg.sender][token] == address(0),
             "PoolFactory: This borrower and token already have a corresponding pool"
         );
         OwnedProxyWithReference proxy = new OwnedProxyWithReference(this.owner(), address(poolImplementationReference));
-        privatePool[msg.sender][token] = address(proxy);
+        singleBorrowerPool[msg.sender][token] = address(proxy);
         isPool[address(proxy)] = true;
 
         ITrueFiPool2(address(proxy)).customInitialize(ERC20(token), trueLender2, safu, this.owner(), borrowerName, borrowerSymbol);
 
-        emit PrivatePoolCreated(msg.sender, token, address(proxy));
+        emit SingleBorrowerPoolCreated(msg.sender, token, address(proxy));
     }
 
     /**

@@ -174,7 +174,7 @@ describe('PoolFactory', () => {
     })
   })
 
-  describe('createPrivatePool', () => {
+  describe('createSingleBorrowerPool', () => {
     let creationEventArgs: any
     let proxy: OwnedProxyWithReference
     let pool: TrueFiPool2
@@ -182,9 +182,9 @@ describe('PoolFactory', () => {
     beforeEach(async () => {
       await factory.allowToken(token1.address, true)
       await factory.whitelistBorrower(borrower.address, true)
-      const tx = await factory.connect(borrower).createPrivatePool(token1.address, 'CompanyName', 'CN')
+      const tx = await factory.connect(borrower).createSingleBorrowerPool(token1.address, 'CompanyName', 'CN')
       creationEventArgs = (await tx.wait()).events[2].args
-      proxy = OwnedProxyWithReference__factory.connect(await factory.privatePool(borrower.address, token1.address), owner)
+      proxy = OwnedProxyWithReference__factory.connect(await factory.singleBorrowerPool(borrower.address, token1.address), owner)
 
       pool = poolImplementation.attach(proxy.address)
     })
@@ -195,7 +195,7 @@ describe('PoolFactory', () => {
 
     it('initializes implementation with ownership', async () => {
       await factory.allowToken(token2.address, true)
-      await factory.connect(borrower).createPrivatePool(token2.address, 'CompanyName', 'CN')
+      await factory.connect(borrower).createSingleBorrowerPool(token2.address, 'CompanyName', 'CN')
       proxy = OwnedProxyWithReference__factory.connect(await factory.pool(token2.address), owner)
       expect(await pool.owner()).to.eq(owner.address)
     })
@@ -206,7 +206,7 @@ describe('PoolFactory', () => {
     })
 
     it('adds pool to token -> pool mapping', async () => {
-      expect(await factory.privatePool(borrower.address, token1.address)).to.eq(proxy.address)
+      expect(await factory.singleBorrowerPool(borrower.address, token1.address)).to.eq(proxy.address)
     })
 
     it('adds pool to isPool mapping', async () => {
@@ -226,12 +226,12 @@ describe('PoolFactory', () => {
     })
 
     it('cannot create pool for token that already has a pool', async () => {
-      await expect(factory.connect(borrower).createPrivatePool(token1.address, 'CompanyName', 'CN'))
+      await expect(factory.connect(borrower).createSingleBorrowerPool(token1.address, 'CompanyName', 'CN'))
         .to.be.revertedWith('PoolFactory: This borrower and token already have a corresponding pool')
     })
 
     it('emits event', async () => {
-      const proxyAddress = await factory.privatePool(borrower.address, token1.address)
+      const proxyAddress = await factory.singleBorrowerPool(borrower.address, token1.address)
       expect(creationEventArgs['borrower']).to.eq(borrower.address)
       expect(creationEventArgs['token']).to.eq(token1.address)
       expect(creationEventArgs['pool']).to.eq(proxyAddress)
