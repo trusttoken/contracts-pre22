@@ -318,14 +318,6 @@
       "txHash": "0x40eb8b4627c9335138ef57c1fca17fed1dd4455dcc6cdb117ba81a065d1e7955",
       "address": "0x4ACE6dE67E9a9EDFf5c2d0a584390Fb5394119e7"
     },
-    "liquidator": {
-      "txHash": "0xae18e9d9cbd359448fa8da885b505920e2cf5bf38a2ae722e16755fc80b80d43",
-      "address": "0xA5C6B8930373972c5b67cd8bF4F3DaDBDA82F772"
-    },
-    "liquidator_proxy": {
-      "txHash": "0xbbc189b5cb149d528df85e1574703290096e906025bfd17ac4a00bd8decfee18",
-      "address": "0x76dd4921C99AC6b61b3a98f9fa6f181cA6D70c77"
-    },
     "stkTruToken_LinearTrueDistributor": {
       "txHash": "0x05ca5eb3fe1bb8ce1e513630d5667e61c2abc8b1b555b2a8757923a17d25cf67",
       "address": "0x27f74f7fa7e813AD6a2b452FA6589ae5a5D4C941"
