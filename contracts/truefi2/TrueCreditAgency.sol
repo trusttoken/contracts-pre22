@@ -67,7 +67,6 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     function setRiskPremium(uint256 newRate) external onlyOwner {
         riskPremium = newRate;
-        // TODO keep separate premiums per pool, pass pool as an argument here
         emit RiskPremiumChanged(newRate);
     }
 
