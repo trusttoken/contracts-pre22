@@ -25,7 +25,6 @@ yarn flatten
 
 status=0
 slither flatten/GovernorAlpha.sol || status=1
-slither flatten/Liquidator.sol || status=1
 slither flatten/LoanFactory.sol || status=1
 slither flatten/LoanToken.sol || status=1
 slither flatten/StkTruToken.sol || status=1

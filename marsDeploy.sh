@@ -2,7 +2,7 @@
 set -eu
 
 # Example usage:
-# $ ./marsDeploy.sh deploy/truefi.ts --network ropsten --dry-run
+# $ ./marsDeploy.sh deploy/truefi2.ts --network ropsten --dry-run
 # PRIVATE_KEY=0x123..64
 
 # Consume the first argument as a path to the Mars deploy script.

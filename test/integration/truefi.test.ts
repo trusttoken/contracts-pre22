@@ -2,7 +2,12 @@ import { TEST_STATE_BLOCK_NUMBER, upgradeSuite } from './suite'
 import {
   ArbitraryDistributor__factory,
   LinearTrueDistributor__factory,
-  Liquidator__factory, LoanFactory__factory, RatingAgencyV2Distributor__factory, TrueFarm__factory, TrueFiPool__factory, TrueLender__factory, TrueRatingAgencyV2__factory,
+  LoanFactory__factory,
+  RatingAgencyV2Distributor__factory,
+  TrueFarm__factory,
+  TrueFiPool__factory,
+  TrueLender__factory,
+  TrueRatingAgencyV2__factory,
 } from 'contracts'
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
@@ -12,16 +17,6 @@ use(solidity)
 
 describe('TrueFi', () => {
   const emptyAddress = Wallet.createRandom().address
-
-  it('Liquidator', async () => {
-    await upgradeSuite(TEST_STATE_BLOCK_NUMBER, Liquidator__factory, '0x76dd4921C99AC6b61b3a98f9fa6f181cA6D70c77', [
-      'pool',
-      'stkTru',
-      'tru',
-      'oracle',
-      'factory',
-    ])
-  })
 
   it('LoanFactory', async () => {
     // this needs to be updated once in a while, this loan will exist till 06/06/21
