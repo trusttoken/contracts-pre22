@@ -549,10 +549,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         emit Flushed(currencyAmount);
     }
 
-    function _curvePoolDeposit(uint256 currencyAmount)
-        internal
-        exchangeProtector(calcTokenAmount(currencyAmount), _curvePool.token())
-    {
+    function _curvePoolDeposit(uint256 currencyAmount) private {
         uint256[N_TOKENS] memory amounts = [0, 0, 0, currencyAmount];
 
         token.safeApprove(address(_curvePool), currencyAmount);
