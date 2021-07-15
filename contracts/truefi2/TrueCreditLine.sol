@@ -12,6 +12,7 @@ contract TrueCreditLine is ERC20 {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
+    address public creditAgency;
     address public borrower;
     ITrueFiPool2 public pool;
 
@@ -40,23 +41,37 @@ contract TrueCreditLine is ERC20 {
     event Claimed(address indexed who, uint256 amountClaimed);
 
     /**
+     * @dev Emitted when borrower increases principal debt
+     * @param borrower Borrowers address
+     * @param increasedAmount Increased amount
+     */
+    event DebtIncreased(address indexed borrower, uint256 increasedAmount);
+
+    /**
      * @dev Create Credit Line
      * @param _borrower Borrower address
      * @param _pool Pool to which the credit line is attached to
      * @param _principalDebt Initial amount of debt taken by borrower
      */
     constructor(
+        address _creditAgency,
         address _borrower,
         ITrueFiPool2 _pool,
         uint256 _principalDebt
     ) public {
         ERC20.__ERC20_initialize("TrueFi Credit Line", "tfCL");
 
+        creditAgency = _creditAgency;
         borrower = _borrower;
         pool = _pool;
 
         principalDebt = _principalDebt;
         _mint(address(_pool), _principalDebt);
+    }
+
+    modifier onlyCreditAgency() {
+        require(msg.sender == creditAgency, "TrueCreditLine: Caller is not the credit agency");
+        _;
     }
 
     /**
@@ -77,6 +92,16 @@ contract TrueCreditLine is ERC20 {
         // update previous cumulative for sender
         previousCumulatedRewards[account] = cumulativeTotalRewards;
         _;
+    }
+
+    /**
+     * @dev Function called by credit agency to increase the principal debt,
+     * withdraw tokens from the pool and mint CL tokens to the pool accordingly
+     */
+    function increasePrincipalDebt(uint256 amount) external onlyCreditAgency {
+        principalDebt = principalDebt.add(amount);
+        _mint(address(pool), amount);
+        emit DebtIncreased(borrower, amount);
     }
 
     /**

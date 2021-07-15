@@ -14,6 +14,7 @@ use(solidity)
 
 describe('TrueCreditLine', () => {
   let owner: Wallet
+  let creditAgency: Wallet
   let borrower: Wallet
   let holder: Wallet
   let pool: TrueFiPool2
@@ -24,18 +25,22 @@ describe('TrueCreditLine', () => {
   const splitReward = fullReward.div(2)
 
   beforeEachWithFixture(async (wallets) => {
-    [owner, borrower, holder] = wallets
+    [owner, borrower, holder, creditAgency] = wallets
 
     ;({ standardPool: pool, standardToken: token } = await setupTruefi2(owner))
-    creditLine = await deployContract(owner, TestTrueCreditLine__factory, [owner.address, pool.address, parseEth(1000)])
+    creditLine = await deployContract(owner, TestTrueCreditLine__factory, [creditAgency.address, borrower.address, pool.address, parseEth(1000)])
 
     await token.mint(borrower.address, parseEth(1000))
     await token.connect(borrower).approve(creditLine.address, parseEth(1000))
   })
 
   describe('on creation', () => {
+    it('sets creditAgency', async () => {
+      expect(await creditLine.creditAgency()).to.eq(creditAgency.address)
+    })
+
     it('sets borrower', async () => {
-      expect(await creditLine.borrower()).to.eq(owner.address)
+      expect(await creditLine.borrower()).to.eq(borrower.address)
     })
 
     it('sets pool', async () => {
@@ -229,6 +234,29 @@ describe('TrueCreditLine', () => {
     })
   })
 
+  describe('increasePrincipalDebt', () => {
+    it('can only be called by creditAgency', async () => {
+      await expect(creditLine.connect(borrower).increasePrincipalDebt(parseEth(1000)))
+        .to.be.revertedWith('TrueCreditLine: Caller is not the credit agency')
+    })
+
+    it('increases principalDebt', async () => {
+      await creditLine.connect(creditAgency).increasePrincipalDebt(parseEth(1000))
+      expect(await creditLine.principalDebt()).to.eq(parseEth(2000))
+    })
+
+    it('mints more tokens to the pool', async () => {
+      await creditLine.connect(creditAgency).increasePrincipalDebt(parseEth(1000))
+      expect(await creditLine.balanceOf(pool.address)).to.eq(parseEth(2000))
+    })
+
+    it('emits event', async () => {
+      await expect(creditLine.connect(creditAgency).increasePrincipalDebt(parseEth(1000)))
+        .to.emit(creditLine, 'DebtIncreased')
+        .withArgs(borrower.address, parseEth(1000))
+    })
+  })
+
   describe('Complex scenarios', () => {
     const quarterReward = splitReward.div(2)
 
@@ -310,6 +338,48 @@ describe('TrueCreditLine', () => {
 
       expect(await creditLine.claimable(holder.address)).to.eq(splitReward.mul(6).div(10).add(splitReward.mul(8).div(10)))
       expect(await creditLine.claimable(owner.address)).to.eq(splitReward.mul(4).div(10).add(splitReward.mul(2).div(10)))
+    })
+
+    it('borrower increases debt', async () => {
+      await creditLine.mint(holder.address, parseEth(1000))
+
+      // first interest repay
+      await creditLine.connect(borrower).payInterest(fullReward)
+
+      expect(await creditLine.cumulativeTotalRewards()).to.eq(fullReward)
+      expect(await creditLine.totalInterestRewards()).to.eq(fullReward)
+      expect(await creditLine.totalClaimedRewards()).to.eq(splitReward)
+      
+
+      // pool
+      expect(await creditLine.claimable(pool.address)).to.eq(0)
+      expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward)
+
+      // holder
+      expect(await creditLine.claimable(holder.address)).to.eq(splitReward)
+      expect(await creditLine.claimableRewards(holder.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewards(holder.address)).to.eq(0)
+
+      // borrower increases debt
+      await creditLine.connect(creditAgency).increasePrincipalDebt(parseEth(2000))
+
+      // second interest repay
+      await creditLine.connect(borrower).payInterest(fullReward.mul(2))
+
+      expect(await creditLine.cumulativeTotalRewards()).to.eq(fullReward.mul(3))
+      expect(await creditLine.totalInterestRewards()).to.eq(fullReward.mul(3))
+      expect(await creditLine.totalClaimedRewards()).to.eq(splitReward.add(fullReward.mul(2).mul(3).div(4)))
+
+      // pool
+      expect(await creditLine.claimable(pool.address)).to.eq(0)
+      expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward.mul(3))
+
+      // holder
+      expect(await creditLine.claimable(holder.address)).to.eq(splitReward.add(fullReward.mul(2).mul(1).div(4)))
+      expect(await creditLine.claimableRewards(holder.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewards(holder.address)).to.eq(fullReward)
     })
   })
 })
