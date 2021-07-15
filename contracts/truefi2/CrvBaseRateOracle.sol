@@ -102,7 +102,7 @@ contract CrvBaseRateOracle {
      * Notice that whether we are going to use the whole buffer or not
      * depends on if it is filled up and the value of timeToCover parameter.
      * @param timeToCover For how much time average should be calculated.
-     * @return Average rate in basis points.
+     * @return Average rate.
      */
     function calculateAverageRate(uint256 timeToCover) public view returns (uint256) {
         require(1 days <= timeToCover && timeToCover <= 365 days, "CrvBaseRateOracle: Expected amount of time in range 1 to 365 days");
@@ -120,7 +120,7 @@ contract CrvBaseRateOracle {
         uint256 dt = curTimestamp.sub(totalsBuffer.timestamps[lidx]);
         runningTotalForTimeToCover = runningTotalForTimeToCover.add(curCrvBaseRate.add(totalsBuffer.lastRate).mul(dt).div(2));
         uint256 totalTime = curTimestamp.sub(totalsBuffer.timestamps[startIndex]);
-        return runningTotalForTimeToCover.mul(BASIS_PRECISION).div(totalTime);
+        return runningTotalForTimeToCover.div(totalTime);
     }
 
     /**
@@ -131,8 +131,8 @@ contract CrvBaseRateOracle {
      */
     function apy(uint256 time) internal view returns (int256) {
         int256 avgRate = int256(calculateAverageRate(time));
-        uint256 curCrvBaseRate = curve.get_virtual_price();
-        return ((int256(curCrvBaseRate * BASIS_PRECISION) - avgRate) * int256(BASIS_PRECISION)) / avgRate;
+        int256 curCrvBaseRate = int256(curve.get_virtual_price());
+        return ((curCrvBaseRate - avgRate) * int256(BASIS_PRECISION)) / avgRate;
     }
 
     /**
