@@ -136,21 +136,21 @@ contract CrvBaseRateOracle {
     }
 
     /**
-     * @dev APY based on data from last 7 days.
+     * @dev APR based on data from last 7 days.
      */
     function getWeeklyAPR() public view returns (int256) {
         return apr(7 days);
     }
 
     /**
-     * @dev APY based on data from last 30 days.
+     * @dev APR based on data from last 30 days.
      */
     function getMonthlyAPR() public view returns (int256) {
         return apr(30 days);
     }
 
     /**
-     * @dev APY based on data from last 365 days.
+     * @dev APR based on data from last 365 days.
      */
     function getYearlyAPR() public view returns (int256) {
         return apr(365 days);
