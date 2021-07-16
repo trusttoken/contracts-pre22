@@ -139,19 +139,19 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     function poke(ITrueFiPool2 pool) public {
         uint256 bitMap = usedBucketsBitmap;
+        CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
+        uint256 timeNow = block.timestamp;
+
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
                 continue;
             }
 
-            CreditScoreBucket storage bucket = buckets[pool][i];
-
-            uint256 timeNow = block.timestamp;
+            CreditScoreBucket storage bucket = creditScoreBuckets[i];
 
             bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
                 bucket.rate.mul(1e23).mul(timeNow.sub(bucket.timestamp)).div(365 days)
             );
-
             bucket.rate = _creditScoreAdjustmentRate(uint8(i)).add(riskPremium);
             bucket.timestamp = uint128(timeNow);
         }
