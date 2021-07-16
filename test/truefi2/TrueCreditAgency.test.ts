@@ -228,7 +228,7 @@ describe('TrueCreditAgency', () => {
     })
 
     it('usedBuckets are constructed by setting bits for buckets on positions of buckets that have any borrowers', async () => {
-      expect(await creditAgency.usedBuckets()).to.equal(usedBucketSet(200, 255))
+      expect(await creditAgency.usedBucketsBitmap()).to.equal(usedBucketSet(200, 255))
     })
 
     it('when score changes, borrower is moved between buckets and used bucket map is updated', async () => {
@@ -240,7 +240,7 @@ describe('TrueCreditAgency', () => {
       expect(bucket100.borrowersCount).to.equal(1)
       expect(bucket200.totalBorrowed).to.equal(0)
       expect(bucket100.totalBorrowed).to.equal(2000)
-      expect(await creditAgency.usedBuckets()).to.equal(usedBucketSet(100, 255))
+      expect(await creditAgency.usedBucketsBitmap()).to.equal(usedBucketSet(100, 255))
     })
 
     it('correctly updates bucket map when adding borrower to non-empty bucket', async () => {
@@ -249,7 +249,7 @@ describe('TrueCreditAgency', () => {
       const bucket255 = await creditAgency.buckets(tusdPool.address, 255)
       expect(bucket255.borrowersCount).to.equal(2)
       expect(bucket255.totalBorrowed).to.equal(3000)
-      expect(await creditAgency.usedBuckets()).to.equal(usedBucketSet(255))
+      expect(await creditAgency.usedBucketsBitmap()).to.equal(usedBucketSet(255))
     })
 
     it('correctly updates bucket map when removing borrowers from bucket with multiple borrowers', async () => {
@@ -260,7 +260,7 @@ describe('TrueCreditAgency', () => {
       const bucket255 = await creditAgency.buckets(tusdPool.address, 255)
       expect(bucket255.borrowersCount).to.equal(1)
       expect(bucket255.totalBorrowed).to.equal(2000)
-      expect(await creditAgency.usedBuckets()).to.equal(usedBucketSet(255, 150))
+      expect(await creditAgency.usedBucketsBitmap()).to.equal(usedBucketSet(255, 150))
     })
   })
 

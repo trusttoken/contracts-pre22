@@ -50,7 +50,14 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     ITrueFiCreditOracle public creditOracle;
 
-    uint256 public usedBuckets;
+    /**
+     * This bitmap is used to non-empty buckets.
+     * If at least one borrower with a score n has an opened credit line, the n-th bit of the bitmap is set
+     * Profiling result of calling poke() with one borrower:
+     * - 650k gas used without using bitmap
+     * - 120k gas used using bitmap
+     */
+    uint256 public usedBucketsBitmap;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -131,7 +138,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function poke(ITrueFiPool2 pool) public {
-        uint256 bitMap = usedBuckets;
+        uint256 bitMap = usedBucketsBitmap;
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
                 continue;
@@ -175,7 +182,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         require(bucket.borrowersCount > 0, "TrueCreditAgency: bucket is empty");
         bucket.borrowersCount -= 1;
         if (bucket.borrowersCount == 0) {
-            usedBuckets &= ~(uint256(1) << bucketNumber);
+            usedBucketsBitmap &= ~(uint256(1) << bucketNumber);
         }
         bucket.totalBorrowed = bucket.totalBorrowed.sub(borrowed[pool][borrower]);
         totalBorrowerInterest = _interest(pool, bucket, borrower);
@@ -190,7 +197,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
     ) internal {
         bucket.borrowersCount = bucket.borrowersCount + 1;
         if (bucket.borrowersCount == 1) {
-            usedBuckets |= uint256(1) << bucketNumber;
+            usedBucketsBitmap |= uint256(1) << bucketNumber;
         }
         bucket.totalBorrowed = bucket.totalBorrowed.add(borrowed[pool][borrower]);
     }
