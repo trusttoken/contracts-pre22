@@ -15,7 +15,7 @@ interface ITrueFiPool2 is IERC20 {
         address __owner
     ) external;
 
-    function customInitialize(
+    function singleBorrowerInitialize(
         ERC20 _token,
         ITrueLender2 _lender,
         ISAFU safu,

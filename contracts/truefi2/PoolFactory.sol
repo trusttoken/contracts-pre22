@@ -41,7 +41,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     ISAFU public safu;
 
-    // @dev Mapping of borrowers to mapping of ERC20 token's addresses to its private pools
+    // @dev Mapping of borrowers to mapping of ERC20 token's addresses to its single borrower pool
     mapping(address => mapping(address => address)) public singleBorrowerPool;
     mapping(address => bool) public isBorrowerWhitelisted;
 
@@ -55,7 +55,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     event PoolCreated(address token, address pool);
 
     /**
-     * @dev Event to show creation of the new private pool
+     * @dev Event to show creation of the new single borrower pool
      * @param borrower Address of new pool's borrower
      * @param token Address of token, for which the pool was created
      * @param pool Address of new pool's proxy
@@ -70,7 +70,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     event AllowedStatusChanged(address token, bool status);
 
     /**
-     * @dev Event to show that borrower is now allowed/disallowed to have a private pool
+     * @dev Event to show that borrower is now allowed/disallowed to have a single borrower pool
      * @param borrower Address of borrower
      * @param status New status of allowance
      */
@@ -161,7 +161,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     }
 
     /**
-     * @dev Create a new private pool behind proxy. Update new pool's implementation.
+     * @dev Create a new single borrower pool behind proxy. Update new pool's implementation.
      * Transfer ownership of created pool to Factory owner.
      * @param token Address of token which the pool will correspond to.
      */
@@ -178,7 +178,14 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         singleBorrowerPool[msg.sender][token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).customInitialize(ERC20(token), trueLender2, safu, this.owner(), borrowerName, borrowerSymbol);
+        ITrueFiPool2(address(proxy)).singleBorrowerInitialize(
+            ERC20(token),
+            trueLender2,
+            safu,
+            this.owner(),
+            borrowerName,
+            borrowerSymbol
+        );
 
         emit SingleBorrowerPoolCreated(msg.sender, token, address(proxy));
     }

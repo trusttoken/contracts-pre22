@@ -116,9 +116,9 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     }
 
     /**
-     * @dev Initializer for custom pools
+     * @dev Initializer for single borrower pools
      */
-    function customInitialize(
+    function singleBorrowerInitialize(
         ERC20 _token,
         ITrueLender2 _lender,
         ISAFU _safu,
