@@ -4,5 +4,6 @@
   "target": "esnext",
   "timeout": 40000,
   "exclude": "test/integration/**/*.ts",
-  "watch-files": ["test"]
+  "watch-files": ["test"],
+  "exit": true
 }
