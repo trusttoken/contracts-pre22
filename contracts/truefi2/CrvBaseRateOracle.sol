@@ -124,35 +124,35 @@ contract CrvBaseRateOracle {
     }
 
     /**
-     * @dev Calculate apy based on current curve virtual price and
+     * @dev Calculate apr based on current curve virtual price and
      * average rate from collected data in the nearest past.
      * @param time Determines from how far in the past collected data should be used.
-     * @return Calculated estimated apy in basis points.
+     * @return Calculated estimated apr in basis points.
      */
-    function apy(uint256 time) internal view returns (int256) {
+    function apr(uint256 time) internal view returns (int256) {
         int256 avgRate = int256(calculateAverageRate(time));
         int256 curCrvBaseRate = int256(curve.get_virtual_price());
-        return ((curCrvBaseRate - avgRate) * int256(BASIS_PRECISION)) / avgRate;
+        return ((curCrvBaseRate - avgRate) * int256(BASIS_PRECISION) * 365 days) / int256(time) / avgRate;
     }
 
     /**
      * @dev APY based on data from last 7 days.
      */
-    function getWeeklyAPY() public view returns (int256) {
-        return apy(7 days);
+    function getWeeklyAPR() public view returns (int256) {
+        return apr(7 days);
     }
 
     /**
      * @dev APY based on data from last 30 days.
      */
-    function getMonthlyAPY() public view returns (int256) {
-        return apy(30 days);
+    function getMonthlyAPR() public view returns (int256) {
+        return apr(30 days);
     }
 
     /**
      * @dev APY based on data from last 365 days.
      */
-    function getYearlyAPY() public view returns (int256) {
-        return apy(365 days);
+    function getYearlyAPR() public view returns (int256) {
+        return apr(365 days);
     }
 }

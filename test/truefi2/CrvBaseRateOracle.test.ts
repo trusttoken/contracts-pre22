@@ -179,12 +179,11 @@ describe('CrvBaseRateOracle', () => {
         await timeTravel(provider, DAY / 2 - 1)
         // Curve virtual prices: 1.0, 2.0, 3.0 probed with 1 day interval
         // Expected value is (1.0 + 1.5 + 2.5 / 2) / 2.5 = 1.5
-        // expectCloseTo(await crvBaseRateOracle.calculateAverageRate(3 * DAY), BN(1_50e16), 0)
         expect(await crvBaseRateOracle.calculateAverageRate(3 * DAY)).to.eq(BN(1_50e16))
       })
     })
 
-    describe('getWeeklyAPY', () => {
+    describe('getWeeklyAPR', () => {
       describe('returns correct value if', () => {
         it('prices grows for last 3 days', async () => {
           await mockCurve.mock.get_virtual_price.returns(BN(1e18))
@@ -200,9 +199,9 @@ describe('CrvBaseRateOracle', () => {
           await timeTravel(provider, DAY / 2)
           // Curve virtual prices: 1.0, 1.0, 1.0, 2.0, 3.0, 4.0 probed with 1 day interval
           // Expected avg rate is (1.0 * 3 + 1.5 + 2.5 + 3.5 + 4 / 2) / 6.5 = 1.(923076)
-          // Expected weekly apy is (4.0 - 1.9230) / 1.9230 = 1.08
+          // Expected weekly apr is (4.0 - 1.9230) / 1.9230 / (7 days / 365 days) = 56.3142
           expectCloseTo(await crvBaseRateOracle.calculateAverageRate(7 * DAY), BN(1_9230769230e8), 1e8)
-          expect(await crvBaseRateOracle.getWeeklyAPY()).to.eq(1_0800)
+          expect(await crvBaseRateOracle.getWeeklyAPR()).to.eq(56_3142)
         })
 
         it('price goes up and down', async () => {
@@ -223,10 +222,9 @@ describe('CrvBaseRateOracle', () => {
           await timeTravel(provider, DAY / 2)
           // Curve virtual prices: 2.5, 2.0, 1.0, 1.5, 2.0, 3.0, 2.0 probed with 1 day interval
           // Expected avg rate is (11.75 + 2.5 / 2) / 6.5 = 2.0
-          // Expected weekly apy is (2.50 - 2.0) / 2.0 = 0.25
-          // expectCloseTo(await crvBaseRateOracle.calculateAverageRate(7 * DAY), BN(2e18), 1e8)
+          // Expected weekly apr is (2.50 - 2.0) / 2.0 / (7 days / 365 days) = 13.0357
           expect(await crvBaseRateOracle.calculateAverageRate(7 * DAY)).to.eq(BN(2e18))
-          expect(await crvBaseRateOracle.getWeeklyAPY()).to.eq(2500)
+          expect(await crvBaseRateOracle.getWeeklyAPR()).to.eq(Math.floor(13_0357))
         })
 
         it('prices goes down', async () => {
@@ -234,16 +232,15 @@ describe('CrvBaseRateOracle', () => {
           await updateBufferRightAfterCooldown(crvBaseRateOracle)
           // Curve virtual prices: 1.0, 0.5 probed with 1 day interval
           // Expected avg rate is 0.75 / 1 = 0.75
-          // Expected weekly apy is (0.50 - 0.75) / 0.75 = -0.(3)
-          // expectCloseTo(await crvBaseRateOracle.calculateAverageRate(2 * DAY), BN(7_5e16), 5)
+          // Expected weekly apr is (0.50 - 0.75) / 0.75 / (7 / 365) = -17.3809..
           expect(await crvBaseRateOracle.calculateAverageRate(2 * DAY)).to.eq(BN(75e16))
-          expect(await crvBaseRateOracle.getWeeklyAPY()).to.eq(-3333)
+          expect(await crvBaseRateOracle.getWeeklyAPR()).to.eq(-17_3809)
         })
       })
     })
 
-    describe('getMonthlyAPY', () => {
-      it('correctly calculates APY', async () => {
+    describe('getMonthlyAPR', () => {
+      it('correctly calculates apr', async () => {
         await updateBufferRightAfterCooldown(oracleLongBuffer)
         await updateBufferRightAfterCooldown(oracleLongBuffer)
 
@@ -252,14 +249,14 @@ describe('CrvBaseRateOracle', () => {
           await updateBufferRightAfterCooldown(oracleLongBuffer)
         }
         // Curve virtual prices: 1.0, 1.1, ..., 3.9 probed with 1 day interval
-        // Expected avg rate is 2.45
-        // Expected monthly apy is 0.5918
-        expect(await oracleLongBuffer.getMonthlyAPY()).to.eq(5918)
+        // Expected avg rate is 2.45..
+        // Expected monthly apr is 7.2006..
+        expect(await oracleLongBuffer.getMonthlyAPR()).to.eq(7_2006)
       })
     })
 
-    describe('getYearlyAPY', () => {
-      xit('correctly calculates APY', async () => {
+    describe('getYearlyAPR', () => {
+      xit('correctly calculates apr', async () => {
         await updateBufferRightAfterCooldown(oracleLongBuffer)
         await updateBufferRightAfterCooldown(oracleLongBuffer)
 
@@ -269,8 +266,8 @@ describe('CrvBaseRateOracle', () => {
         }
         // Curve virtual prices: 1, 1.1, ..., 3.74 probed with 1 day interval
         // Expected avg rate is 1.92
-        // Expected yearly apy is 0.9479
-        expect(await oracleLongBuffer.getYearlyAPY()).to.eq(9479)
+        // Expected yearly apr is 0.9479
+        expect(await oracleLongBuffer.getYearlyAPR()).to.eq(9479)
       }).timeout(100_000)
     })
   })
