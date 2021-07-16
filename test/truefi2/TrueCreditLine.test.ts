@@ -6,7 +6,7 @@ import {
 } from 'contracts'
 import { expect, use } from 'chai'
 import { deployContract, solidity } from 'ethereum-waffle'
-import { Wallet } from 'ethers'
+import { BigNumber, Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 import { parseEth, setupTruefi2 } from 'utils'
 
@@ -21,14 +21,17 @@ describe('TrueCreditLine', () => {
   let token: MockTrueCurrency
   let creditLine: TestTrueCreditLine
 
+  const PRECISION = BigNumber.from(10).pow(30)
+
   const fullReward = parseEth(1)
   const splitReward = fullReward.div(2)
+  const principalDebt = parseEth(1000)
 
   beforeEachWithFixture(async (wallets) => {
     [owner, borrower, holder, creditAgency] = wallets
 
     ;({ standardPool: pool, standardToken: token } = await setupTruefi2(owner))
-    creditLine = await deployContract(owner, TestTrueCreditLine__factory, [creditAgency.address, borrower.address, pool.address, parseEth(1000)])
+    creditLine = await deployContract(owner, TestTrueCreditLine__factory, [creditAgency.address, borrower.address, pool.address, principalDebt])
 
     await token.mint(borrower.address, parseEth(1000))
     await token.connect(borrower).approve(creditLine.address, parseEth(1000))
@@ -48,11 +51,11 @@ describe('TrueCreditLine', () => {
     })
 
     it('sets principal debt', async () => {
-      expect(await creditLine.principalDebt()).to.eq(parseEth(1000))
+      expect(await creditLine.principalDebt()).to.eq(principalDebt)
     })
 
     it('mints tokens to the pool', async () => {
-      expect(await creditLine.balanceOf(pool.address)).to.eq(parseEth(1000))
+      expect(await creditLine.balanceOf(pool.address)).to.eq(principalDebt)
     })
 
     it('returns correct version', async () => {
@@ -61,10 +64,21 @@ describe('TrueCreditLine', () => {
   })
 
   describe('updating rewards', () => {
+    describe.only('cumulativeTotalRewardPerToken', () => {
+      it('initially 0', async () => {
+        expect(await creditLine.cumulativeTotalRewardPerToken()).to.eq(0)
+      })
+
+      it('updated after payInterest', async () => {
+        await creditLine.connect(borrower).payInterest(fullReward)
+        expect(await creditLine.cumulativeTotalRewardPerToken()).to.eq(fullReward.mul(PRECISION).div(principalDebt))
+      })
+    })
+
     describe('only pool holds CreditLine tokens', () => {
       it('initially 0 rewards', async () => {
-        expect(await creditLine.cumulativeTotalRewards()).to.eq(0)
-        expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(0)
+        expect(await creditLine.cumulativeTotalRewardPerToken()).to.eq(0)
+        expect(await creditLine.previousCumulatedRewardPerToken(pool.address)).to.eq(0)
         expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
         expect(await creditLine.totalInterestRewards()).to.eq(0)
         expect(await creditLine.totalClaimedRewards()).to.eq(0)
@@ -73,8 +87,8 @@ describe('TrueCreditLine', () => {
       it('updates rewards after payInterest', async () => {
         await creditLine.connect(borrower).payInterest(fullReward)
 
-        expect(await creditLine.cumulativeTotalRewards()).to.eq(fullReward)
-        expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward)
+        expect(await creditLine.cumulativeTotalRewardPerToken()).to.eq(fullReward)
+        expect(await creditLine.previousCumulatedRewardPerToken(pool.address)).to.eq(fullReward)
         expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
         expect(await creditLine.totalInterestRewards()).to.eq(fullReward)
         expect(await creditLine.totalClaimedRewards()).to.eq(fullReward)
@@ -88,15 +102,15 @@ describe('TrueCreditLine', () => {
       })
 
       it('updates rewards after payInterest', async () => {
-        expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward)
+        expect(await creditLine.previousCumulatedRewardPerToken(pool.address)).to.eq(fullReward)
         expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
         expect(await creditLine.claimableRewards(holder.address)).to.eq(0)
 
         // second call just to update
         await creditLine.connect(borrower).payInterest(parseEth(0))
 
-        expect(await creditLine.cumulativeTotalRewards()).to.eq(fullReward)
-        expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward)
+        expect(await creditLine.cumulativeTotalRewardPerToken()).to.eq(fullReward)
+        expect(await creditLine.previousCumulatedRewardPerToken(pool.address)).to.eq(fullReward)
         expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
         expect(await creditLine.totalInterestRewards()).to.eq(fullReward)
         expect(await creditLine.totalClaimedRewards()).to.eq(splitReward)
@@ -268,54 +282,54 @@ describe('TrueCreditLine', () => {
       // first interest repay
       await creditLine.connect(borrower).payInterest(fullReward)
 
-      expect(await creditLine.cumulativeTotalRewards()).to.eq(fullReward)
+      expect(await creditLine.cumulativeTotalRewardPerToken()).to.eq(fullReward)
       expect(await creditLine.totalInterestRewards()).to.eq(fullReward)
       expect(await creditLine.totalClaimedRewards()).to.eq(splitReward)
 
       // pool
       expect(await creditLine.claimable(pool.address)).to.eq(0)
       expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
-      expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward)
+      expect(await creditLine.previousCumulatedRewardPerToken(pool.address)).to.eq(fullReward)
 
       // holder
       expect(await creditLine.claimable(holder.address)).to.eq(quarterReward)
       expect(await creditLine.claimableRewards(holder.address)).to.eq(0)
-      expect(await creditLine.previousCumulatedRewards(holder.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewardPerToken(holder.address)).to.eq(0)
 
       await creditLine.connect(holder).claim()
       expect(await creditLine.claimable(holder.address)).to.eq(0)
-      expect(await creditLine.previousCumulatedRewards(holder.address)).to.eq(fullReward)
+      expect(await creditLine.previousCumulatedRewardPerToken(holder.address)).to.eq(fullReward)
 
       // owner
       expect(await creditLine.claimable(owner.address)).to.eq(quarterReward)
       expect(await creditLine.claimableRewards(owner.address)).to.eq(0)
-      expect(await creditLine.previousCumulatedRewards(owner.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewardPerToken(owner.address)).to.eq(0)
 
       // second interest repay
       await creditLine.connect(borrower).payInterest(fullReward)
 
-      expect(await creditLine.cumulativeTotalRewards()).to.eq(fullReward.mul(2))
+      expect(await creditLine.cumulativeTotalRewardPerToken()).to.eq(fullReward.mul(2))
       expect(await creditLine.totalInterestRewards()).to.eq(fullReward.mul(2))
       expect(await creditLine.totalClaimedRewards()).to.eq(splitReward.mul(2).add(quarterReward))
 
       // pool
       expect(await creditLine.claimable(pool.address)).to.eq(0)
       expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
-      expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward.mul(2))
+      expect(await creditLine.previousCumulatedRewardPerToken(pool.address)).to.eq(fullReward.mul(2))
 
       // holder
       expect(await creditLine.claimable(holder.address)).to.eq(quarterReward)
       expect(await creditLine.claimableRewards(holder.address)).to.eq(0)
-      expect(await creditLine.previousCumulatedRewards(holder.address)).to.eq(fullReward)
+      expect(await creditLine.previousCumulatedRewardPerToken(holder.address)).to.eq(fullReward)
 
       await creditLine.connect(holder).claim()
       expect(await creditLine.claimable(holder.address)).to.eq(0)
-      expect(await creditLine.previousCumulatedRewards(holder.address)).to.eq(fullReward.mul(2))
+      expect(await creditLine.previousCumulatedRewardPerToken(holder.address)).to.eq(fullReward.mul(2))
 
       // owner
       expect(await creditLine.claimable(owner.address)).to.eq(quarterReward.mul(2))
       expect(await creditLine.claimableRewards(owner.address)).to.eq(0)
-      expect(await creditLine.previousCumulatedRewards(owner.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewardPerToken(owner.address)).to.eq(0)
     })
 
     it('complex transfer scenario', async () => {
@@ -346,7 +360,7 @@ describe('TrueCreditLine', () => {
       // first interest repay
       await creditLine.connect(borrower).payInterest(fullReward)
 
-      expect(await creditLine.cumulativeTotalRewards()).to.eq(fullReward)
+      expect(await creditLine.cumulativeTotalRewardPerToken()).to.eq(fullReward)
       expect(await creditLine.totalInterestRewards()).to.eq(fullReward)
       expect(await creditLine.totalClaimedRewards()).to.eq(splitReward)
       
@@ -354,12 +368,12 @@ describe('TrueCreditLine', () => {
       // pool
       expect(await creditLine.claimable(pool.address)).to.eq(0)
       expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
-      expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward)
+      expect(await creditLine.previousCumulatedRewardPerToken(pool.address)).to.eq(fullReward)
 
       // holder
       expect(await creditLine.claimable(holder.address)).to.eq(splitReward)
       expect(await creditLine.claimableRewards(holder.address)).to.eq(0)
-      expect(await creditLine.previousCumulatedRewards(holder.address)).to.eq(0)
+      expect(await creditLine.previousCumulatedRewardPerToken(holder.address)).to.eq(0)
 
       // borrower increases debt
       await creditLine.connect(creditAgency).increasePrincipalDebt(parseEth(2000))
@@ -367,19 +381,19 @@ describe('TrueCreditLine', () => {
       // second interest repay
       await creditLine.connect(borrower).payInterest(fullReward.mul(2))
 
-      expect(await creditLine.cumulativeTotalRewards()).to.eq(fullReward.mul(3))
+      expect(await creditLine.cumulativeTotalRewardPerToken()).to.eq(fullReward.mul(3))
       expect(await creditLine.totalInterestRewards()).to.eq(fullReward.mul(3))
       expect(await creditLine.totalClaimedRewards()).to.eq(splitReward.add(fullReward.mul(2).mul(3).div(4)))
 
       // pool
       expect(await creditLine.claimable(pool.address)).to.eq(0)
       expect(await creditLine.claimableRewards(pool.address)).to.eq(0)
-      expect(await creditLine.previousCumulatedRewards(pool.address)).to.eq(fullReward.mul(3))
+      expect(await creditLine.previousCumulatedRewardPerToken(pool.address)).to.eq(fullReward.mul(3))
 
       // holder
       expect(await creditLine.claimable(holder.address)).to.eq(splitReward.add(fullReward.mul(2).mul(1).div(4)))
       expect(await creditLine.claimableRewards(holder.address)).to.eq(0)
-      expect(await creditLine.previousCumulatedRewards(holder.address)).to.eq(fullReward)
+      expect(await creditLine.previousCumulatedRewardPerToken(holder.address)).to.eq(fullReward)
     })
   })
 })

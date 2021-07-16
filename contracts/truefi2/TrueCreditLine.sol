@@ -12,6 +12,8 @@ contract TrueCreditLine is ERC20 {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
+    uint256 constant PRECISION = 1e30;
+
     address public creditAgency;
     address public borrower;
     ITrueFiPool2 public pool;
@@ -19,13 +21,13 @@ contract TrueCreditLine is ERC20 {
     uint256 public principalDebt;
 
     // track overall cumulative rewards
-    uint256 public cumulativeTotalRewards;
+    uint256 public cumulativeTotalRewardPerToken;
     /**
      * track previous cumulative rewards for accounts
      * @notice this is not cumulated reward for address,
      * it is total cumulative total reward written, last time an update has been made for that address
      */
-    mapping(address => uint256) public previousCumulatedRewards;
+    mapping(address => uint256) public previousCumulatedRewardPerToken;
 
     // track claimable rewards for accounts
     mapping(address => uint256) public claimableRewards;
@@ -79,18 +81,18 @@ contract TrueCreditLine is ERC20 {
      */
     modifier update(address account) {
         // calculate total rewards
-        uint256 newTotalInterestRewards = token().balanceOf(address(this)).add(totalClaimedRewards);
+        uint256 newTotalInterestRewards = token().balanceOf(address(this)).add(totalClaimedRewards).mul(PRECISION);
         // calculate new reward
         uint256 totalNewRewards = newTotalInterestRewards.sub(totalInterestRewards);
         // update interest rewards
         totalInterestRewards = newTotalInterestRewards;
-        cumulativeTotalRewards = cumulativeTotalRewards.add(totalNewRewards);
+        cumulativeTotalRewardPerToken = cumulativeTotalRewardPerToken.add(totalNewRewards.div(principalDebt));
         // update claimable reward for sender
         claimableRewards[account] = claimableRewards[account].add(
-            balanceOf(account).mul(cumulativeTotalRewards.sub(previousCumulatedRewards[account])).div(totalSupply())
+            balanceOf(account).mul(cumulativeTotalRewardPerToken.sub(previousCumulatedRewardPerToken[account])).div(PRECISION)
         );
         // update previous cumulative for sender
-        previousCumulatedRewards[account] = cumulativeTotalRewards;
+        previousCumulatedRewardPerToken[account] = cumulativeTotalRewardPerToken;
         _;
     }
 
@@ -113,10 +115,12 @@ contract TrueCreditLine is ERC20 {
         uint256 newTotalInterestRewards = token().balanceOf(address(this)).add(totalClaimedRewards);
         // calculate new reward
         uint256 totalNewRewards = newTotalInterestRewards.sub(totalInterestRewards);
+        // calculate next cumulative reward per token
+        uint256 nextcumulativeRewardPerToken = cumulativeTotalRewardPerToken.add(totalNewRewards.div(principalDebt));
         // return claimable reward for this account
         // prettier-ignore
         return claimableRewards[account].add(
-            balanceOf(account).mul(cumulativeTotalRewards.add(totalNewRewards).sub(previousCumulatedRewards[account])).div(totalSupply())
+            balanceOf(account).mul(nextcumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[account])).div(PRECISION)
         );
     }
 
