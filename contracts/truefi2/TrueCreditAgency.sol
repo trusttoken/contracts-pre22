@@ -22,7 +22,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         uint16 borrowersCount;
         uint128 timestamp;
         uint256 rate;
-        uint256 cumulativeInterestPerShare; // How much interest was gathered by 1 wei times 10^18
+        uint256 cumulativeInterestPerShare; // How much interest was gathered by 1 wei times 10^27
         uint256 totalBorrowed;
         mapping(address => SavedInterest) savedInterest;
     }
@@ -49,6 +49,15 @@ contract TrueCreditAgency is UpgradeableClaimable {
     uint256 public creditAdjustmentCoefficient;
 
     ITrueFiCreditOracle public creditOracle;
+
+    /**
+     * This bitmap is used to non-empty buckets.
+     * If at least one borrower with a score n has an opened credit line, the n-th bit of the bitmap is set
+     * Profiling result of calling poke() with one borrower:
+     * - 650k gas used without using bitmap
+     * - 120k gas used using bitmap
+     */
+    uint256 public usedBucketsBitmap;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -129,17 +138,20 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function poke(ITrueFiPool2 pool) public {
-        for (uint16 i = 1; i <= MAX_CREDIT_SCORE; i++) {
-            CreditScoreBucket storage bucket = buckets[pool][i];
-            if (bucket.borrowersCount == 0) {
+        uint256 bitMap = usedBucketsBitmap;
+        CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
+        uint256 timeNow = block.timestamp;
+
+        for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
+            if (bitMap & 1 == 0) {
                 continue;
             }
-            uint256 timeNow = block.timestamp;
+
+            CreditScoreBucket storage bucket = creditScoreBuckets[i];
 
             bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
-                bucket.rate.mul(1e14).mul(timeNow.sub(bucket.timestamp)).div(365 days)
+                bucket.rate.mul(1e23).mul(timeNow.sub(bucket.timestamp)).div(365 days)
             );
-
             bucket.rate = _creditScoreAdjustmentRate(uint8(i)).add(riskPremium);
             bucket.timestamp = uint128(timeNow);
         }
@@ -152,11 +164,11 @@ contract TrueCreditAgency is UpgradeableClaimable {
         uint8 newScore,
         uint256 totalBorrowed
     ) internal {
-        uint256 totalBorrowerInterest = oldScore > 0 ? _takeOutOfBucket(pool, buckets[pool][oldScore], borrower) : 0;
+        uint256 totalBorrowerInterest = oldScore > 0 ? _takeOutOfBucket(pool, buckets[pool][oldScore], oldScore, borrower) : 0;
         borrowed[pool][borrower] = totalBorrowed;
         creditScore[pool][borrower] = newScore;
         CreditScoreBucket storage bucket = buckets[pool][newScore];
-        _putIntoBucket(pool, bucket, borrower);
+        _putIntoBucket(pool, bucket, newScore, borrower);
         poke(pool);
         bucket.savedInterest[borrower] = SavedInterest(totalBorrowerInterest, bucket.cumulativeInterestPerShare);
     }
@@ -164,10 +176,14 @@ contract TrueCreditAgency is UpgradeableClaimable {
     function _takeOutOfBucket(
         ITrueFiPool2 pool,
         CreditScoreBucket storage bucket,
+        uint8 bucketNumber,
         address borrower
     ) internal returns (uint256 totalBorrowerInterest) {
         require(bucket.borrowersCount > 0, "TrueCreditAgency: bucket is empty");
-        bucket.borrowersCount = bucket.borrowersCount - 1;
+        bucket.borrowersCount -= 1;
+        if (bucket.borrowersCount == 0) {
+            usedBucketsBitmap &= ~(uint256(1) << bucketNumber);
+        }
         bucket.totalBorrowed = bucket.totalBorrowed.sub(borrowed[pool][borrower]);
         totalBorrowerInterest = _interest(pool, bucket, borrower);
         delete bucket.savedInterest[borrower];
@@ -176,9 +192,13 @@ contract TrueCreditAgency is UpgradeableClaimable {
     function _putIntoBucket(
         ITrueFiPool2 pool,
         CreditScoreBucket storage bucket,
+        uint8 bucketNumber,
         address borrower
     ) internal {
         bucket.borrowersCount = bucket.borrowersCount + 1;
+        if (bucket.borrowersCount == 1) {
+            usedBucketsBitmap |= uint256(1) << bucketNumber;
+        }
         bucket.totalBorrowed = bucket.totalBorrowed.add(borrowed[pool][borrower]);
     }
 
@@ -194,7 +214,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
                 bucket.cumulativeInterestPerShare
                     .sub(bucket.savedInterest[borrower].perShare)
                     .mul(borrowedByBorrower)
-                    .div(1e18)
+                    .div(1e27)
             ).add(
                 block.timestamp.sub(bucket.timestamp)
                 .mul(borrowedByBorrower)
