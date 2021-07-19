@@ -619,7 +619,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * Equals to 1 - utilization.
      * @return Calculated ratio in basis points
      */
-    function liquidRatio() public view returns (uint256) {
+    function liquidRatio() public override view returns (uint256) {
         return liquidValue().mul(BASIS_PRECISION).div(poolValue());
     }
 
