@@ -112,7 +112,7 @@ contract TrueCreditLine is ERC20 {
      */
     function claimable(address account) external view returns (uint256) {
         // calculate total rewards (including not updated)
-        uint256 newTotalInterestRewards = token().balanceOf(address(this)).add(totalClaimedRewards);
+        uint256 newTotalInterestRewards = token().balanceOf(address(this)).add(totalClaimedRewards).mul(PRECISION);
         // calculate new reward
         uint256 totalNewRewards = newTotalInterestRewards.sub(totalInterestRewards);
         // calculate next cumulative reward per token

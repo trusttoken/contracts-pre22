@@ -16,6 +16,7 @@ contract TestTrueCreditLine is TrueCreditLine {
     ) public TrueCreditLine(_creditAgency, _borrower, _pool, _principalDebt) {}
 
     function mint(address to, uint256 amount) external {
+        principalDebt = principalDebt.add(amount);
         _mint(to, amount);
     }
 }
