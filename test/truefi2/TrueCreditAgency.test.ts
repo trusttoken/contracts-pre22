@@ -20,7 +20,7 @@ import {
   YEAR,
 } from 'utils'
 import { expect } from 'chai'
-import { AddressZero, MaxUint256 } from '@ethersproject/constants'
+import { AddressZero } from '@ethersproject/constants'
 import { MockProvider } from 'ethereum-waffle'
 
 describe('TrueCreditAgency', () => {
@@ -251,19 +251,14 @@ describe('TrueCreditAgency', () => {
       [80, 1200],
       [90, 4950],
       [95, 19950],
-      [99, 499950],
+      [99, 50000],
+      [100, 50000],
     ].map(([utilization, adjustment]) =>
       it(`returns ${adjustment} if utilization is at ${utilization} percent`, async () => {
         await setUtilization(tusdPool, utilization)
         expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(adjustment)
       }),
     )
-
-    it('returns infinity if utilization is at 100 percent', async () => {
-      await setUtilization(tusdPool, 100)
-      expect(await tusdPool.utilization()).to.eq(1e4)
-      expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(MaxUint256)
-    })
   })
 
   describe('Repaying', () => {

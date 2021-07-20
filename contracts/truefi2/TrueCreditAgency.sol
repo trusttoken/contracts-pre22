@@ -7,13 +7,13 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
-import {TrueFiPool2} from "./TrueFiPool2.sol";
 
 contract TrueCreditAgency is UpgradeableClaimable {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
 
-    uint8 MAX_CREDIT_SCORE = 255;
+    uint8 constant MAX_CREDIT_SCORE = 255;
+    uint256 constant MAX_RATE_CAP = 50000;
 
     struct SavedInterest {
         uint256 total;
@@ -110,21 +110,24 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     function _creditScoreAdjustmentRate(uint8 score) internal view returns (uint256) {
         if (score == 0) {
-            return 50000; // Cap rate by 500%
+            return MAX_RATE_CAP; // Cap rate by 500%
         }
-        return min(creditAdjustmentCoefficient.mul(MAX_CREDIT_SCORE - score).div(score), 50000);
+        return min(creditAdjustmentCoefficient.mul(MAX_CREDIT_SCORE - score).div(score), MAX_RATE_CAP);
     }
 
     function utilizationAdjustmentRate(ITrueFiPool2 pool) public view returns (uint256) {
         uint256 liquidRatio = pool.liquidRatio();
         if (liquidRatio == 0) {
             // if utilization is at 100 %
-            return type(uint256).max;
+            return MAX_RATE_CAP; // Cap rate by 500%
         }
         return
-            utilizationAdjustmentCoefficient
-                .mul((1e4**(utilizationAdjustmentPower + 1)).div(liquidRatio**utilizationAdjustmentPower).sub(1e4))
-                .div(1e4);
+            min(
+                utilizationAdjustmentCoefficient
+                    .mul((1e4**(utilizationAdjustmentPower + 1)).div(liquidRatio**utilizationAdjustmentPower).sub(1e4))
+                    .div(1e4),
+                MAX_RATE_CAP
+            );
     }
 
     function interest(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
