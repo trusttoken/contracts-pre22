@@ -60,7 +60,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
      * - 120k gas used using bitmap
      */
     uint256 public usedBucketsBitmap;
-    
+
     // basis precision: 10000 = 100%
     uint256 public utilizationAdjustmentCoefficient;
 
