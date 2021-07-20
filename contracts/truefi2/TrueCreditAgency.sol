@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20, IERC20, SafeMath} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
+
+import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
+import {TrueFiPool2} from "./TrueFiPool2.sol";
 
 contract TrueCreditAgency is UpgradeableClaimable {
     using SafeERC20 for ERC20;
@@ -50,6 +52,11 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     ITrueFiCreditOracle public creditOracle;
 
+    // basis precision: 10000 = 100%
+    uint256 public utilizationAdjustmentCoefficient;
+
+    uint256 public utilizationAdjustmentPower;
+
     // ======= STORAGE DECLARATION END ============
 
     event RiskPremiumChanged(uint256 newRate);
@@ -63,6 +70,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
         riskPremium = _riskPremium;
         creditOracle = _creditOracle;
         creditAdjustmentCoefficient = 1000;
+        utilizationAdjustmentCoefficient = 50;
+        utilizationAdjustmentPower = 2;
     }
 
     function setRiskPremium(uint256 newRate) external onlyOwner {
@@ -104,6 +113,18 @@ contract TrueCreditAgency is UpgradeableClaimable {
             return 50000; // Cap rate by 500%
         }
         return min(creditAdjustmentCoefficient.mul(MAX_CREDIT_SCORE - score).div(score), 50000);
+    }
+
+    function utilizationAdjustmentRate(ITrueFiPool2 pool) public view returns (uint256) {
+        uint256 liquidRatio = pool.liquidRatio();
+        if (liquidRatio == 0) {
+            // if utilization is at 100 %
+            return type(uint256).max;
+        }
+        return
+            utilizationAdjustmentCoefficient
+                .mul((1e4**(utilizationAdjustmentPower + 1)).div(liquidRatio**utilizationAdjustmentPower).sub(1e4))
+                .div(1e4);
     }
 
     function interest(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
