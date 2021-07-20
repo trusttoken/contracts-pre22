@@ -275,6 +275,65 @@ describe('TrueCreditAgency', () => {
     })
   })
 
+  describe('Credit score change', () => {
+    const usedBucketSet = (...usedBuckets: number[]) => usedBuckets
+      .map((bucket) => BigNumber.from(2).pow(bucket))
+      .reduce((sum, bit) => sum.add(bit), BigNumber.from(0))
+
+    beforeEach(async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await creditAgency.allowBorrower(owner.address, true)
+      await creditOracle.setScore(owner.address, 200)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await creditAgency.borrow(tusdPool.address, 2000)
+    })
+
+    it('borrower becomes part of the bucket with a corresponding credit score', async () => {
+      const bucket255 = await creditAgency.buckets(tusdPool.address, 255)
+      const bucket200 = await creditAgency.buckets(tusdPool.address, 200)
+      expect(bucket255.borrowersCount).to.equal(1)
+      expect(bucket200.borrowersCount).to.equal(1)
+      expect(bucket255.totalBorrowed).to.equal(1000)
+      expect(bucket200.totalBorrowed).to.equal(2000)
+    })
+
+    it('usedBuckets are constructed by setting bits for buckets on positions of buckets that have any borrowers', async () => {
+      expect(await creditAgency.usedBucketsBitmap()).to.equal(usedBucketSet(200, 255))
+    })
+
+    it('when score changes, borrower is moved between buckets and used bucket map is updated', async () => {
+      await creditOracle.setScore(owner.address, 100)
+      await creditAgency.updateCreditScore(tusdPool.address, owner.address)
+      const bucket200 = await creditAgency.buckets(tusdPool.address, 200)
+      const bucket100 = await creditAgency.buckets(tusdPool.address, 100)
+      expect(bucket200.borrowersCount).to.equal(0)
+      expect(bucket100.borrowersCount).to.equal(1)
+      expect(bucket200.totalBorrowed).to.equal(0)
+      expect(bucket100.totalBorrowed).to.equal(2000)
+      expect(await creditAgency.usedBucketsBitmap()).to.equal(usedBucketSet(100, 255))
+    })
+
+    it('correctly updates bucket map when adding borrower to non-empty bucket', async () => {
+      await creditOracle.setScore(owner.address, 255)
+      await creditAgency.updateCreditScore(tusdPool.address, owner.address)
+      const bucket255 = await creditAgency.buckets(tusdPool.address, 255)
+      expect(bucket255.borrowersCount).to.equal(2)
+      expect(bucket255.totalBorrowed).to.equal(3000)
+      expect(await creditAgency.usedBucketsBitmap()).to.equal(usedBucketSet(255))
+    })
+
+    it('correctly updates bucket map when removing borrowers from bucket with multiple borrowers', async () => {
+      await creditOracle.setScore(owner.address, 255)
+      await creditAgency.updateCreditScore(tusdPool.address, owner.address)
+      await creditOracle.setScore(borrower.address, 150)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
+      const bucket255 = await creditAgency.buckets(tusdPool.address, 255)
+      expect(bucket255.borrowersCount).to.equal(1)
+      expect(bucket255.totalBorrowed).to.equal(2000)
+      expect(await creditAgency.usedBucketsBitmap()).to.equal(usedBucketSet(255, 150))
+    })
+  })
+
   describe('Interest calculation', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
