@@ -1,32 +1,56 @@
 import { BigNumber, Wallet } from 'ethers'
 import {
+  LoanFactory2,
+  TrueLender2,
   MockTrueCurrency,
+  StkTruToken,
   TrueCreditAgency,
   TrueCreditAgency__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
   TrueFiPool2,
+  TrueRatingAgencyV2,
 } from 'contracts'
-import { beforeEachWithFixture, parseEth, setupTruefi2, timeTravel as _timeTravel, YEAR } from 'utils'
+import {
+  beforeEachWithFixture,
+  createApprovedLoan, DAY,
+  parseEth,
+  setupTruefi2,
+  timeTravel as _timeTravel,
+  YEAR,
+} from 'utils'
 import { expect } from 'chai'
 import { AddressZero } from '@ethersproject/constants'
+import { MockProvider } from 'ethereum-waffle'
 
 describe('TrueCreditAgency', () => {
+  let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
   let creditAgency: TrueCreditAgency
   let tusd: MockTrueCurrency
   let tusdPool: TrueFiPool2
+  let tru: MockTrueCurrency
+  let stkTru: StkTruToken
+  let loanFactory: LoanFactory2
+  let rater: TrueRatingAgencyV2
+  let lender: TrueLender2
   let creditOracle: TrueFiCreditOracle
   let timeTravel: (time: number) => void
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower] = wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
+    provider = _provider
 
     ;({
       standardToken: tusd,
       standardPool: tusdPool,
+      loanFactory,
+      tru,
+      stkTru,
+      rater,
+      lender,
     } = await setupTruefi2(owner))
 
     await tusd.mint(owner.address, parseEth(1e7))
@@ -187,6 +211,52 @@ describe('TrueCreditAgency', () => {
         await creditOracle.setScore(borrower.address, score)
         await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
         expect(await creditAgency.creditScoreAdjustmentRate(tusdPool.address, borrower.address)).to.equal(adjustment)
+      }),
+    )
+  })
+
+  describe('utilizationAdjustmentRate', () => {
+    const setUtilization = async (pool: TrueFiPool2, utilization: number) => {
+      if (utilization === 0) {
+        return
+      }
+      const utilizationAmount = (await pool.poolValue()).mul(utilization).div(100)
+      const loan = await createApprovedLoan(
+        rater, tru, stkTru,
+        loanFactory, borrower, tusdPool,
+        utilizationAmount, DAY, 1,
+        owner, provider,
+      )
+      await lender.connect(borrower).fund(loan.address)
+    }
+
+    describe('setUtilization', () => {
+      [0, 20, 50, 80, 100].map((utilization) => {
+        it(`sets utilization to ${utilization} percent`, async () => {
+          await setUtilization(tusdPool, utilization)
+          expect(await tusdPool.utilization()).to.eq(utilization * 100)
+        })
+      })
+    })
+
+    ;[
+      [0, 0],
+      [10, 11],
+      [20, 28],
+      [30, 52],
+      [40, 88],
+      [50, 150],
+      [60, 262],
+      [70, 505],
+      [80, 1200],
+      [90, 4950],
+      [95, 19950],
+      [99, 50000],
+      [100, 50000],
+    ].map(([utilization, adjustment]) =>
+      it(`returns ${adjustment} if utilization is at ${utilization} percent`, async () => {
+        await setUtilization(tusdPool, utilization)
+        expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(adjustment)
       }),
     )
   })
