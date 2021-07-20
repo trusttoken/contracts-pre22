@@ -123,9 +123,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
         }
         return
             min(
-                utilizationAdjustmentCoefficient
-                    .mul((1e4**(utilizationAdjustmentPower + 1)).div(liquidRatio**utilizationAdjustmentPower).sub(1e4))
-                    .div(1e4),
+                utilizationAdjustmentCoefficient.mul(1e4**utilizationAdjustmentPower).div(liquidRatio**utilizationAdjustmentPower).sub(
+                    utilizationAdjustmentCoefficient
+                ),
                 MAX_RATE_CAP
             );
     }
