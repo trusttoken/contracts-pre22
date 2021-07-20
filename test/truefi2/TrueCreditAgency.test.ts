@@ -201,19 +201,19 @@ describe('TrueCreditAgency', () => {
         .to.be.revertedWith('TrueCreditAgency: The pool is not whitelisted for borrowing')
     })
 
-    it('updates nextRepaymentTerm', async () => {
-      expect(await creditAgency.nextRepaymentTerm(tusdPool.address, borrower.address)).to.eq(0)
+    it('updates nextRepaymentTimestamp', async () => {
+      expect(await creditAgency.nextRepaymentTimestamp(tusdPool.address, borrower.address)).to.eq(0)
       const tx = await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
-      expect(await creditAgency.nextRepaymentTerm(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+      expect(await creditAgency.nextRepaymentTimestamp(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
     })
 
-    it('does not update nextRepaymentTerm on debt increase', async () => {
+    it('does not update nextRepaymentTimestamp on debt increase', async () => {
       const tx = await creditAgency.connect(borrower).borrow(tusdPool.address, 500)
       const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
-      expect(await creditAgency.nextRepaymentTerm(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+      expect(await creditAgency.nextRepaymentTimestamp(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
       await creditAgency.connect(borrower).borrow(tusdPool.address, 500)
-      expect(await creditAgency.nextRepaymentTerm(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+      expect(await creditAgency.nextRepaymentTimestamp(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
     })
 
     it('correctly handles the case when credit score is changing', async () => {
@@ -313,10 +313,10 @@ describe('TrueCreditAgency', () => {
       expect(await tusd.balanceOf(tusdPool.address)).to.equal(parseEth(1e7))
     })
 
-    it('updates nextRepaymentTerm', async () => {
+    it('updates nextRepaymentTimestamp', async () => {
       const tx = await creditAgency.connect(borrower).repay(tusdPool.address, 1000)
       const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
-      expect(await creditAgency.nextRepaymentTerm(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+      expect(await creditAgency.nextRepaymentTimestamp(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
     })
   })
 

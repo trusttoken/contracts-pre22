@@ -39,7 +39,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     mapping(ITrueFiPool2 => mapping(address => uint8)) public creditScore;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public borrowed;
-    mapping(ITrueFiPool2 => mapping(address => uint256)) public nextRepaymentTerm;
+    mapping(ITrueFiPool2 => mapping(address => uint256)) public nextRepaymentTimestamp;
 
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
 
@@ -161,7 +161,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         uint8 newScore = creditOracle.getScore(msg.sender);
         uint256 currentDebt = borrowed[pool][msg.sender];
         if (currentDebt == 0) {
-            nextRepaymentTerm[pool][msg.sender] = block.timestamp.add(repaymentPeriod);
+            nextRepaymentTimestamp[pool][msg.sender] = block.timestamp.add(repaymentPeriod);
         }
 
         _rebucket(pool, msg.sender, oldScore, newScore, currentDebt.add(amount));
@@ -171,7 +171,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function repay(ITrueFiPool2 pool, uint256 amount) external {
-        nextRepaymentTerm[pool][msg.sender] = block.timestamp.add(repaymentPeriod);
+        nextRepaymentTimestamp[pool][msg.sender] = block.timestamp.add(repaymentPeriod);
         pool.token().safeTransferFrom(msg.sender, address(this), amount);
         pool.token().safeApprove(address(pool), amount);
         pool.repay(amount);
