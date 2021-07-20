@@ -14,7 +14,6 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     uint8 constant MAX_CREDIT_SCORE = 255;
     uint256 constant MAX_RATE_CAP = 50000;
-    uint256 constant REPAYMENT_PERIOD = 31 days;
 
     struct SavedInterest {
         uint256 total;
@@ -46,6 +45,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     mapping(address => bool) public isBorrowerAllowed;
 
+    uint256 public repaymentPeriod;
+
     // basis precision: 10000 = 100%
     uint256 public riskPremium;
 
@@ -76,6 +77,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     event PoolAllowed(ITrueFiPool2 pool, bool isAllowed);
 
+    event RepaymentPeriodChanged(uint256 newPeriod);
+
     function initialize(ITrueFiCreditOracle _creditOracle, uint256 _riskPremium) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         riskPremium = _riskPremium;
@@ -83,6 +86,12 @@ contract TrueCreditAgency is UpgradeableClaimable {
         creditAdjustmentCoefficient = 1000;
         utilizationAdjustmentCoefficient = 50;
         utilizationAdjustmentPower = 2;
+        repaymentPeriod = 31 days;
+    }
+
+    modifier onlyAllowedBorrowers() {
+        require(isBorrowerAllowed[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
+        _;
     }
 
     function setRiskPremium(uint256 newRate) external onlyOwner {
@@ -90,9 +99,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
         emit RiskPremiumChanged(newRate);
     }
 
-    modifier onlyAllowedBorrowers() {
-        require(isBorrowerAllowed[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
-        _;
+    function setRepaymentPeriod(uint256 newPeriod) external onlyOwner {
+        repaymentPeriod = newPeriod;
+        emit RepaymentPeriodChanged(newPeriod);
     }
 
     function allowBorrower(address who, bool status) external onlyOwner {
@@ -150,7 +159,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
         uint8 oldScore = creditScore[pool][msg.sender];
         uint8 newScore = creditOracle.getScore(msg.sender);
-        nextRepaymentTerm[pool][msg.sender] = block.timestamp.add(REPAYMENT_PERIOD);
+        nextRepaymentTerm[pool][msg.sender] = block.timestamp.add(repaymentPeriod);
 
         _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].add(amount));
 
@@ -159,7 +168,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function repay(ITrueFiPool2 pool, uint256 amount) external {
-        nextRepaymentTerm[pool][msg.sender] = block.timestamp.add(REPAYMENT_PERIOD);
+        nextRepaymentTerm[pool][msg.sender] = block.timestamp.add(repaymentPeriod);
         pool.token().safeTransferFrom(msg.sender, address(this), amount);
         pool.token().safeApprove(address(pool), amount);
         pool.repay(amount);

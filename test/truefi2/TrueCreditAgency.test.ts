@@ -80,6 +80,10 @@ describe('TrueCreditAgency', () => {
     it('sets creditOracle', async () => {
       expect(await creditAgency.creditOracle()).to.equal(creditOracle.address)
     })
+
+    it('sets repaymentPeriod', async () => {
+      expect(await creditAgency.repaymentPeriod()).to.equal(MONTH)
+    })
   })
 
   describe('Ownership', () => {
@@ -112,6 +116,24 @@ describe('TrueCreditAgency', () => {
       await expect(creditAgency.setRiskPremium(1))
         .to.emit(creditAgency, 'RiskPremiumChanged')
         .withArgs(1)
+    })
+  })
+
+  describe('setRepaymentPeriod', () => {
+    it('only owner can set repayment period', async () => {
+      await expect(creditAgency.connect(borrower).setRepaymentPeriod(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('period is properly set', async () => {
+      await creditAgency.setRepaymentPeriod(DAY)
+      expect(await creditAgency.repaymentPeriod()).to.equal(DAY)
+    })
+
+    it('emits a proper event', async () => {
+      await expect(creditAgency.setRepaymentPeriod(DAY))
+        .to.emit(creditAgency, 'RepaymentPeriodChanged')
+        .withArgs(DAY)
     })
   })
 
