@@ -38,6 +38,8 @@ describe('TrueCreditAgency', () => {
   let creditOracle: TrueFiCreditOracle
   let timeTravel: (time: number) => void
 
+  const MONTH = DAY * 31
+
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower] = wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
@@ -175,6 +177,13 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowPool(tusdPool.address, false)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
         .to.be.revertedWith('TrueCreditAgency: The pool is not whitelisted for borrowing')
+    })
+
+    it('updates nextRepaymentTerm', async () => {
+      expect(await creditAgency.nextRepaymentTerm(tusdPool.address, borrower.address)).to.eq(0)
+      const tx = await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await creditAgency.nextRepaymentTerm(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
     })
 
     it('correctly handles the case when credit score is changing', async () => {

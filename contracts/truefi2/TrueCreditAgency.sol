@@ -14,6 +14,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     uint8 constant MAX_CREDIT_SCORE = 255;
     uint256 constant MAX_RATE_CAP = 50000;
+    uint256 constant REPAYMENT_PERIOD = 31 days;
 
     struct SavedInterest {
         uint256 total;
@@ -39,6 +40,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     mapping(ITrueFiPool2 => mapping(address => uint8)) public creditScore;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public borrowed;
+    mapping(ITrueFiPool2 => mapping(address => uint256)) public nextRepaymentTerm;
 
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
 
@@ -148,6 +150,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
         uint8 oldScore = creditScore[pool][msg.sender];
         uint8 newScore = creditOracle.getScore(msg.sender);
+        nextRepaymentTerm[pool][msg.sender] = block.timestamp.add(REPAYMENT_PERIOD);
 
         _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].add(amount));
 
