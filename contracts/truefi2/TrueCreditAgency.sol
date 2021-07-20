@@ -224,7 +224,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         uint256 adjustment = borrowLimitAdjustment(score);
         uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(10000);
         uint256 poolBorrowMax = min(pool.poolValue().mul(borrowLimitConfig.poolValueLimitCoefficient).div(10000), creditLimit);
-        return floorSub(poolBorrowMax, totalBorrowed(borrower, poolDecimals));
+        return saturatingSub(poolBorrowMax, totalBorrowed(borrower, poolDecimals));
     }
 
     function interest(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
@@ -336,7 +336,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
             );
     }
 
-    function floorSub(uint256 a, uint256 b) internal pure returns (uint256) {
+    function saturatingSub(uint256 a, uint256 b) internal pure returns (uint256) {
         if (b > a) {
             return 0;
         }

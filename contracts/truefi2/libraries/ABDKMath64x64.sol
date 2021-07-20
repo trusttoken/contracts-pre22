@@ -193,6 +193,14 @@ library ABDKMath64x64 {
         return int128(result);
     }
 
+    /**
+     * @dev calculate x^y using the fact that
+     * x^y = (2^log2(x))^y = 2^(y * log2(x))
+     *
+     * @param x is 64.64-bit fixed point number
+     * @param y is basis-point precision (10000 = 100%)
+     * @return signed 64.64-bit fixed point number
+     */
     function pow(int128 x, uint256 y) internal pure returns (int128) {
         if (x == 0) {
             return 0;
