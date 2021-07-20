@@ -273,14 +273,20 @@ describe('TrueCreditAgency', () => {
   describe('Repaying', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await tusd.connect(borrower).approve(creditAgency.address, 1000)
     })
 
     it('repays the funds to the pool', async () => {
-      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
-      await tusd.connect(borrower).approve(creditAgency.address, 1000)
       await creditAgency.connect(borrower).repay(tusdPool.address, 1000)
       expect(await tusd.balanceOf(borrower.address)).to.equal(0)
       expect(await tusd.balanceOf(tusdPool.address)).to.equal(parseEth(1e7))
+    })
+
+    it('updates nextRepaymentTerm', async () => {
+      const tx = await creditAgency.connect(borrower).repay(tusdPool.address, 1000)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await creditAgency.nextRepaymentTerm(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
     })
   })
 

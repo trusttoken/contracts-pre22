@@ -159,6 +159,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function repay(ITrueFiPool2 pool, uint256 amount) external {
+        nextRepaymentTerm[pool][msg.sender] = block.timestamp.add(REPAYMENT_PERIOD);
         pool.token().safeTransferFrom(msg.sender, address(this), amount);
         pool.token().safeApprove(address(pool), amount);
         pool.repay(amount);
