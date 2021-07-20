@@ -159,9 +159,12 @@ contract TrueCreditAgency is UpgradeableClaimable {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
         uint8 oldScore = creditScore[pool][msg.sender];
         uint8 newScore = creditOracle.getScore(msg.sender);
-        nextRepaymentTerm[pool][msg.sender] = block.timestamp.add(repaymentPeriod);
+        uint256 currentDebt = borrowed[pool][msg.sender];
+        if (currentDebt == 0) {
+            nextRepaymentTerm[pool][msg.sender] = block.timestamp.add(repaymentPeriod);
+        }
 
-        _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].add(amount));
+        _rebucket(pool, msg.sender, oldScore, newScore, currentDebt.add(amount));
 
         pool.borrow(amount);
         pool.token().safeTransfer(msg.sender, amount);

@@ -208,6 +208,14 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.nextRepaymentTerm(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
     })
 
+    it('does not update nextRepaymentTerm on debt increase', async () => {
+      const tx = await creditAgency.connect(borrower).borrow(tusdPool.address, 500)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await creditAgency.nextRepaymentTerm(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 500)
+      expect(await creditAgency.nextRepaymentTerm(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+    })
+
     it('correctly handles the case when credit score is changing', async () => {
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.equal(255)
