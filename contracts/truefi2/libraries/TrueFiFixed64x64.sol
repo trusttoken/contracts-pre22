@@ -72,7 +72,7 @@ library TrueFiFixed64x64 {
      * @param y signed 64.64-bit fixed point number
      * @return signed 64.64-bit fixed point number
      */
-    function powi(int128 x, int128 y) internal pure returns (int128) {
+    function fixed64x64Pow(int128 x, int128 y) internal pure returns (int128) {
         if (x == 0) {
             return 0;
         }

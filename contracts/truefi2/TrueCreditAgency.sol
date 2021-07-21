@@ -212,7 +212,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     function borrowLimitAdjustment(uint256 score) public view returns (uint256) {
         return
-            ((score.fromUInt() / MAX_CREDIT_SCORE).powi(uint256(borrowLimitConfig.limitAdjustmentPower).fromUInt() / 10000) * 10000)
+            ((score.fromUInt() / MAX_CREDIT_SCORE).fixed64x64Pow(uint256(borrowLimitConfig.limitAdjustmentPower).fromUInt() / 10000) *
+                10000)
                 .toUInt();
     }
 
