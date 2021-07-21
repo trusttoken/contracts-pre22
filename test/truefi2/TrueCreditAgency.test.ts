@@ -261,17 +261,22 @@ describe('TrueCreditAgency', () => {
     )
   })
 
-  describe('Repaying', () => {
+  describe('payInterest', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
+      await creditAgency.setRiskPremium(1000)
+      await creditOracle.setScore(owner.address, 255)
     })
 
-    it('repays the funds to the pool', async () => {
+    it('pays interest to the pool', async () => {
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await timeTravel(YEAR)
+      await creditAgency.poke(tusdPool.address)
       await tusd.connect(borrower).approve(creditAgency.address, 1000)
-      await creditAgency.connect(borrower).repay(tusdPool.address, 1000)
-      expect(await tusd.balanceOf(borrower.address)).to.equal(0)
-      expect(await tusd.balanceOf(tusdPool.address)).to.equal(parseEth(1e7))
+      await creditAgency.connect(borrower).payInterest(tusdPool.address)
+
+      expect(await tusd.balanceOf(borrower.address)).to.be.closeTo(BigNumber.from(900), 2)
+      expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(900), 2)
     })
   })
 

@@ -139,7 +139,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
             );
     }
 
-    function interest(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
+    function interest(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
         CreditScoreBucket storage bucket = buckets[pool][creditScore[pool][borrower]];
         return _interest(pool, bucket, borrower);
     }
@@ -155,10 +155,11 @@ contract TrueCreditAgency is UpgradeableClaimable {
         pool.token().safeTransfer(msg.sender, amount);
     }
 
-    function repay(ITrueFiPool2 pool, uint256 amount) external {
-        pool.token().safeTransferFrom(msg.sender, address(this), amount);
-        pool.token().safeApprove(address(pool), amount);
-        pool.repay(amount);
+    function payInterest(ITrueFiPool2 pool) external {
+        uint256 accruedInterest = interest(pool, msg.sender);
+        pool.token().safeTransferFrom(msg.sender, address(this), accruedInterest);
+        pool.token().safeApprove(address(pool), accruedInterest);
+        pool.repay(accruedInterest);
     }
 
     function poke(ITrueFiPool2 pool) public {
