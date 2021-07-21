@@ -73,7 +73,7 @@ contract AaveBaseRateOracle {
 
     function getAaveDepositAPY(address _asset) public view returns (uint256) {
         (, , , uint128 currentLiquidityRate, , , , , , , , ) = aavePool.getReserveData(_asset);
-        return uint256(currentLiquidityRate).mul(100).div(1e27);
+        return uint256(currentLiquidityRate).div(1e23);
     }
 
     /**
