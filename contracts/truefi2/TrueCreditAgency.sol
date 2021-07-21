@@ -161,12 +161,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function payInterest(ITrueFiPool2 pool) public {
-        uint256 totalInterest = interest(pool, msg.sender);
-        uint256 accruedInterest = totalInterest.sub(paidTotalInterest[pool][msg.sender]);
-        paidTotalInterest[pool][msg.sender] = totalInterest;
-        pool.token().safeTransferFrom(msg.sender, address(this), accruedInterest);
-        pool.token().safeApprove(address(pool), accruedInterest);
-        pool.repay(accruedInterest);
+        uint256 accruedInterest = _payInterestWithoutTransfer(pool);
+        _repay(pool, accruedInterest);
         emit InterestPaid(pool, msg.sender, accruedInterest);
     }
 
@@ -178,10 +174,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
         uint8 newScore = creditOracle.getScore(msg.sender);
         _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(amount));
 
-        payInterest(pool);
-        pool.token().safeTransferFrom(msg.sender, address(this), amount);
-        pool.token().safeApprove(address(pool), amount);
-        pool.repay(amount);
+        uint256 accruedInterest = _payInterestWithoutTransfer(pool);
+        _repay(pool, amount.add(accruedInterest));
         emit PrincipalRepaid(pool, msg.sender, amount);
     }
 
@@ -270,6 +264,19 @@ contract TrueCreditAgency is UpgradeableClaimable {
                 .div(10000)
                 .div(365 days)
             );
+    }
+
+    function _payInterestWithoutTransfer(ITrueFiPool2 pool) internal returns (uint256) {
+        uint256 totalInterest = interest(pool, msg.sender);
+        uint256 accruedInterest = totalInterest.sub(paidTotalInterest[pool][msg.sender]);
+        paidTotalInterest[pool][msg.sender] = totalInterest;
+        return accruedInterest;
+    }
+
+    function _repay(ITrueFiPool2 pool, uint256 amount) internal {
+        pool.token().safeTransferFrom(msg.sender, address(this), amount);
+        pool.token().safeApprove(address(pool), amount);
+        pool.repay(amount);
     }
 
     function min(uint256 a, uint256 b) internal pure returns (uint256) {

@@ -261,7 +261,7 @@ describe('TrueCreditAgency', () => {
     )
   })
 
-  describe.only('payInterest', () => {
+  describe('payInterest', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.setRiskPremium(1000)
@@ -279,6 +279,12 @@ describe('TrueCreditAgency', () => {
     })
 
     it('increases paidTotalInterest', async () => {
+      await creditAgency.connect(borrower).payInterest(tusdPool.address)
+      expect(await creditAgency.paidTotalInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+    })
+
+    it('pays close to nothing on second call', async () => {
+      await creditAgency.connect(borrower).payInterest(tusdPool.address)
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
       expect(await creditAgency.paidTotalInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
