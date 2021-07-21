@@ -159,7 +159,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         pool.token().safeTransfer(msg.sender, amount);
     }
 
-    function payInterest(ITrueFiPool2 pool) external {
+    function payInterest(ITrueFiPool2 pool) public {
         uint256 accruedInterest = interest(pool, msg.sender);
         pool.token().safeTransferFrom(msg.sender, address(this), accruedInterest);
         pool.token().safeApprove(address(pool), accruedInterest);
@@ -175,6 +175,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         uint8 newScore = creditOracle.getScore(msg.sender);
         _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(amount));
 
+        payInterest(pool);
         pool.token().safeTransferFrom(msg.sender, address(this), amount);
         pool.token().safeApprove(address(pool), amount);
         pool.repay(amount);

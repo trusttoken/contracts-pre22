@@ -288,6 +288,7 @@ describe('TrueCreditAgency', () => {
   describe('repayPrincipal', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
+      await creditAgency.setRiskPremium(1000)
       await creditOracle.setScore(owner.address, 255)
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       await tusd.connect(borrower).approve(creditAgency.address, 1000)
@@ -315,6 +316,14 @@ describe('TrueCreditAgency', () => {
       expect(bucketBefore.rate).to.eq(bucketAfter.rate)
       expect(bucketBefore.cumulativeInterestPerShare).to.lt(bucketAfter.cumulativeInterestPerShare)
       expect(bucketBefore.totalBorrowed).to.eq(bucketAfter.totalBorrowed.add(500))
+    })
+
+    it('calls payInterest', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repayPrincipal(tusdPool.address, 500)
+
+      expect(await tusd.balanceOf(borrower.address)).to.be.closeTo(BigNumber.from(400), 2)
+      expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(400), 2)
     })
 
     it('emits event', async () => {
