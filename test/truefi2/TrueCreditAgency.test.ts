@@ -62,7 +62,7 @@ describe('TrueCreditAgency', () => {
     await creditOracle.setManager(owner.address)
 
     creditAgency = await new TrueCreditAgency__factory(owner).deploy()
-    await creditAgency.initialize(creditOracle.address, 100)
+    await creditAgency.initialize(creditOracle.address, 100, 1000, 50, 2)
 
     await tusdPool.setCreditAgency(creditAgency.address)
     await creditAgency.allowPool(tusdPool.address, true)
@@ -71,12 +71,24 @@ describe('TrueCreditAgency', () => {
   })
 
   describe('initializer', () => {
+    it('sets creditOracle', async () => {
+      expect(await creditAgency.creditOracle()).to.equal(creditOracle.address)
+    })
+
     it('sets riskPremium', async () => {
       expect(await creditAgency.riskPremium()).to.eq(100)
     })
 
-    it('sets creditOracle', async () => {
-      expect(await creditAgency.creditOracle()).to.equal(creditOracle.address)
+    it('sets creditAdjustmentCoefficient', async () => {
+      expect(await creditAgency.creditAdjustmentCoefficient()).to.eq(1000)
+    })
+
+    it('sets utilizationAdjustmentCoefficient', async () => {
+      expect(await creditAgency.utilizationAdjustmentCoefficient()).to.eq(50)
+    })
+
+    it('sets utilizationAdjustmentPower', async () => {
+      expect(await creditAgency.utilizationAdjustmentPower()).to.eq(2)
     })
   })
 
@@ -109,6 +121,60 @@ describe('TrueCreditAgency', () => {
     it('emits event', async () => {
       await expect(creditAgency.setRiskPremium(1))
         .to.emit(creditAgency, 'RiskPremiumChanged')
+        .withArgs(1)
+    })
+  })
+
+  describe('setCreditAdjustmentCoefficient', () => {
+    it('reverts if not called by the owner', async () => {
+      await expect(creditAgency.connect(borrower).setCreditAdjustmentCoefficient(1))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('changes credit adjustment coefficient', async () => {
+      await creditAgency.setCreditAdjustmentCoefficient(1)
+      expect(await creditAgency.creditAdjustmentCoefficient()).to.eq(1)
+    })
+
+    it('emits event', async () => {
+      await expect(creditAgency.setCreditAdjustmentCoefficient(1))
+        .to.emit(creditAgency, 'CreditAdjustmentCoefficientChanged')
+        .withArgs(1)
+    })
+  })
+
+  describe('setUtilizationAdjustmentCoefficient', () => {
+    it('reverts if not called by the owner', async () => {
+      await expect(creditAgency.connect(borrower).setUtilizationAdjustmentCoefficient(1))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('changes utilization adjustment coefficient', async () => {
+      await creditAgency.setUtilizationAdjustmentCoefficient(1)
+      expect(await creditAgency.utilizationAdjustmentCoefficient()).to.eq(1)
+    })
+
+    it('emits event', async () => {
+      await expect(creditAgency.setUtilizationAdjustmentCoefficient(1))
+        .to.emit(creditAgency, 'UtilizationAdjustmentCoefficientChanged')
+        .withArgs(1)
+    })
+  })
+
+  describe('setUtilizationAdjustmentPower', () => {
+    it('reverts if not called by the owner', async () => {
+      await expect(creditAgency.connect(borrower).setUtilizationAdjustmentPower(1))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('changes utilization adjustment power', async () => {
+      await creditAgency.setUtilizationAdjustmentPower(1)
+      expect(await creditAgency.utilizationAdjustmentPower()).to.eq(1)
+    })
+
+    it('emits event', async () => {
+      await expect(creditAgency.setUtilizationAdjustmentPower(1))
+        .to.emit(creditAgency, 'UtilizationAdjustmentPowerChanged')
         .withArgs(1)
     })
   })
