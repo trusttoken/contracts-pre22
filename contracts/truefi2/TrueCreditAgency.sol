@@ -170,10 +170,14 @@ contract TrueCreditAgency is UpgradeableClaimable {
     function repayPrincipal(ITrueFiPool2 pool, uint256 amount) external {
         uint256 currentDebt = borrowed[pool][msg.sender];
         require(currentDebt >= amount, "TrueCreditAgency: Cannot repay more than principal debt");
+
+        uint8 oldScore = creditScore[pool][msg.sender];
+        uint8 newScore = creditOracle.getScore(msg.sender);
+        _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(amount));
+
         pool.token().safeTransferFrom(msg.sender, address(this), amount);
         pool.token().safeApprove(address(pool), amount);
         pool.repay(amount);
-        borrowed[pool][msg.sender] = currentDebt.sub(amount);
         emit PrincipalRepaid(pool, msg.sender, amount);
     }
 
