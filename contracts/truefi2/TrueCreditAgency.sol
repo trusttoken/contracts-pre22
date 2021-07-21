@@ -80,19 +80,13 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     event PoolAllowed(ITrueFiPool2 pool, bool isAllowed);
 
-    function initialize(
-        ITrueFiCreditOracle _creditOracle,
-        uint256 _riskPremium,
-        uint256 _creditAdjustmentCoefficient,
-        uint256 _utilizationAdjustmentCoefficient,
-        uint256 _utilizationAdjustmentPower
-    ) public initializer {
+    function initialize(ITrueFiCreditOracle _creditOracle, uint256 _riskPremium) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
         riskPremium = _riskPremium;
-        creditAdjustmentCoefficient = _creditAdjustmentCoefficient;
-        utilizationAdjustmentCoefficient = _utilizationAdjustmentCoefficient;
-        utilizationAdjustmentPower = _utilizationAdjustmentPower;
+        creditAdjustmentCoefficient = 1000;
+        utilizationAdjustmentCoefficient = 50;
+        utilizationAdjustmentPower = 2;
     }
 
     modifier onlyAllowedBorrowers() {

@@ -62,7 +62,7 @@ describe('TrueCreditAgency', () => {
     await creditOracle.setManager(owner.address)
 
     creditAgency = await new TrueCreditAgency__factory(owner).deploy()
-    await creditAgency.initialize(creditOracle.address, 100, 1000, 50, 2)
+    await creditAgency.initialize(creditOracle.address, 100)
 
     await tusdPool.setCreditAgency(creditAgency.address)
     await creditAgency.allowPool(tusdPool.address, true)
@@ -77,18 +77,6 @@ describe('TrueCreditAgency', () => {
 
     it('sets riskPremium', async () => {
       expect(await creditAgency.riskPremium()).to.eq(100)
-    })
-
-    it('sets creditAdjustmentCoefficient', async () => {
-      expect(await creditAgency.creditAdjustmentCoefficient()).to.eq(1000)
-    })
-
-    it('sets utilizationAdjustmentCoefficient', async () => {
-      expect(await creditAgency.utilizationAdjustmentCoefficient()).to.eq(50)
-    })
-
-    it('sets utilizationAdjustmentPower', async () => {
-      expect(await creditAgency.utilizationAdjustmentPower()).to.eq(2)
     })
   })
 
