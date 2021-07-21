@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: BSD-4-Clause
 /*
- * ABDK Math 64.64 Smart Contract Library.  Copyright © 2019 by ABDK Consulting.
+ * Based on ABDK Math 64.64 Smart Contract Library.  Copyright © 2019 by ABDK Consulting.
  * Author: Mikhail Vladimirov <mikhail.vladimirov@gmail.com>
+ * https://github.com/abdk-consulting/abdk-libraries-solidity/blob/master/ABDKMath64x64.sol
+ * Unused functions were removed to reduce contract size
+ * Modifications made by TrueFi can be found by searching for lines that begin with a 'TF-CHANGE' comment.
  */
 pragma solidity 0.6.10;
 
@@ -13,7 +16,7 @@ pragma solidity 0.6.10;
  * need to store it, thus in Solidity signed 64.64-bit fixed point numbers are
  * represented by int128 type holding only the numerator.
  */
-library ABDKMath64x64 {
+library TrueFiFixed64x64 {
     /*
      * Minimum value signed 64.64-bit fixed point number may have.
      */
@@ -45,6 +48,35 @@ library ABDKMath64x64 {
     function toUInt(int128 x) internal pure returns (uint64) {
         require(x >= 0);
         return uint64(uint128(x >> 64));
+    }
+
+    /**
+     * Calculate x * y rounding down.  Revert on overflow.
+     *
+     * @param x signed 64.64-bit fixed point number
+     * @param y signed 64.64-bit fixed point number
+     * @return signed 64.64-bit fixed point number
+     */
+    function mul(int128 x, int128 y) internal pure returns (int128) {
+        int256 result = (int256(x) * y) >> 64;
+        require(result >= MIN_64x64 && result <= MAX_64x64);
+        return int128(result);
+    }
+
+    /**
+     * TF-CHANGE Add a new pow implementation that takes 64.64-bit fixed point numbers for both arguments.
+     * @dev calculate x^y using the fact that
+     * x^y = (2^log2(x))^y = 2^(y * log2(x))
+     *
+     * @param x signed 64.64-bit fixed point number
+     * @param y signed 64.64-bit fixed point number
+     * @return signed 64.64-bit fixed point number
+     */
+    function powi(int128 x, int128 y) internal pure returns (int128) {
+        if (x == 0) {
+            return 0;
+        }
+        return exp_2(mul(y, log_2(x)));
     }
 
     /**
@@ -178,33 +210,5 @@ library ABDKMath64x64 {
         require(result <= uint256(int256(MAX_64x64)));
 
         return int128(int256(result));
-    }
-
-    /**
-     * Calculate x * y rounding down.  Revert on overflow.
-     *
-     * @param x signed 64.64-bit fixed point number
-     * @param y signed 64.64-bit fixed point number
-     * @return signed 64.64-bit fixed point number
-     */
-    function mul(int128 x, int128 y) internal pure returns (int128) {
-        int256 result = (int256(x) * y) >> 64;
-        require(result >= MIN_64x64 && result <= MAX_64x64);
-        return int128(result);
-    }
-
-    /**
-     * @dev calculate x^y using the fact that
-     * x^y = (2^log2(x))^y = 2^(y * log2(x))
-     *
-     * @param x is 64.64-bit fixed point number
-     * @param y is basis-point precision (10000 = 100%)
-     * @return signed 64.64-bit fixed point number
-     */
-    function pow(int128 x, uint256 y) internal pure returns (int128) {
-        if (x == 0) {
-            return 0;
-        }
-        return exp_2(mul(fromUInt(y) / 10000, log_2(x)));
     }
 }

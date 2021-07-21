@@ -13,5 +13,6 @@ describe('Power', () => {
     expect(await pow.pow(10000, 5000)).to.be.closeTo(BigNumber.from(100), 1)
     expect(await pow.pow(1000, 3333)).to.be.closeTo(BigNumber.from(10), 1)
     expect(await pow.pow(4, 20000)).to.equal(16)
+    expect(await pow.pow(4, 0)).to.equal(1)
   })
 })

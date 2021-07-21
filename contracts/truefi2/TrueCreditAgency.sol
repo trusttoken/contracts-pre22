@@ -7,7 +7,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
-import {ABDKMath64x64} from "./libraries/ABDKMath64x64.sol";
+import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -16,7 +16,8 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
 contract TrueCreditAgency is UpgradeableClaimable {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
-    using ABDKMath64x64 for int128;
+    using TrueFiFixed64x64 for int128;
+    using TrueFiFixed64x64 for uint256;
 
     uint8 constant MAX_CREDIT_SCORE = 255;
     uint256 constant MAX_RATE_CAP = 50000;
@@ -210,7 +211,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function borrowLimitAdjustment(uint256 score) public view returns (uint256) {
-        return ((ABDKMath64x64.fromUInt(score) / MAX_CREDIT_SCORE).pow(borrowLimitConfig.limitAdjustmentPower) * 10000).toUInt();
+        return
+            ((score.fromUInt() / MAX_CREDIT_SCORE).powi(uint256(borrowLimitConfig.limitAdjustmentPower).fromUInt() / 10000) * 10000)
+                .toUInt();
     }
 
     function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
