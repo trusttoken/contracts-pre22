@@ -2,9 +2,10 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ITrueLender2} from "../interface/ITrueLender2.sol";
+import {ILoanToken2} from "../interface/ILoanToken2.sol";
+import {IERC20WithDecimals} from "../interface/IERC20WithDecimals.sol";
 import {UpgradeableClaimable} from "../../common/UpgradeableClaimable.sol";
 
 /**
@@ -13,7 +14,7 @@ import {UpgradeableClaimable} from "../../common/UpgradeableClaimable.sol";
  */
 contract BorrowerDistributor is UpgradeableClaimable {
     using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeERC20 for IERC20WithDecimals;
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -24,7 +25,7 @@ contract BorrowerDistributor is UpgradeableClaimable {
     /**
      * @notice Will be TRU
      */
-    IERC20 public rewardCurrency;
+    IERC20WithDecimals public rewardCurrency;
 
     /**
      * @notice Only lenders can distribute the reward
@@ -50,7 +51,7 @@ contract BorrowerDistributor is UpgradeableClaimable {
     /** @notice setting TRU address
      */
     function initialize(
-        IERC20 _rewardCurrency,
+        IERC20WithDecimals _rewardCurrency,
         ITrueLender2 _lender,
         uint256 _rewardRate
     ) external initializer {
@@ -67,8 +68,9 @@ contract BorrowerDistributor is UpgradeableClaimable {
 
     /** @notice Distribute reward
      */
-    function distribute(address borrower, uint256 loanAmount) external onlyLender {
-        uint256 rewardAmount = loanAmount.mul(rewardRate).div(BASIS_RATIO);
-        rewardCurrency.safeTransfer(borrower, rewardAmount);
+    function distribute(ILoanToken2 loan) external onlyLender {
+        uint256 loanRewardAmount = loan.amount().mul(rewardRate).div(BASIS_RATIO);
+        uint256 truRewardAmount = loanRewardAmount.mul(10**rewardCurrency.decimals()).div(10**uint256(loan.token().decimals()));
+        rewardCurrency.safeTransfer(loan.borrower(), truRewardAmount);
     }
 }
