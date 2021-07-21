@@ -303,6 +303,12 @@ describe('TrueCreditAgency', () => {
       await creditAgency.connect(borrower).repayPrincipal(tusdPool.address, 500)
       expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.eq(500)
     })
+
+    it('emits event', async () => {
+      await expect(creditAgency.connect(borrower).repayPrincipal(tusdPool.address, 500))
+        .to.emit(creditAgency, 'PrincipalRepaid')
+        .withArgs(tusdPool.address, borrower.address, 500)
+    })
   })
 
   describe('Credit score change', () => {

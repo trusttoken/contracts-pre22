@@ -76,6 +76,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     event InterestPaid(ITrueFiPool2 pool, address borrower, uint256 amount);
 
+    event PrincipalRepaid(ITrueFiPool2 pool, address borrower, uint256 amount);
+
     function initialize(ITrueFiCreditOracle _creditOracle, uint256 _riskPremium) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         riskPremium = _riskPremium;
@@ -172,6 +174,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         pool.token().safeApprove(address(pool), amount);
         pool.repay(amount);
         borrowed[pool][msg.sender] = currentDebt.sub(amount);
+        emit PrincipalRepaid(pool, msg.sender, amount);
     }
 
     function poke(ITrueFiPool2 pool) public {
