@@ -162,6 +162,15 @@ contract TrueCreditAgency is UpgradeableClaimable {
         pool.repay(accruedInterest);
     }
 
+    function repayPrincipal(ITrueFiPool2 pool, uint256 amount) external {
+        uint256 currentDebt = borrowed[pool][msg.sender];
+        require(currentDebt >= amount, "TrueCreditAgency: Cannot repay more than principal debt");
+        pool.token().safeTransferFrom(msg.sender, address(this), amount);
+        pool.token().safeApprove(address(pool), amount);
+        pool.repay(amount);
+        borrowed[pool][msg.sender] = currentDebt.sub(amount);
+    }
+
     function poke(ITrueFiPool2 pool) public {
         uint256 bitMap = usedBucketsBitmap;
         CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];

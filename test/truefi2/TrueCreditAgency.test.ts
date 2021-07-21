@@ -266,17 +266,36 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.setRiskPremium(1000)
       await creditOracle.setScore(owner.address, 255)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await timeTravel(YEAR)
+      await tusd.connect(borrower).approve(creditAgency.address, 1000)
     })
 
     it('pays interest to the pool', async () => {
-      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
-      await timeTravel(YEAR)
-      await creditAgency.poke(tusdPool.address)
-      await tusd.connect(borrower).approve(creditAgency.address, 1000)
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
 
       expect(await tusd.balanceOf(borrower.address)).to.be.closeTo(BigNumber.from(900), 2)
       expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(900), 2)
+    })
+  })
+
+  describe('repayPrincipal', () => {
+    beforeEach(async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await tusd.connect(borrower).approve(creditAgency.address, 1000)
+    })
+
+    it('repays principal debt to the pool', async () => {
+      await creditAgency.connect(borrower).repayPrincipal(tusdPool.address, 500)
+
+      expect(await tusd.balanceOf(borrower.address)).to.eq(500)
+      expect(await tusd.balanceOf(tusdPool.address)).to.eq(parseEth(1e7).sub(500))
+    })
+
+    it('reduces borrowed amount', async () => {
+      await creditAgency.connect(borrower).repayPrincipal(tusdPool.address, 500)
+      expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.eq(500)
     })
   })
 
