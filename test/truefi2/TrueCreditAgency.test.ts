@@ -261,7 +261,7 @@ describe('TrueCreditAgency', () => {
     )
   })
 
-  describe('payInterest', () => {
+  describe.only('payInterest', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.setRiskPremium(1000)
@@ -276,6 +276,11 @@ describe('TrueCreditAgency', () => {
 
       expect(await tusd.balanceOf(borrower.address)).to.be.closeTo(BigNumber.from(900), 2)
       expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(900), 2)
+    })
+
+    it('increases paidTotalInterest', async () => {
+      await creditAgency.connect(borrower).payInterest(tusdPool.address)
+      expect(await creditAgency.paidTotalInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
     it('emits event', async () => {
