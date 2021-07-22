@@ -285,6 +285,7 @@ describe('TrueCreditAgency', () => {
 
     it('pays close to nothing on second call', async () => {
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
+      expect(await creditAgency.paidTotalInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
       expect(await creditAgency.paidTotalInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
