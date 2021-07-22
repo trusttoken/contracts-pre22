@@ -160,7 +160,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         pool.token().safeTransfer(msg.sender, amount);
     }
 
-    function payInterest(ITrueFiPool2 pool) public {
+    function payInterest(ITrueFiPool2 pool) external {
         uint256 accruedInterest = _payInterestWithoutTransfer(pool);
         _repay(pool, accruedInterest);
         emit InterestPaid(pool, msg.sender, accruedInterest);
