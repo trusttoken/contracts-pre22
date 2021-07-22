@@ -274,6 +274,17 @@ contract TrueCreditAgency is UpgradeableClaimable {
         return saturatingSub(poolBorrowMax, totalBorrowed(borrower, poolDecimals));
     }
 
+    function currentRate(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
+        return _currentRate(riskPremium.add(utilizationAdjustmentRate(pool)), creditScoreAdjustmentRate(pool, borrower));
+    }
+
+    function _currentRate(
+        uint256 partialRate, // risk premium + utilization adjustment rate
+        uint256 __creditScoreAdjustmentRate
+    ) internal pure returns (uint256) {
+        return min(partialRate.add(__creditScoreAdjustmentRate), MAX_RATE_CAP);
+    }
+
     function interest(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
         CreditScoreBucket storage bucket = buckets[pool][creditScore[pool][borrower]];
         return _interest(pool, bucket, borrower);
@@ -323,6 +334,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         uint256 bitMap = usedBucketsBitmap;
         CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
         uint256 timeNow = block.timestamp;
+        uint256 partialRate = utilizationAdjustmentRate(pool).add(riskPremium);
 
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
@@ -334,7 +346,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
             bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
                 bucket.rate.mul(1e23).mul(timeNow.sub(bucket.timestamp)).div(365 days)
             );
-            bucket.rate = _creditScoreAdjustmentRate(uint8(i)).add(riskPremium);
+            bucket.rate = _currentRate(partialRate, _creditScoreAdjustmentRate(uint8(i)));
             bucket.timestamp = uint128(timeNow);
         }
     }
