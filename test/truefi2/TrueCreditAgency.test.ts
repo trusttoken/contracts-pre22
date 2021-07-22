@@ -278,16 +278,16 @@ describe('TrueCreditAgency', () => {
       expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(900), 2)
     })
 
-    it('increases paidTotalInterest', async () => {
+    it('increases totalPaidInterest', async () => {
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
-      expect(await creditAgency.paidTotalInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
     it('pays close to nothing on second call', async () => {
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
-      expect(await creditAgency.paidTotalInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
-      expect(await creditAgency.paidTotalInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
     it('emits event', async () => {

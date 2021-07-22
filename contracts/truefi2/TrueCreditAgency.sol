@@ -39,7 +39,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     mapping(ITrueFiPool2 => mapping(address => uint8)) public creditScore;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public borrowed;
-    mapping(ITrueFiPool2 => mapping(address => uint256)) public paidTotalInterest;
+    mapping(ITrueFiPool2 => mapping(address => uint256)) public totalPaidInterest;
 
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
 
@@ -263,13 +263,14 @@ contract TrueCreditAgency is UpgradeableClaimable {
                 .mul(bucket.rate)
                 .div(10000)
                 .div(365 days)
+            ).sub(
+                totalPaidInterest[pool][borrower]
             );
     }
 
     function _payInterestWithoutTransfer(ITrueFiPool2 pool) internal returns (uint256) {
-        uint256 totalInterest = interest(pool, msg.sender);
-        uint256 accruedInterest = totalInterest.sub(paidTotalInterest[pool][msg.sender]);
-        paidTotalInterest[pool][msg.sender] = totalInterest;
+        uint256 accruedInterest = interest(pool, msg.sender);
+        totalPaidInterest[pool][msg.sender] = totalPaidInterest[pool][msg.sender].add(accruedInterest);
         return accruedInterest;
     }
 
