@@ -40,10 +40,13 @@ contract TrueCreditAgency is UpgradeableClaimable {
     mapping(ITrueFiPool2 => mapping(address => uint8)) public creditScore;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public borrowed;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public totalPaidInterest;
+    mapping(ITrueFiPool2 => mapping(address => uint256)) public repayInFullTime;
 
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
 
     mapping(address => bool) public isBorrowerAllowed;
+
+    uint256 public repaymentMaxTerm;
 
     // basis precision: 10000 = 100%
     uint256 public riskPremium;
@@ -79,6 +82,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     event PrincipalRepaid(ITrueFiPool2 pool, address borrower, uint256 amount);
 
+    event RepaymentMaxTermChanged(uint256 newTerm);
+
     function initialize(ITrueFiCreditOracle _creditOracle, uint256 _riskPremium) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         riskPremium = _riskPremium;
@@ -86,11 +91,17 @@ contract TrueCreditAgency is UpgradeableClaimable {
         creditAdjustmentCoefficient = 1000;
         utilizationAdjustmentCoefficient = 50;
         utilizationAdjustmentPower = 2;
+        repaymentMaxTerm = 365 days;
     }
 
     function setRiskPremium(uint256 newRate) external onlyOwner {
         riskPremium = newRate;
         emit RiskPremiumChanged(newRate);
+    }
+
+    function setRepaymentMaxTerm(uint256 newTerm) external onlyOwner {
+        repaymentMaxTerm = newTerm;
+        emit RepaymentMaxTermChanged(newTerm);
     }
 
     modifier onlyAllowedBorrowers() {
@@ -153,6 +164,10 @@ contract TrueCreditAgency is UpgradeableClaimable {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
         uint8 oldScore = creditScore[pool][msg.sender];
         uint8 newScore = creditOracle.getScore(msg.sender);
+
+        if (borrowed[pool][msg.sender] == 0) {
+            repayInFullTime[pool][msg.sender] = block.timestamp.add(repaymentMaxTerm);
+        }
 
         _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].add(amount));
 

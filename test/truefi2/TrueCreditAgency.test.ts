@@ -78,6 +78,10 @@ describe('TrueCreditAgency', () => {
     it('sets creditOracle', async () => {
       expect(await creditAgency.creditOracle()).to.equal(creditOracle.address)
     })
+
+    it('sets repaymentMaxTerm', async () => {
+      expect(await creditAgency.repaymentMaxTerm()).to.equal(YEAR)
+    })
   })
 
   describe('Ownership', () => {
@@ -110,6 +114,24 @@ describe('TrueCreditAgency', () => {
       await expect(creditAgency.setRiskPremium(1))
         .to.emit(creditAgency, 'RiskPremiumChanged')
         .withArgs(1)
+    })
+  })
+
+  describe('setRepaymentMaxTerm', () => {
+    it('reverts if not called by the owner', async () => {
+      await expect(creditAgency.connect(borrower).setRepaymentMaxTerm(DAY))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('changes repaymentMaxTerm', async () => {
+      await creditAgency.setRepaymentMaxTerm(DAY)
+      expect(await creditAgency.repaymentMaxTerm()).to.eq(DAY)
+    })
+
+    it('emits event', async () => {
+      await expect(creditAgency.setRepaymentMaxTerm(DAY))
+        .to.emit(creditAgency, 'RepaymentMaxTermChanged')
+        .withArgs(DAY)
     })
   })
 
@@ -175,6 +197,12 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowPool(tusdPool.address, false)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
         .to.be.revertedWith('TrueCreditAgency: The pool is not whitelisted for borrowing')
+    })
+
+    it('sets repayInFullTime', async () => {
+      const tx = await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await creditAgency.repayInFullTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(YEAR))
     })
 
     it('correctly handles the case when credit score is changing', async () => {
