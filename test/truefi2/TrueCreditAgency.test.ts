@@ -499,7 +499,7 @@ describe('TrueCreditAgency', () => {
   })
 
   describe('utilizationAdjustmentRate', () => {
-    ;[
+    [
       [0, 0],
       [10, 11],
       [20, 28],
