@@ -161,14 +161,21 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function payInterest(ITrueFiPool2 pool) external {
-        uint256 accruedInterest = _payInterestWithoutTransfer(pool);
+        uint256 accruedInterest = interest(pool, msg.sender);
+        _payInterestWithoutTransfer(pool, accruedInterest);
         _repay(pool, accruedInterest);
-        emit InterestPaid(pool, msg.sender, accruedInterest);
     }
 
     function repay(ITrueFiPool2 pool, uint256 amount) public {
         uint256 currentDebt = borrowed[pool][msg.sender];
-        uint256 accruedInterest = _payInterestWithoutTransfer(pool);
+        uint256 accruedInterest = interest(pool, msg.sender);
+        if (amount < accruedInterest) {
+            _payInterestWithoutTransfer(pool, amount);
+            return;
+        }
+
+        _payInterestWithoutTransfer(pool, accruedInterest);
+
         uint256 repaidPrincipal = amount.sub(accruedInterest);
         require(currentDebt.add(accruedInterest) >= amount, "TrueCreditAgency: Cannot repay more than debt");
 
@@ -273,10 +280,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
             );
     }
 
-    function _payInterestWithoutTransfer(ITrueFiPool2 pool) internal returns (uint256) {
-        uint256 accruedInterest = interest(pool, msg.sender);
-        totalPaidInterest[pool][msg.sender] = totalPaidInterest[pool][msg.sender].add(accruedInterest);
-        return accruedInterest;
+    function _payInterestWithoutTransfer(ITrueFiPool2 pool, uint256 amount) internal {
+        totalPaidInterest[pool][msg.sender] = totalPaidInterest[pool][msg.sender].add(amount);
+        emit InterestPaid(pool, msg.sender, amount);
     }
 
     function _repay(ITrueFiPool2 pool, uint256 amount) internal {

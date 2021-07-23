@@ -324,11 +324,25 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(600), 2)
     })
 
-    it('calls payInterest', async () => {
+    it('repays whole interest', async () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repay(tusdPool.address, 500)
 
       expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+    })
+
+    it('repays interest partially', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 50)
+
+      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(50), 2)
+    })
+
+    it('partial interest repay does not trigger principal repayment', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 50)
+
+      expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.eq(1000)
     })
 
     it('calls _rebucket', async () => {
@@ -343,15 +357,22 @@ describe('TrueCreditAgency', () => {
       expect(bucketBefore.totalBorrowed).to.eq(bucketAfter.totalBorrowed.add(500))
     })
 
-    it('emits event', async () => {
+    it('emits PrincipalRepaid event', async () => {
       await timeTravel(YEAR)
       await expect(creditAgency.connect(borrower).repay(tusdPool.address, 500))
         .to.emit(creditAgency, 'PrincipalRepaid')
         .withArgs(tusdPool.address, borrower.address, 400)
     })
+
+    it('emits InterestPaid event', async () => {
+      await timeTravel(YEAR)
+      await expect(creditAgency.connect(borrower).repay(tusdPool.address, 500))
+        .to.emit(creditAgency, 'InterestPaid')
+        .withArgs(tusdPool.address, borrower.address, 100)
+    })
   })
 
-  describe.only('repayInFull', () => {
+  describe('repayInFull', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.setRiskPremium(1000)
