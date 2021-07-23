@@ -119,7 +119,7 @@ deploy({}, (_, config) => {
     liquidator2.initialize(stkTruToken, trustToken, loanFactory2, AddressZero)
   })
   runIf(poolFactory.pool(usdc).equals(AddressZero), () => {
-    poolFactory.whitelist(usdc, true)
+    poolFactory.allowToken(usdc, true)
     poolFactory.createPool(usdc)
   })
   const usdc_TrueFiPool2 = poolFactory.pool(usdc)
@@ -136,7 +136,7 @@ deploy({}, (_, config) => {
     usdc_TrueFiPool2_TrueFarm.initialize(usdc_TrueFiPool2, usdc_TrueFiPool2_LinearTrueDistributor, 'TrueFi tfUSDC Farm')
   })
   runIf(poolFactory.pool(usdt).equals(AddressZero), () => {
-    poolFactory.whitelist(usdt, true)
+    poolFactory.allowToken(usdt, true)
     poolFactory.createPool(usdt)
   })
   const usdt_TrueFiPool2 = poolFactory.pool(usdt)

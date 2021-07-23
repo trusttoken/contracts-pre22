@@ -7,10 +7,17 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
+import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
+
+interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
+    function decimals() external view returns (uint8);
+}
 
 contract TrueCreditAgency is UpgradeableClaimable {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
+    using TrueFiFixed64x64 for int128;
+    using TrueFiFixed64x64 for uint256;
 
     uint8 constant MAX_CREDIT_SCORE = 255;
     uint256 constant MAX_RATE_CAP = 50000;
@@ -29,6 +36,13 @@ contract TrueCreditAgency is UpgradeableClaimable {
         mapping(address => SavedInterest) savedInterest;
     }
 
+    struct BorrowLimitConfig {
+        uint8 scoreFloor;
+        uint16 limitAdjustmentPower; // times 10000
+        uint16 tvlLimitCoefficient; // times 10000
+        uint16 poolValueLimitCoefficient; // times 10000
+    }
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -42,6 +56,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
     mapping(ITrueFiPool2 => mapping(address => uint256)) public totalPaidInterest;
 
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
+    ITrueFiPool2[] public pools;
 
     mapping(address => bool) public isBorrowerAllowed;
 
@@ -50,6 +65,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     // basis precision: 10000 = 100%
     uint256 public creditAdjustmentCoefficient;
+
+    BorrowLimitConfig public borrowLimitConfig;
 
     ITrueFiCreditOracle public creditOracle;
 
@@ -71,6 +88,12 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     event RiskPremiumChanged(uint256 newRate);
 
+    event CreditAdjustmentCoefficientChanged(uint256 newCoefficient);
+
+    event UtilizationAdjustmentCoefficientChanged(uint256 newCoefficient);
+
+    event UtilizationAdjustmentPowerChanged(uint256 newValue);
+
     event BorrowerAllowed(address indexed who, bool status);
 
     event PoolAllowed(ITrueFiPool2 pool, bool isAllowed);
@@ -79,13 +102,26 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     event PrincipalRepaid(ITrueFiPool2 pool, address borrower, uint256 amount);
 
+    event BorrowLimitConfigChanged(
+        uint8 scoreFloor,
+        uint16 limitAdjustmentPower,
+        uint16 tvlLimitCoefficient,
+        uint16 poolValueLimitCoefficient
+    );
+
     function initialize(ITrueFiCreditOracle _creditOracle, uint256 _riskPremium) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
-        riskPremium = _riskPremium;
         creditOracle = _creditOracle;
+        riskPremium = _riskPremium;
         creditAdjustmentCoefficient = 1000;
+        borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
         utilizationAdjustmentCoefficient = 50;
         utilizationAdjustmentPower = 2;
+    }
+
+    modifier onlyAllowedBorrowers() {
+        require(isBorrowerAllowed[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
+        _;
     }
 
     function setRiskPremium(uint256 newRate) external onlyOwner {
@@ -93,9 +129,29 @@ contract TrueCreditAgency is UpgradeableClaimable {
         emit RiskPremiumChanged(newRate);
     }
 
-    modifier onlyAllowedBorrowers() {
-        require(isBorrowerAllowed[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
-        _;
+    function setBorrowLimitConfig(
+        uint8 scoreFloor,
+        uint16 limitAdjustmentPower,
+        uint16 tvlLimitCoefficient,
+        uint16 poolValueLimitCoefficient
+    ) external onlyOwner {
+        borrowLimitConfig = BorrowLimitConfig(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
+        emit BorrowLimitConfigChanged(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
+    }
+
+    function setCreditAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
+        creditAdjustmentCoefficient = newCoefficient;
+        emit CreditAdjustmentCoefficientChanged(newCoefficient);
+    }
+
+    function setUtilizationAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
+        utilizationAdjustmentCoefficient = newCoefficient;
+        emit UtilizationAdjustmentCoefficientChanged(newCoefficient);
+    }
+
+    function setUtilizationAdjustmentPower(uint256 newValue) external onlyOwner {
+        utilizationAdjustmentPower = newValue;
+        emit UtilizationAdjustmentPowerChanged(newValue);
     }
 
     function allowBorrower(address who, bool status) external onlyOwner {
@@ -104,6 +160,18 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function allowPool(ITrueFiPool2 pool, bool isAllowed) external onlyOwner {
+        if (!isPoolAllowed[pool] && isAllowed) {
+            pools.push(pool);
+        }
+        if (isPoolAllowed[pool] && !isAllowed) {
+            for (uint256 i = 0; i < pools.length; i++) {
+                if (pools[i] == pool) {
+                    pools[i] = pools[pools.length - 1];
+                    pools.pop();
+                    break;
+                }
+            }
+        }
         isPoolAllowed[pool] = isAllowed;
         emit PoolAllowed(pool, isAllowed);
     }
@@ -142,6 +210,51 @@ contract TrueCreditAgency is UpgradeableClaimable {
                 ),
                 MAX_RATE_CAP
             );
+    }
+
+    function totalTVL(uint8 decimals) public view returns (uint256) {
+        uint256 tvl = 0;
+        uint256 resultPrecision = uint256(10)**decimals;
+        for (uint8 i = 0; i < pools.length; i++) {
+            tvl = tvl.add(
+                pools[i].poolValue().mul(resultPrecision).div(uint256(10)**(ITrueFiPool2WithDecimals(address(pools[i])).decimals()))
+            );
+        }
+        return tvl;
+    }
+
+    function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
+        uint256 borrowSum = 0;
+        uint256 resultPrecision = uint256(10)**decimals;
+        for (uint8 i = 0; i < pools.length; i++) {
+            borrowSum = borrowSum.add(
+                borrowed[pools[i]][borrower].mul(resultPrecision).div(
+                    uint256(10)**(ITrueFiPool2WithDecimals(address(pools[i])).decimals())
+                )
+            );
+        }
+        return borrowSum;
+    }
+
+    function borrowLimitAdjustment(uint256 score) public view returns (uint256) {
+        return
+            ((score.fromUInt() / MAX_CREDIT_SCORE).fixed64x64Pow(uint256(borrowLimitConfig.limitAdjustmentPower).fromUInt() / 10000) *
+                10000)
+                .toUInt();
+    }
+
+    function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
+        uint256 score = uint256(creditOracle.getScore(borrower));
+        if (score < borrowLimitConfig.scoreFloor) {
+            return 0;
+        }
+        uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
+        uint256 maxBorrowerLimit = creditOracle.getMaxBorrowerLimit(borrower).mul(uint256(10)**poolDecimals).div(1 ether);
+        uint256 maxTVLLimit = totalTVL(poolDecimals).mul(borrowLimitConfig.tvlLimitCoefficient).div(10000);
+        uint256 adjustment = borrowLimitAdjustment(score);
+        uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(10000);
+        uint256 poolBorrowMax = min(pool.poolValue().mul(borrowLimitConfig.poolValueLimitCoefficient).div(10000), creditLimit);
+        return saturatingSub(poolBorrowMax, totalBorrowed(borrower, poolDecimals));
     }
 
     function interest(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
@@ -216,10 +329,10 @@ contract TrueCreditAgency is UpgradeableClaimable {
         address borrower,
         uint8 oldScore,
         uint8 newScore,
-        uint256 totalBorrowed
+        uint256 updatedBorrowAmount
     ) internal {
         uint256 totalBorrowerInterest = oldScore > 0 ? _takeOutOfBucket(pool, buckets[pool][oldScore], oldScore, borrower) : 0;
-        borrowed[pool][borrower] = totalBorrowed;
+        borrowed[pool][borrower] = updatedBorrowAmount;
         creditScore[pool][borrower] = newScore;
         CreditScoreBucket storage bucket = buckets[pool][newScore];
         _putIntoBucket(pool, bucket, newScore, borrower);
@@ -289,6 +402,13 @@ contract TrueCreditAgency is UpgradeableClaimable {
         pool.token().safeTransferFrom(msg.sender, address(this), amount);
         pool.token().safeApprove(address(pool), amount);
         pool.repay(amount);
+    }
+
+    function saturatingSub(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (b > a) {
+            return 0;
+        }
+        return a.sub(b);
     }
 
     function min(uint256 a, uint256 b) internal pure returns (uint256) {

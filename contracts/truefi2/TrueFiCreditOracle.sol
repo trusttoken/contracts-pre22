@@ -57,6 +57,7 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
 
     /**
      * @dev Get max borrow limit for `account`
+     * Limit should be stored with 18 decimal precision
      */
     function getMaxBorrowerLimit(address account) public override view returns (uint256) {
         return maxBorrowerLimit[account];
