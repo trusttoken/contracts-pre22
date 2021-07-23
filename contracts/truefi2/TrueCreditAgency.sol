@@ -166,17 +166,18 @@ contract TrueCreditAgency is UpgradeableClaimable {
         emit InterestPaid(pool, msg.sender, accruedInterest);
     }
 
-    function repayPrincipal(ITrueFiPool2 pool, uint256 amount) external {
+    function repay(ITrueFiPool2 pool, uint256 amount) external {
         uint256 currentDebt = borrowed[pool][msg.sender];
         require(currentDebt >= amount, "TrueCreditAgency: Cannot repay more than principal debt");
+        uint256 accruedInterest = _payInterestWithoutTransfer(pool);
+        uint256 repaidPrincipal = amount.sub(accruedInterest);
 
         uint8 oldScore = creditScore[pool][msg.sender];
         uint8 newScore = creditOracle.getScore(msg.sender);
-        _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(amount));
+        _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(repaidPrincipal));
 
-        uint256 accruedInterest = _payInterestWithoutTransfer(pool);
-        _repay(pool, amount.add(accruedInterest));
-        emit PrincipalRepaid(pool, msg.sender, amount);
+        _repay(pool, amount);
+        emit PrincipalRepaid(pool, msg.sender, repaidPrincipal);
     }
 
     function poke(ITrueFiPool2 pool) public {

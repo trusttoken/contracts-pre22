@@ -16,6 +16,7 @@ import {
   createApprovedLoan, DAY,
   parseEth,
   setupTruefi2,
+  timeTravel,
   timeTravel as _timeTravel,
   YEAR,
 } from 'utils'
@@ -297,7 +298,7 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe('repayPrincipal', () => {
+  describe('repay', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.setRiskPremium(1000)
@@ -306,21 +307,31 @@ describe('TrueCreditAgency', () => {
       await tusd.connect(borrower).approve(creditAgency.address, 1000)
     })
 
-    it('repays principal debt to the pool', async () => {
-      await creditAgency.connect(borrower).repayPrincipal(tusdPool.address, 500)
+    it('repays debt to the pool', async () => {
+      await creditAgency.connect(borrower).repay(tusdPool.address, 500)
 
       expect(await tusd.balanceOf(borrower.address)).to.eq(500)
       expect(await tusd.balanceOf(tusdPool.address)).to.eq(parseEth(1e7).sub(500))
     })
 
     it('reduces borrowed amount', async () => {
-      await creditAgency.connect(borrower).repayPrincipal(tusdPool.address, 500)
-      expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.eq(500)
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 500)
+      expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(600), 2)
+    })
+    
+    it('calls payInterest', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 500)
+
+      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await tusd.balanceOf(borrower.address)).to.be.closeTo(BigNumber.from(500), 2)
+      expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(500), 2)
     })
 
     it('calls _rebucket', async () => {
       const bucketBefore = await creditAgency.buckets(tusdPool.address, 255)
-      await creditAgency.connect(borrower).repayPrincipal(tusdPool.address, 500)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 500)
       const bucketAfter = await creditAgency.buckets(tusdPool.address, 255)
 
       expect(bucketBefore.borrowersCount).to.eq(bucketAfter.borrowersCount)
@@ -330,18 +341,11 @@ describe('TrueCreditAgency', () => {
       expect(bucketBefore.totalBorrowed).to.eq(bucketAfter.totalBorrowed.add(500))
     })
 
-    it('calls payInterest', async () => {
-      await timeTravel(YEAR)
-      await creditAgency.connect(borrower).repayPrincipal(tusdPool.address, 500)
-
-      expect(await tusd.balanceOf(borrower.address)).to.be.closeTo(BigNumber.from(400), 2)
-      expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(400), 2)
-    })
-
     it('emits event', async () => {
-      await expect(creditAgency.connect(borrower).repayPrincipal(tusdPool.address, 500))
+      await timeTravel(YEAR)
+      await expect(creditAgency.connect(borrower).repay(tusdPool.address, 500))
         .to.emit(creditAgency, 'PrincipalRepaid')
-        .withArgs(tusdPool.address, borrower.address, 500)
+        .withArgs(tusdPool.address, borrower.address, 400)
     })
   })
 
