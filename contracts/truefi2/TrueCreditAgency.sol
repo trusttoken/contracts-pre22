@@ -87,6 +87,12 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     event RiskPremiumChanged(uint256 newRate);
 
+    event CreditAdjustmentCoefficientChanged(uint256 newCoefficient);
+
+    event UtilizationAdjustmentCoefficientChanged(uint256 newCoefficient);
+
+    event UtilizationAdjustmentPowerChanged(uint256 newValue);
+
     event BorrowerAllowed(address indexed who, bool status);
 
     event PoolAllowed(ITrueFiPool2 pool, bool isAllowed);
@@ -100,12 +106,17 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     function initialize(ITrueFiCreditOracle _creditOracle, uint256 _riskPremium) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
-        riskPremium = _riskPremium;
         creditOracle = _creditOracle;
+        riskPremium = _riskPremium;
         creditAdjustmentCoefficient = 1000;
         borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
         utilizationAdjustmentCoefficient = 50;
         utilizationAdjustmentPower = 2;
+    }
+
+    modifier onlyAllowedBorrowers() {
+        require(isBorrowerAllowed[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
+        _;
     }
 
     function setRiskPremium(uint256 newRate) external onlyOwner {
@@ -123,9 +134,19 @@ contract TrueCreditAgency is UpgradeableClaimable {
         emit BorrowLimitConfigChanged(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
     }
 
-    modifier onlyAllowedBorrowers() {
-        require(isBorrowerAllowed[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
-        _;
+    function setCreditAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
+        creditAdjustmentCoefficient = newCoefficient;
+        emit CreditAdjustmentCoefficientChanged(newCoefficient);
+    }
+
+    function setUtilizationAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
+        utilizationAdjustmentCoefficient = newCoefficient;
+        emit UtilizationAdjustmentCoefficientChanged(newCoefficient);
+    }
+
+    function setUtilizationAdjustmentPower(uint256 newValue) external onlyOwner {
+        utilizationAdjustmentPower = newValue;
+        emit UtilizationAdjustmentPowerChanged(newValue);
     }
 
     function allowBorrower(address who, bool status) external onlyOwner {
