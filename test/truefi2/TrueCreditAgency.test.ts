@@ -395,6 +395,11 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower2.address)).to.eq(parseEth(80.51))
       await expect(creditAgency.connect(borrower2).borrow(tusdPool.address, parseEth(80.51).add(1)))
         .to.be.revertedWith('TrueCreditAgency: Borrow amount cannot exceed borrow limit')
+
+      await creditAgency.connect(borrower2).borrow(tusdPool.address, parseEth(75))
+
+      await expect(creditAgency.connect(borrower2).borrow(tusdPool.address, parseEth(5.51).add(1)))
+        .to.be.revertedWith('TrueCreditAgency: Borrow amount cannot exceed borrow limit')
     })
 
     it('correctly handles the case when credit score is changing', async () => {
