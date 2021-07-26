@@ -608,8 +608,7 @@ describe('TrueCreditAgency', () => {
     it('does not update nextInterestRepayTime when interest repaid partially', async () => {
       const prevNextInterestRepayTime = await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)
       await timeTravel(YEAR)
-      const tx = await creditAgency.connect(borrower).repay(tusdPool.address, 50)
-      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 50)
       expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(prevNextInterestRepayTime)
     })
 
