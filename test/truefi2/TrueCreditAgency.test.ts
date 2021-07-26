@@ -68,6 +68,8 @@ describe('TrueCreditAgency', () => {
     await creditAgency.allowPool(tusdPool.address, true)
 
     await creditOracle.setScore(borrower.address, 255)
+    await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
+    await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
   })
 
   describe('initializer', () => {
@@ -257,11 +259,11 @@ describe('TrueCreditAgency', () => {
     beforeEach(async () => {
       pool1 = await deployMockContract(owner, TrueFiPool2Json.abi)
       pool2 = await deployMockContract(owner, TrueFiPool2Json.abi)
-      await pool1.mock.poolValue.returns(parseEth(10))
+      await pool1.mock.poolValue.returns(parseEth(10_000))
       await pool1.mock.decimals.returns(18)
       await pool1.mock.borrow.returns()
       await pool1.mock.token.returns(tusd.address)
-      await pool2.mock.poolValue.returns(parseUSDC(30))
+      await pool2.mock.poolValue.returns(parseUSDC(30_000))
       await pool2.mock.decimals.returns(6)
       await pool2.mock.borrow.returns()
       await pool2.mock.token.returns(tusd.address)
@@ -271,7 +273,7 @@ describe('TrueCreditAgency', () => {
 
     it('totalTVL returns sum of poolValues of all pools with 18 decimals precision', async () => {
       const tusdPoolValue = await tusdPool.poolValue()
-      expect(await creditAgency.totalTVL(18)).to.equal(tusdPoolValue.add(parseEth(40)))
+      expect(await creditAgency.totalTVL(18)).to.equal(tusdPoolValue.add(parseEth(40_000)))
     })
 
     it('totalBorrowed returns total borrowed amount across all pools with 18 decimals precision', async () => {
@@ -321,7 +323,6 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowPool(pool1.address, true)
       await creditAgency.allowPool(pool2.address, true)
       await creditOracle.setScore(borrower.address, 191) // adjustment = 0.8051
-      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
       await creditAgency.allowBorrower(borrower.address, true)
       await tusd.mint(creditAgency.address, parseEth(1000))
     })
