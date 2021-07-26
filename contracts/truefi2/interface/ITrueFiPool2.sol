@@ -15,9 +15,20 @@ interface ITrueFiPool2 is IERC20 {
         address __owner
     ) external;
 
+    function singleBorrowerInitialize(
+        ERC20 _token,
+        ITrueLender2 _lender,
+        ISAFU safu,
+        address __owner,
+        string memory borrowerName,
+        string memory borrowerSymbol
+    ) external;
+
     function token() external view returns (ERC20);
 
     function oracle() external view returns (ITrueFiPoolOracle);
+
+    function poolValue() external view returns (uint256);
 
     /**
      * @dev Ratio of liquid assets in the pool to the pool value

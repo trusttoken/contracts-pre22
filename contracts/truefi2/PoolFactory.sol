@@ -41,6 +41,10 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     ISAFU public safu;
 
+    // @dev Mapping of borrowers to mapping of ERC20 token's addresses to its single borrower pool
+    mapping(address => mapping(address => address)) public singleBorrowerPool;
+    mapping(address => bool) public isBorrowerWhitelisted;
+
     // ======= STORAGE DECLARATION END ===========
 
     /**
@@ -51,11 +55,26 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     event PoolCreated(address token, address pool);
 
     /**
+     * @dev Event to show creation of the new single borrower pool
+     * @param borrower Address of new pool's borrower
+     * @param token Address of token, for which the pool was created
+     * @param pool Address of new pool's proxy
+     */
+    event SingleBorrowerPoolCreated(address borrower, address token, address pool);
+
+    /**
      * @dev Event to show that token is now allowed/disallowed to have a pool created
      * @param token Address of token
      * @param status New status of allowance
      */
     event AllowedStatusChanged(address token, bool status);
+
+    /**
+     * @dev Event to show that borrower is now allowed/disallowed to have a single borrower pool
+     * @param borrower Address of borrower
+     * @param status New status of allowance
+     */
+    event BorrowerWhitelistStatusChanged(address borrower, bool status);
 
     /**
      * @dev Event to show that allowAll status has been changed
@@ -88,8 +107,17 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @dev Throws if token is not whitelisted for creating new pool
      * @param token Address of token to be checked in whitelist
      */
-    modifier onlyAllowed(address token) {
+    modifier onlyAllowedTokens(address token) {
         require(allowAll || isAllowed[token], "PoolFactory: This token is not allowed to have a pool");
+        _;
+    }
+
+    /**
+     * @dev Throws if borrower is not whitelisted for creating new pool
+     * @param borrower Address of borrower to be checked in whitelist
+     */
+    modifier onlyWhitelistedBorrowers(address borrower) {
+        require(isBorrowerWhitelisted[borrower], "PoolFactory: This borrower is not allowed to have a pool");
         _;
     }
 
@@ -122,7 +150,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * Transfer ownership of created pool to Factory owner.
      * @param token Address of token which the pool will correspond to.
      */
-    function createPool(address token) external onlyAllowed(token) onlyNotExistingPools(token) {
+    function createPool(address token) external onlyAllowedTokens(token) onlyNotExistingPools(token) {
         OwnedProxyWithReference proxy = new OwnedProxyWithReference(this.owner(), address(poolImplementationReference));
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
@@ -133,13 +161,53 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     }
 
     /**
+     * @dev Create a new single borrower pool behind proxy. Update new pool's implementation.
+     * Transfer ownership of created pool to Factory owner.
+     * @param token Address of token which the pool will correspond to.
+     */
+    function createSingleBorrowerPool(
+        address token,
+        string memory borrowerName,
+        string memory borrowerSymbol
+    ) external onlyAllowedTokens(token) onlyWhitelistedBorrowers(msg.sender) {
+        require(
+            singleBorrowerPool[msg.sender][token] == address(0),
+            "PoolFactory: This borrower and token already have a corresponding pool"
+        );
+        OwnedProxyWithReference proxy = new OwnedProxyWithReference(this.owner(), address(poolImplementationReference));
+        singleBorrowerPool[msg.sender][token] = address(proxy);
+        isPool[address(proxy)] = true;
+
+        ITrueFiPool2(address(proxy)).singleBorrowerInitialize(
+            ERC20(token),
+            trueLender2,
+            safu,
+            this.owner(),
+            borrowerName,
+            borrowerSymbol
+        );
+
+        emit SingleBorrowerPoolCreated(msg.sender, token, address(proxy));
+    }
+
+    /**
      * @dev Change token allowed status
      * @param token Address of token to be allowed or disallowed
      * @param status New status of allowance for token
      */
-    function whitelist(address token, bool status) external onlyOwner {
+    function allowToken(address token, bool status) external onlyOwner {
         isAllowed[token] = status;
         emit AllowedStatusChanged(token, status);
+    }
+
+    /**
+     * @dev Change borrower allowance status
+     * @param borrower Address of borrower to be allowed or disallowed
+     * @param status New status of allowance for borrower
+     */
+    function whitelistBorrower(address borrower, bool status) external onlyOwner {
+        isBorrowerWhitelisted[borrower] = status;
+        emit BorrowerWhitelistStatusChanged(borrower, status);
     }
 
     /**
