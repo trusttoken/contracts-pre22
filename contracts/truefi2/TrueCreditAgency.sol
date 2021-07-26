@@ -274,9 +274,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function payInterest(ITrueFiPool2 pool) external {
-        uint256 accruedInterest = interest(pool, msg.sender);
-        _payInterestWithoutTransfer(pool, accruedInterest);
-        _repay(pool, accruedInterest);
+        repay(pool, interest(pool, msg.sender));
     }
 
     function repay(ITrueFiPool2 pool, uint256 amount) public {
