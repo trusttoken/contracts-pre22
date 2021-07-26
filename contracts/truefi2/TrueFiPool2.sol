@@ -118,6 +118,28 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     }
 
     /**
+     * @dev Initializer for single borrower pools
+     */
+    function singleBorrowerInitialize(
+        ERC20 _token,
+        ITrueLender2 _lender,
+        ISAFU _safu,
+        address __owner,
+        string memory borrowerName,
+        string memory borrowerSymbol
+    ) external override initializer {
+        ERC20.__ERC20_initialize(
+            concat(concat("TrueFi ", borrowerName), concat(" ", _token.name())),
+            concat(concat("tf", borrowerSymbol), _token.symbol())
+        );
+        UpgradeableClaimable.initialize(__owner);
+
+        token = _token;
+        lender = _lender;
+        safu = _safu;
+    }
+
+    /**
      * @dev Emitted when fee is changed
      * @param newFee New fee
      */
@@ -307,7 +329,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * "virtual price" of entire pool - LoanTokens, UnderlyingTokens, strategy value
      * @return pool value denominated in underlying token
      */
-    function poolValue() public view returns (uint256) {
+    function poolValue() public override view returns (uint256) {
         // this assumes defaulted loans are worth their full value
         return liquidValue().add(loansValue()).add(deficitValue());
     }
