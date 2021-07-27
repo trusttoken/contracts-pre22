@@ -400,6 +400,13 @@ describe('TrueCreditAgency', () => {
         .to.be.revertedWith('TrueCreditAgency: Sender is not allowed to borrow')
     })
 
+    it('fails if borrower tries to borrow after whitelist period', async () => {
+      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await timeTravel(YEAR)
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
+        .to.be.revertedWith('TrueCreditAgency: Sender is not allowed to borrow')
+    })
+
     it('cannot borrow from the pool that is not whitelisted', async () => {
       await creditAgency.allowPool(tusdPool.address, false)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
