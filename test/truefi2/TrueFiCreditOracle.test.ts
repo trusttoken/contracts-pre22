@@ -49,12 +49,12 @@ describe('TrueFiCreditOracle', () => {
       await oracle.connect(manager).setScore(firstAccount.address, firstScore)
     })
 
-    it('reverts if caller is not the manager', async () => {
+    it('only manager can set scores', async () => {
       await expect(oracle.connect(owner).setScore(firstAccount.address, firstScore))
         .to.be.revertedWith('TrueFiCreditOracle: Caller is not the manager')
     })
 
-    it('sets correct score for the account', async () => {
+    it('score is set correctly for account', async () => {
       expect(await oracle.getScore(firstAccount.address)).to.equal(firstScore)
     })
 
@@ -69,7 +69,7 @@ describe('TrueFiCreditOracle', () => {
     const firstScore = 100
     const secondScore = 200
 
-    it('gets correct score after it has changed', async () => {
+    it('gets score correctly after it has changed', async () => {
       await oracle.connect(manager).setScore(firstAccount.address, firstScore)
       expect(await oracle.getScore(firstAccount.address)).to.equal(firstScore)
       await oracle.connect(manager).setScore(firstAccount.address, secondScore)
