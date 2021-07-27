@@ -62,6 +62,12 @@ describe('TrueFiCreditOracle', () => {
       await oracle.connect(manager).setScore(firstAccount.address, secondScore)
       expect(await oracle.getScore(firstAccount.address)).to.equal(secondScore)
     })
+
+    it('emits event', async () => {
+      await expect(oracle.connect(manager).setScore(firstAccount.address, firstScore))
+        .to.emit(oracle, 'ScoreChanged')
+        .withArgs(firstAccount.address, firstScore)
+    })
   })
 
   describe('set and get max borrower limits', () => {
