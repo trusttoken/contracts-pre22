@@ -48,7 +48,7 @@ contract AaveBaseRateOracle {
         cooldownTime = _cooldownTime;
         asset = _asset;
 
-        totalsBuffer.lastValue = getAaveDepositAPY(_asset);
+        totalsBuffer.lastValue = getAaveVariableBorrowAPY(asset);
         totalsBuffer.timestamps[0] = block.timestamp;
     }
 
@@ -71,9 +71,9 @@ contract AaveBaseRateOracle {
         return (totalsBuffer.runningTotals, totalsBuffer.timestamps, totalsBuffer.latestIndex);
     }
 
-    function getAaveDepositAPY(address _asset) public view returns (uint256) {
-        (, , , uint128 currentLiquidityRate, , , , , , , , ) = aavePool.getReserveData(_asset);
-        return uint256(currentLiquidityRate).div(1e23);
+    function getAaveVariableBorrowAPY(address _asset) public view returns (uint256) {
+        (, , , , uint128 currentVariableBorrowRate, , , , , , , ) = aavePool.getReserveData(_asset);
+        return uint256(currentVariableBorrowRate).div(1e23);
     }
 
     /**
@@ -86,7 +86,7 @@ contract AaveBaseRateOracle {
     function update() public offCooldown {
         uint16 lidx = totalsBuffer.latestIndex;
         uint16 nextIndex = (lidx + 1) % bufferSize();
-        uint256 apy = getAaveDepositAPY(asset);
+        uint256 apy = getAaveVariableBorrowAPY(asset);
         uint256 dt = block.timestamp.sub(totalsBuffer.timestamps[lidx]);
         totalsBuffer.runningTotals[nextIndex] = totalsBuffer.runningTotals[lidx].add(apy.add(totalsBuffer.lastValue).mul(dt).div(2));
         totalsBuffer.timestamps[nextIndex] = block.timestamp;
@@ -130,7 +130,7 @@ contract AaveBaseRateOracle {
             startIndex = 0;
         }
         uint256 runningTotalForTimeToCover = totalsBuffer.runningTotals[lidx].sub(totalsBuffer.runningTotals[startIndex]);
-        uint256 curValue = getAaveDepositAPY(asset);
+        uint256 curValue = getAaveVariableBorrowAPY(asset);
         uint256 curTimestamp = block.timestamp;
         uint256 dt = curTimestamp.sub(totalsBuffer.timestamps[lidx]);
         runningTotalForTimeToCover = runningTotalForTimeToCover.add(curValue.add(totalsBuffer.lastValue).mul(dt).div(2));
