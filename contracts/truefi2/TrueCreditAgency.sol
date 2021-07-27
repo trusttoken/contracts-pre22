@@ -286,14 +286,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
             _payInterestWithoutTransfer(pool, amount);
         } else {
             _payInterestWithoutTransfer(pool, accruedInterest);
-
-            uint256 repaidPrincipal = amount.sub(accruedInterest);
-
-            uint8 oldScore = creditScore[pool][msg.sender];
-            uint8 newScore = creditOracle.getScore(msg.sender);
-            _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(repaidPrincipal));
-
-            emit PrincipalRepaid(pool, msg.sender, repaidPrincipal);
+            _payPrincipalWithoutTransfer(pool, amount.sub(accruedInterest));
         }
 
         _repay(pool, amount);
@@ -395,6 +388,18 @@ contract TrueCreditAgency is UpgradeableClaimable {
     function _payInterestWithoutTransfer(ITrueFiPool2 pool, uint256 amount) internal {
         totalPaidInterest[pool][msg.sender] = totalPaidInterest[pool][msg.sender].add(amount);
         emit InterestPaid(pool, msg.sender, amount);
+    }
+
+    function _payPrincipalWithoutTransfer(ITrueFiPool2 pool, uint256 amount) internal {
+        if (amount == 0) {
+            return;
+        }
+
+        uint8 oldScore = creditScore[pool][msg.sender];
+        uint8 newScore = creditOracle.getScore(msg.sender);
+        _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(amount));
+
+        emit PrincipalRepaid(pool, msg.sender, amount);
     }
 
     function _repay(ITrueFiPool2 pool, uint256 amount) internal {
